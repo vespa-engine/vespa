@@ -99,28 +99,6 @@ public:
 
     LookupResultVector lookup(const std::vector<uint32_t> & indexes, std::string_view word);
 
-    /**
-     * Read the posting list corresponding to the given lookup result.
-     *
-     * @param lookupRes the result of the previous dictionary lookup.
-     * @return a handle for the posting list in memory.
-     */
-    index::PostingListHandle readPostingList(const LookupResult &lookupRes) const;
-
-    std::unique_ptr<search::queryeval::SearchIterator>
-    create_iterator(const LookupResult& lookup_result,
-                    const index::PostingListHandle& handle,
-                    const search::fef::TermFieldMatchDataArray& tfmda) const;
-
-    /**
-     * Read the bit vector corresponding to the given lookup result.
-     *
-     * @param lookupRes the result of the previous dictionary lookup.
-     * @return the bit vector or nullptr if no bit vector exists for the
-     *         word in the lookup result.
-     */
-    BitVector::UP readBitVector(const LookupResult &lookupRes) const;
-
     std::unique_ptr<queryeval::Blueprint> createBlueprint(const queryeval::IRequestContext & requestContext,
                                                           const queryeval::FieldSpec &field,
                                                           const query::Node &term) override;
@@ -143,6 +121,7 @@ public:
 
     index::FieldLengthInfo get_field_length_info(const std::string& field_name) const;
     const std::shared_ptr<IPostingListCache>& get_posting_list_cache() const noexcept { return _posting_list_cache; }
+    const FieldIndex& get_field_index(uint32_t field_id) const noexcept { return _field_indexes[field_id]; }
 };
 
 void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b);

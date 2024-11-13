@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "diskindex.h"
+#include "field_index.h"
 #include <vespa/searchlib/queryeval/blueprint.h>
 
 namespace search::diskindex {
@@ -14,9 +14,10 @@ class DiskTermBlueprint : public queryeval::SimpleLeafBlueprint
 {
 private:
     queryeval::FieldSpec             _field;
-    const DiskIndex               &  _diskIndex;
+    const FieldIndex&                _field_index;
     std::string                 _query_term;
-    DiskIndex::LookupResult          _lookupRes;
+    index::DictionaryLookupResult          _lookupRes;
+    index::BitVectorDictionaryLookupResult _bitvector_lookup_result;
     bool                             _useBitVector;
     bool                             _fetchPostingsDone;
     index::PostingListHandle         _postingHandle;
@@ -27,14 +28,14 @@ public:
      * Create a new blueprint.
      *
      * @param field        the field to search in.
-     * @param diskIndex    the disk index used to read the bit vector or posting list.
+     * @param field_index    the field index used to read the bit vector or posting list.
      * @param lookupRes    the result after disk dictionary lookup.
      * @param useBitVector whether or not we should use bit vector.
      **/
     DiskTermBlueprint(const queryeval::FieldSpec & field,
-                      const DiskIndex & diskIndex,
+                      const FieldIndex& field_index,
                       const std::string& query_term,
-                      DiskIndex::LookupResult lookupRes,
+                      index::DictionaryLookupResult lookupRes,
                       bool useBitVector);
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;

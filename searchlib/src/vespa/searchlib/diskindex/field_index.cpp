@@ -3,6 +3,7 @@
 #include "field_index.h"
 #include "fileheader.h"
 #include "pagedict4randread.h"
+#include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <filesystem>
@@ -10,6 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.field_index");
 
+using search::index::BitVectorDictionaryLookupResult;
 using search::index::DictionaryLookupResult;
 using search::index::PostingListHandle;
 
@@ -45,13 +47,15 @@ FieldIndex::FieldIndex()
       _file_id(0),
       _size_on_disk(0),
       _cache_disk_io_stats(std::make_shared<LockedCacheDiskIoStats>()),
-      _posting_list_cache()
+      _posting_list_cache(),
+      _field_id(0)
 {
 }
 
-FieldIndex::FieldIndex(std::shared_ptr<IPostingListCache> posting_list_cache)
+FieldIndex::FieldIndex(uint32_t field_id, std::shared_ptr<IPostingListCache> posting_list_cache)
     : FieldIndex()
 {
+    _field_id = field_id;
     _posting_list_cache = std::move(posting_list_cache);
 }
 
@@ -203,17 +207,26 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
     return result;
 }
 
-std::unique_ptr<BitVector>
-FieldIndex::read_bit_vector(const DictionaryLookupResult& lookup_result) const
+BitVectorDictionaryLookupResult
+FieldIndex::lookup_bit_vector(const DictionaryLookupResult& lookup_result) const
 {
-    if (!_bit_vector_dict) {
+    if (!_bit_vector_dict || !lookup_result.valid()) {
         return {};
     }
     return _bit_vector_dict->lookup(lookup_result.wordNum);
 }
 
+std::unique_ptr<BitVector>
+FieldIndex::read_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
+{
+    if (!_bit_vector_dict) {
+        return {};
+    }
+    return _bit_vector_dict->read_bitvector(lookup_result);
+}
+
 std::unique_ptr<search::queryeval::SearchIterator>
-FieldIndex::create_iterator(const search::index::DictionaryLookupResult& lookup_result,
+FieldIndex::create_iterator(const DictionaryLookupResult& lookup_result,
                             const index::PostingListHandle& handle,
                             const search::fef::TermFieldMatchDataArray& tfmda) const
 {
