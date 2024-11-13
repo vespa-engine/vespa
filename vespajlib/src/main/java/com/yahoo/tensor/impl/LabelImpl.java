@@ -1,27 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.impl;
+
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.Tensor;
 
 /**
- * A label for a tensor dimension.
- * It works for both mapped dimensions with string labels and indexed dimensions with numeric labels.
- * For mapped dimensions, a negative numeric label is assigned by LabelCache.
- * For indexed dimension, the index itself is used as a positive numeric label.
- * Tensor operations rely on the numeric label for performance.
+ * Basic implementation of @link Label.
  * 
  * @author glebashnik
  */
-public class Label {
-    public static final Label INVALID_INDEX_LABEL = new Label(Tensor.invalidIndex, null);
-
+class LabelImpl implements Label {
     private final long numeric;
     private String string = null;
     
-    Label(long numeric) {
+    LabelImpl(long numeric) {
         this.numeric = numeric;
     }
 
-    Label(long numeric, String string) {
+    LabelImpl(long numeric, String string) {
         this.numeric = numeric;
         this.string = string;
     }
@@ -31,7 +27,7 @@ public class Label {
     }
     
     public String toString() {
-        if (numeric == INVALID_INDEX_LABEL.numeric) {
+        if (numeric == Tensor.invalidIndex) {
             return null;
         }
         // String label for indexed dimension are created at runtime to reduce memory usage.
@@ -46,7 +42,7 @@ public class Label {
     public boolean equals(Object object) {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
-        var label = (Label) object;
+        var label = (LabelImpl) object;
         return numeric == label.numeric;
     }
 

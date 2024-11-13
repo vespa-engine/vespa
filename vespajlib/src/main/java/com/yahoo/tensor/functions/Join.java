@@ -12,7 +12,8 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
-import com.yahoo.tensor.impl.Label;
+import com.yahoo.tensor.Label;
+import com.yahoo.tensor.impl.LabelCache;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
 import java.util.ArrayList;
@@ -378,7 +379,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     private static TensorAddress joinAddresses(TensorAddress a, int[] aToIndexes, TensorAddress b, int[] bToIndexes,
                                                TensorType joinedType) {
         Label[] joinedLabels = new Label[joinedType.dimensions().size()];
-        Arrays.fill(joinedLabels, Label.INVALID_INDEX_LABEL);
+        Arrays.fill(joinedLabels, LabelCache.INVALID_INDEX_LABEL);
         mapContent(a, joinedLabels, aToIndexes);
         boolean compatible = mapContent(b, joinedLabels, bToIndexes);
         if ( ! compatible) return null;
@@ -395,7 +396,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (int i = 0, size = from.size(); i < size; i++) {
             int toIndex = indexMap[i];
             Label label = from.objectLabel(i);
-            if (to[toIndex] != Label.INVALID_INDEX_LABEL && !to[toIndex].equals(label))
+            if (!to[toIndex].equals(LabelCache.INVALID_INDEX_LABEL) && !to[toIndex].equals(label))
                 return false;
             to[toIndex] = label;
         }

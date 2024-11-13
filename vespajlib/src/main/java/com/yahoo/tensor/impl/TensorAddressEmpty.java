@@ -2,6 +2,7 @@
 
 package com.yahoo.tensor.impl;
 
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.TensorAddress;
 
 /**

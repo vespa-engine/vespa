@@ -10,7 +10,7 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
-import com.yahoo.tensor.impl.Label;
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.impl.LabelCache;
 import com.yahoo.tensor.impl.TensorAddressAny;
 

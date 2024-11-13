@@ -20,7 +20,6 @@ import com.yahoo.tensor.functions.Rename;
 import com.yahoo.tensor.functions.Softmax;
 import com.yahoo.tensor.functions.XwPlusB;
 import com.yahoo.tensor.functions.Expand;
-import com.yahoo.tensor.impl.Label;
 
 import java.util.ArrayList;
 import java.util.Iterator;

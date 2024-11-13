@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.yahoo.tensor.impl.Label;
 import com.yahoo.tensor.impl.LabelCache;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
@@ -164,7 +163,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         private static Label[] createEmptyLabels(int size) {
             var labels = new Label[size];
-            Arrays.fill(labels, Label.INVALID_INDEX_LABEL);
+            Arrays.fill(labels, LabelCache.INVALID_INDEX_LABEL);
             return labels;
         }
 
@@ -190,21 +189,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
             add(mappedSubtype.dimensions().get(0).name(), label);
             return this;
         }
-
-        /**
-         * Adds the label object to the only mapped dimension of this.
-         *
-         * @throws IllegalArgumentException if this does not have exactly one dimension
-         */
-        public Builder add(Label label) {
-            var mappedSubtype = type.mappedSubtype();
-            if (mappedSubtype.rank() != 1)
-                throw new IllegalArgumentException("Cannot add a label without explicit dimension to a tensor of type " +
-                        type + ": Must have exactly one mapped dimension");
-            add(mappedSubtype.dimensions().get(0).name(), label);
-            return this;
-        }
-
+        
         /**
          * Adds a label in a dimension to this.
          *
@@ -259,7 +244,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
 
         void validate() {
             for (int i = 0; i < labels.length; i++)
-                if (labels[i] == Label.INVALID_INDEX_LABEL)
+                if (labels[i].equals(LabelCache.INVALID_INDEX_LABEL))
                     throw new IllegalArgumentException("Missing a label for dimension '" +
                                                        type.dimensions().get(i).name() + "' for " + type);
         }

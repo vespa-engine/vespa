@@ -932,6 +932,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.Label" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract long toNumeric()",
+      "public abstract java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.MappedTensor$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -1077,6 +1091,7 @@
     ],
     "methods" : [
       "public void <init>(int)",
+      "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, com.yahoo.tensor.Label)",
       "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, long)",
       "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.PartialAddress build()"
@@ -1091,6 +1106,7 @@
     ],
     "methods" : [
       "public java.lang.String dimension(int)",
+      "public com.yahoo.tensor.Label objectLabel(java.lang.String)",
       "public long numericLabel(java.lang.String)",
       "public java.lang.String label(java.lang.String)",
       "public java.lang.String label(int)",
@@ -1281,6 +1297,7 @@
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, java.lang.String)",
+      "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, com.yahoo.tensor.Label)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, int)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, long)",
       "public com.yahoo.tensor.TensorAddress$Builder copy()",
@@ -1317,6 +1334,7 @@
       "public static varargs com.yahoo.tensor.TensorAddress of(long[])",
       "public static varargs com.yahoo.tensor.TensorAddress of(int[])",
       "public abstract int size()",
+      "public abstract com.yahoo.tensor.Label objectLabel(int)",
       "public abstract java.lang.String label(int)",
       "public abstract long numericLabel(int)",
       "public abstract com.yahoo.tensor.TensorAddress withLabel(int, long)",
@@ -3827,14 +3845,14 @@
       "public static java.lang.String toMessageString(java.lang.Throwable)",
       "public static java.util.Optional findCause(java.lang.Throwable, java.lang.Class)",
       "public static void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException)",
-      "public static void uncheckInterrupted(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
-      "public static void uncheckInterruptedAndRestoreFlag(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
       "public static varargs void uncheck(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.String, java.lang.String[])",
       "public static void uncheckAndIgnore(com.yahoo.yolean.Exceptions$RunnableThrowingIOException, java.lang.Class)",
       "public static java.util.function.Function uncheck(com.yahoo.yolean.Exceptions$FunctionThrowingIOException)",
       "public static java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException)",
       "public static varargs java.lang.Object uncheck(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.String, java.lang.String[])",
       "public static java.lang.Object uncheckAndIgnore(com.yahoo.yolean.Exceptions$SupplierThrowingIOException, java.lang.Class)",
+      "public static void uncheckInterrupted(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
+      "public static void uncheckInterruptedAndRestoreFlag(com.yahoo.yolean.Exceptions$RunnableThrowingInterruptedException)",
       "public static java.lang.Object uncheckInterrupted(com.yahoo.yolean.Exceptions$SupplierThrowingInterruptedException)",
       "public static java.lang.RuntimeException throwUnchecked(java.lang.Throwable)"
     ],

@@ -2,6 +2,8 @@
 package com.yahoo.tensor.impl;
 
 import com.google.common.util.concurrent.Striped;
+import com.yahoo.tensor.Label;
+import com.yahoo.tensor.Tensor;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
@@ -19,6 +21,8 @@ import java.util.concurrent.locks.Lock;
 public class LabelCache {
     // Global cache used as default.
     public static final LabelCache GLOBAL = new LabelCache(32, 1000);
+    // Label for invalid index.
+    public static final Label INVALID_INDEX_LABEL = new LabelImpl(Tensor.invalidIndex, null);
     
     // Stores string and numeric keys to clean the cache after Label is garbage collected.
     static class LabelWeakReference extends WeakReference<Label> {
@@ -63,7 +67,7 @@ public class LabelCache {
         var labels = new Label[count];
 
         for (var i = 0; i < count; i++) {
-            labels[i] = new Label(i, String.valueOf(i));
+            labels[i] = new LabelImpl(i, String.valueOf(i));
         }
 
         return labels;
@@ -71,7 +75,7 @@ public class LabelCache {
 
     public Label getOrCreateLabel(String string) {
         if (string == null) {
-            return Label.INVALID_INDEX_LABEL;
+            return INVALID_INDEX_LABEL;
         }
 
         // Index labels are not cached.
@@ -84,7 +88,7 @@ public class LabelCache {
                     return smallIndex[(int) numeric];
                 }
 
-                return new Label(numeric, string);
+                return new LabelImpl(numeric, string);
             } catch(NumberFormatException e){
                 // Continue with cached labels
             }
@@ -106,11 +110,11 @@ public class LabelCache {
                 return smallIndex[(int) numeric];
             }
 
-            return new Label(numeric);
+            return new LabelImpl(numeric);
         }
 
-        if (numeric == Label.INVALID_INDEX_LABEL.toNumeric()) {
-            return Label.INVALID_INDEX_LABEL;
+        if (numeric == INVALID_INDEX_LABEL.toNumeric()) {
+            return INVALID_INDEX_LABEL;
         }
 
         // Negative numeric labels are mapped to string labels.
@@ -161,7 +165,7 @@ public class LabelCache {
             }
 
             var newNumeric = uniqueCounter.getAndDecrement();
-            var newLabel = new Label(newNumeric, string);
+            var newLabel = new LabelImpl(newNumeric, string);
             var newReference = new LabelWeakReference(newLabel, referenceQueue);
 
             byString.put(string, newReference);

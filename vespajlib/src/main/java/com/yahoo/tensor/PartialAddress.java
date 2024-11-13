@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.yahoo.tensor.impl.Label;
 import com.yahoo.tensor.impl.LabelCache;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
@@ -39,7 +38,7 @@ public class PartialAddress {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
                 return labels[i];
-        return Label.INVALID_INDEX_LABEL;
+        return LabelCache.INVALID_INDEX_LABEL;
     }
     
     /** Returns the numeric label of this dimension, or -1 if no label is specified for it */
@@ -79,7 +78,7 @@ public class PartialAddress {
         Label[] labels = new Label[this.labels.length];
         for (int i = 0; i < type.dimensions().size(); i++) {
             Label label = objectLabel(type.dimensions().get(i).name());
-            if (label.equals(Label.INVALID_INDEX_LABEL))
+            if (label.equals(LabelCache.INVALID_INDEX_LABEL))
                 throw new IllegalArgumentException(type + " dimension names does not match " + this);
             labels[i] = label;
         }
