@@ -182,12 +182,12 @@ FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_resu
 }
 
 PostingListHandle
-FieldIndex::read(const IPostingListCache::Key& key) const
+FieldIndex::read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const
 {
+    ctx.cache_miss = true;
     DictionaryLookupResult lookup_result;
     lookup_result.bitOffset = key.bit_offset;
     lookup_result.counts._bitLength = key.bit_length;
-    key.backing_store_file = nullptr; // Signal cache miss back to layer above cache
     return read_uncached_posting_list(lookup_result);
 }
 
@@ -202,13 +202,12 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
         return read_uncached_posting_list(lookup_result);
     }
     IPostingListCache::Key key;
-    key.backing_store_file = this;
     key.file_id = _file_id;
     key.bit_offset = lookup_result.bitOffset;
     key.bit_length = lookup_result.counts._bitLength;
-    auto result = _posting_list_cache->read(key);
-    auto cache_hit = key.backing_store_file == this;
-    if (cache_hit && result._read_bytes != 0) {
+    IPostingListCache::Context ctx(this);
+    auto result = _posting_list_cache->read(key, ctx);
+    if (!ctx.cache_miss && result._read_bytes != 0) {
         _cache_disk_io_stats->add_cached_read_operation(result._read_bytes);
     }
     return result;

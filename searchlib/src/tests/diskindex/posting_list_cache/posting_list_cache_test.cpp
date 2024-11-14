@@ -15,7 +15,7 @@ class MockFile : public PostingListCache::IPostingListFileBacking {
 public:
     MockFile();
     ~MockFile() override;
-    PostingListHandle read(const PostingListCache::Key& key) const override;
+    PostingListHandle read(const PostingListCache::Key& key, PostingListCache::Context& ctx) const override;
     std::shared_ptr<BitVector> read(const PostingListCache::BitVectorKey& key, PostingListCache::Context& ctx) const override;
 };
 
@@ -27,9 +27,10 @@ MockFile::MockFile()
 MockFile::~MockFile() = default;
 
 PostingListHandle
-MockFile::read(const PostingListCache::Key& key) const
+MockFile::read(const PostingListCache::Key& key, PostingListCache::Context& ctx) const
 {
     EXPECT_NE(0, key.bit_length);
+    ctx.cache_miss = true;
     PostingListHandle handle;
     handle._allocSize = key.bit_length / 8;
     return handle;
@@ -57,8 +58,14 @@ protected:
     PostingListCache::Context _ctx;
     PostingListCacheTest();
     ~PostingListCacheTest() override;
-    PostingListHandle read() const { return _cache.read(_key); }
-    std::shared_ptr<BitVector> read_bv() { return _cache.read(_bv_key, _ctx); }
+    PostingListHandle read() {
+        _ctx.cache_miss = false;
+        return _cache.read(_key, _ctx);
+    }
+    std::shared_ptr<BitVector> read_bv() {
+        _ctx.cache_miss = false;
+        return _cache.read(_bv_key, _ctx);
+    }
 };
 
 PostingListCacheTest::PostingListCacheTest()
@@ -69,7 +76,6 @@ PostingListCacheTest::PostingListCacheTest()
       _bv_key(),
       _ctx(&_mock_file)
 {
-    _key.backing_store_file = &_mock_file;
 }
 
 PostingListCacheTest::~PostingListCacheTest() = default;
@@ -78,8 +84,11 @@ TEST_F(PostingListCacheTest, repeated_lookups_gives_hit)
 {
     _key.bit_length = 24 * 8;
     auto handle = read();
+    EXPECT_TRUE(_ctx.cache_miss);
     auto handle2 = read();
+    EXPECT_FALSE(_ctx.cache_miss);
     auto handle3 = read();
+    EXPECT_FALSE(_ctx.cache_miss);
     EXPECT_EQ(24, handle._allocSize);
     auto stats = _cache.get_stats();
     EXPECT_EQ(1, stats.misses);
@@ -125,10 +134,8 @@ TEST_F(PostingListCacheTest, repeated_bitvector_lookup_gives_hit)
 {
     _bv_key.lookup_result.idx = 1;
     _bv_key.file_id = 2;
-    _ctx.cache_miss = false;
     auto bv = read_bv();
     EXPECT_TRUE(_ctx.cache_miss);
-    _ctx.cache_miss = false;
     auto bv2 = read_bv();
     EXPECT_FALSE(_ctx.cache_miss);
     EXPECT_EQ(bv, bv2);

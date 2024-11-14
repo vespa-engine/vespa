@@ -73,7 +73,7 @@ public:
     bool open(const std::string& field_dir, const TuneFileSearch &tune_file_search);
     void reuse_files(const FieldIndex& rhs);
     index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
-    index::PostingListHandle read(const IPostingListCache::Key& key) const override;
+    index::PostingListHandle read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const override;
     index::PostingListHandle read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
     index::BitVectorDictionaryLookupResult lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
     std::shared_ptr<BitVector> read_uncached_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;

@@ -19,7 +19,7 @@ class PostingListCache::BackingStore
 public:
     BackingStore();
     ~BackingStore();
-    bool read(const Key& key, PostingListHandle& value) const;
+    bool read(const Key& key, PostingListHandle& value, Context& ctx) const;
     bool read(const BitVectorKey& key, std::shared_ptr<BitVector>& value, Context& ctx) const;
 };
 
@@ -27,10 +27,10 @@ PostingListCache::BackingStore::BackingStore() = default;
 PostingListCache::BackingStore::~BackingStore() = default;
 
 bool
-PostingListCache::BackingStore::read(const Key& key, PostingListHandle& value) const
+PostingListCache::BackingStore::read(const Key& key, PostingListHandle& value, Context& ctx) const
 {
     // TODO: Store a smaller copy if posting list is small
-    value = key.backing_store_file->read(key);
+    value = ctx.backing_store_file->read(key, ctx);
     return true;
 }
 
@@ -104,9 +104,9 @@ PostingListCache::PostingListCache(size_t max_bytes, size_t bitvector_max_bytes)
 PostingListCache::~PostingListCache() = default;
 
 PostingListHandle
-PostingListCache::read(const Key& key) const
+PostingListCache::read(const Key& key, Context& ctx) const
 {
-    return _cache->read(key);
+    return _cache->read(key, ctx);
 }
 
 std::shared_ptr<BitVector>
