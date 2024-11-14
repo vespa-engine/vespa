@@ -1,0 +1,17 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
+        <server id="lemminxVespa"
+                name="Vespa LemMinX Extension"
+                factoryClass="ai.vespa.schemals.intellij.LemminxVespaServerFactory"
+                lastDocumentDisconnectedTimeout="36000">
+            <description><![CDATA[
+                    The Vespa LemMinX Language Server provides support in:
+                    <ul>
+                      <li>The services.xml file of Vespa Applications</li>
+                    </ul>
+                    ]]>
+            </description>
+        </server>
+        <languageMapping language="XML" serverId="lemminxVespa"/>
+    </extensions>
+</idea-plugin>

@@ -11,6 +11,14 @@ val JAVA_VERSION = "17"
 repositories {
   mavenCentral()
 
+  maven {
+    url = uri("https://repo.eclipse.org/content/repositories/lemminx")
+    metadataSources {
+      mavenPom()
+      artifact()
+    }
+  }
+
   mavenLocal()
   maven {
     url = uri("file://${System.getProperty("user.home")}/.m2/repository")
@@ -35,8 +43,13 @@ dependencies {
   implementation("org.jsoup:jsoup:1.17.2")
   implementation("com.vladsch.flexmark:flexmark-html2md-converter:0.64.8")
 
+  implementation("org.eclipse.lemminx:org.eclipse.lemminx:0.28.0:uber") {
+    exclude(group = "org.eclipse.lsp4j")
+    exclude(group = "com.google.code.gson")
+  }
+
   intellijPlatform {
-    intellijIdeaCommunity("2024.2")
+    intellijIdeaUltimate("2024.2")
     instrumentationTools()
     plugin("com.redhat.devtools.lsp4ij:0.7.0")
   }
@@ -68,14 +81,16 @@ tasks {
   }
 
   prepareSandbox {
-    val fromPath = "../../language-server/target/schema-language-server-jar-with-dependencies.jar"
+    val fromPathSchema = "../../language-server/target/schema-language-server-jar-with-dependencies.jar"
+    val fromPathLemminx = "../../lemminx-vespa/target/lemminx-vespa-jar-with-dependencies.jar"
     val toPath = pluginDirectory.get()
 
     // see: https://docs.gradle.org/8.7/userguide/configuration_cache.html#config_cache:requirements:disallowed_types
     val injected = project.objects.newInstance<InjectFileSystem>()
     doLast {
       injected.fs.copy {
-        from(fromPath)
+        from(fromPathSchema)
+        from(fromPathLemminx)
         into(toPath)
       }
     }

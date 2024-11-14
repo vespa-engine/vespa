@@ -39,4 +39,6 @@ In addition, the plugin will be available for community editions as well.
                             serverId="vespaSchemaLanguageServer"
                             languageId="vespaSchema"/>
   </extensions>
+  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="/META-INF/lsp.xml"
+              xpointer="xpointer(/idea-plugin/*)"/>
 </idea-plugin>
