@@ -11,6 +11,7 @@
 class FastOS_FileInterface;
 
 namespace search { class BitVector; }
+namespace search { struct ReadStats; }
 
 namespace search::diskindex {
 
@@ -29,6 +30,7 @@ private:
     size_t                                _vectorSize;
     std::unique_ptr<FastOS_FileInterface> _datFile;
     uint32_t                              _datHeaderLen;
+    bool                                  _memory_mapped;
 
 public:
     using SP = std::shared_ptr<BitVectorDictionary>;
@@ -62,13 +64,17 @@ public:
      * Load and return the associated bit vector if lookup result is valid.
      *
      * @param lookup_result the result returned from lookup.
+     * @param read_stats statistics to be updated when reading bit vector
      * @return the loaded bit vector or empty if lookup result was invalid.
      **/
+    std::unique_ptr<BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result,
+                                              ReadStats &read_stats);
     std::unique_ptr<BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result);
 
-    uint32_t getDocIdLimit() const { return _docIdLimit; }
+    uint32_t getDocIdLimit() const noexcept { return _docIdLimit; }
 
-    const std::vector<WordSingleKey> & getEntries() const { return _entries; }
+    const std::vector<WordSingleKey> & getEntries() const noexcept { return _entries; }
+    bool get_memory_mapped() const noexcept { return _memory_mapped; }
 };
 
 }

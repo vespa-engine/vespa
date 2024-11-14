@@ -4,6 +4,7 @@
 #include "fileheader.h"
 #include "pagedict4randread.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/common/read_stats.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
 #include <filesystem>
@@ -48,6 +49,8 @@ FieldIndex::FieldIndex()
       _size_on_disk(0),
       _cache_disk_io_stats(std::make_shared<LockedCacheDiskIoStats>()),
       _posting_list_cache(),
+      _posting_list_cache_enabled(false),
+      _bitvector_cache_enabled(false),
       _field_id(0)
 {
 }
@@ -57,6 +60,8 @@ FieldIndex::FieldIndex(uint32_t field_id, std::shared_ptr<IPostingListCache> pos
 {
     _field_id = field_id;
     _posting_list_cache = std::move(posting_list_cache);
+    _posting_list_cache_enabled = _posting_list_cache && _posting_list_cache->enabled_for_posting_lists();
+    _bitvector_cache_enabled = _posting_list_cache && _posting_list_cache->enabled_for_bitvectors();
 }
 
 FieldIndex::FieldIndex(FieldIndex&&) = default;
@@ -191,7 +196,7 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
     if (file == nullptr || lookup_result.counts._bitLength == 0) {
         return {};
     }
-    if (file->getMemoryMapped() || !_posting_list_cache) {
+    if (file->getMemoryMapped() || !_posting_list_cache_enabled) {
         return read_uncached_posting_list(lookup_result);
     }
     IPostingListCache::Key key;
@@ -216,13 +221,42 @@ FieldIndex::lookup_bit_vector(const DictionaryLookupResult& lookup_result) const
     return _bit_vector_dict->lookup(lookup_result.wordNum);
 }
 
-std::unique_ptr<BitVector>
+std::shared_ptr<BitVector>
+FieldIndex::read_uncached_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
+{
+    ReadStats read_stats;
+    auto result = _bit_vector_dict->read_bitvector(lookup_result, read_stats);
+    if (read_stats.read_bytes != 0) {
+        _cache_disk_io_stats->add_uncached_read_operation(read_stats.read_bytes);
+    }
+    return result;
+}
+
+std::shared_ptr<BitVector>
+FieldIndex::read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const
+{
+    ctx.cache_miss = true;
+    return read_uncached_bit_vector(key.lookup_result);
+}
+
+std::shared_ptr<BitVector>
 FieldIndex::read_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
 {
     if (!_bit_vector_dict) {
         return {};
     }
-    return _bit_vector_dict->read_bitvector(lookup_result);
+    if (_bit_vector_dict->get_memory_mapped() || !_bitvector_cache_enabled) {
+        return read_uncached_bit_vector(lookup_result);
+    }
+    IPostingListCache::BitVectorKey key;
+    key.file_id = _file_id;
+    key.lookup_result = lookup_result;
+    IPostingListCache::Context ctx(this);
+    auto result = _posting_list_cache->read(key, ctx);
+    if (!ctx.cache_miss) {
+        _cache_disk_io_stats->add_cached_read_operation(result->getFileBytes());
+    }
+    return result;
 }
 
 std::unique_ptr<search::queryeval::SearchIterator>

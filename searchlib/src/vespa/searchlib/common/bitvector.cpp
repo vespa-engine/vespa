@@ -3,10 +3,12 @@
 #include "bitvector.h"
 #include "allocatedbitvector.h"
 #include "partialbitvector.h"
+#include "read_stats.h"
 #include <vespa/searchlib/util/file_settings.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/thread_bundle.h>
+#include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
@@ -365,6 +367,8 @@ public:
     MMappedBitVector(Index numberOfElements, FastOS_FileInterface &file,
                      int64_t offset, Index doccount);
 
+    size_t get_allocated_bytes(bool include_self) const noexcept override;
+
 private:
     void read(Index numberOfElements, FastOS_FileInterface &file,
               int64_t offset, Index doccount);
@@ -372,10 +376,12 @@ private:
 
 BitVector::UP
 BitVector::create(Index numberOfElements, FastOS_FileInterface &file,
-                  int64_t offset, Index doccount)
+                  int64_t offset, Index doccount, ReadStats& read_stats)
 {
     UP bv;
     if (file.IsMemoryMapped()) {
+        size_t pad_before = offset - vespalib::round_down_to_page_boundary(offset);
+        read_stats.read_bytes = vespalib::round_up_to_page_size(pad_before + getFileBytes(numberOfElements));
         bv = std::make_unique<MMappedBitVector>(numberOfElements, file, offset, doccount);
     } else {
         size_t padbefore, padafter;
@@ -385,7 +391,8 @@ BitVector::create(Index numberOfElements, FastOS_FileInterface &file,
         AllocatedBitVector::Alloc alloc = Alloc::alloc(padbefore + vectorsize + padafter,
                                                        MMAP_LIMIT, FileSettings::DIRECTIO_ALIGNMENT);
         void * alignedBuffer = alloc.get();
-        file.ReadBuf(alignedBuffer, alloc.size(), offset - padbefore);
+        file.ReadBuf(alignedBuffer, padbefore + vectorsize + padafter, offset - padbefore);
+        read_stats.read_bytes = padbefore + vectorsize + padafter;
         bv = std::make_unique<AllocatedBitVector>(numberOfElements, std::move(alloc), padbefore);
         bv->setTrueBits(doccount);
         // Check guard bit for getNextTrueBit()
@@ -448,6 +455,12 @@ MMappedBitVector::read(Index numberOfElements, FastOS_FileInterface &file,
         init(mapptr, 0, numberOfElements);
     }
     setTrueBits(doccount);
+}
+
+size_t
+MMappedBitVector::get_allocated_bytes(bool include_self) const noexcept
+{
+    return include_self ? sizeof(MMappedBitVector) : 0;
 }
 
 nbostream &

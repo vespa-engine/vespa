@@ -108,4 +108,14 @@ AllocatedBitVector::resize(Index newLength)
     clear();
 }
 
+size_t
+AllocatedBitVector::get_allocated_bytes(bool include_self) const noexcept
+{
+    size_t result = extraByteSize();
+    if (include_self) {
+        result += sizeof(AllocatedBitVector);
+    }
+    return result;
+}
+
 } // namespace search

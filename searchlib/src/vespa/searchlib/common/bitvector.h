@@ -21,6 +21,7 @@ class FastOS_FileInterface;
 namespace search {
 
 class PartialBitVector;
+struct ReadStats;
 class AllocatedBitVector;
 
 class BitVector : protected BitWord
@@ -277,7 +278,7 @@ public:
      * @param offset            Where bitvector image is located in the file.
      * @param doccount          Number of bits set in bitvector
      */
-    static UP create(Index numberOfElements, FastOS_FileInterface &file, int64_t offset, Index doccount);
+    static UP create(Index numberOfElements, FastOS_FileInterface &file, int64_t offset, Index doccount, ReadStats& read_stats);
     static UP create(Index start, Index end);
     static UP create(const BitVector & org, Index start, Index end);
     static UP create(Index numberOfElements);
@@ -291,6 +292,7 @@ public:
     static void parallellOr(vespalib::ThreadBundle & thread_bundle, std::span<BitVector* const> vectors);
     static Index numWords(Index bits) noexcept { return wordNum(bits + 1 + (WordLen - 1)); }
     static Index numBytes(Index bits) noexcept { return numWords(bits) * sizeof(Word); }
+    virtual size_t get_allocated_bytes(bool include_self) const noexcept = 0;
 protected:
     using Alloc = vespalib::alloc::Alloc;
     VESPA_DLL_LOCAL BitVector(void * buf, Index start, Index end) noexcept;

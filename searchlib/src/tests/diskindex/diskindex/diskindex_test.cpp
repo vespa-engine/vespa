@@ -289,7 +289,7 @@ DiskIndexTest::requireThatWeCanReadBitVector()
             auto& field_index = _index->get_field_index(1);
             auto blr = field_index.lookup_bit_vector(r);
             EXPECT_TRUE(blr.valid());
-            BitVector::UP bv = field_index.read_bit_vector(blr);
+            auto bv = field_index.read_bit_vector(blr);
             EXPECT_TRUE(bv.get() != nullptr);
             EXPECT_TRUE(*bv == *exp);
         }
