@@ -182,11 +182,8 @@ public class Snapshots {
 
     /** Reseal the encryption key for snapshot using given public key */
     private SealedSharedKey resealKeyOf(Snapshot snapshot, PublicKey receiverPublicKey) {
-        if (snapshot.key().isEmpty()) {
-            throw new IllegalArgumentException("Snapshot " + snapshot.id() + " has no encryption key");
-        }
-        VersionedKeyPair sealingKeyPair = sealingKeyPair(snapshot.key().get().sealingKeyVersion());
-        SecretSharedKey unsealedKey = SharedKeyGenerator.fromSealedKey(snapshot.key().get().sharedKey(),
+        VersionedKeyPair sealingKeyPair = sealingKeyPair(snapshot.key().sealingKeyVersion());
+        SecretSharedKey unsealedKey = SharedKeyGenerator.fromSealedKey(snapshot.key().sharedKey(),
                                                                        sealingKeyPair.keyPair().getPrivate());
         return SharedKeyGenerator.reseal(unsealedKey, receiverPublicKey, KeyId.ofString(snapshot.id().toString()))
                                  .sealedSharedKey();
