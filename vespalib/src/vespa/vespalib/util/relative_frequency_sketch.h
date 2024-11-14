@@ -72,7 +72,7 @@ public:
 
     [[nodiscard]] size_t window_size() const noexcept { return _window_size; }
 private:
-    void div_all_by_2() noexcept;
+    void div_all_by_2() noexcept __attribute__((noinline));
 
     template <bool ReturnMinCount>
     uint8_t add_by_hash_impl(uint64_t hash) noexcept;
