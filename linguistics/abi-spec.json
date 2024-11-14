@@ -436,7 +436,7 @@
     "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
-      "public java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context, com.yahoo.document.DataType)"
+      "public java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context)"
     ],
     "fields" : [ ]
   },
@@ -451,7 +451,7 @@
     "methods" : [
       "public java.util.Map asMap()",
       "public java.util.Map asMap(java.lang.String)",
-      "public abstract java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context, com.yahoo.document.DataType)"
+      "public abstract java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context)"
     ],
     "fields" : [
       "public static final java.lang.String defaultGeneratorId",

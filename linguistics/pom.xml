@@ -68,13 +68,6 @@
       <scope>provided</scope>
     </dependency>
 
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>document</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-
     <!-- Test Scope Dependencies -->
     <dependency>
       <groupId>junit</groupId>

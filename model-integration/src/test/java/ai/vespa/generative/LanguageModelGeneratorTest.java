@@ -28,12 +28,12 @@ public class LanguageModelGeneratorTest {
         var config1 = new LanguageModelGeneratorConfig.Builder().providerId("mock1").build();
         var generator1 = createGenerator(config1, languageModels);
         var context = new com.yahoo.language.process.Generator.Context("schema.indexing");
-        var result1 = generator1.generate("hello", context, DataType.STRING);
+        var result1 = generator1.generate("hello", context);
         assertEquals("hello", result1);
     
         var config2 = new LanguageModelGeneratorConfig.Builder().providerId("mock2").build();
         var generator2 = createGenerator(config2, Map.of("mock1", languageModel1, "mock2", languageModel2));
-        var result2 = generator2.generate("hello", context, DataType.STRING);
+        var result2 = generator2.generate("hello", context);
         assertEquals("hello hello", result2);
     }
 

@@ -49,7 +49,7 @@ public class OpenAI extends ConfigurableLanguageModel implements Generator {
     }
 
     @Override
-    public String generate(String prompt, Context context, DataType dataType) {
+    public String generate(String prompt, Context context) {
         return GeneratorUtils.generate(prompt, this);
     }
 }

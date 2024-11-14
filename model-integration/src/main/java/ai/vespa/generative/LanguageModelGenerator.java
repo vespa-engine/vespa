@@ -23,7 +23,7 @@ public  class LanguageModelGenerator extends AbstractComponent implements com.ya
     }
     
     @Override
-    public String generate(String prompt, Context context, DataType dataType) {
+    public String generate(String prompt, Context context) {
         return GeneratorUtils.generate(prompt, languageModel);
     }
 }

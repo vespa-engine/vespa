@@ -119,8 +119,7 @@ public class GenerateExpression extends Expression {
                 input,
                 new Generator.Context(destination, context.getCache())
                         .setLanguage(context.resolveLanguage(linguistics))
-                        .setGeneratorId(generatorId),
-                targetType
+                        .setGeneratorId(generatorId)
         );
     }
 

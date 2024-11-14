@@ -1,7 +1,6 @@
 package com.yahoo.language.process;
 
 import com.yahoo.collections.LazyMap;
-import com.yahoo.document.DataType;
 import com.yahoo.language.Language;
 
 import java.util.Map;
@@ -26,7 +25,7 @@ public interface Generator {
         return Map.of(name, this);
     }
 
-    String generate(String prompt, Context context, DataType dataType);
+    String generate(String prompt, Context context);
 
 
     class Context {
@@ -121,7 +120,7 @@ public interface Generator {
             this.message = message;
         }
         
-        public String generate(String prompt, Context context, DataType dataType) {
+        public String generate(String prompt, Context context) {
             throw new IllegalStateException(message);
         }
     }

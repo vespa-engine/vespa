@@ -168,7 +168,7 @@
       "public void deconstruct()",
       "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
       "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)",
-      "public java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context, com.yahoo.document.DataType)"
+      "public java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context)"
     ],
     "fields" : [ ]
   },
@@ -184,7 +184,7 @@
       "public void <init>(ai.vespa.llm.clients.LlmClientConfig, com.yahoo.container.jdisc.secretstore.SecretStore)",
       "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
       "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)",
-      "public java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context, com.yahoo.document.DataType)"
+      "public java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context)"
     ],
     "fields" : [ ]
   },

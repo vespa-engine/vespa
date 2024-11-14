@@ -80,7 +80,7 @@ public class GeneratorScriptTester {
             this.repetitions = repetitions;
         }
 
-        public String generate(String prompt, Context context, DataType dataType) {
+        public String generate(String prompt, Context context) {
             var stringBuilder = new StringBuilder();
             
             for (int i = 0; i < repetitions; i++) {

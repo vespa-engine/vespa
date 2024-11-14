@@ -156,7 +156,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel, Genera
 
 
     @Override
-    public String generate(String prompt, Context context, DataType dataType) {
+    public String generate(String prompt, Context context) {
         return GeneratorUtils.generate(prompt, this);
     }
 }
