@@ -54,8 +54,8 @@ final class TensorAddressAny3 extends TensorAddressAny {
     @Override
     public boolean equals(Object o) {
         return (o instanceof TensorAddressAny3 any) &&
-                (label0.equals(any.label0)) &&
-                (label1.equals(any.label1)) &&
-                (label2.equals(any.label2));
+                (label0.isEqualsTo(any.label0)) &&
+                (label1.isEqualsTo(any.label1)) &&
+                (label2.isEqualsTo(any.label2));
     }
 }

@@ -27,11 +27,13 @@ class LabelImpl implements Label {
     public long asNumeric() {
         return numeric;
     }
-    
+
+    @Override
     public String asString() {
         if (numeric == Tensor.invalidIndex) {
             return null;
         }
+        
         // String label for indexed dimension are created at runtime to reduce memory usage.
         if (string == null) {
             return String.valueOf(numeric);
@@ -41,13 +43,18 @@ class LabelImpl implements Label {
     }
 
     @Override
+    public boolean isEqualsTo(Label label) {
+        return asNumeric() == label.asNumeric();
+    }
+
+    @Override
     public boolean equals(Object object) {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
         var label = (LabelImpl) object;
-        return numeric == label.numeric;
+        return isEqualsTo(label);
     }
-
+    
     @Override
     public int hashCode() {
         return Long.hashCode(numeric);

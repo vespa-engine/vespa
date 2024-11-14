@@ -2,6 +2,7 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.api.annotations.Beta;
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.PartialAddress;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
@@ -118,8 +119,8 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
     private boolean matches(PartialAddress subspaceAddress,
                             TensorAddress address, TensorType type) {
         for (int i = 0; i < subspaceAddress.size(); i++) {
-            String label = address.label(type.indexOfDimension(subspaceAddress.dimension(i)).get());
-            if ( ! label.equals(subspaceAddress.label(i)))
+            Label label = address.objectLabel(type.indexOfDimension(subspaceAddress.dimension(i)).get());
+            if (!label.isEqualsTo(subspaceAddress.objectLabel(i)))
                 return false;
         }
         return true;

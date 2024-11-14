@@ -38,34 +38,38 @@ public class PartialAddress {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
                 return labels[i];
+        
         return LabelCache.INVALID_INDEX_LABEL;
     }
     
     /** Returns the numeric label of this dimension, or -1 if no label is specified for it */
     public long numericLabel(String dimensionName) {
-        for (int i = 0; i < dimensionNames.length; i++)
-            if (dimensionNames[i].equals(dimensionName))
-                return labels[i].asNumeric();
-        return Tensor.invalidIndex;
+        return objectLabel(dimensionName).asNumeric();
     }
 
     /** Returns the string label of this dimension, or null if no label is specified for it */
     public String label(String dimensionName) {
-        for (int i = 0; i < dimensionNames.length; i++)
-            if (dimensionNames[i].equals(dimensionName))
-                return labels[i].toString();
-        return null;
+        return objectLabel(dimensionName).asString();
     }
 
     /**
-     * Returns the label at position i
+     * Returns label object at position i
+     *
+     * @throws IllegalArgumentException if i is out of bounds
+     */
+    public Label objectLabel(int i) {
+        if (i >= size())
+            throw new IllegalArgumentException("No label at position " + i + " in " + this);
+        return labels[i];
+    }
+
+    /**
+     * Returns string label at position i
      *
      * @throws IllegalArgumentException if i is out of bounds
      */
     public String label(int i) {
-        if (i >= size())
-            throw new IllegalArgumentException("No label at position " + i + " in " + this);
-        return labels[i].toString();
+        return objectLabel(i).asString();
     }
 
     public int size() { return dimensionNames.length; }
@@ -78,7 +82,7 @@ public class PartialAddress {
         Label[] labels = new Label[this.labels.length];
         for (int i = 0; i < type.dimensions().size(); i++) {
             Label label = objectLabel(type.dimensions().get(i).name());
-            if (label.equals(LabelCache.INVALID_INDEX_LABEL))
+            if (label.isEqualsTo(LabelCache.INVALID_INDEX_LABEL))
                 throw new IllegalArgumentException(type + " dimension names does not match " + this);
             labels[i] = label;
         }

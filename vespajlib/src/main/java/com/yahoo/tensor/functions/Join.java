@@ -396,7 +396,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (int i = 0, size = from.size(); i < size; i++) {
             int toIndex = indexMap[i];
             Label label = from.objectLabel(i);
-            if (!to[toIndex].equals(LabelCache.INVALID_INDEX_LABEL) && !to[toIndex].equals(label))
+            if (!to[toIndex].isEqualsTo(LabelCache.INVALID_INDEX_LABEL) && !to[toIndex].isEqualsTo(label))
                 return false;
             to[toIndex] = label;
         }

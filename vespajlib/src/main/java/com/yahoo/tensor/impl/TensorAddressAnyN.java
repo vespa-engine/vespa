@@ -54,7 +54,7 @@ final class TensorAddressAnyN extends TensorAddressAny {
     public boolean equals(Object o) {
         if (! (o instanceof TensorAddressAnyN any) || (size() != any.size())) return false;
         for (int i = 0; i < size(); i++) {
-            if (!labels[i].equals(any.labels[i])) return false;
+            if (!labels[i].isEqualsTo(any.labels[i])) return false;
         }
         return true;
     }
