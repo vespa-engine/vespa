@@ -55,7 +55,7 @@ public class HashExpression extends Expression  {
     @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
-        if (DataType.INT.equals(targetType) || requireOutputType().equals(DataType.INT))
+        if (DataType.INT.equals(targetType) || ( ! DataType.LONG.equals(targetType) && requireOutputType().equals(DataType.INT)))
             context.setCurrentValue(new IntegerFieldValue(hashToInt(input.getString())));
         else if (DataType.LONG.equals(targetType) || requireOutputType().equals(DataType.LONG))
             context.setCurrentValue(new LongFieldValue(hashToLong(input.getString())));

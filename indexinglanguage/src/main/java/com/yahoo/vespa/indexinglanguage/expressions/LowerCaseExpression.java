@@ -17,7 +17,7 @@ public final class LowerCaseExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        return super.setInputType(inputType, context);
+        return super.setInputType(inputType, DataType.STRING, context);
     }
 
     @Override
