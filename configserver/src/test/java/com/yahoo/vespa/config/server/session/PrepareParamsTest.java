@@ -5,6 +5,7 @@ import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.TenantName;
@@ -18,6 +19,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
+import com.yahoo.vespa.config.server.tenant.TenantVaultSerializer;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -171,6 +173,35 @@ public class PrepareParamsTest {
     }
 
     @Test
+    public void testTenantVaults() throws IOException {
+        List<TenantVault> tenantVaults = List.of(new TenantVault(
+                "id", "name", "extId",
+                List.of(new TenantVault.Secret("sId", "sName"))));
+
+        Slime tenantVaultSlime = TenantVaultSerializer.toSlime(tenantVaults);
+        String tenantVaultParam = new String(SlimeUtils.toJsonBytes(tenantVaultSlime), StandardCharsets.UTF_8);
+
+        var prepareParams = createParams(request + "&" + PrepareParams.TENANT_VAULTS_PARAM_NAME + "="
+                                                 + URLEncoder.encode(tenantVaultParam, StandardCharsets.UTF_8),
+                                         TenantName.from("foo"));
+
+        assertEquals(1, prepareParams.tenantVaults().size());
+        TenantVault tenantVault = prepareParams.tenantVaults().get(0);
+        assertEquals("id", tenantVault.id());
+        assertEquals("name", tenantVault.name());
+        assertEquals("extId", tenantVault.externalId());
+        assertEquals(1, tenantVault.secrets().size());
+        assertEquals("sId", tenantVault.secrets().get(0).id());
+        assertEquals("sName", tenantVault.secrets().get(0).name());
+
+        // Verify using json object
+        var root = SlimeUtils.jsonToSlime(json);
+        new Injector().inject(tenantVaultSlime.get(), new ObjectInserter(root.get(), PrepareParams.TENANT_VAULTS_PARAM_NAME));
+        PrepareParams prepareParamsJson = PrepareParams.fromJson(SlimeUtils.toJsonBytes(root), TenantName.from("foo"), Duration.ofSeconds(60));
+        assertPrepareParamsEqual(prepareParams, prepareParamsJson);
+    }
+
+    @Test
     public void testSecretStores() throws  IOException {
         List<TenantSecretStore> secretStores = List.of(new TenantSecretStore("name", "awsId", "role", "extId"));
         Slime secretStoreSlime = TenantSecretStoreSerializer.toSlime(secretStores);
@@ -213,6 +244,7 @@ public class PrepareParamsTest {
         assertEquals(urlParams.dockerImageRepository(), jsonParams.dockerImageRepository());
         assertEquals(urlParams.athenzDomain(), jsonParams.athenzDomain());
         assertEquals(urlParams.quota(), jsonParams.quota());
+        assertEquals(urlParams.tenantVaults(), jsonParams.tenantVaults());
         assertEquals(urlParams.tenantSecretStores(), jsonParams.tenantSecretStores());
     }
 

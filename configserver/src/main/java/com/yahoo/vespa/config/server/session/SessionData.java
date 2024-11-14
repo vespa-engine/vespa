@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
@@ -16,6 +17,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.tenant.DataplaneTokenSerializer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
+import com.yahoo.vespa.config.server.tenant.TenantVaultSerializer;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -38,6 +40,7 @@ public record SessionData(ApplicationId applicationId,
                           Optional<DockerImage> dockerImageRepository,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<Quota> quota,
+                          List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount,
@@ -52,6 +55,7 @@ public record SessionData(ApplicationId applicationId,
     static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
     static final String ATHENZ_DOMAIN = "athenzDomain";
     static final String QUOTA_PATH = "quota";
+    static final String TENANT_VAULTS_PATH = "tenantVaults";
     static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
     static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
     static final String CLOUD_ACCOUNT_PATH = "cloudAccount";
@@ -79,6 +83,9 @@ public record SessionData(ApplicationId applicationId,
         athenzDomain.ifPresent(domain -> object.setString(ATHENZ_DOMAIN, domain.value()));
         quota.ifPresent(q -> q.toSlime(object.setObject(QUOTA_PATH)));
 
+        Cursor tenantVaultArray = object.setArray(TENANT_VAULTS_PATH);
+        TenantVaultSerializer.toSlime(tenantVaults, tenantVaultArray);
+
         Cursor tenantSecretStoresArray = object.setArray(TENANT_SECRET_STORES_PATH);
         TenantSecretStoreSerializer.toSlime(tenantSecretStores, tenantSecretStoresArray);
 
@@ -104,6 +111,7 @@ public record SessionData(ApplicationId applicationId,
                                SlimeUtils.isPresent(cursor.field(QUOTA_PATH))
                                        ? Optional.of(Quota.fromSlime(cursor.field(QUOTA_PATH)))
                                        : Optional.empty(),
+                               TenantVaultSerializer.listFromSlime(cursor.field(TENANT_VAULTS_PATH)),
                                TenantSecretStoreSerializer.listFromSlime(cursor.field(TENANT_SECRET_STORES_PATH)),
                                OperatorCertificateSerializer.fromSlime(cursor.field(OPERATOR_CERTIFICATES_PATH)),
                                optionalString(cursor.field(CLOUD_ACCOUNT_PATH)).map(CloudAccount::from),

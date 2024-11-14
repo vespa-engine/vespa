@@ -6,6 +6,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -147,6 +148,20 @@ public class SessionZooKeeperClientTest {
     }
 
     @Test
+    public void tenant_vaults_are_written_and_parsed() {
+        var vaults = List.of(
+                new TenantVault("id1", "name1", "extId1",
+                                List.of(new TenantVault.Secret("sId1", "sName1"))),
+                new TenantVault("id2", "name2", "extId2",
+                                List.of(new TenantVault.Secret("sId2", "sName2"))));
+
+        var zkc = createSessionZKClient(4);
+        zkc.writeTenantVaults(vaults);
+        List<TenantVault> actual = zkc.readTenantVaults();
+        assertEquals(vaults, actual);
+    }
+
+    @Test
     public void require_tenant_secret_stores_written_and_parsed() {
         var secretStores = List.of(
                 new TenantSecretStore("name1", "awsId1", "role1"),
@@ -171,6 +186,7 @@ public class SessionZooKeeperClientTest {
                                              Optional.empty(),
                                              List.of(),
                                              List.of(),
+                                             List.of(),
                                              Optional.empty(),
                                              List.of(),
                                              ActivationTriggers.empty()));
@@ -178,7 +194,7 @@ public class SessionZooKeeperClientTest {
         assertTrue(curator.exists(path));
         String data = Utf8.toString(curator.getData(path).get());
         assertTrue(data.contains("{\"applicationId\":\"default:default:default\",\"applicationPackageReference\":\"foo\",\"version\":\"8.195.1\",\"createTime\":"));
-        assertTrue(data.contains(",\"tenantSecretStores\":[],\"operatorCertificates\":[],\"dataplaneTokens\":[]," +
+        assertTrue(data.contains(",\"tenantVaults\":[],\"tenantSecretStores\":[],\"operatorCertificates\":[],\"dataplaneTokens\":[]," +
                                  "\"activationTriggers\":{\"nodeRestarts\":[],\"reindexings\":[]}"));
     }
 

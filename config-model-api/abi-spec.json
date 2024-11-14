@@ -1390,6 +1390,7 @@
       "public java.util.Optional endpointCertificateSecrets()",
       "public java.util.Optional athenzDomain()",
       "public com.yahoo.config.model.api.Quota quota()",
+      "public java.util.List tenantVaults()",
       "public java.util.List tenantSecretStores()",
       "public java.lang.String jvmGCOptions()",
       "public abstract java.lang.String jvmGCOptions(java.util.Optional)",
@@ -1795,6 +1796,44 @@
       "public java.lang.String toString()",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.TenantVault$Secret" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String name()",
+      "public java.lang.String id()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.config.model.api.TenantVault" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.lang.String, java.lang.String, java.util.List)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String id()",
+      "public java.lang.String name()",
+      "public java.lang.String externalId()",
+      "public java.util.List secrets()"
     ],
     "fields" : [ ]
   },
