@@ -67,7 +67,7 @@ public class GenerateExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        return super.setOutputType(DataType.STRING, outputType, context);
+        return super.setOutputType(DataType.STRING, outputType, null, context);
     }
 
     @Override
