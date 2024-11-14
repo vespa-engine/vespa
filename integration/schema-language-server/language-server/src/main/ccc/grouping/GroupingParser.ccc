@@ -40,6 +40,12 @@ INJECT GroupingParser:
     
 }
 
+INJECT GroupingParserLexer:
+{
+    public static EnumSet<TokenType> getRegularTokens() {
+        return EnumSet.copyOf(regularTokens);
+    }
+}
 
         
 TOKEN :

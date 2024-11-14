@@ -4,20 +4,28 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
+import org.junit.jupiter.api.DynamicTest;
 
 import ai.vespa.schemals.parser.SchemaParserLexer;
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParserLexer;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParserLexer;
+import ai.vespa.schemals.parser.grouping.GroupingParserLexer;
 
+import com.vladsch.flexmark.parser.Parser;
 import com.yahoo.schema.parser.SchemaParserConstants;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingParserConstants;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConstants;
+import com.yahoo.search.grouping.request.parser.GroupingParserConstants;
+
 
 /**
  * Tests that the set of tokens declared in JavaCC parsers are also present in CongoCC parsers.
@@ -96,6 +104,20 @@ public class ParserTokensTest {
         Set<String> congoCCTokenStrings = new HashSet<>();
 
         for (var tokenType : RankingExpressionParserLexer.getRegularTokens()) {
+            congoCCTokenStrings.add(tokenType.toString());
+        }
+
+        List<String> missing = findMissingTokens(javaCCFields, congoCCTokenStrings);
+        assertEquals(0, missing.size(), "Missing ranking expression tokens in CongoCC: " + String.join(", ", missing));
+    }
+
+    @Test
+    public void testVespaGroupingTokenList() {
+        Field[] javaCCFields = GroupingParserConstants.class.getDeclaredFields();
+
+        Set<String> congoCCTokenStrings = new HashSet<>();
+
+        for (var tokenType : GroupingParserLexer.getRegularTokens()) {
             congoCCTokenStrings.add(tokenType.toString());
         }
 
