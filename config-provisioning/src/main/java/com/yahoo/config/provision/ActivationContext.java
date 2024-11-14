@@ -9,12 +9,16 @@ package com.yahoo.config.provision;
 public class ActivationContext {
 
     private final long generation;
+    private final boolean isBootstrap;
 
-    public ActivationContext(long generation) {
+    public ActivationContext(long generation, boolean isBootstrap) {
         this.generation = generation;
+        this.isBootstrap = isBootstrap;
     }
 
     /** Returns the application config generation we are activating */
     public long generation() { return generation; }
 
+    /** Returns true if this deployment is done to bootstrap the config server */
+    public boolean isBootstrap() { return isBootstrap; }
 }

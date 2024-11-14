@@ -268,7 +268,7 @@ public class MockNodeRepository extends NodeRepository {
     private void activate(List<HostSpec> hosts, ApplicationId application, NodeRepositoryProvisioner provisioner) {
         try (var lock = provisioner.lock(application)) {
             NestedTransaction transaction = new NestedTransaction();
-            provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
+            provisioner.activate(hosts, new ActivationContext(0, false), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
     }
