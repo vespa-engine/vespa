@@ -31,11 +31,11 @@ final class TensorAddressAny1 extends TensorAddressAny {
         throw new IllegalArgumentException("No label " + labelIndex);
     }
 
-    @Override public int hashCode() { return (int)Math.abs(label.toNumeric()); }
+    @Override public int hashCode() { return (int)Math.abs(label.asNumeric()); }
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof TensorAddressAny1 any) && (label.toNumeric() == any.label.toNumeric());
+        return (o instanceof TensorAddressAny1 any) && (label.asNumeric() == any.label.asNumeric());
     }
 
 }

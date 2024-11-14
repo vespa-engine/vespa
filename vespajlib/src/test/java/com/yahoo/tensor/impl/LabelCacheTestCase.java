@@ -76,28 +76,18 @@ public class LabelCacheTestCase {
     public void testStringLabelIsGarbageCollected() throws InterruptedException {
         var cache = new LabelCache(32, 1000);
         var label1 = cache.getOrCreateLabel("l1");
-        var numeric1 = label1.toNumeric();
+        var numeric1 = label1.asNumeric();
         assertEquals(1, cache.size());
         
         label1 = null;
         System.gc();
-        Thread.sleep(1000);
-
+        Thread.sleep(1000); // Need to wait for garbage collector.
+        
         cache.getOrCreateLabel("l2");
-        
-        // Need to wait for garbage collector, 20 attempts with half a second wait between.
-        for (int i = 0; i < 20; i++) {
-            if (cache.size() == 1)
-                break;
-            
-            Thread.sleep(500);
-            System.gc();
-        }
-        
         assertEquals(1, cache.size());
         
         var label2 = cache.getOrCreateLabel("l1");
-        var numeric2 = label2.toNumeric();
+        var numeric2 = label2.asNumeric();
         assertEquals(2, cache.size());
         assertNotEquals(numeric1, numeric2);
     }

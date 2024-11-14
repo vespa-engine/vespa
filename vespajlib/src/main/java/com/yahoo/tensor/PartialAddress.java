@@ -45,7 +45,7 @@ public class PartialAddress {
     public long numericLabel(String dimensionName) {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
-                return labels[i].toNumeric();
+                return labels[i].asNumeric();
         return Tensor.invalidIndex;
     }
 

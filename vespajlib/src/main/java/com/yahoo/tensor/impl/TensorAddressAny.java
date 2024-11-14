@@ -17,12 +17,12 @@ import com.yahoo.tensor.TensorAddress;
 abstract public class TensorAddressAny extends TensorAddress {
     @Override
     public String label(int i) {
-        return objectLabel(i).toString();
+        return objectLabel(i).asString();
     }
 
     @Override
     public long numericLabel(int i) {
-        return objectLabel(i).toNumeric();
+        return objectLabel(i).asNumeric();
     }
     
     public static TensorAddress of() {

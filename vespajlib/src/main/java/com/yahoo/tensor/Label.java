@@ -10,6 +10,6 @@ package com.yahoo.tensor;
  * @author glebashnik
  */
 public interface Label {
-    long toNumeric();
-    String toString();
+    long asNumeric();
+    String asString();
 }

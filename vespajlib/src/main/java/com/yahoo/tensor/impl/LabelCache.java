@@ -31,8 +31,8 @@ public class LabelCache {
 
         LabelWeakReference(Label label, ReferenceQueue<Label> referenceQueue) {
             super(label, referenceQueue);
-            this.stringKey = label.toString();
-            this.numericKey = label.toNumeric();
+            this.stringKey = label.asString();
+            this.numericKey = label.asNumeric();
         }
     }
     
@@ -50,7 +50,7 @@ public class LabelCache {
     private final ReferenceQueue<Label> referenceQueue = new ReferenceQueue<>();
     
     // Pre-computed labels for small numeric labels used for indexed dimensions.
-    public final Label[] smallIndex;
+    private final Label[] smallIndex;
 
     /**
      * Creates a label cache.
@@ -113,7 +113,7 @@ public class LabelCache {
             return new LabelImpl(numeric);
         }
 
-        if (numeric == INVALID_INDEX_LABEL.toNumeric()) {
+        if (numeric == INVALID_INDEX_LABEL.asNumeric()) {
             return INVALID_INDEX_LABEL;
         }
 

@@ -11,10 +11,11 @@ import com.yahoo.tensor.Tensor;
  */
 class LabelImpl implements Label {
     private final long numeric;
-    private String string = null;
+    private final String string;
     
     LabelImpl(long numeric) {
         this.numeric = numeric;
+        this.string = null;
     }
 
     LabelImpl(long numeric, String string) {
@@ -22,11 +23,12 @@ class LabelImpl implements Label {
         this.string = string;
     }
 
-    public long toNumeric() {
+    @Override
+    public long asNumeric() {
         return numeric;
     }
     
-    public String toString() {
+    public String asString() {
         if (numeric == Tensor.invalidIndex) {
             return null;
         }

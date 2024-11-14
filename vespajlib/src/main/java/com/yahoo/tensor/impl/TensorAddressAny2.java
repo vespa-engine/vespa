@@ -42,8 +42,8 @@ final class TensorAddressAny2 extends TensorAddressAny {
 
     @Override
     public int hashCode() {
-        long hash =  abs(label0.toNumeric()) |
-                (abs(label1.toNumeric()) << (64 - Long.numberOfLeadingZeros(abs(label0.toNumeric()))));
+        long hash =  abs(label0.asNumeric()) |
+                (abs(label1.asNumeric()) << (64 - Long.numberOfLeadingZeros(abs(label0.asNumeric()))));
         return (int) hash;
     }
 
