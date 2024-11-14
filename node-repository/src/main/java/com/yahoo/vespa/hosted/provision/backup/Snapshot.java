@@ -21,7 +21,7 @@ import java.util.UUID;
  * @author mpolden
  */
 public record Snapshot(SnapshotId id, HostName hostname, State state, History history, ClusterId cluster,
-                       int clusterIndex, CloudAccount cloudAccount, Optional<SnapshotKey> key) {
+                       int clusterIndex, CloudAccount cloudAccount, SnapshotKey key) {
 
     public Snapshot {
         Objects.requireNonNull(id);
@@ -126,7 +126,7 @@ public record Snapshot(SnapshotId id, HostName hostname, State state, History hi
     public static Snapshot create(SnapshotId id, HostName hostname, CloudAccount cloudAccount, Instant at,
                                   ClusterId cluster, int clusterIndex, SnapshotKey encryptionKey) {
         return new Snapshot(id, hostname, State.creating, History.of(State.creating, at), cluster, clusterIndex,
-                            cloudAccount, Optional.of(encryptionKey));
+                            cloudAccount, encryptionKey);
     }
 
 }
