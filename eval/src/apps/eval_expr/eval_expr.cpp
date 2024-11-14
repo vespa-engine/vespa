@@ -17,8 +17,13 @@
 #include <vespa/eval/eval/test/test_io.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <cctype>
+#include <set>
+#include <map>
+#include <vector>
 
 #include <histedit.h>
 
@@ -33,6 +38,7 @@ using vespalib::slime::Inspector;
 using vespalib::slime::Cursor;
 using vespalib::Input;
 using vespalib::Memory;
+using vespalib::SimpleBuffer;
 
 using CostProfile = std::vector<std::pair<size_t,vespalib::duration>>;
 
@@ -337,6 +343,11 @@ public:
     std::string toString() const {
         return _slime.toString();
     }
+    std::string toCompactString() const {
+        SimpleBuffer buf;
+        JsonFormat::encode(_slime.get(), buf, true);
+        return buf.get().make_string();
+    }
 };
 
 struct EditLineWrapper {
@@ -500,6 +511,410 @@ int json_repl_mode(Context &ctx) {
     }
 }
 
+// like base64, but replace '/' with '-' and drop padding (note: reserved '+' is still used)
+const char *symbols = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-";
+std::map<char,int> make_symbol_map() {
+    std::map<char,int> map;
+    for (int i = 0; i < 64; ++i) {
+        map[symbols[i]] = i;
+    }
+    return map;
+}
+
+// Write bits to url-safe-ish string
+struct UrlSafeBitOutput {
+    int bits = 0;
+    int num_bits = 0;
+    std::string result;
+    void write_bits(int x, int n) {
+        for (int i = 0; i < n; ++i) {
+            bits = (bits << 1) | (x & 1);
+            if (++num_bits == 6) {
+                result.push_back(symbols[bits]);
+                num_bits = 0;
+                bits = 0;
+            }
+            x >>= 1;
+        }
+    }
+    void flush() {
+        if (num_bits != 0) {
+            write_bits(0, 6 - num_bits);
+        }
+    }
+};
+
+// Read bits from url-safe-ish string
+struct UrlSafeBitInput {
+    int bits = 0;
+    int num_bits = 0;
+    size_t offset = 0;
+    static constexpr int bit_read_mask = (1 << 5);
+    static const std::map<char,int> symbol_map;
+    const std::string &str;
+    UrlSafeBitInput(const std::string &str_in) noexcept : str(str_in) {}
+    int read_bits(int n) {
+        int x = 0;
+        int b = 1;
+        for (int i = 0; i < n; ++i) {
+            if (num_bits == 0) {
+                REQUIRE(offset < str.size()); // input underflow
+                auto pos = symbol_map.find(str[offset++]);
+                REQUIRE(pos != symbol_map.end()); // invalid input character
+                bits = pos->second;
+                num_bits = 6;
+            }
+            if (bits & bit_read_mask) {
+                x |= b;
+            }
+            b <<= 1;
+            bits <<= 1;
+            --num_bits;
+        }
+        return x;
+    }
+};
+const std::map<char,int> UrlSafeBitInput::symbol_map = make_symbol_map();
+
+// keeps track of how many bits to use for dict references
+struct BitWidthTracker {
+    int num;
+    int next;
+    BitWidthTracker(int num_in, int next_in) noexcept
+      : num(num_in), next(next_in) {}
+    void use() {
+        if (--next == 0) {
+            next = 1 << num;
+            ++num;
+        }
+    }
+    int width() {
+        return num;
+    }
+};
+
+// unified dictionary satisfying the needs of both compress and decompress
+struct LZDict {
+    std::map<std::string,int> map;
+    std::vector<std::string> list;
+    static constexpr int lit8 = 0;
+    static constexpr int lit16 = 1;
+    static constexpr int eof = 2;
+    LZDict() {
+        list.push_back("<lit8>");  // 0
+        list.push_back("<lit16>"); // 1
+        list.push_back("<eof>");   // 2
+        // we cannot put these in the forward dictionary since they
+        // could produce duplicates which we check for
+    }
+    int size() { return list.size(); }
+    bool has(const std::string &key) {
+        return (map.count(key) == 1);
+    }
+    int add(const std::string &key) {
+        REQUIRE(map.count(key) == 0); // no duplicates
+        int value = list.size();
+        list.push_back(key);
+        map[key] = value;
+        return value;
+    }
+    std::string get(int value) {
+        REQUIRE(value < size()); // check with size first
+        return list[value];
+    }
+    int get(const std::string &key) {
+        REQUIRE(map.count(key) == 1); // check with has first
+        return map[key];
+    }
+};
+
+// ascii-only lz_string compression (https://github.com/pieroxy/lz-string)
+void compress_impl(const std::string &str, auto &bits, auto &dict, auto &dst) {
+
+    std::set<std::string> pending;
+    std::string ctx_wc;
+    std::string ctx_w;
+
+    for (char c: str) {
+        std::string ctx_c(1, c);
+        if (!dict.has(ctx_c)) {
+            dict.add(ctx_c);
+            pending.insert(ctx_c);
+        }
+        ctx_wc = ctx_w + ctx_c;
+        if (dict.has(ctx_wc)) {
+            ctx_w = ctx_wc;
+        } else {
+            if (pending.count(ctx_w) == 1) {
+                REQUIRE_EQ(ctx_w.size(), 1zu);
+                dst.write_bits(dict.lit8, bits.width());
+                dst.write_bits(ctx_w[0], 8);
+                bits.use();
+                pending.erase(ctx_w);
+            } else {
+                dst.write_bits(dict.get(ctx_w), bits.width());
+            }
+            bits.use();
+            dict.add(ctx_wc);
+            ctx_w = ctx_c;
+        }
+    }
+    if (!ctx_w.empty()) {
+        if (pending.count(ctx_w) == 1) {
+            dst.write_bits(dict.lit8, bits.width());
+            dst.write_bits(ctx_w[0], 8);
+            bits.use();
+            pending.erase(ctx_w);
+        } else {
+            dst.write_bits(dict.get(ctx_w), bits.width());
+        }
+        bits.use();
+    }
+    dst.write_bits(dict.eof, bits.width());
+    dst.flush();
+}
+
+// ascii-only lz_string decompression (https://github.com/pieroxy/lz-string)
+std::string decompress_impl(auto &src, auto &bits, auto &dict) {
+
+    std::string result;
+
+    int c = src.read_bits(2);
+    if (c == dict.eof) {
+        return result;
+    }
+    REQUIRE_EQ(c, dict.lit8); // ascii only
+    c = src.read_bits(8);
+    std::string w(1, char(c));
+    result.append(w);
+    dict.add(w);
+
+    std::string entry;
+    for (;;) {
+        c = src.read_bits(bits.width());
+        REQUIRE(c != dict.lit16); // ascii only
+        if (c == dict.eof) {
+            return result;
+        }
+        if (c == dict.lit8) {
+            c = dict.add(std::string(1, char(src.read_bits(8))));
+            bits.use();
+        }
+        REQUIRE(c <= dict.size()); // invalid dict entry
+        if (c == dict.size()) {
+            entry = w + w.substr(0, 1);
+        } else {
+            entry = dict.get(c);
+        }
+        result.append(entry);
+        dict.add(w + entry.substr(0, 1));
+        bits.use();
+        w = entry;
+    }
+}
+
+// used to encode setups in tensor playground
+std::string compress(const std::string &str) {
+    LZDict dict;
+    BitWidthTracker bits(2, 2);
+    UrlSafeBitOutput dst;
+    compress_impl(str, bits, dict, dst);
+    return dst.result;
+}
+
+// used to test the compression code above, hence the inlined REQUIREs
+std::string decompress(const std::string &str) {
+    LZDict dict;
+    BitWidthTracker bits(3, 4);
+    UrlSafeBitInput src(str);
+    return decompress_impl(src, bits, dict);
+}
+
+// What happens during compression and decompression, the full story
+struct LZLog {
+    static constexpr int BW = 18;
+    static constexpr int PW = 14;
+    struct Block {
+        std::vector<std::string> writer;
+        std::vector<std::string> reader;
+        void dump(size_t idx) {
+            if (writer.empty() && reader.empty()) {
+                return;
+            }
+            size_t len = reader.size() + 1;
+            if (idx == 0) {
+                len = std::max(len, writer.size());
+            } else {
+                len = std::max(len, writer.size() + 1);
+            }
+            size_t wait = (len - writer.size());
+            for (size_t i = 0; i < len; ++i) {
+                fprintf(stderr, "%*s%-*s%-*s\n",
+                        BW, (i >= wait) ? writer[i - wait].c_str() : "",
+                        PW, "",
+                        BW, (i < reader.size()) ? reader[i].c_str() : "");
+            }
+        }
+    };
+    struct Packet {
+        int bits;
+        int value;
+        Packet(int bits_in, int value_in) noexcept
+          : bits(bits_in), value(value_in) {}
+        void dump() {
+            fprintf(stderr, "%*s%-*s%-*s\n",
+                    BW, fmt("write %d bits", bits).c_str(),
+                    PW, fmt("  -> %4d ->  ", value).c_str(),
+                    BW, fmt("read %d bits", bits).c_str());
+        }
+    };
+    std::vector<Block> blocks;
+    std::vector<Packet> packets;
+    void ensure_block(size_t idx) {
+        while (blocks.size() <= idx) {
+            blocks.emplace_back();
+        }
+    }
+    void writer(int block, const std::string &msg) {
+        ensure_block(block);
+        blocks[block].writer.push_back(msg);
+    }
+    int packet(int block, int bits, int value) {
+        if (packets.size() <= size_t(block)) {
+            REQUIRE_EQ(packets.size(), size_t(block));
+            packets.emplace_back(bits, value);
+        } else {
+            REQUIRE_EQ(packets[block].bits, bits);
+            REQUIRE_EQ(packets[block].value, value);
+        }
+        return block + 1;
+    }
+    void reader(int block, const std::string &msg) {
+        ensure_block(block);
+        blocks[block].reader.push_back(msg);
+    }
+    void dump() {
+        std::string bsep(BW, '-');
+        std::string psep(PW, '-');
+        REQUIRE_EQ(blocks.size(), packets.size() + 1);
+        fprintf(stderr, "%s%s%s\n", bsep.c_str(), psep.c_str(), bsep.c_str());
+        fprintf(stderr, "%*s%-*s%-*s\n", BW, "COMPRESS", PW, "     DATA", BW, "DECOMPRESS");
+        fprintf(stderr, "%s%s%s\n", bsep.c_str(), psep.c_str(), bsep.c_str());
+        for (size_t i = 0; i < blocks.size(); ++i) {
+            blocks[i].dump(i);
+            if (i < packets.size()) {
+                packets[i].dump();
+            }
+        }
+        fprintf(stderr, "%s%s%s\n", bsep.c_str(), psep.c_str(), bsep.c_str());
+    }
+    ~LZLog();
+    struct Writer {
+        LZLog &log;
+        size_t idx = 0;
+        LZDict dict;
+        BitWidthTracker bits{2,2};
+        UrlSafeBitOutput dst;
+        Writer(LZLog &log_in) : log(log_in) {}
+        ~Writer();
+
+        static constexpr int lit8 = LZDict::lit8;
+        static constexpr int lit16 = LZDict::lit16;
+        static constexpr int eof = LZDict::eof;
+
+        int width() { return bits.width(); }
+        bool has(const std::string &key) { return dict.has(key); }
+        int get(const std::string &key) { return dict.get(key); }
+
+        int add(const std::string &key) {
+            int value = dict.add(key);
+            log.writer(idx, fmt("dict[%s] -> %d", key.c_str(), value));
+            return value;
+        }
+        void use() {
+            int before = bits.width();
+            bits.use();
+            int after = bits.width();
+            log.writer(idx, fmt("bit width %d -> %d", before, after));
+        }
+        void write_bits(int x, int n) {
+            dst.write_bits(x, n);
+            idx = log.packet(idx, n, x);
+        }
+        void flush() {
+            dst.flush();
+            log.writer(idx, fmt("flush bits"));
+        }
+    };
+    struct Reader {
+        LZLog &log;
+        size_t idx = 0;
+        LZDict dict;
+        BitWidthTracker bits{3,4};
+        UrlSafeBitInput src;
+        Reader(LZLog &log_in, const std::string &str) : log(log_in), src(str) {}
+        ~Reader();
+
+        static constexpr int lit8 = LZDict::lit8;
+        static constexpr int lit16 = LZDict::lit16;
+        static constexpr int eof = LZDict::eof;
+
+        int width() { return bits.width(); }
+        int size() { return dict.size(); }
+        std::string get(int value) { return dict.get(value); }
+
+        int read_bits(int n) {
+            int x = src.read_bits(n);
+            idx = log.packet(idx, n, x);
+            return x;
+        }
+        void use() {
+            int before = bits.width();
+            bits.use();
+            int after = bits.width();
+            log.reader(idx, fmt("bit width %d -> %d", before, after));
+        }
+        int add(const std::string &key) {
+            int value = dict.add(key);
+            log.reader(idx, fmt("dict[%s] -> %d", key.c_str(), value));
+            return value;
+        }
+    };
+    static LZLog analyze(const std::string &str) {
+        LZLog log;
+        Writer writer(log);
+        compress_impl(str, writer, writer, writer);
+        Reader reader(log, writer.dst.result);
+        auto res = decompress_impl(reader, reader, reader);
+        REQUIRE_EQ(res, str);
+        return log;
+    }
+};
+
+LZLog::~LZLog() = default;
+LZLog::Writer::~Writer() = default;
+LZLog::Reader::~Reader() = default;
+
+void verify_compr(std::string str) {
+    auto compr = compress(str);
+    auto res = decompress(compr);
+    REQUIRE_EQ(str, res);
+    fprintf(stderr, "'%s' -> '%s' -> '%s'\n", str.c_str(), compr.c_str(), res.c_str());
+    auto log = LZLog::analyze(str);
+    log.dump();
+}
+
+void run_tests() {
+    REQUIRE_EQ(strlen(symbols), 64zu);
+    verify_compr("");
+    verify_compr("abcdef");
+    verify_compr("aaaaaa");
+    verify_compr("baaaaaa");
+    verify_compr("cbaaaaaa");
+    verify_compr("ababababababab");
+    verify_compr("a and b and c and d");
+}
+
 int main(int argc, char **argv) {
     bool verbose = ((argc > 1) && (std::string(argv[1]) == "--verbose"));
     int expr_idx = verbose ? 2 : 1;
@@ -538,8 +953,34 @@ int main(int argc, char **argv) {
             return 3;
         }
     }
+    if ((expr_cnt == 3) &&
+        (std::string(argv[expr_idx]) == "interactive") &&
+        (std::string(argv[expr_idx + 2]) == "link"))
+    {
+        setlocale(LC_ALL, "");
+        Collector collector;
+        collector.enable();
+        interactive_mode(ctx, Script::from_file(argv[expr_idx + 1])->script_only(true), collector);
+        if (collector.error().empty()) {
+            auto hash = compress(collector.toCompactString());
+            fprintf(stdout, "https://docs.vespa.ai/playground/#%s\n", hash.c_str());
+            return 0;
+        } else {
+            fprintf(stderr, "conversion failed: %s\n", collector.error().c_str());
+            return 3;
+        }
+    }
     if ((expr_cnt == 1) && (std::string(argv[expr_idx]) == "json-repl")) {
         return json_repl_mode(ctx);
+    }
+    if ((expr_cnt == 1) && (std::string(argv[expr_idx]) == "test")) {
+        try {
+            run_tests();
+        } catch (std::exception &e) {
+            fprintf(stderr, "test failed: %s\n", e.what());
+            return 3;
+        }
+        return 0;
     }
     ctx.verbose(verbose);
     std::string name("a");
