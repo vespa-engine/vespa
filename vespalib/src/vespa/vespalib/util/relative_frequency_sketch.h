@@ -55,7 +55,7 @@ namespace vespalib {
  */
 class RawRelativeFrequencySketch {
     alloc::Alloc _buf;
-    size_t       _samples_since_decay;
+    size_t       _estimated_sample_count;
     size_t       _window_size;
     uint32_t     _block_mask_bits;
 public:
@@ -63,14 +63,28 @@ public:
     ~RawRelativeFrequencySketch();
 
     void add_by_hash(uint64_t hash) noexcept;
-    [[nodiscard]] std::weak_ordering estimate_relative_frequency_by_hash(uint64_t lhs_hash, uint64_t rhs_hash) const noexcept;
+    [[nodiscard]] uint8_t add_and_count_by_hash(uint64_t hash) noexcept;
+    // Note: since this compares _hashes_ rather than elements this has strong ordering semantics.
+    [[nodiscard]] std::strong_ordering estimate_relative_frequency_by_hash(uint64_t lhs_hash, uint64_t rhs_hash) const noexcept;
 
     // Gets the raw underlying counter value saturated in [0, 15] for a given hash.
     [[nodiscard]] uint8_t count_min_by_hash(uint64_t hash) const noexcept;
 
+    [[nodiscard]] size_t window_size() const noexcept { return _window_size; }
+private:
     void div_all_by_2() noexcept;
 
-    [[nodiscard]] size_t window_size() const noexcept { return _window_size; }
+    template <bool ReturnMinCount>
+    uint8_t add_by_hash_impl(uint64_t hash) noexcept;
+};
+
+template <typename H, typename T>
+concept SketchHasher = requires(H h, T t) {
+    // Hashers should never throw.
+    { h(t) } noexcept;
+    // We need a 64-bit hash output (not using uint64_t since STL is standardized
+    // on returning size_t from hash functions).
+    { h(t) } -> std::same_as<size_t>;
 };
 
 /**
@@ -82,14 +96,13 @@ public:
  *
  * See `RawRelativeFrequencySketch` for algorithm details.
  */
-template <typename T, typename Hash = std::hash<T>, bool HasGoodEntropyHash = false>
-requires requires(Hash h, T t) { noexcept(noexcept(h(t))); }
+template <typename T, SketchHasher<T> Hash = std::hash<T>, bool HasGoodEntropyHash = false>
 class RelativeFrequencySketch {
     RawRelativeFrequencySketch _impl;
-    Hash                       _hash;
+    [[no_unique_address]] Hash _hash;
 public:
     // Initializes a sketch used for estimating frequencies for an underlying cache
-    // (or similar datastructure) that can hold a maximum of `count` entries.
+    // (or similar data structure) that can hold a maximum of `count` entries.
     explicit RelativeFrequencySketch(size_t count, Hash hash = Hash{})
         : _impl(count),
           _hash(hash)
@@ -109,6 +122,10 @@ public:
     void add(const T& elem) noexcept {
         _impl.add_by_hash(hash_elem(elem));
     }
+    // Same as `add` but returns Count-Min estimate from _after_ `elem` has been added.
+    [[nodiscard]] uint8_t add_and_count(const T& elem) noexcept {
+        return _impl.add_and_count_by_hash(hash_elem(elem));
+    }
     // Returns a frequency estimate for the given element, saturated at 15. Since this is
     // a probabilistic sketch, the frequency may be overestimated. Note that automatic counter
     // decaying will over time reduce the reported frequency of elements that are no longer
@@ -120,10 +137,6 @@ public:
         const uint64_t lhs_hash = hash_elem(lhs);
         const uint64_t rhs_hash = hash_elem(rhs);
         return _impl.estimate_relative_frequency_by_hash(lhs_hash, rhs_hash);
-    }
-    // Manually trigger counter decay; divides all count estimates by 2
-    void div_all_by_2() {
-        _impl.div_all_by_2();
     }
     // Sample count required before all counters are automatically divided by 2.
     // Note that invoking `add(v)` for an element `v` whose counters are _all_ fully

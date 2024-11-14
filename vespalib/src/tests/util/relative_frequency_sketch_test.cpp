@@ -8,9 +8,9 @@ using namespace ::testing;
 
 namespace {
 
-struct Identity {
+struct IdentityHash {
     template <typename T>
-    constexpr T operator()(T v) const noexcept { return v; }
+    constexpr size_t operator()(T v) const noexcept { return v; }
 };
 
 }
@@ -19,7 +19,7 @@ struct RelativeFrequencySketchTest : Test {
     // Note: although the sketch is inherently _probabilistic_, the below tests are fully
     // deterministic as long as the underlying hash function remains the same. This is also why
     // we explicitly do _not_ use std::hash here, but defer entirely to (deterministic) XXH3.
-    using U32FrequencySketch = RelativeFrequencySketch<uint32_t, Identity>;
+    using U32FrequencySketch = RelativeFrequencySketch<uint32_t, IdentityHash>;
 };
 
 TEST_F(RelativeFrequencySketchTest, frequency_estimates_are_initially_zero) {
@@ -40,6 +40,14 @@ TEST_F(RelativeFrequencySketchTest, frequency_is_counted_up_to_and_saturated_at_
             EXPECT_EQ(sketch.count_min(7), 15);
         }
     }
+}
+
+TEST_F(RelativeFrequencySketchTest, add_and_count_returns_min_count_after_add) {
+    U32FrequencySketch sketch(2);
+    EXPECT_EQ(sketch.add_and_count(123), 1);
+    EXPECT_EQ(sketch.add_and_count(123), 2);
+    EXPECT_EQ(sketch.add_and_count(123), 3);
+    EXPECT_EQ(sketch.add_and_count(456), 1);
 }
 
 TEST_F(RelativeFrequencySketchTest, can_track_frequency_of_multiple_elements) {
