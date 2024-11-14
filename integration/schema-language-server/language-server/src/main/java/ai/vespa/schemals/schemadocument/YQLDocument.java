@@ -190,7 +190,7 @@ public class YQLDocument implements DocumentManager {
             charsRead = newOffset;
         }
 
-        // YQLUtils.printTree(context.logger(), ret);
+        YQLUtils.printTree(context.logger(), ret);
 
         return new ParseResult(diagnostics, Optional.of(ret));
     }

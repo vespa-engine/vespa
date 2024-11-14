@@ -609,7 +609,7 @@ primary_expression:
         (<LPAREN> expression(in_select) <RPAREN> )
         | constant_expression
         | (
-            (SCAN 2 => call_expression(in_select))
+            (SCAN 4 => call_expression(in_select)) // WARNING: The scan number could be very large. This will catch all Myfield.MyChild. However nested structs will not parse
             | fieldref
         )
     )
