@@ -48,7 +48,7 @@ public class LiteralPhraseProduction extends TermProduction {
         PhraseItem newPhrase = new PhraseItem();
         newPhrase.setIndexName(getLabel());
         for (String term : terms)
-            newPhrase.addItem(new WordItem(term));
+            newPhrase.addItem(new WordItem(term, true));
 
         Match matched = e.getNonreferencedMatch(0);
         insertMatch(e, matched, List.of(newPhrase), offset);
