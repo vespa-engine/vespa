@@ -18,7 +18,7 @@ git checkout master
 git pull --rebase
 
 # Create a proper release tag if not there
-if [[ $(git show-ref --tags "$RELEASE_TAG" | awk '{print $1}') != "$GITREF" ]]; then
+if [[ $(git rev-list -n 1 "$RELEASE_TAG") != "$GITREF" ]]; then
   git tag -a "$RELEASE_TAG" -m "Release version $VERSION" $GITREF
   git push origin "$RELEASE_TAG"
 fi
