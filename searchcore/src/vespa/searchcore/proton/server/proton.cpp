@@ -165,10 +165,11 @@ void ensureWritableDir(const std::string &dirName) {
 std::shared_ptr<IPostingListCache>
 make_posting_list_cache(const ProtonConfig& cfg)
 {
-    if (cfg.search.io == ProtonConfig::Search::Io::MMAP || cfg.index.cache.postinglist.maxbytes == 0) {
+    if (cfg.search.io == ProtonConfig::Search::Io::MMAP ||
+        (cfg.index.cache.postinglist.maxbytes == 0 && cfg.index.cache.bitvector.maxbytes == 0)) {
         return {};
     }
-    return std::make_shared<PostingListCache>(cfg.index.cache.postinglist.maxbytes);
+    return std::make_shared<PostingListCache>(cfg.index.cache.postinglist.maxbytes, cfg.index.cache.bitvector.maxbytes);
 }
 
 } // namespace <unnamed>
@@ -282,7 +283,8 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _nodeUpLock(),
       _nodeUp(),
       _posting_list_cache(),
-      _last_posting_list_cache_stats()
+      _last_posting_list_cache_stats(),
+      _last_bitvector_cache_stats()
 { }
 
 BootstrapConfig::SP
@@ -805,6 +807,13 @@ updateSessionCacheMetrics(ContentProtonMetrics &metrics, proton::matching::Sessi
     metrics.sessionCache.grouping.update(groupingStats);
 }
 
+void
+update_cache_stats(CacheMetrics& metrics, const vespalib::CacheStats& stats, vespalib::CacheStats& last_stats)
+{
+    metrics.update_metrics(stats, last_stats);
+    last_stats = stats;
+}
+
 }
 
 void
@@ -872,9 +881,12 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         }
     }
     if (_posting_list_cache) {
-        auto stats = _posting_list_cache->get_stats();
-        _metricsEngine->root().index.cache.postinglist.update_metrics(stats, _last_posting_list_cache_stats);
-        _last_posting_list_cache_stats = stats;
+        update_cache_stats(_metricsEngine->root().index.cache.postinglist,
+                           _posting_list_cache->get_stats(),
+                           _last_posting_list_cache_stats);
+        update_cache_stats(_metricsEngine->root().index.cache.bitvector,
+                           _posting_list_cache->get_bitvector_stats(),
+                           _last_bitvector_cache_stats);
     }
 }
 

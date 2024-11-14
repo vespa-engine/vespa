@@ -21,7 +21,7 @@ private:
     bool                             _useBitVector;
     bool                             _fetchPostingsDone;
     index::PostingListHandle         _postingHandle;
-    BitVector::UP                    _bitVector;
+    std::shared_ptr<BitVector>       _bitVector;
 
 public:
     /**
