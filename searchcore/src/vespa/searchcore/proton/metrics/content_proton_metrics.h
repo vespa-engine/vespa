@@ -46,6 +46,7 @@ struct ContentProtonMetrics : metrics::MetricSet
         struct CacheMetrics : public metrics::MetricSet {
 
             proton::CacheMetrics postinglist;
+            proton::CacheMetrics bitvector;
 
             explicit CacheMetrics(metrics::MetricSet* parent);
             ~CacheMetrics() override;
