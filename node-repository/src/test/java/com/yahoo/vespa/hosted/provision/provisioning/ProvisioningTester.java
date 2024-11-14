@@ -247,7 +247,7 @@ public class ProvisioningTester {
         try (var lock = provisioner.lock(application)) {
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(new CuratorTransaction(curator));
-            provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
+            provisioner.activate(hosts, new ActivationContext(0, false), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
         assertEquals(toHostNames(hosts), nodeRepository.nodes().list(Node.State.active).owner(application).hostnames());
