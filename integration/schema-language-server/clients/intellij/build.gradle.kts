@@ -43,7 +43,7 @@ dependencies {
   implementation("org.jsoup:jsoup:1.17.2")
   implementation("com.vladsch.flexmark:flexmark-html2md-converter:0.64.8")
 
-  implementation("org.eclipse.lemminx:org.eclipse.lemminx:0.28.0:uber") {
+  implementation("org.eclipse.lemminx:org.eclipse.lemminx:0.28.0") {
     exclude(group = "org.eclipse.lsp4j")
     exclude(group = "com.google.code.gson")
   }

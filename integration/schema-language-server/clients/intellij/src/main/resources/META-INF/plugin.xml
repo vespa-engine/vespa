@@ -38,7 +38,19 @@ In addition, the plugin will be available for community editions as well.
     <fileNamePatternMapping patterns="*.sd;*.profile"
                             serverId="vespaSchemaLanguageServer"
                             languageId="vespaSchema"/>
+
+      <server id="lemminxVespa"
+              name="Vespa LemMinX Extension"
+              factoryClass="ai.vespa.schemals.intellij.LemminxVespaServerFactory"
+              lastDocumentDisconnectedTimeout="36000">
+        <description><![CDATA[
+                    The Vespa LemMinX Language Server provides support in:
+                    <ul>
+                      <li>The services.xml file of Vespa Applications</li>
+                    </ul>
+                    ]]>
+        </description>
+      </server>
+      <fileNamePatternMapping patterns="services.xml" serverId="lemminxVespa" languageId="xml" />
   </extensions>
-  <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="/META-INF/lsp.xml"
-              xpointer="xpointer(/idea-plugin/*)"/>
 </idea-plugin>

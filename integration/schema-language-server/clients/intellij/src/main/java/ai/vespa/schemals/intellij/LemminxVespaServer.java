@@ -5,33 +5,44 @@ import com.redhat.devtools.lsp4ij.server.JavaProcessCommandBuilder;
 import com.redhat.devtools.lsp4ij.server.ProcessStreamConnectionProvider;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
+
 import com.intellij.openapi.extensions.PluginId;
 import com.intellij.ide.plugins.PluginManagerCore;
 
 public class LemminxVespaServer extends ProcessStreamConnectionProvider {
     public LemminxVespaServer(Project project) {
         PluginId id = PluginId.getId("ai.vespa");
-        var plugin = PluginManagerCore.getPlugin(id);
-        if (plugin == null) {
+        var vespaPlugin = PluginManagerCore.getPlugin(id);
+        if (vespaPlugin == null) {
             throw new IllegalStateException("Plugin " + id + " not found. Cannot start the Vespa Schema Language Support plugin.");
         }
-        var pluginPath = plugin.getPluginPath();
+        var vespaPluginPath = vespaPlugin.getPluginPath();
 
-        var vespaServerPath = pluginPath
+        var lsp4ijPlugin = PluginManagerCore.getPlugin(PluginId.getId("com.redhat.devtools.lsp4ij"));
+        if (lsp4ijPlugin == null) {
+            throw new IllegalStateException("LSP4IJ could not be found. Cannot start the Vespa Schema Language Support plugin.");
+        }
+
+        var vespaServerPath = vespaPluginPath
                 .resolve("lemminx-vespa-jar-with-dependencies.jar")
                 .toAbsolutePath()
                 .toString();
 
-        var lemminxPath = pluginPath
+        var lemminxPath = vespaPluginPath
                 .resolve("lib")
-                .resolve("org.eclipse.lemminx-0.28.0-uber.jar")
+                .resolve("*")
                 .toAbsolutePath()
                 .toString();
 
-        List<String> commands = new JavaProcessCommandBuilder(project, "vespaSchemaLanguageServer")
-                .setCp(lemminxPath + File.pathSeparator + vespaServerPath)
+        var lsp4ijPath = lsp4ijPlugin.getPluginPath()
+                .resolve("lib")
+                .resolve("*")
+                .toAbsolutePath()
+                .toString();
+
+        List<String> commands = new JavaProcessCommandBuilder(project, "vespaLemminxLanguageServer")
+                .setCp(lemminxPath + File.pathSeparator + vespaServerPath + File.pathSeparator + lsp4ijPath)
                 .create();
         commands.add("org.eclipse.lemminx.XMLServerLauncher");
 
