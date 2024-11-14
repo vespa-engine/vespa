@@ -372,7 +372,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                     default -> throw new IllegalArgumentException("cannot handle: " + how);
                 }
             }
-            return TensorAddressAny.of(labels);
+            return TensorAddressAny.ofUnsafe(labels);
         }
 
         Tensor merge(CellVectorMapMap a, CellVectorMapMap b) {
@@ -419,8 +419,8 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                         default -> throw new IllegalArgumentException("cannot handle: " + how.handleDims.get(i));
                     }
                 }
-                TensorAddress commonAddr = TensorAddressAny.of(commonLabels);
-                TensorAddress separateAddr = TensorAddressAny.of(separateLabels);
+                TensorAddress commonAddr = TensorAddressAny.ofUnsafe(commonLabels);
+                TensorAddress separateAddr = TensorAddressAny.ofUnsafe(separateLabels);
                 result.lookupCreate(commonAddr).lookupCreate(separateAddr).setValue((int)ccDimIndex, cell.getValue());
             }
             return result;

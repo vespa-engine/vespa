@@ -115,7 +115,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
         for (int i = 0; i < labels.length; ++i) {
             labels[i] = objectLabel(indexMap[i]);
         }
-        return TensorAddressAny.of(labels);
+        return TensorAddressAny.ofUnsafe(labels);
     }
 
     /** Creates a complete address by taking the mapped dimensions of this and adding the indexed from the indexedPart */
@@ -133,7 +133,7 @@ public abstract class TensorAddress implements Comparable<TensorAddress> {
                 mappedIndex++;
             }
         }
-        return TensorAddressAny.of(labels);
+        return TensorAddressAny.ofUnsafe(labels);
     }
 
     /**

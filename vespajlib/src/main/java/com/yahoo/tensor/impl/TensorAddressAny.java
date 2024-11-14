@@ -156,7 +156,7 @@ abstract public class TensorAddressAny extends TensorAddress {
             default -> {
                 var copy = new Label[labels.length];
                 System.arraycopy(labels, 0, copy, 0, labels.length);
-                yield  new TensorAddressAnyN(copy);
+                yield new TensorAddressAnyN(copy);
             }
         };
     }

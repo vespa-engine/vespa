@@ -86,7 +86,7 @@ public class PartialAddress {
                 throw new IllegalArgumentException(type + " dimension names does not match " + this);
             labels[i] = label;
         }
-        return TensorAddressAny.of(labels);
+        return TensorAddressAny.ofUnsafe(labels);
     }
 
     @Override
