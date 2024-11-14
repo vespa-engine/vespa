@@ -118,8 +118,8 @@ TEST_P(BitVectorTest, require_that_dictionary_handles_no_entries)
     EXPECT_TRUE(dict.open("dump/1/", tuneFileRead, bvScope));
     EXPECT_EQ(5u, dict.getDocIdLimit());
     EXPECT_EQ(0u, dict.getEntries().size());
-    EXPECT_FALSE(dict.lookup(1));
-    EXPECT_FALSE(dict.lookup(2));
+    EXPECT_FALSE(dict.lookup(1).valid());
+    EXPECT_FALSE(dict.lookup(2).valid());
 }
 
 TEST_P(BitVectorTest, require_that_dictionary_handles_multiple_entries)
@@ -176,16 +176,20 @@ TEST_P(BitVectorTest, require_that_dictionary_handles_multiple_entries)
     EXPECT_EQ(5u, e._wordNum);
     EXPECT_EQ(23u, e._numDocs);
 
-    EXPECT_FALSE(dict.lookup(2));
-    EXPECT_FALSE(dict.lookup(3));
-    EXPECT_FALSE(dict.lookup(4));
-    EXPECT_FALSE(dict.lookup(6));
+    EXPECT_FALSE(dict.lookup(2).valid());
+    EXPECT_FALSE(dict.lookup(3).valid());
+    EXPECT_FALSE(dict.lookup(4).valid());
+    EXPECT_FALSE(dict.lookup(6).valid());
 
-    BitVector::UP bv1act = dict.lookup(1);
+    auto bv1lr = dict.lookup(1);
+    EXPECT_TRUE(bv1lr.valid());
+    auto bv1act = dict.read_bitvector(bv1lr);
     EXPECT_TRUE(bv1act);
     EXPECT_TRUE(*bv1exp == *bv1act);
 
-    BitVector::UP bv5act = dict.lookup(5);
+    auto bv5lr = dict.lookup(5);
+    EXPECT_TRUE(bv5lr.valid());
+    auto bv5act = dict.read_bitvector(bv5lr);
     EXPECT_TRUE(bv5act);
     EXPECT_TRUE(*bv5exp == *bv5act);
 }

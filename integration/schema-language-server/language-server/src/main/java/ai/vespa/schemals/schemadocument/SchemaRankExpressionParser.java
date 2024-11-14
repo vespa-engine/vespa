@@ -31,7 +31,7 @@ import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 
 /**
  * SchemaRankExpressionParser is a parser for rank epxressions, which is small part in other files
@@ -95,7 +95,7 @@ public class SchemaRankExpressionParser {
 
     private static ExpressionMetaData findExpressionMetaData(SchemaNode node) {
 
-        TokenType nodeType = node.findFirstLeaf().getSchemaType();
+        TokenType nodeType = node.findFirstLeaf().getSchemaNode().getSchemaType();
 
         boolean inherits = inheritsTokens.contains(nodeType);
 
@@ -245,7 +245,7 @@ public class SchemaRankExpressionParser {
     private static ArrayList<SchemaNode> findPreChildren(ParseContext context, ExpressionMetaData metaData, SchemaNode node) {
         ArrayList<SchemaNode> children = new ArrayList<>();
 
-        TokenType nodeType = node.findFirstLeaf().getSchemaType();
+        TokenType nodeType = node.findFirstLeaf().getSchemaNode().getSchemaType();
         String firstTokenString = preTextMap.get(nodeType);
         if (firstTokenString == null) {
             return null;
@@ -314,7 +314,7 @@ public class SchemaRankExpressionParser {
 
         ExpressionMetaData metaData = findExpressionMetaData(node);
 
-        ArrayList<SchemaNode> newChildren = findPreChildren(context, metaData, node);
+        List<SchemaNode> newChildren = findPreChildren(context, metaData, node);
         if (newChildren == null) return;
 
         SchemaNode rankExpressionNode = parseRankingExpression(context, node, metaData.expressionOffset(), diagnostics);

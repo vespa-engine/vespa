@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import org.eclipse.lemminx.dom.DOMNode;
 import org.eclipse.lemminx.services.extensions.hover.IHoverParticipant;
 import org.eclipse.lemminx.services.extensions.hover.IHoverRequest;
 import org.eclipse.lsp4j.Hover;
@@ -31,7 +34,15 @@ public class HoverParticipant implements IHoverParticipant {
     public Hover onTag(IHoverRequest request, CancelChecker cancelChecker) throws Exception {
         if (request.getCurrentTag() == null) return null;
 
-        Optional<MarkupContent> content = getFileHover(request.getCurrentTag());
+        DOMNode iterator = request.getNode();
+
+        List<String> nodePath = new LinkedList<>();
+        while (iterator != null) {
+            nodePath.add(0, iterator.getNodeName());
+            iterator = iterator.getParentNode();
+        }
+
+        Optional<MarkupContent> content = getFileHover(request.getCurrentTag(), nodePath);
 
         if (content.isEmpty()) return null;
 
@@ -53,64 +64,34 @@ public class HoverParticipant implements IHoverParticipant {
         return null;
     }
 
-    private Optional<MarkupContent> getFileHover(String tagName) {
-        Path servicesPath = serverPath.resolve("hover").resolve("services");
+    private Optional<MarkupContent> getFileHover(String tagName, List<String> pathElements) {
+        Path readPath = serverPath.resolve("hover");
 
         if (!serverPath.toFile().exists()) {
             logger.warning("Could not get hover content because services hover does not exist!");
             return Optional.empty();
         }
 
-        // key: tag -> value: path
-        Map<String, Path> markdownFiles = new HashMap<>();
-
-        try (Stream<Path> stream = Files.list(servicesPath)) {
-            stream.forEach(path -> {
-                if (Files.isDirectory(path)) {
-                    try (Stream<Path> innerStream = Files.list(path)) {
-                        innerStream.forEach(innerPath -> {
-                            String tag = innerPath.getFileName().toString();
-                            if (tag.endsWith(".md")) {
-                                tag = tag.substring(0, tag.length() - 3);
-                                if (markdownFiles.containsKey(tag)) {
-                                    //logger.warning("Duplicate key: " + tag);
-                                }
-                                markdownFiles.put(tag, innerPath);
-                            }
-                        });
-                    } catch (IOException ex) { 
-                        // Ignore
-                    }
-                } else {
-                    String tag = path.getFileName().toString();
-                    if (tag.endsWith(".md")) {
-                        tag = tag.substring(0, tag.length() - 3);
-                        if (markdownFiles.containsKey(tag)) {
-                            //logger.warning("Duplicate key: " + tag);
-                        }
-                        markdownFiles.put(tag, path);
-                    }
-                }
-            });
-        } catch (IOException ex) {
-            logger.severe("Failed to read documentation files: " + ex.getMessage());
+        for (String element : pathElements) {
+            if (readPath.resolve(element).toFile().exists()) {
+                readPath = readPath.resolve(element);
+            }
         }
 
-        if (!markdownFiles.containsKey(tagName)) {
-            logger.warning("Found no hover file with name " + tagName + ".md");
+        readPath = readPath.resolve(tagName + ".md");
+
+        if (!readPath.toFile().exists()) {
+            logger.warning(readPath.toString() + " did not exist!");
             return Optional.empty();
         }
 
         try {
-            Path markdownPath = markdownFiles.get(tagName);
-            String markdown = Files.readString(markdownPath);
-
-            MarkupContent mdContent = new MarkupContent(MarkupKind.MARKDOWN, markdown);
+            String content = Files.readString(readPath);
+            MarkupContent mdContent = new MarkupContent(MarkupKind.MARKDOWN, content);
             return Optional.of(mdContent);
         } catch (Exception ex) {
-            logger.severe("Unknown error when getting hover: " + ex.getMessage());
+            logger.severe("Unknown exception: " + ex.getMessage());
         }
-
         return Optional.empty();
     }
 }

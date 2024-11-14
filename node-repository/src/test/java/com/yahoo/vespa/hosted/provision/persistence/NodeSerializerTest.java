@@ -58,7 +58,7 @@ import static org.junit.Assert.assertTrue;
 public class NodeSerializerTest {
 
     private final NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("default", "large", "ugccloud-container", "arm64", "gpu");
-    private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors);
+    private final NodeSerializer nodeSerializer = new NodeSerializer(nodeFlavors, CloudAccount.from("aws:999123456789"));
     private final ManualClock clock = new ManualClock();
 
     @Test

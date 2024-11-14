@@ -25,6 +25,7 @@ import ai.vespa.schemals.parser.indexinglanguage.ast.inputExp;
 import ai.vespa.schemals.parser.indexinglanguage.ast.script;
 import ai.vespa.schemals.parser.indexinglanguage.ast.statement;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -39,8 +40,8 @@ public class IndexingLanguageResolver {
      * Given a node containing an ILSCRIPT, resolve the language
      */
     public static void resolveIndexingLanguage(ParseContext context, SchemaNode indexingLanguageNode, List<Diagnostic> diagnostics) {
-        SchemaNode fieldDefinitionNode = indexingLanguageNode.getParent().getParent().get(1);
-        while (fieldDefinitionNode.getNextSibling() != null && fieldDefinitionNode.getNextSibling().isASTInstance(identifierStr.class) && fieldDefinitionNode.getNextSibling().hasSymbol()) {
+        Node fieldDefinitionNode = indexingLanguageNode.getParent().getParent().get(1);
+        while (fieldDefinitionNode.getNextSibling() != null && fieldDefinitionNode.getNextSibling().getASTClass() == identifierStr.class && fieldDefinitionNode.getNextSibling().hasSymbol()) {
             fieldDefinitionNode = fieldDefinitionNode.getNextSibling();
         }
         Symbol fieldDefinitionSymbol = fieldDefinitionNode.getSymbol();
@@ -89,7 +90,7 @@ public class IndexingLanguageResolver {
             context.fieldIndex().addFieldIndexingType(containingFieldDefinition, IndexingType.SUMMARY);
         }
 
-        if (node.isASTInstance(ai.vespa.schemals.parser.indexinglanguage.ast.identifierStr.class) && node.getParent().isASTInstance(inputExp.class)) {
+        if (node.isASTInstance(ai.vespa.schemals.parser.indexinglanguage.ast.identifierStr.class) && node.getParent().getASTClass() == inputExp.class) {
             Optional<Symbol> scope = CSTUtils.findScope(node);
             if (scope.isPresent()) {
                 Optional<Symbol> fieldDefinition = context.schemaIndex().findSymbol(scope.get(), SymbolType.FIELD, node.getText());
@@ -151,8 +152,8 @@ public class IndexingLanguageResolver {
             node.setSymbolStatus(SymbolStatus.UNRESOLVED);
         }
 
-        for (SchemaNode child : node) {
-            traverse(child, diagnostics);
+        for (Node child : node) {
+            traverse(child.getSchemaNode(), diagnostics);
         }
     }
 }

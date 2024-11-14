@@ -123,6 +123,7 @@
   "cloudAccount": "aws:111222333444",
   "snapshot": {
     "id": "(ignore)",
-    "state": "created"
+    "state": "created",
+    "encrypted": true
   }
 }

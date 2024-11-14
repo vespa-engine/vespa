@@ -10,7 +10,7 @@ import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.tree.CSTUtils;
-import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node;
 
 /**
  * Responsible for LSP textDocument/references requests.
@@ -21,7 +21,7 @@ public class SchemaReferences {
 
         List<Location> ret = new ArrayList<>();
 
-        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 
         if (node == null) {
             return ret;

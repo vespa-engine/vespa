@@ -27,13 +27,30 @@ ContentProtonMetrics::SessionCacheMetrics::~SessionCacheMetrics() = default;
 
 ContentProtonMetrics::ProtonExecutorMetrics::~ProtonExecutorMetrics() = default;
 
+ContentProtonMetrics::IndexMetrics::CacheMetrics::CacheMetrics(metrics::MetricSet* parent)
+    : metrics::MetricSet("cache", {}, "Metrics for caches", parent),
+      postinglist(this, "postinglist", "Posting list cache metrics", "postinglist_cache")
+{
+}
+
+ContentProtonMetrics::IndexMetrics::CacheMetrics::~CacheMetrics() = default;
+
+ContentProtonMetrics::IndexMetrics::IndexMetrics(metrics::MetricSet* parent)
+    : metrics::MetricSet("index", {}, "Metrics for indexes", parent),
+      cache(this)
+{
+}
+
+ContentProtonMetrics::IndexMetrics::~IndexMetrics() = default;
+
 ContentProtonMetrics::ContentProtonMetrics()
     : metrics::MetricSet("content.proton", {}, "Search engine metrics", nullptr),
       configGeneration("config.generation", {}, "The oldest config generation used by this process", this),
       transactionLog(this),
       resourceUsage(this),
       executor(this),
-      sessionCache(this)
+      sessionCache(this),
+      index(this)
 {
 }
 

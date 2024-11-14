@@ -698,7 +698,10 @@ public class Nodes {
                     Node newNode = childMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
                     write(newNode, childMutex);
                 }
-                if (wantToSnapshot) {
+                boolean contentNode = childMutex.node().allocation()
+                                                .map(a -> a.membership().cluster().type() == ClusterSpec.Type.content)
+                                                .orElse(false);
+                if (wantToSnapshot && contentNode) {
                     snapshots.create(childMutex.node().hostname(), clock.instant());
                 }
             }
@@ -1118,6 +1121,7 @@ public class Nodes {
         /** Returns whether this operation requires a snapshot to be created for all children of given host */
         public boolean needsSnapshot(Node host, boolean enabled) {
             return this == softRebuild &&
+                   host.type() == NodeType.host && // Only tenant hosts need/support snapshots
                    host.resources().storageType() == NodeResources.StorageType.local &&
                    enabled;
         }

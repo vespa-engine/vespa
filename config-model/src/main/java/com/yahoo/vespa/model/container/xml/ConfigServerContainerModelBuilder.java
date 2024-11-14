@@ -28,7 +28,7 @@ public class ConfigServerContainerModelBuilder extends ContainerModelBuilder {
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
         ConfigserverCluster cluster = new ConfigserverCluster(modelContext.getParentProducer(), "configserver",
-                                                              options);
+                                                              options, modelContext.featureFlags());
         super.doBuild(model, spec, modelContext.withParent(cluster));
         cluster.setContainerCluster(model.getCluster());
     }

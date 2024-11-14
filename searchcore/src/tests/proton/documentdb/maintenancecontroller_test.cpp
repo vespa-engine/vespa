@@ -35,7 +35,7 @@
 #include <vespa/searchcore/proton/test/transport_helper.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -82,9 +82,6 @@ sampleThreadId(std::thread::id *threadId)
     *threadId = std::this_thread::get_id();
 }
 
-}  // namespace
-
-
 class MyDocumentSubDB
 {
     using DocMap = std::map<DocumentIdT, Document::SP>;
@@ -115,7 +112,6 @@ public:
 
     MaintenanceDocumentSubDB getSubDB();
     void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation &op);
-    void handlePut(PutOperation &op);
     void handleRemove(RemoveOperationWithDocId &op);
     void prepareMove(MoveOperation &op);
     void handleMove(const MoveOperation &op);
@@ -269,6 +265,7 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
           _firstRun()
     {
     }
+    ~MyLongRunningJob() override;
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
     bool run() override {
         _firstRun.countDown();
@@ -277,120 +274,9 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
     }
 };
 
+MyLongRunningJob::~MyLongRunningJob() = default;
+
 using MyAttributeManager = test::MockAttributeManager;
-
-class MaintenanceControllerFixture
-{
-public:
-    MyExecutor                         _executor;
-    SyncableExecutorThreadService      _threadService;
-    DummyBucketExecutor                _bucketExecutor;
-    DocTypeName                        _docTypeName;
-    test::UserDocumentsBuilder         _builder;
-    std::shared_ptr<bucketdb::BucketDBOwner>     _bucketDB;
-    test::BucketStateCalculator::SP    _calc;
-    test::ClusterStateHandler          _clusterStateHandler;
-    test::BucketHandler                _bucketHandler;
-    MyBucketModifiedHandler            _bmc;
-    MyDocumentSubDB                    _ready;
-    MyDocumentSubDB                    _removed;
-    MyDocumentSubDB                    _notReady;
-    MyFeedHandler                      _fh;
-    DocumentDBMaintenanceConfig::SP    _mcCfg;
-    bool                               _injectDefaultJobs;
-    DocumentDBJobTrackers              _jobTrackers;
-    std::shared_ptr<proton::IAttributeManager> _readyAttributeManager;
-    std::shared_ptr<proton::IAttributeManager> _notReadyAttributeManager;
-    AttributeUsageFilter               _attributeUsageFilter;
-    test::DiskMemUsageNotifier         _diskMemUsageNotifier;
-    BucketCreateNotifier               _bucketCreateNotifier;
-    MonitoredRefCount                  _refCount;
-    Transport                          _transport;
-    MaintenanceController              _mc;
-
-    MaintenanceControllerFixture();
-    ~MaintenanceControllerFixture();
-
-    void syncSubDBs();
-    void performSyncSubDBs();
-    void notifyClusterStateChanged();
-    void performNotifyClusterStateChanged();
-    void startMaintenance();
-    void injectMaintenanceJobs();
-    void performStartMaintenance();
-    void stopMaintenance();
-    void forwardMaintenanceConfig();
-    void performForwardMaintenanceConfig();
-
-    void insertDocs(const test::UserDocuments &docs, MyDocumentSubDB &subDb);
-
-    void removeDocs(const test::UserDocuments &docs, Timestamp timestamp);
-
-    void
-    setPruneConfig(const DocumentDBPruneConfig &pruneConfig)
-    {
-        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
-                           pruneConfig,
-                           _mcCfg->getHeartBeatConfig(),
-                           _mcCfg->getVisibilityDelay(),
-                           _mcCfg->getLidSpaceCompactionConfig(),
-                           _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig(),
-                           _mcCfg->getBucketMoveConfig());
-        _mcCfg = newCfg;
-        forwardMaintenanceConfig();
-    }
-
-    void
-    setHeartBeatConfig(const DocumentDBHeartBeatConfig &heartBeatConfig)
-    {
-        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
-                           _mcCfg->getPruneRemovedDocumentsConfig(),
-                           heartBeatConfig,
-                           _mcCfg->getVisibilityDelay(),
-                           _mcCfg->getLidSpaceCompactionConfig(),
-                           _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig(),
-                           _mcCfg->getBucketMoveConfig());
-        _mcCfg = newCfg;
-        forwardMaintenanceConfig();
-    }
-
-    void setLidSpaceCompactionConfig(const DocumentDBLidSpaceCompactionConfig &cfg) {
-        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
-                           _mcCfg->getPruneRemovedDocumentsConfig(),
-                           _mcCfg->getHeartBeatConfig(),
-                           _mcCfg->getVisibilityDelay(),
-                           cfg,
-                           _mcCfg->getAttributeUsageFilterConfig(),
-                           _mcCfg->getAttributeUsageSampleInterval(),
-                           _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig(),
-                           _mcCfg->getBucketMoveConfig());
-        _mcCfg = newCfg;
-        forwardMaintenanceConfig();
-    }
-
-    void
-    performNotifyBucketStateChanged(document::BucketId bucketId, BucketInfo::ActiveState newState)
-    {
-        _bucketHandler.notifyBucketStateChanged(bucketId, newState);
-    }
-
-    void
-    notifyBucketStateChanged(const document::BucketId &bucketId, BucketInfo::ActiveState newState)
-    {
-        _executor.execute(makeLambdaTask([&]() {
-            performNotifyBucketStateChanged(bucketId, newState);
-        }));
-        _executor.sync();
-    }
-};
-
 
 MaintenanceDocumentSubDB
 MyDocumentSubDB::getSubDB()
@@ -417,49 +303,6 @@ MyDocumentSubDB::handlePruneRemovedDocuments(const PruneRemovedDocumentsOperatio
     _metaStore.commit(serialNum);
     for (auto lid : lidsToRemove) {
         _docs.erase(lid);
-    }
-}
-
-
-void
-MyDocumentSubDB::handlePut(PutOperation &op)
-{
-    const SerialNum serialNum = op.getSerialNum();
-    const Document::SP &doc = op.getDocument();
-    const DocumentId &docId = doc->getId();
-    const document::GlobalId &gid = docId.getGlobalId();
-    bool needCommit = false;
-
-    if (op.getValidDbdId(_subDBId)) {
-        using PutRes = DocumentMetaStore::Result;
-
-        PutRes putRes(_metaStore.put(gid,
-                                     op.getBucketId(),
-                                     op.getTimestamp(),
-                                     op.getSerializedDocSize(),
-                                     op.getLid(), 0u));
-        assert(putRes.ok());
-        assert(op.getLid() == putRes._lid);
-        _docs[op.getLid()] = doc;
-        needCommit = true;
-    }
-    if (op.getValidPrevDbdId(_subDBId) && op.changedDbdId()) {
-        assert(_metaStore.validLid(op.getPrevLid()));
-        const RawDocumentMetaData &meta(_metaStore.getRawMetaData(op.getPrevLid()));
-        assert((_subDBId == 1u) == op.getPrevMarkedAsRemoved());
-        assert(meta.getGid() == gid);
-        (void) meta;
-
-        bool remres = _metaStore.remove(op.getPrevLid(), 0u);
-        assert(remres);
-        (void) remres;
-        _metaStore.removes_complete({ op.getPrevLid() });
-
-        _docs.erase(op.getPrevLid());
-        needCommit = true;
-    }
-    if (needCommit) {
-        _metaStore.commit(CommitParam(serialNum));
     }
 }
 
@@ -682,7 +525,119 @@ MyExecutor::waitIdle(vespalib::duration timeout)
 }
 
 
-MaintenanceControllerFixture::MaintenanceControllerFixture()
+}  // namespace
+
+class MaintenanceControllerTest : public ::testing::Test
+{
+public:
+    MyExecutor                         _executor;
+    SyncableExecutorThreadService      _threadService;
+    DummyBucketExecutor                _bucketExecutor;
+    DocTypeName                        _docTypeName;
+    test::UserDocumentsBuilder         _builder;
+    std::shared_ptr<bucketdb::BucketDBOwner>     _bucketDB;
+    test::BucketStateCalculator::SP    _calc;
+    test::ClusterStateHandler          _clusterStateHandler;
+    test::BucketHandler                _bucketHandler;
+    MyBucketModifiedHandler            _bmc;
+    MyDocumentSubDB                    _ready;
+    MyDocumentSubDB                    _removed;
+    MyDocumentSubDB                    _notReady;
+    MyFeedHandler                      _fh;
+    DocumentDBMaintenanceConfig::SP    _mcCfg;
+    bool                               _injectDefaultJobs;
+    DocumentDBJobTrackers              _jobTrackers;
+    std::shared_ptr<proton::IAttributeManager> _readyAttributeManager;
+    std::shared_ptr<proton::IAttributeManager> _notReadyAttributeManager;
+    AttributeUsageFilter               _attributeUsageFilter;
+    test::DiskMemUsageNotifier         _diskMemUsageNotifier;
+    BucketCreateNotifier               _bucketCreateNotifier;
+    MonitoredRefCount                  _refCount;
+    Transport                          _transport;
+    MaintenanceController              _mc;
+
+    MaintenanceControllerTest();
+    ~MaintenanceControllerTest() override;
+
+    void syncSubDBs();
+    void performSyncSubDBs();
+    void notifyClusterStateChanged();
+    void performNotifyClusterStateChanged();
+    void startMaintenance();
+    void injectMaintenanceJobs();
+    void performStartMaintenance();
+    void stopMaintenance();
+    void forwardMaintenanceConfig();
+    void performForwardMaintenanceConfig();
+
+    void removeDocs(const test::UserDocuments &docs, Timestamp timestamp);
+
+    void
+    setPruneConfig(const DocumentDBPruneConfig &pruneConfig)
+    {
+        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
+                           pruneConfig,
+                           _mcCfg->getHeartBeatConfig(),
+                           _mcCfg->getVisibilityDelay(),
+                           _mcCfg->getLidSpaceCompactionConfig(),
+                           _mcCfg->getAttributeUsageFilterConfig(),
+                           _mcCfg->getAttributeUsageSampleInterval(),
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig(),
+                           _mcCfg->getBucketMoveConfig());
+        _mcCfg = newCfg;
+        forwardMaintenanceConfig();
+    }
+
+    void
+    setHeartBeatConfig(const DocumentDBHeartBeatConfig &heartBeatConfig)
+    {
+        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
+                           _mcCfg->getPruneRemovedDocumentsConfig(),
+                           heartBeatConfig,
+                           _mcCfg->getVisibilityDelay(),
+                           _mcCfg->getLidSpaceCompactionConfig(),
+                           _mcCfg->getAttributeUsageFilterConfig(),
+                           _mcCfg->getAttributeUsageSampleInterval(),
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig(),
+                           _mcCfg->getBucketMoveConfig());
+        _mcCfg = newCfg;
+        forwardMaintenanceConfig();
+    }
+
+    void setLidSpaceCompactionConfig(const DocumentDBLidSpaceCompactionConfig &cfg) {
+        auto newCfg = std::make_shared<DocumentDBMaintenanceConfig>(
+                           _mcCfg->getPruneRemovedDocumentsConfig(),
+                           _mcCfg->getHeartBeatConfig(),
+                           _mcCfg->getVisibilityDelay(),
+                           cfg,
+                           _mcCfg->getAttributeUsageFilterConfig(),
+                           _mcCfg->getAttributeUsageSampleInterval(),
+                           _mcCfg->getBlockableJobConfig(),
+                           _mcCfg->getFlushConfig(),
+                           _mcCfg->getBucketMoveConfig());
+        _mcCfg = newCfg;
+        forwardMaintenanceConfig();
+    }
+
+    void
+    performNotifyBucketStateChanged(document::BucketId bucketId, BucketInfo::ActiveState newState)
+    {
+        _bucketHandler.notifyBucketStateChanged(bucketId, newState);
+    }
+
+    void
+    notifyBucketStateChanged(const document::BucketId &bucketId, BucketInfo::ActiveState newState)
+    {
+        _executor.execute(makeLambdaTask([&]() {
+            performNotifyBucketStateChanged(bucketId, newState);
+        }));
+        _executor.sync();
+    }
+};
+
+MaintenanceControllerTest::MaintenanceControllerTest()
     : _executor(),
       _threadService(_executor),
       _bucketExecutor(2),
@@ -716,46 +671,46 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
     syncSubDBs();
 }
 
-MaintenanceControllerFixture::~MaintenanceControllerFixture()
+MaintenanceControllerTest::~MaintenanceControllerTest()
 {
     stopMaintenance();
 }
 
 void
-MaintenanceControllerFixture::syncSubDBs()
+MaintenanceControllerTest::syncSubDBs()
 {
     _executor.execute(makeLambdaTask([this]() { performSyncSubDBs(); }));
     _executor.sync();
 }
 
 void
-MaintenanceControllerFixture::performSyncSubDBs()
+MaintenanceControllerTest::performSyncSubDBs()
 {
     _mc.syncSubDBs(_ready.getSubDB(), _removed.getSubDB(), _notReady.getSubDB());
 }
 
 void
-MaintenanceControllerFixture::notifyClusterStateChanged()
+MaintenanceControllerTest::notifyClusterStateChanged()
 {
     _executor.execute(makeLambdaTask([this]() { performNotifyClusterStateChanged(); }));
     _executor.sync();
 }
 
 void
-MaintenanceControllerFixture::performNotifyClusterStateChanged()
+MaintenanceControllerTest::performNotifyClusterStateChanged()
 {
     _clusterStateHandler.notifyClusterStateChanged(_calc);
 }
 
 void
-MaintenanceControllerFixture::startMaintenance()
+MaintenanceControllerTest::startMaintenance()
 {
     _executor.execute(makeLambdaTask([this]() { performStartMaintenance(); }));
     _executor.sync();
 }
 
 void
-MaintenanceControllerFixture::injectMaintenanceJobs()
+MaintenanceControllerTest::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
         MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _fh,
@@ -767,7 +722,7 @@ MaintenanceControllerFixture::injectMaintenanceJobs()
 }
 
 void
-MaintenanceControllerFixture::performStartMaintenance()
+MaintenanceControllerTest::performStartMaintenance()
 {
     injectMaintenanceJobs();
     _mc.start();
@@ -775,7 +730,7 @@ MaintenanceControllerFixture::performStartMaintenance()
 
 
 void
-MaintenanceControllerFixture::stopMaintenance()
+MaintenanceControllerTest::stopMaintenance()
 {
     _mc.stop();
     _executor.sync();
@@ -783,7 +738,7 @@ MaintenanceControllerFixture::stopMaintenance()
 
 
 void
-MaintenanceControllerFixture::forwardMaintenanceConfig()
+MaintenanceControllerTest::forwardMaintenanceConfig()
 {
     _executor.execute(makeLambdaTask([this]() { performForwardMaintenanceConfig(); }));
     _executor.sync();
@@ -791,7 +746,7 @@ MaintenanceControllerFixture::forwardMaintenanceConfig()
 
 
 void
-MaintenanceControllerFixture::performForwardMaintenanceConfig()
+MaintenanceControllerTest::performForwardMaintenanceConfig()
 {
     _mc.killJobs();
     injectMaintenanceJobs();
@@ -800,23 +755,7 @@ MaintenanceControllerFixture::performForwardMaintenanceConfig()
 
 
 void
-MaintenanceControllerFixture::insertDocs(const test::UserDocuments &docs, MyDocumentSubDB &subDb)
-{
-
-    for (const auto & entry : docs) {
-        const test::BucketDocuments &bucketDocs = entry.second;
-        for (const test::Document &testDoc : bucketDocs.getDocs()) {
-            PutOperation op(testDoc.getBucket(), testDoc.getTimestamp(), testDoc.getDoc());
-            op.setDbDocumentId(DbDocumentId(subDb.getSubDBId(), testDoc.getLid()));
-            _fh.appendOperation(op, std::make_shared<vespalib::IgnoreCallback>());
-            subDb.handlePut(op);
-        }
-    }
-}
-
-
-void
-MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs, Timestamp timestamp)
+MaintenanceControllerTest::removeDocs(const test::UserDocuments &docs, Timestamp timestamp)
 {
 
     for (const auto & entry : docs) {
@@ -830,120 +769,122 @@ MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs, Timest
     }
 }
 
-TEST_F("require that document pruner is active", MaintenanceControllerFixture)
+TEST_F(MaintenanceControllerTest, require_that_document_pruner_is_active)
 {
     uint64_t tshz = 1000000;
     uint64_t now = static_cast<uint64_t>(time(nullptr)) * tshz;
     Timestamp remTime(static_cast<Timestamp::Type>(now - 3600 * tshz));
     Timestamp keepTime(static_cast<Timestamp::Type>(now + 3600 * tshz));
-    f._builder.createDocs(1, 1, 4); // 3 docs
-    f._builder.createDocs(2, 4, 6); // 2 docs
-    test::UserDocuments keepDocs(f._builder.getDocs());
-    f.removeDocs(keepDocs, keepTime);
-    f._builder.clearDocs();
-    f._builder.createDocs(3, 6, 8); // 2 docs
-    f._builder.createDocs(4, 8, 11); // 3 docs
-    test::UserDocuments removeDocs(f._builder.getDocs());
-    f.removeDocs(removeDocs, remTime);
-    f.notifyClusterStateChanged();
-    EXPECT_TRUE(f._executor.isIdle());
-    EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
-    EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
-    EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    f.setPruneConfig(DocumentDBPruneConfig(DELAY, 900s));
+    _builder.createDocs(1, 1, 4); // 3 docs
+    _builder.createDocs(2, 4, 6); // 2 docs
+    test::UserDocuments keepDocs(_builder.getDocs());
+    removeDocs(keepDocs, keepTime);
+    _builder.clearDocs();
+    _builder.createDocs(3, 6, 8); // 2 docs
+    _builder.createDocs(4, 8, 11); // 3 docs
+    test::UserDocuments removeDocs(_builder.getDocs());
+    this->removeDocs(removeDocs, remTime);
+    notifyClusterStateChanged();
+    EXPECT_TRUE(_executor.isIdle());
+    EXPECT_EQ(10u, _removed.getNumUsedLids());
+    EXPECT_EQ(10u, _removed.getDocumentCount());
+    startMaintenance();
+    ASSERT_TRUE(_executor.waitIdle(TIMEOUT));
+    EXPECT_EQ(10u, _removed.getNumUsedLids());
+    EXPECT_EQ(10u, _removed.getDocumentCount());
+    setPruneConfig(DocumentDBPruneConfig(DELAY, 900s));
     for (uint32_t i = 0; i < 60000; ++i) {
         std::this_thread::sleep_for(1ms);
-        ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-        if (f._removed.getNumUsedLids() != 10u)
+        ASSERT_TRUE(_executor.waitIdle(TIMEOUT));
+        if (_removed.getNumUsedLids() != 10u)
             break;
     }
-    f._bucketExecutor.sync();
-    f._executor.sync();
-    EXPECT_EQUAL(5u, f._removed.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._removed.getDocumentCount());
+    _bucketExecutor.sync();
+    _executor.sync();
+    EXPECT_EQ(5u, _removed.getNumUsedLids());
+    EXPECT_EQ(5u, _removed.getDocumentCount());
 }
 
-TEST_F("require that heartbeats are scheduled", MaintenanceControllerFixture)
+TEST_F(MaintenanceControllerTest, require_that_heartbeats_are_scheduled)
 {
-    f.notifyClusterStateChanged();
-    f.startMaintenance();
-    f.setHeartBeatConfig(DocumentDBHeartBeatConfig(DELAY));
+    notifyClusterStateChanged();
+    startMaintenance();
+    setHeartBeatConfig(DocumentDBHeartBeatConfig(DELAY));
     for (uint32_t i = 0; i < 60000; ++i) {
         std::this_thread::sleep_for(1ms);
-        if (f._fh.getHeartBeats() != 0u)
+        if (_fh.getHeartBeats() != 0u)
             break;
     }
-    EXPECT_GREATER(f._fh.getHeartBeats(), 0u);
+    EXPECT_GT(_fh.getHeartBeats(), 0u);
 }
 
-TEST_F("require that a simple maintenance job is executed", MaintenanceControllerFixture)
+TEST_F(MaintenanceControllerTest, require_that_a_simple_maintenance_job_is_executed)
 {
     auto job = std::make_unique<MySimpleJob>(DELAY, DELAY, 3);
     MySimpleJob &myJob = *job;
-    f._mc.registerJob(std::move(job));
-    f._injectDefaultJobs = false;
-    f.startMaintenance();
+    _mc.registerJob(std::move(job));
+    _injectDefaultJobs = false;
+    startMaintenance();
     bool done = myJob._latch.await(TIMEOUT);
     EXPECT_TRUE(done);
-    EXPECT_EQUAL(0u, myJob._latch.getCount());
+    EXPECT_EQ(0u, myJob._latch.getCount());
 }
 
-TEST_F("require that a split maintenance job is executed", MaintenanceControllerFixture)
+TEST_F(MaintenanceControllerTest, require_that_a_split_maintenance_job_is_executed)
 {
     auto job = std::make_unique<MySplitJob>(DELAY, TIMEOUT * 2, 3);
     MySplitJob &myJob = *job;
-    f._mc.registerJob(std::move(job));
-    f._injectDefaultJobs = false;
-    f.startMaintenance();
+    _mc.registerJob(std::move(job));
+    _injectDefaultJobs = false;
+    startMaintenance();
     bool done = myJob._latch.await(TIMEOUT);
     EXPECT_TRUE(done);
-    EXPECT_EQUAL(0u, myJob._latch.getCount());
+    EXPECT_EQ(0u, myJob._latch.getCount());
 }
 
-TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixture)
+TEST_F(MaintenanceControllerTest, require_that_blocked_jobs_are_not_executed)
 {
     auto job = std::make_unique<MySimpleJob>(DELAY, DELAY, 0);
     MySimpleJob &myJob = *job;
     myJob.block();
-    f._mc.registerJob(std::move(job));
-    f._injectDefaultJobs = false;
-    f.startMaintenance();
+    _mc.registerJob(std::move(job));
+    _injectDefaultJobs = false;
+    startMaintenance();
     for (uint32_t napCount = 0; (myJob._runCnt != 0) && (napCount < 200); napCount++) {
         std::this_thread::sleep_for(10ms);
     }
-    EXPECT_EQUAL(0u, myJob._runCnt);
+    EXPECT_EQ(0u, myJob._runCnt);
 }
 
-TEST_F("require that maintenance controller state list jobs", MaintenanceControllerFixture)
+TEST_F(MaintenanceControllerTest, require_that_maintenance_controller_state_list_jobs)
 {
     {
         auto job1 = std::make_unique<MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 0);
         auto job2 = std::make_unique<MyLongRunningJob>(DELAY, DELAY);
         auto &longRunningJob = dynamic_cast<MyLongRunningJob &>(*job2);
-        f._mc.registerJob(std::move(job1));
-        f._mc.registerJob(std::move(job2));
-        f._injectDefaultJobs = false;
-        f.startMaintenance();
+        _mc.registerJob(std::move(job1));
+        _mc.registerJob(std::move(job2));
+        _injectDefaultJobs = false;
+        startMaintenance();
         longRunningJob._firstRun.await(TIMEOUT);
     }
 
-    MaintenanceControllerExplorer explorer(f._mc.getJobList());
+    MaintenanceControllerExplorer explorer(_mc.getJobList());
     Slime state;
     SlimeInserter inserter(state);
     explorer.get_state(inserter, true);
 
     Inspector &runningJobs = state.get()["runningJobs"];
-    EXPECT_EQUAL(1u, runningJobs.children());
-    EXPECT_EQUAL("long_running_job", runningJobs[0]["name"].asString().make_string());
+    EXPECT_EQ(1u, runningJobs.children());
+    EXPECT_EQ("long_running_job", runningJobs[0]["name"].asString().make_string());
 
     Inspector &allJobs = state.get()["allJobs"];
-    EXPECT_EQUAL(2u, allJobs.children());
-    EXPECT_EQUAL("my_job", allJobs[0]["name"].asString().make_string());
-    EXPECT_EQUAL("long_running_job", allJobs[1]["name"].asString().make_string());
+    EXPECT_EQ(2u, allJobs.children());
+    EXPECT_EQ("my_job", allJobs[0]["name"].asString().make_string());
+    EXPECT_EQ("long_running_job", allJobs[1]["name"].asString().make_string());
 }
+
+namespace {
 
 const MaintenanceJobRunner *
 findJob(const MaintenanceController::JobList &jobs, const std::string &jobName)
@@ -962,33 +903,36 @@ containsJob(const MaintenanceController::JobList &jobs, const std::string &jobNa
     return findJob(jobs, jobName) != nullptr;
 }
 
-TEST_F("require that lid space compaction jobs can be disabled", MaintenanceControllerFixture)
+}
+
+TEST_F(MaintenanceControllerTest, require_that_lid_space_compaction_jobs_can_be_disabled)
 {
-    f.forwardMaintenanceConfig();
+    forwardMaintenanceConfig();
     {
-        auto jobs = f._mc.getJobList();
-        EXPECT_EQUAL(7u, jobs.size());
+        auto jobs = _mc.getJobList();
+        EXPECT_EQ(7u, jobs.size());
         EXPECT_TRUE(containsJob(jobs, "lid_space_compaction.searchdocument.my_sub_db"));
     }
-    f.setLidSpaceCompactionConfig(DocumentDBLidSpaceCompactionConfig::createDisabled());
+    setLidSpaceCompactionConfig(DocumentDBLidSpaceCompactionConfig::createDisabled());
     {
-        auto jobs = f._mc.getJobList();
-        EXPECT_EQUAL(4u, jobs.size());
+        auto jobs = _mc.getJobList();
+        EXPECT_EQ(4u, jobs.size());
         EXPECT_FALSE(containsJob(jobs, "lid_space_compaction.searchdocument.my_sub_db"));
     }
 }
 
 void
-assertPruneRemovedDocumentsConfig(vespalib::duration expDelay, vespalib::duration expInterval, vespalib::duration interval, MaintenanceControllerFixture &f)
+assertPruneRemovedDocumentsConfig(vespalib::duration expDelay, vespalib::duration expInterval, vespalib::duration interval, MaintenanceControllerTest &f)
 {
+    SCOPED_TRACE(std::to_string(vespalib::to_s(interval)));
     f.setPruneConfig(DocumentDBPruneConfig(interval, 1000s));
     const auto *job = findJob(f._mc.getJobList(), "prune_removed_documents.searchdocument");
-    EXPECT_EQUAL(expDelay, job->getJob().getDelay());
-    EXPECT_EQUAL(expInterval, job->getJob().getInterval());
+    EXPECT_EQ(expDelay, job->getJob().getDelay());
+    EXPECT_EQ(expInterval, job->getJob().getInterval());
 }
 
-TEST_F("require that delay for prune removed documents is set based on interval and is max 300 secs", MaintenanceControllerFixture)
+TEST_F(MaintenanceControllerTest, require_that_delay_for_prune_removed_documents_is_set_based_on_interval_and_is_max_300_secs)
 {
-    assertPruneRemovedDocumentsConfig(300s, 301s, 301s, f);
-    assertPruneRemovedDocumentsConfig(299s, 299s, 299s, f);
+    assertPruneRemovedDocumentsConfig(300s, 301s, 301s, *this);
+    assertPruneRemovedDocumentsConfig(299s, 299s, 299s, *this);
 }

@@ -20,6 +20,7 @@ IndexManagerInitializer(const std::string &baseDir,
                         const search::TuneFileIndexManager & tuneFileIndexManager,
                         const search::TuneFileAttributes &tuneFileAttributes,
                         const search::common::FileHeaderContext & fileHeaderContext,
+                        std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
                         std::shared_ptr<searchcorespi::IIndexManager::SP> indexManager)
     : _baseDir(baseDir),
       _indexConfig(indexCfg),
@@ -31,6 +32,7 @@ IndexManagerInitializer(const std::string &baseDir,
       _tuneFileIndexManager(tuneFileIndexManager),
       _tuneFileAttributes(tuneFileAttributes),
       _fileHeaderContext(fileHeaderContext),
+      _posting_list_cache(std::move(posting_list_cache)),
       _indexManager(indexManager)
 {
 }
@@ -44,7 +46,7 @@ IndexManagerInitializer::run()
     std::filesystem::create_directory(std::filesystem::path(_baseDir));
     vespalib::File::sync(vespalib::dirname(_baseDir));
     *_indexManager = std::make_shared<index::IndexManager>
-                    (_baseDir, _indexConfig, _schema, _serialNum, _reconfigurer, _threadingService,
+                    (_baseDir, _posting_list_cache, _indexConfig, _schema, _serialNum, _reconfigurer, _threadingService,
                      _warmupExecutor, _tuneFileIndexManager, _tuneFileAttributes, _fileHeaderContext);
 }
 

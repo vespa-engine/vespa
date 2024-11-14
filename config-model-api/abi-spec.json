@@ -758,10 +758,10 @@
       "public static final enum com.yahoo.config.application.api.ValidationId accessControl",
       "public static final enum com.yahoo.config.application.api.ValidationId globalEndpointChange",
       "public static final enum com.yahoo.config.application.api.ValidationId zoneEndpointChange",
-      "public static final enum com.yahoo.config.application.api.ValidationId redundancyIncrease",
       "public static final enum com.yahoo.config.application.api.ValidationId redundancyOne",
       "public static final enum com.yahoo.config.application.api.ValidationId pagedSettingRemoval",
-      "public static final enum com.yahoo.config.application.api.ValidationId certificateRemoval"
+      "public static final enum com.yahoo.config.application.api.ValidationId certificateRemoval",
+      "public static final enum com.yahoo.config.application.api.ValidationId redundancyIncrease"
     ]
   },
   "com.yahoo.config.application.api.ValidationOverrides$Allow" : {
@@ -1337,11 +1337,13 @@
       "public com.yahoo.config.provision.SharedHosts sharedHosts()",
       "public com.yahoo.config.provision.NodeResources$Architecture adminClusterArchitecture()",
       "public double logserverNodeMemory()",
+      "public double clusterControllerNodeMemory()",
       "public boolean symmetricPutAndActivateReplicaSelection()",
       "public boolean enforceStrictlyIncreasingClusterStateVersions()",
       "public boolean distributionConfigFromClusterController()",
       "public boolean useLegacyWandQueryParsing()",
-      "public boolean forwardAllLogLevels()"
+      "public boolean forwardAllLogLevels()",
+      "public long zookeeperPreAllocSize()"
     ],
     "fields" : [ ]
   },

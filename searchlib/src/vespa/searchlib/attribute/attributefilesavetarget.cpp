@@ -128,5 +128,16 @@ AttributeFileSaveTarget::get_writer(const std::string& file_suffix)
     return *itr->second;
 }
 
+uint64_t
+AttributeFileSaveTarget::size_on_disk() const noexcept
+{
+    uint64_t result = _datWriter.size_on_disk() + _idxWriter.size_on_disk() + _weightWriter.size_on_disk() +
+                      _udatWriter.size_on_disk();
+    for (auto & writer : _writers) {
+        result += writer.second->size_on_disk();
+    }
+    return result;
+}
+
 } // namespace search
 

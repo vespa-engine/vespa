@@ -7,13 +7,16 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.Validation.ChangeContext;
+import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 /**
- * Checks that no cluster sizes are reduced too much in one go.
+ * Checks that resources per document per node is reduced too much in one go.
  *
  * @author bratseth
  */
 public class ResourcesReductionValidator implements ChangeValidator {
+
+    private static final double maxAllowedUtilizationIncrease = 2.0; // Allow max doubling of utilization
 
     @Override
     public void validate(ChangeContext context) {
@@ -23,35 +26,66 @@ public class ResourcesReductionValidator implements ChangeValidator {
         }
     }
 
-    private void validate(ClusterSpec.Id clusterId, ChangeContext context) {
-        ClusterResources current = clusterResources(clusterId, context.previousModel());
-        ClusterResources next = clusterResources(clusterId, context.model());
-        if (current == null || next == null) return; // No request recording - test
-        if (current.nodeResources().isUnspecified() || next.nodeResources().isUnspecified()) {
-            // Self-hosted - unspecified resources; compare node count
-            int currentNodes = current.nodes();
-            int nextNodes = next.nodes();
-            if (nextNodes < 0.5 * currentNodes && nextNodes != currentNodes - 1) {
-                context.invalid(ValidationId.resourcesReduction,
-                                "Size reduction in '" + clusterId.value() + "' is too large: " +
-                                "To guard against mistakes, the new max nodes must be at least 50% of the current nodes. " +
-                                "Current nodes: " + currentNodes + ", new nodes: " + nextNodes);
-            }
+    private void validate(ClusterSpec cluster, ChangeContext context) {
+        ClusterResources current = clusterResources(cluster.id(), context.previousModel());
+        ClusterResources next = clusterResources(cluster.id(), context.model());
+        if (current == null || next == null) return;
+
+        double loadIncreasePerNode;
+        StringBuilder changes = new StringBuilder();
+        if ( ! cluster.type().isContent()) {
+            loadIncreasePerNode = (double)current.nodes() / next.nodes();
+            if (current.nodes() != next.nodes())
+                changes.append("from ").append(current.nodes()).append(" nodes to ")
+                       .append(next.nodes()).append(" nodes").append(", ");
         }
-        else {
-            NodeResources currentResources = current.totalResources();
-            NodeResources nextResources = next.totalResources();
-            if (nextResources.vcpu() < 0.5 * currentResources.vcpu() ||
-                nextResources.memoryGiB() < 0.5 * currentResources.memoryGiB() ||
-                nextResources.diskGb() < 0.5 * currentResources.diskGb())
-                context.invalid(ValidationId.resourcesReduction,
-                                "Resource reduction in '" + clusterId.value() + "' is too large: " +
-                                "To guard against mistakes, the new max resources must be at least 50% of the current " +
-                                "max resources in all dimensions. " +
-                                "Current: " + currentResources.withBandwidthGbps(0) + // (don't output bandwidth here)
-                                ", new: " + nextResources.withBandwidthGbps(0));
+        else { // take data size per node given from redundancy and groups into account
+            ContentCluster currentCluster = context.previousModel().getContentClusters().get(cluster.id().value());
+            ContentCluster nextCluster = context.model().getContentClusters().get(cluster.id().value());
+            loadIncreasePerNode =
+                (double) nextCluster.getRedundancy().finalRedundancy() / currentCluster.getRedundancy().finalRedundancy()
+                *
+                (double) currentCluster.groupSize() / nextCluster.groupSize();
+            if (nextCluster.getRedundancy().finalRedundancy() != currentCluster.getRedundancy().finalRedundancy())
+                changes.append("redundancy from ").append(currentCluster.getRedundancy().finalRedundancy())
+                       .append(" to ").append(nextCluster.getRedundancy().finalRedundancy()).append(", ");
+            if (nextCluster.groupSize() != currentCluster.groupSize())
+                changes.append("group size from ").append(currentCluster.groupSize())
+                       .append(" to ").append(nextCluster.groupSize()).append(" nodes, ");
         }
 
+        if (current.nodeResources().isUnspecified() || next.nodeResources().isUnspecified()) {
+            // Self-hosted: We don't know node resources so assume they are constant
+            if (loadIncreasePerNode > maxAllowedUtilizationIncrease)
+                invalid(changes, cluster, context);
+        }
+        else {
+            NodeResources currentResources = current.nodeResources();
+            NodeResources nextResources = next.nodeResources();
+            if (invalid(currentResources.vcpu(), nextResources.vcpu(), "vcpu", loadIncreasePerNode, changes)
+                || invalid(currentResources.memoryGiB(), nextResources.memoryGiB(), "memory GiB", loadIncreasePerNode, changes)
+                || invalid(currentResources.diskGb(), nextResources.diskGb(), "disk Gb", loadIncreasePerNode, changes))
+                invalid(changes, cluster, context);
+        }
+    }
+
+    private boolean invalid(double current, double next, String resource, double loadIncreasePerNode,
+                            StringBuilder changes) {
+        if (loadIncreasePerNode * current / next > maxAllowedUtilizationIncrease) {
+            if (current != next)
+                changes.append("from ").append(current).append(" to ").append(next)
+                       .append(" ").append(resource).append(" per node, ");
+            return true;
+        }
+        return false;
+    }
+
+    private void invalid(StringBuilder changes, ClusterSpec cluster, ChangeContext context) {
+        changes.setLength(changes.length() - 2); // Remove last ", "
+        context.invalid(ValidationId.resourcesReduction,
+                        "Effective resource reduction in " + cluster.id() + " is too large: " +
+                        changes +
+                        ". To protect against mistakes, changes causing load increases of more than 100% are blocked");
     }
 
     /**

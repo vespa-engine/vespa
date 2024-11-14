@@ -7,6 +7,7 @@
 #define _NEED_SUMMARY_CONFIG_IMPL
 #include "SummaryConfig.h"
 #include <vespa/vespalib/locale/c.h>
+#include <cstdlib>
 
 namespace juniper
 {

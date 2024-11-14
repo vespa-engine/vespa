@@ -28,23 +28,54 @@ const uint32_t DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY = 4;
 
 //-----------------------------------------------------------------------------
 
+class StopWordStrategy {
+private:
+    uint32_t _adjust_limit;
+    uint32_t _drop_limit;
+
+    static uint32_t to_abs(double rate, uint32_t docid_limit) {
+        if (rate < 0.0) {
+            // negative number : inverse absolute value
+            return uint32_t(-rate);
+        }
+        if (rate >= 0.0 && rate < 1.0) {
+            // in the range [0,1> : relative to docid limit
+            return uint32_t(rate * docid_limit);
+        }
+        // >= 1.0 : max limit (disabled)
+        return uint32_t(-1);
+    }
+
+public:
+    StopWordStrategy(double adjust_limit, double drop_limit, uint32_t docid_limit) noexcept
+        : _adjust_limit(to_abs(adjust_limit, docid_limit)),
+          _drop_limit(to_abs(drop_limit, docid_limit)) {}
+    [[nodiscard]] bool auto_adjust() const noexcept { return _adjust_limit != uint32_t(-1); }
+    [[nodiscard]] uint32_t adjust_distance(uint32_t hits) const noexcept {
+        return (hits > _adjust_limit) ? (hits - _adjust_limit) : (_adjust_limit - hits);
+    }
+    [[nodiscard]] bool keep_all() const noexcept { return _drop_limit == uint32_t(-1); }
+    [[nodiscard]] bool should_drop(uint32_t hits) const noexcept { return hits > _drop_limit; }
+    [[nodiscard]] static StopWordStrategy none() noexcept { return {1.0, 1.0, 0}; }
+};
+
 /**
  * Params used to tweak the behavior of the WAND algorithm.
  */
 struct MatchParams
 {
-    WeakAndHeap   &scores;
-    score_t        scoreThreshold;
-    uint32_t       abs_stop_word_limit;
-    const uint32_t scoresAdjustFrequency;
+    WeakAndHeap     &scores;
+    StopWordStrategy stop_words;
+    const uint32_t   scoresAdjustFrequency;
+    const uint32_t   docid_limit;
     MatchParams(WeakAndHeap &scores_in) noexcept
-        : MatchParams(scores_in, 1, -1, DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY)
+        : MatchParams(scores_in, StopWordStrategy::none(), DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, 0)
     {}
-    MatchParams(WeakAndHeap &scores_in, score_t scoreThreshold_in, uint32_t abs_stop_word_limit_in, uint32_t scoresAdjustFrequency_in) noexcept
+    MatchParams(WeakAndHeap &scores_in, StopWordStrategy stop_word_strategy, uint32_t scoresAdjustFrequency_in, uint32_t docid_limit_in) noexcept
         : scores(scores_in),
-          scoreThreshold(scoreThreshold_in),
-          abs_stop_word_limit(abs_stop_word_limit_in),
-          scoresAdjustFrequency(scoresAdjustFrequency_in)
+          stop_words(stop_word_strategy),
+          scoresAdjustFrequency(scoresAdjustFrequency_in),
+          docid_limit(docid_limit_in)
     {}
 };
 
@@ -224,6 +255,7 @@ template <typename IteratorPack>
 VectorizedState<IteratorPack> &
 VectorizedState<IteratorPack>::operator=(VectorizedState &&) noexcept = default;
 
+// Note: parallel wand variants MUST ALWAYS use StopWordStrategy::none() to avoid breaking important invariants
 template <typename IteratorPack>
 template <typename Scorer, typename Input>
 std::vector<ref_t>

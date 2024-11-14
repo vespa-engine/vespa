@@ -84,7 +84,8 @@ updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableSta
         auto entry = field_metrics.get_field_metrics_entry(field.first);
         if (entry) {
             entry->memoryUsage.update(field.second.memory_usage());
-            entry->_disk_usage.update(field.second.size_on_disk(), field.second.disk_io_stats());
+            entry->size_on_disk.set(field.second.size_on_disk());
+            entry->update_disk_io(field.second.cache_disk_io_stats());
         }
     }
 }
@@ -93,10 +94,12 @@ struct TempAttributeMetric
 {
     MemoryUsage memoryUsage;
     uint64_t    bitVectors;
+    uint64_t    size_on_disk;
 
     TempAttributeMetric()
         : memoryUsage(),
-          bitVectors(0)
+          bitVectors(0),
+          size_on_disk(0)
     {}
 };
 
@@ -121,13 +124,15 @@ isNotReadySubDB(const IDocumentSubDB *subDb, const DocumentSubDBCollection &subD
 
 void
 fillTempAttributeMetrics(TempAttributeMetrics &metrics, const std::string &attrName,
-                         const MemoryUsage &memoryUsage, uint32_t bitVectors)
+                         const MemoryUsage &memoryUsage, uint32_t bitVectors, uint64_t size_on_disk)
 {
     metrics.total.memoryUsage.merge(memoryUsage);
     metrics.total.bitVectors += bitVectors;
+    metrics.total.size_on_disk += size_on_disk;
     TempAttributeMetric &m = metrics.attrs[attrName];
     m.memoryUsage.merge(memoryUsage);
     m.bitVectors += bitVectors;
+    m.size_on_disk += size_on_disk;
 }
 
 void
@@ -148,9 +153,10 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
                 const search::attribute::Status &status = attr->getStatus();
                 MemoryUsage memoryUsage(status.getAllocated(), status.getUsed(), status.getDead(), status.getOnHold());
                 uint32_t bitVectors = status.getBitVectors();
-                fillTempAttributeMetrics(totalMetrics, attr->getName(), memoryUsage, bitVectors);
+                uint64_t size_on_disk = attr->size_on_disk();
+                fillTempAttributeMetrics(totalMetrics, attr->getName(), memoryUsage, bitVectors, size_on_disk);
                 if (subMetrics != nullptr) {
-                    fillTempAttributeMetrics(*subMetrics, attr->getName(), memoryUsage, bitVectors);
+                    fillTempAttributeMetrics(*subMetrics, attr->getName(), memoryUsage, bitVectors, size_on_disk);
                 }
             }
             auto imported = attrMgr->getImportedAttributes();
@@ -159,9 +165,9 @@ fillTempAttributeMetrics(TempAttributeMetrics &totalMetrics,
                 imported->getAll(i_list);
                 for (const auto& attr : i_list) {
                     auto memory_usage = attr->get_memory_usage();
-                    fillTempAttributeMetrics(totalMetrics,  attr->getName(), memory_usage, 0);
+                    fillTempAttributeMetrics(totalMetrics,  attr->getName(), memory_usage, 0, 0);
                     if (subMetrics != nullptr) {
-                        fillTempAttributeMetrics(*subMetrics,  attr->getName(), memory_usage, 0);
+                        fillTempAttributeMetrics(*subMetrics,  attr->getName(), memory_usage, 0, 0);
                     }
                 }
             }
@@ -176,6 +182,7 @@ updateAttributeMetrics(AttributeMetrics &metrics, const TempAttributeMetrics &tm
         auto entry = metrics.get_field_metrics_entry(attr.first);
         if (entry) {
             entry->memoryUsage.update(attr.second.memoryUsage);
+            entry->size_on_disk.set(attr.second.size_on_disk);
         }
     }
 }
@@ -191,6 +198,7 @@ updateAttributeMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBColl
     updateAttributeMetrics(metrics.ready.attributes, readyMetrics);
     updateAttributeMetrics(metrics.notReady.attributes, notReadyMetrics);
     updateMemoryUsageMetrics(metrics.attribute.totalMemoryUsage, totalMetrics.total.memoryUsage, totalStats);
+    updateDiskUsageMetric(metrics.attribute.diskUsage, totalMetrics.total.size_on_disk, totalStats);
 }
 
 void
@@ -223,33 +231,6 @@ updateDocumentsMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBColl
 }
 
 void
-updateDocumentStoreCacheHitRate(const CacheStats &current, const CacheStats &last,
-                                metrics::LongAverageMetric &cacheHitRate)
-{
-    if (current.lookups() < last.lookups() || current.hits < last.hits) {
-        LOG(warning, "Not adding document store cache hit rate metrics as values calculated "
-                     "are corrupt. current.lookups=%zu, last.lookups=%zu, current.hits=%zu, last.hits=%zu.",
-            current.lookups(), last.lookups(), current.hits, last.hits);
-    } else {
-        if ((current.lookups() - last.lookups()) > 0xffffffffull
-            || (current.hits - last.hits) > 0xffffffffull)
-        {
-            LOG(warning, "Document store cache hit rate metrics to add are suspiciously high."
-                         " lookups diff=%zu, hits diff=%zu.",
-                current.lookups() - last.lookups(), current.hits - last.hits);
-        }
-        cacheHitRate.addTotalValueWithCount(current.hits - last.hits, current.lookups() - last.lookups());
-    }
-}
-
-void
-updateCountMetric(uint64_t currVal, uint64_t lastVal, metrics::LongCountMetric &metric)
-{
-    uint64_t delta = (currVal >= lastVal) ? (currVal - lastVal) : 0;
-    metric.inc(delta);
-}
-
-void
 updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics &metrics,
                            const IDocumentSubDB *subDb,
                            CacheStats &lastCacheStats,
@@ -265,11 +246,7 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreM
 
     vespalib::CacheStats cacheStats = backingStore.getCacheStats();
     totalStats.memoryUsage.incAllocatedBytes(cacheStats.memory_used);
-    metrics.cache.memoryUsage.set(cacheStats.memory_used);
-    metrics.cache.elements.set(cacheStats.elements);
-    updateDocumentStoreCacheHitRate(cacheStats, lastCacheStats, metrics.cache.hitRate);
-    updateCountMetric(cacheStats.lookups(), lastCacheStats.lookups(), metrics.cache.lookups);
-    updateCountMetric(cacheStats.invalidations, lastCacheStats.invalidations, metrics.cache.invalidations);
+    metrics.cache.update_metrics(cacheStats, lastCacheStats);
     lastCacheStats = cacheStats;
 }
 

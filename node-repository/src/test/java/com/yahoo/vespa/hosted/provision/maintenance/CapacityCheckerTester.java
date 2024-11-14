@@ -33,6 +33,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvid
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
+import com.yahoo.vespa.hosted.provision.testutils.SecretStoreMock;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -76,7 +77,8 @@ public class CapacityCheckerTester {
                                             new MemoryMetricsDb(clock),
                                             new OrchestratorMock(),
                                             true,
-                                            0);
+                                            0,
+                                            new SecretStoreMock());
     }
 
     private void updateCapacityChecker() {

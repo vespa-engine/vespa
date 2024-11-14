@@ -342,9 +342,21 @@ public class PermanentFlags {
             "Takes effect on allocation from node repository",
             INSTANCE_ID);
 
+    public static final UnboundDoubleFlag CLUSTER_CONTROLLER_NODE_MEMORY = defineDoubleFlag(
+            "cluster-controller-node-memory", 0.0,
+            "Amount of memory (in GiB) to allocate for cluster-controller nodes",
+            "Takes effect on allocation from node repository",
+            INSTANCE_ID);
+
     public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
             "cloud-accounts", List.of(), String.class,
-            "A list of 12-digit AWS account IDs that are valid for the given tenant",
+            "A list of cloud accounts (e.g. AWS account or GCP project IDs) that are valid for the given tenant",
+            "Takes effect on next deployment through controller",
+            TENANT_ID);
+
+    public static final UnboundBooleanFlag REQUIRE_ENCLAVE = defineFeatureFlag(
+            "require-enclave", false,
+            "Whether the given tenant should only be allowed to deploy to enclave",
             "Takes effect on next deployment through controller",
             TENANT_ID);
 
@@ -366,6 +378,12 @@ public class PermanentFlags {
             "Allow user filter (chains) in application",
             "Takes effect on next redeployment",
             INSTANCE_ID);
+
+    public static final UnboundBooleanFlag ALLOW_STATUS_PAGE = defineFeatureFlag(
+            "allow-status-page", false,
+            "Shows link to status page for nodes of a specific tenant",
+            "Takes effect on browser reload of /user/v1/user",
+            CONSOLE_USER_EMAIL, TENANT_ID);
 
     public static final UnboundIntFlag PRE_PROVISIONED_LB_COUNT = defineIntFlag(
             "pre-provisioned-lb-count", 0,
@@ -504,6 +522,18 @@ public class PermanentFlags {
             "How to handle user config referencing unknown config definitions. Valid values are 'warn' and 'fail'",
             "Takes effect at redeployment",
             INSTANCE_ID);
+
+    public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
+            "allowed-athenz-proxy-identities", List.of(), String.class,
+            "Allowed Athenz proxy identities",
+            "takes effect at redeployment");
+
+    public static final UnboundLongFlag CONFIG_SERVER_UNKNOWN_STATUS_SESSION_EXPIRY_TIME = defineLongFlag(
+            "config-server-unknown-status-session-expiry-time", 6,
+            "Expiry time in hours for sessions with unknown status, can be lowered if there are incidents/bugs " +
+                    " or free disk space is too low and one needs to delete sessions",
+            "Takes effect after restart of config server"
+    );
 
     private PermanentFlags() {}
 

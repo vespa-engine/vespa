@@ -57,7 +57,7 @@ public class IndexingInputsTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("For schema 'indexing_extra_field_input_implicit', field 'foo': " +
-                         "For expression '{ tokenize normalize stem:\"BEST\" | index foo; }': Expected string input, but no input is specified",
+                         "Invalid expression '{ tokenize normalize stem:\"BEST\" | index foo; }': Expected string input, but no input is specified",
                          Exceptions.toMessageString(e));
         }
     }
@@ -156,7 +156,7 @@ public class IndexingInputsTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("For schema 'test', field 'derived1': For expression '{ attribute derived1; }': " +
+            assertEquals("For schema 'test', field 'derived1': Invalid expression '{ attribute derived1; }': " +
                          "Expected any input, but no input is specified",
                          Exceptions.toMessageString(e));
         }

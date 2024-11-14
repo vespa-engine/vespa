@@ -47,6 +47,14 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundIntFlag CLEAR_CONNTRACK = defineIntFlag(
+            "clear-conntrack", 3,
+            List.of("hakonhall"), "2024-10-28", "2024-11-28",
+            "Clear the conntrack table:" +
+            " bit 0: after NAT/NPT rules changes." +
+            " bit 1: after WireGuard changes.",
+            "See description");
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -191,13 +199,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    // TODO: Move to a permanent flag
-    public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
-            "allowed-athenz-proxy-identities", List.of(), String.class,
-            List.of("bjorncs", "tokle"), "2021-02-10", "2025-10-01",
-            "Allowed Athenz proxy identities",
-            "takes effect at redeployment");
-
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
             List.of("vekterli"), "2021-02-19", "2025-02-01",
@@ -259,13 +260,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SEPARATE_METRIC_CHECK_CONFIG = defineFeatureFlag(
-            "separate-metric-check-config", false,
-            List.of("olaa"), "2022-07-04", "2025-01-01",
-            "Determines whether one metrics config check should be written per Vespa node",
-            "Takes effect on next tick",
-            HOSTNAME);
-
     public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
             "tls-capabilities-enforcement-mode", "disable",
             List.of("bjorncs", "vekterli"), "2022-07-21", "2025-01-01",
@@ -309,27 +303,27 @@ public class Flags {
 
     public static final UnboundBooleanFlag SORT_BLUEPRINTS_BY_COST = defineFeatureFlag(
             "sort-blueprints-by-cost", false,
-            List.of("baldersheim"), "2023-12-19", "2024-10-31",
+            List.of("baldersheim"), "2023-12-19", "2025-01-10",
             "If true blueprints are sorted based on cost estimate, rather that absolute estimated hits",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
             "always-mark-phrase-expensive", false,
-            List.of("baldersheim"), "2023-11-20", "2024-10-31",
+            List.of("baldersheim"), "2023-11-20", "2025-01-10",
             "If true all phrases will be marked expensive, independent of parents",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-11-01",
+            List.of("hmusum"), "2023-07-19", "2025-01-10",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2024-11-01",
+            List.of("hmusum"), "2023-07-19", "2025-01-10",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -420,7 +414,7 @@ public class Flags {
             TENANT_ID);
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
-            "enforce-strictly-increasing-cluster-state-versions", false,
+            "enforce-strictly-increasing-cluster-state-versions", true,
             List.of("vekterli"), "2024-06-03", "2024-12-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
@@ -429,7 +423,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
-            List.of("jonmv"), "2024-06-11", "2024-11-01",
+            List.of("jonmv"), "2024-06-11", "2025-01-10",
             "Whether to launch an Athenz service unique to the application. Only valid in public systems!",
             "Takes effect on next deployment",
             INSTANCE_ID);
@@ -469,12 +463,6 @@ public class Flags {
             "Whether to sync companies to HubSpot",
             "Takes effect immediately");
 
-    public static final UnboundBooleanFlag SDM_ENABLED_PROVISIONING = defineFeatureFlag(
-            "sdm-enabled-provisioning", true,
-            List.of("olaa"), "2024-07-31", "2024-11-01",
-            "Whether to provision with SDM enabled",
-            "Takes effect immediately");
-
     public static final UnboundStringFlag HOSTNAME_SCHEME = defineStringFlag(
             "hostname-scheme", "legacy",
             List.of("mpolden"), "2024-08-07", "2024-12-01",
@@ -483,15 +471,9 @@ public class Flags {
             (value) -> "legacy".equals(value) || "standard".equals(value),
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundLongFlag FILE_DOWNLOAD_BACKOFF_INITIAL_TIME_MS = defineLongFlag(
-            "file-download-backoff-initial-time-ms", 1000,
-            List.of("hmusum"), "2024-08-16", "2024-11-01",
-            "Initial backoff time in milliseconds when failing to download a file reference",
-            "Takes effect on restart of Docker container");
-
     public static final UnboundBooleanFlag OVERRIDE_S1_TOKEN = defineFeatureFlag(
             "override-s1-token", false,
-            List.of("mortent"), "2024-09-23", "2024-11-01",
+            List.of("mortent"), "2024-09-23", "2024-12-01",
             "Override the S1 token",
             "Takes effect on next host-admin run",
             HOSTNAME);
@@ -501,6 +483,13 @@ public class Flags {
             List.of("mpolden"), "2024-10-22", "2025-01-10",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
+
+    public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
+            "zookeeper-pre-alloc-size", 65536,
+            List.of("hmusum"), "2024-11-11", "2025-01-11",
+            "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
+            + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
+            "Takes effect on restart of Docker container");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

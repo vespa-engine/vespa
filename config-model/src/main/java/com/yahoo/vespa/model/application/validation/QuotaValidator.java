@@ -33,9 +33,11 @@ public class QuotaValidator implements Validator {
     @Override
     public void validate(Context context) {
         var zone = context.deployState().zone();
-        var exclusivity = new Exclusivity(zone, context.deployState().featureFlags().sharedHosts());
-        var tuning = new CapacityPolicies.Tuning(context.deployState().featureFlags().adminClusterArchitecture(),
-                                                 context.deployState().featureFlags().logserverNodeMemory());
+        var featureFlags = context.deployState().featureFlags();
+        var exclusivity = new Exclusivity(zone, featureFlags.sharedHosts());
+        var tuning = new CapacityPolicies.Tuning(featureFlags.adminClusterArchitecture(),
+                                                 featureFlags.logserverNodeMemory(),
+                                                 featureFlags.clusterControllerNodeMemory());
         var capacityPolicies = new CapacityPolicies(zone, exclusivity, context.model().applicationPackage().getApplicationId(),
                                                     tuning);
         var quota = context.deployState().getProperties().quota();
@@ -49,10 +51,10 @@ public class QuotaValidator implements Validator {
         var application = context.model().applicationPackage().getApplicationId();
 
         var maxSpend = 0.0;
-        for (var id : context.model().allClusters()) {
-            if (adminClusterIds(context.model()).contains(id)) continue;
-            var cluster = context.model().provisioned().clusters().get(id);
-            var capacity = context.model().provisioned().capacities().getOrDefault(id, zeroCapacity);
+        for (var spec : context.model().allClusters()) {
+            if (adminClusterIds(context.model()).contains(spec.id())) continue;
+            var cluster = context.model().provisioned().clusters().get(spec.id());
+            var capacity = context.model().provisioned().capacities().getOrDefault(spec.id(), zeroCapacity);
             maxSpend += capacityPolicies.applyOn(capacity, cluster.isExclusive()).maxResources().cost();
         }
 

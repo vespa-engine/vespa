@@ -1,11 +1,14 @@
 {
   "snapshots": [
     {
+      "cloudAccount": "aws:111222333444",
       "cluster": "id3",
       "clusterIndex": 0,
       "hostname": "host4.yahoo.com",
       "id": "(ignore)",
       "instance": "tenant3:application3:instance3",
+      "sealedSharedKey": "(ignore)",
+      "sealingKeyVersion": "1",
       "state": "creating",
       "history": [
         {

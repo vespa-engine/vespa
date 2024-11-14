@@ -229,7 +229,8 @@ private:
                std::shared_ptr<search::attribute::Interlock> attribute_interlock,
                ConfigStore::UP config_store,
                InitializeThreads initializeThreads,
-               const vespalib::HwInfo &hwInfo);
+               const vespalib::HwInfo &hwInfo,
+               std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache);
 public:
     using SP = std::shared_ptr<DocumentDB>;
 
@@ -259,7 +260,8 @@ public:
            std::shared_ptr<search::attribute::Interlock> attribute_interlock,
            ConfigStore::UP config_store,
            InitializeThreads initializeThreads,
-           const vespalib::HwInfo &hwInfo);
+           const vespalib::HwInfo &hwInfo,
+           std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache);
 
     /**
      * Frees any allocated resources. This will also stop the internal thread

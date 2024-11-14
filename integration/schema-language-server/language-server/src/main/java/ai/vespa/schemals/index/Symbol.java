@@ -1,6 +1,7 @@
 package ai.vespa.schemals.index;
 
 import ai.vespa.schemals.common.FileUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 import java.net.URI;
@@ -12,7 +13,7 @@ import org.eclipse.lsp4j.Position;
  * Symbol represents a symbol in a document.
  */
 public class Symbol {
-    private SchemaNode identifierNode;
+    private Node identifierNode;
     private Symbol scope = null;
     private String fileURI;
     private URI fileURIimpl; // for comparing with other symbols file URIs
@@ -20,7 +21,7 @@ public class Symbol {
     private SymbolStatus status;
     private String overrideShortIdentifier = null;
 
-    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
+    public Symbol(Node identifierNode, SymbolType type, String fileURI, Symbol scope, String shortIdentifier) {
         this.identifierNode = identifierNode;
         this.setFileURI(fileURI);
         this.type = type;
@@ -29,11 +30,11 @@ public class Symbol {
         this.overrideShortIdentifier = shortIdentifier;
     }
 
-    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI) {
+    public Symbol(Node identifierNode, SymbolType type, String fileURI) {
         this(identifierNode, type, fileURI, null, null);
     }
 
-    public Symbol(SchemaNode identifierNode, SymbolType type, String fileURI, Symbol scope) {
+    public Symbol(Node identifierNode, SymbolType type, String fileURI, Symbol scope) {
         this(identifierNode, type, fileURI, scope, null);
     }
 
@@ -72,7 +73,7 @@ public class Symbol {
         return this.scope.equals(scope);
     }
 
-    public SchemaNode getNode() { return identifierNode; }
+    public Node getNode() { return identifierNode; }
 
     public String getShortIdentifier() {
         if (overrideShortIdentifier != null) return overrideShortIdentifier;

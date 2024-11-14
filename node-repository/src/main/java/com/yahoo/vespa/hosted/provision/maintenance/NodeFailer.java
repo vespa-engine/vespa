@@ -83,6 +83,9 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         int throttledNodeFailures = 0;
 
         for (FailingNode failing : findActiveFailingNodes()) {
+            if (shuttingDown())
+                return asSuccessFactorDeviation(attempts, failures);
+
             attempts++;
             if (!failAllowedFor(failing.node().type())) continue;
 

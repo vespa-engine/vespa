@@ -1,0 +1,32 @@
+# This file tests if overriding/extending the rank-profile default works
+schema defaultdefault {
+    document defaultdefault {
+        field title type string {
+            indexing: index | summary
+        }
+
+        field chunk type string {
+            indexing: index | summary
+        }
+    }
+    
+    field embedding type tensor<bfloat16>(x[384]) {
+        indexing: (input title || "") . " " . (input chunk || "") | embed e5 | attribute | index 
+	    attribute {
+	        distance-metric: angular
+	    }
+    }
+
+    rank-profile default inherits default {
+        function cos_sim() {
+            expression: cos(distance(field, embedding))
+        }
+    }
+
+    rank-profile custom inherits default {
+        function foo() {
+            expression: cos_sim()
+        }
+        
+    }
+}

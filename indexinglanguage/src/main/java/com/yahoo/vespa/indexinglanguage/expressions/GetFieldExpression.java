@@ -3,7 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.document.StructDataType;
+import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructuredDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StructuredFieldValue;
@@ -14,6 +14,10 @@ import com.yahoo.document.datatypes.StructuredFieldValue;
  * @author Simon Thoresen Hult
  */
 public final class GetFieldExpression extends Expression {
+
+    // The special "field names" used to access a map entry key and value
+    private static final String keyName = "$key";
+    private static final String valueName = "$value";
 
     private final String structFieldName;
 
@@ -27,40 +31,70 @@ public final class GetFieldExpression extends Expression {
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
-        return getStructFieldType(context);
+        return getFieldType(inputType, context);
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(getStructFieldType(context), outputType, context);
-        return AnyDataType.instance;
+        super.setOutputType(outputType, context);
+        return getInputType(context);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        context.setCurrentType(getStructFieldType(context));
+        context.setCurrentType(getFieldType(context.getCurrentType(), context));
     }
 
-    private DataType getStructFieldType(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        if ( ! (input instanceof StructuredDataType structInput))
-            throw new VerificationException(this, "Expected structured input, got " + input.getName());
+    private DataType getFieldType(DataType input, VerificationContext context) {
+        if (input instanceof MapDataType entryInput) {
+            if (structFieldName.equals(keyName))
+                return entryInput.getKeyType();
+            else if (structFieldName.equals(valueName))
+                return entryInput.getValueType();
+            else if (entryInput.getValueType() instanceof StructuredDataType structInput)
+                return getStructFieldType(structInput);
+        }
+        else if (input instanceof StructuredDataType structInput) {
+            return getStructFieldType(structInput);
+        }
+        throw new VerificationException(this, "Expected a struct or map, but got an " + input.getName());
+    }
+
+    private DataType getStructFieldType(StructuredDataType structInput) {
         Field field = structInput.getField(structFieldName);
         if (field == null)
             throw new VerificationException(this, "Field '" + structFieldName + "' not found in struct type '" +
-                                                  input.getName() + "'");
+                                                  structInput.getName() + "'");
         return field.getDataType();
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
-        if (!(input instanceof StructuredFieldValue struct))
-            throw new IllegalArgumentException("Expected structured input, got " + input.getDataType().getName());
+        if (input instanceof StructuredFieldValue struct)
+            executeStructField(struct, context);
+        else if (input instanceof MapEntryFieldValue entry)
+            executeMapEntry(entry, context);
+        else
+            throw new IllegalArgumentException("In " + this + ": Expected structured input, got " + input.getDataType().getName());
+    }
 
+    private void executeMapEntry(MapEntryFieldValue entry, ExecutionContext context) {
+        if (structFieldName.equals(keyName))
+            context.setCurrentValue(entry.getKey());
+        else if (structFieldName.equals(valueName))
+            context.setCurrentValue(entry.getValue());
+        else if (entry.getValue() instanceof StructuredFieldValue struct)
+            executeStructField(struct, context);
+        else
+            throw new IllegalArgumentException("In " + this + ": Expected structured input, got " +
+                                               entry.getValue().getDataType().getName());
+    }
+
+    private void executeStructField(StructuredFieldValue struct, ExecutionContext context) {
         Field field = struct.getField(structFieldName);
         if (field == null)
-            throw new IllegalArgumentException("Field '" + structFieldName + "' not found in struct type '" +
+            throw new IllegalArgumentException("In " + this +": Field '" + structFieldName + "' not found in struct type '" +
                                                struct.getDataType().getName() + "'");
         context.setCurrentValue(struct.getFieldValue(field));
     }

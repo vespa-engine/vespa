@@ -29,6 +29,11 @@ public class EmptyProvisionServiceProvider implements ProvisionServiceProvider {
     }
 
     @Override
+    public Optional<SnapshotStore> getSnapshotStore() {
+        return Optional.empty();
+    }
+
+    @Override
     public HostResourcesCalculator getHostResourcesCalculator() {
         return hostResourcesCalculator;
     }

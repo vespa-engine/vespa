@@ -10,7 +10,7 @@
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/cloningvisitor.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".selectpruner_test");
@@ -123,8 +123,9 @@ csString(const SelectPruner &pruner)
     return "const something";
 }
 
+}
 
-class TestFixture
+class SelectPrunerTest : public ::testing::Test
 {
 public:
     MockAttributeManager _amgr;
@@ -132,8 +133,8 @@ public:
     bool _hasFields;
     bool _hasDocuments;
 
-    TestFixture();
-    ~TestFixture();
+    SelectPrunerTest();
+    ~SelectPrunerTest() override;
 
     void testParse(const string &selection);
     void testParseFail(const string &selection);
@@ -142,8 +143,9 @@ public:
 };
 
 
-TestFixture::TestFixture()
-    : _amgr(),
+SelectPrunerTest::SelectPrunerTest()
+    : ::testing::Test(),
+      _amgr(),
       _repoUP(),
       _hasFields(true),
       _hasDocuments(true)
@@ -159,11 +161,11 @@ TestFixture::TestFixture()
 }
 
 
-TestFixture::~TestFixture() = default;
+SelectPrunerTest::~SelectPrunerTest() = default;
 
 
 void
-TestFixture::testParse(const string &selection)
+SelectPrunerTest::testParse(const string &selection)
 {
     const DocumentTypeRepo &repo(*_repoUP);
     document::select::Parser parser(repo,document::BucketIdFactory());
@@ -182,7 +184,7 @@ TestFixture::testParse(const string &selection)
 
 
 void
-TestFixture::testParseFail(const string &selection)
+SelectPrunerTest::testParseFail(const string &selection)
 {
     const DocumentTypeRepo &repo(*_repoUP);
     document::select::Parser parser(repo,document::BucketIdFactory());
@@ -201,8 +203,9 @@ TestFixture::testParseFail(const string &selection)
 
 
 void
-TestFixture::testPrune(const string &selection, const string &exp, const string &docTypeName)
+SelectPrunerTest::testPrune(const string &selection, const string &exp, const string &docTypeName)
 {
+    SCOPED_TRACE(selection);
     const DocumentTypeRepo &repo(*_repoUP);
     document::select::Parser parser(repo,document::BucketIdFactory());
 
@@ -226,7 +229,7 @@ TestFixture::testPrune(const string &selection, const string &exp, const string 
     pruner.process(*select);
     std::ostringstream pos;
     pruner.getNode()->print(pos, true, "");
-    EXPECT_EQUAL(exp, pos.str());
+    EXPECT_EQ(exp, pos.str());
     LOG(info,
         "Pruned ParseTree: '%s', fieldNodes=%u, attrFieldNodes=%u, cs=%s, rs=%s",
         pos.str().c_str(),
@@ -248,7 +251,7 @@ TestFixture::testPrune(const string &selection, const string &exp, const string 
     pruner.getNode()->visit(cv);
     std::ostringstream cvpos;
     cv.getNode()->print(cvpos, true, "");
-    EXPECT_EQUAL(exp, cvpos.str());
+    EXPECT_EQ(exp, cvpos.str());
 #if 0
     std::ostringstream os2;
     pruner.trace(os2);
@@ -258,568 +261,563 @@ TestFixture::testPrune(const string &selection, const string &exp, const string 
 
 
 void
-TestFixture::testPrune(const string &selection,
+SelectPrunerTest::testPrune(const string &selection,
                        const string &exp)
 {
     testPrune(selection, exp, "test");
 }
 
 
-TEST_F("Test that test setup is OK", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_test_setup_is_OK)
 {
-    const DocumentTypeRepo &repo = *f._repoUP;
+    const DocumentTypeRepo &repo = *_repoUP;
     const DocumentType *docType = repo.getDocumentType("test");
     ASSERT_TRUE(docType);
-    EXPECT_EQUAL(11u, docType->getFieldCount());
-    EXPECT_EQUAL("String", docType->getField("ia").getDataType().getName());
-    EXPECT_EQUAL("String", docType->getField("ib").getDataType().getName());
-    EXPECT_EQUAL("Int", docType->getField("aa").getDataType().getName());
-    EXPECT_EQUAL("Int", docType->getField("ab").getDataType().getName());
+    EXPECT_EQ(11u, docType->getFieldCount());
+    EXPECT_EQ("String", docType->getField("ia").getDataType().getName());
+    EXPECT_EQ("String", docType->getField("ib").getDataType().getName());
+    EXPECT_EQ("Int", docType->getField("aa").getDataType().getName());
+    EXPECT_EQ("Int", docType->getField("ab").getDataType().getName());
 }
 
 
-TEST_F("Test that simple parsing works", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_simple_parsing_works)
 {
-    f.testParse("not ((test))");
-    f.testParse("not ((test and (test.aa > 3999)))");
-    f.testParse("not ((test and (test.ab > 3999)))");
-    f.testParse("not ((test and (test.af > 3999)))");
-    f.testParse("not ((test_2 and (test_2.af > 3999)))");
+    testParse("not ((test))");
+    testParse("not ((test and (test.aa > 3999)))");
+    testParse("not ((test and (test.ab > 3999)))");
+    testParse("not ((test and (test.af > 3999)))");
+    testParse("not ((test_2 and (test_2.af > 3999)))");
 }
 
 
-TEST_F("Test that wrong doctype causes parse error", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_wrong_doctype_causes_parse_error)
 {
-    f.testParseFail("not ((test_3 and (test_3.af > 3999)))");
+    testParseFail("not ((test_3 and (test_3.af > 3999)))");
 }
 
 
-TEST_F("Test that boolean const shortcuts are OK", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_boolean_const_shortcuts_are_OK)
 {
-    f.testPrune("false and false",
-                "false");
-    f.testPrune(false_name + " and " + invalid2_name,
-                "false");
-    f.testPrune(false_name + " and " + valid2_name,
-                "false");
-    f.testPrune("false and true",
-                "false");
+    testPrune("false and false",
+              "false");
+    testPrune(false_name + " and " + invalid2_name,
+              "false");
+    testPrune(false_name + " and " + valid2_name,
+              "false");
+    testPrune("false and true",
+              "false");
 
-    f.testPrune(invalid_name + " and false",
-                "false");
-    f.testPrune(invalid_name + " and " + invalid2_name,
-                "invalid");
-    f.testPrune(invalid_name + " and " + valid2_name,
-                empty + "invalid and " + valid2_name);
-    f.testPrune(invalid_name + " and true",
-                "invalid");
+    testPrune(invalid_name + " and false",
+              "false");
+    testPrune(invalid_name + " and " + invalid2_name,
+              "invalid");
+    testPrune(invalid_name + " and " + valid2_name,
+              empty + "invalid and " + valid2_name);
+    testPrune(invalid_name + " and true",
+              "invalid");
 
-    f.testPrune(valid_name + " and false",
-                "false");
-    f.testPrune(valid_name + " and " + invalid2_name,
-                empty + valid_name + " and invalid");
-    f.testPrune(valid_name + " and " + valid2_name,
-                valid_name + " and " + valid2_name);
-    f.testPrune(valid_name + " and true",
-                valid_name);
+    testPrune(valid_name + " and false",
+              "false");
+    testPrune(valid_name + " and " + invalid2_name,
+              empty + valid_name + " and invalid");
+    testPrune(valid_name + " and " + valid2_name,
+              valid_name + " and " + valid2_name);
+    testPrune(valid_name + " and true",
+              valid_name);
 
-    f.testPrune("true and false",
-                "false");
-    f.testPrune(true_name + " and " + invalid2_name,
-                "invalid");
-    f.testPrune(true_name + " and " + valid2_name,
-                valid2_name);
-    f.testPrune("true and true",
-                "true");
+    testPrune("true and false",
+              "false");
+    testPrune(true_name + " and " + invalid2_name,
+              "invalid");
+    testPrune(true_name + " and " + valid2_name,
+              valid2_name);
+    testPrune("true and true",
+              "true");
 
-    f.testPrune("false or false",
-                "false");
-    f.testPrune(false_name + " or " + invalid2_name,
-                "invalid");
-    f.testPrune(false_name + " or " + valid2_name,
-                valid2_name);
-    f.testPrune("false or true",
-                "true");
+    testPrune("false or false",
+              "false");
+    testPrune(false_name + " or " + invalid2_name,
+              "invalid");
+    testPrune(false_name + " or " + valid2_name,
+              valid2_name);
+    testPrune("false or true",
+              "true");
 
-    f.testPrune(invalid_name + " or false",
-                "invalid");
-    f.testPrune(invalid_name + " or " + invalid2_name,
-                "invalid");
-    f.testPrune(invalid_name + " or " + valid2_name,
-                empty + "invalid or " + valid2_name);
-    f.testPrune(invalid_name + " or true",
-                "true");
+    testPrune(invalid_name + " or false",
+              "invalid");
+    testPrune(invalid_name + " or " + invalid2_name,
+              "invalid");
+    testPrune(invalid_name + " or " + valid2_name,
+              empty + "invalid or " + valid2_name);
+    testPrune(invalid_name + " or true",
+              "true");
 
-    f.testPrune(valid_name + " or false",
-                valid_name);
-    f.testPrune(valid_name + " or " + invalid2_name,
-                valid_name + " or invalid");
-    f.testPrune(valid_name + " or " + valid2_name,
-                valid_name + " or " + valid2_name);
-    f.testPrune(valid_name + " or true",
-                "true");
+    testPrune(valid_name + " or false",
+              valid_name);
+    testPrune(valid_name + " or " + invalid2_name,
+              valid_name + " or invalid");
+    testPrune(valid_name + " or " + valid2_name,
+              valid_name + " or " + valid2_name);
+    testPrune(valid_name + " or true",
+              "true");
 
-    f.testPrune("true or false",
-                "true");
-    f.testPrune(true_name + " or " + invalid2_name,
-                "true");
-    f.testPrune(true_name + " or " + valid2_name,
-                "true");
-    f.testPrune("true or true",
-                "true");
+    testPrune("true or false",
+              "true");
+    testPrune(true_name + " or " + invalid2_name,
+              "true");
+    testPrune(true_name + " or " + valid2_name,
+              "true");
+    testPrune("true or true",
+              "true");
 }
 
 
-TEST_F("Test that selection expressions are pruned", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_selection_expressions_are_pruned)
 {
-    f.testPrune("not ((test))",
-                "false");
-    f.testPrune("not ((test and (test.aa > 3999)))",
-                "test.aa <= 3999");
-    f.testPrune("not ((test and (test.ab > 3999)))",
-                     "test.ab <= 3999");
-    f.testPrune("not ((test and (test.af > 3999)))",
-                "invalid");
-    f.testPrune("not ((test and (test_2.ac > 3999)))",
-                "invalid");
-    f.testPrune("not ((test and (test.af > 3999)))",
-                "true",
-                "test_2");
+    testPrune("not ((test))",
+              "false");
+    testPrune("not ((test and (test.aa > 3999)))",
+              "test.aa <= 3999");
+    testPrune("not ((test and (test.ab > 3999)))",
+              "test.ab <= 3999");
+    testPrune("not ((test and (test.af > 3999)))",
+              "invalid");
+    testPrune("not ((test and (test_2.ac > 3999)))",
+              "invalid");
+    testPrune("not ((test and (test.af > 3999)))",
+              "true",
+              "test_2");
     const char *combined =
         "not ((test and (test.aa > 3999)) or (test_2 and (test_2.ac > 4999)))";
-    f.testPrune(combined,
-                "test.aa <= 3999");
-    f.testPrune(combined,
-                "test_2.ac <= 4999",
-                "test_2");
+    testPrune(combined,
+              "test.aa <= 3999");
+    testPrune(combined,
+              "test_2.ac <= 4999",
+              "test_2");
 }
 
 
-TEST_F("Test that De Morgan's laws are applied", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_De_Morgans_laws_are_applied)
 {
-    f.testPrune("not (test.aa < 3901 and test.ab < 3902)",
-                "test.aa >= 3901 or test.ab >= 3902");
-    f.testPrune("not (test.aa < 3903 or test.ab < 3904)",
-                "test.aa >= 3903 and test.ab >= 3904");
-    f.testPrune("not (not (test.aa < 3903 or test.ab < 3904))",
-                "test.aa < 3903 or test.ab < 3904");
+    testPrune("not (test.aa < 3901 and test.ab < 3902)",
+              "test.aa >= 3901 or test.ab >= 3902");
+    testPrune("not (test.aa < 3903 or test.ab < 3904)",
+              "test.aa >= 3903 and test.ab >= 3904");
+    testPrune("not (not (test.aa < 3903 or test.ab < 3904))",
+              "test.aa < 3903 or test.ab < 3904");
 
-    f.testPrune("not (false and false)",
-                "true");
-    f.testPrune(empty + "not (false and " + invalid2_name + ")",
-                "true");
-    f.testPrune(empty + "not (false and " + valid2_name + ")",
-                "true");
-    f.testPrune("not (false and true)",
-                "true");
+    testPrune("not (false and false)",
+              "true");
+    testPrune(empty + "not (false and " + invalid2_name + ")",
+              "true");
+    testPrune(empty + "not (false and " + valid2_name + ")",
+              "true");
+    testPrune("not (false and true)",
+              "true");
 
-    f.testPrune(empty + "not (" + invalid_name + " and false)",
-                "true");
-    f.testPrune(empty + "not (" + invalid_name + " and " + invalid2_name + ")",
-                "invalid");
-    f.testPrune(empty + "not (" + invalid_name + " and " + valid2_name + ")",
-                empty + "invalid or " + rvalid2_name);
-    f.testPrune(empty + "not (" + invalid_name + " and true)",
-                "invalid");
+    testPrune(empty + "not (" + invalid_name + " and false)",
+              "true");
+    testPrune(empty + "not (" + invalid_name + " and " + invalid2_name + ")",
+              "invalid");
+    testPrune(empty + "not (" + invalid_name + " and " + valid2_name + ")",
+              empty + "invalid or " + rvalid2_name);
+    testPrune(empty + "not (" + invalid_name + " and true)",
+              "invalid");
 
-    f.testPrune(empty + "not (" + valid_name + " and false)",
-                "true");
-    f.testPrune(empty + "not (" + valid_name + " and " + invalid2_name + ")",
-                empty + rvalid_name + " or invalid");
-    f.testPrune(empty + "not (" + valid_name + " and " + valid2_name + ")",
-                rvalid_name + " or " + rvalid2_name);
-    f.testPrune(empty + "not (" + valid_name + " and true)",
-                rvalid_name);
+    testPrune(empty + "not (" + valid_name + " and false)",
+              "true");
+    testPrune(empty + "not (" + valid_name + " and " + invalid2_name + ")",
+              empty + rvalid_name + " or invalid");
+    testPrune(empty + "not (" + valid_name + " and " + valid2_name + ")",
+              rvalid_name + " or " + rvalid2_name);
+    testPrune(empty + "not (" + valid_name + " and true)",
+              rvalid_name);
 
-    f.testPrune("not (true and false)",
-                "true");
-    f.testPrune(empty + "not (true and " + invalid2_name + ")",
-                "invalid");
-    f.testPrune(empty + "not (true and " + valid2_name + ")",
-                rvalid2_name);
-    f.testPrune("not (true and true)",
-                "false");
+    testPrune("not (true and false)",
+              "true");
+    testPrune(empty + "not (true and " + invalid2_name + ")",
+              "invalid");
+    testPrune(empty + "not (true and " + valid2_name + ")",
+              rvalid2_name);
+    testPrune("not (true and true)",
+              "false");
 
-    f.testPrune("not (false or false)",
-                "true");
-    f.testPrune(empty + "not (false or " + invalid2_name + ")",
-                "invalid");
-    f.testPrune(empty + "not (false or " + valid2_name + ")",
-                rvalid2_name);
-    f.testPrune("not (false or true)",
-                "false");
+    testPrune("not (false or false)",
+              "true");
+    testPrune(empty + "not (false or " + invalid2_name + ")",
+              "invalid");
+    testPrune(empty + "not (false or " + valid2_name + ")",
+              rvalid2_name);
+    testPrune("not (false or true)",
+              "false");
 
-    f.testPrune(empty + "not (" + invalid_name + " or false)",
-                "invalid");
-    f.testPrune(empty + "not (" + invalid_name + " or " + invalid2_name + ")",
-                "invalid");
-    f.testPrune(empty + "not (" + invalid_name + " or " + valid2_name + ")",
-                empty + "invalid and " + rvalid2_name);
-    f.testPrune(empty + "not (" + invalid_name + " or true)",
-                "false");
+    testPrune(empty + "not (" + invalid_name + " or false)",
+              "invalid");
+    testPrune(empty + "not (" + invalid_name + " or " + invalid2_name + ")",
+              "invalid");
+    testPrune(empty + "not (" + invalid_name + " or " + valid2_name + ")",
+              empty + "invalid and " + rvalid2_name);
+    testPrune(empty + "not (" + invalid_name + " or true)",
+              "false");
 
-    f.testPrune(empty + "not (" + valid_name + " or false)",
-                rvalid_name);
-    f.testPrune(empty + "not (" + valid_name + " or " + invalid2_name + ")",
-                rvalid_name + " and invalid");
-    f.testPrune(empty + "not (" + valid_name + " or " + valid2_name + ")",
-                rvalid_name + " and " + rvalid2_name);
-    f.testPrune(empty + "not (" + valid_name + " or true)",
-                "false");
+    testPrune(empty + "not (" + valid_name + " or false)",
+              rvalid_name);
+    testPrune(empty + "not (" + valid_name + " or " + invalid2_name + ")",
+              rvalid_name + " and invalid");
+    testPrune(empty + "not (" + valid_name + " or " + valid2_name + ")",
+              rvalid_name + " and " + rvalid2_name);
+    testPrune(empty + "not (" + valid_name + " or true)",
+              "false");
 
-    f.testPrune("not (true or false)",
-                "false");
-    f.testPrune(empty + "not (true or " + invalid2_name + ")",
-                "false");
-    f.testPrune(empty + "not (true or " + valid2_name + ")",
-                "false");
-    f.testPrune("not (true or true)",
-                "false");
+    testPrune("not (true or false)",
+              "false");
+    testPrune(empty + "not (true or " + invalid2_name + ")",
+              "false");
+    testPrune(empty + "not (true or " + valid2_name + ")",
+              "false");
+    testPrune("not (true or true)",
+              "false");
 
 }
 
 
-TEST_F("Test that attribute fields and constants are evaluated"
-       " before other fields",
-       TestFixture)
+TEST_F(SelectPrunerTest, Test_that_attribute_fields_and_constants_are_evaluated_before_other_fields)
 {
-    f.testPrune("test.ia == \"hello\" and test.aa > 5",
-                "test.aa > 5 and test.ia == \"hello\"");
+    testPrune("test.ia == \"hello\" and test.aa > 5",
+              "test.aa > 5 and test.ia == \"hello\"");
 }
 
 
-TEST_F("Test that functions are visited", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_functions_are_visited)
 {
-    f.testPrune("test.ia.lowercase() == \"hello\"",
-                "test.ia.lowercase() == \"hello\"");
-    f.testPrune("test_2.ac.lowercase() == \"hello\"",
-                "invalid");
-    f.testPrune("test.ia.hash() == 45",
-                "test.ia.hash() == 45");
-    f.testPrune("test_2.ic.hash() == 45",
-                "invalid");
-    f.testPrune("test.aa.abs() == 45",
-                "test.aa.abs() == 45");
-    f.testPrune("test_2.ac.abs() == 45",
-                "invalid");
+    testPrune("test.ia.lowercase() == \"hello\"",
+              "test.ia.lowercase() == \"hello\"");
+    testPrune("test_2.ac.lowercase() == \"hello\"",
+              "invalid");
+    testPrune("test.ia.hash() == 45",
+              "test.ia.hash() == 45");
+    testPrune("test_2.ic.hash() == 45",
+              "invalid");
+    testPrune("test.aa.abs() == 45",
+              "test.aa.abs() == 45");
+    testPrune("test_2.ac.abs() == 45",
+              "invalid");
 }
 
 
-TEST_F("Test that arithmethic values are visited", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_arithmethic_values_are_visited)
 {
-    f.testPrune("test.aa + 4 < 3999",
-                "test.aa + 4 < 3999");
-    f.testPrune("test_2.ac + 4 < 3999",
-                "invalid");
-    f.testPrune("test.aa + 4.2 < 3999",
-                "test.aa + 4.2 < 3999");
-    f.testPrune("test_2.ac + 5.2 < 3999",
-                "invalid");
+    testPrune("test.aa + 4 < 3999",
+              "test.aa + 4 < 3999");
+    testPrune("test_2.ac + 4 < 3999",
+              "invalid");
+    testPrune("test.aa + 4.2 < 3999",
+              "test.aa + 4.2 < 3999");
+    testPrune("test_2.ac + 5.2 < 3999",
+              "invalid");
 }
 
 
-TEST_F("Test that addition is associative", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_addition_is_associative)
 {
-    f.testPrune("test.aa + 4 + 5 < 3999",
-                "test.aa + 4 + 5 < 3999");
-    f.testPrune("(test.aa + 6) + 7 < 3999",
-                "test.aa + 6 + 7 < 3999");
-    f.testPrune("test.aa + (8 + 9) < 3999",
-                "test.aa + 8 + 9 < 3999");
+    testPrune("test.aa + 4 + 5 < 3999",
+              "test.aa + 4 + 5 < 3999");
+    testPrune("(test.aa + 6) + 7 < 3999",
+              "test.aa + 6 + 7 < 3999");
+    testPrune("test.aa + (8 + 9) < 3999",
+              "test.aa + 8 + 9 < 3999");
 }
 
 
-TEST_F("Test that subtraction is left associative", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_subtraction_is_left_associative)
 {
-    f.testPrune("test.aa - 4 - 5 < 3999",
-                "test.aa - 4 - 5 < 3999");
-    f.testPrune("(test.aa - 6) - 7 < 3999",
-                "test.aa - 6 - 7 < 3999");
-    f.testPrune("test.aa - (8 - 9) < 3999",
-                "test.aa - (8 - 9) < 3999");
+    testPrune("test.aa - 4 - 5 < 3999",
+              "test.aa - 4 - 5 < 3999");
+    testPrune("(test.aa - 6) - 7 < 3999",
+              "test.aa - 6 - 7 < 3999");
+    testPrune("test.aa - (8 - 9) < 3999",
+              "test.aa - (8 - 9) < 3999");
 }
 
 
-TEST_F("Test that multiplication is associative", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_multiplication_is_associative)
 {
-    f.testPrune("test.aa * 4 * 5 < 3999",
-                "test.aa * 4 * 5 < 3999");
-    f.testPrune("(test.aa * 6) * 7 < 3999",
-                "test.aa * 6 * 7 < 3999");
-    f.testPrune("test.aa * (8 * 9) < 3999",
-                "test.aa * 8 * 9 < 3999");
+    testPrune("test.aa * 4 * 5 < 3999",
+              "test.aa * 4 * 5 < 3999");
+    testPrune("(test.aa * 6) * 7 < 3999",
+              "test.aa * 6 * 7 < 3999");
+    testPrune("test.aa * (8 * 9) < 3999",
+              "test.aa * 8 * 9 < 3999");
 }
 
 
-TEST_F("Test that division is left associative", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_division_is_left_associative)
 {
-    f.testPrune("test.aa / 4 / 5 < 3999",
-                "test.aa / 4 / 5 < 3999");
-    f.testPrune("(test.aa / 6) / 7 < 3999",
-                "test.aa / 6 / 7 < 3999");
-    f.testPrune("test.aa / (8 / 9) < 3999",
-                "test.aa / (8 / 9) < 3999");
+    testPrune("test.aa / 4 / 5 < 3999",
+              "test.aa / 4 / 5 < 3999");
+    testPrune("(test.aa / 6) / 7 < 3999",
+              "test.aa / 6 / 7 < 3999");
+    testPrune("test.aa / (8 / 9) < 3999",
+              "test.aa / (8 / 9) < 3999");
 }
 
 
-TEST_F("Test that mod is left associative", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_mod_is_left_associative)
 {
-    f.testPrune("test.aa % 4 % 5 < 3999",
-                "test.aa % 4 % 5 < 3999");
-    f.testPrune("(test.aa % 6) % 7 < 3999",
-                "test.aa % 6 % 7 < 3999");
-    f.testPrune("test.aa % (8 % 9) < 3999",
-                "test.aa % (8 % 9) < 3999");
+    testPrune("test.aa % 4 % 5 < 3999",
+              "test.aa % 4 % 5 < 3999");
+    testPrune("(test.aa % 6) % 7 < 3999",
+              "test.aa % 6 % 7 < 3999");
+    testPrune("test.aa % (8 % 9) < 3999",
+              "test.aa % (8 % 9) < 3999");
 }
 
 
-TEST_F("Test that multiplication has higher priority than addition",
-       TestFixture)
+TEST_F(SelectPrunerTest, Test_that_multiplication_has_higher_priority_than_addition)
 {
-    f.testPrune("test.aa + 4 * 5 < 3999",
-                "test.aa + 4 * 5 < 3999");
-    f.testPrune("(test.aa + 6) * 7 < 3999",
-                "(test.aa + 6) * 7 < 3999");
-    f.testPrune("test.aa + (8 * 9) < 3999",
-                "test.aa + 8 * 9 < 3999");
-    f.testPrune("test.aa * 4 + 5 < 3999",
-                "test.aa * 4 + 5 < 3999");
-    f.testPrune("(test.aa * 6) + 7 < 3999",
-                "test.aa * 6 + 7 < 3999");
-    f.testPrune("test.aa * (8 + 9) < 3999",
-                "test.aa * (8 + 9) < 3999");
+    testPrune("test.aa + 4 * 5 < 3999",
+              "test.aa + 4 * 5 < 3999");
+    testPrune("(test.aa + 6) * 7 < 3999",
+              "(test.aa + 6) * 7 < 3999");
+    testPrune("test.aa + (8 * 9) < 3999",
+              "test.aa + 8 * 9 < 3999");
+    testPrune("test.aa * 4 + 5 < 3999",
+              "test.aa * 4 + 5 < 3999");
+    testPrune("(test.aa * 6) + 7 < 3999",
+              "test.aa * 6 + 7 < 3999");
+    testPrune("test.aa * (8 + 9) < 3999",
+              "test.aa * (8 + 9) < 3999");
 }
 
 
-TEST_F("Test that toplevel functions are visited", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_toplevel_functions_are_visited)
 {
-    f.testPrune("id.scheme == \"doc\"",
-                "id.scheme == \"doc\"");
-    f.testPrune("test.aa < now() - 7200",
-                "test.aa < now() - 7200");
+    testPrune("id.scheme == \"doc\"",
+              "id.scheme == \"doc\"");
+    testPrune("test.aa < now() - 7200",
+              "test.aa < now() - 7200");
 }
 
 
-TEST_F("Test that variables are visited", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_variables_are_visited)
 {
-    f.testPrune("$foovar == 4.3",
-                "$foovar == 4.3");
+    testPrune("$foovar == 4.3",
+              "$foovar == 4.3");
 }
 
 
-TEST_F("Test that null is visited", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_null_is_visited)
 {
-    f.testPrune("test.aa",
-                "test.aa != null");
-    f.testPrune("test.aa == null",
-                "test.aa == null");
-    f.testPrune("not test.aa",
-                "test.aa == null");
+    testPrune("test.aa",
+              "test.aa != null");
+    testPrune("test.aa == null",
+              "test.aa == null");
+    testPrune("not test.aa",
+              "test.aa == null");
 }
 
 
-TEST_F("Test that operator inversion works", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_operator_inversion_works)
 {
-    f.testPrune("not test.aa < 3999",
-                "test.aa >= 3999");
-    f.testPrune("not test.aa <= 3999",
-                "test.aa > 3999");
-    f.testPrune("not test.aa > 3999",
-                "test.aa <= 3999");
-    f.testPrune("not test.aa >= 3999",
-                "test.aa < 3999");
-    f.testPrune("not test.aa == 3999",
-                "test.aa != 3999");
-    f.testPrune("not test.aa != 3999",
-                "test.aa == 3999");
+    testPrune("not test.aa < 3999",
+              "test.aa >= 3999");
+    testPrune("not test.aa <= 3999",
+              "test.aa > 3999");
+    testPrune("not test.aa > 3999",
+              "test.aa <= 3999");
+    testPrune("not test.aa >= 3999",
+              "test.aa < 3999");
+    testPrune("not test.aa == 3999",
+              "test.aa != 3999");
+    testPrune("not test.aa != 3999",
+              "test.aa == 3999");
 }
 
 
-TEST_F("Test that fields are not present in removed sub db", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_fields_are_not_present_in_removed_sub_db)
 {
-    f._hasFields = true;
-    f.testPrune("test.aa > 5",
-                "test.aa > 5");
-    f.testPrune("test.aa == test.ab",
-                "test.aa == test.ab");
-    f.testPrune("test.aa != test.ab",
-                "test.aa != test.ab");
-    f.testPrune("not test.aa == test.ab",
-                "test.aa != test.ab");
-    f.testPrune("not test.aa != test.ab",
-                "test.aa == test.ab");
-    f.testPrune("test.ia == \"hello\"",
-                "test.ia == \"hello\"");
-    f._hasFields = false;
-    f.testPrune("test.aa > 5",
-                "invalid");
-    f.testPrune("test.aa == test.ab",
-                "true");
-    f.testPrune("test.aa != test.ab",
-                "false");
-    f.testPrune("test.aa < test.ab",
-                "invalid");
-    f.testPrune("test.aa > test.ab",
-                "invalid");
-    f.testPrune("test.aa <= test.ab",
-                "invalid");
-    f.testPrune("test.aa >= test.ab",
-                "invalid");
-    f.testPrune("not test.aa == test.ab",
-                "false");
-    f.testPrune("not test.aa != test.ab",
-                "true");
-    f.testPrune("test.ia == \"hello\"",
-                "invalid");
-    f.testPrune("not test.aa < test.ab",
-                "invalid");
-    f.testPrune("not test.aa > test.ab",
-                "invalid");
-    f.testPrune("not test.aa <= test.ab",
-                "invalid");
-    f.testPrune("not test.aa >= test.ab",
-                "invalid");
+    _hasFields = true;
+    testPrune("test.aa > 5",
+              "test.aa > 5");
+    testPrune("test.aa == test.ab",
+              "test.aa == test.ab");
+    testPrune("test.aa != test.ab",
+              "test.aa != test.ab");
+    testPrune("not test.aa == test.ab",
+              "test.aa != test.ab");
+    testPrune("not test.aa != test.ab",
+              "test.aa == test.ab");
+    testPrune("test.ia == \"hello\"",
+              "test.ia == \"hello\"");
+    _hasFields = false;
+    testPrune("test.aa > 5",
+              "invalid");
+    testPrune("test.aa == test.ab",
+              "true");
+    testPrune("test.aa != test.ab",
+              "false");
+    testPrune("test.aa < test.ab",
+              "invalid");
+    testPrune("test.aa > test.ab",
+              "invalid");
+    testPrune("test.aa <= test.ab",
+              "invalid");
+    testPrune("test.aa >= test.ab",
+              "invalid");
+    testPrune("not test.aa == test.ab",
+              "false");
+    testPrune("not test.aa != test.ab",
+              "true");
+    testPrune("test.ia == \"hello\"",
+              "invalid");
+    testPrune("not test.aa < test.ab",
+              "invalid");
+    testPrune("not test.aa > test.ab",
+              "invalid");
+    testPrune("not test.aa <= test.ab",
+              "invalid");
+    testPrune("not test.aa >= test.ab",
+              "invalid");
 }
 
 
-TEST_F("Test that some operators cannot be inverted", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_some_operators_cannot_be_inverted)
 {
-    f.testPrune("test.ia == \"hello\"",
-                "test.ia == \"hello\"");
-    f.testPrune("not test.ia == \"hello\"",
-                "test.ia != \"hello\"");
-    f.testPrune("test.ia = \"hello\"",
-                "test.ia = \"hello\"");
-    f.testPrune("not test.ia = \"hello\"",
-                "not test.ia = \"hello\"");
-    f.testPrune("not (test.ia == \"hello\" or test.ia == \"hi\")",
-                "test.ia != \"hello\" and test.ia != \"hi\"");
-    f.testPrune("not (test.ia == \"hello\" or test.ia = \"hi\")",
-                "not (not test.ia != \"hello\" or test.ia = \"hi\")");
-    f.testPrune("not (test.ia = \"hello\" or test.ia == \"hi\")",
-                "not (test.ia = \"hello\" or not test.ia != \"hi\")");
-    f.testPrune("not (test.ia = \"hello\" or test.ia = \"hi\")",
-                "not (test.ia = \"hello\" or test.ia = \"hi\")");
+    testPrune("test.ia == \"hello\"",
+              "test.ia == \"hello\"");
+    testPrune("not test.ia == \"hello\"",
+              "test.ia != \"hello\"");
+    testPrune("test.ia = \"hello\"",
+              "test.ia = \"hello\"");
+    testPrune("not test.ia = \"hello\"",
+              "not test.ia = \"hello\"");
+    testPrune("not (test.ia == \"hello\" or test.ia == \"hi\")",
+              "test.ia != \"hello\" and test.ia != \"hi\"");
+    testPrune("not (test.ia == \"hello\" or test.ia = \"hi\")",
+              "not (not test.ia != \"hello\" or test.ia = \"hi\")");
+    testPrune("not (test.ia = \"hello\" or test.ia == \"hi\")",
+              "not (test.ia = \"hello\" or not test.ia != \"hi\")");
+    testPrune("not (test.ia = \"hello\" or test.ia = \"hi\")",
+              "not (test.ia = \"hello\" or test.ia = \"hi\")");
 }
 
 
-TEST_F("Test that complex field refs are handled", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_complex_field_refs_are_handled)
 {
-    f.testPrune("test.ia",
-                "test.ia != null");
-    f.testPrune("test.ia != null",
-                "test.ia != null");
-    f.testPrune("test.ia == \"hello\"",
-                "test.ia == \"hello\"");
-    f.testPrune("test.ia.foo == \"hello\"",
-                "invalid");
-    f.testPrune("test.ibs.foo == \"hello\"",
-                "invalid");
-    f.testPrune("test.ibs.x == \"hello\"",
-                "test.ibs.x == \"hello\"");
-    f.testPrune("test.ia[2] == \"hello\"",
-                "invalid");
-    f.testPrune("test.iba[2] == \"hello\"",
-                "test.iba[2] == \"hello\"");
-    f.testPrune("test.ia{foo} == \"hello\"",
-                "invalid");
-    f.testPrune("test.ibw{foo} == 4",
-                "test.ibw{foo} == 4");
-    f.testPrune("test.ibw{foo} == \"hello\"",
-                "test.ibw{foo} == \"hello\"");
-    f.testPrune("test.ibm{foo} == \"hello\"",
-                "test.ibm{foo} == \"hello\"");
-    f.testPrune("test.aa == 4",
-                "test.aa == 4");
-    f.testPrune("test.aa[4] == 4",
-                "invalid");
-    f.testPrune("test.aaa[4] == 4",
-                "test.aaa[4] == 4");
-    f.testPrune("test.aa{4} == 4",
-                "invalid");
-    f.testPrune("test.aaw{4} == 4",
-                "test.aaw{4} == 4");
-    f.testPrune("id.namespace == \"hello\"",
-                "id.namespace == \"hello\"");
-    f.testPrune("test.aa == 4 and id.namespace == \"hello\"",
-                "test.aa == 4 and id.namespace == \"hello\"");
-    f.testPrune("test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"",
-                "test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"");
+    testPrune("test.ia",
+              "test.ia != null");
+    testPrune("test.ia != null",
+              "test.ia != null");
+    testPrune("test.ia == \"hello\"",
+              "test.ia == \"hello\"");
+    testPrune("test.ia.foo == \"hello\"",
+              "invalid");
+    testPrune("test.ibs.foo == \"hello\"",
+              "invalid");
+    testPrune("test.ibs.x == \"hello\"",
+              "test.ibs.x == \"hello\"");
+    testPrune("test.ia[2] == \"hello\"",
+              "invalid");
+    testPrune("test.iba[2] == \"hello\"",
+              "test.iba[2] == \"hello\"");
+    testPrune("test.ia{foo} == \"hello\"",
+              "invalid");
+    testPrune("test.ibw{foo} == 4",
+              "test.ibw{foo} == 4");
+    testPrune("test.ibw{foo} == \"hello\"",
+              "test.ibw{foo} == \"hello\"");
+    testPrune("test.ibm{foo} == \"hello\"",
+              "test.ibm{foo} == \"hello\"");
+    testPrune("test.aa == 4",
+              "test.aa == 4");
+    testPrune("test.aa[4] == 4",
+              "invalid");
+    testPrune("test.aaa[4] == 4",
+              "test.aaa[4] == 4");
+    testPrune("test.aa{4} == 4",
+              "invalid");
+    testPrune("test.aaw{4} == 4",
+              "test.aaw{4} == 4");
+    testPrune("id.namespace == \"hello\"",
+              "id.namespace == \"hello\"");
+    testPrune("test.aa == 4 and id.namespace == \"hello\"",
+              "test.aa == 4 and id.namespace == \"hello\"");
+    testPrune("test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"",
+              "test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"");
 }
 
-TEST_F("Test that field values are invalid when disabling document access", TestFixture)
+TEST_F(SelectPrunerTest, Test_that_field_values_are_invalid_when_disabling_document_access)
 {
-    f._hasDocuments = false;
-    f.testPrune("test.ia",
-                "invalid");
-    f.testPrune("test.ia != null",
-                "invalid");
-    f.testPrune("test.ia == \"hello\"",
-                "invalid");
-    f.testPrune("test.ia.foo == \"hello\"",
-                "invalid");
-    f.testPrune("test.ibs.foo == \"hello\"",
-                "invalid");
-    f.testPrune("test.ibs.x == \"hello\"",
-                "invalid");
-    f.testPrune("test.ia[2] == \"hello\"",
-                "invalid");
-    f.testPrune("test.iba[2] == \"hello\"",
-                "invalid");
-    f.testPrune("test.ia{foo} == \"hello\"",
-                "invalid");
-    f.testPrune("test.ibw{foo} == 4",
-                "invalid");
-    f.testPrune("test.ibw{foo} == \"hello\"",
-                "invalid");
-    f.testPrune("test.ibm{foo} == \"hello\"",
-                "invalid");
-    f.testPrune("test.aa == 4",
-                "test.aa == 4");
-    f.testPrune("test.aa[4] == 4",
-                "invalid");
-    f.testPrune("test.aaa[4] == 4",
-                "invalid");
-    f.testPrune("test.aa{4} == 4",
-                "invalid");
-    f.testPrune("test.aaw{4} == 4",
-                "invalid");
-    f.testPrune("id.namespace == \"hello\"",
-                "invalid");
-    f.testPrune("test.aa == 4 and id.namespace == \"hello\"",
-                "test.aa == 4 and invalid");
-    f.testPrune("test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"",
-                "test.aa == 4 and test.ae == 5 and invalid");
+    _hasDocuments = false;
+    testPrune("test.ia",
+              "invalid");
+    testPrune("test.ia != null",
+              "invalid");
+    testPrune("test.ia == \"hello\"",
+              "invalid");
+    testPrune("test.ia.foo == \"hello\"",
+              "invalid");
+    testPrune("test.ibs.foo == \"hello\"",
+              "invalid");
+    testPrune("test.ibs.x == \"hello\"",
+              "invalid");
+    testPrune("test.ia[2] == \"hello\"",
+              "invalid");
+    testPrune("test.iba[2] == \"hello\"",
+              "invalid");
+    testPrune("test.ia{foo} == \"hello\"",
+              "invalid");
+    testPrune("test.ibw{foo} == 4",
+              "invalid");
+    testPrune("test.ibw{foo} == \"hello\"",
+              "invalid");
+    testPrune("test.ibm{foo} == \"hello\"",
+              "invalid");
+    testPrune("test.aa == 4",
+              "test.aa == 4");
+    testPrune("test.aa[4] == 4",
+              "invalid");
+    testPrune("test.aaa[4] == 4",
+              "invalid");
+    testPrune("test.aa{4} == 4",
+              "invalid");
+    testPrune("test.aaw{4} == 4",
+              "invalid");
+    testPrune("id.namespace == \"hello\"",
+              "invalid");
+    testPrune("test.aa == 4 and id.namespace == \"hello\"",
+              "test.aa == 4 and invalid");
+    testPrune("test.aa == 4 and test.ae == 5 and id.namespace == \"hello\"",
+              "test.aa == 4 and test.ae == 5 and invalid");
 }
 
-TEST_F("Imported fields with matching attribute names are supported", TestFixture)
+TEST_F(SelectPrunerTest, Imported_fields_with_matching_attribute_names_are_supported)
 {
-    f.testPrune("test.my_imported_field > 0",
-                "test.my_imported_field > 0");
+    testPrune("test.my_imported_field > 0",
+              "test.my_imported_field > 0");
 }
 
-TEST_F("Imported fields can be used alongside non-attribute fields", TestFixture)
+TEST_F(SelectPrunerTest, Imported_fields_can_be_used_alongside_non_attribute_fields)
 {
-    f.testPrune("test.my_imported_field > 0 and id.namespace != \"foo\"",
-                "test.my_imported_field > 0 and id.namespace != \"foo\"");
+    testPrune("test.my_imported_field > 0 and id.namespace != \"foo\"",
+              "test.my_imported_field > 0 and id.namespace != \"foo\"");
 }
 
 // Edge case: document type reconfigured but attribute not yet visible in Proton
-TEST_F("Imported fields without matching attribute are mapped to constant NullValue", TestFixture)
+TEST_F(SelectPrunerTest, Imported_fields_without_matching_attribute_are_mapped_to_constant_NullValue)
 {
-    f.testPrune("test.my_missing_imported_field != test.aa", "null != test.aa");
+    testPrune("test.my_missing_imported_field != test.aa", "null != test.aa");
     // Simplified to -> "null != null" -> "false"
-    f.testPrune("test.my_missing_imported_field != null", "false");
+    testPrune("test.my_missing_imported_field != null", "false");
     // Simplified to -> "null > 0" -> "invalid", as null is not well-defined
     // for operators other than (in-)equality.
-    f.testPrune("test.my_missing_imported_field > 0", "invalid");
+    testPrune("test.my_missing_imported_field > 0", "invalid");
 }
 
-TEST_F("Complex imported field references return Invalid", TestFixture)
+TEST_F(SelectPrunerTest, Complex_imported_field_references_return_Invalid)
 {
-    f.testPrune("test.my_imported_field.foo", "invalid");
-    f.testPrune("test.my_imported_field[123]", "invalid");
-    f.testPrune("test.my_imported_field{foo}", "invalid");
+    testPrune("test.my_imported_field.foo", "invalid");
+    testPrune("test.my_imported_field[123]", "invalid");
+    testPrune("test.my_imported_field{foo}", "invalid");
 }
-
-}  // namespace

@@ -209,12 +209,14 @@ public class ModelContextImpl implements ModelContext {
         private final SharedHosts sharedHosts;
         private final Architecture adminClusterArchitecture;
         private final double logserverNodeMemory;
+        private final double clusterControllerNodeMemory;
         private final boolean symmetricPutAndActivateReplicaSelection;
         private final boolean enforceStrictlyIncreasingClusterStateVersions;
         private final boolean launchApplicationAthenzService;
         private final boolean distributionConfigFromClusterController;
         private final boolean useLegacyWandQueryParsing;
         private final boolean forwardAllLogLevels;
+        private final long zookeeperPreAllocSize;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
@@ -225,7 +227,7 @@ public class ModelContextImpl implements ModelContext {
             this.feedConcurrency = Flags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.feedNiceness = Flags.FEED_NICENESS.bindTo(source).with(appId).with(version).value();
             this.mbus_network_threads = Flags.MBUS_NUM_NETWORK_THREADS.bindTo(source).with(appId).with(version).value();
-            this.allowedAthenzProxyIdentities = Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
+            this.allowedAthenzProxyIdentities = PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
             this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
@@ -258,15 +260,17 @@ public class ModelContextImpl implements ModelContext {
             this.sortBlueprintsByCost = Flags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
             this.persistenceThreadMaxFeedOpBatchSize = Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE.bindTo(source).with(appId).with(version).value();
             this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
-            this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with( appId).with(version).value();
+            this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with(appId).with(version).value();
             this.adminClusterArchitecture = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(source).with(appId).with(version).value());
             this.logserverNodeMemory = PermanentFlags.LOGSERVER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.clusterControllerNodeMemory = PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
             this.enforceStrictlyIncreasingClusterStateVersions = Flags.ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS.bindTo(source).with(appId).with(version).value();
             this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(source).with(appId).with(version).value();
             this.distributionConfigFromClusterController = Flags.DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER.bindTo(source).with(appId).with(version).value();
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
             this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
+            this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -319,11 +323,13 @@ public class ModelContextImpl implements ModelContext {
         @Override public SharedHosts sharedHosts() { return sharedHosts; }
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public double logserverNodeMemory() { return logserverNodeMemory; }
+        @Override public double clusterControllerNodeMemory() { return clusterControllerNodeMemory; }
         @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
         @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
         @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
         @Override public boolean useLegacyWandQueryParsing() { return useLegacyWandQueryParsing; }
         @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
+        @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }
     }
 
     public static class Properties implements ModelContext.Properties {

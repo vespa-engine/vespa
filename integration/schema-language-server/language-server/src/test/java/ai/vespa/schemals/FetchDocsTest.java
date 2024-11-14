@@ -3,8 +3,13 @@ package ai.vespa.schemals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 
@@ -22,5 +27,19 @@ public class FetchDocsTest {
         } catch(IOException ioe) {
             assertEquals(0, 1, ioe.getMessage());
         }
+
+        if (Paths.get("").resolve("tmp").toFile().exists()) {
+            deleteDirectory(Paths.get("").resolve("tmp").toFile());
+        }
+    }
+
+    private boolean deleteDirectory(File directory) {
+        File[] contents = directory.listFiles();
+        if (contents != null) {
+            for (File f : contents) {
+                deleteDirectory(f);
+            }
+        }
+        return directory.delete();
     }
 }

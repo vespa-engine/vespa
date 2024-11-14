@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "cache_metrics.h"
 #include "executor_metrics.h"
 #include "resource_usage_metrics.h"
 #include "trans_log_server_metrics.h"
@@ -41,11 +42,27 @@ struct ContentProtonMetrics : metrics::MetricSet
         ~SessionCacheMetrics() override;
     };
 
+    struct IndexMetrics : public metrics::MetricSet {
+        struct CacheMetrics : public metrics::MetricSet {
+
+            proton::CacheMetrics postinglist;
+
+            explicit CacheMetrics(metrics::MetricSet* parent);
+            ~CacheMetrics() override;
+        };
+
+        CacheMetrics     cache;
+
+        explicit IndexMetrics(metrics::MetricSet* parent);
+        ~IndexMetrics() override;
+    };
+
     metrics::LongValueMetric configGeneration;
     TransLogServerMetrics transactionLog;
     ResourceUsageMetrics resourceUsage;
     ProtonExecutorMetrics executor;
     SessionCacheMetrics sessionCache;
+    IndexMetrics        index;
 
     ContentProtonMetrics();
     ~ContentProtonMetrics() override;

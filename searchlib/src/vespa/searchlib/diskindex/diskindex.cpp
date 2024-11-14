@@ -46,14 +46,15 @@ DiskIndex::Key::Key(const Key &) = default;
 DiskIndex::Key & DiskIndex::Key::operator = (const Key &) = default;
 DiskIndex::Key::~Key() = default;
 
-DiskIndex::DiskIndex(const std::string &indexDir, size_t cacheSize)
+DiskIndex::DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache, size_t dictionary_cache_size)
     : _indexDir(indexDir),
-      _cacheSize(cacheSize),
+      _dictionary_cache_size(dictionary_cache_size),
       _schema(),
       _field_indexes(),
       _nonfield_size_on_disk(0),
       _tuneFileSearch(),
-      _cache(*this, cacheSize)
+      _posting_list_cache(std::move(posting_list_cache)),
+      _cache(*this, dictionary_cache_size)
 {
     calculate_nonfield_size_on_disk();
 }
@@ -80,7 +81,7 @@ DiskIndex::openDictionaries(const TuneFileSearch &tuneFileSearch)
 {
     for (SchemaUtil::IndexIterator itr(_schema); itr.isValid(); ++itr) {
         std::string field_dir = _indexDir + "/" + itr.getName();
-        _field_indexes.emplace_back();
+        _field_indexes.emplace_back(itr.getIndex(), _posting_list_cache);
         if (!_field_indexes.back().open_dictionary(field_dir, tuneFileSearch)) {
             _field_indexes.clear();
             return false;
@@ -140,7 +141,7 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old)
     return true;
 }
 
-DiskIndex::LookupResult::UP
+DiskIndex::LookupResult
 DiskIndex::lookup(uint32_t index, std::string_view word)
 {
     /** Only used for testing */
@@ -148,10 +149,9 @@ DiskIndex::lookup(uint32_t index, std::string_view word)
     indexes.push_back(index);
     Key key(std::move(indexes), word);
     LookupResultVector resultV(1);
-    LookupResult::UP result;
+    LookupResult result;
     if ( read(key, resultV)) {
-        result = std::make_unique<LookupResult>();
-        result->swap(resultV[0]);
+        result.swap(resultV[0]);
     }
     return result;
 }
@@ -198,7 +198,7 @@ DiskIndex::lookup(const std::vector<uint32_t> & indexes, std::string_view word)
 {
     Key key(indexes, word);
     LookupResultVector result;
-    if (_cacheSize > 0) {
+    if (_dictionary_cache_size > 0) {
         result = _cache.read(key);
         if (!containsAll(indexes, result)) {
             key = Key(unite(indexes, result), word);
@@ -232,20 +232,6 @@ DiskIndex::read(const Key & key, LookupResultVector & result)
         lr.bitOffset = offsetAndCounts._offset;
     }
     return true;
-}
-
-index::PostingListHandle::UP
-DiskIndex::readPostingList(const LookupResult &lookupRes) const
-{
-    auto& field_index = _field_indexes[lookupRes.indexId];
-    return field_index.read_posting_list(lookupRes);
-}
-
-BitVector::UP
-DiskIndex::readBitVector(const LookupResult &lookupRes) const
-{
-    auto& field_index = _field_indexes[lookupRes.indexId];
-    return field_index.read_bit_vector(lookupRes);
 }
 
 namespace {
@@ -325,7 +311,7 @@ public:
         const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
         if (lookupRes.valid()) {
             bool useBitVector = _field.isFilter();
-            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex, termStr, std::make_unique<DiskIndex::LookupResult>(lookupRes), useBitVector));
+            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex.get_field_index(_fieldId), termStr, lookupRes, useBitVector));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }

@@ -11,7 +11,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
-import com.yahoo.vespa.athenz.api.AwsRole;
 import com.yahoo.vespa.athenz.client.zts.DefaultZtsClient;
 import com.yahoo.vespa.athenz.client.zts.ZtsClient;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
@@ -64,7 +63,7 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     }
 
     // For testing
-    public AsmSecretReader(Function<AwsRole, SecretsManagerClient> clientAndCredentialsSupplier) {
+    public AsmSecretReader(Function<AwsRolePath, SecretsManagerClient> clientAndCredentialsSupplier) {
         super(clientAndCredentialsSupplier);
         cache = initCache();
         ztsClientCloser = () -> {};
@@ -108,11 +107,16 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
         }
         var request = requestBuilder.build();
 
-        GetSecretValueResponse secret = client.getSecretValue(request);
-        return new Secret(key,
-                          secret.secretString().getBytes(StandardCharsets.UTF_8),
-                          SecretVersionId.of(secret.versionId()),
-                          toSecretVersionState(secret.versionStages()));
+
+        try {
+            GetSecretValueResponse secret = client.getSecretValue(request);
+            return new Secret(key,
+                              secret.secretString().getBytes(StandardCharsets.UTF_8),
+                              SecretVersionId.of(secret.versionId()),
+                              toSecretVersionState(secret.versionStages()));
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to retrieve secret with key %s:\n%s".formatted(key, e.getMessage()));
+        }
     }
 
     private static SecretVersionState toSecretVersionState(List<String> versionStages) {
@@ -157,17 +161,21 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     public List<Secret> listSecretVersions(Key key) {
         var client = getClient(key.vaultName());
 
-        ListSecretVersionIdsResponse response = client.listSecretVersionIds(
-                ListSecretVersionIdsRequest.builder()
-                        .secretId(awsSecretId(key)).build());
+        try {
+            ListSecretVersionIdsResponse response = client.listSecretVersionIds(
+                    ListSecretVersionIdsRequest.builder()
+                            .secretId(awsSecretId(key)).build());
 
-        var secretVersions = response.versions().stream()
-                .map(version -> getSecret(key, SecretVersionId.of(version.versionId())))
-                .sorted().toList();
+            var secretVersions = response.versions().stream()
+                    .map(version -> getSecret(key, SecretVersionId.of(version.versionId())))
+                    .sorted().toList();
 
-        secretVersions.forEach(secret -> cache.put(new VersionKey(key, secret.version()), secret));
+            secretVersions.forEach(secret -> cache.put(new VersionKey(key, secret.version()), secret));
 
-        return secretVersions;
+            return secretVersions;
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Failed to list secret versions for %s:\n%s".formatted(key, e.getMessage()));
+        }
     }
 
     @Override

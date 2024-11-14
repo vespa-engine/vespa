@@ -22,9 +22,14 @@ import static com.yahoo.config.provision.NodeType.confighost;
 public class Dns {
     private Dns() {}
 
+    // TODO: Remove REVERSE after we have stopped adding those
     public enum RecordType { FORWARD, PUBLIC_FORWARD, REVERSE }
 
     /** Returns the set of DNS record types for a host and its children and the given version (ipv6), host type, etc. */
+    public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave) {
+        return recordTypesFor(ipVersion, hostType, cloudName, enclave, false);
+    }
+
     public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave, boolean allowReverse) {
         if (cloudName == CloudName.AWS || cloudName == CloudName.GCP) {
             if (enclave) {
@@ -60,13 +65,12 @@ public class Dns {
     public static void verify(String hostname, String ipAddress, NodeType nodeType, NameResolver resolver,
                                  CloudAccount cloudAccount, Zone zone) {
         IP.Version version = IP.Version.fromIpAddress(ipAddress);
-        boolean allowReverse = !hostname.endsWith(".vespa-cloud.net");
-        Set<RecordType> recordTypes = recordTypesFor(version, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone), allowReverse);
+        Set<RecordType> recordTypes = recordTypesFor(version, nodeType, zone.cloud().name(), cloudAccount.isEnclave(zone));
 
         if (recordTypes.contains(RecordType.FORWARD)) {
             NameResolver.RecordType recordType = version.is6() ? NameResolver.RecordType.AAAA : NameResolver.RecordType.A;
             Set<String> addresses = resolver.resolve(hostname, recordType);
-            if (!addresses.equals(java.util.Set.of(ipAddress)))
+            if (!addresses.equals(Set.of(ipAddress)))
                 throw new IllegalArgumentException("Expected " + hostname + " to resolve to " + ipAddress +
                                                    ", but got " + addresses);
         }

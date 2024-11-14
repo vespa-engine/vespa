@@ -127,7 +127,6 @@ ResultProcessor::makeReply(PartialResultUP full_result)
         if (_wasMerged) {
             _groupingSession->getGroupingManager().prune();
         }
-        _groupingSession->getGroupingManager().convertToGlobalId(_metaStore);
         _groupingSession->continueExecution(_groupingContext);
         numFs4Hits = _groupingContext.countFS4Hits();
         _groupingContext.getResult().swap(r.groupResult);

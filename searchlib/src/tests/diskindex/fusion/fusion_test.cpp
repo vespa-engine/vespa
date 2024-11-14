@@ -157,20 +157,15 @@ make_schema(bool interleaved_features)
 void
 assert_interleaved_features(DiskIndex &d, const std::string &field, const std::string &term, uint32_t doc_id, uint32_t exp_num_occs, uint32_t exp_field_length)
 {
-    using LookupResult = DiskIndex::LookupResult;
-    using PostingListHandle = index::PostingListHandle;
-    using SearchIterator = search::queryeval::SearchIterator;
-
     const Schema &schema = d.getSchema();
     uint32_t field_id(schema.getIndexFieldId(field));
-    std::unique_ptr<LookupResult> lookup_result(d.lookup(field_id, term));
-    ASSERT_TRUE(lookup_result);
-    std::unique_ptr<PostingListHandle> handle(d.readPostingList(*lookup_result));
-    ASSERT_TRUE(handle);
+    auto& field_index = d.get_field_index(field_id);
+    auto lookup_result(d.lookup(field_id, term));
+    auto handle(field_index.read_posting_list(lookup_result));
     TermFieldMatchData tfmd;
     TermFieldMatchDataArray tfmda;
     tfmda.add(&tfmd);
-    std::unique_ptr<SearchIterator> sbap(handle->createIterator(lookup_result->counts, tfmda));
+    auto sbap(field_index.create_iterator(lookup_result, handle, tfmda));
     sbap->initFullRange();
     EXPECT_TRUE(sbap->seek(doc_id));
     sbap->unpack(doc_id);
@@ -181,22 +176,17 @@ assert_interleaved_features(DiskIndex &d, const std::string &field, const std::s
 void
 validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
 {
-    using LR = DiskIndex::LookupResult;
-    using PH = index::PostingListHandle;
-    using SB = search::queryeval::SearchIterator;
-
     const Schema &schema(dw.getSchema());
 
     {
         uint32_t id1(schema.getIndexFieldId("f0"));
-        LR::UP lr1(dw.lookup(id1, "c"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto& field_index = dw.get_field_index(id1);
+        auto lr1(dw.lookup(id1, "c"));
+        auto wh1(field_index.read_posting_list(lr1));
         TermFieldMatchData f0;
         TermFieldMatchDataArray a;
         a.add(&f0);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(field_index.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f0.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
@@ -205,14 +195,13 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
     {
         uint32_t id1(schema.getIndexFieldId("f2"));
-        LR::UP lr1(dw.lookup(id1, "ax"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto& field_index = dw.get_field_index(id1);
+        auto lr1(dw.lookup(id1, "ax"));
+        auto wh1(field_index.read_posting_list(lr1));
         TermFieldMatchData f2;
         TermFieldMatchDataArray a;
         a.add(&f2);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(field_index.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f2.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
@@ -227,14 +216,13 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
     {
         uint32_t id1(schema.getIndexFieldId("f3"));
-        LR::UP lr1(dw.lookup(id1, "wx"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto& field_index = dw.get_field_index(id1);
+        auto lr1(dw.lookup(id1, "wx"));
+        auto wh1(field_index.read_posting_list(lr1));
         TermFieldMatchData f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(field_index.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(10));
@@ -249,14 +237,13 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
     {
         uint32_t id1(schema.getIndexFieldId("f3"));;
-        LR::UP lr1(dw.lookup(id1, "zz"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto& field_index = dw.get_field_index(id1);
+        auto lr1(dw.lookup(id1, "zz"));
+        auto wh1(field_index.read_posting_list(lr1));
         TermFieldMatchData f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(field_index.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(11));
@@ -271,14 +258,13 @@ validateDiskIndex(DiskIndex &dw, bool f2HasElements, bool f3HasWeights)
     }
     {
         uint32_t id1(schema.getIndexFieldId("f3"));;
-        LR::UP lr1(dw.lookup(id1, "zz0"));
-        ASSERT_TRUE(lr1);
-        PH::UP wh1(dw.readPostingList(*lr1));
-        ASSERT_TRUE(wh1);
+        auto& field_index = dw.get_field_index(id1);
+        auto lr1(dw.lookup(id1, "zz0"));
+        auto wh1(field_index.read_posting_list(lr1));
         TermFieldMatchData f3;
         TermFieldMatchDataArray a;
         a.add(&f3);
-        SB::UP sbap(wh1->createIterator(lr1->counts, a));
+        auto sbap(field_index.create_iterator(lr1, wh1, a));
         sbap->initFullRange();
         EXPECT_EQ(std::string("{1000000:}"), toString(f3.getIterator()));
         EXPECT_TRUE(sbap->seek(12));
@@ -385,7 +371,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
     vespalib::ThreadStackExecutor executor(4);
 
     do {
-        DiskIndex dw2(prefix + "dump2");
+        DiskIndex dw2(prefix + "dump2", {});
         ASSERT_TRUE(dw2.setup(tuneFileSearch));
         validateDiskIndex(dw2, true, true);
     } while (0);
@@ -400,7 +386,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw3(prefix + "dump3");
+        DiskIndex dw3(prefix + "dump3", {});
         ASSERT_TRUE(dw3.setup(tuneFileSearch));
         validateDiskIndex(dw3, true, true);
     } while (0);
@@ -414,7 +400,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw4(prefix + "dump4");
+        DiskIndex dw4(prefix + "dump4", {});
         ASSERT_TRUE(dw4.setup(tuneFileSearch));
         validateDiskIndex(dw4, true, false);
     } while (0);
@@ -428,7 +414,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw5(prefix + "dump5");
+        DiskIndex dw5(prefix + "dump5", {});
         ASSERT_TRUE(dw5.setup(tuneFileSearch));
         validateDiskIndex(dw5, false, false);
     } while (0);
@@ -443,7 +429,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw6(prefix + "dump6");
+        DiskIndex dw6(prefix + "dump6", {});
         ASSERT_TRUE(dw6.setup(tuneFileSearch));
         validateDiskIndex(dw6, true, true);
     } while (0);
@@ -457,7 +443,7 @@ FusionTest::requireThatFusionIsWorking(const std::string &prefix, bool directio,
         ASSERT_TRUE(fusion.merge(executor, std::make_shared<FlushToken>()));
     } while (0);
     do {
-        DiskIndex dw3(prefix + "dump3");
+        DiskIndex dw3(prefix + "dump3", {});
         ASSERT_TRUE(dw3.setup(tuneFileSearch));
         validateDiskIndex(dw3, true, true);
     } while (0);
@@ -552,7 +538,7 @@ TEST_F(FusionTest, require_that_average_field_length_is_preserved)
     make_simple_index("fldump2", MockFieldLengthInspector());
     make_simple_index("fldump3", MyMockFieldLengthInspector());
     merge_simple_indexes("fldump4", {"fldump2", "fldump3"});
-    DiskIndex disk_index("fldump4");
+    DiskIndex disk_index("fldump4", {});
     ASSERT_TRUE(disk_index.setup(TuneFileSearch()));
     EXPECT_EQ(3.5, disk_index.get_field_length_info("f0").get_average_field_length());
     clean_field_length_testdirs();
@@ -565,7 +551,7 @@ FusionTest::reconstruct_interleaved_features()
     make_simple_index("fldump2", MockFieldLengthInspector());
     _schema = make_schema(true); // want interleaved features
     merge_simple_indexes("fldump4", {"fldump2"});
-    DiskIndex disk_index("fldump4");
+    DiskIndex disk_index("fldump4", {});
     ASSERT_TRUE(disk_index.setup(TuneFileSearch()));
     assert_interleaved_features(disk_index, "f0", "a", 10, 1, 7);
     assert_interleaved_features(disk_index, "f1", "w", 10, 1, 4);

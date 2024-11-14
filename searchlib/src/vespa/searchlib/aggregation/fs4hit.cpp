@@ -2,6 +2,9 @@
 #include "fs4hit.h"
 #include <vespa/vespalib/objects/visit.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.aggregation.fs4hit");
+
 namespace search::aggregation {
 
 using vespalib::Serializer;
@@ -22,8 +25,13 @@ FS4Hit::onSerialize(Serializer &os) const
     Hit::onSerialize(os);
     os.put(_path);
     const unsigned char * rawGid = _globalId.get();
+    bool hasGlobalId = false;
     for (size_t i = 0; i < document::GlobalId::LENGTH; ++i) {
         os.put(rawGid[i]);
+        if (rawGid[i] != 0) hasGlobalId = true;
+    }
+    if (! hasGlobalId) {
+        LOG(warning, "missing GlobalId for grouping hit %u (rank %f)", _docId, getRank());
     }
     os.put(_distributionKey);
     return os;

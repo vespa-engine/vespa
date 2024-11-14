@@ -38,6 +38,11 @@ public:
     const vespalib::GenericHeader &getDatHeader() const {
         return _datFile.header();
     }
+    /*
+     * Size of .dat, .idx and .weight files (but not .udat file) on disk.
+     * Includes direct io padding and disk space calculator padding.
+     */
+    uint64_t size_on_disk() const;
 protected:
     FileWithHeader _datFile;
 private:

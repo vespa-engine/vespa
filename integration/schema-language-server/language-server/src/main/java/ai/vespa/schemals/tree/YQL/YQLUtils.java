@@ -6,6 +6,7 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.parser.yqlplus.Node;
 import ai.vespa.schemals.parser.yqlplus.TokenSource;
+import ai.vespa.schemals.tree.CSTUtils;
 
 public class YQLUtils {
 
@@ -38,6 +39,18 @@ public class YQLUtils {
         );
 
         for (Node child : node) {
+            printTree(logger, child, indent + 1);
+        }
+    }
+
+    public static void printTree(ClientLogger logger, ai.vespa.schemals.tree.Node node) {
+        printTree(logger, node, 0);
+    }
+
+    public static void printTree(ClientLogger logger, ai.vespa.schemals.tree.Node node, int indent) {
+        String padding = new String(new char[indent]).replace("\0", CSTUtils.SPACER);
+        logger.info(padding +  node.toString());
+        for (ai.vespa.schemals.tree.Node child : node) {
             printTree(logger, child, indent + 1);
         }
     }

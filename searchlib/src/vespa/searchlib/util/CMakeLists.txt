@@ -2,6 +2,7 @@
 vespa_add_library(searchlib_util OBJECT
     SOURCES
     bufferwriter.cpp
+    cache_disk_io_stats.cpp
     comprbuffer.cpp
     comprfile.cpp
     data_buffer_writer.cpp

@@ -2,19 +2,17 @@
 package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.Exclusivity;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
@@ -30,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
+import com.yahoo.vespa.hosted.provision.testutils.SecretStoreMock;
 import org.junit.Ignore;
 import org.junit.Test;
 
@@ -273,7 +272,8 @@ public class SpareCapacityMaintainerTest {
                                                 new MemoryMetricsDb(clock),
                                                 new OrchestratorMock(),
                                                 true,
-                                                1);
+                                                1,
+                                                new SecretStoreMock());
             deployer = new MockDeployer(nodeRepository);
             maintainer = new SpareCapacityMaintainer(deployer, nodeRepository, metric, Duration.ofDays(1), maxIterations);
         }

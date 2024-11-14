@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Properties of the cloud service where the zone is deployed.
@@ -17,15 +18,17 @@ public class Cloud {
     private final boolean allowEnclave;
     private final boolean requireAccessControl;
     private final CloudAccount account;
+    private final Optional<String> snapshotPrivateKeySecretName;
 
     private Cloud(CloudName name, boolean dynamicProvisioning, boolean allowHostSharing, boolean allowEnclave,
-                  boolean requireAccessControl, CloudAccount account) {
+                  boolean requireAccessControl, CloudAccount account, Optional<String> snapshotPrivateKeySecretName) {
         this.name = Objects.requireNonNull(name);
         this.dynamicProvisioning = dynamicProvisioning;
         this.allowHostSharing = allowHostSharing;
         this.allowEnclave = allowEnclave;
         this.requireAccessControl = requireAccessControl;
         this.account = Objects.requireNonNull(account);
+        this.snapshotPrivateKeySecretName = Objects.requireNonNull(snapshotPrivateKeySecretName);
         if (allowEnclave && account.isUnspecified()) {
             throw new IllegalArgumentException("Account must be non-empty in '" + name + "'");
         }
@@ -62,6 +65,11 @@ public class Cloud {
         return !name.equals(CloudName.AZURE);
     }
 
+    /** Name of private key secret used for sealing snapshot encryption keys */
+    public Optional<String> snapshotPrivateKeySecretName() {
+        return snapshotPrivateKeySecretName;
+    }
+
     /** For testing purposes only */
     public static Cloud defaultCloud() {
         return new Builder().build();
@@ -79,6 +87,7 @@ public class Cloud {
         private boolean allowEnclave = false;
         private boolean requireAccessControl = false;
         private CloudAccount account = CloudAccount.empty;
+        private Optional<String> snapshotPrivateKeySecretName = Optional.empty();
 
         public Builder() {}
 
@@ -112,8 +121,14 @@ public class Cloud {
             return this;
         }
 
+        public Builder snapshotPrivateKeySecretName(String snapshotPrivateKeySecretName) {
+            this.snapshotPrivateKeySecretName = Optional.of(snapshotPrivateKeySecretName)
+                                                        .filter(s -> !s.isEmpty());
+            return this;
+        }
+
         public Cloud build() {
-            return new Cloud(name, dynamicProvisioning, allowHostSharing, allowEnclave, requireAccessControl, account);
+            return new Cloud(name, dynamicProvisioning, allowHostSharing, allowEnclave, requireAccessControl, account, snapshotPrivateKeySecretName);
         }
 
     }

@@ -1,12 +1,14 @@
 package com.yahoo.vespa.hosted.provision.backup;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.hosted.provision.node.ClusterId;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -47,7 +49,7 @@ class SnapshotTest {
     private static Snapshot snapshot(Snapshot.State state) {
         return new Snapshot(Snapshot.generateId(), HostName.of("h1.example.com"), state,
                             Snapshot.History.of(state, Instant.ofEpochMilli(123)), new ClusterId(ApplicationId.defaultId(), ClusterSpec.Id.from("c1")),
-                            0);
+                            0, CloudAccount.empty, Optional.empty());
     }
 
 }

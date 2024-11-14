@@ -134,6 +134,7 @@ private:
     DiversityParams                    _diversityParams;
     bool                               _valid;
     FirstPhaseRankLookup*              _first_phase_rank_lookup;
+    const search::IDocumentMetaStore & _metaStore;
 
     std::unique_ptr<AttributeOperationTask>
     createTask(std::string_view attribute, std::string_view operation) const;
@@ -190,6 +191,7 @@ public:
     extract_attribute_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
                                        uint32_t active_docids, uint32_t docid_limit);
     FirstPhaseRankLookup* get_first_phase_rank_lookup() const noexcept { return _first_phase_rank_lookup; }
+    const search::IDocumentMetaStore & metaStore() const noexcept { return _metaStore; }
 };
 
 }

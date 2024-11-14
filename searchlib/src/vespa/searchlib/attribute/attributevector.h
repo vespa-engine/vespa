@@ -430,12 +430,14 @@ private:
     bool                                  _isUpdateableInMemoryOnly;
     vespalib::steady_time                 _nextStatUpdateTime;
     std::shared_ptr<vespalib::alloc::MemoryAllocator> _memory_allocator;
+    std::atomic<uint64_t>                 _size_on_disk;
 
     /// Clean up [0, firstUsed>
     virtual void reclaim_memory(generation_t oldest_used_gen);
     virtual void before_inc_generation(generation_t current_gen);
     virtual void onUpdateStat() = 0;
     friend class AttributeTest;
+
 public:
     ////// Locking strategy interface.
     /**
@@ -497,6 +499,10 @@ public:
     bool commitIfChangeVectorTooLarge();
 
     void drain_hold(uint64_t hold_limit);
+
+    void set_size_on_disk(uint64_t value) noexcept {_size_on_disk.store(value, std::memory_order_release); }
+    void set_size_on_disk(const IAttributeSaveTarget& target);
+    uint64_t size_on_disk() const noexcept { return _size_on_disk.load(std::memory_order_acquire); }
 };
 
 }

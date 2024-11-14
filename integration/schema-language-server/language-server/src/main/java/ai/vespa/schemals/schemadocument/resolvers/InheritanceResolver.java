@@ -20,6 +20,7 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.COMMA;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -89,7 +90,7 @@ public class InheritanceResolver {
     }
 
     private static void resolveStructInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
-        if (inheritanceNode.getPreviousSibling() != null && inheritanceNode.getPreviousSibling().isASTInstance(COMMA.class)) {
+        if (inheritanceNode.getPreviousSibling() != null && inheritanceNode.getPreviousSibling().getASTClass() == COMMA.class) {
             diagnostics.add(new SchemaDiagnostic.Builder()
                              .setRange(inheritanceNode.getRange())
                              .setMessage("Inheriting multiple structs is not supported.")
@@ -97,7 +98,7 @@ public class InheritanceResolver {
                              .build());
             return;
         }
-        SchemaNode myStructDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
+        Node myStructDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
 
         if (myStructDefinitionNode == null) {
             return;
@@ -149,22 +150,23 @@ public class InheritanceResolver {
     }
 
     private static void resolveRankProfileInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
-        SchemaNode myRankProfileDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
+        Node myRankProfileDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
         String inheritedIdentifier = inheritanceNode.getText();
 
         if (myRankProfileDefinitionNode == null) return;
         if (!myRankProfileDefinitionNode.hasSymbol() || myRankProfileDefinitionNode.getSymbol().getStatus() != SymbolStatus.DEFINITION) return;
 
-        if (inheritedIdentifier.equals("default")) {
-            inheritanceNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
-            return;
-        }
-
-
         List<Symbol> parentSymbols = context.schemaIndex().findSymbols(inheritanceNode.getSymbol());
 
-        if (parentSymbols.isEmpty()) {
-            // Handled in resolve symbol ref
+        if (parentSymbols.isEmpty() || 
+            // prevents rank-profile default inherits default from causing cyclic inheritance
+            (inheritedIdentifier.equals("default") && myRankProfileDefinitionNode.getSymbol().getShortIdentifier().equals("default"))
+        ) {
+            if (inheritedIdentifier.equals("default")) {
+                inheritanceNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
+                return;
+            }
+            // Otherwise handled in resolve symbol ref
             return;
         }
 
@@ -254,7 +256,7 @@ public class InheritanceResolver {
     }
 
     private static void resolveDocumentSummaryInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
-        SchemaNode myDocSummaryDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
+        Node myDocSummaryDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
 
         if (myDocSummaryDefinitionNode == null) {
             return;

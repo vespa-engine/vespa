@@ -17,6 +17,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 
 /**
@@ -39,7 +40,7 @@ public class SchemaRename {
 
     public static WorkspaceEdit rename(EventPositionContext context, String newName) {
 
-        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
         if (node == null || !node.hasSymbol()) {
             context.logger.error("Could not find symbol");
             return null;

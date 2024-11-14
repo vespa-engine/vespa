@@ -197,12 +197,28 @@ MemoryIndex::createBlueprint(const IRequestContext & requestContext,
     return visitor.getResult();
 }
 
+std::unique_ptr<queryeval::Blueprint>
+MemoryIndex::createBlueprint(const queryeval::IRequestContext & requestContext,
+                             const queryeval::FieldSpecList &fields,
+                             const query::Node &term)
+{
+    return queryeval::Searchable::createBlueprint(requestContext, fields, term);
+}
+
 vespalib::MemoryUsage
 MemoryIndex::getMemoryUsage() const
 {
     vespalib::MemoryUsage usage;
     usage.merge(_fieldIndexes->getMemoryUsage());
     return usage;
+}
+
+SearchableStats
+MemoryIndex::get_stats() const
+{
+    auto stats = _fieldIndexes->get_stats(_schema);
+    stats.docsInMemory(getNumDocs());
+    return stats;
 }
 
 uint64_t
@@ -219,13 +235,13 @@ MemoryIndex::pruneRemovedFields(const Schema &schema)
         if (_schema == *newSchema) {
             return;
         }
-        _prunedSchema.reset(newSchema.release());
+        _prunedSchema = std::move(newSchema);
     } else {
         auto newSchema = Schema::intersect(*_prunedSchema, schema);
         if (*_prunedSchema == *newSchema) {
             return;
         }
-        _prunedSchema.reset(newSchema.release());
+        _prunedSchema = std::move(newSchema);
     }
     SchemaUtil::IndexIterator i(_schema);
     for (; i.isValid(); ++i) {

@@ -26,23 +26,23 @@ public class ScriptManager {
     private static final FastLogger log = FastLogger.getLogger(ScriptManager.class.getName());
     private static final String FULL = "[all]";
     private final Map<String, Map<String, DocumentScript>> documentFieldScripts;
-    private final DocumentTypeManager docTypeMgr;
+    private final DocumentTypeManager documentTypeManager;
 
-    public ScriptManager(DocumentTypeManager docTypeMgr, IlscriptsConfig config, Linguistics linguistics,
+    public ScriptManager(DocumentTypeManager documentTypeManager, IlscriptsConfig config, Linguistics linguistics,
                          Map<String, Embedder> embedders) {
-        this.docTypeMgr = docTypeMgr;
-        documentFieldScripts = createScriptsMap(docTypeMgr, config, linguistics, embedders);
+        this.documentTypeManager = documentTypeManager;
+        documentFieldScripts = createScriptsMap(documentTypeManager, config, linguistics, embedders);
     }
 
     private Map<String, DocumentScript> getScripts(DocumentType inputType) {
         Map<String, DocumentScript> scripts = documentFieldScripts.get(inputType.getName());
         if (scripts != null) return scripts;
         for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
-            if (inputType.inherits(docTypeMgr.getDocumentType(entry.getKey())))
+            if (inputType.inherits(documentTypeManager.getDocumentType(entry.getKey())))
                 return entry.getValue();
         }
         for (Map.Entry<String, Map<String, DocumentScript>> entry : documentFieldScripts.entrySet()) {
-            if (docTypeMgr.getDocumentType(entry.getKey()).inherits(inputType))
+            if (documentTypeManager.getDocumentType(entry.getKey()).inherits(inputType))
                 return entry.getValue();
         }
         return null;
@@ -104,7 +104,7 @@ public class ScriptManager {
                     DocumentScript documentScript = new DocumentScript(ilscript.doctype(), inputFieldNames, script);
                     fieldScripts.put(fieldName, documentScript);
                 } else {
-                    log.log(Level.FINE, "Non single(" + inputFieldNames.size() +"" +
+                    log.log(Level.FINE, "Non single(" + inputFieldNames.size() +
                                         ") inputs = " + inputFieldNames + ". Script = " + statement);
                 }
             }

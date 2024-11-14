@@ -10,6 +10,7 @@ import com.yahoo.concurrent.UncheckedTimeoutException;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationLockException;
 import com.yahoo.config.provision.ApplicationTransaction;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
@@ -90,17 +91,19 @@ public class CuratorDb {
     private final CuratorCounter provisionIndexCounter;
     private final CuratorCounter loadBalancerPoolHead;
     private final CuratorCounter loadBalancerPoolTail;
+    private final CloudAccount systemAccount;
 
     /** Simple cache for deserialized node objects, based on their ZK node version. */
     private final Cache<Path, Pair<Integer, Node>> cachedNodes = CacheBuilder.newBuilder().recordStats().build();
 
-    public CuratorDb(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache) {
-        this.nodeSerializer = new NodeSerializer(flavors);
+    public CuratorDb(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache, CloudAccount systemAccount) {
+        this.nodeSerializer = new NodeSerializer(flavors, systemAccount);
         this.db = new CachingCurator(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter"));
         this.loadBalancerPoolHead = new CuratorCounter(curator, root.append("loadBalancerPoolHead"));
         this.loadBalancerPoolTail = new CuratorCounter(curator, root.append("loadBalancerPoolTail"));
+        this.systemAccount = systemAccount;
         initZK();
     }
 
@@ -448,7 +451,7 @@ public class CuratorDb {
     }
 
     public List<Snapshot> readSnapshots(String hostname) {
-        return read(snapshotsPath.append(hostname), (data) -> SnapshotSerializer.listFromSlime(SlimeUtils.jsonToSlime(data))).orElseGet(List::of);
+        return read(snapshotsPath.append(hostname), (data) -> SnapshotSerializer.listFromSlime(SlimeUtils.jsonToSlime(data), systemAccount)).orElseGet(List::of);
     }
 
     public List<Snapshot> readSnapshots() {

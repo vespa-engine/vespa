@@ -9,20 +9,6 @@ namespace vespalib {
 
 using re2::StringPiece;
 
-// All RE2 instances use a Quiet option to prevent the library from
-// complaining to stderr if pattern compilation fails.
-
-Regex::Regex(std::unique_ptr<const Impl> impl)
-    : _impl(std::move(impl))
-{}
-
-Regex::Regex() : _impl() {}
-
-Regex::Regex(Regex&&) noexcept = default;
-Regex& Regex::operator=(Regex&&) noexcept = default;
-
-Regex::~Regex() = default;
-
 class Regex::Impl {
     RE2 _regex;
 public:
@@ -60,6 +46,20 @@ public:
         return {std::move(min_prefix), std::move(max_prefix)};
     }
 };
+
+// All RE2 instances use a Quiet option to prevent the library from
+// complaining to stderr if pattern compilation fails.
+
+Regex::Regex(std::unique_ptr<const Impl> impl)
+    : _impl(std::move(impl))
+{}
+
+Regex::Regex() : _impl() {}
+
+Regex::Regex(Regex&&) noexcept = default;
+Regex& Regex::operator=(Regex&&) noexcept = default;
+
+Regex::~Regex() = default;
 
 Regex Regex::from_pattern(std::string_view pattern, uint32_t opt_mask) {
     assert(pattern.size() <= INT32_MAX); // StringPiece limitation

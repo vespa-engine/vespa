@@ -23,7 +23,7 @@ HitList & HitList::addHit(const FS4Hit & hit, uint32_t maxHits)
     } else {
         if (hit.cmp(_fs4hits.front()) < 0) {
             std::pop_heap(_fs4hits.begin(), _fs4hits.end());
-            _fs4hits.push_back(hit);
+            _fs4hits.back() = hit;
             std::push_heap(_fs4hits.begin(), _fs4hits.end());
         }
     }
@@ -40,7 +40,7 @@ HitList & HitList::addHit(const VdsHit & hit, uint32_t maxHits)
     } else {
         if (hit.cmp(_vdshits.front()) < 0) {
             std::pop_heap(_vdshits.begin(), _vdshits.end());
-            _vdshits.push_back(hit);
+            _vdshits.back() = hit;
             std::push_heap(_vdshits.begin(), _vdshits.end());
         }
     }

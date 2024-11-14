@@ -28,6 +28,7 @@ class AttributeFileWriter : public IAttributeFileWriter
     const attribute::AttributeHeader &_header;
     std::string _desc;
     uint64_t _fileBitSize;
+    uint64_t _size_on_disk;
 
     void addTags(vespalib::GenericHeader &header);
 
@@ -43,6 +44,7 @@ public:
     std::unique_ptr<BufferWriter> allocBufferWriter() override;
     bool open(const std::string &fileName);
     void close();
+    uint64_t size_on_disk() const noexcept { return _size_on_disk; }
 };
 
 

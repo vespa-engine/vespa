@@ -1,11 +1,11 @@
-// Copyright Yahoo. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.backup.Snapshot;
-import com.yahoo.vespa.hosted.provision.backup.SnapshotId;
+import com.yahoo.config.provision.SnapshotId;
 import com.yahoo.vespa.hosted.provision.persistence.SnapshotSerializer;
 
 import java.time.Instant;

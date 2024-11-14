@@ -12,6 +12,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.FieldIndex.IndexingType;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.CSTUtils;
+import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 
@@ -25,7 +26,8 @@ public class FieldArgument extends SymbolArgument {
         NUMERIC_ARRAY,
         STRING,
         STRING_ARRAY,
-        POSITION
+        POSITION,
+        PREDICATE
     };
 
     public static final EnumSet<FieldType> AnyFieldType = EnumSet.allOf(FieldType.class);
@@ -114,7 +116,7 @@ public class FieldArgument extends SymbolArgument {
             RankNode featureNode = node.getChildren().get(0);
             Optional<SchemaNode> firstProperty = featureNode.getProperty();
             if (firstProperty.isPresent()) {
-                SchemaNode parentNode = firstProperty.get().getParent();
+                Node parentNode = firstProperty.get().getParent();
                 Optional<Symbol> scope = CSTUtils.findScope(parentNode);
 
                 for (int i = 0; i < parentNode.size(); i += 2) {

@@ -461,11 +461,12 @@ Expression forEachExp() :
 
 Expression getFieldExp() :
 {
+    boolean hasPrefix = false;
     String val;
 }
 {
-    ( <GET_FIELD> val = identifier() )
-    { return new GetFieldExpression(val); }
+    ( <GET_FIELD> ( "$" { hasPrefix = true; } )? val = identifier() )
+    { return new GetFieldExpression( (hasPrefix ? "$" : "") + val); }
 }
 
 Expression getVarExp() :

@@ -100,7 +100,7 @@ FusionRunnerTest::FusionRunnerTest()
       _fusion_spec(),
       _fileHeaderContext(),
       _service(1),
-      _ops(_fileHeaderContext,TuneFileIndexManager(), 0, _service.write())
+      _ops(_fileHeaderContext,TuneFileIndexManager(), {}, 0, _service.write())
 { }
 
 FusionRunnerTest::~FusionRunnerTest() = default;
@@ -226,7 +226,7 @@ void
 FusionRunnerTest::checkResults(uint32_t fusion_id, const uint32_t *ids, size_t size)
 {
     FakeRequestContext requestContext;
-    DiskIndex disk_index(getFusionIndexName(fusion_id));
+    DiskIndex disk_index(getFusionIndexName(fusion_id), {});
     ASSERT_TRUE(disk_index.setup(TuneFileSearch()));
     uint32_t fieldId = 0;
 

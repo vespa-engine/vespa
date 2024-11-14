@@ -23,6 +23,8 @@ namespace search {
     namespace transactionlog { class SyncProxy; }
 }
 
+namespace search::diskindex { class IPostingListCache; }
+
 namespace searchcorespi {
     class IFlushTarget;
     namespace index { struct IThreadingService; }
@@ -93,7 +95,8 @@ public:
             const std::atomic<vespalib::steady_time> & now_ref,
             std::mutex &configMutex,
             const std::string &baseDir,
-            const vespalib::HwInfo &hwInfo);
+            const vespalib::HwInfo &hwInfo,
+            std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache);
     ~DocumentSubDBCollection();
 
     void setBucketStateCalculator(const IBucketStateCalculatorSP &calc, OnDone onDone);

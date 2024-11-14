@@ -14,6 +14,18 @@ public final class ToIntegerExpression extends Expression {
     }
 
     @Override
+    public DataType setInputType(DataType input, VerificationContext context) {
+        super.setInputType(input, context);
+        return DataType.INT;
+    }
+
+    @Override
+    public DataType setOutputType(DataType output, VerificationContext context) {
+        super.setOutputType(DataType.INT, output, null, context);
+        return getInputType(context);
+    }
+
+    @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(createdOutputType());
     }

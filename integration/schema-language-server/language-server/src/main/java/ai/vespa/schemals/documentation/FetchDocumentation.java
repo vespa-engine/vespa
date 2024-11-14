@@ -74,13 +74,14 @@ public class FetchDocumentation {
         targetPath = targetPath.resolve("services");
 
         for (ServicesLocation locationEntry : SERVICES_PATHS) {
-            Map<String, String> markdownContent = new ServicesDocumentationFetcher(locationEntry.relativeUrl()).getMarkdownContent();
+            Map<String, String> markdownContent = new ServicesDocumentationFetcher(locationEntry.relativeUrl(), locationEntry.relativeSavePath()).getMarkdownContent();
             Path writePath = targetPath.resolve(locationEntry.relativeSavePath());
             Files.createDirectories(writePath); // mkdir -p
 
             for (var entry : markdownContent.entrySet()) {
                 if (entry.getKey().contains("/")) continue;
-                Files.write(writePath.resolve(entry.getKey() + ".md"), entry.getValue().getBytes(), StandardOpenOption.CREATE);
+                String fileName = entry.getKey().toLowerCase();
+                Files.write(writePath.resolve(fileName + ".md"), entry.getValue().getBytes(), StandardOpenOption.CREATE);
             }
         }
     }

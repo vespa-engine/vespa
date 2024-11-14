@@ -11,7 +11,7 @@ import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.tree.CSTUtils;
-import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node;
 
 /**
  * Responsible for LSP textDocument/definition requests.
@@ -20,7 +20,7 @@ public class SchemaDefinition {
     public static List<Location> getDefinition(EventPositionContext context) {
         ArrayList<Location> ret = new ArrayList<Location>();
 
-        SchemaNode node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
+        Node node = CSTUtils.getSymbolAtPosition(context.document.getRootNode(), context.position);
 
         if (node == null || !node.hasSymbol()) {
             return ret;

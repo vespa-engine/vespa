@@ -457,8 +457,6 @@ randReadField(FakeWordSet &wordSet,
 {
     const char *dynamicKStr = dynamicK ? "true" : "false";
 
-    PostingListCounts counts;
-
     LOG(info, "enter randReadField, namepref=%s, dynamicK=%s, decode_interleaved_features=%s",
         namepref.c_str(), dynamicKStr, bool_to_str(decode_interleaved_features));
 
@@ -501,21 +499,18 @@ randReadField(FakeWordSet &wordSet,
                                  offsetAndCounts);
                 assert(wordNum == checkWordNum);
 
-                counts = offsetAndCounts._counts;
-                search::index::PostingListHandle handle;
+                DictionaryLookupResult lookup_result;
+                lookup_result.wordNum = wordNum;
+                lookup_result.counts = offsetAndCounts._counts;
+                lookup_result.bitOffset = offsetAndCounts._offset;
 
-                handle._bitLength = counts._bitLength;
-                handle._file = postingFile;
-                handle._bitOffset = offsetAndCounts._offset;
-
-                postingFile->readPostingList(handle);
+                auto handle = postingFile->read_posting_list(lookup_result);
 
                 TermFieldMatchData mdfield1;
                 TermFieldMatchDataArray tfmda;
                 tfmda.add(&mdfield1);
 
-                std::unique_ptr<SearchIterator>
-                    sb(handle.createIterator(counts, tfmda));
+                auto sb(postingFile->createIterator(lookup_result, handle, tfmda));
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
                 word->validate(sb.get(), tfmda, true, decode_interleaved_features, verbose);

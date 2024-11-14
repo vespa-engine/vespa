@@ -145,9 +145,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.findSchemaDefinition", async (fileName) => {
-        if (schemaClient === null) {
-            return null;
-        }
+        if (schemaClient === null) { return null; }
         try {
             const result = await schemaClient.sendRequest("workspace/executeCommand", {
                 command: "FIND_SCHEMA_DEFINITION",
@@ -162,9 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // This command exists to setup schema language server workspace in case the first opened document is an xml file (which not handled by schema language server)
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.setupWorkspace", async (fileURI) => {
-        if (schemaClient === null) {
-            return;
-        }
+        if (schemaClient === null) { return; }
         try {
             schemaClient.sendRequest("workspace/executeCommand", {
                 command: "SETUP_WORKSPACE",
@@ -176,9 +172,7 @@ export function activate(context: vscode.ExtensionContext) {
     }));
 
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.hasSetupWorkspace", async () =>  {
-        if (schemaClient === null) {
-            return false;
-        }
+        if (schemaClient === null) { return false; }
 
         try {
             const result: boolean = await schemaClient.sendRequest("workspace/executeCommand", {
@@ -190,6 +184,31 @@ export function activate(context: vscode.ExtensionContext) {
             logger.error("Error when sending command: ", err);
         }
         return false;
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.createSchemaFile", async (schemaName) => {
+        if (schemaClient === null) { return false; }
+        try {
+            schemaClient.sendRequest("workspace/executeCommand", {
+                command: "CREATE_SCHEMA_FILE",
+                arguments: [schemaName]
+            });
+        } catch (err) {
+            logger.error("Error when sending command: " + err);
+        }
+    }));
+
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.getDefinedSchemas", async () => {
+        if (schemaClient === null) { return false; }
+        try {
+            const result = await schemaClient.sendRequest("workspace/executeCommand", {
+                command: "GET_DEFINED_SCHEMAS",
+                arguments: []
+            });
+            return result;
+        } catch (err) {
+            logger.error("Error when sending command: " + err);
+        }
     }));
 
     logger.info("Vespa language client activated");

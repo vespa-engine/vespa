@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import ai.vespa.secret.model.Key;
+import ai.vespa.secret.model.Secret;
+import ai.vespa.secret.model.SecretVersionId;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
@@ -30,6 +33,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.security.KeyUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.applicationmodel.InfrastructureApplication;
@@ -44,6 +48,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
+import com.yahoo.vespa.hosted.provision.backup.SnapshotStoreMock;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -53,6 +58,7 @@ import com.yahoo.vespa.hosted.provision.testutils.InMemoryProvisionLogger;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider;
 import com.yahoo.vespa.hosted.provision.testutils.OrchestratorMock;
+import com.yahoo.vespa.hosted.provision.testutils.SecretStoreMock;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.duper.ConfigServerHostApplication;
@@ -62,6 +68,8 @@ import com.yahoo.vespa.service.duper.InfraApplication;
 import com.yahoo.vespa.service.duper.ProxyHostApplication;
 import com.yahoo.vespa.service.duper.TenantHostApplication;
 
+import java.security.KeyPair;
+import java.security.interfaces.XECPrivateKey;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -95,6 +103,8 @@ public class ProvisioningTester {
     private final NodeRepositoryProvisioner provisioner;
     private final InMemoryProvisionLogger provisionLogger;
     private final LoadBalancerServiceMock loadBalancerService;
+    private final SnapshotStoreMock snapshotStore;
+    private final SecretStoreMock secretStore;
 
     private int nextHost = 0;
     private int nextIP = 0;
@@ -110,12 +120,14 @@ public class ProvisioningTester {
                                LoadBalancerServiceMock loadBalancerService,
                                FlagSource flagSource,
                                int spareCount,
-                               ManualClock clock) {
+                               ManualClock clock,
+                               SecretStoreMock secretStore) {
         this.curator = curator;
         this.nodeFlavors = nodeFlavors;
         this.clock = clock;
         this.hostProvisioner = hostProvisioner;
-        ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner, resourcesCalculator);
+        this.snapshotStore = new SnapshotStoreMock();
+        ProvisionServiceProvider provisionServiceProvider = new MockProvisionServiceProvider(loadBalancerService, hostProvisioner, resourcesCalculator, snapshotStore);
         this.nodeRepository = new NodeRepository(nodeFlavors,
                                                  provisionServiceProvider,
                                                  curator,
@@ -129,10 +141,12 @@ public class ProvisioningTester {
                                                  new MemoryMetricsDb(clock),
                                                  orchestrator,
                                                  true,
-                                                 spareCount);
+                                                 spareCount,
+                                                 secretStore);
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, new MockMetric());
         this.provisionLogger = new InMemoryProvisionLogger();
         this.loadBalancerService = loadBalancerService;
+        this.secretStore = secretStore;
     }
 
     public static FlavorsConfig createConfig() {
@@ -155,9 +169,11 @@ public class ProvisioningTester {
     public NodeRepository nodeRepository() { return nodeRepository; }
     public Orchestrator orchestrator() { return nodeRepository.orchestrator(); }
     public ManualClock clock() { return clock; }
+    public SecretStoreMock secretStore() { return secretStore; }
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public HostProvisioner hostProvisioner() { return hostProvisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
+    public SnapshotStoreMock snapshotStore() { return snapshotStore; }
     public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }
     public InMemoryFlagSource flagSource() { return (InMemoryFlagSource) nodeRepository.flagSource(); }
     public InMemoryProvisionLogger provisionLogger() { return provisionLogger; }
@@ -661,6 +677,7 @@ public class ProvisioningTester {
         private int spareCount = 0;
         private ManualClock clock = new ManualClock();
         private DockerImage defaultImage = DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa");
+        private SecretStoreMock secretStore;
 
         public Builder curator(Curator curator) {
             this.curator = curator;
@@ -742,23 +759,41 @@ public class ProvisioningTester {
             return this;
         }
 
+        public Builder secretStore(SecretStoreMock secretStore) {
+            this.secretStore = secretStore;
+            return this;
+        }
+
         private FlagSource defaultFlagSource() {
             return new InMemoryFlagSource();
+        }
+
+        private SecretStoreMock defaultSecretStore() {
+            SecretStoreMock secretStore = new SecretStoreMock();
+            KeyPair keyPair = KeyUtils.generateX25519KeyPair();
+            secretStore.add(new Secret(Key.fromString("snapshot/sealingPrivateKey"),
+                                       KeyUtils.toBase64EncodedX25519PrivateKey((XECPrivateKey) keyPair.getPrivate())
+                                               .getBytes(),
+                                       SecretVersionId.of("1")));
+            return secretStore;
         }
 
         public ProvisioningTester build() {
             return new ProvisioningTester(Optional.ofNullable(curator).orElseGet(MockCurator::new),
                                           new NodeFlavors(Optional.ofNullable(flavorsConfig).orElseGet(ProvisioningTester::createConfig)),
                                           resourcesCalculator,
-                                          Optional.ofNullable(zone).orElseGet(Zone::defaultZone),
+                                          Optional.ofNullable(zone).orElseGet(() -> new Zone(Cloud.builder().snapshotPrivateKeySecretName("snapshot/sealingPrivateKey").build(),
+                                                                                             SystemName.defaultSystem(), Environment.defaultEnvironment(),
+                                                                                             RegionName.defaultName())),
                                           Optional.ofNullable(nameResolver).orElseGet(() -> new MockNameResolver().mockAnyLookup()),
                                           defaultImage,
                                           Optional.ofNullable(orchestrator).orElseGet(() -> new OrchestratorMock(clock)),
                                           hostProvisioner,
                                           new LoadBalancerServiceMock(),
-                                          Optional.ofNullable(flagSource).orElse(defaultFlagSource()),
+                                          Optional.ofNullable(flagSource).orElseGet(this::defaultFlagSource),
                                           spareCount,
-                                          clock);
+                                          clock,
+                                          Optional.ofNullable(secretStore).orElseGet(this::defaultSecretStore));
         }
 
         private static FlavorsConfig asConfig(List<Flavor> flavors) {

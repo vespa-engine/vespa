@@ -1,15 +1,17 @@
 package ai.vespa.schemals.lsp.yqlplus.codelens;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.CodeLens;
-import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.lsp.common.command.CommandRegistry;
 import ai.vespa.schemals.lsp.common.command.CommandRegistry.CommandType;
 import ai.vespa.schemals.schemadocument.DocumentManager.DocumentType;
+import ai.vespa.schemals.tree.Node;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class YQLPlusCodeLens {
 
@@ -20,10 +22,21 @@ public class YQLPlusCodeLens {
             return List.of();
         }
 
-        return List.of(new CodeLens(
-            new Range(new Position(1, 1), new Position(1, 4)),
-            CommandRegistry.createLSPCommand(CommandType.RUN_VESPA_QUERY, List.of()),
-            null
-        ));
+        YQLNode rootNode = context.document.getRootYQLNode();
+
+        List<CodeLens> ret = new ArrayList<>();
+
+        for (Node child : rootNode) {
+            if (child.size() == 0) continue;
+            String command = child.getText();
+            Range range = child.get(0).getRange();
+            ret.add(new CodeLens(
+                range,
+                CommandRegistry.createLSPCommand(CommandType.RUN_VESPA_QUERY, List.of(command, context.document.getFileURI())),
+                null
+            ));
+        }
+
+        return ret;
     }
 }

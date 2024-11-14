@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.yolean.trace;
 
-import com.yahoo.yolean.concurrent.ThreadRobustList;
-
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -14,21 +14,17 @@ import java.util.NoSuchElementException;
  * may contain a payload of any type, the trace tree can be used to exchange any thread-safe state between producers and
  * consumers in different threads, whether or not the shape of the trace tree is relevant to the particular
  * information.</p>
- * <p>This class uses a {@link ThreadRobustList} for its children. That list allows multiple threads to inspect the
- * hierarchy of a <code>TraceNode</code> tree while there are other threads concurrently modifying it, without incurring the
- * cost of memory synchronization. The only caveat being that for each <code>TraceNode</code> there can never be more than
- * exactly one writer thread. If multiple threads need to mutate a single <code>TraceNode</code>, then the writer threads
- * need to synchronize their access on the <code>TraceNode</code>.</p>
+ * <p>This class uses a synchronized list for its children.  To avoid contention, each <code>TraceNode</code> should only
+ * have one writer thread.
  *
  * @author Steinar Knutsen
  * @author bratseth
- * @since 5.1.15
  */
 public class TraceNode {
 
     private final Object payload;
     private final long timestamp;
-    private ThreadRobustList<TraceNode> children;
+    private List<TraceNode> children;
     private TraceNode parent;
 
     /**
@@ -55,8 +51,10 @@ public class TraceNode {
             throw new IllegalArgumentException("Can not add " + child + " to " + this + "; it is not a root.");
         }
         child.parent = this;
-        if (children == null) {
-            children = new ThreadRobustList<>();
+        synchronized(this) {
+            if (children == null) {
+                children = Collections.synchronizedList(new ArrayList<>());
+            }
         }
         children.add(child);
         return this;

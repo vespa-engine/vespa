@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import static com.yahoo.config.provision.NodeResources.Architecture;
+import static com.yahoo.config.provision.NodeResources.Architecture.x86_64;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -17,11 +18,18 @@ import static java.util.Objects.requireNonNull;
  */
 public class CapacityPolicies {
 
-    public record Tuning(Architecture adminClusterArchitecture,
-                         double logserverMemoryGiB)
-    {
+    public record Tuning(Architecture adminClusterArchitecture, double logserverMemoryGiB, double clusterControllerMemoryGiB) {
+
+        public Tuning(Architecture adminClusterArchitecture, double logserverMemoryGiB) {
+            this(adminClusterArchitecture, logserverMemoryGiB, 0.0);
+        }
+
         double logserverMem(double v) {
             double override = logserverMemoryGiB();
+            return (override > 0) ? override : v;
+        }
+        double clusterControllerMem(double v) {
+            double override = clusterControllerMemoryGiB();
             return (override > 0) ? override : v;
         }
     }
@@ -32,7 +40,7 @@ public class CapacityPolicies {
     private final Tuning tuning;
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Architecture adminClusterArchitecture) {
-        this(zone, exclusivity, applicationId, new Tuning(adminClusterArchitecture, 0.0));
+        this(zone, exclusivity, applicationId, new Tuning(adminClusterArchitecture, 0.0, 0.0));
     }
 
     public CapacityPolicies(Zone zone, Exclusivity exclusivity, ApplicationId applicationId, Tuning tuning) {
@@ -139,11 +147,10 @@ public class CapacityPolicies {
     private NodeResources clusterControllerResources(ClusterSpec clusterSpec, Architecture architecture) {
         // 1.32 fits floor(8/1.32) = 6 cluster controllers on each 8Gb host, and each will have
         // 1.32-(0.7+0.6)*(1.32/8) = 1.1 Gb real memory given current taxes.
-        if (architecture == Architecture.x86_64)
-            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.32, 10, 0.3)));
-        else
-            // arm64 nodes need more memory
-            return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, 1.50, 10, 0.3)));
+        var memory = architecture == x86_64
+                ? tuning.clusterControllerMem(1.32)
+                : tuning.clusterControllerMem(1.50);
+        return versioned(clusterSpec, Map.of(new Version(0), new NodeResources(0.25, memory, 10, 0.3)));
     }
 
     private NodeResources logserverResources(Architecture architecture) {

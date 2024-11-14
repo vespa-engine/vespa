@@ -37,6 +37,7 @@
 #include <vespa/searchcore/proton/common/scheduled_forward_executor.h>
 #include <vespa/searchlib/attribute/interlock.h>
 #include <vespa/searchlib/common/packets.h>
+#include <vespa/searchlib/diskindex/posting_list_cache.h>
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
@@ -63,6 +64,8 @@ LOG_SETUP(".proton.server.proton");
 using CpuCategory = vespalib::CpuUsage::Category;
 
 using document::DocumentTypeRepo;
+using search::diskindex::IPostingListCache;
+using search::diskindex::PostingListCache;
 using search::engine::MonitorReply;
 using search::transactionlog::DomainStats;
 using vespa::config::search::core::ProtonConfig;
@@ -157,6 +160,15 @@ void ensureWritableDir(const std::string &dirName) {
     probe.write("probe\n", 6, 0);
     probe.close();
     probe.unlink();
+}
+
+std::shared_ptr<IPostingListCache>
+make_posting_list_cache(const ProtonConfig& cfg)
+{
+    if (cfg.search.io == ProtonConfig::Search::Io::MMAP || cfg.index.cache.postinglist.maxbytes == 0) {
+        return {};
+    }
+    return std::make_shared<PostingListCache>(cfg.index.cache.postinglist.maxbytes);
 }
 
 } // namespace <unnamed>
@@ -268,7 +280,9 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _has_shut_down_config_and_state_components(false),
       _documentDBReferenceRegistry(std::make_shared<DocumentDBReferenceRegistry>()),
       _nodeUpLock(),
-      _nodeUp()
+      _nodeUp(),
+      _posting_list_cache(),
+      _last_posting_list_cache_stats()
 { }
 
 BootstrapConfig::SP
@@ -298,6 +312,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     setBucketCheckSumType(protonConfig);
     setFS4Compression(protonConfig);
     _diskMemUsageSampler = std::make_unique<DiskMemUsageSampler>(protonConfig.basedir, hwInfo);
+    _posting_list_cache = make_posting_list_cache(protonConfig);
 
     _tls = std::make_unique<TLS>(_configUri.createWithNewId(protonConfig.tlsconfigid), _fileHeaderContext);
     _metricsEngine->addMetricsHook(*_metricsHook);
@@ -652,7 +667,8 @@ Proton::addDocumentDB(const document::DocumentType &docType,
                                   _attribute_interlock,
                                   std::move(config_store),
                                   initializeThreads,
-                                  bootstrapConfig->getHwInfo());
+                                  bootstrapConfig->getHwInfo(),
+                                  _posting_list_cache);
     try {
         ret->start();
     } catch (vespalib::Exception &e) {
@@ -855,7 +871,11 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
             metrics.field_writer.update(_shared_service->field_writer().getStats());
         }
     }
-
+    if (_posting_list_cache) {
+        auto stats = _posting_list_cache->get_stats();
+        _metricsEngine->root().index.cache.postinglist.update_metrics(stats, _last_posting_list_cache_stats);
+        _last_posting_list_cache_stats = stats;
+    }
 }
 
 void

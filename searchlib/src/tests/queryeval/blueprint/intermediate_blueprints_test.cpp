@@ -794,6 +794,12 @@ struct make {
     static make NEAR(uint32_t window) { return make(std::make_unique<NearBlueprint>(window)); }
     static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window)); }
     static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
+    static make WEAKAND_ADJUST(double limit) {
+        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy(-limit, 1.0, 0), true));
+    }
+    static make WEAKAND_DROP(double limit) {
+        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy(1.0, -limit, 0), true));
+    }
 };
 
 TEST("AND AND collapsing") {
@@ -878,6 +884,25 @@ TEST("test single child optimization") {
     //-------------------------------------------------------------------------
     Blueprint::UP expect = make::SB(selector).source(2).leaf(42);
     //-------------------------------------------------------------------------
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("test WeakAnd drop stop words") {
+    Blueprint::UP top = make::WEAKAND_DROP(10).leafs({2,20,1,15,3,25});
+    Blueprint::UP expect = make::WEAKAND(100).leafs({2,1,3});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("test WeakAnd drop stop words with only stop words") {
+    Blueprint::UP top = make::WEAKAND_DROP(10).leafs({20,15,25});
+    Blueprint::UP expect(MyLeafSpec(15).create());
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST("test WeakAnd adjusting initial threshold based on stop words") {
+    // added OR to satisfy requirement that optimize must modify blueprint
+    Blueprint::UP top = make::OR().add(make::WEAKAND_ADJUST(10).leafs({2,20,1,15,3,25}));
+    Blueprint::UP expect = make::WEAKAND(100).leafs({2,20,1,15,3,25});
     optimize_and_compare(std::move(top), std::move(expect));
 }
 
@@ -1143,7 +1168,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     search::diskindex::TestDiskIndex index;
     std::filesystem::create_directory(std::filesystem::path("index"));
     index.buildSchema();
-    index.openIndex("index/1", false, true, false, false, false);
+    index.openIndex("index/1", false, true, false, false, false, false);
     FieldSpecBaseList fields;
     fields.add(FieldSpecBase(1, 11));
     fields.add(FieldSpecBase(2, 22));

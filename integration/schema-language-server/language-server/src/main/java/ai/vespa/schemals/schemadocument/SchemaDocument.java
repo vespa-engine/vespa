@@ -39,7 +39,7 @@ import ai.vespa.schemals.schemadocument.resolvers.RankExpression.argument.FieldA
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
-import ai.vespa.schemals.tree.SchemaNode.LanguageType;
+import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 
 /**
@@ -75,7 +75,8 @@ public class SchemaDocument implements DocumentManager {
         this.scheduler = scheduler;
     }
     
-    public ParseContext getParseContext(String content) {
+    @Override
+    public ParseContext getParseContext() {
         ParseContext context = new ParseContext(content, this.logger, this.fileURI, this.schemaIndex, this.scheduler);
         context.useDocumentIdentifiers();
         return context;
@@ -100,7 +101,7 @@ public class SchemaDocument implements DocumentManager {
         schemaIndex.clearDocument(fileURI);
 
         logger.info("Parsing: " + fileURI);
-        ParseContext context = getParseContext(content);
+        ParseContext context = getParseContext();
         var parsingResult = parseContent(context);
 
         parsingResult.diagnostics().addAll(verifyFileName());
@@ -271,12 +272,12 @@ public class SchemaDocument implements DocumentManager {
             SchemaRankExpressionParser.embedCST(context, node, diagnostics);
         }
 
-        for (Identifier identifier : context.identifiers()) {
+        for (Identifier<SchemaNode> identifier : context.identifiers()) {
             diagnostics.addAll(identifier.identify(node));
         }
 
-        for (int i = 0; i < node.size(); ++i) {
-            traverseCST(node.get(i), context, diagnostics);
+        for (ai.vespa.schemals.tree.Node child : node) {
+            traverseCST(child.getSchemaNode(), context, diagnostics);
         }
     }
 

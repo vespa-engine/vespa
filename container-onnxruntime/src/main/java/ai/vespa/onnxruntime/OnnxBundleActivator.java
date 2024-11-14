@@ -26,7 +26,7 @@ public class OnnxBundleActivator implements BundleActivator {
     public void start(BundleContext ctx) {
         String skipAll = OnnxBundleActivator.class.getSimpleName() + SKIP_SUFFIX;
         if (SKIP_VALUE.equals(System.getProperty(skipAll))) {
-            log.info("skip loading of native libraries");
+            log.fine("skip loading of native libraries");
             return;
         }
         System.setProperty(ONNX_PREFIX + PATH_SUFFIX, "/opt/vespa-deps/lib64");
