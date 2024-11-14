@@ -226,8 +226,12 @@ public class NodeRepository extends AbstractComponent implements HealthCheckerPr
                 .bindTo(flagSource)
                 .with(INSTANCE_ID, applicationId.serializedForm())
                 .value();
+        double clusterControllerMemory = PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY
+                .bindTo(flagSource)
+                .with(INSTANCE_ID, applicationId.serializedForm())
+                .value();
         var tuning = new CapacityPolicies.Tuning(Architecture.valueOf(adminClusterNodeArchitecture),
-                                                 logserverMemory);
+                                                 logserverMemory, clusterControllerMemory);
         return new CapacityPolicies(zone, exclusivity(), applicationId, tuning);
     }
 

@@ -342,6 +342,12 @@ public class PermanentFlags {
             "Takes effect on allocation from node repository",
             INSTANCE_ID);
 
+    public static final UnboundDoubleFlag CLUSTER_CONTROLLER_NODE_MEMORY = defineDoubleFlag(
+            "cluster-controller-node-memory", 0.0,
+            "Amount of memory (in GiB) to allocate for cluster-controller nodes",
+            "Takes effect on allocation from node repository",
+            INSTANCE_ID);
+
     public static final UnboundListFlag<String> CLOUD_ACCOUNTS = defineListFlag(
             "cloud-accounts", List.of(), String.class,
             "A list of cloud accounts (e.g. AWS account or GCP project IDs) that are valid for the given tenant",
