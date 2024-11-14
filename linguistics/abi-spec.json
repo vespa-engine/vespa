@@ -403,6 +403,61 @@
       "public static final com.yahoo.language.process.Embedder throwsOnUse"
     ]
   },
+  "com.yahoo.language.process.Generator$Context" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.util.Map)",
+      "public com.yahoo.language.process.Generator$Context copy()",
+      "public com.yahoo.language.Language getLanguage()",
+      "public com.yahoo.language.process.Generator$Context setLanguage(com.yahoo.language.Language)",
+      "public java.lang.String getDestination()",
+      "public com.yahoo.language.process.Generator$Context setDestination(java.lang.String)",
+      "public java.lang.String getGeneratorId()",
+      "public com.yahoo.language.process.Generator$Context setGeneratorId(java.lang.String)",
+      "public void putCachedValue(java.lang.Object, java.lang.Object)",
+      "public java.lang.Object getCachedValue(java.lang.Object)",
+      "public java.lang.Object computeCachedValueIfAbsent(java.lang.Object, java.util.function.Supplier)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.Generator$FailingGenerator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.language.process.Generator"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(java.lang.String)",
+      "public java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context, com.yahoo.document.DataType)"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.language.process.Generator" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public java.util.Map asMap()",
+      "public java.util.Map asMap(java.lang.String)",
+      "public abstract java.lang.String generate(java.lang.String, com.yahoo.language.process.Generator$Context, com.yahoo.document.DataType)"
+    ],
+    "fields" : [
+      "public static final java.lang.String defaultGeneratorId",
+      "public static final com.yahoo.language.process.Generator throwsOnUse"
+    ]
+  },
   "com.yahoo.language.process.GramSplitter$Gram" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

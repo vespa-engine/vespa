@@ -83,7 +83,7 @@ public class SchemaParser {
      */
     @SuppressWarnings("deprecation")
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), Generator.throwsOnUse.asMap());
     }
 
     /**
