@@ -22,7 +22,10 @@ private:
     bool                             _fetchPostingsDone;
     index::PostingListHandle         _postingHandle;
     std::shared_ptr<BitVector>       _bitVector;
+    mutable std::mutex               _mutex;
+    mutable std::shared_ptr<BitVector> _late_bitvector;
 
+    const BitVector* get_bitvector() const;
 public:
     /**
      * Create a new blueprint.
