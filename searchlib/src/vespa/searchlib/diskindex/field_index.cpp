@@ -145,10 +145,12 @@ FieldIndex::open(const std::string& field_dir, const TuneFileSearch& tune_file_s
     }
 
     bDict = std::make_shared<BitVectorDictionary>();
-    // Always memory map bitvectors for now
-    auto force_mmap = tune_file_search._read;
-    force_mmap.setWantMemoryMap();
-    if (!bDict->open(field_dir, force_mmap, BitVectorKeyScope::PERFIELD_WORDS)) {
+    // memory map bitvectors unless bitvector cache is enabled
+    auto maybe_force_mmap = tune_file_search._read;
+    if (!_bitvector_cache_enabled) {
+        maybe_force_mmap.setWantMemoryMap();
+    }
+    if (!bDict->open(field_dir, maybe_force_mmap, BitVectorKeyScope::PERFIELD_WORDS)) {
         LOG(warning, "Could not open bit vector dictionary in '%s'", field_dir.c_str());
         return false;
     }
@@ -242,7 +244,7 @@ FieldIndex::read(const IPostingListCache::BitVectorKey& key, IPostingListCache::
 std::shared_ptr<BitVector>
 FieldIndex::read_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
 {
-    if (!_bit_vector_dict) {
+    if (!_bit_vector_dict || !lookup_result.valid()) {
         return {};
     }
     if (_bit_vector_dict->get_memory_mapped() || !_bitvector_cache_enabled) {
