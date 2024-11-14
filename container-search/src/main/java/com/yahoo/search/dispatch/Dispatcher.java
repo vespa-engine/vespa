@@ -51,10 +51,14 @@ public class Dispatcher extends AbstractComponent {
 
     public static final String DISPATCH = "dispatch";
     private static final String TOP_K_PROBABILITY = "topKProbability";
+    private static final String DOCSUM_RETRY_LIMIT = "docsumRetryLimit";
+    private static final String DOCSUM_RETRY_FACTOR  = "docsumRetryFactor";
     private static final int MAX_GROUP_SELECTION_ATTEMPTS = 3;
 
     /** If set will control computation of how many hits will be fetched from each partition.*/
     public static final CompoundName topKProbability = CompoundName.from(DISPATCH + "." + TOP_K_PROBABILITY);
+    public static final CompoundName docsumRetryLimit = CompoundName.from(DISPATCH + "." + DOCSUM_RETRY_LIMIT);
+    public static final CompoundName docsumRetryFactor  = CompoundName.from(DISPATCH + "." + DOCSUM_RETRY_FACTOR);
 
     private final InvokerFactoryFactory invokerFactories;
     private final DispatchConfig dispatchConfig;
@@ -101,6 +105,8 @@ public class Dispatcher extends AbstractComponent {
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(TOP_K_PROBABILITY, FieldType.doubleType));
+        argumentType.addField(new FieldDescription(DOCSUM_RETRY_LIMIT, FieldType.integerType));
+        argumentType.addField(new FieldDescription(DOCSUM_RETRY_FACTOR, FieldType.doubleType));
         argumentType.freeze();
     }
 
