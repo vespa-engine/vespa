@@ -114,6 +114,57 @@ public class YQLDocument implements DocumentManager {
         return new YQLPartParseResult(List.of(), Optional.of(retNode), charsRead);
     }
 
+    private static int findContinuationLength(String inputString) {
+
+        // BUG: This never check if the curly bracket are in a string or something else
+
+        char[] charArr = inputString.toCharArray();
+        int continuationStart = -1;
+        for (int i = 0; i < charArr.length; i++) {
+            if (!Character.isWhitespace(charArr[i])) {
+                if (charArr[i] != '{') {
+                    return 0;
+                }
+
+                continuationStart = i;
+                break;
+
+            }
+        }
+        if (continuationStart == -1) return 0;
+
+
+        int level = 0;
+        int continuationEnd = charArr.length;
+        for (int i = continuationStart; i < charArr.length; i++) {
+            if (charArr[i] == '{') level++;
+            if (charArr[i] == '}') level--;
+
+            if (level == 0) {
+                continuationEnd = i + 1;
+                break;
+            };
+        }
+
+        return continuationEnd;
+    }
+
+    private static ParseResult parseContinuation(String inputString, Position offset) {
+
+        YQLPlusParser parser = new YQLPlusParser(inputString);
+
+        try {
+            parser.map_expression();
+        } catch (ParseException exception) {
+            // Ignored, marked as dirty node
+        }
+
+        var node = parser.rootNode();
+        YQLNode retNode = new YQLNode(node, offset);
+
+        return new ParseResult(List.of(), Optional.of(retNode));
+    }
+
     private static YQLPartParseResult parseYQLQuery(ParseContext context, String queryString, Position offset) {
         YQLNode ret = new YQLNode(new Range(offset, offset));
 
@@ -139,14 +190,35 @@ public class YQLDocument implements DocumentManager {
                 Position groupOffset = CSTUtils.addPositions(groupOffsetWithoutPipe, new Position(0, 1)); // Add pipe char
 
                 ret.addChild(new YQLNode(new Range(groupOffsetWithoutPipe, groupOffset), "|"));
-    
-                YQLPartParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), groupOffset);
-                if (groupingResult.CST.isPresent()) {
-                    ret.addChild(groupingResult.CST.get());
+                charsRead++;
+
+                // Look for continuation
+                int continuationLength = findContinuationLength(groupingString);
+                if (continuationLength != 0) {
+                    String continuationString = groupingString.substring(0, continuationLength);
+                    ParseResult continuationResults = parseContinuation(continuationString, groupOffset);
+
+                    diagnostics.addAll(continuationResults.diagnostics());
+                    if (continuationResults.CST().isPresent()) {
+                        ret.addChild(continuationResults.CST().get());
+                    }
+
+                    charsRead += continuationLength;
+                    groupingString = groupingString.substring(continuationLength);
+                    Position continuationPosition = StringUtils.getStringPosition(continuationString);
+                    groupOffset = CSTUtils.addPositions(groupOffset, continuationPosition);
+                }
+
+                if (groupingString.length() > 0 && groupingString.strip().length() > 0) {
+                    YQLPartParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), groupOffset);
+                    if (groupingResult.CST.isPresent()) {
+                        ret.addChild(groupingResult.CST.get());
+                    }
+        
+                    diagnostics.addAll(groupingResult.diagnostics());
+                    charsRead += groupingResult.charsRead(); // Add one for the pipe symbol
                 }
     
-                diagnostics.addAll(groupingResult.diagnostics());
-                charsRead += 1 + groupingResult.charsRead(); // Add one for the pipe symbol
             }
 
         }
@@ -190,7 +262,7 @@ public class YQLDocument implements DocumentManager {
             charsRead = newOffset;
         }
 
-        YQLUtils.printTree(context.logger(), ret);
+        // YQLUtils.printTree(context.logger(), ret);
 
         return new ParseResult(diagnostics, Optional.of(ret));
     }

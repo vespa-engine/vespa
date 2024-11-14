@@ -44,6 +44,68 @@ public class YQLParserTest {
 
     @TestFactory
     Stream<DynamicTest> generateGoodTests() {
+        String[] groupingQueries = new String[] {
+
+            // From docs: /en/grouping.html
+            "all( group(customer) each(output(sum(price))) )",
+            "all(group(customer) max(2) precision(12) order(-count()) each(output(sum(price))))",
+            "all(group(customer) each(max(3) each(output(summary()))))",
+            "all(group(a) max(5) each(output(count())))",
+            "all(group(a) max(5) each(output(count()) max(7) each(output(summary()))))",
+            "all(all(group(a) max(3) each(output(count()) max(5) each(output(summary())))) all(group(b) max(3) each(output(count()) max(5) each(output(summary())))))",
+            "all(group(a) max(5) each(output(count()) max(7) each(output(summary()))))",
+            "all(group(a) each(output(count()) each(output(summary()))))",
+            "all(group(customer) each(group(time.date(date)) each(output(sum(price)))))",
+            "all(group(customer) each(max(1) output(sum(price)) each(output(summary()))) each(group(time.date(date)) each(max(10) output(sum(price)) each(output(summary())))))",
+            "all(group(price) each(each(output(summary()))))",
+            "all(group(price/1000) each(each(output(summary()))))",
+            "all(group(fixedwidth(price,1000)) each(each(output(summary()))))",
+            "all(group(predefined(price, bucket(0,1000), bucket(1000,2000), bucket(2000,5000), bucket(5000,inf))) each(each(output(summary()))))",
+            "all(group(predefined(price, bucket[0,1000>, bucket[1000,2000>, bucket[2000,5000>, bucket[5000,inf>)) each(each(output(summary()))))",
+            "all(group(predefined(customer, bucket(-inf,\"Jones\"), bucket(\"Jones\", inf))) each(each(output(summary()))))",
+            "all(group(predefined(customer, bucket<-inf,\"Jones\">, bucket[\"Jones\"], bucket<\"Jones\", inf>)) each(each(output(summary()))))",
+            "all(group(predefined(tax, bucket[0.0,0.2>, bucket[0.2,0.5>, bucket[0.5,inf>)) each(each(output(summary()))))",
+            // "{ 'continuations':['BGAAABEBCA'] }all(output(count()))",
+            // "{ 'continuations':['BGAAABEBCA', 'BGAAABEBEBC'] }all(output(count()))",
+            "all(group(mod(div(date,mul(60,60)),24)) each(output(sum(price))))",
+            "all(group(customer) each(output(sum(mul(price,sub(1,tax))))))",
+            "all( group(a) each(output(count())) )",
+            "all( all(group(a) each(output(count()))) all(group(b) each(output(count()))) )",
+            "all( max(1000) all(group(a) each(output(count()))) )",
+            "all( group(a % 5) each(output(count())) )",
+            "all( group(a + b * c) each(output(count())) )",
+            "all( group(a % 5) order(sum(b)) each(output(count())) )",
+            "all( group(a + b * c) order(max(d)) each(output(count())) )",
+            "all( group(a) order(avg(relevance()) * count()) each(output(count())) )",
+            "all(group(a) order(max(attr) * count()) each(output(count())) )",
+            "all( group(a) each(max(1) each(output(summary()))) )",
+            "all( group(a) each(max(1) output(count(), sum(b)) each(output(summary()))) )",
+            "all(group(a) each(max(1) output(count(), sum(b), xor(md5(cat(a, b, c), 64))) each(output(summary()))))",
+            "all( group(a) max(5) each(max(69) output(count()) each(output(summary()))) )",
+            "all( group(a) max(5) each(output(count()) all(group(b) max(5) each(max(69) output(count()) each(output(summary()))))) )",
+            "all( group(a) max(5) each(output(count()) all(group(b) max(5) each(output(count()) all(group(c) max(5) each(max(69) output(count()) each(output(summary()))))) )))",
+            "all( group(a) max(5) each(output(count()) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(c) max(5) each(max(69) output(count()) each(output(summary()))))) )))",
+            "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(c) max(5) each(max(69) output(count()) each(output(summary()))))) )))",
+            "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary(complexsummary)))) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary(simplesummary)))) all(group(c) max(5) each(max(69) output(count()) each(output(summary(fastsummary)))))) )))",
+            "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))) )))",
+            "all( group(time.year(a)) each(output(count())) )",
+            "all( group(time.year(a)) each(output(count()) all(group(time.monthofyear(a)) each(output(count())))) )",
+            "all( group(time.year(a)) each(output(count()) all(group(time.monthofyear(a)) each(output(count()) all(group(time.dayofmonth(a)) each(output(count()) all(group(time.hourofday(a)) each(output(count())))))))) )",
+            "all( group(predefined((now() - a) / (60 * 60 * 24), bucket(0,1), bucket(1,2), bucket(3,7), bucket(8,31))) each(output(count()) all(max(2) each(output(summary()))) all(group((now() - a) / (60 * 60 * 24)) each(output(count()) all(max(2) each(output(summary())))))) )",
+            "all( group(a) output(count()) )",
+            "all( group(strlen(name)) output(count()) )",
+            "all( group(a) output(count()) each(output(sum(b))) )",
+            "all( group(a) max(3) output(count()) each(output(sum(b))) )",
+            "all( group(a) max(10) output(count()) each(group(b) output(count())) )",
+            "all(group(1) each(output(avg(rating))))",
+            "all( group(predefined(rating, bucket[-inf, 0>, bucket[0, inf>)) each(output(count())) )",
+            "all( group(predefined(rating, bucket[-inf, 0>, bucket[0, inf>)) order(max(rating)) max(1) each( max(100) each(output(summary(name_only)))) )",
+        };
+
+        for (int i = 0; i < groupingQueries.length; i++) {
+            groupingQueries[i] = "select * from sources * where true | " + groupingQueries[i];
+        }
+
         String[] queries = new String[] {
             "select * from music",
             "select * from sources * where range(title, 0.0, 500.0)", // /container-search/src/test/java/com/yahoo/select/SelectTestCase.java
@@ -111,11 +173,19 @@ public class YQLParserTest {
             "select * from music where title contains \"madonna\" timeout 70",
             "select * from music where userInput(@userinput)",
             "select * from music where text contains ({distance: 5}near(\"a\", \"b\")) and text contains ({distance:2}near(\"c\", \"d\"))",
+            "select * from music where ({bounds:\"rightOpen\"}range(year, 2000, 2018))",
+            "select * from music where text contains ({distance: 5}near(\"a\", \"b\"))",
+            "select * from music where myUrlField.hostname contains uri(\"vespa.ai\")",
+            "select * from music where myUrlField.hostname contains ({startAnchor: true}uri(\"vespa.ai\"))",
+            "select * from music where title contains ({weight:200}\"heads\")",
+            "select * from sources * where ({stem: false}(foo contains \"a\" and bar contains \"b\")) or foo contains {stem: false}\"c\"",
+            "select * from sources * where foo contains @animal and foo contains phrase(@animal, @syntaxExample, @animal)",
+            "select * from sources * where sddocname contains 'purchase' | all(group(customer) each(output(sum(price))))",
         };
 
+        Stream<String> queryStream = Stream.concat(Arrays.stream(queries), Arrays.stream(groupingQueries));
 
-        return Arrays.stream(queries)
-                     .map(query -> DynamicTest.dynamicTest(query, () -> checkQueryParses(0, query)));
+        return queryStream.map(query -> DynamicTest.dynamicTest(query, () -> checkQueryParses(0, query)));
     }
 
     private record TestWithError(int expectedErrors, String query) {}
@@ -124,6 +194,7 @@ public class YQLParserTest {
     Stream<DynamicTest> InvalidQuery() throws Exception {
         var queries = new TestWithError[] {
             new TestWithError(1, "seletc *"),
+            // new TestWithError(1, "select * from sources * where true | all(group(a) order(attr * count()) each(output(count())) )"),
         };
 
         return Arrays.stream(queries)
