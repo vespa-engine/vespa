@@ -13,18 +13,21 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.antlr.v4.runtime.Vocabulary;
 import org.junit.jupiter.api.DynamicTest;
 
 import ai.vespa.schemals.parser.SchemaParserLexer;
 import ai.vespa.schemals.parser.indexinglanguage.IndexingParserLexer;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParserLexer;
 import ai.vespa.schemals.parser.grouping.GroupingParserLexer;
+import ai.vespa.schemals.parser.yqlplus.YQLPlusLexer;
 
 import com.vladsch.flexmark.parser.Parser;
 import com.yahoo.schema.parser.SchemaParserConstants;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingParserConstants;
 import com.yahoo.searchlib.rankingexpression.parser.RankingExpressionParserConstants;
 import com.yahoo.search.grouping.request.parser.GroupingParserConstants;
+import com.yahoo.search.yql.yqlplusLexer;
 
 
 /**
@@ -52,6 +55,11 @@ public class ParserTokensTest {
         "EXPONENT",
         "HEX",
         "OCTAL"
+    );
+
+    public static Set<String> antlrSpecialTokens = Set.of(
+        "COMMENT",
+        "WS"
     );
 
     private List<String> findMissingTokens(Field[] javaCCFields, Set<String> congoCCTokenStrings) {
@@ -123,5 +131,37 @@ public class ParserTokensTest {
 
         List<String> missing = findMissingTokens(javaCCFields, congoCCTokenStrings);
         assertEquals(0, missing.size(), "Missing ranking expression tokens in CongoCC: " + String.join(", ", missing));
+    }
+
+    @Test
+    public void testYQLPlusTokenList() {
+        Vocabulary vocabulary = yqlplusLexer.VOCABULARY;
+
+        Set<String> antlrTokens = new HashSet<>();
+
+        for (int i = 0; i < vocabulary.getMaxTokenType(); i++) {
+            String symbolicName = vocabulary.getSymbolicName(i);
+            if (symbolicName != null) {
+                antlrTokens.add(symbolicName);
+            }
+        }
+
+        Set<String> congoCCTokenStrings = new HashSet<>();
+
+        for (var tokenType : YQLPlusLexer.getRegularTokens()) {
+            congoCCTokenStrings.add(tokenType.toString());
+        }
+
+        List<String> missing = new ArrayList<>();
+        for (var token : antlrTokens) {
+            if (antlrSpecialTokens.contains(token)) continue;
+
+            if (!congoCCTokenStrings.contains(token)) {
+                missing.add(token);
+            }
+        }
+
+        assertEquals(0, missing.size(), "Missing yqlplus tokens in CongoCC: " + String.join(", ", missing));
+
     }
 }

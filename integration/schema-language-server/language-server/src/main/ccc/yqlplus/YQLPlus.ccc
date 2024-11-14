@@ -12,6 +12,13 @@ INJECT YQLPlusParser:
     protected Deque<Boolean> expression_stack = new ArrayDeque<>();
 }
 
+INJECT YQLPlusLexer:
+{
+    public static EnumSet<TokenType> getRegularTokens() {
+        return EnumSet.copyOf(regularTokens);
+    }
+}
+
 // --------------------------------------------------------------------------------
 //
 // Token declarations.
