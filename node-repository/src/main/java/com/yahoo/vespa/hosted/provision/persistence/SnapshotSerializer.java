@@ -50,16 +50,13 @@ public class SnapshotSerializer {
             Instant at = Instant.ofEpochMilli(inspector.field(AT_FIELD).asLong());
             history.put(type, new Snapshot.History.Event(type, at));
         });
-        // TODO(mpolden): Require field after 2024-12-01
-        CloudAccount cloudAccount = SlimeUtils.optionalString(object.field(CLOUD_ACCOUNT_FIELD))
-                                              .map(CloudAccount::from)
-                                              .orElse(systemAccount);
         Optional<SnapshotKey> encryptionKey = Optional.empty();
         if (object.field(SEALED_SHARED_KEY_FIELD).valid()) {
             SealedSharedKey sharedKey = SealedSharedKey.fromTokenString(object.field(SEALED_SHARED_KEY_FIELD).asString());
             SecretVersionId sealingKeyVersion = SecretVersionId.of(object.field(SEALING_KEY_VERSION).asString());
             encryptionKey = Optional.of(new SnapshotKey(sharedKey, sealingKeyVersion));
         }
+        CloudAccount cloudAccount = CloudAccount.from(object.field(CLOUD_ACCOUNT_FIELD).asString());
         return new Snapshot(SnapshotId.of(object.field(ID_FIELD).asString()),
                             HostName.of(object.field(HOSTNAME_FIELD).asString()),
                             stateFromSlime(object.field(STATE_FIELD).asString()),
