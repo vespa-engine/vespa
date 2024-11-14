@@ -11,6 +11,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Generates a value using the configured Generator component
+ *
+ * @author glebashnik
+ */
 public class GenerateExpression extends Expression {
     private final Linguistics linguistics;
     private final Generator generator;
@@ -29,7 +34,7 @@ public class GenerateExpression extends Expression {
             String generatorId, 
             List<String> generatorArguments
     ) {
-        super(null);
+        super(DataType.STRING);
         this.linguistics = linguistics;
         this.generatorId = generatorId;
         this.generatorArguments = List.copyOf(generatorArguments);
@@ -56,25 +61,13 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
-    public DataType setInputType(DataType type, VerificationContext context) {
-        // TODO: Not sure if this implementation of the methods is correct, needs careful review.
-        super.setInputType(type, context);
-        
-        if (type == DataType.STRING)
-             throw new IllegalArgumentException("generate requires a string input type, but got " + type);
-        
-        return DataType.STRING;
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        return super.setInputType(inputType, DataType.STRING, context);
     }
 
     @Override
-    public DataType setOutputType(DataType type, VerificationContext context) {
-        // TODO: Not sure if this implementation of the methods is correct, needs careful review.
-        super.setOutputType(type, type, context);
-        
-        if (type != DataType.STRING)
-            throw new IllegalArgumentException("generate requires a string input type, but got " + type);
-        
-        return DataType.STRING;
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        return super.setOutputType(DataType.STRING, outputType, context);
     }
 
     @Override
@@ -86,10 +79,6 @@ public class GenerateExpression extends Expression {
     @Override
     protected void doVerify(VerificationContext context) {
         targetType = getOutputType(context);
-        
-        if (!validTarget(targetType))
-            throw new VerificationException(this, "The generate target field must be a String");
-    
         context.setCurrentType(createdOutputType());
     }
 
