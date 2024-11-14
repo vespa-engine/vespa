@@ -8,6 +8,7 @@
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.disktermblueprint");
@@ -51,7 +52,9 @@ DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
       _useBitVector(useBitVector),
       _fetchPostingsDone(false),
       _postingHandle(),
-      _bitVector()
+      _bitVector(),
+      _mutex(),
+      _late_bitvector()
 {
     setEstimate(HitEstimate(_lookupRes.counts._numDocs,
                             _lookupRes.counts._numDocs == 0));
@@ -62,8 +65,10 @@ DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
     (void) execInfo;
     if (!_fetchPostingsDone) {
-        _bitVector = _field_index.read_bit_vector(_bitvector_lookup_result);
-        if (!_useBitVector || !_bitVector) {
+        if (_useBitVector && _bitvector_lookup_result.valid()) {
+            _bitVector = _field_index.read_bit_vector(_bitvector_lookup_result);
+        }
+        if (!_bitVector) {
             _postingHandle = _field_index.read_posting_list(_lookupRes);
         }
     }
@@ -77,13 +82,27 @@ DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
     return {rel_est, disk_index_cost(rel_est), disk_index_strict_cost(rel_est)};
 }
 
+const BitVector *
+DiskTermBlueprint::get_bitvector() const
+{
+    if (_bitVector) {
+        return _bitVector.get();
+    }
+    std::lock_guard guard(_mutex);
+    if (!_late_bitvector) {
+        _late_bitvector = _field_index.read_bit_vector(_bitvector_lookup_result);
+        assert(_late_bitvector);
+    }
+    return _late_bitvector.get();
+}
+
 SearchIterator::UP
 DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
 {
-    if (_bitVector && (_useBitVector || tfmda[0]->isNotNeeded())) {
+    if (_bitvector_lookup_result.valid() && (_useBitVector || tfmda[0]->isNotNeeded())) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_field_index.get_field_id()).c_str(), _lookupRes.wordNum, _lookupRes.counts._numDocs);
-        return BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict());
+        return BitVectorIterator::create(get_bitvector(), *tfmda[0], strict());
     }
     auto search(_field_index.create_iterator(_lookupRes, _postingHandle, tfmda));
     if (_useBitVector) {
@@ -101,8 +120,8 @@ DiskTermBlueprint::createFilterSearch(FilterConstraint) const
 {
     auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
     auto & tfmda = wrapper->tfmda();
-    if (_bitVector) {
-        wrapper->wrap(BitVectorIterator::create(_bitVector.get(), *tfmda[0], strict()));
+    if (_bitvector_lookup_result.valid()) {
+        wrapper->wrap(BitVectorIterator::create(get_bitvector(), *tfmda[0], strict()));
     } else {
         wrapper->wrap(_field_index.create_iterator(_lookupRes, _postingHandle, tfmda));
     }
