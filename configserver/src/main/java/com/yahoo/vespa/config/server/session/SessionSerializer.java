@@ -43,6 +43,7 @@ public class SessionSerializer {
         zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
         zooKeeperClient.writeAthenzDomain(athenzDomain);
         zooKeeperClient.writeQuota(quota);
+        zooKeeperClient.writeTenantVaults(tenantVaults);
         zooKeeperClient.writeTenantSecretStores(tenantSecretStores);
         zooKeeperClient.writeOperatorCertificates(operatorCertificates);
         zooKeeperClient.writeCloudAccount(cloudAccount);
