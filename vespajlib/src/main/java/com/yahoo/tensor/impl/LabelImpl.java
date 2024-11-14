@@ -43,7 +43,7 @@ class LabelImpl implements Label {
     }
 
     @Override
-    public boolean isEqualsTo(Label label) {
+    public boolean isEqualTo(Label label) {
         return asNumeric() == label.asNumeric();
     }
 
@@ -52,7 +52,7 @@ class LabelImpl implements Label {
         if (this == object) return true;
         if (object == null || getClass() != object.getClass()) return false;
         var label = (LabelImpl) object;
-        return isEqualsTo(label);
+        return isEqualTo(label);
     }
     
     @Override

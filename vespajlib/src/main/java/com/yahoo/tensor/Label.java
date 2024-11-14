@@ -12,5 +12,5 @@ package com.yahoo.tensor;
 public interface Label {
     long asNumeric();
     String asString();
-    boolean isEqualsTo(Label label);
+    boolean isEqualTo(Label label);
 }

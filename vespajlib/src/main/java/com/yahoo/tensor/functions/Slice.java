@@ -120,7 +120,7 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
                             TensorAddress address, TensorType type) {
         for (int i = 0; i < subspaceAddress.size(); i++) {
             Label label = address.objectLabel(type.indexOfDimension(subspaceAddress.dimension(i)).get());
-            if (!label.isEqualsTo(subspaceAddress.objectLabel(i)))
+            if (!label.isEqualTo(subspaceAddress.objectLabel(i)))
                 return false;
         }
         return true;

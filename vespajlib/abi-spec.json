@@ -941,8 +941,9 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract long toNumeric()",
-      "public abstract java.lang.String toString()"
+      "public abstract long asNumeric()",
+      "public abstract java.lang.String asString()",
+      "public abstract boolean isEqualTo(com.yahoo.tensor.Label)"
     ],
     "fields" : [ ]
   },
@@ -1109,6 +1110,7 @@
       "public com.yahoo.tensor.Label objectLabel(java.lang.String)",
       "public long numericLabel(java.lang.String)",
       "public java.lang.String label(java.lang.String)",
+      "public com.yahoo.tensor.Label objectLabel(int)",
       "public java.lang.String label(int)",
       "public int size()",
       "public com.yahoo.tensor.TensorAddress asAddress(com.yahoo.tensor.TensorType)",

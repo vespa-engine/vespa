@@ -82,7 +82,7 @@ public class PartialAddress {
         Label[] labels = new Label[this.labels.length];
         for (int i = 0; i < type.dimensions().size(); i++) {
             Label label = objectLabel(type.dimensions().get(i).name());
-            if (label.isEqualsTo(LabelCache.INVALID_INDEX_LABEL))
+            if (label.isEqualTo(LabelCache.INVALID_INDEX_LABEL))
                 throw new IllegalArgumentException(type + " dimension names does not match " + this);
             labels[i] = label;
         }
