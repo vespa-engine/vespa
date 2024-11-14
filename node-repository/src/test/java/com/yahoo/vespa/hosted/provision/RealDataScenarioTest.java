@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.model.builder.xml.XmlHelper;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
@@ -16,7 +17,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -119,7 +119,7 @@ public class RealDataScenarioTest {
                                             .flatMap(Collection::stream)
                                             .toList();
         NestedTransaction transaction = new NestedTransaction();
-        tester.provisioner().activate(hostSpecs, new ActivationContext(0), new ApplicationTransaction(new ApplicationMutex(app, () -> {}), transaction));
+        tester.provisioner().activate(hostSpecs, new ActivationContext(0, false), new ApplicationTransaction(new ApplicationMutex(app, () -> {}), transaction));
         transaction.commit();
     }
 

@@ -70,7 +70,13 @@ public class Preparer {
         log.log(Level.FINE, () -> "Preparing " + cluster.type().name() + " " + cluster.id() + " with requested resources " +
                                   requested.resources().orElse(NodeResources.unspecified()));
 
-        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
+        try {
+            loadBalancerProvisioner.ifPresent(provisioner -> provisioner.prepare(application, cluster, requested));
+        } catch (RuntimeException e) {
+            if (!requested.canFail())
+                log.warning("Failed to prepare load balancers for " + application + " " + cluster + ": " + Exceptions.toMessageString(e) + " (Ignoring because bootstrap deployment)");
+            throw e;
+        }
 
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes,
         // and we can return nodes previously allocated.

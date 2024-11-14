@@ -107,7 +107,7 @@ public class InfraDeployerImpl implements InfraDeployer {
                     removeApplication(application.getApplicationId());
                 } else {
                     NestedTransaction nestedTransaction = new NestedTransaction();
-                    provisioner.activate(hostSpecs, new ActivationContext(0), new ApplicationTransaction(lock, nestedTransaction));
+                    provisioner.activate(hostSpecs, new ActivationContext(0, !application.getCapacity().canFail()), new ApplicationTransaction(lock, nestedTransaction));
                     nestedTransaction.commit();
 
                     duperModel.infraApplicationActivated(
