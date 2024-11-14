@@ -70,7 +70,7 @@ public class ScriptManager {
                                                                               Linguistics linguistics,
                                                                               Map<String, Embedder> embedders) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
-        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedders, null);
+        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedders, Collections.emptyMap());
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenizeLength(config.fieldmatchmaxlength());
 
