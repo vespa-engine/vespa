@@ -466,7 +466,7 @@ argument(boolean in_select):
 expression(boolean select):
     (
         null_operator
-        | annotate_expression
+        | (SCAN annotate_expression => annotate_expression)
         | logical_OR_expression
     )
 ;
@@ -515,7 +515,7 @@ equality_expression:
 
 in_not_in_target:
     ( // TODO: Add expression stack peek
-        ( <LPAREN> select_statement <RPAREN> )
+        SCAN 2 => ( <LPAREN> select_statement <RPAREN> )
         | literal_list
     )
 ;
@@ -609,7 +609,7 @@ primary_expression:
         (<LPAREN> expression(in_select) <RPAREN> )
         | constant_expression
         | (
-            (SCAN 4 => call_expression(in_select)) // WARNING: The scan number could be very large. This will catch all Myfield.MyChild. However nested structs will not parse
+            (SCAN namespaced_name <LPAREN> => call_expression(in_select) )
             | fieldref
         )
     )
