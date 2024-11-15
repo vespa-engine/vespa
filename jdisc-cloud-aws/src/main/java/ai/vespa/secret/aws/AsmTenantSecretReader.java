@@ -3,6 +3,7 @@ package ai.vespa.secret.aws;
 
 import ai.vespa.secret.config.aws.AsmSecretConfig;
 import ai.vespa.secret.config.aws.AsmTenantSecretConfig;
+import ai.vespa.secret.model.ExternalId;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.VaultId;
 import ai.vespa.secret.model.VaultName;
@@ -23,7 +24,7 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
 
     private final String system;
     private final String tenant;
-    private final Map<VaultName, VaultId> vaultIds;
+    private final Map<VaultName, Vault> vaults;
 
     @Inject
     public AsmTenantSecretReader(AsmSecretConfig secretConfig,
@@ -32,22 +33,22 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
         super(secretConfig, identities);
         this.system = tenantConfig.system();
         this.tenant = tenantConfig.tenant();
-        this.vaultIds = createVaultIdMap(tenantConfig);
+        this.vaults = createVaultIdMap(tenantConfig);
     }
 
     // For testing
     AsmTenantSecretReader(Function<AwsRolePath, SecretsManagerClient> clientAndCredentialsSupplier,
-                          String system, String tenant, Map<VaultName, VaultId> vaultIds) {
+                          String system, String tenant, Map<VaultName, Vault> vaults) {
         super(clientAndCredentialsSupplier);
         this.system = system;
         this.tenant = tenant;
-        this.vaultIds = vaultIds;
+        this.vaults = vaults;
     }
 
-    static Map<VaultName, VaultId> createVaultIdMap(AsmTenantSecretConfig config) {
+    static Map<VaultName, Vault> createVaultIdMap(AsmTenantSecretConfig config) {
         // Note: we can rightfully assume that the vaults are unique by name for a tenant.
         return config.vaults().stream()
-                .map(vault -> Map.entry(VaultName.of(vault.name()), VaultId.of(vault.id())))
+                .map(vault -> Map.entry(VaultName.of(vault.name()), new Vault(VaultId.of(vault.id()), VaultName.of(vault.name()), ExternalId.of(vault.externalId()))))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
@@ -75,4 +76,5 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
                                           key.vaultName().value(), key.secretName().value());
     }
 
+    record Vault(VaultId vaultId, VaultName vaultName, ExternalId externalId) {}
 }

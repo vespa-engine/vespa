@@ -3,6 +3,7 @@ package ai.vespa.secret.aws;
 import ai.vespa.secret.aws.testutil.AsmSecretReaderTester;
 import ai.vespa.secret.aws.testutil.AsmSecretTesterBase.SecretVersion;
 import ai.vespa.secret.config.aws.AsmTenantSecretConfig;
+import ai.vespa.secret.model.ExternalId;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.Secret;
 import ai.vespa.secret.model.SecretName;
@@ -172,10 +173,15 @@ public class AsmTenantSecretReaderTest {
                 .vaults(builder -> builder.name("vault1").id("id1").externalId("ext1"))
                 .vaults(builder -> builder.name("vault2").id("id2").externalId("ext2"));
 
-        Map<VaultName, VaultId> idMap = AsmTenantSecretReader.createVaultIdMap(config.build());
+        Map<VaultName, AsmTenantSecretReader.Vault> idMap = AsmTenantSecretReader.createVaultIdMap(config.build());
         assertEquals(2, idMap.size());
-        assertEquals(VaultId.of("id1"), idMap.get(VaultName.of("vault1")));
-        assertEquals(VaultId.of("id2"), idMap.get(VaultName.of("vault2")));
+        var vault1 = idMap.get(VaultName.of("vault1"));
+        assertEquals(VaultId.of("id1"), vault1.vaultId());
+        assertEquals(ExternalId.of("ext1"), vault1.externalId());
+
+        var vault2 = idMap.get(VaultName.of("vault2"));
+        assertEquals(VaultId.of("id2"), vault2.vaultId());
+        assertEquals(ExternalId.of("ext2"), vault2.externalId());
     }
 
     private void assertSame(SecretVersion version, Secret secret) {
