@@ -491,6 +491,13 @@ public class Flags {
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
 
+    public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
+            "enforce-email-domain-sso", false,
+            List.of("eirik"), "2024-11-07", "2025-02-07",
+            "Enforce SSO login for an email domain",
+            "Takes effect immediately",
+            CONSOLE_USER_EMAIL);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
