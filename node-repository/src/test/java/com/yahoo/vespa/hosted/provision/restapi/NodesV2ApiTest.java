@@ -11,6 +11,7 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.security.KeyFormat;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
@@ -28,7 +29,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
-import java.security.interfaces.XECPrivateKey;
 import java.security.interfaces.XECPublicKey;
 import java.time.Duration;
 import java.util.Arrays;
@@ -876,8 +876,7 @@ public class NodesV2ApiTest {
                                                               .getComponent(SecretStoreMock.class.getName());
         KeyPair keyPair = KeyUtils.generateX25519KeyPair();
         secretStore.add(new Secret(Key.fromString("snapshot/sealingPrivateKey"),
-                                   KeyUtils.toBase64EncodedX25519PrivateKey((XECPrivateKey) keyPair.getPrivate())
-                                           .getBytes(),
+                                   KeyUtils.toPem(keyPair.getPrivate(), KeyFormat.PKCS8).getBytes(),
                                    SecretVersionId.of("1")));
 
         // Trigger creation of snapshots

@@ -9,6 +9,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.security.KeyFormat;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SealedSharedKey;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -17,7 +18,6 @@ import org.junit.jupiter.api.Test;
 
 import java.security.KeyPair;
 import java.security.PublicKey;
-import java.security.interfaces.XECPrivateKey;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -54,8 +54,7 @@ class SnapshotsTest {
         // Sealing key can be rotated independently of existing snapshots
         KeyPair keyPair = KeyUtils.generateX25519KeyPair();
         tester.secretStore().add(new Secret(Key.fromString("snapshot/sealingPrivateKey"),
-                                            KeyUtils.toBase64EncodedX25519PrivateKey((XECPrivateKey) keyPair.getPrivate())
-                                                    .getBytes(),
+                                            KeyUtils.toPem(keyPair.getPrivate(), KeyFormat.PKCS8).getBytes(),
                                             SecretVersionId.of("2")));
         assertEquals(SecretVersionId.of("1"), snapshots.require(snapshot0.id(), node0).key().sealingKeyVersion());
         assertNotEquals(snapshot0.key().sharedKey(), snapshots.keyOf(snapshot0.id(), node0, receiverPublicKey),
