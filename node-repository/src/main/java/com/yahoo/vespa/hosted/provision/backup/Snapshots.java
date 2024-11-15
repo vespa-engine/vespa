@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SnapshotId;
+import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyId;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SealedSharedKey;
@@ -28,9 +29,8 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.provision.provisioning.SnapshotStore;
 
 import java.security.KeyPair;
+import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.interfaces.XECPrivateKey;
-import java.security.interfaces.XECPublicKey;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -196,8 +196,12 @@ public class Snapshots {
         }
         Key key = Key.fromString(sealingPrivateKeySecretName.get());
         Secret sealingPrivateKey = version == null ? secretStore.getSecret(key) : secretStore.getSecret(key, version);
-        XECPrivateKey privateKey = KeyUtils.fromBase64EncodedX25519PrivateKey(sealingPrivateKey.secretValue().value());
-        XECPublicKey publicKey = KeyUtils.extractX25519PublicKey(privateKey);
+        PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(sealingPrivateKey.secretValue().value());
+        PublicKey publicKey = KeyUtils.extractPublicKey(privateKey);
+        if (KeyAlgorithm.from(privateKey.getAlgorithm()) != KeyAlgorithm.XDH) {
+            throw new IllegalArgumentException("Expected sealing key to use algorithm " + KeyAlgorithm.XDH +
+                                               ", but got " + privateKey.getAlgorithm());
+        }
         return new VersionedKeyPair(new KeyPair(publicKey, privateKey), sealingPrivateKey.version());
     }
 

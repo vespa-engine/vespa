@@ -3,6 +3,7 @@ package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -50,6 +51,7 @@ import java.util.List;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.KeyAlgorithm.RSA;
+import static com.yahoo.security.KeyAlgorithm.XDH;
 
 /**
  * @author bjorncs
@@ -78,23 +80,30 @@ public class KeyUtils {
     }
 
     public static PublicKey extractPublicKey(PrivateKey privateKey) {
-        String algorithm = privateKey.getAlgorithm();
+        KeyAlgorithm keyAlgorithm = KeyAlgorithm.from(privateKey.getAlgorithm());
         try {
-            if (algorithm.equals(RSA.getAlgorithmName())) {
-                KeyFactory keyFactory = createKeyFactory(RSA);
-                RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey) privateKey;
-                RSAPublicKeySpec keySpec = new RSAPublicKeySpec(rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
-                return keyFactory.generatePublic(keySpec);
-            } else if (algorithm.equals(EC.getAlgorithmName())) {
-                KeyFactory keyFactory = createKeyFactory(EC);
-                BCECPrivateKey ecPrivateKey = (BCECPrivateKey) privateKey;
-                ECParameterSpec ecParameterSpec = ecPrivateKey.getParameters();
-                ECPoint ecPoint = new FixedPointCombMultiplier().multiply(ecParameterSpec.getG(), ecPrivateKey.getD());
-                ECPublicKeySpec keySpec = new ECPublicKeySpec(ecPoint, ecParameterSpec);
-                return keyFactory.generatePublic(keySpec);
-            } else {
-                throw new IllegalArgumentException("Unexpected key algorithm: " + algorithm);
-            }
+            return switch (keyAlgorithm) {
+                case RSA -> {
+                    KeyFactory keyFactory = createKeyFactory(RSA);
+                    RSAPrivateCrtKey rsaPrivateCrtKey = (RSAPrivateCrtKey) privateKey;
+                    RSAPublicKeySpec keySpec = new RSAPublicKeySpec(rsaPrivateCrtKey.getModulus(), rsaPrivateCrtKey.getPublicExponent());
+                    yield keyFactory.generatePublic(keySpec);
+                }
+                case EC -> {
+                    KeyFactory keyFactory = createKeyFactory(EC);
+                    BCECPrivateKey ecPrivateKey = (BCECPrivateKey) privateKey;
+                    ECParameterSpec ecParameterSpec = ecPrivateKey.getParameters();
+                    ECPoint ecPoint = new FixedPointCombMultiplier().multiply(ecParameterSpec.getG(), ecPrivateKey.getD());
+                    ECPublicKeySpec keySpec = new ECPublicKeySpec(ecPoint, ecParameterSpec);
+                    yield keyFactory.generatePublic(keySpec);
+                }
+                case XDH -> {
+                    byte[] privScalar = toRawX25519PrivateKeyBytes((XECPrivateKey) privateKey);
+                    byte[] pubPoint = new byte[X25519.POINT_SIZE];
+                    X25519.generatePublicKey(privScalar, 0, pubPoint, 0); // scalarMultBase => public key point
+                    yield fromRawX25519PublicKey(pubPoint);
+                }
+            };
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
         }
@@ -127,7 +136,7 @@ public class KeyUtils {
                     unknownObjects.add(pemObject);
                 }
             }
-            throw new IllegalArgumentException("Expected a private key, but found " + unknownObjects.toString());
+            throw new IllegalArgumentException("Expected a private key, but found " + unknownObjects);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (GeneralSecurityException e) {
@@ -168,14 +177,10 @@ public class KeyUtils {
     }
 
     public static String toPem(PrivateKey privateKey, KeyFormat format) {
-        switch (format) {
-            case PKCS1:
-                return toPkcs1Pem(privateKey);
-            case PKCS8:
-                return toPkcs8Pem(privateKey);
-            default:
-                throw new IllegalArgumentException("Unknown format: " + format);
-        }
+        return switch (format) {
+            case PKCS1 -> toPkcs1Pem(privateKey);
+            case PKCS8 -> toPkcs8Pem(privateKey);
+        };
     }
 
     public static String toPem(PublicKey publicKey) {
@@ -190,15 +195,12 @@ public class KeyUtils {
 
     private static String toPkcs1Pem(PrivateKey privateKey) {
         try (StringWriter stringWriter = new StringWriter(); JcaPEMWriter pemWriter = new JcaPEMWriter(stringWriter)) {
-            String algorithm = privateKey.getAlgorithm();
-            String type;
-            if (algorithm.equals(RSA.getAlgorithmName())) {
-                type = "RSA PRIVATE KEY";
-            } else if (algorithm.equals(EC.getAlgorithmName())) {
-                type = "EC PRIVATE KEY";
-            } else {
-                throw new IllegalArgumentException("Unexpected key algorithm: " + algorithm);
-            }
+            KeyAlgorithm keyAlgorithm = KeyAlgorithm.from(privateKey.getAlgorithm());
+            String type = switch (keyAlgorithm) {
+                case RSA -> "RSA PRIVATE KEY";
+                case EC -> "EC PRIVATE KEY";
+                case XDH -> throw new IllegalArgumentException("Cannot use PKCS#1 for X25519 key");
+            };
             pemWriter.writeObject(new PemObject(type, getPkcs1Bytes(privateKey)));
             pemWriter.flush();
             return stringWriter.toString();
@@ -227,9 +229,11 @@ public class KeyUtils {
 
     private static KeyFactory createKeyFactory(AlgorithmIdentifier algorithm) throws NoSuchAlgorithmException {
         if (X9ObjectIdentifiers.id_ecPublicKey.equals(algorithm.getAlgorithm())) {
-            return createKeyFactory(KeyAlgorithm.EC);
+            return createKeyFactory(EC);
         } else if (PKCSObjectIdentifiers.rsaEncryption.equals(algorithm.getAlgorithm())) {
-            return createKeyFactory(KeyAlgorithm.RSA);
+            return createKeyFactory(RSA);
+        } else if (EdECObjectIdentifiers.id_X25519.equals(algorithm.getAlgorithm())) {
+            return createKeyFactory(XDH);
         } else {
             throw new IllegalArgumentException("Unknown key algorithm: " + algorithm);
         }
@@ -338,21 +342,14 @@ public class KeyUtils {
         return Base58.codec().encode(toRawX25519PrivateKeyBytes(privateKey));
     }
 
-    // TODO unify with generateKeypair()?
+    // TODO: In-line and remove
     public static KeyPair generateX25519KeyPair() {
-        try {
-            return KeyPairGenerator.getInstance("X25519").generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        return generateKeypair(XDH);
     }
 
-    // TODO unify with extractPublicKey()
+    // TODO: In-line and remove
     public static XECPublicKey extractX25519PublicKey(XECPrivateKey privateKey) {
-        byte[] privScalar = toRawX25519PrivateKeyBytes(privateKey);
-        byte[] pubPoint = new byte[X25519.POINT_SIZE];
-        X25519.generatePublicKey(privScalar, 0, pubPoint, 0); // scalarMultBase => public key point
-        return fromRawX25519PublicKey(pubPoint);
+        return (XECPublicKey) extractPublicKey(privateKey);
     }
 
     /**

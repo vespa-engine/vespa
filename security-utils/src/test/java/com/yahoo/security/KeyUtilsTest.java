@@ -13,6 +13,7 @@ import static com.yahoo.security.ArrayUtils.hex;
 import static com.yahoo.security.ArrayUtils.unhex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -56,25 +57,33 @@ public class KeyUtilsTest {
     }
 
     @Test
+    void can_serialize_and_deserialize_x25519_private_key_using_pkcs8_pem_format() {
+        testPrivateKeySerialization(KeyAlgorithm.XDH, KeyFormat.PKCS8, "PRIVATE KEY");
+    }
+
+    @Test
     void can_serialize_and_deserialize_rsa_publickey_using_pem_format() {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.RSA);
-        String pem = KeyUtils.toPem(keyPair.getPublic());
-        assertTrue(pem.contains("BEGIN PUBLIC KEY"));
-        assertTrue(pem.contains("END PUBLIC KEY"));
-        PublicKey deserializedKey = KeyUtils.fromPemEncodedPublicKey(pem);
-        assertEquals(keyPair.getPublic(), deserializedKey);
-        assertEquals(KeyAlgorithm.RSA.getAlgorithmName(), deserializedKey.getAlgorithm());
+        testPublicKeySerialization(KeyAlgorithm.RSA);
     }
 
     @Test
     void can_serialize_and_deserialize_ec_publickey_using_pem_format() {
-        KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
+        testPublicKeySerialization(KeyAlgorithm.EC);
+    }
+
+    @Test
+    void can_serialize_and_deserialize_x25519_publickey_using_pem_format() {
+        testPublicKeySerialization(KeyAlgorithm.XDH);
+    }
+
+    private static void testPublicKeySerialization(KeyAlgorithm keyAlgorithm) {
+        KeyPair keyPair = KeyUtils.generateKeypair(keyAlgorithm);
         String pem = KeyUtils.toPem(keyPair.getPublic());
         assertTrue(pem.contains("BEGIN PUBLIC KEY"));
         assertTrue(pem.contains("END PUBLIC KEY"));
         PublicKey deserializedKey = KeyUtils.fromPemEncodedPublicKey(pem);
         assertEquals(keyPair.getPublic(), deserializedKey);
-        assertEquals(KeyAlgorithm.EC.getAlgorithmName(), deserializedKey.getAlgorithm());
+        assertSame(keyAlgorithm, KeyAlgorithm.from(deserializedKey.getAlgorithm()));
     }
 
     private static void testPrivateKeySerialization(KeyAlgorithm keyAlgorithm, KeyFormat keyFormat, String pemLabel) {
@@ -84,7 +93,7 @@ public class KeyUtilsTest {
         assertTrue(pem.contains("END " + pemLabel));
         PrivateKey deserializedKey = KeyUtils.fromPemEncodedPrivateKey(pem);
         assertEquals(keyPair.getPrivate(), deserializedKey);
-        assertEquals(keyAlgorithm.getAlgorithmName(), deserializedKey.getAlgorithm());
+        assertSame(keyAlgorithm, KeyAlgorithm.from(deserializedKey.getAlgorithm()));
     }
 
     private static XECPrivateKey xecPrivFromHex(String hex) {
