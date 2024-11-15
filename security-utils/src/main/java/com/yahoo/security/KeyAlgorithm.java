@@ -11,7 +11,8 @@ import java.util.Optional;
 public enum KeyAlgorithm {
 
     RSA("RSA", null),
-    EC("EC", new ECGenParameterSpec("prime256v1")); // TODO Make curve configurable
+    EC("EC", new ECGenParameterSpec("prime256v1")),
+    XDH("XDH", new ECGenParameterSpec("X25519"));
 
     final String algorithmName;
     private final AlgorithmParameterSpec spec;
@@ -30,6 +31,10 @@ public enum KeyAlgorithm {
     public static KeyAlgorithm from(String name) {
         for (var algorithm : values()) {
             if (name.equals(algorithm.getAlgorithmName())) {
+                return algorithm;
+            } else if (algorithm == XDH && name.equals("X25519")) {
+                // "XDH" is the name used by the JDK for elliptic curve keys using Curve25519, while BouncyCastle uses
+                // "X25519"
                 return algorithm;
             }
         }
