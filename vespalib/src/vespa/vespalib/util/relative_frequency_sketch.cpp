@@ -47,7 +47,7 @@ RawRelativeFrequencySketch::~RawRelativeFrequencySketch() = default;
  */
 template <bool ReturnMinCount>
 uint8_t RawRelativeFrequencySketch::add_by_hash_impl(uint64_t hash) noexcept {
-    const uint64_t block = hash & ((1u << _block_mask_bits) - 1);
+    const uint64_t block = hash & ((1ULL << _block_mask_bits) - 1);
     hash >>= _block_mask_bits;
     assert(block*64 + 64 <= _buf.size());
     auto* block_ptr = static_cast<uint8_t*>(_buf.get()) + (block * 64);
@@ -96,7 +96,7 @@ uint8_t RawRelativeFrequencySketch::add_and_count_by_hash(uint64_t hash) noexcep
  * counter decaying).
  */
 uint8_t RawRelativeFrequencySketch::count_min_by_hash(uint64_t hash) const noexcept {
-    const uint64_t block = hash & ((1u << _block_mask_bits) - 1);
+    const uint64_t block = hash & ((1ULL << _block_mask_bits) - 1);
     hash >>= _block_mask_bits;
     const uint8_t* block_ptr = static_cast<const uint8_t*>(_buf.get()) + (block * 64);
     uint8_t cm[4];
