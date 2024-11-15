@@ -12,6 +12,7 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -37,7 +38,7 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
     }
 
     // For testing
-    AsmTenantSecretReader(Function<AwsRolePath, SecretsManagerClient> clientAndCredentialsSupplier,
+    AsmTenantSecretReader(Function<AssumedRoleInfo, SecretsManagerClient> clientAndCredentialsSupplier,
                           String system, String tenant, Map<VaultName, Vault> vaults) {
         super(clientAndCredentialsSupplier);
         this.system = system;
@@ -58,6 +59,10 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
             throw new IllegalArgumentException("No vault id found for " + vault);
         }
         return AthenzUtil.awsReaderRole(system, tenant, vaultIds.get(vault));
+    }
+
+    protected ExternalId externalId(VaultName vaultName) {
+        return Optional.ofNullable(vaults.get(vaultName)).map(Vault::externalId).orElse(null);
     }
 
     @Override

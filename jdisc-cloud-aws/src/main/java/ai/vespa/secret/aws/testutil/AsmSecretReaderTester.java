@@ -5,6 +5,7 @@
 
 package ai.vespa.secret.aws.testutil;
 
+import ai.vespa.secret.aws.AssumedRoleInfo;
 import ai.vespa.secret.aws.AwsRolePath;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.SecretVersionState;
@@ -30,8 +31,8 @@ public class AsmSecretReaderTester extends AsmSecretTesterBase {
         secrets.put(awsSecretIdMapper.apply(key), List.of(versions));
     }
 
-    public MockSecretsReader newClient(AwsRolePath awsRole) {
-        return new MockSecretsReader(awsRole);
+    public MockSecretsReader newClient(AssumedRoleInfo assumedRoleInfo) {
+        return new MockSecretsReader(assumedRoleInfo.role());
     }
 
 
