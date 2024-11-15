@@ -3,6 +3,7 @@ package com.yahoo.security;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -50,6 +51,7 @@ import java.util.List;
 
 import static com.yahoo.security.KeyAlgorithm.EC;
 import static com.yahoo.security.KeyAlgorithm.RSA;
+import static com.yahoo.security.KeyAlgorithm.XDH;
 
 /**
  * @author bjorncs
@@ -95,6 +97,12 @@ public class KeyUtils {
                     ECPublicKeySpec keySpec = new ECPublicKeySpec(ecPoint, ecParameterSpec);
                     yield keyFactory.generatePublic(keySpec);
                 }
+                case XDH -> {
+                    byte[] privScalar = toRawX25519PrivateKeyBytes((XECPrivateKey) privateKey);
+                    byte[] pubPoint = new byte[X25519.POINT_SIZE];
+                    X25519.generatePublicKey(privScalar, 0, pubPoint, 0); // scalarMultBase => public key point
+                    yield fromRawX25519PublicKey(pubPoint);
+                }
             };
         } catch (GeneralSecurityException e) {
             throw new RuntimeException(e);
@@ -128,7 +136,7 @@ public class KeyUtils {
                     unknownObjects.add(pemObject);
                 }
             }
-            throw new IllegalArgumentException("Expected a private key, but found " + unknownObjects.toString());
+            throw new IllegalArgumentException("Expected a private key, but found " + unknownObjects);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         } catch (GeneralSecurityException e) {
@@ -191,6 +199,7 @@ public class KeyUtils {
             String type = switch (keyAlgorithm) {
                 case RSA -> "RSA PRIVATE KEY";
                 case EC -> "EC PRIVATE KEY";
+                case XDH -> throw new IllegalArgumentException("Cannot use PKCS#1 for X25519 key");
             };
             pemWriter.writeObject(new PemObject(type, getPkcs1Bytes(privateKey)));
             pemWriter.flush();
@@ -223,6 +232,8 @@ public class KeyUtils {
             return createKeyFactory(EC);
         } else if (PKCSObjectIdentifiers.rsaEncryption.equals(algorithm.getAlgorithm())) {
             return createKeyFactory(RSA);
+        } else if (EdECObjectIdentifiers.id_X25519.equals(algorithm.getAlgorithm())) {
+            return createKeyFactory(XDH);
         } else {
             throw new IllegalArgumentException("Unknown key algorithm: " + algorithm);
         }
@@ -331,21 +342,14 @@ public class KeyUtils {
         return Base58.codec().encode(toRawX25519PrivateKeyBytes(privateKey));
     }
 
-    // TODO unify with generateKeypair()?
+    // TODO: In-line and remove
     public static KeyPair generateX25519KeyPair() {
-        try {
-            return KeyPairGenerator.getInstance("X25519").generateKeyPair();
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        return generateKeypair(XDH);
     }
 
-    // TODO unify with extractPublicKey()
+    // TODO: In-line and remove
     public static XECPublicKey extractX25519PublicKey(XECPrivateKey privateKey) {
-        byte[] privScalar = toRawX25519PrivateKeyBytes(privateKey);
-        byte[] pubPoint = new byte[X25519.POINT_SIZE];
-        X25519.generatePublicKey(privScalar, 0, pubPoint, 0); // scalarMultBase => public key point
-        return fromRawX25519PublicKey(pubPoint);
+        return (XECPublicKey) extractPublicKey(privateKey);
     }
 
     /**
