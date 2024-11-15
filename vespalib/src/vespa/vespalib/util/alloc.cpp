@@ -315,7 +315,8 @@ AlignedHeapAllocator::alloc(size_t sz) const {
     void* ptr;
     int result = posix_memalign(&ptr, _alignment, sz);
     if (result != 0) {
-        throw IllegalArgumentException(make_string("posix_memalign(%zu, %zu) failed with code %d", sz, _alignment, result));
+        throw IllegalArgumentException(make_string("posix_memalign(&ptr, %zu, %zu) failed with code %d : %s",
+                                                   _alignment, sz, result, getErrorString(result).c_str()));
     }
     return PtrAndSize(ptr, sz);
 }
