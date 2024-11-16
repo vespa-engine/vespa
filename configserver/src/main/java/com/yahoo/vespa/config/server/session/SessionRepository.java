@@ -611,6 +611,7 @@ public class SessionRepository {
         // we will exclude these)
         Set<Long> newSessions = findNewSessionsInFileSystem();
         sessions.removeAll(newSessions);
+        Collections.sort(sessions);
 
         // Avoid deleting too many in one run
         int deleteMax = (int) Math.min(1000, Math.max(maxSessionsToDelete, sessions.size() * 0.05));
