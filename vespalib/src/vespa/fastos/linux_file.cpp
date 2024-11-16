@@ -284,21 +284,22 @@ FastOS_Linux_File::SetSize(int64_t newSize)
 }
 
 void *
-FastOS_Linux_File::AllocateDirectIOBuffer (size_t byteSize, void *&realPtr)
+FastOS_Linux_File::AllocateDirectIOBuffer (size_t byteSize)
 {
     size_t dummy1, dummy2;
     size_t memoryAlignment;
+    void* ptr = nullptr;
 
     GetDirectIORestrictions(memoryAlignment, dummy1, dummy2);
     memoryAlignment = std::max(memoryAlignment, sizeof(void*));
-    int result = posix_memalign(&realPtr, memoryAlignment, byteSize);
+    int result = posix_memalign(&ptr, memoryAlignment, byteSize);
     if (result != 0) {
         std::ostringstream os;
-        os << "posix_memalign(&realPtr, " << memoryAlignment << ", " << byteSize << ") failed with code " << result <<
+        os << "posix_memalign(&ptr, " << memoryAlignment << ", " << byteSize << ") failed with code " << result <<
            " : " << getErrorString(result);
         throw std::runtime_error(os.str());
     }
-    return realPtr;
+    return ptr;
 }
 
 size_t
