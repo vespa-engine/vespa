@@ -165,10 +165,9 @@ FastOS_FileInterface::DirectIOPadding(int64_t offset,
 
 
 void *
-FastOS_FileInterface::allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr)
+FastOS_FileInterface::allocateIOBuffer(size_t byteSize)
 {
-    realPtr = malloc(byteSize);    // Default - use malloc allignment
-    return realPtr;
+    return malloc(byteSize);    // Default - use malloc allignment
 }
 
 size_t
@@ -178,9 +177,9 @@ FastOS_FileInterface::getMaxDirectIOMemAlign()
 }
 
 void *
-FastOS_FileInterface::AllocateDirectIOBuffer(size_t byteSize, void *&realPtr)
+FastOS_FileInterface::AllocateDirectIOBuffer(size_t byteSize)
 {
-    return allocateGenericDirectIOBuffer(byteSize, realPtr);
+    return allocateIOBuffer(byteSize);
 }
 
 void

@@ -113,11 +113,10 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
         }
 
         size_t mallocLen = padBefore + vectorLen + padAfter + padExtraAfter;
-        void *mallocStart = nullptr;
         void *alignedBuffer = nullptr;
         if (mallocLen > 0) {
-            alignedBuffer = _file->AllocateDirectIOBuffer(mallocLen, mallocStart);
-            assert(mallocStart != nullptr);
+            alignedBuffer = _file->AllocateDirectIOBuffer(mallocLen);
+            assert(alignedBuffer != nullptr);
             assert(endOffset + padAfter + padExtraAfter <= _fileSize);
             _file->ReadBuf(alignedBuffer,
                            padBefore + vectorLen + padAfter,
@@ -130,7 +129,7 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
                    padExtraAfter);
         }
         handle._mem = static_cast<char *>(alignedBuffer) + padBefore;
-        handle._allocMem = std::shared_ptr<void>(mallocStart, free);
+        handle._allocMem = std::shared_ptr<void>(alignedBuffer, free);
         handle._allocSize = mallocLen;
         handle._read_bytes = padBefore + vectorLen + padAfter;
     }
