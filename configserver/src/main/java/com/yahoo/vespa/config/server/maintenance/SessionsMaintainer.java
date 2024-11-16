@@ -13,14 +13,23 @@ import java.time.Duration;
  */
 public class SessionsMaintainer extends ConfigServerMaintainer {
 
+    private final int maxSessionsToDelete;
+
     SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
         super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(),
               interval, true, true);
+        this.maxSessionsToDelete = 50;
+    }
+
+    SessionsMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, int maxSessionsToDelete) {
+        super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(),
+                interval, true, true);
+        this.maxSessionsToDelete = maxSessionsToDelete;
     }
 
     @Override
     protected double maintain() {
-        applicationRepository.deleteExpiredSessions();
+        applicationRepository.deleteExpiredSessions(maxSessionsToDelete);
 
         return 1.0;
     }
