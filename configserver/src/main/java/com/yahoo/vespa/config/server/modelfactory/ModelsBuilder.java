@@ -187,24 +187,22 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                  Instant now,
                                                  boolean buildLatestModelForThisMajor,
                                                  int majorVersion) {
-        List<MODELRESULT> builtModelVersions = new ArrayList<>();
-        Optional<Version> latest = Optional.empty();
+        List<MODELRESULT> built = new ArrayList<>();
         if (buildLatestModelForThisMajor) {
-            latest = Optional.of(findLatest(versions));
-            // load latest application version
-            MODELRESULT latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest.get()),
-                                                               applicationPackage,
-                                                               applicationId,
-                                                               wantedDockerImageRepository,
-                                                               wantedNodeVespaVersion);
-            allocatedHosts.add(latestModelVersion.getModel().allocatedHosts(), latest.get());
-            builtModelVersions.add(latestModelVersion);
+            var latest = findLatest(versions);
+            var latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest),
+                                                       applicationPackage,
+                                                       applicationId,
+                                                       wantedDockerImageRepository,
+                                                       wantedNodeVespaVersion);
+            allocatedHosts.add(latestModelVersion.getModel().allocatedHosts(), latest);
+            built.add(latestModelVersion);
         }
 
         // load old model versions
         versions = versionsToBuild(versions, wantedNodeVespaVersion, majorVersion, allocatedHosts);
         for (Version version : versions) {
-            if (latest.isPresent() && version.equals(latest.get())) continue; // already loaded
+            if (alreadyBuilt(version, built)) continue;
 
             try {
                 MODELRESULT modelVersion = buildModelVersion(modelFactoryRegistry.getFactory(version),
@@ -213,12 +211,12 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                              wantedDockerImageRepository,
                                                              wantedNodeVespaVersion);
                 allocatedHosts.add(modelVersion.getModel().allocatedHosts(), version);
-                builtModelVersions.add(modelVersion);
+                built.add(modelVersion);
             } catch (RuntimeException e) {
                 // allow failure to create old config models if there is a validation override that allow skipping old
                 // config models, or we're manually deploying
-                if (! builtModelVersions.isEmpty() &&
-                    ( builtModelVersions.get(0).getModel().skipOldConfigModels(now) || zone().environment().isManuallyDeployed()))
+                if (! built.isEmpty() &&
+                    ( built.get(0).getModel().skipOldConfigModels(now) || zone().environment().isManuallyDeployed()))
                     log.log(Level.WARNING, applicationId + ": Failed to build version " + version +
                             ", but allow failure due to validation override or manual deployment:"
                             + Exceptions.toMessageString(e));
@@ -228,7 +226,13 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 }
             }
         }
-        return builtModelVersions;
+        return built;
+    }
+
+    private static <MODELRESULT extends ModelResult> boolean alreadyBuilt(Version version, List<MODELRESULT> built) {
+        return built.stream()
+                    .map(modelresult -> modelresult.getModel().version())
+                    .anyMatch(version::equals);
     }
 
     private Set<Version> versionsToBuild(Set<Version> versions, Version wantedVersion, int majorVersion,
