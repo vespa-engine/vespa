@@ -498,6 +498,13 @@ public class Flags {
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
+    public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
+            "restrict-users-to-domain", List.of(), String.class,
+            List.of("eirik"), "2024-11-07", "2025-02-07",
+            "Only allow adding specific email domains as user to tenant",
+            "Takes effect immediately",
+            TENANT_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
