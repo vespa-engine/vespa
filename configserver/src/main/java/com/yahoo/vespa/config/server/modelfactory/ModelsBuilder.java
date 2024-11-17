@@ -91,36 +91,23 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                          Instant now) {
         Instant start = Instant.now();
         log.log(Level.FINE, () -> "Will build models for " + applicationId);
-        Set<Version> versions = modelFactoryRegistry.allVersions();
-
-        // If the application specifies a major, skip models on a newer major
-        Optional<Integer> requestedMajorVersion = applicationPackage.getMajorVersion();
-        if (requestedMajorVersion.isPresent()) {
-            versions = keepUpToMajorVersion(requestedMajorVersion.get(), versions);
-            if (versions.isEmpty())
-                throw new UnknownVespaVersionException("No Vespa versions on or before major version " +
-                                                       requestedMajorVersion.get() + " are present");
-        }
+        Set<Version> versions = findVersionsToBuild(applicationPackage);
 
         // Load models one major version at a time (in reverse order) as new major versions are allowed
         // to be non-loadable in the case where an existing application is incompatible with a new
         // major version (which is possible by the definition of major)
-        List<Integer> majorVersions = versions.stream()
-                                              .map(Version::getMajor)
-                                              .distinct()
-                                              .sorted(Comparator.reverseOrder())
-                                              .toList();
+        List<Integer> majorVersions = majorVersionsNewestFirst(versions);
 
-        List<MODELRESULT> allApplicationModels = new ArrayList<>();
+        List<MODELRESULT> builtModels = new ArrayList<>();
         // Build latest model for latest major only, if that fails build latest model for previous major
         boolean buildLatestModelForThisMajor = true;
         for (int i = 0; i < majorVersions.size(); i++) {
             int majorVersion = majorVersions.get(i);
             try {
-                allApplicationModels.addAll(buildModelVersions(keepMajorVersion(majorVersion, versions),
-                                                               applicationId, dockerImageRepository, wantedNodeVespaVersion,
-                                                               applicationPackage, allocatedHosts, now,
-                                                               buildLatestModelForThisMajor, majorVersion));
+                builtModels.addAll(buildModelVersions(keepMajorVersion(majorVersion, versions),
+                                                      applicationId, dockerImageRepository, wantedNodeVespaVersion,
+                                                      applicationPackage, allocatedHosts, now,
+                                                      buildLatestModelForThisMajor, majorVersion));
                 buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
             }
             catch (NodeAllocationException | ApplicationLockException | TransientException | QuotaExceededException e) {
@@ -146,12 +133,34 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             }
         }
         log.log(Level.FINE, () -> "Done building models for " + applicationId + ". Built models for versions " +
-                                  allApplicationModels.stream()
-                                                      .map(result -> result.getModel().version())
-                                                      .map(Version::toFullString)
-                                                      .collect(Collectors.toSet()) +
+                                  builtModels.stream()
+                                             .map(result -> result.getModel().version())
+                                             .map(Version::toFullString)
+                                             .collect(Collectors.toSet()) +
                                   " in " + Duration.between(start, Instant.now()));
-        return allApplicationModels;
+        return builtModels;
+    }
+
+    private Set<Version> findVersionsToBuild(ApplicationPackage applicationPackage) {
+        Set<Version> versions = modelFactoryRegistry.allVersions();
+
+        // If the application specifies a major, skip models on a newer major
+        Optional<Integer> requestedMajorVersion = applicationPackage.getMajorVersion();
+        if (requestedMajorVersion.isPresent()) {
+            versions = keepUpToMajorVersion(requestedMajorVersion.get(), versions);
+            if (versions.isEmpty())
+                throw new UnknownVespaVersionException("No Vespa versions on or before major version " +
+                                                       requestedMajorVersion.get() + " are present");
+        }
+        return versions;
+    }
+
+    private static List<Integer> majorVersionsNewestFirst(Set<Version> versions) {
+        return versions.stream()
+                       .map(Version::getMajor)
+                       .distinct()
+                       .sorted(Comparator.reverseOrder())
+                       .toList();
     }
 
     private boolean shouldSkipCreatingMajorVersionOnError(List<Integer> majorVersions, Integer majorVersion, Version wantedVersion,
@@ -208,7 +217,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             } catch (RuntimeException e) {
                 // allow failure to create old config models if there is a validation override that allow skipping old
                 // config models, or we're manually deploying
-                if (builtModelVersions.size() > 0 &&
+                if (! builtModelVersions.isEmpty() &&
                     ( builtModelVersions.get(0).getModel().skipOldConfigModels(now) || zone().environment().isManuallyDeployed()))
                     log.log(Level.WARNING, applicationId + ": Failed to build version " + version +
                             ", but allow failure due to validation override or manual deployment:"
