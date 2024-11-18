@@ -4,11 +4,12 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.io.Connection;
-import org.eclipse.jetty.server.HttpChannel;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.util.component.AbstractLifeCycle;
+import org.eclipse.jetty.server.handler.EventsHandler;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
@@ -17,14 +18,15 @@ import static com.yahoo.jdisc.http.server.jetty.RequestUtils.isHttpServerConnect
 /**
  * @author bjorncs
  */
-class ConnectionMetricAggregator extends AbstractLifeCycle implements Connection.Listener, HttpChannel.Listener{
+class ConnectionMetricAggregator extends EventsHandler implements Connection.Listener {
 
     private final SimpleConcurrentIdentityHashMap<Connection, ConnectionMetrics> connectionsMetrics = new SimpleConcurrentIdentityHashMap<>();
 
     private final Metric metricAggregator;
-    private final Collection<String> monitoringHandlerPaths;
+    private final List<String> monitoringHandlerPaths;
 
-    ConnectionMetricAggregator(ServerConfig serverConfig, Metric metricAggregator) {
+    ConnectionMetricAggregator(ServerConfig serverConfig, Metric metricAggregator, Handler handler) {
+        super(handler);
         this.monitoringHandlerPaths = serverConfig.metric().monitoringHandlerPaths();
         this.metricAggregator = metricAggregator;
     }
@@ -40,12 +42,12 @@ class ConnectionMetricAggregator extends AbstractLifeCycle implements Connection
     }
 
     @Override
-    public void onRequestBegin(Request request) {
+    protected void onRequestRead(Request request, Content.Chunk chunk) {
         if (monitoringHandlerPaths.stream()
-                .anyMatch(pathPrefix -> request.getRequestURI().startsWith(pathPrefix))){
+                .anyMatch(pathPrefix -> request.getHttpURI().getPath().startsWith(pathPrefix))){
             return;
         }
-        Connection connection = request.getHttpChannel().getConnection();
+        Connection connection = request.getConnectionMetaData().getConnection();
         if (isHttpServerConnection(connection)) {
             ConnectionMetrics metrics = this.connectionsMetrics.computeIfAbsent(
                     connection,
