@@ -19,6 +19,7 @@ import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 
@@ -504,6 +505,13 @@ public class Flags {
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
+
+    public static final UnboundBooleanFlag LEGACY_AUTH0_FILTER = defineFeatureFlag(
+            "use-legacy-auth0-filter", true,
+            List.of("eirik"), "2024-11-07", "2025-02-07",
+            "Use legacy auth0 request filter, or new one",
+            "Takes after controller restart",
+            SYSTEM);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
