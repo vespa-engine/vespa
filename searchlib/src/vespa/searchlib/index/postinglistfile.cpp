@@ -112,9 +112,9 @@ PostingListFileRandReadPassThrough::read_posting_list(const DictionaryLookupResu
 
 void
 PostingListFileRandReadPassThrough::consider_trim_posting_list(const DictionaryLookupResult &lookup_result,
-                                                      PostingListHandle &handle) const
+                                                               PostingListHandle &handle, double bloat_factor) const
 {
-    return _lower->consider_trim_posting_list(lookup_result, handle);
+    return _lower->consider_trim_posting_list(lookup_result, handle, bloat_factor);
 }
 
 bool

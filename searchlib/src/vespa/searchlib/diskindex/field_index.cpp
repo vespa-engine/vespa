@@ -179,7 +179,7 @@ FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_resu
         _cache_disk_io_stats->add_uncached_read_operation(handle._read_bytes);
     }
     if (trim) {
-        _posting_file->consider_trim_posting_list(lookup_result, handle); // Trim posting list if more than 20% bloat
+        _posting_file->consider_trim_posting_list(lookup_result, handle, 0.2); // Trim posting list if more than 20% bloat
     }
     return handle;
 }
