@@ -237,11 +237,11 @@ public class SessionRepository {
         return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
     }
 
-    public Set<Long> getLocalSessionsIdsFromFileSystem() {
+    public List<Long> getLocalSessionsIdsFromFileSystem() {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
-        if (sessions == null) return Set.of();
+        if (sessions == null) return List.of();
 
-        Set<Long> sessionIds = new HashSet<>();
+        List<Long> sessionIds = new ArrayList<>();
         for (File session : sessions) {
             long sessionId = Long.parseLong(session.getName());
             sessionIds.add(sessionId);
@@ -601,9 +601,9 @@ public class SessionRepository {
 
     // ---------------- Common stuff ----------------------------------------------------------------
 
-    public void deleteExpiredRemoteAndLocalSessions(Predicate<Session> sessionIsActiveForApplication) {
+    public void deleteExpiredRemoteAndLocalSessions(Predicate<Session> sessionIsActiveForApplication, int maxSessionsToDelete) {
         // All known sessions, both local (file) and remote (zookeeper)
-        Set<Long> sessions = getLocalSessionsIdsFromFileSystem();
+        List<Long> sessions = getLocalSessionsIdsFromFileSystem();
         sessions.addAll(getRemoteSessionsFromZooKeeper());
         log.log(Level.FINE, () -> "Sessions for tenant " + tenantName + ": " + sessions);
 
@@ -611,9 +611,10 @@ public class SessionRepository {
         // we will exclude these)
         Set<Long> newSessions = findNewSessionsInFileSystem();
         sessions.removeAll(newSessions);
+        Collections.sort(sessions);
 
         // Avoid deleting too many in one run
-        int deleteMax = (int) Math.min(1000, Math.max(50, sessions.size() * 0.05));
+        int deleteMax = (int) Math.min(1000, Math.max(maxSessionsToDelete, sessions.size() * 0.05));
         int deletedRemoteSessions = 0;
         int deletedLocalSessions = 0;
         for (Long sessionId : sessions) {
