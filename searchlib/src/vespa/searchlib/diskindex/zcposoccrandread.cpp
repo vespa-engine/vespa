@@ -139,7 +139,7 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
 }
 
 void
-ZcPosOccRandRead::trim_posting_list(const DictionaryLookupResult& lookup_result, PostingListHandle& handle) const
+ZcPosOccRandRead::consider_trim_posting_list(const DictionaryLookupResult& lookup_result, PostingListHandle& handle) const
 {
     if (lookup_result.counts._bitLength == 0 || _memoryMapped) {
         return;
@@ -157,6 +157,9 @@ ZcPosOccRandRead::trim_posting_list(const DictionaryLookupResult& lookup_result,
         return;
     }
     assert(handle._allocSize >= malloc_len);
+    if (handle._allocSize <= malloc_len * 1.2) {
+        return;
+    }
     auto *mem = malloc(malloc_len);
     assert(mem != nullptr);
     memcpy(mem, handle._mem, malloc_len);

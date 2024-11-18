@@ -251,7 +251,7 @@ DiskIndexTest::requireThatWeCanReadPostingList()
         auto r = _index->lookup(0, "w1");
         auto& field_index = _index->get_field_index(0);
         auto h = field_index.read_posting_list(r);
-        if (field_index.get_posting_list_cache_enabled()) {
+        if (field_index.is_posting_list_cache_enabled()) {
             EXPECT_GT(64, h._allocSize);
         }
         auto sb = field_index.create_iterator(r, h, mda);

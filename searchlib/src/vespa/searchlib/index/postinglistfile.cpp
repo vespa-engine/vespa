@@ -111,10 +111,10 @@ PostingListFileRandReadPassThrough::read_posting_list(const DictionaryLookupResu
 }
 
 void
-PostingListFileRandReadPassThrough::trim_posting_list(const DictionaryLookupResult &lookup_result,
+PostingListFileRandReadPassThrough::consider_trim_posting_list(const DictionaryLookupResult &lookup_result,
                                                       PostingListHandle &handle) const
 {
-    return _lower->trim_posting_list(lookup_result, handle);
+    return _lower->consider_trim_posting_list(lookup_result, handle);
 }
 
 bool
