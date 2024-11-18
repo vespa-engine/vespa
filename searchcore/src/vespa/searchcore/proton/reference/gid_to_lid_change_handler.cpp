@@ -82,12 +82,12 @@ GidToLidChangeHandler::notifyRemoves(IDestructorCallbackSP context, const std::v
             assert(entry.removeSerialNum < serialNum);
             assert(entry.putSerialNum < serialNum);
             if (entry.removeSerialNum < entry.putSerialNum) {
-                notifyRemove(std::move(context), gid);
+                notifyRemove(context, gid);
             }
             entry.removeSerialNum = serialNum;
             ++entry.refCount;
         } else {
-            notifyRemove(std::move(context), gid);
+            notifyRemove(context, gid);
         }
         _pending_changes.emplace_back(IDestructorCallbackSP(), gid, 0, serialNum, true);
     }
