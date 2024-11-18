@@ -86,6 +86,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
     public List<MODELRESULT> buildModels(ApplicationId applicationId,
                                          Optional<DockerImage> dockerImageRepository,
                                          Version wantedNodeVespaVersion,
+                                         Optional<Version> versionToBuildFirst,
                                          ApplicationPackage applicationPackage,
                                          AllocatedHostsFromAllModels allocatedHosts,
                                          Instant now) {
@@ -103,12 +104,15 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
         boolean buildLatestModelForThisMajor = true;
         for (int i = 0; i < majorVersions.size(); i++) {
             int majorVersion = majorVersions.get(i);
+            log.log(Level.FINE, "Building major " + majorVersion + ", versionToBuildFirst=" + versionToBuildFirst);
             try {
                 builtModels.addAll(buildModelVersions(keepMajorVersion(majorVersion, versions),
                                                       applicationId, dockerImageRepository, wantedNodeVespaVersion,
                                                       applicationPackage, allocatedHosts, now,
-                                                      buildLatestModelForThisMajor, majorVersion));
+                                                      buildLatestModelForThisMajor,
+                                                      versionToBuildFirst, majorVersion));
                 buildLatestModelForThisMajor = false; // We have successfully built latest model version, do it only for this major
+                versionToBuildFirst = Optional.empty(); // Set to empty, cannot build this first on another major
             }
             catch (NodeAllocationException | ApplicationLockException | TransientException | QuotaExceededException e) {
                 // Don't wrap this exception, and don't try to load other model versions as this is (most likely)
@@ -186,20 +190,21 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                                  AllocatedHostsFromAllModels allocatedHosts,
                                                  Instant now,
                                                  boolean buildLatestModelForThisMajor,
+                                                 Optional<Version> versionToBuildFirst,
                                                  int majorVersion) {
         List<MODELRESULT> built = new ArrayList<>();
         if (buildLatestModelForThisMajor) {
-            var latest = findLatest(versions);
-            var latestModelVersion = buildModelVersion(modelFactoryRegistry.getFactory(latest),
-                                                       applicationPackage,
-                                                       applicationId,
-                                                       wantedDockerImageRepository,
-                                                       wantedNodeVespaVersion);
-            allocatedHosts.add(latestModelVersion.getModel().allocatedHosts(), latest);
-            built.add(latestModelVersion);
+            if (versionToBuildFirst.isEmpty())
+                versionToBuildFirst = Optional.of(findLatest(versions));
+            var builtFirst = buildModelVersion(modelFactoryRegistry.getFactory(versionToBuildFirst.get()),
+                                               applicationPackage,
+                                               applicationId,
+                                               wantedDockerImageRepository,
+                                               wantedNodeVespaVersion);
+            allocatedHosts.add(builtFirst.getModel().allocatedHosts(), versionToBuildFirst.get());
+            built.add(builtFirst);
         }
 
-        // load old model versions
         versions = versionsToBuild(versions, wantedNodeVespaVersion, majorVersion, allocatedHosts);
         for (Version version : versions) {
             if (alreadyBuilt(version, built)) continue;
@@ -213,11 +218,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 allocatedHosts.add(modelVersion.getModel().allocatedHosts(), version);
                 built.add(modelVersion);
             } catch (RuntimeException e) {
-                // allow failure to create old config models if there is a validation override that allow skipping old
-                // config models, or we're manually deploying
-                if (! built.isEmpty() &&
-                    ( built.get(0).getModel().skipOldConfigModels(now) || zone().environment().isManuallyDeployed()))
-                    log.log(Level.WARNING, applicationId + ": Failed to build version " + version +
+                if (allowBuildToFail(now, built))
+                    log.log(Level.INFO, applicationId + ": Failed to build version " + version +
                             ", but allow failure due to validation override or manual deployment:"
                             + Exceptions.toMessageString(e));
                 else {
@@ -227,6 +229,15 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
             }
         }
         return built;
+    }
+
+    /**
+     * Allow build of other config models to fail if there is a validation override that allow skipping old
+     * config models, or we're manually deploying
+     */
+    private boolean allowBuildToFail(Instant now, List<MODELRESULT> built) {
+        return ! built.isEmpty() &&
+                (built.get(0).getModel().skipOldConfigModels(now) || zone().environment().isManuallyDeployed());
     }
 
     private static <MODELRESULT extends ModelResult> boolean alreadyBuilt(Version version, List<MODELRESULT> built) {

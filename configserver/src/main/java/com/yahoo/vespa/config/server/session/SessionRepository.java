@@ -547,6 +547,7 @@ public class SessionRepository {
         return ApplicationVersions.fromList(builder.buildModels(session.getApplicationId(),
                                                                 session.getDockerImageRepository(),
                                                                 session.getVespaVersion(),
+                                                                session.getVersionToBuildFirst(),
                                                                 sessionZooKeeperClient.loadApplicationPackage(),
                                                                 new AllocatedHostsFromAllModels(),
                                                                 clock.instant()));
@@ -584,6 +585,7 @@ public class SessionRepository {
                                 existingSession.getApplicationPackageReference(),
                                 existingSession.getDockerImageRepository(),
                                 existingSession.getVespaVersion(),
+                                existingSession.getVersionToBuildFirst(),
                                 existingSession.getAthenzDomain(),
                                 existingSession.getQuota(),
                                 existingSession.getTenantVaults(),
