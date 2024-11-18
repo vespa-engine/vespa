@@ -81,7 +81,7 @@ public class AdminModel extends ConfigModel {
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
             // admin v4 is used on hosted: Build a default V4 instead
             if (modelContext.getDeployState().isHosted()) {
-                modelContext.getDeployLogger().logApplicationPackage(WARNING, "<admin> version 2.0 is not supported " +
+                modelContext.getDeployLogger().logApplicationPackage(WARNING, "<admin> version 2.0 is deprecated" +
                         "and will be ignored, please use <admin> version 4.0 instead");
                 new BuilderV4().doBuild(model, adminElement, modelContext);
                 return;
