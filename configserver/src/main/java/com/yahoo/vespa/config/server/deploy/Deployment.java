@@ -249,6 +249,7 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
             PrepareParams.Builder params = new PrepareParams.Builder()
                     .applicationId(session.getApplicationId())
                     .vespaVersion(session.getVespaVersion().toString())
+                    .vespaVersionToBuildFirst(session.getVersionToBuildFirst())
                     .timeoutBudget(timeoutBudget)
                     .ignoreValidationErrors(ignoreValidationErrors)
                     .isBootstrap(isBootstrap)

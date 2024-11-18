@@ -32,7 +32,8 @@ public class SessionSerializer {
 
     void write(SessionZooKeeperClient zooKeeperClient, ApplicationId applicationId,
                Instant created, Optional<FileReference> fileReference, Optional<DockerImage> dockerImageRepository,
-               Version vespaVersion, Optional<AthenzDomain> athenzDomain, Optional<Quota> quota,
+               Version vespaVersion, Optional<Version> versionToBuildFirst,
+               Optional<AthenzDomain> athenzDomain, Optional<Quota> quota,
                List<TenantVault> tenantVaults, List<TenantSecretStore> tenantSecretStores,
                List<X509Certificate> operatorCertificates, Optional<CloudAccount> cloudAccount,
                List<DataplaneToken> dataplaneTokens, ActivationTriggers activationTriggers,
@@ -40,6 +41,7 @@ public class SessionSerializer {
         zooKeeperClient.writeApplicationId(applicationId);
         zooKeeperClient.writeApplicationPackageReference(fileReference);
         zooKeeperClient.writeVespaVersion(vespaVersion);
+        zooKeeperClient.writeVersionToBuildFirst(versionToBuildFirst);
         zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
         zooKeeperClient.writeAthenzDomain(athenzDomain);
         zooKeeperClient.writeQuota(quota);
@@ -53,6 +55,7 @@ public class SessionSerializer {
             zooKeeperClient.writeSessionData(new SessionData(applicationId,
                                                              fileReference,
                                                              vespaVersion,
+                                                             versionToBuildFirst,
                                                              created,
                                                              dockerImageRepository,
                                                              athenzDomain,
@@ -81,6 +84,7 @@ public class SessionSerializer {
         return new SessionData(zooKeeperClient.readApplicationId(),
                                zooKeeperClient.readApplicationPackageReference(),
                                zooKeeperClient.readVespaVersion(),
+                               zooKeeperClient.readVersionToBuildFirst(),
                                zooKeeperClient.readCreateTime(),
                                zooKeeperClient.readDockerImageRepository(),
                                zooKeeperClient.readAthenzDomain(),

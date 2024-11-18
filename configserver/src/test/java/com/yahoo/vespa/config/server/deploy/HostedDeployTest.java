@@ -23,6 +23,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
@@ -32,7 +33,9 @@ import com.yahoo.vespa.config.server.http.UnknownVespaVersionException;
 import com.yahoo.vespa.config.server.http.v2.PrepareResult;
 import com.yahoo.vespa.config.server.maintenance.PendingRestartsMaintainer;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
+import com.yahoo.vespa.config.server.session.LocalSession;
 import com.yahoo.vespa.config.server.session.PrepareParams;
+import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
 import org.junit.Rule;
@@ -159,6 +162,32 @@ public class HostedDeployTest {
                                                                        .build();
         tester.deployApp("src/test/apps/hosted/", "6.2.0");
         assertEquals(9, tester.getAllocatedHostsOf(tester.applicationId()).getHosts().size());
+    }
+
+    @Test
+    public void testDeployMultipleVersionsSpecifyingWhicVersionToBuildFirst() {
+        List<ModelFactory> modelFactories = List.of(createHostedModelFactory(Version.fromString("8.1.0")),
+                                                    createHostedModelFactory(Version.fromString("8.2.0")),
+                                                    createHostedModelFactory(Version.fromString("8.3.0")));
+        var tester = new DeployTester.Builder(temporaryFolder)
+                .hostedConfigserverConfig(Zone.defaultZone())
+                .modelFactories(modelFactories)
+                .build();
+        var appRepo = tester.applicationRepository();
+        var applicationId = tester.applicationId();
+
+        // Deploy as usual, only wanted version is set => 8.2.0 and 8.3.0 (latest version) are built
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
+                .vespaVersion("8.2.0"));
+        assertEquals("8.2.0", appRepo.getActiveSession(applicationId).get().getVespaVersion().toFullString());
+        assertEquals(List.of("8.2.0", "8.3.0"), appRepo.getActiveApplicationVersions(applicationId).get().versions().stream().map(Version::toFullString).toList());
+
+        // Deploy with vespaVersionToBuildFirst=8.2.0 and wanted version set to 8.2.0 => only 8.2.0 version is built
+        tester.deployApp("src/test/apps/hosted/", new PrepareParams.Builder()
+                .vespaVersion("8.2.0")
+                .vespaVersionToBuildFirst("8.2.0"));
+        assertEquals("8.2.0", appRepo.getActiveSession(applicationId).get().getVespaVersion().toFullString());
+        assertEquals(List.of("8.2.0"), appRepo.getActiveApplicationVersions(applicationId).get().versions().stream().map(Version::toFullString).toList());
     }
 
     /**

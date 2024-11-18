@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateMetadata;
@@ -66,6 +67,7 @@ public class PrepareParamsTest {
         assertFalse(prepareParams.isVerbose());
         assertFalse(prepareParams.ignoreValidationErrors());
         assertTrue(prepareParams.vespaVersion().isEmpty());
+        assertTrue(prepareParams.vespaVersionToBuildFirst().isEmpty());
         assertTrue(prepareParams.getTimeoutBudget().hasTimeLeft());
         assertTrue(prepareParams.containerEndpoints().isEmpty());
         assertTrue(prepareParams.cloudAccount().isEmpty());
@@ -229,6 +231,13 @@ public class PrepareParamsTest {
         assertEquals(CloudAccount.from("012345678912"), params.cloudAccount().get());
     }
 
+    @Test
+    public void testFirstVespaVersionToBuild() {
+        String json = "{\"vespaVersionToBuildFirst\": \"8.3.0\"}";
+        PrepareParams params = PrepareParams.fromJson(json.getBytes(StandardCharsets.UTF_8), TenantName.defaultName(), Duration.ZERO);
+        assertEquals(Version.fromString("8.3.0"), params.vespaVersionToBuildFirst().get());
+    }
+
     private void assertPrepareParamsEqual(PrepareParams urlParams, PrepareParams jsonParams) {
         assertEquals(urlParams.ignoreValidationErrors(), jsonParams.ignoreValidationErrors());
         assertEquals(urlParams.isDryRun(), jsonParams.isDryRun());
@@ -239,6 +248,7 @@ public class PrepareParamsTest {
         assertEquals(urlParams.getApplicationId(), jsonParams.getApplicationId());
         assertEquals(urlParams.getTimeoutBudget().timeout(), jsonParams.getTimeoutBudget().timeout());
         assertEquals(urlParams.vespaVersion(), jsonParams.vespaVersion());
+        assertEquals(urlParams.vespaVersionToBuildFirst(), jsonParams.vespaVersionToBuildFirst());
         assertEquals(urlParams.containerEndpoints(), jsonParams.containerEndpoints());
         assertEquals(urlParams.endpointCertificateMetadata(), jsonParams.endpointCertificateMetadata());
         assertEquals(urlParams.dockerImageRepository(), jsonParams.dockerImageRepository());

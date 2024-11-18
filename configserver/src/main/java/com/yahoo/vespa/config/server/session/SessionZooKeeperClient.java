@@ -54,6 +54,7 @@ import static com.yahoo.vespa.config.server.session.SessionData.CLOUD_ACCOUNT_PA
 import static com.yahoo.vespa.config.server.session.SessionData.CREATE_TIME_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.DATAPLANE_TOKENS_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.DOCKER_IMAGE_REPOSITORY_PATH;
+import static com.yahoo.vespa.config.server.session.SessionData.VERSION_TO_BUILD_FIRST_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.OPERATOR_CERTIFICATES_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.QUOTA_PATH;
 import static com.yahoo.vespa.config.server.session.SessionData.SESSION_DATA_PATH;
@@ -191,9 +192,9 @@ public class SessionZooKeeperClient {
         return sessionPath.append(APPLICATION_PACKAGE_REFERENCE_PATH);
     }
 
-    private Path versionPath() {
-        return sessionPath.append(VERSION_PATH);
-    }
+    private Path versionPath() { return sessionPath.append(VERSION_PATH); }
+
+    private Path versionToBuildFirstPath() { return sessionPath.append(VERSION_TO_BUILD_FIRST_PATH); }
 
     private Path dockerImageRepositoryPath() {
         return sessionPath.append(DOCKER_IMAGE_REPOSITORY_PATH);
@@ -231,6 +232,10 @@ public class SessionZooKeeperClient {
        curator.set(versionPath(), Utf8.toBytes(version.toString()));
     }
 
+    public void writeVersionToBuildFirst    (Optional<Version> version) {
+        version.ifPresent(v -> curator.set(versionToBuildFirstPath(), Utf8.toBytes(v.toString())));
+    }
+
     public void writeSessionData(SessionData sessionData) {
         curator.set(sessionPath.append(SESSION_DATA_PATH), sessionData.toJson());
     }
@@ -249,6 +254,11 @@ public class SessionZooKeeperClient {
                        log.log(Level.WARNING, "No Vespa version found for session at " + versionPath().getAbsolute() + "," + "returning current Vtag version");
                        return Vtag.currentVersion;
                    });
+    }
+
+    public Optional<Version> readVersionToBuildFirst() {
+        Optional<byte[]> data = curator.getData(versionToBuildFirstPath());
+        return data.map(d -> Version.fromString(Utf8.toString(d)));
     }
 
     public Optional<DockerImage> readDockerImageRepository() {
