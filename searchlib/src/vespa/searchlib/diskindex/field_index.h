@@ -88,7 +88,7 @@ public:
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
     FieldIndexStats get_stats() const;
     uint32_t get_field_id() const noexcept { return _field_id; }
-    bool get_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
+    bool is_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
 };
 
 }

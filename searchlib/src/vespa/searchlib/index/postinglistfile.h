@@ -162,9 +162,9 @@ public:
     virtual PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) = 0;
 
     /**
-     * Remove directio padding from posting list.
+     * Remove directio padding from posting list if bloat is excessive (>20%)
      */
-    virtual void trim_posting_list(const DictionaryLookupResult& lookup_result, PostingListHandle& handle) const = 0;
+    virtual void consider_trim_posting_list(const DictionaryLookupResult& lookup_result, PostingListHandle& handle) const = 0;
 
     /**
      * Open posting list file for random read.
@@ -203,7 +203,7 @@ public:
                    const search::fef::TermFieldMatchDataArray &matchData) const override;
 
     PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) override;
-    void trim_posting_list(const DictionaryLookupResult& lookup_result, PostingListHandle& handle) const override;
+    void consider_trim_posting_list(const DictionaryLookupResult& lookup_result, PostingListHandle& handle) const override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;
