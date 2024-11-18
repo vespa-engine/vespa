@@ -26,7 +26,7 @@ public class ResponseMetricAggregatorTest {
 
     private final List<String> monitoringPaths = List.of("/status.html");
     private final List<String> searchPaths = List.of("/search");
-    private final ResponseMetricAggregator collector = new ResponseMetricAggregator(monitoringPaths, searchPaths, Set.of(), false);
+    private final ResponseMetricAggregator collector = new ResponseMetricAggregator(monitoringPaths, searchPaths, List.of(), false, null);
 
     @BeforeEach
     public void initializeCollector() {
@@ -130,19 +130,13 @@ public class ResponseMetricAggregatorTest {
     }
     private void testRequest(String scheme, int responseCode, String httpMethod, String path,
                                 com.yahoo.jdisc.Request.RequestType explicitRequestType) {
-
-        Response resp = mock(Response.class);
-        when(resp.getCommittedMetaData())
-                .thenReturn(new MetaData.Response(HttpVersion.HTTP_1_1, responseCode, HttpFields.EMPTY));
-        Request req = mock(Request.class);
-        when(req.getResponse()).thenReturn(resp);
-        when(req.getMethod()).thenReturn(httpMethod);
-        when(req.getScheme()).thenReturn(scheme);
-        when(req.getRequestURI()).thenReturn(path);
-        when(req.getAttribute(ResponseMetricAggregator.requestTypeAttribute)).thenReturn(explicitRequestType);
-        when(req.getProtocol()).thenReturn(HttpVersion.HTTP_1_1.asString());
-
-        collector.onResponseCommit(req);
+        var builder = JettyMockRequestBuilder.newBuilder()
+                .method(httpMethod)
+                .uri(scheme, "localhost", 8080, path, null)
+                .protocol(HttpVersion.HTTP_1_1.asString());
+        if (explicitRequestType != null)
+            builder.attribute(ResponseMetricAggregator.requestTypeAttribute, explicitRequestType);
+        collector.onResponseBegin(builder.build().getCoreRequest(), responseCode, HttpFields.EMPTY);
     }
 
     private static void assertStatisticsEntry(List<StatisticsEntry> result, String scheme, String method, String name,
