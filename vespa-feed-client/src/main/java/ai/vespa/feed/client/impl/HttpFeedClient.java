@@ -167,6 +167,7 @@ class HttpFeedClient implements FeedClient {
                 if (response.code() == 400 && "Could not read document, no document?".equals(message)) {
                     if (builder.speedTest) throw new FeedException("server does not support speed test; upgrade to a newer version");
                     return;
+
                 }
                 throw new FeedException("server responded non-OK to handshake: " + message);
             }

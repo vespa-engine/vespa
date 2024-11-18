@@ -8,7 +8,7 @@ import com.yahoo.text.Text;
 import jakarta.servlet.ReadListener;
 import jakarta.servlet.ServletInputStream;
 import jakarta.servlet.http.HttpServletRequest;
-import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.ee9.nested.Request;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -108,7 +108,7 @@ class ServletRequestReader {
             Janitor janitor,
             RequestMetricReporter metricReporter) {
         this.req = Objects.requireNonNull(req);
-        var cfg = RequestUtils.getConnector(req).connectorConfig();
+        var cfg = RequestUtils.getConnector(req.getCoreRequest().getWrapped()).connectorConfig();
         long maxContentSize = resolveMaxContentSize(cfg);
         var msgTemplate = resolveMaxContentSizeErrorMessage(cfg);
         this.requestContentChannel = maxContentSize >= 0
