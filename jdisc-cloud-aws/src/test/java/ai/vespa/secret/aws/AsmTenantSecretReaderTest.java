@@ -45,8 +45,8 @@ public class AsmTenantSecretReaderTest {
 
     AsmTenantSecretReader secretReader() {
         return new AsmTenantSecretReader(tester::newClient, system, tenant,
-                                         Map.of(VaultName.of("vault1"), VaultId.of("vaultId1"),
-                                                VaultName.of("vault2"), VaultId.of("vaultId2")));
+                                         Map.of(VaultName.of("vault1"), new AsmTenantSecretReader.Vault(VaultId.of("vaultId1"), VaultName.of("vault1"), ExternalId.of("ext1")),
+                                                VaultName.of("vault2"), new AsmTenantSecretReader.Vault(VaultId.of("vaultId2"), VaultName.of("vault2"), ExternalId.of("ext2"))));
     }
 
     @Test

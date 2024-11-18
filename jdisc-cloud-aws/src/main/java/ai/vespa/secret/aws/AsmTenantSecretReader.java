@@ -55,10 +55,10 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
 
     @Override
     protected AwsRolePath awsRole(VaultName vault) {
-        if ( ! vaultIds.containsKey(vault)) {
+        if ( ! vaults.containsKey(vault)) {
             throw new IllegalArgumentException("No vault id found for " + vault);
         }
-        return AthenzUtil.awsReaderRole(system, tenant, vaultIds.get(vault));
+        return AthenzUtil.awsReaderRole(system, tenant, vaults.get(vault).vaultId());
     }
 
     protected ExternalId externalId(VaultName vaultName) {
