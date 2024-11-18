@@ -110,6 +110,13 @@ PostingListFileRandReadPassThrough::read_posting_list(const DictionaryLookupResu
     return _lower->read_posting_list(lookup_result);
 }
 
+void
+PostingListFileRandReadPassThrough::trim_posting_list(const DictionaryLookupResult &lookup_result,
+                                                      PostingListHandle &handle) const
+{
+    return _lower->trim_posting_list(lookup_result, handle);
+}
+
 bool
 PostingListFileRandReadPassThrough::open(const std::string &name,
         const TuneFileRandRead &tuneFileRead)

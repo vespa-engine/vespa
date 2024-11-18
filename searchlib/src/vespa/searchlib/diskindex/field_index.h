@@ -72,7 +72,8 @@ public:
     bool open_dictionary(const std::string& field_dir, const TuneFileSearch& tune_file_search);
     bool open(const std::string& field_dir, const TuneFileSearch &tune_file_search);
     void reuse_files(const FieldIndex& rhs);
-    index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
+    index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult &lookup_result,
+                                                        bool trim) const;
     index::PostingListHandle read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const override;
     index::PostingListHandle read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
     index::BitVectorDictionaryLookupResult lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
@@ -87,6 +88,7 @@ public:
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
     FieldIndexStats get_stats() const;
     uint32_t get_field_id() const noexcept { return _field_id; }
+    bool get_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
 };
 
 }

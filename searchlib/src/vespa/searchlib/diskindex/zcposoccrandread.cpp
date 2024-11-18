@@ -44,7 +44,8 @@ ZcPosOccRandRead::ZcPosOccRandRead()
       _fileBitSize(0),
       _headerBitSize(0),
       _fieldsParams()
-{ }
+{
+}
 
 
 ZcPosOccRandRead::~ZcPosOccRandRead()
@@ -108,8 +109,8 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
         size_t padExtraAfter;       // Decode prefetch space
         _file->DirectIOPadding(startOffset, vectorLen, padBefore, padAfter);
         padExtraAfter = 0;
-        if (padAfter < 16) {
-            padExtraAfter = 16 - padAfter;
+        if (padAfter < decode_prefetch_size) {
+            padExtraAfter = decode_prefetch_size - padAfter;
         }
 
         size_t mallocLen = padBefore + vectorLen + padAfter + padExtraAfter;
@@ -137,6 +138,33 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
     return handle;
 }
 
+void
+ZcPosOccRandRead::trim_posting_list(const DictionaryLookupResult& lookup_result, PostingListHandle& handle) const
+{
+    if (lookup_result.counts._bitLength == 0 || _memoryMapped) {
+        return;
+    }
+    uint64_t start_offset = (lookup_result.bitOffset + _headerBitSize) >> 3;
+    // Align start at 64-bit boundary
+    start_offset -= (start_offset & 7);
+    uint64_t end_offset = (lookup_result.bitOffset + _headerBitSize +
+                           lookup_result.counts._bitLength + 7) >> 3;
+    // Align end at 64-bit boundary
+    end_offset += (-end_offset & 7);
+    size_t malloc_len = end_offset - start_offset + decode_prefetch_size;
+    if (handle._allocSize == malloc_len) {
+        assert(handle._allocMem.get() == handle._mem);
+        return;
+    }
+    assert(handle._allocSize >= malloc_len);
+    auto *mem = malloc(malloc_len);
+    assert(mem != nullptr);
+    memcpy(mem, handle._mem, malloc_len);
+    handle._allocMem = std::shared_ptr<void>(mem, free);
+    handle._mem = mem;
+    handle._allocSize = malloc_len;
+    handle._read_bytes = end_offset - start_offset;
+}
 
 bool
 ZcPosOccRandRead::
@@ -156,6 +184,7 @@ open(const std::string &name, const TuneFileRandRead &tuneFileRead)
     _fileSize = _file->getSize();
 
     readHeader();
+    afterOpen(*_file);
     return true;
 }
 

@@ -172,11 +172,15 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
 }
 
 PostingListHandle
-FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_result) const
+FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_result, bool trim) const
 {
     auto handle = _posting_file->read_posting_list(lookup_result);
     if (handle._read_bytes != 0) {
         _cache_disk_io_stats->add_uncached_read_operation(handle._read_bytes);
+    }
+    if (trim &&
+        handle._allocSize > (16 + ((lookup_result.bitOffset & 63) + lookup_result.counts._bitLength + 63) / 8) * 1.2) {
+        _posting_file->trim_posting_list(lookup_result, handle); // Trim posting list if more than 20% bloat
     }
     return handle;
 }
@@ -188,7 +192,7 @@ FieldIndex::read(const IPostingListCache::Key& key, IPostingListCache::Context& 
     DictionaryLookupResult lookup_result;
     lookup_result.bitOffset = key.bit_offset;
     lookup_result.counts._bitLength = key.bit_length;
-    return read_uncached_posting_list(lookup_result);
+    return read_uncached_posting_list(lookup_result, true);
 }
 
 PostingListHandle
@@ -199,7 +203,7 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
         return {};
     }
     if (file->getMemoryMapped() || !_posting_list_cache_enabled) {
-        return read_uncached_posting_list(lookup_result);
+        return read_uncached_posting_list(lookup_result, false);
     }
     IPostingListCache::Key key;
     key.file_id = _file_id;
