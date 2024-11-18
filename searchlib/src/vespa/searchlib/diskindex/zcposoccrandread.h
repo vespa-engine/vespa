@@ -44,7 +44,8 @@ public:
      * Read (possibly partial) posting list into handle.
      */
     PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) override;
-    void consider_trim_posting_list(const DictionaryLookupResult& lookup_result, PostingListHandle& handle) const override;
+    void consider_trim_posting_list(const DictionaryLookupResult &lookup_result, PostingListHandle &handle,
+                                    double bloat_factor) const override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;
