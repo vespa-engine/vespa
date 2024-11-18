@@ -11,9 +11,9 @@ namespace proton {
  */
 struct FieldMetricsEntry : public metrics::MetricSet {
     MemoryUsageMetrics        memoryUsage;
-    metrics::LongValueMetric  size_on_disk;
+    metrics::LongValueMetric  disk_usage;
     FieldMetricsEntry(const std::string& name, const std::string& field_name, const std::string& description);
     ~FieldMetricsEntry() override;
 };
 
-} // namespace proton
+}
