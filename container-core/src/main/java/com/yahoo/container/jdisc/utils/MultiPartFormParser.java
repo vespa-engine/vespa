@@ -4,7 +4,7 @@ package com.yahoo.container.jdisc.utils;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.yolean.Exceptions;
 import jakarta.servlet.http.Part;
-import org.eclipse.jetty.server.MultiPartFormInputStream;
+import org.eclipse.jetty.ee9.nested.MultiPartFormInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +16,7 @@ import java.util.TreeMap;
  *
  * @author bjorncs
  */
+// TODO(bjorncs, 2024-11-19): Remove dependency on Jakarta EE API
 public class MultiPartFormParser {
 
     private final MultiPartFormInputStream multipart;

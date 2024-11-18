@@ -169,6 +169,10 @@
           <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
+          <groupId>org.eclipse.jetty.ee9</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>org.eclipse.jetty.http2</groupId>
           <artifactId>*</artifactId>
         </exclusion>
