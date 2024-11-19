@@ -16,7 +16,7 @@ namespace proton {
 class CacheMetrics : public metrics::MetricSet {
     metrics::LongValueMetric memoryUsage;
     metrics::LongValueMetric elements;
-    metrics::LongAverageMetric hitRate;
+    metrics::DoubleAverageMetric hitRate;
     metrics::LongCountMetric lookups;
     metrics::LongCountMetric invalidations;
     std::string _cache_name;
