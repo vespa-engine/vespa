@@ -654,8 +654,8 @@ void compress_impl(const std::string &str, auto &bits, auto &dict, auto &dst) {
             } else {
                 dst.write_bits(dict.get(ctx_w), bits.width());
             }
-            bits.use();
             dict.add(ctx_wc);
+            bits.use();
             ctx_w = ctx_c;
         }
     }
@@ -679,7 +679,7 @@ std::string decompress_impl(auto &src, auto &bits, auto &dict) {
 
     std::string result;
 
-    int c = src.read_bits(2);
+    int c = src.read_bits(bits.width());
     if (c == dict.eof) {
         return result;
     }
@@ -688,6 +688,7 @@ std::string decompress_impl(auto &src, auto &bits, auto &dict) {
     std::string w(1, char(c));
     result.append(w);
     dict.add(w);
+    bits.use();
 
     std::string entry;
     for (;;) {
@@ -725,15 +726,15 @@ std::string compress(const std::string &str) {
 // used to test the compression code above, hence the inlined REQUIREs
 std::string decompress(const std::string &str) {
     LZDict dict;
-    BitWidthTracker bits(3, 4);
+    BitWidthTracker bits(2, 1);
     UrlSafeBitInput src(str);
     return decompress_impl(src, bits, dict);
 }
 
 // What happens during compression and decompression, the full story
 struct LZLog {
-    static constexpr int BW = 18;
-    static constexpr int PW = 14;
+    static constexpr int BW = 31;
+    static constexpr int PW = 18;
     struct Block {
         std::vector<std::string> writer;
         std::vector<std::string> reader;
@@ -749,7 +750,7 @@ struct LZLog {
             }
             size_t wait = (len - writer.size());
             for (size_t i = 0; i < len; ++i) {
-                fprintf(stderr, "%*s%-*s%-*s\n",
+                fprintf(stderr, "%*s%*s%-*s\n",
                         BW, (i >= wait) ? writer[i - wait].c_str() : "",
                         PW, "",
                         BW, (i < reader.size()) ? reader[i].c_str() : "");
@@ -759,13 +760,15 @@ struct LZLog {
     struct Packet {
         int bits;
         int value;
+        std::string writer;
+        std::string reader;
         Packet(int bits_in, int value_in) noexcept
           : bits(bits_in), value(value_in) {}
         void dump() {
-            fprintf(stderr, "%*s%-*s%-*s\n",
-                    BW, fmt("write %d bits", bits).c_str(),
-                    PW, fmt("  -> %4d ->  ", value).c_str(),
-                    BW, fmt("read %d bits", bits).c_str());
+            fprintf(stderr, "%*s%*s%-*s\n",
+                    BW, writer.c_str(),
+                    PW, fmt(" -> %2db:%6d -> ", bits, value).c_str(),
+                    BW, reader.c_str());
         }
     };
     std::vector<Block> blocks;
@@ -779,7 +782,7 @@ struct LZLog {
         ensure_block(block);
         blocks[block].writer.push_back(msg);
     }
-    int packet(int block, int bits, int value) {
+    int ensure_packet(int block, int bits, int value) {
         if (packets.size() <= size_t(block)) {
             REQUIRE_EQ(packets.size(), size_t(block));
             packets.emplace_back(bits, value);
@@ -788,6 +791,16 @@ struct LZLog {
             REQUIRE_EQ(packets[block].value, value);
         }
         return block + 1;
+    }
+    int write_packet(int block, int bits, int value, const std::string &msg) {
+        int res = ensure_packet(block, bits, value);
+        packets[block].writer = msg;
+        return res;
+    }
+    int read_packet(int block, int bits, int value, const std::string &msg) {
+        int res = ensure_packet(block, bits, value);
+        packets[block].reader = msg;
+        return res;
     }
     void reader(int block, const std::string &msg) {
         ensure_block(block);
@@ -798,7 +811,7 @@ struct LZLog {
         std::string psep(PW, '-');
         REQUIRE_EQ(blocks.size(), packets.size() + 1);
         fprintf(stderr, "%s%s%s\n", bsep.c_str(), psep.c_str(), bsep.c_str());
-        fprintf(stderr, "%*s%-*s%-*s\n", BW, "COMPRESS", PW, "     DATA", BW, "DECOMPRESS");
+        fprintf(stderr, "%*s%*s%-*s\n", BW, "COMPRESS", PW, "DATA       ", BW, "DECOMPRESS");
         fprintf(stderr, "%s%s%s\n", bsep.c_str(), psep.c_str(), bsep.c_str());
         for (size_t i = 0; i < blocks.size(); ++i) {
             blocks[i].dump(i);
@@ -813,6 +826,7 @@ struct LZLog {
         LZLog &log;
         size_t idx = 0;
         LZDict dict;
+        bool expect_lit8 = false;
         BitWidthTracker bits{2,2};
         UrlSafeBitOutput dst;
         Writer(LZLog &log_in) : log(log_in) {}
@@ -838,8 +852,24 @@ struct LZLog {
             log.writer(idx, fmt("bit width %d -> %d", before, after));
         }
         void write_bits(int x, int n) {
+            std::string msg;
+            if (expect_lit8) {
+                msg = fmt("write lit8 '%c'", char(x));
+            } else {
+                switch (x) {
+                    case lit8:
+                        msg = "write lit8 tag";
+                        break;
+                    case eof:
+                        msg = "write EOF tag";
+                        break;
+                    default:
+                        msg = fmt("write entry '%s'", dict.get(x).c_str());
+                }
+            }
+            expect_lit8 = (x == lit8);
             dst.write_bits(x, n);
-            idx = log.packet(idx, n, x);
+            idx = log.write_packet(idx, n, x, msg);
         }
         void flush() {
             dst.flush();
@@ -850,7 +880,9 @@ struct LZLog {
         LZLog &log;
         size_t idx = 0;
         LZDict dict;
-        BitWidthTracker bits{3,4};
+        bool expect_lit8 = false;
+        int prev = -1;
+        BitWidthTracker bits{2,1};
         UrlSafeBitInput src;
         Reader(LZLog &log_in, const std::string &str) : log(log_in), src(str) {}
         ~Reader();
@@ -865,7 +897,34 @@ struct LZLog {
 
         int read_bits(int n) {
             int x = src.read_bits(n);
-            idx = log.packet(idx, n, x);
+            std::string msg;
+            if (expect_lit8) {
+                msg = fmt("read lit8 '%c'", char(x));
+                prev = dict.size();
+            } else {
+                switch (x) {
+                    case lit8:
+                        msg = "read lit8 tag";
+                        prev = -1;
+                        break;
+                    case eof:
+                        msg = "read EOF tag";
+                        prev = -1;
+                        break;
+                    default:
+                        if (x == dict.size()) {
+                            REQUIRE(prev != -1);
+                            std::string entry = dict.get(prev);
+                            entry.push_back(entry[0]);
+                            msg = fmt("infer entry '%s'", entry.c_str());
+                        } else {
+                            msg = fmt("read entry '%s'", dict.get(x).c_str());
+                        }
+                        prev = x;
+                }
+            }
+            expect_lit8 = (x == lit8);
+            idx = log.read_packet(idx, n, x, msg);
             return x;
         }
         void use() {
