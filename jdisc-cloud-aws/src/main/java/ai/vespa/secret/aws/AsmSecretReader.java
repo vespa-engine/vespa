@@ -60,17 +60,17 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
 
     private AsmSecretReader(ZtsClient ztsClient, AthenzDomain domain, Duration refreshInterval) {
         super(ztsClient, domain);
+        this.refreshInterval = refreshInterval;
         cache = initCache();
         ztsClientCloser = ztsClient::close;
-        this.refreshInterval = refreshInterval;
     }
 
     // For testing
     public AsmSecretReader(Function<AssumedRoleInfo, SecretsManagerClient> clientAndCredentialsSupplier) {
         super(clientAndCredentialsSupplier);
+        this.refreshInterval = DEFAULT_REFRESH_INTERVAL;
         cache = initCache();
         ztsClientCloser = () -> {};
-        this.refreshInterval = DEFAULT_REFRESH_INTERVAL;
     }
 
 
