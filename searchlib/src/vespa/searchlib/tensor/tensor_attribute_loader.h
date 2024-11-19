@@ -36,9 +36,6 @@ class TensorAttributeLoader {
     bool load_index();
     uint64_t get_index_size_on_disk();
     void check_consistency(uint32_t docid_limit);
-    void log_event(const char *eventName);
-    void log_event(const char *eventName, const char *key, const char *value);
-    void log_event(const char *eventName, const char *key, double value);
 
 public:
     TensorAttributeLoader(TensorAttribute& attr, GenerationHandler& generation_handler, RefVector& ref_vector, TensorStore& store, NearestNeighborIndex* index);
@@ -47,3 +44,4 @@ public:
 };
 
 }
+
