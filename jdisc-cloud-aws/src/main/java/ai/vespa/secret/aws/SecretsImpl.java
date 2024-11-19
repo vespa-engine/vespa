@@ -5,7 +5,6 @@ import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import ai.vespa.secret.config.SecretsConfig;
 import ai.vespa.secret.internal.TypedSecretStore;
-import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.SecretName;
 import ai.vespa.secret.model.VaultName;
 
@@ -43,12 +42,6 @@ public class SecretsImpl implements Secrets {
         VaultName vaultName = VaultName.of(secretConfig.vault());
         SecretName secretName = SecretName.of(secretConfig.name());
 
-        var secret = secretStore.getSecret(new Key(vaultName, secretName));
-        if (secret == null) {
-            throw new IllegalArgumentException("Secret with key '" + key + "' not found in secret store");
-        }
-
-        return secret::secretAsString;
-    }
-
+        return new SecretImpl(vaultName, secretName, secretStore);
+   }
 }
