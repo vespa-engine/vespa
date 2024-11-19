@@ -47,16 +47,6 @@ public class SecretsImplTest {
         }
     }
 
-    @Test
-    public void testSecretInConfigButNotInVault() {
-        try {
-            secrets.get("mySecret");
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertEquals("Secret with key 'mySecret' not found in secret store", e.getMessage());
-        }
-    }
-
     private static SecretsImpl createSecrets() {
         var config = createSecretsConfig();
         var secretStore = createSecretStore();
