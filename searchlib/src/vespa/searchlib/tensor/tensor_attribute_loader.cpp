@@ -13,10 +13,12 @@
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/time.h>
 #include <condition_variable>
 #include <filesystem>
 #include <mutex>
@@ -41,12 +43,15 @@ bool
 can_use_index_save_file(const search::attribute::Config &config, const AttributeHeader& header)
 {
     if (!config.hnsw_index_params().has_value() || !header.get_hnsw_index_params().has_value()) {
+        LOG(warning, "Cannot use saved HNSW index for ANN, missing index parameters");
         return false;
     }
     const auto &config_params = config.hnsw_index_params().value();
     const auto &header_params = header.get_hnsw_index_params().value();
     if ((config_params.max_links_per_node() != header_params.max_links_per_node()) ||
-        (config_params.distance_metric() != header_params.distance_metric())) {
+        (config_params.distance_metric() != header_params.distance_metric()))
+    {
+        LOG(warning, "Cannot use saved HNSW index for ANN, index parameters have changed");
         return false;
     }
     return true;
@@ -258,16 +263,28 @@ TensorAttributeLoader::build_index(vespalib::Executor* executor, uint32_t docid_
     std::unique_ptr<IndexBuilder> builder;
     if (executor != nullptr) {
         builder = std::make_unique<ThreadedIndexBuilder>(_attr, _generation_handler, _store, *_index, *executor);
+        log_event("hnsw.index.rebuild.start", "execution", "multi-threaded");
     } else {
         builder = std::make_unique<ForegroundIndexBuilder>(_attr, *_index);
+        log_event("hnsw.index.rebuild.start", "execution", "single-threaded");
     }
+    constexpr vespalib::duration report_interval = 60s;
+    auto beforeStamp = vespalib::steady_clock::now();
+    auto last_report = beforeStamp;
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
         auto ref = _ref_vector[lid].load_relaxed();
         if (ref.valid()) {
             builder->add(lid);
+            auto now = vespalib::steady_clock::now();
+            if (last_report + report_interval < now) {
+                log_event("hnsw.index.rebuild.progress", "percent", (lid * 100.0 / docid_limit));
+                last_report = now;
+            }
         }
     }
     builder->wait_complete();
+    vespalib::duration elapsedTime = vespalib::steady_clock::now() - beforeStamp;
+    log_event("hnsw.index.rebuild.complete", "time.elapsed.ms", vespalib::count_ms(elapsedTime));
     _attr.commit();
 }
 
@@ -357,4 +374,37 @@ TensorAttributeLoader::check_consistency(uint32_t docid_limit)
         inconsistencies, _attr.getName().c_str(), elapsed);
 }
 
+
+namespace {
+struct EventValue {
+    vespalib::JSONStringer jstr;
+    EventValue(const TensorAttribute& attr) : jstr() {
+        jstr.beginObject();
+        jstr.appendKey("name").appendString(attr.getName());
+    }
+    void addKV(const char* key, const char* value) { jstr.appendKey(key).appendString(value); }
+    void addKV(const char* key, double value) { jstr.appendKey(key).appendDouble(value); }
+    const char* message() {
+        jstr.endObject();
+        return jstr.str().c_str();
+     }
+};
+} // namespace
+
+void TensorAttributeLoader::log_event(const char* eventName) {
+    EV_STATE(eventName, EventValue(_attr).message());
 }
+
+void TensorAttributeLoader::log_event(const char* eventName, const char* key, const char* value) {
+    EventValue ev(_attr);
+    ev.addKV(key, value);
+    EV_STATE(eventName, ev.message());
+}
+
+void TensorAttributeLoader::log_event(const char* eventName, const char* key, double value) {
+    EventValue ev(_attr);
+    ev.addKV(key, value);
+    EV_STATE(eventName, ev.message());
+}
+
+} // namespace search::tensor
