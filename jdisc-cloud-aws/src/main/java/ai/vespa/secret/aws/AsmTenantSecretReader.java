@@ -3,6 +3,7 @@ package ai.vespa.secret.aws;
 
 import ai.vespa.secret.config.aws.AsmSecretConfig;
 import ai.vespa.secret.config.aws.AsmTenantSecretConfig;
+import ai.vespa.secret.model.ExternalId;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.VaultId;
 import ai.vespa.secret.model.VaultName;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -23,7 +25,7 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
 
     private final String system;
     private final String tenant;
-    private final Map<VaultName, VaultId> vaultIds;
+    private final Map<VaultName, Vault> vaults;
 
     @Inject
     public AsmTenantSecretReader(AsmSecretConfig secretConfig,
@@ -32,31 +34,35 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
         super(secretConfig, identities);
         this.system = tenantConfig.system();
         this.tenant = tenantConfig.tenant();
-        this.vaultIds = createVaultIdMap(tenantConfig);
+        this.vaults = createVaultIdMap(tenantConfig);
     }
 
     // For testing
-    AsmTenantSecretReader(Function<AwsRolePath, SecretsManagerClient> clientAndCredentialsSupplier,
-                          String system, String tenant, Map<VaultName, VaultId> vaultIds) {
+    AsmTenantSecretReader(Function<AssumedRoleInfo, SecretsManagerClient> clientAndCredentialsSupplier,
+                          String system, String tenant, Map<VaultName, Vault> vaults) {
         super(clientAndCredentialsSupplier);
         this.system = system;
         this.tenant = tenant;
-        this.vaultIds = vaultIds;
+        this.vaults = vaults;
     }
 
-    static Map<VaultName, VaultId> createVaultIdMap(AsmTenantSecretConfig config) {
+    static Map<VaultName, Vault> createVaultIdMap(AsmTenantSecretConfig config) {
         // Note: we can rightfully assume that the vaults are unique by name for a tenant.
         return config.vaults().stream()
-                .map(vault -> Map.entry(VaultName.of(vault.name()), VaultId.of(vault.id())))
+                .map(vault -> Map.entry(VaultName.of(vault.name()), new Vault(VaultId.of(vault.id()), VaultName.of(vault.name()), ExternalId.of(vault.externalId()))))
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @Override
     protected AwsRolePath awsRole(VaultName vault) {
-        if ( ! vaultIds.containsKey(vault)) {
+        if ( ! vaults.containsKey(vault)) {
             throw new IllegalArgumentException("No vault id found for " + vault);
         }
-        return AthenzUtil.awsReaderRole(system, tenant, vaultIds.get(vault));
+        return AthenzUtil.awsReaderRole(system, tenant, vaults.get(vault).vaultId());
+    }
+
+    protected ExternalId externalId(VaultName vaultName) {
+        return Optional.ofNullable(vaults.get(vaultName)).map(Vault::externalId).orElse(null);
     }
 
     @Override
@@ -75,4 +81,5 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
                                           key.vaultName().value(), key.secretName().value());
     }
 
+    record Vault(VaultId vaultId, VaultName vaultName, ExternalId externalId) {}
 }
