@@ -44,7 +44,8 @@ public class CloudAsmSecrets extends SimpleComponent implements
     @Override
     public void getConfig(AsmSecretConfig.Builder builder) {
         builder.ztsUri(ztsUri.toString())
-                .athenzDomain(athenzDomain.value());
+                .athenzDomain(athenzDomain.value())
+                .refreshInterval(1); // 1 minute
     }
 
     @Override
