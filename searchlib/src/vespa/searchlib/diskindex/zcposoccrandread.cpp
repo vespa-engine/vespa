@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <cassert>
 #include <cstring>
 
@@ -93,16 +94,17 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
     uint64_t startOffset = (lookup_result.bitOffset + _headerBitSize) >> 3;
     // Align start at 64-bit boundary
     startOffset -= (startOffset & 7);
+    uint64_t endOffset = (lookup_result.bitOffset + _headerBitSize +
+                          lookup_result.counts._bitLength + 7) >> 3;
+    // Align end at 64-bit boundary
+    endOffset += (-endOffset & 7);
 
     void *mapPtr = _file->MemoryMapPtr(startOffset);
     if (mapPtr != nullptr) {
         handle._mem = mapPtr;
+        size_t pad_before = startOffset - vespalib::round_down_to_page_boundary(startOffset);
+        handle._read_bytes = vespalib::round_up_to_page_size(pad_before + endOffset - startOffset + decode_prefetch_size);
     } else {
-        uint64_t endOffset = (lookup_result.bitOffset + _headerBitSize +
-                              lookup_result.counts._bitLength + 7) >> 3;
-        // Align end at 64-bit boundary
-        endOffset += (-endOffset & 7);
-
         uint64_t vectorLen = endOffset - startOffset;
         size_t padBefore;
         size_t padAfter;
