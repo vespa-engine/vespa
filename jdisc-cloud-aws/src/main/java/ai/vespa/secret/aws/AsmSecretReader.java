@@ -37,27 +37,30 @@ import java.util.function.Function;
 public abstract class AsmSecretReader extends AsmSecretStoreBase
         implements TypedSecretStore {
 
-    private static final Duration CACHE_EXPIRE = Duration.ofMinutes(30);
+    private static final Duration DEFAULT_REFRESH_INTERVAL = Duration.ofMinutes(30);
 
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(5);
 
     private final LoadingCache<VersionKey, Secret> cache;
     private final Runnable ztsClientCloser;
+    private final Duration refreshInterval;
 
     protected record VersionKey(Key key, SecretVersionId version) {}
 
     // For subclasses using dependency injection
     public AsmSecretReader(AsmSecretConfig config, ServiceIdentityProvider identities) {
         this(ztsClient(URI.create(config.ztsUri()), identities.getIdentitySslContext()),
-             athenzDomain(config, identities));
+             athenzDomain(config, identities),
+             Duration.ofMinutes(config.refreshInterval()));
     }
 
     public AsmSecretReader(URI ztsUri, SSLContext sslContext, AthenzDomain domain) {
-        this(ztsClient(ztsUri, sslContext), domain);
+        this(ztsClient(ztsUri, sslContext), domain, DEFAULT_REFRESH_INTERVAL);
     }
 
-    private AsmSecretReader(ZtsClient ztsClient, AthenzDomain domain) {
+    private AsmSecretReader(ZtsClient ztsClient, AthenzDomain domain, Duration refreshInterval) {
         super(ztsClient, domain);
+        this.refreshInterval = refreshInterval;
         cache = initCache();
         ztsClientCloser = ztsClient::close;
     }
@@ -65,6 +68,7 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     // For testing
     public AsmSecretReader(Function<AssumedRoleInfo, SecretsManagerClient> clientAndCredentialsSupplier) {
         super(clientAndCredentialsSupplier);
+        this.refreshInterval = DEFAULT_REFRESH_INTERVAL;
         cache = initCache();
         ztsClientCloser = () -> {};
     }
@@ -85,7 +89,7 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
 
     private LoadingCache<VersionKey, Secret> initCache() {
         return CacheBuilder.newBuilder()
-                .refreshAfterWrite(CACHE_EXPIRE)
+                .refreshAfterWrite(refreshInterval)
                 // See documentation for refreshAfterWrite for why we use asyncReloading.
                 .build(CacheLoader.asyncReloading(new CacheLoader<>() {
                     @Override
