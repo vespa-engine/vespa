@@ -132,6 +132,8 @@ public abstract class Session implements Comparable<Session>  {
 
     public Version getVespaVersion() { return sessionZooKeeperClient.readVespaVersion(); }
 
+    public Optional<Version> getVersionToBuildFirst() { return sessionZooKeeperClient.readVersionToBuildFirst(); }
+
     public Optional<AthenzDomain> getAthenzDomain() { return sessionZooKeeperClient.readAthenzDomain(); }
 
     public Optional<Quota> getQuota() { return sessionZooKeeperClient.readQuota(); }
@@ -194,7 +196,7 @@ public abstract class Session implements Comparable<Session>  {
         return getApplicationPackage().getFile(relativePath);
     }
 
-    Optional<ApplicationVersions> applicationVersions() { return Optional.empty(); }
+    public Optional<ApplicationVersions> applicationVersions() { return Optional.empty(); }
 
     private void markSessionEdited() {
         setStatus(Session.Status.NEW);

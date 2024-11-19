@@ -178,6 +178,8 @@ public class SessionPreparer {
 
         /** The version of Vespa the application to be prepared specifies for its nodes */
         final Version vespaVersion;
+        /** The version of Vespa to build first when there are several config models, empty if latest version should be built first */
+        final Optional<Version> vespaVersionToBuildFirst;
 
         final ContainerEndpointsCache containerEndpointsCache;
         final List<ContainerEndpoint> containerEndpoints;
@@ -206,6 +208,7 @@ public class SessionPreparer {
             this.applicationId = params.getApplicationId();
             this.dockerImageRepository = params.dockerImageRepository();
             this.vespaVersion = params.vespaVersion().orElse(Vtag.currentVersion);
+            this.vespaVersionToBuildFirst = params.vespaVersionToBuildFirst();
             this.containerEndpointsCache = new ContainerEndpointsCache(tenantPath, curator);
             this.endpointCertificateMetadataStore = new EndpointCertificateMetadataStore(curator, tenantPath);
             EndpointCertificateRetriever endpointCertificateRetriever = new EndpointCertificateRetriever(endpointCertificateSecretStores);
@@ -337,7 +340,8 @@ public class SessionPreparer {
         AllocatedHosts buildModels(Instant now) {
             var allocatedHosts = new AllocatedHostsFromAllModels();
             this.modelResultList = preparedModelsBuilder.buildModels(applicationId, dockerImageRepository, vespaVersion,
-                                                                     preprocessedApplicationPackage, allocatedHosts, now);
+                                                                     vespaVersionToBuildFirst, preprocessedApplicationPackage,
+                                                                     allocatedHosts, now);
             checkTimeout("build models");
             return allocatedHosts.toAllocatedHosts();
         }
@@ -357,6 +361,7 @@ public class SessionPreparer {
                                   Optional.of(filereference),
                                   dockerImageRepository,
                                   vespaVersion,
+                                  vespaVersionToBuildFirst,
                                   logger,
                                   prepareResult.getFileRegistries(),
                                   prepareResult.allocatedHosts(),
@@ -402,6 +407,7 @@ public class SessionPreparer {
                                        Optional<FileReference> fileReference,
                                        Optional<DockerImage> dockerImageRepository,
                                        Version vespaVersion,
+                                       Optional<Version> versionToBuildFirst,
                                        DeployLogger deployLogger,
                                        Map<Version, FileRegistry> fileRegistryMap,
                                        AllocatedHosts allocatedHosts,
@@ -422,6 +428,7 @@ public class SessionPreparer {
                                           fileReference,
                                           dockerImageRepository,
                                           vespaVersion,
+                                          versionToBuildFirst,
                                           athenzDomain,
                                           quota,
                                           tenantVaults,
