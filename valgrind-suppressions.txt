@@ -617,3 +617,47 @@
    fun:setenv
    ...
 }
+{
+   Protobuf 5.26.1 suppression 7
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:_Znwm
+   ...
+   fun:_ZN6google8protobuf14DescriptorPool24InternalAddGeneratedFileEPKvi
+   fun:_ZN6google8protobuf8internal14AddDescriptorsEPKNS1_15DescriptorTableE
+   ...
+}
+{
+   Protobuf 5.26.1 suppression 8
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:_Znwm
+   ...
+   fun:_ZN6google8protobuf8internal13OnShutdownRunEPFvPKvES3_
+   fun:_ZN6google8protobuf8internal24InitProtobufDefaultsSlowEv
+   ...
+}
+{
+   Protobuf 5.26.1 suppression 9
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:_Znwm
+   fun:_ZN6google8protobuf12_GLOBAL__N_123GeneratedMessageFactory9singletonEv
+   fun:_ZN6google8protobuf14MessageFactory29InternalRegisterGeneratedFileEPKNS0_8internal15DescriptorTableE
+   ...
+   fun:call_init
+   ...
+}
+{
+   Protobuf 5.26.1 suppression 10
+   Memcheck:Leak
+   match-leak-kinds: reachable
+   fun:_Znwm
+   fun:_ZN4absl12lts_2024011618container_internal19HashSetResizeHelper15InitializeSlotsISaIcELm8ELb1ELm8EEEbRNS1_12CommonFieldsEPvT_.isra.0
+   fun:_ZN4absl12lts_2024011618container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPKN6google8protobuf8internal15DescriptorTableEEENS5_12_GLOBAL__N_123GeneratedMessageFactory20DescriptorByNameHashENSC_18DescriptorByNameEqESaIS9_EE6resizeEm
+   fun:_ZN4absl12lts_2024011618container_internal12raw_hash_setINS1_17FlatHashSetPolicyIPKN6google8protobuf8internal15DescriptorTableEEENS5_12_GLOBAL__N_123GeneratedMessageFactory20DescriptorByNameHashENSC_18DescriptorByNameEqESaIS9_EE14prepare_insertEm
+   fun:_ZN6google8protobuf14MessageFactory29InternalRegisterGeneratedFileEPKNS0_8internal15DescriptorTableE
+   ...
+   fun:call_init
+   ...
+}

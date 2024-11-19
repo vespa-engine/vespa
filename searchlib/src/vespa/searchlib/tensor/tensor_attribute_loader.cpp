@@ -13,10 +13,12 @@
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/arrayqueue.hpp>
 #include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/jsonwriter.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/time.h>
 #include <condition_variable>
 #include <filesystem>
 #include <mutex>
@@ -34,19 +36,47 @@ namespace search::tensor {
 
 inline namespace loader {
 
+class Event {
+private:
+    vespalib::JSONStringer jstr;
+public:
+    Event(const TensorAttribute& attr) : jstr() {
+        jstr.beginObject();
+        jstr.appendKey("name").appendString(attr.getName());
+    }
+    Event& addKV(const char* key, const char* value) {
+        jstr.appendKey(key).appendString(value);
+        return *this;
+    }
+    Event& addKV(const char* key, double value) {
+        jstr.appendKey(key).appendDouble(value);
+        return *this;
+    }
+    void log(const char *eventName) {
+        jstr.endObject();
+        EV_STATE(eventName, jstr.str().c_str());
+    }
+};
+
 constexpr uint32_t LOAD_COMMIT_INTERVAL = 256;
 const std::string tensorTypeTag("tensortype");
 
-bool
-can_use_index_save_file(const search::attribute::Config &config, const AttributeHeader& header)
+bool can_use_index_save_file(const std::string& attrName,
+                             const search::attribute::Config &config,
+                             const AttributeHeader& header)
 {
     if (!config.hnsw_index_params().has_value() || !header.get_hnsw_index_params().has_value()) {
+        LOG(warning, "Attribute %s cannot use saved HNSW index for ANN (missing parameters)",
+            attrName.c_str());
         return false;
     }
     const auto &config_params = config.hnsw_index_params().value();
     const auto &header_params = header.get_hnsw_index_params().value();
     if ((config_params.max_links_per_node() != header_params.max_links_per_node()) ||
-        (config_params.distance_metric() != header_params.distance_metric())) {
+        (config_params.distance_metric() != header_params.distance_metric()))
+    {
+        LOG(warning, "Attribute %s cannot use saved HNSW index for ANN, index parameters have changed",
+            attrName.c_str());
         return false;
     }
     return true;
@@ -258,16 +288,32 @@ TensorAttributeLoader::build_index(vespalib::Executor* executor, uint32_t docid_
     std::unique_ptr<IndexBuilder> builder;
     if (executor != nullptr) {
         builder = std::make_unique<ThreadedIndexBuilder>(_attr, _generation_handler, _store, *_index, *executor);
+        Event(_attr).addKV("execution", "multi-threaded").log("hnsw.index.rebuild.start");
     } else {
         builder = std::make_unique<ForegroundIndexBuilder>(_attr, *_index);
+        Event(_attr).addKV("execution", "single-threaded").log("hnsw.index.rebuild.start");
     }
+    constexpr vespalib::duration report_interval = 60s;
+    auto beforeStamp = vespalib::steady_clock::now();
+    auto last_report = beforeStamp;
     for (uint32_t lid = 0; lid < docid_limit; ++lid) {
         auto ref = _ref_vector[lid].load_relaxed();
         if (ref.valid()) {
             builder->add(lid);
+            auto now = vespalib::steady_clock::now();
+            if (last_report + report_interval < now) {
+                Event(_attr)
+                        .addKV("percent", (lid * 100.0 / docid_limit))
+                        .log("hnsw.index.rebuild.progress");
+                last_report = now;
+            }
         }
     }
     builder->wait_complete();
+    vespalib::duration elapsedTime = vespalib::steady_clock::now() - beforeStamp;
+    Event(_attr)
+            .addKV("time.elapsed.ms", vespalib::count_ms(elapsedTime))
+            .log("hnsw.index.rebuild.complete");
     _attr.commit();
 }
 
@@ -330,7 +376,7 @@ TensorAttributeLoader::on_load(vespalib::Executor* executor)
         bool use_index_file = false;
         if (has_index_file(_attr)) {
             auto header = AttributeHeader::extractTags(reader.getDatHeader(), _attr.getBaseFileName());
-            use_index_file = can_use_index_save_file(_attr.getConfig(), header);
+            use_index_file = can_use_index_save_file(_attr.getName(), _attr.getConfig(), header);
         }
         if (use_index_file) {
             if (!load_index()) {
@@ -357,4 +403,4 @@ TensorAttributeLoader::check_consistency(uint32_t docid_limit)
         inconsistencies, _attr.getName().c_str(), elapsed);
 }
 
-}
+} // namespace search::tensor
