@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -880,23 +881,20 @@ public class NodesV2ApiTest {
                                    SecretVersionId.of("1")));
 
         // Trigger creation of snapshots
-        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
-                                                  new byte[0], Request.Method.POST),
-                                      "{\"message\":\"Triggered a new snapshot of host4.yahoo.com:");
+        String createSnapshotResponse = tester.container()
+                                              .handleRequest(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com", new byte[0], Request.Method.POST))
+                                              .getBodyAsString();
+        String id0 = SlimeUtils.jsonToSlime(createSnapshotResponse).get().field("id").asString();
+        assertEquals("{\"id\":\"" + id0 + "\",\"message\":\"Triggered a new snapshot of host4.yahoo.com: " + id0 + "\"}",
+                     createSnapshotResponse);
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
                                                   new byte[0], Request.Method.POST),
                                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot trigger new snapshot: Node host4.yahoo.com is busy with snapshot");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host2.yahoo.com",
                                                   new byte[0], Request.Method.POST),
-                                      "{\"message\":\"Triggered a new snapshot of host2.yahoo.com:");
+                                      "\"message\":\"Triggered a new snapshot of host2.yahoo.com:");
 
         // List snapshots
-        String listResponse = tester.container()
-                                    .handleRequest(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com"))
-                                    .getBodyAsString();
-        String id0 = SlimeUtils.entriesStream(SlimeUtils.jsonToSlime(listResponse).get().field("snapshots"))
-                               .findFirst().get()
-                               .field("id").asString();
         assertFile(new Request("http://localhost:8080/nodes/v2/snapshot"), "snapshot/list.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com"), "snapshot/list-host.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id0), "snapshot/single.json");
@@ -922,14 +920,10 @@ public class NodesV2ApiTest {
                                       "{\"sealedSharedKey\"");
 
         // Trigger another snapshot
-        tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com",
-                                                  new byte[0], Request.Method.POST),
-                                      "{\"message\":\"Triggered a new snapshot of host4.yahoo.com:");
-        listResponse = tester.container()
-                                    .handleRequest(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com"))
-                                    .getBodyAsString();
-        String id1 = SlimeUtils.entriesStream(SlimeUtils.jsonToSlime(listResponse).get().field("snapshots"))
-                               .toList().get(1).field("id").asString();
+        createSnapshotResponse = tester.container()
+                                       .handleRequest(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com", new byte[0], Request.Method.POST))
+                                       .getBodyAsString();
+        String id1 = SlimeUtils.jsonToSlime(createSnapshotResponse).get().field("id").asString();
 
         // Cannot trigger restore while busy with a different snapshot
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/snapshot/host4.yahoo.com/" + id0 + "/restore",
