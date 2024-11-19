@@ -114,10 +114,10 @@ public class AsmTenantSecretReaderTest {
         var key = new Key(vault, SecretName.of("secret1"));
         try (var reader = secretReader()) {
             var e = assertThrows(IllegalArgumentException.class, () -> reader.getSecret(key));
-            assertEquals("Failed to retrieve current version of secret with key vault1/secret1", e.getMessage());
+            assertTrue(e.getMessage().startsWith("Failed to retrieve current version of secret with key vault1/secret1"));
 
             e = assertThrows(IllegalArgumentException.class, () -> reader.getSecret(key, SecretVersionId.of("1")));
-            assertEquals("Failed to retrieve secret with key vault1/secret1, version: 1", e.getMessage());
+            assertTrue(e.getMessage().startsWith("Failed to retrieve secret with key vault1/secret1, version: 1"));
         }
     }
 
@@ -131,7 +131,7 @@ public class AsmTenantSecretReaderTest {
 
         try (var store = secretReader()) {
             var e = assertThrows(IllegalArgumentException.class, () -> store.getSecret(key, SecretVersionId.of("2")));
-            assertEquals("Failed to retrieve secret with key vault1/secret1, version: 2", e.getMessage());
+            assertTrue(e.getMessage().startsWith("Failed to retrieve secret with key vault1/secret1, version: 2"));
         }
 
     }

@@ -143,7 +143,7 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
             var msg = version == null ?
                     "Failed to retrieve current version of secret with key " + key
                     : "Failed to retrieve secret with key " + key + ", version: " + version.value();
-            throw new IllegalArgumentException(msg, e);
+            throw new IllegalArgumentException(msg + ":\n" + e.getMessage());
         }
     }
 
