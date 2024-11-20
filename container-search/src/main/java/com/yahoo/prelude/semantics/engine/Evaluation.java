@@ -343,7 +343,9 @@ public class Evaluation {
         CompositeItem newParent = newParent(desiredParentType);
 
         if (parentsParent != null && (! (parentsParent instanceof QueryTree) && parentsParent.getItemType() == newParent.getItemType())) { // Collapse
-            newParent = parentsParent;
+            for (Item item : items)
+                parentsParent.addItem(item);
+            return;
         }
 
         for (Item item : items)
