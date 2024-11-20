@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/read_stats.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
+#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -175,9 +176,8 @@ PostingListHandle
 FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_result, bool trim) const
 {
     auto handle = _posting_file->read_posting_list(lookup_result);
-    if (handle._read_bytes != 0) {
-        _cache_disk_io_stats->add_uncached_read_operation(handle._read_bytes);
-    }
+    assert(handle._read_bytes != 0);
+    _cache_disk_io_stats->add_uncached_read_operation(handle._read_bytes);
     if (trim) {
         _posting_file->consider_trim_posting_list(lookup_result, handle, 0.2); // Trim posting list if more than 20% bloat
     }
@@ -210,7 +210,8 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
     key.bit_length = lookup_result.counts._bitLength;
     IPostingListCache::Context ctx(this);
     auto result = _posting_list_cache->read(key, ctx);
-    if (!ctx.cache_miss && result._read_bytes != 0) {
+    if (!ctx.cache_miss) {
+        assert(result._read_bytes != 0);
         _cache_disk_io_stats->add_cached_read_operation(result._read_bytes);
     }
     return result;
@@ -230,9 +231,8 @@ FieldIndex::read_uncached_bit_vector(BitVectorDictionaryLookupResult lookup_resu
 {
     ReadStats read_stats;
     auto result = _bit_vector_dict->read_bitvector(lookup_result, read_stats);
-    if (read_stats.read_bytes != 0) {
-        _cache_disk_io_stats->add_uncached_read_operation(read_stats.read_bytes);
-    }
+    assert(read_stats.read_bytes != 0);
+    _cache_disk_io_stats->add_uncached_read_operation(read_stats.read_bytes);
     return result;
 }
 
