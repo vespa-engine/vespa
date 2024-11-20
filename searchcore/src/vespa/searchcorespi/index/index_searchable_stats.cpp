@@ -14,7 +14,7 @@ IndexSearchableStats::IndexSearchableStats()
 
 IndexSearchableStats::IndexSearchableStats(const IndexSearchable &index)
     : _serialNum(index.getSerialNum()),
-      _searchableStats(index.getSearchableStats())
+      _searchableStats(index.getSearchableStats(false))
 {
 }
 

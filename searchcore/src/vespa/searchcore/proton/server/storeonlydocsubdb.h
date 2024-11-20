@@ -231,7 +231,7 @@ public:
 
     void pruneRemovedFields(SerialNum serialNum) override;
     void setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) override;
-    search::SearchableStats getSearchableStats() const override;
+    search::SearchableStats getSearchableStats(bool) const override;
     std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override;
     matching::MatchingStats getMatcherStats(const std::string &rankProfile) const override;
     void close() override;

@@ -226,9 +226,9 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
 }
 
 search::SearchableStats
-WarmupIndexCollection::getSearchableStats() const
+WarmupIndexCollection::getSearchableStats(bool clear_disk_io_stats) const
 {
-    return _prev->getSearchableStats();
+    return _prev->getSearchableStats(clear_disk_io_stats);
 }
 
 

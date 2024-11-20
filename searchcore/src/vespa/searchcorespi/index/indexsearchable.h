@@ -40,7 +40,7 @@ public:
     /**
      * Returns the searchable stats for this index searchable.
      */
-    virtual search::SearchableStats getSearchableStats() const = 0;
+    virtual search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const = 0;
 
     /**
      * Returns the serial number for this index searchable.

@@ -32,7 +32,13 @@ public:
         return _read == rhs.read() &&
                _cached_read == rhs.cached_read();
     }
-    CacheDiskIoStats read_and_clear() noexcept { auto result = *this; clear(); return result; }
+    CacheDiskIoStats read_and_maybe_clear(bool clear_disk_io_stats) noexcept {
+        auto result = *this;
+        if (clear_disk_io_stats) {
+            clear();
+        }
+        return result;
+    }
     void clear() noexcept {
         _read.clear();
         _cached_read.clear();

@@ -42,9 +42,9 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
             _stats.add_cached_read_operation(bytes);
         }
 
-        CacheDiskIoStats read_and_clear() {
+        CacheDiskIoStats read_and_maybe_clear(bool clear_disk_io_stats) {
             std::lock_guard guard(_mutex);
-            return _stats.read_and_clear();
+            return _stats.read_and_maybe_clear(clear_disk_io_stats);
         }
     };
 
@@ -86,7 +86,7 @@ public:
     index::FieldLengthInfo get_field_length_info() const;
 
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
-    FieldIndexStats get_stats() const;
+    FieldIndexStats get_stats(bool clear_disk_io_stats) const;
     uint32_t get_field_id() const noexcept { return _field_id; }
     bool is_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
 };
