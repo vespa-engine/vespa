@@ -63,7 +63,7 @@ public class MetricSetDocumentation {
                             <h2 id="%s-metrics">%s Metrics</h2>
                             <table class="table">
                               <thead>
-                                 <tr><th>Name</th><th>Description</th><th>Unit</th><th>Suffixes</th></tr>
+                                 <tr><th>Name</th><th>Unit</th><th>Suffixes</th><th>Description</th></tr>
                               </thead>
                               <tbody>
                              %s  </tbody>
@@ -92,9 +92,9 @@ public class MetricSetDocumentation {
                                  """,
                                 entry.getKey().baseName().replaceAll("\\.", "_"),
                                 entry.getKey().baseName(),
-                                entry.getKey().description(),
                                 entry.getKey().unit().toString().toLowerCase(),
-                                String.join(", ", entry.getValue()))
+                                String.join(", ", entry.getValue()),
+                                entry.getKey().description())
 
                 ).collect(Collectors.joining());
     }
