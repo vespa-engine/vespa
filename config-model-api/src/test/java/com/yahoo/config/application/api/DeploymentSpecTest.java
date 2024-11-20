@@ -1607,7 +1607,7 @@ public class DeploymentSpecTest {
                                             <deployment>
                                               <instance id='default' tags='  '>
                                                 <test />
-                                                <staging tester-flavor='2-8-50' />
+                                                <staging />
                                                 <block-change days='mon' />
                                                 <upgrade policy='canary' revision-target='next' revision-change='when-clear' rollout='simultaneous' />
                                                 <prod />
