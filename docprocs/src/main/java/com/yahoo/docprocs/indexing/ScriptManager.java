@@ -111,7 +111,7 @@ public class ScriptManager {
 
             ScriptExpression script = new ScriptExpression(expressions);
             script.select(fieldPathOptimizer, fieldPathOptimizer);
-            fieldScripts.put(FULL, new DocumentScript(ilscript.doctype(), ilscript.docfield(),script));
+            fieldScripts.put(FULL, new DocumentScript(ilscript.doctype(), ilscript.docfield(), script));
             documentFieldScripts.put(ilscript.doctype(), Collections.unmodifiableMap(fieldScripts));
         }
         return Collections.unmodifiableMap(documentFieldScripts);
