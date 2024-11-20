@@ -79,6 +79,9 @@ public class FieldCollapsingSearcher extends Searcher {
     private void init(int collapseSize, double extraFactor) {
         this.defaultCollapseSize = collapseSize;
         this.extraFactor = extraFactor;
+        if (extraFactor < 1.0) {
+            throw new IllegalArgumentException("FieldCollapsingSearcher: extraFactor " + extraFactor + " should be >= 1.0");
+        }
     }
 
     /**
@@ -95,9 +98,10 @@ public class FieldCollapsingSearcher extends Searcher {
         int globalCollapseSize = query.properties().getInteger(collapseSize, defaultCollapseSize);
         query.properties().set(collapse, "0");
 
-        int hitsToRequest = query.getHits() != 0 ? (int) Math.ceil((query.getOffset() + query.getHits() + 1) * extraFactor) : 0;
+        int wantedHits = query.getOffset() + query.getHits();
+        int hitsToRequest = query.getHits() != 0 ? (int) Math.ceil((wantedHits + 1) * extraFactor) : 0;
         int nextOffset = 0;
-        int hitsAfterCollapse;
+        int hitsAfterCollapse = 0;
         boolean moreHitsAvailable = true;
         Map<String, Integer> knownCollapses = new java.util.HashMap<>();
         Result result = new Result(query);
@@ -107,8 +111,11 @@ public class FieldCollapsingSearcher extends Searcher {
         String summaryClass = (collapseSummary == null)
                               ? query.getPresentation().getSummary() : collapseSummary;
         query.trace("Collapsing by '" + Arrays.toString(collapseFields) + "' using summary '" + collapseSummary + "'", 2);
-
+        boolean wantAnotherQuery;
         do {
+            if (performedQueries > 0) {
+                query.trace("Collapsing: retry " + performedQueries + ", only has " + hitsAfterCollapse + " hits, wanted " + wantedHits, 2);
+            }
             resultSource = search(query.clone(), execution, nextOffset, hitsToRequest);
             fill(resultSource, summaryClass, execution);
 
@@ -120,16 +127,18 @@ public class FieldCollapsingSearcher extends Searcher {
                 moreHitsAvailable = false;
             }
             nextOffset += hitsToRequest;
-            if (hitsAfterCollapse < query.getOffset() + query.getHits()) {
+            if (hitsAfterCollapse < wantedHits) {
                 hitsToRequest = (int) Math.ceil(hitsToRequest * extraFactor);
             }
             ++performedQueries;
-
-        } while (hitsToRequest != 0
-                && (hitsAfterCollapse < query.getOffset() + query.getHits())
-                && moreHitsAvailable
-                && (performedQueries <= maxQueries));
-
+            wantAnotherQuery = (hitsToRequest != 0
+                                && (hitsAfterCollapse < wantedHits)
+                                && moreHitsAvailable);
+        } while (wantAnotherQuery && (performedQueries <= maxQueries));
+        // failure?
+        if (wantAnotherQuery) {
+            query.trace("Collapsing: giving up after " + performedQueries + " performed queries, collapsing removed too many hits", 1);
+        }
         // Set correct meta information
         result.mergeWith(resultSource);
         // Keep only (offset ... offset+hits) hits
