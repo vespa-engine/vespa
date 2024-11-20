@@ -26,8 +26,8 @@ public enum ClusterControllerMetrics implements VespaMetrics {
     RESOURCE_USAGE_NODES_ABOVE_LIMIT("cluster-controller.resource_usage.nodes_above_limit", Unit.NODE, "The number of content nodes above resource limit, blocking feed"),
     RESOURCE_USAGE_MAX_MEMORY_UTILIZATION("cluster-controller.resource_usage.max_memory_utilization", Unit.FRACTION, "Current memory utilisation, for content node with highest value"),
     RESOURCE_USAGE_MAX_DISK_UTILIZATION("cluster-controller.resource_usage.max_disk_utilization", Unit.FRACTION, "Current disk space utilisation, for content node with highest value"),
-    RESOURCE_USAGE_MEMORY_LIMIT("cluster-controller.resource_usage.memory_limit", Unit.FRACTION, "Disk space limit as a fraction of available disk space"),
-    RESOURCE_USAGE_DISK_LIMIT("cluster-controller.resource_usage.disk_limit", Unit.FRACTION, "Memory space limit as a fraction of available memory"),
+    RESOURCE_USAGE_MEMORY_LIMIT("cluster-controller.resource_usage.memory_limit", Unit.FRACTION, "Memory space limit as a fraction of available memory"),
+    RESOURCE_USAGE_DISK_LIMIT("cluster-controller.resource_usage.disk_limit", Unit.FRACTION, "Disk space limit as a fraction of available disk space"),
     REINDEXING_PROGRESS("reindexing.progress", Unit.FRACTION, "Re-indexing progress");
 
 
