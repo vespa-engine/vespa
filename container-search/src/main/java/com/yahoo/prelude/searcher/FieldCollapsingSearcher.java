@@ -19,7 +19,7 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * A searcher which does parameterized collapsing.
+ * A searcher which removes hits which has an already seen value of a given field.
  *
  * @author Steinar Knutsen
  */
@@ -28,8 +28,9 @@ import java.util.Map;
 public class FieldCollapsingSearcher extends Searcher {
 
     private static final CompoundName collapse = CompoundName.from("collapse");
-    private static final CompoundName collapsefield = CompoundName.from("collapsefield");
-    private static final CompoundName collapsesize = CompoundName.from("collapsesize");
+    // TODO: Use collapse.field and collapse.size and make these aliases
+    private static final CompoundName collapseField = CompoundName.from("collapsefield");
+    private static final CompoundName collapseSize = CompoundName.from("collapsesize");
     private static final CompoundName collapseSummaryName = CompoundName.from("collapse.summary");
 
     /** Separator used for the fieldnames in collapsefield */
@@ -40,15 +41,13 @@ public class FieldCollapsingSearcher extends Searcher {
 
     /**
      * The max number of hits that will be preserved per unique
-     * value of the collapsing parameter,
-     * if no field-specific value is configured.
+     * value of the collapsing parameter, if no field-specific value is configured.
      */
     private int defaultCollapseSize;
 
     /**
      * The factor by which to scale up the requested number of hits
-     * from the next searcher in the chain, because collapsing will
-     * likely delete many hits.
+     * from the next searcher in the chain, because collapsing will likely delete many hits.
      */
     private double extraFactor;
 
@@ -60,10 +59,8 @@ public class FieldCollapsingSearcher extends Searcher {
     @Inject
     @SuppressWarnings("unused")
     public FieldCollapsingSearcher(QrSearchersConfig config) {
-        QrSearchersConfig.Com.Yahoo.Prelude.Searcher.FieldCollapsingSearcher
-                s = config.com().yahoo().prelude().searcher().FieldCollapsingSearcher();
-
-        init(s.collapsesize(), s.extrafactor());
+        var searcherConfig = config.com().yahoo().prelude().searcher().FieldCollapsingSearcher();
+        init(searcherConfig.collapsesize(), searcherConfig.extrafactor());
     }
 
     /**
@@ -91,14 +88,11 @@ public class FieldCollapsingSearcher extends Searcher {
      */
     @Override
     public Result search(com.yahoo.search.Query query, Execution execution) {
-        String collapseFieldParam = query.properties().getString(collapsefield);
-
+        String collapseFieldParam = query.properties().getString(collapseField);
         if (collapseFieldParam == null) return execution.search(query);
 
         String[] collapseFields = collapseFieldParam.split(separator);
-
-        int globalCollapseSize = query.properties().getInteger(collapsesize, defaultCollapseSize);
-
+        int globalCollapseSize = query.properties().getInteger(collapseSize, defaultCollapseSize);
         query.properties().set(collapse, "0");
 
         int hitsToRequest = query.getHits() != 0 ? (int) Math.ceil((query.getOffset() + query.getHits() + 1) * extraFactor) : 0;
@@ -118,9 +112,7 @@ public class FieldCollapsingSearcher extends Searcher {
             resultSource = search(query.clone(), execution, nextOffset, hitsToRequest);
             fill(resultSource, summaryClass, execution);
 
-            collapse(result, knownCollapses, resultSource,
-                collapseFields, query.properties(), globalCollapseSize
-            );
+            collapse(result, knownCollapses, resultSource, collapseFields, query.properties(), globalCollapseSize);
 
             hitsAfterCollapse = result.getHitCount();
             if (resultSource.getTotalHitCount() < (hitsToRequest + nextOffset)) {
@@ -140,7 +132,7 @@ public class FieldCollapsingSearcher extends Searcher {
 
         // Set correct meta information
         result.mergeWith(resultSource);
-        // Keep only (offset,.. offset+hits) hits
+        // Keep only (offset ... offset+hits) hits
         result.hits().trim(query.getOffset(), query.getHits());
         // Mark query as query with collapsing
         query.properties().set(collapse, "1");
@@ -160,7 +152,6 @@ public class FieldCollapsingSearcher extends Searcher {
      */
     private void collapse(Result result, Map<String, Integer> knownCollapses, Result resultSource,
                           String[] collapseFields, Properties queryProperties, int globalCollapseSize) {
-
         for (Hit unknownHit : resultSource.hits()) {
             if (!(unknownHit instanceof FastHit hit)) {
                 result.hits().add(unknownHit);
@@ -168,14 +159,10 @@ public class FieldCollapsingSearcher extends Searcher {
             }
 
             boolean addHit = true;
-
             for (String collapseField : collapseFields) {
-
                 Object peek = hit.getField(collapseField);
                 String collapseId = peek != null ? peek.toString() : null;
-                if (collapseId == null) {
-                    continue;
-                }
+                if (collapseId == null) continue;
 
                 // prepending the fieldname is necessary to distinguish between values in the different collapsefields
                 // @ cannot occur in fieldnames
@@ -199,19 +186,14 @@ public class FieldCollapsingSearcher extends Searcher {
                 }
             }
 
-            if (addHit) {
+            if (addHit)
                 result.hits().add(hit);
-            }
         }
     }
 
     private int getCollapseSize(Properties properties, String fieldName, int globalCollapseSize) {
-        Integer fieldCollapseSize = properties.getInteger(collapsesize.append(fieldName));
-
-        if (fieldCollapseSize != null) {
-            return fieldCollapseSize;
-        }
-
-        return globalCollapseSize;
+        Integer fieldCollapseSize = properties.getInteger(collapseSize.append(fieldName));
+        return fieldCollapseSize != null ? fieldCollapseSize : globalCollapseSize;
     }
+
 }
