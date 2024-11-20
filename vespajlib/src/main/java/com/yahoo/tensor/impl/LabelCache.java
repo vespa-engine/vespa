@@ -20,7 +20,7 @@ import java.util.concurrent.locks.Lock;
  */
 public class LabelCache {
     // Global cache used as default.
-    public static final LabelCache GLOBAL = new LabelCache(32, 1000);
+    public static final LabelCache GLOBAL = new LabelCache(128, 1000);
     // Label for invalid index.
     public static final Label INVALID_INDEX_LABEL = new LabelImpl(Tensor.invalidIndex, null);
     
