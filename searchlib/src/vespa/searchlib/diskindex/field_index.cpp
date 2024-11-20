@@ -279,9 +279,9 @@ FieldIndex::get_field_length_info() const
 }
 
 FieldIndexStats
-FieldIndex::get_stats() const
+FieldIndex::get_stats(bool clear_disk_io_stats) const
 {
-    auto cache_disk_io_stats = _cache_disk_io_stats->read_and_clear();
+    auto cache_disk_io_stats = _cache_disk_io_stats->read_and_maybe_clear(clear_disk_io_stats);
     return FieldIndexStats().size_on_disk(_size_on_disk).cache_disk_io_stats(cache_disk_io_stats);
 }
 

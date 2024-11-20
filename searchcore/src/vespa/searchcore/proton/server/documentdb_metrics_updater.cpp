@@ -303,7 +303,7 @@ DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, 
 {
     TotalStats totalStats;
     ExecutorThreadingServiceStats threadingServiceStats = _writeService.getStats();
-    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(), totalStats);
+    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(true), totalStats);
     updateAttributeMetrics(metrics, _subDBs, totalStats);
     updateMatchingMetrics(guard, metrics, *_subDBs.getReadySubDB());
     updateDocumentsMetrics(metrics, _subDBs);

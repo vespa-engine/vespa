@@ -399,13 +399,13 @@ DiskIndex::get_field_length_info(const std::string& field_name) const
 }
 
 SearchableStats
-DiskIndex::get_stats() const
+DiskIndex::get_stats(bool clear_disk_io_stats) const
 {
     SearchableStats stats;
     uint64_t size_on_disk = _nonfield_size_on_disk;
     uint32_t field_id = 0;
     for (auto& field_index : _field_indexes) {
-        auto field_stats = field_index.get_stats();
+        auto field_stats = field_index.get_stats(clear_disk_io_stats);
         size_on_disk += field_stats.size_on_disk();
         stats.add_field_stats(_schema.getIndexField(field_id).getName(), field_stats);
         ++field_id;

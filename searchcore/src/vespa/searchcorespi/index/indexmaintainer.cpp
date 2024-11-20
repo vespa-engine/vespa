@@ -135,7 +135,7 @@ public:
     {
         return _index->createBlueprint(requestContext, fields, term);
     }
-    search::SearchableStats getSearchableStats() const override;
+    search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const override;
     search::SerialNum getSerialNum() const override {
         return _index->getSerialNum();
     }
@@ -161,9 +161,9 @@ public:
 DiskIndexWithDestructorCallback::~DiskIndexWithDestructorCallback() = default;
 
 search::SearchableStats
-DiskIndexWithDestructorCallback::getSearchableStats() const
+DiskIndexWithDestructorCallback::getSearchableStats(bool clear_disk_io_stats) const
 {
-    auto stats = _index->getSearchableStats();
+    auto stats = _index->getSearchableStats(clear_disk_io_stats);
     uint64_t transient_size = _disk_indexes.get_transient_size(_layout, _index_disk_dir);
     stats.fusion_size_on_disk(transient_size);
     return stats;
@@ -315,7 +315,7 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
     }
     vespalib::Timer timer;
     auto index = _operations.loadDiskIndex(indexDir);
-    auto stats = index->getSearchableStats();
+    auto stats = index->getSearchableStats(false);
     _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
     auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
             std::move(index),
@@ -338,7 +338,7 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
     vespalib::Timer timer;
     const IDiskIndex &wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCallback &>(oldIndex)).getWrapped();
     auto index = _operations.reloadDiskIndex(wrappedDiskIndex);
-    auto stats = index->getSearchableStats();
+    auto stats = index->getSearchableStats(false);
     _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
     auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
             std::move(index),
@@ -1184,7 +1184,7 @@ IndexMaintainer::getFusionStats() const
         source_list = _source_list;
         stats.maxFlushed = _maxFlushed;
     }
-    stats.diskUsage = source_list->getSearchableStats().sizeOnDisk();
+    stats.diskUsage = source_list->getSearchableStats(false).sizeOnDisk();
     {
         LockGuard guard(_fusion_lock);
         stats.numUnfused = _fusion_spec.flush_ids.size() + ((_fusion_spec.last_fusion_id != 0) ? 1 : 0);

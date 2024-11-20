@@ -448,7 +448,7 @@ DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettings& e
 void
 DiskIndexTest::require_that_get_stats_works()
 {
-    auto stats = getIndex().get_stats();
+    auto stats = getIndex().get_stats(false);
     auto& schema = getIndex().getSchema();
     EXPECT_LT(0, stats.sizeOnDisk());
     auto field_stats = stats.get_field_stats();

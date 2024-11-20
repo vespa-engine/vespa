@@ -319,9 +319,9 @@ SearchableDocSubDB::getNumActiveDocs() const
 }
 
 search::SearchableStats
-SearchableDocSubDB::getSearchableStats() const
+SearchableDocSubDB::getSearchableStats(bool clear_disk_io_stats) const
 {
-    return _indexMgr ? _indexMgr->getSearchableStats() : search::SearchableStats();
+    return _indexMgr ? _indexMgr->getSearchableStats(clear_disk_io_stats) : search::SearchableStats();
 }
 
 std::shared_ptr<IDocumentRetriever>
@@ -375,7 +375,7 @@ SearchableDocSubDB::get_transient_resource_usage() const
     auto result = FastAccessDocSubDB::get_transient_resource_usage();
     // Transient disk usage is measured as the total disk usage of all current fusion indexes.
     // Transient memory usage is measured as the total memory usage of all memory indexes.
-    auto stats = getSearchableStats();
+    auto stats = getSearchableStats(false);
     result.merge({stats.fusion_size_on_disk(), stats.memoryUsage().allocatedBytes()});
     return result;
 }

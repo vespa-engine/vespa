@@ -120,8 +120,8 @@ public:
         return _maintainer.getSearchable();
     }
 
-    search::SearchableStats getSearchableStats() const override {
-        return _maintainer.getSearchableStats();
+    search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const override {
+        return _maintainer.getSearchableStats(clear_disk_io_stats);
     }
 
     searchcorespi::IFlushTarget::List getFlushTargets() override {

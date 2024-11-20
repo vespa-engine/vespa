@@ -110,7 +110,7 @@ public:
     /**
      * Get stats for this index.
      */
-    SearchableStats get_stats() const;
+    SearchableStats get_stats(bool clear_disk_io_stats) const;
     const index::Schema &getSchema() const { return _schema; }
     const std::string &getIndexDir() const { return _indexDir; }
 
