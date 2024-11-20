@@ -436,7 +436,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
-            "distribution-config-from-cluster-controller", false,
+            "distribution-config-from-cluster-controller", true,
             List.of("vekterli"), "2024-07-01", "2024-12-01",
             "Iff true, the cluster controller will be the authoritative source of distribution " +
             "config changes in a content cluster, and distribution changes will be part of explicitly " +
