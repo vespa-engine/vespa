@@ -53,6 +53,8 @@ public enum ControllerMetrics implements VespaMetrics {
     HUBSPOT_EXCEPTIONS("hubspot.exceptions", Unit.FAILURE, "Controller: Hubspot exceptions"),
     HUBSPOT_LAST_SUCCESS("hubspot.last_success", Unit.SECONDS_SINCE_EPOCH, "Controller: Last successful Hubspot synchronization"),
     TENANT_CREATED_LAST_SUCCESS("tenant.created.last_success", Unit.SECONDS_SINCE_EPOCH, "Controller: Last successful tenant creation"),
+    ATLASSIAN_EXCEPTIONS("atlassian.exceptions", Unit.FAILURE, "Controller: Atlassian exceptions"),
+    ATLASSIAN_LAST_SUCCESS("atlassian.last_success", Unit.SECONDS_SINCE_EPOCH, "Controller: Last successful Atlassian synchronization"),
 
     // Metrics per API, metrics names generated in ControllerMaintainer/MetricsReporter
     OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),
