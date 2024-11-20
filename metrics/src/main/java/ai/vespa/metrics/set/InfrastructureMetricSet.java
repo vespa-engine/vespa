@@ -210,6 +210,9 @@ public class InfrastructureMetricSet {
 
         addMetric(metrics, ControllerMetrics.TENANT_CREATED_LAST_SUCCESS.last());
 
+        addMetric(metrics, ControllerMetrics.ATLASSIAN_EXCEPTIONS.count());
+        addMetric(metrics, ControllerMetrics.ATLASSIAN_LAST_SUCCESS.last());
+
         return metrics;
     }
 
