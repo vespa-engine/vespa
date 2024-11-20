@@ -607,6 +607,8 @@ public class SessionRepository {
         // All known sessions, both local (file) and remote (zookeeper)
         List<Long> sessions = getLocalSessionsIdsFromFileSystem();
         sessions.addAll(getRemoteSessionsFromZooKeeper());
+        if (sessions.isEmpty()) return;
+
         log.log(Level.FINE, () -> "Sessions for tenant " + tenantName + ": " + sessions);
 
         // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
@@ -629,10 +631,15 @@ public class SessionRepository {
                 try (var ignored = lockApplication(applicationId)) {
                     Session.Status status = session.getStatus();
                     boolean activeForApplication = sessionIsActiveForApplication.test(session);
+                    log.log(Level.FINE, () -> "local session " + sessionId +
+                            ", status " + status + (status == UNKNOWN ? "" : ", activeForApplication " + activeForApplication));
                     if (status == ACTIVATE && activeForApplication) continue;
 
                     Instant createTime = session.getCreateTime();
                     boolean hasExpired = hasExpired(createTime);
+                    log.log(Level.FINE, () -> "local session " + sessionId +
+                            ", status " + status + (status == UNKNOWN ? "" : ", created " + createTime +
+                            ", has expired: " + hasExpired));
                     if (! hasExpired) continue;
 
                     log.log(Level.FINE, () -> "Remote session " + sessionId + " for " + tenantName + " has expired, deleting it");
@@ -640,10 +647,8 @@ public class SessionRepository {
                     deletedRemoteSessions++;
 
                     var localSessionCanBeDeleted = canBeDeleted(sessionId, status, createTime, activeForApplication);
-                    log.log(Level.FINE, () -> "Expired local session " + sessionId +
-                            ", status " + status + (status == UNKNOWN ? "" : ", created " + createTime) +
-                            ", can be deleted: " + localSessionCanBeDeleted);
                     if (localSessionCanBeDeleted) {
+                        log.log(Level.FINE, () -> "Expired local session " + sessionId + " can be deleted");
                         deleteLocalSession(sessionId);
                         deletedLocalSessions++;
                     }
@@ -655,7 +660,7 @@ public class SessionRepository {
             }
         }
         log.log(Level.FINE, "Deleted " + deletedRemoteSessions + " remote and " + deletedLocalSessions +
-                " local sessions that had expired");
+                " local sessions for tenant " + tenantName + " that had expired");
     }
 
     private record ApplicationLock(Optional<Lock> lock) implements Closeable {
