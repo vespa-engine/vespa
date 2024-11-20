@@ -544,7 +544,7 @@ StoreOnlyDocSubDB::setIndexSchema(std::shared_ptr<const Schema>, SerialNum)
 }
 
 search::SearchableStats
-StoreOnlyDocSubDB::getSearchableStats() const
+StoreOnlyDocSubDB::getSearchableStats(bool) const
 {
     return {};
 }

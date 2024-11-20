@@ -28,7 +28,7 @@ public:
         return _fake.createBlueprint(requestContext, field, term);
     }
 
-    search::SearchableStats getSearchableStats() const override {
+    search::SearchableStats getSearchableStats(bool) const override {
         return search::SearchableStats();
     }
 

@@ -178,7 +178,7 @@ public:
      *
      * @return statistics gathered about underlying memory and disk indexes.
      */
-    virtual search::SearchableStats getSearchableStats() const = 0;
+    virtual search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const = 0;
 
     /**
      * Returns the list of all flush targets contained in this index manager.

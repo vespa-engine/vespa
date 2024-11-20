@@ -109,11 +109,11 @@ IndexCollection::getSourceId(uint32_t i) const
 }
 
 search::SearchableStats
-IndexCollection::getSearchableStats() const
+IndexCollection::getSearchableStats(bool clear_disk_io_stats) const
 {
     search::SearchableStats stats;
     for (size_t i = 0; i < _sources.size(); ++i) {
-        stats.merge(_sources[i].source_wrapper->getSearchableStats());
+        stats.merge(_sources[i].source_wrapper->getSearchableStats(clear_disk_io_stats));
     }
     return stats;
 }

@@ -122,7 +122,7 @@ public:
     virtual SerialNum getNewestFlushedSerial()  = 0;
     virtual void pruneRemovedFields(SerialNum serialNum) = 0;
     virtual void setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) = 0;
-    virtual search::SearchableStats getSearchableStats() const = 0;
+    virtual search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const = 0;
     virtual std::shared_ptr<IDocumentRetriever> getDocumentRetriever() = 0;
 
     virtual matching::MatchingStats getMatcherStats(const std::string &rankProfile) const = 0;
