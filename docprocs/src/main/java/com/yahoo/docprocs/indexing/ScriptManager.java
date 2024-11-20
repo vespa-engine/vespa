@@ -7,6 +7,7 @@ import com.yahoo.language.Linguistics;
 import java.util.logging.Level;
 
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.Generator;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
@@ -29,9 +30,9 @@ public class ScriptManager {
     private final DocumentTypeManager documentTypeManager;
 
     public ScriptManager(DocumentTypeManager documentTypeManager, IlscriptsConfig config, Linguistics linguistics,
-                         Map<String, Embedder> embedders) {
+                         Map<String, Embedder> embedders, Map<String, Generator> generators) {
         this.documentTypeManager = documentTypeManager;
-        documentFieldScripts = createScriptsMap(documentTypeManager, config, linguistics, embedders);
+        documentFieldScripts = createScriptsMap(documentTypeManager, config, linguistics, embedders, generators);
     }
 
     private Map<String, DocumentScript> getScripts(DocumentType inputType) {
@@ -68,9 +69,10 @@ public class ScriptManager {
     private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
                                                                               IlscriptsConfig config,
                                                                               Linguistics linguistics,
-                                                                              Map<String, Embedder> embedders) {
+                                                                              Map<String, Embedder> embedders,
+                                                                              Map<String, Generator> generators) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
-        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedders, Collections.emptyMap());
+        ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedders, generators);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());
         parserContext.getAnnotatorConfig().setMaxTokenizeLength(config.fieldmatchmaxlength());
 

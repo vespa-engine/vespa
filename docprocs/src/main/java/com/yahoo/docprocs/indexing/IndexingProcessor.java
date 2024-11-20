@@ -22,7 +22,9 @@ import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.Generator;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
+import com.yahoo.language.provider.DefaultGeneratorProvider;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
@@ -58,9 +60,12 @@ public class IndexingProcessor extends DocumentProcessor {
     public IndexingProcessor(DocumentTypeManager documentTypeManager,
                              IlscriptsConfig ilscriptsConfig,
                              Linguistics linguistics,
-                             ComponentRegistry<Embedder> embedders) {
+                             ComponentRegistry<Embedder> embedders,
+                             ComponentRegistry<Generator> generators) {
         this.documentTypeManager = documentTypeManager;
-        scriptManager = new ScriptManager(this.documentTypeManager, ilscriptsConfig, linguistics, toMap(embedders));
+        Map<String, Embedder> embedderMap = toMap(embedders, DefaultEmbedderProvider.class);
+        Map<String, Generator> generatorMap = toMap(generators, DefaultGeneratorProvider.class);
+        scriptManager = new ScriptManager(this.documentTypeManager, ilscriptsConfig, linguistics, embedderMap, generatorMap);
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }
 
@@ -132,11 +137,11 @@ public class IndexingProcessor extends DocumentProcessor {
         out.add(input);
     }
 
-    private Map<String, Embedder> toMap(ComponentRegistry<Embedder> embedders) {
-        var map = embedders.allComponentsById().entrySet().stream()
-                    .collect(Collectors.toMap(e -> e.getKey().stringValue(), Map.Entry::getValue));
+    private <T> Map<String, T> toMap(ComponentRegistry<T> registry, Class<?> defaultProviderClass) {
+        var map = registry.allComponentsById().entrySet().stream()
+                .collect(Collectors.toMap(e -> e.getKey().stringValue(), Map.Entry::getValue));
         if (map.size() > 1) {
-            map.remove(DefaultEmbedderProvider.class.getName());
+            map.remove(defaultProviderClass.getName());
             // Ideally, this should be handled by dependency injection, however for now this workaround is necessary.
         }
         return map;

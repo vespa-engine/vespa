@@ -124,4 +124,5 @@ public interface Generator {
             throw new IllegalStateException(message);
         }
     }
+
 }
