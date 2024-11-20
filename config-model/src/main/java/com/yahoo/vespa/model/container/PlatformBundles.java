@@ -151,7 +151,6 @@ public class PlatformBundles {
             com.yahoo.search.searchchain.ForkingSearcher.class.getName(),
             com.yahoo.search.searchers.CacheControlSearcher.class.getName(),
             com.yahoo.search.searchers.RateLimitingSearcher.class.getName(),
-            com.yahoo.vespa.streamingvisitors.MetricsSearcher.class.getName(),
             com.yahoo.vespa.streamingvisitors.StreamingBackend.class.getName(),
             ai.vespa.search.llm.LLMSearcher.class.getName(),
             ai.vespa.search.llm.RAGSearcher.class.getName()
