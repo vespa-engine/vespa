@@ -3,12 +3,16 @@ package com.yahoo.schema;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.processing.ImportedFieldsResolver;
 import com.yahoo.schema.processing.OnnxModelTypeResolver;
+import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -17,6 +21,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.*;
@@ -486,19 +492,31 @@ public class SchemaTestCase {
     void testDeriving() throws Exception {
         String schema =
                 """
-                schema test {
-                    field my_hash type long {
-                        indexing: input my_string | hash | attribute
+                schema page {
+
+                    field domain_hash type long {
+                        indexing: input domain | hash | attribute
                     }
-                    document test {
-                        field my_string type string {
+
+                    document page {
+
+                        field domain type string {
+                            indexing: index | summary
+                            match: word
+                            rank: filter
                         }
                     }
                 }""";
         ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
         builder.addSchema(schema);
         var application = builder.build(false); // validate=false to test config deriving without validation
-        new DerivedConfiguration(application.schemas().get("test"), application.rankProfileRegistry());
+        var derived = new DerivedConfiguration(application.schemas().get("page"), application.rankProfileRegistry());
+        var ilConfig = new IlscriptsConfig.Builder();
+        derived.getIndexingScript().getConfig(ilConfig);
+
+        var documentModel = new DocumentModelBuilder();
+        var documentManager = documentModel.build(List.of(application.schemas().get("page")));
+        var documentConfig = new DocumentManager().produce(documentManager, new DocumentmanagerConfig.Builder());
     }
 
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {

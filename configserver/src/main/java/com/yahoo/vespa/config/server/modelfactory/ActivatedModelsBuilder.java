@@ -14,7 +14,6 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -35,9 +34,6 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.model.VespaModel;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
-import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
 import java.util.Comparator;
 import java.util.List;
@@ -168,6 +164,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                        .flatMap(new EndpointCertificateRetriever(endpointCertificateSecretStores)::readEndpointCertificateSecrets),
                                                zkClient.readAthenzDomain(),
                                                zkClient.readQuota(),
+                                               zkClient.readTenantVaults(),
                                                zkClient.readTenantSecretStores(),
                                                secretStore,
                                                zkClient.readOperatorCertificates(),

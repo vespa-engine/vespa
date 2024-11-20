@@ -14,7 +14,6 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.application.provider.DeployData;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
@@ -238,11 +237,11 @@ public class SessionRepository {
         return new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
     }
 
-    public Set<Long> getLocalSessionsIdsFromFileSystem() {
+    public List<Long> getLocalSessionsIdsFromFileSystem() {
         File[] sessions = tenantFileSystemDirs.sessionsPath().listFiles(sessionApplicationsFilter);
-        if (sessions == null) return Set.of();
+        if (sessions == null) return List.of();
 
-        Set<Long> sessionIds = new HashSet<>();
+        List<Long> sessionIds = new ArrayList<>();
         for (File session : sessions) {
             long sessionId = Long.parseLong(session.getName());
             sessionIds.add(sessionId);
@@ -548,6 +547,7 @@ public class SessionRepository {
         return ApplicationVersions.fromList(builder.buildModels(session.getApplicationId(),
                                                                 session.getDockerImageRepository(),
                                                                 session.getVespaVersion(),
+                                                                session.getVersionToBuildFirst(),
                                                                 sessionZooKeeperClient.loadApplicationPackage(),
                                                                 new AllocatedHostsFromAllModels(),
                                                                 clock.instant()));
@@ -578,11 +578,6 @@ public class SessionRepository {
 
     private void write(Session existingSession, LocalSession session, ApplicationId applicationId, Instant created) {
 
-        // TODO: remove when tenant secret store integration test passes
-        var tenantSecretStores = existingSession.getTenantSecretStores();
-        if (! tenantSecretStores.isEmpty() && zone.system().isPublic() && zone.cloud().name().equals(CloudName.AWS)) {
-            tenantSecretStores.forEach(ss -> log.info("Existing tenant secret store:\n" + ss));
-        }
         SessionSerializer sessionSerializer = new SessionSerializer();
         sessionSerializer.write(session.getSessionZooKeeperClient(),
                                 applicationId,
@@ -590,9 +585,11 @@ public class SessionRepository {
                                 existingSession.getApplicationPackageReference(),
                                 existingSession.getDockerImageRepository(),
                                 existingSession.getVespaVersion(),
+                                existingSession.getVersionToBuildFirst(),
                                 existingSession.getAthenzDomain(),
                                 existingSession.getQuota(),
-                                tenantSecretStores,
+                                existingSession.getTenantVaults(),
+                                existingSession.getTenantSecretStores(),
                                 existingSession.getOperatorCertificates(),
                                 existingSession.getCloudAccount(),
                                 existingSession.getDataplaneTokens(),
@@ -606,9 +603,9 @@ public class SessionRepository {
 
     // ---------------- Common stuff ----------------------------------------------------------------
 
-    public void deleteExpiredRemoteAndLocalSessions(Predicate<Session> sessionIsActiveForApplication) {
+    public void deleteExpiredRemoteAndLocalSessions(Predicate<Session> sessionIsActiveForApplication, int maxSessionsToDelete) {
         // All known sessions, both local (file) and remote (zookeeper)
-        Set<Long> sessions = getLocalSessionsIdsFromFileSystem();
+        List<Long> sessions = getLocalSessionsIdsFromFileSystem();
         sessions.addAll(getRemoteSessionsFromZooKeeper());
         log.log(Level.FINE, () -> "Sessions for tenant " + tenantName + ": " + sessions);
 
@@ -616,9 +613,10 @@ public class SessionRepository {
         // we will exclude these)
         Set<Long> newSessions = findNewSessionsInFileSystem();
         sessions.removeAll(newSessions);
+        Collections.sort(sessions);
 
         // Avoid deleting too many in one run
-        int deleteMax = (int) Math.min(1000, Math.max(50, sessions.size() * 0.05));
+        int deleteMax = (int) Math.min(1000, Math.max(maxSessionsToDelete, sessions.size() * 0.05));
         int deletedRemoteSessions = 0;
         int deletedLocalSessions = 0;
         for (Long sessionId : sessions) {

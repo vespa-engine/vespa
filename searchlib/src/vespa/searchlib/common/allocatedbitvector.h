@@ -58,6 +58,8 @@ public:
      */
     void resize(Index newLength);
 
+    size_t get_allocated_bytes(bool include_self) const noexcept override;
+
 protected:
     Index          _capacityBits;
     Alloc          _alloc;

@@ -55,6 +55,8 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     uint64_t _size_on_disk;
     std::shared_ptr<LockedCacheDiskIoStats> _cache_disk_io_stats;
     std::shared_ptr<IPostingListCache> _posting_list_cache;
+    bool                               _posting_list_cache_enabled;
+    bool                               _bitvector_cache_enabled;
     static std::atomic<uint64_t> _file_id_source;
     uint32_t _field_id;
 
@@ -70,11 +72,14 @@ public:
     bool open_dictionary(const std::string& field_dir, const TuneFileSearch& tune_file_search);
     bool open(const std::string& field_dir, const TuneFileSearch &tune_file_search);
     void reuse_files(const FieldIndex& rhs);
-    index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
-    index::PostingListHandle read(const IPostingListCache::Key& key) const override;
+    index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult &lookup_result,
+                                                        bool trim) const;
+    index::PostingListHandle read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const override;
     index::PostingListHandle read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
     index::BitVectorDictionaryLookupResult lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
-    std::unique_ptr<BitVector> read_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
+    std::shared_ptr<BitVector> read_uncached_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
+    std::shared_ptr<BitVector> read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const override;
+    std::shared_ptr<BitVector> read_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
     std::unique_ptr<search::queryeval::SearchIterator> create_iterator(const search::index::DictionaryLookupResult& lookup_result,
                                                                        const index::PostingListHandle& handle,
                                                                        const search::fef::TermFieldMatchDataArray& tfmda) const;
@@ -83,6 +88,7 @@ public:
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
     FieldIndexStats get_stats() const;
     uint32_t get_field_id() const noexcept { return _field_id; }
+    bool is_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
 };
 
 }

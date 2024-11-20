@@ -120,7 +120,7 @@ TestDiskIndex::openIndex(const std::string &dir, bool directio, bool readmmap, b
     }
     std::shared_ptr<IPostingListCache> posting_list_cache;
     if (use_posting_list_cache) {
-        posting_list_cache = std::make_shared<PostingListCache>(256_Ki);
+        posting_list_cache = std::make_shared<PostingListCache>(256_Ki, 256_Ki);
     }
     _index = std::make_unique<DiskIndex>(dir, posting_list_cache);
     bool ok(_index->setup(tuneFileRead));

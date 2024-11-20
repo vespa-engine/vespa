@@ -2,7 +2,9 @@
 package com.yahoo.vespa.model.container.xml;
 
 import ai.vespa.secret.config.SecretsConfig;
+import ai.vespa.secret.config.aws.AsmTenantSecretConfig;
 import com.yahoo.component.ComponentId;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -15,6 +17,8 @@ import com.yahoo.vespa.model.container.component.Component;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
 
+import java.util.List;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
@@ -23,45 +27,87 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  */
 public class SecretsTest extends ContainerModelBuilderTestBase {
 
-    private static final String IMPL_ID = "ai.vespa.secret.aws.SecretsImpl";
+    private static final String SECRETS_IMPL_ID = CloudSecrets.CLASS;
+
 
     @Test
     void testCloudSecretsNeedHosted() {
-        Element clusterElem = DomBuilderTest.parse(
-                "<container version='1.0'>",
-                "  <secrets>",
-                "    <openAiApiKey vault='prod' name='openai-apikey' />",
-                "  </secrets>",
-                "</container>");
-        createModel(root, clusterElem);
+        createModel(root, containerXml());
         ApplicationContainerCluster container = getContainerCluster("container");
-        Component<?, ?> component = container.getComponentsMap().get(ComponentId.fromString(IMPL_ID));
+        Component<?, ?> component = container.getComponentsMap().get(ComponentId.fromString(SECRETS_IMPL_ID));
         assertNull(component);
     }
 
     @Test
     void testSecretsCanBeSetUp() {
-        Element clusterElem = DomBuilderTest.parse(
+        DeployState state = new DeployState.Builder()
+                .properties(new TestProperties().setHostedVespa(true))
+                .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
+                .build();
+        createModel(root, state, null, containerXml());
+        ApplicationContainerCluster container = getContainerCluster("container");
+        assertComponentConfigured(container, SECRETS_IMPL_ID);
+        var secretsConfig = getSecretsConfig(container);
+
+        assertEquals(1, secretsConfig.secret().size());
+        assertEquals("openai-apikey", secretsConfig.secret("openAiApiKey").name());
+    }
+
+    @Test
+    void tenant_vaults_are_propagated_in_config() {
+        var tenantVaults = List.of(
+                new TenantVault("id1", "name1", "externalId1", List.of()),
+                new TenantVault("id2", "name2", "externalId2", List.of()));
+
+        var deployState = new DeployState.Builder()
+                .properties(new TestProperties()
+                                    .setHostedVespa(true)
+                                    .setTenantVaults(tenantVaults))
+                .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
+                .build();
+
+        createModel(root, deployState, null, containerXml());
+        ApplicationContainerCluster container = getContainerCluster("container");
+
+        var config = getAsmTenantSecretConfig(container);
+        assertEquals(SystemName.Public.value(), config.system());
+        assertEquals("default", config.tenant());
+
+        var vaults = config.vaults();
+        assertEquals(2, vaults.size());
+
+        assertEquals("id1", vaults.get(0).id());
+        assertEquals("name1", vaults.get(0).name());
+        assertEquals("externalId1", vaults.get(0).externalId());
+
+        assertEquals("id2", vaults.get(1).id());
+        assertEquals("name2", vaults.get(1).name());
+        assertEquals("externalId2", vaults.get(1).externalId());
+    }
+
+    private static AsmTenantSecretConfig getAsmTenantSecretConfig(ApplicationContainerCluster container) {
+        var secrets = (CloudAsmSecrets) container.getComponentsMap().get(ComponentId.fromString(CloudAsmSecrets.CLASS));
+
+        AsmTenantSecretConfig.Builder configBuilder = new AsmTenantSecretConfig.Builder();
+        secrets.getConfig(configBuilder);
+        return configBuilder.build();
+    }
+
+    private static SecretsConfig getSecretsConfig(ApplicationContainerCluster container) {
+        var secrets = (CloudSecrets) container.getComponentsMap().get(ComponentId.fromString(SECRETS_IMPL_ID));
+
+        SecretsConfig.Builder configBuilder = new SecretsConfig.Builder();
+        secrets.getConfig(configBuilder);
+        return configBuilder.build();
+    }
+
+    private static Element containerXml() {
+        return DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <secrets>",
                 "    <openAiApiKey vault='prod' name='openai-apikey' />",
                 "  </secrets>",
                 "</container>");
-        DeployState state = new DeployState.Builder()
-                .properties(new TestProperties().setHostedVespa(true))
-                .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
-                .build();
-        createModel(root, state, null, clusterElem);
-        ApplicationContainerCluster container = getContainerCluster("container");
-        assertComponentConfigured(container, IMPL_ID);
-        CloudSecrets secrets = (CloudSecrets) container.getComponentsMap().get(ComponentId.fromString(IMPL_ID));
-
-        SecretsConfig.Builder configBuilder = new SecretsConfig.Builder();
-        secrets.getConfig(configBuilder);
-        SecretsConfig secretsConfig = configBuilder.build();
-
-        assertEquals(1, secretsConfig.secret().size());
-        assertEquals("openai-apikey", secretsConfig.secret("openAiApiKey").name());
     }
 
 }

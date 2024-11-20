@@ -18,7 +18,6 @@ import org.junit.jupiter.api.Test;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -41,7 +40,7 @@ class SnapshotSerializerTest {
                                                         ClusterSpec.Id.from("c1")),
                                           0,
                                           CloudAccount.from("aws:000123456789"),
-                                          Optional.empty()
+                                          new SnapshotKey(sharedKey.sealedSharedKey(), SecretVersionId.of("v2"))
         );
         Snapshot snapshot1 = new Snapshot(SnapshotId.of("7e45b44a-0f1a-4729-a4f4-20fff5d1e85d"),
                                           HostName.of("host1.example.com"),
@@ -52,7 +51,7 @@ class SnapshotSerializerTest {
                                                         ClusterSpec.Id.from("c2")),
                                           2,
                                           CloudAccount.from("aws:777123456789"),
-                                          Optional.of(new SnapshotKey(sharedKey.sealedSharedKey(), SecretVersionId.of("v1")))
+                                          new SnapshotKey(sharedKey.sealedSharedKey(), SecretVersionId.of("v1"))
         );
         assertEquals(snapshot0, SnapshotSerializer.fromSlime(SnapshotSerializer.toSlime(snapshot0), systemAccount));
         List<Snapshot> snapshots = List.of(snapshot0, snapshot1);

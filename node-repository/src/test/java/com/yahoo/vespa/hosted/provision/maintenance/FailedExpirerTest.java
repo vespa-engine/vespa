@@ -362,7 +362,7 @@ public class FailedExpirerTest {
                                                                (level, message) -> System.out.println(level + ": " + message) );
             try (var lock = provisioner.lock(applicationId)) {
                 NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-                provisioner.activate(Set.copyOf(preparedNodes), new ActivationContext(0), new ApplicationTransaction(lock, transaction));
+                provisioner.activate(Set.copyOf(preparedNodes), new ActivationContext(0, !capacity.canFail()), new ApplicationTransaction(lock, transaction));
                 transaction.commit();
             }
             return this;

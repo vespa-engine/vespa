@@ -97,6 +97,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         metrics::LongValueMetric diskUsage;
         MemoryUsageMetrics memoryUsage;
         metrics::LongValueMetric docsInMemory;
+        DiskIoMetrics disk_io;
 
         IndexMetrics(metrics::MetricSet *parent);
         ~IndexMetrics() override;

@@ -68,6 +68,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     rcuvector.cpp
     ref_counted.cpp
     regexp.cpp
+    relative_frequency_sketch.cpp
     require.cpp
     resource_limits.cpp
     round_up_to_page_size.cpp

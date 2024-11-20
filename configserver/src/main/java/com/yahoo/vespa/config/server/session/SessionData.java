@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
@@ -16,6 +17,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.tenant.DataplaneTokenSerializer;
 import com.yahoo.vespa.config.server.tenant.OperatorCertificateSerializer;
 import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
+import com.yahoo.vespa.config.server.tenant.TenantVaultSerializer;
 
 import java.io.IOException;
 import java.security.cert.X509Certificate;
@@ -34,10 +36,12 @@ import static com.yahoo.slime.SlimeUtils.optionalString;
 public record SessionData(ApplicationId applicationId,
                           Optional<FileReference> applicationPackageReference,
                           Version version,
+                          Optional<Version> versionToBuildFirst,
                           Instant created,
                           Optional<DockerImage> dockerImageRepository,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<Quota> quota,
+                          List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount,
@@ -48,10 +52,12 @@ public record SessionData(ApplicationId applicationId,
     static final String APPLICATION_ID_PATH = "applicationId";
     static final String APPLICATION_PACKAGE_REFERENCE_PATH = "applicationPackageReference";
     static final String VERSION_PATH = "version";
+    static final String VERSION_TO_BUILD_FIRST_PATH = "versionToBuildFirst";
     static final String CREATE_TIME_PATH = "createTime";
     static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
     static final String ATHENZ_DOMAIN = "athenzDomain";
     static final String QUOTA_PATH = "quota";
+    static final String TENANT_VAULTS_PATH = "tenantVaults";
     static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
     static final String OPERATOR_CERTIFICATES_PATH = "operatorCertificates";
     static final String CLOUD_ACCOUNT_PATH = "cloudAccount";
@@ -74,10 +80,14 @@ public record SessionData(ApplicationId applicationId,
         object.setString(APPLICATION_ID_PATH, applicationId.serializedForm());
         applicationPackageReference.ifPresent(ref -> object.setString(APPLICATION_PACKAGE_REFERENCE_PATH, ref.value()));
         object.setString(VERSION_PATH, version.toString());
+        versionToBuildFirst.ifPresent(v -> object.setString(VERSION_TO_BUILD_FIRST_PATH, v.toString()));
         object.setLong(CREATE_TIME_PATH, created.toEpochMilli());
         dockerImageRepository.ifPresent(image -> object.setString(DOCKER_IMAGE_REPOSITORY_PATH, image.asString()));
         athenzDomain.ifPresent(domain -> object.setString(ATHENZ_DOMAIN, domain.value()));
         quota.ifPresent(q -> q.toSlime(object.setObject(QUOTA_PATH)));
+
+        Cursor tenantVaultArray = object.setArray(TENANT_VAULTS_PATH);
+        TenantVaultSerializer.toSlime(tenantVaults, tenantVaultArray);
 
         Cursor tenantSecretStoresArray = object.setArray(TENANT_SECRET_STORES_PATH);
         TenantSecretStoreSerializer.toSlime(tenantSecretStores, tenantSecretStoresArray);
@@ -98,12 +108,16 @@ public record SessionData(ApplicationId applicationId,
         return new SessionData(ApplicationId.fromSerializedForm(cursor.field(APPLICATION_ID_PATH).asString()),
                                optionalString(cursor.field(APPLICATION_PACKAGE_REFERENCE_PATH)).map(FileReference::new),
                                Version.fromString(cursor.field(VERSION_PATH).asString()),
+                               SlimeUtils.isPresent(cursor.field(VERSION_TO_BUILD_FIRST_PATH))
+                                       ? Optional.of(Version.fromString(cursor.field(VERSION_TO_BUILD_FIRST_PATH).asString()))
+                                       : Optional.empty(),
                                Instant.ofEpochMilli(cursor.field(CREATE_TIME_PATH).asLong()),
                                optionalString(cursor.field(DOCKER_IMAGE_REPOSITORY_PATH)).map(DockerImage::fromString),
                                optionalString(cursor.field(ATHENZ_DOMAIN)).map(AthenzDomain::from),
                                SlimeUtils.isPresent(cursor.field(QUOTA_PATH))
                                        ? Optional.of(Quota.fromSlime(cursor.field(QUOTA_PATH)))
                                        : Optional.empty(),
+                               TenantVaultSerializer.listFromSlime(cursor.field(TENANT_VAULTS_PATH)),
                                TenantSecretStoreSerializer.listFromSlime(cursor.field(TENANT_SECRET_STORES_PATH)),
                                OperatorCertificateSerializer.fromSlime(cursor.field(OPERATOR_CERTIFICATES_PATH)),
                                optionalString(cursor.field(CLOUD_ACCOUNT_PATH)).map(CloudAccount::from),

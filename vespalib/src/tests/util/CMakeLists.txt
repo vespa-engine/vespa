@@ -25,6 +25,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     random_test.cpp
     rcuvector_test.cpp
     ref_counted_test.cpp
+    relative_frequency_sketch_test.cpp
     require_test.cpp
     size_literals_test.cpp
     small_vector_test.cpp

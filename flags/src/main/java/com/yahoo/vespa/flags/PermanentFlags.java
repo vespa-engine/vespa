@@ -278,6 +278,12 @@ public class PermanentFlags {
             INSTANCE_ID
     );
 
+    public static final UnboundIntFlag DELAY_HOST_SECURITY_AGENT_START_MINUTES = defineIntFlag(
+            "delay-host-security-agent-start-minutes", 5,
+            "The number of minutes (from host admin start) to delay the start of the host security agent",
+            "Takes effect on next host-admin tick",
+            NODE_TYPE);
+
     // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
     public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
             "host-memory", -1.0,

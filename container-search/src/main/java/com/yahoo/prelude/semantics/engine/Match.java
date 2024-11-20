@@ -65,7 +65,7 @@ public class Match {
 
     /** Returns a new item representing this match */
     public Item toItem(String label, String term) {
-        var newItem = new WordItem(term, label);
+        var newItem = new WordItem(term, label, true);
         newItem.setWeight(item.getWeight());
         return newItem;
     }

@@ -34,7 +34,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.SecretStoreProvider;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
@@ -113,7 +112,15 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
@@ -873,7 +880,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     // ---------------- Session operations ----------------------------------------------------------------
 
-    public Activation activate(Session session, ApplicationId applicationId, Tenant tenant, boolean force) {
+    public Activation activate(Session session, ApplicationId applicationId, Tenant tenant, boolean isBootstrap, boolean force) {
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
@@ -885,7 +892,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             transaction.add(deactivateCurrentActivateNew(activeSession, session, force));
             if (applicationTransaction.isPresent()) {
                 hostProvisioner.get().activate(session.getAllocatedHosts().getHosts(),
-                                               new ActivationContext(session.getSessionId()),
+                                               new ActivationContext(session.getSessionId(), isBootstrap),
                                                applicationTransaction.get());
                 applicationTransaction.get().nested().commit();
             } else {
@@ -954,9 +961,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return session.getSessionId();
     }
 
-    public void deleteExpiredSessions() {
+    public void deleteExpiredSessions(int maxSessionsToDelete) {
         tenantRepository.getAllTenants()
-                .forEach(tenant -> tenant.getSessionRepository().deleteExpiredRemoteAndLocalSessions(session -> sessionIsActiveForItsApplication(tenant, session)));
+                .forEach(tenant -> tenant.getSessionRepository().deleteExpiredRemoteAndLocalSessions(session -> sessionIsActiveForItsApplication(tenant, session),
+                                                                                                     maxSessionsToDelete));
     }
 
     private boolean sessionIsActiveForItsApplication(Tenant tenant, Session session) {

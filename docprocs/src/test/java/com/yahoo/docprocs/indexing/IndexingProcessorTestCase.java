@@ -33,30 +33,28 @@ import static org.junit.Assert.assertTrue;
  */
 public class IndexingProcessorTestCase {
 
-    private static final String CONFIG_ID = "dir:src/test/cfg";
-
-    private final IndexingProcessor indexer = newProcessor(CONFIG_ID);
-
     @Test
     public void requireThatIndexerForwardsDocumentsOfUnknownType() {
+        var tester = new IndexingProcessorTester();
         Document input = new Document(new DocumentType("unknown"), "id:ns:unknown::");
-        DocumentOperation output = process(new DocumentPut(input));
+        DocumentOperation output = tester.process(new DocumentPut(input));
         assertTrue(output instanceof DocumentPut);
         assertSame(input, ((DocumentPut)output).getDocument());
     }
 
     @Test
     public void testPut() {
+        IndexingProcessorTester tester = new IndexingProcessorTester("src/test/cfg");
         // 'combined' gets the value of both
         // 'combinedWithFallback' falls back to an empty string if an input is missing
 
         {   // Both artist and title are set
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
             input.getDocument().setFieldValue(inputType.getField("artist"), new StringFieldValue("artist1"));
             input.getDocument().setFieldValue(inputType.getField("title"), new StringFieldValue("title1"));
 
-            Document output = ((DocumentPut)process(input)).getDocument();
+            Document output = ((DocumentPut)tester.process(input)).getDocument();
             assertEquals("artist1", output.getFieldValue("artist").getWrappedValue());
             assertEquals("title1", output.getFieldValue("title").getWrappedValue());
             assertNull(output.getFieldValue("song"));
@@ -65,11 +63,11 @@ public class IndexingProcessorTestCase {
         }
 
         {   // Just artist is set
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
             input.getDocument().setFieldValue(inputType.getField("artist"), new StringFieldValue("artist1"));
 
-            Document output = ((DocumentPut)process(input)).getDocument();
+            Document output = ((DocumentPut)tester.process(input)).getDocument();
             assertEquals("artist1", output.getFieldValue("artist").getWrappedValue());
             assertNull(output.getFieldValue("title"));
             assertNull(output.getFieldValue("song"));
@@ -78,11 +76,11 @@ public class IndexingProcessorTestCase {
         }
 
         {   // Just title is set
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
             input.getDocument().setFieldValue(inputType.getField("title"), new StringFieldValue("title1"));
 
-            Document output = ((DocumentPut)process(input)).getDocument();
+            Document output = ((DocumentPut)tester.process(input)).getDocument();
             assertEquals("title1", output.getFieldValue("title").getWrappedValue());
             assertNull(output.getFieldValue("artist"));
             assertNull(output.getFieldValue("song"));
@@ -91,11 +89,11 @@ public class IndexingProcessorTestCase {
         }
 
         {   // Neither title nor artist is set
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
             input.getDocument().setFieldValue(inputType.getField("song"), new StringFieldValue("song1"));
 
-            Document output = ((DocumentPut)process(input)).getDocument();
+            Document output = ((DocumentPut)tester.process(input)).getDocument();
             assertNull(output.getFieldValue("artist"));
             assertNull(output.getFieldValue("title"));
             assertEquals("song1", output.getFieldValue("song").getWrappedValue());
@@ -104,10 +102,10 @@ public class IndexingProcessorTestCase {
         }
 
         {   // None is set
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentPut input = new DocumentPut(inputType, "id:ns:music::");
 
-            Document output = ((DocumentPut)process(input)).getDocument();
+            Document output = ((DocumentPut)tester.process(input)).getDocument();
             assertNull(output.getFieldValue("artist"));
             assertNull(output.getFieldValue("title"));
             assertNull(output.getFieldValue("song"));
@@ -117,99 +115,104 @@ public class IndexingProcessorTestCase {
     }
 
     @Test
+    public void testPutCfg2() {
+        // Config of the following schema, derived Nov 2024, by SchemaTestCase.testDeriving in the config-model
+        //
+        //                schema page {
+        //
+        //                    field domain_hash type long {
+        //                        indexing: input domain | hash | attribute
+        //                    }
+        //
+        //                    document page {
+        //
+        //                        field domain type string {
+        //                            indexing: index | summary
+        //                            match: word
+        //                            rank: filter
+        //                        }
+        //                    }
+        //                }
+        IndexingProcessorTester tester = new IndexingProcessorTester("src/test/cfg2");
+
+        {   // Both artist and title are set
+            DocumentType inputType = tester.getDocumentType("page");
+            DocumentPut input = new DocumentPut(inputType, "id:ns:page::");
+            input.getDocument().setFieldValue(inputType.getField("domain"), new StringFieldValue("domain1"));
+
+            Document output = ((DocumentPut)tester.process(input)).getDocument();
+            assertEquals("domain1", output.getFieldValue("domain").getWrappedValue());
+            assertEquals(1386505442371493468L, output.getFieldValue("domain_hash").getWrappedValue());
+        }
+    }
+
+    @Test
     public void testUpdate() {
+        IndexingProcessorTester tester = new IndexingProcessorTester("src/test/cfg");
         // 'combined' gets the value of artist and title
         // 'combinedWithFallback' falls back to an empty string if an input is missing
 
         {   // Both artist and title are set
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
             input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("artist"), new StringFieldValue("artist1")));
             input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("title"), new StringFieldValue("title1")));
 
-            DocumentUpdate output = (DocumentUpdate)process(input);
+            DocumentUpdate output = (DocumentUpdate)tester.process(input);
             assertEquals(4, output.fieldUpdates().size());
-            assertAssignment("artist", "artist1", output);
-            assertAssignment("title", "title1", output);
-            assertAssignment("combined", "artist1 title1", output);
-            assertAssignment("combinedWithFallback", "artist1 title1", output);
+            tester.assertAssignment("artist", "artist1", output);
+            tester.assertAssignment("title", "title1", output);
+            tester.assertAssignment("combined", "artist1 title1", output);
+            tester.assertAssignment("combinedWithFallback", "artist1 title1", output);
         }
 
         {   // Just artist is set
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
             input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("artist"), new StringFieldValue("artist1")));
 
-            DocumentUpdate output = (DocumentUpdate)process(input);
+            DocumentUpdate output = (DocumentUpdate)tester.process(input);
             assertEquals(2, output.fieldUpdates().size());
-            assertAssignment("artist", "artist1", output);
-            assertAssignment("combinedWithFallback", "artist1 ", output);
+            tester.assertAssignment("artist", "artist1", output);
+            tester.assertAssignment("combinedWithFallback", "artist1 ", output);
         }
 
         {   // Just title is set
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
             input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("title"), new StringFieldValue("title1")));
 
-            DocumentUpdate output = (DocumentUpdate)process(input);
+            DocumentUpdate output = (DocumentUpdate)tester.process(input);
             assertEquals(2, output.fieldUpdates().size());
-            assertAssignment("title", "title1", output);
-            assertAssignment("combinedWithFallback", " title1", output);
+            tester.assertAssignment("title", "title1", output);
+            tester.assertAssignment("combinedWithFallback", " title1", output);
         }
 
         {   // Neither title nor artist is set: Should not update embeddings even though it has fallbacks for all
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
             input.addFieldUpdate(FieldUpdate.createAssign(inputType.getField("song"), new StringFieldValue("song1")));
 
-            DocumentUpdate output = (DocumentUpdate)process(input);
+            DocumentUpdate output = (DocumentUpdate)tester.process(input);
             assertEquals(1, output.fieldUpdates().size());
-            assertAssignment("song", "song1", output);
+            tester.assertAssignment("song", "song1", output);
         }
 
         {   // None is set: Should not update anything
-            DocumentType inputType = indexer.getDocumentTypeManager().getDocumentType("music");
+            DocumentType inputType = tester.getDocumentType("music");
             DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
 
-            DocumentUpdate output = (DocumentUpdate)process(input);
+            DocumentUpdate output = (DocumentUpdate)tester.process(input);
             assertNull(output);
         }
     }
 
     @Test
     public void requireThatIndexerForwardsUpdatesOfUnknownType() {
+        var tester = new IndexingProcessorTester();
         DocumentUpdate input = new DocumentUpdate(new DocumentType("unknown"), "id:ns:music::");
-        DocumentOperation output = process(input);
+        DocumentOperation output = tester.process(input);
         assertSame(input, output);
     }
 
-    private void assertAssignment(String fieldName, String value, DocumentUpdate output) {
-        FieldUpdate update = output.getFieldUpdate(fieldName);
-        assertNotNull("Update of '" + fieldName + "' exists", update);
-        assertEquals(fieldName, update.getField().getName());
-        assertEquals(1, update.getValueUpdates().size());
-        ValueUpdate<?> combinedAssignment = update.getValueUpdate(0);
-        assertTrue(combinedAssignment instanceof AssignValueUpdate);
-        assertEquals(new StringFieldValue(value), combinedAssignment.getValue());
-    }
-
-    private DocumentOperation process(DocumentOperation input) {
-        Processing proc = new Processing();
-        proc.getDocumentOperations().add(input);
-        indexer.process(proc);
-
-        List<DocumentOperation> operations = proc.getDocumentOperations();
-        if (operations.isEmpty()) return null;
-        assertEquals(1, operations.size());
-        return operations.get(0);
-    }
-
-    @SuppressWarnings("deprecation")
-    private static IndexingProcessor newProcessor(String configId) {
-        return new IndexingProcessor(new DocumentTypeManager(ConfigGetter.getConfig(DocumentmanagerConfig.class, configId)),
-                                     ConfigGetter.getConfig(IlscriptsConfig.class, configId),
-                                     new SimpleLinguistics(),
-                                     new ComponentRegistry<>(),
-                                     new ComponentRegistry<>());
-    }
 }

@@ -26,11 +26,11 @@ import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeRepositoryProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
+import com.yahoo.vespa.hosted.provision.testutils.InMemoryProvisionLogger;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
 import com.yahoo.vespa.hosted.provision.testutils.ServiceMonitorStub;
 import com.yahoo.vespa.service.duper.InfraApplication;
 import com.yahoo.vespa.service.duper.TenantHostApplication;
-import com.yahoo.vespa.hosted.provision.testutils.InMemoryProvisionLogger;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -274,7 +274,7 @@ public class NodeFailTester {
         List<HostSpec> hosts = provisioner.prepare(applicationId, cluster, capacity, new InMemoryProvisionLogger());
         try (var lock = provisioner.lock(applicationId)) {
             NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(curator));
-            provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
+            provisioner.activate(hosts, new ActivationContext(0, !capacity.canFail()), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
     }

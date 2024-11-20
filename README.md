@@ -23,7 +23,7 @@ A new release of Vespa is made from this repository's master branch every mornin
 
 - Home page: [https://vespa.ai](https://vespa.ai)
 - Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)
-- Continuous build: [https://factory.vespa.oath.cloud](https://factory.vespa.oath.cloud)
+- Continuous build: [https://factory.vespa.ai](https://factory.vespa.ai)
 - Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)
 
 ## Table of contents

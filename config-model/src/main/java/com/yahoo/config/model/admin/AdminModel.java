@@ -78,7 +78,9 @@ public class AdminModel extends ConfigModel {
 
         @Override
         public void doBuild(AdminModel model, Element adminElement, ConfigModelContext modelContext) {
-            if (modelContext.getDeployState().isHosted()) { // admin v4 is used on hosted: Build a default V4 instead
+            // admin v4 is used on hosted: Build a default V4 instead. We want to allow version 2.0 so
+            // that self-hosted apps deploy without changes. TODO: Warn if tags from version 2.0 are used (and ignored)
+            if (modelContext.getDeployState().isHosted()) {
                 new BuilderV4().doBuild(model, adminElement, modelContext);
                 return;
             }

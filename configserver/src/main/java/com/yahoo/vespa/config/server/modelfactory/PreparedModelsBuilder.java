@@ -19,7 +19,6 @@ import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.ValidationParameters;
-import com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.AllocatedHosts;
@@ -49,6 +48,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors.FALSE;
+import static com.yahoo.config.model.api.ValidationParameters.IgnoreValidationErrors.TRUE;
 import static com.yahoo.yolean.Exceptions.toMessageString;
 import static java.util.logging.Level.FINE;
 
@@ -142,9 +143,8 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                      ModelContext modelContext) {
         log.log(FINE, () -> "Create and validate model " + modelVersion + " for " + applicationId +
                 ", previous model " + (modelOf(modelVersion).isPresent() ? " exists" : "does not exist"));
-        ValidationParameters validationParameters =
-                new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
-        ModelCreateResult result = modelFactory.createAndValidateModel(modelContext, validationParameters);
+        var validationParameters = new ValidationParameters(params.ignoreValidationErrors() ? TRUE : FALSE);
+        var result = modelFactory.createAndValidateModel(modelContext, validationParameters);
         validateModelHosts(hostValidator, applicationId, result.getModel());
         log.log(FINE, () -> "Done building model " + modelVersion + " for " + applicationId);
         params.getTimeoutBudget().assertNotTimedOut(() -> "prepare timed out after building model " + modelVersion +
@@ -222,6 +222,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                endpointCertificateSecrets,
                                                params.athenzDomain(),
                                                params.quota(),
+                                               params.tenantVaults(),
                                                params.tenantSecretStores(),
                                                secretStore,
                                                params.operatorCertificates(),

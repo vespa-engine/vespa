@@ -10,14 +10,15 @@
 #ifdef __linux__
 #include "file.h"
 #include "file_rw_ops.h"
-#include <sstream>
 #include <dirent.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <algorithm>
+#include <cassert>
 #include <cstdio>
 #include <cstring>
+#include <sstream>
 #include <system_error>
-#include <cassert>
 
 using fastos::File_RW_Ops;
 
@@ -282,24 +283,23 @@ FastOS_Linux_File::SetSize(int64_t newSize)
     return rc;
 }
 
-
-namespace {
-    void * align(void * p, size_t alignment) {
-        const size_t alignMask(alignment-1);
-        return reinterpret_cast<void *>((reinterpret_cast<unsigned long>(p) + alignMask) & ~alignMask);
-    }
-}
-
 void *
-FastOS_Linux_File::AllocateDirectIOBuffer (size_t byteSize, void *&realPtr)
+FastOS_Linux_File::AllocateDirectIOBuffer (size_t byteSize)
 {
     size_t dummy1, dummy2;
     size_t memoryAlignment;
+    void* ptr = nullptr;
 
     GetDirectIORestrictions(memoryAlignment, dummy1, dummy2);
-
-    realPtr = malloc(byteSize + memoryAlignment - 1);
-    return align(realPtr, memoryAlignment);
+    memoryAlignment = std::max(memoryAlignment, sizeof(void*));
+    int result = posix_memalign(&ptr, memoryAlignment, byteSize);
+    if (result != 0) {
+        std::ostringstream os;
+        os << "posix_memalign(&ptr, " << memoryAlignment << ", " << byteSize << ") failed with code " << result <<
+           " : " << getErrorString(result);
+        throw std::runtime_error(os.str());
+    }
+    return ptr;
 }
 
 size_t

@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.provision.node.ClusterId;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * @author mpolden
@@ -50,16 +49,11 @@ public class SnapshotSerializer {
             Instant at = Instant.ofEpochMilli(inspector.field(AT_FIELD).asLong());
             history.put(type, new Snapshot.History.Event(type, at));
         });
-        // TODO(mpolden): Require field after 2024-12-01
-        CloudAccount cloudAccount = SlimeUtils.optionalString(object.field(CLOUD_ACCOUNT_FIELD))
-                                              .map(CloudAccount::from)
-                                              .orElse(systemAccount);
-        Optional<SnapshotKey> encryptionKey = Optional.empty();
-        if (object.field(SEALED_SHARED_KEY_FIELD).valid()) {
-            SealedSharedKey sharedKey = SealedSharedKey.fromTokenString(object.field(SEALED_SHARED_KEY_FIELD).asString());
-            SecretVersionId sealingKeyVersion = SecretVersionId.of(object.field(SEALING_KEY_VERSION).asString());
-            encryptionKey = Optional.of(new SnapshotKey(sharedKey, sealingKeyVersion));
-        }
+        CloudAccount cloudAccount = CloudAccount.from(object.field(CLOUD_ACCOUNT_FIELD).asString());
+        SealedSharedKey sharedKey = SealedSharedKey.fromTokenString(object.field(SEALED_SHARED_KEY_FIELD).asString());
+        SecretVersionId sealingKeyVersion = SecretVersionId.of(object.field(SEALING_KEY_VERSION).asString());
+        SnapshotKey encryptionKey = new SnapshotKey(sharedKey, sealingKeyVersion);
+
         return new Snapshot(SnapshotId.of(object.field(ID_FIELD).asString()),
                             HostName.of(object.field(HOSTNAME_FIELD).asString()),
                             stateFromSlime(object.field(STATE_FIELD).asString()),
@@ -113,10 +107,8 @@ public class SnapshotSerializer {
             eventObject.setLong(AT_FIELD, event.at().toEpochMilli());
         });
         object.setString(CLOUD_ACCOUNT_FIELD, snapshot.cloudAccount().value());
-        snapshot.key().ifPresent(k -> {
-            object.setString(SEALED_SHARED_KEY_FIELD, k.sharedKey().toTokenString());
-            object.setString(SEALING_KEY_VERSION, k.sealingKeyVersion().value());
-        });
+        object.setString(SEALED_SHARED_KEY_FIELD, snapshot.key().sharedKey().toTokenString());
+        object.setString(SEALING_KEY_VERSION, snapshot.key().sealingKeyVersion().value());
     }
 
     public static String asString(Snapshot.State state) {

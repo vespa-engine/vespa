@@ -14,7 +14,7 @@ import java.util.List;
  */
 public class CloudSecrets extends SimpleComponent implements SecretsConfig.Producer {
 
-    private static final String CLASS = "ai.vespa.secret.aws.SecretsImpl";
+    static final String CLASS = "ai.vespa.secret.aws.SecretsImpl";
     private static final String BUNDLE = "jdisc-cloud-aws";
 
     private final List<SecretConfig> secrets = new ArrayList<>();
