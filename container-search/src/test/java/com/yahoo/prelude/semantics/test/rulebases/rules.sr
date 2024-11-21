@@ -72,3 +72,8 @@ the -> ;
 [typechange] -> $default:[typechange] ;
 
 [typechange] :- typechange;
+
+# Replacing a phrase and changing index
+[myphrase] -> brand:smashtogether ;
+
+[myphrase] :- smash together;
