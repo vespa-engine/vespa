@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "cache_disk_io_stats.h"
+#include "field_index_io_stats.h"
 #include <vespa/vespalib/util/memoryusage.h>
 #include <iosfwd>
 
@@ -15,13 +15,13 @@ class FieldIndexStats
 private:
     vespalib::MemoryUsage _memory_usage;
     size_t _size_on_disk; // in bytes
-    CacheDiskIoStats _cache_disk_io_stats;
+    FieldIndexIoStats _io_stats;
 
 public:
     FieldIndexStats() noexcept
         : _memory_usage(),
           _size_on_disk(0),
-          _cache_disk_io_stats()
+          _io_stats()
     {}
     FieldIndexStats &memory_usage(const vespalib::MemoryUsage &usage) noexcept {
         _memory_usage = usage;
@@ -34,19 +34,19 @@ public:
     }
     size_t size_on_disk() const noexcept { return _size_on_disk; }
 
-    FieldIndexStats& cache_disk_io_stats(const CacheDiskIoStats& stats) { _cache_disk_io_stats = stats; return *this; }
-    const CacheDiskIoStats& cache_disk_io_stats() const noexcept { return _cache_disk_io_stats; }
+    FieldIndexStats& io_stats(const FieldIndexIoStats& stats) { _io_stats = stats; return *this; }
+    const FieldIndexIoStats& io_stats() const noexcept { return _io_stats; }
 
     void merge(const FieldIndexStats &rhs) noexcept {
         _memory_usage.merge(rhs._memory_usage);
         _size_on_disk += rhs._size_on_disk;
-        _cache_disk_io_stats.merge(rhs._cache_disk_io_stats);
+        _io_stats.merge(rhs._io_stats);
     }
 
     bool operator==(const FieldIndexStats& rhs) const noexcept {
         return _memory_usage == rhs._memory_usage &&
-        _size_on_disk == rhs._size_on_disk &&
-        _cache_disk_io_stats == rhs._cache_disk_io_stats;
+               _size_on_disk == rhs._size_on_disk &&
+               _io_stats == rhs._io_stats;
     }
 };
 

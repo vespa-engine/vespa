@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "searchable_stats.h"
+#include "index_stats.h"
 #include <ostream>
 
 namespace search {
 
-SearchableStats::SearchableStats()
+IndexStats::IndexStats()
     : _memoryUsage(),
       _docsInMemory(0),
       _sizeOnDisk(0),
@@ -14,10 +14,10 @@ SearchableStats::SearchableStats()
 {
 }
 
-SearchableStats::~SearchableStats() = default;
+IndexStats::~IndexStats() = default;
 
-SearchableStats&
-SearchableStats::merge(const SearchableStats &rhs) {
+IndexStats&
+IndexStats::merge(const IndexStats &rhs) {
     _memoryUsage.merge(rhs._memoryUsage);
     _docsInMemory += rhs._docsInMemory;
     _sizeOnDisk += rhs._sizeOnDisk;
@@ -29,7 +29,7 @@ SearchableStats::merge(const SearchableStats &rhs) {
 }
 
 bool
-SearchableStats::operator==(const SearchableStats& rhs) const noexcept
+IndexStats::operator==(const IndexStats& rhs) const noexcept
 {
     return _memoryUsage == rhs._memoryUsage &&
     _docsInMemory == rhs._docsInMemory &&
@@ -38,14 +38,14 @@ SearchableStats::operator==(const SearchableStats& rhs) const noexcept
     _field_stats == rhs._field_stats;
 }
 
-SearchableStats&
-SearchableStats::add_field_stats(const std::string& name, const FieldIndexStats& stats)
+IndexStats&
+IndexStats::add_field_stats(const std::string& name, const FieldIndexStats& stats)
 {
     _field_stats[name].merge(stats);
     return *this;
 }
 
-std::ostream& operator<<(std::ostream& os, const SearchableStats& stats) {
+std::ostream& operator<<(std::ostream& os, const IndexStats& stats) {
     os << "{memory: " << stats.memoryUsage() << ", docsInMemory: " << stats.docsInMemory() <<
        ", disk: " << stats.sizeOnDisk() << ", fusion_size_on_disk: " << stats.fusion_size_on_disk() << ", ";
     os << "fields: {";

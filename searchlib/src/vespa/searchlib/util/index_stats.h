@@ -7,11 +7,11 @@
 namespace search {
 
 /**
- * Simple statistics for a single Searchable component or multiple components that are merged together.
+ * Simple statistics for a single index or for multiple indexes (merged stats).
  *
  * E.g. used for internal aggregation before inserting numbers into the metrics framework.
  **/
-class SearchableStats
+class IndexStats
 {
 private:
     vespalib::MemoryUsage _memoryUsage;
@@ -21,35 +21,35 @@ private:
     std::map<std::string, FieldIndexStats> _field_stats;
 
 public:
-    SearchableStats();
-    ~SearchableStats();
-    SearchableStats &memoryUsage(const vespalib::MemoryUsage &usage) {
+    IndexStats();
+    ~IndexStats();
+    IndexStats &memoryUsage(const vespalib::MemoryUsage &usage) {
         _memoryUsage = usage;
         return *this;
     }
     const vespalib::MemoryUsage &memoryUsage() const { return _memoryUsage; }
-    SearchableStats &docsInMemory(size_t value) {
+    IndexStats &docsInMemory(size_t value) {
         _docsInMemory = value;
         return *this;
     }
     size_t docsInMemory() const { return _docsInMemory; }
-    SearchableStats &sizeOnDisk(size_t value) {
+    IndexStats &sizeOnDisk(size_t value) {
         _sizeOnDisk = value;
         return *this;
     }
     size_t sizeOnDisk() const { return _sizeOnDisk; }
-    SearchableStats& fusion_size_on_disk(size_t value) {
+    IndexStats& fusion_size_on_disk(size_t value) {
         _fusion_size_on_disk = value;
         return *this;
     }
     size_t fusion_size_on_disk() const { return _fusion_size_on_disk; }
 
-    SearchableStats& merge(const SearchableStats& rhs);
-    bool operator==(const SearchableStats& rhs) const noexcept;
-    SearchableStats& add_field_stats(const std::string& name, const FieldIndexStats& stats);
+    IndexStats& merge(const IndexStats& rhs);
+    bool operator==(const IndexStats& rhs) const noexcept;
+    IndexStats& add_field_stats(const std::string& name, const FieldIndexStats& stats);
     const std::map<std::string, FieldIndexStats>& get_field_stats() const noexcept { return _field_stats; }
 };
 
-std::ostream& operator<<(std::ostream& os, const SearchableStats& stats);
+std::ostream& operator<<(std::ostream& os, const IndexStats& stats);
 
 }

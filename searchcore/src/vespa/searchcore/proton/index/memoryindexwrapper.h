@@ -49,7 +49,7 @@ public:
     {
         return _index.createBlueprint(requestContext, fields, term);
     }
-    search::SearchableStats getSearchableStats(bool) const override {
+    search::IndexStats get_index_stats(bool) const override {
         return _index.get_stats();
     }
 

@@ -9,7 +9,7 @@
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchlib/queryeval/searchable.h>
-#include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/searchlib/util/index_stats.h>
 
 namespace searchcorespi {
 
@@ -38,9 +38,9 @@ public:
     using SP = std::shared_ptr<IndexSearchable>;
 
     /**
-     * Returns the searchable stats for this index searchable.
+     * Returns the index stats for this index searchable.
      */
-    virtual search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const = 0;
+    virtual search::IndexStats get_index_stats(bool clear_disk_io_stats) const = 0;
 
     /**
      * Returns the serial number for this index searchable.

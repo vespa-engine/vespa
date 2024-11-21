@@ -361,9 +361,9 @@ public:
         return _source_list;
     }
 
-    search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const override {
+    search::IndexStats get_index_stats(bool clear_disk_io_stats) const override {
         LockGuard lock(_new_search_lock);
-        return _source_list->getSearchableStats(clear_disk_io_stats);
+        return _source_list->get_index_stats(clear_disk_io_stats);
     }
 
     IFlushTarget::List getFlushTargets() override;

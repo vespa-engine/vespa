@@ -34,13 +34,13 @@ const std::vector<std::string> field_file_names{
 
 std::atomic<uint64_t> FieldIndex::_file_id_source(0);
 
-FieldIndex::LockedCacheDiskIoStats::LockedCacheDiskIoStats() noexcept
+FieldIndex::LockedFieldIndexIoStats::LockedFieldIndexIoStats() noexcept
     : _stats(),
       _mutex()
 {
 }
 
-FieldIndex::LockedCacheDiskIoStats::~LockedCacheDiskIoStats() = default;
+FieldIndex::LockedFieldIndexIoStats::~LockedFieldIndexIoStats() = default;
 
 FieldIndex::FieldIndex()
     : _posting_file(),
@@ -48,7 +48,7 @@ FieldIndex::FieldIndex()
       _dict(),
       _file_id(0),
       _size_on_disk(0),
-      _cache_disk_io_stats(std::make_shared<LockedCacheDiskIoStats>()),
+      _io_stats(std::make_shared<LockedFieldIndexIoStats>()),
       _posting_list_cache(),
       _posting_list_cache_enabled(false),
       _bitvector_cache_enabled(false),
@@ -169,7 +169,7 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
     _bit_vector_dict = rhs._bit_vector_dict;
     _file_id = rhs._file_id;
     _size_on_disk = rhs._size_on_disk;
-    _cache_disk_io_stats = rhs._cache_disk_io_stats;
+    _io_stats = rhs._io_stats;
 }
 
 PostingListHandle
@@ -177,7 +177,7 @@ FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_resu
 {
     auto handle = _posting_file->read_posting_list(lookup_result);
     assert(handle._read_bytes != 0);
-    _cache_disk_io_stats->add_uncached_read_operation(handle._read_bytes);
+    _io_stats->add_uncached_read_operation(handle._read_bytes);
     if (trim) {
         _posting_file->consider_trim_posting_list(lookup_result, handle, 0.2); // Trim posting list if more than 20% bloat
     }
@@ -212,7 +212,7 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
     auto result = _posting_list_cache->read(key, ctx);
     if (!ctx.cache_miss) {
         assert(result._read_bytes != 0);
-        _cache_disk_io_stats->add_cached_read_operation(result._read_bytes);
+        _io_stats->add_cached_read_operation(result._read_bytes);
     }
     return result;
 }
@@ -232,7 +232,7 @@ FieldIndex::read_uncached_bit_vector(BitVectorDictionaryLookupResult lookup_resu
     ReadStats read_stats;
     auto result = _bit_vector_dict->read_bitvector(lookup_result, read_stats);
     assert(read_stats.read_bytes != 0);
-    _cache_disk_io_stats->add_uncached_read_operation(read_stats.read_bytes);
+    _io_stats->add_uncached_read_operation(read_stats.read_bytes);
     return result;
 }
 
@@ -258,7 +258,7 @@ FieldIndex::read_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
     IPostingListCache::Context ctx(this);
     auto result = _posting_list_cache->read(key, ctx);
     if (!ctx.cache_miss) {
-        _cache_disk_io_stats->add_cached_read_operation(result->getFileBytes());
+        _io_stats->add_cached_read_operation(result->getFileBytes());
     }
     return result;
 }
@@ -281,8 +281,8 @@ FieldIndex::get_field_length_info() const
 FieldIndexStats
 FieldIndex::get_stats(bool clear_disk_io_stats) const
 {
-    auto cache_disk_io_stats = _cache_disk_io_stats->read_and_maybe_clear(clear_disk_io_stats);
-    return FieldIndexStats().size_on_disk(_size_on_disk).cache_disk_io_stats(cache_disk_io_stats);
+    auto io_stats = _io_stats->read_and_maybe_clear(clear_disk_io_stats);
+    return FieldIndexStats().size_on_disk(_size_on_disk).io_stats(io_stats);
 }
 
 }

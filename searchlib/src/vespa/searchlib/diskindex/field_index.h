@@ -25,13 +25,13 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     using DiskPostingFileReal = Zc4PosOccRandRead;
     using DiskPostingFileDynamicKReal = ZcPosOccRandRead;
 
-    class LockedCacheDiskIoStats {
-        CacheDiskIoStats _stats;
+    class LockedFieldIndexIoStats {
+        FieldIndexIoStats _stats;
         std::mutex _mutex;
 
     public:
-        LockedCacheDiskIoStats() noexcept;
-        ~LockedCacheDiskIoStats();
+        LockedFieldIndexIoStats() noexcept;
+        ~LockedFieldIndexIoStats();
 
         void add_uncached_read_operation(uint64_t bytes) {
             std::lock_guard guard(_mutex);
@@ -42,7 +42,7 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
             _stats.add_cached_read_operation(bytes);
         }
 
-        CacheDiskIoStats read_and_maybe_clear(bool clear_disk_io_stats) {
+        FieldIndexIoStats read_and_maybe_clear(bool clear_disk_io_stats) {
             std::lock_guard guard(_mutex);
             return _stats.read_and_maybe_clear(clear_disk_io_stats);
         }
@@ -53,7 +53,7 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     std::unique_ptr<index::DictionaryFileRandRead> _dict;
     uint64_t _file_id;
     uint64_t _size_on_disk;
-    std::shared_ptr<LockedCacheDiskIoStats> _cache_disk_io_stats;
+    std::shared_ptr<LockedFieldIndexIoStats> _io_stats;
     std::shared_ptr<IPostingListCache> _posting_list_cache;
     bool                               _posting_list_cache_enabled;
     bool                               _bitvector_cache_enabled;
