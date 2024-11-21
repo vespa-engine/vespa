@@ -53,13 +53,17 @@ public class CloudAsmSecrets extends SimpleComponent implements
         builder.system(system.value())
                 .tenant(tenant.value());
 
-        tenantVaults.forEach(vault -> {
-            builder.vaults(vaultBuilder -> {
-                vaultBuilder.id(vault.id())
+        tenantVaults.forEach(vault -> builder.vaults(
+                vaultBuilder -> { vaultBuilder
+                        .id(vault.id())
                         .name(vault.name())
                         .externalId(vault.externalId());
-            });
-        });
+
+                    vault.secrets().forEach(secret -> vaultBuilder.secrets(
+                            secretBuilder -> secretBuilder
+                                    .id(secret.id())
+                                    .name(secret.name())));
+                }));
     }
 
 }
