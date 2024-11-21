@@ -22,6 +22,8 @@ public class TermType {
 
     public static final TermType EQUIV = new TermType("equiv", Item.ItemType.EQUIV, EquivItem.class, null, "");
 
+    public static final TermType WEAK_AND = new TermType("wand", Item.ItemType.WAND, WeakAndItem.class, null, "~");
+
     public static final TermType DEFAULT = new TermType("", Item.ItemType.AND, CompositeItem.class, AndItem.class, "");
 
     public final String name;

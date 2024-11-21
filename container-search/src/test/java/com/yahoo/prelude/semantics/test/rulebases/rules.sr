@@ -49,7 +49,7 @@ java +> -coffee;
 # Adding an or term
 something +> ?somethingelse;
 
-# Add two or terms:
+# Replace with two or terms:
 somethingmore -> ?more ?evenmore;
 
 # Adding another negative
@@ -72,3 +72,8 @@ the -> ;
 [typechange] -> $default:[typechange] ;
 
 [typechange] :- typechange;
+
+# Replacing a phrase and changing index
+[myphrase] -> brand:smashtogether ;
+
+[myphrase] :- smash together;
