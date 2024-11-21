@@ -43,7 +43,6 @@ DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection
       _jobTrackers(jobTrackers),
       _writeFilter(writeFilter),
       _feed_handler(feed_handler),
-      _lastDocStoreCacheStats(),
       _last_feed_handler_stats()
 {
 }
@@ -236,7 +235,6 @@ updateDocumentsMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBColl
 void
 updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics &metrics,
                            const IDocumentSubDB *subDb,
-                           CacheStats &lastCacheStats,
                            TotalStats &totalStats)
 {
     const ISummaryManager::SP &summaryMgr = subDb->getSummaryManager();
@@ -249,17 +247,16 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreM
 
     vespalib::CacheStats cacheStats = backingStore.getCacheStats();
     totalStats.memoryUsage.incAllocatedBytes(cacheStats.memory_used);
-    metrics.cache.update_metrics(cacheStats, lastCacheStats);
-    lastCacheStats = cacheStats;
+    metrics.cache.update_metrics(cacheStats);
 }
 
 void
 updateDocumentStoreMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDBs,
-                           DocumentDBMetricsUpdater::DocumentStoreCacheStats &lastDocStoreCacheStats, TotalStats &totalStats)
+                           TotalStats &totalStats)
 {
-    updateDocumentStoreMetrics(metrics.ready.documentStore, subDBs.getReadySubDB(), lastDocStoreCacheStats.readySubDb, totalStats);
-    updateDocumentStoreMetrics(metrics.removed.documentStore, subDBs.getRemSubDB(), lastDocStoreCacheStats.removedSubDb, totalStats);
-    updateDocumentStoreMetrics(metrics.notReady.documentStore, subDBs.getNotReadySubDB(), lastDocStoreCacheStats.notReadySubDb, totalStats);
+    updateDocumentStoreMetrics(metrics.ready.documentStore, subDBs.getReadySubDB(), totalStats);
+    updateDocumentStoreMetrics(metrics.removed.documentStore, subDBs.getRemSubDB(), totalStats);
+    updateDocumentStoreMetrics(metrics.notReady.documentStore, subDBs.getNotReadySubDB(), totalStats);
 }
 
 template <typename MetricSetType>
@@ -307,7 +304,7 @@ DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, 
     updateAttributeMetrics(metrics, _subDBs, totalStats);
     updateMatchingMetrics(guard, metrics, *_subDBs.getReadySubDB());
     updateDocumentsMetrics(metrics, _subDBs);
-    updateDocumentStoreMetrics(metrics, _subDBs, _lastDocStoreCacheStats, totalStats);
+    updateDocumentStoreMetrics(metrics, _subDBs, totalStats);
     updateMiscMetrics(metrics, threadingServiceStats);
 
     metrics.totalMemoryUsage.update(totalStats.memoryUsage);

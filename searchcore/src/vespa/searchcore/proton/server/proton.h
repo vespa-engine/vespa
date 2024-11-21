@@ -132,8 +132,6 @@ private:
     std::mutex                      _nodeUpLock;
     std::set<BucketSpace>           _nodeUp;   // bucketspaces where node is up
     std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
-    vespalib::CacheStats             _last_posting_list_cache_stats;
-    vespalib::CacheStats             _last_bitvector_cache_stats;
 
     std::shared_ptr<DocumentDBConfigOwner>
     addDocumentDB(const DocTypeName & docTypeName, BucketSpace bucketSpace, const std::string & configid,
