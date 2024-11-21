@@ -203,7 +203,30 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 	if err := zipDir(dir, zipFile, &ignore.List{}); err != nil {
 		return err
 	}
-	return os.Rename(zipFile, path)
+	if err = renameOrCopyTmpFile(zipFile, path); err != nil {
+		return fmt.Errorf("Could neither rename nor copy %s to %s: %w", zipFile, path, err)
+	}
+	return err
+}
+
+func renameOrCopyTmpFile(srcPath, dstPath string) error {
+	if err := os.Rename(srcPath, dstPath); err == nil {
+		return err
+	}
+	src, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	stat, err := os.Stat(srcPath)
+	if err != nil {
+		return err
+	}
+	dst, err := os.OpenFile(dstPath, os.O_CREATE|os.O_WRONLY, stat.Mode())
+	if err != nil {
+		return err
+	}
+	_, err = io.Copy(dst, src)
+	return err
 }
 
 func fetchFilesFromConfigServer(deployment DeploymentOptions, contentURL *url.URL, path string) error {
