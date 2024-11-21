@@ -134,7 +134,7 @@ public:
     SerialNum getNewestFlushedSerial() override;
     void setIndexSchema(std::shared_ptr<const Schema> schema, SerialNum serialNum) override;
     size_t getNumActiveDocs() const override;
-    search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const override ;
+    search::IndexStats get_index_stats(bool clear_disk_io_stats) const override ;
     std::shared_ptr<IDocumentRetriever> getDocumentRetriever() override;
     matching::MatchingStats getMatcherStats(const std::string &rankProfile) const override;
     void close() override;

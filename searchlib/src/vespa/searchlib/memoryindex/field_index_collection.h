@@ -4,7 +4,7 @@
 
 #include "i_field_index_collection.h"
 #include "i_field_index.h"
-#include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/searchlib/util/index_stats.h>
 #include <memory>
 #include <vector>
 
@@ -47,7 +47,7 @@ public:
     void dump(search::index::IndexBuilder & indexBuilder);
 
     vespalib::MemoryUsage getMemoryUsage() const;
-    SearchableStats get_stats(const index::Schema& schema) const;
+    IndexStats get_stats(const index::Schema& schema) const;
 
     IFieldIndex *getFieldIndex(uint32_t fieldId) const {
         return _fieldIndexes[fieldId].get();

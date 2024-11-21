@@ -19,8 +19,8 @@ struct MockIndexManager : public searchcorespi::IIndexManager
     searchcorespi::IndexSearchable::SP getSearchable() const override {
         return searchcorespi::IndexSearchable::SP();
     }
-    search::SearchableStats getSearchableStats(bool) const override {
-        return search::SearchableStats();
+    search::IndexStats get_index_stats(bool) const override {
+        return search::IndexStats();
     }
     searchcorespi::IFlushTarget::List getFlushTargets() override {
         return searchcorespi::IFlushTarget::List();

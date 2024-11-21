@@ -174,11 +174,11 @@ public:
     virtual IndexSearchable::SP getSearchable() const = 0;
 
     /**
-     * Returns searchable stats for this index manager.
+     * Returns index stats for this index manager.
      *
      * @return statistics gathered about underlying memory and disk indexes.
      */
-    virtual search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const = 0;
+    virtual search::IndexStats get_index_stats(bool clear_disk_io_stats) const = 0;
 
     /**
      * Returns the list of all flush targets contained in this index manager.

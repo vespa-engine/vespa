@@ -17,7 +17,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
-#include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/searchlib/util/index_stats.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -73,7 +73,7 @@ updateDiskUsageMetric(metrics::LongValueMetric &metric, uint64_t diskUsage, Tota
 }
 
 void
-updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableStats &stats, TotalStats &totalStats)
+updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::IndexStats &stats, TotalStats &totalStats)
 {
     DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.index;
     updateDiskUsageMetric(indexMetrics.diskUsage, stats.sizeOnDisk(), totalStats);
@@ -303,7 +303,7 @@ DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, 
 {
     TotalStats totalStats;
     ExecutorThreadingServiceStats threadingServiceStats = _writeService.getStats();
-    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(true), totalStats);
+    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->get_index_stats(true), totalStats);
     updateAttributeMetrics(metrics, _subDBs, totalStats);
     updateMatchingMetrics(guard, metrics, *_subDBs.getReadySubDB());
     updateDocumentsMetrics(metrics, _subDBs);
