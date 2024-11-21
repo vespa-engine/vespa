@@ -97,7 +97,7 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
                     : estimateHitsToFetch(neededHits, invokers.size());
         }
         if (q < neededHits) {
-            query.trace("Only fetching " + q + " of " + neededHits + " per node (TopK probability for " + invokers.size() + " nodes)", 1);
+            query.trace("Only fetching " + q + " of " + neededHits + " hits per node (TopK probability for " + invokers.size() + " nodes)", 1);
         }
         query.setHits(q);
         query.setOffset(0);
