@@ -12,7 +12,7 @@ import java.util.Map;
 public class VerificationContext {
 
     private final Map<String, DataType> variables = new HashMap<>();
-    private final FieldTypeAdapter fieldType;
+    private final FieldTypeAdapter fieldTypes;
     private DataType currentType;
     private String outputField;
 
@@ -20,8 +20,8 @@ public class VerificationContext {
         this(null);
     }
 
-    public VerificationContext(FieldTypeAdapter field) {
-        this.fieldType = field;
+    public VerificationContext(FieldTypeAdapter fieldTypes) {
+        this.fieldTypes = fieldTypes;
     }
 
     public VerificationContext verify(Expression expression) {
@@ -32,16 +32,16 @@ public class VerificationContext {
 
     /** Returns the type of the field processed by this. */
     public DataType getFieldType(Expression expression) {
-        return fieldType.getInputType(expression, getOutputField());
+        return fieldTypes.getInputType(expression, getOutputField());
     }
 
     /** Returns the type of the given field. */
     public DataType getFieldType(String fieldName, Expression expression) {
-        return fieldType.getInputType(expression, fieldName);
+        return fieldTypes.getInputType(expression, fieldName);
     }
 
     public void tryOutputType(String fieldName, DataType valueType, Expression expression) {
-        fieldType.tryOutputType(expression, fieldName, valueType);
+        fieldTypes.tryOutputType(expression, fieldName, valueType);
     }
 
     /** Returns the current value type */

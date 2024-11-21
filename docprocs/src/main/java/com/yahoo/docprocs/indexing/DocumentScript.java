@@ -40,7 +40,7 @@ public class DocumentScript {
         this.documentType = documentType;
         this.inputFields = new HashSet<>(inputFields);
         this.expression = expression;
-        //expression.verify(documentType);
+        expression.verify(documentType);
     }
 
     public Expression getExpression() { return expression; }

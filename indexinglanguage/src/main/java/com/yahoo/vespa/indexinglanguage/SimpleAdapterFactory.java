@@ -27,6 +27,7 @@ public class SimpleAdapterFactory implements AdapterFactory {
     public SimpleAdapterFactory() {
         this(new SelectExpression());
     }
+
     public SimpleAdapterFactory(SelectExpression expressionSelector) {
         this.expressionSelector = expressionSelector;
     }
@@ -36,7 +37,7 @@ public class SimpleAdapterFactory implements AdapterFactory {
         return newDocumentAdapter(doc, false);
     }
 
-    public DocumentAdapter newDocumentAdapter(Document doc, boolean isUpdate) {
+    public static DocumentAdapter newDocumentAdapter(Document doc, boolean isUpdate) {
         if (isUpdate) {
             return new SimpleDocumentAdapter(doc);
         }

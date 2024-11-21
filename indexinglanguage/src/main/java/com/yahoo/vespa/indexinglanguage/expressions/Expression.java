@@ -152,6 +152,10 @@ public abstract class Expression extends Selectable {
         return verify(new VerificationContext());
     }
 
+    public final void verify(DocumentType type) {
+        verify(new DocumentTypeAdapter(type));
+    }
+
     public final DataType verify(DataType val) {
         return verify(new VerificationContext().setCurrentType(val));
     }
