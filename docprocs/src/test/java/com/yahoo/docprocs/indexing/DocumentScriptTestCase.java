@@ -27,6 +27,7 @@ import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
@@ -262,9 +263,9 @@ public class DocumentScriptTestCase {
     }
 
     private static DocumentScript newScript(DocumentType docType, String fieldName) {
+        var script = new ScriptExpression();
         return new DocumentScript(docType.getName(), List.of(fieldName),
-                new StatementExpression(new InputExpression(fieldName),
-                        new IndexExpression(fieldName)));
+                                  new ScriptExpression(new StatementExpression(new InputExpression(fieldName), new IndexExpression(fieldName))));
     }
 
     private static DocumentScript newScript(DocumentType docType) {
@@ -358,6 +359,6 @@ public class DocumentScriptTestCase {
 
     private static DocumentScript newScript() throws ParseException {
         return new DocumentScript("documentType", List.of("documentField"),
-                                  Expression.fromString("input documentField | index documentField"));
+                                  new ScriptExpression((StatementExpression)Expression.fromString("input documentField | index documentField")));
     }
 }

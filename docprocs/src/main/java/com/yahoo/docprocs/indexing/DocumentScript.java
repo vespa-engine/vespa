@@ -18,6 +18,7 @@ import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -32,9 +33,9 @@ public class DocumentScript {
 
     private final String documentType;
     private final Set<String> inputFields;
-    private final Expression expression;
+    private final ScriptExpression expression;
 
-    public DocumentScript(String documentType, Collection<String> inputFields, Expression expression) {
+    public DocumentScript(String documentType, Collection<String> inputFields, ScriptExpression expression) {
         this.documentType = documentType;
         this.inputFields = new HashSet<>(inputFields);
         this.expression = expression;
