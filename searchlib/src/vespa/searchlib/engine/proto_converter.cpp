@@ -237,7 +237,11 @@ ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply
     if (reply.hasResult()) {
         vespalib::SmartBuffer buf(4_Ki);
         vespalib::slime::BinaryFormat::encode(reply.slime(), buf);
-        proto.set_slime_summaries(buf.obtain().data, buf.obtain().size);
+        if (buf.obtain().size < 2_Gi - 4_Ki) {
+            proto.set_slime_summaries(buf.obtain().data, buf.obtain().size);
+        } else {
+            proto.add_errors()->set_message("Error: DocsumReply too big, > 2GB");
+        }
     }
     if (reply.hasIssues()) {
         reply.issues().for_each_message([&](const std::string &err_msg)
