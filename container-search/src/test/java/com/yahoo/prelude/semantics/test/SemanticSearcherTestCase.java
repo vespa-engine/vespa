@@ -61,6 +61,9 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     @Test
     void testLiteralReplacing() {
         assertSemantics("AND lord of rings", "lotr");
+        assertSemantics("AND foo1 lord of rings bar2", "foo1 lotr bar2");
+        assertSemantics("WEAKAND(100) lord of rings", "lotr", 0, Query.Type.WEAKAND);
+        assertSemantics("WEAKAND(100) foo1 lord of rings bar2", "foo1 lotr bar2", 0, Query.Type.WEAKAND);
     }
 
     @Test

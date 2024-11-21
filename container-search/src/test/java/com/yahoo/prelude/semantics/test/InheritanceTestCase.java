@@ -88,7 +88,7 @@ public class InheritanceTestCase {
     void testParent()  {
         assertSemantics("WEAKAND(100) vehiclebrand:audi", "audi cars", parent);
         assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", parent);
-        assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", parent);
+        assertSemantics("WEAKAND(100) vehiclebrand:bmw expensivetv", "bmw motorcycle", parent);
         assertSemantics("WEAKAND(100) vw car",       "vw cars", parent);
         assertSemantics("WEAKAND(100) skoda car",    "skoda cars", parent);
     }
@@ -97,7 +97,7 @@ public class InheritanceTestCase {
     void testChild1() {
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", child1);
         assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", child1);
-        assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", child1);
+        assertSemantics("WEAKAND(100) vehiclebrand:bmw expensivetv", "bmw motorcycle", child1);
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars", child1);
         assertSemantics("WEAKAND(100) skoda car",      "skoda cars", child1);
     }
@@ -106,7 +106,7 @@ public class InheritanceTestCase {
     void testChild2() {
         assertSemantics("WEAKAND(100) vehiclebrand:audi", "audi cars", child2);
         assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", child2);
-        assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", child2);
+        assertSemantics("WEAKAND(100) vehiclebrand:bmw expensivetv", "bmw motorcycle", child2);
         assertSemantics("WEAKAND(100) vw car", "vw cars", child2);
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "skoda cars", child2);
     }
@@ -115,7 +115,7 @@ public class InheritanceTestCase {
     void testGrandchild() {
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "audi cars", grandchild);
         assertSemantics("WEAKAND(100) vehiclebrand:alfa", "alfa bus", grandchild);
-        assertSemantics("AND (WEAKAND(100) vehiclebrand:bmw) expensivetv", "bmw motorcycle", grandchild);
+        assertSemantics("WEAKAND(100) vehiclebrand:bmw expensivetv", "bmw motorcycle", grandchild);
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "vw cars", grandchild);
         assertSemantics("WEAKAND(100) vehiclebrand:skoda", "skoda cars", grandchild);
     }
