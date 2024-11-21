@@ -23,7 +23,13 @@ insertDiskIndex(Cursor &arrayCursor, const DiskIndexStats &diskIndex)
     const IndexStats &sstats = diskIndex.get_index_stats();
     diskIndexCursor.setLong("serialNum", diskIndex.getSerialNum());
     diskIndexCursor.setString("indexDir", diskIndex.getIndexdir());
-    diskIndexCursor.setLong("sizeOnDisk", sstats.sizeOnDisk());
+    diskIndexCursor.setLong("disk_usage", sstats.sizeOnDisk());
+    auto& fields = diskIndexCursor.setArray("fields");
+    for (auto& field_stats : sstats.get_field_stats()) {
+        auto& field = fields.addObject();
+        field.setString("name", field_stats.first);
+        field.setLong("disk_usage", field_stats.second.size_on_disk());
+    }
 }
 
 void
