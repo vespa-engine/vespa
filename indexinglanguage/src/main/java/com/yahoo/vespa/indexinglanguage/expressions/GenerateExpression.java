@@ -1,5 +1,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
@@ -105,7 +106,7 @@ public class GenerateExpression extends Expression {
 
     private String generate(String input, DataType targetType, ExecutionContext context) {
         return generator.generate(
-                input,
+                StringPrompt.from(input),
                 new Generator.Context(destination, context.getCache())
                         .setLanguage(context.resolveLanguage(linguistics))
                         .setGeneratorId(generatorId)

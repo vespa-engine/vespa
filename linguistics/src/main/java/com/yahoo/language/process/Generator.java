@@ -1,5 +1,6 @@
 package com.yahoo.language.process;
 
+import ai.vespa.llm.completion.Prompt;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.language.Language;
 
@@ -25,7 +26,7 @@ public interface Generator {
         return Map.of(name, this);
     }
 
-    String generate(String prompt, Context context);
+    String generate(Prompt prompt, Context context);
 
 
     class Context {
@@ -120,7 +121,7 @@ public interface Generator {
             this.message = message;
         }
         
-        public String generate(String prompt, Context context) {
+        public String generate(Prompt prompt, Context context) {
             throw new IllegalStateException(message);
         }
     }

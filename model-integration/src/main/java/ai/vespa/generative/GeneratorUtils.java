@@ -2,6 +2,7 @@ package ai.vespa.generative;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
+import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -47,11 +48,10 @@ public class GeneratorUtils {
     }
     
     public static String generate(
-            String prompt, LanguageModel languageModel)
+            Prompt prompt, LanguageModel languageModel)
     {
         var options = new InferenceParameters(s -> "");
-        var promptObj = StringPrompt.from(prompt);
-        var completions = languageModel.complete(promptObj, options);
+        var completions = languageModel.complete(prompt, options);
         var firstCompletion = completions.get(0);
         return firstCompletion.text();
     }

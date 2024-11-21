@@ -1,5 +1,6 @@
 package com.yahoo.vespa.indexinglanguage;
 
+import ai.vespa.llm.completion.Prompt;
 import com.yahoo.language.process.Generator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -80,7 +81,7 @@ public class GeneratorScriptTester {
             this.repetitions = repetitions;
         }
 
-        public String generate(String prompt, Context context) {
+        public String generate(Prompt prompt, Context context) {
             var stringBuilder = new StringBuilder();
             
             for (int i = 0; i < repetitions; i++) {

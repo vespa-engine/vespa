@@ -1,6 +1,7 @@
 package ai.vespa.generative;
 
 import ai.vespa.llm.LanguageModel;
+import ai.vespa.llm.completion.Prompt;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
@@ -23,7 +24,7 @@ public  class LanguageModelGenerator extends AbstractComponent implements com.ya
     }
     
     @Override
-    public String generate(String prompt, Context context) {
+    public String generate(Prompt prompt, Context context) {
         return GeneratorUtils.generate(prompt, languageModel);
     }
 }
