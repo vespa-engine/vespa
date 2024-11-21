@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "disk_io_metrics.h"
-#include <vespa/searchlib/util/cache_disk_io_stats.h>
+#include <vespa/searchlib/util/field_index_io_stats.h>
 
-using search::CacheDiskIoStats;
 using search::DiskIoStats;
+using search::FieldIndexIoStats;
 
 namespace proton {
 
@@ -27,10 +27,10 @@ DiskIoMetrics::SearchMetrics::SearchMetrics(metrics::MetricSet* parent)
 DiskIoMetrics::SearchMetrics::~SearchMetrics() = default;
 
 void
-DiskIoMetrics::SearchMetrics::update(const CacheDiskIoStats& cache_disk_io_stats)
+DiskIoMetrics::SearchMetrics::update(const FieldIndexIoStats& io_stats)
 {
-    update_helper(_read_bytes, cache_disk_io_stats.read());
-    update_helper(_cached_read_bytes, cache_disk_io_stats.cached_read());
+    update_helper(_read_bytes, io_stats.read());
+    update_helper(_cached_read_bytes, io_stats.cached_read());
 }
 
 DiskIoMetrics::DiskIoMetrics(metrics::MetricSet* parent)

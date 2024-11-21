@@ -80,15 +80,15 @@ updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableSta
     updateMemoryUsageMetrics(indexMetrics.memoryUsage, stats.memoryUsage(), totalStats);
     indexMetrics.docsInMemory.set(stats.docsInMemory());
     auto& field_metrics = metrics.ready.index;
-    search::CacheDiskIoStats disk_io;
+    search::FieldIndexIoStats disk_io;
     for (auto& field : stats.get_field_stats()) {
         auto entry = field_metrics.get_field_metrics_entry(field.first);
         if (entry) {
             entry->memoryUsage.update(field.second.memory_usage());
             entry->disk_usage.set(field.second.size_on_disk());
-            entry->update_disk_io(field.second.cache_disk_io_stats());
+            entry->update_disk_io(field.second.io_stats());
         }
-        disk_io.merge(field.second.cache_disk_io_stats());
+        disk_io.merge(field.second.io_stats());
     }
     indexMetrics.disk_io.update(disk_io);
 }
