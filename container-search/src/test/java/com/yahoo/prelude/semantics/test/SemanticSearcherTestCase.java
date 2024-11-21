@@ -144,6 +144,15 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     @Test
     void testOrProduction() {
         assertSemantics("OR something somethingelse", "something");
+        // I did not expect this:
+        assertSemantics("OR (AND foo1 something bar2) somethingelse", "foo1 something bar2");
+    }
+
+    @Test
+    void testDoubleOrProduction() {
+        assertSemantics("OR more evenmore", "somethingmore");
+        // Strange ordering:
+        assertSemantics("OR more (AND foo1 bar2) evenmore", "foo1 somethingmore bar2");
     }
 
     // This test is order dependent. Fix it!!

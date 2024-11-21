@@ -49,6 +49,9 @@ java +> -coffee;
 # Adding an or term
 something +> ?somethingelse;
 
+# Add two or terms:
+somethingmore -> ?more ?evenmore;
+
 # Adding another negative
 # TODO: Term types in conditions
 # java -coffee +> -island
