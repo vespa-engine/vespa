@@ -3,7 +3,7 @@
 #pragma once
 
 #include "isearchableindexcollection.h"
-#include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/searchlib/util/index_stats.h>
 
 namespace searchcorespi {
 
@@ -50,7 +50,7 @@ public:
     createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term) override;
     std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term) override;
-    search::SearchableStats getSearchableStats(bool clear_disk_io_stats) const  override;
+    search::IndexStats get_index_stats(bool clear_disk_io_stats) const  override;
     search::SerialNum getSerialNum() const override;
     void accept(IndexSearchableVisitor &visitor) const override;
 

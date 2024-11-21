@@ -59,10 +59,10 @@ FieldIndexCollection::getMemoryUsage() const
     return usage;
 }
 
-SearchableStats
+IndexStats
 FieldIndexCollection::get_stats(const index::Schema& schema) const
 {
-    SearchableStats stats;
+    IndexStats stats;
     vespalib::MemoryUsage memory_usage;
     for (uint32_t field_id = 0; field_id < _numFields; ++field_id) {
         auto &field_index = _fieldIndexes[field_id];

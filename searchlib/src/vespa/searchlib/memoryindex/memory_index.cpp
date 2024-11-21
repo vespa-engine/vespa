@@ -213,7 +213,7 @@ MemoryIndex::getMemoryUsage() const
     return usage;
 }
 
-SearchableStats
+IndexStats
 MemoryIndex::get_stats() const
 {
     auto stats = _fieldIndexes->get_stats(_schema);

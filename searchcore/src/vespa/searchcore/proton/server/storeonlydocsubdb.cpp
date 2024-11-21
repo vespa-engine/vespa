@@ -543,8 +543,8 @@ StoreOnlyDocSubDB::setIndexSchema(std::shared_ptr<const Schema>, SerialNum)
     assert(_writeService.master().isCurrentThread());
 }
 
-search::SearchableStats
-StoreOnlyDocSubDB::getSearchableStats(bool) const
+search::IndexStats
+StoreOnlyDocSubDB::get_index_stats(bool) const
 {
     return {};
 }
