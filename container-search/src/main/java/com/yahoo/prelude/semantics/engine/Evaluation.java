@@ -444,6 +444,8 @@ public class Evaluation {
         if (termType == TermType.DEFAULT) {
             if (query.getModel().getType() == Query.Type.ANY)
                 return new OrItem();
+            else if (query.getModel().getType() == Query.Type.WEAKAND)
+                return new WeakAndItem();
             else
                 return new AndItem();
         }
