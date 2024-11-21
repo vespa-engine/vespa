@@ -2,6 +2,7 @@
 package com.yahoo.docprocs.indexing;
 
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.annotation.SpanTrees;
@@ -31,14 +32,15 @@ import java.util.Set;
  */
 public class DocumentScript {
 
-    private final String documentType;
+    private final DocumentType documentType;
     private final Set<String> inputFields;
     private final ScriptExpression expression;
 
-    public DocumentScript(String documentType, Collection<String> inputFields, ScriptExpression expression) {
+    public DocumentScript(DocumentType documentType, Collection<String> inputFields, ScriptExpression expression) {
         this.documentType = documentType;
         this.inputFields = new HashSet<>(inputFields);
         this.expression = expression;
+        //expression.verify(documentType);
     }
 
     public Expression getExpression() { return expression; }
@@ -69,10 +71,8 @@ public class DocumentScript {
     }
 
     private void requireThatFieldIsDeclaredInDocument(Field field) {
-        if (field != null && !inputFields.contains(field.getName())) {
-            throw new IllegalArgumentException("Field '" + field.getName() + "' is not part of the declared document " +
-                                               "type '" + documentType + "'.");
-        }
+        if (field != null && !inputFields.contains(field.getName()))
+            throw new IllegalArgumentException("Field '" + field.getName() + "' is not part of the declared " + documentType);
     }
 
     private void removeAnyLinguisticsSpanTree(ValueUpdate<?> valueUpdate) {

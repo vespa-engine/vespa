@@ -48,26 +48,26 @@ public class DocumentScriptTestCase {
     private static final AdapterFactory ADAPTER_FACTORY = new SimpleAdapterFactory();
 
     @Test
-    public void requireThatDocumentWithExtraFieldsThrow() throws ParseException {
-        assertFail("Field 'extraField' is not part of the declared document type 'documentType'.",
+    public void requireThatDocumentWithExtraFieldsThrow() {
+        assertFail("Field 'extraField' is not part of the declared document type 'documentType'",
                    newDocument(new StringFieldValue("foo"), new StringFieldValue("bar")));
-        assertFail("Field 'extraField' is not part of the declared document type 'documentType'.",
+        assertFail("Field 'extraField' is not part of the declared document type 'documentType'",
                    newDocument(null, new StringFieldValue("bar")));
     }
 
     @Test
-    public void requireThatFieldUpdateToExtraFieldsThrow() throws ParseException {
-        assertFail("Field 'extraField' is not part of the declared document type 'documentType'.",
+    public void requireThatFieldUpdateToExtraFieldsThrow() {
+        assertFail("Field 'extraField' is not part of the declared document type 'documentType'",
                    newFieldUpdate(new StringFieldValue("foo"), new StringFieldValue("bar")));
-        assertFail("Field 'extraField' is not part of the declared document type 'documentType'.",
+        assertFail("Field 'extraField' is not part of the declared document type 'documentType'",
                    newFieldUpdate(null, new StringFieldValue("bar")));
     }
 
     @Test
-    public void requireThatPathUpdateToExtraFieldsThrow() throws ParseException {
-        assertFail("Field 'extraField' is not part of the declared document type 'documentType'.",
+    public void requireThatPathUpdateToExtraFieldsThrow() {
+        assertFail("Field 'extraField' is not part of the declared document type 'documentType'",
                    newPathUpdate(new StringFieldValue("foo"), new StringFieldValue("bar")));
-        assertFail("Field 'extraField' is not part of the declared document type 'documentType'.",
+        assertFail("Field 'extraField' is not part of the declared document type 'documentType'",
                    newPathUpdate(null, new StringFieldValue("bar")));
     }
 
@@ -262,9 +262,9 @@ public class DocumentScriptTestCase {
         return update.getFieldUpdate("myField").getValueUpdate(0);
     }
 
-    private static DocumentScript newScript(DocumentType docType, String fieldName) {
+    private static DocumentScript newScript(DocumentType type, String fieldName) {
         var script = new ScriptExpression();
-        return new DocumentScript(docType.getName(), List.of(fieldName),
+        return new DocumentScript(type, List.of(fieldName),
                                   new ScriptExpression(new StatementExpression(new InputExpression(fieldName), new IndexExpression(fieldName))));
     }
 
@@ -331,7 +331,7 @@ public class DocumentScriptTestCase {
         return update;
     }
 
-    private static void assertFail(String expectedException, Document document) throws ParseException {
+    private static void assertFail(String expectedException, Document document) {
         try {
             execute(document);
             fail();
@@ -340,7 +340,7 @@ public class DocumentScriptTestCase {
         }
     }
 
-    private static void assertFail(String expectedException, DocumentUpdate update) throws ParseException {
+    private static void assertFail(String expectedException, DocumentUpdate update) {
         try {
             execute(update);
             fail();
@@ -349,16 +349,12 @@ public class DocumentScriptTestCase {
         }
     }
 
-    private static Document execute(Document document) throws ParseException {
-        return newScript().execute(new SimpleAdapterFactory(), document);
+    private static Document execute(Document document) {
+        return newScript(document.getDataType()).execute(new SimpleAdapterFactory(), document);
     }
 
-    private static DocumentUpdate execute(DocumentUpdate update) throws ParseException {
-        return newScript().execute(new SimpleAdapterFactory(), update);
+    private static DocumentUpdate execute(DocumentUpdate update) {
+        return newScript(update.getType()).execute(new SimpleAdapterFactory(), update);
     }
 
-    private static DocumentScript newScript() throws ParseException {
-        return new DocumentScript("documentType", List.of("documentField"),
-                                  new ScriptExpression((StatementExpression)Expression.fromString("input documentField | index documentField")));
-    }
 }

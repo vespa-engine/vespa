@@ -89,9 +89,7 @@ public abstract class StructuredDataType extends DataType {
 
     @Override
     public FieldPath buildFieldPath(String remainFieldName) {
-        if (remainFieldName.length() == 0) {
-            return new FieldPath();
-        }
+        if (remainFieldName.isEmpty()) return new FieldPath();
 
         String currFieldName = remainFieldName;
         String subFieldName = "";

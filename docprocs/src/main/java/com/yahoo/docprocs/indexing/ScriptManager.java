@@ -67,7 +67,7 @@ public class ScriptManager {
      * Returns an unmodifiable map from document type name to a map of the subset of indexing statements
      * to run for each input field which *only* depend on that field.
      */
-    private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
+    private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager documentTypes,
                                                                               IlscriptsConfig config,
                                                                               Linguistics linguistics,
                                                                               Map<String, Embedder> embedders) {
@@ -77,12 +77,12 @@ public class ScriptManager {
         parserContext.getAnnotatorConfig().setMaxTokenizeLength(config.fieldmatchmaxlength());
 
         for (IlscriptsConfig.Ilscript ilscript : config.ilscript()) {
-            DocumentType documentType = docTypeMgr.getDocumentType(ilscript.doctype());
+            DocumentType documentType = documentTypes.getDocumentType(ilscript.doctype());
             InputExpression.FieldPathOptimizer fieldPathOptimizer = new InputExpression.FieldPathOptimizer(documentType);
             List<StatementExpression> allStatements = new ArrayList<>(ilscript.content().size());
             Map<String, DocumentScript> fieldScripts = new HashMap<>(ilscript.content().size());
             for (String content : ilscript.content()) {
-                StatementExpression statement = parse(ilscript.doctype(), parserContext, content);
+                StatementExpression statement = parse(documentType, parserContext, content);
                 allStatements.add(statement);
                 List<String> inputFieldNames = InputExpression.InputFieldNameExtractor.runOn(statement);
                 OutputExpression.OutputFieldNameExtractor outputFieldNameExtractor = new OutputExpression.OutputFieldNameExtractor();
@@ -103,25 +103,24 @@ public class ScriptManager {
                     } else {
                         fieldScript = new ScriptExpression(statement);
                     }
-                    fieldScripts.put(fieldName, new DocumentScript(ilscript.doctype(), inputFieldNames, fieldScript));
+                    fieldScripts.put(fieldName, new DocumentScript(documentType, inputFieldNames, fieldScript));
                 }
             }
 
             var script = new ScriptExpression(allStatements);
             script.select(fieldPathOptimizer, fieldPathOptimizer);
-            fieldScripts.put(FULL, new DocumentScript(ilscript.doctype(), ilscript.docfield(), script));
+            fieldScripts.put(FULL, new DocumentScript(documentType, ilscript.docfield(), script));
             documentFieldScripts.put(ilscript.doctype(), Collections.unmodifiableMap(fieldScripts));
         }
         return Collections.unmodifiableMap(documentFieldScripts);
     }
 
-    private static StatementExpression parse(String docType, ScriptParserContext parserConfig, String content) {
-        parserConfig.setInputStream(new IndexingInput(content));
+    private static StatementExpression parse(DocumentType type, ScriptParserContext parserConfig, String content) {
         try {
+            parserConfig.setInputStream(new IndexingInput(content));
             return StatementExpression.newInstance(parserConfig);
         } catch (ParseException e) {
-            throw new IllegalArgumentException("Illegal indexing script for document type '" +
-                                               docType + "'; " + content, e);
+            throw new IllegalArgumentException("Illegal indexing script for " + type, e);
         }
     }
 
