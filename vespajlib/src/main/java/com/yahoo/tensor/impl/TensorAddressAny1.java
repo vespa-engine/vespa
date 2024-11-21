@@ -16,7 +16,7 @@ final class TensorAddressAny1 extends TensorAddressAny {
     TensorAddressAny1(Label label) { this.label = label; }
 
     @Override public int size() { return 1; }
-    
+
     @Override
     public Label objectLabel(int i) {
         if (i == 0) {
@@ -31,7 +31,10 @@ final class TensorAddressAny1 extends TensorAddressAny {
         throw new IllegalArgumentException("No label " + labelIndex);
     }
 
-    @Override public int hashCode() { return (int)Math.abs(label.asNumeric()); }
+    // Added 32 to be consistent with the multi-label addresses
+    @Override public int hashCode() { 
+        return 31 + label.hashCode(); 
+    }
 
     @Override
     public boolean equals(Object o) {

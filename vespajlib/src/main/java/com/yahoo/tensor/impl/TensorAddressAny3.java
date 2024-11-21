@@ -5,6 +5,8 @@ package com.yahoo.tensor.impl;
 import com.yahoo.tensor.Label;
 import com.yahoo.tensor.TensorAddress;
 
+import java.util.Objects;
+
 import static java.lang.Math.abs;
 
 /**
@@ -43,12 +45,14 @@ final class TensorAddressAny3 extends TensorAddressAny {
         };
     }
 
+    // Same as Objects.hash(label1, label0) but a little faster since it avoids creating an array, loop and null checks.
+    // The order of labels is important - it has a big impact on the performance of mapped tensors in a dot product.
     @Override
     public int hashCode() {
-        long hash =  abs(label0.asNumeric()) |
-                (abs(label1.asNumeric()) << (64 - Long.numberOfLeadingZeros(abs(label0.asNumeric())))) |
-                (abs(label2.asNumeric()) << (2*64 - (Long.numberOfLeadingZeros(abs(label0.asNumeric())) + Long.numberOfLeadingZeros(abs(label1.asNumeric())))));
-        return (int) hash;
+        return 31 * 31 * 31 
+                + 31 * 31 * label2.hashCode() 
+                + 31 * label1.hashCode() 
+                + label0.hashCode();
     }
 
     @Override

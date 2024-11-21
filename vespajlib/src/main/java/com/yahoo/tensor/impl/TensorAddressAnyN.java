@@ -23,16 +23,16 @@ final class TensorAddressAnyN extends TensorAddressAny {
         this.labels = labels;
     }
 
-    @Override public int size() { 
-        return labels.length; 
+    @Override public int size() {
+        return labels.length;
     }
 
     @Override
     public Label objectLabel(int i) {
-        if (i < 0 || i >= size()) 
+        if (i < 0 || i >= size())
             throw new IndexOutOfBoundsException("Index is not in [0," + (size() - 1) + "]: " + i);
-        
-        return labels[i]; 
+
+        return labels[i];
     }
 
     @Override
@@ -42,13 +42,16 @@ final class TensorAddressAnyN extends TensorAddressAny {
         return new TensorAddressAnyN(copy);
     }
 
+    // Same as Arrays.hashCode(labels) but labels are iterated in reverse order. 
+    // The order of labels is important - it has a big impact on the performance of mapped tensors in a dot product.
     @Override public int hashCode() {
-        long hash = abs(labels[0].asNumeric());
-        for (int i = 0; i < size(); i++) {
-            hash = hash | (abs(labels[i].asNumeric()) << (32 - Long.numberOfLeadingZeros(hash)));
-        }
-        return (int) hash;
-    }
+        int result = 1;
+
+        for (int i = labels.length - 1; i >= 0; i--)
+            result = 31 * result +  labels[i].hashCode();
+
+        return result;
+     }
 
     @Override
     public boolean equals(Object o) {
