@@ -282,9 +282,7 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _documentDBReferenceRegistry(std::make_shared<DocumentDBReferenceRegistry>()),
       _nodeUpLock(),
       _nodeUp(),
-      _posting_list_cache(),
-      _last_posting_list_cache_stats(),
-      _last_bitvector_cache_stats()
+      _posting_list_cache()
 { }
 
 BootstrapConfig::SP
@@ -807,13 +805,6 @@ updateSessionCacheMetrics(ContentProtonMetrics &metrics, proton::matching::Sessi
     metrics.sessionCache.grouping.update(groupingStats);
 }
 
-void
-update_cache_stats(CacheMetrics& metrics, const vespalib::CacheStats& stats, vespalib::CacheStats& last_stats)
-{
-    metrics.update_metrics(stats, last_stats);
-    last_stats = stats;
-}
-
 }
 
 void
@@ -881,12 +872,8 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         }
     }
     if (_posting_list_cache) {
-        update_cache_stats(_metricsEngine->root().index.cache.postinglist,
-                           _posting_list_cache->get_stats(),
-                           _last_posting_list_cache_stats);
-        update_cache_stats(_metricsEngine->root().index.cache.bitvector,
-                           _posting_list_cache->get_bitvector_stats(),
-                           _last_bitvector_cache_stats);
+        _metricsEngine->root().index.cache.postinglist.update_metrics(_posting_list_cache->get_stats());
+        _metricsEngine->root().index.cache.bitvector.update_metrics(_posting_list_cache->get_bitvector_stats());
     }
 }
 
