@@ -113,7 +113,7 @@ public abstract class StructuredDataType extends DataType {
             tmpPath.add(0, FieldPathEntry.newStructFieldEntry(f));
             return new FieldPath(tmpPath);
         } else {
-            throw new IllegalArgumentException("Field '" + currFieldName + "' not found in type " + this);
+            throw new IllegalArgumentException("Field '" + currFieldName + "' not found in " + this);
         }
     }
 

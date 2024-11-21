@@ -356,4 +356,9 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         return refToThis;
     }
 
+    @Override
+    public String toString() {
+        return "document type '" + getName() + "'";
+    }
+
 }

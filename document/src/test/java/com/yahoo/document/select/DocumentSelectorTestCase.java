@@ -817,9 +817,10 @@ public class DocumentSelectorTestCase {
         try {
             // Nested field access is NOT considered a simple expression.
             evaluate("test.my_imported_field.foo", documents.get(0));
-            fail();
+            fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertTrue(e.getMessage().startsWith("Field 'my_imported_field' not found in type datatype test"));
+            assertEquals("Field 'my_imported_field' not found in document type 'test'",
+                         Exceptions.toMessageString(e));
         }
     }
 
