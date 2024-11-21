@@ -18,7 +18,8 @@ CacheMetrics::CacheMetrics(MetricSet *parent, const std::string& name, const std
       hitRate("hit_rate", {}, "Rate of hits in the cache compared to number of lookups", this),
       lookups("lookups", {}, "Number of lookups in the cache (hits + misses)", this),
       invalidations("invalidations", {}, "Number of invalidations (erased elements) in the cache.", this),
-      _cache_name(cache_name)
+      _cache_name(cache_name),
+      _last_stats()
 {
 }
 
@@ -51,13 +52,14 @@ CacheMetrics::update_count_metric(uint64_t currVal, uint64_t lastVal, metrics::L
 }
 
 void
-CacheMetrics::update_metrics(const CacheStats& current, const CacheStats& last)
+CacheMetrics::update_metrics(const CacheStats& stats)
 {
-    memoryUsage.set(current.memory_used);
-    elements.set(current.elements);
-    update_hit_rate(current, last);
-    update_count_metric(current.lookups(), last.lookups(), lookups);
-    update_count_metric(current.invalidations, last.invalidations, invalidations);
+    memoryUsage.set(stats.memory_used);
+    elements.set(stats.elements);
+    update_hit_rate(stats, _last_stats);
+    update_count_metric(stats.lookups(), _last_stats.lookups(), lookups);
+    update_count_metric(stats.invalidations, _last_stats.invalidations, invalidations);
+    _last_stats = stats;
 }
 
 }
