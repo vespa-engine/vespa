@@ -57,7 +57,8 @@ public class SecretsTest extends ContainerModelBuilderTestBase {
     void tenant_vaults_are_propagated_in_config() {
         var tenantVaults = List.of(
                 new TenantVault("id1", "name1", "externalId1", List.of()),
-                new TenantVault("id2", "name2", "externalId2", List.of()));
+                new TenantVault("id2", "name2", "externalId2",
+                                List.of(new TenantVault.Secret("sId1", "sName1"))));
 
         var deployState = new DeployState.Builder()
                 .properties(new TestProperties()
@@ -76,13 +77,21 @@ public class SecretsTest extends ContainerModelBuilderTestBase {
         var vaults = config.vaults();
         assertEquals(2, vaults.size());
 
-        assertEquals("id1", vaults.get(0).id());
-        assertEquals("name1", vaults.get(0).name());
-        assertEquals("externalId1", vaults.get(0).externalId());
+        var vault1 = vaults.get(0);
+        assertEquals("id1", vault1.id());
+        assertEquals("name1", vault1.name());
+        assertEquals("externalId1", vault1.externalId());
+        assertEquals(0, vault1.secrets().size());
 
-        assertEquals("id2", vaults.get(1).id());
-        assertEquals("name2", vaults.get(1).name());
-        assertEquals("externalId2", vaults.get(1).externalId());
+        var vault2 = vaults.get(1);
+        assertEquals("id2", vault2.id());
+        assertEquals("name2", vault2.name());
+        assertEquals("externalId2", vault2.externalId());
+        assertEquals(1, vault2.secrets().size());
+
+        var secret = vault2.secrets().get(0);
+        assertEquals("sId1", secret.id());
+        assertEquals("sName1", secret.name());
     }
 
     private static AsmTenantSecretConfig getAsmTenantSecretConfig(ApplicationContainerCluster container) {
