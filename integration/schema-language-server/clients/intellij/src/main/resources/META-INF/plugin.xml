@@ -38,5 +38,8 @@ In addition, the plugin will be available for community editions as well.
     <fileNamePatternMapping patterns="*.sd;*.profile"
                             serverId="vespaSchemaLanguageServer"
                             languageId="vespaSchema"/>
+    <fileNamePatternMapping patterns="*.yql"
+                            serverId="vespaSchemaLanguageServer"
+                            languageId="vespaYQL"/>
   </extensions>
 </idea-plugin>
