@@ -54,7 +54,7 @@ public class TenantSecretValidatorTest {
 
         var exception = assertThrows(IllegalArgumentException.class,
                                      () -> runTenantSecretValidator(properties, servicesWithSecrets()));
-        assertEquals("Vault 'vault1' is not defined in tenant vaults", exception.getMessage());
+        assertEquals("Vault 'vault1' does not exist, or application does not have access to it", exception.getMessage());
     }
 
     @Test

@@ -31,7 +31,7 @@ public class TenantSecretValidator implements Validator {
                 CloudSecrets secrets = cloudSecrets.get();
                 for (CloudSecrets.SecretConfig secretConfig : secrets.configuredSecrets()) {
                     if (! existingVaults.containsKey(secretConfig.vault())) {
-                        context.illegal("Vault '" + secretConfig.vault() + "' is not defined in tenant vaults");
+                        context.illegal("Vault '" + secretConfig.vault() + "' does not exist, or application does not have access to it");
                     } else {
                         // Vault exists, check that the secret exists in the vault
                         var vaultSecrets = existingVaults.get(secretConfig.vault());
