@@ -56,7 +56,7 @@ public class RunVespaQuery implements SchemaCommand {
 
         runVespaQuery(queryCommand, context.logger).thenAccept(result -> {
             if (!result.success()) {
-                if (result.result().toLowerCase().contains("command not found")) {
+                if (result.result().toLowerCase().contains("cannot run program")) {
                     context.messageHandler.sendMessage(MessageType.Error, "Could not find vespa CLI. Make sure vespa CLI is installed and added to path. Download vespa CLI here: https://docs.vespa.ai/en/vespa-cli.html");
                     return;
                 }
@@ -107,13 +107,10 @@ public class RunVespaQuery implements SchemaCommand {
 
         ProcessBuilder builder = new ProcessBuilder();
 
-        String queryEscaped = query.replace("\"", "\\\"");
-        String vespaCommand = String.format("vespa query \"%s\"", queryEscaped);
-
         if (isWindows) {
-            builder.command("cmd.exe", "/c", vespaCommand); // TODO: Test this on windows
+            builder.command("cmd.exe", "/c", "vespa", "query", query); // TODO: Test this on windows
         } else {
-            builder.command("/bin/sh", "-c", vespaCommand);
+            builder.command("vespa", "query", query);
         }
 
         return CompletableFuture.supplyAsync(() -> {
@@ -146,8 +143,7 @@ public class RunVespaQuery implements SchemaCommand {
             } catch (InterruptedException e) {
                 return new QueryResult(false, "Program interrupted");
             } catch (IOException e) {
-                logger.error(e.getMessage());
-                return new QueryResult(false, "IOException occurred.");
+                return new QueryResult(false, e.getMessage());
             }
         });
     }
