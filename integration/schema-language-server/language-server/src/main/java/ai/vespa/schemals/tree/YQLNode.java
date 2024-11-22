@@ -103,6 +103,19 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
         throw new RuntimeException("Could not find the begin offset of YQLNode.");
     }
 
+    @Override
+    public int getEndOffset() {
+        if (language == LanguageType.YQLPlus) return originalYQLNode.getEndOffset();
+        if (language == LanguageType.GROUPING) return originalGroupingNode.getEndOffset();
+
+        if (language == LanguageType.CUSTOM && size() > 0) {
+            var child = get(size() - 1);
+            return child.getEndOffset();
+        }
+
+        throw new RuntimeException("Could not find the end offset of YQLNode.");
+    }
+
     public String toString() {
         Range range = getRange();
         Position start = range.getStart();

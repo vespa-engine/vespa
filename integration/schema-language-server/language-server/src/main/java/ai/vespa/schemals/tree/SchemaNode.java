@@ -307,6 +307,23 @@ public class SchemaNode extends Node {
         }
     }
 
+    @Override
+    public int getEndOffset() {
+        switch (language) {
+            case SCHEMA:
+                if (originalSchemaNode == null) return -1;
+                return originalSchemaNode.getEndOffset();
+            case INDEXING:
+                if (originalIndexingNode == null) return -1;
+                return originalIndexingNode.getEndOffset();
+            case RANK_EXPRESSION:
+                if (originalRankExpressionNode == null) return -1;
+                return originalRankExpressionNode.getEndOffset();
+            default:
+                return -1;
+        }
+    }
+
     public String getClassLeafIdentifierString() {
         if (language == LanguageType.CUSTOM && getASTClass() != null) {
             return getASTClass().getSimpleName();

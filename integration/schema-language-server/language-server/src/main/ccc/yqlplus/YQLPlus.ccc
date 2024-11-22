@@ -37,7 +37,7 @@ TOKEN :
 | < WHERE: 'where' >
 | < ORDER: 'order' >
 | < BY: 'by' >
-| < ORDERBY: <ORDER> <BY> >
+| < ORDERBY: 'order by' >
 | < DESC: 'desc' >
 | < ASC: 'asc' >
 | < FROM: 'from' >
