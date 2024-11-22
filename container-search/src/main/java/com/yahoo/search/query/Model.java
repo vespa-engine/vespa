@@ -6,6 +6,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.LocaleFactory;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NullItem;
 import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
@@ -248,8 +249,14 @@ public class Model implements Cloneable {
             try {
                 Parser parser = ParserFactory.newInstance(type, ParserEnvironment.fromExecutionContext(execution.context()));
                 queryTree = parser.parse(Parsable.fromQueryModel(this));
-                if (parent.getTrace().getLevel() >= 2)
+                if (queryTree.getRoot() == null || queryTree.getRoot() instanceof NullItem) {
+                    if (parent.getTrace().getLevel() >= 5) {
+                        parent.trace("Query parsing deferred", 5);
+                    }
+                }
+                else if (parent.getTrace().getLevel() >= 2) {
                     parent.trace("Query parsed to: " + parent.yqlRepresentation(), 2);
+                }
             }
             catch (IllegalArgumentException e) {
                 throw new IllegalInputException("Failed parsing query", e);

@@ -721,7 +721,7 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
         try {
             return yqlRepresentation(true);
         } catch (NullItemException e) {
-            return "Query currently a placeholder, NullItem encountered.";
+            return "Query currently a placeholder, parsing is deferred";
         } catch (IllegalArgumentException e) {
             return "Invalid query: " + Exceptions.toMessageString(e);
         } catch (RuntimeException e) {
