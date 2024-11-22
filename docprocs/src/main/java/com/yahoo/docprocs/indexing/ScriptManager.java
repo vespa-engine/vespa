@@ -4,7 +4,6 @@ package com.yahoo.docprocs.indexing;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.Linguistics;
-import java.util.logging.Level;
 
 import com.yahoo.language.process.Embedder;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -16,14 +15,17 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Simon Thoresen Hult
  */
 public class ScriptManager {
 
-    private static final FastLogger log = FastLogger.getLogger(ScriptManager.class.getName());
     private static final String FULL = "[all]";
     private final Map<String, Map<String, DocumentScript>> documentFieldScripts;
     private final DocumentTypeManager documentTypeManager;
@@ -65,7 +67,7 @@ public class ScriptManager {
      * Returns an unmodifiable map from document type name to a map of the subset of indexing statements
      * to run for each input field which *only* depend on that field.
      */
-    private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager docTypeMgr,
+    private static Map<String, Map<String, DocumentScript>>  createScriptsMap(DocumentTypeManager documentTypes,
                                                                               IlscriptsConfig config,
                                                                               Linguistics linguistics,
                                                                               Map<String, Embedder> embedders) {
@@ -75,13 +77,13 @@ public class ScriptManager {
         parserContext.getAnnotatorConfig().setMaxTokenizeLength(config.fieldmatchmaxlength());
 
         for (IlscriptsConfig.Ilscript ilscript : config.ilscript()) {
-            DocumentType documentType = docTypeMgr.getDocumentType(ilscript.doctype());
+            DocumentType documentType = documentTypes.getDocumentType(ilscript.doctype());
             InputExpression.FieldPathOptimizer fieldPathOptimizer = new InputExpression.FieldPathOptimizer(documentType);
-            List<StatementExpression> expressions = new ArrayList<>(ilscript.content().size());
+            List<StatementExpression> allStatements = new ArrayList<>(ilscript.content().size());
             Map<String, DocumentScript> fieldScripts = new HashMap<>(ilscript.content().size());
             for (String content : ilscript.content()) {
-                StatementExpression statement = parse(ilscript.doctype(), parserContext, content);
-                expressions.add(statement);
+                StatementExpression statement = parse(documentType, parserContext, content);
+                allStatements.add(statement);
                 List<String> inputFieldNames = InputExpression.InputFieldNameExtractor.runOn(statement);
                 OutputExpression.OutputFieldNameExtractor outputFieldNameExtractor = new OutputExpression.OutputFieldNameExtractor();
                 statement.select(outputFieldNameExtractor, outputFieldNameExtractor);
@@ -92,38 +94,34 @@ public class ScriptManager {
                 }
                 if (inputFieldNames.size() == 1) {
                     String fieldName = inputFieldNames.get(0);
-                    ScriptExpression script;
+                    ScriptExpression fieldScript;
                     if (fieldScripts.containsKey(fieldName)) {
-                        DocumentScript prev = fieldScripts.get(fieldName);
-                        List<StatementExpression> appendedList = new ArrayList<>(((ScriptExpression)prev.getExpression()).asList());
+                        DocumentScript existing = fieldScripts.get(fieldName);
+                        List<StatementExpression> appendedList = new ArrayList<>(((ScriptExpression)existing.getExpression()).asList());
                         appendedList.add(statement);
-                        script = new ScriptExpression(appendedList);
+                        fieldScript = new ScriptExpression(appendedList);
                     } else {
-                        script = new ScriptExpression(statement);
+                        fieldScript = new ScriptExpression(statement);
                     }
-                    DocumentScript documentScript = new DocumentScript(ilscript.doctype(), inputFieldNames, script);
-                    fieldScripts.put(fieldName, documentScript);
-                } else {
-                    log.log(Level.FINE, "Non single(" + inputFieldNames.size() +
-                                        ") inputs = " + inputFieldNames + ". Script = " + statement);
+                    fieldScripts.put(fieldName, new DocumentScript(documentType, inputFieldNames, fieldScript));
                 }
             }
 
-            ScriptExpression script = new ScriptExpression(expressions);
+            var script = new ScriptExpression(allStatements);
             script.select(fieldPathOptimizer, fieldPathOptimizer);
-            fieldScripts.put(FULL, new DocumentScript(ilscript.doctype(), ilscript.docfield(), script));
+            fieldScripts.put(FULL, new DocumentScript(documentType, ilscript.docfield(), script));
             documentFieldScripts.put(ilscript.doctype(), Collections.unmodifiableMap(fieldScripts));
         }
         return Collections.unmodifiableMap(documentFieldScripts);
     }
 
-    private static StatementExpression parse(String docType, ScriptParserContext parserConfig, String content) {
-        parserConfig.setInputStream(new IndexingInput(content));
+    private static StatementExpression parse(DocumentType type, ScriptParserContext parserConfig, String content) {
         try {
+            parserConfig.setInputStream(new IndexingInput(content));
             return StatementExpression.newInstance(parserConfig);
         } catch (ParseException e) {
-            throw new IllegalArgumentException("Illegal indexing script for document type '" +
-                                               docType + "'; " + content, e);
+            throw new IllegalArgumentException("Illegal indexing script for " + type, e);
         }
     }
+
 }

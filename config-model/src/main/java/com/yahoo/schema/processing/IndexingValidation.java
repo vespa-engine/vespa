@@ -154,12 +154,10 @@ public class IndexingValidation extends Processor {
         private static DataType createCompatType(DataType origType) {
             if (origType instanceof ArrayDataType) {
                 return DataType.getArray(createCompatType(origType.getNestedType()));
-            } else if (origType instanceof MapDataType) {
-                MapDataType mapType = (MapDataType)origType;
-                return DataType.getMap(createCompatType(mapType.getKeyType()),
-                                       createCompatType(mapType.getValueType()));
+            } else if (origType instanceof MapDataType mapType) {
+                return DataType.getMap(createCompatType(mapType.getKeyType()), createCompatType(mapType.getValueType()));
             } else if (origType instanceof WeightedSetDataType) {
-                return DataType.getWeightedSet(createCompatType(((WeightedSetDataType)origType).getNestedType()));
+                return DataType.getWeightedSet(createCompatType(origType.getNestedType()));
             } else if (GeoPos.isPos(origType)) {
                 return DataType.LONG;
             } else {
