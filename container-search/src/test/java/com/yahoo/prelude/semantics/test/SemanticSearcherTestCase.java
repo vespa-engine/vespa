@@ -149,6 +149,11 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("OR something somethingelse", "something");
         // I did not expect this:
         assertSemantics("OR (AND foo1 something bar2) somethingelse", "foo1 something bar2");
+        // Nor this; we should fix documentation to emphasize that "+>" adding terms
+        // always happens at the root of the query:
+        assertSemantics("OR (RANK (AND foo1 (OR foo2 something bar1) bar2) bar3) somethingelse",
+                        "foo1 AND (foo2 OR something OR bar1) AND bar2 RANK bar3",
+                        0, Query.Type.ADVANCED);
     }
 
     @Test
@@ -185,6 +190,26 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
         assertSemantics("OR brand:smashtogether \"foo1 bar2\"", "\"foo1 smash together bar2\"", 0, Query.Type.ANY);
         // the difference in ordering here is because the parsed query already has a WEAKAND root (with 1 child):
         assertSemantics("WEAKAND(100) \"foo1 bar2\" brand:smashtogether", "\"foo1 smash together bar2\"", 0, Query.Type.WEAKAND);
+    }
+
+    @Test
+    void testWandAddition() {
+        assertSemantics("WEAKAND(100) confused perplex", "confused");
+        // not what I expected, but similar to OrProduction above:
+        assertSemantics("WEAKAND(100) (AND dazed confused disoriented) perplex", "dazed confused disoriented");
+        assertSemantics("WEAKAND(100) (OR foo1 (AND dazed confused disoriented) bar2) perplex",
+                        "foo1 OR (dazed AND confused AND disoriented) OR bar2",
+                        0, Query.Type.ADVANCED);
+    }
+
+    @Test
+    void testWandReplacement() {
+        assertSemantics("WEAKAND(100) greatest", "goat");
+        assertSemantics("WEAKAND(100) greatest dazed", "dazed goat");
+        assertSemantics("WEAKAND(100) greatest (AND dazed disoriented)", "dazed goat disoriented");
+        assertSemantics("WEAKAND(100) the greatest of all time", "thegoat");
+        // Strange ordering again:
+        assertSemantics("WEAKAND(100) the (AND dazed disoriented) greatest of all time", "dazed thegoat disoriented");
     }
 
     private Result doSearch(Searcher searcher, Query query, int offset, int hits) {

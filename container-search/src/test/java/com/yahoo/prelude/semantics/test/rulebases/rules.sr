@@ -77,3 +77,12 @@ the -> ;
 [myphrase] -> brand:smashtogether ;
 
 [myphrase] :- smash together;
+
+# Adding a WeakAnd term
+confused +> ~perplex;
+
+# Replacing with a WeakAnd term
+goat -> ~greatest;
+
+# Replacing with multiple WeakAnd terms
+thegoat -> ~the ~greatest ~of ~all ~time;
