@@ -97,6 +97,11 @@ public class ServicesDocumentationFetcher extends ContentFetcher {
                     currentBuilder.append(nodeIterator.toString());
                 continue;
             }
+            if (element.tag().equals(Tag.valueOf("table"))) {
+                // tables are inherently problematic so we just replace everything after the first table with "read more"
+                prevH2 = null;
+                continue;
+            }
 
             currentBuilder.append(getElementHTML(element));
         }

@@ -50,5 +50,19 @@ The plugin now supports syntax highlighting of <code>.yql</code> files, in addit
     <fileNamePatternMapping patterns="*.yql"
                             serverId="vespaSchemaLanguageServer"
                             languageId="vespaYQL"/>
+
+      <server id="lemminxVespa"
+              name="Vespa LemMinX Extension"
+              factoryClass="ai.vespa.schemals.intellij.LemminxVespaServerFactory"
+              lastDocumentDisconnectedTimeout="36000">
+        <description><![CDATA[
+                    The Vespa LemMinX Language Server provides support in:
+                    <ul>
+                      <li>The services.xml file of Vespa Applications</li>
+                    </ul>
+                    ]]>
+        </description>
+      </server>
+      <fileNamePatternMapping patterns="services.xml" serverId="lemminxVespa" languageId="xml" />
   </extensions>
 </idea-plugin>

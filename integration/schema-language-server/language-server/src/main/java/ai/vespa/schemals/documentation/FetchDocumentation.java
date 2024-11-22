@@ -48,15 +48,13 @@ public class FetchDocumentation {
         Map<String, String> schemaMarkdownContent = new SchemaDocumentationFetcher(SCHEMA_URL).getMarkdownContent();
 
         for (var entry : schemaMarkdownContent.entrySet()) {
-            String fileName = convertToToken(entry.getKey());
+            String tokenName = convertToToken(entry.getKey());
             String content = entry.getValue();
 
-            if (REPLACE_FILENAME_MAP.containsKey(fileName)) {
-                for (String replacedFileName : REPLACE_FILENAME_MAP.get(fileName)) {
-                    Files.write(writePath.resolve(replacedFileName + ".md"), content.getBytes(), StandardOpenOption.CREATE);
-                }
-            } else {
-                Files.write(writePath.resolve(fileName + ".md"), content.getBytes(), StandardOpenOption.CREATE);
+            List<String> fileNamesToWrite = REPLACE_FILENAME_MAP.getOrDefault(tokenName, List.of(tokenName));
+
+            for (String fileName : fileNamesToWrite) {
+                writeMarkdown(writePath.resolve(fileName + ".md"), content);
             }
         }
 
@@ -64,7 +62,7 @@ public class FetchDocumentation {
 
         writePath = targetPath.resolve("rankExpression");
         for (var entry : rankFeatureMarkdownContent.entrySet()) {
-            Files.write(writePath.resolve(entry.getKey() + ".md"), entry.getValue().getBytes(), StandardOpenOption.CREATE);
+            writeMarkdown(writePath.resolve(entry.getKey() + ".md"), entry.getValue());
         }
     }
 
@@ -81,9 +79,13 @@ public class FetchDocumentation {
             for (var entry : markdownContent.entrySet()) {
                 if (entry.getKey().contains("/")) continue;
                 String fileName = entry.getKey().toLowerCase();
-                Files.write(writePath.resolve(fileName + ".md"), entry.getValue().getBytes(), StandardOpenOption.CREATE);
+                writeMarkdown(writePath.resolve(fileName + ".md"), entry.getValue());
             }
         }
+    }
+
+    private static void writeMarkdown(Path writePath, String markdown) throws IOException {
+        Files.write(writePath, markdown.getBytes(), StandardOpenOption.CREATE);
     }
 
     private static String convertToToken(String h2Id) {

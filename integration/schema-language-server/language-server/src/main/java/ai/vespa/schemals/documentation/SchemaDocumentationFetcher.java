@@ -75,13 +75,10 @@ public class SchemaDocumentationFetcher extends ContentFetcher {
             }
 
             if (element.tag().equals(Tag.valueOf("table"))) {
-                Element tbody = element.selectFirst("tbody");
-                // replace all <th> in tbody with <td>
-                tbody.select("th").tagName("td");
-
-                // some tables have very big texts in td. For our purposes, only keep the first sentence.
-                if (prevH2.id().equals("field"))
-                    manuallyFixFieldTable(tbody);
+                // The tables in the docs are inherently problematic 
+                // so we just replace the first table and everything after with "read more"
+                prevH2 = null;
+                continue;
             }
 
             currentBuilder.append(element.outerHtml());
@@ -107,28 +104,4 @@ public class SchemaDocumentationFetcher extends ContentFetcher {
         }
         return result;
 	}
-
-    private static void manuallyFixFieldTable(Element tbodyElement) {
-        for (Element td : tbodyElement.select("tr td:nth-child(2)")) {
-            String curr = td.html();
-            int level = 0;
-            int i;
-            for (i = 0; i < curr.length(); ++i) {
-                if ((
-                    (curr.charAt(i) == '.' && !curr.substring(i-1, Math.min(curr.length(), i+3)).equals("i.e.") && !curr.substring(i-3,i+1).equals("i.e."))
-                    || curr.substring(i).startsWith("<code>") 
-                    || curr.substring(i).startsWith("<pre>") 
-                    || curr.charAt(i) == ':') && level == 0) {
-                    break;
-                }
-                if (curr.charAt(i) == '(')++level;
-                if (curr.charAt(i) == ')')--level;
-                if (curr.charAt(i) == '<')++level;
-                if (curr.charAt(i) == '>')--level;
-            }
-            String firstSentence = curr.substring(0, i) + ".";
-            td.html(firstSentence);
-        }
-    }
-    
 }
