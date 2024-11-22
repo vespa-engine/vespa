@@ -165,10 +165,11 @@ void ensureWritableDir(const std::string &dirName) {
 std::shared_ptr<IPostingListCache>
 make_posting_list_cache(const ProtonConfig& cfg)
 {
-    if (cfg.search.io == ProtonConfig::Search::Io::MMAP || cfg.index.cache.postinglist.maxbytes == 0) {
+    if (cfg.search.io == ProtonConfig::Search::Io::MMAP ||
+        (cfg.index.cache.postinglist.maxbytes == 0 && cfg.index.cache.bitvector.maxbytes == 0)) {
         return {};
     }
-    return std::make_shared<PostingListCache>(cfg.index.cache.postinglist.maxbytes);
+    return std::make_shared<PostingListCache>(cfg.index.cache.postinglist.maxbytes, cfg.index.cache.bitvector.maxbytes);
 }
 
 } // namespace <unnamed>
@@ -281,8 +282,7 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _documentDBReferenceRegistry(std::make_shared<DocumentDBReferenceRegistry>()),
       _nodeUpLock(),
       _nodeUp(),
-      _posting_list_cache(),
-      _last_posting_list_cache_stats()
+      _posting_list_cache()
 { }
 
 BootstrapConfig::SP
@@ -872,9 +872,8 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         }
     }
     if (_posting_list_cache) {
-        auto stats = _posting_list_cache->get_stats();
-        _metricsEngine->root().index.cache.postinglist.update_metrics(stats, _last_posting_list_cache_stats);
-        _last_posting_list_cache_stats = stats;
+        _metricsEngine->root().index.cache.postinglist.update_metrics(_posting_list_cache->get_stats());
+        _metricsEngine->root().index.cache.bitvector.update_metrics(_posting_list_cache->get_bitvector_stats());
     }
 }
 

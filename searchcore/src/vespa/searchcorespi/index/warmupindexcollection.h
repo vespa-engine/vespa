@@ -48,7 +48,7 @@ public:
     createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term) override;
     std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term) override;
-    search::SearchableStats getSearchableStats() const override;
+    search::IndexStats get_index_stats(bool clear_disk_io_stats) const override;
     search::SerialNum getSerialNum() const override;
     void accept(IndexSearchableVisitor &visitor) const override;
 

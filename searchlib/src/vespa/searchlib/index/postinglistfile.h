@@ -159,8 +159,13 @@ public:
     /**
      * Read posting list into handle.
      */
-    virtual PostingListHandle
-    read_posting_list(const DictionaryLookupResult& lookup_result) = 0;
+    virtual PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) = 0;
+
+    /**
+     * Remove directio padding from posting list if bloat is excessive.
+     */
+    virtual void consider_trim_posting_list(const DictionaryLookupResult &lookup_result, PostingListHandle &handle,
+                                            double bloat_factor) const = 0;
 
     /**
      * Open posting list file for random read.
@@ -199,6 +204,8 @@ public:
                    const search::fef::TermFieldMatchDataArray &matchData) const override;
 
     PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) override;
+    void consider_trim_posting_list(const DictionaryLookupResult &lookup_result, PostingListHandle &handle,
+                                    double bloat_factor) const override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;

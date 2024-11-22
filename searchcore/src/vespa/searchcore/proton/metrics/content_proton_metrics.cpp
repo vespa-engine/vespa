@@ -29,7 +29,8 @@ ContentProtonMetrics::ProtonExecutorMetrics::~ProtonExecutorMetrics() = default;
 
 ContentProtonMetrics::IndexMetrics::CacheMetrics::CacheMetrics(metrics::MetricSet* parent)
     : metrics::MetricSet("cache", {}, "Metrics for caches", parent),
-      postinglist(this, "postinglist", "Posting list cache metrics", "postinglist_cache")
+      postinglist(this, "postinglist", "Posting list cache metrics", "postinglist_cache"),
+      bitvector(this, "bitvector", "Bitvector cache metrics", "bitvector_cache")
 {
 }
 

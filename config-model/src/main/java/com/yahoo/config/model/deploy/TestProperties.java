@@ -7,6 +7,7 @@ import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
@@ -54,6 +55,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private double feedNiceness = 0.0;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
+    private List<TenantVault> tenantVaults = List.of();
     private List<TenantSecretStore> tenantSecretStores = List.of();
     private boolean allowDisableMtls = true;
     private List<X509Certificate> operatorCertificates = List.of();
@@ -114,6 +116,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public double feedNiceness() { return feedNiceness; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
+    @Override public List<TenantVault> tenantVaults() { return tenantVaults; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public boolean allowDisableMtls() { return allowDisableMtls; }
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
@@ -275,6 +278,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxActivationInhibitedOutOfSyncGroups(int nGroups) {
         maxActivationInhibitedOutOfSyncGroups = nGroups;
+        return this;
+    }
+
+    public TestProperties setTenantVaults(List<TenantVault> tenantVaults) {
+        this.tenantVaults = List.copyOf(tenantVaults);
         return this;
     }
 

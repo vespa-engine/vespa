@@ -4,8 +4,10 @@
 #include "fileheader.h"
 #include "pagedict4randread.h"
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/common/read_stats.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
+#include <cassert>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -32,13 +34,13 @@ const std::vector<std::string> field_file_names{
 
 std::atomic<uint64_t> FieldIndex::_file_id_source(0);
 
-FieldIndex::LockedCacheDiskIoStats::LockedCacheDiskIoStats() noexcept
+FieldIndex::LockedFieldIndexIoStats::LockedFieldIndexIoStats() noexcept
     : _stats(),
       _mutex()
 {
 }
 
-FieldIndex::LockedCacheDiskIoStats::~LockedCacheDiskIoStats() = default;
+FieldIndex::LockedFieldIndexIoStats::~LockedFieldIndexIoStats() = default;
 
 FieldIndex::FieldIndex()
     : _posting_file(),
@@ -46,8 +48,10 @@ FieldIndex::FieldIndex()
       _dict(),
       _file_id(0),
       _size_on_disk(0),
-      _cache_disk_io_stats(std::make_shared<LockedCacheDiskIoStats>()),
+      _io_stats(std::make_shared<LockedFieldIndexIoStats>()),
       _posting_list_cache(),
+      _posting_list_cache_enabled(false),
+      _bitvector_cache_enabled(false),
       _field_id(0)
 {
 }
@@ -57,6 +61,8 @@ FieldIndex::FieldIndex(uint32_t field_id, std::shared_ptr<IPostingListCache> pos
 {
     _field_id = field_id;
     _posting_list_cache = std::move(posting_list_cache);
+    _posting_list_cache_enabled = _posting_list_cache && _posting_list_cache->enabled_for_posting_lists();
+    _bitvector_cache_enabled = _posting_list_cache && _posting_list_cache->enabled_for_bitvectors();
 }
 
 FieldIndex::FieldIndex(FieldIndex&&) = default;
@@ -140,10 +146,12 @@ FieldIndex::open(const std::string& field_dir, const TuneFileSearch& tune_file_s
     }
 
     bDict = std::make_shared<BitVectorDictionary>();
-    // Always memory map bitvectors for now
-    auto force_mmap = tune_file_search._read;
-    force_mmap.setWantMemoryMap();
-    if (!bDict->open(field_dir, force_mmap, BitVectorKeyScope::PERFIELD_WORDS)) {
+    // memory map bitvectors unless bitvector cache is enabled
+    auto maybe_force_mmap = tune_file_search._read;
+    if (!_bitvector_cache_enabled) {
+        maybe_force_mmap.setWantMemoryMap();
+    }
+    if (!bDict->open(field_dir, maybe_force_mmap, BitVectorKeyScope::PERFIELD_WORDS)) {
         LOG(warning, "Could not open bit vector dictionary in '%s'", field_dir.c_str());
         return false;
     }
@@ -161,27 +169,29 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
     _bit_vector_dict = rhs._bit_vector_dict;
     _file_id = rhs._file_id;
     _size_on_disk = rhs._size_on_disk;
-    _cache_disk_io_stats = rhs._cache_disk_io_stats;
+    _io_stats = rhs._io_stats;
 }
 
 PostingListHandle
-FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_result) const
+FieldIndex::read_uncached_posting_list(const DictionaryLookupResult& lookup_result, bool trim) const
 {
     auto handle = _posting_file->read_posting_list(lookup_result);
-    if (handle._read_bytes != 0) {
-        _cache_disk_io_stats->add_uncached_read_operation(handle._read_bytes);
+    assert(handle._read_bytes != 0);
+    _io_stats->add_uncached_read_operation(handle._read_bytes);
+    if (trim) {
+        _posting_file->consider_trim_posting_list(lookup_result, handle, 0.2); // Trim posting list if more than 20% bloat
     }
     return handle;
 }
 
 PostingListHandle
-FieldIndex::read(const IPostingListCache::Key& key) const
+FieldIndex::read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const
 {
+    ctx.cache_miss = true;
     DictionaryLookupResult lookup_result;
     lookup_result.bitOffset = key.bit_offset;
     lookup_result.counts._bitLength = key.bit_length;
-    key.backing_store_file = nullptr; // Signal cache miss back to layer above cache
-    return read_uncached_posting_list(lookup_result);
+    return read_uncached_posting_list(lookup_result, true);
 }
 
 PostingListHandle
@@ -191,18 +201,18 @@ FieldIndex::read_posting_list(const DictionaryLookupResult& lookup_result) const
     if (file == nullptr || lookup_result.counts._bitLength == 0) {
         return {};
     }
-    if (file->getMemoryMapped() || !_posting_list_cache) {
-        return read_uncached_posting_list(lookup_result);
+    if (file->getMemoryMapped() || !_posting_list_cache_enabled) {
+        return read_uncached_posting_list(lookup_result, false);
     }
     IPostingListCache::Key key;
-    key.backing_store_file = this;
     key.file_id = _file_id;
     key.bit_offset = lookup_result.bitOffset;
     key.bit_length = lookup_result.counts._bitLength;
-    auto result = _posting_list_cache->read(key);
-    auto cache_hit = key.backing_store_file == this;
-    if (cache_hit && result._read_bytes != 0) {
-        _cache_disk_io_stats->add_cached_read_operation(result._read_bytes);
+    IPostingListCache::Context ctx(this);
+    auto result = _posting_list_cache->read(key, ctx);
+    if (!ctx.cache_miss) {
+        assert(result._read_bytes != 0);
+        _io_stats->add_cached_read_operation(result._read_bytes);
     }
     return result;
 }
@@ -216,13 +226,41 @@ FieldIndex::lookup_bit_vector(const DictionaryLookupResult& lookup_result) const
     return _bit_vector_dict->lookup(lookup_result.wordNum);
 }
 
-std::unique_ptr<BitVector>
+std::shared_ptr<BitVector>
+FieldIndex::read_uncached_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
+{
+    ReadStats read_stats;
+    auto result = _bit_vector_dict->read_bitvector(lookup_result, read_stats);
+    assert(read_stats.read_bytes != 0);
+    _io_stats->add_uncached_read_operation(read_stats.read_bytes);
+    return result;
+}
+
+std::shared_ptr<BitVector>
+FieldIndex::read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const
+{
+    ctx.cache_miss = true;
+    return read_uncached_bit_vector(key.lookup_result);
+}
+
+std::shared_ptr<BitVector>
 FieldIndex::read_bit_vector(BitVectorDictionaryLookupResult lookup_result) const
 {
-    if (!_bit_vector_dict) {
+    if (!_bit_vector_dict || !lookup_result.valid()) {
         return {};
     }
-    return _bit_vector_dict->read_bitvector(lookup_result);
+    if (_bit_vector_dict->get_memory_mapped() || !_bitvector_cache_enabled) {
+        return read_uncached_bit_vector(lookup_result);
+    }
+    IPostingListCache::BitVectorKey key;
+    key.file_id = _file_id;
+    key.lookup_result = lookup_result;
+    IPostingListCache::Context ctx(this);
+    auto result = _posting_list_cache->read(key, ctx);
+    if (!ctx.cache_miss) {
+        _io_stats->add_cached_read_operation(result->getFileBytes());
+    }
+    return result;
 }
 
 std::unique_ptr<search::queryeval::SearchIterator>
@@ -241,10 +279,10 @@ FieldIndex::get_field_length_info() const
 }
 
 FieldIndexStats
-FieldIndex::get_stats() const
+FieldIndex::get_stats(bool clear_disk_io_stats) const
 {
-    auto cache_disk_io_stats = _cache_disk_io_stats->read_and_clear();
-    return FieldIndexStats().size_on_disk(_size_on_disk).cache_disk_io_stats(cache_disk_io_stats);
+    auto io_stats = _io_stats->read_and_maybe_clear(clear_disk_io_stats);
+    return FieldIndexStats().size_on_disk(_size_on_disk).io_stats(io_stats);
 }
 
 }

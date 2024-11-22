@@ -503,6 +503,7 @@ public class VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_USED_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_DEAD_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_MEMORY_USAGE_ONHOLD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_ATTRIBUTE_DISK_USAGE.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_ALLOCATED_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_USED_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_NOTREADY_ATTRIBUTE_MEMORY_USAGE_DEAD_BYTES.average());
@@ -513,6 +514,19 @@ public class VespaMetricSet {
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_USED_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_DEAD_BYTES.average());
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_ONHOLD_BYTES.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_IO_SEARCH_READ_BYTES, EnumSet.of(sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_INDEX_IO_SEARCH_CACHED_READ_BYTES, EnumSet.of(sum, count));
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_READY_INDEX_DISK_USAGE.average());
+
+        // index caches
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_INDEX_CACHE_POSTINGLIST_MEMORY_USAGE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_INDEX_CACHE_POSTINGLIST_HIT_RATE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_INDEX_CACHE_POSTINGLIST_LOOKUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_INDEX_CACHE_POSTINGLIST_INVALIDATIONS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_INDEX_CACHE_BITVECTOR_MEMORY_USAGE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_INDEX_CACHE_BITVECTOR_HIT_RATE.average());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_INDEX_CACHE_BITVECTOR_LOOKUPS.rate());
+        addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_INDEX_CACHE_BITVECTOR_INVALIDATIONS.rate());
 
         // matching
         addMetric(metrics, SearchNodeMetrics.CONTENT_PROTON_DOCUMENTDB_MATCHING_QUERIES.rate());

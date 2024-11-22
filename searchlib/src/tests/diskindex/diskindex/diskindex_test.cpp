@@ -24,9 +24,11 @@ using search::BitVector;
 using search::BitVectorIterator;
 using search::diskindex::DiskIndex;
 using search::diskindex::DiskTermBlueprint;
+using search::diskindex::FieldIndex;
 using search::diskindex::TestDiskIndex;
 using search::diskindex::ZcRareWordPosOccIterator;
 using search::fef::TermFieldMatchDataArray;
+using search::index::DictionaryLookupResult;
 using search::index::DummyFileHeaderContext;
 using search::index::PostingListHandle;
 using search::index::Schema;
@@ -128,7 +130,7 @@ protected:
     static void SetUpTestSuite();
     static void TearDownTestSuite();
     void requireThatLookupIsWorking(const EmptySettings& empty_settings);
-    void requireThatWeCanReadPostingList();
+    void requireThatWeCanReadPostingList(const IOSettings& io_settings);
     void require_that_we_can_get_field_length_info();
     void requireThatWeCanReadBitVector();
     void requireThatBlueprintIsCreated();
@@ -138,6 +140,8 @@ protected:
     void build_index(const IOSettings& io_settings, const EmptySettings& empty_settings);
     void test_empty_settings(const EmptySettings& empty_settings);
     void test_io_settings(const IOSettings& io_settings);
+    SimpleResult search(const FieldIndex& field_index, const DictionaryLookupResult& lookup_result,
+                        const PostingListHandle& handle);
 };
 
 DiskIndexTest::DiskIndexTest() = default;
@@ -243,16 +247,35 @@ DiskIndexTest::requireThatLookupIsWorking(const EmptySettings& empty_settings)
     }
 }
 
-void
-DiskIndexTest::requireThatWeCanReadPostingList()
+SimpleResult
+DiskIndexTest::search(const FieldIndex& field_index, const DictionaryLookupResult& lookup_result,
+                      const PostingListHandle& handle)
 {
     TermFieldMatchDataArray mda;
+    auto sb = field_index.create_iterator(lookup_result, handle, mda);
+    return SimpleResult().search(*sb);
+}
+
+
+void
+DiskIndexTest::requireThatWeCanReadPostingList(const IOSettings& io_settings)
+{
     { // field 'f1'
         auto r = _index->lookup(0, "w1");
         auto& field_index = _index->get_field_index(0);
         auto h = field_index.read_posting_list(r);
-        auto sb = field_index.create_iterator(r, h, mda);
-        EXPECT_EQ(SimpleResult({1,3}), SimpleResult().search(*sb));
+        if (field_index.is_posting_list_cache_enabled()) {
+            EXPECT_GT(64, h._allocSize);
+        }
+        EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, h));
+        if (io_settings._use_directio && !io_settings._use_mmap) {
+            auto directio_handle = field_index.read_uncached_posting_list(r, false);
+            EXPECT_LT(256, directio_handle._allocSize);
+            EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, directio_handle));
+            auto trimmed_directio_handle = field_index.read_uncached_posting_list(r, true);
+            EXPECT_GT(64, trimmed_directio_handle._allocSize);
+            EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, trimmed_directio_handle));
+        }
     }
 }
 
@@ -289,7 +312,7 @@ DiskIndexTest::requireThatWeCanReadBitVector()
             auto& field_index = _index->get_field_index(1);
             auto blr = field_index.lookup_bit_vector(r);
             EXPECT_TRUE(blr.valid());
-            BitVector::UP bv = field_index.read_bit_vector(blr);
+            auto bv = field_index.read_bit_vector(blr);
             EXPECT_TRUE(bv.get() != nullptr);
             EXPECT_TRUE(*bv == *exp);
         }
@@ -425,7 +448,7 @@ DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettings& e
 void
 DiskIndexTest::require_that_get_stats_works()
 {
-    auto stats = getIndex().get_stats();
+    auto stats = getIndex().get_stats(false);
     auto& schema = getIndex().getSchema();
     EXPECT_LT(0, stats.sizeOnDisk());
     auto field_stats = stats.get_field_stats();
@@ -452,7 +475,7 @@ DiskIndexTest::test_io_settings(const IOSettings& io_settings)
     EmptySettings empty_settings;
     build_index(io_settings, empty_settings);
     requireThatLookupIsWorking(empty_settings);
-    requireThatWeCanReadPostingList();
+    requireThatWeCanReadPostingList(io_settings);
     require_that_we_can_get_field_length_info();
     requireThatWeCanReadBitVector();
     requireThatBlueprintIsCreated();

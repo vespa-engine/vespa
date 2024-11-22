@@ -18,6 +18,7 @@ import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.CloudAccount;
@@ -350,6 +351,7 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
         private final Optional<AthenzDomain> athenzDomain;
         private final Quota quota;
+        private final List<TenantVault> tenantVaults;
         private final List<TenantSecretStore> tenantSecretStores;
         private final SecretStore secretStore;
         private final StringFlag jvmGCOptionsFlag;
@@ -376,6 +378,7 @@ public class ModelContextImpl implements ModelContext {
                           Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<Quota> maybeQuota,
+                          List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
                           SecretStore secretStore,
                           List<X509Certificate> operatorCertificates,
@@ -397,6 +400,7 @@ public class ModelContextImpl implements ModelContext {
             this.endpointCertificateSecrets = endpointCertificateSecrets;
             this.athenzDomain = athenzDomain;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
+            this.tenantVaults = tenantVaults;
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
@@ -412,7 +416,7 @@ public class ModelContextImpl implements ModelContext {
             this.endpointConnectionTtl = Duration.ofSeconds(PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource).with(applicationId).value());
             this.dataplaneTokens = dataplaneTokens;
             this.requestPrefixForLoggingContent = PermanentFlags.LOG_REQUEST_CONTENT.bindTo(flagSource).with(applicationId).value();
-            this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(flagSource).with(applicationId).value();
+            this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(flagSource).with(applicationId).with(modelVersion).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -468,6 +472,11 @@ public class ModelContextImpl implements ModelContext {
         public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
 
         @Override public Quota quota() { return quota; }
+
+        @Override
+        public List<TenantVault> tenantVaults() {
+            return tenantVaults;
+        }
 
         @Override
         public List<TenantSecretStore> tenantSecretStores() {

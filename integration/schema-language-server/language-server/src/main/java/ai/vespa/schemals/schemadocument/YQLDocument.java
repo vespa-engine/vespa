@@ -21,7 +21,6 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
-import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
 
@@ -107,9 +106,38 @@ public class YQLDocument implements DocumentManager {
 
         int charsRead = parser.getToken(0).getEndOffset();
 
+        if (charsRead == 0) return new YQLPartParseResult(List.of(), Optional.empty(), charsRead);
+
         ai.vespa.schemals.parser.yqlplus.Node node = parser.rootNode();
         YQLNode retNode = new YQLNode(node, offset);
         // YQLUtils.printTree(logger, node);
+
+        return new YQLPartParseResult(List.of(), Optional.of(retNode), charsRead);
+    }
+
+    private static boolean detectContinuation(String inputString) {
+        for (int i = 0; i < inputString.length(); i++) {
+            if (inputString.charAt(i) != ' ') {
+                return inputString.charAt(i) == '{';
+            }
+        }
+        return false;
+    }
+
+    private static YQLPartParseResult parseContinuation(String inputString, Position offset) {
+
+        YQLPlusParser parser = new YQLPlusParser(inputString);
+
+        try {
+            parser.map_expression();
+        } catch (ParseException exception) {
+            // Ignored, marked as dirty node
+        }
+
+        var node = parser.rootNode();
+        YQLNode retNode = new YQLNode(node, offset);
+
+        int charsRead = parser.getToken(0).getEndOffset();
 
         return new YQLPartParseResult(List.of(), Optional.of(retNode), charsRead);
     }
@@ -139,14 +167,36 @@ public class YQLDocument implements DocumentManager {
                 Position groupOffset = CSTUtils.addPositions(groupOffsetWithoutPipe, new Position(0, 1)); // Add pipe char
 
                 ret.addChild(new YQLNode(new Range(groupOffsetWithoutPipe, groupOffset), "|"));
-    
-                YQLPartParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), groupOffset);
-                if (groupingResult.CST.isPresent()) {
-                    ret.addChild(groupingResult.CST.get());
+                charsRead++;
+
+                // Look for continuation
+                boolean continuationDetected = detectContinuation(groupingString);
+                if (continuationDetected) {
+                    YQLPartParseResult continuationResults = parseContinuation(groupingString, groupOffset);
+
+                    diagnostics.addAll(continuationResults.diagnostics());
+                    if (continuationResults.CST().isPresent()) {
+                        ret.addChild(continuationResults.CST().get());
+                    }
+
+                    charsRead += continuationResults.charsRead();
+                    String continuationString = groupingString.substring(0, continuationResults.charsRead());
+                    Position continuationPosition = StringUtils.getStringPosition(continuationString);
+
+                    groupingString = groupingString.substring(continuationResults.charsRead());
+                    groupOffset = CSTUtils.addPositions(groupOffset, continuationPosition);
+                }
+
+                if (groupingString.length() > 0 && groupingString.strip().length() > 0) {
+                    YQLPartParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), groupOffset);
+                    if (groupingResult.CST.isPresent()) {
+                        ret.addChild(groupingResult.CST.get());
+                    }
+        
+                    diagnostics.addAll(groupingResult.diagnostics());
+                    charsRead += groupingResult.charsRead(); // Add one for the pipe symbol
                 }
     
-                diagnostics.addAll(groupingResult.diagnostics());
-                charsRead += 1 + groupingResult.charsRead(); // Add one for the pipe symbol
             }
 
         }
@@ -180,6 +230,8 @@ public class YQLDocument implements DocumentManager {
             if (result.CST().isPresent()) {
                 ret.addChild(result.CST().get());
             }
+
+            if (result.charsRead() == 0) result.charsRead++;
             
             int newOffset = content.indexOf('\n', charsRead + result.charsRead());
             if (newOffset == -1) {

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.ClusterMembership;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -34,6 +37,8 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 class Activator {
+
+    private static final Logger log = Logger.getLogger(Activator.class.getName());
 
     private final NodeRepository nodeRepository;
     private final Optional<LoadBalancerProvisioner> loadBalancerProvisioner;
@@ -44,9 +49,9 @@ class Activator {
     }
 
     /** Activate required resources for application guarded by given lock */
-    public void activate(Collection<HostSpec> hosts, long generation, ApplicationTransaction transaction) {
-        NodeList newActive = activateNodes(hosts, generation, transaction);
-        activateLoadBalancers(hosts, newActive, transaction);
+    public void activate(Collection<HostSpec> hosts, ActivationContext context, ApplicationTransaction transaction) {
+        NodeList newActive = activateNodes(hosts, context.generation(), transaction);
+        activateLoadBalancers(hosts, newActive, transaction, context.isBootstrap());
     }
 
     /**
@@ -149,8 +154,14 @@ class Activator {
     }
 
     /** Activate load balancers */
-    private void activateLoadBalancers(Collection<HostSpec> hosts, NodeList newActive, ApplicationTransaction transaction) {
-        loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(allClustersOf(hosts), newActive, transaction));
+    private void activateLoadBalancers(Collection<HostSpec> hosts, NodeList newActive, ApplicationTransaction transaction, boolean isBootstrap) {
+        try {
+            loadBalancerProvisioner.ifPresent(provisioner -> provisioner.activate(allClustersOf(hosts), newActive, transaction));
+        } catch (RuntimeException e) {
+            if (isBootstrap)
+                log.warning("Failed to activate load balancers for " + transaction.application() + ": " + Exceptions.toMessageString(e) + " (Ignoring because bootstrap deployment)");
+            throw e;
+        }
     }
 
     private static Set<ClusterSpec> allClustersOf(Collection<HostSpec> hosts) {

@@ -39,4 +39,14 @@ PartialBitVector::PartialBitVector(const BitVector & org, Index start, Index end
 
 PartialBitVector::~PartialBitVector() = default;
 
+size_t
+PartialBitVector::get_allocated_bytes(bool include_self) const noexcept
+{
+    size_t result = _alloc.size();
+    if (include_self) {
+        result += sizeof(PartialBitVector);
+    }
+    return result;
+}
+
 } // namespace search

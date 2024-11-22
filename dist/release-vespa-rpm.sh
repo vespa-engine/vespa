@@ -17,10 +17,11 @@ readonly CURRENT_BRANCH=$(git branch | grep "^\*" | cut -d' ' -f2)
 git checkout master
 git pull --rebase
 
-# Create a proper release tag
-
-git tag -a "$RELEASE_TAG" -m "Release version $VERSION" $GITREF
-git push origin "$RELEASE_TAG"
+# Create a proper release tag if not there
+if [[ $(git rev-list -n 1 "$RELEASE_TAG") != "$GITREF" ]]; then
+  git tag -a "$RELEASE_TAG" -m "Release version $VERSION" $GITREF
+  git push origin "$RELEASE_TAG"
+fi
 
 git reset --hard HEAD
 git checkout $CURRENT_BRANCH

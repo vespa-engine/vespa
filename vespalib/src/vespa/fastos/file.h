@@ -393,16 +393,12 @@ public:
                                  size_t &padAfter);
 
     /**
-     * Allocate a buffer properly alligned with regards to direct io
-     * access restrictions.
+     * Allocate a buffer for normal io.
      * @param  byteSize          Number of bytes to be allocated
-     * @param  realPtr           Reference where the actual pointer returned
-     *                           from malloc will be saved.  Use free() with
-     *                           this pointer to deallocate the buffer.
-     *                           This value is always set.
-     * @return Alligned pointer value or nullptr if out of memory
+     * @return pointer value or nullptr if out of memory
+     *         Use free() with this pointer to deallocate the buffer.
      */
-    static void *allocateGenericDirectIOBuffer(size_t byteSize, void *&realPtr);
+    static void *allocateIOBuffer(size_t byteSize);
 
     /**
      * Get maximum memory alignment for directio buffers.
@@ -411,16 +407,13 @@ public:
     static size_t getMaxDirectIOMemAlign();
 
     /**
-     * Allocate a buffer properly alligned with regards to direct io
+     * Allocate a buffer properly aligned with regards to direct io
      * access restrictions.
      * @param  byteSize          Number of bytes to be allocated
-     * @param  realPtr           Reference where the actual pointer returned
-     *                           from malloc will be saved.  Use free() with
-     *                           this pointer to deallocate the buffer.
-     *                           This value is always set.
-     * @return Alligned pointer value or nullptr if out of memory
+     * @return Aligned pointer value or nullptr if out of memory.
+     *         Use free() with this pointer to deallocate the buffer.
      */
-    virtual void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr);
+    virtual void *AllocateDirectIOBuffer(size_t byteSize);
 
     /**
      * Enable mapping of complete file contents into the address space of the

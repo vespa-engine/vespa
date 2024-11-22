@@ -6,33 +6,39 @@
 namespace search {
 
 /*
- * Class tracking disk io when using a cache.
+ * Class tracking disk io for a single field.
  */
-class CacheDiskIoStats {
+class FieldIndexIoStats {
     DiskIoStats _read;        // cache miss
     DiskIoStats _cached_read; // cache hit
 
 public:
-    CacheDiskIoStats() noexcept
+    FieldIndexIoStats() noexcept
         : _read(),
           _cached_read()
     {
     }
 
-    CacheDiskIoStats& read(const DiskIoStats& value) { _read = value; return *this; }
-    CacheDiskIoStats& cached_read(DiskIoStats& value) { _cached_read = value; return *this; }
+    FieldIndexIoStats& read(const DiskIoStats& value) { _read = value; return *this; }
+    FieldIndexIoStats& cached_read(DiskIoStats& value) { _cached_read = value; return *this; }
     const DiskIoStats& read() const noexcept { return _read; }
     const DiskIoStats& cached_read() const noexcept { return _cached_read; }
-    void merge(const CacheDiskIoStats& rhs) noexcept {
+    void merge(const FieldIndexIoStats& rhs) noexcept {
         _read.merge(rhs.read());
         _cached_read.merge(rhs.cached_read());
     }
 
-    bool operator==(const CacheDiskIoStats &rhs) const noexcept {
+    bool operator==(const FieldIndexIoStats &rhs) const noexcept {
         return _read == rhs.read() &&
                _cached_read == rhs.cached_read();
     }
-    CacheDiskIoStats read_and_clear() noexcept { auto result = *this; clear(); return result; }
+    FieldIndexIoStats read_and_maybe_clear(bool clear_disk_io_stats) noexcept {
+        auto result = *this;
+        if (clear_disk_io_stats) {
+            clear();
+        }
+        return result;
+    }
     void clear() noexcept {
         _read.clear();
         _cached_read.clear();
@@ -41,6 +47,6 @@ public:
     void add_cached_read_operation(uint64_t bytes) noexcept { _cached_read.add_read_operation(bytes); }
 };
 
-std::ostream& operator<<(std::ostream& os, const CacheDiskIoStats& stats);
+std::ostream& operator<<(std::ostream& os, const FieldIndexIoStats& stats);
 
 }

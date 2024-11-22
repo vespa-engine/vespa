@@ -35,7 +35,7 @@ public:
     int64_t getPosition() const override;
     bool SetSize(int64_t newSize) override;
     void ReadBuf(void *buffer, size_t length, int64_t readOffset) override;
-    void *AllocateDirectIOBuffer(size_t byteSize, void *&realPtr) override;
+    void *AllocateDirectIOBuffer(size_t byteSize) override;
 
 
     [[nodiscard]] ssize_t Read(void *buffer, size_t len) override;

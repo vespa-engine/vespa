@@ -1793,6 +1793,7 @@
       "public static final com.yahoo.prelude.query.TermType NOT",
       "public static final com.yahoo.prelude.query.TermType PHRASE",
       "public static final com.yahoo.prelude.query.TermType EQUIV",
+      "public static final com.yahoo.prelude.query.TermType WEAK_AND",
       "public static final com.yahoo.prelude.query.TermType DEFAULT",
       "public final java.lang.String name"
     ]

@@ -3,8 +3,14 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 
 namespace vespalib {
+
+/*
+ * Return offset rounded down to a page boundary.
+ */
+uint64_t round_down_to_page_boundary(uint64_t offset);
 
 /*
  * Return sz rounded up to a multiple of page size.

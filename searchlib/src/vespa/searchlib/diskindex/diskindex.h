@@ -4,7 +4,7 @@
 
 #include "field_index.h"
 #include <vespa/searchlib/queryeval/searchable.h>
-#include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/searchlib/util/index_stats.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/vespalib/stllike/cache.h>
 #include <string>
@@ -110,7 +110,7 @@ public:
     /**
      * Get stats for this index.
      */
-    SearchableStats get_stats() const;
+    IndexStats get_stats(bool clear_disk_io_stats) const;
     const index::Schema &getSchema() const { return _schema; }
     const std::string &getIndexDir() const { return _indexDir; }
 

@@ -8,13 +8,13 @@ namespace searchcorespi::index {
 
 IndexSearchableStats::IndexSearchableStats()
     : _serialNum(0),
-      _searchableStats()
+      _index_stats()
 {
 }
 
 IndexSearchableStats::IndexSearchableStats(const IndexSearchable &index)
     : _serialNum(index.getSerialNum()),
-      _searchableStats(index.getSearchableStats())
+      _index_stats(index.get_index_stats(false))
 {
 }
 

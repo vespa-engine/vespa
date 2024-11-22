@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/round_up_to_page_size.h>
 #include <cassert>
 #include <cstring>
 
@@ -44,7 +45,8 @@ ZcPosOccRandRead::ZcPosOccRandRead()
       _fileBitSize(0),
       _headerBitSize(0),
       _fieldsParams()
-{ }
+{
+}
 
 
 ZcPosOccRandRead::~ZcPosOccRandRead()
@@ -92,32 +94,32 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
     uint64_t startOffset = (lookup_result.bitOffset + _headerBitSize) >> 3;
     // Align start at 64-bit boundary
     startOffset -= (startOffset & 7);
+    uint64_t endOffset = (lookup_result.bitOffset + _headerBitSize +
+                          lookup_result.counts._bitLength + 7) >> 3;
+    // Align end at 64-bit boundary
+    endOffset += (-endOffset & 7);
 
     void *mapPtr = _file->MemoryMapPtr(startOffset);
     if (mapPtr != nullptr) {
         handle._mem = mapPtr;
+        size_t pad_before = startOffset - vespalib::round_down_to_page_boundary(startOffset);
+        handle._read_bytes = vespalib::round_up_to_page_size(pad_before + endOffset - startOffset + decode_prefetch_size);
     } else {
-        uint64_t endOffset = (lookup_result.bitOffset + _headerBitSize +
-                              lookup_result.counts._bitLength + 7) >> 3;
-        // Align end at 64-bit boundary
-        endOffset += (-endOffset & 7);
-
         uint64_t vectorLen = endOffset - startOffset;
         size_t padBefore;
         size_t padAfter;
         size_t padExtraAfter;       // Decode prefetch space
         _file->DirectIOPadding(startOffset, vectorLen, padBefore, padAfter);
         padExtraAfter = 0;
-        if (padAfter < 16) {
-            padExtraAfter = 16 - padAfter;
+        if (padAfter < decode_prefetch_size) {
+            padExtraAfter = decode_prefetch_size - padAfter;
         }
 
         size_t mallocLen = padBefore + vectorLen + padAfter + padExtraAfter;
-        void *mallocStart = nullptr;
         void *alignedBuffer = nullptr;
         if (mallocLen > 0) {
-            alignedBuffer = _file->AllocateDirectIOBuffer(mallocLen, mallocStart);
-            assert(mallocStart != nullptr);
+            alignedBuffer = _file->AllocateDirectIOBuffer(mallocLen);
+            assert(alignedBuffer != nullptr);
             assert(endOffset + padAfter + padExtraAfter <= _fileSize);
             _file->ReadBuf(alignedBuffer,
                            padBefore + vectorLen + padAfter,
@@ -130,7 +132,7 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
                    padExtraAfter);
         }
         handle._mem = static_cast<char *>(alignedBuffer) + padBefore;
-        handle._allocMem = std::shared_ptr<void>(mallocStart, free);
+        handle._allocMem = std::shared_ptr<void>(alignedBuffer, free);
         handle._allocSize = mallocLen;
         handle._read_bytes = padBefore + vectorLen + padAfter;
     }
@@ -138,6 +140,37 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
     return handle;
 }
 
+void
+ZcPosOccRandRead::consider_trim_posting_list(const DictionaryLookupResult &lookup_result, PostingListHandle &handle,
+                                             double bloat_factor) const
+{
+    if (lookup_result.counts._bitLength == 0 || _memoryMapped) {
+        return;
+    }
+    uint64_t start_offset = (lookup_result.bitOffset + _headerBitSize) >> 3;
+    // Align start at 64-bit boundary
+    start_offset -= (start_offset & 7);
+    uint64_t end_offset = (lookup_result.bitOffset + _headerBitSize +
+                           lookup_result.counts._bitLength + 7) >> 3;
+    // Align end at 64-bit boundary
+    end_offset += (-end_offset & 7);
+    size_t malloc_len = end_offset - start_offset + decode_prefetch_size;
+    if (handle._allocSize == malloc_len) {
+        assert(handle._allocMem.get() == handle._mem);
+        return;
+    }
+    assert(handle._allocSize >= malloc_len);
+    if (handle._allocSize <= malloc_len * (1.0 + bloat_factor)) {
+        return;
+    }
+    auto *mem = malloc(malloc_len);
+    assert(mem != nullptr);
+    memcpy(mem, handle._mem, malloc_len);
+    handle._allocMem = std::shared_ptr<void>(mem, free);
+    handle._mem = mem;
+    handle._allocSize = malloc_len;
+    handle._read_bytes = end_offset - start_offset;
+}
 
 bool
 ZcPosOccRandRead::
@@ -157,6 +190,7 @@ open(const std::string &name, const TuneFileRandRead &tuneFileRead)
     _fileSize = _file->getSize();
 
     readHeader();
+    afterOpen(*_file);
     return true;
 }
 

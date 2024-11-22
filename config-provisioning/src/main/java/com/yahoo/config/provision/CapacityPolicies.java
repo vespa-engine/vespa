@@ -19,6 +19,11 @@ import static java.util.Objects.requireNonNull;
 public class CapacityPolicies {
 
     public record Tuning(Architecture adminClusterArchitecture, double logserverMemoryGiB, double clusterControllerMemoryGiB) {
+
+        public Tuning(Architecture adminClusterArchitecture, double logserverMemoryGiB) {
+            this(adminClusterArchitecture, logserverMemoryGiB, 0.0);
+        }
+
         double logserverMem(double v) {
             double override = logserverMemoryGiB();
             return (override > 0) ? override : v;

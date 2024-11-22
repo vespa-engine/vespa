@@ -91,7 +91,6 @@ public class DeploymentSpecXmlReader {
     private static final String idAttribute = "id";
     private static final String athenzServiceAttribute = "athenz-service";
     private static final String athenzDomainAttribute = "athenz-domain";
-    private static final String testerFlavorAttribute = "tester-flavor";
     private static final String testerTag = "tester";
     private static final String nodesTag = "nodes";
     private static final String majorVersionAttribute = "major-version";

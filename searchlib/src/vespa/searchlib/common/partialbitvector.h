@@ -27,6 +27,8 @@ public:
 
     ~PartialBitVector() override;
 
+    size_t get_allocated_bytes(bool include_self) const noexcept override;
+
 private:
     vespalib::alloc::Alloc  _alloc;
 };

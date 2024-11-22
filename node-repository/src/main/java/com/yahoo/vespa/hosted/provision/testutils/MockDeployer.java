@@ -183,7 +183,7 @@ public class MockDeployer implements Deployer {
             activations++;
             try (var lock = provisioner.lock(application.id)) {
                 try (NestedTransaction t = new NestedTransaction()) {
-                    provisioner.activate(preparedHosts, new ActivationContext(activations), new ApplicationTransaction(lock, t));
+                    provisioner.activate(preparedHosts, new ActivationContext(activations, false), new ApplicationTransaction(lock, t));
                     t.commit();
                     lastActivationTimes.put(application.id, clock.instant());
                 }

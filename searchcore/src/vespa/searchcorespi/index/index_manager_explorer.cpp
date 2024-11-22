@@ -8,7 +8,7 @@
 
 using vespalib::slime::Cursor;
 using vespalib::slime::Inserter;
-using search::SearchableStats;
+using search::IndexStats;
 using searchcorespi::index::DiskIndexStats;
 using searchcorespi::index::MemoryIndexStats;
 
@@ -20,10 +20,16 @@ void
 insertDiskIndex(Cursor &arrayCursor, const DiskIndexStats &diskIndex)
 {
     Cursor &diskIndexCursor = arrayCursor.addObject();
-    const SearchableStats &sstats = diskIndex.getSearchableStats();
+    const IndexStats &sstats = diskIndex.get_index_stats();
     diskIndexCursor.setLong("serialNum", diskIndex.getSerialNum());
     diskIndexCursor.setString("indexDir", diskIndex.getIndexdir());
-    diskIndexCursor.setLong("sizeOnDisk", sstats.sizeOnDisk());
+    diskIndexCursor.setLong("disk_usage", sstats.sizeOnDisk());
+    auto& fields = diskIndexCursor.setArray("fields");
+    for (auto& field_stats : sstats.get_field_stats()) {
+        auto& field = fields.addObject();
+        field.setString("name", field_stats.first);
+        field.setLong("disk_usage", field_stats.second.size_on_disk());
+    }
 }
 
 void
@@ -40,7 +46,7 @@ void
 insertMemoryIndex(Cursor &arrayCursor, const MemoryIndexStats &memoryIndex)
 {
     Cursor &memoryIndexCursor = arrayCursor.addObject();
-    const SearchableStats &sstats = memoryIndex.getSearchableStats();
+    const IndexStats &sstats = memoryIndex.get_index_stats();
     memoryIndexCursor.setLong("serialNum", memoryIndex.getSerialNum());
     memoryIndexCursor.setLong("docsInMemory", sstats.docsInMemory());
     insertMemoryUsage(memoryIndexCursor, sstats.memoryUsage());

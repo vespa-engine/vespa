@@ -8,6 +8,7 @@ import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.config.model.api.TenantVault;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -19,6 +20,7 @@ import com.yahoo.path.Path;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+
 import java.security.cert.X509Certificate;
 import java.time.Instant;
 import java.util.List;
@@ -130,6 +132,8 @@ public abstract class Session implements Comparable<Session>  {
 
     public Version getVespaVersion() { return sessionZooKeeperClient.readVespaVersion(); }
 
+    public Optional<Version> getVersionToBuildFirst() { return sessionZooKeeperClient.readVersionToBuildFirst(); }
+
     public Optional<AthenzDomain> getAthenzDomain() { return sessionZooKeeperClient.readAthenzDomain(); }
 
     public Optional<Quota> getQuota() { return sessionZooKeeperClient.readQuota(); }
@@ -140,6 +144,10 @@ public abstract class Session implements Comparable<Session>  {
 
     public Transaction createDeactivateTransaction() {
         return createSetStatusTransaction(Status.DEACTIVATE);
+    }
+
+    public List<TenantVault> getTenantVaults() {
+        return sessionZooKeeperClient.readTenantVaults();
     }
 
     public List<TenantSecretStore> getTenantSecretStores() {
@@ -188,7 +196,7 @@ public abstract class Session implements Comparable<Session>  {
         return getApplicationPackage().getFile(relativePath);
     }
 
-    Optional<ApplicationVersions> applicationVersions() { return Optional.empty(); }
+    public Optional<ApplicationVersions> applicationVersions() { return Optional.empty(); }
 
     private void markSessionEdited() {
         setStatus(Session.Status.NEW);

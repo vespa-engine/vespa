@@ -3,6 +3,7 @@
 #include "bitvectordictionary.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadertags.h>
+#include <vespa/searchlib/common/read_stats.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
@@ -21,7 +22,8 @@ BitVectorDictionary::BitVectorDictionary()
       _entries(),
       _vectorSize(0u),
       _datFile(),
-      _datHeaderLen(0u)
+      _datHeaderLen(0u),
+      _memory_mapped(false)
 { }
 
 BitVectorDictionary::~BitVectorDictionary() = default;
@@ -83,6 +85,7 @@ BitVectorDictionary::open(const std::string &pathPrefix,
     vespalib::FileHeader datHeader(64);
     _datHeaderLen = datHeader.readFile(*_datFile);
     assert(_datFile->getSize() >= static_cast<int64_t>(_vectorSize * _entries.size() + _datHeaderLen));
+    _memory_mapped = (_datFile->MemoryMapPtr(0) != nullptr);
     return true;
 }
 
@@ -98,13 +101,20 @@ BitVectorDictionary::lookup(uint64_t wordNum) {
 }
 
 std::unique_ptr<BitVector>
-BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result)
+BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result, ReadStats& read_stats)
 {
     if (!lookup_result.valid()) {
         return {};
     }
     int64_t offset = ((int64_t) _vectorSize) * lookup_result.idx + _datHeaderLen;
-    return BitVector::create(_docIdLimit, *_datFile, offset, _entries[lookup_result.idx]._numDocs);
+    return BitVector::create(_docIdLimit, *_datFile, offset, _entries[lookup_result.idx]._numDocs, read_stats);
+}
+
+std::unique_ptr<BitVector>
+BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_result)
+{
+    ReadStats read_stats;
+    return read_bitvector(lookup_result, read_stats);
 }
 
 }

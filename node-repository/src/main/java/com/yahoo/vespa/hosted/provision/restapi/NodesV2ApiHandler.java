@@ -266,7 +266,11 @@ public class NodesV2ApiHandler extends ThreadedHttpRequestHandler {
 
     private HttpResponse snapshot(String hostname) {
         Snapshot snapshot = nodeRepository.snapshots().create(hostname, nodeRepository.clock().instant());
-        return new MessageResponse("Triggered a new snapshot of " + hostname + ": " + snapshot.id());
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        root.setString("id", snapshot.id().toString());
+        root.setString("message", "Triggered a new snapshot of " + hostname + ": " + snapshot.id());
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse restoreSnapshot(SnapshotId id, String hostname) {

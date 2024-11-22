@@ -50,7 +50,7 @@ using search::DocumentMetaData;
 using vespalib::IDestructorCallback;
 using vespalib::Gate;
 using vespalib::GateCallback;
-using search::SearchableStats;
+using search::IndexStats;
 using search::test::DocBuilder;
 using search::test::SchemaBuilder;
 using searchcorespi::IndexSearchable;

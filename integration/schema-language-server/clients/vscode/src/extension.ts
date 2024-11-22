@@ -72,24 +72,16 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
 
 	let clientOptions: LanguageClientOptions = {
 		// Register the server for plain text documents
-		documentSelector: [{
-			scheme: 'file',
-			language: 'vespaSchema',
-		}],
-		middleware: { 
-			provideCompletionItem: async (document, position, context, token, next) => {
-				const r = await next(document, position, context, token);
-				return r;
-			},
-			provideDocumentHighlights: async (document, position, token, next) => {
-				const r = await next(document, position, token);
-				return r;
-			},
-			provideDocumentSemanticTokens: async (document, token, next) => {
-				const r = await next(document, token);
-				return r;
-			},
-		},
+		documentSelector: [
+            {
+			    scheme: 'file',
+			    language: 'vespaSchema',
+		    },
+            {
+                scheme: 'file',
+                language: 'vespaYQL'
+            }
+        ],
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher("**/*{.sd,.profile}")
         }

@@ -28,8 +28,8 @@ public:
         return _fake.createBlueprint(requestContext, field, term);
     }
 
-    search::SearchableStats getSearchableStats() const override {
-        return search::SearchableStats();
+    search::IndexStats get_index_stats(bool) const override {
+        return search::IndexStats();
     }
 
     search::SerialNum getSerialNum() const override { return 0; }

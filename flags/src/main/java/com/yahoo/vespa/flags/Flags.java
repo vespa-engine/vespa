@@ -19,6 +19,7 @@ import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
+import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 
@@ -291,12 +292,12 @@ public class Flags {
             NODE_TYPE, HOSTNAME);
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
-            "zonal-weighted-endpoint-records", List.of(), String.class, List.of("jonmv"), "2023-12-15", "2024-12-01",
+            "zonal-weighted-endpoint-records", List.of(), String.class, List.of("hmusum"), "2023-12-15", "2025-02-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
-            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2024-12-01",
+            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("hmusum"), "2023-05-16", "2025-02-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
@@ -397,6 +398,12 @@ public class Flags {
             "Whether to sync tenants to HubSpot",
             "Takes effect immediately");
 
+    public static UnboundBooleanFlag ATLASSIAN_SYNC_TENANTS = defineFeatureFlag(
+            "atlassian-sync-tenants", false,
+            List.of("bjormel"), "2024-11-11", "2025-01-01",
+            "Whether to sync tenants to Atlassian",
+            "Takes effect immediately");
+
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
             List.of("vekterli"), "2024-05-23", "2024-12-01",
@@ -423,7 +430,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
-            List.of("jonmv"), "2024-06-11", "2025-01-10",
+            List.of("hmusum"), "2024-06-11", "2025-02-01",
             "Whether to launch an Athenz service unique to the application. Only valid in public systems!",
             "Takes effect on next deployment",
             INSTANCE_ID);
@@ -435,7 +442,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
-            "distribution-config-from-cluster-controller", false,
+            "distribution-config-from-cluster-controller", true,
             List.of("vekterli"), "2024-07-01", "2024-12-01",
             "Iff true, the cluster controller will be the authoritative source of distribution " +
             "config changes in a content cluster, and distribution changes will be part of explicitly " +
@@ -490,6 +497,27 @@ public class Flags {
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
+
+    public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
+            "enforce-email-domain-sso", false,
+            List.of("eirik"), "2024-11-07", "2025-02-07",
+            "Enforce SSO login for an email domain",
+            "Takes effect immediately",
+            CONSOLE_USER_EMAIL);
+
+    public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
+            "restrict-users-to-domain", List.of(), String.class,
+            List.of("eirik"), "2024-11-07", "2025-02-07",
+            "Only allow adding specific email domains as user to tenant",
+            "Takes effect immediately",
+            TENANT_ID);
+
+    public static final UnboundBooleanFlag LEGACY_AUTH0_FILTER = defineFeatureFlag(
+            "use-legacy-auth0-filter", true,
+            List.of("eirik"), "2024-11-07", "2025-02-07",
+            "Use legacy auth0 request filter, or new one",
+            "Takes after controller restart",
+            SYSTEM);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

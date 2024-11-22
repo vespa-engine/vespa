@@ -33,6 +33,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.security.KeyFormat;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
@@ -69,7 +70,6 @@ import com.yahoo.vespa.service.duper.ProxyHostApplication;
 import com.yahoo.vespa.service.duper.TenantHostApplication;
 
 import java.security.KeyPair;
-import java.security.interfaces.XECPrivateKey;
 import java.time.temporal.TemporalAmount;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -247,7 +247,7 @@ public class ProvisioningTester {
         try (var lock = provisioner.lock(application)) {
             NestedTransaction transaction = new NestedTransaction();
             transaction.add(new CuratorTransaction(curator));
-            provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
+            provisioner.activate(hosts, new ActivationContext(0, false), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
         assertEquals(toHostNames(hosts), nodeRepository.nodes().list(Node.State.active).owner(application).hostnames());
@@ -772,8 +772,7 @@ public class ProvisioningTester {
             SecretStoreMock secretStore = new SecretStoreMock();
             KeyPair keyPair = KeyUtils.generateX25519KeyPair();
             secretStore.add(new Secret(Key.fromString("snapshot/sealingPrivateKey"),
-                                       KeyUtils.toBase64EncodedX25519PrivateKey((XECPrivateKey) keyPair.getPrivate())
-                                               .getBytes(),
+                                       KeyUtils.toPem(keyPair.getPrivate(), KeyFormat.PKCS8).getBytes(),
                                        SecretVersionId.of("1")));
             return secretStore;
         }

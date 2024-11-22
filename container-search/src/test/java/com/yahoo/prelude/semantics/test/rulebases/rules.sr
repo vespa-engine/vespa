@@ -49,6 +49,9 @@ java +> -coffee;
 # Adding an or term
 something +> ?somethingelse;
 
+# Replace with two or terms:
+somethingmore -> ?more ?evenmore;
+
 # Adding another negative
 # TODO: Term types in conditions
 # java -coffee +> -island
@@ -69,3 +72,8 @@ the -> ;
 [typechange] -> $default:[typechange] ;
 
 [typechange] :- typechange;
+
+# Replacing a phrase and changing index
+[myphrase] -> brand:smashtogether ;
+
+[myphrase] :- smash together;

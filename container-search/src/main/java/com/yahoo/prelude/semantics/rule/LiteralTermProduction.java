@@ -61,7 +61,7 @@ public class LiteralTermProduction extends TermProduction {
     public String getLiteral() { return literal; }
 
     public void produce(RuleEvaluation e, int offset) {
-        WordItem newItem = new WordItem(literal, getLabel());
+        WordItem newItem = new WordItem(literal, getLabel(), true);
         if (replacing) {
             Match matched = e.getNonreferencedMatch(0);
             newItem.setWeight(matched.getItem().getWeight());

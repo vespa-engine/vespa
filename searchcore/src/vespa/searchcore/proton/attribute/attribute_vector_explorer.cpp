@@ -162,7 +162,9 @@ AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const ves
     Cursor &object = inserter.insertObject();
     if (full) {
         convert_config_to_slime(attr.getConfig(), full, object.setObject("config"));
-        StateExplorerUtils::status_to_slime(status, object.setObject("status"));
+        auto& slime_status = object.setObject("status");
+        StateExplorerUtils::status_to_slime(status, slime_status);
+        slime_status.setLong("disk_usage", attr.size_on_disk());
         convertGenerationToSlime(attr, object.setObject("generation"));
         convertAddressSpaceUsageToSlime(attr.getAddressSpaceUsage(), object.setObject("addressSpaceUsage"));
         // TODO: Consider making enum store, multivalue mapping, posting list attribute and tensor attribute
@@ -191,6 +193,7 @@ AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const ves
     } else {
         convert_config_to_slime(attr.getConfig(), full, object);
         object.setLong("allocated_bytes", status.getAllocated());
+        object.setLong("disk_usage", attr.size_on_disk());
     }
 }
 

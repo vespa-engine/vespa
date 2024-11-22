@@ -61,6 +61,9 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     @Test
     void testLiteralReplacing() {
         assertSemantics("AND lord of rings", "lotr");
+        assertSemantics("AND foo1 lord of rings bar2", "foo1 lotr bar2");
+        assertSemantics("WEAKAND(100) lord of rings", "lotr", 0, Query.Type.WEAKAND);
+        assertSemantics("WEAKAND(100) foo1 lord of rings bar2", "foo1 lotr bar2", 0, Query.Type.WEAKAND);
     }
 
     @Test
@@ -144,6 +147,15 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     @Test
     void testOrProduction() {
         assertSemantics("OR something somethingelse", "something");
+        // I did not expect this:
+        assertSemantics("OR (AND foo1 something bar2) somethingelse", "foo1 something bar2");
+    }
+
+    @Test
+    void testDoubleOrProduction() {
+        assertSemantics("OR more evenmore", "somethingmore");
+        // Strange ordering:
+        assertSemantics("OR more (AND foo1 bar2) evenmore", "foo1 somethingmore bar2");
     }
 
     // This test is order dependent. Fix it!!
@@ -162,6 +174,17 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
         Query query = new Query(""); // Causes a query containing a NullItem
         doSearch(searcher, query, 0, 10);
         assertEquals(NullItem.class, query.getModel().getQueryTree().getRoot().getClass()); // Still a NullItem
+    }
+
+    @Test
+    void testPhraseReplacementCornerCase() {
+        assertSemantics("brand:smashtogether", "\"smash together\"");
+        assertSemantics("brand:smashtogether", "smash-together");
+        assertSemantics("AND foo1 brand:smashtogether bar2", "foo1 \"smash together\" bar2");
+        assertSemantics("AND brand:smashtogether \"foo1 bar2\"", "\"foo1 smash together bar2\"");
+        assertSemantics("OR brand:smashtogether \"foo1 bar2\"", "\"foo1 smash together bar2\"", 0, Query.Type.ANY);
+        // the difference in ordering here is because the parsed query already has a WEAKAND root (with 1 child):
+        assertSemantics("WEAKAND(100) \"foo1 bar2\" brand:smashtogether", "\"foo1 smash together bar2\"", 0, Query.Type.WEAKAND);
     }
 
     private Result doSearch(Searcher searcher, Query query, int offset, int hits) {
