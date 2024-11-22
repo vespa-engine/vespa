@@ -98,11 +98,11 @@ TEST_F(CacheTest, max_cache_size_is_honored) {
     EXPECT_EQ(2u, cache.size());
     EXPECT_EQ(191u, cache.sizeBytes());
     cache.write(3, "17 bytes stringgg");
-    EXPECT_EQ(3u, cache.size());
-    EXPECT_EQ(288u, cache.sizeBytes());
+    EXPECT_EQ(2, cache.size());
+    EXPECT_EQ(193, cache.sizeBytes());
     cache.write(4, "18 bytes stringggg");
-    EXPECT_EQ(3u, cache.size());
-    EXPECT_EQ(291u, cache.sizeBytes());
+    EXPECT_EQ(2, cache.size());
+    EXPECT_EQ(195, cache.sizeBytes());
 }
 
 TEST_F(CacheTest, overflow_can_remove_multiple_elements) {
@@ -113,30 +113,33 @@ TEST_F(CacheTest, overflow_can_remove_multiple_elements) {
             cache.write(j*53+i, "a");
         }
     }
-    EXPECT_EQ(25u, cache.size());
-    EXPECT_EQ(2025u, cache.sizeBytes());
-    EXPECT_FALSE( cache.hasKey(0) );
+    EXPECT_EQ(24, cache.size());
+    EXPECT_EQ(1944, cache.sizeBytes());
+    EXPECT_FALSE(cache.hasKey(0));
     std::string ls("long string aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    std::string vls=ls+ls+ls+ls+ls+ls;
+    std::string vls=ls+ls+ls+ls+ls+ls; // 2844 bytes
     cache.write(53+5, ls);
-    EXPECT_EQ(25u, cache.size());
-    EXPECT_EQ(2498u, cache.sizeBytes());
+    EXPECT_EQ(18, cache.size());
+    EXPECT_EQ(1931, cache.sizeBytes());
     EXPECT_FALSE(cache.hasKey(1));
     cache.write(53*7+5, ls);
-    EXPECT_EQ(19u, cache.size());
-    EXPECT_EQ(2485u, cache.sizeBytes());
+    EXPECT_EQ(13, cache.size());
+    EXPECT_EQ(1999, cache.sizeBytes());
     EXPECT_FALSE(cache.hasKey(2));
     cache.write(53*8+5, vls);
-    EXPECT_EQ(14u, cache.size());
-    EXPECT_EQ(4923u, cache.sizeBytes());
+    EXPECT_EQ(1, cache.size());
+    EXPECT_EQ(2924, cache.sizeBytes());
     cache.write(53*9+6, vls);
     EXPECT_EQ(1u, cache.size());
     EXPECT_EQ(2924u, cache.sizeBytes());
+    // One oversized KV replaced by another
+    EXPECT_FALSE(cache.hasKey(53*8+5));
+    EXPECT_TRUE(cache.hasKey(53*9+6));
 }
 
 class ExtendedCache : public cache<CacheParam<P, B>> {
@@ -159,7 +162,7 @@ private:
 };
 
 TEST_F(CacheTest, insert_and_remove_callbacks_invoked_when_full) {
-    ExtendedCache cache(m, 200);
+    ExtendedCache cache(m, 250);
     EXPECT_EQ(0u, cache._insert_count);
     EXPECT_EQ(0u, cache._remove_count);
     cache.write(1, "15 bytes string");
@@ -272,9 +275,9 @@ struct SelfAsSize {
 }
 
 TEST_F(SlruCacheTest, zero_sized_protected_segment_implies_lru_semantics) {
-    cache<CacheParam<P, B, SelfAsSize, zero<std::string>>> cache(m, 200, 0);
+    cache<CacheParam<P, B, SelfAsSize, zero<std::string>>> cache(m, 300, 0);
 
-    ASSERT_NO_FATAL_FAILURE(assert_segment_capacity_bytes(cache, 200, 0));
+    ASSERT_NO_FATAL_FAILURE(assert_segment_capacity_bytes(cache, 300, 0));
 
     cache.write(20, "foo");
     EXPECT_EQ(cache.size(), 1);
@@ -283,7 +286,6 @@ TEST_F(SlruCacheTest, zero_sized_protected_segment_implies_lru_semantics) {
     EXPECT_EQ(cache.size(), 2);
     EXPECT_EQ(cache.sizeBytes(), 198);
     cache.write(10, "baz");
-    // Soft limit
     EXPECT_EQ(cache.size(), 3);
     EXPECT_EQ(cache.sizeBytes(), 288);
     cache.write(11, "zoid");

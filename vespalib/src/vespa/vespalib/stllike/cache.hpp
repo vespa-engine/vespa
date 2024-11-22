@@ -40,12 +40,13 @@ cache<P>::SizeConstrainedLru::has_key(const KeyT& key) const noexcept {
 template <typename P>
 void
 cache<P>::SizeConstrainedLru::insert_and_update_size(const KeyT& key, ValueT value) {
-    const auto kv_size = _owner.calcSize(key, value);
+    // Account for added size _prior_ to inserting into the LRU so that we'll trigger
+    // an eviction of existing entries that would otherwise cause the segment to get
+    // overfull once the insertion has been completed.
+    add_size_bytes(_owner.calcSize(key, value));
     auto insert_res = Lru::insert(key, std::move(value));
     assert(insert_res.second);
-    // Must be updated _after_ insert, since the underlying eviction policy (removeOldest)
-    // transitively consults this value as part of the insertion itself.
-    add_size_bytes(kv_size);
+
 }
 
 template <typename P>
