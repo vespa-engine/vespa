@@ -447,8 +447,7 @@ TEST_F(SlruCacheTest, assigning_zero_capacity_of_protected_segment_evicts_all_se
     EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 0, 90));
 }
 
-// FIXME LRU must be LRU first!
-TEST_F(SlruCacheTest, DISABLED_accessing_element_in_protected_segment_moves_to_segment_head) {
+TEST_F(SlruCacheTest, accessing_element_in_protected_segment_moves_to_segment_head) {
     cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> cache(m, -1, -1);
     cache.write(1, "a");
     cache.write(2, "b");

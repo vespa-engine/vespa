@@ -74,7 +74,7 @@ cache<P>::SizeConstrainedLru::get_existing(const KeyT& key) const {
 template <typename P>
 bool
 cache<P>::SizeConstrainedLru::try_get_and_ref(const KeyT& key, ValueT& val_out) {
-    const auto* maybe_val = Lru::findAndRef(key);
+    const auto* maybe_val = Lru::find_and_ref(key);
     if (maybe_val) {
         val_out = *maybe_val;
         return true;

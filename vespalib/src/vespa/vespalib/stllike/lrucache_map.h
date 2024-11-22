@@ -143,7 +143,16 @@ public:
      * Object is then put at head of LRU list if found.
      * If not found nullptr is returned.
      */
-    V * findAndRef(const K & key);
+    [[nodiscard]] V* find_and_ref(const K& key);
+
+    /**
+     * Return pointer to the object with the given key. Object is then put at
+     * head of LRU list if found and the size of the cache is more than half
+     * its capacity. Otherwise, the LRU is not updated.
+     *
+     * If not found nullptr is returned.
+     */
+    [[nodiscard]] V* find_and_lazy_ref(const K& key);
 
     /**
      * Return the object with the given key. If it does not exist an empty one will be created.

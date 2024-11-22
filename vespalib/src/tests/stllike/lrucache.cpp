@@ -187,4 +187,54 @@ TEST("testCacheIteratorErase") {
     cache.erase(it);
 }
 
+namespace {
+
+template <typename C>
+std::string lru_key_order(C& cache) {
+    std::string keys;
+    for (auto it = cache.begin(); it != cache.end(); ++it) {
+        keys += std::to_string(it.key());
+        keys += ' ';
+    }
+    return keys;
+}
+
+}
+
+TEST("find_and_lazy_ref elides updating LRU head when less than half used") {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(6);
+    cache.insert(1, "a");
+    cache.insert(2, "b");
+    EXPECT_EQUAL(lru_key_order(cache), "2 1 ");
+    EXPECT_NOT_EQUAL(cache.find_and_lazy_ref(1), nullptr);
+    EXPECT_EQUAL(lru_key_order(cache), "2 1 "); // Not updated
+    cache.insert(3, "c");
+    EXPECT_EQUAL(lru_key_order(cache), "3 2 1 ");
+    EXPECT_NOT_EQUAL(cache.find_and_lazy_ref(1), nullptr);
+    EXPECT_EQUAL(lru_key_order(cache), "3 2 1 "); // Still not > capacity/2
+    cache.insert(4, "c");
+    EXPECT_EQUAL(lru_key_order(cache), "4 3 2 1 ");
+    EXPECT_NOT_EQUAL(cache.find_and_lazy_ref(1), nullptr);
+    EXPECT_EQUAL(lru_key_order(cache), "1 4 3 2 "); // At long last, our time to LRU shine
+}
+
+TEST("Eager find_and_ref always moves to LRU head") {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(6);
+    cache.insert(1, "a");
+    cache.insert(2, "b");
+    cache.insert(3, "c");
+    cache.insert(4, "d");
+    cache.insert(5, "e");
+    cache.insert(6, "f");
+    EXPECT_EQUAL(lru_key_order(cache), "6 5 4 3 2 1 ");
+    EXPECT_NOT_EQUAL(cache.find_and_ref(2), nullptr);
+    EXPECT_EQUAL(lru_key_order(cache), "2 6 5 4 3 1 ");
+    EXPECT_NOT_EQUAL(cache.find_and_ref(5), nullptr);
+    EXPECT_EQUAL(lru_key_order(cache), "5 2 6 4 3 1 ");
+    EXPECT_NOT_EQUAL(cache.find_and_ref(1), nullptr);
+    EXPECT_EQUAL(lru_key_order(cache), "1 5 2 6 4 3 ");
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
