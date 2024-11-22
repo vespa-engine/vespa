@@ -21,7 +21,6 @@ import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.YQLNode;
-import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class YQLDocument implements DocumentManager {
 
@@ -149,7 +148,16 @@ public class YQLDocument implements DocumentManager {
         return continuationEnd;
     }
 
-    private static ParseResult parseContinuation(String inputString, Position offset) {
+    private static boolean detectContinuation(String inputString) {
+        for (int i = 0; i < inputString.length(); i++) {
+            if (inputString.charAt(i) != ' ') {
+                return inputString.charAt(i) == '{';
+            }
+        }
+        return false;
+    }
+
+    private static YQLPartParseResult parseContinuation(String inputString, Position offset) {
 
         YQLPlusParser parser = new YQLPlusParser(inputString);
 
@@ -162,7 +170,9 @@ public class YQLDocument implements DocumentManager {
         var node = parser.rootNode();
         YQLNode retNode = new YQLNode(node, offset);
 
-        return new ParseResult(List.of(), Optional.of(retNode));
+        int charsRead = parser.getToken(0).getEndOffset();
+
+        return new YQLPartParseResult(List.of(), Optional.of(retNode), charsRead);
     }
 
     private static YQLPartParseResult parseYQLQuery(ParseContext context, String queryString, Position offset) {
@@ -193,19 +203,20 @@ public class YQLDocument implements DocumentManager {
                 charsRead++;
 
                 // Look for continuation
-                int continuationLength = findContinuationLength(groupingString);
-                if (continuationLength != 0) {
-                    String continuationString = groupingString.substring(0, continuationLength);
-                    ParseResult continuationResults = parseContinuation(continuationString, groupOffset);
+                boolean continuationDetected = detectContinuation(groupingString);
+                if (continuationDetected) {
+                    YQLPartParseResult continuationResults = parseContinuation(groupingString, groupOffset);
 
                     diagnostics.addAll(continuationResults.diagnostics());
                     if (continuationResults.CST().isPresent()) {
                         ret.addChild(continuationResults.CST().get());
                     }
 
-                    charsRead += continuationLength;
-                    groupingString = groupingString.substring(continuationLength);
+                    charsRead += continuationResults.charsRead();
+                    String continuationString = groupingString.substring(0, continuationResults.charsRead());
                     Position continuationPosition = StringUtils.getStringPosition(continuationString);
+
+                    groupingString = groupingString.substring(continuationResults.charsRead());
                     groupOffset = CSTUtils.addPositions(groupOffset, continuationPosition);
                 }
 
