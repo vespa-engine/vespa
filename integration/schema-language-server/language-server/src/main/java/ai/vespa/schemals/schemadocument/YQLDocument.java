@@ -9,8 +9,6 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
-import com.google.protobuf.Option;
-
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.StringUtils;
