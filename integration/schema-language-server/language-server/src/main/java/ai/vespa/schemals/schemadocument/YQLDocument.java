@@ -162,13 +162,13 @@ public class YQLDocument implements DocumentManager {
             String charsBeforePipe = queryString.substring(charsRead, pipeIndex);
             if (charsBeforePipe.strip().length() == 0) {
                 String groupingString = queryString.substring(pipeIndex + 1); // Do not include pipe char
+                charsRead = pipeIndex + 1;
                 Position YQLStringPosition = StringUtils.getStringPosition(YQLString);
                 Position groupOffsetWithoutPipe = CSTUtils.addPositions(offset, YQLStringPosition);
 
                 Position groupOffset = CSTUtils.addPositions(groupOffsetWithoutPipe, new Position(0, 1)); // Add pipe char
 
                 ret.addChild(new YQLNode(new Range(groupOffsetWithoutPipe, groupOffset), "|", charOffset + pipeIndex));
-                charsRead++;
 
                 // Look for continuation
                 boolean continuationDetected = detectContinuation(groupingString);

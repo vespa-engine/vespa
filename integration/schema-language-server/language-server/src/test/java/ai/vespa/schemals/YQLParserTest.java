@@ -98,7 +98,7 @@ public class YQLParserTest {
             "all( group(a) max(5) each(output(count()) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(c) max(5) each(max(69) output(count()) each(output(summary()))))) )))",
             "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(c) max(5) each(max(69) output(count()) each(output(summary()))))) )))",
             "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary(complexsummary)))) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary(simplesummary)))) all(group(c) max(5) each(max(69) output(count()) each(output(summary(fastsummary)))))) )))",
-            "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))) )))",
+            "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))) )",
             "all( group(time.year(a)) each(output(count())) )",
             "all( group(time.year(a)) each(output(count()) all(group(time.monthofyear(a)) each(output(count())))) )",
             "all( group(time.year(a)) each(output(count()) all(group(time.monthofyear(a)) each(output(count()) all(group(time.dayofmonth(a)) each(output(count()) all(group(time.hourofday(a)) each(output(count())))))))) )",
