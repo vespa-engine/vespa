@@ -7,9 +7,11 @@ import com.yahoo.document.PositionDataType;
 /**
  * Common utilities for recognizing fields with the built-in "position" datatype,
  * possibly in array form.
+ *
  * @author arnej
  */
 public class GeoPos {
+
     static public boolean isPos(DataType type) {
         return PositionDataType.INSTANCE.equals(type);
     }
@@ -23,4 +25,5 @@ public class GeoPos {
     static public boolean isPos(ImmutableSDField field)      { return isPos(field.getDataType()); }
     static public boolean isPosArray(ImmutableSDField field) { return isPosArray(field.getDataType()); }
     static public boolean isAnyPos(ImmutableSDField field)   { return isAnyPos(field.getDataType()); }
+
 }
