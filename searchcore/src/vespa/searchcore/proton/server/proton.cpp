@@ -41,6 +41,7 @@
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
@@ -998,11 +999,25 @@ struct DocumentDBMapExplorer : vespalib::StateExplorer {
     }
 };
 
+void insert_cache_stats(Cursor& object, const vespalib::CacheStats& stats)
+{
+    object.setLong("hits", stats.hits);
+    object.setLong("misses", stats.misses);
+    object.setLong("elements", stats.elements);
+    object.setLong("memory_used", stats.memory_used);
+    object.setLong("lookups", stats.lookups());
+}
+
 } // namespace proton::<unnamed>
 
 void
-Proton::get_state(const vespalib::slime::Inserter &, bool) const
+Proton::get_state(const vespalib::slime::Inserter &inserter, bool) const
 {
+    if (_posting_list_cache) {
+        auto& object = inserter.insertObject().setObject("cache");
+        insert_cache_stats(object.setObject("postinglist"), _posting_list_cache->get_stats());
+        insert_cache_stats(object.setObject("bitvector"), _posting_list_cache->get_stats());
+    }
 }
 
 std::vector<std::string>
