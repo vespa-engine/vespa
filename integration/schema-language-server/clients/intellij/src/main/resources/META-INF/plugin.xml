@@ -28,6 +28,9 @@
   <li>Running queries directly from <code>.yql</code> files
 </ul>
 
+<h2>Requirements</h4>
+The plugin requires <a href="https://docs.vespa.ai/en/vespa-cli.html">Vespa CLI</a> to be installed to be able to run Vespa Queries from <code>.yql</code> files.
+
   ]]></description>
   <change-notes><![CDATA[
 <h2>Simple support for YQL</h2>
