@@ -151,12 +151,11 @@ class cache {
 
         ProbationarySegmentLru(cache& owner, size_t capacity_bytes);
         ~ProbationarySegmentLru() override;
+
         // Elements are always inserted into the probationary segment first, and
-        // removed from the probationary segment last. Forward these events to any
-        // subclass of the owner cache, as they represent an object either freshly
-        // entering or finally leaving the cache.
-        void onRemove(const KeyT&) override;
-        void onInsert(const KeyT&) override;
+        // removed from the probationary segment last. Forward final removal events
+        // to the owner.
+        bool removeOldest(const typename P::value_type& kv) override;
     };
 
     class ProtectedSegmentLru final : public SizeConstrainedLru {

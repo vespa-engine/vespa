@@ -24,7 +24,7 @@ bool
 cache<P>::SizeConstrainedLru::removeOldest(const typename P::value_type& kv) {
     const size_t sz_now = size_bytes();
     // TODO shouldn't this be size > capacity, not >= ? Not touching it for now...
-    bool remove(Lru::removeOldest(kv) || (sz_now >= capacity_bytes()));
+    const bool remove = (Lru::removeOldest(kv) || (sz_now >= capacity_bytes()));
     if (remove) {
         sub_size_bytes(_owner.calcSize(kv.first, kv.second._value));
     }
@@ -103,15 +103,13 @@ template <typename P>
 cache<P>::ProbationarySegmentLru::~ProbationarySegmentLru() = default;
 
 template <typename P>
-void
-cache<P>::ProbationarySegmentLru::onRemove(const KeyT& k) {
-    SizeConstrainedLru::_owner.onRemove(k);
-}
-
-template <typename P>
-void
-cache<P>::ProbationarySegmentLru::onInsert(const KeyT& k) {
-    SizeConstrainedLru::_owner.onInsert(k);
+bool
+cache<P>::ProbationarySegmentLru::removeOldest(const typename P::value_type& kv) {
+    const bool remove = SizeConstrainedLru::removeOldest(kv);
+    if (remove) {
+        SizeConstrainedLru::_owner.onRemove(kv.first);
+    }
+    return remove;
 }
 
 template <typename P>
@@ -126,7 +124,7 @@ cache<P>::ProtectedSegmentLru::~ProtectedSegmentLru() = default;
 template <typename P>
 bool
 cache<P>::ProtectedSegmentLru::removeOldest(const typename P::value_type& kv) {
-    bool remove = SizeConstrainedLru::removeOldest(kv); // Updates own size if `remove == true`
+    const bool remove = SizeConstrainedLru::removeOldest(kv); // Updates own size if `remove == true`
     if (remove) {
         // Move back into probationary segment. This may shove the oldest entry out of it,
         // which evicts it from the cache completely (no second chances for probationary elements).
@@ -269,6 +267,7 @@ cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args)
     if (_store.read(key, value, std::forward<BackingStoreArgs>(backing_store_args)...)) {
         std::lock_guard guard(_hashLock);
         _probationary_segment.insert_and_update_size(key, value);
+        onInsert(key);
         update_size_bytes();
         increment_stat(_insert, guard);
     } else {
@@ -310,6 +309,7 @@ cache<P>::write(const K& key, V value)
         } else {
             // Always insert into probationary first
             _probationary_segment.insert_and_update_size(key, std::move(value));
+            onInsert(key);
         }
         update_size_bytes();
         increment_stat(_write, guard); // TODO only increment when not updating?
@@ -339,6 +339,7 @@ cache<P>::invalidate(const UniqueLock& guard, const K& key)
     } else {
         return;
     }
+    onRemove(key); // Not transitively invoked by erase_and_update_size()
     update_size_bytes();
     increment_stat(_invalidate, guard);
 }
