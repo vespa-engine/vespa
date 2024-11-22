@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 public class SnapshotExpirer extends NodeRepositoryMaintainer {
 
     private static final Logger LOG = Logger.getLogger(SnapshotExpirer.class.getName());
-    private static final Duration MIN_IDLE_PERIOD = Duration.ofDays(1);
 
     public SnapshotExpirer(NodeRepository nodeRepository, Duration interval, Metric metric) {
         super(nodeRepository, interval, metric);
@@ -69,10 +68,15 @@ public class SnapshotExpirer extends NodeRepositoryMaintainer {
     /** Returns whether given snapshot should be removed */
     private boolean shouldRemove(Snapshot snapshot, NodeList nodes, Instant now) {
         Duration idle = snapshot.idle(now);
-        if (idle.compareTo(MIN_IDLE_PERIOD) < 0) return false;              // No:  Snapshot not idle long enough
+        if (idle.compareTo(expiry()) < 0) return false;                     // No:  Snapshot not idle long enough
         // TODO(mpolden): Replace this with a proper policy when implementing application-level backups
         if (nodes.node(snapshot.hostname().value()).isEmpty()) return true; // Yes: Snapshot belongs to non-existent node
         return snapshot.state() == Snapshot.State.restored;                 // Yes: Snapshot has been restored
+    }
+
+    /** How long we should wait before a snapshot can be cleaned up */
+    private Duration expiry() {
+        return nodeRepository().zone().system().isCd() ? Duration.ofHours(6) : Duration.ofDays(1);
     }
 
 }
