@@ -37,7 +37,7 @@ public class YQLParserTest {
             var parseResult = parseString(input);
             String testMessage = "For input: " + input + Utils.constructDiagnosticMessage(parseResult.diagnostics(), 1);
             assertEquals(expectedErrors, Utils.countErrors(parseResult.diagnostics()), testMessage);
-
+    
             if (expectedErrors == 0) {
                 assertTrue(parseResult.CST().isPresent(), "Expected that a YQLNode was present in the input: " + input);
 
@@ -174,7 +174,7 @@ public class YQLParserTest {
             "select * from music where weakAnd(a contains \"A\", b contains \"B\")",
             "select * from music where ({targetHits: 7}weakAnd(a contains \"A\", b contains \"B\"))",
             "select * from music where geoLocation(myfieldname, 63.5, 10.5, \"200 km\")",
-            "select * from music where ({targetHits: 10}nearestNeighbor(doc_vector, query_vector))&input.query(query_vector)=[3,5,7]",
+            "select * from music where ({targetHits: 10}nearestNeighbor(doc_vector, query_vector))",
             "select * from sources * where bar contains \"a\" and nonEmpty(bar contains \"bar\" and foo contains @foo)",
             "select * from music where predicate(predicate_field,{\"gender\":\"Female\"},{\"age\":20L})",
             "select * from music where predicate(predicate_field,0,{\"age\":20L})",

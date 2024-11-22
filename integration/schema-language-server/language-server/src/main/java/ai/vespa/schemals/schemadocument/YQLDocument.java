@@ -95,7 +95,7 @@ public class YQLDocument implements DocumentManager {
         updateFileContent(content);
     }
 
-    private static YQLPartParseResult parseYQLPart(CharSequence content, ClientLogger logger, Position offset) {
+    private static YQLPartParseResult parseYQLPart(CharSequence content, ClientLogger logger, Position offset, int charOffset) {
         // CharSequence charSequence = content.toLowerCase();
         YQLPlusParser parser = new YQLPlusParser(content);
 
@@ -110,7 +110,7 @@ public class YQLDocument implements DocumentManager {
         if (charsRead == 0) return new YQLPartParseResult(List.of(), Optional.empty(), charsRead);
 
         ai.vespa.schemals.parser.yqlplus.Node node = parser.rootNode();
-        YQLNode retNode = new YQLNode(node, offset);
+        YQLNode retNode = new YQLNode(node, offset, charOffset);
         // YQLUtils.printTree(logger, node);
 
         return new YQLPartParseResult(List.of(), Optional.of(retNode), charsRead);
@@ -125,7 +125,7 @@ public class YQLDocument implements DocumentManager {
         return false;
     }
 
-    private static YQLPartParseResult parseContinuation(String inputString, Position offset) {
+    private static YQLPartParseResult parseContinuation(String inputString, Position offset, int charOffset) {
 
         YQLPlusParser parser = new YQLPlusParser(inputString);
 
@@ -136,19 +136,19 @@ public class YQLDocument implements DocumentManager {
         }
 
         var node = parser.rootNode();
-        YQLNode retNode = new YQLNode(node, offset);
+        YQLNode retNode = new YQLNode(node, offset, charOffset);
 
         int charsRead = parser.getToken(0).getEndOffset();
 
         return new YQLPartParseResult(List.of(), Optional.of(retNode), charsRead);
     }
 
-    private static YQLPartParseResult parseYQLQuery(ParseContext context, String queryString, Position offset) {
+    private static YQLPartParseResult parseYQLQuery(ParseContext context, String queryString, Position offset, int charOffset) {
         YQLNode ret = new YQLNode(new Range(offset, offset));
 
         int pipeIndex = queryString.indexOf('|');
         String YQLString = pipeIndex == -1 ? queryString : queryString.substring(0, pipeIndex);
-        YQLPartParseResult YQLResult = parseYQLPart(YQLString, context.logger(), offset);
+        YQLPartParseResult YQLResult = parseYQLPart(YQLString, context.logger(), offset, charOffset);
 
         if (YQLResult.CST.isEmpty()) return YQLResult;
 
@@ -167,13 +167,13 @@ public class YQLDocument implements DocumentManager {
 
                 Position groupOffset = CSTUtils.addPositions(groupOffsetWithoutPipe, new Position(0, 1)); // Add pipe char
 
-                ret.addChild(new YQLNode(new Range(groupOffsetWithoutPipe, groupOffset), "|"));
+                ret.addChild(new YQLNode(new Range(groupOffsetWithoutPipe, groupOffset), "|", charOffset + pipeIndex));
                 charsRead++;
 
                 // Look for continuation
                 boolean continuationDetected = detectContinuation(groupingString);
                 if (continuationDetected) {
-                    YQLPartParseResult continuationResults = parseContinuation(groupingString, groupOffset);
+                    YQLPartParseResult continuationResults = parseContinuation(groupingString, groupOffset, charOffset + charsRead);
 
                     diagnostics.addAll(continuationResults.diagnostics());
                     if (continuationResults.CST().isPresent()) {
@@ -189,7 +189,7 @@ public class YQLDocument implements DocumentManager {
                 }
 
                 if (groupingString.length() > 0 && groupingString.strip().length() > 0) {
-                    YQLPartParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), groupOffset);
+                    YQLPartParseResult groupingResult = VespaGroupingParser.parseVespaGrouping(groupingString, context.logger(), groupOffset, charOffset + charsRead);
                     if (groupingResult.CST.isPresent()) {
                         ret.addChild(groupingResult.CST.get());
                     }
@@ -225,15 +225,15 @@ public class YQLDocument implements DocumentManager {
                 break;
             }
 
-            YQLPartParseResult result = parseYQLQuery(context, toParser, new Position(linesRead, 0));
+            YQLPartParseResult result = parseYQLQuery(context, toParser, new Position(linesRead, 0), charsRead);
             diagnostics.addAll(result.diagnostics());
-    
+
             if (result.CST().isPresent()) {
                 ret.addChild(result.CST().get());
             }
 
             if (result.charsRead() == 0) result.charsRead++;
-            
+
             int newOffset = content.indexOf('\n', charsRead + result.charsRead());
             if (newOffset == -1) {
                 newOffset = content.length();

@@ -15,7 +15,7 @@ import ai.vespa.schemals.tree.YQLNode;
 
 class VespaGroupingParser {
 
-    static YQLPartParseResult parseVespaGrouping(String input, ClientLogger logger, Position offset) {
+    static YQLPartParseResult parseVespaGrouping(String input, ClientLogger logger, Position offset, int charOffset) {
 
         CharSequence charSequence = input.toLowerCase();
         GroupingParser parser = new GroupingParser(charSequence);
@@ -27,7 +27,7 @@ class VespaGroupingParser {
         }
 
         Node node = parser.rootNode();
-        YQLNode CST = new YQLNode(node, offset);
+        YQLNode CST = new YQLNode(node, offset, charOffset);
         // GroupingUtils.printTree(logger, node);
 
         int charsRead = parser.getToken(0).getEndOffset();

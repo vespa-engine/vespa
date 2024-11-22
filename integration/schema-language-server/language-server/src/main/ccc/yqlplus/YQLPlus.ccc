@@ -37,7 +37,8 @@ TOKEN :
 | < WHERE: 'where' >
 | < ORDER: 'order' >
 | < BY: 'by' >
-| < ORDERBY: 'order by' >
+| < ORDER: 'order' >
+| < ORDERBY: <ORDER> ' ' <BY> >
 | < DESC: 'desc' >
 | < ASC: 'asc' >
 | < FROM: 'from' >
@@ -143,15 +144,12 @@ String identifierStr:
         | <DESC>
         | <OUTPUT>
         | <COUNT>
-        | <NOT_IN>
         | <IN>
         | <LIKE>
         | <CONTAINS>
         | <NOTLIKE>
         | <MATCHES>
         | <NOTMATCHES>
-        | <IS_NULL>
-        | <IS_NOT_NULL>
         | <TIMEOUT>
         | <IDENTIFIER>
         | <LETTER>
@@ -169,7 +167,6 @@ vespa_grouping_identifier:
         | <WHERE>
         | <ORDER>
         | <BY>
-        | <ORDERBY>
         | <DESC>
         | <ASC>
         | <FROM>
@@ -191,8 +188,6 @@ vespa_grouping_identifier:
         | <MATCHES>
         | <NOTMATCHES>
         | <NULL>
-        | <IS_NULL>
-        | <IS_NOT_NULL>
         | <DOT>
         | <AT>
         | <TIMEOUT>
@@ -421,8 +416,7 @@ orderby_fields:
 
 orderby_field:
     (
-        (expression(true) <DESC>)
-        | (expression(true) (<ASC>)? )
+        expression(true) (<DESC> | <ASC>)?
     )
 ;
 
