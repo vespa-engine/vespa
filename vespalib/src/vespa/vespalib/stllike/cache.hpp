@@ -264,7 +264,6 @@ cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args)
     {
         std::lock_guard guard(_hashLock);
         if (try_fill_from_cache(key, value)) {
-            increment_stat(_hit, guard);
             increment_stat(_race, guard); // Somebody else just fetched it ahead of me.
             return value;
         }
