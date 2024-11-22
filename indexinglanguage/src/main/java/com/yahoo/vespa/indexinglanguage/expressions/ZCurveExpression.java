@@ -39,7 +39,7 @@ public final class ZCurveExpression extends Expression {
     @Override
     public DataType setOutputType(DataType output, VerificationContext context) {
         super.setOutputType(DataType.LONG, output, null, context);
-        return null; // There's no 'any' struct
+        return PositionDataType.INSTANCE;
     }
 
     @Override

@@ -1,12 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
-import com.yahoo.config.model.deploy.DeployState;
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.schema.derived.DerivedConfiguration;
-import com.yahoo.schema.derived.SchemaInfo;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.processing.ImportedFieldsResolver;
@@ -14,18 +10,16 @@ import com.yahoo.schema.processing.OnnxModelTypeResolver;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.configmodel.producers.DocumentManager;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
-import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.model.test.utils.DeployLoggerStub;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Schema tests that don't depend on files.
@@ -489,7 +483,7 @@ public class SchemaTestCase {
     }
 
     @Test
-    void testDeriving() throws Exception {
+    void testDerivingHash() throws Exception {
         String schema =
                 """
                 schema page {
@@ -516,6 +510,31 @@ public class SchemaTestCase {
 
         var documentModel = new DocumentModelBuilder();
         var documentManager = documentModel.build(List.of(application.schemas().get("page")));
+        var documentConfig = new DocumentManager().produce(documentManager, new DocumentmanagerConfig.Builder());
+    }
+
+    @Test
+    void testDerivingPosition() throws Exception {
+        String schema =
+                """
+                schema place {
+
+                    document place {
+
+                        field location type position {
+                            indexing: attribute
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(false); // validate=false to test config deriving without validation
+        var derived = new DerivedConfiguration(application.schemas().get("place"), application.rankProfileRegistry());
+        var ilConfig = new IlscriptsConfig.Builder();
+        derived.getIndexingScript().getConfig(ilConfig);
+
+        var documentModel = new DocumentModelBuilder();
+        var documentManager = documentModel.build(List.of(application.schemas().get("place")));
         var documentConfig = new DocumentManager().produce(documentManager, new DocumentmanagerConfig.Builder());
     }
 
