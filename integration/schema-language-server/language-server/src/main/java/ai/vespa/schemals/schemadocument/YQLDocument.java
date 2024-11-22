@@ -113,41 +113,6 @@ public class YQLDocument implements DocumentManager {
         return new YQLPartParseResult(List.of(), Optional.of(retNode), charsRead);
     }
 
-    private static int findContinuationLength(String inputString) {
-
-        // BUG: This never check if the curly bracket are in a string or something else
-
-        char[] charArr = inputString.toCharArray();
-        int continuationStart = -1;
-        for (int i = 0; i < charArr.length; i++) {
-            if (!Character.isWhitespace(charArr[i])) {
-                if (charArr[i] != '{') {
-                    return 0;
-                }
-
-                continuationStart = i;
-                break;
-
-            }
-        }
-        if (continuationStart == -1) return 0;
-
-
-        int level = 0;
-        int continuationEnd = charArr.length;
-        for (int i = continuationStart; i < charArr.length; i++) {
-            if (charArr[i] == '{') level++;
-            if (charArr[i] == '}') level--;
-
-            if (level == 0) {
-                continuationEnd = i + 1;
-                break;
-            };
-        }
-
-        return continuationEnd;
-    }
-
     private static boolean detectContinuation(String inputString) {
         for (int i = 0; i < inputString.length(); i++) {
             if (inputString.charAt(i) != ' ') {
