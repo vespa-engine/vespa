@@ -17,7 +17,7 @@ Features:
 YQL Features:
 - Error highlighting
 - Semantic token highlighting
-- Running Queries directly from `.yql` files
+- Running queries directly from `.yql` files
 
 ## Requirements
 The extension requires Java 17 or greater. Upon activation, the extension will look in the following locations in this order for a Java executable:
