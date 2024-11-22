@@ -75,6 +75,10 @@ public:
         }
         bool operator==(const iterator& rhs) const { return (_current == rhs._current); }
         bool operator!=(const iterator& rhs) const { return (_current != rhs._current); }
+
+        [[nodiscard]] const K& key() const noexcept {
+            return _cache->getByInternalIndex(_current).first;
+        }
     private:
         lrucache_map * _cache;
         uint32_t _current;

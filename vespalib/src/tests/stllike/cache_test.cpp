@@ -263,6 +263,15 @@ struct SlruCacheTest : CacheTest {
         ASSERT_EQ(cache.segment_size_bytes(CacheSegment::Probationary), exp_probationary);
         ASSERT_EQ(cache.segment_size_bytes(CacheSegment::Protected), exp_protected);
     }
+
+    template <typename C>
+    void assert_segment_lru_keys(C& cache,
+                                 const std::vector<typename C::key_type>& exp_probationary_keys,
+                                 const std::vector<typename C::key_type>& exp_protected_keys)
+    {
+        ASSERT_EQ(cache.dump_segment_keys_in_lru_order(CacheSegment::Probationary), exp_probationary_keys);
+        ASSERT_EQ(cache.dump_segment_keys_in_lru_order(CacheSegment::Protected),    exp_protected_keys);
+    }
 };
 
 namespace {
@@ -436,6 +445,29 @@ TEST_F(SlruCacheTest, assigning_zero_capacity_of_protected_segment_evicts_all_se
     EXPECT_EQ(cache.read(10), "foo");
     EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 0, 1)); // key 10 now moved to protected
     EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 0, 90));
+}
+
+// FIXME LRU must be LRU first!
+TEST_F(SlruCacheTest, DISABLED_accessing_element_in_protected_segment_moves_to_segment_head) {
+    cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> cache(m, -1, -1);
+    cache.write(1, "a");
+    cache.write(2, "b");
+    cache.write(3, "c");
+    cache.write(4, "d");
+    cache.write(5, "e");
+    EXPECT_EQ(cache.read(2), "b");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {5, 4, 3, 1}, {2}));
+    EXPECT_EQ(cache.read(4), "d");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {5, 3, 1}, {4, 2}));
+    EXPECT_EQ(cache.read(1), "a");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {5, 3}, {1, 4, 2}));
+    // Bump to LRU head in protected segment
+    EXPECT_EQ(cache.read(2), "b");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {5, 3}, {2, 1, 4}));
+    EXPECT_EQ(cache.read(4), "d");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {5, 3}, {4, 2, 1}));
+    EXPECT_EQ(cache.read(4), "d"); // Idempotent head -> head
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {5, 3}, {4, 2, 1}));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

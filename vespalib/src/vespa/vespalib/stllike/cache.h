@@ -5,6 +5,7 @@
 #include <vespa/vespalib/util/memoryusage.h>
 #include <atomic>
 #include <mutex>
+#include <vector>
 
 namespace vespalib {
 
@@ -120,6 +121,8 @@ class cache {
         // _size_bytes will be reset to zero after invocation.
         void evict_all();
 
+        [[nodiscard]] std::vector<KeyT> dump_segment_keys_in_lru_order();
+
         using Lru::empty;
         using Lru::size;
         using Lru::capacity;
@@ -175,6 +178,8 @@ protected:
     using SizeV        = typename P::SizeV;
     using value_type   = typename P::value_type;
 public:
+    using key_type     = K;
+
     cache(BackingStore& backing_store, size_t max_probationary_bytes, size_t max_protected_bytes);
 
     /**
@@ -299,6 +304,9 @@ public:
     [[nodiscard]] constexpr static size_t per_element_fixed_overhead() noexcept {
         return sizeof(value_type);
     }
+
+    // For testing. Not const since backing lrucache_map does not have const_iterator
+    [[nodiscard]] std::vector<K> dump_segment_keys_in_lru_order(CacheSegment segment);
 
 protected:
     using UniqueLock = std::unique_lock<std::mutex>;

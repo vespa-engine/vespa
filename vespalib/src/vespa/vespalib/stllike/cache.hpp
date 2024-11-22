@@ -94,6 +94,17 @@ cache<P>::SizeConstrainedLru::evict_all() {
 }
 
 template <typename P>
+std::vector<typename P::Key>
+cache<P>::SizeConstrainedLru::dump_segment_keys_in_lru_order() {
+    std::vector<KeyT> lru_keys;
+    lru_keys.reserve(size());
+    for (auto it = Lru::begin(); it != Lru::end(); ++it) {
+        lru_keys.emplace_back(it.key());
+    }
+    return lru_keys;
+}
+
+template <typename P>
 cache<P>::ProbationarySegmentLru::ProbationarySegmentLru(cache& owner, size_t capacity_bytes)
     : SizeConstrainedLru(owner, capacity_bytes)
 {
@@ -369,6 +380,14 @@ cache<P>::get_stats() const
 {
     std::lock_guard guard(_hashLock);
     return CacheStats(getHit(), getMiss(), size(), sizeBytes(), getInvalidate());
+}
+
+template <typename P>
+std::vector<typename P::Key>
+cache<P>::dump_segment_keys_in_lru_order(CacheSegment seg) {
+    std::lock_guard guard(_hashLock);
+    return (seg == CacheSegment::Probationary) ? _probationary_segment.dump_segment_keys_in_lru_order()
+                                               : _protected_segment.dump_segment_keys_in_lru_order();
 }
 
 template <typename P>
