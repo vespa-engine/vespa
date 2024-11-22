@@ -10,6 +10,8 @@ import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+import com.yahoo.tensor.Label;
+import com.yahoo.tensor.impl.LabelCache;
 import com.yahoo.tensor.impl.TensorAddressAny;
 
 import java.util.Arrays;
@@ -356,17 +358,17 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         }
 
         TensorAddress combine(TensorAddress match, TensorAddress leftOnly, TensorAddress rightOnly, int concatDimIdx) {
-            long[] labels = new long[plan.resultType.rank()];
+            Label[] labels = new Label[plan.resultType.rank()];
             int out = 0;
             int m = 0;
             int a = 0;
             int b = 0;
             for (var how : plan.combineHow) {
                 switch (how) {
-                    case left -> labels[out++] = leftOnly.numericLabel(a++);
-                    case right -> labels[out++] = rightOnly.numericLabel(b++);
-                    case both -> labels[out++] = match.numericLabel(m++);
-                    case concat -> labels[out++] = concatDimIdx;
+                    case left -> labels[out++] = leftOnly.objectLabel(a++);
+                    case right -> labels[out++] = rightOnly.objectLabel(b++);
+                    case both -> labels[out++] = match.objectLabel(m++);
+                    case concat -> labels[out++] = LabelCache.GLOBAL.getOrCreateLabel(concatDimIdx);
                     default -> throw new IllegalArgumentException("cannot handle: " + how);
                 }
             }
@@ -400,8 +402,8 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         CellVectorMapMap decompose(Tensor input, SplitHow how) {
             var iter = input.cellIterator();
-            long[] commonLabels = new long[(int)how.numCommon()];
-            long[] separateLabels = new long[(int)how.numSeparate()];
+            Label[] commonLabels = new Label[(int)how.numCommon()];
+            Label[] separateLabels = new Label[(int)how.numSeparate()];
             CellVectorMapMap result = new CellVectorMapMap();
             while (iter.hasNext()) {
                 var cell = iter.next();
@@ -411,8 +413,8 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                 int separateIdx = 0;
                 for (int i = 0; i < how.handleDims.size(); i++) {
                     switch (how.handleDims.get(i)) {
-                        case common -> commonLabels[commonIdx++] = addr.numericLabel(i);
-                        case separate -> separateLabels[separateIdx++] = addr.numericLabel(i);
+                        case common -> commonLabels[commonIdx++] = addr.objectLabel(i);
+                        case separate -> separateLabels[separateIdx++] = addr.objectLabel(i);
                         case concat -> ccDimIndex = addr.numericLabel(i);
                         default -> throw new IllegalArgumentException("cannot handle: " + how.handleDims.get(i));
                     }

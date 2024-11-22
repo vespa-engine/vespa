@@ -2,6 +2,7 @@
 
 package com.yahoo.tensor.impl;
 
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.TensorAddress;
 
 import static java.lang.Math.abs;
@@ -12,10 +13,9 @@ import static java.lang.Math.abs;
  * @author baldersheim
  */
 final class TensorAddressAny2 extends TensorAddressAny {
+    private final Label label0, label1;
 
-    private final long label0, label1;
-
-    TensorAddressAny2(long label0, long label1) {
+    TensorAddressAny2(Label label0, Label label1) {
         this.label0 = label0;
         this.label1 = label1;
     }
@@ -23,7 +23,7 @@ final class TensorAddressAny2 extends TensorAddressAny {
     @Override public int size() { return 2; }
 
     @Override
-    public long numericLabel(int i) {
+    public Label objectLabel(int i) {
         return switch (i) {
             case 0 -> label0;
             case 1 -> label1;
@@ -34,21 +34,23 @@ final class TensorAddressAny2 extends TensorAddressAny {
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
         return switch (labelIndex) {
-            case 0 -> new TensorAddressAny2(label, label1);
-            case 1 -> new TensorAddressAny2(label0, label);
+            case 0 -> new TensorAddressAny2(LabelCache.GLOBAL.getOrCreateLabel(label), label1);
+            case 1 -> new TensorAddressAny2(label0, LabelCache.GLOBAL.getOrCreateLabel(label));
             default -> throw new IllegalArgumentException("No label " + labelIndex);
         };
     }
 
     @Override
     public int hashCode() {
-        long hash =  abs(label0) | (abs(label1) << (64 - Long.numberOfLeadingZeros(abs(label0))));
+        long hash =  abs(label0.asNumeric()) |
+                (abs(label1.asNumeric()) << (64 - Long.numberOfLeadingZeros(abs(label0.asNumeric()))));
         return (int) hash;
     }
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof TensorAddressAny2 any) && (label0 == any.label0) && (label1 == any.label1);
+        return (o instanceof TensorAddressAny2 any) &&
+                (label0.isEqualTo(any.label0)) &&
+                (label1.isEqualTo(any.label1));
     }
-
 }

@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor;
 
-import com.yahoo.tensor.impl.Label;
+import com.yahoo.tensor.impl.LabelCache;
+import com.yahoo.tensor.impl.TensorAddressAny;
 
 /**
  * An address to a subset of a tensors' cells, specifying a label for some, but not necessarily all, of the tensors
@@ -18,7 +19,7 @@ public class PartialAddress {
     // Two arrays which contains corresponding dimension:label pairs.
     // The sizes of these are always equal.
     private final String[] dimensionNames;
-    private final long[] labels;
+    private final Label[] labels;
 
     private PartialAddress(Builder builder) {
         this.dimensionNames = builder.dimensionNames;
@@ -31,31 +32,44 @@ public class PartialAddress {
         return dimensionNames[i];
     }
 
-    /** Returns the numeric label of this dimension, or -1 if no label is specified for it */
-    public long numericLabel(String dimensionName) {
+
+    /** Returns the label object of this dimension, or -1 if no label is specified for it */
+    public Label objectLabel(String dimensionName) {
         for (int i = 0; i < dimensionNames.length; i++)
             if (dimensionNames[i].equals(dimensionName))
                 return labels[i];
-        return Tensor.invalidIndex;
+        
+        return LabelCache.INVALID_INDEX_LABEL;
+    }
+    
+    /** Returns the numeric label of this dimension, or -1 if no label is specified for it */
+    public long numericLabel(String dimensionName) {
+        return objectLabel(dimensionName).asNumeric();
     }
 
-    /** Returns the label of this dimension, or null if no label is specified for it */
+    /** Returns the string label of this dimension, or null if no label is specified for it */
     public String label(String dimensionName) {
-        for (int i = 0; i < dimensionNames.length; i++)
-            if (dimensionNames[i].equals(dimensionName))
-                return Label.fromNumber(labels[i]);
-        return null;
+        return objectLabel(dimensionName).asString();
     }
 
     /**
-     * Returns the label at position i
+     * Returns label object at position i
+     *
+     * @throws IllegalArgumentException if i is out of bounds
+     */
+    public Label objectLabel(int i) {
+        if (i >= size())
+            throw new IllegalArgumentException("No label at position " + i + " in " + this);
+        return labels[i];
+    }
+
+    /**
+     * Returns string label at position i
      *
      * @throws IllegalArgumentException if i is out of bounds
      */
     public String label(int i) {
-        if (i >= size())
-            throw new IllegalArgumentException("No label at position " + i + " in " + this);
-        return Label.fromNumber(labels[i]);
+        return objectLabel(i).asString();
     }
 
     public int size() { return dimensionNames.length; }
@@ -65,14 +79,14 @@ public class PartialAddress {
     public TensorAddress asAddress(TensorType type) {
         if (type.rank() != size())
             throw new IllegalArgumentException(type + " has a different rank than " + this);
-        long[] numericLabels = new long[labels.length];
+        Label[] labels = new Label[this.labels.length];
         for (int i = 0; i < type.dimensions().size(); i++) {
-            long label = numericLabel(type.dimensions().get(i).name());
-            if (label == Tensor.invalidIndex)
+            Label label = objectLabel(type.dimensions().get(i).name());
+            if (label.isEqualTo(LabelCache.INVALID_INDEX_LABEL))
                 throw new IllegalArgumentException(type + " dimension names does not match " + this);
-            numericLabels[i] = label;
+            labels[i] = label;
         }
-        return TensorAddress.of(numericLabels);
+        return TensorAddressAny.ofUnsafe(labels);
     }
 
     @Override
@@ -88,24 +102,31 @@ public class PartialAddress {
     public static class Builder {
 
         private String[] dimensionNames;
-        private long[] labels;
+        private Label[] labels;
         private int index = 0;
 
         public Builder(int size) {
             dimensionNames = new String[size];
-            labels = new long[size];
+            labels = new Label[size];
         }
 
-        public Builder add(String dimensionName, long label) {
+        public Builder add(String dimensionName, Label label) {
             dimensionNames[index] = dimensionName;
             labels[index] = label;
             index++;
             return this;
         }
 
+        public Builder add(String dimensionName, long label) {
+            dimensionNames[index] = dimensionName;
+            labels[index] = LabelCache.GLOBAL.getOrCreateLabel(label);
+            index++;
+            return this;
+        }
+
         public Builder add(String dimensionName, String label) {
             dimensionNames[index] = dimensionName;
-            labels[index] = Label.toNumber(label);
+            labels[index] = LabelCache.GLOBAL.getOrCreateLabel(label);
             index++;
             return this;
         }

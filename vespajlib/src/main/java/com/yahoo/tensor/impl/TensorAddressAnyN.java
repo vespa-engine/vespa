@@ -2,6 +2,7 @@
 
 package com.yahoo.tensor.impl;
 
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.TensorAddress;
 
 import java.util.Arrays;
@@ -15,28 +16,36 @@ import static java.lang.Math.abs;
  */
 final class TensorAddressAnyN extends TensorAddressAny {
 
-    private final long[] labels;
+    private final Label[] labels;
 
-    TensorAddressAnyN(long[] labels) {
+    TensorAddressAnyN(Label[] labels) {
         if (labels.length < 1) throw new IllegalArgumentException("Need at least 1 label");
         this.labels = labels;
     }
 
-    @Override public int size() { return labels.length; }
+    @Override public int size() { 
+        return labels.length; 
+    }
 
-    @Override public long numericLabel(int i) { return labels[i]; }
+    @Override
+    public Label objectLabel(int i) {
+        if (i < 0 || i >= size()) 
+            throw new IndexOutOfBoundsException("Index is not in [0," + (size() - 1) + "]: " + i);
+        
+        return labels[i]; 
+    }
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
-        long[] copy = Arrays.copyOf(labels, labels.length);
-        copy[labelIndex] = label;
+        var copy = Arrays.copyOf(labels, labels.length);
+        copy[labelIndex] = LabelCache.GLOBAL.getOrCreateLabel(label);
         return new TensorAddressAnyN(copy);
     }
 
     @Override public int hashCode() {
-        long hash = abs(labels[0]);
+        long hash = abs(labels[0].asNumeric());
         for (int i = 0; i < size(); i++) {
-            hash = hash | (abs(labels[i]) << (32 - Long.numberOfLeadingZeros(hash)));
+            hash = hash | (abs(labels[i].asNumeric()) << (32 - Long.numberOfLeadingZeros(hash)));
         }
         return (int) hash;
     }
@@ -45,7 +54,7 @@ final class TensorAddressAnyN extends TensorAddressAny {
     public boolean equals(Object o) {
         if (! (o instanceof TensorAddressAnyN any) || (size() != any.size())) return false;
         for (int i = 0; i < size(); i++) {
-            if (labels[i] != any.labels[i]) return false;
+            if (!labels[i].isEqualTo(any.labels[i])) return false;
         }
         return true;
     }
