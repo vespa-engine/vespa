@@ -179,6 +179,11 @@ void
 cache<P>::disable_slru() {
     _protected_segment.set_max_elements(0);
     _protected_segment.set_capacity_bytes(0);
+    // This has the not-entirely-optimal(tm) side effect of evicting the elements
+    // we consider the most important (i.e. the protected ones), but this exists
+    // only so that live-disabling SLRU entirely will be _correct_, not that it
+    // will be objectively _efficient_.
+    // TODO expose lrucache_map trimming and use this here instead.
     _protected_segment.evict_all();
 }
 
