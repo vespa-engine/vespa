@@ -1,9 +1,12 @@
 package com.yahoo.tensor.impl;
 
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Timeout;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
@@ -73,23 +76,37 @@ public class LabelCacheTestCase {
     }
     
     @Test
+    @Timeout(value = 2, unit = SECONDS)
     public void testStringLabelIsGarbageCollected() throws InterruptedException {
         var cache = new LabelCache(32, 1000);
-        var label1 = cache.getOrCreateLabel("l1");
-        var numeric1 = label1.asNumeric();
+        var xLabel1 = cache.getOrCreateLabel("x");
+        var xNumeric1 = xLabel1.asNumeric();
         assertEquals(1, cache.size());
         
-        label1 = null;
-        System.gc();
-        Thread.sleep(1000); // Need to wait for garbage collector.
+        // Garbage collect the label.
+        xLabel1 = null;
+        System.gc();        
+        var yLabels = new Label[10];
+        int i;
         
-        cache.getOrCreateLabel("l2");
-        assertEquals(1, cache.size());
+        for (i = 0; i < yLabels.length; i++) {
+            // Every create removes garbage collected labels.
+            // Labels are stored to avoid garbage collection.
+            yLabels[i] = cache.getOrCreateLabel("y" + i);
+            
+            if (i + 1 == cache.size()) {
+                break;
+            }
+            
+            Thread.sleep(100);
+        }
         
-        var label2 = cache.getOrCreateLabel("l1");
-        var numeric2 = label2.asNumeric();
-        assertEquals(2, cache.size());
-        assertNotEquals(numeric1, numeric2);
+        assertEquals(i + 1, cache.size());
+        
+        // A new label with the same string as garbage collected one should have a different numeric value.
+        var xLabel2 = cache.getOrCreateLabel("x");
+        var xNumeric2 = xLabel2.asNumeric();
+        assertNotEquals(xNumeric1, xNumeric2);
     }
     
     @Test
