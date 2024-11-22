@@ -9,6 +9,8 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
+import com.google.protobuf.Option;
+
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.StringUtils;
@@ -105,6 +107,8 @@ public class YQLDocument implements DocumentManager {
         }
 
         int charsRead = parser.getToken(0).getEndOffset();
+
+        if (charsRead == 0) return new YQLPartParseResult(List.of(), Optional.empty(), charsRead);
 
         ai.vespa.schemals.parser.yqlplus.Node node = parser.rootNode();
         YQLNode retNode = new YQLNode(node, offset);
@@ -228,6 +232,8 @@ public class YQLDocument implements DocumentManager {
             if (result.CST().isPresent()) {
                 ret.addChild(result.CST().get());
             }
+
+            if (result.charsRead() == 0) result.charsRead++;
             
             int newOffset = content.indexOf('\n', charsRead + result.charsRead());
             if (newOffset == -1) {
