@@ -14,7 +14,6 @@ import com.yahoo.vespa.model.admin.LogserverContainer;
 import com.yahoo.vespa.model.admin.LogserverContainerCluster;
 import com.yahoo.vespa.model.admin.Slobrok;
 import com.yahoo.vespa.model.admin.otel.OpenTelemetryCollector;
-import com.yahoo.vespa.model.admin.otel.OpenTelemetryConfigGenerator;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
@@ -25,6 +24,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import static java.util.logging.Level.WARNING;
 
 /**
  * Builds the admin model from a version 4 XML tag, or as a default when an admin 3 tag or no admin tag is used.
@@ -60,6 +61,8 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
         addLogForwarders(adminElement.child("logforwarding"), admin, deployState);
         addLoggingSpecs(adminElement.child("logging"), admin);
+
+        validateAdminV20Elements(deployState, adminElement);
     }
 
     private void assignSlobroks(DeployState deployState, NodesSpecification nodesSpecification, Admin admin) {
@@ -202,6 +205,17 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
             slobrok.initService(deployState);
         }
         admin.addSlobroks(slobroks);
+    }
+
+    // Validate elements allowed from version 2.0, but log a warning about it
+    private static void validateAdminV20Elements(DeployState deployState, ModelElement adminElement) {
+        var validForVersion2Elements = List.of("adminserver", "cluster-controllers", "configservers", "logserver", "monitoring", "slobroks");
+        var used = validForVersion2Elements.stream()
+                                           .filter(e -> ! adminElement.children(e).isEmpty())
+                                           .map(e -> "'" + e + "'")
+                                           .collect(Collectors.joining(", "));
+        if ( ! used.isEmpty())
+            deployState.getDeployLogger().logApplicationPackage(WARNING, "Elements " + used + " in <admin> are deprecated and ignored, please remove");
     }
 
 }

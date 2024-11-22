@@ -5,7 +5,10 @@ import com.yahoo.cloud.config.SentinelConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.cloud.config.SlobroksConfig.Slobrok;
 import com.yahoo.cloud.config.log.LogdConfig;
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ApplicationConfigProducerRoot;
+import com.yahoo.config.model.api.ApplicationClusterEndpoint;
+import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.TestDriver;
@@ -26,6 +29,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 
 import static com.yahoo.config.model.api.container.ContainerServiceType.METRICS_PROXY_CONTAINER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -289,6 +293,44 @@ public class AdminTestCase {
         System.out.println(sentinelConfig);
         assertEquals(4, getConfigForService("container", sentinelConfig).logctl().size());
         assertEquals(4, getConfigForService("metricsproxy-container", sentinelConfig).logctl().size());
+    }
+
+    @Test
+    void testAdminV2OnHosted() {
+        String services = """
+                <services>\
+                  <admin version='2.0'>\
+                    <adminserver hostalias='node0' />\
+                    <logserver hostalias='node0' />\
+                    <metrics>
+                      <consumer id="my-custom-consumer">
+                        <metric-set id="default" />
+                        <metric id="vds.idealstate.garbage_collection.documents_removed.count" />
+                      </consumer>
+                    </metrics>\
+                  </admin>\
+                  <container id='default' version='1.0'>\
+                    <search /> \
+                    <nodes> \
+                      <node hostalias='node1' /> \
+                    </nodes>\
+                  </container>\
+                </services>""";
+
+        // Deprecated elements should be logged as warning
+        var logged = new StringBuilder();
+        DeployLogger logger = (level, message) -> {
+            if (level.equals(Level.WARNING) && message.contains("<admin>")) logged.append(message);
+        };
+
+        var builder = new DeployState.Builder()
+                .deployLogger(logger)
+                .properties(new TestProperties().setHostedVespa(true))
+                .endpoints(Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))));
+        new VespaModelCreatorWithMockPkg(null, services).create(builder);
+
+        assertEquals("Elements 'adminserver', 'logserver' in <admin> are deprecated and ignored, please remove",
+                     logged.toString());
     }
 
     private SentinelConfig.Service getConfigForService(String serviceName, SentinelConfig config) {
