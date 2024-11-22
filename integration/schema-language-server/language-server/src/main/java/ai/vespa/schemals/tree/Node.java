@@ -239,6 +239,7 @@ public abstract class Node implements Iterable<Node> {
     }
 
     public abstract int getBeginOffset();
+    public abstract int getEndOffset();
 
     public abstract String getText();
     public abstract Class<?> getASTClass();

@@ -1,10 +1,12 @@
 package ai.vespa.schemals;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.DynamicTest;
@@ -16,6 +18,7 @@ import ai.vespa.schemals.schemadocument.YQLDocument;
 import ai.vespa.schemals.schemadocument.YQLDocument.ParseResult;
 
 import ai.vespa.schemals.testutils.*;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class YQLParserTest {
 
@@ -34,6 +37,14 @@ public class YQLParserTest {
             var parseResult = parseString(input);
             String testMessage = "For input: " + input + Utils.constructDiagnosticMessage(parseResult.diagnostics(), 1);
             assertEquals(expectedErrors, Utils.countErrors(parseResult.diagnostics()), testMessage);
+    
+            if (expectedErrors == 0) {
+                assertTrue(parseResult.CST().isPresent(), "Expected that a YQLNode was present in the input: " + input);
+
+                YQLNode node = parseResult.CST().get();
+                int charsRead = node.getEndOffset();
+                assertEquals(input.length(), charsRead, "Expected the parser to read all the chars in the input, but it read " + charsRead + " of " + input.length() + " for input: " + input);
+            }
         } catch (Exception e) {
             StringWriter stringWriter = new StringWriter();
             PrintWriter printWriter = new PrintWriter(stringWriter);
@@ -65,8 +76,8 @@ public class YQLParserTest {
             "all(group(predefined(customer, bucket(-inf,\"Jones\"), bucket(\"Jones\", inf))) each(each(output(summary()))))",
             "all(group(predefined(customer, bucket<-inf,\"Jones\">, bucket[\"Jones\"], bucket<\"Jones\", inf>)) each(each(output(summary()))))",
             "all(group(predefined(tax, bucket[0.0,0.2>, bucket[0.2,0.5>, bucket[0.5,inf>)) each(each(output(summary()))))",
-            // "{ 'continuations':['BGAAABEBCA'] }all(output(count()))",
-            // "{ 'continuations':['BGAAABEBCA', 'BGAAABEBEBC'] }all(output(count()))",
+            "{ 'continuations':['BGAAABEBCA'] }all(output(count()))",
+            "{ 'continuations':['BGAAABEBCA', 'BGAAABEBEBC'] }all(output(count()))",
             "all(group(mod(div(date,mul(60,60)),24)) each(output(sum(price))))",
             "all(group(customer) each(output(sum(mul(price,sub(1,tax))))))",
             "all( group(a) each(output(count())) )",
@@ -87,7 +98,7 @@ public class YQLParserTest {
             "all( group(a) max(5) each(output(count()) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(c) max(5) each(max(69) output(count()) each(output(summary()))))) )))",
             "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(c) max(5) each(max(69) output(count()) each(output(summary()))))) )))",
             "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary(complexsummary)))) all(group(b) max(5) each(output(count()) all(max(1) each(output(summary(simplesummary)))) all(group(c) max(5) each(max(69) output(count()) each(output(summary(fastsummary)))))) )))",
-            "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))) )))",
+            "all( group(a) max(5) each(output(count()) all(max(1) each(output(summary()))) all(group(b) each(output(count()) all(max(1) each(output(summary()))) all(group(c) each(output(count()) all(max(1) each(output(summary())))))))) )",
             "all( group(time.year(a)) each(output(count())) )",
             "all( group(time.year(a)) each(output(count()) all(group(time.monthofyear(a)) each(output(count())))) )",
             "all( group(time.year(a)) each(output(count()) all(group(time.monthofyear(a)) each(output(count()) all(group(time.dayofmonth(a)) each(output(count()) all(group(time.hourofday(a)) each(output(count())))))))) )",
@@ -163,7 +174,7 @@ public class YQLParserTest {
             "select * from music where weakAnd(a contains \"A\", b contains \"B\")",
             "select * from music where ({targetHits: 7}weakAnd(a contains \"A\", b contains \"B\"))",
             "select * from music where geoLocation(myfieldname, 63.5, 10.5, \"200 km\")",
-            "select * from music where ({targetHits: 10}nearestNeighbor(doc_vector, query_vector))&input.query(query_vector)=[3,5,7]",
+            "select * from music where ({targetHits: 10}nearestNeighbor(doc_vector, query_vector))",
             "select * from sources * where bar contains \"a\" and nonEmpty(bar contains \"bar\" and foo contains @foo)",
             "select * from music where predicate(predicate_field,{\"gender\":\"Female\"},{\"age\":20L})",
             "select * from music where predicate(predicate_field,0,{\"age\":20L})",
@@ -178,7 +189,7 @@ public class YQLParserTest {
             "select * from music where myUrlField.hostname contains uri(\"vespa.ai\")",
             "select * from music where myUrlField.hostname contains ({startAnchor: true}uri(\"vespa.ai\"))",
             "select * from music where title contains ({weight:200}\"heads\")",
-            "select * from sources * where ({stem: false}(foo contains \"a\" and bar contains \"b\")) or foo contains {stem: false}\"c\"",
+            "select * from sources * where ({stem: false}(foo contains \"a\" and bar contains \"b\")) or foo contains ({stem: false}\"c\")",
             "select * from sources * where foo contains @animal and foo contains phrase(@animal, @syntaxExample, @animal)",
             "select * from sources * where sddocname contains 'purchase' | all(group(customer) each(output(sum(price))))",
         };
