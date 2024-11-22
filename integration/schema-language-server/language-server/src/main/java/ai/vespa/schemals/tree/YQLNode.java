@@ -16,6 +16,17 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
     private String customText;
     private int startCharOffset;
 
+    public YQLNode(Node node, Position offset, int startCharOffset, String originalString) {
+        super(LanguageType.YQLPlus, CSTUtils.addPositionToRange(offset, YQLUtils.getNodeRange(node)), node.isDirty());
+        originalYQLNode = node;
+        this.startCharOffset = startCharOffset;
+        this.customText = originalString.substring(node.getBeginOffset(), node.getEndOffset());
+
+        for (Node child : node.children()) {
+            addChild(new YQLNode(child, offset, startCharOffset, originalString));
+        }
+    }
+
     public YQLNode(Node node, Position offset, int startCharOffset) {
         super(LanguageType.YQLPlus, CSTUtils.addPositionToRange(offset, YQLUtils.getNodeRange(node)), node.isDirty());
         originalYQLNode = node;
@@ -53,6 +64,7 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
 
     public String getText() {
         if (language == LanguageType.YQLPlus) {
+            if (customText != null) return customText;
             return originalYQLNode.getSource();
         }
 
@@ -76,6 +88,7 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
             var child = get(i);
             ret += " " + child.getText();
         }
+        if (ret.length() == 0) return "";
 
         return ret.substring(1);
     }

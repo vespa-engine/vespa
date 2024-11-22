@@ -95,9 +95,8 @@ public class YQLDocument implements DocumentManager {
         updateFileContent(content);
     }
 
-    private static YQLPartParseResult parseYQLPart(CharSequence content, ClientLogger logger, Position offset, int charOffset) {
-        // CharSequence charSequence = content.toLowerCase();
-        YQLPlusParser parser = new YQLPlusParser(content);
+    private static YQLPartParseResult parseYQLPart(String content, ClientLogger logger, Position offset, int charOffset) {
+        YQLPlusParser parser = new YQLPlusParser(content.toLowerCase());
 
         try {
             parser.statement();
@@ -110,7 +109,7 @@ public class YQLDocument implements DocumentManager {
         if (charsRead == 0) return new YQLPartParseResult(List.of(), Optional.empty(), charsRead);
 
         ai.vespa.schemals.parser.yqlplus.Node node = parser.rootNode();
-        YQLNode retNode = new YQLNode(node, offset, charOffset);
+        YQLNode retNode = new YQLNode(node, offset, charOffset, content);
         // YQLUtils.printTree(logger, node);
 
         return new YQLPartParseResult(List.of(), Optional.of(retNode), charsRead);
@@ -215,6 +214,8 @@ public class YQLDocument implements DocumentManager {
         YQLNode ret = new YQLNode(StringUtils.getStringRange(content));
         ArrayList<Diagnostic> diagnostics = new ArrayList<>();
 
+        if (content.trim().length() == 0) return new ParseResult(diagnostics, Optional.of(ret));
+
         int charsRead = 0;
         int linesRead = 0;
 
@@ -243,7 +244,7 @@ public class YQLDocument implements DocumentManager {
             charsRead = newOffset;
         }
 
-        YQLUtils.printTree(context.logger(), ret);
+        // YQLUtils.printTree(context.logger(), ret);
 
         return new ParseResult(diagnostics, Optional.of(ret));
     }

@@ -189,7 +189,7 @@ public class YQLParserTest {
             "select * from music where myUrlField.hostname contains uri(\"vespa.ai\")",
             "select * from music where myUrlField.hostname contains ({startAnchor: true}uri(\"vespa.ai\"))",
             "select * from music where title contains ({weight:200}\"heads\")",
-            "select * from sources * where ({stem: false}(foo contains \"a\" and bar contains \"b\")) or foo contains {stem: false}\"c\"",
+            "select * from sources * where ({stem: false}(foo contains \"a\" and bar contains \"b\")) or foo contains ({stem: false}\"c\")",
             "select * from sources * where foo contains @animal and foo contains phrase(@animal, @syntaxExample, @animal)",
             "select * from sources * where sddocname contains 'purchase' | all(group(customer) each(output(sum(price))))",
         };
