@@ -61,8 +61,8 @@ void
 cache<P>::SizeConstrainedLru::replace_and_update_size(const KeyT& key, ValueT value) {
     const auto kv_size = _owner.calcSize(key, value);
     sub_size_bytes(_owner.calcSize(key, Lru::get(key))); // get() does not update LRU
-    (*this)[key] = std::move(value); // operator[] _does_ update LRU; `key` will be placed at head
     add_size_bytes(kv_size);
+    (*this)[key] = std::move(value); // operator[] _does_ update LRU; `key` will be placed at head
 }
 
 template <typename P>
