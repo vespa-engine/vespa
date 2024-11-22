@@ -41,6 +41,7 @@
 #include <vespa/searchlib/transactionlog/trans_log_server_explorer.h>
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
+#include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
@@ -963,6 +964,7 @@ const std::string RESOURCE_USAGE = "resourceusage";
 const std::string THREAD_POOLS = "threadpools";
 const std::string HW_INFO = "hwinfo";
 const std::string SESSION = "session";
+const std::string CACHE_NAME = "cache";
 
 
 struct StateExplorerProxy : vespalib::StateExplorer {
@@ -998,6 +1000,40 @@ struct DocumentDBMapExplorer : vespalib::StateExplorer {
     }
 };
 
+void insert_cache_stats(Cursor& object, const vespalib::CacheStats& stats)
+{
+    object.setLong("hits", stats.hits);
+    object.setLong("misses", stats.misses);
+    object.setLong("elements", stats.elements);
+    object.setLong("memory_used", stats.memory_used);
+    object.setLong("lookups", stats.lookups());
+}
+
+class CacheExplorer : public vespalib::StateExplorer {
+    const IPostingListCache& _posting_list_cache;
+public:
+    CacheExplorer(const IPostingListCache& posting_list_cache) noexcept;
+    ~CacheExplorer() override;
+    void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
+};
+
+CacheExplorer::CacheExplorer(const IPostingListCache& posting_list_cache) noexcept
+    : _posting_list_cache(posting_list_cache)
+{
+}
+
+CacheExplorer::~CacheExplorer() = default;
+
+void
+CacheExplorer::get_state(const vespalib::slime::Inserter& inserter, bool full) const
+{
+    auto &object = inserter.insertObject();
+    if (full) {
+        insert_cache_stats(object.setObject("postinglist"), _posting_list_cache.get_stats());
+        insert_cache_stats(object.setObject("bitvector"), _posting_list_cache.get_bitvector_stats());
+    }
+}
+
 } // namespace proton::<unnamed>
 
 void
@@ -1008,7 +1044,7 @@ Proton::get_state(const vespalib::slime::Inserter &, bool) const
 std::vector<std::string>
 Proton::get_children_names() const
 {
-    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE, SESSION};
+    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE, SESSION, CACHE_NAME};
 }
 
 std::unique_ptr<vespalib::StateExplorer>
@@ -1037,6 +1073,8 @@ Proton::get_child(std::string_view name) const
         return std::make_unique<HwInfoExplorer>(_hw_info);
     } else if (name == SESSION) {
         return std::make_unique<matching::SessionManagerExplorer>(*_sessionManager);
+    } else if (name == CACHE_NAME && _posting_list_cache) {
+        return std::make_unique<CacheExplorer>(*_posting_list_cache);
     }
     return {};
 }
