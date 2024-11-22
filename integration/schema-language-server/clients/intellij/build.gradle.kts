@@ -43,6 +43,8 @@ dependencies {
   implementation("org.jsoup:jsoup:1.17.2")
   implementation("com.vladsch.flexmark:flexmark-html2md-converter:0.64.8")
 
+  // Note: its quite important we ignore lsp4j, as the classes would collide
+  //       with the lsp4ij plugins classes.
   implementation("org.eclipse.lemminx:org.eclipse.lemminx:0.28.0") {
     exclude(group = "org.eclipse.lsp4j")
     exclude(group = "com.google.code.gson")

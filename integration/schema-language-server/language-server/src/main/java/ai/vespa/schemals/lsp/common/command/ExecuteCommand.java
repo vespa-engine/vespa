@@ -17,6 +17,11 @@ public class ExecuteCommand {
         if (command.isEmpty()) {
             context.logger.error("Unknown command " + context.params.getCommand());
             context.logger.error("Arguments:");
+            if (context.params.getArguments() == null) {
+                context.logger.error("null");
+                return null;
+            }
+
             for (Object obj : context.params.getArguments()) {
                 context.logger.info(obj.getClass().toString() + ": " + obj.toString());
             }
