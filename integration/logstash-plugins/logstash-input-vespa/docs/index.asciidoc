@@ -1,0 +1,120 @@
+:plugin: vespa
+:type: input
+:default_codec: json
+
+///////////////////////////////////////////
+START - GENERATED VARIABLES, DO NOT EDIT!
+///////////////////////////////////////////
+:version: %VERSION%
+:release_date: %RELEASE_DATE%
+:changelog_url: %CHANGELOG_URL%
+:include_path: ../../../../logstash/docs/include
+///////////////////////////////////////////
+END - GENERATED VARIABLES, DO NOT EDIT!
+///////////////////////////////////////////
+
+[id="plugins-{type}s-{plugin}"]
+
+=== Vespa input plugin
+
+include::{include_path}/plugin_header.asciidoc[]
+
+==== Description
+
+Reads documents from Vespa.
+
+[id="plugins-{type}s-{plugin}-options"]
+==== Vespa Input Configuration Options
+
+[cols="<,<,<",options="header",]
+|=======================================================================
+|Setting |Input type|Required
+| <<plugins-{type}s-{plugin}-vespa_url>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-cluster>> |<<string,string>>|Yes
+|=======================================================================
+
+[id="plugins-{type}s-{plugin}-vespa_url"]
+===== `vespa_url`
+
+* Value type is <<string,string>>
+* Default value is `http://localhost:8080`
+
+URL to the Vespa instance.
+
+[id="plugins-{type}s-{plugin}-cluster"]
+===== `cluster`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+The cluster name to be used while visiting: https://docs.vespa.ai/en/reference/document-v1-api-reference.html#visit
+
+[id="plugins-{type}s-{plugin}-client_cert"]
+===== `client_cert`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+Path to the client certificate file for mTLS.
+
+[id="plugins-{type}s-{plugin}-client_key"]
+===== `client_key`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+Path to the client key file for mTLS.
+
+[id="plugins-{type}s-{plugin}-page_size"]
+===== `page_size`
+
+* Value type is <<number,number>>
+* Default value is `100`
+
+Desired page size for the visit request, i.e. the wantedDocumentCount parameter.
+
+[id="plugins-{type}s-{plugin}-backend_concurrency"]
+===== `backend_concurrency`
+
+* Value type is <<number,number>>
+* Default value is `1`
+
+Backend concurrency for the visit request, i.e. the concurrency parameter.
+
+[id="plugins-{type}s-{plugin}-selection"]
+===== `selection`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+Selection. A query in Vespa selector language.
+
+[id="plugins-{type}s-{plugin}-timeout"]
+===== `timeout`
+
+* Value type is <<number,number>>
+* Default value is `180`
+
+Timeout for each HTTP request.
+
+[id="plugins-{type}s-{plugin}-from_timestamp"]
+===== `from_timestamp`
+
+* Value type is <<number,number>>
+* Default value is `nil`
+
+Lower timestamp limit for the visit request, i.e. the fromTimestamp parameter.
+Microseconds since epoch.
+
+[id="plugins-{type}s-{plugin}-to_timestamp"]
+===== `to_timestamp`
+
+* Value type is <<number,number>>
+* Default value is `nil`
+
+Upper timestamp limit for the visit request, i.e. the toTimestamp parameter.
+
+[id="plugins-{type}s-{plugin}-common-options"]
+include::{include_path}/{type}.asciidoc[]
+
+:default_codec!:

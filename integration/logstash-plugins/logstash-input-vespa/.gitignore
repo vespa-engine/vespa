@@ -1,0 +1,5 @@
+*.gem
+Gemfile.lock
+Gemfile.bak
+.bundle
+vendor
