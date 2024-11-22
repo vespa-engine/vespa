@@ -223,7 +223,7 @@ public:
     }
     // Thread safe
     [[nodiscard]] size_t sizeBytes() const noexcept {
-        return _size_bytes.load(std::memory_order_relaxed);
+        return _probationary_segment.size_bytes() + _protected_segment.size_bytes();
     }
     // _Not_ thread safe
     [[nodiscard]] bool empty() const noexcept {
@@ -312,7 +312,6 @@ private:
 
     [[nodiscard]] bool multi_segment() const noexcept { return _protected_segment.capacity_bytes() != 0; }
     void disable_slru();
-    void update_size_bytes() noexcept;
     void verifyHashLock(const UniqueLock& guard) const;
     [[nodiscard]] size_t calcSize(const K& k, const V& v) const noexcept {
         return per_element_fixed_overhead() + _sizeK(k) + _sizeV(v);

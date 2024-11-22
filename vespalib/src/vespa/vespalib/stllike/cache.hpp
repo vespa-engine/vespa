@@ -208,7 +208,6 @@ template <typename P>
 cache<P>::cache(BackingStore& backing_store,
                 size_t max_probationary_bytes,
                 size_t max_protected_bytes) :
-    _size_bytes(0),
     _hit(0),
     _miss(0),
     _non_existing(0),
@@ -272,7 +271,6 @@ cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args)
         std::lock_guard guard(_hashLock);
         _probationary_segment.insert_and_update_size(key, value);
         onInsert(key);
-        update_size_bytes();
         increment_stat(_insert, guard);
     } else {
         _non_existing.fetch_add(1, std::memory_order_relaxed);
@@ -315,7 +313,6 @@ cache<P>::write(const K& key, V value)
             _probationary_segment.insert_and_update_size(key, std::move(value));
             onInsert(key);
         }
-        update_size_bytes();
         increment_stat(_write, guard); // TODO only increment when not updating?
     }
 }
@@ -344,7 +341,6 @@ cache<P>::invalidate(const UniqueLock& guard, const K& key)
         return;
     }
     onRemove(key); // Not transitively invoked by erase_and_update_size()
-    update_size_bytes();
     increment_stat(_invalidate, guard);
 }
 
@@ -373,13 +369,6 @@ cache<P>::get_stats() const
 {
     std::lock_guard guard(_hashLock);
     return CacheStats(getHit(), getMiss(), size(), sizeBytes(), getInvalidate());
-}
-
-template <typename P>
-void
-cache<P>::update_size_bytes() noexcept {
-    _size_bytes.store(_probationary_segment.size_bytes() + _protected_segment.size_bytes(),
-                      std::memory_order_relaxed);
 }
 
 template <typename P>
