@@ -538,7 +538,7 @@ public class PermanentFlags {
             "config-server-unknown-status-session-expiry-time", 6,
             "Expiry time in hours for sessions with unknown status, can be lowered if there are incidents/bugs " +
                     " or free disk space is too low and one needs to delete sessions",
-            "Takes effect after restart of config server"
+            "Takes effect after reboot of config server node"
     );
 
     private PermanentFlags() {}
