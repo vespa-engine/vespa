@@ -84,7 +84,6 @@ public class ModelProvisioningTest {
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>\n" +
                         "\n" +
-                        "<admin version='3.0'><nodes count='1' /></admin>\n" +
                         "<container id='mydisc' version='1.0'>" +
                         "  <handler id='myHandler'>" +
                         "    <component id='injected' />" +
@@ -119,6 +118,9 @@ public class ModelProvisioningTest {
                 + " </host>"
                 + " <host name='myhost5'>"
                 + "  <alias>node5</alias>"
+                + " </host>"
+                + " <host name='myhost6'>"
+                + "  <alias>node6</alias>"
                 + " </host>"
                 + "</hosts>";
         VespaModelCreatorWithMockPkg creator = new VespaModelCreatorWithMockPkg(null, services);
@@ -292,7 +294,7 @@ public class ModelProvisioningTest {
         assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
         assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
         var msgs = logger.msgs().stream().filter(m -> m.level().equals(Level.WARNING)).toList();
-        assertEquals(1, msgs.size());
+        assertEquals(1, msgs.size(), msgs.toString());
         assertEquals("Declaring combined cluster with <nodes of=\"...\"> is deprecated without replacement, " +
                      "and the feature will be removed in Vespa 9. Use separate container and content clusters instead",
                      msgs.get(0).message);
