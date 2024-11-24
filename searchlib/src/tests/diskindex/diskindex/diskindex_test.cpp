@@ -270,7 +270,11 @@ DiskIndexTest::requireThatWeCanReadPostingList(const IOSettings& io_settings)
         EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, h));
         if (io_settings._use_directio && !io_settings._use_mmap) {
             auto directio_handle = field_index.read_uncached_posting_list(r, false);
+#ifdef __linux__
             EXPECT_LT(256, directio_handle._allocSize);
+#else
+            EXPECT_GT(64, directio_handle._allocSize);
+#endif
             EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, directio_handle));
             auto trimmed_directio_handle = field_index.read_uncached_posting_list(r, true);
             EXPECT_GT(64, trimmed_directio_handle._allocSize);
