@@ -163,7 +163,7 @@ MatchEngine::doSearch(const SearchRequest & searchRequest) {
         vespalib::Issue::report("search request timed out; results may be incomplete");
     }
     searchRequest.trace().addEvent(4,
-            vespalib::make_string("returning %zu hits from total %zu",
+            vespalib::make_string("returning %zu hits from total %" PRIu64,
                                   ret->hits.size(), ret->totalHitCount));
     return ret;
 }
