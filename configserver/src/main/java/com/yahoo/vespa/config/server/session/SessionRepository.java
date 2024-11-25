@@ -71,6 +71,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -214,11 +215,16 @@ public class SessionRepository {
 
     // ---------------- Local sessions ----------------------------------------------------------------
 
+    public void addLocalAndRemoteSession(LocalSession session) {
+        addLocalSession(session);
+        long sessionId = session.getSessionId();
+        if (remoteSessionCache.get(sessionId) == null)
+            createRemoteSession(sessionId);
+    }
+
     public void addLocalSession(LocalSession session) {
         long sessionId = session.getSessionId();
         localSessionCache.put(sessionId, session);
-        if (remoteSessionCache.get(sessionId) == null)
-            createRemoteSession(sessionId);
     }
 
     public LocalSession getLocalSession(long sessionId) {
@@ -609,19 +615,20 @@ public class SessionRepository {
         sessions.addAll(getRemoteSessionsFromZooKeeper());
         if (sessions.isEmpty()) return;
 
-        log.log(Level.FINE, () -> "Sessions for tenant " + tenantName + ": " + sessions);
-
         // Skip sessions newly added (we might have a session in the file system, but not in ZooKeeper,
         // we will exclude these)
         Set<Long> newSessions = findNewSessionsInFileSystem();
         sessions.removeAll(newSessions);
         Collections.sort(sessions);
+        // Use a LinkedHashSet to avoid duplicates, but preserver order from sorted list
+        var sortedSessions = new LinkedHashSet<>(sessions);
+        log.log(Level.FINE, () -> "Sessions for tenant " + tenantName + ": " + sortedSessions);
 
         // Avoid deleting too many in one run
-        int deleteMax = (int) Math.min(1000, Math.max(maxSessionsToDelete, sessions.size() * 0.05));
+        int deleteMax = (int) Math.min(1000, Math.max(maxSessionsToDelete, sortedSessions.size() * 0.05));
         int deletedRemoteSessions = 0;
         int deletedLocalSessions = 0;
-        for (Long sessionId : sessions) {
+        for (Long sessionId : sortedSessions) {
             try {
                 Session session = remoteSessionCache.get(sessionId);
                 Instant createTime;
@@ -816,7 +823,7 @@ public class SessionRepository {
             CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
             LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
             waiter.awaitCompletion(Duration.ofSeconds(Math.min(120, timeoutBudget.timeLeft().getSeconds())));
-            addLocalSession(session);
+            addLocalAndRemoteSession(session);
             return session;
         } catch (IOException e) {
             throw new RuntimeException("Error creating session " + sessionId, e);
@@ -922,7 +929,7 @@ public class SessionRepository {
     void createLocalSession(long sessionId, ApplicationPackage applicationPackage) {
         SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
         LocalSession session = new LocalSession(tenantName, sessionId, applicationPackage, sessionZKClient);
-        addLocalSession(session);
+        addLocalAndRemoteSession(session);
     }
 
     /**
