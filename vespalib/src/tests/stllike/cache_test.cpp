@@ -142,7 +142,7 @@ TEST_F(CacheTest, overflow_can_remove_multiple_elements) {
     EXPECT_TRUE(cache.hasKey(53*9+6));
 }
 
-class ExtendedCache : public cache<CacheParam<P, B>> {
+class ExtendedCache : public cache<CacheParam<P, B, zero<uint32_t>, size<std::string>>> {
 public:
     ExtendedCache(BackingStore& b, size_t max_bytes, size_t max_protected_bytes = 0)
         : cache(b, max_bytes, max_protected_bytes),
@@ -162,40 +162,40 @@ private:
 };
 
 TEST_F(CacheTest, insert_and_remove_callbacks_invoked_when_full) {
-    ExtendedCache cache(m, 250);
+    ExtendedCache cache(m, 300);
     EXPECT_EQ(0u, cache._insert_count);
     EXPECT_EQ(0u, cache._remove_count);
     cache.write(1, "15 bytes string");
     EXPECT_EQ(1u, cache.size());
-    EXPECT_EQ(80u, cache.sizeBytes());
+    EXPECT_EQ(95, cache.sizeBytes());
     EXPECT_EQ(1u, cache._insert_count);
     EXPECT_EQ(0u, cache._remove_count);
     cache.write(2, "16 bytes stringg");
     EXPECT_EQ(2u, cache.size());
-    EXPECT_EQ(160u, cache.sizeBytes());
+    EXPECT_EQ(191, cache.sizeBytes());
     EXPECT_EQ(2u, cache._insert_count);
     EXPECT_EQ(0u, cache._remove_count);
     cache.write(3, "17 bytes stringgg");
     EXPECT_EQ(3u, cache.size());
-    EXPECT_EQ(240u, cache.sizeBytes());
+    EXPECT_EQ(288, cache.sizeBytes());
     EXPECT_EQ(3u, cache._insert_count);
     EXPECT_EQ(0u, cache._remove_count);
     EXPECT_TRUE(cache.hasKey(1));
     cache.write(4, "18 bytes stringggg");
     EXPECT_EQ(3u, cache.size());
-    EXPECT_EQ(240u, cache.sizeBytes());
+    EXPECT_EQ(291, cache.sizeBytes());
     EXPECT_EQ(4u, cache._insert_count);
     EXPECT_EQ(1u, cache._remove_count);
     EXPECT_FALSE(cache.hasKey(1));
     cache.invalidate(2);
     EXPECT_EQ(2u, cache.size());
-    EXPECT_EQ(160u, cache.sizeBytes());
+    EXPECT_EQ(195, cache.sizeBytes());
     EXPECT_EQ(4u, cache._insert_count);
     EXPECT_EQ(2u, cache._remove_count);
     EXPECT_FALSE(cache.hasKey(2));
     cache.invalidate(3);
     EXPECT_EQ(1u, cache.size());
-    EXPECT_EQ(80u, cache.sizeBytes());
+    EXPECT_EQ(98, cache.sizeBytes());
     EXPECT_EQ(4u, cache._insert_count);
     EXPECT_EQ(3u, cache._remove_count);
     EXPECT_FALSE(cache.hasKey(3));
@@ -455,6 +455,27 @@ TEST_F(SlruCacheTest, evicting_protected_segment_invokes_remove_callback) {
     EXPECT_EQ(cache._remove_count, 0);
     cache.setCapacityBytes(-1, 0);
     EXPECT_EQ(cache._insert_count, 1);
+    EXPECT_EQ(cache._remove_count, 1);
+}
+
+TEST_F(SlruCacheTest, transitive_eviction_from_probationary_segment_invokes_remove_callback) {
+    ExtendedCache cache(m, 170, 100);
+    cache.write(10, "foo");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 83, 0));
+    EXPECT_EQ(cache.read(10), "foo"); // ==> protected
+    cache.write(30, "a string that is so large that it will squeeze out other elements");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {30}, {10}));
+    (void)cache.read(30); // ==> protected
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {10}, {30})); // the great swaparoo
+    EXPECT_EQ(cache._remove_count, 0);
+    // Room for another element in probationary
+    cache.write(20, "bar");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 166, 145));
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {20, 10}, {30}));
+    EXPECT_EQ(cache._remove_count, 0);
+    (void)cache.read(20); // ==> protected, kicks 30 into probationary
+    // 30 is too big for both it and 10 to fit into probationary, so 10 is shown the door.
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {30}, {20}));
     EXPECT_EQ(cache._remove_count, 1);
 }
 
