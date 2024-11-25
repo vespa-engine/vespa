@@ -21,16 +21,16 @@ final class TensorAddressAnyN extends TensorAddressAny {
         this.labels = labels;
     }
 
-    @Override public int size() {
-        return labels.length;
+    @Override public int size() { 
+        return labels.length; 
     }
 
     @Override
     public Label objectLabel(int i) {
-        if (i < 0 || i >= size())
+        if (i < 0 || i >= size()) 
             throw new IndexOutOfBoundsException("Index is not in [0," + (size() - 1) + "]: " + i);
-
-        return labels[i];
+        
+        return labels[i]; 
     }
 
     @Override
