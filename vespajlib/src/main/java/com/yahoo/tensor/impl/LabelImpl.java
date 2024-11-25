@@ -6,13 +6,13 @@ import com.yahoo.tensor.Tensor;
 
 /**
  * {@link Label} implementation used by {@link LabelCache}.
- *
+ * 
  * @author glebashnik
  */
 class LabelImpl implements Label {
     private final long numeric;
     private final String string;
-
+    
     LabelImpl(long numeric) {
         this.numeric = numeric;
         this.string = null;
@@ -33,12 +33,12 @@ class LabelImpl implements Label {
         if (numeric == Tensor.invalidIndex) {
             return null;
         }
-
+        
         // String label for indexed dimension are created at runtime to reduce memory usage.
         if (string == null) {
             return String.valueOf(numeric);
         }
-
+        
         return string;
     }
 
@@ -54,7 +54,7 @@ class LabelImpl implements Label {
         var label = (LabelImpl) object;
         return isEqualTo(label);
     }
-
+    
     @Override
     public int hashCode() {
         return Long.hashCode(numeric);

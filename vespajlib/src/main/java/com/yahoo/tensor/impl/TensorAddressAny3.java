@@ -5,10 +5,6 @@ package com.yahoo.tensor.impl;
 import com.yahoo.tensor.Label;
 import com.yahoo.tensor.TensorAddress;
 
-import java.util.Objects;
-
-import static java.lang.Math.abs;
-
 /**
  * A three-dimensional address.
  *

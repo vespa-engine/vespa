@@ -7,8 +7,6 @@ import com.yahoo.tensor.TensorAddress;
 
 import java.util.Arrays;
 
-import static java.lang.Math.abs;
-
 /**
  * An n-dimensional address.
  *
