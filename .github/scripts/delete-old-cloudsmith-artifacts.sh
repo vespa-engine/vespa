@@ -54,15 +54,16 @@ done
 
 echo
 if [[ "${GITHUB_EVENT_NAME}" == "schedule" || "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-    printf '\033[1;33mDeleting the following RPMs:\033[0m\n\n' "${RPMS_TO_DELETE}"
+    printf '\033[1;33mDeleting RPMs packages:\033[0m\n\n'
 
     while IFS= read -r RPMID
     do
+      printf '\033[0;33m- %s\033[0m\n' "${RPMID}"
       curl --silent --show-error --location --fail \
         --request DELETE \
         --header "X-Api-Key: ${CLOUDSMITH_API_TOKEN}" \
         --header "accept: application/json" \
-        "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/${RPMID}/"
+        "https://api.cloudsmith.io/v1/packages/vespa/open-source-rpms/${RPMID}/" || true # Continue on error
     done < "${RPMS_TO_DELETE}"
 else
     printf '\033[1;32m#### Dry-run mode ####\033[0m\n'
