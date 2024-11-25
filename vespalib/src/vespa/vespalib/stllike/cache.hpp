@@ -88,6 +88,9 @@ cache<P>::SizeConstrainedLru::evict_all() {
     // There's no `clear()` on lrucache_map, so do it the hard way.
     auto iter = Lru::begin();
     while (iter != Lru::end()) {
+        // Entries will not be transitioned out of the cache via the probationary segment,
+        // so invoke the removal callback directly.
+        _owner.onRemove(iter.key());
         iter = Lru::erase(iter); // This does _not_ invoke `removeOldest()`
     }
     set_size_bytes(0);

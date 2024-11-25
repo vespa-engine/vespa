@@ -144,8 +144,8 @@ TEST_F(CacheTest, overflow_can_remove_multiple_elements) {
 
 class ExtendedCache : public cache<CacheParam<P, B>> {
 public:
-    ExtendedCache(BackingStore& b, size_t maxBytes)
-        : cache(b, maxBytes),
+    ExtendedCache(BackingStore& b, size_t max_bytes, size_t max_protected_bytes = 0)
+        : cache(b, max_bytes, max_protected_bytes),
           _insert_count(0),
           _remove_count(0)
     {}
@@ -445,6 +445,17 @@ TEST_F(SlruCacheTest, assigning_zero_capacity_of_protected_segment_evicts_all_se
     EXPECT_EQ(cache.read(10), "foo");
     EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 0, 1)); // key 10 now moved to protected
     EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 0, 90));
+}
+
+TEST_F(SlruCacheTest, evicting_protected_segment_invokes_remove_callback) {
+    ExtendedCache cache(m, -1, -1);
+    cache.write(10, "foo");
+    EXPECT_EQ(cache.read(10), "foo"); // ==> protected
+    EXPECT_EQ(cache._insert_count, 1);
+    EXPECT_EQ(cache._remove_count, 0);
+    cache.setCapacityBytes(-1, 0);
+    EXPECT_EQ(cache._insert_count, 1);
+    EXPECT_EQ(cache._remove_count, 1);
 }
 
 TEST_F(SlruCacheTest, accessing_element_in_protected_segment_moves_to_segment_head) {
