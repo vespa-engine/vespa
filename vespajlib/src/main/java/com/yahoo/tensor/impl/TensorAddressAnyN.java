@@ -40,13 +40,12 @@ final class TensorAddressAnyN extends TensorAddressAny {
         return new TensorAddressAnyN(copy);
     }
 
-    // Same as Arrays.hashCode(labels) but labels are iterated in reverse order. 
-    // The order of labels is important - it has a big impact on the performance of mapped tensors in a dot product.
+    // Same as Arrays.hashCode(labels) but without null checks.
     @Override public int hashCode() {
         int result = 1;
 
-        for (int i = labels.length - 1; i >= 0; i--)
-            result = 31 * result +  labels[i].hashCode();
+        for (var label : labels)
+            result = 31 * result + label.hashCode();
 
         return result;
      }

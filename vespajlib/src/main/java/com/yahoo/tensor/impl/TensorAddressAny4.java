@@ -44,15 +44,14 @@ final class TensorAddressAny4 extends TensorAddressAny {
         };
     }
 
-    // Same as Objects.hash(label1, label0) but a little faster since it avoids creating an array, loop and null checks.
-    // The order of labels is important - it has a big impact on the performance of mapped tensors in a dot product.
+    // Same as Objects.hash(...) but a little faster since it avoids creating an array, loop and null checks.
     @Override
     public int hashCode() {
-        return 31 * 31 * 31 * 31 
-                + 31 * 31 * 31 * label3.hashCode() 
-                + 31 * 31 * label2.hashCode() 
-                + 31 * label1.hashCode() 
-                + label0.hashCode();
+        return 31 * 31 * 31 * 31    
+                + 31 * 31 * 31 * label0.hashCode() 
+                + 31 * 31 * label1.hashCode() 
+                + 31 * label2.hashCode() 
+                + label3.hashCode();
     }
 
     @Override
