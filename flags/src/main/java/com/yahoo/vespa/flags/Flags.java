@@ -48,14 +48,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundIntFlag CLEAR_CONNTRACK = defineIntFlag(
-            "clear-conntrack", 3,
-            List.of("hakonhall"), "2024-10-28", "2024-11-28",
-            "Clear the conntrack table:" +
-            " bit 0: after NAT/NPT rules changes." +
-            " bit 1: after WireGuard changes.",
-            "See description");
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
