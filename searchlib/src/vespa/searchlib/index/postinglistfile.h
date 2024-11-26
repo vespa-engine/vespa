@@ -2,6 +2,7 @@
 #pragma once
 
 #include "dictionary_lookup_result.h"
+#include "posting_list_file_range.h"
 #include "postinglistcounts.h"
 #include "postinglisthandle.h"
 #include <vespa/searchlib/common/tunefileinfo.h>
@@ -167,6 +168,8 @@ public:
     virtual void consider_trim_posting_list(const DictionaryLookupResult &lookup_result, PostingListHandle &handle,
                                             double bloat_factor) const = 0;
 
+    virtual PostingListFileRange get_posting_list_file_range(const DictionaryLookupResult& lookup_result) const = 0;
+
     /**
      * Open posting list file for random read.
      */
@@ -206,6 +209,7 @@ public:
     PostingListHandle read_posting_list(const DictionaryLookupResult& lookup_result) override;
     void consider_trim_posting_list(const DictionaryLookupResult &lookup_result, PostingListHandle &handle,
                                     double bloat_factor) const override;
+    PostingListFileRange get_posting_list_file_range(const DictionaryLookupResult& lookup_result) const override;
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;

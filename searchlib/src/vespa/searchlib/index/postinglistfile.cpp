@@ -117,6 +117,12 @@ PostingListFileRandReadPassThrough::consider_trim_posting_list(const DictionaryL
     return _lower->consider_trim_posting_list(lookup_result, handle, bloat_factor);
 }
 
+PostingListFileRange
+PostingListFileRandReadPassThrough::get_posting_list_file_range(const DictionaryLookupResult& lookup_result) const
+{
+    return _lower->get_posting_list_file_range(lookup_result);
+}
+
 bool
 PostingListFileRandReadPassThrough::open(const std::string &name,
         const TuneFileRandRead &tuneFileRead)

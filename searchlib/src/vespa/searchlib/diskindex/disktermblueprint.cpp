@@ -61,14 +61,45 @@ DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
 }
 
 void
+DiskTermBlueprint::log_bitvector_read() const
+{
+    auto range = _field_index.get_bitvector_file_range(_bitvector_lookup_result);
+    LOG(debug, "DiskTermBlueprint::fetchPosting "
+        "bitvector %s %s %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu32 " %" PRIu64 " %" PRIu64,
+        _field.getName().c_str(), _query_term.c_str(), _field_index.get_file_id(),
+        _lookupRes.wordNum, _lookupRes.counts._numDocs,
+        _bitvector_lookup_result.idx,
+        range.start_offset, range.size());
+
+}
+
+void
+DiskTermBlueprint::log_posting_list_read() const
+{
+    auto range = _field_index.get_posting_list_file_range(_lookupRes);
+    LOG(debug, "DiskTermBlueprint::fetchPosting "
+        "posting %s %s %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64,
+        _field.getName().c_str(), _query_term.c_str(), _field_index.get_file_id(),
+        _lookupRes.wordNum, _lookupRes.counts._numDocs,
+        _lookupRes.bitOffset, _lookupRes.counts._bitLength,
+        range.start_offset, range.size());
+}
+
+void
 DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
     (void) execInfo;
     if (!_fetchPostingsDone) {
         if (_useBitVector && _bitvector_lookup_result.valid()) {
+            if (LOG_WOULD_LOG(debug)) {
+                log_bitvector_read();
+            }
             _bitVector = _field_index.read_bit_vector(_bitvector_lookup_result);
         }
         if (!_bitVector) {
+            if (LOG_WOULD_LOG(debug)) {
+                log_posting_list_read();
+            }
             _postingHandle = _field_index.read_posting_list(_lookupRes);
         }
     }
@@ -90,6 +121,9 @@ DiskTermBlueprint::get_bitvector() const
     }
     std::lock_guard guard(_mutex);
     if (!_late_bitvector) {
+        if (LOG_WOULD_LOG(debug)) {
+            log_bitvector_read();
+        }
         _late_bitvector = _field_index.read_bit_vector(_bitvector_lookup_result);
         assert(_late_bitvector);
     }
