@@ -80,6 +80,9 @@ public class TensorAddressTestCase {
         equal(ofLabels("b", "d", "c"), abcd.partialCopy(o_1_3_2));
     }
     
+    // This test was designed for a previous version of the hashCode to produce collisions, see:
+    // https://github.com/vespa-engine/vespa/blob/073cb004ce0c26da9eff4b8f4745e0174bc85424/vespajlib/src/main/java/com/yahoo/tensor/impl/TensorAddressAnyN.java#L45
+    // Current implementation of the hashCode shouldn't produce collisions for this test.
     @Test
     void testHashCodeForLowEntropy() {
         var e = TensorAddress.ofLabels("1", "4", "5", "6", "x", "y", "z");
