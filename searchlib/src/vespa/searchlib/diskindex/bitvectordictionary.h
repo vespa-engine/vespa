@@ -3,6 +3,7 @@
 
 #include "bitvectorkeyscope.h"
 #include <vespa/searchlib/index/bitvector_dictionary_lookup_result.h>
+#include <vespa/searchlib/index/posting_list_file_range.h>
 #include <vespa/searchlib/index/bitvectorkeys.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <string>
@@ -70,6 +71,7 @@ public:
     std::unique_ptr<BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result,
                                               ReadStats &read_stats);
     std::unique_ptr<BitVector> read_bitvector(index::BitVectorDictionaryLookupResult lookup_result);
+    index::PostingListFileRange get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const;
 
     uint32_t getDocIdLimit() const noexcept { return _docIdLimit; }
 

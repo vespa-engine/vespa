@@ -24,6 +24,7 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     using DiskPostingFile = index::PostingListFileRandRead;
     using DiskPostingFileReal = Zc4PosOccRandRead;
     using DiskPostingFileDynamicKReal = ZcPosOccRandRead;
+    using PostingListFileRange = index::PostingListFileRange;
 
     class LockedFieldIndexIoStats {
         FieldIndexIoStats _stats;
@@ -76,10 +77,16 @@ public:
                                                         bool trim) const;
     index::PostingListHandle read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const override;
     index::PostingListHandle read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
+    PostingListFileRange get_posting_list_file_range(const search::index::DictionaryLookupResult& lookup_result) const {
+        return _posting_file->get_posting_list_file_range(lookup_result);
+    }
     index::BitVectorDictionaryLookupResult lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
     std::shared_ptr<BitVector> read_uncached_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
     std::shared_ptr<BitVector> read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const override;
     std::shared_ptr<BitVector> read_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
+    PostingListFileRange get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const {
+        return _bit_vector_dict->get_bitvector_file_range(lookup_result);
+    }
     std::unique_ptr<search::queryeval::SearchIterator> create_iterator(const search::index::DictionaryLookupResult& lookup_result,
                                                                        const index::PostingListHandle& handle,
                                                                        const search::fef::TermFieldMatchDataArray& tfmda) const;
@@ -87,6 +94,7 @@ public:
 
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
     FieldIndexStats get_stats(bool clear_disk_io_stats) const;
+    uint64_t get_file_id() const noexcept { return _file_id; }
     uint32_t get_field_id() const noexcept { return _field_id; }
     bool is_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
 };

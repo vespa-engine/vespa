@@ -20,8 +20,10 @@ using search::bitcompression::EGPosOccDecodeContext;
 using search::bitcompression::EGPosOccDecodeContextCooked;
 using search::bitcompression::PosOccFieldsParams;
 using search::bitcompression::FeatureDecodeContext;
+using search::index::DictionaryLookupResult;
 using search::index::FieldLengthInfo;
 using search::index::PostingListCounts;
+using search::index::PostingListFileRange;
 using search::index::PostingListHandle;
 using search::ComprFileReadContext;
 
@@ -30,6 +32,17 @@ namespace {
 std::string myId4("Zc.4");
 std::string myId5("Zc.5");
 std::string interleaved_features("interleaved_features");
+
+PostingListFileRange get_file_range(const DictionaryLookupResult& lookup_result, uint64_t header_bit_size)
+{
+    uint64_t start_offset = (lookup_result.bitOffset + header_bit_size) >> 3;
+    // Align start at 64-bit boundary
+    start_offset -= (start_offset & 7);
+    uint64_t end_offset = (lookup_result.bitOffset + header_bit_size + lookup_result.counts._bitLength + 7) >> 3;
+    // Align end at 64-bit boundary
+    end_offset += (-end_offset & 7);
+    return {start_offset, end_offset};
+}
 
 }
 
@@ -91,25 +104,18 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
         return handle;
     }
 
-    uint64_t startOffset = (lookup_result.bitOffset + _headerBitSize) >> 3;
-    // Align start at 64-bit boundary
-    startOffset -= (startOffset & 7);
-    uint64_t endOffset = (lookup_result.bitOffset + _headerBitSize +
-                          lookup_result.counts._bitLength + 7) >> 3;
-    // Align end at 64-bit boundary
-    endOffset += (-endOffset & 7);
-
-    void *mapPtr = _file->MemoryMapPtr(startOffset);
+    auto file_range = get_file_range(lookup_result, _headerBitSize);
+    void *mapPtr = _file->MemoryMapPtr(file_range.start_offset);
     if (mapPtr != nullptr) {
         handle._mem = mapPtr;
-        size_t pad_before = startOffset - vespalib::round_down_to_page_boundary(startOffset);
-        handle._read_bytes = vespalib::round_up_to_page_size(pad_before + endOffset - startOffset + decode_prefetch_size);
+        size_t pad_before = file_range.start_offset - vespalib::round_down_to_page_boundary(file_range.start_offset);
+        handle._read_bytes = vespalib::round_up_to_page_size(pad_before + file_range.size() + decode_prefetch_size);
     } else {
-        uint64_t vectorLen = endOffset - startOffset;
+        uint64_t vectorLen = file_range.size();
         size_t padBefore;
         size_t padAfter;
         size_t padExtraAfter;       // Decode prefetch space
-        _file->DirectIOPadding(startOffset, vectorLen, padBefore, padAfter);
+        _file->DirectIOPadding(file_range.start_offset, vectorLen, padBefore, padAfter);
         padExtraAfter = 0;
         if (padAfter < decode_prefetch_size) {
             padExtraAfter = decode_prefetch_size - padAfter;
@@ -120,10 +126,10 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
         if (mallocLen > 0) {
             alignedBuffer = _file->AllocateDirectIOBuffer(mallocLen);
             assert(alignedBuffer != nullptr);
-            assert(endOffset + padAfter + padExtraAfter <= _fileSize);
+            assert(file_range.end_offset + padAfter + padExtraAfter <= _fileSize);
             _file->ReadBuf(alignedBuffer,
                            padBefore + vectorLen + padAfter,
-                           startOffset - padBefore);
+                           file_range.start_offset - padBefore);
         }
         // Zero decode prefetch memory to avoid uninitialized reads
         if (padExtraAfter > 0) {
@@ -136,7 +142,7 @@ ZcPosOccRandRead::read_posting_list(const DictionaryLookupResult& lookup_result)
         handle._allocSize = mallocLen;
         handle._read_bytes = padBefore + vectorLen + padAfter;
     }
-    handle._bitOffsetMem = (startOffset << 3) - _headerBitSize;
+    handle._bitOffsetMem = (file_range.start_offset << 3) - _headerBitSize;
     return handle;
 }
 
@@ -147,14 +153,8 @@ ZcPosOccRandRead::consider_trim_posting_list(const DictionaryLookupResult &looku
     if (lookup_result.counts._bitLength == 0 || _memoryMapped) {
         return;
     }
-    uint64_t start_offset = (lookup_result.bitOffset + _headerBitSize) >> 3;
-    // Align start at 64-bit boundary
-    start_offset -= (start_offset & 7);
-    uint64_t end_offset = (lookup_result.bitOffset + _headerBitSize +
-                           lookup_result.counts._bitLength + 7) >> 3;
-    // Align end at 64-bit boundary
-    end_offset += (-end_offset & 7);
-    size_t malloc_len = end_offset - start_offset + decode_prefetch_size;
+    auto file_range = get_file_range(lookup_result, _headerBitSize);
+    size_t malloc_len = file_range.size() + decode_prefetch_size;
     if (handle._allocSize == malloc_len) {
         assert(handle._allocMem.get() == handle._mem);
         return;
@@ -169,7 +169,16 @@ ZcPosOccRandRead::consider_trim_posting_list(const DictionaryLookupResult &looku
     handle._allocMem = std::shared_ptr<void>(mem, free);
     handle._mem = mem;
     handle._allocSize = malloc_len;
-    handle._read_bytes = end_offset - start_offset;
+    handle._read_bytes = file_range.size();
+}
+
+PostingListFileRange
+ZcPosOccRandRead::get_posting_list_file_range(const DictionaryLookupResult& lookup_result) const
+{
+    if (lookup_result.counts._bitLength == 0) {
+        return {0, 0};
+    }
+    return get_file_range(lookup_result, _headerBitSize);
 }
 
 bool

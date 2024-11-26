@@ -26,6 +26,8 @@ private:
     mutable std::shared_ptr<BitVector> _late_bitvector;
 
     const BitVector* get_bitvector() const;
+    void log_bitvector_read() const __attribute__((noinline));
+    void log_posting_list_read() const __attribute__((noinline));
 public:
     /**
      * Create a new blueprint.
