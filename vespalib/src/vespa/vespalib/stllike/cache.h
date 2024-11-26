@@ -106,12 +106,18 @@ class cache {
         [[nodiscard]] bool has_key(const KeyT& key) const noexcept;
         // Precondition: key does not already exist in the mapping
         void insert_and_update_size(const KeyT& key, ValueT value);
-        // Precondition: key must exist in the mapping
-        void erase_and_update_size(const KeyT& key);
-        void replace_and_update_size(const KeyT& key, ValueT value);
         // Fetches an existing key from the cache _without_ updating the LRU ordering.
         [[nodiscard]] const typename P::Value& get_existing(const KeyT& key) const;
 
+        // Returns true iff `key` existed in the mapping prior to the call, which also
+        // implies the mapping has been updated by consuming `value` (i.e. its contents
+        // has been std::move()'d away and it is now in a logically empty state).
+        // Otherwise, both the mapping and `value` remains unmodified and false is returned.
+        [[nodiscard]] bool try_replace_and_update_size(const KeyT& key, ValueT& value);
+        // Iff `key` was present in the mapping prior to the call, its entry is removed
+        // from the mapping and true is returned. Otherwise, the mapping remains unmodified
+        // and false is returned.
+        [[nodiscard]] bool try_erase_and_update_size(const KeyT& key);
         // Iff element exists in cache, assigns `val_out` the stored value and returns true.
         // This also updates the underlying LRU order.
         // Otherwise, `val_out` is not modified and false is returned.

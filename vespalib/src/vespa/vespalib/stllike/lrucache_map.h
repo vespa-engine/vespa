@@ -43,7 +43,6 @@ struct LruParam
 template< typename P >
 class lrucache_map : private P::HashTable
 {
-private:
     using HashTable = typename P::HashTable;
     using V = typename P::Value;
     using K = typename P::Key;
@@ -105,11 +104,11 @@ public:
     }
 
 
-    size_t capacity()                  const { return _maxElements.load(std::memory_order_relaxed); }
-    size_t size()                      const { return HashTable::size(); }
-    bool empty()                       const { return HashTable::empty(); }
-    iterator begin()                         { return iterator(this, _head); }
-    iterator end()                           { return iterator(this, LinkedValueBase::npos); }
+    [[nodiscard]] size_t capacity() const noexcept { return _maxElements.load(std::memory_order_relaxed); }
+    [[nodiscard]] size_t size()     const noexcept { return HashTable::size(); }
+    [[nodiscard]] bool empty()      const noexcept { return HashTable::empty(); }
+    [[nodiscard]] iterator begin()        noexcept { return iterator(this, _head); }
+    [[nodiscard]] iterator end()          noexcept { return iterator(this, LinkedValueBase::npos); }
 
     /**
      * This fetches the object without modifying the lru list.
@@ -155,6 +154,12 @@ public:
     [[nodiscard]] V* find_and_lazy_ref(const K& key);
 
     /**
+     * Returns an iterator to the element with the given key iff it exists, without
+     * updating the LRU. Otherwise returns end().
+     */
+    [[nodiscard]] iterator find_no_ref(const K& key);
+
+    /**
      * Return the object with the given key. If it does not exist an empty one will be created.
      * This can be used as an insert.
      * Object is then put at head of LRU list.
@@ -165,7 +170,7 @@ public:
      * Tell if an object with given key exists in the cache.
      * Does not alter the LRU list.
      */
-    bool hasKey(const K & key) const __attribute__((noinline));
+    [[nodiscard]] bool hasKey(const K & key) const __attribute__((noinline));
 
     /**
      * Called when an object is inserted, to see if the LRU should be removed.
@@ -203,8 +208,8 @@ private:
     public:
         RecordMoves(const RecordMoves &) = delete;
         RecordMoves & operator = (const RecordMoves &) = delete;
-        RecordMoves(lrucache_map & lru) :
-            _lru(lru)
+        RecordMoves(lrucache_map & lru) noexcept
+            : _lru(lru)
         {
             _lru._moveRecordingEnabled = true;
         }

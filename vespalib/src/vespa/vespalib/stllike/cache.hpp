@@ -50,19 +50,29 @@ cache<P>::SizeConstrainedLru::insert_and_update_size(const KeyT& key, ValueT val
 }
 
 template <typename P>
-void
-cache<P>::SizeConstrainedLru::erase_and_update_size(const KeyT& key) {
-    sub_size_bytes(_owner.calcSize(key, Lru::get(key)));
-    Lru::erase(key);
+bool
+cache<P>::SizeConstrainedLru::try_replace_and_update_size(const KeyT& key, ValueT& value) {
+    auto* maybe_existing = Lru::find_and_ref(key); // Bump to LRU head iff already existing
+    if (maybe_existing) {
+        const auto new_kv_size = _owner.calcSize(key, value);
+        sub_size_bytes(_owner.calcSize(key, *maybe_existing));
+        add_size_bytes(new_kv_size);
+        *maybe_existing = std::move(value);
+        return true;
+    }
+    return false;
 }
 
 template <typename P>
-void
-cache<P>::SizeConstrainedLru::replace_and_update_size(const KeyT& key, ValueT value) {
-    const auto kv_size = _owner.calcSize(key, value);
-    sub_size_bytes(_owner.calcSize(key, Lru::get(key))); // get() does not update LRU
-    add_size_bytes(kv_size);
-    (*this)[key] = std::move(value); // operator[] _does_ update LRU; `key` will be placed at head
+bool
+cache<P>::SizeConstrainedLru::try_erase_and_update_size(const KeyT& key) {
+    auto iter = Lru::find_no_ref(key);
+    if (iter != Lru::end()) {
+        sub_size_bytes(_owner.calcSize(key, *iter)); // Must be prior to erase()!
+        Lru::erase(iter);
+        return true;
+    }
+    return false;
 }
 
 template <typename P>
@@ -298,7 +308,8 @@ cache<P>::try_fill_from_cache(const K& key, V& val_out) {
     if (_probationary_segment.try_get_and_ref(key, val_out)) {
         if (multi_segment()) {
             // Hit on probationary item; move to protected segment
-            _probationary_segment.erase_and_update_size(key);
+            const bool erased = _probationary_segment.try_erase_and_update_size(key);
+            assert(erased);
             _protected_segment.insert_and_update_size(key, val_out);
         }
         return true;
@@ -316,12 +327,11 @@ cache<P>::write(const K& key, V value)
     _store.write(key, value);
     {
         std::lock_guard guard(_hashLock);
-        if (_probationary_segment.has_key(key)) {
+        // Important: `try_replace_and_update_size()` consumes `value` if replacing took place
+        if (_probationary_segment.try_replace_and_update_size(key, value)) {
             increment_stat(_update, guard);
-            _probationary_segment.replace_and_update_size(key, std::move(value));
-        } else if (multi_segment() && _protected_segment.has_key(key)) {
+        } else if (multi_segment() && _protected_segment.try_replace_and_update_size(key, value)) {
             increment_stat(_update, guard);
-            _protected_segment.replace_and_update_size(key, std::move(value));
         } else {
             // Always insert into probationary first
             _probationary_segment.insert_and_update_size(key, std::move(value));
@@ -345,14 +355,10 @@ void
 cache<P>::invalidate(const UniqueLock& guard, const K& key)
 {
     verifyHashLock(guard);
-    // TODO lrucache_map should have a `bool erase(key)` function so that we could
-    //  do this in one lookup instead of two...
-    if (_probationary_segment.has_key(key)) {
-        _probationary_segment.erase_and_update_size(key);
-    } else if (multi_segment() && _protected_segment.has_key(key)) {
-        _protected_segment.erase_and_update_size(key);
-    } else {
-        return;
+    if (!(_probationary_segment.try_erase_and_update_size(key) ||
+         (multi_segment() && _protected_segment.try_erase_and_update_size(key))))
+    {
+        return; // No cache entry found for `key`
     }
     onRemove(key); // Not transitively invoked by erase_and_update_size()
     increment_stat(_invalidate, guard);
