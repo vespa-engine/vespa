@@ -13,7 +13,7 @@ import com.yahoo.tensor.Tensor;
  * @author glebashnik
  */
 class LabelImpl implements Label {
-    // Using caching function with avalanche effect to avoid too many hash bucket collisions.
+    // Hash function with avalanche effect to avoid too many hash bucket collisions.
     private static final HashFunction hashFunction = Hashing.murmur3_32_fixed();
     
     private final long numeric;
