@@ -75,8 +75,6 @@ This command runs a browser-based authentication flow for the Vespa Cloud contro
 				return fmt.Errorf("login error: %w", err)
 			}
 
-			cli.printSuccess("Logged in")
-
 			// store the refresh token
 			secretsStore := &auth.Keyring{}
 			err = secretsStore.Set(auth.SecretsNamespace, system.Name, res.RefreshToken)
@@ -93,7 +91,9 @@ This command runs a browser-based authentication flow for the Vespa Cloud contro
 			if err := a.WriteCredentials(creds); err != nil {
 				return fmt.Errorf("failed to write credentials: %w", err)
 			}
-			return err
+
+			cli.printSuccess("Logged in")
+			return nil
 		},
 	}
 }
