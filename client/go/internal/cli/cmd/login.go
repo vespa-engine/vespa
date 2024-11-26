@@ -72,10 +72,15 @@ This command runs a browser-based authentication flow for the Vespa Cloud contro
 			})
 
 			if err != nil {
-				return fmt.Errorf("login error: %w", err)
+				switch err.Error() {
+				case "600":
+					return errHint(fmt.Errorf("Unable to login through social channels"),
+						"Your organization does not allow logging in through our social channels",
+						"Please login by entering your address into the email field")
+				default:
+					return fmt.Errorf("login error: %w", err)
+				}
 			}
-
-			cli.printSuccess("Logged in")
 
 			// store the refresh token
 			secretsStore := &auth.Keyring{}
@@ -93,7 +98,9 @@ This command runs a browser-based authentication flow for the Vespa Cloud contro
 			if err := a.WriteCredentials(creds); err != nil {
 				return fmt.Errorf("failed to write credentials: %w", err)
 			}
-			return err
+
+			cli.printSuccess("Logged in")
+			return nil
 		},
 	}
 }
