@@ -91,13 +91,13 @@ DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
     (void) execInfo;
     if (!_fetchPostingsDone) {
         if (_useBitVector && _bitvector_lookup_result.valid()) {
-            if (LOG_WOULD_LOG(debug)) {
+            if (LOG_WOULD_LOG(debug)) [[unlikely]] {
                 log_bitvector_read();
             }
             _bitVector = _field_index.read_bit_vector(_bitvector_lookup_result);
         }
         if (!_bitVector) {
-            if (LOG_WOULD_LOG(debug)) {
+            if (LOG_WOULD_LOG(debug)) [[unlikely]] {
                 log_posting_list_read();
             }
             _postingHandle = _field_index.read_posting_list(_lookupRes);
@@ -121,7 +121,7 @@ DiskTermBlueprint::get_bitvector() const
     }
     std::lock_guard guard(_mutex);
     if (!_late_bitvector) {
-        if (LOG_WOULD_LOG(debug)) {
+        if (LOG_WOULD_LOG(debug)) [[unlikely]] {
             log_bitvector_read();
         }
         _late_bitvector = _field_index.read_bit_vector(_bitvector_lookup_result);
