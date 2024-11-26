@@ -26,7 +26,10 @@ RPCServicePool::resolve(const string &pattern)
     {
         LockGuard guard(_lock);
         handleMirrorUpdates(guard);
-        std::shared_ptr<RPCService> *found = _lru->findAndRef(pattern);
+        // The address pool has a capacity of 4K and is likely to contain many fewer elements
+        // than this; use lazy findAndRef which only updates the LRU if the cache is more than
+        // 50% full. Prevents LRU reordering in the common case.
+        std::shared_ptr<RPCService> *found = _lru->find_and_lazy_ref(pattern);
         if (found) {
             service = *found;
         }

@@ -75,6 +75,10 @@ public:
         }
         bool operator==(const iterator& rhs) const { return (_current == rhs._current); }
         bool operator!=(const iterator& rhs) const { return (_current != rhs._current); }
+
+        [[nodiscard]] const K& key() const noexcept {
+            return _cache->getByInternalIndex(_current).first;
+        }
     private:
         lrucache_map * _cache;
         uint32_t _current;
@@ -86,7 +90,7 @@ public:
      * Will create a lrucache with max elements. Use the chained setter
      * @ref reserve to control initial size.
      *
-     * @param maxElements in cache unless you override @ref removeOldest.
+     * @param maxElems in cache unless you override @ref removeOldest.
      */
     lrucache_map(size_t maxElems);
     virtual ~lrucache_map();
@@ -139,7 +143,16 @@ public:
      * Object is then put at head of LRU list if found.
      * If not found nullptr is returned.
      */
-    V * findAndRef(const K & key);
+    [[nodiscard]] V* find_and_ref(const K& key);
+
+    /**
+     * Return pointer to the object with the given key. Object is then put at
+     * head of LRU list if found and the size of the cache is more than half
+     * its capacity. Otherwise, the LRU is not updated.
+     *
+     * If not found nullptr is returned.
+     */
+    [[nodiscard]] V* find_and_lazy_ref(const K& key);
 
     /**
      * Return the object with the given key. If it does not exist an empty one will be created.
@@ -165,7 +178,7 @@ public:
     virtual void onInsert(const K & key);
 
     /**
-     * Method for testing that internal consitency is good.
+     * Method for testing that internal consistency is good.
      */
     bool verifyInternals();
 
