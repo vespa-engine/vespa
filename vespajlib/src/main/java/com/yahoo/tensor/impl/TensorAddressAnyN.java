@@ -7,8 +7,6 @@ import com.yahoo.tensor.TensorAddress;
 
 import java.util.Arrays;
 
-import static java.lang.Math.abs;
-
 /**
  * An n-dimensional address.
  *
@@ -42,13 +40,15 @@ final class TensorAddressAnyN extends TensorAddressAny {
         return new TensorAddressAnyN(copy);
     }
 
+    // Same as Arrays.hashCode(labels) but without null checks.
     @Override public int hashCode() {
-        long hash = abs(labels[0].asNumeric());
-        for (int i = 0; i < size(); i++) {
-            hash = hash | (abs(labels[i].asNumeric()) << (32 - Long.numberOfLeadingZeros(hash)));
-        }
-        return (int) hash;
-    }
+        int result = 1;
+
+        for (var label : labels)
+            result = 31 * result + label.hashCode();
+
+        return result;
+     }
 
     @Override
     public boolean equals(Object o) {
