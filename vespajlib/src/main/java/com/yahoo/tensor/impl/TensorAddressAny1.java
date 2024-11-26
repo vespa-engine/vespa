@@ -30,8 +30,10 @@ final class TensorAddressAny1 extends TensorAddressAny {
         if (labelIndex == 0) return new TensorAddressAny1(LabelCache.GLOBAL.getOrCreateLabel(label));
         throw new IllegalArgumentException("No label " + labelIndex);
     }
-
-    @Override public int hashCode() { return (int)Math.abs(label.asNumeric()); }
+    
+    @Override public int hashCode() { 
+        return 31 + label.hashCode(); 
+    }
 
     @Override
     public boolean equals(Object o) {

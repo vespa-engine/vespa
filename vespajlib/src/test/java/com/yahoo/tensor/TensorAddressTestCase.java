@@ -40,8 +40,8 @@ public class TensorAddressTestCase {
     void testInEquality() {
         notEqual(ofLabels("1"), ofLabels("2"));
         notEqual(of(1), of(2));
-        notEqual(ofLabels("1"), ofLabels("01"));
         notEqual(ofLabels("0"), ofLabels("00"));
+        notEqual(ofLabels("1"), ofLabels("01"));
     }
     @Test
     void testDimensionsEffectsEqualityAndHash() {
@@ -79,5 +79,22 @@ public class TensorAddressTestCase {
         int[] o_1_3_2 = {1,3,2};
         equal(ofLabels("b", "d", "c"), abcd.partialCopy(o_1_3_2));
     }
+    
+    // This test was designed for a previous version of the hashCode to produce collisions, see:
+    // https://github.com/vespa-engine/vespa/blob/073cb004ce0c26da9eff4b8f4745e0174bc85424/vespajlib/src/main/java/com/yahoo/tensor/impl/TensorAddressAnyN.java#L45
+    // Current implementation of the hashCode shouldn't produce collisions for this test.
+    @Test
+    void testHashCodeForLowEntropy() {
+        var e = TensorAddress.ofLabels("1", "4", "5", "6", "x", "y", "z");
+        var f = TensorAddress.ofLabels("1", "4", "5", "6", "x", "y", "z");
+        assertEquals(e.hashCode(), f.hashCode());
+        
+        var a = TensorAddress.ofLabels("a", "b", "c", "d", "e", "f", "g");
+        var b = TensorAddress.ofLabels("a", "b", "c", "d", "e", "f", "g", "h", "i", "j");
+        assertNotEquals(a.hashCode(), b.hashCode());
 
+        var c = TensorAddress.ofLabels("1", "4", "5", "6", "x", "y", "z");
+        var d = TensorAddress.ofLabels("1", "3", "5", "7", "z", "b", "c", "d", "e", "f");
+        assertNotEquals(c.hashCode(), d.hashCode());
+    }
 }

@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.impl;
 
+
+import com.google.common.hash.HashFunction;
+import com.google.common.hash.Hashing;
 import com.yahoo.tensor.Label;
 import com.yahoo.tensor.Tensor;
 
@@ -10,17 +13,25 @@ import com.yahoo.tensor.Tensor;
  * @author glebashnik
  */
 class LabelImpl implements Label {
+    // Hash function with avalanche effect to avoid too many hash bucket collisions.
+    private static final HashFunction hashFunction = Hashing.murmur3_32_fixed();
+    
     private final long numeric;
     private final String string;
+    
+    // Caching the hash code to avoid recalculating it when cached labels are reused in multiple tensors.
+    private final int hashCode;
     
     LabelImpl(long numeric) {
         this.numeric = numeric;
         this.string = null;
+        this.hashCode = hashFunction.hashLong(numeric).asInt();
     }
 
     LabelImpl(long numeric, String string) {
         this.numeric = numeric;
         this.string = string;
+        this.hashCode = hashFunction.hashLong(numeric).asInt();
     }
 
     @Override
@@ -57,6 +68,6 @@ class LabelImpl implements Label {
     
     @Override
     public int hashCode() {
-        return Long.hashCode(numeric);
+        return hashCode;
     }
 }

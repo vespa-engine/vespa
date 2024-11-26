@@ -5,8 +5,6 @@ package com.yahoo.tensor.impl;
 import com.yahoo.tensor.Label;
 import com.yahoo.tensor.TensorAddress;
 
-import static java.lang.Math.abs;
-
 /**
  * A three-dimensional address.
  *
@@ -43,12 +41,13 @@ final class TensorAddressAny3 extends TensorAddressAny {
         };
     }
 
+    // Same as Objects.hash(...) but a little faster since it avoids creating an array, loop and null checks.
     @Override
     public int hashCode() {
-        long hash =  abs(label0.asNumeric()) |
-                (abs(label1.asNumeric()) << (64 - Long.numberOfLeadingZeros(abs(label0.asNumeric())))) |
-                (abs(label2.asNumeric()) << (2*64 - (Long.numberOfLeadingZeros(abs(label0.asNumeric())) + Long.numberOfLeadingZeros(abs(label1.asNumeric())))));
-        return (int) hash;
+        return 31 * 31 * 31 
+                + 31 * 31 * label0.hashCode() 
+                + 31 * label1.hashCode() 
+                + label2.hashCode();
     }
 
     @Override
