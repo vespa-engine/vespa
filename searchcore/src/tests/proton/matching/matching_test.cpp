@@ -1288,8 +1288,8 @@ struct AttributeBlueprintParamsFixture {
        rank_properties.add(FuzzyAlgorithm::NAME, fuzzy_matching_algorithm);
    }
    ~AttributeBlueprintParamsFixture();
-   AttributeBlueprintParams extract(uint32_t active_docids = 9, uint32_t docid_limit = 10) const {
-       return MatchToolsFactory::extract_attribute_blueprint_params(rank_setup, rank_properties, active_docids, docid_limit);
+   CreateBlueprintParams extract(uint32_t active_docids = 9, uint32_t docid_limit = 10) const {
+       return MatchToolsFactory::extract_create_blueprint_params(rank_setup, rank_properties, active_docids, docid_limit);
    }
 };
 

@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_blueprint_factory.h"
-#include "attribute_blueprint_params.h"
 #include "attribute_object_visitor.h"
 #include "attribute_weighted_set_blueprint.h"
 #include "direct_multi_term_blueprint.h"
@@ -19,6 +18,7 @@
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/queryeval/andsearchstrict.h>
+#include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
 #include <vespa/searchlib/queryeval/dot_product_blueprint.h>
 #include <vespa/searchlib/queryeval/dot_product_search.h>
@@ -74,6 +74,7 @@ using search::queryeval::AndBlueprint;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::Blueprint;
 using search::queryeval::ComplexLeafBlueprint;
+using search::queryeval::CreateBlueprintParams;
 using search::queryeval::CreateBlueprintVisitorHelper;
 using search::queryeval::DotProductBlueprint;
 using search::queryeval::FieldSpec;
@@ -621,7 +622,7 @@ public:
     template <class TermNode>
     void visitTerm(TermNode &n) {
         SearchContextParams scParams = createContextParams(_field.isFilter());
-        scParams.fuzzy_matching_algorithm(getRequestContext().get_attribute_blueprint_params().fuzzy_matching_algorithm);
+        scParams.fuzzy_matching_algorithm(getRequestContext().get_create_blueprint_params().fuzzy_matching_algorithm);
         const string stack = StackDumpCreator::create(n);
         setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack, scParams));
     }
@@ -765,7 +766,7 @@ public:
         }
         try {
             auto calc = tensor::DistanceCalculator::make_with_validation(_attr, *query_tensor);
-            const auto& params = getRequestContext().get_attribute_blueprint_params();
+            const auto& params = getRequestContext().get_create_blueprint_params();
             setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field,
                                                                             std::move(calc),
                                                                             n.get_target_num_hits(),
