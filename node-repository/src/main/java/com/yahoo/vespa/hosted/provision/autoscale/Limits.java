@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.IntRange;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
@@ -80,7 +80,8 @@ public class Limits {
     @Override
     public String toString() {
         if (isEmpty()) return "no limits";
-        return "limits: from " + min + " to " + max + ( groupSize.isEmpty() ? "" : " with group size " + groupSize);
+        return (min.equals(max) ? "resources " + min : "limits from " + min + " to " + max) +
+               (groupSize.isEmpty() ? "" : ", group size " + groupSize);
     }
 
     public static Limits of(Cluster cluster) {
