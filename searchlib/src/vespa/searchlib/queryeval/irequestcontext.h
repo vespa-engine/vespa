@@ -5,7 +5,6 @@
 #include <vespa/searchcommon/attribute/i_document_meta_store_context.h>
 #include <string>
 
-namespace search::attribute { struct AttributeBlueprintParams; }
 namespace search::attribute { class IAttributeVector; }
 namespace vespalib::eval { struct Value; }
 namespace vespalib {
@@ -14,6 +13,8 @@ namespace vespalib {
 }
 
 namespace search::queryeval {
+
+struct CreateBlueprintParams;
 
 /**
  * Provides a context that follows the life of a query.
@@ -35,7 +36,7 @@ public:
     virtual vespalib::ThreadBundle & thread_bundle() const = 0;
 
     /**
-     * Provide access to attributevectors
+     * Provide access to attribute vectors.
      * @return AttributeVector or nullptr if it does not exist.
      */
     virtual const attribute::IAttributeVector *getAttribute(std::string_view name) const = 0;
@@ -47,7 +48,7 @@ public:
      */
     virtual const vespalib::eval::Value* get_query_tensor(const std::string& tensor_name) const = 0;
 
-    virtual const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const = 0;
+    virtual const CreateBlueprintParams& get_create_blueprint_params() const = 0;
 
     virtual const MetaStoreReadGuardSP * getMetaStoreReadGuard() const = 0;
 };

@@ -113,7 +113,7 @@ class MatchToolsFactory
 private:
     using IAttributeFunctor = search::attribute::IAttributeFunctor;
     using IAttributeContext = search::attribute::IAttributeContext;
-    using AttributeBlueprintParams = search::attribute::AttributeBlueprintParams;
+    using CreateBlueprintParams = search::queryeval::CreateBlueprintParams;
     using MatchDataLayout = search::fef::MatchDataLayout;
     using Properties = search::fef::Properties;
     using RankProgram = search::fef::RankProgram;
@@ -122,7 +122,7 @@ private:
     using IDiversifier = search::queryeval::IDiversifier;
     using FirstPhaseRankLookup = search::features::FirstPhaseRankLookup;
     QueryLimiter                     & _queryLimiter;
-    AttributeBlueprintParams           _attribute_blueprint_params;
+    CreateBlueprintParams              _create_blueprint_params;
     Query                              _query;
     MaybeMatchPhaseLimiter::UP         _match_limiter;
     std::unique_ptr<RangeQueryLocator> _rangeLocator;
@@ -181,15 +181,15 @@ public:
     const StringStringMap & get_feature_rename_map() const;
 
     /**
-     * Extracts attribute blueprint parameters from the rank-profile and query.
+     * Extracts create blueprint parameters from the rank-profile and query.
      *
      * The global filter parameters are expected to be in the range [0.0, 1.0], which matches the range of the estimated hit ratio of the query.
      * When searchable-copies > 1, we must scale the parameters to match the effective range of the estimated hit ratio.
      * This is done by multiplying with the active hit ratio (active docids / docid limit).
      */
-    static AttributeBlueprintParams
-    extract_attribute_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
-                                       uint32_t active_docids, uint32_t docid_limit);
+    static CreateBlueprintParams
+    extract_create_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
+                                    uint32_t active_docids, uint32_t docid_limit);
     FirstPhaseRankLookup* get_first_phase_rank_lookup() const noexcept { return _first_phase_rank_lookup; }
     const search::IDocumentMetaStore & metaStore() const noexcept { return _metaStore; }
 };
