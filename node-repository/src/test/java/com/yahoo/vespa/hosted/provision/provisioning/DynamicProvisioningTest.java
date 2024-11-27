@@ -311,7 +311,7 @@ public class DynamicProvisioningTest {
         }
         catch (IllegalArgumentException e) {
             // Success
-            String expected = "No allocation possible within limits";
+            String expected = "No allocation possible with limits";
             assertEquals(expected, e.getMessage().substring(0, expected.length()));
         }
 
