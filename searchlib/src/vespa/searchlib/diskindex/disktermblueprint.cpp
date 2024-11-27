@@ -42,14 +42,16 @@ DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
                                      const FieldIndex& field_index,
                                      const std::string& query_term,
                                      DictionaryLookupResult lookupRes,
-                                     bool useBitVector)
+                                     bool is_filter_field,
+                                     double bitvector_limit)
     : SimpleLeafBlueprint(field),
       _field(field),
       _field_index(field_index),
       _query_term(query_term),
       _lookupRes(std::move(lookupRes)),
       _bitvector_lookup_result(_field_index.lookup_bit_vector(_lookupRes)),
-      _useBitVector(useBitVector),
+      _is_filter_field(is_filter_field),
+      _bitvector_limit(bitvector_limit),
       _fetchPostingsDone(false),
       _postingHandle(),
       _bitVector(),
@@ -90,7 +92,7 @@ DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
     (void) execInfo;
     if (!_fetchPostingsDone) {
-        if (_useBitVector && _bitvector_lookup_result.valid()) {
+        if (use_bitvector() && _bitvector_lookup_result.valid()) {
             if (LOG_WOULD_LOG(debug)) [[unlikely]] {
                 log_bitvector_read();
             }
@@ -113,6 +115,13 @@ DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
     return {rel_est, disk_index_cost(rel_est), disk_index_strict_cost(rel_est)};
 }
 
+bool
+DiskTermBlueprint::use_bitvector() const
+{
+    return _is_filter_field  ||
+        ((get_docid_limit() > 0) && ((double)_lookupRes.counts._numDocs / (double)get_docid_limit()) > _bitvector_limit);
+}
+
 const BitVector *
 DiskTermBlueprint::get_bitvector() const
 {
@@ -133,13 +142,13 @@ DiskTermBlueprint::get_bitvector() const
 SearchIterator::UP
 DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
 {
-    if (_bitvector_lookup_result.valid() && (_useBitVector || tfmda[0]->isNotNeeded())) {
+    if (_bitvector_lookup_result.valid() && (_bitVector || tfmda[0]->isNotNeeded())) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_field_index.get_field_id()).c_str(), _lookupRes.wordNum, _lookupRes.counts._numDocs);
         return BitVectorIterator::create(get_bitvector(), *tfmda[0], strict());
     }
     auto search(_field_index.create_iterator(_lookupRes, _postingHandle, tfmda));
-    if (_useBitVector) {
+    if (use_bitvector()) {
         LOG(debug, "Return BooleanMatchIteratorWrapper: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_field_index.get_field_id()).c_str(), _lookupRes.wordNum, _lookupRes.counts._numDocs);
         return std::make_unique<BooleanMatchIteratorWrapper>(std::move(search), tfmda);

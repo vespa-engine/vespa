@@ -50,6 +50,8 @@ public:
 
     const CreateBlueprintParams& get_create_blueprint_params() const override;
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
+
+    CreateBlueprintParams& get_create_blueprint_params() { return _create_blueprint_params; }
 private:
     std::unique_ptr<vespalib::TestClock> _clock;
     const vespalib::Doom _doom;
