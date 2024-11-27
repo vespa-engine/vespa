@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/eval/eval/value.h>
-#include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
-#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
+#include <vespa/searchlib/queryeval/create_blueprint_params.h>
+#include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/vespalib/util/doom.h>
 
 namespace search::fef {
@@ -27,7 +27,7 @@ public:
                    IAttributeContext& attributeContext,
                    const search::fef::IQueryEnvironment& query_env,
                    search::fef::IObjectStore& shared_store,
-                   const search::attribute::AttributeBlueprintParams& attribute_blueprint_params,
+                   const search::queryeval::CreateBlueprintParams& create_blueprint_params,
                    const MetaStoreReadGuardSP * metaStoreReadGuard);
 
     const Doom & getDoom() const override { return _doom; }
@@ -39,8 +39,8 @@ public:
 
     const vespalib::eval::Value* get_query_tensor(const std::string& tensor_name) const override;
 
-    const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const override {
-        return _attribute_blueprint_params;
+    const search::queryeval::CreateBlueprintParams& get_create_blueprint_params() const override {
+        return _create_blueprint_params;
     }
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override {
         return _metaStoreReadGuard;
@@ -52,7 +52,7 @@ private:
     IAttributeContext                           & _attributeContext;
     const search::fef::IQueryEnvironment        & _query_env;
     search::fef::IObjectStore                   & _shared_store;
-    search::attribute::AttributeBlueprintParams   _attribute_blueprint_params;
+    search::queryeval::CreateBlueprintParams      _create_blueprint_params;
     const MetaStoreReadGuardSP                  * _metaStoreReadGuard;
 };
 
