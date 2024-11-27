@@ -16,16 +16,16 @@ FakeRequestContext::FakeRequestContext(attribute::IAttributeContext * context, v
       _attributeContext(context),
       _query_tensor_name(),
       _query_tensor(),
-      _attribute_blueprint_params()
+      _create_blueprint_params()
 {
 }
 
 FakeRequestContext::~FakeRequestContext() = default;
 
-const search::attribute::AttributeBlueprintParams&
-FakeRequestContext::get_attribute_blueprint_params() const
+const CreateBlueprintParams&
+FakeRequestContext::get_create_blueprint_params() const
 {
-    return _attribute_blueprint_params;
+    return _create_blueprint_params;
 }
 
 }

@@ -5,11 +5,11 @@
 #include "same_element_builder.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
 #include <vespa/searchlib/query/tree/customtypevisitor.h>
-#include <vespa/searchlib/queryeval/leaf_blueprints.h>
-#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/equiv_blueprint.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
-#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
+#include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/vespalib/util/issue.h>
 
 using namespace search::queryeval;
@@ -71,8 +71,8 @@ private:
 
     void buildWeakAnd(ProtonWeakAnd &n) {
         auto *wand = new WeakAndBlueprint(n.getTargetNumHits(),
-                                          _requestContext.get_attribute_blueprint_params().weakand_range,
-                                          _requestContext.get_attribute_blueprint_params().weakand_stop_word_strategy,
+                                          _requestContext.get_create_blueprint_params().weakand_range,
+                                          _requestContext.get_create_blueprint_params().weakand_stop_word_strategy,
                                           is_search_multi_threaded());
         Blueprint::UP result(wand);
         for (auto node : n.getChildren()) {

@@ -4,7 +4,7 @@
 
 #include "isearchableindexcollection.h"
 #include "warmupconfig.h"
-#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
+#include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/executor.h>
 #include <vespa/vespalib/util/monitored_refcount.h>
