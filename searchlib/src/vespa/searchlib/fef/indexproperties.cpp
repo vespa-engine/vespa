@@ -458,6 +458,13 @@ double WeakAndStopWordDropLimit::lookup(const Properties &props, double defaultV
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string DiskIndexBitvectorLimit::NAME("vespa.matching.diskindex.bitvector_limit");
+const double DiskIndexBitvectorLimit::DEFAULT_VALUE(1.0);
+double DiskIndexBitvectorLimit::lookup(const Properties& props) { return lookup(props, DEFAULT_VALUE); }
+double DiskIndexBitvectorLimit::lookup(const Properties& props, double default_value) {
+    return lookupDouble(props, NAME, default_value);
+}
+
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
 
 const double TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE(20.0);

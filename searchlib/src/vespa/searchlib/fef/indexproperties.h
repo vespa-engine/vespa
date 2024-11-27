@@ -364,6 +364,17 @@ namespace matching {
     };
 
     /**
+     * Use bitvector posting list for terms searching in disk indexes that match more than this limit of the corpus.
+     * If a bitvector is not available for the term, mask the posocc posting list as a bitvector iterator.
+     **/
+    struct DiskIndexBitvectorLimit {
+        static const std::string NAME;
+        static const double DEFAULT_VALUE;
+        static double lookup(const Properties& props);
+        static double lookup(const Properties& props, double default_value);
+    };
+
+    /**
      * Property to control the algorithm using for fuzzy matching.
      **/
     struct FuzzyAlgorithm {

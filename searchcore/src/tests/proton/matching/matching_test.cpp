@@ -1262,13 +1262,13 @@ TEST_F(MatchingTest, require_that_docsum_matcher_can_extract_matching_elements_f
 
 using FMA = vespalib::FuzzyMatchingAlgorithm;
 
-struct AttributeBlueprintParamsFixture {
+struct CreateBlueprintParamsFixture {
    BlueprintFactory factory;
    search::fef::test::IndexEnvironment index_env;
    RankSetup rank_setup;
    Properties rank_properties;
-   AttributeBlueprintParamsFixture(double lower_limit, double upper_limit, double target_hits_max_adjustment_factor,
-                                   FMA fuzzy_matching_algorithm)
+   CreateBlueprintParamsFixture(double lower_limit, double upper_limit, double target_hits_max_adjustment_factor,
+                                FMA fuzzy_matching_algorithm)
        : factory(),
          index_env(),
          rank_setup(factory, index_env),
@@ -1281,44 +1281,49 @@ struct AttributeBlueprintParamsFixture {
    }
    void set_query_properties(std::string_view lower_limit, std::string_view upper_limit,
                              std::string_view target_hits_max_adjustment_factor,
-                             const std::string & fuzzy_matching_algorithm) {
+                             std::string_view fuzzy_matching_algorithm,
+                             std::string_view disk_index_bitvector_limit) {
        rank_properties.add(GlobalFilterLowerLimit::NAME, lower_limit);
        rank_properties.add(GlobalFilterUpperLimit::NAME, upper_limit);
        rank_properties.add(TargetHitsMaxAdjustmentFactor::NAME, target_hits_max_adjustment_factor);
        rank_properties.add(FuzzyAlgorithm::NAME, fuzzy_matching_algorithm);
+       rank_properties.add(DiskIndexBitvectorLimit::NAME, disk_index_bitvector_limit);
    }
-   ~AttributeBlueprintParamsFixture();
+   ~CreateBlueprintParamsFixture();
    CreateBlueprintParams extract(uint32_t active_docids = 9, uint32_t docid_limit = 10) const {
        return MatchToolsFactory::extract_create_blueprint_params(rank_setup, rank_properties, active_docids, docid_limit);
    }
 };
 
-AttributeBlueprintParamsFixture::~AttributeBlueprintParamsFixture() = default;
+CreateBlueprintParamsFixture::~CreateBlueprintParamsFixture() = default;
 
-TEST_F(MatchingTest, attribute_blueprint_params_are_extracted_from_rank_profile)
+TEST_F(MatchingTest, create_blueprint_params_are_extracted_from_rank_profile)
 {
-    AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
+    CreateBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
+    f.rank_setup.set_disk_index_bitvector_limit(0.04);
     auto params = f.extract();
     EXPECT_EQ(0.2, params.global_filter_lower_limit);
     EXPECT_EQ(0.8, params.global_filter_upper_limit);
     EXPECT_EQ(5.0, params.target_hits_max_adjustment_factor);
     EXPECT_EQ(FMA::DfaTable, params.fuzzy_matching_algorithm);
+    EXPECT_EQ(0.04, params.disk_index_bitvector_limit);
 }
 
-TEST_F(MatchingTest, attribute_blueprint_params_are_extracted_from_query)
+TEST_F(MatchingTest, create_blueprint_params_are_extracted_from_query)
 {
-    AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
-    f.set_query_properties("0.15", "0.75", "3.0", "dfa_explicit");
+    CreateBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
+    f.set_query_properties("0.15", "0.75", "3.0", "dfa_explicit", "0.02");
     auto params = f.extract();
     EXPECT_EQ(0.15, params.global_filter_lower_limit);
     EXPECT_EQ(0.75, params.global_filter_upper_limit);
     EXPECT_EQ(3.0, params.target_hits_max_adjustment_factor);
     EXPECT_EQ(FMA::DfaExplicit, params.fuzzy_matching_algorithm);
+    EXPECT_EQ(0.02, params.disk_index_bitvector_limit);
 }
 
 TEST_F(MatchingTest, global_filter_params_are_scaled_with_active_hit_ratio)
 {
-    AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
+    CreateBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
     auto params = f.extract(5, 10);
     EXPECT_EQ(0.12, params.global_filter_lower_limit);
     EXPECT_EQ(0.48, params.global_filter_upper_limit);
@@ -1326,7 +1331,7 @@ TEST_F(MatchingTest, global_filter_params_are_scaled_with_active_hit_ratio)
 
 TEST_F(MatchingTest, weak_and_stop_word_strategy_is_resolved_correctly)
 {
-    AttributeBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
+    CreateBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
     EXPECT_EQ(WeakAndStopWordAdjustLimit::DEFAULT_VALUE, 1.0);
     EXPECT_EQ(WeakAndStopWordDropLimit::DEFAULT_VALUE, 1.0);
     EXPECT_EQ(f.rank_setup.get_weakand_stop_word_adjust_limit(), 1.0);
