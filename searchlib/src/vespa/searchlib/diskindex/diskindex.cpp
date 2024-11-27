@@ -5,14 +5,16 @@
 #include "fileheader.h"
 #include "pagedict4randread.h"
 #include <vespa/searchlib/index/schemautil.h>
+#include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
-#include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/irequestcontext.h>
+#include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/cache.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -310,8 +312,9 @@ public:
         const std::string termStr = termAsString(n);
         const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
         if (lookupRes.valid()) {
-            bool useBitVector = _field.isFilter();
-            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex.get_field_index(_fieldId), termStr, lookupRes, useBitVector));
+            double bitvector_limit = getRequestContext().get_create_blueprint_params().disk_index_bitvector_limit;
+            setResult(std::make_unique<DiskTermBlueprint>
+                (_field, _diskIndex.get_field_index(_fieldId), termStr, lookupRes, _field.isFilter(), bitvector_limit));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }

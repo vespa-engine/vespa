@@ -356,6 +356,7 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
     double weakand_range = temporary::WeakAndRange::lookup(rank_properties, rank_setup.get_weakand_range());
     double weakand_stop_word_adjust_limit = WeakAndStopWordAdjustLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_adjust_limit());
     double weakand_stop_word_drop_limit = WeakAndStopWordDropLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_drop_limit());
+    double disk_index_bitvector_limit = DiskIndexBitvectorLimit::lookup(rank_properties, rank_setup.get_disk_index_bitvector_limit());
 
     // Note that we count the reserved docid 0 as active.
     // This ensures that when searchable-copies=1, the ratio is 1.0.
@@ -367,7 +368,8 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
             fuzzy_matching_algorithm,
             weakand_range,
             StopWordStrategy(weakand_stop_word_adjust_limit,
-                                                      weakand_stop_word_drop_limit, docid_limit)};
+                                                      weakand_stop_word_drop_limit, docid_limit),
+            disk_index_bitvector_limit};
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,
