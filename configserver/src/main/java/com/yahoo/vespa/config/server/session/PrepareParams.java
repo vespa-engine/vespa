@@ -370,13 +370,17 @@ public final class PrepareParams {
     }
 
     public static PrepareParams fromJson(byte[] json, TenantName tenant, Duration barrierTimeout) {
+        return fromJson(json, tenant, barrierTimeout, false);
+    }
+
+    public static PrepareParams fromJson(byte[] json, TenantName tenant, Duration barrierTimeout, boolean verboseOverride) {
         Slime slime = SlimeUtils.jsonToSlimeOrThrow(json);
         Inspector params = slime.get();
 
         return new Builder()
                 .ignoreValidationErrors(booleanValue(params, IGNORE_VALIDATION_PARAM_NAME))
                 .dryRun(booleanValue(params, DRY_RUN_PARAM_NAME))
-                .verbose(booleanValue(params, VERBOSE_PARAM_NAME))
+                .verbose(booleanValue(params, VERBOSE_PARAM_NAME) || verboseOverride)
                 .timeoutBudget(SessionHandler.getTimeoutBudget(getTimeout(params, barrierTimeout)))
                 .applicationId(createApplicationId(params, tenant))
                 .vespaVersion(SlimeUtils.optionalString(params.field(VESPA_VERSION_PARAM_NAME)).orElse(null))
