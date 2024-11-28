@@ -77,7 +77,7 @@ public class OptimizePredicateTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new OptimizePredicateExpression();
         String prefix = "Invalid expression 'optimize_predicate': ";
-        assertVerifyThrows(prefix + "Expected predicate input, but no input is specified", null, exp);
+        assertVerifyThrows(prefix + "Expected input, but no input is specified", null, exp);
         assertVerifyThrows(prefix + "Expected predicate input, got int", DataType.INT, exp);
         assertVerifyThrows(prefix + "Variable 'arity' must be set", DataType.PREDICATE, exp);
 

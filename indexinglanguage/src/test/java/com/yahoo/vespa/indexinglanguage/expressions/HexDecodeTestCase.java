@@ -29,7 +29,7 @@ public class HexDecodeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new HexDecodeExpression();
         assertVerify(DataType.STRING, exp, DataType.LONG);
-        assertVerifyThrows("Invalid expression 'hexdecode': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'hexdecode': Expected input, but no input is specified", null, exp);
         assertVerifyThrows("Invalid expression 'hexdecode': Expected string input, got long", DataType.LONG, exp);
     }
 

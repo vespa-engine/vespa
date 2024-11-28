@@ -53,7 +53,7 @@ public class ForEachTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.getArray(DataType.INT), exp, DataType.getArray(DataType.STRING));
-        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected any input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected input, but no input is specified", null, exp);
         assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected Array, Struct, WeightedSet or Map input, got int", DataType.INT, exp);
         assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.getArray(DataType.STRING), exp);
     }

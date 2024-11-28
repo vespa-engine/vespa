@@ -4,7 +4,6 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
@@ -12,13 +11,16 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 
 /**
  * @author Simon Thoresen Hult
  */
-// TODO: Support Map in addition to Array and Wighted Set (doc just says "collection type")
+// TODO: Support Map in addition to Array and Weghted Set (doc just says "collection type")
 public final class CatExpression extends ExpressionList<Expression> {
 
     public CatExpression(Expression... expressions) {
@@ -28,6 +30,9 @@ public final class CatExpression extends ExpressionList<Expression> {
     public CatExpression(Collection<? extends Expression> expressions) {
         super(expressions, resolveInputType(expressions));
     }
+
+    @Override
+    public boolean requiresInput() { return false; }
 
     @Override
     public CatExpression convertChildren(ExpressionConverter converter) {

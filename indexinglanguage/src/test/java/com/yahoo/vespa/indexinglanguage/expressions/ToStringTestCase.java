@@ -30,7 +30,7 @@ public class ToStringTestCase {
         Expression exp = new ToStringExpression();
         assertVerify(DataType.INT, exp, DataType.STRING);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'to_string': Expected any input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'to_string': Expected input, but no input is specified", null, exp);
     }
 
     @Test

@@ -37,7 +37,7 @@ public class ParenthesisTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ParenthesisExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.INT, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression '(SimpleExpression)': Expected int input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression '(SimpleExpression)': Expected input, but no input is specified", null, exp);
         assertVerifyThrows("Invalid expression '(SimpleExpression)': Expected int input, got string", DataType.STRING, exp);
     }
 

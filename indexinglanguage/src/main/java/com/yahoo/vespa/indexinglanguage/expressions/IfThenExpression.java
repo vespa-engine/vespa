@@ -58,6 +58,11 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
+    public boolean requiresInput() {
+        return left.requiresInput() || right.requiresInput() || ifFalse.requiresInput() || ifFalse.requiresInput();
+    }
+
+    @Override
     public IfThenExpression convertChildren(ExpressionConverter converter) {
         return new IfThenExpression(converter.branch().convert(left),
                                     comparator,

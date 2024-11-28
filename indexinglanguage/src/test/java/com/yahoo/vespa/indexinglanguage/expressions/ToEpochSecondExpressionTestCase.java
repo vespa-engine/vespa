@@ -28,7 +28,7 @@ public class ToEpochSecondExpressionTestCase {
         Expression exp = new ToEpochSecondExpression();
         assertVerify(DataType.STRING, exp, DataType.LONG);
         assertVerifyThrows("Invalid expression 'to_epoch_second': Expected string input, got int", DataType.INT, exp);
-        assertVerifyThrows("Invalid expression 'to_epoch_second': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'to_epoch_second': Expected input, but no input is specified", null, exp);
     }
 
     @Test

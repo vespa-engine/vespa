@@ -32,6 +32,9 @@ public final class SelectInputExpression extends CompositeExpression {
     }
 
     @Override
+    public boolean requiresInput() { return false; }
+
+    @Override
     public SelectInputExpression convertChildren(ExpressionConverter converter) {
         return new SelectInputExpression(cases.stream()
                                               .map(c -> new Pair<>(c.getFirst(), converter.branch().convert(c.getSecond())))

@@ -43,7 +43,7 @@ public class NormalizeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new NormalizeExpression(new SimpleLinguistics());
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'normalize': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'normalize': Expected input, but no input is specified", null, exp);
         assertVerifyThrows("Invalid expression 'normalize': Expected string input, got int", DataType.INT, exp);
     }
 

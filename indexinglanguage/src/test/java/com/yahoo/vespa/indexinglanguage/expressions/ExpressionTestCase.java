@@ -34,7 +34,7 @@ public class ExpressionTestCase {
     public void requireThatInputTypeIsCheckedBeforeVerify() {
         assertVerify(newRequiredInput(DataType.INT), DataType.INT);
         assertVerifyThrows(newRequiredInput(DataType.INT), null,
-                           "Invalid expression 'SimpleExpression': Expected int input, but no input is specified");
+                           "Invalid expression 'SimpleExpression': Expected input, but no input is specified");
         assertVerifyThrows(newRequiredInput(DataType.INT), UnresolvedDataType.INSTANCE,
                            "Invalid expression 'SimpleExpression': Failed to resolve input type");
         assertVerifyThrows(newRequiredInput(DataType.INT), DataType.STRING,

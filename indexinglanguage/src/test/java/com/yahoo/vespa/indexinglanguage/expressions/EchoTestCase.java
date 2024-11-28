@@ -53,6 +53,6 @@ public class EchoTestCase {
         Expression exp = new EchoExpression();
         assertVerify(DataType.INT, exp, DataType.INT);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'echo': Expected any input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'echo': Expected input, but no input is specified", null, exp);
     }
 }

@@ -28,6 +28,9 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
         }
     }
 
+    @Override
+    public boolean requiresInput() { return !expressions.isEmpty() && expressions.get(0).requiresInput(); }
+
     public List<T> expressions() { return expressions; }
 
     protected List<Expression> convertChildList(ExpressionConverter converter) {

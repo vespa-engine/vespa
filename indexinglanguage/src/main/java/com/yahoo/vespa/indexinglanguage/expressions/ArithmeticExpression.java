@@ -3,7 +3,13 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.NumericFieldValue;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
@@ -53,6 +59,9 @@ public final class ArithmeticExpression extends CompositeExpression {
         this.op = Objects.requireNonNull(op);
         this.right = Objects.requireNonNull(right);
     }
+
+    @Override
+    public boolean requiresInput() { return false; }
 
     public Expression getLeftHandSide() { return left; }
 

@@ -10,7 +10,14 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.vespa.indexinglanguage.*;
+import com.yahoo.vespa.indexinglanguage.AdapterFactory;
+import com.yahoo.vespa.indexinglanguage.DocumentAdapter;
+import com.yahoo.vespa.indexinglanguage.DocumentTypeAdapter;
+import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
+import com.yahoo.vespa.indexinglanguage.ScriptParser;
+import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
+import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
+import com.yahoo.vespa.indexinglanguage.UpdateAdapter;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import com.yahoo.vespa.objects.Selectable;
@@ -210,17 +217,15 @@ public abstract class Expression extends Selectable {
     }
 
     public final DataType verify(VerificationContext context) {
-        //if (requiresInput() && context.getCurrentType() == null)   (My try, but since scriptexpression bafflingly requires input ...
-        //    throw new VerificationException(this, "Missing an input");
-        if (requiredInputType != null) {
+        if (requiresInput()) {
             DataType input = context.getCurrentType();
             if (input == null) {
-                throw new VerificationException(this, "Expected " + requiredInputType.getName() + " input, but no input is specified");
+                throw new VerificationException(this, "Expected input, but no input is specified");
             }
             if (input != null && input.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
                 throw new VerificationException(this, "Failed to resolve input type");
             }
-            if (input != null && !requiredInputType.isAssignableFrom(input)) {
+            if (input != null && requiredInputType != null && !requiredInputType.isAssignableFrom(input)) {
                 throw new VerificationException(this, "Expected " + requiredInputType.getName() + " input, got " +
                                                       input.getName());
             }

@@ -24,6 +24,9 @@ final class SimpleExpression extends Expression {
         this.requiredInput = requiredInput;
     }
 
+    @Override
+    public boolean requiresInput() { return requiredInput != null; }
+
     public SimpleExpression setVerifyValue(DataType verifyValue) {
         this.hasVerifyValue = true;
         this.verifyValue = verifyValue;

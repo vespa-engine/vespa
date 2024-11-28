@@ -7,7 +7,9 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -27,7 +29,7 @@ class OutputAssert {
     public static void assertVerify(OutputExpression exp) {
         assertVerify(new MyAdapter(null), DataType.INT, exp);
         assertVerify(new MyAdapter(null), DataType.STRING, exp);
-        assertVerifyThrows(new MyAdapter(null), null, exp, "Invalid expression '" + exp + "': Expected any input, but no input is specified");
+        assertVerifyThrows(new MyAdapter(null), null, exp, "Invalid expression '" + exp + "': Expected input, but no input is specified");
         assertVerifyThrows(new MyAdapter(new VerificationException((Expression) null, "foo")), DataType.INT, exp, "Invalid expression 'null': foo");
     }
 

@@ -42,7 +42,7 @@ public class IfThenTestCase {
                                           DataType.STRING, DataType.STRING);
         assertVerify(DataType.STRING, exp, DataType.STRING);
         String prefix = "Invalid expression 'if (SimpleExpression == SimpleExpression) { SimpleExpression; } else { SimpleExpression; }': ";
-        assertVerifyThrows(prefix + "Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows(prefix + "Expected input, but no input is specified", null, exp);
         assertVerifyThrows(prefix + "Expected string input, got int", DataType.INT, exp);
         assertVerifyThrows("Invalid expression of type 'IfThenExpression': Operands require conflicting input types, int vs string", null, () -> newRequiredInput(DataType.INT, Comparator.EQ, DataType.STRING,
                                                                                                                             DataType.STRING, DataType.STRING)
@@ -61,7 +61,7 @@ public class IfThenTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.STRING, new FlattenExpression(), DataType.STRING);
-        assertVerifyThrows("Invalid expression 'flatten': Expected string input, but no input is specified", null, new FlattenExpression()
+        assertVerifyThrows("Invalid expression 'flatten': Expected input, but no input is specified", null, new FlattenExpression()
                           );
         assertVerifyThrows("Invalid expression 'flatten': Expected string input, got int", DataType.INT, new FlattenExpression()
                           );

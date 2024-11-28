@@ -36,7 +36,7 @@ public class SetVarTestCase {
         Expression exp = new SetVarExpression("foo");
         assertVerify(DataType.INT, exp, DataType.INT);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'set_var foo': Expected any input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'set_var foo': Expected input, but no input is specified", null, exp);
 
         try {
             new VerificationContext().setVariable("foo", DataType.INT).setCurrentType(DataType.STRING).verify(exp);

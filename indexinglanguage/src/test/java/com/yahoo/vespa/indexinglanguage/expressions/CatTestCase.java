@@ -65,10 +65,10 @@ public class CatTestCase {
                            "Invalid expression of type 'CatExpression': Operands require conflicting input types, string vs int");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), null,
-                           "Invalid expression 'SimpleExpression . SimpleExpression': Expected string input, but no input is specified");
+                           "Invalid expression 'SimpleExpression': Expected input, but no input is specified");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), DataType.INT,
-                           "Invalid expression 'SimpleExpression . SimpleExpression': Expected string input, got int");
+                           "Invalid expression 'SimpleExpression': Expected string input, got int");
     }
 
     @Test
