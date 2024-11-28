@@ -799,4 +799,28 @@ TEST("Require that parallell OR computes same result as serial") {
     }
 }
 
+namespace {
+
+bool check_full_term_field_match_data_reset_on_unpack(bool strict, bool full_reset)
+{
+    AllocatedBitVector bv(10);
+    bv.setBit(5);
+    fef::TermFieldMatchData tfmd;
+    auto iterator = BitVectorIterator::create(&bv, bv.size(), tfmd, strict, false, full_reset);
+    tfmd.setNumOccs(10);
+    iterator->initRange(1, bv.size());
+    iterator->unpack(5);
+    return tfmd.getNumOccs() == 0;
+}
+
+}
+
+TEST("reset term field match data on unpack")
+{
+    EXPECT_FALSE(check_full_term_field_match_data_reset_on_unpack(false, false));
+    EXPECT_FALSE(check_full_term_field_match_data_reset_on_unpack(true, false));
+    EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(false, true));
+    EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(true, true));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
