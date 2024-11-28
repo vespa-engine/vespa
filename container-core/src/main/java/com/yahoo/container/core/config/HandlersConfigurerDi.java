@@ -97,7 +97,7 @@ public class HandlersConfigurerDi {
         public void installPlatformBundles(Collection<String> bundlePaths) {
             // Don't install physical bundles for test frameworks, where all platform bundles are on the classpath.
             if (osgiFramework.isFelixFramework()) {
-                log.info("Installing platform bundles from " + bundlePaths);
+                log.fine("Installing platform bundles.");
                 platformBundleLoader.useBundles(new ArrayList<>(bundlePaths));
             }
         }
