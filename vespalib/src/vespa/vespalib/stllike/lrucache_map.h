@@ -197,7 +197,7 @@ public:
     /**
      * Method for testing that internal consistency is good.
      */
-    bool verifyInternals();
+    void verifyInternals();
 
     /**
      * Implements the move callback from the hashtable

@@ -11,29 +11,29 @@ TEST(LruCacheMapTest, cache_basics) {
     // Verify start conditions.
     EXPECT_EQ(cache.size(), 0);
     cache.insert(1, "First inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 1);
     EXPECT_TRUE(cache.hasKey(1));
     cache.insert(2, "Second inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 2);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
     cache.insert(3, "Third inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 3);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
     EXPECT_TRUE(cache.hasKey(3));
     cache.insert(4, "Fourth inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 4);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
     EXPECT_TRUE(cache.hasKey(3));
     EXPECT_TRUE(cache.hasKey(4));
     cache.insert(5, "Fifth inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 5);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
@@ -41,7 +41,7 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(4));
     EXPECT_TRUE(cache.hasKey(5));
     cache.insert(6, "Sixt inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 6);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
@@ -50,7 +50,7 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(5));
     EXPECT_TRUE(cache.hasKey(6));
     cache.insert(7, "Seventh inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 7);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
@@ -60,7 +60,7 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(6));
     EXPECT_TRUE(cache.hasKey(7));
     cache.insert(8, "Eighth inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 7);
     EXPECT_TRUE(cache.hasKey(2));
     EXPECT_TRUE(cache.hasKey(3));
@@ -70,7 +70,7 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(7));
     EXPECT_TRUE(cache.hasKey(8));
     cache.insert(15, "Eighth inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 7);
     EXPECT_TRUE(cache.hasKey(3));
     EXPECT_TRUE(cache.hasKey(4));
@@ -81,9 +81,9 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(15));
     // Test get and erase
     (void)cache.get(3);
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     cache.erase(3);
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_TRUE(!cache.hasKey(3));
 }
 
@@ -204,6 +204,7 @@ TEST(LruCacheMapTest, cache_erase_by_iterator) {
     ASSERT_EQ("third", *it);
     cache.erase(it);
     EXPECT_EQ(lru_key_order(cache), "1");
+    cache.verifyInternals();
 }
 
 TEST(LruCacheMapTest, find_no_ref_returns_iterator_if_present_and_does_not_update_lru) {

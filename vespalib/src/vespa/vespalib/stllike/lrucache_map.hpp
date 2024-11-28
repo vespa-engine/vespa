@@ -146,16 +146,15 @@ lrucache_map<P>::erase(const iterator & it)
 }
 
 template< typename P >
-bool
+void
 lrucache_map<P>::verifyInternals()
 {
-    bool retval(true);
     if (_head == LinkedValueBase::npos || _tail == LinkedValueBase::npos) {
         // If _either_ head or tail is invalid, they must both be.
         assert(_head == LinkedValueBase::npos);
         assert(_tail == LinkedValueBase::npos);
         assert(size() == 0);
-        return true;
+        return;
     }
     assert(HashTable::getByInternalIndex(_head).second._prev == LinkedValueBase::npos);
     assert(HashTable::getByInternalIndex(_tail).second._next == LinkedValueBase::npos);
@@ -181,7 +180,6 @@ lrucache_map<P>::verifyInternals()
         assert(i == size());
         assert(c == LinkedValueBase::npos);
     }
-    return retval;
 }
 
 template< typename P >
