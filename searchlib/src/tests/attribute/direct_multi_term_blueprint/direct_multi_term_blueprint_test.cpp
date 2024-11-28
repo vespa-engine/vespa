@@ -42,6 +42,7 @@ struct StringKey : public LookupKey {
 const std::string field_name = "test";
 constexpr uint32_t field_id = 3;
 uint32_t doc_id_limit = 500;
+const std::string strict_bitvector_iterator_class_name_prefix = "search::BitVectorIteratorTT<search::BitVectorIteratorStrictT";
 
 using Docids = std::vector<uint32_t>;
 
@@ -326,7 +327,7 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_used_instead_of_btree_iterators_
     add_terms({1, 100});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 2);
-    expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
+    expect_or_child(*itr, 0, strict_bitvector_iterator_class_name_prefix);
     expect_or_child(*itr, 1, iterator_unpack_docid);
     expect_hits(concat({10}, range(100, 128)), *itr);
 }
@@ -349,8 +350,8 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_fil
     add_terms({1, 3, 100, 300});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 3);
-    expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
+    expect_or_child(*itr, 0, strict_bitvector_iterator_class_name_prefix);
+    expect_or_child(*itr, 1, strict_bitvector_iterator_class_name_prefix);
     expect_or_child(*itr, 2, iterator_unpack_docid);
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
@@ -361,8 +362,8 @@ TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field)
     add_terms({100, 300});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 2);
-    expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
+    expect_or_child(*itr, 0, strict_bitvector_iterator_class_name_prefix);
+    expect_or_child(*itr, 1, strict_bitvector_iterator_class_name_prefix);
     expect_hits(concat(range(100, 128), range(300, 128)), *itr);
 }
 
@@ -381,8 +382,8 @@ TEST_P(DirectMultiTermBlueprintTest, bitvectors_and_btree_iterators_used_for_fil
     add_terms({1, 3, 100, 300});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 3);
-    expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
+    expect_or_child(*itr, 0, strict_bitvector_iterator_class_name_prefix);
+    expect_or_child(*itr, 1, strict_bitvector_iterator_class_name_prefix);
     expect_or_child(*itr, 2, iterator_unpack_none);
     expect_hits(concat({10, 30, 31}, concat(range(100, 128), range(300, 128))), *itr);
 }
@@ -393,8 +394,8 @@ TEST_P(DirectMultiTermBlueprintTest, only_bitvectors_used_for_filter_field_when_
     add_terms({100, 300});
     auto itr = create_leaf_search();
     expect_or_iterator(*itr, 2);
-    expect_or_child(*itr, 0, "search::BitVectorIteratorStrictT");
-    expect_or_child(*itr, 1, "search::BitVectorIteratorStrictT");
+    expect_or_child(*itr, 0, strict_bitvector_iterator_class_name_prefix);
+    expect_or_child(*itr, 1, strict_bitvector_iterator_class_name_prefix);
     expect_hits(concat(range(100, 128), range(300, 128)), *itr);
 }
 

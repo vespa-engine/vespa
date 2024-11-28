@@ -18,13 +18,10 @@ protected:
 
     uint32_t          _docIdLimit;
     const BitVector & _bv;
+    fef::TermFieldMatchData  &_tfmd;
 private:
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    void doUnpack(uint32_t docId) final {
-        _tfmd.resetOnlyDocId(docId);
-    }
     BitVectorMeta asBitVector() const noexcept override { return {&_bv, _docIdLimit, isInverted()}; }
-    fef::TermFieldMatchData  &_tfmd;
 public:
     virtual bool isInverted() const = 0;
 
@@ -33,6 +30,8 @@ public:
     static UP create(const BitVector *const other, fef::TermFieldMatchData &matchData, bool strict, bool inverted = false);
     static UP create(const BitVector *const other, uint32_t docIdLimit,
                      fef::TermFieldMatchData &matchData, bool strict, bool inverted = false);
+    static UP create(const BitVector *const other, uint32_t docIdLimit,
+                     fef::TermFieldMatchData &matchData, bool strict, bool inverted, bool full_reset);
 };
 
 } // namespace search

@@ -41,6 +41,7 @@ using vespalib::normalize_class_name;
 using Path = std::vector<std::variant<size_t,std::string_view>>;
 
 std::string strict_equiv_name = "search::queryeval::EquivImpl<true, search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char> >";
+const std::string strict_bitvector_iterator_class_name = "search::BitVectorIteratorTT<search::BitVectorIteratorStrictT<false>, false>";
 
 struct InvalidSelector : ISourceSelector {
     InvalidSelector() : ISourceSelector(Source()) {}
@@ -1196,7 +1197,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
+        EXPECT_EQUAL(strict_bitvector_iterator_class_name, e.getChildren()[0]->getClassName());
         EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
         EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
     }
@@ -1206,7 +1207,7 @@ TEST("require that children does not optimize when parents refuse them to") {
     EXPECT_EQUAL(strict_equiv_name, normalize_class_name(search->getClassName()));
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
-        EXPECT_EQUAL("search::BitVectorIteratorStrictT<false>", e.getChildren()[0]->getClassName());
+        EXPECT_EQUAL(strict_bitvector_iterator_class_name, e.getChildren()[0]->getClassName());
         EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
         EXPECT_EQUAL("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
     }

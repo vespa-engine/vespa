@@ -145,7 +145,13 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
     if (_bitvector_lookup_result.valid() && (_bitVector || tfmda[0]->isNotNeeded())) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_field_index.get_field_id()).c_str(), _lookupRes.wordNum, _lookupRes.counts._numDocs);
-        return BitVectorIterator::create(get_bitvector(), *tfmda[0], strict());
+        auto bv = get_bitvector();
+        /*
+         * If bitvectors are used when _is_filter_field is false due to word being very common in this disk index
+         * then the term field match data needs a full reset during unpack to clear out values set during unpack
+         * from another iterator for the same term and another disk index or memory index.
+         */
+        return BitVectorIterator::create(bv, bv->size(), *tfmda[0], strict(), false, !_is_filter_field);
     }
     auto search(_field_index.create_iterator(_lookupRes, _postingHandle, tfmda));
     if (use_bitvector()) {
