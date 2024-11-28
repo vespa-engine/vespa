@@ -412,50 +412,52 @@ TEST_F(SlruCacheTest, capacity_bytes_change_is_propagated_to_segments) {
     EXPECT_NO_FATAL_FAILURE(assert_segment_capacity_bytes(cache, 500, 700));
 }
 
-TEST_F(SlruCacheTest, assigning_zero_capacity_of_protected_segment_evicts_all_segment_entries) {
+TEST_F(SlruCacheTest, assigning_capacity_to_segments_trims_entries) {
     cache<CacheParam<P, B, SelfAsSize, zero<std::string>>> cache(m, 400, 500);
 
     cache.write(10, "foo");
     EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 90, 0));
     EXPECT_NO_FATAL_FAILURE(assert_segment_capacities(cache, -1, -1)); // Unlimited cardinality for both
     cache.write(20, "bar");
-    EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 2, 0));
-    EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 190, 0));
+    cache.write(30, "baz");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {30, 20, 10}, {}));
+    EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 3, 0));
+    EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 300, 0));
     EXPECT_EQ(cache.read(20), "bar");
     // 20 is now in protected segment
-    EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 1, 1));
-    EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 90, 100));
-    cache.setCapacityBytes(400, 0);
-    // Evicting the protected segment drops them on the floor without bringing them
-    // back into the probationary segment (at least with the current semantics).
-    // Setting byte capacity to zero also implicitly sets max elements to zero.
-    EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 1, 0));
-    EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 90, 0));
-    ASSERT_NO_FATAL_FAILURE(assert_segment_capacities(cache, -1, 0));
-    EXPECT_TRUE(cache.hasKey(10));
-    EXPECT_FALSE(cache.hasKey(20));
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {30, 10}, {20}));
+    EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 200, 100));
+    // Reduce capacities across both segments (for protected, effectively disabling it)
+    cache.setCapacityBytes(250, 0);
+    // Trimming the protected segment implicitly moves elements to the head of the
+    // probationary segment. This may in turn shove old capacity-exceeding elements
+    // out of the probationary cache (in this case 10).
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {20, 30}, {}));
+    EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 2, 0));
     // Backing store is untouched by evictions
-    EXPECT_EQ(m[20], "bar");
-    // Accessing key 10 does not move it to protected
-    EXPECT_EQ(cache.read(10), "foo");
-    EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 1, 0));
+    EXPECT_EQ(m[10], "foo");
+    // Accessing key 30 does not move it to protected (but does update the LRU)
+    EXPECT_EQ(cache.read(30), "baz");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {30, 20}, {}));
 
     // We can turn segmenting back on again
     cache.setCapacityBytes(400, 500);
-    EXPECT_EQ(cache.read(10), "foo");
-    EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 0, 1)); // key 10 now moved to protected
-    EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 0, 90));
+    EXPECT_EQ(cache.read(20), "bar");
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {30}, {20}));
+    EXPECT_NO_FATAL_FAILURE(assert_segment_sizes(cache, 1, 1));
+    EXPECT_NO_FATAL_FAILURE(assert_segment_size_bytes(cache, 110, 100));
 }
 
-TEST_F(SlruCacheTest, evicting_protected_segment_invokes_remove_callback) {
+TEST_F(SlruCacheTest, trimming_protected_segment_does_not_invoke_remove_callback) {
     ExtendedCache cache(m, -1, -1);
     cache.write(10, "foo");
     EXPECT_EQ(cache.read(10), "foo"); // ==> protected
     EXPECT_EQ(cache._insert_count, 1);
     EXPECT_EQ(cache._remove_count, 0);
-    cache.setCapacityBytes(-1, 0);
+    cache.setCapacityBytes(-1, 0); // ==> back into probationary it goes
+    ASSERT_NO_FATAL_FAILURE(assert_segment_lru_keys(cache, {10}, {}));
     EXPECT_EQ(cache._insert_count, 1);
-    EXPECT_EQ(cache._remove_count, 1);
+    EXPECT_EQ(cache._remove_count, 0);
 }
 
 TEST_F(SlruCacheTest, transitive_eviction_from_probationary_segment_invokes_remove_callback) {
