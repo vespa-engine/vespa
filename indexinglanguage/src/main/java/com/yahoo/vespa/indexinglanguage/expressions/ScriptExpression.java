@@ -45,7 +45,6 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        System.out.println("Scripts input type " + inputType);
         super.setInputType(inputType, context);
         DataType currentOutput = null;
         for (var expression : expressions())

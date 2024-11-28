@@ -3,14 +3,22 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
-
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -57,7 +65,7 @@ public class CatTestCase {
                            "Invalid expression of type 'CatExpression': Operands require conflicting input types, string vs int");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), null,
-                           "Invalid expression 'SimpleExpression . SimpleExpression': In SimpleExpression: Attempting to concatenate a null value");
+                           "Invalid expression 'SimpleExpression . SimpleExpression': Expected string input, but no input is specified");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), DataType.INT,
                            "Invalid expression 'SimpleExpression . SimpleExpression': Expected string input, got int");
