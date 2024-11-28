@@ -269,4 +269,51 @@ TEST(LruCacheMapTest, eager_find_and_ref_always_moves_to_LRU_head) {
     EXPECT_EQ(lru_key_order(cache), "1 5 2 6 4 3");
 }
 
+TEST(LruCacheMapTest, trimming_removes_old_entries_until_within_capacity) {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(5);
+    cache.insert(1, "a");
+    cache.insert(2, "b");
+    cache.insert(3, "c");
+    cache.insert(4, "d");
+    // Cache is below capacity, trimming should do nothing
+    cache.trim();
+    EXPECT_EQ(lru_key_order(cache), "4 3 2 1");
+    cache.verifyInternals();
+
+    cache.insert(5, "e");
+    // Cache is at capacity, trimming should do nothing
+    cache.trim();
+    EXPECT_EQ(lru_key_order(cache), "5 4 3 2 1");
+    cache.verifyInternals();
+
+    cache.maxElements(3);
+    // maxElements() doesn't trim anything by itself (checking this here in case it changes)
+    EXPECT_EQ(lru_key_order(cache), "5 4 3 2 1");
+    // But trimming should do the deed
+    cache.trim();
+    EXPECT_EQ(lru_key_order(cache), "5 4 3");
+    cache.verifyInternals();
+
+    // Trimming should allow going down to zero size
+    cache.maxElements(0);
+    EXPECT_EQ(lru_key_order(cache), "5 4 3");
+    cache.trim();
+    EXPECT_EQ(cache.size(), 0);
+    EXPECT_EQ(lru_key_order(cache), "");
+    cache.verifyInternals();
+}
+
+TEST(LruCacheMapTest, implicit_lru_trimming_on_oversized_insert_does_not_remove_head_element) {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(0);
+    cache.insert(1, "sneaky");
+    EXPECT_EQ(cache.size(), 1);
+    EXPECT_EQ(lru_key_order(cache), "1");
+    // But head element can be replaced
+    cache.insert(2, "stuff");
+    EXPECT_EQ(cache.size(), 1);
+    EXPECT_EQ(lru_key_order(cache), "2");
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

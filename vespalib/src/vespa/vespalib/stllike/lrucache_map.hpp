@@ -150,8 +150,13 @@ bool
 lrucache_map<P>::verifyInternals()
 {
     bool retval(true);
-    assert(_head != LinkedValueBase::npos);
-    assert(_tail != LinkedValueBase::npos);
+    if (_head == LinkedValueBase::npos || _tail == LinkedValueBase::npos) {
+        // If _either_ head or tail is invalid, they must both be.
+        assert(_head == LinkedValueBase::npos);
+        assert(_tail == LinkedValueBase::npos);
+        assert(size() == 0);
+        return true;
+    }
     assert(HashTable::getByInternalIndex(_head).second._prev == LinkedValueBase::npos);
     assert(HashTable::getByInternalIndex(_tail).second._next == LinkedValueBase::npos);
     {
@@ -196,17 +201,32 @@ lrucache_map<P>::move(NodeStore && oldStore)
     }
 }
 
+template <typename P>
+template <bool PreserveHead>
+void
+lrucache_map<P>::trim_impl() {
+    while (_tail != LinkedValueBase::npos) {
+        if (PreserveHead && (_head == _tail)) {
+            break;
+        }
+        value_type& elem = HashTable::getByInternalIndex(_tail);
+        if (!removeOldest(elem)) {
+            break;
+        }
+        erase(elem.first); // Updates _tail
+    }
+}
+
 template< typename P >
 void
 lrucache_map<P>::removeOld() {
-    if (_tail != LinkedValueBase::npos) {
-        for (value_type * last(& HashTable::getByInternalIndex(_tail));
-             (_tail != _head) && removeOldest(*last);
-             last = & HashTable::getByInternalIndex(_tail))
-        {
-            erase(last->first);
-        }
-    }
+    trim_impl<true>(); // Don't remove the most recently inserted element
+}
+
+template <typename P>
+void
+lrucache_map<P>::trim() {
+    trim_impl<false>(); // Similar to removeOld(), but may go down to zero size.
 }
 
 template< typename P >
