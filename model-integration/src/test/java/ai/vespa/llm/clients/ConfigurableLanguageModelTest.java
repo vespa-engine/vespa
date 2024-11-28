@@ -5,9 +5,10 @@ import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
+import ai.vespa.secret.Secret;
+import ai.vespa.secret.Secrets;
 import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.container.jdisc.SecretStoreProvider;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.container.jdisc.SecretsProvider;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -106,17 +107,10 @@ public class ConfigurableLanguageModelTest {
         return config.build();
     }
 
-    public static SecretStore createSecretStore(Map<String, String> secrets) {
-        Provider<SecretStore> secretStore = new Provider<>() {
-            public SecretStore get() {
-                return new SecretStore() {
-                    public String getSecret(String key) {
-                        return secrets.get(key);
-                    }
-                    public String getSecret(String key, int version) {
-                        return secrets.get(key);
-                    }
-                };
+    public static Secrets createSecretStore(Map<String, String> secrets) {
+        Provider<Secrets> secretStore = new Provider<>() {
+            public Secrets get() {
+                return key -> secrets.get(key) == null ? null : (Secret) () -> secrets.get(key);
             }
             public void deconstruct() {
             }
@@ -154,19 +148,19 @@ public class ConfigurableLanguageModelTest {
 
     private static MockLLMClient createLLM(LlmClientConfig config, ExecutorService executor) {
         var generator = createGenerator();
-        var secretStore = new SecretStoreProvider();  // throws exception on use
+        var secretStore = new SecretsProvider();  // throws exception on use
         return createLLM(config, generator, secretStore.get(), executor);
     }
 
     private static MockLLMClient createLLM(LlmClientConfig config,
                                            BiFunction<Prompt, InferenceParameters, String> generator,
-                                           SecretStore secretStore) {
+                                           Secrets secretStore) {
         return createLLM(config, generator, secretStore, null);
     }
 
     private static MockLLMClient createLLM(LlmClientConfig config,
                                            BiFunction<Prompt, InferenceParameters, String> generator,
-                                           SecretStore secretStore,
+                                           Secrets secretStore,
                                            ExecutorService executor) {
         return new MockLLMClient(config, secretStore, generator, executor);
     }
