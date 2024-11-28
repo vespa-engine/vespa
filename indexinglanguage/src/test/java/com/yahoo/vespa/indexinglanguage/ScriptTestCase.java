@@ -8,6 +8,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
@@ -216,6 +217,23 @@ public class ScriptTestCase {
         expression.execute(context);
         assertTrue(adapter.values.containsKey("id"));
         assertEquals("value2", ((StringFieldValue)adapter.values.get("id")).getString());
+    }
+
+    @Test
+    public void testFloatAndIntArithmetic() {
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom("input myFloat * 10 | attribute myFloat");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        var myFloat = new Field("myFloat", DataType.FLOAT);
+        adapter.createField(myFloat);
+        adapter.setValue("myFloat", new FloatFieldValue(1.3f));
+
+        expression.verify(adapter);
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertEquals(13.0f, ((FloatFieldValue)adapter.values.get("myFloat")).getFloat(), 0.000001);
     }
 
 }

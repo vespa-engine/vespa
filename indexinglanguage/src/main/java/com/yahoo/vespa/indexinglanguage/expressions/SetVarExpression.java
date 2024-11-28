@@ -36,11 +36,17 @@ public final class SetVarExpression extends Expression {
 
     private void setVariableType(DataType newType, VerificationContext context) {
         DataType existingType = context.getVariable(varName);
-        if (existingType != null && ! newType.equals(existingType)) {
-            throw new VerificationException(this, "Cannot set variable '" + varName + "' to type " + newType.getName() +
-                                                  ": It is already set to type " + existingType.getName());
+        DataType mostGeneralType = newType;
+        if (existingType != null) {
+            if (existingType.isAssignableTo(newType))
+                mostGeneralType = newType;
+            else if (newType.isAssignableTo(existingType))
+                mostGeneralType = existingType;
+            else
+                throw new VerificationException(this, "Cannot set variable '" + varName + "' to type " + newType.getName() +
+                                                      ": It is already set to type " + existingType.getName());
         }
-        context.setVariable(varName, newType);
+        context.setVariable(varName, mostGeneralType);
     }
 
     @Override
