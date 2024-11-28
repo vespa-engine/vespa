@@ -4,11 +4,8 @@ package com.yahoo.vespa.config.server.http.v2;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ApplicationLockException;
-import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.utils.MultiPartFormParser;
@@ -16,9 +13,7 @@ import com.yahoo.container.jdisc.utils.MultiPartFormParser.PartItem;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.restapi.MessageResponse;
-import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.vespa.config.server.ApplicationRepository;
-import com.yahoo.vespa.config.server.TimeoutBudget;
 import com.yahoo.vespa.config.server.application.CompressedApplicationInputStream;
 import com.yahoo.vespa.config.server.http.BadRequestException;
 import com.yahoo.vespa.config.server.http.SessionHandler;
@@ -41,9 +36,9 @@ import java.util.Optional;
 import static com.yahoo.vespa.config.server.application.CompressedApplicationInputStream.createFromCompressedStream;
 import static com.yahoo.vespa.config.server.http.Utils.checkThatTenantExists;
 import static com.yahoo.vespa.config.server.http.v2.SessionCreateHandler.validateDataAndHeader;
+import static com.yahoo.vespa.flags.PermanentFlags.VERBOSE_DEPLOY_PARAMETER;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.INFO;
-import static java.util.logging.Level.WARNING;
 
 /**
  *  * The implementation of the /application/v2 API.
@@ -107,7 +102,8 @@ public class ApplicationApiHandler extends SessionHandler {
                 byte[] params;
                 try (InputStream part = parts.get(MULTIPART_PARAMS).data()) { params = part.readAllBytes(); }
                 log.log(FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
-                prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout);
+                prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout,
+                                                       VERBOSE_DEPLOY_PARAMETER.bindTo(applicationRepository.flagSource()).value());
                 PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
                 compressedStream = createFromCompressedStream(appPackagePart.data(), appPackagePart.contentType(), maxApplicationPackageSize);
             } catch (IOException e) {
