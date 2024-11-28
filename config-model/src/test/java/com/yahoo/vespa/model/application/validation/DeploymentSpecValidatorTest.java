@@ -34,6 +34,25 @@ public class DeploymentSpecValidatorTest {
                 "deployment.xml does not match any container cluster ID", deploymentXml);
     }
 
+    @Test
+    void requireUniqueInstanceId() {
+        String deploymentXml = """
+                    <deployment version="1.0" cloud-account="aws:010438471985">
+                    <instance id="default" tags="search">
+                        <prod>
+                            <region>aws-us-west-2a</region>
+                        </prod>
+                    </instance>
+                    <instance id="default" tags="canary">
+                        <prod>
+                            <region>aws-us-west-2a</region>
+                        </prod>
+                    </instance>
+                </deployment>
+                """;
+        assertValidationError("Duplicate instance name 'default' specified in deployment.xml.", deploymentXml);
+    }
+
     private static void assertValidationError(String message, String deploymentXml) {
         var simpleHosts = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>" +
                           "<hosts>  " +
