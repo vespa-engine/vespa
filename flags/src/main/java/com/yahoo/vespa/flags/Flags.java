@@ -342,7 +342,7 @@ public class Flags {
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
-            "content-layer-metadata-feature-level", 0,
+            "content-layer-metadata-feature-level", 1,
             List.of("vekterli"), "2022-09-12", "2024-12-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
