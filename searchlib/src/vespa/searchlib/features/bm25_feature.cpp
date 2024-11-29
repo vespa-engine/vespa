@@ -96,13 +96,18 @@ Bm25Executor::execute(uint32_t doc_id)
     feature_t score = 0;
     for (const auto& term : _terms) {
         if (term.tfmd->getDocId() == doc_id) {
-            feature_t num_occs = term.tfmd->getNumOccs();
-            feature_t norm_field_length = ((feature_t)term.tfmd->getFieldLength()) / _avg_field_length;
+            auto raw_num_occs = term.tfmd->getNumOccs();
+            if (raw_num_occs == 0) {
+                // Interleaved features are missing. Assume 1 occurrence and average field length.
+                score += term.degraded_score;
+            } else {
+                feature_t num_occs = raw_num_occs;
+                feature_t norm_field_length = ((feature_t) term.tfmd->getFieldLength()) / _avg_field_length;
+                feature_t numerator = num_occs * term.idf_mul_k1_plus_one;
+                feature_t denominator = num_occs + (_k1_mul_one_minus_b + _k1_mul_b * norm_field_length);
 
-            feature_t numerator = num_occs * term.idf_mul_k1_plus_one;
-            feature_t denominator = num_occs + (_k1_mul_one_minus_b + _k1_mul_b * norm_field_length);
-
-            score += numerator / denominator;
+                score += numerator / denominator;
+            }
         }
     }
     outputs().set_number(0, score);
