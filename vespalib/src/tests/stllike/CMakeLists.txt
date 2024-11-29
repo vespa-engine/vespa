@@ -61,6 +61,7 @@ vespa_add_executable(vespalib_lrucache_test_app TEST
     lrucache.cpp
     DEPENDS
     vespalib
+    GTest::GTest
 )
 vespa_add_test(NAME vespalib_lrucache_test_app COMMAND vespalib_lrucache_test_app)
 vespa_add_executable(vespalib_cache_test_app TEST
@@ -68,5 +69,6 @@ vespa_add_executable(vespalib_cache_test_app TEST
     cache_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_cache_test_app COMMAND vespalib_cache_test_app)

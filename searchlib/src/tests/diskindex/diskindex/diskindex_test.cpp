@@ -142,6 +142,7 @@ protected:
     void test_io_settings(const IOSettings& io_settings);
     SimpleResult search(const FieldIndex& field_index, const DictionaryLookupResult& lookup_result,
                         const PostingListHandle& handle);
+    Blueprint::UP create_blueprint(const FieldSpec& field, const search::query::Node& term, uint32_t docid_limit=1000);
 };
 
 DiskIndexTest::DiskIndexTest() = default;
@@ -256,6 +257,14 @@ DiskIndexTest::search(const FieldIndex& field_index, const DictionaryLookupResul
     return SimpleResult().search(*sb);
 }
 
+Blueprint::UP
+DiskIndexTest::create_blueprint(const FieldSpec& field, const search::query::Node& term, uint32_t docid_limit)
+{
+    auto b = _index->createBlueprint(_requestContext, field, term);
+    b->basic_plan(true, docid_limit);
+    b->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+    return b;
+}
 
 void
 DiskIndexTest::requireThatWeCanReadPostingList(const IOSettings& io_settings)
@@ -270,7 +279,11 @@ DiskIndexTest::requireThatWeCanReadPostingList(const IOSettings& io_settings)
         EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, h));
         if (io_settings._use_directio && !io_settings._use_mmap) {
             auto directio_handle = field_index.read_uncached_posting_list(r, false);
+#ifdef __linux__
             EXPECT_LT(256, directio_handle._allocSize);
+#else
+            EXPECT_GT(64, directio_handle._allocSize);
+#endif
             EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, directio_handle));
             auto trimmed_directio_handle = field_index.read_uncached_posting_list(r, true);
             EXPECT_GT(64, trimmed_directio_handle._allocSize);
@@ -323,28 +336,23 @@ void
 DiskIndexTest::requireThatBlueprintIsCreated()
 {
     { // unknown field
-        Blueprint::UP b =
-            _index->createBlueprint(_requestContext, FieldSpec("none", 0, 0), makeTerm("w1"));
-        EXPECT_TRUE(dynamic_cast<EmptyBlueprint *>(b.get()) != NULL);
+        auto b = _index->createBlueprint(_requestContext, FieldSpec("none", 0, 0), makeTerm("w1"));
+        EXPECT_TRUE(dynamic_cast<EmptyBlueprint *>(b.get()) != nullptr);
     }
     { // unknown word
-        Blueprint::UP b =
-            _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("none"));
-        EXPECT_TRUE(dynamic_cast<EmptyBlueprint *>(b.get()) != NULL);
+        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("none"));
+        EXPECT_TRUE(dynamic_cast<EmptyBlueprint *>(b.get()) != nullptr);
     }
     { // known field & word with hits
-        Blueprint::UP b =
-            _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
-        EXPECT_TRUE(dynamic_cast<DiskTermBlueprint *>(b.get()) != NULL);
+        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
+        EXPECT_TRUE(dynamic_cast<DiskTermBlueprint *>(b.get()) != nullptr);
         EXPECT_EQ(2u, b->getState().estimate().estHits);
         EXPECT_TRUE(!b->getState().estimate().empty);
     }
     { // known field & word without hits
-        Blueprint::UP b =
-            _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w2"));
-//        std::cerr << "BP = " << typeid(*b).name() << std::endl;
-        EXPECT_TRUE((dynamic_cast<DiskTermBlueprint *>(b.get()) != NULL) ||
-                    (dynamic_cast<EmptyBlueprint *>(b.get()) != NULL));
+        auto b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w2"));
+        EXPECT_TRUE((dynamic_cast<DiskTermBlueprint *>(b.get()) != nullptr) ||
+                    (dynamic_cast<EmptyBlueprint *>(b.get()) != nullptr));
         EXPECT_EQ(0u, b->getState().estimate().estHits);
         EXPECT_TRUE(b->getState().estimate().empty);
     }
@@ -362,53 +370,64 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
     SimpleResult result_f1_w2;
     SimpleResult result_f2_w2({1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17});
     auto upper_bound = Blueprint::FilterConstraint::UPPER_BOUND;
-    { // bit vector due to isFilter
-        b = _index->createBlueprint(_requestContext, FieldSpec("f2", 0, 0, true), makeTerm("w2"));
-        b->basic_plan(true, 1000);
-        b->fetchPostings(search::queryeval::ExecuteInfo::FULL);
+    { // bitvector due to is_filter_field=true
+        b = create_blueprint(FieldSpec("f2", 0, 0, true), makeTerm("w2"));
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
-        EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
+        EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
-    { // bit vector due to no ranking needed
-        b = _index->createBlueprint(_requestContext, FieldSpec("f2", 0, 0, false), makeTerm("w2"));
-        b->basic_plan(true, 1000);
-        b->fetchPostings(ExecuteInfo::FULL);
+    { // bitvector due to no ranking needed
+        b = create_blueprint(FieldSpec("f2", 0, 0, false), makeTerm("w2"));
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
-        EXPECT_FALSE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
+        EXPECT_FALSE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
         TermFieldMatchData md2;
         md2.tagAsNotNeeded();
         TermFieldMatchDataArray mda2;
         mda2.add(&md2);
         EXPECT_TRUE(mda2[0]->isNotNeeded());
         s = (dynamic_cast<LeafBlueprint *>(b.get()))->createLeafSearch(mda2);
-        EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != NULL);
+        EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
-    { // fake bit vector
-        b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0, true), makeTerm("w2"));
-//        std::cerr << "BP = " << typeid(*b).name() << std::endl;
-        b->basic_plan(true, 1000);
-        b->fetchPostings(ExecuteInfo::FULL);
+    { // fake bitvector (wrapping posocc iterator)
+        b = create_blueprint(FieldSpec("f1", 0, 0, true), makeTerm("w1"));
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
-//        std::cerr << "SI = " << typeid(*s).name() << std::endl;
-        EXPECT_TRUE((dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != NULL) ||
-                    dynamic_cast<EmptySearch *>(s.get()));
-        EXPECT_EQ(result_f1_w2, SimpleResult().search(*s));
-        EXPECT_EQ(result_f1_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        EXPECT_TRUE(dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != nullptr);
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
     { // posting list iterator
-        b = _index->createBlueprint(_requestContext, FieldSpec("f1", 0, 0), makeTerm("w1"));
-        b->basic_plan(true, 1000);
-        b->fetchPostings(ExecuteInfo::FULL);
+        b = create_blueprint(FieldSpec("f1", 0, 0), makeTerm("w1"));
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
-        ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != NULL));
+        ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != nullptr));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
+        EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+    }
+    { // bitvector used due to bitvector_limit set.
+        // The term 'w2' hits 17 docs in field 'f2' (bitvector for term exists).
+        double bitvector_limit = 16.0 / 100.0;
+        _requestContext.get_create_blueprint_params().disk_index_bitvector_limit = bitvector_limit;
+        b = create_blueprint(FieldSpec("f2", 0, 0, false), makeTerm("w2"), 100);
+        auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
+        s = leaf_b.createLeafSearch(mda);
+        EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+    }
+    { // fake bitvector (wrapping posocc iterator) used due to bitvector_limit set.
+        // The term 'w1' hits 2 docs in field 'f1' (bitvector for term doesn't exist).
+        double bitvector_limit = 1.0 / 100.0;
+        _requestContext.get_create_blueprint_params().disk_index_bitvector_limit = bitvector_limit;
+        b = create_blueprint(FieldSpec("f1", 0, 0, false), makeTerm("w1"), 100);
+        auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
+        s = leaf_b.createLeafSearch(mda);
+        EXPECT_TRUE((dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != nullptr));
         EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
         EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
@@ -448,7 +467,7 @@ DiskIndexTest::build_index(const IOSettings& io_settings, const EmptySettings& e
 void
 DiskIndexTest::require_that_get_stats_works()
 {
-    auto stats = getIndex().get_stats();
+    auto stats = getIndex().get_stats(false);
     auto& schema = getIndex().getSchema();
     EXPECT_LT(0, stats.sizeOnDisk());
     auto field_stats = stats.get_field_stats();
@@ -486,7 +505,7 @@ DiskIndexTest::test_io_settings(const IOSettings& io_settings)
         ASSERT_TRUE(posting_list_cache);
         auto stats = posting_list_cache->get_stats();
         EXPECT_EQ(2, stats.misses);
-        EXPECT_EQ(1, stats.hits);
+        EXPECT_EQ(3, stats.hits);
     } else {
         ASSERT_FALSE(posting_list_cache);
     }

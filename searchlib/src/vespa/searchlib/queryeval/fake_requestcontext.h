@@ -3,13 +3,13 @@
 #pragma once
 
 #include "irequestcontext.h"
+#include "create_blueprint_params.h"
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 #include <limits>
@@ -48,15 +48,17 @@ public:
         _query_tensor = vespalib::eval::value_from_spec(tensor_spec, vespalib::eval::FastValueBuilderFactory::get());
     }
 
-    const search::attribute::AttributeBlueprintParams& get_attribute_blueprint_params() const override;
+    const CreateBlueprintParams& get_create_blueprint_params() const override;
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
+
+    CreateBlueprintParams& get_create_blueprint_params() { return _create_blueprint_params; }
 private:
     std::unique_ptr<vespalib::TestClock> _clock;
     const vespalib::Doom _doom;
     attribute::IAttributeContext *_attributeContext;
     std::string _query_tensor_name;
     std::unique_ptr<vespalib::eval::Value> _query_tensor;
-    search::attribute::AttributeBlueprintParams _attribute_blueprint_params;
+    CreateBlueprintParams _create_blueprint_params;
 };
 
 }

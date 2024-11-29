@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "index_metrics_entry.h"
-#include <vespa/searchlib/util/cache_disk_io_stats.h>
+#include <vespa/searchlib/util/field_index_io_stats.h>
 
 namespace proton {
 

@@ -218,9 +218,7 @@ public abstract class DataType extends Identifiable implements Comparable<DataTy
         return new TensorDataType(type);
     }
 
-    public String getName() {
-        return name;
-    }
+    public String getName() { return name; }
 
     /**
      * Sets the name of this data type. WARNING! Do not use!
@@ -326,7 +324,7 @@ public abstract class DataType extends Identifiable implements Comparable<DataTy
         return Integer.compare(dataTypeId, dataType.dataTypeId);
     }
 
-    /** Returns whether this is a multivalue type, i.e either a CollectionDataType or a MapDataType */
+    /** Returns whether this is a multivalue type, i.e. either a CollectionDataType or a MapDataType */
     public boolean isMultivalue() { return false; }
 
 }

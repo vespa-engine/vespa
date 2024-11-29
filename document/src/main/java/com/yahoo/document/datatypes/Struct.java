@@ -210,10 +210,12 @@ public class Struct extends StructuredFieldValue {
     public String toString() {
         StringBuilder retVal = new StringBuilder();
         retVal.append("Struct (").append(getDataType()).append("): ");
-        int [] increasing = getInOrder();
+        int[] increasing = getInOrder();
         for (int id : increasing) {
             retVal.append(getDataType().getField(id)).append("=").append(values.get(id)).append(", ");
         }
+        if (increasing.length > 0)
+            retVal.setLength(retVal.length() - 2);
         return retVal.toString();
     }
 

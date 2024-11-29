@@ -270,8 +270,20 @@ lrucache_map<P>::hasKey(const K & key) const {
 }
 
 template< typename P >
-typename P::Value *
-lrucache_map<P>::findAndRef(const K & key)
+typename P::Value*
+lrucache_map<P>::find_and_ref(const K& key)
+{
+    internal_iterator found = HashTable::find(key);
+    if (found != HashTable::end()) {
+        ref(found);
+        return &found->second._value;
+    }
+    return nullptr;
+}
+
+template< typename P >
+typename P::Value*
+lrucache_map<P>::find_and_lazy_ref(const K& key)
 {
     internal_iterator found = HashTable::find(key);
     if (found != HashTable::end()) {
@@ -281,6 +293,16 @@ lrucache_map<P>::findAndRef(const K & key)
         return &found->second._value;
     }
     return nullptr;
+}
+
+template <typename P>
+typename lrucache_map<P>::iterator
+lrucache_map<P>::find_no_ref(const K& key) {
+    internal_iterator iter = HashTable::find(key);
+    if (iter != HashTable::end()) {
+        return iterator(this, iter.getInternalIndex());
+    }
+    return end();
 }
 
 }

@@ -48,14 +48,6 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
-    public static final UnboundIntFlag CLEAR_CONNTRACK = defineIntFlag(
-            "clear-conntrack", 3,
-            List.of("hakonhall"), "2024-10-28", "2024-11-28",
-            "Clear the conntrack table:" +
-            " bit 0: after NAT/NPT rules changes." +
-            " bit 1: after WireGuard changes.",
-            "See description");
-
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2024-12-31",
@@ -292,12 +284,12 @@ public class Flags {
             NODE_TYPE, HOSTNAME);
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
-            "zonal-weighted-endpoint-records", List.of(), String.class, List.of("jonmv"), "2023-12-15", "2024-12-01",
+            "zonal-weighted-endpoint-records", List.of(), String.class, List.of("hmusum"), "2023-12-15", "2025-02-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
-            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("jonmv"), "2023-05-16", "2024-12-01",
+            "weighted-endpoint-record-ttl", List.of(), String.class, List.of("hmusum"), "2023-05-16", "2025-02-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
@@ -398,6 +390,12 @@ public class Flags {
             "Whether to sync tenants to HubSpot",
             "Takes effect immediately");
 
+    public static UnboundBooleanFlag ATLASSIAN_SYNC_TENANTS = defineFeatureFlag(
+            "atlassian-sync-tenants", false,
+            List.of("bjormel"), "2024-11-11", "2025-01-01",
+            "Whether to sync tenants to Atlassian",
+            "Takes effect immediately");
+
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
             List.of("vekterli"), "2024-05-23", "2024-12-01",
@@ -424,7 +422,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
             "launch-application-athenz-service", false,
-            List.of("jonmv"), "2024-06-11", "2025-01-10",
+            List.of("hmusum"), "2024-06-11", "2025-02-01",
             "Whether to launch an Athenz service unique to the application. Only valid in public systems!",
             "Takes effect on next deployment",
             INSTANCE_ID);
@@ -436,7 +434,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
-            "distribution-config-from-cluster-controller", false,
+            "distribution-config-from-cluster-controller", true,
             List.of("vekterli"), "2024-07-01", "2024-12-01",
             "Iff true, the cluster controller will be the authoritative source of distribution " +
             "config changes in a content cluster, and distribution changes will be part of explicitly " +

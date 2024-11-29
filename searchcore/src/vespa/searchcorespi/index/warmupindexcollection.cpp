@@ -33,7 +33,7 @@ using TermMap = vespalib::hash_set<std::string>;
 namespace {
 class WarmupRequestContext : public IRequestContext {
     using IAttributeVector = search::attribute::IAttributeVector;
-    using AttributeBlueprintParams = search::attribute::AttributeBlueprintParams;
+    using CreateBlueprintParams = search::queryeval::CreateBlueprintParams;
 public:
     explicit WarmupRequestContext();
     ~WarmupRequestContext() override;
@@ -42,10 +42,10 @@ public:
     const IAttributeVector *getAttribute(std::string_view) const override { return nullptr; }
     const IAttributeVector *getAttributeStableEnum(std::string_view) const override { return nullptr; }
     const vespalib::eval::Value* get_query_tensor(const std::string&) const override;
-    const AttributeBlueprintParams& get_attribute_blueprint_params() const override { return _params; }
+    const CreateBlueprintParams& get_create_blueprint_params() const override { return _params; }
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
 private:
-    const AttributeBlueprintParams _params;
+    const CreateBlueprintParams _params;
 };
 class WarmupTask : public vespalib::Executor::Task {
 public:
@@ -225,10 +225,10 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
     return _prev->createBlueprint(requestContext, fields, term);
 }
 
-search::SearchableStats
-WarmupIndexCollection::getSearchableStats() const
+search::IndexStats
+WarmupIndexCollection::get_index_stats(bool clear_disk_io_stats) const
 {
-    return _prev->getSearchableStats();
+    return _prev->get_index_stats(clear_disk_io_stats);
 }
 
 

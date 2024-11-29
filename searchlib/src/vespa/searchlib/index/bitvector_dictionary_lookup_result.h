@@ -13,7 +13,7 @@ namespace search::index {
 class BitVectorDictionaryLookupResult {
 public:
     static constexpr uint32_t invalid = std::numeric_limits<uint32_t>::max();
-    uint64_t idx;
+    uint32_t idx;
 
     explicit BitVectorDictionaryLookupResult(uint32_t idx_in) noexcept
         : idx(idx_in)

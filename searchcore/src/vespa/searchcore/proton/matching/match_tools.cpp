@@ -4,23 +4,23 @@
 #include "querynodes.h"
 #include "rangequerylocator.h"
 #include <vespa/searchcorespi/index/indexsearchable.h>
-#include <vespa/searchlib/attribute/attribute_blueprint_params.h>
 #include <vespa/searchlib/attribute/attribute_operation.h>
 #include <vespa/searchlib/attribute/diversity.h>
-#include <vespa/searchlib/queryeval/flow.h>
-#include <vespa/searchlib/queryeval/wand/wand_parts.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/features/first_phase_rank_lookup.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/ranksetup.h>
+#include <vespa/searchlib/queryeval/create_blueprint_params.h>
+#include <vespa/searchlib/queryeval/flow.h>
+#include <vespa/searchlib/queryeval/wand/wand_parts.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
 
-using search::queryeval::IDiversifier;
-using search::attribute::diversity::DiversityFilter;
 using search::attribute::BasicType;
-using search::attribute::AttributeBlueprintParams;
+using search::attribute::diversity::DiversityFilter;
+using search::queryeval::CreateBlueprintParams;
 using search::queryeval::ExecuteInfo;
+using search::queryeval::IDiversifier;
 using vespalib::Issue;
 
 using namespace search::fef::indexproperties::matchphase;
@@ -183,12 +183,12 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   uint32_t                     maxNumHits,
                   bool                         is_search)
     : _queryLimiter(queryLimiter),
-      _attribute_blueprint_params(extract_attribute_blueprint_params(rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
+      _create_blueprint_params(extract_create_blueprint_params(rankSetup, rankProperties, metaStore.getNumActiveLids(), searchContext.getDocIdLimit())),
       _query(),
       _match_limiter(),
       _queryEnv(indexEnv, attributeContext, rankProperties, searchContext.getIndexes()),
       _requestContext(doom, thread_bundle, attributeContext, _queryEnv, _queryEnv.getObjectStore(),
-                      _attribute_blueprint_params, metaStoreReadGuard),
+                      _create_blueprint_params, metaStoreReadGuard),
       _mdl(),
       _rankSetup(rankSetup),
       _featureOverrides(featureOverrides),
@@ -221,8 +221,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
         if (is_search) {
             _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
-                                        _attribute_blueprint_params.global_filter_lower_limit,
-                                        _attribute_blueprint_params.global_filter_upper_limit, trace, sort_by_cost);
+                                        _create_blueprint_params.global_filter_lower_limit,
+                                        _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost);
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
@@ -345,9 +345,9 @@ MatchToolsFactory::get_feature_rename_map() const
     return _rankSetup.get_feature_rename_map();
 }
 
-AttributeBlueprintParams
-MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
-                                                      uint32_t active_docids, uint32_t docid_limit)
+CreateBlueprintParams
+MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, const Properties& rank_properties,
+                                                   uint32_t active_docids, uint32_t docid_limit)
 {
     double lower_limit = GlobalFilterLowerLimit::lookup(rank_properties, rank_setup.get_global_filter_lower_limit());
     double upper_limit = GlobalFilterUpperLimit::lookup(rank_properties, rank_setup.get_global_filter_upper_limit());
@@ -356,6 +356,7 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
     double weakand_range = temporary::WeakAndRange::lookup(rank_properties, rank_setup.get_weakand_range());
     double weakand_stop_word_adjust_limit = WeakAndStopWordAdjustLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_adjust_limit());
     double weakand_stop_word_drop_limit = WeakAndStopWordDropLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_drop_limit());
+    double disk_index_bitvector_limit = DiskIndexBitvectorLimit::lookup(rank_properties, rank_setup.get_disk_index_bitvector_limit());
 
     // Note that we count the reserved docid 0 as active.
     // This ensures that when searchable-copies=1, the ratio is 1.0.
@@ -367,7 +368,8 @@ MatchToolsFactory::extract_attribute_blueprint_params(const RankSetup& rank_setu
             fuzzy_matching_algorithm,
             weakand_range,
             StopWordStrategy(weakand_stop_word_adjust_limit,
-                                                      weakand_stop_word_drop_limit, docid_limit)};
+                                                      weakand_stop_word_drop_limit, docid_limit),
+            disk_index_bitvector_limit};
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

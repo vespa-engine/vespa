@@ -15,13 +15,81 @@ class GroupingContext;
 class GroupingManager;
 
 /**
- * A grouping session represents the execution of a grouping expression with one
- * or more passes. Multiple passes are supported by keeping internal state, and
- * providing a way to copy parts of this state into a context object for each
- * pass.
+ * A grouping session represents the execution of a grouping
+ * expression with one or more passes. Multiple passes are supported
+ * by keeping internal state, and providing a way to copy parts of
+ * this state into a context object for each pass.
  **/
 class GroupingSession
 {
+/*
+ * The grouping flow currently goes like this:
+ * Matcher::match creates a GroupingContext from the request,
+ * and looks for an existing session.
+ * Assuming first time, the next step is in ResultProcessor
+ * constructor, where a new GroupingSession is created.
+ *
+ * The new GroupingSession makes its own copy _mgrContext of the
+ * GroupingContext with shared pointers to all the target Grouping
+ * objects.  For groupings that can be fully processed the first time
+ * through, the shared pointer will be to the object in the original
+ * request, so the results end up there directly (skipping some of the
+ * steps below). But most groupings require multiple passes, and the
+ * target will instead be a Grouping copy which is shared into
+ * _groupingMap, where the result will be cached for later passes.
+ *
+ * Then MatchMaster::match calls (via ResultProcessor)
+ * prepareThreadContextCreation, and each MatchThread calls
+ * (again via ResultProcessor) createThreadContext.
+ *
+ * Thread 0 gets a GroupingContext with shared pointers to the
+ * Grouping objects owned by the GroupingSession, while other threads
+ * get their own standalone Grouping objects.
+ *
+ * After matching, MatchThread::processResult will aggregate into the
+ * Grouping objects via groupInRelevanceOrder or groupUnordered, and
+ * fill in distribution key and global ID in the grouping results.
+ *
+ * The per-thread results are merged via GroupingSource::merge and
+ * GroupingManager::merge, where the final merge target will be in
+ * Thread 0 (meaning it ends up in _mgrContext here, shared with
+ * either _groupingMap or ResultProcessor::_groupingContext).
+ *
+ * The next step happens in ResultProcessor::makeReply. If multiple
+ * threads were used above, GroupingManager::prune() is called to
+ * perform post-merge steps; often pruning group lists down to
+ * maxGroups/precision target.  Note that the groups pruned here may
+ * not be completely cleaned, since there's special code in
+ * Group::Value::postMerge where actual destruct is delayed and
+ * Group::Value::prune considers children beyond getChildrenSize()
+ * which means that some groups may be "resurrected" after being
+ * hidden.
+ *
+ * At this point the grouping objects in our _mgrContext holds the
+ * "full" result from this content partition; to generate the actual
+ * (first-pass) result requested from the QRS continueExecution() is
+ * called.
+ * This will copy as needed from the full result (found in
+ * _groupingMap) into the original request (_groupingContext owned by
+ * ResultProcessor) using mergePartial(), and serialize the results.
+ * The serialized grouping result is swapped into the actual SearchReply,
+ * and the GroupingSession is saved in the SessionManager (assuming
+ * more than one pass is needed).
+ *
+ * The QRS GroupingExecutor will gather results from multiple content
+ * nodes and do its own merging and pruning, and send a request for
+ * next-pass results (again assuming multiple passes).
+ * This will find the GroupingSession in SessionManager and
+ * instead of performing search and aggregation, only
+ * handleGroupingSession is called.
+ * This will again call continueExecution, but now we will actually
+ * prune from the full results anything that QRS wasn't interested in,
+ * copy the partial result QRS wants to the request GroupingContext
+ * where it's serialized, then handleGroupingSession swaps the
+ * serialized result into a SearchReply and returns just that.
+ * This repeats with new requests from QRS until all passes are
+ * finished for all groupings.
+ */
 private:
     using GroupingPtr = std::shared_ptr<aggregation::Grouping>;
     using GroupingMap = std::map<uint32_t, GroupingPtr>;

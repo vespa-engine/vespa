@@ -1,28 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docprocs.indexing;
 
-import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.docproc.Processing;
 import com.yahoo.document.Document;
-import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentOperation;
+import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
-import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.document.PositionDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
-import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.Test;
 
-import java.util.List;
-
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -115,7 +104,30 @@ public class IndexingProcessorTestCase {
     }
 
     @Test
-    public void testPutCfg2() {
+    public void testPutPosition() {
+        // Config of the following schema, derived Nov 2024, by SchemaTestCase.testDerivingPosition in the config-model
+        //
+        //                schema place {
+        //
+        //                    document place {
+        //
+        //                        field location type position {
+        //                            indexing: attribute
+        //                        }
+        //                    }
+        //                }
+        IndexingProcessorTester tester = new IndexingProcessorTester("src/test/cfg3");
+
+        DocumentType inputType = tester.getDocumentType("place");
+        DocumentPut input = new DocumentPut(inputType, "id:ns:place::");
+        input.getDocument().setFieldValue(inputType.getField("location"), PositionDataType.fromString("13;17"));
+
+        Document output = ((DocumentPut)tester.process(input)).getDocument();
+        assertEquals(595L, output.getFieldValue("location_zcurve").getWrappedValue());
+    }
+
+    @Test
+    public void testPutLongHash() {
         // Config of the following schema, derived Nov 2024, by SchemaTestCase.testDeriving in the config-model
         //
         //                schema page {
@@ -135,15 +147,13 @@ public class IndexingProcessorTestCase {
         //                }
         IndexingProcessorTester tester = new IndexingProcessorTester("src/test/cfg2");
 
-        {   // Both artist and title are set
-            DocumentType inputType = tester.getDocumentType("page");
-            DocumentPut input = new DocumentPut(inputType, "id:ns:page::");
-            input.getDocument().setFieldValue(inputType.getField("domain"), new StringFieldValue("domain1"));
+        DocumentType inputType = tester.getDocumentType("page");
+        DocumentPut input = new DocumentPut(inputType, "id:ns:page::");
+        input.getDocument().setFieldValue(inputType.getField("domain"), new StringFieldValue("domain1"));
 
-            Document output = ((DocumentPut)tester.process(input)).getDocument();
-            assertEquals("domain1", output.getFieldValue("domain").getWrappedValue());
-            assertEquals(1386505442371493468L, output.getFieldValue("domain_hash").getWrappedValue());
-        }
+        Document output = ((DocumentPut)tester.process(input)).getDocument();
+        assertEquals("domain1", output.getFieldValue("domain").getWrappedValue());
+        assertEquals(1386505442371493468L, output.getFieldValue("domain_hash").getWrappedValue());
     }
 
     @Test

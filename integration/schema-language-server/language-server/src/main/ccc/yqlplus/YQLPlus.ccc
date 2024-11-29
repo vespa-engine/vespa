@@ -12,6 +12,13 @@ INJECT YQLPlusParser:
     protected Deque<Boolean> expression_stack = new ArrayDeque<>();
 }
 
+INJECT YQLPlusLexer:
+{
+    public static EnumSet<TokenType> getRegularTokens() {
+        return EnumSet.copyOf(regularTokens);
+    }
+}
+
 // --------------------------------------------------------------------------------
 //
 // Token declarations.
@@ -30,7 +37,8 @@ TOKEN :
 | < WHERE: 'where' >
 | < ORDER: 'order' >
 | < BY: 'by' >
-| < ORDERBY: <ORDER> <BY> >
+| < ORDER: 'order' >
+| < ORDERBY: <ORDER> ' ' <BY> >
 | < DESC: 'desc' >
 | < ASC: 'asc' >
 | < FROM: 'from' >
@@ -69,9 +77,9 @@ TOKEN :
 | < EQ: '=' >
 | < LIKE: 'like' >
 | < CONTAINS: 'contains' >
-| < NOTLIKE: 'not like' >
+| < NOTLIKE: 'not ' <LIKE> >
 | < MATCHES: 'matches' >
-| < NOTMATCHES: 'not matches' >
+| < NOTMATCHES: 'not ' <MATCHES> >
 
 | < PLUS: '+' >
 | < MINUS: '-' >
@@ -81,8 +89,8 @@ TOKEN :
 
 // effectively unary operators
 | < NULL: 'null' >
-| < IS_NULL: 'is' <NULL> >
-| < IS_NOT_NULL: 'is not' <NULL> >
+| < IS_NULL: 'is ' <NULL> >
+| < IS_NOT_NULL: 'is not ' <NULL> >
 
 // dereference
 | < DOT: '.' >
@@ -136,15 +144,12 @@ String identifierStr:
         | <DESC>
         | <OUTPUT>
         | <COUNT>
-        | <NOT_IN>
         | <IN>
         | <LIKE>
         | <CONTAINS>
         | <NOTLIKE>
         | <MATCHES>
         | <NOTMATCHES>
-        | <IS_NULL>
-        | <IS_NOT_NULL>
         | <TIMEOUT>
         | <IDENTIFIER>
         | <LETTER>
@@ -162,7 +167,6 @@ vespa_grouping_identifier:
         | <WHERE>
         | <ORDER>
         | <BY>
-        | <ORDERBY>
         | <DESC>
         | <ASC>
         | <FROM>
@@ -184,8 +188,6 @@ vespa_grouping_identifier:
         | <MATCHES>
         | <NOTMATCHES>
         | <NULL>
-        | <IS_NULL>
-        | <IS_NOT_NULL>
         | <DOT>
         | <AT>
         | <TIMEOUT>
@@ -414,8 +416,7 @@ orderby_fields:
 
 orderby_field:
     (
-        (expression(true) <DESC>)
-        | (expression(true) (<ASC>)? )
+        expression(true) (<DESC> | <ASC>)?
     )
 ;
 
@@ -466,7 +467,7 @@ argument(boolean in_select):
 expression(boolean select):
     (
         null_operator
-        | annotate_expression
+        | (SCAN annotate_expression => annotate_expression)
         | logical_OR_expression
     )
 ;
@@ -515,7 +516,7 @@ equality_expression:
 
 in_not_in_target:
     ( // TODO: Add expression stack peek
-        ( <LPAREN> select_statement <RPAREN> )
+        SCAN 2 => ( <LPAREN> select_statement <RPAREN> )
         | literal_list
     )
 ;
@@ -609,7 +610,7 @@ primary_expression:
         (<LPAREN> expression(in_select) <RPAREN> )
         | constant_expression
         | (
-            (SCAN 2 => call_expression(in_select))
+            (SCAN namespaced_name <LPAREN> => call_expression(in_select) )
             | fieldref
         )
     )

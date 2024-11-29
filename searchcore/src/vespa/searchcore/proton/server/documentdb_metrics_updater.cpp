@@ -17,7 +17,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
-#include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/searchlib/util/index_stats.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/size_literals.h>
 
@@ -43,7 +43,6 @@ DocumentDBMetricsUpdater::DocumentDBMetricsUpdater(const DocumentSubDBCollection
       _jobTrackers(jobTrackers),
       _writeFilter(writeFilter),
       _feed_handler(feed_handler),
-      _lastDocStoreCacheStats(),
       _last_feed_handler_stats()
 {
 }
@@ -73,22 +72,22 @@ updateDiskUsageMetric(metrics::LongValueMetric &metric, uint64_t diskUsage, Tota
 }
 
 void
-updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::SearchableStats &stats, TotalStats &totalStats)
+updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::IndexStats &stats, TotalStats &totalStats)
 {
     DocumentDBTaggedMetrics::IndexMetrics &indexMetrics = metrics.index;
     updateDiskUsageMetric(indexMetrics.diskUsage, stats.sizeOnDisk(), totalStats);
     updateMemoryUsageMetrics(indexMetrics.memoryUsage, stats.memoryUsage(), totalStats);
     indexMetrics.docsInMemory.set(stats.docsInMemory());
     auto& field_metrics = metrics.ready.index;
-    search::CacheDiskIoStats disk_io;
+    search::FieldIndexIoStats disk_io;
     for (auto& field : stats.get_field_stats()) {
         auto entry = field_metrics.get_field_metrics_entry(field.first);
         if (entry) {
             entry->memoryUsage.update(field.second.memory_usage());
             entry->disk_usage.set(field.second.size_on_disk());
-            entry->update_disk_io(field.second.cache_disk_io_stats());
+            entry->update_disk_io(field.second.io_stats());
         }
-        disk_io.merge(field.second.cache_disk_io_stats());
+        disk_io.merge(field.second.io_stats());
     }
     indexMetrics.disk_io.update(disk_io);
 }
@@ -236,7 +235,6 @@ updateDocumentsMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBColl
 void
 updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreMetrics &metrics,
                            const IDocumentSubDB *subDb,
-                           CacheStats &lastCacheStats,
                            TotalStats &totalStats)
 {
     const ISummaryManager::SP &summaryMgr = subDb->getSummaryManager();
@@ -249,17 +247,16 @@ updateDocumentStoreMetrics(DocumentDBTaggedMetrics::SubDBMetrics::DocumentStoreM
 
     vespalib::CacheStats cacheStats = backingStore.getCacheStats();
     totalStats.memoryUsage.incAllocatedBytes(cacheStats.memory_used);
-    metrics.cache.update_metrics(cacheStats, lastCacheStats);
-    lastCacheStats = cacheStats;
+    metrics.cache.update_metrics(cacheStats);
 }
 
 void
 updateDocumentStoreMetrics(DocumentDBTaggedMetrics &metrics, const DocumentSubDBCollection &subDBs,
-                           DocumentDBMetricsUpdater::DocumentStoreCacheStats &lastDocStoreCacheStats, TotalStats &totalStats)
+                           TotalStats &totalStats)
 {
-    updateDocumentStoreMetrics(metrics.ready.documentStore, subDBs.getReadySubDB(), lastDocStoreCacheStats.readySubDb, totalStats);
-    updateDocumentStoreMetrics(metrics.removed.documentStore, subDBs.getRemSubDB(), lastDocStoreCacheStats.removedSubDb, totalStats);
-    updateDocumentStoreMetrics(metrics.notReady.documentStore, subDBs.getNotReadySubDB(), lastDocStoreCacheStats.notReadySubDb, totalStats);
+    updateDocumentStoreMetrics(metrics.ready.documentStore, subDBs.getReadySubDB(), totalStats);
+    updateDocumentStoreMetrics(metrics.removed.documentStore, subDBs.getRemSubDB(), totalStats);
+    updateDocumentStoreMetrics(metrics.notReady.documentStore, subDBs.getNotReadySubDB(), totalStats);
 }
 
 template <typename MetricSetType>
@@ -303,11 +300,11 @@ DocumentDBMetricsUpdater::updateMetrics(const metrics::MetricLockGuard & guard, 
 {
     TotalStats totalStats;
     ExecutorThreadingServiceStats threadingServiceStats = _writeService.getStats();
-    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->getSearchableStats(), totalStats);
+    updateIndexMetrics(metrics, _subDBs.getReadySubDB()->get_index_stats(true), totalStats);
     updateAttributeMetrics(metrics, _subDBs, totalStats);
     updateMatchingMetrics(guard, metrics, *_subDBs.getReadySubDB());
     updateDocumentsMetrics(metrics, _subDBs);
-    updateDocumentStoreMetrics(metrics, _subDBs, _lastDocStoreCacheStats, totalStats);
+    updateDocumentStoreMetrics(metrics, _subDBs, totalStats);
     updateMiscMetrics(metrics, threadingServiceStats);
 
     metrics.totalMemoryUsage.update(totalStats.memoryUsage);

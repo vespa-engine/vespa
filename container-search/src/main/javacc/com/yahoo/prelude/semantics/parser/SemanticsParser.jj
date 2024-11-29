@@ -90,6 +90,7 @@ TOKEN :
     <STAR: "*"> |
     <STEMMINGDIRECTIVE: "@stemming"> |
     <SUPERDIRECTIVE: "@super"> |
+    <TILDE: "~"> |
     <IDENTIFIER: (~[
 "\u0000"-"\u002f","\u003a"-"\u003f","\u005b"-"\u005d","\u007b"-"\u00a7","\u00a9","\u00ab"-"\u00ae","\u00b0"-"\u00b3","\u00b6"-"\u00b7","\u00b9","\u00bb"-"\u00bf",
 "\u00d7","\u00f7","\u037e","\u0387","\u03f6","\u0482","\u055a"-"\u055f","\u0589"-"\u058a","\u05be","\u05c0","\u05c3","\u05c6","\u05f3"-"\u05f4","\u0600"-"\u0603",
@@ -348,6 +349,7 @@ TermType termType() :
 {
     <QUESTION> { return TermType.OR; } |
     <DOLLAR> { return TermType.RANK; } |
+    <TILDE> { return TermType.WEAK_AND; } |
     <PLUS> { return TermType.AND; }  |
     <DASH> { return TermType.NOT; } |
     <EQUALS> { return TermType.EQUIV; } |

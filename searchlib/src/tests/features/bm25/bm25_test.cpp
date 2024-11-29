@@ -274,4 +274,11 @@ TEST_F(Bm25ExecutorTest, inverse_document_frequency_can_be_overriden_with_signif
     EXPECT_TRUE(execute(score(3.0, 20, 0.35)));
 }
 
+TEST_F(Bm25ExecutorTest, missing_interleaved_features_are_handled)
+{
+    setup();
+    prepare_term(0, 0, 0, 0);
+    EXPECT_TRUE(execute(score(1.0, 10, idf(25))));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -483,6 +483,7 @@ public class DocumentType extends StructuredDataType {
         return contentStructType.getFields().iterator();
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof DocumentType other)) return false;
         // Ignore whether one of them have added inheritance to super Document.0 type
@@ -497,8 +498,14 @@ public class DocumentType extends StructuredDataType {
         return false;
     }
 
+    @Override
     public int hashCode() {
         return super.hashCode() + contentStructType.hashCode() + inherits.hashCode();
+    }
+
+    @Override
+    public String toString() {
+        return "document type '" + getName() + "'";
     }
 
     @Override
@@ -509,11 +516,11 @@ public class DocumentType extends StructuredDataType {
         // TODO: what if it's not a DocumentWriter?
     }
 
-
     @Override
     public void visitMembers(ObjectVisitor visitor) {
         super.visitMembers(visitor);
         visitor.visit("headertype", contentStructType);
         visitor.visit("inherits", inherits);
     }
+
 }

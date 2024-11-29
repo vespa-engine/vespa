@@ -89,9 +89,7 @@ public abstract class StructuredDataType extends DataType {
 
     @Override
     public FieldPath buildFieldPath(String remainFieldName) {
-        if (remainFieldName.length() == 0) {
-            return new FieldPath();
-        }
+        if (remainFieldName.isEmpty()) return new FieldPath();
 
         String currFieldName = remainFieldName;
         String subFieldName = "";
@@ -115,7 +113,7 @@ public abstract class StructuredDataType extends DataType {
             tmpPath.add(0, FieldPathEntry.newStructFieldEntry(f));
             return new FieldPath(tmpPath);
         } else {
-            throw new IllegalArgumentException("Field '" + currFieldName + "' not found in type " + this);
+            throw new IllegalArgumentException("Field '" + currFieldName + "' not found in " + this);
         }
     }
 

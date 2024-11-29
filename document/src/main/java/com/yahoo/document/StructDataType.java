@@ -164,4 +164,10 @@ public class StructDataType extends BaseStructDataType {
         result = 31 * result + (superType != null ? superType.hashCode() : 0);
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "struct type '" + getName() + "'";
+    }
+
 }

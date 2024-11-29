@@ -2,6 +2,7 @@
 
 package com.yahoo.tensor.impl;
 
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.TensorAddress;
 
 /**
@@ -17,7 +18,10 @@ final class TensorAddressEmpty extends TensorAddressAny {
 
     @Override public int size() { return 0; }
 
-    @Override public long numericLabel(int i) { throw new IllegalArgumentException("Empty address with no labels"); }
+    @Override 
+    public Label objectLabel(int i) { 
+        throw new IllegalArgumentException("Empty address with no labels"); 
+    }
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {

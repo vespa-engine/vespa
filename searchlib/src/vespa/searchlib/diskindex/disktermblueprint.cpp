@@ -42,14 +42,16 @@ DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
                                      const FieldIndex& field_index,
                                      const std::string& query_term,
                                      DictionaryLookupResult lookupRes,
-                                     bool useBitVector)
+                                     bool is_filter_field,
+                                     double bitvector_limit)
     : SimpleLeafBlueprint(field),
       _field(field),
       _field_index(field_index),
       _query_term(query_term),
       _lookupRes(std::move(lookupRes)),
       _bitvector_lookup_result(_field_index.lookup_bit_vector(_lookupRes)),
-      _useBitVector(useBitVector),
+      _is_filter_field(is_filter_field),
+      _bitvector_limit(bitvector_limit),
       _fetchPostingsDone(false),
       _postingHandle(),
       _bitVector(),
@@ -61,14 +63,45 @@ DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
 }
 
 void
+DiskTermBlueprint::log_bitvector_read() const
+{
+    auto range = _field_index.get_bitvector_file_range(_bitvector_lookup_result);
+    LOG(debug, "DiskTermBlueprint::fetchPosting "
+        "bitvector %s %s %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu32 " %" PRIu64 " %" PRIu64,
+        _field.getName().c_str(), _query_term.c_str(), _field_index.get_file_id(),
+        _lookupRes.wordNum, _lookupRes.counts._numDocs,
+        _bitvector_lookup_result.idx,
+        range.start_offset, range.size());
+
+}
+
+void
+DiskTermBlueprint::log_posting_list_read() const
+{
+    auto range = _field_index.get_posting_list_file_range(_lookupRes);
+    LOG(debug, "DiskTermBlueprint::fetchPosting "
+        "posting %s %s %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64,
+        _field.getName().c_str(), _query_term.c_str(), _field_index.get_file_id(),
+        _lookupRes.wordNum, _lookupRes.counts._numDocs,
+        _lookupRes.bitOffset, _lookupRes.counts._bitLength,
+        range.start_offset, range.size());
+}
+
+void
 DiskTermBlueprint::fetchPostings(const queryeval::ExecuteInfo &execInfo)
 {
     (void) execInfo;
     if (!_fetchPostingsDone) {
-        if (_useBitVector && _bitvector_lookup_result.valid()) {
+        if (use_bitvector() && _bitvector_lookup_result.valid()) {
+            if (LOG_WOULD_LOG(debug)) [[unlikely]] {
+                log_bitvector_read();
+            }
             _bitVector = _field_index.read_bit_vector(_bitvector_lookup_result);
         }
         if (!_bitVector) {
+            if (LOG_WOULD_LOG(debug)) [[unlikely]] {
+                log_posting_list_read();
+            }
             _postingHandle = _field_index.read_posting_list(_lookupRes);
         }
     }
@@ -82,6 +115,13 @@ DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
     return {rel_est, disk_index_cost(rel_est), disk_index_strict_cost(rel_est)};
 }
 
+bool
+DiskTermBlueprint::use_bitvector() const
+{
+    return _is_filter_field  ||
+        ((get_docid_limit() > 0) && ((double)_lookupRes.counts._numDocs / (double)get_docid_limit()) > _bitvector_limit);
+}
+
 const BitVector *
 DiskTermBlueprint::get_bitvector() const
 {
@@ -90,6 +130,9 @@ DiskTermBlueprint::get_bitvector() const
     }
     std::lock_guard guard(_mutex);
     if (!_late_bitvector) {
+        if (LOG_WOULD_LOG(debug)) [[unlikely]] {
+            log_bitvector_read();
+        }
         _late_bitvector = _field_index.read_bit_vector(_bitvector_lookup_result);
         assert(_late_bitvector);
     }
@@ -99,13 +142,19 @@ DiskTermBlueprint::get_bitvector() const
 SearchIterator::UP
 DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
 {
-    if (_bitvector_lookup_result.valid() && (_useBitVector || tfmda[0]->isNotNeeded())) {
+    if (_bitvector_lookup_result.valid() && (_bitVector || tfmda[0]->isNotNeeded())) {
         LOG(debug, "Return BitVectorIterator: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_field_index.get_field_id()).c_str(), _lookupRes.wordNum, _lookupRes.counts._numDocs);
-        return BitVectorIterator::create(get_bitvector(), *tfmda[0], strict());
+        auto bv = get_bitvector();
+        /*
+         * If bitvectors are used when _is_filter_field is false due to word being very common in this disk index
+         * then the term field match data needs a full reset during unpack to clear out values set during unpack
+         * from another iterator for the same term and another disk index or memory index.
+         */
+        return BitVectorIterator::create(bv, bv->size(), *tfmda[0], strict(), false, !_is_filter_field);
     }
     auto search(_field_index.create_iterator(_lookupRes, _postingHandle, tfmda));
-    if (_useBitVector) {
+    if (use_bitvector()) {
         LOG(debug, "Return BooleanMatchIteratorWrapper: %s, wordNum(%" PRIu64 "), docCount(%" PRIu64 ")",
             getName(_field_index.get_field_id()).c_str(), _lookupRes.wordNum, _lookupRes.counts._numDocs);
         return std::make_unique<BooleanMatchIteratorWrapper>(std::move(search), tfmda);

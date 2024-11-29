@@ -35,7 +35,7 @@ public class SimpleTestAdapter implements FieldValueAdapter {
     public DataType getInputType(Expression exp, String fieldName) {
         // Same check as in config-model IndexingValidation:
         if ( ! types.containsKey(fieldName))
-            throw new VerificationException(exp, "Input field '" + fieldName + "' not found.");
+            throw new VerificationException(exp, "Field '" + fieldName + "' not found.");
         return types.get(fieldName);
     }
 

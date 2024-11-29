@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ApplicationTransaction;
 import com.yahoo.config.provision.Capacity;
@@ -15,7 +16,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
@@ -548,7 +548,7 @@ public class VirtualNodeProvisioningTest {
                                                           new ClusterResources(4, 1, resources)));
         }
         catch (IllegalArgumentException e) {
-            assertEquals("No allocation possible within limits: " +
+            assertEquals("No allocation possible with limits " +
                          "from 2 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk: 10.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
                          "to 4 nodes with [vcpu: 1.0, memory: 5.0 Gb, disk: 10.0 Gb, bandwidth: 1.0 Gbps, architecture: any]",
                          e.getMessage());
@@ -572,7 +572,7 @@ public class VirtualNodeProvisioningTest {
                                                           new ClusterResources(4, 1, resources)));
         }
         catch (IllegalArgumentException e) {
-            assertEquals("No allocation possible within limits: " +
+            assertEquals("No allocation possible with limits " +
                          "from 2 nodes with [vcpu: 20.0, memory: 37.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any] " +
                          "to 4 nodes with [vcpu: 20.0, memory: 37.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, architecture: any]. " +
                          "Nearest allowed node resources: [vcpu: 20.0, memory: 40.0 Gb, disk: 100.0 Gb, bandwidth: 1.0 Gbps, storage type: remote, architecture: any]",

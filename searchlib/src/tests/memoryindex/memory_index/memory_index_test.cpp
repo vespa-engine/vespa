@@ -21,7 +21,7 @@
 #include <vespa/searchlib/test/doc_builder.h>
 #include <vespa/searchlib/test/schema_builder.h>
 #include <vespa/searchlib/test/string_field_builder.h>
-#include <vespa/searchlib/util/searchable_stats.h>
+#include <vespa/searchlib/util/index_stats.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
@@ -36,7 +36,7 @@ using document::DataType;
 using document::Document;
 using document::FieldValue;
 using search::FieldIndexStats;
-using search::SearchableStats;
+using search::IndexStats;
 using search::ScheduleTaskCallback;
 using search::index::FieldLengthInfo;
 using search::index::IFieldLengthInspector;
@@ -471,7 +471,7 @@ TEST(MemoryIndexTest, require_that_num_docs_and_doc_id_limit_is_returned)
 
 namespace {
 
-FieldIndexStats get_field_stats(const SearchableStats &stats, const std::string& field_name)
+FieldIndexStats get_field_stats(const IndexStats &stats, const std::string& field_name)
 {
     auto itr = stats.get_field_stats().find(field_name);
     return itr == stats.get_field_stats().end() ? FieldIndexStats() : itr->second;

@@ -2,14 +2,10 @@
 package com.yahoo.schema.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
-import com.yahoo.document.MapDataType;
-import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.Attribute;
-import com.yahoo.schema.document.GeoPos;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
@@ -144,28 +140,11 @@ public class IndexingValidation extends Processor {
             } else {
                 throw new UnsupportedOperationException();
             }
-            if ( ! fieldType.isAssignableFrom(valueType) &&
-                 ! fieldType.isAssignableFrom(createCompatType(valueType))) {
+            if ( ! fieldType.isAssignableFrom(valueType))
                 throw new VerificationException(expression, "Can not assign " + valueType.getName() + " to " + fieldDesc +
                                                             " '" + fieldName + "' which is " + fieldType.getName() + ".");
-            }
         }
 
-        private static DataType createCompatType(DataType origType) {
-            if (origType instanceof ArrayDataType) {
-                return DataType.getArray(createCompatType(origType.getNestedType()));
-            } else if (origType instanceof MapDataType) {
-                MapDataType mapType = (MapDataType)origType;
-                return DataType.getMap(createCompatType(mapType.getKeyType()),
-                                       createCompatType(mapType.getValueType()));
-            } else if (origType instanceof WeightedSetDataType) {
-                return DataType.getWeightedSet(createCompatType(((WeightedSetDataType)origType).getNestedType()));
-            } else if (GeoPos.isPos(origType)) {
-                return DataType.LONG;
-            } else {
-                return origType;
-            }
-        }
     }
 
 }

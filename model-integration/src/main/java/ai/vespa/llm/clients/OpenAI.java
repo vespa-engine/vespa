@@ -6,10 +6,9 @@ import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.client.openai.OpenAiClient;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
+import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
-import com.yahoo.document.DataType;
 import com.yahoo.language.process.Generator;
 
 import java.util.List;
@@ -27,7 +26,7 @@ public class OpenAI extends ConfigurableLanguageModel implements Generator {
     private final OpenAiClient client;
 
     @Inject
-    public OpenAI(LlmClientConfig config, SecretStore secretStore) {
+    public OpenAI(LlmClientConfig config, Secrets secretStore) {
         super(config, secretStore);
         client = new OpenAiClient();
     }
@@ -52,5 +51,6 @@ public class OpenAI extends ConfigurableLanguageModel implements Generator {
     public String generate(Prompt prompt, Context context) {
         return GeneratorUtils.generate(prompt, this);
     }
+
 }
 

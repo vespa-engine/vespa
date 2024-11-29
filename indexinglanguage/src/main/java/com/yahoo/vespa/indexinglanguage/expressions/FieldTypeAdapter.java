@@ -4,6 +4,8 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 
 /**
+ * Returns information about the input and output types of fields.
+ *
  * @author Simon Thoresen Hult
  */
 public interface FieldTypeAdapter {

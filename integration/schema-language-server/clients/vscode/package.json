@@ -15,7 +15,8 @@
   ],
   "keywords": [
     "Vespa",
-    "Schema"
+    "Schema",
+    "YQL"
   ],
   "repository": {
     "type": "git",  
@@ -24,7 +25,8 @@
   "icon": "images/icon.png",
   "activationEvents": [
     "onLanguage:xml",
-    "onLanguage:vespaSchema"
+    "onLanguage:vespaSchema",
+    "onLanguage:vespaYQL"
   ],
   "main": "./dist/extension.js",
   "contributes": {
@@ -37,6 +39,16 @@
         "extensions": [
           ".sd",
           ".profile"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "vespaYQL",
+        "aliases": [
+          "Vespa YQL"
+        ],
+        "extensions": [
+          ".yql"
         ],
         "configuration": "./language-configuration.json"
       }

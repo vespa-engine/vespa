@@ -932,6 +932,21 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.Label" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract long asNumeric()",
+      "public abstract java.lang.String asString()",
+      "public abstract boolean isEqualTo(com.yahoo.tensor.Label)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.MappedTensor$Builder" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
@@ -1077,6 +1092,7 @@
     ],
     "methods" : [
       "public void <init>(int)",
+      "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, com.yahoo.tensor.Label)",
       "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, long)",
       "public com.yahoo.tensor.PartialAddress$Builder add(java.lang.String, java.lang.String)",
       "public com.yahoo.tensor.PartialAddress build()"
@@ -1091,8 +1107,10 @@
     ],
     "methods" : [
       "public java.lang.String dimension(int)",
+      "public com.yahoo.tensor.Label objectLabel(java.lang.String)",
       "public long numericLabel(java.lang.String)",
       "public java.lang.String label(java.lang.String)",
+      "public com.yahoo.tensor.Label objectLabel(int)",
       "public java.lang.String label(int)",
       "public int size()",
       "public com.yahoo.tensor.TensorAddress asAddress(com.yahoo.tensor.TensorType)",
@@ -1281,6 +1299,7 @@
       "public void <init>(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, java.lang.String)",
+      "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, com.yahoo.tensor.Label)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, int)",
       "public com.yahoo.tensor.TensorAddress$Builder add(java.lang.String, long)",
       "public com.yahoo.tensor.TensorAddress$Builder copy()",
@@ -1317,6 +1336,7 @@
       "public static varargs com.yahoo.tensor.TensorAddress of(long[])",
       "public static varargs com.yahoo.tensor.TensorAddress of(int[])",
       "public abstract int size()",
+      "public abstract com.yahoo.tensor.Label objectLabel(int)",
       "public abstract java.lang.String label(int)",
       "public abstract long numericLabel(int)",
       "public abstract com.yahoo.tensor.TensorAddress withLabel(int, long)",

@@ -165,6 +165,12 @@ public class PermanentFlags {
             "Takes effect on next host admin tick",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag VERBOSE_DEPLOY_PARAMETER = defineFeatureFlag(
+            "verbose-deploy-parameter", false,
+            "Whether (external) deployments should set verbose flag (will mean more logging in practice). " +
+                    "Will only be used if flag in request is false (which is the default)",
+            "Takes effect at next deployment");
+
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
     private static final Pattern VERSION_PATTERN = Pattern.compile("^\\d\\.\\d\\.\\d(\\." + VERSION_QUALIFIER_REGEX + ")?$");
@@ -538,7 +544,7 @@ public class PermanentFlags {
             "config-server-unknown-status-session-expiry-time", 6,
             "Expiry time in hours for sessions with unknown status, can be lowered if there are incidents/bugs " +
                     " or free disk space is too low and one needs to delete sessions",
-            "Takes effect after restart of config server"
+            "Takes effect after reboot of config server node"
     );
 
     private PermanentFlags() {}

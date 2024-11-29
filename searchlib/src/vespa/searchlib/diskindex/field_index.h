@@ -24,14 +24,15 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     using DiskPostingFile = index::PostingListFileRandRead;
     using DiskPostingFileReal = Zc4PosOccRandRead;
     using DiskPostingFileDynamicKReal = ZcPosOccRandRead;
+    using PostingListFileRange = index::PostingListFileRange;
 
-    class LockedCacheDiskIoStats {
-        CacheDiskIoStats _stats;
+    class LockedFieldIndexIoStats {
+        FieldIndexIoStats _stats;
         std::mutex _mutex;
 
     public:
-        LockedCacheDiskIoStats() noexcept;
-        ~LockedCacheDiskIoStats();
+        LockedFieldIndexIoStats() noexcept;
+        ~LockedFieldIndexIoStats();
 
         void add_uncached_read_operation(uint64_t bytes) {
             std::lock_guard guard(_mutex);
@@ -42,9 +43,9 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
             _stats.add_cached_read_operation(bytes);
         }
 
-        CacheDiskIoStats read_and_clear() {
+        FieldIndexIoStats read_and_maybe_clear(bool clear_disk_io_stats) {
             std::lock_guard guard(_mutex);
-            return _stats.read_and_clear();
+            return _stats.read_and_maybe_clear(clear_disk_io_stats);
         }
     };
 
@@ -53,7 +54,7 @@ class FieldIndex : public IPostingListCache::IPostingListFileBacking {
     std::unique_ptr<index::DictionaryFileRandRead> _dict;
     uint64_t _file_id;
     uint64_t _size_on_disk;
-    std::shared_ptr<LockedCacheDiskIoStats> _cache_disk_io_stats;
+    std::shared_ptr<LockedFieldIndexIoStats> _io_stats;
     std::shared_ptr<IPostingListCache> _posting_list_cache;
     bool                               _posting_list_cache_enabled;
     bool                               _bitvector_cache_enabled;
@@ -76,17 +77,24 @@ public:
                                                         bool trim) const;
     index::PostingListHandle read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const override;
     index::PostingListHandle read_posting_list(const search::index::DictionaryLookupResult& lookup_result) const;
+    PostingListFileRange get_posting_list_file_range(const search::index::DictionaryLookupResult& lookup_result) const {
+        return _posting_file->get_posting_list_file_range(lookup_result);
+    }
     index::BitVectorDictionaryLookupResult lookup_bit_vector(const search::index::DictionaryLookupResult& lookup_result) const;
     std::shared_ptr<BitVector> read_uncached_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
     std::shared_ptr<BitVector> read(const IPostingListCache::BitVectorKey& key, IPostingListCache::Context& ctx) const override;
     std::shared_ptr<BitVector> read_bit_vector(index::BitVectorDictionaryLookupResult lookup_result) const;
+    PostingListFileRange get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const {
+        return _bit_vector_dict->get_bitvector_file_range(lookup_result);
+    }
     std::unique_ptr<search::queryeval::SearchIterator> create_iterator(const search::index::DictionaryLookupResult& lookup_result,
                                                                        const index::PostingListHandle& handle,
                                                                        const search::fef::TermFieldMatchDataArray& tfmda) const;
     index::FieldLengthInfo get_field_length_info() const;
 
     index::DictionaryFileRandRead* get_dictionary() noexcept { return _dict.get(); }
-    FieldIndexStats get_stats() const;
+    FieldIndexStats get_stats(bool clear_disk_io_stats) const;
+    uint64_t get_file_id() const noexcept { return _file_id; }
     uint32_t get_field_id() const noexcept { return _field_id; }
     bool is_posting_list_cache_enabled() const noexcept { return _posting_list_cache_enabled; }
 };

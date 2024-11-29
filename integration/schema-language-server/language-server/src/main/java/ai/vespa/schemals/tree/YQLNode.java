@@ -14,22 +14,36 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
     private ai.vespa.schemals.parser.grouping.Node originalGroupingNode;
 
     private String customText;
+    private int startCharOffset;
 
-    public YQLNode(Node node, Position offset) {
+    public YQLNode(Node node, Position offset, int startCharOffset, String originalString) {
         super(LanguageType.YQLPlus, CSTUtils.addPositionToRange(offset, YQLUtils.getNodeRange(node)), node.isDirty());
         originalYQLNode = node;
+        this.startCharOffset = startCharOffset;
+        this.customText = originalString.substring(node.getBeginOffset(), node.getEndOffset());
 
         for (Node child : node.children()) {
-            addChild(new YQLNode(child, offset));
+            addChild(new YQLNode(child, offset, startCharOffset, originalString));
         }
     }
 
-    public YQLNode(ai.vespa.schemals.parser.grouping.Node node, Position rangeOffset) {
+    public YQLNode(Node node, Position offset, int startCharOffset) {
+        super(LanguageType.YQLPlus, CSTUtils.addPositionToRange(offset, YQLUtils.getNodeRange(node)), node.isDirty());
+        originalYQLNode = node;
+        this.startCharOffset = startCharOffset;
+
+        for (Node child : node.children()) {
+            addChild(new YQLNode(child, offset, startCharOffset));
+        }
+    }
+
+    public YQLNode(ai.vespa.schemals.parser.grouping.Node node, Position rangeOffset, int startCharOffset) {
         super(LanguageType.GROUPING, CSTUtils.addPositionToRange(rangeOffset, GroupingUtils.getNodeRange(node)), node.isDirty());
         originalGroupingNode = node;
+        this.startCharOffset = startCharOffset;
 
         for (ai.vespa.schemals.parser.grouping.Node child : node.children()) {
-            addChild(new YQLNode(child, rangeOffset));
+            addChild(new YQLNode(child, rangeOffset, startCharOffset));
         }
     }
 
@@ -37,9 +51,10 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
         super(LanguageType.CUSTOM, range, false);
     }
 
-    public YQLNode(Range range, String customText) {
+    public YQLNode(Range range, String customText, int startCharOffset) {
         this(range);
         this.customText = customText;
+        this.startCharOffset = startCharOffset;
     }
 
     public Range setRange(Range range) {
@@ -49,6 +64,7 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
 
     public String getText() {
         if (language == LanguageType.YQLPlus) {
+            if (customText != null) return customText;
             return originalYQLNode.getSource();
         }
 
@@ -72,6 +88,7 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
             var child = get(i);
             ret += " " + child.getText();
         }
+        if (ret.length() == 0) return "";
 
         return ret.substring(1);
     }
@@ -97,10 +114,26 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
 
     @Override
     public int getBeginOffset() {
-        if (language == LanguageType.YQLPlus) return originalYQLNode.getBeginOffset();
-        if (language == LanguageType.GROUPING) return originalGroupingNode.getBeginOffset();
+        if (language == LanguageType.YQLPlus) return startCharOffset + originalYQLNode.getBeginOffset();
+        if (language == LanguageType.GROUPING) return startCharOffset + originalGroupingNode.getBeginOffset();
+        if (language == LanguageType.CUSTOM) return startCharOffset;
 
         throw new RuntimeException("Could not find the begin offset of YQLNode.");
+    }
+
+    @Override
+    public int getEndOffset() {
+        if (language == LanguageType.YQLPlus) return startCharOffset + originalYQLNode.getEndOffset();
+        if (language == LanguageType.GROUPING) return startCharOffset + originalGroupingNode.getEndOffset();
+
+        if (language == LanguageType.CUSTOM && size() > 0) {
+            return get(size() - 1).getEndOffset();
+        }
+        if (language == LanguageType.CUSTOM && customText != null) {
+            return startCharOffset + customText.length();
+        }
+
+        throw new RuntimeException("Could not find the end offset of YQLNode.");
     }
 
     public String toString() {

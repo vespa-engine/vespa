@@ -25,6 +25,7 @@ public:
     Value &operator=(Value &&rhs) = default;
 
     Value(const Value &rhs);
+    Value& operator=(const Value&);
     ~Value();
 
     uint64_t getSyncToken() const { return _syncToken; }

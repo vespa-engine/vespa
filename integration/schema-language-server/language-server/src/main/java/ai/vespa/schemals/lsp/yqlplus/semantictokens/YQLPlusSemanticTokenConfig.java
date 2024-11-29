@@ -11,6 +11,7 @@ import ai.vespa.schemals.parser.yqlplus.ast.FALSE;
 import ai.vespa.schemals.parser.yqlplus.ast.TRUE;
 import ai.vespa.schemals.parser.yqlplus.ast.AT;
 import ai.vespa.schemals.parser.yqlplus.ast.CONTAINS;
+import ai.vespa.schemals.parser.yqlplus.ast.DESC;
 import ai.vespa.schemals.parser.yqlplus.ast.FLOAT;
 import ai.vespa.schemals.parser.yqlplus.ast.FROM;
 import ai.vespa.schemals.parser.yqlplus.ast.INT;
@@ -26,7 +27,9 @@ import ai.vespa.schemals.parser.yqlplus.ast.mult_op;
 import ai.vespa.schemals.parser.yqlplus.ast.relational_op;
 import ai.vespa.schemals.parser.yqlplus.ast.unary_op;
 import ai.vespa.schemals.parser.yqlplus.ast.OR;
+import ai.vespa.schemals.parser.yqlplus.ast.ORDERBY;
 import ai.vespa.schemals.parser.yqlplus.ast.AND;
+import ai.vespa.schemals.parser.yqlplus.ast.ASC;
 import ai.vespa.schemals.parser.yqlplus.ast.NOT_IN;
 import ai.vespa.schemals.parser.yqlplus.ast.IN;
 import ai.vespa.schemals.parser.yqlplus.ast.LIKE;
@@ -48,6 +51,9 @@ class YQLPlusSemanticTokenConfig {
         add(NOTLIKE.class);
         add(MATCHES.class);
         add(NOTMATCHES.class);
+        add(ORDERBY.class);
+        add(ASC.class);
+        add(DESC.class);
     }};
 
     static final Map<Class<?>, String> tokensMap = new HashMap<Class<?>, String>() {{

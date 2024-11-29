@@ -2,6 +2,7 @@
 
 package com.yahoo.tensor.impl;
 
+import com.yahoo.tensor.Label;
 import com.yahoo.tensor.TensorAddress;
 
 /**
@@ -10,15 +11,14 @@ import com.yahoo.tensor.TensorAddress;
  * @author baldersheim
  */
 final class TensorAddressAny1 extends TensorAddressAny {
+    private final Label label;
 
-    private final long label;
-
-    TensorAddressAny1(long label) { this.label = label; }
+    TensorAddressAny1(Label label) { this.label = label; }
 
     @Override public int size() { return 1; }
-
+    
     @Override
-    public long numericLabel(int i) {
+    public Label objectLabel(int i) {
         if (i == 0) {
             return label;
         }
@@ -27,15 +27,17 @@ final class TensorAddressAny1 extends TensorAddressAny {
 
     @Override
     public TensorAddress withLabel(int labelIndex, long label) {
-        if (labelIndex == 0) return new TensorAddressAny1(label);
+        if (labelIndex == 0) return new TensorAddressAny1(LabelCache.GLOBAL.getOrCreateLabel(label));
         throw new IllegalArgumentException("No label " + labelIndex);
     }
-
-    @Override public int hashCode() { return (int)Math.abs(label); }
+    
+    @Override public int hashCode() { 
+        return 31 + label.hashCode(); 
+    }
 
     @Override
     public boolean equals(Object o) {
-        return (o instanceof TensorAddressAny1 any) && (label == any.label);
+        return (o instanceof TensorAddressAny1 any) && (label.asNumeric() == any.label.asNumeric());
     }
 
 }

@@ -16,7 +16,7 @@
 #include <string>
 #include <sys/time.h>
 
-#include <vespa/log/log.h>
+#include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".document.select.valuenode");
 
 namespace document::select {
@@ -374,8 +374,8 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
         default:
             break;
     }
-    LOG(warning, "Tried to use unsupported datatype %s in field comparison",
-        fval.getDataType()->toString().c_str());
+    LOGBP(warning, "Tried to use unsupported datatype %s in field comparison",
+          fval.getDataType()->toString().c_str());
     return std::make_unique<InvalidValue>();
 }
 
@@ -452,10 +452,10 @@ FieldValueNode::getValue(const Context& context) const
             }
         }
     } catch (vespalib::IllegalArgumentException& e) {
-        LOG(warning, "Caught exception while fetching field from document: %s", e.what());
+        LOGBP(warning, "Caught exception while fetching field from document: %s", e.what());
         return std::make_unique<InvalidValue>();
     } catch (FieldNotFoundException& e) {
-        LOG(warning, "Tried to compare to field %s, not found in document type", _fieldExpression.c_str());
+        LOGBP(warning, "Tried to compare with field %s, not found in document type", _fieldExpression.c_str());
         return std::make_unique<InvalidValue>();
     }
 }
@@ -513,8 +513,8 @@ FieldValueNode::traceValue(const Context &context, std::ostream& out) const
             }
         }
     } catch (FieldNotFoundException& e) {
-        LOG(warning, "Tried to compare to field %s, not found in document type",
-                     _fieldExpression.c_str());
+        LOGBP(warning, "Tried to compare with field %s, not found in document type",
+                       _fieldExpression.c_str());
         out << "Field not found in document type " << doc.getType()
             << ". Returning invalid.\n";
         return std::make_unique<InvalidValue>();
@@ -600,8 +600,7 @@ IdValueNode::getValue(const DocumentId& id) const
         if (id.getScheme().hasGroup()) {
             value = id.getScheme().getGroup();
         } else {
-            fprintf(stderr, "***** Returning invalid value for %s\n",
-                    id.toString().c_str());
+            LOGBP(warning, "Returning invalid value for IdValueNode of type GROUP for id: %s", id.toString().c_str());
             return std::make_unique<InvalidValue>();
         }
         break;
@@ -743,7 +742,7 @@ FunctionValueNode::FunctionValueNode(std::string_view name,
     } else if (name == "abs") {
         _function = ABS;
     } else {
-        throw ParsingFailedException("No function '" + std::string(name) + "' exist.",
+        throw ParsingFailedException("No function '" + std::string(name) + "' exists.",
                                      VESPA_STRLOC);
     }
 }
@@ -791,7 +790,7 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
         case Value::Bucket:
         {
             throw ParsingFailedException(
-                    "No functioncalls are allowed on value of type bucket",
+                    "No function calls are allowed on value of type bucket",
                     VESPA_STRLOC);
             break;
         }

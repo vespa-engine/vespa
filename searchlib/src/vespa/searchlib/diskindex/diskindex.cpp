@@ -5,14 +5,16 @@
 #include "fileheader.h"
 #include "pagedict4randread.h"
 #include <vespa/searchlib/index/schemautil.h>
+#include <vespa/searchlib/queryeval/create_blueprint_params.h>
 #include <vespa/searchlib/queryeval/create_blueprint_visitor_helper.h>
-#include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/irequestcontext.h>
+#include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/util/dirtraverse.h>
 #include <vespa/searchlib/util/disk_space_calculator.h>
-#include <vespa/vespalib/stllike/hash_set.h>
-#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/cache.hpp>
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/stllike/hash_set.h>
 #include <filesystem>
 
 #include <vespa/log/log.h>
@@ -310,8 +312,9 @@ public:
         const std::string termStr = termAsString(n);
         const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
         if (lookupRes.valid()) {
-            bool useBitVector = _field.isFilter();
-            setResult(std::make_unique<DiskTermBlueprint>(_field, _diskIndex.get_field_index(_fieldId), termStr, lookupRes, useBitVector));
+            double bitvector_limit = getRequestContext().get_create_blueprint_params().disk_index_bitvector_limit;
+            setResult(std::make_unique<DiskTermBlueprint>
+                (_field, _diskIndex.get_field_index(_fieldId), termStr, lookupRes, _field.isFilter(), bitvector_limit));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }
@@ -398,14 +401,14 @@ DiskIndex::get_field_length_info(const std::string& field_name) const
     }
 }
 
-SearchableStats
-DiskIndex::get_stats() const
+IndexStats
+DiskIndex::get_stats(bool clear_disk_io_stats) const
 {
-    SearchableStats stats;
+    IndexStats stats;
     uint64_t size_on_disk = _nonfield_size_on_disk;
     uint32_t field_id = 0;
     for (auto& field_index : _field_indexes) {
-        auto field_stats = field_index.get_stats();
+        auto field_stats = field_index.get_stats(clear_disk_io_stats);
         size_on_disk += field_stats.size_on_disk();
         stats.add_field_stats(_schema.getIndexField(field_id).getName(), field_stats);
         ++field_id;

@@ -3,10 +3,13 @@ package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
+import ai.vespa.llm.completion.Prompt;
+import ai.vespa.secret.Secret;
+import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 
@@ -18,9 +21,9 @@ import java.util.logging.Logger;
 @Beta
 public abstract class ConfigurableLanguageModel implements LanguageModel {
 
-    private static Logger log = Logger.getLogger(ConfigurableLanguageModel.class.getName());
+    private static final Logger log = Logger.getLogger(ConfigurableLanguageModel.class.getName());
 
-    private final String apiKey;
+    private final Secret apiKey;
     private final String endpoint;
 
     public ConfigurableLanguageModel() {
@@ -29,17 +32,19 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
     }
 
     @Inject
-    public ConfigurableLanguageModel(LlmClientConfig config, SecretStore secretStore) {
+    public ConfigurableLanguageModel(LlmClientConfig config, Secrets secretStore) {
         this.apiKey = findApiKeyInSecretStore(config.apiKeySecretName(), secretStore);
         this.endpoint = config.endpoint();
     }
 
-    private static String findApiKeyInSecretStore(String property, SecretStore secretStore) {
-        String apiKey = "";
+    private static Secret findApiKeyInSecretStore(String property, Secrets secretStore) {
+        Secret apiKey = null;
         if (property != null && ! property.isEmpty()) {
             try {
-                apiKey = secretStore.getSecret(property);
+                apiKey = secretStore.get(property);
             } catch (UnsupportedOperationException e) {
+                log.warning("Secrets is not set up: " + e.getMessage() + "\n" +
+                        "Will expect API key in request header");
                 // Secret store is not available - silently ignore this
             } catch (Exception e) {
                 log.warning("Secret store look up failed: " + e.getMessage() + "\n" +
@@ -58,7 +63,7 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
      */
     protected void setApiKey(InferenceParameters params) {
         if (params.getApiKey().isEmpty() && apiKey != null) {
-            params.setApiKey(apiKey);
+            params.setApiKey(apiKey.current());
         }
     }
 

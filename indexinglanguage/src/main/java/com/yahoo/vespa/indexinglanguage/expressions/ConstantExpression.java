@@ -31,10 +31,9 @@ public final class ConstantExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        // TODO:
-        //if (outputType != value.getDataType())
-        //    throw new VerificationException(this, "Produces type " + value.getDataType() + ", but type " +
-        //                                    outputType + " is required");
+        if ( ! value.getDataType().isAssignableTo(outputType))
+            throw new VerificationException(this, "Produces type " + value.getDataType().getName() + ", but type " +
+                                            outputType.getName() + " is required");
         return super.setOutputType(outputType, context);
     }
 

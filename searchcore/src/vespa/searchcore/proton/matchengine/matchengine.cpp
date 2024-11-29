@@ -2,11 +2,12 @@
 #include "matchengine.h"
 #include <vespa/searchcore/proton/common/state_reporter_utils.h>
 #include <vespa/searchlib/fef/indexproperties.h>
+#include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/smart_buffer.h>
-#include <vespa/vespalib/data/slime/binary_format.h>
-#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/cpu_usage.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 
@@ -132,6 +133,12 @@ MatchEngine::doSearch(const SearchRequest & searchRequest) {
     // 3 is the minimum level required for backend tracing.
     searchRequest.setTraceLevel(trace::Level::lookup(searchRequest.propertiesMap.modelOverrides(),
                                                       searchRequest.trace().getLevel()), 3);
+    searchRequest.trace().addEvent(4,
+            vespalib::make_string("searching for %u hits at offset %u%s%s",
+                                  searchRequest.maxhits,
+                                  searchRequest.offset,
+                                  searchRequest.sortSpec.empty() ? "" : " (with sorting)",
+                                  searchRequest.groupSpec.empty() ? "" : " (with grouping)"));
     ISearchHandler::SP searchHandler;
     auto threadBundle = _threadBundlePool.getBundle();
     { // try to find the match handler corresponding to the specified search doc type
@@ -155,6 +162,9 @@ MatchEngine::doSearch(const SearchRequest & searchRequest) {
     if (searchRequest.expired()) {
         vespalib::Issue::report("search request timed out; results may be incomplete");
     }
+    searchRequest.trace().addEvent(4,
+            vespalib::make_string("returning %zu hits from total %" PRIu64,
+                                  ret->hits.size(), ret->totalHitCount));
     return ret;
 }
 

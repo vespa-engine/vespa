@@ -97,7 +97,7 @@ TEST_F(PostingListCacheTest, repeated_lookups_gives_hit)
     EXPECT_EQ(PostingListCache::element_size() + 24, stats.memory_used);
 }
 
-TEST_F(PostingListCacheTest, large_elements_kills_cache_on_next_read)
+TEST_F(PostingListCacheTest, large_elements_immediately_evicts_from_cache)
 {
     _key.bit_length = 24 * 8;
     (void) read();
@@ -107,10 +107,10 @@ TEST_F(PostingListCacheTest, large_elements_kills_cache_on_next_read)
     EXPECT_EQ(2, stats.elements);
     _key.bit_length = 512_Ki * 8;
     _key.bit_offset = 16_Ki;
-    auto handle = read(); // stats for memory usage updated after eviction check => no eviction
+    auto handle = read(); // stats for memory usage updated before eviction check => eviction
     EXPECT_EQ(512_Ki, handle._allocSize);
     stats = _cache.get_stats();
-    EXPECT_EQ(3, stats.elements);
+    EXPECT_EQ(1, stats.elements);
     EXPECT_LT(512_Ki, stats.memory_used);
     _key.bit_length = 25 * 8;
     _key.bit_offset = 2000;

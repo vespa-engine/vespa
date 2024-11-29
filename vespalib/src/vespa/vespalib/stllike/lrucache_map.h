@@ -43,7 +43,6 @@ struct LruParam
 template< typename P >
 class lrucache_map : private P::HashTable
 {
-private:
     using HashTable = typename P::HashTable;
     using V = typename P::Value;
     using K = typename P::Key;
@@ -75,6 +74,10 @@ public:
         }
         bool operator==(const iterator& rhs) const { return (_current == rhs._current); }
         bool operator!=(const iterator& rhs) const { return (_current != rhs._current); }
+
+        [[nodiscard]] const K& key() const noexcept {
+            return _cache->getByInternalIndex(_current).first;
+        }
     private:
         lrucache_map * _cache;
         uint32_t _current;
@@ -86,7 +89,7 @@ public:
      * Will create a lrucache with max elements. Use the chained setter
      * @ref reserve to control initial size.
      *
-     * @param maxElements in cache unless you override @ref removeOldest.
+     * @param maxElems in cache unless you override @ref removeOldest.
      */
     lrucache_map(size_t maxElems);
     virtual ~lrucache_map();
@@ -101,11 +104,11 @@ public:
     }
 
 
-    size_t capacity()                  const { return _maxElements.load(std::memory_order_relaxed); }
-    size_t size()                      const { return HashTable::size(); }
-    bool empty()                       const { return HashTable::empty(); }
-    iterator begin()                         { return iterator(this, _head); }
-    iterator end()                           { return iterator(this, LinkedValueBase::npos); }
+    [[nodiscard]] size_t capacity() const noexcept { return _maxElements.load(std::memory_order_relaxed); }
+    [[nodiscard]] size_t size()     const noexcept { return HashTable::size(); }
+    [[nodiscard]] bool empty()      const noexcept { return HashTable::empty(); }
+    [[nodiscard]] iterator begin()        noexcept { return iterator(this, _head); }
+    [[nodiscard]] iterator end()          noexcept { return iterator(this, LinkedValueBase::npos); }
 
     /**
      * This fetches the object without modifying the lru list.
@@ -139,7 +142,22 @@ public:
      * Object is then put at head of LRU list if found.
      * If not found nullptr is returned.
      */
-    V * findAndRef(const K & key);
+    [[nodiscard]] V* find_and_ref(const K& key);
+
+    /**
+     * Return pointer to the object with the given key. Object is then put at
+     * head of LRU list if found and the size of the cache is more than half
+     * its capacity. Otherwise, the LRU is not updated.
+     *
+     * If not found nullptr is returned.
+     */
+    [[nodiscard]] V* find_and_lazy_ref(const K& key);
+
+    /**
+     * Returns an iterator to the element with the given key iff it exists, without
+     * updating the LRU. Otherwise returns end().
+     */
+    [[nodiscard]] iterator find_no_ref(const K& key);
 
     /**
      * Return the object with the given key. If it does not exist an empty one will be created.
@@ -152,7 +170,7 @@ public:
      * Tell if an object with given key exists in the cache.
      * Does not alter the LRU list.
      */
-    bool hasKey(const K & key) const __attribute__((noinline));
+    [[nodiscard]] bool hasKey(const K & key) const __attribute__((noinline));
 
     /**
      * Called when an object is inserted, to see if the LRU should be removed.
@@ -165,7 +183,7 @@ public:
     virtual void onInsert(const K & key);
 
     /**
-     * Method for testing that internal consitency is good.
+     * Method for testing that internal consistency is good.
      */
     bool verifyInternals();
 
@@ -190,8 +208,8 @@ private:
     public:
         RecordMoves(const RecordMoves &) = delete;
         RecordMoves & operator = (const RecordMoves &) = delete;
-        RecordMoves(lrucache_map & lru) :
-            _lru(lru)
+        RecordMoves(lrucache_map & lru) noexcept
+            : _lru(lru)
         {
             _lru._moveRecordingEnabled = true;
         }

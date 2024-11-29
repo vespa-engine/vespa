@@ -125,30 +125,93 @@ BitVectorIteratorStrictT<inverse>::initRange(uint32_t begin, uint32_t end)
     }
 }
 
+template <typename Parent, bool full_reset>
+class BitVectorIteratorTT : public Parent {
+public:
+    BitVectorIteratorTT(const BitVector& bv, uint32_t docid_limit, TermFieldMatchData& tfmd);
+    ~BitVectorIteratorTT() override;
+    void doUnpack(uint32_t docId) override;
+};
+
+template<typename Parent, bool full_reset>
+BitVectorIteratorTT<Parent, full_reset>::BitVectorIteratorTT(const BitVector& bv, uint32_t docid_limit, TermFieldMatchData& tfmd)
+    : Parent(bv, docid_limit, tfmd)
+{
+}
+
+template<typename Parent, bool full_reset>
+BitVectorIteratorTT<Parent, full_reset>::~BitVectorIteratorTT() = default;
+
+template <typename Parent, bool full_reset>
+void
+BitVectorIteratorTT<Parent, full_reset>::doUnpack(uint32_t docId)
+{
+    if constexpr (full_reset) {
+        this->_tfmd.reset(docId);
+    } else {
+        this->_tfmd.resetOnlyDocId(docId);
+    }
+}
+
+namespace
+{
+
+struct StrictIteratorType {
+    template <bool inverted, bool full_reset> using type = BitVectorIteratorTT<BitVectorIteratorStrictT<inverted>, full_reset>;
+};
+
+struct IteratorType {
+    template <bool inverted, bool full_reset> using type = BitVectorIteratorTT<BitVectorIteratorT<inverted>, full_reset>;
+};
+
+template <typename IteratorType, bool full_reset>
+std::unique_ptr<queryeval::SearchIterator>
+create_helper_helper(const BitVector& bv, uint32_t docid_limit, TermFieldMatchData& tfmd, bool inverted)
+{
+    if (inverted) {
+        return std::make_unique<typename IteratorType::template type<true, full_reset>>(bv, docid_limit, tfmd);
+    } else {
+        return std::make_unique<typename IteratorType::template type<false, full_reset>>(bv, docid_limit, tfmd);
+    }
+}
+
+template <typename IteratorType>
+std::unique_ptr<queryeval::SearchIterator>
+create_helper(const BitVector& bv, uint32_t docid_limit, TermFieldMatchData& tfmd, bool inverted, bool full_reset)
+{
+    if (full_reset) {
+        return create_helper_helper<IteratorType, true>(bv, docid_limit, tfmd, inverted);
+    } else {
+        return create_helper_helper<IteratorType, false>(bv, docid_limit, tfmd, inverted);
+
+    }
+}
+
+}
+
 queryeval::SearchIterator::UP
 BitVectorIterator::create(const BitVector *const bv, TermFieldMatchData &matchData, bool strict, bool inverted)
 {
-    return create(bv, bv->size(), matchData, strict, inverted);
+    return create(bv, bv->size(), matchData, strict, inverted, false);
 }
 
 queryeval::SearchIterator::UP
 BitVectorIterator::create(const BitVector *const bv, uint32_t docIdLimit,
                           TermFieldMatchData &matchData, bool strict, bool inverted)
 {
+    return create(bv, docIdLimit, matchData, strict, inverted, false);
+}
+
+queryeval::SearchIterator::UP
+BitVectorIterator::create(const BitVector *const bv, uint32_t docid_limit,
+                          TermFieldMatchData& tfmd, bool strict, bool inverted, bool full_reset)
+{
     if (bv == nullptr) {
         return std::make_unique<queryeval::EmptySearch>();
     } else if (strict) {
-        if (inverted) {
-            return std::make_unique<BitVectorIteratorStrictT<true>>(*bv, docIdLimit, matchData);
-        } else {
-            return std::make_unique<BitVectorIteratorStrictT<false>>(*bv, docIdLimit, matchData);
-        }
+        return create_helper<StrictIteratorType>(*bv, docid_limit, tfmd, inverted, full_reset);
     } else {
-        if (inverted) {
-            return std::make_unique<BitVectorIteratorT<true>>(*bv, docIdLimit, matchData);
-        } else {
-            return std::make_unique<BitVectorIteratorT<false>>(*bv, docIdLimit, matchData);
-        }
+        return create_helper<IteratorType>(*bv, docid_limit, tfmd, inverted, full_reset);
     }
 }
 

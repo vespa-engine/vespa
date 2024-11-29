@@ -314,7 +314,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 String vault = element.getAttribute("vault");
                 secretsConfig.addSecret(key, name, vault);
             }
-            cluster.addComponent(secretsConfig);
+            cluster.setTenantSecretsConfig(secretsConfig);
             cluster.addComponent(new CloudAsmSecrets(deployState.getProperties().ztsUrl(),
                                                      deployState.getProperties().tenantSecretDomain(),
                                                      deployState.zone().system(),

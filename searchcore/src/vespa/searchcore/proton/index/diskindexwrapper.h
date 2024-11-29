@@ -31,8 +31,8 @@ public:
     createBlueprint(const IRequestContext & requestContext, const FieldSpecList &fields, const Node &term) override {
         return _index.createBlueprint(requestContext, fields, term);
     }
-    search::SearchableStats getSearchableStats() const override {
-        return _index.get_stats();
+    search::IndexStats get_index_stats(bool clear_disk_io_stats) const override {
+        return _index.get_stats(clear_disk_io_stats);
     }
 
     search::SerialNum getSerialNum() const override;

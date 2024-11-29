@@ -11,7 +11,10 @@ import org.junit.Test;
 import java.util.LinkedList;
 import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -60,7 +63,7 @@ public class SelectInputTestCase {
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_str"),
                            "Invalid expression 'attribute my_int': Can not assign string to field 'my_int' which is int.");
         assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_unknown"),
-                           "Invalid expression 'select_input { my_unknown: attribute my_int; }': Input field 'my_unknown' not found.");
+                           "Invalid expression 'select_input { my_unknown: attribute my_int; }': Field 'my_unknown' not found.");
     }
 
     @Test

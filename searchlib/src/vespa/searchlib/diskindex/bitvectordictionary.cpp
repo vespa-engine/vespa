@@ -12,6 +12,7 @@
 LOG_SETUP(".diskindex.bitvectordictionary");
 
 using search::index::BitVectorDictionaryLookupResult;
+using search::index::PostingListFileRange;
 
 namespace search::diskindex {
 
@@ -115,6 +116,16 @@ BitVectorDictionary::read_bitvector(BitVectorDictionaryLookupResult lookup_resul
 {
     ReadStats read_stats;
     return read_bitvector(lookup_result, read_stats);
+}
+
+PostingListFileRange
+BitVectorDictionary::get_bitvector_file_range(index::BitVectorDictionaryLookupResult lookup_result) const
+{
+    if (!lookup_result.valid()) {
+        return {0, 0};
+    }
+    uint64_t offset = ((uint64_t) _vectorSize) * lookup_result.idx + _datHeaderLen;
+    return {offset, offset + _vectorSize};
 }
 
 }

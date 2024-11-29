@@ -40,6 +40,7 @@ import com.yahoo.vespa.model.container.component.Component;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.configserver.ConfigserverCluster;
+import com.yahoo.vespa.model.container.xml.CloudSecrets;
 import com.yahoo.vespa.model.filedistribution.UserConfiguredFiles;
 
 import java.util.ArrayList;
@@ -110,6 +111,9 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private List<ApplicationClusterEndpoint> endpoints = List.of();
 
     private final UserConfiguredUrls userConfiguredUrls = new UserConfiguredUrls();
+
+    private Optional<CloudSecrets> tenantSecrets = Optional.empty();
+
 
     public ApplicationContainerCluster(TreeConfigProducer<?> parent, String configSubId, String clusterId, DeployState deployState) {
         super(parent, configSubId, clusterId, deployState, true, 10);
@@ -392,6 +396,15 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                         serviceId,
                         ComponentSpecification.fromString(MbusServerProvider.class.getName()),
                         null))));
+    }
+
+    public void setTenantSecretsConfig(CloudSecrets secretsConfig) {
+        tenantSecrets = Optional.of(secretsConfig);
+        addComponent(secretsConfig);
+    }
+
+    public Optional<CloudSecrets> getTenantSecrets() {
+        return tenantSecrets;
     }
 
     @Override

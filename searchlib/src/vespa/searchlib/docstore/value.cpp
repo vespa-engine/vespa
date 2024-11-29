@@ -28,6 +28,7 @@ Value::Value(uint64_t syncToken)
 {}
 
 Value::Value(const Value &rhs) = default;
+Value& Value::operator=(const Value&) = default;
 
 Value::~Value() = default;
 

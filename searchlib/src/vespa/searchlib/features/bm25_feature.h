@@ -16,10 +16,12 @@ private:
         fef::TermFieldHandle handle;
         const fef::TermFieldMatchData* tfmd;
         double idf_mul_k1_plus_one;
+        double degraded_score;
         QueryTerm(fef::TermFieldHandle handle_, double inverse_doc_freq, double k1_param) noexcept
             : handle(handle_),
               tfmd(nullptr),
-              idf_mul_k1_plus_one(inverse_doc_freq * (k1_param + 1))
+              idf_mul_k1_plus_one(inverse_doc_freq * (k1_param + 1)),
+              degraded_score(inverse_doc_freq)
         {}
     };
 

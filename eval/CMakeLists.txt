@@ -10,7 +10,6 @@ vespa_define_module(
     src/apps/tensor_conformance
 
     TESTS
-    src/tests/ann
     src/tests/apps/analyze_onnx_model
     src/tests/apps/eval_expr
     src/tests/eval/addr_to_symbol
