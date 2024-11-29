@@ -46,7 +46,6 @@ cache<P>::SizeConstrainedLru::insert_and_update_size(const KeyT& key, ValueT val
     add_size_bytes(_owner.calcSize(key, value));
     auto insert_res = Lru::insert(key, std::move(value));
     assert(insert_res.second);
-
 }
 
 template <typename P>
@@ -90,20 +89,6 @@ cache<P>::SizeConstrainedLru::try_get_and_ref(const KeyT& key, ValueT& val_out) 
         return true;
     }
     return false;
-}
-
-template <typename P>
-void
-cache<P>::SizeConstrainedLru::evict_all() {
-    // There's no `clear()` on lrucache_map, so do it the hard way.
-    auto iter = Lru::begin();
-    while (iter != Lru::end()) {
-        // Entries will not be transitioned out of the cache via the probationary segment,
-        // so invoke the removal callback directly.
-        _owner.onRemove(iter.key());
-        iter = Lru::erase(iter); // This does _not_ invoke `removeOldest()`
-    }
-    set_size_bytes(0);
 }
 
 template <typename P>
@@ -166,9 +151,7 @@ cache<P>::maxElements(size_t probationary_elems, size_t protected_elems) {
     std::lock_guard guard(_hashLock);
     _probationary_segment.set_max_elements(probationary_elems);
     _protected_segment.set_max_elements(protected_elems);
-    if (protected_elems == 0) { // If max protected elems == 0, this disables SLRU semantics
-        disable_slru();
-    }
+    trim_segments();
     return *this;
 }
 
@@ -185,9 +168,7 @@ cache<P>::setCapacityBytes(size_t probationary_sz, size_t protected_sz) {
     std::lock_guard guard(_hashLock);
     _probationary_segment.set_capacity_bytes(probationary_sz);
     _protected_segment.set_capacity_bytes(protected_sz);
-    if (protected_sz == 0) { // If max protected size == 0, this disables SLRU semantics
-        disable_slru();
-    }
+    trim_segments();
     return *this;
 }
 
@@ -200,15 +181,13 @@ cache<P>::setCapacityBytes(size_t sz) {
 
 template <typename P>
 void
-cache<P>::disable_slru() {
-    _protected_segment.set_max_elements(0);
-    _protected_segment.set_capacity_bytes(0);
-    // This has the not-entirely-optimal(tm) side effect of evicting the elements
-    // we consider the most important (i.e. the protected ones), but this exists
-    // only so that live-disabling SLRU entirely will be _correct_, not that it
-    // will be objectively _efficient_.
-    // TODO expose lrucache_map trimming and use this here instead.
-    _protected_segment.evict_all();
+cache<P>::trim_segments() {
+    // First trim the protected segment. This will transfer trimmed elements into the
+    // probationary segment, preserving the presumed most "important" elements.
+    _protected_segment.trim();
+    // Now trim the probationary segment. This will not transfer elements to the
+    // protected segment, but will send them to the great cache in the sky.
+    _probationary_segment.trim();
 }
 
 template <typename P>

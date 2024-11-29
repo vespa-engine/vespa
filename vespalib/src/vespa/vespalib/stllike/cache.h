@@ -123,9 +123,9 @@ class cache {
         // Otherwise, `val_out` is not modified and false is returned.
         [[nodiscard]] bool try_get_and_ref(const KeyT& key, ValueT& val_out);
 
-        // Clears the entire cache segment. removeOldest() is not invoked for any entries.
-        // _size_bytes will be reset to zero after invocation.
-        void evict_all();
+        // Trims the cache segment so that after the call the following holds:
+        //   size_bytes() <= capacity() && size() <= maxElements()
+        using Lru::trim;
 
         [[nodiscard]] std::vector<KeyT> dump_segment_keys_in_lru_order();
 
@@ -325,7 +325,7 @@ private:
     [[nodiscard]] bool try_fill_from_cache(const K& key, V& val_out);
 
     [[nodiscard]] bool multi_segment() const noexcept { return _protected_segment.capacity_bytes() != 0; }
-    void disable_slru();
+    void trim_segments();
     void verifyHashLock(const UniqueLock& guard) const;
     [[nodiscard]] size_t calcSize(const K& k, const V& v) const noexcept {
         return per_element_fixed_overhead() + _sizeK(k) + _sizeV(v);
