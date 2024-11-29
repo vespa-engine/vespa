@@ -4,6 +4,7 @@ package ai.vespa.llm.clients;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.container.jdisc.SecretStoreProvider;
+import com.yahoo.container.jdisc.SecretsProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -17,7 +18,7 @@ public class OpenAITest {
     @Disabled
     public void testOpenAIGeneration() {
         var config = new LlmClientConfig.Builder().build();
-        var openai = new OpenAI(config, new SecretStoreProvider().get());
+        var openai = new OpenAI(config, new SecretsProvider().get());
         var options = Map.of(
                 "maxTokens", "10"
         );

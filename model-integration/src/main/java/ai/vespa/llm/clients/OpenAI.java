@@ -5,9 +5,9 @@ import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.client.openai.OpenAiClient;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
+import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -24,7 +24,7 @@ public class OpenAI extends ConfigurableLanguageModel {
     private final OpenAiClient client;
 
     @Inject
-    public OpenAI(LlmClientConfig config, SecretStore secretStore) {
+    public OpenAI(LlmClientConfig config, Secrets secretStore) {
         super(config, secretStore);
         client = new OpenAiClient();
     }
@@ -44,5 +44,6 @@ public class OpenAI extends ConfigurableLanguageModel {
         setEndpoint(parameters);
         return client.completeAsync(prompt, parameters, consumer);
     }
+
 }
 
