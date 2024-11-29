@@ -48,6 +48,7 @@ public:
     void consider_trim_posting_list(const DictionaryLookupResult &lookup_result, PostingListHandle &handle,
                                     double bloat_factor) const override;
     PostingListFileRange get_posting_list_file_range(const DictionaryLookupResult& lookup_result) const override;
+    static PostingListFileRange get_posting_list_file_range(const DictionaryLookupResult& lookup_result, uint64_t header_bit_size);
 
     bool open(const std::string &name, const TuneFileRandRead &tuneFileRead) override;
     bool close() override;
