@@ -191,9 +191,9 @@ struct ModSearchFactory : ChildFactory {
 //-----------------------------------------------------------------------------
 
 struct VespaWandFactory : SparseVectorFactory {
-    mutable SharedWeakAndPriorityQueue _scores;
+    mutable std::unique_ptr<SharedWeakAndPriorityQueue> _scores;
     uint32_t n;
-    explicit VespaWandFactory(uint32_t n_in) : _scores(n_in), n(n_in) {}
+    explicit VespaWandFactory(uint32_t n_in) : _scores(), n(n_in) {}
     std::string name() const override {
         return vespalib::make_string("VespaWand(%u)", n);
     }
@@ -202,7 +202,9 @@ struct VespaWandFactory : SparseVectorFactory {
         for (size_t i = 0; i < childCnt; ++i) {
             terms.emplace_back(childFactory.createChild(i, limit), default_weight, limit / (i + 1));
         }
-        return WeakAndSearch::create(terms, wand::MatchParams(_scores), n, true, false);
+        _scores = std::make_unique<SharedWeakAndPriorityQueue>(n);
+        wand::MatchParams match_params(*_scores, wand::StopWordStrategy::none(), 1, limit);
+        return WeakAndSearch::create(terms, match_params, n, true, false);
     }
 };
 
