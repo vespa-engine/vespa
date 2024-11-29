@@ -92,12 +92,6 @@ cache<P>::SizeConstrainedLru::try_get_and_ref(const KeyT& key, ValueT& val_out) 
 }
 
 template <typename P>
-void
-cache<P>::SizeConstrainedLru::trim() {
-    Lru::trim();
-}
-
-template <typename P>
 std::vector<typename P::Key>
 cache<P>::SizeConstrainedLru::dump_segment_keys_in_lru_order() {
     std::vector<KeyT> lru_keys;

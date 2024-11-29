@@ -125,7 +125,7 @@ class cache {
 
         // Trims the cache segment so that after the call the following holds:
         //   size_bytes() <= capacity() && size() <= maxElements()
-        void trim();
+        using Lru::trim;
 
         [[nodiscard]] std::vector<KeyT> dump_segment_keys_in_lru_order();
 
