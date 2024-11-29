@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * @author lesters
  */
 @Beta
-public class OpenAI extends ConfigurableLanguageModel implements Generator {
+public class OpenAI extends ConfigurableLanguageModel {
 
     private final OpenAiClient client;
 
@@ -45,11 +45,6 @@ public class OpenAI extends ConfigurableLanguageModel implements Generator {
         setApiKey(parameters);
         setEndpoint(parameters);
         return client.completeAsync(prompt, parameters, consumer);
-    }
-
-    @Override
-    public String generate(Prompt prompt, Context context) {
-        return GeneratorUtils.generate(prompt, this);
     }
 
 }
