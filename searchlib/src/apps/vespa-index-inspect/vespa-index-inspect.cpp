@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/fastos/file.h>
 #include <vespa/searchlib/index/dictionaryfile.h>
 #include <vespa/searchlib/index/postinglistfile.h>
 #include <vespa/searchlib/bitcompression/compression.h>
@@ -12,6 +13,8 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
+#include <vespa/vespalib/data/fileheader.h>
+#include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <iostream>
 #include <getopt.h>
@@ -22,6 +25,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("vespa-index-inspect");
 
+using search::FileUtil;
 using search::TuneFileSeqRead;
 using search::diskindex::DocIdMapping;
 using search::diskindex::FieldReader;
@@ -29,6 +33,7 @@ using search::diskindex::PageDict4FileSeqRead;
 using search::diskindex::PageDict4RandRead;
 using search::diskindex::WordNumMapping;
 using search::diskindex::Zc4PosOccRandRead;
+using search::diskindex::ZcPosOccRandRead;
 using search::fef::FieldPositionsIterator;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
@@ -43,6 +48,7 @@ using search::index::SchemaUtil;
 using search::index::schema::DataType;
 using search::queryeval::SearchIterator;
 using namespace search::index;
+using vespalib::FileHeader;
 
 namespace {
 
@@ -161,6 +167,7 @@ FieldOptions::validateFields(const Schema &schema)
     }
 }
 
+const std::string posocc_file_name = "posocc.dat.compressed";
 
 }
 
@@ -543,7 +550,7 @@ ShowPostingListSubApp::showPostingList()
     }
     std::unique_ptr<PostingListFileRandRead> postingfile(new Zc4PosOccRandRead);
     std::string mangledName = _indexDir + "/" + shortName +
-                              "/posocc.dat.compressed";
+                              "/" + posocc_file_name;
     if (!postingfile->open(mangledName, tuneFileRead)) {
         LOG(error, "Could not open posting list file %s", mangledName.c_str());
         std::_Exit(1);
@@ -644,7 +651,10 @@ class DumpWordsSubApp : public SubApp
     uint64_t _minNumDocs;
     bool _verbose;
     bool _showWordNum;
+    bool _file_range;
+    uint64_t _posocc_file_header_bit_size;
 
+    void extract_posocc_file_header_bit_size(const std::string& field_dir);
 public:
     DumpWordsSubApp();
     virtual ~DumpWordsSubApp();
@@ -660,7 +670,9 @@ DumpWordsSubApp::DumpWordsSubApp()
       _fieldOptions(),
       _minNumDocs(0u),
       _verbose(false),
-      _showWordNum(false)
+      _showWordNum(false),
+      _file_range(false),
+      _posocc_file_header_bit_size(0)
 {
 }
 
@@ -677,7 +689,7 @@ DumpWordsSubApp::usage(bool showHeader)
     cerr <<
         "vespa-index-inspect dumpwords [--indexdir indexDir]\n"
         " --field field\n"
-        " [--minnumdocs minnumdocs] [--verbose] [--wordnum]\n"
+        " [--file-range] [--minnumdocs minnumdocs] [--verbose] [--wordnum]\n"
         "\n";
 }
 
@@ -690,6 +702,7 @@ DumpWordsSubApp::getOptions(int argc, char **argv)
     static struct option longopts[] = {
         { "indexdir", 1, nullptr, 0 },
         { "field", 1, nullptr, 0 },
+        { "file-range", 0, nullptr, 0 },
         { "minnumdocs", 1, nullptr, 0 },
         { "verbose", 0, nullptr, 0 },
         { "wordnum", 0, nullptr, 0 },
@@ -698,6 +711,7 @@ DumpWordsSubApp::getOptions(int argc, char **argv)
     enum longopts_enum {
         LONGOPT_INDEXDIR,
         LONGOPT_FIELD,
+        LONGOPT_FILE_RANGE,
         LONGOPT_MINNUMDOCS,
         LONGOPT_VERBOSE,
         LONGOPT_WORDNUM
@@ -714,6 +728,9 @@ DumpWordsSubApp::getOptions(int argc, char **argv)
                 break;
             case LONGOPT_FIELD:
                 _fieldOptions.addField(optarg);
+                break;
+            case LONGOPT_FILE_RANGE:
+                _file_range = true;
                 break;
             case LONGOPT_MINNUMDOCS:
                 _minNumDocs = atol(optarg);
@@ -746,6 +763,15 @@ DumpWordsSubApp::getOptions(int argc, char **argv)
     return true;
 }
 
+void
+DumpWordsSubApp::extract_posocc_file_header_bit_size(const std::string& field_dir)
+{
+    std::string file_name = field_dir + "/" + posocc_file_name;
+    auto df = FileUtil::openFile(file_name);
+    FileHeader header;
+    auto header_size = header.readFile(*df);
+    _posocc_file_header_bit_size = header_size * 8;
+}
 
 void
 DumpWordsSubApp::dumpWords()
@@ -772,19 +798,29 @@ DumpWordsSubApp::dumpWords()
         LOG(error, "Could not open wordlist %s", wordListName.c_str());
         std::_Exit(1);
     }
+    if (_file_range) {
+        extract_posocc_file_header_bit_size(fieldDir);
+    }
     uint64_t wordNum = 0;
     std::string word;
-    PostingListCounts counts;
+    DictionaryLookupResult lookup_result;
+    auto& counts = lookup_result.counts;
     for (;;) {
+        lookup_result.bitOffset += counts._bitLength;
         wordList.readWord(word, wordNum, counts);
         if (wordNum == wordList.noWordNumHigh())
             break;
-        if (counts._numDocs < _minNumDocs)
+        if (counts._numDocs < _minNumDocs) {
             continue;
+        }
         if (_showWordNum) {
             std::cout << wordNum << '\t';
         }
         std::cout << word << '\t' << counts._numDocs;
+        if (_file_range) {
+            auto range = ZcPosOccRandRead::get_posting_list_file_range(lookup_result, _posocc_file_header_bit_size);
+            std::cout << '\t' << range.start_offset << '\t' << range.size();
+        }
         if (_verbose) {
             std::cout << '\t' << counts._bitLength;
         }
