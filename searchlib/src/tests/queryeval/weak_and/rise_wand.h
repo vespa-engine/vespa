@@ -15,7 +15,7 @@ namespace rise {
 
 struct TermFreqScorer
 {
-    [[no_unique_address]] Bm25TermFrequencyScorer _termFrequencyScorer;
+    Bm25TermFrequencyScorer _termFrequencyScorer;
     TermFreqScorer(uint32_t num_docs) noexcept
         : _termFrequencyScorer(num_docs)
     { }
