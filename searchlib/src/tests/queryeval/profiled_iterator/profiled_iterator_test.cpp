@@ -96,7 +96,7 @@ SearchIterator::UP create_weak_and() {
     terms.emplace_back(T({1,2,3}).release(), 100, 3);
     terms.emplace_back(T({5,6}).release(), 200, 2);
     terms.emplace_back(T({8}).release(), 300, 1);
-    return WeakAndSearch::create(terms, wand::MatchParams(dummy_heap), wand::TermFrequencyScorer(), 100, true, true);
+    return WeakAndSearch::create(terms, wand::MatchParams(dummy_heap), wand::Bm25TermFrequencyScorer(num_docs), 100, true, true);
 }
 
 void collect(std::map<std::string,size_t> &counts, const auto &node) {

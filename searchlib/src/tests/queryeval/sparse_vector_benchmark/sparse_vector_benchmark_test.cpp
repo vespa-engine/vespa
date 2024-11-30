@@ -219,7 +219,7 @@ struct RiseWandFactory : SparseVectorFactory {
         for (size_t i = 0; i < childCnt; ++i) {
             terms.emplace_back(childFactory.createChild(i, limit), default_weight, limit / (i + 1));
         }
-        return std::make_unique<rise::TermFrequencyRiseWand>(terms, n);
+        return std::make_unique<rise::TermFrequencyRiseWand>(terms, n, rise::TermFreqScorer(limit));
     }
 };
 
