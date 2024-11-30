@@ -225,10 +225,12 @@ struct RiseWandFactory : SparseVectorFactory {
 
 struct WeightedSetFactory : SparseVectorFactory {
     mutable TermFieldMatchData tfmd;
+    mutable std::vector<int32_t> weights;
     bool                       field_is_filter;
 
     WeightedSetFactory(bool field_is_filter_, bool term_is_not_needed)
         : tfmd(),
+          weights(),
           field_is_filter(field_is_filter_)
     {
         if (term_is_not_needed) {
@@ -240,7 +242,7 @@ struct WeightedSetFactory : SparseVectorFactory {
     }
     SearchIterator::UP createSparseVector(ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
         std::vector<SearchIterator *> terms;
-        std::vector<int32_t> weights;
+        weights.clear();
         for (size_t i = 0; i < childCnt; ++i) {
             // TODO: pass ownership with unique_ptr
             terms.push_back(childFactory.createChild(i, limit).release());
