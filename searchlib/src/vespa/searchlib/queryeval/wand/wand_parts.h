@@ -455,27 +455,6 @@ DualHeap<FutureHeap, PastHeap>::stringify() const {
 
 constexpr double TermFrequencyScorer_TERM_SCORE_FACTOR = 1000000.0;
 
-/**
- * Scorer used with WeakAndAlgorithm that calculates a pseudo term frequency
- * as max score and regular score for a term.
- */
-struct TermFrequencyScorer
-{
-    // weight * idf, scaled to fixedpoint
-    score_t calculateMaxScore(double estHits, double weight) const noexcept {
-        return (score_t) (TermFrequencyScorer_TERM_SCORE_FACTOR * weight / (1.0 + log(1.0 + (estHits / 1000.0))));
-    }
-
-    score_t calculateMaxScore(const Term &term) const noexcept {
-        return calculateMaxScore(term.estHits, term.weight) + 1;
-    }
-
-    template <typename Input>
-    score_t calculate_max_score(const Input &input, ref_t ref) const noexcept {
-        return calculateMaxScore(input.get_est_hits(ref), input.get_weight(ref)) + 1;
-    }
-};
-
 class Bm25TermFrequencyScorer
 {
 public:

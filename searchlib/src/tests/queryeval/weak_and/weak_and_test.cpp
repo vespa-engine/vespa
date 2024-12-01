@@ -18,6 +18,8 @@ using History = SearchHistory;
 
 namespace {
 
+constexpr uint32_t docid_limit = 116;
+
 struct MyWandSpec : public WandSpec
 {
     SharedWeakAndPriorityQueue scores;
@@ -30,7 +32,7 @@ struct MyWandSpec : public WandSpec
           scores(n_in),
           n(n_in),
           matching_phase(MatchingPhase::FIRST_PHASE),
-          my_params(scores, wand::StopWordStrategy::none(), 1, 0)
+          my_params(scores, wand::StopWordStrategy::none(), 1, docid_limit)
     {}
     SearchIterator *create() {
         bool readonly_scores_heap = (matching_phase != MatchingPhase::FIRST_PHASE);
@@ -39,7 +41,7 @@ struct MyWandSpec : public WandSpec
     }
     void set_second_phase() { matching_phase = MatchingPhase::SECOND_PHASE; }
     void set_abs_stop_word_adjust_limit(double limit) {
-        my_params.stop_words = wand::StopWordStrategy(-limit, 1.0, 0);
+        my_params.stop_words = wand::StopWordStrategy(-limit, 1.0, docid_limit);
     }
     SimpleResult search() {
         SearchIterator::UP search(create());
@@ -142,7 +144,8 @@ TEST(WeakAndTest, require_that_initial_docid_for_subsearches_are_taken_into_acco
     terms.push_back(wand::Term(new TrackedSearch("foo", history, new EagerChild(search::endDocId)), 100, 1));
     terms.push_back(wand::Term(new TrackedSearch("bar", history, new EagerChild(10)), 100, 2));
     SharedWeakAndPriorityQueue scores(2);
-    auto search = std::make_unique<TrackedSearch>("WAND", history, WeakAndSearch::create(terms, wand::MatchParams(scores), 2, true, false));
+    wand::MatchParams match_params(scores, wand::StopWordStrategy::none(), wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, docid_limit);
+    auto search = std::make_unique<TrackedSearch>("WAND", history, WeakAndSearch::create(terms, match_params, 2, true, false));
     SimpleResult hits;
     hits.search(*search);
     EXPECT_EQ(SimpleResult().addHit(10), hits);
@@ -191,7 +194,7 @@ private:
         }
         static constexpr size_t LARGE_ENOUGH_HEAP_FOR_ALL = 10000;
         _scores.push_back(std::make_unique<SharedWeakAndPriorityQueue>(LARGE_ENOUGH_HEAP_FOR_ALL));
-        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), wand::StopWordStrategy::none(), 1, 0), -1, strict, false);
+        return WeakAndSearch::create(terms, wand::MatchParams(*_scores.back(), wand::StopWordStrategy::none(), 1, docid_limit), -1, strict, false);
     }
 };
 

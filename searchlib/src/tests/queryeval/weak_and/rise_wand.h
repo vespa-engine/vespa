@@ -7,17 +7,17 @@
 #include <vespa/vespalib/util/priority_queue.h>
 #include <functional>
 
+using search::queryeval::wand::Bm25TermFrequencyScorer;
 using search::queryeval::wand::DotProductScorer;
-using search::queryeval::wand::TermFrequencyScorer;
 using namespace search::queryeval;
 
 namespace rise {
 
 struct TermFreqScorer
 {
-    [[no_unique_address]] TermFrequencyScorer _termFrequencyScorer;
-    TermFreqScorer() noexcept
-        : _termFrequencyScorer()
+    Bm25TermFrequencyScorer _termFrequencyScorer;
+    TermFreqScorer(uint32_t num_docs) noexcept
+        : _termFrequencyScorer(num_docs)
     { }
     int64_t calculateMaxScore(const wand::Term &term) const noexcept {
         return _termFrequencyScorer.calculateMaxScore(term);
@@ -127,7 +127,7 @@ private:
     void _sortMerge(uint32_t numStreamsToSort);
 
 public:
-    RiseWand(const Terms &terms, uint32_t n);
+    RiseWand(const Terms &terms, uint32_t n, Scorer scorer);
     ~RiseWand() override;
     void next();
     void doSeek(uint32_t docid) override;

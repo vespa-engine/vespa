@@ -119,14 +119,16 @@ VespaWandFactory::~VespaWandFactory() = default;
 struct VespaArrayWandFactory : WandFactory {
     mutable SharedWeakAndPriorityQueue  _scores;
     uint32_t n;
-    explicit VespaArrayWandFactory(uint32_t n_in)
+    uint32_t docid_limit;
+    explicit VespaArrayWandFactory(uint32_t n_in, uint32_t docid_limit_in)
         : _scores(n_in),
-          n(n_in)
+          n(n_in),
+          docid_limit(docid_limit_in)
     {}
     ~VespaArrayWandFactory() override;
     std::string name() const override { return make_string("VESPA ARRAY WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::createArrayWand(terms, wand::MatchParams(_scores, wand::StopWordStrategy::none(), 1, 0), wand::TermFrequencyScorer(), n, true, false);
+        return WeakAndSearch::createArrayWand(terms, wand::MatchParams(_scores, wand::StopWordStrategy::none(), 1, 0), wand::Bm25TermFrequencyScorer(docid_limit), n, true, false);
     }
 };
 
@@ -135,14 +137,16 @@ VespaArrayWandFactory::~VespaArrayWandFactory() = default;
 struct VespaHeapWandFactory : WandFactory {
     mutable SharedWeakAndPriorityQueue  _scores;
     uint32_t n;
-    explicit VespaHeapWandFactory(uint32_t n_in)
+    uint32_t docid_limit;
+    explicit VespaHeapWandFactory(uint32_t n_in, uint32_t docid_limit_in)
         : _scores(n_in),
-          n(n_in)
+          n(n_in),
+          docid_limit(docid_limit_in)
     {}
     ~VespaHeapWandFactory() override;
     std::string name() const override { return make_string("VESPA HEAP WAND (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return WeakAndSearch::createHeapWand(terms, wand::MatchParams(_scores, wand::StopWordStrategy::none(), 1, 0), wand::TermFrequencyScorer(), n, true, false);
+        return WeakAndSearch::createHeapWand(terms, wand::MatchParams(_scores, wand::StopWordStrategy::none(), 1, 0), wand::Bm25TermFrequencyScorer(docid_limit), n, true, false);
     }
 };
 
@@ -191,11 +195,16 @@ VespaParallelHeapWandFactory::~VespaParallelHeapWandFactory() = default;
 
 struct TermFrequencyRiseWandFactory : WandFactory {
     uint32_t n;
-    explicit TermFrequencyRiseWandFactory(uint32_t n_in) noexcept : n(n_in) {}
+    uint32_t docid_limit;
+    explicit TermFrequencyRiseWandFactory(uint32_t n_in, uint32_t docid_limit_in) noexcept
+        : n(n_in),
+          docid_limit(docid_limit_in)
+    {
+    }
     ~TermFrequencyRiseWandFactory() override;
     std::string name() const override { return make_string("RISE WAND TF (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return std::make_unique<rise::TermFrequencyRiseWand>(terms, n);
+        return std::make_unique<rise::TermFrequencyRiseWand>(terms, n, rise::TermFreqScorer(docid_limit));
     }
 };
 
@@ -207,7 +216,7 @@ struct DotProductRiseWandFactory : WandFactory {
     ~DotProductRiseWandFactory() override;
     std::string name() const override { return make_string("RISE WAND DP (n=%u)", n); }
     SearchIterator::UP create(const wand::Terms &terms) override {
-        return std::make_unique<rise::DotProductRiseWand>(terms, n);
+        return std::make_unique<rise::DotProductRiseWand>(terms, n, DotProductScorer());
     }
 };
 
