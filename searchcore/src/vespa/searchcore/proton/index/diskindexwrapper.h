@@ -16,12 +16,10 @@ private:
 public:
     DiskIndexWrapper(const std::string &indexDir,
                      const search::TuneFileSearch &tuneFileSearch,
-                     std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache,
-                     size_t dictionary_cache_size);
+                     std::shared_ptr<search::diskindex::IPostingListCache> posting_list_cache);
 
     DiskIndexWrapper(const DiskIndexWrapper &oldIndex,
-                     const search::TuneFileSearch &tuneFileSearch,
-                     size_t dictionary_cache_size);
+                     const search::TuneFileSearch &tuneFileSearch);
 
     std::unique_ptr<search::queryeval::Blueprint>
     createBlueprint(const IRequestContext & requestContext, const FieldSpec &field, const Node &term) override {
