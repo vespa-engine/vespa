@@ -174,20 +174,33 @@ public class LabelCache {
             return newLabel;
         } finally {
             lock.unlock();
-            
-            // Remove stale references can be moved into a separate thread if needed.
             removeStaleReferences();
         }
     }
-
+    
+    // Remove weak references for garbage collected labels from maps.
+    // Since it is called each time a new label is added, removing two labels (if available) 
+    // guarantees that the cache will not grow indefinitely.
+    // Previous implementation was removing all stale references at once, 
+    // but this could cause a performance hit if many labels are garbage collected at once.
+    // Instead performance cost is amortized by removing two references.
+    // Loop is avoided to maximize performance.
     private void removeStaleReferences() {
-        LabelWeakReference staleReference;
-        while ((staleReference = (LabelWeakReference) referenceQueue.poll()) != null) {
-            // No lock needed because concurrent map checks that the value has not changed.
-            // i.e. if another thread replaced the value, it will not be removed.
-            byString.remove(staleReference.stringKey, staleReference);
-            byNumeric.remove(staleReference.numericKey, staleReference);
+        var staleReference = (LabelWeakReference) referenceQueue.poll();
+        if (staleReference == null) {
+            return;
         }
+
+        byString.remove(staleReference.stringKey, staleReference);
+        byNumeric.remove(staleReference.numericKey, staleReference);
+
+        staleReference = (LabelWeakReference) referenceQueue.poll();
+        if (staleReference == null) {
+            return;
+        }
+
+        byString.remove(staleReference.stringKey, staleReference);
+        byNumeric.remove(staleReference.numericKey, staleReference);
     }
     
     public int size() {
