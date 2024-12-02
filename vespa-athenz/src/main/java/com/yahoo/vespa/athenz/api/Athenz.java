@@ -1,4 +1,4 @@
-package com.yahoo.config.provision.athenz;
+package com.yahoo.vespa.athenz.api;
 
 import com.yahoo.config.provision.SystemName;
 
@@ -12,7 +12,6 @@ import java.nio.file.Path;
  * @param ztsUri                  The base URL to the ZTS API, typically ending in /zts/v1.
  * @param zmsUri                  The base URL to the ZMS API, typically ending in /zms/v1.
  * @param userCredentialDirectory The absolute path of the directory containing the user certificate key and cert.
- * @author hakon
  */
 public record Athenz(String name, URI ztsUri, URI zmsUri, Path userCredentialDirectory) {
     public static Athenz VESPA = new Athenz("Vespa Athenz", "athenz.vespa-cloud.com", ".vespaai/athenz");

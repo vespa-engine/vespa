@@ -1,13 +1,10 @@
-package com.yahoo.config.provision.athenz;
+package com.yahoo.vespa.athenz.api;
 
 
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-/**
- * @author hakon
- */
 public class AthenzTest {
     @Test
     void verifyUris() {
