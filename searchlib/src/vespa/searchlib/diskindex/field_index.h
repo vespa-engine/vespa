@@ -73,6 +73,7 @@ public:
     bool open_dictionary(const std::string& field_dir, const TuneFileSearch& tune_file_search);
     bool open(const std::string& field_dir, const TuneFileSearch &tune_file_search);
     void reuse_files(const FieldIndex& rhs);
+    index::DictionaryLookupResult lookup(std::string_view word) const;
     index::PostingListHandle read_uncached_posting_list(const search::index::DictionaryLookupResult &lookup_result,
                                                         bool trim) const;
     index::PostingListHandle read(const IPostingListCache::Key& key, IPostingListCache::Context& ctx) const override;

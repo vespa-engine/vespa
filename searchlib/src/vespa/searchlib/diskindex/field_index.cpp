@@ -16,6 +16,7 @@ LOG_SETUP(".diskindex.field_index");
 using search::index::BitVectorDictionaryLookupResult;
 using search::index::DictionaryLookupResult;
 using search::index::PostingListHandle;
+using search::index::PostingListOffsetAndCounts;
 
 namespace search::diskindex {
 
@@ -170,6 +171,17 @@ FieldIndex::reuse_files(const FieldIndex& rhs)
     _file_id = rhs._file_id;
     _size_on_disk = rhs._size_on_disk;
     _io_stats = rhs._io_stats;
+}
+
+DictionaryLookupResult
+FieldIndex::lookup(std::string_view word) const
+{
+    DictionaryLookupResult lookup_result;
+    PostingListOffsetAndCounts offsetAndCounts;
+    _dict->lookup(word, lookup_result.wordNum,offsetAndCounts);
+    lookup_result.counts.swap(offsetAndCounts._counts);
+    lookup_result.bitOffset = offsetAndCounts._offset;
+    return lookup_result;
 }
 
 PostingListHandle

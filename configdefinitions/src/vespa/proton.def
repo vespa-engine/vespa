@@ -536,7 +536,7 @@ indexing.threads int default=1 restart
 
 ## How much memory is set aside for caching.
 ## Now only used for caching of dictionary lookups.
-## TODO Still relevant, check config model, seems unused.
+## DEPRECATED - Not used.
 index.cache.size long default=0 restart
 
 ## Configure a shared disk index posting list cache across all document dbs.
