@@ -20,6 +20,7 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
+import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -97,30 +98,30 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testContainerNotReadyException() throws Throwable {
-        new TestRunner().expect(errorWithReason(is(SC_INTERNAL_SERVER_ERROR), containsString("Container not ready.")))
+        new TestRunner().expect(responseMatcher(is(SC_INTERNAL_SERVER_ERROR), any(String.class), containsString("Container not ready.")))
                         .execute();
     }
 
     @Override
     @Test
     public void testBindingSetNotFoundException() throws Throwable {
-        new TestRunner().expect(errorWithReason(is(SC_NOT_FOUND), containsString("No binding set named 'unknown'.")))
+        new TestRunner().expect(responseMatcher(is(SC_NOT_FOUND), any(String.class), containsString("No binding set named &apos;unknown&apos;.")))
                         .execute();
     }
 
     @Override
     @Test
     public void testNoBindingSetSelectedException() throws Throwable {
-        final Pattern reasonPattern = Pattern.compile(".*No binding set selected for URI 'http://.+/status.html'\\.");
-        new TestRunner().expect(errorWithReason(is(SC_INTERNAL_SERVER_ERROR), matchesPattern(reasonPattern)))
+        final Pattern reasonPattern = Pattern.compile(".*No binding set selected for URI .+http://.+/status.html.+", Pattern.DOTALL);
+        new TestRunner().expect(responseMatcher(is(SC_INTERNAL_SERVER_ERROR), any(String.class), matchesPattern(reasonPattern)))
                         .execute();
     }
 
     @Override
     @Test
     public void testBindingNotFoundException() throws Throwable {
-        final Pattern contentPattern = Pattern.compile(".*No binding for URI 'http://.+/status.html'\\.");
-        new TestRunner().expect(errorWithReason(is(NOT_FOUND), matchesPattern(contentPattern)))
+        final Pattern contentPattern = Pattern.compile(".*No binding for URI .+http://.+/status.html.+", Pattern.DOTALL);
+        new TestRunner().expect(responseMatcher(is(SC_NOT_FOUND), any(String.class), matchesPattern(contentPattern)))
                         .execute();
     }
 

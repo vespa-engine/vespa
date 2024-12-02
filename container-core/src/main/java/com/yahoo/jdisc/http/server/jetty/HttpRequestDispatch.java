@@ -17,11 +17,11 @@ import jakarta.servlet.AsyncEvent;
 import jakarta.servlet.AsyncListener;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
+import org.eclipse.jetty.ee9.nested.Request;
+import org.eclipse.jetty.http2.server.internal.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EofException;
-import org.eclipse.jetty.server.HttpConnection;
-import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.internal.HttpConnection;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -71,7 +71,7 @@ class HttpRequestDispatch {
                                                                        metricReporter,
                                                                        jDiscContext.developerMode());
         shutdownConnectionGracefullyIfThresholdReached(jettyRequest);
-        metricReporter.uriLength(jettyRequest.getOriginalURI().length());
+        metricReporter.uriLength(jettyRequest.getHttpURI().getPath().length());
     }
 
     void dispatchRequest() {
@@ -155,9 +155,9 @@ class HttpRequestDispatch {
     }
 
     private static void shutdownConnectionGracefullyIfThresholdReached(Request request) {
-        ConnectorConfig connectorConfig = getConnector(request).connectorConfig();
+        ConnectorConfig connectorConfig = getConnector(request.getCoreRequest().getWrapped()).connectorConfig();
         int maxRequestsPerConnection = connectorConfig.maxRequestsPerConnection();
-        Connection connection = RequestUtils.getConnection(request);
+        Connection connection = RequestUtils.getConnection(request.getCoreRequest().getWrapped());
         if (maxRequestsPerConnection > 0) {
             if (connection.getMessagesIn() >= maxRequestsPerConnection) {
                 gracefulShutdown(connection);

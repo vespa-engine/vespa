@@ -193,7 +193,7 @@ class ServletResponseController {
     }
 
     private static void setStatus(HttpServletResponse response, int statusCode, String reasonPhrase) {
-        org.eclipse.jetty.server.Response jettyResponse = (org.eclipse.jetty.server.Response) response;
+        org.eclipse.jetty.ee9.nested.Response jettyResponse = (org.eclipse.jetty.ee9.nested.Response) response;
         if (reasonPhrase != null) {
             jettyResponse.setStatusWithReason(statusCode, reasonPhrase);
         } else {
