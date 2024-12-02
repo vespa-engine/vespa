@@ -34,10 +34,9 @@ public class SslHandshakeFailedListenerTest {
         verify(metrics).createContext(eq(Map.of("serverName", "connector", "serverPort", 1234)));
     }
 
-    @SuppressWarnings("removal")
     private SslHandshakeListener.Event handshakeEvent(boolean includePeer) {
         var sslEngine = mock(SSLEngine.class);
         if(includePeer) when(sslEngine.getPeerHost()).thenReturn("127.0.0.1");
-        return new SslHandshakeListener.Event(sslEngine); // deprecated constructor
+        return new SslHandshakeListener.Event(sslEngine);
     }
 }

@@ -113,11 +113,10 @@ public class HttpRequest extends Request {
         }
     }
 
-    @SuppressWarnings("deprecation")
     private static Map<String, List<String>> getUriQueryParameters(URI uri) {
         if (uri.getRawQuery() == null) return Map.of();
         MultiMap<String> params = new MultiMap<>();
-        UrlEncoded.decodeUtf8To(uri.getRawQuery(), params); // deprecated
+        UrlEncoded.decodeUtf8To(uri.getRawQuery(), params);
         return Map.copyOf(params);
     }
 
