@@ -194,7 +194,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2025-02-01",
+            List.of("vekterli"), "2021-02-19", "2025-06-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -202,7 +202,7 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("geirst", "vekterli"), "2021-07-16", "2025-02-01",
+            List.of("geirst", "vekterli"), "2021-07-16", "2025-06-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -255,7 +255,7 @@ public class Flags {
 
     public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
             "tls-capabilities-enforcement-mode", "disable",
-            List.of("bjorncs", "vekterli"), "2022-07-21", "2025-01-01",
+            List.of("bjorncs", "vekterli"), "2022-07-21", "2025-06-01",
             "Configure Vespa TLS capability enforcement mode",
             "Takes effect on restart of Docker container",
             INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
@@ -278,7 +278,7 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2025-02-01",
+            List.of("vekterli"), "2022-11-03", "2025-06-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
@@ -343,7 +343,7 @@ public class Flags {
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 1,
-            List.of("vekterli"), "2022-09-12", "2024-12-01",
+            List.of("vekterli"), "2022-09-12", "2025-03-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
             "Takes effect at redeployment",
@@ -371,7 +371,7 @@ public class Flags {
 
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 64,
-            List.of("vekterli"), "2024-04-12", "2025-01-01",
+            List.of("vekterli"), "2024-04-12", "2025-03-01",
             "Maximum number of enqueued feed operations (put/update/remove) bound "+
             "towards the same bucket that can be async dispatched as part of the " +
             "same write-locked batch by a persistence thread.",
@@ -398,7 +398,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", false,
-            List.of("vekterli"), "2024-05-23", "2024-12-01",
+            List.of("vekterli"), "2024-05-23", "2025-03-01",
             "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
             "for Put operations and the replica selection logic for bucket activation. If false, " +
             "legacy feed behavior is used.",
@@ -414,7 +414,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", true,
-            List.of("vekterli"), "2024-06-03", "2024-12-01",
+            List.of("vekterli"), "2024-06-03", "2025-03-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
             "Takes effect immediately",
@@ -435,7 +435,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
             "distribution-config-from-cluster-controller", true,
-            List.of("vekterli"), "2024-07-01", "2024-12-01",
+            List.of("vekterli"), "2024-07-01", "2025-03-01",
             "Iff true, the cluster controller will be the authoritative source of distribution " +
             "config changes in a content cluster, and distribution changes will be part of explicitly " +
             "versioned cluster states.",
