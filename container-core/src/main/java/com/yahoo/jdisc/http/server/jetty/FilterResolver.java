@@ -10,7 +10,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
-import org.eclipse.jetty.ee9.nested.Request;
+import org.eclipse.jetty.server.Request;
 
 import java.net.URI;
 import java.util.Map;
@@ -34,7 +34,7 @@ class FilterResolver {
     }
 
     Optional<RequestFilter> resolveRequestFilter(Request request, URI jdiscUri) {
-        Optional<String> maybeFilterId = bindings.resolveRequestFilter(jdiscUri, getConnector(request.getCoreRequest().getWrapped()).listenPort());
+        Optional<String> maybeFilterId = bindings.resolveRequestFilter(jdiscUri, getConnector(request).listenPort());
         if (maybeFilterId.isPresent()) {
             metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
             request.setAttribute(RequestUtils.JDISC_REQUEST_CHAIN, maybeFilterId.get());
@@ -50,7 +50,7 @@ class FilterResolver {
     }
 
     Optional<ResponseFilter> resolveResponseFilter(Request request, URI jdiscUri) {
-        Optional<String> maybeFilterId = bindings.resolveResponseFilter(jdiscUri, getConnector(request.getCoreRequest().getWrapped()).listenPort());
+        Optional<String> maybeFilterId = bindings.resolveResponseFilter(jdiscUri, getConnector(request).listenPort());
         if (maybeFilterId.isPresent()) {
             metric.add(MetricDefinitions.FILTERING_RESPONSE_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
             request.setAttribute(RequestUtils.JDISC_RESPONSE_CHAIN, maybeFilterId.get());
@@ -64,7 +64,7 @@ class FilterResolver {
         Map<String, String> extraDimensions = filterId != null
                 ? Map.of(MetricDefinitions.FILTER_CHAIN_ID_DIMENSION, filterId)
                 : Map.of();
-        return getConnector(request.getCoreRequest().getWrapped()).createRequestMetricContext(request, extraDimensions);
+        return getConnector(request).createRequestMetricContext(request, extraDimensions);
     }
 
     private static class RejectingRequestFilter extends NoopSharedResource implements RequestFilter {

@@ -17,7 +17,6 @@ import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
-import org.eclipse.jetty.server.HostHeaderCustomizer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.ProxyConnectionFactory;
@@ -75,9 +74,11 @@ public class ConnectorFactory {
         return connectorConfig;
     }
 
-    JDiscServerConnector createConnector(Metric metric, Server server) {
+    public ServerConnector createConnector(final Metric metric, final Server server, JettyConnectionLogger connectionLogger,
+                                           ConnectionMetricAggregator connectionMetricAggregator) {
         return new JDiscServerConnector(
-                connectorConfig, metric, server, createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
+                connectorConfig, metric, server, connectionLogger, connectionMetricAggregator,
+                createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
     }
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {
@@ -151,9 +152,7 @@ public class ConnectorFactory {
             httpConfig.addCustomizer(new SecureRequestCustomizer(false, false, -1, false));
         }
         String serverNameFallback = connectorConfig.serverName().fallback();
-        if (!serverNameFallback.isBlank()) {
-            httpConfig.setServerAuthority(new HostPort(serverNameFallback));
-        }
+        if (!serverNameFallback.isBlank()) httpConfig.setServerAuthority(new HostPort(serverNameFallback));
         return httpConfig;
     }
 

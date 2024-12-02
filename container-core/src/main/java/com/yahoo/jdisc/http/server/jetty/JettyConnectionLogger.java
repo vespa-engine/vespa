@@ -9,18 +9,17 @@ import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.security.SubjectAlternativeName;
 import com.yahoo.security.X509CertificateUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnection;
-import org.eclipse.jetty.http.HttpFields;
-import org.eclipse.jetty.http2.server.internal.HTTP2ServerConnection;
+import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.io.SocketChannelEndPoint;
 import org.eclipse.jetty.io.ssl.SslConnection;
 import org.eclipse.jetty.io.ssl.SslHandshakeListener;
-import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.HttpChannel;
+import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.ProxyConnectionFactory;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.handler.EventsHandler;
-import org.eclipse.jetty.server.internal.HttpConnection;
+import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import javax.net.ssl.ExtendedSSLSession;
 import javax.net.ssl.SNIHostName;
@@ -49,7 +48,7 @@ import java.util.logging.Logger;
  *
  * @author bjorncs
  */
-class JettyConnectionLogger extends EventsHandler implements Connection.Listener, SslHandshakeListener {
+class JettyConnectionLogger extends AbstractLifeCycle implements Connection.Listener, HttpChannel.Listener, SslHandshakeListener {
 
     static final String CONNECTION_ID_REQUEST_ATTRIBUTE = "jdisc.request.connection.id";
 
@@ -63,8 +62,7 @@ class JettyConnectionLogger extends EventsHandler implements Connection.Listener
     private final boolean enabled;
     private final ConnectionLog connectionLog;
 
-    JettyConnectionLogger(ServerConfig.ConnectionLog config, ConnectionLog connectionLog, Handler handler) {
-        super(handler);
+    JettyConnectionLogger(ServerConfig.ConnectionLog config, ConnectionLog connectionLog) {
         this.enabled = config.enabled();
         this.connectionLog = connectionLog;
         log.log(Level.FINE, () -> "Jetty connection logger is " + (config.enabled() ? "enabled" : "disabled"));
@@ -138,7 +136,7 @@ class JettyConnectionLogger extends EventsHandler implements Connection.Listener
             if (connection instanceof HttpConnection) {
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
             }
-            if (connection.getEndPoint() instanceof SslConnection.SslEndPoint ssl) {
+            if (connection.getEndPoint() instanceof SslConnection.DecryptedEndPoint ssl) {
                 info.setSslBytes(ssl.getSslConnection().getBytesIn(), ssl.getSslConnection().getBytesOut());
             }
             if (!endpoint.isOpen()) {
@@ -155,12 +153,12 @@ class JettyConnectionLogger extends EventsHandler implements Connection.Listener
     //
 
     //
-    // EventsHandler methods start
+    // HttpChannel.Listener methods start
     //
     @Override
-    protected void onBeforeHandling(Request request) {
-        handleListenerInvocation("EventsHandler", "onBeforeHandling", "%h", List.of(request), () -> {
-            SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getConnectionMetaData().getConnection().getEndPoint());
+    public void onRequestBegin(Request request) {
+        handleListenerInvocation("HttpChannel.Listener", "onRequestBegin", "%h", List.of(request), () -> {
+            SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
             ConnectionInfo info = connectionInfos.get(endpoint).get();
             info.incrementRequests();
             request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, info.uuid());
@@ -168,16 +166,16 @@ class JettyConnectionLogger extends EventsHandler implements Connection.Listener
     }
 
     @Override
-    protected void onResponseBegin(Request request, int status, HttpFields headers) {
-        handleListenerInvocation("EventsHandler", "onResponseBegin", "%h", List.of(request), () -> {
-            SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getConnectionMetaData().getConnection().getEndPoint());
+    public void onResponseBegin(Request request) {
+        handleListenerInvocation("HttpChannel.Listener", "onResponseBegin", "%h", List.of(request), () -> {
+            SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
             ConnectionInfo info = connectionInfos.get(endpoint).orElse(null);
             if (info == null) return; // Connection closed before response started - observed during Jetty server shutdown
             info.incrementResponses();
         });
     }
     //
-    // EventsHandler methods end
+    // HttpChannel.Listener methods end
     //
 
     //
@@ -225,8 +223,8 @@ class JettyConnectionLogger extends EventsHandler implements Connection.Listener
     private static SocketChannelEndPoint findUnderlyingSocketEndpoint(EndPoint endpoint) {
         if (endpoint instanceof SocketChannelEndPoint) {
             return (SocketChannelEndPoint) endpoint;
-        } else if (endpoint instanceof SslConnection.SslEndPoint) {
-            var decryptedEndpoint = (SslConnection.SslEndPoint) endpoint;
+        } else if (endpoint instanceof SslConnection.DecryptedEndPoint) {
+            var decryptedEndpoint = (SslConnection.DecryptedEndPoint) endpoint;
             return findUnderlyingSocketEndpoint(decryptedEndpoint.getSslConnection().getEndPoint());
         } else if (endpoint instanceof ProxyConnectionFactory.ProxyEndPoint) {
             var proxyEndpoint = (ProxyConnectionFactory.ProxyEndPoint) endpoint;
