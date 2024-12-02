@@ -29,7 +29,7 @@ LZ4Compressor::process(CompressionConfig config, const void * inputV, size_t inp
     assert(sz != 0);
     outputLenV = sz;
     return (sz != 0);
-    
+
 }
 
 bool

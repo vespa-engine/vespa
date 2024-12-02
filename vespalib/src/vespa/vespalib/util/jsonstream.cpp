@@ -324,7 +324,7 @@ JsonStream::finalize()
     }
     return *this;
 }
-    
+
 std::string
 JsonStream::getStateString() const
 {

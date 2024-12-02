@@ -301,7 +301,7 @@ AdaptiveSequencedExecutor::sync_all()
 void
 AdaptiveSequencedExecutor::setTaskLimit(uint32_t task_limit)
 {
-    auto guard = std::unique_lock(_mutex);   
+    auto guard = std::unique_lock(_mutex);
     _cfg.set_max_pending(task_limit);
     maybe_unblock_self(guard);
 }

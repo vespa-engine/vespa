@@ -604,7 +604,7 @@ ProgramOptions::addArgument(std::shared_ptr<OptionParser> arg)
                 "Argument '" + arg->_names[0] + "' cannot follow a list "
                 "argument that will consume all remaining arguments.",
                 VESPA_STRLOC);
-        
+
     }
     _arguments.push_back(arg);
     return *arg;

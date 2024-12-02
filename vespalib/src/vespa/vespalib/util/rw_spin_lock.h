@@ -159,7 +159,7 @@ public:
 
     // convert a write (unique) lock to a read (shared) lock
     void convert_write_to_read() noexcept {
-        _state.store(2, std::memory_order_release);        
+        _state.store(2, std::memory_order_release);
     }
 };
 
