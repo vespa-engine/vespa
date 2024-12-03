@@ -15,6 +15,7 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.MapDataType;
 import com.yahoo.document.StructDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -23,10 +24,13 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
+import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.select.convert.SelectionExpressionConverter;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,6 +81,7 @@ public class DocumentSelectorTestCase {
 
         ArrayDataType intarray = new ArrayDataType(DataType.INT);
         type.addField("intarray", intarray);
+        type.addField("dense_tensor", TensorDataType.getTensor(TensorType.fromSpec("tensor(x[2])")));
 
         manager.registerDocumentType(parent);
         manager.registerDocumentType(type);
@@ -393,6 +398,10 @@ public class DocumentSelectorTestCase {
             aval.add(sval2);
         }
         documents.get(1).getDocument().setFieldValue("structarray", aval);
+        {
+            var tensor = Tensor.from("tensor(x[2]):[0.1, 0.2]");
+            documents.get(1).getDocument().setFieldValue("dense_tensor", new TensorFieldValue(tensor));
+        }
 
         MapFieldValue<IntegerFieldValue, StringFieldValue> mval =
                 new MapFieldValue<>((MapDataType)documents.get(1).getDocument().getField("mymap").getDataType());
@@ -770,6 +779,30 @@ public class DocumentSelectorTestCase {
         assertEquals(Result.FALSE, evaluate("test.truth == true", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("test.truth == 0", documents.get(0)));
         assertEquals(Result.FALSE, evaluate("test.truth == false", documents.get(0)));
+    }
+
+    @Test
+    public void tensor_fields_can_be_presence_checked_with_null() throws ParseException {
+        var documents = createDocs();
+        // Document 1 has `dense_tensor` field set, the others do not
+        assertEquals(Result.TRUE, evaluate("test.dense_tensor != null", documents.get(1)));
+        assertEquals(Result.TRUE, evaluate("test.dense_tensor", documents.get(1)));
+        assertEquals(Result.TRUE, evaluate("null != test.dense_tensor", documents.get(1)));
+        assertEquals(Result.FALSE, evaluate("test.dense_tensor == null", documents.get(1)));
+        assertEquals(Result.FALSE, evaluate("null == test.dense_tensor", documents.get(1)));
+        assertEquals(Result.TRUE, evaluate("test.dense_tensor == null", documents.get(0)));
+        assertEquals(Result.TRUE, evaluate("not test.dense_tensor", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.dense_tensor != null", documents.get(0)));
+        // Tensors are not defined for any other operations than presence checks
+        assertEquals(Result.INVALID, evaluate("test.dense_tensor == 1234", documents.get(1)));
+        assertEquals(Result.INVALID, evaluate("test.dense_tensor < 1234", documents.get(1)));
+        // ... not even identity checks
+        assertEquals(Result.INVALID, evaluate("test.dense_tensor == test.dense_tensor", documents.get(1)));
+        assertEquals(Result.INVALID, evaluate("test.dense_tensor != test.dense_tensor", documents.get(1)));
+        // ... unless the fields are not set, in which case identity checks will succeed since the
+        // expression degenerates to comparing null values.
+        assertEquals(Result.TRUE, evaluate("test.dense_tensor == test.dense_tensor", documents.get(0)));
+        assertEquals(Result.FALSE, evaluate("test.dense_tensor != test.dense_tensor", documents.get(0)));
     }
 
     @Test
