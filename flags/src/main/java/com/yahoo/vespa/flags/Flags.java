@@ -464,7 +464,7 @@ public class Flags {
 
     public static final UnboundStringFlag HOSTNAME_SCHEME = defineStringFlag(
             "hostname-scheme", "legacy",
-            List.of("mpolden"), "2024-08-07", "2024-12-01",
+            List.of("mpolden"), "2024-08-07", "2025-01-15",
             "The hostname scheme to use when provisioning hosts. Must be 'legacy' or 'standard",
             "Takes effect immediately",
             (value) -> "legacy".equals(value) || "standard".equals(value),
