@@ -290,6 +290,12 @@ public class PermanentFlags {
             "Takes effect on next host-admin tick",
             NODE_TYPE);
 
+    public static final UnboundStringFlag HOST_SECURITY_AGENT_VERSION = defineStringFlag(
+            "host-security-agent-version", "",
+            "Upgrades/downgrades the host security agent to the specified version, does nothing if empty. Only effective in public systems.",
+            "Takes effect on next host-admin tick",
+            NODE_TYPE);
+
     // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
     public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
             "host-memory", -1.0,
