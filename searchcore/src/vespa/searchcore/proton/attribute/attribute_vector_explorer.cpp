@@ -108,23 +108,10 @@ convertPostingBaseToSlime(const IPostingListAttributeBase &postingBase, Cursor &
     convertMemoryUsageToSlime(memory_usage.bitvectors, cursor.setObject("bitvectors"));
 }
 
-std::string
-type_to_string(const Config& cfg)
-{
-    if (cfg.basicType().type() == BasicType::TENSOR) {
-        return cfg.tensorType().to_spec();
-    }
-    if (cfg.collectionType().type() == CollectionType::SINGLE) {
-        return cfg.basicType().asString();
-    }
-    return std::string(cfg.collectionType().asString()) +
-           "<" + std::string(cfg.basicType().asString()) + ">";
-}
-
 void
 convert_config_to_slime(const Config& cfg, bool full, Cursor& object)
 {
-    object.setString("type", type_to_string(cfg));
+    object.setString("type", cfg.type_to_string());
     object.setBool("fast_search", cfg.fastSearch());
     object.setBool("filter", cfg.getIsFilter());
     object.setBool("paged", cfg.paged());

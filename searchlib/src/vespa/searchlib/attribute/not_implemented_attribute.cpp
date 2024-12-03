@@ -140,8 +140,8 @@ NotImplementedAttribute::addDoc(DocId &) {
 
 std::unique_ptr<SearchContext>
 NotImplementedAttribute::getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const {
-    Issue::report("Search is not implemented for attribute '%s' of type '%s'.",
-                  getName().c_str(), getClassName(*this).c_str());
+    Issue::report("Search is not supported for attribute '%s' of type '%s' ('%s').",
+                  getName().c_str(), getConfig().type_to_string().c_str(), getClassName(*this).c_str());
     return std::make_unique<EmptySearchContext>(*this);
 }
 

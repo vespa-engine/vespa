@@ -181,7 +181,7 @@ TEST_F(RawAttributeTest, search_is_not_implemented)
         EXPECT_NE(nullptr, dynamic_cast<const EmptySearchContext*>(ctx.get()));
     }
     std::vector<std::string> exp;
-    exp.emplace_back("Search is not implemented for attribute 'raw' of type 'search::attribute::SingleRawAttribute'.");
+    exp.emplace_back("Search is not supported for attribute 'raw' of type 'raw' ('search::attribute::SingleRawAttribute').");
     EXPECT_EQ(exp, handler.list);
 }
 
