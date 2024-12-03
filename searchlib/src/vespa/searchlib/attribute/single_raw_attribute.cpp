@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "single_raw_attribute.h"
-#include "empty_search_context.h"
 #include "single_raw_attribute_loader.h"
 #include "single_raw_attribute_saver.h"
 #include <vespa/searchcommon/attribute/config.h>
@@ -160,12 +159,6 @@ void
 SingleRawAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
     usage.set(AddressSpaceComponents::raw_store, _raw_store.get_address_space_usage());
-}
-
-std::unique_ptr<attribute::SearchContext>
-SingleRawAttribute::getSearch(std::unique_ptr<QueryTermSimple>, const attribute::SearchContextParams&) const
-{
-    return std::make_unique<EmptySearchContext>(*this);
 }
 
 }

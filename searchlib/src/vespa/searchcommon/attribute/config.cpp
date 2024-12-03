@@ -70,4 +70,17 @@ Config::set_hnsw_index_params(const HnswIndexParams& params) {
     return *this;
 }
 
+std::string
+Config::type_to_string() const
+{
+    if (basicType().type() == BasicType::TENSOR) {
+        return tensorType().to_spec();
+    }
+    if (collectionType().type() == CollectionType::SINGLE) {
+        return basicType().asString();
+    }
+    return std::string(collectionType().asString()) +
+           "<" + std::string(basicType().asString()) + ">";
+}
+
 }
