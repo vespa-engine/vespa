@@ -371,6 +371,15 @@ IteratorHandler::getInternalValue(const FieldValue& fval) const
                 return std::make_unique<ArrayValue>(std::vector<ArrayValue::VariableValue>());
             }
         }
+        case FieldValue::Type::TENSOR:
+        {
+            const auto& tensor_val(static_cast<const TensorFieldValue&>(fval));
+            if (tensor_val.getAsTensorPtr() == nullptr) {
+                return std::make_unique<NullValue>();
+            }
+            // TODO consider adding tensor cell inspection to document selection language?
+            return std::make_unique<TensorValue>();
+        }
         default:
             break;
     }
@@ -797,6 +806,7 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
 
         case Value::Array: break;
         case Value::Struct: break;
+        case Value::Tensor: break;
         case Value::Invalid: break;
         case Value::Null: break;
     }
@@ -862,6 +872,7 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val, std::ostream& out) con
         case Value::Bucket: break;
         case Value::Array: break;
         case Value::Struct: break;
+        case Value::Tensor: break;
         case Value::Invalid: break;
         case Value::Null: break;
     }

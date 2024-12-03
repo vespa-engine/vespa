@@ -62,9 +62,11 @@ ResultList
 NullValue::operator==(const Value& value) const
 {
     const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-    if (nval != 0) return ResultList(Result::True);
+    if (nval != nullptr) {
+        return ResultList(Result::True);
+    }
     const InvalidValue* ival(dynamic_cast<const InvalidValue*>(&value));
-    return ResultList(ival != 0 ? Result::Invalid : Result::False);
+    return ResultList(ival != nullptr ? Result::Invalid : Result::False);
 }
 
 
@@ -107,7 +109,9 @@ ResultList
 StringValue::operator<(const Value& value) const
 {
     const StringValue* val(dynamic_cast<const StringValue*>(&value));
-    if (val == 0) return ResultList(Result::Invalid);
+    if (val == nullptr) {
+        return ResultList(Result::Invalid);
+    }
     return ResultList(Result::get(_value < val->_value));
 }
 
@@ -115,9 +119,9 @@ ResultList
 StringValue::operator==(const Value& value) const
 {
     const StringValue* val(dynamic_cast<const StringValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-        return ResultList(nval == 0 ? Result::Invalid : Result::False);
+        return ResultList(nval == nullptr ? Result::Invalid : Result::False);
     }
     return ResultList(Result::get(_value == val->_value));
 }
@@ -139,7 +143,9 @@ ResultList
 IntegerValue::operator<(const Value& value) const
 {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
-    if (val == 0) return ResultList(Result::Invalid);
+    if (val == nullptr) {
+        return ResultList(Result::Invalid);
+    }
     return val->operator>(*this);
 }
 
@@ -147,9 +153,9 @@ ResultList
 IntegerValue::operator==(const Value& value) const
 {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-        return ResultList(nval == 0 ? Result::Invalid : Result::False);
+        return ResultList(nval == nullptr ? Result::Invalid : Result::False);
     }
     return val->operator==(*this);
 }
@@ -171,7 +177,9 @@ ResultList
 FloatValue::operator<(const Value& value) const
 {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
-    if (val == 0) return ResultList(Result::Invalid);
+    if (val == nullptr) {
+        return ResultList(Result::Invalid);
+    }
     return val->operator>(*this);
 }
 
@@ -179,9 +187,9 @@ ResultList
 FloatValue::operator==(const Value& value) const
 {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-        return ResultList(nval == 0 ? Result::Invalid : Result::False);
+        return ResultList(nval == nullptr ? Result::Invalid : Result::False);
     }
     return val->operator==(*this);
 }
@@ -327,7 +335,7 @@ ResultList
 StructValue::operator<(const Value& value) const
 {
     const StructValue* val(dynamic_cast<const StructValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         return ResultList(Result::Invalid);
     }
     ValueMap::const_iterator it1 = _values.begin();
@@ -355,9 +363,9 @@ ResultList
 StructValue::operator==(const Value& value) const
 {
     const StructValue* val(dynamic_cast<const StructValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-        return ResultList(nval == 0 ? Result::Invalid : Result::False);
+        return ResultList(nval == nullptr ? Result::Invalid : Result::False);
     }
     ValueMap::const_iterator it1 = _values.begin();
     ValueMap::const_iterator it2 = val->_values.begin();
@@ -391,7 +399,7 @@ namespace {
 fieldvalue::VariableMap
 cloneMap(const fieldvalue::VariableMap &map) {
     fieldvalue::VariableMap m;
-    for (const auto & item : map) {
+    for (const auto& item : map) {
         m.emplace(item.first, item.second);
     }
     return m;
@@ -422,8 +430,8 @@ ArrayValue::doCompare(const Value& value, const Predicate& cmp) const
 
         std::bitset<3> resultForNoVariables;
         // If comparing with other value, must match one.
-        for (const auto & item : _values) {
-            const Result & result = cmp(*item.second, value).combineResults();
+        for (const auto& item : _values) {
+            const Result& result = cmp(*item.second, value).combineResults();
             if (item.first.empty()) {
                 resultForNoVariables.set(result.toEnum());
             } else {
@@ -438,5 +446,35 @@ ArrayValue::doCompare(const Value& value, const Predicate& cmp) const
         return results;
     }
 }
+
+TensorValue::TensorValue() : Value(Tensor) {}
+TensorValue::~TensorValue() = default;
+
+ResultList
+TensorValue::operator<(const Value&) const {
+    // No other comparisons are well-defined for TensorValue other than null-ness
+    return ResultList(Result::Invalid);
+}
+
+ResultList
+TensorValue::operator==(const Value& rhs) const {
+    // "present tensor == null" is always False, Invalid otherwise.
+    const bool rhs_is_null = (rhs.getType() == Type::Null);
+    return ResultList(rhs_is_null ? Result::False : Result::Invalid);
+}
+
+ResultList
+TensorValue::operator!=(const Value& rhs) const {
+    // "present tensor != null" is always True, Invalid otherwise.
+    const bool rhs_is_null = (rhs.getType() == Type::Null);
+    return ResultList(rhs_is_null ? Result::True : Result::Invalid);
+}
+
+void
+TensorValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    (void) verbose; (void) indent;
+    out << "<tensor placeholder value>";
+}
+
 
 }
