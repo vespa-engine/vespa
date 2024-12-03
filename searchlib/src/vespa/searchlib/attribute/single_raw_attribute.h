@@ -44,7 +44,6 @@ public:
     }
     bool isUndefined(DocId docid) const override;
     uint32_t clearDoc(DocId docId) override;
-    std::unique_ptr<attribute::SearchContext> getSearch(std::unique_ptr<QueryTermSimple>, const attribute::SearchContextParams&) const override;
 };
 
 }

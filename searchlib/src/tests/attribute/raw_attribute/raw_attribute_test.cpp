@@ -3,8 +3,11 @@
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/empty_search_context.h>
+#include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/issue.h>
 #include <filesystem>
 #include <memory>
 
@@ -12,10 +15,14 @@ using search::AddressSpaceComponents;
 using search::AddressSpaceUsage;
 using search::AttributeFactory;
 using search::AttributeVector;
+using search::QueryTermSimple;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
+using search::attribute::EmptySearchContext;
+using search::attribute::SearchContextParams;
 using search::attribute::SingleRawAttribute;
+using vespalib::Issue;
 
 using namespace std::literals;
 
@@ -36,6 +43,13 @@ std::vector<char> as_vector(std::span<const char> value) {
 void remove_saved_attr() {
     std::filesystem::remove(attr_path);
 }
+
+struct MyIssueHandler : Issue::Handler {
+    std::vector<std::string> list;
+    void handle(const Issue &issue) override {
+        list.push_back(issue.message());
+    }
+};
 
 class RawAttributeTest : public ::testing::Test
 {
@@ -155,6 +169,20 @@ TEST_F(RawAttributeTest, address_space_usage_is_reported)
     EXPECT_EQ(1, all.at(raw_store).used());
     _raw->set_raw(1, as_vector("foo"sv));
     EXPECT_EQ(2, _attr->getAddressSpaceUsage().get_all().at(raw_store).used());
+}
+
+TEST_F(RawAttributeTest, search_is_not_implemented)
+{
+    MyIssueHandler handler;
+    {
+        Issue::Binding binding(handler);
+        auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>("hello", QueryTermSimple::Type::WORD),
+                                    SearchContextParams());
+        EXPECT_NE(nullptr, dynamic_cast<const EmptySearchContext*>(ctx.get()));
+    }
+    std::vector<std::string> exp;
+    exp.emplace_back("Search is not implemented for attribute 'raw' of type 'search::attribute::SingleRawAttribute'.");
+    EXPECT_EQ(exp, handler.list);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
