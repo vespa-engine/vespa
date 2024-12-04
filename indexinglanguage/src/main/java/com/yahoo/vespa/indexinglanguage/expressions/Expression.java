@@ -36,22 +36,9 @@ import java.util.Map;
  */
 public abstract class Expression extends Selectable {
 
-    private final DataType requiredInputType;
-
     // Input and output types resolved during verification
     private DataType inputType;
     private DataType outputType;
-
-    /**
-     * Creates an expression
-     *
-     * @param requiredInputType the type of the input this expression can work with.
-     *                          UnresolvedDataType.INSTANCE if it works with any type,
-     *                          and null if it does not consume any input.
-     */
-    protected Expression(DataType requiredInputType) {
-        this.requiredInputType = requiredInputType;
-    }
 
     /** Returns whether this expression requires an input value. */
     public boolean requiresInput() { return true; }
@@ -64,8 +51,6 @@ public abstract class Expression extends Selectable {
 
     /** Sets the document type and field the statement this expression is part of will write to */
     public void setStatementOutput(DocumentType documentType, Field field) {}
-
-    public final DataType requiredInputType() { return requiredInputType; }
 
     public DataType getInputType(VerificationContext context) { return inputType; }
 
@@ -255,15 +240,9 @@ public abstract class Expression extends Selectable {
     }
 
     public final FieldValue execute(ExecutionContext context) {
-        DataType inputType = requiredInputType();
-        if (inputType != null) {
+        if (requiresInput()) {
             FieldValue input = context.getCurrentValue();
             if (input == null) return null;
-
-            if (!inputType.isValueCompatible(input)) {
-                throw new IllegalArgumentException("Expression '" + this + "' expected " + inputType.getName() +
-                                                   " input, got " + input.getDataType().getName());
-            }
         }
         doExecute(context);
         DataType outputType = createdOutputType();
@@ -319,12 +298,18 @@ public abstract class Expression extends Selectable {
 
     protected DataType mostGeneralOf(DataType left, DataType right) {
         if (left == null || right == null) return null;
-        return left.isAssignableTo(right) ? right : left;
+        if (left.isAssignableTo(right)) return right;
+        if (right.isAssignableTo(left)) return left;
+        throw new VerificationException(this, "Argument types are incompatible. " +
+                                              "First " + left.getName() + ", second: " + right.getName());
     }
 
     protected DataType leastGeneralOf(DataType left, DataType right) {
         if (left == null || right == null) return null;
-        return left.isAssignableTo(right) ? left : right;
+        if (left.isAssignableTo(right)) return left;
+        if (right.isAssignableTo(left)) return right;
+        throw new VerificationException(this, "Argument types are incompatible. " +
+                                              "First " + left.getName() + ", second: " + right.getName());
     }
 
 }

@@ -9,10 +9,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
  */
 public final class ToStringExpression extends Expression {
 
-    public ToStringExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);

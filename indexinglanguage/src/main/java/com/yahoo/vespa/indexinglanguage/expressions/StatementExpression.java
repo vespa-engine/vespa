@@ -37,7 +37,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     private StatementExpression(Iterable<Expression> list, Object unused) {
-        super(list, resolveInputType(list));
+        super(list);
         inputFields = List.copyOf(InputExpression.InputFieldNameExtractor.runOn(this));
     }
 
@@ -119,17 +119,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
         for (Expression expression : this) {
             if (expression instanceof OutputExpression output)
                 return output.getFieldName();
-        }
-        return null;
-    }
-
-    private static DataType resolveInputType(Iterable<Expression> expressions) {
-        for (Expression expression : expressions) {
-            DataType type = expression.requiredInputType();
-            if (type != null) return type;
-
-            type = expression.createdOutputType();
-            if (type != null) return null;
         }
         return null;
     }

@@ -27,7 +27,6 @@ public final class SelectInputExpression extends CompositeExpression {
     }
 
     public SelectInputExpression(List<Pair<String, Expression>> cases) {
-        super(null);
         this.cases = cases;
     }
 

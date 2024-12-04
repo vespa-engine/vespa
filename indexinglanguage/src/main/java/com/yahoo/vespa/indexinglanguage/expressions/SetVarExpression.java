@@ -11,7 +11,6 @@ public final class SetVarExpression extends Expression {
     private final String varName;
 
     public SetVarExpression(String varName) {
-        super(UnresolvedDataType.INSTANCE);
         this.varName = varName;
     }
 

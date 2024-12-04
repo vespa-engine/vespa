@@ -240,9 +240,6 @@ public class ForEachTestCase {
 
         List<FieldValue> lst = new LinkedList<>();
 
-        MyCollector() {
-            super(null);
-        }
         @Override
         protected void doExecute(ExecutionContext context) {
             lst.add(context.getCurrentValue());

@@ -22,7 +22,6 @@ public final class GetFieldExpression extends Expression {
     private final String structFieldName;
 
     public GetFieldExpression(String structFieldName) {
-        super(UnresolvedDataType.INSTANCE);
         this.structFieldName = structFieldName;
     }
 

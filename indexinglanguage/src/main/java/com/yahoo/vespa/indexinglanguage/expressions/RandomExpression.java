@@ -19,7 +19,6 @@ public final class RandomExpression extends Expression {
     }
 
     public RandomExpression(Integer max) {
-        super(null);
         this.max = max;
     }
 

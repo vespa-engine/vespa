@@ -13,10 +13,6 @@ import com.yahoo.document.datatypes.StringFieldValue;
  */
 public final class ToBoolExpression extends Expression {
 
-    public ToBoolExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);

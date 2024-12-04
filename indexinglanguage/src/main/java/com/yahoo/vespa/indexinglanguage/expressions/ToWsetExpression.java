@@ -15,7 +15,6 @@ public final class ToWsetExpression extends Expression {
     private final Boolean removeIfZero;
 
     public ToWsetExpression(boolean createIfNonExistent, boolean removeIfZero) {
-        super(UnresolvedDataType.INSTANCE);
         this.createIfNonExistent = createIfNonExistent;
         this.removeIfZero = removeIfZero;
     }

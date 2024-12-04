@@ -34,7 +34,6 @@ public final class NGramExpression extends Expression {
      * @param gramSize the gram size
      */
     public NGramExpression(Linguistics linguistics, int gramSize) {
-        super(DataType.STRING);
         this.linguistics = linguistics;
         this.gramSize = gramSize;
     }

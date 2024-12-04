@@ -19,8 +19,8 @@ final class SimpleExpression extends Expression {
     public SimpleExpression() {
         this(null);
     }
+
     public SimpleExpression(DataType requiredInput) {
-        super(requiredInput);
         this.requiredInput = requiredInput;
     }
 

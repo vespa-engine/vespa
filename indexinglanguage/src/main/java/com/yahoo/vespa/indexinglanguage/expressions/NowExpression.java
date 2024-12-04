@@ -16,7 +16,6 @@ public final class NowExpression extends Expression {
     }
 
     public NowExpression(Timer timer) {
-        super(null);
         this.timer = timer;
     }
 

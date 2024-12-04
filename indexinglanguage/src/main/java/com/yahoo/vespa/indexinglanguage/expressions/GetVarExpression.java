@@ -11,7 +11,6 @@ public final class GetVarExpression extends Expression {
     private final String variableName;
 
     public GetVarExpression(String variableName) {
-        super(null);
         this.variableName = variableName;
     }
 

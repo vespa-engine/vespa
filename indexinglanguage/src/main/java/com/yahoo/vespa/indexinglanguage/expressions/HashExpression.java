@@ -23,10 +23,6 @@ public class HashExpression extends Expression  {
 
     private DataType targetType;
 
-    public HashExpression() {
-        super(DataType.STRING);
-    }
-
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         targetType = field.getDataType();

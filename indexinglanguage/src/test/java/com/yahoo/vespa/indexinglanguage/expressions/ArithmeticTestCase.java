@@ -74,15 +74,6 @@ public class ArithmeticTestCase {
     }
 
     @Test
-    public void requireThatOperandsAreInputCompatible() {
-        assertVerify(new SimpleExpression(DataType.INT), Operator.ADD,
-                     new SimpleExpression(DataType.INT), DataType.INT);
-        assertVerifyThrows(new SimpleExpression(DataType.INT), Operator.ADD,
-                           new SimpleExpression(DataType.STRING), null,
-                           "Operands require conflicting input types, int vs string");
-    }
-
-    @Test
     public void requireThatResultIsCalculated() {
         for (int i = 0; i < 50; ++i) {
             LongFieldValue left = new LongFieldValue(i);
@@ -189,6 +180,7 @@ public class ArithmeticTestCase {
         ArithmeticExpression expression = null;
         try {
             expression = new ArithmeticExpression(lhs, op, rhs);
+            expression.setInputType(null, new VerificationContext(new SimpleTestAdapter()));
             expression.verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
             fail("Expected exception");
         } catch (VerificationException e) {

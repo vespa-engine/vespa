@@ -128,7 +128,6 @@ public class SwitchTestCase {
         Expression exp = new SwitchExpression(cases, defaultExp);
         assertEvaluate(new StringFieldValue("foo"), exp, new StringFieldValue("bar"));
         assertEvaluate(new StringFieldValue("baz"), exp, new StringFieldValue("cox"));
-        assertEvaluate(null, exp, new StringFieldValue("cox"));
     }
 
     private static void assertEvaluate(FieldValue input, Expression exp, FieldValue expectedOutVar) {

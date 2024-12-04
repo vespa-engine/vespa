@@ -9,10 +9,6 @@ import com.yahoo.document.datatypes.LongFieldValue;
  */
 public final class ToLongExpression extends Expression {
 
-    public ToLongExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);

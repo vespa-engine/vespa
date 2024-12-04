@@ -29,7 +29,6 @@ public final class ForEachExpression extends CompositeExpression {
     private final Expression expression;
 
     public ForEachExpression(Expression expression) {
-        super(UnresolvedDataType.INSTANCE);
         this.expression = Objects.requireNonNull(expression);
     }
 

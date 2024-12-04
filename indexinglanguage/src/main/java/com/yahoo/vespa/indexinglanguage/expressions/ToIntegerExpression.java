@@ -9,10 +9,6 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
  */
 public final class ToIntegerExpression extends Expression {
 
-    public ToIntegerExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);

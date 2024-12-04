@@ -8,10 +8,6 @@ import com.yahoo.document.DataType;
  */
 public final class ThisExpression extends Expression {
 
-    public ThisExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     protected void doVerify(VerificationContext context) {
         if (context.getCurrentType() == null)

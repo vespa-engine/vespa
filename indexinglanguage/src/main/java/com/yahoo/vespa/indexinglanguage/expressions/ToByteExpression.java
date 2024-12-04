@@ -9,10 +9,6 @@ import com.yahoo.document.datatypes.ByteFieldValue;
  */
 public final class ToByteExpression extends Expression {
 
-    public ToByteExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);

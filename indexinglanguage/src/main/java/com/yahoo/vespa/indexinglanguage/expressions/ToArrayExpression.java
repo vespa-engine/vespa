@@ -11,10 +11,6 @@ import com.yahoo.document.datatypes.FieldValue;
  */
 public final class ToArrayExpression extends Expression {
 
-    public ToArrayExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);

@@ -16,7 +16,6 @@ public class ParenthesisExpression extends CompositeExpression {
     private final Expression innerExpression;
 
     public ParenthesisExpression(Expression innerExpression) {
-        super(innerExpression.requiredInputType());
         this.innerExpression = innerExpression;
     }
 

@@ -14,10 +14,6 @@ import com.yahoo.geo.ZCurve;
  */
 public final class ZCurveExpression extends Expression {
 
-    public ZCurveExpression() {
-        super(PositionDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         if (input == null) return null;

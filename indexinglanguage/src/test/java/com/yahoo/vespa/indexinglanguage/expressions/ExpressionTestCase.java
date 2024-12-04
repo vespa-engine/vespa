@@ -19,14 +19,6 @@ import static org.junit.Assert.fail;
 public class ExpressionTestCase {
 
     @Test
-    public void requireThatInputTypeIsCheckedBeforeExecute() {
-        assertExecute(newRequiredInput(DataType.INT), null);
-        assertExecute(newRequiredInput(DataType.INT), new IntegerFieldValue(69));
-        assertExecuteThrows(newRequiredInput(DataType.INT), new StringFieldValue("foo"),
-                            new IllegalArgumentException("expected int input, got string"));
-    }
-
-    @Test
     public void requireThatOutputTypeIsCheckedAfterExecute() {
         assertExecute(newCreatedOutput(DataType.INT, (FieldValue)null), null);
         assertExecute(newCreatedOutput(DataType.INT, new IntegerFieldValue(69)), null);

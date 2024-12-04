@@ -3,16 +3,13 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.StringFieldValue;
+
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * @author Simon Thoresen Hult
  */
 public final class HostNameExpression extends Expression {
-
-    public HostNameExpression() {
-        super(null);
-    }
 
     @Override
     public boolean requiresInput() { return false; }

@@ -54,7 +54,6 @@ public final class ArithmeticExpression extends CompositeExpression {
     private final Expression right;
 
     public ArithmeticExpression(Expression left, Operator op, Expression right) {
-        super(requiredInputType(left, right));
         this.left = Objects.requireNonNull(left);
         this.op = Objects.requireNonNull(op);
         this.right = Objects.requireNonNull(right);
@@ -125,17 +124,6 @@ public final class ArithmeticExpression extends CompositeExpression {
         FieldValue input = context.getCurrentValue();
         context.setCurrentValue(evaluate(context.setCurrentValue(input).execute(left).getCurrentValue(),
                                          context.setCurrentValue(input).execute(right).getCurrentValue()));
-    }
-
-    private static DataType requiredInputType(Expression left, Expression right) {
-        DataType leftType = left.requiredInputType();
-        DataType rightType = right.requiredInputType();
-        if (leftType == null) return rightType;
-        if (rightType == null) return leftType;
-        if (!leftType.equals(rightType))
-            throw new VerificationException(ArithmeticExpression.class, "Operands require conflicting input types, " +
-                                                                        leftType.getName() + " vs " + rightType.getName());
-        return leftType;
     }
 
     @Override

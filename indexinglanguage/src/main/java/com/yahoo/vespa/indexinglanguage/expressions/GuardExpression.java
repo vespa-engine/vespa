@@ -19,7 +19,6 @@ public final class GuardExpression extends CompositeExpression {
     private final boolean shouldExecute;
 
     public GuardExpression(Expression innerExpression) {
-        super(innerExpression.requiredInputType());
         this.innerExpression = innerExpression;
         shouldExecute = shouldExecute(innerExpression);
     }

@@ -17,7 +17,6 @@ public final class ConstantExpression extends Expression {
     private final FieldValue value;
 
     public ConstantExpression(FieldValue value) {
-        super(null);
         this.value = Objects.requireNonNull(value);
     }
 

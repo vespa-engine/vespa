@@ -39,7 +39,6 @@ public class EmbedExpression extends Expression  {
     private TensorType targetType;
 
     public EmbedExpression(Linguistics linguistics, Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
-        super(null);
         this.linguistics = linguistics;
         this.embedderId = embedderId;
         this.embedderArguments = List.copyOf(embedderArguments);

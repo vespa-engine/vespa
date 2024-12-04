@@ -11,10 +11,6 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  */
 public final class LowerCaseExpression extends Expression {
 
-    public LowerCaseExpression() {
-        super(DataType.STRING);
-    }
-
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         return super.setInputType(inputType, DataType.STRING, context);

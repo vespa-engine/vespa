@@ -18,7 +18,6 @@ public final class JoinExpression extends Expression {
     private final String delimiter;
 
     public JoinExpression(String delimiter) {
-        super(UnresolvedDataType.INSTANCE);
         this.delimiter = delimiter;
     }
 

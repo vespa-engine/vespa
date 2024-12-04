@@ -19,7 +19,6 @@ public final class InputExpression extends Expression {
     private FieldPath fieldPath;
 
     public InputExpression(String fieldName) {
-        super(null);
         if (fieldName == null)
             throw new IllegalArgumentException("'input' must be given a field name as argument");
         this.fieldName = fieldName;

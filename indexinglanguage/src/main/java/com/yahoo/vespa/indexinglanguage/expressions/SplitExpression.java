@@ -17,7 +17,6 @@ public final class SplitExpression extends Expression {
     private final Pattern splitPattern;
 
     public SplitExpression(String splitString) {
-        super(DataType.STRING);
         this.splitPattern = Pattern.compile(splitString);
     }
 

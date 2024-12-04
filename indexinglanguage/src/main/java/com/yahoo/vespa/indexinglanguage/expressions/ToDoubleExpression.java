@@ -9,10 +9,6 @@ import com.yahoo.document.datatypes.DoubleFieldValue;
  */
 public final class ToDoubleExpression extends Expression {
 
-    public ToDoubleExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);

@@ -28,7 +28,7 @@ public final class CatExpression extends ExpressionList<Expression> {
     }
 
     public CatExpression(Collection<? extends Expression> expressions) {
-        super(expressions, resolveInputType(expressions));
+        super(expressions);
     }
 
     @Override
@@ -83,46 +83,13 @@ public final class CatExpression extends ExpressionList<Expression> {
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
-        DataType inputType = input != null ? input.getDataType() : null;
-//        VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
-//        context.fillVariableTypes(verificationContext);
         List<FieldValue> values = new LinkedList<>();
-//        List<DataType> types = new LinkedList<>();
-        for (Expression expression : this) {
-            FieldValue val = context.setCurrentValue(input).execute(expression).getCurrentValue();
-            values.add(val);
-/*
-            DataType type;
-            if (val != null) {
-                type = val.getDataType();
-            } else {
-                type = verificationContext.setCurrentType(inputType).verify(this).getCurrentType();
-            }
-            types.add(type);
-
- */
-        }
-//        DataType type = resolveOutputType(types);
+        for (Expression expression : this)
+            values.add(context.setCurrentValue(input).execute(expression).getCurrentValue());
         DataType type = getOutputType();
         if (type == null)
             throw new RuntimeException("Output type is not resolved in " + this);
         context.setCurrentValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
-    }
-
-    private static DataType resolveInputType(Collection<? extends Expression> list) {
-        DataType prev = null;
-        for (Expression exp : list) {
-            DataType next = exp.requiredInputType();
-            if (next == null) {
-                // ignore
-            } else if (prev == null) {
-                prev = next;
-            } else if (!prev.isAssignableFrom(next)) {
-                throw new VerificationException(CatExpression.class, "Operands require conflicting input types, " +
-                                                                      prev.getName() + " vs " + next.getName());
-            }
-        }
-        return prev;
     }
 
     @Override

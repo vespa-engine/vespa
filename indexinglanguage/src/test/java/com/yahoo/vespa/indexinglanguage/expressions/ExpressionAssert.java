@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 
 import static org.junit.Assert.assertEquals;
@@ -34,6 +35,7 @@ class ExpressionAssert {
     public static void assertVerifyThrows(String expectedMessage, CreateExpression createExp, VerificationContext context) {
         try {
             Expression exp = createExp.create();
+            exp = new StatementExpression(new ConstantExpression(new StringFieldValue("test")), exp);
             exp.verify(context);
             fail("Expected exception");
         } catch (VerificationException e) {

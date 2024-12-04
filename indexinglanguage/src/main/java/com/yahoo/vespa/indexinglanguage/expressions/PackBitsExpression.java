@@ -21,11 +21,6 @@ public class PackBitsExpression extends Expression  {
 
     private TensorType outputTensorType;
 
-    /** Creates a pack_bits expression. */
-    public PackBitsExpression() {
-        super(TensorDataType.any());
-    }
-
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);

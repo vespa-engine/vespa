@@ -9,10 +9,6 @@ import com.yahoo.document.datatypes.FloatFieldValue;
  */
 public final class ToFloatExpression extends Expression {
 
-    public ToFloatExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);
