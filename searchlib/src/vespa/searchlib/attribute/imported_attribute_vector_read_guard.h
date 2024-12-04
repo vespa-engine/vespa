@@ -110,6 +110,7 @@ protected:
         return target_lid < _target_docid_limit ? target_lid : 0u;
     }
 
+    bool is_sortable() const noexcept override;
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available,
                                      const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available,

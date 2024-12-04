@@ -103,6 +103,12 @@ StringAttribute::get(DocId doc, largeint_t * v, uint32_t sz) const
     return n;
 }
 
+bool
+StringAttribute::is_sortable() const noexcept
+{
+    return true;
+}
+
 long
 StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {

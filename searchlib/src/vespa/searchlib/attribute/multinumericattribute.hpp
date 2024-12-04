@@ -187,6 +187,13 @@ MultiValueNumericAttribute<B, M>::onInitSave(std::string_view fileName)
 }
 
 template <typename B, typename M>
+bool
+MultiValueNumericAttribute<B, M>::is_sortable() const noexcept
+{
+    return true;
+}
+
+template <typename B, typename M>
 template <bool asc>
 long
 MultiValueNumericAttribute<B, M>::on_serialize_for_sort(DocId doc, void* serTo, long available) const

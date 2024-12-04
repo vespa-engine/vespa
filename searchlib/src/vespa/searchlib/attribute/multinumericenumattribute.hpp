@@ -149,6 +149,13 @@ MultiValueNumericEnumAttribute<B, M>::getSearch(QueryTermSimple::UP qTerm,
 }
 
 template <typename B, typename M>
+bool
+MultiValueNumericEnumAttribute<B, M>::is_sortable() const noexcept
+{
+    return true;
+}
+
+template <typename B, typename M>
 template <bool asc>
 long
 MultiValueNumericEnumAttribute<B, M>::on_serialize_for_sort(DocId doc, void* serTo, long available) const

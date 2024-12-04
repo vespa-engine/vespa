@@ -62,6 +62,13 @@ IntegerAttributeTemplate<T>::findFoldedEnums(const char *value) const
 }
 
 template<typename T>
+bool
+IntegerAttributeTemplate<T>::is_sortable() const noexcept
+{
+    return true;
+}
+
+template<typename T>
 long
 IntegerAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
     T origValue(get(doc));
