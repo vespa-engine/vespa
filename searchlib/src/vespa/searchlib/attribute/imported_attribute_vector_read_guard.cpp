@@ -281,6 +281,10 @@ bool ImportedAttributeVectorReadGuard::isUndefined(DocId doc) const {
     return _target_attribute.isUndefined(getTargetLid(doc));
 }
 
+bool ImportedAttributeVectorReadGuard::is_sortable() const noexcept {
+    return _target_attribute.is_sortable();
+}
+
 long ImportedAttributeVectorReadGuard::onSerializeForAscendingSort(DocId doc,
                                                                    void *serTo,
                                                                    long available,

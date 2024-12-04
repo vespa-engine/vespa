@@ -54,6 +54,7 @@ protected:
         return array.size();
     }
 
+    bool is_sortable() const noexcept override;
     template <bool asc>
     long on_serialize_for_sort(DocId doc, void* serTo, long available) const;
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;

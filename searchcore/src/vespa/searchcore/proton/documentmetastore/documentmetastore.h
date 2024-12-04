@@ -271,6 +271,7 @@ public:
     uint32_t getVersion() const override;
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
     void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
+    bool is_sortable() const noexcept override;
     long onSerializeForAscendingSort(DocId, void *, long, const search::common::BlobConverter *) const override;
     long onSerializeForDescendingSort(DocId, void *, long, const search::common::BlobConverter *) const override;
 };

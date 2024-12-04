@@ -73,6 +73,7 @@ protected:
 
     bool get_match_is_cased() const noexcept;
     bool has_uncased_matching() const noexcept override;
+    bool is_sortable() const noexcept override;
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 private:

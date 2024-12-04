@@ -113,6 +113,12 @@ NotImplementedAttribute::findFoldedEnums(const char *) const {
     notImplemented();
 }
 
+bool
+NotImplementedAttribute::is_sortable() const noexcept
+{
+    return false;
+}
+
 long
 NotImplementedAttribute::onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const {
     notImplemented();

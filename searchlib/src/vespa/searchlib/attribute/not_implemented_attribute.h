@@ -29,6 +29,7 @@ struct NotImplementedAttribute : AttributeVector {
     bool findEnum(const char *, EnumHandle &) const override;
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
 
+    bool is_sortable() const noexcept override;
     long onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const override;
     long onSerializeForDescendingSort(DocId, void *, long, const common::BlobConverter *) const override;
     uint32_t clearDoc(DocId) override;

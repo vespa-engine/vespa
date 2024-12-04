@@ -182,6 +182,10 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const SortInfo & sInfo)
             Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", sInfo._field.c_str());
             return false;
         }
+        if (!vector->is_sortable()) {
+            Issue::report("sort spec: Attribute vector '%s' is not sortable. Skipped in sorting", sInfo._field.c_str());
+            return false;
+        }
     }
 
     LOG(spam, "SortSpec: adding vector (%s)'%s'",

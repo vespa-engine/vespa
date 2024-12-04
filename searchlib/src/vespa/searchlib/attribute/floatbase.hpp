@@ -49,6 +49,13 @@ FloatingPointAttributeTemplate<T>::findFoldedEnums(const char *value) const
 }
 
 template<typename T>
+bool
+FloatingPointAttributeTemplate<T>::is_sortable() const noexcept
+{
+    return true;
+}
+
+template<typename T>
 long
 FloatingPointAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
     T origValue(get(doc));

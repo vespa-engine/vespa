@@ -92,6 +92,13 @@ NumericDirectAttrVector(const std::string & baseFileName)
 }
 
 template <typename F, typename B>
+bool
+NumericDirectAttrVector<F, B>::is_sortable() const noexcept
+{
+    return true;
+}
+
+template <typename F, typename B>
 template <bool asc>
 long
 NumericDirectAttrVector<F, B>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
@@ -158,6 +165,13 @@ StringDirectAttrVector<F>::on_serialize_for_sort(DocId doc, void* serTo, long av
         }
     }
     return writer.write();
+}
+
+template <typename F>
+bool
+StringDirectAttrVector<F>::is_sortable() const noexcept
+{
+    return true;
 }
 
 template <typename F>

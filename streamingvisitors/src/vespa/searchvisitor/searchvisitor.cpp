@@ -1001,18 +1001,23 @@ SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & 
             if ( fid != StringFieldIdTMap::npos ) {
                 AttributeGuard::UP attr(_attrMan.getAttribute(sInfo._field));
                 if (attr->valid()) {
-                    size_t index(_attributeFields.size());
-                    for(size_t j(0); j < index; j++) {
-                        if ((_attributeFields[j]._field == fid) && notContained(_sortList, j)) {
-                            index = j;
-                            _attributeFields[index]._ascending = sInfo._ascending;
-                            _attributeFields[index]._converter = sInfo._converter.get();
+                    if (attr->get()->is_sortable()) {
+                        size_t index(_attributeFields.size());
+                        for (size_t j(0); j < index; j++) {
+                            if ((_attributeFields[j]._field == fid) && notContained(_sortList, j)) {
+                                index = j;
+                                _attributeFields[index]._ascending = sInfo._ascending;
+                                _attributeFields[index]._converter = sInfo._converter.get();
+                            }
                         }
+                        if (index == _attributeFields.size()) {
+                            _attributeFields.emplace_back(fid, std::move(attr), sInfo._ascending,
+                                                          sInfo._converter.get());
+                        }
+                        _sortList.push_back(index);
+                    } else {
+                        LOG(warning, "Attribute '%s' is not sortable", sInfo._field.c_str());
                     }
-                    if (index == _attributeFields.size()) {
-                        _attributeFields.emplace_back(fid, std::move(attr), sInfo._ascending, sInfo._converter.get());
-                    }
-                    _sortList.push_back(index);
                 } else {
                     LOG(warning, "Attribute '%s' is not valid", sInfo._field.c_str());
                 }

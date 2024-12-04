@@ -68,6 +68,7 @@ protected:
     virtual void load_enum_store(LoadedVector&) {}
     virtual void fillValues(LoadedVector &) {}
     virtual void load_posting_lists(LoadedVector&) {}
+    bool is_sortable() const noexcept override;
     long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const override;
 
