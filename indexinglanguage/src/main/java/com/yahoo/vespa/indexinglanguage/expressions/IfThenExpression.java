@@ -59,7 +59,7 @@ public final class IfThenExpression extends CompositeExpression {
 
     @Override
     public boolean requiresInput() {
-        return left.requiresInput() || right.requiresInput() || ifFalse.requiresInput() || ifFalse.requiresInput();
+        return left.requiresInput() || right.requiresInput() || ifTrue.requiresInput() || (ifFalse != null && ifFalse.requiresInput());
     }
 
     @Override

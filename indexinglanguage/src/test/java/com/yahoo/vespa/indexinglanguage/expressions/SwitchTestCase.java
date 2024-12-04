@@ -12,7 +12,13 @@ import java.util.Map;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -57,7 +63,7 @@ public class SwitchTestCase {
         Expression foo = SimpleExpression.newConversion(DataType.STRING, DataType.INT);
         Expression exp = new SwitchExpression(Map.of("foo", foo));
         assertVerify(DataType.STRING, exp, DataType.STRING); // does not touch output
-        assertVerifyThrows("Invalid expression 'switch { case \"foo\": SimpleExpression; }': Expected input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'switch { case \"foo\": SimpleExpression; }': Expected string input, but no input is provided", null, exp);
         assertVerifyThrows("Invalid expression 'switch { case \"foo\": SimpleExpression; }': Expected string input, got int", DataType.INT, exp);
     }
 

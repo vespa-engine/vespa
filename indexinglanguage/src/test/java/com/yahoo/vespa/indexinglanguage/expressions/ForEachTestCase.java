@@ -64,7 +64,7 @@ public class ForEachTestCase {
         type.addField(new Field("foo", DataType.INT));
         assertVerify(type, new ForEachExpression(new SimpleExpression()), type);
         assertVerifyThrows("Invalid expression 'SimpleExpression': Expected string input, got int", type, new ForEachExpression(SimpleExpression.newConversion(DataType.STRING, DataType.INT)));
-        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected int output, got string", type, new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
+        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Struct field 'foo' has type int but expression produces string", type, new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
     }
 
     @Test

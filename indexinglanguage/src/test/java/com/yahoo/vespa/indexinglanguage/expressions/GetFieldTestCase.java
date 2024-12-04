@@ -1,7 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
-import com.yahoo.document.*;
+import com.yahoo.document.DataType;
+import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
+import com.yahoo.document.Field;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
@@ -10,7 +14,9 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -39,7 +45,7 @@ public class GetFieldTestCase {
         Expression exp = new GetFieldExpression("foo");
         assertVerify(type, exp, DataType.STRING);
         assertVerifyThrows("Invalid expression 'get_field foo': Expected input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression 'get_field foo': Expected a struct or map, but got an int", DataType.INT, exp);
+        assertVerifyThrows("Invalid expression 'get_field foo': Expected a struct or map, but got int", DataType.INT, exp);
         assertVerifyThrows("Invalid expression 'get_field bar': Field 'bar' not found in struct type 'my_struct'", type, new GetFieldExpression("bar"));
     }
 

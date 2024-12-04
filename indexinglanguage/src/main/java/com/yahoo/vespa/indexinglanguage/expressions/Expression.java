@@ -81,8 +81,10 @@ public abstract class Expression extends Selectable {
      * @throws IllegalArgumentException if inputType isn't assignable to requiredType
      */
     protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
-        if ( requiredType != null && ! (inputType.isAssignableTo(requiredType)))
-            throw new VerificationException(this, "This requires type " + requiredType.getName() + ", but gets " + inputType.getName());
+        if (requiredType != null && inputType == null)
+            throw new VerificationException(this, "Expected " + requiredType.getName() + " input, but no input is provided");
+        if (requiredType != null && ! (inputType.isAssignableTo(requiredType)))
+            throw new VerificationException(this, "Expected " + requiredType.getName() + " input, got " + inputType.getName());
         return assignInputType(inputType);
     }
 
@@ -163,16 +165,8 @@ public abstract class Expression extends Selectable {
     /** Implementations that don't change the type should implement this to do verification. */
     protected void doVerify(VerificationContext context) {}
 
-    public final DataType verify() {
-        return verify(new VerificationContext());
-    }
-
     public final void verify(DocumentType type) {
         verify(new DocumentTypeAdapter(type));
-    }
-
-    public final DataType verify(DataType val) {
-        return verify(new VerificationContext().setCurrentType(val));
     }
 
     public final Document verify(Document doc) {
@@ -225,10 +219,11 @@ public abstract class Expression extends Selectable {
             if (input != null && input.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
                 throw new VerificationException(this, "Failed to resolve input type");
             }
+            /*
             if (input != null && requiredInputType != null && !requiredInputType.isAssignableFrom(input)) {
                 throw new VerificationException(this, "Expected " + requiredInputType.getName() + " input, got " +
                                                       input.getName());
-            }
+            }*/
         }
         doVerify(context);
         return context.getCurrentType();
@@ -325,6 +320,7 @@ public abstract class Expression extends Selectable {
 
     // Convenience For testing
     public static Document execute(Expression expression, Document doc) {
+        expression.verify(doc);
         return expression.execute(new SimpleAdapterFactory(), doc);
     }
 

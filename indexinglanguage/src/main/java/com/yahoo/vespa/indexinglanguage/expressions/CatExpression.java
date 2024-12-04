@@ -47,7 +47,9 @@ public final class CatExpression extends ExpressionList<Expression> {
         for (var expression : expressions())
             outputTypes.add(expression.setInputType(inputType, context));
         DataType outputType = resolveOutputType(outputTypes);
-        return outputType != null ? outputType : getOutputType(context);
+        if (outputType == null) outputType = getOutputType(context); // TODO: Remove this line
+        super.setOutputType(outputType, context);
+        return outputType;
     }
 
     @Override
@@ -82,14 +84,14 @@ public final class CatExpression extends ExpressionList<Expression> {
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         DataType inputType = input != null ? input.getDataType() : null;
-        VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
-        context.fillVariableTypes(verificationContext);
+//        VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
+//        context.fillVariableTypes(verificationContext);
         List<FieldValue> values = new LinkedList<>();
-        List<DataType> types = new LinkedList<>();
+//        List<DataType> types = new LinkedList<>();
         for (Expression expression : this) {
             FieldValue val = context.setCurrentValue(input).execute(expression).getCurrentValue();
             values.add(val);
-
+/*
             DataType type;
             if (val != null) {
                 type = val.getDataType();
@@ -97,8 +99,13 @@ public final class CatExpression extends ExpressionList<Expression> {
                 type = verificationContext.setCurrentType(inputType).verify(this).getCurrentType();
             }
             types.add(type);
+
+ */
         }
-        DataType type = resolveOutputType(types);
+//        DataType type = resolveOutputType(types);
+        DataType type = getOutputType();
+        if (type == null)
+            throw new RuntimeException("Output type is not resolved in " + this);
         context.setCurrentValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
     }
 

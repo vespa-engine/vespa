@@ -10,8 +10,10 @@ import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ArithmeticExpression.Operator;
-import static org.junit.Assert.*;
-import static org.mockito.Mockito.verify;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -144,7 +146,7 @@ public class ArithmeticTestCase {
 
     private void assertType(DataType lhs, Operator op, DataType rhs, DataType expected) {
         assertEquals(expected, newArithmetic(SimpleExpression.newOutput(lhs), op,
-                                             SimpleExpression.newOutput(rhs)).verify());
+                                             SimpleExpression.newOutput(rhs)).verify(new VerificationContext(new SimpleTestAdapter())));
         assertEquals(expected, newArithmetic(lhs.createFieldValue(6), op,
                                              rhs.createFieldValue(9)).execute().getDataType());
     }
@@ -179,7 +181,7 @@ public class ArithmeticTestCase {
     }
 
     private static void assertVerify(Expression lhs, Operator op, Expression rhs, DataType val) {
-        new ArithmeticExpression(lhs, op, rhs).verify(val);
+        new ArithmeticExpression(lhs, op, rhs).verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
     }
 
     private static void assertVerifyThrows(Expression lhs, Operator op, Expression rhs, DataType val,
@@ -187,7 +189,7 @@ public class ArithmeticTestCase {
         ArithmeticExpression expression = null;
         try {
             expression = new ArithmeticExpression(lhs, op, rhs);
-            expression.verify(val);
+            expression.verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
             fail("Expected exception");
         } catch (VerificationException e) {
             String expressionString = expression == null ? "of type '" + ArithmeticExpression.class.getSimpleName() + "'"

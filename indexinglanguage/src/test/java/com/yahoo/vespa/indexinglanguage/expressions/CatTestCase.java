@@ -52,11 +52,9 @@ public class CatTestCase {
     }
 
     @Test
-    public void requireThatExpressionCanBeVerified() {
+    public void expressionCanBeVerified() {
         assertVerify(new ConstantExpression(new StringFieldValue("foo")),
                      new ConstantExpression(new StringFieldValue("bar")), null);
-        assertVerify(new SimpleExpression(DataType.STRING),
-                     new SimpleExpression(DataType.STRING), DataType.STRING);
         assertVerifyThrows(new SimpleExpression().setCreatedOutput(null),
                            new SimpleExpression().setCreatedOutput(DataType.STRING), null,
                            "Invalid expression 'SimpleExpression . SimpleExpression': In SimpleExpression: Attempting to concatenate a null value");
@@ -65,7 +63,7 @@ public class CatTestCase {
                            "Invalid expression of type 'CatExpression': Operands require conflicting input types, string vs int");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), null,
-                           "Invalid expression 'SimpleExpression': Expected input, but no input is specified");
+                           "Invalid expression 'SimpleExpression': Expected string input, but no input is provided");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), DataType.INT,
                            "Invalid expression 'SimpleExpression': Expected string input, got int");
@@ -96,22 +94,23 @@ public class CatTestCase {
     }
 
     @Test
-    public void requireThatInputValueIsAvailableToAllInnerExpressions() {
-        assertEquals(new StringFieldValue("foobarfoo"),
-                     new StatementExpression(new ConstantExpression(new StringFieldValue("foo")),
-                                             new CatExpression(new ThisExpression(),
-                                                               new ConstantExpression(new StringFieldValue("bar")),
-                                                               new ThisExpression())).execute());
+    public void inputValueIsAvailableToAllInnerExpressions() {
+        var expression = new StatementExpression(new ConstantExpression(new StringFieldValue("foo")),
+                                                 new CatExpression(new ThisExpression(),
+                                                                   new ConstantExpression(new StringFieldValue("bar")),
+                                                                   new ThisExpression()));
+        expression.verify(new SimpleTestAdapter());
+        assertEquals(new StringFieldValue("foobarfoo"), expression.execute());
     }
 
     @Test
-    public void requiredThatRequiredInputTypeAllowsNull() {
+    public void requiredInputTypeAllowsNull() {
          assertVerify(new ConstantExpression(new StringFieldValue("foo")), new TrimExpression(), DataType.STRING);
          assertVerify(new TrimExpression(), new ConstantExpression(new StringFieldValue("foo")), DataType.STRING);
     }
 
     @Test
-    public void requireThatArraysAreConcatenated() {
+    public void arraysAreConcatenated() {
         Array<StringFieldValue> lhs = new Array<>(DataType.getArray(DataType.STRING));
         lhs.add(new StringFieldValue("6"));
         Array<StringFieldValue> rhs = new Array<>(DataType.getArray(DataType.STRING));
@@ -221,13 +220,16 @@ public class CatTestCase {
     }
 
     private static void assertVerify(Expression expA, Expression expB, DataType val) {
-        new CatExpression(expA, expB).verify(val);
+        new CatExpression(expA, expB).verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
     }
 
     private static void assertVerifyThrows(Expression expA, Expression expB, DataType val, String expectedException) {
         try {
-            new CatExpression(expA, expB).verify(val);
-            fail();
+            var expression = new CatExpression(expA, expB);
+            var context = new VerificationContext(new SimpleTestAdapter()).setCurrentType(val);
+            expression.setInputType(val, context);
+            expression.verify(context);
+            fail("Expected exception");
         } catch (VerificationException e) {
             if (!e.getMessage().startsWith(expectedException)) {
                 assertEquals(expectedException, e.getMessage());
@@ -240,12 +242,15 @@ public class CatTestCase {
     }
 
     private static FieldValue evaluate(DataType typeA, FieldValue valA, DataType typeB, FieldValue valB) {
-        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter(new Field("a", typeA),
-                                                                          new Field("b", typeB)));
-        ctx.setFieldValue("a", valA, null);
-        ctx.setFieldValue("b", valB, null);
-        new CatExpression(new InputExpression("a"), new InputExpression("b")).execute(ctx);
-        return ctx.getCurrentValue();
+        var adapter = new SimpleTestAdapter(new Field("a", typeA),
+                                            new Field("b", typeB));
+        var expression = new CatExpression(new InputExpression("a"), new InputExpression("b"));
+        expression.setInputType(null, new VerificationContext(adapter));
+        ExecutionContext context = new ExecutionContext(adapter);
+        context.setFieldValue("a", valA, null);
+        context.setFieldValue("b", valB, null);
+        expression.execute(context);
+        return context.getCurrentValue();
     }
 
     private static DataType evaluate(DataType typeA, DataType typeB) {

@@ -10,7 +10,9 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -29,7 +31,7 @@ public class HexEncodeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new HexEncodeExpression();
         assertVerify(DataType.LONG, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'hexencode': Expected input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'hexencode': Expected long input, but no input is provided", null, exp);
         assertVerifyThrows("Invalid expression 'hexencode': Expected long input, got string", DataType.STRING, exp);
     }
 

@@ -5,9 +5,13 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -34,9 +38,9 @@ public class ExpressionTestCase {
     public void requireThatInputTypeIsCheckedBeforeVerify() {
         assertVerify(newRequiredInput(DataType.INT), DataType.INT);
         assertVerifyThrows(newRequiredInput(DataType.INT), null,
-                           "Invalid expression 'SimpleExpression': Expected input, but no input is specified");
+                           "Invalid expression 'SimpleExpression': Expected int input, but no input is provided");
         assertVerifyThrows(newRequiredInput(DataType.INT), UnresolvedDataType.INSTANCE,
-                           "Invalid expression 'SimpleExpression': Failed to resolve input type");
+                           "Invalid expression 'SimpleExpression': Expected int input, got unresolved");
         assertVerifyThrows(newRequiredInput(DataType.INT), DataType.STRING,
                            "Invalid expression 'SimpleExpression': Expected int input, got string");
     }
@@ -77,13 +81,15 @@ public class ExpressionTestCase {
     }
 
     private static void assertVerify(Expression exp, DataType val) {
-        exp.verify(val);
+        var context = new VerificationContext(new SimpleTestAdapter()).setCurrentType(val);
+        exp.setInputType(val, context);
+        exp.verify(context);
     }
 
     private static void assertVerifyThrows(Expression exp, DataType val, String expectedException) {
         try {
-            exp.verify(val);
-            fail();
+            assertVerify(exp, val);
+            fail("Expected exception");
         } catch (VerificationException e) {
             assertEquals(expectedException, e.getMessage());
         }

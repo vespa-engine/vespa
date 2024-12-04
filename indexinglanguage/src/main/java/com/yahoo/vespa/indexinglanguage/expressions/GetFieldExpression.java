@@ -31,6 +31,7 @@ public final class GetFieldExpression extends Expression {
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
+        if (inputType == null) return null;
         return getFieldType(inputType, context);
     }
 
@@ -57,7 +58,7 @@ public final class GetFieldExpression extends Expression {
         else if (input instanceof StructuredDataType structInput) {
             return getStructFieldType(structInput);
         }
-        throw new VerificationException(this, "Expected a struct or map, but got an " + input.getName());
+        throw new VerificationException(this, "Expected a struct or map, but got " + input.getName());
     }
 
     private DataType getStructFieldType(StructuredDataType structInput) {

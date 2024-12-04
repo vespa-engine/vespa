@@ -9,13 +9,15 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Transformer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
-
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -43,7 +45,7 @@ public class NormalizeTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new NormalizeExpression(new SimpleLinguistics());
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'normalize': Expected input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'normalize': Expected string input, but no input is provided", null, exp);
         assertVerifyThrows("Invalid expression 'normalize': Expected string input, got int", DataType.INT, exp);
     }
 

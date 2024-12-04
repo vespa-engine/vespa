@@ -16,7 +16,6 @@ import org.junit.Test;
 
 import java.util.List;
 
-import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -64,9 +63,8 @@ public class ScriptTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         Expression exp = newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
-        assertVerify(DataType.INT, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression '{ SimpleExpression; }': Expected input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression '{ SimpleExpression; }': Expected int input, got string", DataType.STRING, exp);
+        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, but no input is provided", null, exp);
+        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.STRING, exp);
 
         assertVerifyThrows("Invalid expression of type 'ScriptExpression': Statements require conflicting input types, int vs string", null, () -> newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
                                                                                                                                                           newStatement(SimpleExpression.newConversion(DataType.STRING, DataType.INT)))

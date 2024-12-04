@@ -3,7 +3,14 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
-import com.yahoo.document.datatypes.*;
+import com.yahoo.document.datatypes.ByteFieldValue;
+import com.yahoo.document.datatypes.DoubleFieldValue;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.FloatFieldValue;
+import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.NumericFieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.serialization.FieldReader;
 import com.yahoo.document.serialization.FieldWriter;
 import com.yahoo.document.serialization.XmlStream;
@@ -15,7 +22,11 @@ import java.util.List;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static com.yahoo.vespa.indexinglanguage.expressions.IfThenExpression.Comparator;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -41,9 +52,8 @@ public class IfThenTestCase {
         Expression exp = newRequiredInput(DataType.STRING, Comparator.EQ, DataType.STRING,
                                           DataType.STRING, DataType.STRING);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        String prefix = "Invalid expression 'if (SimpleExpression == SimpleExpression) { SimpleExpression; } else { SimpleExpression; }': ";
-        assertVerifyThrows(prefix + "Expected input, but no input is specified", null, exp);
-        assertVerifyThrows(prefix + "Expected string input, got int", DataType.INT, exp);
+        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected string input, but no input is provided", null, exp);
+        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected string input, got int", DataType.INT, exp);
         assertVerifyThrows("Invalid expression of type 'IfThenExpression': Operands require conflicting input types, int vs string", null, () -> newRequiredInput(DataType.INT, Comparator.EQ, DataType.STRING,
                                                                                                                             DataType.STRING, DataType.STRING)
                           );
@@ -61,7 +71,7 @@ public class IfThenTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.STRING, new FlattenExpression(), DataType.STRING);
-        assertVerifyThrows("Invalid expression 'flatten': Expected input, but no input is specified", null, new FlattenExpression()
+        assertVerifyThrows("Invalid expression 'flatten': Expected string input, but no input is provided", null, new FlattenExpression()
                           );
         assertVerifyThrows("Invalid expression 'flatten': Expected string input, got int", DataType.INT, new FlattenExpression()
                           );

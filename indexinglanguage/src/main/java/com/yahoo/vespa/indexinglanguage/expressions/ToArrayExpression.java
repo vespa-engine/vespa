@@ -18,6 +18,7 @@ public final class ToArrayExpression extends Expression {
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);
+        if (input == null) return null;
         return new ArrayDataType(input);
     }
 

@@ -27,6 +27,7 @@ public final class JoinExpression extends Expression {
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
+        if (inputType == null) return null;
         if ( ! (inputType instanceof ArrayDataType))
             throw new VerificationException(this, "Expected Array input, got type " + inputType.getName());
         return DataType.STRING;

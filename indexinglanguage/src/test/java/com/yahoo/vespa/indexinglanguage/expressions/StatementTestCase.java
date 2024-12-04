@@ -4,16 +4,18 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.vespa.indexinglanguage.ScriptTester;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
-
 
 import java.util.List;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -77,7 +79,6 @@ public class StatementTestCase {
     public void requireThatInternalVerificationIsPerformed() {
         Expression exp = newStatement(SimpleExpression.newOutput(DataType.STRING),
                                       SimpleExpression.newConversion(DataType.INT, DataType.STRING));
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", null, exp);
         assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.INT, exp);
         assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.STRING, exp);
 

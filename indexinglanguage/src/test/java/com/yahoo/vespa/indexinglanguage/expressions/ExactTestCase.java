@@ -2,7 +2,11 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.annotation.*;
+import com.yahoo.document.annotation.Annotation;
+import com.yahoo.document.annotation.SpanList;
+import com.yahoo.document.annotation.SpanNode;
+import com.yahoo.document.annotation.SpanTree;
+import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
@@ -11,7 +15,11 @@ import java.util.Iterator;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -84,7 +92,7 @@ public class ExactTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ExactExpression();
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'exact': Expected input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'exact': Expected string input, but no input is provided", null, exp);
         assertVerifyThrows("Invalid expression 'exact': Expected string input, got int", DataType.INT, exp);
     }
 
