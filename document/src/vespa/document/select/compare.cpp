@@ -41,12 +41,12 @@ namespace {
     {
         std::unique_ptr<Value> left(l.getValue(value));
         std::unique_ptr<Value> right(r.getValue(value));
-        if (left->getType() == Value::Bucket
-            || right->getType() == Value::Bucket)
+        if (left->getType() == Value::Type::Bucket
+            || right->getType() == Value::Type::Bucket)
         {
-            Value& bVal(left->getType() == Value::Bucket ? *left : *right);
-            Value& nVal(left->getType() == Value::Bucket ? *right : *left);
-            if (nVal.getType() == Value::Integer
+            Value& bVal(left->getType() == Value::Type::Bucket ? *left : *right);
+            Value& nVal(left->getType() == Value::Type::Bucket ? *right : *left);
+            if (nVal.getType() == Value::Type::Integer
                 && (op == FunctionOperator::EQ || op == FunctionOperator::NE
                     || op == GlobOperator::GLOB))
             {
@@ -70,12 +70,12 @@ namespace {
     {
         std::unique_ptr<Value> left(l.traceValue(value, out));
         std::unique_ptr<Value> right(r.traceValue(value, out));
-        if (left->getType() == Value::Bucket
-            || right->getType() == Value::Bucket)
+        if (left->getType() == Value::Type::Bucket
+            || right->getType() == Value::Type::Bucket)
         {
-            Value& bVal(left->getType() == Value::Bucket ? *left : *right);
-            Value& nVal(left->getType() == Value::Bucket ? *right : *left);
-            if (nVal.getType() == Value::Integer
+            Value& bVal(left->getType() == Value::Type::Bucket ? *left : *right);
+            Value& nVal(left->getType() == Value::Type::Bucket ? *right : *left);
+            if (nVal.getType() == Value::Type::Integer
                 && (op == FunctionOperator::EQ || op == FunctionOperator::NE
                     || op == GlobOperator::GLOB))
             {

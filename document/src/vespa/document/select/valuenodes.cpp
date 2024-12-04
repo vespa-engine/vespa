@@ -760,7 +760,7 @@ std::unique_ptr<Value>
 FunctionValueNode::getValue(std::unique_ptr<Value> val) const
 {
     switch (val->getType()) {
-        case Value::String:
+        case Value::Type::String:
         {
             StringValue& sval(static_cast<StringValue&>(*val));
             if (_function == LOWERCASE) {
@@ -770,7 +770,7 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
             }
             break;
         }
-        case Value::Float:
+        case Value::Type::Float:
         {
             FloatValue& fval(static_cast<FloatValue&>(*val));
             if (_function == HASH) {
@@ -783,7 +783,7 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
             }
             break;
         }
-        case Value::Integer:
+        case Value::Type::Integer:
         {
             IntegerValue& ival(static_cast<IntegerValue&>(*val));
             if (_function == HASH) {
@@ -796,7 +796,7 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
             }
             break;
         }
-        case Value::Bucket:
+        case Value::Type::Bucket:
         {
             throw ParsingFailedException(
                     "No function calls are allowed on value of type bucket",
@@ -804,11 +804,11 @@ FunctionValueNode::getValue(std::unique_ptr<Value> val) const
             break;
         }
 
-        case Value::Array: break;
-        case Value::Struct: break;
-        case Value::Tensor: break;
-        case Value::Invalid: break;
-        case Value::Null: break;
+        case Value::Type::Array: break;
+        case Value::Type::Struct: break;
+        case Value::Type::Tensor: break;
+        case Value::Type::Invalid: break;
+        case Value::Type::Null: break;
     }
     return std::make_unique<InvalidValue>();
 }
@@ -817,7 +817,7 @@ std::unique_ptr<Value>
 FunctionValueNode::traceValue(std::unique_ptr<Value> val, std::ostream& out) const
 {
     switch (val->getType()) {
-        case Value::String:
+        case Value::Type::String:
         {
             StringValue& sval(static_cast<StringValue&>(*val));
             if (_function == LOWERCASE) {
@@ -833,7 +833,7 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val, std::ostream& out) con
             }
             break;
         }
-        case Value::Float:
+        case Value::Type::Float:
         {
             FloatValue& fval(static_cast<FloatValue&>(*val));
             if (_function == HASH) {
@@ -851,7 +851,7 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val, std::ostream& out) con
             }
             break;
         }
-        case Value::Integer:
+        case Value::Type::Integer:
         {
             IntegerValue& ival(static_cast<IntegerValue&>(*val));
             if (_function == HASH) {
@@ -869,12 +869,12 @@ FunctionValueNode::traceValue(std::unique_ptr<Value> val, std::ostream& out) con
             }
             break;
         }
-        case Value::Bucket: break;
-        case Value::Array: break;
-        case Value::Struct: break;
-        case Value::Tensor: break;
-        case Value::Invalid: break;
-        case Value::Null: break;
+        case Value::Type::Bucket: break;
+        case Value::Type::Array: break;
+        case Value::Type::Struct: break;
+        case Value::Type::Tensor: break;
+        case Value::Type::Invalid: break;
+        case Value::Type::Null: break;
     }
     out << "Cannot use function " << _function << " on a value of type "
         << val->getType() << ". Resolving invalid.\n";
@@ -940,8 +940,8 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
     switch (_operator) {
         case ADD:
         {
-            if (lval->getType() == Value::String &&
-                rval->getType() == Value::String)
+            if (lval->getType() == Value::Type::String &&
+                rval->getType() == Value::Type::String)
             {
                 StringValue& slval(static_cast<StringValue&>(*lval));
                 StringValue& srval(static_cast<StringValue&>(*rval));
@@ -953,8 +953,8 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
         case MUL:
         case DIV:
         {
-            if (lval->getType() == Value::Integer &&
-                rval->getType() == Value::Integer)
+            if (lval->getType() == Value::Type::Integer &&
+                rval->getType() == Value::Type::Integer)
             {
                 IntegerValue& ilval(static_cast<IntegerValue&>(*lval));
                 IntegerValue& irval(static_cast<IntegerValue&>(*rval));
@@ -1001,8 +1001,8 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
         break;
         case MOD:
         {
-            if (lval->getType() == Value::Integer &&
-                rval->getType() == Value::Integer)
+            if (lval->getType() == Value::Type::Integer &&
+                rval->getType() == Value::Type::Integer)
             {
                 IntegerValue& ilval(static_cast<IntegerValue&>(*lval));
                 IntegerValue& irval(static_cast<IntegerValue&>(*rval));
@@ -1026,8 +1026,8 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
     switch (_operator) {
         case ADD:
         {
-            if (lval->getType() == Value::String &&
-                rval->getType() == Value::String)
+            if (lval->getType() == Value::Type::String &&
+                rval->getType() == Value::Type::String)
             {
                 StringValue& slval(static_cast<StringValue&>(*lval));
                 StringValue& srval(static_cast<StringValue&>(*rval));
@@ -1042,8 +1042,8 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
         case MUL:
         case DIV:
         {
-            if (lval->getType() == Value::Integer &&
-                rval->getType() == Value::Integer)
+            if (lval->getType() == Value::Type::Integer &&
+                rval->getType() == Value::Type::Integer)
             {
                 IntegerValue& ilval(static_cast<IntegerValue&>(*lval));
                 IntegerValue& irval(static_cast<IntegerValue&>(*rval));
@@ -1086,8 +1086,8 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
         break;
         case MOD:
         {
-            if (lval->getType() == Value::Integer &&
-                rval->getType() == Value::Integer)
+            if (lval->getType() == Value::Type::Integer &&
+                rval->getType() == Value::Type::Integer)
             {
                 IntegerValue& ilval(static_cast<IntegerValue&>(*lval));
                 IntegerValue& irval(static_cast<IntegerValue&>(*rval));

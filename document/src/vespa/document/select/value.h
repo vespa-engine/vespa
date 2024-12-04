@@ -30,10 +30,10 @@ class Value : public document::Printable
 public:
     using SP = std::shared_ptr<Value>;
     using UP = std::unique_ptr<Value>;
-    enum Type { Invalid, Null, String, Integer, Float, Array, Struct, Bucket, Tensor };
+    enum class Type { Invalid, Null, String, Integer, Float, Array, Struct, Bucket, Tensor };
 
-    Value(Type t) : _type(t) {}
-    virtual ~Value() = default;
+    explicit Value(Type t) : _type(t) {}
+    ~Value() override = default;
 
     Type getType() const { return _type; }
 
@@ -61,10 +61,12 @@ private:
     Type _type;
 };
 
+std::ostream& operator<<(std::ostream&, Value::Type);
+
 class InvalidValue : public Value
 {
 public:
-    InvalidValue() : Value(Invalid) {}
+    InvalidValue() : Value(Type::Invalid) {}
 
     ResultList operator<(const Value&) const override;
     ResultList operator==(const Value&) const override;
@@ -74,7 +76,7 @@ public:
 class NullValue : public Value
 {
 public:
-    NullValue() : Value(Null) {}
+    NullValue() : Value(Type::Null) {}
 
     ResultList operator<(const Value&) const override;
     ResultList operator==(const Value&) const override;
