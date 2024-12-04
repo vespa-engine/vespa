@@ -462,14 +462,6 @@ public class Flags {
             "Whether to sync companies to HubSpot",
             "Takes effect immediately");
 
-    public static final UnboundStringFlag HOSTNAME_SCHEME = defineStringFlag(
-            "hostname-scheme", "legacy",
-            List.of("mpolden"), "2024-08-07", "2025-01-15",
-            "The hostname scheme to use when provisioning hosts. Must be 'legacy' or 'standard",
-            "Takes effect immediately",
-            (value) -> "legacy".equals(value) || "standard".equals(value),
-            TENANT_ID, APPLICATION, INSTANCE_ID);
-
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
             List.of("mpolden"), "2024-10-22", "2025-01-10",
