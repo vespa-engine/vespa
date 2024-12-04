@@ -5,8 +5,10 @@
 #include <vespa/searchcommon/attribute/attributecontent.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
+#include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <cassert>
+#include <vespa/searchlib/tensor/i_tensor_attribute.h>
 
 namespace proton {
 
@@ -18,6 +20,7 @@ using document::select::StringValue;
 using document::select::Value;
 using document::select::ValueNode;
 using document::select::Visitor;
+using document::select::TensorValue;
 using search::AttributeVector;
 using search::attribute::AttributeContent;
 using search::attribute::BasicType;
@@ -76,9 +79,19 @@ getValue(const Context &context) const
                 assert(content.size() == 1u);
                 return std::make_unique<FloatValue>(content[0]);
             }
+        case BasicType::TENSOR:
+            {
+                auto* tensor_attr = v.asTensorAttribute();
+                assert(tensor_attr != nullptr);
+                if (tensor_attr->getTensor(sc._docId)) {
+                    // This returns a sentinel tensor value that can only be used for
+                    // checking field presence, not actual tensor _contents_.
+                    return std::make_unique<TensorValue>();
+                }
+                return std::make_unique<NullValue>();
+            }
         case BasicType::NONE:
         case BasicType::PREDICATE:
-        case BasicType::TENSOR:
         case BasicType::REFERENCE:
         case BasicType::RAW:
             throw IllegalArgumentException(make_string("Attribute '%s' of type '%s' can not be used for selection",

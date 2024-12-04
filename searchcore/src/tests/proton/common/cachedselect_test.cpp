@@ -3,13 +3,17 @@
 #include <vespa/document/base/documentid.h>
 #include <vespa/document/config/documenttypes_config_fwd.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/select/cloningvisitor.h>
 #include <vespa/document/select/parser.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/searchcore/proton/common/cachedselect.h>
 #include <vespa/searchcore/proton/common/selectcontext.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
@@ -20,6 +24,7 @@
 #include <vespa/searchlib/attribute/singleenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericenumattribute.hpp>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
+#include <vespa/searchlib/tensor/tensor_attribute.h>
 #include <vespa/searchlib/test/mock_attribute_manager.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -33,6 +38,8 @@ using document::DocumentType;
 using document::DocumentTypeRepo;
 using document::IntFieldValue;
 using document::StringFieldValue;
+using document::TensorFieldValue;
+using document::TensorDataType;
 using document::config_builder::Array;
 using document::config_builder::DocumenttypesConfigBuilderHelper;
 using document::config_builder::Map;
@@ -52,12 +59,15 @@ using search::AttributePosting;
 using search::AttributeVector;
 using search::EnumAttribute;
 using search::IntegerAttribute;
+using search::tensor::TensorAttribute;
 using search::IntegerAttributeTemplate;
 using search::SingleValueNumericPostingAttribute;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::IAttributeContext;
 using search::attribute::test::MockAttributeManager;
+using vespalib::eval::TensorSpec;
+using vespalib::eval::SimpleValue;
 using std::string;
 
 using IATint32 = IntegerAttributeTemplate<int32_t>;
@@ -102,7 +112,9 @@ makeDocTypeRepo()
                      addField("aa", DataType::T_INT).
                      addField("aaa", Array(DataType::T_INT)).
                      addField("aaw", Wset(DataType::T_INT)).
-                     addField("ab", DataType::T_INT)).
+                     addField("ab", DataType::T_INT).
+                     addTensorField("dense_tensor", "tensor(x[2])").
+                     addTensorField("sparse_tensor", "tensor(x{})")).
                      imported_field("my_imported_field");
     builder.document(doc_type_id + 1, type_name_2,
                      Struct(header_name_2), Struct(body_name_2).
@@ -263,6 +275,12 @@ public:
            int32_t aa,
            int32_t ab);
 
+    void
+    add_tensor_doc(uint32_t lid,
+                   const string& doc_id,
+                   bool dense_attr_present,
+                   bool sparse_field_present);
+
     const Document &
     getDoc(uint32_t lid) const;
 };
@@ -297,6 +315,35 @@ MyDB::addDoc(uint32_t lid,
     add_attr_value(_amgr.getAttribute("my_imported_field"));
 }
 
+void
+MyDB::add_tensor_doc(uint32_t lid,
+                     const string& doc_id,
+                     bool dense_attr_present,
+                     bool sparse_field_present)
+{
+    Document::UP doc(makeDoc(_repo, doc_id, "foo", "bar", 30, 40));
+    if (sparse_field_present) {
+        const auto& tensor_type = dynamic_cast<const TensorDataType&>(doc->getField("sparse_tensor").getDataType());
+        TensorFieldValue tfv(tensor_type);
+        tfv.make_empty_if_not_existing();
+        doc->setValue("sparse_tensor", tfv);
+    }
+    _docIdToLid[doc_id] = lid;
+    _lidToDocSP[lid] = std::move(doc);
+    if (dense_attr_present) {
+        auto guard = _amgr.getAttribute("dense_tensor");
+        AttributeVector& av = *guard->get();
+        if (lid >= av.getNumDocs()) {
+            AttributeVector::DocId checkDocId(0u);
+            ASSERT_TRUE(av.addDoc(checkDocId));
+            ASSERT_EQ(lid, checkDocId);
+        }
+        auto& ta = dynamic_cast<TensorAttribute&>(av);
+        ta.setTensor(lid, *SimpleValue::from_spec(TensorSpec("tensor(x[2])")
+                .add({{"x", 0}}, 1.0).add({{"x", 1}}, 2.0)));
+        av.commit();
+    }
+}
 
 const Document &
 MyDB::getDoc(uint32_t lid) const
@@ -339,6 +386,10 @@ TestFixture::TestFixture()
     _amgr.addAttribute("aa");
     _amgr.addAttribute("aaa", AttributeFactory::createAttribute("aaa", {BasicType::INT32, CollectionType::ARRAY}));
     _amgr.addAttribute("aaw", AttributeFactory::createAttribute("aaw", {BasicType::INT32, CollectionType::WSET}));
+    search::attribute::Config tensor_cfg(BasicType::TENSOR);
+    tensor_cfg.setTensorType(vespalib::eval::ValueType::from_spec("tensor(x[2])"));
+    _amgr.addAttribute("dense_tensor", AttributeFactory::createAttribute("dense_tensor", tensor_cfg));
+    // `sparse_tensor` is not an attribute.
     // "Faked" imported attribute, as in `selectpruner_test.cpp`
     _amgr.addAttribute("my_imported_field", AttributeFactory::createAttribute("my_imported_field", { BasicType::INT32 }));
 
@@ -427,7 +478,7 @@ TEST(CachedSelectTest, Test_that_test_setup_is_OK)
     const DocumentTypeRepo &repo = *f._repoUP;
     const DocumentType *docType = repo.getDocumentType("test");
     ASSERT_TRUE(docType);
-    EXPECT_EQ(10u, docType->getFieldCount());
+    EXPECT_EQ(12u, docType->getFieldCount());
     EXPECT_EQ("String", docType->getField("ia").getDataType().getName());
     EXPECT_EQ("String", docType->getField("ib").getDataType().getName());
     EXPECT_EQ("Int", docType->getField("aa").getDataType().getName());
@@ -738,6 +789,75 @@ TEST(CachedSelectTest, Test_performance_when_using_attributes)
         "Elapsed time for %u iterations of 4 docs each: %" PRId64 " ns, %8.4f ns/doc",
         i, vespalib::count_ns(elapsed), static_cast<double>(vespalib::count_ns(elapsed)) / ( 4 * i));
     
+}
+
+TEST(CachedSelectTest, can_check_for_pre_doc_only_attribute_tensor_presence_in_selections)
+{
+    TestFixture f;
+    MyDB &db(*f._db);
+
+    db.add_tensor_doc(1u, "id:ns:test::1", true, false);
+    db.add_tensor_doc(2u, "id:ns:test::2", false, false);
+
+    CachedSelect::SP cs;
+    cs = f.testParse("test.dense_tensor != null", "test");
+    assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+    checkSelect(cs, 1u, Result::True, true);
+    checkSelect(cs, 2u, Result::False, false);
+    // Cannot match against document here since preDocOnly is set; will just return false.
+    checkSelect(cs, 1u, db.getDoc(1u), Result::False);
+    checkSelect(cs, 2u, db.getDoc(2u), Result::False);
+
+    cs = f.testParse("test.dense_tensor == null", "test");
+    assertEquals(Stats().preDocOnlySelect().fieldNodes(1).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+    checkSelect(cs, 1u, Result::False, false);
+    checkSelect(cs, 2u, Result::True, true);
+}
+
+TEST(CachedSelectTest, can_check_for_non_pre_doc_only_attribute_tensor_presence_in_selections)
+{
+    TestFixture f;
+    MyDB &db(*f._db);
+
+    db.add_tensor_doc(1u, "id:ns:test::1", true, false);
+    db.add_tensor_doc(2u, "id:ns:test::2", false, false);
+
+    CachedSelect::SP cs;
+    // `id.namespace` requires a doc store fetch and cannot be satisfied by attributes alone
+    cs = f.testParse("test.dense_tensor != null and id.namespace != 'foo'", "test");
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+    checkSelect(cs, 1u, Result::Invalid, true); // pre-doc contains == true ==> must be eval'd with doc
+    checkSelect(cs, 2u, Result::False, false);  // Short-circuits to False
+
+    checkSelect(cs, 1u, db.getDoc(1u), Result::True);
+    checkSelect(cs, 2u, db.getDoc(2u), Result::False);
+
+    cs = f.testParse("test.dense_tensor == null and id.namespace != 'foo'", "test");
+    assertEquals(Stats().preDocSelect().fieldNodes(2).attrFieldNodes(1).svAttrFieldNodes(1), *cs);
+    checkSelect(cs, 1u, Result::False, false); // Short-circuits to False
+    checkSelect(cs, 2u, Result::Invalid, true);
+
+    checkSelect(cs, 1u, db.getDoc(1u), Result::False);
+    checkSelect(cs, 2u, db.getDoc(2u), Result::True);
+}
+
+TEST(CachedSelectTest, can_check_for_non_attribute_tensor_presence_in_selections) {
+    TestFixture f;
+    MyDB &db(*f._db);
+
+    db.add_tensor_doc(1u, "id:ns:test::1", false, true);
+    db.add_tensor_doc(2u, "id:ns:test::2", false, false);
+
+    CachedSelect::SP cs;
+    cs = f.testParse("test.sparse_tensor != null", "test");
+    assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs);
+    checkSelect(cs, 1u, db.getDoc(1u), Result::True);
+    checkSelect(cs, 2u, db.getDoc(2u), Result::False);
+
+    cs = f.testParse("test.sparse_tensor == null", "test");
+    assertEquals(Stats().fieldNodes(1).attrFieldNodes(0).svAttrFieldNodes(0), *cs);
+    checkSelect(cs, 1u, db.getDoc(1u), Result::False);
+    checkSelect(cs, 2u, db.getDoc(2u), Result::True);
 }
 
 }
