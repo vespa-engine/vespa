@@ -158,7 +158,7 @@ public final class ForEachExpression extends CompositeExpression {
         }
         else {
             throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
-                                                  valueType.getName());
+                                                  (valueType == null ? "no value" : valueType.getName()));
         }
     }
 

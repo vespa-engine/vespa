@@ -31,6 +31,8 @@ public final class SetVarExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
+        if (context.getCurrentType() == null)
+            throw new VerificationException(this, "Expected input, but no input is provided");
         setVariableType(context.getCurrentType(), context);
     }
 

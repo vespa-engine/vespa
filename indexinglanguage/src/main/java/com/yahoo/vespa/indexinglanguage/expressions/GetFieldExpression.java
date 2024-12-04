@@ -58,7 +58,7 @@ public final class GetFieldExpression extends Expression {
         else if (input instanceof StructuredDataType structInput) {
             return getStructFieldType(structInput);
         }
-        throw new VerificationException(this, "Expected a struct or map, but got " + input.getName());
+        throw new VerificationException(this, "Expected a struct or map, but got " + (input == null ? "no value": input.getName()));
     }
 
     private DataType getStructFieldType(StructuredDataType structInput) {

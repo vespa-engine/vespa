@@ -33,7 +33,7 @@ public class ToArrayTestCase {
         Expression exp = new ToArrayExpression();
         assertVerify(DataType.INT, exp, DataType.getArray(DataType.INT));
         assertVerify(DataType.STRING, exp, DataType.getArray(DataType.STRING));
-        assertVerifyThrows("Invalid expression 'to_array': Expected input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'to_array': Expected input, but no input is provided", null, exp);
     }
 
     @Test

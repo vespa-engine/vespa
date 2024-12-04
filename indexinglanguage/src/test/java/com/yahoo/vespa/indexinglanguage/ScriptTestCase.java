@@ -71,7 +71,7 @@ public class ScriptTestCase {
             exp.verify(input);
             fail("Expected exception");
         } catch (VerificationException e) {
-            assertEquals("Invalid expression 'attribute out-2': Expected input, but no input is specified", e.getMessage());
+            assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
         }
     }
 
@@ -86,8 +86,8 @@ public class ScriptTestCase {
             exp.verify(input);
             fail("Expected exception");
         } catch (VerificationException e) {
-            assertEquals(e.getExpressionType(), ScriptExpression.class);
-            assertEquals("Invalid expression '{ attribute out-2; }': Expected input, but no input is specified", e.getMessage());
+            assertEquals(AttributeExpression.class, e.getExpressionType());
+            assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
         }
     }
 

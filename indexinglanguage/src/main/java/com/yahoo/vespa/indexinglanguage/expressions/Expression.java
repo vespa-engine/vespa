@@ -162,9 +162,6 @@ public abstract class Expression extends Selectable {
 
     public abstract DataType createdOutputType();
 
-    /** Implementations that don't change the type should implement this to do verification. */
-    protected void doVerify(VerificationContext context) {}
-
     public final void verify(DocumentType type) {
         verify(new DocumentTypeAdapter(type));
     }
@@ -211,23 +208,11 @@ public abstract class Expression extends Selectable {
     }
 
     public final DataType verify(VerificationContext context) {
-        if (requiresInput()) {
-            DataType input = context.getCurrentType();
-            if (input == null) {
-                throw new VerificationException(this, "Expected input, but no input is specified");
-            }
-            if (input != null && input.getPrimitiveType() == UnresolvedDataType.INSTANCE) {
-                throw new VerificationException(this, "Failed to resolve input type");
-            }
-            /*
-            if (input != null && requiredInputType != null && !requiredInputType.isAssignableFrom(input)) {
-                throw new VerificationException(this, "Expected " + requiredInputType.getName() + " input, got " +
-                                                      input.getName());
-            }*/
-        }
         doVerify(context);
         return context.getCurrentType();
     }
+
+    protected void doVerify(VerificationContext context) {}
 
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setCurrentValue(val));
