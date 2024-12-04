@@ -25,3 +25,10 @@ func TestThrottler(t *testing.T) {
 		t.Errorf("got TargetInflight() = %d, but want %d", got, want)
 	}
 }
+
+func TestStaticThrottler(t *testing.T) {
+	var tr Throttler = &staticThrottler{369}
+	if got, want := tr.TargetInflight(), int64(369); got != want {
+		t.Errorf("got TargetInflight() = %d, but want %d", got, want)
+	}
+}
