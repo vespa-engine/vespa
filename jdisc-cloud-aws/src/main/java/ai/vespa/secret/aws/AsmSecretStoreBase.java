@@ -28,6 +28,7 @@ import java.util.function.Function;
 public abstract class AsmSecretStoreBase extends AbstractComponent implements AutoCloseable {
 
     public static final String AWSCURRENT = "AWSCURRENT";
+    public static final String AWSPENDING = "AWSPENDING";
 
     private final Function<AssumedRoleInfo, SecretsManagerClient> clientAndCredentialsSupplier;
 
