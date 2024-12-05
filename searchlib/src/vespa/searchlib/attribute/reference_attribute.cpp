@@ -52,7 +52,6 @@ ReferenceAttribute::ReferenceAttribute(const std::string_view baseFileName, cons
       _gidToLidMapperFactory(),
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef(), get_initial_alloc())
 {
-    //TODO this is not safe without implementing getEnum
     setEnum(true);
 }
 
@@ -296,6 +295,15 @@ ReferenceAttribute::getReference(DocId doc) const
     } else {
         return &_store.get(ref);
     }
+}
+
+IAttributeVector::EnumHandle
+ReferenceAttribute::getEnum(DocId doc) const
+{
+    if (doc >= getCommittedDocIdLimit()) [[unlikely]] {
+        return EntryRef().ref();
+    }
+    return _indices.acquire_elem_ref(doc).load_acquire().ref();
 }
 
 bool
