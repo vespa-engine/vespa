@@ -496,6 +496,13 @@ public class Flags {
             "Takes after controller restart",
             SYSTEM);
 
+    public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
+            "use-legacy-trust-store", true,
+            List.of("marlon"), "2024-12-05", "2025-02-01",
+            "Use legacy trust store for CA, or new one",
+            "Takes effect on restart of OCI containers",
+            SYSTEM);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
