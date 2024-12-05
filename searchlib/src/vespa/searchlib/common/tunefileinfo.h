@@ -20,11 +20,11 @@ private:
 
 public:
     TuneFileSeqRead() noexcept : _tuneControl(NORMAL) { }
-    void setWantDirectIO() { _tuneControl = DIRECTIO; }
-    bool getWantDirectIO() const { return _tuneControl == DIRECTIO; }
+    void setWantDirectIO() noexcept { _tuneControl = DIRECTIO; }
+    bool getWantDirectIO() const noexcept { return _tuneControl == DIRECTIO; }
 
     template <typename Config>
-    void setFromConfig(const enum Config::Io &config) {
+    void setFromConfig(const enum Config::Io &config) noexcept {
         switch (config) {
         case Config::Io::NORMAL:
             _tuneControl = NORMAL;
@@ -38,11 +38,11 @@ public:
         }
     }
 
-    bool operator==(const TuneFileSeqRead &rhs) const {
+    bool operator==(const TuneFileSeqRead &rhs) const noexcept {
         return _tuneControl == rhs._tuneControl;
     }
 
-    bool operator!=(const TuneFileSeqRead &rhs) const {
+    bool operator!=(const TuneFileSeqRead &rhs) const noexcept {
         return _tuneControl != rhs._tuneControl;
     }
 };
@@ -63,12 +63,12 @@ private:
 
 public:
     TuneFileSeqWrite() noexcept : _tuneControl(NORMAL) { }
-    void setWantDirectIO() { _tuneControl = DIRECTIO; }
-    bool getWantDirectIO() const { return _tuneControl == DIRECTIO; }
-    bool getWantSyncWrites() const { return _tuneControl == OSYNC; }
+    void setWantDirectIO() noexcept { _tuneControl = DIRECTIO; }
+    bool getWantDirectIO() const noexcept { return _tuneControl == DIRECTIO; }
+    bool getWantSyncWrites() const noexcept { return _tuneControl == OSYNC; }
 
     template <typename Config>
-    void setFromConfig(const enum Config::Io &config) {
+    void setFromConfig(const enum Config::Io &config) noexcept {
         switch (config) {
         case Config::Io::NORMAL:
             _tuneControl = NORMAL;
@@ -85,8 +85,8 @@ public:
         }
     }
 
-    bool operator==(const TuneFileSeqWrite &rhs) const { return _tuneControl == rhs._tuneControl; }
-    bool operator!=(const TuneFileSeqWrite &rhs) const { return _tuneControl != rhs._tuneControl; }
+    bool operator==(const TuneFileSeqWrite &rhs) const noexcept { return _tuneControl == rhs._tuneControl; }
+    bool operator!=(const TuneFileSeqWrite &rhs) const noexcept { return _tuneControl != rhs._tuneControl; }
 };
 
 
@@ -105,27 +105,28 @@ public:
           _advise(0)
     { }
 
-    void setAdvise(int advise)        { _advise = advise; }
-    void setWantMemoryMap() { _tuneControl = MMAP; }
-    void setWantDirectIO()  { _tuneControl = DIRECTIO; }
-    void setWantNormal()    { _tuneControl = NORMAL; }
-    bool getWantDirectIO()   const { return _tuneControl == DIRECTIO; }
-    bool getWantMemoryMap()  const { return _tuneControl == MMAP; }
-    int  getMemoryMapFlags() const { return _mmapFlags; }
-    int  getAdvise()         const { return _advise; }
+    void setAdvise(int advise) noexcept { _advise = advise; }
+    void setWantMemoryMap() noexcept { _tuneControl = MMAP; }
+    void setWantDirectIO()  noexcept { _tuneControl = DIRECTIO; }
+    void setWantNormal()    noexcept { _tuneControl = NORMAL; }
+    bool getWantDirectIO()   const noexcept { return _tuneControl == DIRECTIO; }
+    bool getWantMemoryMap()  const noexcept { return _tuneControl == MMAP; }
+    int  getMemoryMapFlags() const noexcept { return _mmapFlags; }
+    int  getAdvise()         const noexcept { return _advise; }
 
     template <typename TuneControlConfig, typename MMapConfig>
-    void setFromConfig(const enum TuneControlConfig::Io & tuneControlConfig, const MMapConfig & mmapFlags);
+    void setFromConfig(const enum TuneControlConfig::Io & tuneControlConfig, const MMapConfig & mmapFlags) noexcept;
     template <typename MMapConfig>
-    void setFromMmapConfig(const MMapConfig & mmapFlags);
+    void setFromMmapConfig(const MMapConfig & mmapFlags) noexcept;
 
-    bool operator==(const TuneFileRandRead &rhs) const {
+    bool operator==(const TuneFileRandRead &rhs) const noexcept {
         return (_tuneControl == rhs._tuneControl) && (_mmapFlags == rhs._mmapFlags);
     }
 
-    bool operator!=(const TuneFileRandRead &rhs) const {
+    bool operator!=(const TuneFileRandRead &rhs) const noexcept {
         return (_tuneControl != rhs._tuneControl) && (_mmapFlags == rhs._mmapFlags);
     }
+    TuneFileRandRead consider_force_memory_map(bool force_memory_map) const noexcept;
 };
 
 
@@ -143,11 +144,11 @@ public:
 
     TuneFileIndexing(const TuneFileSeqRead &r, const TuneFileSeqWrite &w) noexcept : _read(r), _write(w) { }
 
-    bool operator==(const TuneFileIndexing &rhs) const {
+    bool operator==(const TuneFileIndexing &rhs) const noexcept {
         return _read == rhs._read && _write == rhs._write;
     }
 
-    bool operator!=(const TuneFileIndexing &rhs) const {
+    bool operator!=(const TuneFileIndexing &rhs) const noexcept {
         return _read != rhs._read || _write != rhs._write;
     }
 };
@@ -160,11 +161,19 @@ class TuneFileSearch
 {
 public:
     TuneFileRandRead _read;
+    bool _force_memory_map_posting_list;
 
-    TuneFileSearch() noexcept : _read() { }
-    TuneFileSearch(const TuneFileRandRead &r) noexcept : _read(r) { }
-    bool operator==(const TuneFileSearch &rhs) const { return _read == rhs._read; }
-    bool operator!=(const TuneFileSearch &rhs) const { return _read != rhs._read; }
+    TuneFileSearch() noexcept : _read(), _force_memory_map_posting_list(false) { }
+    TuneFileSearch(const TuneFileRandRead &r) noexcept : _read(r), _force_memory_map_posting_list(false) { }
+    void set_force_memory_map_posting_list(bool value) noexcept { _force_memory_map_posting_list = value; }
+    TuneFileRandRead get_tune_file_search_posting_list() const noexcept {
+        return _read.consider_force_memory_map(_force_memory_map_posting_list);
+    }
+    bool operator==(const TuneFileSearch &rhs) const noexcept {
+        return _read == rhs._read &&
+               _force_memory_map_posting_list == rhs._force_memory_map_posting_list;
+    }
+    bool operator!=(const TuneFileSearch &rhs) const noexcept { return !operator==(rhs); }
 };
 
 
@@ -180,11 +189,11 @@ public:
 
     TuneFileIndexManager() noexcept : _indexing(), _search() { }
 
-    bool operator==(const TuneFileIndexManager &rhs) const {
+    bool operator==(const TuneFileIndexManager &rhs) const noexcept {
         return _indexing == rhs._indexing && _search == rhs._search;
     }
 
-    bool operator!=(const TuneFileIndexManager &rhs) const {
+    bool operator!=(const TuneFileIndexManager &rhs) const noexcept {
         return _indexing != rhs._indexing || _search != rhs._search;
     }
 };
@@ -200,11 +209,11 @@ public:
 
     TuneFileAttributes() noexcept : _write() { }
 
-    bool operator==(const TuneFileAttributes &rhs) const {
+    bool operator==(const TuneFileAttributes &rhs) const noexcept {
         return _write == rhs._write;
     }
 
-    bool operator!=(const TuneFileAttributes &rhs) const {
+    bool operator!=(const TuneFileAttributes &rhs) const noexcept {
         return _write != rhs._write;
     }
 };
@@ -222,13 +231,13 @@ public:
 
     TuneFileSummary() noexcept : _seqRead(), _write(), _randRead() { }
 
-    bool operator==(const TuneFileSummary &rhs) const {
+    bool operator==(const TuneFileSummary &rhs) const noexcept {
         return _seqRead == rhs._seqRead &&
                  _write == rhs._write &&
               _randRead == rhs._randRead;
     }
 
-    bool operator!=(const TuneFileSummary &rhs) const {
+    bool operator!=(const TuneFileSummary &rhs) const noexcept {
         return _seqRead != rhs._seqRead ||
                  _write != rhs._write ||
               _randRead != rhs._randRead;
@@ -250,13 +259,13 @@ public:
 
     TuneFileDocumentDB() noexcept : _index(), _attr(), _summary() { }
 
-    bool operator==(const TuneFileDocumentDB &rhs) const {
+    bool operator==(const TuneFileDocumentDB &rhs) const noexcept {
         return _index == rhs._index &&
                 _attr == rhs._attr &&
                 _summary == rhs._summary;
     }
 
-    bool operator!=(const TuneFileDocumentDB &rhs) const {
+    bool operator!=(const TuneFileDocumentDB &rhs) const noexcept {
         return _index != rhs._index ||
                 _attr != rhs._attr ||
                 _summary != rhs._summary;

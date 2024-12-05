@@ -166,11 +166,11 @@ void ensureWritableDir(const std::string &dirName) {
 std::shared_ptr<IPostingListCache>
 make_posting_list_cache(const ProtonConfig& cfg)
 {
-    if (cfg.search.io == ProtonConfig::Search::Io::MMAP ||
-        (cfg.index.cache.postinglist.maxbytes == 0 && cfg.index.cache.bitvector.maxbytes == 0)) {
-        return {};
+    int64_t max_bytes = cfg.index.cache.postinglist.maxbytes;
+    if (max_bytes == -1) { // Force memory map posting lists, cf. BootstrapConfigManager::update
+        max_bytes = 0;
     }
-    return std::make_shared<PostingListCache>(cfg.index.cache.postinglist.maxbytes, cfg.index.cache.bitvector.maxbytes);
+    return std::make_shared<PostingListCache>(max_bytes, cfg.index.cache.bitvector.maxbytes);
 }
 
 } // namespace <unnamed>
