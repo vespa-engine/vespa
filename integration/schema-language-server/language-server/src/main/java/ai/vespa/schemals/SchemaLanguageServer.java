@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Files;
@@ -77,7 +78,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     /**
      * Note: Everything happening here, before connect, should not log. All logging here goes nowhere.
      */
-    public SchemaLanguageServer() {
+    public SchemaLanguageServer() throws URISyntaxException {
         this.schemaMessageHandler = new SchemaMessageHandler();
         this.logger = new ClientLogger(schemaMessageHandler);
         this.schemaIndex = new SchemaIndex(logger);
@@ -86,8 +87,9 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
         this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
-        serverPath = Paths.get(SchemaLanguageServer.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
-    }    
+        URL classURL = SchemaLanguageServer.class.getProtectionDomain().getCodeSource().getLocation();
+        serverPath = Paths.get(classURL.toURI()).getParent();
+    }
 
     @Override
     public CompletableFuture<InitializeResult> initialize(InitializeParams initializeParams) {

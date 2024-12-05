@@ -1,10 +1,9 @@
 package ai.vespa.schemals;
 
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.net.URISyntaxException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
@@ -21,7 +20,7 @@ import org.eclipse.lsp4j.services.LanguageClient;
  */
 public class SchemaLSLauncher {
 
-    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException {
+    public static void main(String[] args) throws IOException, InterruptedException, ExecutionException, URISyntaxException {
         LogManager.getLogManager().reset();
         Logger globaLogger = Logger.getLogger(Logger.GLOBAL_LOGGER_NAME);
         globaLogger.setLevel(Level.OFF);
@@ -29,7 +28,7 @@ public class SchemaLSLauncher {
         startServer(System.in, System.out);
     }
 
-    private static void startServer(InputStream in, OutputStream out) throws ExecutionException, InterruptedException {
+    private static void startServer(InputStream in, OutputStream out) throws ExecutionException, InterruptedException, URISyntaxException {
         SchemaLanguageServer schemaLanguageServer = new SchemaLanguageServer();
 
         Launcher<LanguageClient> launcher = LSPLauncher.createServerLauncher(schemaLanguageServer, in, out);
