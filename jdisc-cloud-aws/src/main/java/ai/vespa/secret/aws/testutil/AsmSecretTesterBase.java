@@ -87,7 +87,8 @@ public class AsmSecretTesterBase {
 
         protected List<String> toAwsStages(SecretVersionState state) {
             return switch (state) {
-                case CURRENT -> List.of("AWSCURRENT");
+                // We don't remove the AWSPENDING label when setting AWSCURRENT
+                case CURRENT -> List.of("AWSPENDING", "AWSCURRENT");
                 case PENDING -> List.of("AWSPENDING");
                 case PREVIOUS, DEPRECATED -> List.of();
             };
