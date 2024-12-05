@@ -1073,7 +1073,8 @@ Proton::get_child(std::string_view name) const
         return std::make_unique<HwInfoExplorer>(_hw_info);
     } else if (name == SESSION) {
         return std::make_unique<matching::SessionManagerExplorer>(*_sessionManager);
-    } else if (name == CACHE_NAME && _posting_list_cache) {
+    } else if (name == CACHE_NAME && _posting_list_cache &&
+               (_posting_list_cache->enabled_for_posting_lists() || _posting_list_cache->enabled_for_bitvectors())) {
         return std::make_unique<CacheExplorer>(*_posting_list_cache);
     }
     return {};
