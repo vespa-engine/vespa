@@ -24,6 +24,7 @@ import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -124,16 +125,14 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     }
 
     private static SecretVersionState toSecretVersionState(List<String> versionStages) {
-        if (versionStages.size() != 1) {
-            throw new IllegalArgumentException("Expected exactly one version stage, got: " + versionStages);
+        var stages = new HashSet<>(versionStages);
+        if (stages.contains(AWSCURRENT)) {
+            return SecretVersionState.CURRENT;
+        } else if (stages.contains(AWSPENDING)) {
+            return SecretVersionState.PENDING;
+        } else {
+            return SecretVersionState.DEPRECATED;
         }
-        var state = versionStages.get(0);
-        return switch (state) {
-            case "AWSCURRENT" -> SecretVersionState.CURRENT;
-            case "AWSPENDING" -> SecretVersionState.PENDING;
-            case "AWSPREVIOUS" -> SecretVersionState.PREVIOUS;
-            default -> throw new IllegalArgumentException("Unknown secret version state: " + state);
-        };
     }
 
     /**

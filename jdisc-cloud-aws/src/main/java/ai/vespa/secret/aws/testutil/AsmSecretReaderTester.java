@@ -56,7 +56,7 @@ public class AsmSecretReaderTester extends AsmSecretTesterBase {
                     .name(request.secretId())
                     .secretString(secret.value())
                     .versionId(secret.version())
-                    .versionStages(List.of(toAwsStage(secret.state())))
+                    .versionStages(toAwsStages(secret.state()))
                     .build();
         }
 

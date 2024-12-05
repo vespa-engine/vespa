@@ -74,7 +74,7 @@ public class AsmSecretTesterBase {
                     .versions(secrets.getOrDefault(request.secretId(), List.of()).stream()
                                       .map(version -> SecretVersionsListEntry.builder()
                                               .versionId(version.version())
-                                              .versionStages(List.of(toAwsStage(version.state())))
+                                              .versionStages(toAwsStages(version.state()))
                                               .build())
                                       .toList())
                     .build();
@@ -85,12 +85,11 @@ public class AsmSecretTesterBase {
             isClosed = true;
         }
 
-        protected String toAwsStage(SecretVersionState state) {
+        protected List<String> toAwsStages(SecretVersionState state) {
             return switch (state) {
-                case CURRENT -> "AWSCURRENT";
-                case PENDING -> "AWSPENDING";
-                case PREVIOUS -> "AWSPREVIOUS";
-                default -> throw new IllegalArgumentException("Unknown state: " + state);
+                case CURRENT -> List.of("AWSCURRENT");
+                case PENDING -> List.of("AWSPENDING");
+                case PREVIOUS, DEPRECATED -> List.of();
             };
         }
 
