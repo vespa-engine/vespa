@@ -138,21 +138,15 @@ FieldIndex::open(const std::string& field_dir, const TuneFileSearch& tune_file_s
             LOG(warning, "Could not detect format for posocc file read %s", postingName.c_str());
         }
     }
-    pFile.reset(dynamicK
-                ? new DiskPostingFileDynamicKReal()
-                : new DiskPostingFileReal());
-    if (!pFile->open(postingName, tune_file_search._read)) {
+    pFile = dynamicK ? std::make_shared<DiskPostingFileDynamicKReal>() : std::make_shared<DiskPostingFileReal>();
+    auto tune_file_search_posting_list = tune_file_search.get_tune_file_search_posting_list();
+    if (!pFile->open(postingName, tune_file_search_posting_list)) {
         LOG(warning, "Could not open posting list file '%s'", postingName.c_str());
         return false;
     }
 
     bDict = std::make_shared<BitVectorDictionary>();
-    // memory map bitvectors unless bitvector cache is enabled
-    auto maybe_force_mmap = tune_file_search._read;
-    if (!_bitvector_cache_enabled) {
-        maybe_force_mmap.setWantMemoryMap();
-    }
-    if (!bDict->open(field_dir, maybe_force_mmap, BitVectorKeyScope::PERFIELD_WORDS)) {
+    if (!bDict->open(field_dir, tune_file_search._read, BitVectorKeyScope::PERFIELD_WORDS)) {
         LOG(warning, "Could not open bit vector dictionary in '%s'", field_dir.c_str());
         return false;
     }
