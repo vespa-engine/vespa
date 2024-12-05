@@ -276,7 +276,7 @@ public class Nodes {
      */
     public List<Node> fail(List<Node> nodes, ApplicationTransaction transaction) {
         return db.writeTo(Node.State.failed,
-                          nodes.stream().map(n -> n.withWantToFail(false, Agent.application, clock.instant())).toList(),
+                          nodes.stream().map(n -> n.with(n.status().withWantToFail(false))).toList(),
                           Agent.application, Optional.of("Failed by application"), transaction);
     }
 
@@ -380,7 +380,7 @@ public class Nodes {
 
     private Node failOrMark(Node node, Agent agent, String reason, Mutex lock) {
         if (node.state() == Node.State.active) {
-            node = node.withWantToFail(true, agent, clock.instant());
+            node = node.withWantToFail(agent, clock.instant(), reason);
             write(node, lock);
             return node;
         } else {

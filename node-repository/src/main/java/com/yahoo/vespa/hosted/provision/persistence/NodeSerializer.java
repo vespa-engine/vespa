@@ -126,7 +126,8 @@ public class NodeSerializer {
     // History event fields
     private static final String historyEventTypeKey = "type";
     private static final String atKey = "at";
-    private static final String agentKey = "agent"; // retired events only
+    private static final String agentKey = "agent";
+    private static final String reasonKey = "reason";
 
     // Network port fields
     private static final String networkPortsKey = "networkPorts";
@@ -238,6 +239,7 @@ public class NodeSerializer {
         object.setString(historyEventTypeKey, toString(event.type()));
         object.setLong(atKey, event.at().toEpochMilli());
         object.setString(agentKey, toString(event.agent()));
+        event.reason().ifPresent(reason -> object.setString(reasonKey, reason));
     }
 
     private void toSlime(List<String> addresses, Cursor array, boolean dummyDueToErasure) {
@@ -365,7 +367,8 @@ public class NodeSerializer {
         if (type == null) return null;
         Instant at = Instant.ofEpochMilli(object.field(atKey).asLong());
         Agent agent = eventAgentFromSlime(object.field(agentKey));
-        return new History.Event(type, agent, at);
+        Optional<String> reason = SlimeUtils.optionalString(object.field(reasonKey));
+        return new History.Event(type, agent, at, reason);
     }
 
     private Generation generationFromSlime(Inspector object, String wantedField, String currentField) {
