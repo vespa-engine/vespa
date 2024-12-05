@@ -21,6 +21,15 @@ type Throttler interface {
 	TargetInflight() int64
 }
 
+type staticThrottler struct {
+	inflight int
+}
+
+func (*staticThrottler) Sent()                   {}
+func (*staticThrottler) Success()                {}
+func (*staticThrottler) Throttled(count int64)   {}
+func (s *staticThrottler) TargetInflight() int64 { return int64(s.inflight) }
+
 type dynamicThrottler struct {
 	minInflight    int64
 	maxInflight    int64
@@ -54,7 +63,12 @@ func newThrottler(connections int, nowFunc func() time.Time) *dynamicThrottler {
 	return t
 }
 
-func NewThrottler(connections int) Throttler { return newThrottler(connections, time.Now) }
+func NewThrottler(connections int, inflight int) Throttler {
+	if inflight > 0 {
+		return &staticThrottler{inflight}
+	}
+	return newThrottler(connections, time.Now)
+}
 
 func (t *dynamicThrottler) Sent() {
 	currentInflight := t.TargetInflight()
