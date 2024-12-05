@@ -94,7 +94,7 @@
         <commons-compress.vespa.version>1.27.0</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.9.0</commons-cli.vespa.version>
         <curator.vespa.version>5.7.0</curator.vespa.version>
-        <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.1 requires this -->
+        <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.x requires this -->
         <eclipse-angus.vespa.version>2.0.2</eclipse-angus.vespa.version>
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>
         <eclipse-sisu.vespa.version>0.9.0.M3</eclipse-sisu.vespa.version>
