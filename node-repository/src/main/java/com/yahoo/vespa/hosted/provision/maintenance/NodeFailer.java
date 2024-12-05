@@ -246,7 +246,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
                 if (activeChildrenToFail.isEmpty()) {
                     log.log(Level.INFO, "Failing out " + failing.node + ": " + failing.reason);
-                    markWantToFail(failing.node(), true, lock.parent());
+                    markWantToFail(failing.node(), true, failing.reason, lock.parent());
                     redeploy = true;
                 }
             }
@@ -260,7 +260,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 if (failing == null) return;
 
                 log.log(Level.INFO, "Failing out " + failing.node + ": " + failing.reason);
-                markWantToFail(failing.node(), true, lock);
+                markWantToFail(failing.node(), true, failing.reason, lock);
                 redeploy = true;
             }
         }
@@ -295,16 +295,19 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             Optional<NodeMutex> optionalNodeMutex = nodeRepository().nodes().lockAndGet(failing.node());
             if (optionalNodeMutex.isEmpty()) return;
             try (var nodeMutex = optionalNodeMutex.get()) {
-                markWantToFail(nodeMutex.node(), false, nodeMutex);
+                markWantToFail(nodeMutex.node(), false, failing.reason(), nodeMutex);
                 log.log(Level.WARNING, "Could not fail " + failing.node() + " for " + failing.node().allocation().get().owner() +
                                        " for " + failing.reason() + ": " + Exceptions.toMessageString(e));
             }
         }
     }
 
-    private void markWantToFail(Node node, boolean wantToFail, Mutex lock) {
+    private void markWantToFail(Node node, boolean wantToFail, String reason, Mutex lock) {
         if (node.status().wantToFail() != wantToFail) {
-            nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, clock().instant()), lock);
+            node = wantToFail ?
+                    node.withWantToFail(Agent.NodeFailer, clock().instant(), reason) :
+                    node.with(node.status().withWantToFail(false));
+            nodeRepository().nodes().write(node, lock);
         }
     }
 

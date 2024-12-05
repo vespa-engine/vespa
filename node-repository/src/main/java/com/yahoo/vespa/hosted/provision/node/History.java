@@ -180,7 +180,10 @@ public class History {
     }
 
     /** An event which may happen to a node */
-    public record Event(Type type, Agent agent, Instant at) {
+    public record Event(Type type, Agent agent, Instant at, Optional<String> reason) {
+        public Event(Type type, Agent agent, Instant at) {
+            this(type, agent, at, Optional.empty());
+        }
 
         public enum Type { 
             // State changes
