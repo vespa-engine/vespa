@@ -24,10 +24,6 @@ import java.util.Map;
 // TODO: Remove on Vespa 9
 public final class FlattenExpression extends Expression {
 
-    public FlattenExpression() {
-        super(DataType.STRING);
-    }
-
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         return super.setInputType(inputType, DataType.STRING, context);

@@ -27,9 +27,11 @@ public final class SelectInputExpression extends CompositeExpression {
     }
 
     public SelectInputExpression(List<Pair<String, Expression>> cases) {
-        super(null);
         this.cases = cases;
     }
+
+    @Override
+    public boolean requiresInput() { return false; }
 
     @Override
     public SelectInputExpression convertChildren(ExpressionConverter converter) {

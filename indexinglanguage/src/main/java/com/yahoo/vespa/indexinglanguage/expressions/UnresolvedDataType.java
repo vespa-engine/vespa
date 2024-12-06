@@ -12,7 +12,7 @@ final class UnresolvedDataType extends PrimitiveDataType {
     public static final UnresolvedDataType INSTANCE = new UnresolvedDataType();
 
     private UnresolvedDataType() {
-        super("any", -69, UnresolvedFieldValue.class, UnresolvedFieldValue.getFactory());
+        super("unresolved", -69, UnresolvedFieldValue.class, UnresolvedFieldValue.getFactory());
     }
 
     @Override

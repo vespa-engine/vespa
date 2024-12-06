@@ -11,29 +11,29 @@ import com.yahoo.document.datatypes.FieldValue;
  */
 public final class ToArrayExpression extends Expression {
 
-    public ToArrayExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);
+        if (input == null) return null;
         return new ArrayDataType(input);
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
-        super.setOutputType(output, context);
-        if (output instanceof ArrayDataType arrayType)
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        if (outputType == null) return null;
+        super.setOutputType(outputType, context);
+        if (outputType instanceof ArrayDataType arrayType)
             return arrayType.getNestedType();
-        if (output instanceof AnyDataType)
+        if (outputType instanceof AnyDataType)
             return AnyDataType.instance;
         else
-            throw new VerificationException(this, "Produces an array,  but " + output + " is required");
+            throw new VerificationException(this, "Produces an array,  but " + outputType + " is required");
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
+        if (context.getCurrentType() == null)
+            throw new VerificationException(this, "Expected input, but no input is provided");
         context.setCurrentType(DataType.getArray(context.getCurrentType()));
     }
 

@@ -9,7 +9,10 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -37,7 +40,7 @@ public class SubstringTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new SubstringExpression(6, 9);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'substring 6 9': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'substring 6 9': Expected string input, but no input is provided", null, exp);
         assertVerifyThrows("Invalid expression 'substring 6 9': Expected string input, got int", DataType.INT, exp);
     }
 

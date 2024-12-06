@@ -11,14 +11,22 @@ import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
-import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.Struct;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
+import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -52,7 +60,7 @@ public class ScriptTestCase {
     }
 
     @Test
-    public void requireThatEachStatementHasEmptyInput() {
+    public void failsWhenOneStatementIsMissingInput() {
         Document input = new Document(type, "id:scheme:mytype::");
         input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
 
@@ -61,11 +69,36 @@ public class ScriptTestCase {
                 new StatementExpression(new AttributeExpression("out-2")));
         try {
             exp.verify(input);
-            fail();
+            fail("Expected exception");
         } catch (VerificationException e) {
-            assertEquals(e.getExpressionType(), ScriptExpression.class);
-            assertEquals("Invalid expression '{ input in-1 | attribute out-1; attribute out-2; }': Expected any input, but no input is specified", e.getMessage());
+            assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
         }
+    }
+
+    @Test
+    public void failsWhenAllStatementIsMissingInput() {
+        Document input = new Document(type, "id:scheme:mytype::");
+        input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
+
+        Expression exp = new ScriptExpression(
+                new StatementExpression(new AttributeExpression("out-2")));
+        try {
+            exp.verify(input);
+            fail("Expected exception");
+        } catch (VerificationException e) {
+            assertEquals(AttributeExpression.class, e.getExpressionType());
+            assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void succeedsWhenAllStatementsHaveInput() {
+        Document input = new Document(type, "id:scheme:mytype::");
+        input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
+
+        Expression exp = new ScriptExpression(
+                new StatementExpression(new InputExpression("in-1"), new AttributeExpression("out-1")));
+        exp.verify(input);
     }
 
     @Test

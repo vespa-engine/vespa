@@ -12,10 +12,6 @@ import com.yahoo.document.datatypes.NumericFieldValue;
  */
 public final class BusyWaitExpression extends Expression {
 
-    public BusyWaitExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue value = context.getCurrentValue();
