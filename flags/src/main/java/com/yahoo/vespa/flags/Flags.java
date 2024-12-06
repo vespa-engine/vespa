@@ -500,8 +500,7 @@ public class Flags {
             "use-legacy-trust-store", true,
             List.of("marlon"), "2024-12-05", "2025-02-01",
             "Use legacy trust store for CA, or new one",
-            "Takes effect on restart of OCI containers",
-            SYSTEM);
+            "Takes effect on restart of OCI containers");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
