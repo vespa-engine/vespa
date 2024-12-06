@@ -8,22 +8,19 @@ package ai.vespa.secret.aws.testutil;
 import ai.vespa.secret.aws.AwsRolePath;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.SecretVersionState;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-import software.amazon.awssdk.services.secretsmanager.model.InternalServiceErrorException;
-import software.amazon.awssdk.services.secretsmanager.model.InvalidNextTokenException;
-import software.amazon.awssdk.services.secretsmanager.model.InvalidParameterException;
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsRequest;
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsResponse;
-import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.secretsmanager.model.ListSecretsRequest;
+import software.amazon.awssdk.services.secretsmanager.model.ListSecretsResponse;
+import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry;
 import software.amazon.awssdk.services.secretsmanager.model.SecretVersionsListEntry;
-import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -66,9 +63,18 @@ public class AsmSecretTesterBase {
             clients.add(this);
         }
 
+        @Override
+        public ListSecretsResponse listSecrets(Consumer<ListSecretsRequest.Builder> listSecretsRequest) {
+            return ListSecretsResponse.builder()
+                    .secretList(secrets.keySet().stream()
+                                        .map(name -> SecretListEntry.builder().name(name).build())
+                                        .toList())
+                    .build();
+        }
+
         // Used by both reader and writer testers
         @Override
-        public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) throws InvalidNextTokenException, ResourceNotFoundException, InternalServiceErrorException, InvalidParameterException, AwsServiceException, SdkClientException, SecretsManagerException {
+        public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) {
             return ListSecretVersionIdsResponse.builder()
                     .name(request.secretId())
                     .versions(secrets.getOrDefault(request.secretId(), List.of()).stream()

@@ -77,8 +77,11 @@ public final class AsmTenantSecretReader extends AsmSecretReader {
     }
 
     public static String getAwsSecretId(String system, String tenant, Key key) {
-        return "%s.%s.%s.%s/%s".formatted(AthenzUtil.PREFIX, system, tenant,
-                                          key.vaultName().value(), key.secretName().value());
+        return "%s/%s".formatted(awsVaultPrefix(system, tenant, key.vaultName()), key.secretName().value());
+    }
+
+    public static String awsVaultPrefix(String system, String tenant, VaultName vault) {
+        return "%s.%s.%s.%s".formatted(AthenzUtil.PREFIX, system, tenant, vault.value());
     }
 
     record Vault(VaultId vaultId, VaultName vaultName, ExternalId externalId) {}
