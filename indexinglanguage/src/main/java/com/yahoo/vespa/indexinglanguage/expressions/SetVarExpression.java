@@ -24,6 +24,7 @@ public final class SetVarExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
+        if (outputType == null) return null;
         setVariableType(outputType, context);
         return super.setOutputType(outputType, context);
     }

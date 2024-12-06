@@ -36,7 +36,8 @@ public final class ConstantExpression extends Expression {
         if (outputType != null && ! value.getDataType().isAssignableTo(outputType))
             throw new VerificationException(this, "Produces type " + value.getDataType().getName() + ", but type " +
                                             outputType.getName() + " is required");
-        return super.setOutputType(outputType, context);
+        super.setOutputType(outputType, context);
+        return null;
     }
 
     @Override

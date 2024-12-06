@@ -19,14 +19,15 @@ public final class ToArrayExpression extends Expression {
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
-        super.setOutputType(output, context);
-        if (output instanceof ArrayDataType arrayType)
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        if (outputType == null) return null;
+        super.setOutputType(outputType, context);
+        if (outputType instanceof ArrayDataType arrayType)
             return arrayType.getNestedType();
-        if (output instanceof AnyDataType)
+        if (outputType instanceof AnyDataType)
             return AnyDataType.instance;
         else
-            throw new VerificationException(this, "Produces an array,  but " + output + " is required");
+            throw new VerificationException(this, "Produces an array,  but " + outputType + " is required");
     }
 
     @Override

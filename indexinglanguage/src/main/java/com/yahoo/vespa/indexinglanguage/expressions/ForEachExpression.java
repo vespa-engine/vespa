@@ -71,6 +71,7 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
+        if (outputType == null) return null;
         super.setOutputType(outputType, context);
 
         if (outputType instanceof ArrayDataType || outputType instanceof WeightedSetDataType) {

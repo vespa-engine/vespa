@@ -83,15 +83,21 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
+        if (outputType == null) return null;
         super.setOutputType(outputType, context);
         DataType leftInput = left.setOutputType(AnyNumericDataType.instance, context);
         DataType rightInput = right.setOutputType(AnyNumericDataType.instance, context);
+
+        if (leftInput == null) return getInputType(context);
+        if (rightInput == null) return getInputType(context);
         if (leftInput.isAssignableTo(rightInput))
             return rightInput;
         else if (rightInput.isAssignableTo(leftInput))
             return leftInput;
         else
-            return getInputType(context);
+            throw new VerificationException(this, "The left argument requires " + leftInput.getName() +
+                                                  ", while the right argument requires " + rightInput.getName() +
+                                                  ": These are incompatible");
     }
 
     @Override
