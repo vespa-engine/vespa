@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.clients;
 
+import ai.vespa.generative.GeneratorUtils;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
 import ai.vespa.llm.LanguageModelException;
@@ -8,6 +9,7 @@ import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.language.process.Generator;
 import de.kherud.llama.LlamaModel;
 import de.kherud.llama.ModelParameters;
 
@@ -31,7 +33,7 @@ import java.util.logging.Logger;
  *
  * @author lesters
  */
-public class LocalLLM extends AbstractComponent implements LanguageModel {
+public class LocalLLM extends AbstractComponent implements LanguageModel, Generator {
 
     private final static Logger logger = Logger.getLogger(LocalLLM.class.getName());
 
@@ -152,4 +154,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     }
 
 
+    @Override
+    public String generate(Prompt prompt, Context context) {
+        return GeneratorUtils.generate(prompt, this);
+    }
 }

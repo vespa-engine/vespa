@@ -67,6 +67,7 @@ public class IndexingProcessorTester {
         return new IndexingProcessor(new DocumentTypeManager(ConfigGetter.getConfig(DocumentmanagerConfig.class, configId)),
                                      ConfigGetter.getConfig(IlscriptsConfig.class, configId),
                                      new SimpleLinguistics(),
+                                     new ComponentRegistry<>(),
                                      new ComponentRegistry<>());
     }
 

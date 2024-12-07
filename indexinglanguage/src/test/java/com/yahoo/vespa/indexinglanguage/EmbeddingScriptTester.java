@@ -63,6 +63,34 @@ public class EmbeddingScriptTester {
         }
     }
 
+    public void testStatement2(String expressionString, String input, String targetTensorType, String expected) {
+        var expression = expressionFrom(expressionString);
+        TensorType tensorType = TensorType.fromSpec(targetTensorType);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myText", DataType.STRING));
+        var tensorField = new Field("myTensor", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
+        if (input != null)
+            adapter.setValue("myText", new StringFieldValue(input));
+        expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
+
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(TensorDataType.class, expression.verify(verificationContext).getClass());
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        if (input == null) {
+            assertFalse(adapter.values.containsKey("myTensor"));
+        }
+        else {
+            assertTrue(adapter.values.containsKey("myTensor"));
+            assertEquals(Tensor.from(tensorType, expected),
+                    ((TensorFieldValue) adapter.values.get("myTensor")).getTensor().get());
+        }
+    }
+
     public void testStatementThrows(String expressionString, String input, String expectedMessage) {
         try {
             testStatement(expressionString, input, null);
