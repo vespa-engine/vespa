@@ -53,7 +53,7 @@ public:
             return static_cast<size_t>(static_cast<double>(_bitvector_max_bytes) * _bitvector_slru_protected_ratio);
         }
         [[nodiscard]] size_t bitvector_slru_probationary_bytes() const noexcept {
-            return _bitvector_max_bytes - posting_slru_protected_bytes();
+            return _bitvector_max_bytes - bitvector_slru_protected_bytes();
         }
     };
 
