@@ -12,6 +12,7 @@
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/engine/trace.h>
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
+#include <vespa/searchlib/query/tree/templatetermvisitor.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/thread_bundle.h>
@@ -32,6 +33,7 @@ using search::fef::MatchDataLayout;
 using search::query::LocationTerm;
 using search::query::Node;
 using search::query::QueryTreeCreator;
+using search::query::TemplateTermVisitor;
 using search::query::Weight;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndNotBlueprint;
@@ -141,6 +143,27 @@ void exchange_location_nodes(const string &location_str,
     }
 }
 
+/*
+ * WeakAnd, WeightedSetTerm, DotProduct and WandTerm query operators need ranking since
+ * doUnpack is used to updated threshold during query evaluation.
+ */
+class NeedsRankingVisitor : public TemplateTermVisitor<NeedsRankingVisitor, ProtonNodeTypes>
+{
+    bool _needs_ranking;
+public:
+    NeedsRankingVisitor()
+        : TemplateTermVisitor<NeedsRankingVisitor, ProtonNodeTypes>(),
+          _needs_ranking(false)
+    {
+    }
+    template <class TermNode> void visitTerm(TermNode&) { }
+    void visit(ProtonNodeTypes::WeakAnd&) override { _needs_ranking = true; }
+    void visitTerm(ProtonNodeTypes::WeightedSetTerm&) { _needs_ranking = true; }
+    void visitTerm(ProtonNodeTypes::DotProduct&) { _needs_ranking = true; }
+    void visitTerm(ProtonNodeTypes::WandTerm&) { _needs_ranking = true; }
+    bool needs_ranking() const noexcept { return _needs_ranking; }
+};
+
 }  // namespace
 
 Query::Query() = default;
@@ -160,6 +183,9 @@ Query::buildTree(std::string_view stack, const string &location,
         _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree), bool(_whiteListBlueprint), always_mark_phrase_expensive);
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
         _query_tree->accept(resolve_visitor);
+        NeedsRankingVisitor need_ranking_visitor;
+        _query_tree->accept(need_ranking_visitor);
+        _needs_ranking = need_ranking_visitor.needs_ranking();
         return true;
     } else {
         Issue::report("invalid query");

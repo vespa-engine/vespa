@@ -80,8 +80,11 @@ numThreads(size_t hits, size_t minHits) {
 
 bool
 willNeedRanking(const SearchRequest & request, const GroupingContext & groupingContext,
-                std::optional<search::feature_t> first_phase_rank_score_drop_limit)
+                std::optional<search::feature_t> first_phase_rank_score_drop_limit, bool query_needs_ranking)
 {
+    if (query_needs_ranking) {
+        return true;
+    }
     return (groupingContext.needRanking() || (request.maxhits != 0))
            && (request.sortSpec.empty() ||
                (request.sortSpec.find("[rank]") != std::string::npos) ||
@@ -281,7 +284,7 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
         MatchParams params(searchContext.getDocIdLimit(), heapSize, arraySize, first_phase_rank_score_drop_limit,
                            second_phase_rank_score_drop_limit,
                            request.offset, request.maxhits, !_rankSetup->getSecondPhaseRank().empty(),
-                           willNeedRanking(request, groupingContext, first_phase_rank_score_drop_limit));
+                           willNeedRanking(request, groupingContext, first_phase_rank_score_drop_limit, mtf->query().needs_ranking()));
 
         ResultProcessor rp(attrContext, metaStore, sessionMgr, groupingContext, sessionId,
                            request.sortSpec, params.offset, params.hits);

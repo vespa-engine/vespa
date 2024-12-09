@@ -32,6 +32,7 @@ private:
     Blueprint::UP                _blueprint;
     Blueprint::UP                _whiteListBlueprint;
     std::vector<GeoLocationSpec> _locations;
+    bool                         _needs_ranking = false;
 
 public:
     /** Convenience typedef. */
@@ -148,6 +149,7 @@ public:
      */
     Blueprint::HitEstimate estimate() const;
     const Blueprint * peekRoot() const { return _blueprint.get(); }
+    bool needs_ranking() const noexcept { return _needs_ranking; }
 };
 
 }

@@ -1152,6 +1152,53 @@ TEST(QueryTest, global_filter_is_calculated_and_handled)
     }
 }
 
+bool query_needs_ranking(const std::string& stack_dump)
+{
+    Query query;
+    query.buildTree(stack_dump, "", ViewResolver(), plain_index_env);
+    return query.needs_ranking();
+
+}
+
+TEST(QueryTest, normal_term_doesnt_need_ranking)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addStringTerm("xyz", "f1", 1, Weight(1));
+    EXPECT_FALSE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
+}
+
+TEST(QueryTest, weak_and_term_needs_ranking)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.addWeakAnd(1, 10, "f1");
+    builder.addStringTerm("xyz", "f1", 1, Weight(1));
+    EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
+}
+
+TEST(QueryTest, weighted_set_term_needs_ranking)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    auto& ws = builder.addWeightedSetTerm(1, "f1", 1, Weight(1));
+    ws.addTerm("xyz", Weight(1));
+    EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
+}
+
+TEST(QueryTest, dot_product_term_needs_ranking)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    auto& dp = builder.addDotProduct(1, "f1", 1, Weight(1));
+    dp.addTerm("xyz", Weight(1));
+    EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
+}
+
+TEST(QueryTest, wand_term_needs_ranking)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    auto& wand = builder.addWandTerm(1, "f1", 1, Weight(1), 10, 0, 1.0);
+    wand.addTerm("xyz", Weight(1));
+    EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
+}
+
 }  // namespace
 }  // namespace proton::matching
 
