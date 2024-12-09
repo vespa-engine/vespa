@@ -2,17 +2,12 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.NumericDataType;
 import com.yahoo.document.datatypes.ByteFieldValue;
 
 /**
  * @author Simon Thoresen Hult
  */
 public final class ToByteExpression extends Expression {
-
-    public ToByteExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
 
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
@@ -28,6 +23,8 @@ public final class ToByteExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
+        if (context.getCurrentType() == null)
+            throw new VerificationException(this, "Expected input, but no input is provided");
         context.setCurrentType(createdOutputType());
     }
 

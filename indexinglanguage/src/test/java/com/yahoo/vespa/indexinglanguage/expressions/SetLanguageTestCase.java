@@ -29,7 +29,7 @@ public class SetLanguageTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new SetLanguageExpression();
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'set_language': Expected string input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'set_language': Expected string input, but no input is provided", null, exp);
         assertVerifyThrows("Invalid expression 'set_language': Expected string input, got int", DataType.INT, exp);
     }
 

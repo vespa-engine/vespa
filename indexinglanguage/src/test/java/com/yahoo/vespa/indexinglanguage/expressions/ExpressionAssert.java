@@ -2,8 +2,8 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-
-import java.util.regex.Pattern;
+import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -18,23 +18,24 @@ class ExpressionAssert {
     }
 
     public static void assertVerify(DataType valueBefore, Expression expression, DataType expectedValueAfter) {
-        assertVerifyCtx(expression, expectedValueAfter, new VerificationContext().setCurrentType(valueBefore));
+        assertVerifyCtx(expression, expectedValueAfter, new VerificationContext(new SimpleTestAdapter()).setCurrentType(valueBefore));
     }
 
     public static void assertVerifyThrows(String expectedMessage, DataType valueBefore, Expression expression) {
-        assertVerifyThrows(expectedMessage, expression, new VerificationContext().setCurrentType(valueBefore));
+        assertVerifyThrows(expectedMessage, expression, new VerificationContext(new SimpleTestAdapter()).setCurrentType(valueBefore));
     }
 
     interface CreateExpression {
         Expression create();
     }
     public static void assertVerifyThrows(String expectedMessage, DataType valueBefore, CreateExpression createExpression) {
-        assertVerifyThrows(expectedMessage, createExpression, new VerificationContext().setCurrentType(valueBefore));
+        assertVerifyThrows(expectedMessage, createExpression, new VerificationContext(new SimpleTestAdapter()).setCurrentType(valueBefore));
     }
 
     public static void assertVerifyThrows(String expectedMessage, CreateExpression createExp, VerificationContext context) {
         try {
             Expression exp = createExp.create();
+            exp = new StatementExpression(new ConstantExpression(new StringFieldValue("test")), exp);
             exp.verify(context);
             fail("Expected exception");
         } catch (VerificationException e) {
@@ -43,6 +44,7 @@ class ExpressionAssert {
     }
     public static void assertVerifyThrows(String expectedMessage, Expression expression, VerificationContext context) {
         try {
+            expression.setInputType(context.getCurrentType(), context);
             expression.verify(context);
             fail("Expected exception");
         } catch (VerificationException e) {

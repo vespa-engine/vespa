@@ -10,7 +10,6 @@ import org.junit.Test;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertFalse;
 
 /**
@@ -30,8 +29,8 @@ public class ZCurveTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ZCurveExpression();
         assertVerify(PositionDataType.INSTANCE, exp, DataType.LONG);
-        assertVerifyThrows("Invalid expression 'zcurve': Expected position input, but no input is specified", null, exp);
-        assertVerifyThrows("Invalid expression 'zcurve': Expected position input, got int", DataType.INT, exp);
+        assertVerifyThrows("Invalid expression 'zcurve': Expected input, but no input is provided", null, exp);
+        assertVerifyThrows("Invalid expression 'zcurve': This requires a struct as input, but got int", DataType.INT, exp);
     }
 
     @Test

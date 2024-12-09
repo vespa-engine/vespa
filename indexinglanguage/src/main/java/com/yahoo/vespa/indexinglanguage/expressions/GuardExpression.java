@@ -15,37 +15,39 @@ import com.yahoo.vespa.objects.ObjectPredicate;
  */
 public final class GuardExpression extends CompositeExpression {
 
-    private final Expression expression;
+    private final Expression innerExpression;
     private final boolean shouldExecute;
 
-    public GuardExpression(Expression expression) {
-        super(expression.requiredInputType());
-        this.expression = expression;
-        shouldExecute = shouldExecute(expression);
+    public GuardExpression(Expression innerExpression) {
+        this.innerExpression = innerExpression;
+        shouldExecute = shouldExecute(innerExpression);
     }
 
-    public Expression getInnerExpression() { return expression; }
+    @Override
+    public boolean requiresInput() { return innerExpression.requiresInput(); }
+
+    public Expression getInnerExpression() { return innerExpression; }
 
     @Override
     public GuardExpression convertChildren(ExpressionConverter converter) {
-        return new GuardExpression(converter.convert(expression));
+        return new GuardExpression(converter.convert(innerExpression));
     }
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
-        return expression.setInputType(inputType, context);
+        return innerExpression.setInputType(inputType, context);
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        return expression.setOutputType(outputType, context);
+        return innerExpression.setOutputType(outputType, context);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        expression.verify(context);
+        innerExpression.verify(context);
     }
 
     @Override
@@ -53,40 +55,40 @@ public final class GuardExpression extends CompositeExpression {
         if (!shouldExecute && context.getFieldValue() instanceof UpdateAdapter) {
             context.setCurrentValue(null);
         } else {
-            expression.execute(context);
+            innerExpression.execute(context);
         }
     }
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        expression.setStatementOutput(documentType, field);
+        innerExpression.setStatementOutput(documentType, field);
     }
 
     @Override
     public DataType createdOutputType() {
-        return expression.createdOutputType();
+        return innerExpression.createdOutputType();
     }
 
     @Override
     public String toString() {
-        return "guard " + toScriptBlock(expression);
+        return "guard " + toScriptBlock(innerExpression);
     }
 
     @Override
     public void selectMembers(ObjectPredicate predicate, ObjectOperation operation) {
-         select(expression, predicate, operation);
+         select(innerExpression, predicate, operation);
     }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof GuardExpression rhs)) return false;
-        if (!expression.equals(rhs.expression)) return false;
+        if (!innerExpression.equals(rhs.innerExpression)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + expression.hashCode();
+        return getClass().hashCode() + innerExpression.hashCode();
     }
 
     private static boolean shouldExecute(Expression exp) {

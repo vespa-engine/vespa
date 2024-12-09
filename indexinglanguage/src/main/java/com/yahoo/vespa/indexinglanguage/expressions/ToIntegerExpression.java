@@ -9,10 +9,6 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
  */
 public final class ToIntegerExpression extends Expression {
 
-    public ToIntegerExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);
@@ -27,6 +23,8 @@ public final class ToIntegerExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
+        if (context.getCurrentType() == null)
+            throw new VerificationException(this, "Expected input, but no input is provided");
         context.setCurrentType(createdOutputType());
     }
 

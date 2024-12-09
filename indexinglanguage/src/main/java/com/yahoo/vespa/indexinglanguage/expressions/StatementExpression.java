@@ -37,7 +37,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     private StatementExpression(Iterable<Expression> list, Object unused) {
-        super(list, resolveInputType(list));
+        super(list);
         inputFields = List.copyOf(InputExpression.InputFieldNameExtractor.runOn(this));
     }
 
@@ -74,12 +74,11 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     /** Resolves types forward and returns the final output, or null if resolution could not progress to the end. */
     private DataType resolveForwards(VerificationContext context) {
-        int i = 0;
-        var inputType = getInputType(context); // A nested statement; input imposed from above
-        if (inputType == null) // otherwise the first expression will be an input deciding the type
-            inputType = expressions().get(i++).getOutputType(context);
-        while (i < expressions().size() && inputType != null)
-            inputType = expressions().get(i++).setInputType(inputType, context);
+        var inputType = getInputType(context);
+        for (var expression : expressions()) {
+            inputType = expression.setInputType(inputType, context);
+            if (inputType == null) break;
+        }
         return inputType;
     }
 
@@ -89,7 +88,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
         var outputType = getOutputType(context); // A nested statement; output imposed from above
         if (outputType == null) // otherwise the last expression will be an output deciding the type
             outputType = expressions().get(--i).getInputType(context);
-        while (--i >= 0 && outputType != null)
+        while (--i >= 0)
             outputType = expressions().get(i).setOutputType(outputType, context);
         return outputType;
     }
@@ -120,17 +119,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
         for (Expression expression : this) {
             if (expression instanceof OutputExpression output)
                 return output.getFieldName();
-        }
-        return null;
-    }
-
-    private static DataType resolveInputType(Iterable<Expression> expressions) {
-        for (Expression expression : expressions) {
-            DataType type = expression.requiredInputType();
-            if (type != null) return type;
-
-            type = expression.createdOutputType();
-            if (type != null) return null;
         }
         return null;
     }

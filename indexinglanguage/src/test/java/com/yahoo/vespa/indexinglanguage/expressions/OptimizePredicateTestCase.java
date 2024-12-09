@@ -7,13 +7,17 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.PredicateFieldValue;
 import com.yahoo.document.predicate.Predicate;
+import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyCtx;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -77,11 +81,11 @@ public class OptimizePredicateTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new OptimizePredicateExpression();
         String prefix = "Invalid expression 'optimize_predicate': ";
-        assertVerifyThrows(prefix + "Expected predicate input, but no input is specified", null, exp);
+        assertVerifyThrows(prefix + "Expected predicate input, but no input is provided", null, exp);
         assertVerifyThrows(prefix + "Expected predicate input, got int", DataType.INT, exp);
         assertVerifyThrows(prefix + "Variable 'arity' must be set", DataType.PREDICATE, exp);
 
-        VerificationContext context = new VerificationContext().setCurrentType(DataType.PREDICATE);
+        VerificationContext context = new VerificationContext(new SimpleTestAdapter()).setCurrentType(DataType.PREDICATE);
         context.setVariable("arity", DataType.STRING);
         ExpressionAssert.assertVerifyThrows(prefix + "Variable 'arity' must have type int", exp, context);
         context.setVariable("arity", DataType.INT);

@@ -2,14 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.FieldPath;
-import com.yahoo.vespa.objects.ObjectOperation;
-import com.yahoo.vespa.objects.ObjectPredicate;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 /**
  * Returns the current execution value, that is the value passed to this expression.
@@ -19,10 +11,6 @@ import java.util.Objects;
  * @author bratseth
  */
 public final class ExecutionValueExpression extends Expression {
-
-    public ExecutionValueExpression() {
-        super(null);
-    }
 
     @Override
     protected void doExecute(ExecutionContext context) {

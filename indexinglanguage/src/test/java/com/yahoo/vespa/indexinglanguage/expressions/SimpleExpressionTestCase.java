@@ -3,9 +3,12 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.IntegerFieldValue;
+import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 
 /**
  * @author Simon Thoresen Hult
@@ -15,14 +18,12 @@ public class SimpleExpressionTestCase {
     @Test
     public void requireThatAccessorsWork() {
         SimpleExpression exp = new SimpleExpression();
-        assertNull(exp.requiredInputType());
         assertNull(exp.createdOutputType());
         assertNull(exp.execute());
-        assertNull(exp.verify());
+        assertNull(exp.verify(new SimpleTestAdapter()));
 
-        assertEquals(DataType.INT, new SimpleExpression(DataType.INT).requiredInputType());
         assertEquals(DataType.INT, new SimpleExpression().setCreatedOutput(DataType.INT).createdOutputType());
-        assertEquals(DataType.INT, new SimpleExpression().setVerifyValue(DataType.INT).verify());
+        assertEquals(DataType.INT, new SimpleExpression().setVerifyValue(DataType.INT).verify(new SimpleTestAdapter()));
         assertEquals(new IntegerFieldValue(69),
                      new SimpleExpression().setExecuteValue(new IntegerFieldValue(69)).execute());
     }
@@ -51,7 +52,6 @@ public class SimpleExpressionTestCase {
         assertEquals(exp, new SimpleExpression().setVerifyValue(DataType.INT));
 
         exp = new SimpleExpression(DataType.INT);
-        assertFalse(exp.equals(new SimpleExpression(DataType.STRING)));
         assertEquals(exp, new SimpleExpression(DataType.INT));
 
         exp = new SimpleExpression().setCreatedOutput(DataType.INT);
