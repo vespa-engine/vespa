@@ -166,11 +166,19 @@ void ensureWritableDir(const std::string &dirName) {
 std::shared_ptr<IPostingListCache>
 make_posting_list_cache(const ProtonConfig& cfg)
 {
-    int64_t max_bytes = cfg.index.cache.postinglist.maxbytes;
-    if (max_bytes == -1) { // Force memory map posting lists, cf. BootstrapConfigManager::update
-        max_bytes = 0;
+    int64_t posting_max_bytes = cfg.index.cache.postinglist.maxbytes;
+    if (posting_max_bytes == -1) { // Force memory map posting lists, cf. BootstrapConfigManager::update
+        posting_max_bytes = 0;
     }
-    return std::make_shared<PostingListCache>(max_bytes, cfg.index.cache.bitvector.maxbytes);
+    // Until we support "negative values imply percentage of memory" semantics, implicitly
+    // disable cache if someone sets negative values after reading proton.def and making
+    // assumptions about how things work...! Otherwise, things will likely explode.
+    posting_max_bytes = std::max(posting_max_bytes, 0L);
+    int64_t bitvector_max_bytes = std::max(cfg.index.cache.bitvector.maxbytes, 0L);
+    PostingListCache::CacheSizingParams params(posting_max_bytes, bitvector_max_bytes,
+                                               cfg.index.cache.postinglist.slruProtectedSegmentRatio,
+                                               cfg.index.cache.bitvector.slruProtectedSegmentRatio);
+    return std::make_shared<PostingListCache>(params);
 }
 
 } // namespace <unnamed>
