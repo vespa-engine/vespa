@@ -1183,6 +1183,13 @@ TEST(QueryTest, wand_term_needs_ranking)
     EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
 }
 
+TEST(QueryTest, nearest_neighbor_term_needs_ranking)
+{
+    QueryBuilder<ProtonNodeTypes> builder;
+    builder.add_nearest_neighbor_term("qtensor", "f1", 1, Weight(1), 10, true, 100, 1.5);
+    EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
+}
+
 }  // namespace
 }  // namespace proton::matching
 

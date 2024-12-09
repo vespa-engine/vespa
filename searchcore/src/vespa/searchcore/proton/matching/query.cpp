@@ -144,8 +144,8 @@ void exchange_location_nodes(const string &location_str,
 }
 
 /*
- * WeakAnd, WeightedSetTerm, DotProduct and WandTerm query operators need ranking since
- * doUnpack is used to updated threshold during query evaluation.
+ * WeakAnd, WandTerm and NearestNeighborTerm query operators need ranking since
+ * doUnpack is used to update threshold during query evaluation.
  */
 class NeedsRankingVisitor : public TemplateTermVisitor<NeedsRankingVisitor, ProtonNodeTypes>
 {
@@ -159,6 +159,7 @@ public:
     template <class TermNode> void visitTerm(TermNode&) { }
     void visit(ProtonNodeTypes::WeakAnd&) override { _needs_ranking = true; }
     void visitTerm(ProtonNodeTypes::WandTerm&) { _needs_ranking = true; }
+    void visitTerm(ProtonNodeTypes::NearestNeighborTerm&) { _needs_ranking = true; }
     bool needs_ranking() const noexcept { return _needs_ranking; }
 };
 
