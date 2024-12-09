@@ -77,6 +77,24 @@ export ROOT
 
 # END environment bootstrap section
 
+# Defaults
+server="localhost"
+port="2181"
+command="stat"
+
+if [ "$#" -eq 1 ]; then
+    command=$1
+elif [ "$#" -eq 2 ] || [ "$#" -gt 3 ]; then
+    echo "Need 0, 1 (command) or 3 arguments (host, port, command)"
+    exit 1
+elif [ "$#" -eq 3 ]; then
+    server=$1
+    port=$2
+    command=$3
+fi
+
+args="$server $port $command"
+
 java -cp ${VESPA_HOME}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
      -Dlogback.configurationFile="logback-vespa.xml" -Xms32m -Xmx512m \
-     com.yahoo.vespa.zookeeper.cli.FourLetterWordMain "$@"
+     com.yahoo.vespa.zookeeper.cli.FourLetterWordMain $args
