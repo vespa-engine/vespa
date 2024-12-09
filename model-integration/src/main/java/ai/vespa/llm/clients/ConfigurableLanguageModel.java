@@ -8,6 +8,7 @@ import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.language.process.Generator;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -19,7 +20,7 @@ import java.util.logging.Logger;
  * @author lesters
  */
 @Beta
-public abstract class ConfigurableLanguageModel implements LanguageModel {
+public abstract class ConfigurableLanguageModel implements LanguageModel, Generator {
 
     private static final Logger log = Logger.getLogger(ConfigurableLanguageModel.class.getName());
 
@@ -75,6 +76,17 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
         if (endpoint != null && ! endpoint.isEmpty()) {
             params.setEndpoint(endpoint);
         }
+    }
+
+    @Override
+    public String generate(Prompt prompt, Context context) {
+        var params = new HashMap<String, String>();
+        var options = new InferenceParameters(params::get);
+        setApiKey(options);
+
+        var completions = complete(prompt, options);
+        var firstCompletion = completions.get(0);
+        return firstCompletion.text();
     }
 
 }
