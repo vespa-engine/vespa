@@ -23,6 +23,7 @@ public class PackBitsExpression extends Expression  {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
+        if (inputType == null) return null;
         super.setInputType(inputType, context);
         if ( ! validType(inputType))
             throw new VerificationException(this, "Require a tensor with one dense dimension, but got " + inputType.getName());
