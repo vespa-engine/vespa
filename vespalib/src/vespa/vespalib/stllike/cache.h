@@ -3,6 +3,7 @@
 
 #include "lrucache_map.h"
 #include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/vespalib/util/relative_frequency_sketch.h>
 #include <atomic>
 #include <mutex>
 #include <vector>
@@ -108,6 +109,8 @@ class cache {
         void insert_and_update_size(const KeyT& key, ValueT value);
         // Fetches an existing key from the cache _without_ updating the LRU ordering.
         [[nodiscard]] const typename P::Value& get_existing(const KeyT& key) const;
+
+        const KeyT* last_key_or_nullptr() const noexcept;
 
         // Returns true iff `key` existed in the mapping prior to the call, which also
         // implies the mapping has been updated by consuming `value` (i.e. its contents
@@ -249,6 +252,11 @@ public:
     [[nodiscard]] virtual MemoryUsage getStaticMemoryUsage() const;
 
     /**
+     * TODO "toggle" since this might also disable?
+     */
+    void enable_frequency_sketch(size_t est_cache_max_elem_count);
+
+    /**
      * Listeners for insertion and removal events that may be overridden by a subclass.
      * Important: implementations should never directly or indirectly modify the cache
      * from a listener, or they risk triggering an "uncontrolled" recursion chain.
@@ -302,6 +310,7 @@ public:
     size_t       getWrite() const noexcept { return _write.load(std::memory_order_relaxed); }
     size_t  getInvalidate() const noexcept { return _invalidate.load(std::memory_order_relaxed); }
     size_t      getLookup() const noexcept { return _lookup.load(std::memory_order_relaxed); }
+    size_t    lfu_dropped() const noexcept { return _lfu_dropped.load(std::memory_order_relaxed); }
 
     /**
      * Returns the number of bytes that are always implicitly added for each element
@@ -322,9 +331,16 @@ protected:
 private:
     // Implicitly updates LRU segment(s) on hit.
     // Precondition: _hashLock is held.
-    [[nodiscard]] bool try_fill_from_cache(const K& key, V& val_out);
+    [[nodiscard]] bool try_fill_from_cache(const K& key, V& val_out, const std::lock_guard<std::mutex>& guard);
 
     [[nodiscard]] bool multi_segment() const noexcept { return _protected_segment.capacity_bytes() != 0; }
+    void lfu_add(const K& key) noexcept;
+    [[nodiscard]] uint8_t lfu_add_and_count(const K& key) noexcept;
+    [[nodiscard]] bool lfu_accepts_insertion(const K& key, const V& value,
+                                             const SizeConstrainedLru& segment,
+                                             uint8_t candidate_freq) const noexcept;
+    [[nodiscard]] bool lfu_accepts_insertion(const K& key, const V& value, const SizeConstrainedLru& segment);
+
     void trim_segments();
     void verifyHashLock(const UniqueLock& guard) const;
     [[nodiscard]] size_t calcSize(const K& k, const V& v) const noexcept {
@@ -344,6 +360,8 @@ private:
         v.store(v.load(std::memory_order_relaxed) + 1, std::memory_order_relaxed);
     }
 
+    using SketchType = RelativeFrequencySketch<K, Hash>;
+
     [[no_unique_address]] Hash  _hasher;
     [[no_unique_address]] SizeK _sizeK;
     [[no_unique_address]] SizeV _sizeV;
@@ -357,7 +375,9 @@ private:
     mutable std::atomic<size_t> _update;
     mutable std::atomic<size_t> _invalidate;
     mutable std::atomic<size_t> _lookup;
+    mutable std::atomic<size_t> _lfu_dropped;
     BackingStore&               _store;
+    std::unique_ptr<SketchType> _sketch;
 
     ProbationarySegmentLru      _probationary_segment;
     ProtectedSegmentLru         _protected_segment;
