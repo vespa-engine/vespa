@@ -4,6 +4,7 @@
 #include "cache.h"
 #include "cache_stats.h"
 #include "lrucache_map.hpp"
+#include <vespa/vespalib/util/relative_frequency_sketch.h>
 
 namespace vespalib {
 
@@ -81,6 +82,16 @@ cache<P>::SizeConstrainedLru::get_existing(const KeyT& key) const {
 }
 
 template <typename P>
+const typename P::Key*
+cache<P>::SizeConstrainedLru::last_key_or_nullptr() const noexcept {
+    // There is no const_iterator on the LRU base class, so do an awkward const_cast instead.
+    // We don't do any direct or indirect mutations, so should be fully well-defined.
+    auto* mut_self = const_cast<SizeConstrainedLru*>(this);
+    auto iter = mut_self->iter_to_last();
+    return (iter != mut_self->end()) ? &iter.key() : nullptr;
+}
+
+template <typename P>
 bool
 cache<P>::SizeConstrainedLru::try_get_and_ref(const KeyT& key, ValueT& val_out) {
     const auto* maybe_val = Lru::find_and_ref(key);
@@ -92,13 +103,22 @@ cache<P>::SizeConstrainedLru::try_get_and_ref(const KeyT& key, ValueT& val_out) 
 }
 
 template <typename P>
+template <typename F>
+void
+cache<P>::SizeConstrainedLru::for_each_key(F fn) {
+    for (auto it = Lru::begin(); it != Lru::end(); ++it) {
+        fn(it.key());
+    }
+}
+
+template <typename P>
 std::vector<typename P::Key>
 cache<P>::SizeConstrainedLru::dump_segment_keys_in_lru_order() {
     std::vector<KeyT> lru_keys;
     lru_keys.reserve(size());
-    for (auto it = Lru::begin(); it != Lru::end(); ++it) {
-        lru_keys.emplace_back(it.key());
-    }
+    for_each_key([&lru_keys](const KeyT& k) {
+        lru_keys.emplace_back(k);
+    });
     return lru_keys;
 }
 
@@ -220,7 +240,10 @@ cache<P>::cache(BackingStore& backing_store,
     _update(0),
     _invalidate(0),
     _lookup(0),
+    _lfu_dropped(0),
+    _lfu_not_promoted(0),
     _store(backing_store),
+    _sketch(),
     _probationary_segment(*this, max_probationary_bytes),
     _protected_segment(*this, max_protected_bytes)
 {}
@@ -229,6 +252,64 @@ template <typename P>
 cache<P>::cache(BackingStore& backing_store, size_t max_bytes)
     : cache(backing_store, max_bytes, 0)
 {}
+
+template<typename P>
+void cache<P>::set_frequency_sketch_size(size_t cache_max_elem_count) {
+    std::lock_guard guard(_hashLock);
+    if (cache_max_elem_count > 0) {
+        _sketch = std::make_unique<SketchType>(cache_max_elem_count, _hasher);
+        // (Re)setting the sketch loses all frequency knowledge, but we can at the
+        // very least pre-seed it with the information we _do_ have, which is that
+        // all elements already in the cache have an estimated frequency of >= 1.
+        auto pre_seed_sketch = [this](const K& key) { _sketch->add(key); };
+        _probationary_segment.for_each_key(pre_seed_sketch);
+        _protected_segment.for_each_key(pre_seed_sketch); // no-op unless SLRU
+    } else {
+        _sketch.reset();
+    }
+}
+
+template<typename P>
+void
+cache<P>::lfu_add(const K& key) noexcept {
+    if (_sketch) {
+        _sketch->add(key);
+    }
+}
+
+template<typename P>
+uint8_t
+cache<P>::lfu_add_and_count(const K& key) noexcept {
+    return _sketch ? _sketch->add_and_count(key) : 0;
+}
+
+template<typename P>
+bool
+cache<P>::lfu_accepts_insertion(const K& key, const V& value,
+                                const SizeConstrainedLru& segment,
+                                uint8_t candidate_freq) const noexcept
+{
+    if (!_sketch) {
+        return true; // Trivially accepts insertion, since there's no LFU policy
+    }
+    // TODO > capacity_bytes() instead of >=, this uses >= to be symmetric with removeOldest()
+    const bool would_displace = ((segment.size() >= segment.capacity()) ||
+                                 (segment.size_bytes() + calcSize(key, value)) >= segment.capacity_bytes());
+    const K* victim;
+    if (would_displace && (victim = segment.last_key_or_nullptr()) != nullptr) {
+        const auto existing_freq = _sketch->count_min(*victim);
+        // Frequency > instead of >= (i.e. must be _more_ popular, not just _as_ popular)
+        // empirically shows significantly better hit rates in our cache trace simulations.
+        return (candidate_freq > existing_freq);
+    }
+    return true; // No displacement, no reason to deny insertion.
+}
+
+template<typename P>
+bool
+cache<P>::lfu_accepts_insertion(const K& key, const V& value, const SizeConstrainedLru& segment) {
+    return !_sketch || lfu_accepts_insertion(key, value, segment, _sketch->count_min(key));
+}
 
 template <typename P>
 MemoryUsage
@@ -254,7 +335,7 @@ cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args)
     V value;
     {
         std::lock_guard guard(_hashLock);
-        if (try_fill_from_cache(key, value)) {
+        if (try_fill_from_cache(key, value, guard)) {
             increment_stat(_hit, guard);
             return value;
         } else {
@@ -265,34 +346,50 @@ cache<P>::read(const K& key, BackingStoreArgs&&... backing_store_args)
     std::lock_guard store_guard(getLock(key));
     {
         std::lock_guard guard(_hashLock);
-        if (try_fill_from_cache(key, value)) {
+        if (try_fill_from_cache(key, value, guard)) {
             increment_stat(_race, guard); // Somebody else just fetched it ahead of me.
             return value;
         }
     }
     if (_store.read(key, value, std::forward<BackingStoreArgs>(backing_store_args)...)) {
         std::lock_guard guard(_hashLock);
-        _probationary_segment.insert_and_update_size(key, value);
-        onInsert(key);
-        increment_stat(_insert, guard);
+        const auto new_freq = lfu_add_and_count(key);
+        if (lfu_accepts_insertion(key, value, _probationary_segment, new_freq)) {
+            _probationary_segment.insert_and_update_size(key, value);
+            onInsert(key);
+            increment_stat(_insert, guard);
+        } else {
+            increment_stat(_lfu_dropped, guard);
+        }
     } else {
-        _non_existing.fetch_add(1, std::memory_order_relaxed);
+        _non_existing.fetch_add(1, std::memory_order_relaxed); // Atomic since we're outside _hashLock
     }
     return value;
 }
 
 template <typename P>
 bool
-cache<P>::try_fill_from_cache(const K& key, V& val_out) {
+cache<P>::try_fill_from_cache(const K& key, V& val_out, const std::lock_guard<std::mutex>& guard) {
     if (_probationary_segment.try_get_and_ref(key, val_out)) {
+        // Hitting the cache bumps the sketch count regardless of LRU vs SLRU mode.
+        const auto new_freq = lfu_add_and_count(key);
         if (multi_segment()) {
-            // Hit on probationary item; move to protected segment
-            const bool erased = _probationary_segment.try_erase_and_update_size(key);
-            assert(erased);
-            _protected_segment.insert_and_update_size(key, val_out);
+            if (lfu_accepts_insertion(key, val_out, _protected_segment, new_freq)) {
+                // Hit on probationary item; move to protected segment
+                const bool erased = _probationary_segment.try_erase_and_update_size(key);
+                assert(erased);
+                _protected_segment.insert_and_update_size(key, val_out);
+            } else {
+                // Probationary element is not admitted to the VIP section of the protected segment,
+                // but _has_ been put at the head of the probationary segment, allowing it another
+                // chance to party with the stars.
+                increment_stat(_lfu_not_promoted, guard);
+                return true;
+            }
         }
         return true;
     } else if (multi_segment() && _protected_segment.try_get_and_ref(key, val_out)) {
+        lfu_add(key);
         return true;
     }
     return false;
@@ -306,15 +403,20 @@ cache<P>::write(const K& key, V value)
     _store.write(key, value);
     {
         std::lock_guard guard(_hashLock);
+        // We do not update the frequency sketch on writes, only on reads. We _do_ consult
+        // the sketch when determining if a new element should displace an existing element.
+
         // Important: `try_replace_and_update_size()` consumes `value` if replacing took place
         if (_probationary_segment.try_replace_and_update_size(key, value)) {
             increment_stat(_update, guard);
         } else if (multi_segment() && _protected_segment.try_replace_and_update_size(key, value)) {
             increment_stat(_update, guard);
-        } else {
+        } else if (lfu_accepts_insertion(key, value, _probationary_segment)) {
             // Always insert into probationary first
             _probationary_segment.insert_and_update_size(key, std::move(value));
             onInsert(key);
+        } else {
+            increment_stat(_lfu_dropped, guard);
         }
         increment_stat(_write, guard); // TODO only increment when not updating?
     }
