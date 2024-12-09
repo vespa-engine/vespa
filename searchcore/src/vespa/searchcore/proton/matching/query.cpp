@@ -158,8 +158,6 @@ public:
     }
     template <class TermNode> void visitTerm(TermNode&) { }
     void visit(ProtonNodeTypes::WeakAnd&) override { _needs_ranking = true; }
-    void visitTerm(ProtonNodeTypes::WeightedSetTerm&) { _needs_ranking = true; }
-    void visitTerm(ProtonNodeTypes::DotProduct&) { _needs_ranking = true; }
     void visitTerm(ProtonNodeTypes::WandTerm&) { _needs_ranking = true; }
     bool needs_ranking() const noexcept { return _needs_ranking; }
 };

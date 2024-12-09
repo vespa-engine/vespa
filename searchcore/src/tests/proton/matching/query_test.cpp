@@ -1175,22 +1175,6 @@ TEST(QueryTest, weak_and_term_needs_ranking)
     EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
 }
 
-TEST(QueryTest, weighted_set_term_needs_ranking)
-{
-    QueryBuilder<ProtonNodeTypes> builder;
-    auto& ws = builder.addWeightedSetTerm(1, "f1", 1, Weight(1));
-    ws.addTerm("xyz", Weight(1));
-    EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
-}
-
-TEST(QueryTest, dot_product_term_needs_ranking)
-{
-    QueryBuilder<ProtonNodeTypes> builder;
-    auto& dp = builder.addDotProduct(1, "f1", 1, Weight(1));
-    dp.addTerm("xyz", Weight(1));
-    EXPECT_TRUE(query_needs_ranking(StackDumpCreator::create(*builder.build())));
-}
-
 TEST(QueryTest, wand_term_needs_ranking)
 {
     QueryBuilder<ProtonNodeTypes> builder;
