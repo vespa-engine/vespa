@@ -49,7 +49,8 @@
     {
       "event": "failed",
       "at": 123,
-      "agent": "operator"
+      "agent": "operator",
+      "reason": "MockNodeRepository"
     },
     {
       "event": "deprovisioned",
@@ -76,7 +77,8 @@
     {
       "event": "failed",
       "at": 123,
-      "agent": "operator"
+      "agent": "operator",
+      "reason": "MockNodeRepository"
     },
     {
       "event": "deprovisioned",

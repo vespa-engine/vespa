@@ -50,7 +50,8 @@
     {
       "event": "failed",
       "at": 123,
-      "agent": "system"
+      "agent": "system",
+      "reason": "MockNodeRepository"
     }
   ],
   "log": [
@@ -72,7 +73,8 @@
     {
       "event": "failed",
       "at": 123,
-      "agent": "system"
+      "agent": "system",
+      "reason": "MockNodeRepository"
     }
   ],
   "ipAddresses": ["::5:1", "127.0.5.1"],

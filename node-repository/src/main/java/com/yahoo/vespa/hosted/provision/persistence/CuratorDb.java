@@ -134,7 +134,7 @@ public class CuratorDb {
             if (node.state() != expectedState)
                 throw new IllegalArgumentException(node + " is not in the " + expectedState + " state");
 
-            node = node.with(node.history().recordStateTransition(null, expectedState, agent, clock.instant()));
+            node = node.with(node.history().recordStateTransition(null, expectedState, agent, Optional.empty(), clock.instant()));
             byte[] serialized = nodeSerializer.toJson(node);
             curatorTransaction.add(CuratorOperations.create(nodePath(node).getAbsolute(), serialized));
         }
@@ -234,7 +234,7 @@ public class CuratorDb {
                                     newNodeStatus(node, toState),
                                     toState,
                                     toState.isAllocated() ? node.allocation() : Optional.empty(),
-                                    node.history().recordStateTransition(node.state(), toState, agent, clock.instant()),
+                                    node.history().recordStateTransition(node.state(), toState, agent, reason, clock.instant()),
                                     node.type(), node.reports(), node.modelName(), node.reservedTo(),
                                     node.exclusiveToApplicationId(), node.provisionedForApplicationId(), node.hostTTL(), node.hostEmptyAt(),
                                     node.exclusiveToClusterType(), node.switchHostname(), node.trustedCertificates(),

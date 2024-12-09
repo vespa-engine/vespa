@@ -88,7 +88,8 @@
     {
       "event": "wantToFail",
       "at": 123,
-      "agent": "operator"
+      "agent": "operator",
+      "reason": "Failed through the nodes/v2 API"
     },
     {
       "event": "rebooted",
@@ -135,7 +136,8 @@
     {
       "event": "wantToFail",
       "at": 123,
-      "agent": "operator"
+      "agent": "operator",
+      "reason": "Failed through the nodes/v2 API"
     },
     {
       "event": "rebooted",
