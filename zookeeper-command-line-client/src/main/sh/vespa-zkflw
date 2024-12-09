@@ -93,8 +93,8 @@ elif [ "$#" -eq 3 ]; then
     command=$3
 fi
 
-args="$server $port $command"
+args=("$server" "$port" "$command")
 
 java -cp ${VESPA_HOME}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
      -Dlogback.configurationFile="logback-vespa.xml" -Xms32m -Xmx512m \
-     com.yahoo.vespa.zookeeper.cli.FourLetterWordMain $args
+     com.yahoo.vespa.zookeeper.cli.FourLetterWordMain ${args[@]}
