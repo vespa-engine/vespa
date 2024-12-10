@@ -159,6 +159,14 @@ public class GroupingValidatorTestCase {
         }
     }
 
+    private static void supported_attribute_type_works(String name, AttributesConfig.Attribute.Datatype.Enum datatype) {
+        var builder = new AttributesConfig.Builder();
+        builder.attribute(new AttributesConfig.Attribute.Builder().name(name).datatype(datatype));
+        validateGrouping(new AttributesConfig(builder),
+                "all(group(" + name + ") each(output(count())))");
+
+    }
+
     @Test
     void tensor_attribute_throws() {
         unsupported_attribute_type_throws("tensor", AttributesConfig.Attribute.Datatype.TENSOR);
@@ -176,11 +184,12 @@ public class GroupingValidatorTestCase {
 
     @Test
     void raw_attribute_is_ok() {
-        var builder = new AttributesConfig.Builder();
-        builder.attribute(new AttributesConfig.Attribute.Builder().name("raw")
-                .datatype(AttributesConfig.Attribute.Datatype.RAW));
-        validateGrouping(new AttributesConfig(builder),
-                "all(group(raw) each(output(count())))");
+        supported_attribute_type_works("raw", AttributesConfig.Attribute.Datatype.RAW);
+    }
+
+    @Test
+    void bool_attribute_is_ok() {
+        supported_attribute_type_works("mybool", AttributesConfig.Attribute.Datatype.BOOL);
     }
 
     @Test

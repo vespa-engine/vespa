@@ -76,23 +76,25 @@ public class GroupingValidator extends Searcher {
                 datatype == AttributesConfig.Attribute.Datatype.DOUBLE;
     }
 
-    static private boolean isSingleRawAttribute(AttributesConfig.Attribute attribute) {
-        return  attribute.datatype() == AttributesConfig.Attribute.Datatype.RAW &&
+    static private boolean isSingleRawOrBoolAttribute(AttributesConfig.Attribute attribute) {
+        var datatype = attribute.datatype();
+        return  (datatype == AttributesConfig.Attribute.Datatype.RAW ||
+                datatype == AttributesConfig.Attribute.Datatype.BOOL) &&
                 attribute.collectiontype() == AttributesConfig.Attribute.Collectiontype.SINGLE;
     }
 
-    private void verifyHasAttribute(String attributeName, boolean allowSingleRawAttribute) {
+    private void verifyHasAttribute(String attributeName, boolean isMapLookup) {
         var attribute = attributes.get(attributeName);
         if (attribute == null) {
             throw new UnavailableAttributeException(clusterName, attributeName);
         }
-        if (isPrimitiveAttribute(attribute) || (isSingleRawAttribute(attribute) && allowSingleRawAttribute)) {
+        if (isPrimitiveAttribute(attribute) || (!isMapLookup && isSingleRawOrBoolAttribute(attribute))) {
             return;
         }
         throw new IllegalInputException("Grouping request references attribute '" +
                 attributeName + "' with unsupported data type '" + attribute.datatype() +
                 "' collection type '" + attribute.collectiontype() + "'" +
-                (allowSingleRawAttribute ? "" : " for map lookup"));
+                (isMapLookup ? " for map lookup" : ""));
     }
 
     private void verifyCompatibleAttributeTypes(String keyAttributeName,
@@ -116,14 +118,14 @@ public class GroupingValidator extends Searcher {
         @Override
         public void visitExpression(GroupingExpression exp) {
             if (exp instanceof AttributeMapLookupValue mapLookup) {
-                verifyHasAttribute(mapLookup.getKeyAttribute(), false);
-                verifyHasAttribute(mapLookup.getValueAttribute(), false);
+                verifyHasAttribute(mapLookup.getKeyAttribute(), true);
+                verifyHasAttribute(mapLookup.getValueAttribute(), true);
                 if (mapLookup.hasKeySourceAttribute()) {
-                    verifyHasAttribute(mapLookup.getKeySourceAttribute(), false);
+                    verifyHasAttribute(mapLookup.getKeySourceAttribute(), true);
                     verifyCompatibleAttributeTypes(mapLookup.getKeyAttribute(), mapLookup.getKeySourceAttribute());
                 }
             } else if (exp instanceof AttributeValue) {
-                verifyHasAttribute(((AttributeValue) exp).getAttributeName(), true);
+                verifyHasAttribute(((AttributeValue) exp).getAttributeName(), false);
             }
         }
     }
