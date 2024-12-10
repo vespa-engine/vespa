@@ -257,7 +257,9 @@ template<typename P>
 void cache<P>::set_frequency_sketch_size(size_t cache_max_elem_count) {
     std::lock_guard guard(_hashLock);
     if (cache_max_elem_count > 0) {
-        _sketch = std::make_unique<SketchType>(cache_max_elem_count, _hasher);
+        // Ensure we can count our existing cached elements, if any.
+        size_t effective_elem_count = std::max(size(), cache_max_elem_count);
+        _sketch = std::make_unique<SketchType>(effective_elem_count, _hasher);
         // (Re)setting the sketch loses all frequency knowledge, but we can at the
         // very least pre-seed it with the information we _do_ have, which is that
         // all elements already in the cache have an estimated frequency of >= 1.
@@ -295,14 +297,17 @@ cache<P>::lfu_accepts_insertion(const K& key, const V& value,
     // TODO > capacity_bytes() instead of >=, this uses >= to be symmetric with removeOldest()
     const bool would_displace = ((segment.size() >= segment.capacity()) ||
                                  (segment.size_bytes() + calcSize(key, value)) >= segment.capacity_bytes());
-    const K* victim;
-    if (would_displace && (victim = segment.last_key_or_nullptr()) != nullptr) {
-        const auto existing_freq = _sketch->count_min(*victim);
-        // Frequency > instead of >= (i.e. must be _more_ popular, not just _as_ popular)
-        // empirically shows significantly better hit rates in our cache trace simulations.
-        return (candidate_freq > existing_freq);
+    if (!would_displace) {
+        return true; // No displacement, no reason to deny insertion
     }
-    return true; // No displacement, no reason to deny insertion.
+    const K* victim = segment.last_key_or_nullptr();
+    if (!victim) {
+        return true; // Cache segment is empty, allow at least one entry
+    }
+    const auto existing_freq = _sketch->count_min(*victim);
+    // Frequency > instead of >= (i.e. must be _more_ popular, not just _as_ popular)
+    // empirically shows significantly better hit rates in our cache trace simulations.
+    return (candidate_freq > existing_freq);
 }
 
 template<typename P>

@@ -276,7 +276,9 @@ public:
      * Setting the size to >0 will always create a new sketch. The sketch will be
      * initialized with the cache keys that are currently present in the cache segments,
      * giving each existing entry an estimated frequency of 1. All preexisting frequency
-     * information about entries _not_ currently in the cache will be lost.
+     * information about entries _not_ currently in the cache will be lost. To avoid
+     * pathological frequency estimates for existing entries, the sketch has a lower
+     * bound size of max(existing cache element count, cache_max_elem_count).
      */
     void set_frequency_sketch_size(size_t cache_max_elem_count);
 
