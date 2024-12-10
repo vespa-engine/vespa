@@ -145,11 +145,70 @@ public class GroupingValidatorTestCase {
         }
     }
 
+    private static void unsupported_attribute_type_throws(String name, AttributesConfig.Attribute.Datatype.Enum datatype) {
+        try {
+            var builder = new AttributesConfig.Builder();
+            builder.attribute(new AttributesConfig.Attribute.Builder().name(name).datatype(datatype));
+            validateGrouping(new AttributesConfig(builder),
+                    "all(group(" + name + ") each(output(count())))");
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Grouping request references attribute '" + name + "' " +
+                            "with unsupported data type '" + datatype.toString() + "' collection type 'SINGLE'",
+                    e.getMessage());
+        }
+    }
+
+    @Test
+    void tensor_attribute_throws() {
+        unsupported_attribute_type_throws("tensor", AttributesConfig.Attribute.Datatype.TENSOR);
+    }
+
+    @Test
+    void predicate_attribute_throws() {
+        unsupported_attribute_type_throws("predicate", AttributesConfig.Attribute.Datatype.PREDICATE);
+    }
+
+    @Test
+    void reference_attribute_throws() {
+        unsupported_attribute_type_throws("reference", AttributesConfig.Attribute.Datatype.REFERENCE);
+    }
+
+    @Test
+    void raw_attribute_is_ok() {
+        var builder = new AttributesConfig.Builder();
+        builder.attribute(new AttributesConfig.Attribute.Builder().name("raw")
+                .datatype(AttributesConfig.Attribute.Datatype.RAW));
+        validateGrouping(new AttributesConfig(builder),
+                "all(group(raw) each(output(count())))");
+    }
+
+    @Test
+    void raw_attribute_cannot_be_used_for_lookup() {
+        try {
+            var builder = new AttributesConfig.Builder();
+            builder.attribute(new AttributesConfig.Attribute.Builder().name("map.key")
+                    .datatype(AttributesConfig.Attribute.Datatype.RAW));
+            builder.attribute(new AttributesConfig.Attribute.Builder().name("map.value")
+                            .datatype(AttributesConfig.Attribute.Datatype.STRING));
+            builder.attribute(new AttributesConfig.Attribute.Builder().name("key_source")
+                            .datatype(AttributesConfig.Attribute.Datatype.RAW));
+            validateGrouping(new AttributesConfig(builder),
+                    "all(group(map{attribute(key_source)}) each(output(count())))");
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Grouping request references attribute 'map.key' " +
+                            "with unsupported data type 'RAW' collection type 'SINGLE' for map lookup",
+                    e.getMessage());
+        }
+    }
+
     private static AttributesConfig setupMismatchingKeySourceAttribute(boolean matchingDataType) {
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         builder.attribute(new AttributesConfig.Attribute.Builder().name("map.key")
                 .datatype(AttributesConfig.Attribute.Datatype.Enum.STRING));
-        builder.attribute(new AttributesConfig.Attribute.Builder().name("map.value"));
+        builder.attribute(new AttributesConfig.Attribute.Builder().name("map.value")
+                .datatype(AttributesConfig.Attribute.Datatype.STRING));
         builder.attribute(new AttributesConfig.Attribute.Builder().name("key_source")
                 .datatype(matchingDataType ? AttributesConfig.Attribute.Datatype.Enum.STRING :
                         AttributesConfig.Attribute.Datatype.Enum.INT32)
@@ -172,7 +231,7 @@ public class GroupingValidatorTestCase {
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         for (String attributeName : attributeNames) {
             builder.attribute(new AttributesConfig.Attribute.Builder()
-                    .name(attributeName));
+                    .name(attributeName).datatype(AttributesConfig.Attribute.Datatype.INT32));
         }
         return new AttributesConfig(builder);
     }

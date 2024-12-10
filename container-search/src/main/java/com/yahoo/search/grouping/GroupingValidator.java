@@ -65,10 +65,34 @@ public class GroupingValidator extends Searcher {
         return execution.search(query);
     }
 
-    private void verifyHasAttribute(String attributeName) {
-        if (!attributes.containsKey(attributeName)) {
+    static private boolean isPrimitiveAttribute(AttributesConfig.Attribute attribute) {
+        var datatype = attribute.datatype();
+        return  datatype == AttributesConfig.Attribute.Datatype.INT8 ||
+                datatype == AttributesConfig.Attribute.Datatype.INT16 ||
+                datatype == AttributesConfig.Attribute.Datatype.INT32 ||
+                datatype == AttributesConfig.Attribute.Datatype.INT64 ||
+                datatype == AttributesConfig.Attribute.Datatype.STRING ||
+                datatype == AttributesConfig.Attribute.Datatype.FLOAT ||
+                datatype == AttributesConfig.Attribute.Datatype.DOUBLE;
+    }
+
+    static private boolean isSingleRawAttribute(AttributesConfig.Attribute attribute) {
+        return  attribute.datatype() == AttributesConfig.Attribute.Datatype.RAW &&
+                attribute.collectiontype() == AttributesConfig.Attribute.Collectiontype.SINGLE;
+    }
+
+    private void verifyHasAttribute(String attributeName, boolean allowSingleRawAttribute) {
+        var attribute = attributes.get(attributeName);
+        if (attribute == null) {
             throw new UnavailableAttributeException(clusterName, attributeName);
         }
+        if (isPrimitiveAttribute(attribute) || (isSingleRawAttribute(attribute) && allowSingleRawAttribute)) {
+            return;
+        }
+        throw new IllegalInputException("Grouping request references attribute '" +
+                attributeName + "' with unsupported data type '" + attribute.datatype() +
+                "' collection type '" + attribute.collectiontype() + "'" +
+                (allowSingleRawAttribute ? "" : " for map lookup"));
     }
 
     private void verifyCompatibleAttributeTypes(String keyAttributeName,
@@ -92,14 +116,14 @@ public class GroupingValidator extends Searcher {
         @Override
         public void visitExpression(GroupingExpression exp) {
             if (exp instanceof AttributeMapLookupValue mapLookup) {
-                verifyHasAttribute(mapLookup.getKeyAttribute());
-                verifyHasAttribute(mapLookup.getValueAttribute());
+                verifyHasAttribute(mapLookup.getKeyAttribute(), false);
+                verifyHasAttribute(mapLookup.getValueAttribute(), false);
                 if (mapLookup.hasKeySourceAttribute()) {
-                    verifyHasAttribute(mapLookup.getKeySourceAttribute());
+                    verifyHasAttribute(mapLookup.getKeySourceAttribute(), false);
                     verifyCompatibleAttributeTypes(mapLookup.getKeyAttribute(), mapLookup.getKeySourceAttribute());
                 }
             } else if (exp instanceof AttributeValue) {
-                verifyHasAttribute(((AttributeValue) exp).getAttributeName());
+                verifyHasAttribute(((AttributeValue) exp).getAttributeName(), true);
             }
         }
     }
