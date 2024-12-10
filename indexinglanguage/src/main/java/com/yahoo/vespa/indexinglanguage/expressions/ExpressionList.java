@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
-import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
@@ -21,12 +20,13 @@ public abstract class ExpressionList<T extends Expression> extends CompositeExpr
 
     private final List<T> expressions = new ArrayList<T>();
 
-    protected ExpressionList(Iterable<? extends T> expressions, DataType inputType) {
-        super(inputType);
-        for (T exp : expressions) {
+    protected ExpressionList(Iterable<? extends T> expressions) {
+        for (T exp : expressions)
             this.expressions.add(exp);
-        }
     }
+
+    @Override
+    public boolean requiresInput() { return !expressions.isEmpty() && expressions.get(0).requiresInput(); }
 
     public List<T> expressions() { return expressions; }
 

@@ -12,10 +12,6 @@ import com.yahoo.document.datatypes.NumericFieldValue;
  */
 public final class SleepExpression extends Expression {
 
-    public SleepExpression() {
-        super(UnresolvedDataType.INSTANCE);
-    }
-
     @Override
     protected void doVerify(VerificationContext context) { }
 

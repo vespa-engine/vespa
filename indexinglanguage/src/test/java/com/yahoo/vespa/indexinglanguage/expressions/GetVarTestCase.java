@@ -9,7 +9,10 @@ import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -33,7 +36,7 @@ public class GetVarTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        VerificationContext ctx = new VerificationContext();
+        VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
         ctx.setVariable("foo", DataType.STRING);
 
         assertEquals(DataType.STRING, new GetVarExpression("foo").verify(ctx));
