@@ -237,6 +237,7 @@ class NodesResponse extends SlimeJsonResponse {
             object.setString("event", event.type().name());
             object.setLong("at", event.at().toEpochMilli());
             object.setString("agent", event.agent().name());
+            event.reason().ifPresent(reason -> object.setString("reason", reason));
         }
     }
 
