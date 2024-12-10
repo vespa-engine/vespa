@@ -12,6 +12,10 @@ import java.util.Base64;
  */
 public final class Base64EncodeExpression extends Expression {
 
+    public Base64EncodeExpression() {
+        super(DataType.LONG);
+    }
+
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, DataType.LONG, context);

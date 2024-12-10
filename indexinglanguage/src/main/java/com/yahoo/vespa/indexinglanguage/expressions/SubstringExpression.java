@@ -14,6 +14,7 @@ public final class SubstringExpression extends Expression {
     private final int to;
 
     public SubstringExpression(int from, int to) {
+        super(DataType.STRING);
         if (from < 0 || to < 0 || to < from) {
             throw new IndexOutOfBoundsException();
         }

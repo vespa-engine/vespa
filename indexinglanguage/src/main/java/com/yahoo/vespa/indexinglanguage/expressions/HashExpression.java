@@ -23,6 +23,10 @@ public class HashExpression extends Expression  {
 
     private DataType targetType;
 
+    public HashExpression() {
+        super(DataType.STRING);
+    }
+
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         targetType = field.getDataType();
@@ -37,7 +41,7 @@ public class HashExpression extends Expression  {
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        if (outputType != null && ! isHashCompatible(outputType))
+        if ( ! isHashCompatible(outputType))
             throw new VerificationException(this, "An " + outputType.getName() +
                                                   " output is required, but this produces int or long");
         return DataType.STRING;

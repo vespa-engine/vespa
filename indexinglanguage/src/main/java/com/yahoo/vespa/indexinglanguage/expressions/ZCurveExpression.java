@@ -14,9 +14,12 @@ import com.yahoo.geo.ZCurve;
  */
 public final class ZCurveExpression extends Expression {
 
+    public ZCurveExpression() {
+        super(PositionDataType.INSTANCE);
+    }
+
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
-        if (input == null) return null;
         if ( ! (input instanceof StructDataType struct))
             throw new VerificationException(this, "This requires a struct as input, but got " + input.getName());
         requireIntegerField(PositionDataType.FIELD_X, struct);
@@ -41,8 +44,6 @@ public final class ZCurveExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        if (context.getCurrentType() == null)
-            throw new VerificationException(this, "Expected input, but no input is provided");
         context.setCurrentType(createdOutputType());
     }
 

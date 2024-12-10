@@ -10,6 +10,10 @@ import com.yahoo.document.datatypes.StringFieldValue;
  */
 public final class HexEncodeExpression extends Expression {
 
+    public HexEncodeExpression() {
+        super(DataType.LONG);
+    }
+
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, DataType.LONG, context);

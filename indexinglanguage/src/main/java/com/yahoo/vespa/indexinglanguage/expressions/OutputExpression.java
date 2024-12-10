@@ -17,6 +17,7 @@ public abstract class OutputExpression extends Expression {
     private final String fieldName;
 
     public OutputExpression(String image, String fieldName) {
+        super(UnresolvedDataType.INSTANCE);
         this.image = image;
         this.fieldName = fieldName;
     }

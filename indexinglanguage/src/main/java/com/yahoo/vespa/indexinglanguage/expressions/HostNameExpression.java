@@ -3,7 +3,6 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.StringFieldValue;
-
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
@@ -11,8 +10,9 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
  */
 public final class HostNameExpression extends Expression {
 
-    @Override
-    public boolean requiresInput() { return false; }
+    public HostNameExpression() {
+        super(null);
+    }
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {

@@ -17,11 +17,9 @@ public final class ConstantExpression extends Expression {
     private final FieldValue value;
 
     public ConstantExpression(FieldValue value) {
+        super(null);
         this.value = Objects.requireNonNull(value);
     }
-
-    @Override
-    public boolean requiresInput() { return false; }
 
     public FieldValue getValue() { return value; }
 
@@ -33,11 +31,10 @@ public final class ConstantExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        if (outputType != null && ! value.getDataType().isAssignableTo(outputType))
+        if ( ! value.getDataType().isAssignableTo(outputType))
             throw new VerificationException(this, "Produces type " + value.getDataType().getName() + ", but type " +
                                             outputType.getName() + " is required");
-        super.setOutputType(outputType, context);
-        return null;
+        return super.setOutputType(outputType, context);
     }
 
     @Override

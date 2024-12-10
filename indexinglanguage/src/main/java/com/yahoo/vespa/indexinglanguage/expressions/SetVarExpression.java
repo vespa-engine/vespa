@@ -11,6 +11,7 @@ public final class SetVarExpression extends Expression {
     private final String varName;
 
     public SetVarExpression(String varName) {
+        super(UnresolvedDataType.INSTANCE);
         this.varName = varName;
     }
 
@@ -24,15 +25,12 @@ public final class SetVarExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        if (outputType == null) return null;
         setVariableType(outputType, context);
         return super.setOutputType(outputType, context);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        if (context.getCurrentType() == null)
-            throw new VerificationException(this, "Expected input, but no input is provided");
         setVariableType(context.getCurrentType(), context);
     }
 
