@@ -18,6 +18,7 @@ public final class TokenizeExpression extends Expression {
     private final AnnotatorConfig config;
 
     public TokenizeExpression(Linguistics linguistics, AnnotatorConfig config) {
+        super(DataType.STRING);
         this.linguistics = linguistics;
         this.config = config;
     }

@@ -10,9 +10,7 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -32,7 +30,7 @@ public class ToStringTestCase {
         Expression exp = new ToStringExpression();
         assertVerify(DataType.INT, exp, DataType.STRING);
         assertVerify(DataType.STRING, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'to_string': Expected input, but no input is provided", null, exp);
+        assertVerifyThrows("Invalid expression 'to_string': Expected any input, but no input is specified", null, exp);
     }
 
     @Test

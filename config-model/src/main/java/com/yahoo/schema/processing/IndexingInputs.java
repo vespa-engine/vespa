@@ -75,7 +75,7 @@ public class IndexingInputs extends Processor {
 
         @Override
         protected Expression doConvert(Expression exp) {
-            if (exp.requiresInput()) {
+            if (exp.requiredInputType() != null) {
                 return new StatementExpression(new InputExpression(field.getName()), exp);
             } else {
                 return exp;

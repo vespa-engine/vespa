@@ -9,6 +9,10 @@ import com.yahoo.document.datatypes.StringFieldValue;
  */
 public final class TrimExpression extends Expression {
 
+    public TrimExpression() {
+        super(DataType.STRING);
+    }
+
     @Override
     protected void doVerify(VerificationContext context) {
         context.setCurrentType(createdOutputType());

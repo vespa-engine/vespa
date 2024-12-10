@@ -10,9 +10,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
+import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
+import static org.junit.Assert.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -54,6 +53,6 @@ public class EchoTestCase {
         Expression exp = new EchoExpression();
         assertVerify(DataType.INT, exp, DataType.INT);
         assertVerify(DataType.STRING, exp, DataType.STRING);
+        assertVerifyThrows("Invalid expression 'echo': Expected any input, but no input is specified", null, exp);
     }
-
 }

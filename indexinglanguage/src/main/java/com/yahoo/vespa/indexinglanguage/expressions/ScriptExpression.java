@@ -32,7 +32,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     public ScriptExpression(Collection<? extends StatementExpression> statements) {
-        super(statements);
+        super(statements, resolveInputType(statements));
     }
 
     @Override
@@ -86,6 +86,20 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
             if (context.getFieldValue(inputField) != null)
                 return true;
         return false;
+    }
+
+    private static DataType resolveInputType(Collection<? extends StatementExpression> list) {
+        DataType prev = null;
+        for (Expression exp : list) {
+            DataType next = exp.requiredInputType();
+            if (prev == null) {
+                prev = next;
+            } else if (next != null && !prev.isAssignableFrom(next)) {
+                throw new VerificationException(ScriptExpression.class, "Statements require conflicting input types, " +
+                                                                        prev.getName() + " vs " + next.getName());
+            }
+        }
+        return prev;
     }
 
     @Override

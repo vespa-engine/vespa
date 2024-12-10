@@ -5,7 +5,6 @@ import com.yahoo.document.DataType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -17,8 +16,12 @@ public class VerificationContext {
     private DataType currentType;
     private String outputField;
 
+    public VerificationContext() {
+        this(null);
+    }
+
     public VerificationContext(FieldTypeAdapter fieldTypes) {
-        this.fieldTypes = Objects.requireNonNull(fieldTypes);
+        this.fieldTypes = fieldTypes;
     }
 
     public VerificationContext verify(Expression expression) {

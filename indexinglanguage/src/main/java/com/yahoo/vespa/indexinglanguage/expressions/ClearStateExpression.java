@@ -8,8 +8,9 @@ import com.yahoo.document.DataType;
  */
 public final class ClearStateExpression extends Expression {
 
-    @Override
-    public boolean requiresInput() { return false; }
+    public ClearStateExpression() {
+        super(null);
+    }
 
     @Override
     protected void doVerify(VerificationContext context) {

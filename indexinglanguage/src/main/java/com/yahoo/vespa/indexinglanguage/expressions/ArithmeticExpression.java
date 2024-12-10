@@ -3,13 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.NumericDataType;
-import com.yahoo.document.datatypes.ByteFieldValue;
-import com.yahoo.document.datatypes.DoubleFieldValue;
-import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.FloatFieldValue;
-import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.document.datatypes.LongFieldValue;
-import com.yahoo.document.datatypes.NumericFieldValue;
+import com.yahoo.document.datatypes.*;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
@@ -54,13 +48,11 @@ public final class ArithmeticExpression extends CompositeExpression {
     private final Expression right;
 
     public ArithmeticExpression(Expression left, Operator op, Expression right) {
+        super(requiredInputType(left, right));
         this.left = Objects.requireNonNull(left);
         this.op = Objects.requireNonNull(op);
         this.right = Objects.requireNonNull(right);
     }
-
-    @Override
-    public boolean requiresInput() { return false; }
 
     public Expression getLeftHandSide() { return left; }
 
@@ -83,21 +75,15 @@ public final class ArithmeticExpression extends CompositeExpression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        if (outputType == null) return null;
         super.setOutputType(outputType, context);
         DataType leftInput = left.setOutputType(AnyNumericDataType.instance, context);
         DataType rightInput = right.setOutputType(AnyNumericDataType.instance, context);
-
-        if (leftInput == null) return getInputType(context);
-        if (rightInput == null) return getInputType(context);
         if (leftInput.isAssignableTo(rightInput))
             return rightInput;
         else if (rightInput.isAssignableTo(leftInput))
             return leftInput;
         else
-            throw new VerificationException(this, "The left argument requires " + leftInput.getName() +
-                                                  ", while the right argument requires " + rightInput.getName() +
-                                                  ": These are incompatible");
+            return getInputType(context);
     }
 
     @Override
@@ -130,6 +116,17 @@ public final class ArithmeticExpression extends CompositeExpression {
         FieldValue input = context.getCurrentValue();
         context.setCurrentValue(evaluate(context.setCurrentValue(input).execute(left).getCurrentValue(),
                                          context.setCurrentValue(input).execute(right).getCurrentValue()));
+    }
+
+    private static DataType requiredInputType(Expression left, Expression right) {
+        DataType leftType = left.requiredInputType();
+        DataType rightType = right.requiredInputType();
+        if (leftType == null) return rightType;
+        if (rightType == null) return leftType;
+        if (!leftType.equals(rightType))
+            throw new VerificationException(ArithmeticExpression.class, "Operands require conflicting input types, " +
+                                                                        leftType.getName() + " vs " + rightType.getName());
+        return leftType;
     }
 
     @Override

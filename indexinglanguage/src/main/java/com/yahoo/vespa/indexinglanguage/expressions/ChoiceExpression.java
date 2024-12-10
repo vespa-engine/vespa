@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -28,7 +30,7 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     }
 
     public ChoiceExpression(Collection<? extends Expression> choices) {
-        super(choices);
+        super(choices, resolveInputType(choices));
     }
 
     @Override
@@ -80,6 +82,27 @@ public class ChoiceExpression extends ExpressionList<Expression> {
             if (context.getCurrentValue() != null)
                 break; // value found
         }
+    }
+
+    private static DataType resolveInputType(Collection<? extends Expression> list) {
+        DataType previousInput = null;
+        DataType previousOutput = null;
+        for (Expression choice : list) {
+            DataType thisInput = choice.requiredInputType();
+            if (previousInput == null)
+                previousInput = thisInput;
+            else if (thisInput != null && !previousInput.isAssignableFrom(thisInput))
+                throw new VerificationException(ScriptExpression.class, "Choice expression require conflicting input types, " +
+                                                                        previousInput.getName() + " vs " + thisInput.getName());
+
+            DataType thisOutput = choice.createdOutputType();
+            if (previousOutput == null)
+                previousOutput = thisOutput;
+            else if (thisOutput != null && !previousOutput.isAssignableFrom(thisOutput))
+                throw new VerificationException(ScriptExpression.class, "Choice expression produce conflicting output types, " +
+                                                                        previousOutput.getName() + " vs " + thisOutput.getName());
+        }
+        return previousInput;
     }
 
     @Override

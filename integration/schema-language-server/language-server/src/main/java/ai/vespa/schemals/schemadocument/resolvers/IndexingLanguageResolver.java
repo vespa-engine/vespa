@@ -58,11 +58,12 @@ public class IndexingLanguageResolver {
         if (indexingLanguageNode.isASTInstance(indexingElm.class)) {
             var expression = ((indexingElm)indexingLanguageNode.getOriginalSchemaNode()).expression;
 
-            if (expression != null && expression.requiresInput() && !context.fieldIndex().getIsInsideDoc(fieldDefinitionSymbol)) {
+            if (expression != null && expression.requiredInputType() != null && !context.fieldIndex().getIsInsideDoc(fieldDefinitionSymbol)) {
                 diagnostics.add(new SchemaDiagnostic.Builder()
                         .setRange(indexingLanguageNode.get(0).getRange())
                         .setMessage(
-                            "Fields defined outside the document must start with an expression creating a value (e.g 'input <field>')")
+                            "Expected " + expression.requiredInputType().getName() + " input, but no input is specified. " +
+                            "Fields defined outside the document must start with indexing statements explicitly collecting input.")
                         .setSeverity(DiagnosticSeverity.Error)
                         .build());
             }
@@ -126,10 +127,10 @@ public class IndexingLanguageResolver {
             statement originalNode = (statement)node.getOriginalIndexingNode();
             StatementExpression expression = originalNode.expression;
 
-            if (expression != null && expression.requiresInput() && !context.fieldIndex().getIsInsideDoc(containingFieldDefinition)) {
+            if (expression != null && expression.requiredInputType() != null && !context.fieldIndex().getIsInsideDoc(containingFieldDefinition)) {
                 diagnostics.add(new SchemaDiagnostic.Builder()
                     .setRange(node.getRange())
-                    .setMessage("Fields defined outside the document must start with an expression creating a value (e.g 'input <field>')")
+                    .setMessage("Expected " + expression.requiredInputType().getName() + " input, but no input is specified. Fields defined outside the document must start with indexing statements explicitly collecting input.")
                     .setSeverity(DiagnosticSeverity.Error)
                     .build());
             }

@@ -26,6 +26,7 @@ public final class ExactExpression extends Expression {
     private final int maxTokenLength;
 
     private ExactExpression(OptionalInt maxTokenLength) {
+        super(DataType.STRING);
         this.maxTokenLength = maxTokenLength.isPresent() ? maxTokenLength.getAsInt() : AnnotatorConfig.getDefaultMaxTokenLength();
     }
 

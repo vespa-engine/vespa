@@ -15,6 +15,7 @@ public final class ToWsetExpression extends Expression {
     private final Boolean removeIfZero;
 
     public ToWsetExpression(boolean createIfNonExistent, boolean removeIfZero) {
+        super(UnresolvedDataType.INSTANCE);
         this.createIfNonExistent = createIfNonExistent;
         this.removeIfZero = removeIfZero;
     }
@@ -26,7 +27,6 @@ public final class ToWsetExpression extends Expression {
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {
         super.setInputType(input, context);
-        if (input == null) return null;
         return outputType(input);
     }
 
@@ -40,8 +40,6 @@ public final class ToWsetExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        if (context.getCurrentType() == null)
-            throw new VerificationException(this, "Expected input, but no input is provided");
         context.setCurrentType(outputType(context.getCurrentType()));
     }
 

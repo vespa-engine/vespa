@@ -13,24 +13,13 @@ final class SimpleExpression extends Expression {
     private boolean hasVerifyValue = false;
     private FieldValue executeValue;
     private DataType verifyValue;
-    private final DataType requiredInput;
     private DataType createdOutput;
 
     public SimpleExpression() {
-        this(null);
+        super(null);
     }
-
     public SimpleExpression(DataType requiredInput) {
-        this.requiredInput = requiredInput;
-    }
-
-    @Override
-    public boolean requiresInput() { return requiredInput != null; }
-
-    public SimpleExpression setVerifyValue(DataType verifyValue) {
-        this.hasVerifyValue = true;
-        this.verifyValue = verifyValue;
-        return this;
+        super(requiredInput);
     }
 
     public SimpleExpression setExecuteValue(FieldValue executeValue) {
@@ -39,28 +28,15 @@ final class SimpleExpression extends Expression {
         return this;
     }
 
-    public SimpleExpression setCreatedOutput(DataType createdOutput) {
-        this.createdOutput = createdOutput;
+    public SimpleExpression setVerifyValue(DataType verifyValue) {
+        this.hasVerifyValue = true;
+        this.verifyValue = verifyValue;
         return this;
     }
 
-    @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        super.setInputType(inputType, requiredInput, context);
-        return createdOutput;
-    }
-
-    @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(createdOutput, outputType, null, context);
-        return requiredInput;
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        if (hasVerifyValue) {
-            context.setCurrentType(verifyValue);
-        }
+    public SimpleExpression setCreatedOutput(DataType createdOutput) {
+        this.createdOutput = createdOutput;
+        return this;
     }
 
     @Override
@@ -71,13 +47,20 @@ final class SimpleExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        if (hasVerifyValue) {
+            context.setCurrentType(verifyValue);
+        }
+    }
+
+    @Override
     public DataType createdOutputType() {
         return createdOutput;
     }
 
     @Override
     public int hashCode() {
-        return hashCode(executeValue) + hashCode(verifyValue) + hashCode(createdOutput);
+        return hashCode(executeValue) + hashCode(verifyValue) + hashCode(requiredInputType()) + hashCode(createdOutput);
     }
 
     @Override
@@ -87,6 +70,7 @@ final class SimpleExpression extends Expression {
         if (!equals(executeValue, other.executeValue)) return false;
         if (hasVerifyValue != other.hasVerifyValue) return false;
         if (!equals(verifyValue, other.verifyValue)) return false;
+        if (!equals(requiredInputType(), other.requiredInputType())) return false;
         if (!equals(createdOutput, other.createdOutput)) return false;
         return true;
     }
