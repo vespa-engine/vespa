@@ -78,8 +78,8 @@ io.jsonwebtoken:jjwt-api:${java-jjwt.vespa.version}
 io.jsonwebtoken:jjwt-impl:${java-jjwt.vespa.version}
 io.jsonwebtoken:jjwt-jackson:${java-jjwt.vespa.version}
 io.netty:netty-buffer:${netty.vespa.version}
-io.netty:netty-codec-http2:${netty.vespa.version}
-io.netty:netty-codec-http:${netty.vespa.version}
+io.netty:netty-codec-http2:4.1.112.Final
+io.netty:netty-codec-http:4.1.112.Final
 io.netty:netty-codec:${netty.vespa.version}
 io.netty:netty-common:${netty.vespa.version}
 io.netty:netty-handler:${netty.vespa.version}
