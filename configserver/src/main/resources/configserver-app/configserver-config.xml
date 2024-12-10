@@ -1,0 +1,6 @@
+<config name="container.qr">
+  <shutdown>
+    <!-- High shutdown timeout, as deployments may take a long time -->
+    <timeout>600</timeout>
+  </shutdown>
+</config>
