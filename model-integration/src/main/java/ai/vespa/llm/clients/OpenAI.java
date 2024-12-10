@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.clients;
 
+import ai.vespa.generative.GeneratorUtils;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.client.openai.OpenAiClient;
 import ai.vespa.llm.completion.Completion;
@@ -8,6 +9,7 @@ import ai.vespa.llm.completion.Prompt;
 import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.language.process.Generator;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

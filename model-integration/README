@@ -1,4 +1,4 @@
-3rd party ML models and converters from these to ranking expresssions, provided as a separate bundle.
+3rd party ML models and converters from these to ranking expressions, provided as a separate bundle.
 
 This has two purposes
 - Make converters (importers) available to config models while loading them in just a single instance even when
