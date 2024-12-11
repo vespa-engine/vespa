@@ -108,6 +108,12 @@ lrucache_map<P>::move(next_t from, next_t to) {
     }
 }
 
+template <typename P>
+typename lrucache_map<P>::iterator
+lrucache_map<P>::iter_to_last() noexcept {
+    return iterator(this, _tail); // If _tail is npos, this is implicitly == end()
+}
+
 template< typename P >
 void
 lrucache_map<P>::erase(const K & key) {
