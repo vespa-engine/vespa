@@ -50,14 +50,14 @@ public class Flags {
 
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
-            List.of("baldersheim"), "2020-12-02", "2024-12-31",
+            List.of("baldersheim"), "2020-12-02", "2025-02-01",
             "Default limit for when to apply termwise query evaluation",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundStringFlag QUERY_DISPATCH_POLICY = defineStringFlag(
             "query-dispatch-policy", "adaptive",
-            List.of("baldersheim"), "2022-08-20", "2024-12-31",
+            List.of("baldersheim"), "2022-08-20", "2025-02-01",
             "Select query dispatch policy, valid values are adaptive, round-robin, best-of-random-2," +
                     " latency-amortized-over-requests, latency-amortized-over-time",
             "Takes effect at redeployment (requires restart)",
@@ -65,129 +65,128 @@ public class Flags {
 
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
-            List.of("baldersheim"), "2023-03-30", "2024-12-31",
+            List.of("baldersheim"), "2023-03-30", "2025-02-01",
             "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
     public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
             "feed-sequencer-type", "THROUGHPUT",
-            List.of("baldersheim"), "2020-12-02", "2024-12-31",
+            List.of("baldersheim"), "2020-12-02", "2025-02-01",
             "Selects type of sequenced executor used for feeding in proton, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
-            List.of("geirst, baldersheim"), "2021-10-21", "2024-12-31",
+            List.of("geirst, baldersheim"), "2021-10-21", "2025-02-01",
             "Max amount of memory holding updates to an attribute before we do a commit.",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
-            List.of("baldersheim"), "2020-12-02", "2024-12-31",
+            List.of("baldersheim"), "2020-12-02", "2025-02-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
-            List.of("baldersheim"), "2020-12-02", "2024-12-31",
+            List.of("baldersheim"), "2020-12-02", "2025-02-01",
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
-            List.of("baldersheim"), "2020-12-02", "2024-12-31",
+            List.of("baldersheim"), "2020-12-02", "2025-02-01",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
             "feed-concurrency", 0.5,
-            List.of("baldersheim"), "2020-12-02", "2024-12-31",
+            List.of("baldersheim"), "2020-12-02", "2025-02-01",
             "How much concurrency should be allowed for feed",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundDoubleFlag FEED_NICENESS = defineDoubleFlag(
             "feed-niceness", 0.0,
-            List.of("baldersheim"), "2022-06-24", "2024-12-31",
+            List.of("baldersheim"), "2022-06-24", "2025-02-01",
             "How nice feeding shall be",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
             "mbus-java-num-targets", 2,
-            List.of("baldersheim"), "2022-07-05", "2024-12-31",
+            List.of("baldersheim"), "2022-07-05", "2025-02-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
             "mbus-cpp-num-targets", 2,
-            List.of("baldersheim"), "2022-07-05", "2024-12-31",
+            List.of("baldersheim"), "2022-07-05", "2025-02-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
             "rpc-num-targets", 2,
-            List.of("baldersheim"), "2022-07-05", "2024-12-31",
+            List.of("baldersheim"), "2022-07-05", "2025-02-01",
             "Number of rpc targets per content node",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-java-events-before-wakeup", 1,
-            List.of("baldersheim"), "2022-07-05", "2024-12-31",
+            List.of("baldersheim"), "2022-07-05", "2025-02-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-cpp-events-before-wakeup", 1,
-            List.of("baldersheim"), "2022-07-05", "2024-12-31",
+            List.of("baldersheim"), "2022-07-05", "2025-02-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "rpc-events-before-wakeup", 1,
-            List.of("baldersheim"), "2022-07-05", "2024-12-31",
+            List.of("baldersheim"), "2022-07-05", "2025-02-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_NUM_NETWORK_THREADS = defineIntFlag(
             "mbus-num-network-threads", 1,
-            List.of("baldersheim"), "2022-07-01", "2024-12-31",
+            List.of("baldersheim"), "2022-07-01", "2025-02-01",
             "Number of threads used for mbus network",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag SHARED_STRING_REPO_NO_RECLAIM = defineFeatureFlag(
             "shared-string-repo-no-reclaim", false,
-            List.of("baldersheim"), "2022-06-14", "2024-12-31",
+            List.of("baldersheim"), "2022-06-14", "2025-02-01",
             "Controls whether we do track usage and reclaim unused enum values in shared string repo",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
             "container-dump-heap-on-shutdown-timeout", false,
-            List.of("baldersheim"), "2021-09-25", "2024-12-31",
+            List.of("baldersheim"), "2021-09-25", "2025-02-01",
             "Will trigger a heap dump during if container shutdown times out",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag LOAD_CODE_AS_HUGEPAGES = defineFeatureFlag(
             "load-code-as-hugepages", false,
-            List.of("baldersheim"), "2022-05-13", "2024-12-31",
+            List.of("baldersheim"), "2022-05-13", "2025-02-01",
             "Will try to map the code segment with huge (2M) pages",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundDoubleFlag CONTAINER_SHUTDOWN_TIMEOUT = defineDoubleFlag(
             "container-shutdown-timeout", 50.0,
-            List.of("baldersheim"), "2021-09-25", "2024-12-31",
+            List.of("baldersheim"), "2021-09-25", "2025-02-01",
             "Timeout for shutdown of a jdisc container",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -209,7 +208,7 @@ public class Flags {
 
     public static final UnboundStringFlag SYSTEM_MEMORY_HIGH = defineStringFlag(
             "system-memory-high", "",
-            List.of("baldersheim"), "2023-02-14", "2024-12-31",
+            List.of("baldersheim"), "2023-02-14", "2025-02-01",
             "The value to write to /sys/fs/cgroup/system.slice/memory.high, if non-empty. " +
             "You may want lower memory.high before lowering memory.max, " +
             "and raise memory.high after raising memory.max.",
@@ -218,7 +217,7 @@ public class Flags {
 
     public static final UnboundStringFlag SYSTEM_MEMORY_MAX = defineStringFlag(
             "system-memory-max", "",
-            List.of("baldersheim"), "2023-02-14", "2024-12-31",
+            List.of("baldersheim"), "2023-02-14", "2025-02-01",
             "The value to write to /sys/fs/cgroup/system.slice/memory.max, if non-empty. " +
             "You may want lower memory.high before lowering memory.max, " +
             "and raise memory.high after raising memory.max.",
@@ -234,7 +233,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_COMPACT_BUFFERS = defineIntFlag(
                 "max-compact-buffers", 1,
-                List.of("baldersheim", "geirst", "toregge"), "2021-12-15", "2024-12-31",
+                List.of("baldersheim", "geirst", "toregge"), "2021-12-15", "2025-02-01",
                 "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
                 "Takes effect at redeployment",
             INSTANCE_ID);
