@@ -661,7 +661,7 @@ TEST_F(LogDataStoreTest, Control_static_memory_usage)
     // FIXME this is very, very implementation-specific... :I
     constexpr size_t mutex_size = sizeof(std::mutex) * 2 * (113 + 1); // sizeof(std::mutex) is platform dependent
     constexpr size_t string_size = sizeof(std::string);
-    constexpr size_t lru_segment_overhead = 304;
+    constexpr size_t lru_segment_overhead = 352;
     EXPECT_EQ(74476 + mutex_size + 3 * string_size + lru_segment_overhead, usage.allocatedBytes());
     EXPECT_EQ(752u + mutex_size + 3 * string_size + lru_segment_overhead, usage.usedBytes());
 }

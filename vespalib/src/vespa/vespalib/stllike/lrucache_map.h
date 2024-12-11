@@ -116,6 +116,12 @@ public:
     const V & get(const K & key) const { return HashTable::find(key)->second._value; }
 
     /**
+     * Returns an iterator to the tail of the LRU, i.e. the oldest element, or end()
+     * iff the mapping is empty. Note: this is not a reverse iterator.
+     */
+    iterator iter_to_last() noexcept;
+
+    /**
      * This simply erases the object.
      */
     void erase(const K & key);

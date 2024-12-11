@@ -317,4 +317,43 @@ TEST(LruCacheMapTest, implicit_lru_trimming_on_oversized_insert_does_not_remove_
     EXPECT_EQ(lru_key_order(cache), "2");
 }
 
+TEST(LruCacheMapTest, can_get_iter_to_last_element) {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(5);
+    // Returned iterator is end() if the map is empty
+    EXPECT_TRUE(cache.iter_to_last() == cache.end());
+    cache.insert(1, "a");
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 1);
+    cache.insert(2, "b");
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 1); // LRU tail is still 1
+    cache.insert(3, "c");
+    cache.insert(4, "d");
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 1); // ... and still 1.
+    // Move 1 to LRU head. Tail is now 2.
+    ASSERT_TRUE(cache.find_and_ref(1));
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 2);
+    // Move 3 to LRU head. Tail is still 2.
+    ASSERT_TRUE(cache.find_and_ref(3));
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 2);
+    // Move 2 to LRU head. Tail is now 4.
+    ASSERT_TRUE(cache.find_and_ref(2));
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 4);
+
+    EXPECT_EQ(lru_key_order(cache), "2 3 1 4");
+
+    cache.erase(4);
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 1);
+    cache.erase(3);
+    cache.erase(2);
+    cache.erase(1);
+    ASSERT_TRUE(cache.iter_to_last() == cache.end());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
