@@ -175,9 +175,12 @@ make_posting_list_cache(const ProtonConfig& cfg)
     // assumptions about how things work...! Otherwise, things will likely explode.
     posting_max_bytes = std::max(posting_max_bytes, 0L);
     int64_t bitvector_max_bytes = std::max(cfg.index.cache.bitvector.maxbytes, 0L);
+    int64_t posting_lfu_max_element_count = std::max(cfg.index.cache.postinglist.lfuSketchMaxElementCount, 0L);
+    int64_t bitvector_lfu_max_element_count = std::max(cfg.index.cache.bitvector.lfuSketchMaxElementCount, 0L);
     PostingListCache::CacheSizingParams params(posting_max_bytes, bitvector_max_bytes,
                                                cfg.index.cache.postinglist.slruProtectedSegmentRatio,
-                                               cfg.index.cache.bitvector.slruProtectedSegmentRatio);
+                                               cfg.index.cache.bitvector.slruProtectedSegmentRatio,
+                                               posting_lfu_max_element_count, bitvector_lfu_max_element_count);
     return std::make_shared<PostingListCache>(params);
 }
 

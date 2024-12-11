@@ -21,18 +21,23 @@ private:
     std::unique_ptr<BitVectorCache> _bitvector_cache;
 public:
     class CacheSizingParams {
-        size_t _posting_max_bytes   = 0;
-        size_t _bitvector_max_bytes = 0;
-        double _posting_slru_protected_ratio   = 0.0; // [0, 1]
-        double _bitvector_slru_protected_ratio = 0.0; // [0, 1]
+        size_t _posting_max_bytes               = 0;
+        size_t _bitvector_max_bytes             = 0;
+        double _posting_slru_protected_ratio    = 0.0; // [0, 1]
+        double _bitvector_slru_protected_ratio  = 0.0; // [0, 1]
+        size_t _posting_lfu_max_element_count   = 0;
+        size_t _bitvector_lfu_max_element_count = 0;
     public:
         constexpr CacheSizingParams() noexcept = default;
         CacheSizingParams(size_t posting_max_bytes, size_t bitvector_max_bytes,
-                          double posting_slru_protected_ratio, double bitvector_slru_protected_ratio) noexcept
+                          double posting_slru_protected_ratio, double bitvector_slru_protected_ratio,
+                          size_t posting_lfu_max_element_count, size_t bitvector_lfu_max_element_count) noexcept
             : _posting_max_bytes(posting_max_bytes),
               _bitvector_max_bytes(bitvector_max_bytes),
               _posting_slru_protected_ratio(std::min(std::max(posting_slru_protected_ratio, 0.0), 1.0)),
-              _bitvector_slru_protected_ratio(std::min(std::max(bitvector_slru_protected_ratio, 0.0), 1.0))
+              _bitvector_slru_protected_ratio(std::min(std::max(bitvector_slru_protected_ratio, 0.0), 1.0)),
+              _posting_lfu_max_element_count(posting_lfu_max_element_count),
+              _bitvector_lfu_max_element_count(bitvector_lfu_max_element_count)
         {
         }
 
@@ -54,6 +59,12 @@ public:
         }
         [[nodiscard]] size_t bitvector_slru_probationary_bytes() const noexcept {
             return _bitvector_max_bytes - bitvector_slru_protected_bytes();
+        }
+        [[nodiscard]] size_t posting_lfu_max_element_count() const noexcept {
+            return _posting_lfu_max_element_count;
+        }
+        [[nodiscard]] size_t bitvector_lfu_max_element_count() const noexcept {
+            return _bitvector_lfu_max_element_count;
         }
     };
 

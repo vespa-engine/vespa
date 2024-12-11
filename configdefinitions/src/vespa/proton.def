@@ -561,6 +561,18 @@ index.cache.bitvector.maxbytes long default=0 restart
 index.cache.postinglist.slru_protected_segment_ratio double default=0.0 restart
 index.cache.bitvector.slru_protected_segment_ratio double default=0.0 restart
 
+## Configures the cache to use a LFU frequency sketch to estimate the frequency
+## of cacheable elements and to prevent less frequently accessed elements from
+## displacing more frequent ones.
+## The specified element count should be at least as high as the expected number
+## of elements the cache could contain (_not_ its size in bytes), as this has
+## direct impact on how accurate the (inherently probabilistic) frequency
+## estimates are.
+##
+## Any value greater than 0 enables LFU semantics, 0 disables LFU (default).
+index.cache.postinglist.lfu_sketch_max_element_count long default=0 restart
+index.cache.bitvector.lfu_sketch_max_element_count long default=0 restart
+
 ## Specifies which tensor implementation to use for all backend code.
 ##
 ## TENSOR_ENGINE (default) uses DefaultTensorEngine, which has been the production implementation for years.
