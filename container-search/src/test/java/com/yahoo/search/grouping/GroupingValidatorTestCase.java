@@ -126,8 +126,8 @@ public class GroupingValidatorTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Grouping request references key source attribute 'key_source' with data type 'INT32' " +
-                    "that is different than data type 'STRING' of key attribute 'map.key'",
+            assertEquals("Grouping request references key source attribute 'key_source' with data type 'int' " +
+                    "that is different than data type 'string' of key attribute 'map.key'",
                     e.getMessage());
         }
     }
@@ -140,28 +140,28 @@ public class GroupingValidatorTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Grouping request references key source attribute 'key_source' which is not of single value type",
+            assertEquals("Grouping request references key source attribute 'key_source' with type 'array<string>' which is not of single value type",
                     e.getMessage());
         }
     }
 
-    private static void unsupported_attribute_type_throws(String name, AttributesConfig.Attribute.Datatype.Enum datatype) {
+    private static void unsupported_attribute_type_throws(String name,
+                                                          AttributesConfig.Attribute.Datatype.Enum datatype,
+                                                          String typeName) {
         try {
-            var builder = new AttributesConfig.Builder();
-            builder.attribute(new AttributesConfig.Attribute.Builder().name(name).datatype(datatype));
-            validateGrouping(new AttributesConfig(builder),
-                    "all(group(" + name + ") each(output(count())))");
+            validate_attribute_type(name, datatype);
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Grouping request references attribute '" + name + "' " +
-                            "with unsupported data type '" + datatype.toString() + "' collection type 'SINGLE'",
+                            "with unsupported type '" + typeName + "'",
                     e.getMessage());
         }
     }
 
-    private static void supported_attribute_type_works(String name, AttributesConfig.Attribute.Datatype.Enum datatype) {
+    private static void validate_attribute_type(String name, AttributesConfig.Attribute.Datatype.Enum datatype) {
         var builder = new AttributesConfig.Builder();
-        builder.attribute(new AttributesConfig.Attribute.Builder().name(name).datatype(datatype));
+        builder.attribute(new AttributesConfig.Attribute.Builder().name(name).datatype(datatype)
+                .tensortype(datatype == AttributesConfig.Attribute.Datatype.TENSOR ? "tensor(x[2])" : ""));
         validateGrouping(new AttributesConfig(builder),
                 "all(group(" + name + ") each(output(count())))");
 
@@ -169,27 +169,27 @@ public class GroupingValidatorTestCase {
 
     @Test
     void tensor_attribute_throws() {
-        unsupported_attribute_type_throws("tensor", AttributesConfig.Attribute.Datatype.TENSOR);
+        unsupported_attribute_type_throws("tensor", AttributesConfig.Attribute.Datatype.TENSOR, "tensor(x[2])");
     }
 
     @Test
     void predicate_attribute_throws() {
-        unsupported_attribute_type_throws("predicate", AttributesConfig.Attribute.Datatype.PREDICATE);
+        unsupported_attribute_type_throws("predicate", AttributesConfig.Attribute.Datatype.PREDICATE, "predicate");
     }
 
     @Test
     void reference_attribute_throws() {
-        unsupported_attribute_type_throws("reference", AttributesConfig.Attribute.Datatype.REFERENCE);
+        unsupported_attribute_type_throws("reference", AttributesConfig.Attribute.Datatype.REFERENCE, "reference");
     }
 
     @Test
     void raw_attribute_is_ok() {
-        supported_attribute_type_works("raw", AttributesConfig.Attribute.Datatype.RAW);
+        validate_attribute_type("raw", AttributesConfig.Attribute.Datatype.RAW);
     }
 
     @Test
     void bool_attribute_is_ok() {
-        supported_attribute_type_works("mybool", AttributesConfig.Attribute.Datatype.BOOL);
+        validate_attribute_type("mybool", AttributesConfig.Attribute.Datatype.BOOL);
     }
 
     @Test
@@ -207,7 +207,7 @@ public class GroupingValidatorTestCase {
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
             assertEquals("Grouping request references attribute 'map.key' " +
-                            "with unsupported data type 'RAW' collection type 'SINGLE' for map lookup",
+                            "with unsupported type 'raw' for map lookup",
                     e.getMessage());
         }
     }
