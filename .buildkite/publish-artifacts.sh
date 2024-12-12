@@ -12,11 +12,10 @@ cd "$WORKDIR/artifacts/$ARCH"
 
 tar -cf rpm-repo.tar rpms &
 tar -cf maven-repo.tar maven-repo
-cp -a rpms/vespa-config-model-fat-*.rpm .
 wait
 
-for FILE in *.tar *.rpm; do
+for FILE in *.tar; do
     cosign sign-blob -y --oidc-provider=buildkite-agent --output-signature "$FILE.sig" --output-certificate "$FILE.pem" "$FILE"
 done
 
-buildkite-agent artifact upload "*.tar;*.tar.sig;*.tar.pem;*.rpm;*.rpm.sig;*.rpm.pem" "$BUILDKITE_ARTIFACT_DESTINATION/$VESPA_VERSION/artifacts/$ARCH"
+buildkite-agent artifact upload "*.tar;*.tar.sig;*.tar.pem" "$BUILDKITE_ARTIFACT_DESTINATION/$VESPA_VERSION/artifacts/$ARCH"
