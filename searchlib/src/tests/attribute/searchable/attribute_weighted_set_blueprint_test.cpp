@@ -37,7 +37,7 @@ setupAttributeManager(MockAttributeManager &manager, bool isFilter)
 {
     AttributeVector::DocId docId;
     {
-        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("integer", Config(BasicType("int64")).setIsFilter(isFilter));
+        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("integer", Config(BasicType::INT64).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
 
         auto *attr = (IntegerAttribute*)(attr_sp.get());
@@ -49,7 +49,7 @@ setupAttributeManager(MockAttributeManager &manager, bool isFilter)
         }
     }
     {
-        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("string", Config(BasicType("string")).setIsFilter(isFilter));
+        AttributeVector::SP attr_sp = AttributeFactory::createAttribute("string", Config(BasicType::STRING).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
 
         auto *attr = (StringAttribute*)(attr_sp.get());
@@ -62,7 +62,7 @@ setupAttributeManager(MockAttributeManager &manager, bool isFilter)
     }
     {
         AttributeVector::SP attr_sp = AttributeFactory::createAttribute(
-                "multi", Config(BasicType("int64"), search::attribute::CollectionType("array")).setIsFilter(isFilter));
+                "multi", Config(BasicType::INT64, search::attribute::CollectionType::ARRAY).setIsFilter(isFilter));
         manager.addAttribute(attr_sp);
         auto *attr = (IntegerAttribute*)(attr_sp.get());
         for (size_t i = 1; i < 10; ++i) {

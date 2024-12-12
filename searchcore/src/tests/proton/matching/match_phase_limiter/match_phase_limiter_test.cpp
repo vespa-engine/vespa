@@ -446,8 +446,8 @@ struct RangeLimitFixture {
           a1FieldSpec("a1", 1, 1),
           f1FieldSpec("f1", 2, 2)
     {
-        attrManager.addAttribute(search::AttributeFactory::createAttribute(a1FieldSpec.getName(), Config(BasicType("int64"))));
-        attrManager.addAttribute(search::AttributeFactory::createAttribute(f1FieldSpec.getName(), Config(BasicType("double"))));
+        attrManager.addAttribute(search::AttributeFactory::createAttribute(a1FieldSpec.getName(), Config(BasicType::INT64)));
+        attrManager.addAttribute(search::AttributeFactory::createAttribute(f1FieldSpec.getName(), Config(BasicType::DOUBLE)));
     }
     search::AttributeBlueprintFactory attrSearchable;
     search::attribute::test::MockAttributeManager attrManager;
