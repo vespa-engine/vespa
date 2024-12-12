@@ -65,6 +65,40 @@ public class GroupingValidator extends Searcher {
         return execution.search(query);
     }
 
+    static private String datatypeAsString(AttributesConfig.Attribute attribute) {
+        var datatype = attribute.datatype();
+        if (datatype == AttributesConfig.Attribute.Datatype.TENSOR && !attribute.tensortype().isEmpty()) {
+            return attribute.tensortype();
+        }
+        return switch (datatype) {
+            case STRING -> "string";
+            case BOOL -> "bool";
+            case UINT2 -> "uint2";
+            case UINT4 -> "uint4";
+            case INT8 -> "byte";
+            case INT16 -> "short";
+            case INT32 -> "int";
+            case INT64 -> "long";
+            case FLOAT16 -> "float16";
+            case FLOAT -> "float";
+            case DOUBLE -> "double";
+            case PREDICATE -> "predicate";
+            case TENSOR -> "tensor";
+            case REFERENCE -> "reference";
+            case RAW -> "raw";
+            case NONE -> "none";
+        };
+    }
+
+    static private String typeAsString(AttributesConfig.Attribute attribute) {
+        var collectiontype = attribute.collectiontype();
+        return switch(collectiontype) {
+            case SINGLE -> datatypeAsString(attribute);
+            case ARRAY -> "array<" + datatypeAsString(attribute) + ">";
+            case WEIGHTEDSET -> "weightedset<" + datatypeAsString(attribute) + ">";
+        };
+    }
+
     static private boolean isPrimitiveAttribute(AttributesConfig.Attribute attribute) {
         var datatype = attribute.datatype();
         return  datatype == AttributesConfig.Attribute.Datatype.INT8 ||
@@ -92,8 +126,7 @@ public class GroupingValidator extends Searcher {
             return;
         }
         throw new IllegalInputException("Grouping request references attribute '" +
-                attributeName + "' with unsupported data type '" + attribute.datatype() +
-                "' collection type '" + attribute.collectiontype() + "'" +
+                attributeName + "' with unsupported type '" + typeAsString(attribute) + "'" +
                 (isMapLookup ? " for map lookup" : ""));
     }
 
@@ -103,13 +136,14 @@ public class GroupingValidator extends Searcher {
         AttributesConfig.Attribute keySourceAttribute = attributes.get(keySourceAttributeName);
         if (!keySourceAttribute.datatype().equals(keyAttribute.datatype())) {
             throw new IllegalInputException("Grouping request references key source attribute '" +
-                                            keySourceAttributeName + "' with data type '" + keySourceAttribute.datatype() +
-                                            "' that is different than data type '" + keyAttribute.datatype() + "' of key attribute '" +
+                                            keySourceAttributeName + "' with data type '" + datatypeAsString(keySourceAttribute) +
+                                            "' that is different than data type '" + datatypeAsString(keyAttribute) + "' of key attribute '" +
                                             keyAttributeName + "'");
         }
         if (!keySourceAttribute.collectiontype().equals(AttributesConfig.Attribute.Collectiontype.Enum.SINGLE)) {
             throw new IllegalInputException("Grouping request references key source attribute '" +
-                                            keySourceAttributeName + "' which is not of single value type");
+                                            keySourceAttributeName + "' with type '" + typeAsString(keySourceAttribute) + "' " +
+                                            "which is not of single value type");
         }
     }
 
