@@ -18,7 +18,7 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsRequest;
-import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsResponse;
+import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
 
 import javax.net.ssl.SSLContext;
 import java.net.URI;
@@ -163,12 +163,10 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     @Override
     public List<Secret> listSecretVersions(Key key) {
         var client = getClient(key.vaultName());
-
         try {
-            ListSecretVersionIdsResponse response = client.listSecretVersionIds(
-                    ListSecretVersionIdsRequest.builder()
-                            .secretId(awsSecretId(key)).build());
-
+            var response = client.listSecretVersionIds(ListSecretVersionIdsRequest.builder()
+                                                               .secretId(awsSecretId(key))
+                                                               .build());
             var secretVersions = response.versions().stream()
                     .map(version -> getSecret(key, SecretVersionId.of(version.versionId())))
                     .sorted().toList();
@@ -176,6 +174,8 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
             secretVersions.forEach(secret -> cache.put(new VersionKey(key, secret.version()), secret));
 
             return secretVersions;
+        } catch (ResourceNotFoundException e) {
+            return List.of();
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to list secret versions for %s:\n%s".formatted(key, e.getMessage()));
         }
