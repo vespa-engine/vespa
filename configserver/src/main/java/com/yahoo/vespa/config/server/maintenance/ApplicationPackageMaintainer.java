@@ -43,6 +43,7 @@ import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     private static final Logger log = Logger.getLogger(ApplicationPackageMaintainer.class.getName());
+    private static final Duration fileDownloaderTimeout = Duration.ofSeconds(30);
 
     private final File downloadDirectory;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
@@ -126,7 +127,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
         List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(applicationRepository.configserverConfig());
         ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
         ConnectionPool connectionPool = new FileDistributionConnectionPool(configSourceSet, supervisor);
-        return new FileDownloader(connectionPool, supervisor, downloadDirectory, Duration.ofSeconds(60));
+        return new FileDownloader(connectionPool, supervisor, downloadDirectory, fileDownloaderTimeout);
     }
 
     @Override
