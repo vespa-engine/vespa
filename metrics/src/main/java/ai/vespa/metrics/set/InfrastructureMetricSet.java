@@ -213,6 +213,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.ATLASSIAN_EXCEPTIONS.count());
         addMetric(metrics, ControllerMetrics.ATLASSIAN_LAST_SUCCESS.last());
         addMetric(metrics, ControllerMetrics.ATLASSIAN_ASSETS.max());
+        addMetric(metrics, ControllerMetrics.ATLASSIAN_SERVICEDESK_CUSTOMERS.max());
 
         return metrics;
     }

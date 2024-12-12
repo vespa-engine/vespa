@@ -56,6 +56,7 @@ public enum ControllerMetrics implements VespaMetrics {
     ATLASSIAN_EXCEPTIONS("atlassian.exceptions", Unit.FAILURE, "Controller: Atlassian exceptions"),
     ATLASSIAN_LAST_SUCCESS("atlassian.last_success", Unit.SECONDS_SINCE_EPOCH, "Controller: Last successful Atlassian synchronization"),
     ATLASSIAN_ASSETS("atlassian.assets", Unit.ITEM, "Controller: Number of assets in Atlassian"),
+    ATLASSIAN_SERVICEDESK_CUSTOMERS("atlassian.servicedesk.customers", Unit.ITEM, "Controller: Number of customers in the Atlassian Service Desk"),
 
     // Metrics per API, metrics names generated in ControllerMaintainer/MetricsReporter
     OPERATION_APPLICATION("operation.application", Unit.REQUEST, "Controller: Requests for /application API"),
