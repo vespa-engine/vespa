@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIds
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsResponse;
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretsRequest;
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretsResponse;
+import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
 import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry;
 import software.amazon.awssdk.services.secretsmanager.model.SecretVersionsListEntry;
 
@@ -75,9 +76,13 @@ public class AsmSecretTesterBase {
         // Used by both reader and writer testers
         @Override
         public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) {
+            if (! secrets.containsKey(request.secretId())) {
+                // Emulate AWS behavior
+                throw ResourceNotFoundException.builder().message("Secret not found: " + request.secretId()).build();
+            }
             return ListSecretVersionIdsResponse.builder()
                     .name(request.secretId())
-                    .versions(secrets.getOrDefault(request.secretId(), List.of()).stream()
+                    .versions(secrets.get(request.secretId()).stream()
                                       .map(version -> SecretVersionsListEntry.builder()
                                               .versionId(version.version())
                                               .versionStages(toAwsStages(version.state()))
