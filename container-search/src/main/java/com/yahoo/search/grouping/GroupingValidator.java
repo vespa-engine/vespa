@@ -110,10 +110,11 @@ public class GroupingValidator extends Searcher {
                 datatype == AttributesConfig.Attribute.Datatype.DOUBLE;
     }
 
-    static private boolean isSingleRawOrBoolAttribute(AttributesConfig.Attribute attribute) {
+    static private boolean isSingleRawBoolOrReferenceAttribute(AttributesConfig.Attribute attribute) {
         var datatype = attribute.datatype();
         return  (datatype == AttributesConfig.Attribute.Datatype.RAW ||
-                datatype == AttributesConfig.Attribute.Datatype.BOOL) &&
+                datatype == AttributesConfig.Attribute.Datatype.BOOL ||
+                datatype == AttributesConfig.Attribute.Datatype.REFERENCE) &&
                 attribute.collectiontype() == AttributesConfig.Attribute.Collectiontype.SINGLE;
     }
 
@@ -122,7 +123,7 @@ public class GroupingValidator extends Searcher {
         if (attribute == null) {
             throw new UnavailableAttributeException(clusterName, attributeName);
         }
-        if (isPrimitiveAttribute(attribute) || (!isMapLookup && isSingleRawOrBoolAttribute(attribute))) {
+        if (isPrimitiveAttribute(attribute) || (!isMapLookup && isSingleRawBoolOrReferenceAttribute(attribute))) {
             return;
         }
         throw new IllegalInputException("Grouping request references attribute '" +
