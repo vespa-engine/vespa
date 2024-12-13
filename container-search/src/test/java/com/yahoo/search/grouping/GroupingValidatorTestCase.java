@@ -178,8 +178,8 @@ public class GroupingValidatorTestCase {
     }
 
     @Test
-    void reference_attribute_throws() {
-        unsupported_attribute_type_throws("reference", AttributesConfig.Attribute.Datatype.REFERENCE, "reference");
+    void reference_attribute_is_ok() {
+        validate_attribute_type("reference", AttributesConfig.Attribute.Datatype.REFERENCE);
     }
 
     @Test
