@@ -87,7 +87,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean logserverOtelCol = false;
     private boolean symmetricPutAndActivateReplicaSelection = false;
     private boolean enforceStrictlyIncreasingClusterStateVersions = false;
-    private boolean launchApplicationAthenzService = false;
     private boolean distributionConfigFromClusterController = false;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -150,7 +149,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
     @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
-    @Override public boolean launchApplicationAthenzService() { return launchApplicationAthenzService; }
     @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
@@ -399,11 +397,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setEnforceStrictlyIncreasingClusterStateVersions(boolean enforce) {
         this.enforceStrictlyIncreasingClusterStateVersions = enforce;
-        return this;
-    }
-
-    public TestProperties setLaunchApplicationAthenzService(boolean launch) {
-        this.launchApplicationAthenzService = launch;
         return this;
     }
 
