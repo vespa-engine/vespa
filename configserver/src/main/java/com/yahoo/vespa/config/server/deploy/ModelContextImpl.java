@@ -363,7 +363,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean allowUserFilters;
         private final Duration endpointConnectionTtl;
         private final List<String> requestPrefixForLoggingContent;
-        private final boolean launchApplicationAthenzService;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -414,7 +413,6 @@ public class ModelContextImpl implements ModelContext {
             this.endpointConnectionTtl = Duration.ofSeconds(PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource).with(applicationId).value());
             this.dataplaneTokens = dataplaneTokens;
             this.requestPrefixForLoggingContent = PermanentFlags.LOG_REQUEST_CONTENT.bindTo(flagSource).with(applicationId).value();
-            this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(flagSource).with(applicationId).with(modelVersion).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -526,8 +524,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
 
         @Override public List<String> requestPrefixForLoggingContent() { return requestPrefixForLoggingContent; }
-
-        @Override public boolean launchApplicationAthenzService() { return launchApplicationAthenzService; }
     }
 
 }

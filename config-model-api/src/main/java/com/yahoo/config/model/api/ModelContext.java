@@ -183,7 +183,8 @@ public interface ModelContext {
 
         default List<String> requestPrefixForLoggingContent() { return List.of(); }
 
-        default boolean launchApplicationAthenzService() { return false; }
+        // Remove after 8.457 is the oldest model
+        default boolean launchApplicationAthenzService() { return true; }
 
     }
 
