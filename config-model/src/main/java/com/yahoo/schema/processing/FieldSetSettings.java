@@ -26,7 +26,7 @@ import java.util.logging.Level;
 // (this requires adding normalizing and stemming settings to FieldSet).
 public class FieldSetSettings extends Processor {
 
-    private static String fieldSetDocUrl = "https://docs.vespa.ai/en/reference/schema-reference.html#fieldset";
+    private static final String fieldSetDocUrl = "https://docs.vespa.ai/en/reference/schema-reference.html#fieldset";
 
     public FieldSetSettings(Schema schema,
                             DeployLogger deployLogger,
@@ -66,7 +66,8 @@ public class FieldSetSettings extends Processor {
                 if ( ! matching.equals(fieldMatching)) {
                     warn(schema, field.asField(),
                             "The matching settings for the fields in " + fieldSet + " are inconsistent " +
-                                    "(explicitly or because of field type). This may lead to recall and ranking issues.");
+                                    "(explicitly or because of field type). This may lead to recall and ranking issues. " +
+                                    "See " + fieldSetDocUrl);
                     return;
                 }
             }
@@ -85,7 +86,8 @@ public class FieldSetSettings extends Processor {
                 if ( ! normalizing.equals(fieldNorm)) {
                     warn(schema, field.asField(),
                             "The normalization settings for the fields in " + fieldSet + " are inconsistent " +
-                                    "(explicitly or because of field type). This may lead to recall and ranking issues.");
+                                    "(explicitly or because of field type). This may lead to recall and ranking issues. " +
+                                    "See " + fieldSetDocUrl);
                     return;
                 }
             }
@@ -104,7 +106,8 @@ public class FieldSetSettings extends Processor {
                     warn(schema, field.asField(),
                             "The stemming settings for the fields in the fieldset '"+fieldSet.getName()+
                                     "' are inconsistent (explicitly or because of field type). " +
-                                    "This may lead to recall and ranking issues.");
+                                    "This may lead to recall and ranking issues. " +
+                                    "See " + fieldSetDocUrl);
                     return;
                 }
             }

@@ -24,10 +24,11 @@ public class FieldSetSettingsTestCase {
         assertArrayEquals(new String[]{
                 "For schema 'child', field 'ps': " +
                         "The matching settings for the fields in fieldset 'default' are inconsistent (explicitly or because of field type). " +
-                        "This may lead to recall and ranking issues.",
+                        "This may lead to recall and ranking issues. See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset",
                 "For schema 'child', field 'ps': " +
                         "The normalization settings for the fields in fieldset 'default' are inconsistent (explicitly or because of field type). " +
-                        "This may lead to recall and ranking issues."}, logger.warnings.toArray());
+                        "This may lead to recall and ranking issues. See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset"},
+                logger.warnings.toArray());
     }
 
     @Test
