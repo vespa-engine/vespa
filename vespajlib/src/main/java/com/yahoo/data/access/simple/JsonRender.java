@@ -81,7 +81,7 @@ public final class JsonRender {
                 case '\r': out.append('\\').append('r'); break;
                 case '\t': out.append('\\').append('t'); break;
                 default:
-                    if (c > 0x1f && c < 127) {
+                    if (c > 0x1f) {
                         out.append(c);
                     } else { // requires escaping according to RFC 4627
                         out.append('\\').append('u');
