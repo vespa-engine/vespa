@@ -58,6 +58,23 @@ public class LowercaseTestCase {
     }
 
     @Test
+    public void testTurkishI() {
+        String dottedCapitalI = "\u0130";
+        String lc = Lowercase.toLowerCase(dottedCapitalI);
+        assertEquals("i", lc);
+    }
+
+    @Test
+    public void testAllChars() {
+        for (char c = 1; c != 0; c++) {
+            char [] carray = {c};
+            String s = new String(carray);
+            String lc = Lowercase.toLowerCase(s);
+            assertEquals(1, lc.length());
+        }
+    }
+
+    @Test
     @Ignore
     public void performance() {
         for (int i=0; i < 2; i++) {

@@ -12,6 +12,8 @@ import java.util.Locale;
  */
 public final class Lowercase {
 
+    private static final char upperIwithDot = 0x0130;
+
     /**
      * Return a lowercased version of the given string. Since this is language
      * independent, this is more of a case normalization operation than
@@ -22,9 +24,12 @@ public final class Lowercase {
      * @return a string containing only lowercase character
      */
     public static String toLowerCase(String in) {
+        if (in.indexOf(upperIwithDot) != -1) {
+            return in.replace(upperIwithDot, 'I').toLowerCase(Locale.ENGLISH);
+        }
         return in.toLowerCase(Locale.ENGLISH);
-
     }
+
     public static String toUpperCase(String in) {
         return in.toUpperCase(Locale.ENGLISH);
     }
