@@ -8,7 +8,17 @@
 ucs4_t
 getUCS4Char(const char *src)
 {
-    return Fast_UnicodeUtil::GetUTF8Char(src);
+    const char *input = src;
+    ucs4_t result = Fast_UnicodeUtil::GetUTF8Char(src);
+    if (result != 0) {
+        ucs4_t extra = Fast_UnicodeUtil::GetUTF8Char(src);
+        if (extra != 0) {
+            fprintf(stderr, "Warning: extra character from '%s' -> U+%04x U+%04X\n",
+                    input, result, extra);
+        }
+        result |= (extra << 16);
+    }
+    return result;
 }
 
 int
@@ -39,4 +49,3 @@ main(int argc, char ** argv)
     input.close();
     return 0;
 }
-

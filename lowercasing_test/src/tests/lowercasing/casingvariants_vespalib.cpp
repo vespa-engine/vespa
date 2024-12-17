@@ -12,8 +12,18 @@ using vespalib::Utf8Writer;
 uint32_t
 getUCS4Char(const char *src)
 {
+    const char *input = src;
     Utf8ReaderForZTS reader(src);
-    return reader.getChar();
+    uint32_t result = reader.getChar();
+    if (result != 0) {
+        uint32_t extra = reader.getChar();
+        if (extra != 0) {
+            fprintf(stderr, "Warning: extra character from '%s' -> U+%04x U+%04X\n",
+                    input, result, extra);
+        }
+        result |= (extra << 16);
+    }
+    return result;
 }
 
 std::string
@@ -50,4 +60,3 @@ main(int argc, char ** argv)
     input.close();
     return 0;
 }
-
