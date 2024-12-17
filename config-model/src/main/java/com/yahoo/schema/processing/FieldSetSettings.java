@@ -48,11 +48,18 @@ public class FieldSetSettings extends Processor {
     }
 
     private void checkFieldNames(Schema schema, FieldSet fieldSet) {
-        for (String field : fieldSet.getFieldNames()) {
-            if (schema.getField(field) == null)
-                throw new IllegalArgumentException("For " + schema + ": Field '" + field + "' in " +
-                                                   fieldSet + " does not exist.");
-        }
+        var invalidFieldNames = fieldSet.getFieldNames().stream()
+                .filter(f -> schema.getField(f) == null)
+                .map(f -> "'" + f  + "'")
+                .toList();
+        if (invalidFieldNames.isEmpty()) return;
+
+        var message = "For " + schema + ": ";
+        if (invalidFieldNames.size() == 1)
+            message = message +  "Field " + invalidFieldNames.get(0) + " in " + fieldSet + " does not exist.";
+        else
+            message = message + "Fields " + String.join(",", invalidFieldNames) + " in " + fieldSet + " do not exist.";
+        throw new IllegalArgumentException(message);
     }
 
     private void checkMatching(Schema schema, FieldSet fieldSet) {
@@ -67,7 +74,10 @@ public class FieldSetSettings extends Processor {
                     warn(schema, field.asField(),
                             "The matching settings for the fields in " + fieldSet + " are inconsistent " +
                                     "(explicitly or because of field type). This may lead to recall and ranking issues. " +
+                                    "The matching setting that will be used for this fieldset is " + matching.getType() + ". " +
                                     "See " + fieldSetDocUrl);
+                    // TODO: Remove (see FieldSetSettingsTestCase#inconsistentMatchingShouldStillSetMatchingForFieldSet)
+                    // but when doing so matching for a fieldset might change
                     return;
                 }
             }
@@ -88,7 +98,6 @@ public class FieldSetSettings extends Processor {
                             "The normalization settings for the fields in " + fieldSet + " are inconsistent " +
                                     "(explicitly or because of field type). This may lead to recall and ranking issues. " +
                                     "See " + fieldSetDocUrl);
-                    return;
                 }
             }
         }
@@ -108,7 +117,6 @@ public class FieldSetSettings extends Processor {
                                     "' are inconsistent (explicitly or because of field type). " +
                                     "This may lead to recall and ranking issues. " +
                                     "See " + fieldSetDocUrl);
-                    return;
                 }
             }
         }
