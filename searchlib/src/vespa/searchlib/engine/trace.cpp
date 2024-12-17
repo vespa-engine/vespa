@@ -127,6 +127,16 @@ Trace::addEvent(uint32_t level, std::string_view event) {
 }
 
 void
+Trace::addEvent(uint32_t level, std::string_view event, std::string_view tag) {
+    if (!shouldTrace(level)) { return; }
+
+    Cursor & trace = traces().addObject();
+    addTimeStamp(trace);
+    trace.setString("event", event);
+    trace.setString("tag", tag);
+}
+
+void
 Trace::addTimeStamp(Cursor & trace) {
     trace.setDouble("timestamp_ms", vespalib::count_ns(_relativeTime.timeSinceDawn())/1000000.0);
 }

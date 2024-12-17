@@ -138,7 +138,9 @@ MatchEngine::doSearch(const SearchRequest & searchRequest) {
                                   searchRequest.maxhits,
                                   searchRequest.offset,
                                   searchRequest.sortSpec.empty() ? "" : " (with sorting)",
-                                  searchRequest.groupSpec.empty() ? "" : " (with grouping)"));
+                                  searchRequest.groupSpec.empty() ? "" : " (with grouping)"),
+            "query_start");
+
     ISearchHandler::SP searchHandler;
     auto threadBundle = _threadBundlePool.getBundle();
     { // try to find the match handler corresponding to the specified search doc type
@@ -164,7 +166,8 @@ MatchEngine::doSearch(const SearchRequest & searchRequest) {
     }
     searchRequest.trace().addEvent(4,
             vespalib::make_string("returning %zu hits from total %" PRIu64,
-                                  ret->hits.size(), ret->totalHitCount));
+                                  ret->hits.size(), ret->totalHitCount),
+            "query_reply");
     return ret;
 }
 
