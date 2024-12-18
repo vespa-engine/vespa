@@ -29,9 +29,10 @@ public class FieldSetSettingsTestCase {
         var logger = new TestableDeployLogger();
         assertDoesNotThrow(() -> createFromStrings(logger, childSd("fieldset default { fields: ci,ps }"), parentSd()));
         assertArrayEquals(new String[]{
-                "For schema 'child', field 'ps': " +
-                        "The matching settings for the fields in fieldset 'default' are inconsistent (explicitly or because of field type). " +
-                        "This may lead to recall and ranking issues. The matching setting that will be used for this fieldset is TEXT. " +
+                "For schema 'child': " +
+                        "The matching settings in fieldset 'default' are inconsistent (explicitly or because of field type). " +
+                        "This may lead to recall and ranking issues. The fieldset will use matching TEXT. " +
+                        "[ Field 'ci' has matching TEXT,  Field 'ps' has matching WORD] " +
                         "See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset",
                 "For schema 'child', field 'ps': " +
                         "The normalization settings for the fields in fieldset 'default' are inconsistent (explicitly or because of field type). " +

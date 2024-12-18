@@ -71,11 +71,26 @@ public class FieldSetSettings extends Processor {
                 matching = fieldMatching;
             } else {
                 if ( ! matching.equals(fieldMatching)) {
-                    warn(schema, field.asField(),
-                            "The matching settings for the fields in " + fieldSet + " are inconsistent " +
-                                    "(explicitly or because of field type). This may lead to recall and ranking issues. " +
-                                    "The matching setting that will be used for this fieldset is " + matching.getType() + ". " +
-                                    "See " + fieldSetDocUrl);
+                    final var buf = new StringBuilder();
+                    buf.append("For schema '").append(schema.getName()).append("': ");
+                    buf.append("The matching settings in ").append(fieldSet);
+                    buf.append(" are inconsistent (explicitly or because of field type). ");
+                    buf.append("This may lead to recall and ranking issues. ");
+                    Matching original = fieldSet.getMatching();
+                    if (original == null) {
+                        buf.append("The fieldset will use matching TEXT. ");
+                    } else {
+                        buf.append("The fieldset will use matching ").append(original.getType()).append(". ");
+                    }
+                    var list = fieldSet.getFieldNames().stream()
+                            .map(name -> schema.getField(name))
+                            .filter(f -> (f != null))
+                            .filter(f -> (f.getMatching() != null))
+                            .map(f -> " Field '" + f.asField().getName() + "' has matching " + f.getMatching().getType())
+                            .toList();
+                    buf.append(list);
+                    buf.append(" See ").append(fieldSetDocUrl);
+                    deployLogger.logApplicationPackage(Level.WARNING, buf.toString());
                     // TODO: Remove (see FieldSetSettingsTestCase#inconsistentMatchingShouldStillSetMatchingForFieldSet)
                     // but when doing so matching for a fieldset might change
                     return;
