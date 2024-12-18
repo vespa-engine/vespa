@@ -1812,8 +1812,8 @@
       "public final java.lang.String toString()",
       "public final int hashCode()",
       "public final boolean equals(java.lang.Object)",
-      "public java.lang.String name()",
-      "public java.lang.String id()"
+      "public java.lang.String id()",
+      "public java.lang.String name()"
     ],
     "fields" : [ ]
   },
