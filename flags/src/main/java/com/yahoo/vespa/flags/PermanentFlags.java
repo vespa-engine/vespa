@@ -546,13 +546,6 @@ public class PermanentFlags {
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
-    public static final UnboundLongFlag CONFIG_SERVER_UNKNOWN_STATUS_SESSION_EXPIRY_TIME = defineLongFlag(
-            "config-server-unknown-status-session-expiry-time", 6,
-            "Expiry time in hours for sessions with unknown status, can be lowered if there are incidents/bugs " +
-                    " or free disk space is too low and one needs to delete sessions",
-            "Takes effect after reboot of config server node"
-    );
-
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
