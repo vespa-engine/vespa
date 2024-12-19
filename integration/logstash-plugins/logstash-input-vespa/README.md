@@ -9,6 +9,17 @@ Download and unpack/install Logstash, then:
 bin/logstash-plugin install logstash-input-vespa
 ```
 
+## Development
+
+To run tests, you'll need to clone the Logstash branch you're developing the plugin for. See https://github.com/elastic/logstash
+
+Then:
+```
+export LOGSTASH_PATH=/path/to/logstash/repository/clone
+export LOGSTASH_SOURCE=1
+bundle exec rspec
+```
+
 ## Usage
 
 Minimal Logstash config example:
