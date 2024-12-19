@@ -1,4 +1,7 @@
 # encoding: utf-8
+
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 require "logstash/inputs/base"
 require "logstash/namespace"
 require "net/http"
@@ -21,6 +24,12 @@ class LogStash::Inputs::Vespa < LogStash::Inputs::Base
 
   # The cluster parameter to use in the request.
   config :cluster, :validate => :string, :required => true
+
+  # Maximum number of retries for failed HTTP requests
+  config :max_retries, :validate => :number, :default => 3
+
+  # Delay in seconds for the first retry attempt. We double this delay for each subsequent retry.
+  config :retry_delay, :validate => :number, :default => 1
 
   # Path to the client certificate file for mTLS.
   config :client_cert, :validate => :path
@@ -85,6 +94,9 @@ class LogStash::Inputs::Vespa < LogStash::Inputs::Base
     uri.query = URI.encode_www_form(@uri_params)
     continuation = nil
 
+    retries = 0
+    current_delay = @retry_delay
+
     loop do
       response = fetch_documents_from_vespa(uri)
       # response should look like:
@@ -120,28 +132,58 @@ class LogStash::Inputs::Vespa < LogStash::Inputs::Base
         end
 
       else
-        @logger.error("Failed to fetch documents from Vespa", :request => uri.to_s,
+        # Handle retriable status codes (5xx)
+        if (500..599).include?(response.code.to_i) && retries < (@max_retries - 1)
+          retries += 1
+          @logger.warn("Retriable error from Vespa, retrying", 
+                      :response_code => response.code,
+                      :retry_count => retries,
+                      :max_retries => @max_retries,
+                      :next_retry_delay => current_delay)
+          sleep(current_delay)
+          current_delay *= 2
+        else
+          @logger.error("Failed to fetch documents from Vespa", :request => uri.to_s,
                       :response_code => response.code, :response_message => response.message)
-        break # TODO retry? Only on certain codes?
+          break
+        end
       end # if response.is_a?(Net::HTTPSuccess)
 
     end # loop do
   end # def run
 
   def fetch_documents_from_vespa(uri)
-    http = Net::HTTP.new(uri.host, uri.port)
-    if uri.scheme == "https"
-      http.use_ssl = true
-      http.cert = @cert
-      http.key = @key
-      http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-    end
+    retries = 0
+    current_delay = @retry_delay  # Start with the initial delay
+    
+    begin
+      http = Net::HTTP.new(uri.host, uri.port)
+      if uri.scheme == "https"
+        http.use_ssl = true
+        http.cert = @cert
+        http.key = @key
+        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+      end
 
-    request = Net::HTTP::Get.new(uri.request_uri)
-    http.request(request)
-  rescue => e
-      @logger.error("Failed to make HTTP request to Vespa", :error => e.message)
-      nil
+      request = Net::HTTP::Get.new(uri.request_uri)
+      http.request(request)
+    rescue => e
+      retries += 1
+      if retries < @max_retries
+        @logger.warn("Failed to make HTTP request to Vespa, retrying", 
+                    :error => e.message, 
+                    :retry_count => retries, 
+                    :max_retries => @max_retries,
+                    :next_retry_delay => current_delay)
+        sleep(current_delay)
+        current_delay *= 2  # Double the delay for next retry
+        retry
+      else
+        @logger.error("Failed to make HTTP request to Vespa after #{@max_retries} attempts", 
+                     :error => e.message)
+        nil
+      end
+    end
   end # def fetch_documents_from_vespa
 
   def parse_response(response)

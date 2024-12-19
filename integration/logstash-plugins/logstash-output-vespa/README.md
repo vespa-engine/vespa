@@ -61,7 +61,9 @@ filter {
     columns => ["id", "description", ...]
   }
 
-  # remove fields that we don't need. Here you can do a lot more processing
+  # remove fields we don't need
+  # NOTE: the fields below are added by Logstash by default. You probably *need* this block
+  # otherwise Vespa will reject documents complaining that e.g. @timestamp is an unknown field
   mutate {
     remove_field => ["@timestamp", "@version", "event", "host", "log", "message"]
   }
