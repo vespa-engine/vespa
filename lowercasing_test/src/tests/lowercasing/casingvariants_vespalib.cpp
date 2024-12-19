@@ -21,6 +21,8 @@ getUCS4Char(const char *src)
             fprintf(stderr, "Warning: extra character from '%s' -> U+%04x U+%04X\n",
                     input, result, extra);
         }
+        // mangle two characters into one fake UCS4 number
+        // (in theory we should compare vector<UCS4>, but this is good enough)
         result |= (extra << 16);
     }
     return result;
