@@ -29,7 +29,7 @@ public class SemanticRulesTest {
     private static final String rootWithDuplicateDefault = basePath + "semanticrules_with_duplicate_default_rule";
 
     @Test
-    void semanticRulesTest() throws ParseException, IOException {
+    void semanticRulesTest() throws ParseException {
         SemanticRuleBuilder ruleBuilder = new SemanticRuleBuilder();
         SemanticRules rules = ruleBuilder.build(FilesApplicationPackage.fromFile(new File(root)));
         SemanticRulesConfig.Builder configBuilder = new SemanticRulesConfig.Builder();
@@ -49,8 +49,8 @@ public class SemanticRulesTest {
     void rulesWithErrors() {
         try {
             new SemanticRuleBuilder().build(FilesApplicationPackage.fromFile(new File(rootWithErrors)));
-            fail("should fail with exception");
-        } catch (Exception e) {
+            fail("should fail with IllegalArgumentException, so that it is reported to the user as an error in application package");
+        } catch (IllegalArgumentException e) {
             assertEquals("com.yahoo.prelude.semantics.parser.ParseException: Could not parse rule 'invalid'", e.getMessage());
         }
     }
@@ -59,8 +59,8 @@ public class SemanticRulesTest {
     void rulesWithDuplicateDefault() {
         try {
             new SemanticRuleBuilder().build(FilesApplicationPackage.fromFile(new File(rootWithDuplicateDefault)));
-            fail("should fail with exception");
-        } catch (Exception e) {
+            fail("should fail with IllegalArgumentException, so that it is reported to the user as an error in application package");
+        } catch (IllegalArgumentException e) {
             assertEquals("Rules [one, other] are both marked as the default rule, there can only be one", e.getMessage());
         }
     }
