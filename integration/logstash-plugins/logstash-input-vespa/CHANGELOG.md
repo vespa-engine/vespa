@@ -1,3 +1,6 @@
+## 0.3.0
+added retry+backoff logic
+
 ## 0.2.0
 Added support for mTLS certificates, selector, page_size, backend_concurrency, timeout, from_timestamp, and to_timestamp
 

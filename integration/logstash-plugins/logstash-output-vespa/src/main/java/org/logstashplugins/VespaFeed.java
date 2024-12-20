@@ -72,7 +72,7 @@ public class VespaFeed implements Output {
     public static final PluginConfigSpec<Long> DOOM_PERIOD =
             PluginConfigSpec.numSetting("doom_period", 60);
 
-    private final FeedClient client;
+    private FeedClient client;
     private final String id;
     private final String namespace;
     private final boolean dynamicNamespace;
@@ -145,7 +145,15 @@ public class VespaFeed implements Output {
         objectMapper = ObjectMappers.JSON_MAPPER;
     }
 
-    private void validateOperationAndCreate() {
+    // Constructor for testing
+    protected VespaFeed(String id, Configuration config, Context context, FeedClient testClient) {
+        this(id, config, context);
+        if (testClient != null) {
+            this.client = testClient;
+        }
+    }
+
+    public void validateOperationAndCreate() {
         if (!dynamicOperation) {
             if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
                 throw new IllegalArgumentException("Operation must be put, update or remove");
@@ -156,7 +164,7 @@ public class VespaFeed implements Output {
         }
     }
 
-    private FeedClientBuilder addCertAndKeyToBuilder(Configuration config, FeedClientBuilder builder) {
+    protected static FeedClientBuilder addCertAndKeyToBuilder(Configuration config, FeedClientBuilder builder) {
         String clientCert = config.get(CLIENT_CERT);
         Path clientCertPath = null;
         if (clientCert != null) {
@@ -212,7 +220,7 @@ public class VespaFeed implements Output {
 
     }
 
-    private CompletableFuture<Result> asyncFeed(Event event) throws JsonProcessingException {
+    protected CompletableFuture<Result> asyncFeed(Event event) throws JsonProcessingException {
         Map<String, Object> eventData = event.getData();
 
         // we put the doc ID here
@@ -263,7 +271,6 @@ public class VespaFeed implements Output {
         doc.put("fields", eventData);
 
         // create the request to feed the document
-        //return client.put(docId, toJson(doc), operationParameters);
         if (operation.equals("put")) {
             return client.put(docId, toJson(doc), operationParameters);
         } else if (operation.equals("update")) {
@@ -279,7 +286,7 @@ public class VespaFeed implements Output {
      * @param docId
      * @return The operation parameters with create=true if applicable
      */
-    private OperationParameters addCreateIfApplicable(String operation, String docId) {
+    public OperationParameters addCreateIfApplicable(String operation, String docId) {
         OperationParameters operationParameters = OperationParameters.empty()
                 .timeout(Duration.ofSeconds(operationTimeout));
 
@@ -302,7 +309,7 @@ public class VespaFeed implements Output {
      * @param fieldName The field name to get
      * @return The value of the field or the field name if it doesn't exist
      */
-    private String getDynamicField(Event event, String fieldName) {
+    protected String getDynamicField(Event event, String fieldName) {
         Object namespaceFieldValue = event.getField(fieldName);
         if (namespaceFieldValue != null) {
             return namespaceFieldValue.toString();
@@ -311,7 +318,7 @@ public class VespaFeed implements Output {
         }
     }
 
-    private String toJson(Map<String, Object> eventData) throws JsonProcessingException {
+    protected String toJson(Map<String, Object> eventData) throws JsonProcessingException {
         return objectMapper.writeValueAsString(eventData);
     }
 
@@ -335,5 +342,37 @@ public class VespaFeed implements Output {
     @Override
     public String getId() {
         return id;
+    }
+
+    public boolean isDynamicNamespace() {
+        return dynamicNamespace;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public boolean isDynamicDocumentType() {
+        return dynamicDocumentType;
+    }
+
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public String getOperation() {
+        return operation;
+    }
+
+    public boolean isCreate() {
+        return create;
+    }
+
+    public boolean isDynamicOperation() {
+        return dynamicOperation;
+    }
+
+    public long getOperationTimeout() {
+        return operationTimeout;
     }
 }

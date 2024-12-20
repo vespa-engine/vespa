@@ -20,6 +20,13 @@ export LOGSTASH_SOURCE=1
 bundle exec rspec
 ```
 
+To run integration tests, you'll need to have a Vespa instance running + Logstash installed. Check out the `integration-test` directory for more information.
+
+```
+cd integration-test
+./run_tests.sh
+```
+
 ## Usage
 
 Minimal Logstash config example:
@@ -61,6 +68,12 @@ input {
 
     # HTTP request timeout
     timeout => 180
+
+    # maximum retries for failed HTTP requests
+    max_retries => 3
+
+    # delay in seconds for the first retry attempt. We double this delay for each subsequent retry.
+    retry_delay => 1
 
     # lower timestamp bound (microseconds since epoch)
     from_timestamp => 1600000000000000

@@ -14,8 +14,10 @@ If you're developing the plugin, you'll want to do something like:
 ```
 # build the gem
 ./gradlew gem
+# run tests
+./gradlew test
 # install it as a Logstash plugin
-/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.4.0.gem
+/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.5.2.gem
 # profit
 /opt/logstash/bin/logstash
 ```
@@ -23,6 +25,16 @@ Some more good info about Logstash Java plugins can be found [here](https://www.
 
 It looks like the JVM options from [here](https://github.com/logstash-plugins/.ci/blob/main/dockerjdk17.env)
 are useful to make JRuby's `bundle install` work.
+
+### Integration tests
+To run integration tests, you'll need to have a Vespa instance running + Logstash installed. Check out the `integration-test` directory for more information.
+
+```
+cd integration-test
+./run_tests.sh
+```
+
+### Publishing the gem
 
 Note to self: for some reason, `bundle exec rake publish_gem` fails, but `gem push logstash-output-vespa_feed-$VERSION.gem`
 does the trick.
