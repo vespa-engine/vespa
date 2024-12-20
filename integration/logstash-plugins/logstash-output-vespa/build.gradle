@@ -47,6 +47,7 @@ repositories {
 
 shadowJar {
     archiveClassifier.set('')
+    configurations = [project.configurations.runtimeClasspath, project.configurations.testRuntimeClasspath]
 }
 
 dependencies {
@@ -56,11 +57,19 @@ dependencies {
 
     implementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
 
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.17.2'
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.18.2'
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.18.2'
+    implementation 'com.fasterxml.jackson.core:jackson-core:2.18.2'
+    implementation 'com.fasterxml.jackson.core:jackson-annotations:2.18.2'
 
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.jruby:jruby-complete:9.1.13.0'
+    testImplementation 'org.jruby:jruby-complete:9.4.3.0'
+    testImplementation 'org.jruby:jruby-core:9.4.3.0'
     testImplementation 'org.apache.logging.log4j:log4j-core:2.9.1'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.mockito:mockito-core:5.11.0'
+    testImplementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
+    testImplementation fileTree(dir: LOGSTASH_CORE_PATH, include: "**/logstash-core.jar")
+    testImplementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:2.18.2'
 }
 
 clean {
@@ -111,4 +120,16 @@ tasks.register("gem"){
     doLast {
         buildGem(projectDir, buildDir, pluginInfo.pluginFullName() + ".gemspec")
     }
+}
+
+test {
+    doFirst {
+        println "Test runtime classpath:"
+        classpath.each { println it }
+    }
+}
+
+task integrationTest(type: Exec) {
+    workingDir 'integration-test'
+    commandLine './run_tests.sh'
 }
