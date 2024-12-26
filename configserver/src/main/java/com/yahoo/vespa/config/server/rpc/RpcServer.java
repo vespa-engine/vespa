@@ -227,6 +227,12 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                                   .methodDesc("set which file references to download")
                                   .paramDesc(0, "file references", "file reference to download")
                                   .returnDesc(0, "ret", "0 if success, 1 otherwise"));
+        getSupervisor().addMethod(new Method("filedistribution.triggerDownload", "Ss", "i", this::triggerDownload)
+                                          .requireCapabilities(Capability.CONFIGSERVER__FILEDISTRIBUTION_API)
+                                          .methodDesc("trigger download of file references from supplied source")
+                                          .paramDesc(0, "file references", "file reference to download")
+                                          .paramDesc(1, "address", "address (jrt spec) for a source to download from")
+                                          .returnDesc(0, "ret", "0 if success, 1 otherwise"));
     }
 
     /**
@@ -309,7 +315,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     }
 
     public void respond(JRTServerConfigRequest request) {
-        log.log(FINEST, () -> "Trace when responding:\n" + request.getRequestTrace().toString());
+        log.log(FINEST, () -> "Trace when responding to " + request + ":\n" + request.getRequestTrace().toString());
         request.getRequest().returnRequest();
     }
 
@@ -578,6 +584,28 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                             .forEach(fileReference -> downloadFromSource(fileReference, client.toString(), peerSpec));
                     req.returnValues().add(new Int32Value(0));
                 });
+    }
+
+    private void triggerDownload(Request req) {
+        log.log(FINE, () -> "Got request triggerDownload from " + req.target());
+        req.detach();
+        rpcAuthorizer.authorizeFileRequest(req)
+                     .thenRun(() -> { // okay to do in authorizer thread as downloadFromSource is async
+                         if (req.parameters().size() < 2) {
+                             log.log(FINE, () -> "No source to download from in triggerDownload()");
+                             return;
+                         }
+                         // Download directly from the source that has the file reference, which
+                         // is the client that sent the request
+                         List<String> fileReferenceStrings = List.of(req.parameters().get(0).asStringArray());
+                         var peerSpec = new Spec(req.parameters().get(1).asString());
+                         log.log(FINE, () -> "setFileReferencesToDownload: " + fileReferenceStrings + ", spec=" + peerSpec);
+                         fileReferenceStrings.stream()
+                                             .map(FileReference::new)
+                                             .forEach(fileReference -> downloadFromSource(fileReference, peerSpec.host(), peerSpec));
+                     });
+        req.returnValues().add(new Int32Value(0));
+        req.returnRequest();
     }
 
     private void downloadFromSource(FileReference fileReference, String client, Spec peerSpec) {
