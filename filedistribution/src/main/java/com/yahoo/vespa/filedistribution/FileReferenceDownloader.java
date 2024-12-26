@@ -132,8 +132,10 @@ public class FileReferenceDownloader {
 
         log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout);
         for (var source : ((JRTConnectionPool) connectionPool).getSources()) {
-            if (source.getTarget().peerSpec().equals(spec))
+            if (source.getAddress().equals(spec.toString()))
                 downloadExecutor.submit(() -> {
+                    log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec);
+                    downloads.add(fileReferenceDownload);
                     startDownloadRpc(fileReferenceDownload, 1, source);
                     downloads.remove(fileReference);
                 });
