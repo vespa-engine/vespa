@@ -44,6 +44,7 @@ import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReceiver;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
+import com.yahoo.yolean.Exceptions;
 
 import java.nio.ByteBuffer;
 import java.time.Duration;
@@ -66,6 +67,7 @@ import java.util.stream.Stream;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static java.util.logging.Level.FINE;
+import static java.util.logging.Level.FINEST;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -280,7 +282,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
             // Doing cancel here deals with the case where the timer is already running or has not run, so
             // there is no need for any extra check.
             if (delayedConfigResponse.cancel()) {
-                log.log(FINE, () -> logPre + "Timer cancelled for " + delayedConfigResponse.request);
+                log.log(FINEST, () -> logPre + "Timer cancelled for " + delayedConfigResponse.request);
                 // Do not wait for this request if we were unable to execute
                 if (addToRequestQueue(delayedConfigResponse.request, false, completionService)) {
                     responsesSent++;
@@ -307,7 +309,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     }
 
     public void respond(JRTServerConfigRequest request) {
-        log.log(FINE, () -> "Trace when responding:\n" + request.getRequestTrace().toString());
+        log.log(FINEST, () -> "Trace when responding:\n" + request.getRequestTrace().toString());
         request.getRequest().returnRequest();
     }
 
@@ -573,17 +575,21 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                     var peerSpec = client.peerSpec();
                     Stream.of(fileReferenceStrings)
                             .map(FileReference::new)
-                            .forEach(fileReference -> downloadFromSource(fileReference, client, peerSpec));
+                            .forEach(fileReference -> downloadFromSource(fileReference, client.toString(), peerSpec));
                     req.returnValues().add(new Int32Value(0));
                 });
     }
 
-    private void downloadFromSource(FileReference fileReference, Target client, Spec peerSpec) {
-        var fileReferenceDownload = new FileReferenceDownload(fileReference, client.toString());
-        var downloading = downloader.downloadFromSource(fileReferenceDownload, peerSpec);
-        log.log(FINE, () -> downloading
-                ? "Downloading file reference " + fileReference.value() + " from " + peerSpec
-                : "File reference " + fileReference.value() + " already exists");
+    private void downloadFromSource(FileReference fileReference, String client, Spec peerSpec) {
+        var fileReferenceDownload = new FileReferenceDownload(fileReference, client, false);
+        try {
+            var downloading = downloader.downloadFromSource(fileReferenceDownload, peerSpec);
+            log.log(FINE, () -> downloading
+                    ? "Downloading file reference " + fileReference.value() + " from " + peerSpec
+                    : "File reference " + fileReference.value() + " already exists");
+        } catch (Exception e) {
+            log.log(WARNING, "download from source failed: ", Exceptions.toMessageString(e));
+        }
     }
 
 }
