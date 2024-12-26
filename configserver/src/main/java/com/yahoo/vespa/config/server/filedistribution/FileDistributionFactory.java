@@ -7,6 +7,8 @@ import com.yahoo.config.application.api.FileRegistry;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Transport;
+import com.yahoo.vespa.flags.FlagSource;
+
 import java.io.File;
 
 /**
@@ -19,13 +21,15 @@ public class FileDistributionFactory implements AutoCloseable {
 
     protected final ConfigserverConfig configserverConfig;
     protected final FileDirectory fileDirectory;
+    private final FlagSource flagSource;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution"));
 
 
     @Inject
-    public FileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory) {
+    public FileDistributionFactory(ConfigserverConfig configserverConfig, FileDirectory fileDirectory, FlagSource flagSource) {
         this.configserverConfig = configserverConfig;
         this.fileDirectory = fileDirectory;
+        this.flagSource = flagSource;
     }
 
     public FileRegistry createFileRegistry(File applicationPackage) {
@@ -33,7 +37,7 @@ public class FileDistributionFactory implements AutoCloseable {
     }
 
     public FileDistribution createFileDistribution() {
-        return new FileDistributionImpl(supervisor);
+        return new FileDistributionImpl(supervisor, flagSource);
     }
 
     public AddFileInterface createFileManager(File applicationDir) {
