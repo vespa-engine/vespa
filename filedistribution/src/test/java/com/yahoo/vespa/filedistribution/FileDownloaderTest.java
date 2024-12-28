@@ -350,6 +350,9 @@ public class FileDownloaderTest {
             return 1;
         }
 
+        @Override
+        public List<Connection> connections() { return List.of();}
+
         void setResponseHandler(ResponseHandler responseHandler) {
             this.responseHandler = responseHandler;
         }

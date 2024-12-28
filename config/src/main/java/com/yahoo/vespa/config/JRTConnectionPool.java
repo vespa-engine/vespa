@@ -149,4 +149,7 @@ public class JRTConnectionPool implements ConnectionPool {
         }
     }
 
+    @Override
+    public List<Connection> connections() { return List.copyOf(connections.values()); }
+
 }
