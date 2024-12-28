@@ -574,8 +574,9 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                     Stream.of(fileReferenceStrings)
                             .map(FileReference::new)
                             .forEach(fileReference -> downloadFromSource(fileReference, client, peerSpec));
-                    req.returnValues().add(new Int32Value(0));
                 });
+        req.returnValues().add(new Int32Value(0));
+        req.returnRequest();
     }
 
     private void downloadFromSource(FileReference fileReference, Target client, Spec peerSpec) {
