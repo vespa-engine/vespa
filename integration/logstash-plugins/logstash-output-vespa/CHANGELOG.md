@@ -1,3 +1,6 @@
+## 0.6.0
+- adds options to remove fields after using them for writing
+
 ## 0.5.0
 - supports update and remove operations
 
