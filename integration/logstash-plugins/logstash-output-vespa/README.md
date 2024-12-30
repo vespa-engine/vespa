@@ -17,7 +17,7 @@ If you're developing the plugin, you'll want to do something like:
 # run tests
 ./gradlew test
 # install it as a Logstash plugin
-/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.5.2.gem
+/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.6.1.gem
 # profit
 /opt/logstash/bin/logstash
 ```

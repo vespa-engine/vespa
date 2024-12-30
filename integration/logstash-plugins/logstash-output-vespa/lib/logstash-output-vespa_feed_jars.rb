@@ -2,4 +2,4 @@
 # encoding: utf-8
 
 require 'jar_dependencies'
-require_jar('org.logstashplugins', 'logstash-output-vespa_feed', '0.6.0')
+require_jar('org.logstashplugins', 'logstash-output-vespa_feed', '0.6.1')

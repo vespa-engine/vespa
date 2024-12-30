@@ -30,10 +30,20 @@ fi
 echo "Building plugin..."
 cd ..
 ./gradlew clean gem
-cd integration-test
+# bail if the plugin is not built
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Error: Plugin not built${NC}"
+    exit 1
+fi
 
+cd integration-test
 echo "Installing plugin..."
 $LOGSTASH_HOME/bin/logstash-plugin install --no-verify ../logstash-output-vespa_feed-$PLUGIN_VERSION.gem
+# bail if the plugin is not installed
+if [ $? -ne 0 ]; then
+    echo -e "${RED}Error: Plugin not installed${NC}"
+    exit 1
+fi
 
 # Wait for Vespa to be ready
 echo "Checking Vespa availability..."
