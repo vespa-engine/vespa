@@ -3,6 +3,7 @@ package com.yahoo.tensor;
 import com.yahoo.api.annotations.Beta;
 
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.Iterator;
 
 /**
@@ -71,7 +72,7 @@ public class Tensors {
                 int packedValue = 0;
                 for (int j = 0; j < 8 && i < indexed.size(); j++)
                     packedValue = packInto(packedValue, indexed.get(i), j, i++);
-                builder.cell(packedValue, packedIndex);
+                builder.cell((byte)packedValue, packedIndex);
             }
         }
         else if (tensor instanceof MixedTensor mixed) {
@@ -81,7 +82,7 @@ public class Tensors {
                     int packedValue = 0;
                     for (int j = 0; j < 8 && i < denseSubspace.cells.length; j++)
                         packedValue = packInto(packedValue, denseSubspace.cells[i], j, i++);
-                    builder.cell(packedAddress, packedValue);
+                    builder.cell(packedAddress, (byte)packedValue);
                 }
             }
         }
