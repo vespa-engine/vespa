@@ -30,7 +30,7 @@ public class TensorsTestCase {
     @Test
     void testPackBits() {
         assertPacked("tensor<int8>(x[2]):[-127,14]", "tensor(x[16]):[1,0,0,0,0,0,0,1, 0,0,0,0,1,1,1,0]");
-        assertPacked("tensor<int8>(x[2]):[-127,14]", "tensor(x[15]):[1,0,0,0,0,0,0,1, 0,0,0,0,1,1,1]");
+        assertPacked("tensor<int8>(x[2]):[-127,14]", "tensor(x[15]):[1,0,0,0,0,0,0,1, 0,0,0,0,1,2,3]");
         assertPacked("tensor<int8>(x[1]):[-128]",    "tensor(x[1]):[1]");
         assertPacked("tensor<int8>(key{},x[2]):{a:[-127,14], b:[12, 7]}",
                          "tensor(key{},x[16]):{a:[1,0,0,0,0,0,0,1, 0,0,0,0,1,1,1,0]," +
@@ -45,14 +45,6 @@ public class TensorsTestCase {
         }
         catch (IllegalArgumentException e) {
             assertEquals("packBits requires a tensor with one dense dimensions, but got tensor(x[1],y[1])",
-                         e.getMessage());
-        }
-        try {
-            Tensors.packBits(Tensor.from("tensor(x[3]):[0, 1, 2]"));
-            fail("Expected exception");
-        }
-        catch (IllegalArgumentException e) {
-            assertEquals("The tensor to be packed can only contain 0 or 1 values, but has 2.0 at position 2",
                          e.getMessage());
         }
     }

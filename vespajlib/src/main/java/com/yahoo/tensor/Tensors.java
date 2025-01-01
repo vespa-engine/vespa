@@ -48,9 +48,10 @@ public class Tensors {
     }
 
     /**
-     * Converts any tensor containing only ones and zeroes into one where each consecutive 8 values in the
-     * dense dimension are packed into a single byte. As a consequence the output type of this is a tensor
-     * where the dense dimension is 1/8th as large.
+     * Converts any tensor into one where each consecutive 8 values in the
+     * dense dimension are packed into a single byte,
+     * by setting a bit to 1 when the tensor has a positive value and 0 otherwise.
+     * As a consequence the output type of this is a tensor where the dense dimension is 1/8th as large.
      *
      * @throws IllegalArgumentException if the tensor has the wrong type or contains any other value than 0 or 1
      */
@@ -94,13 +95,10 @@ public class Tensors {
     }
 
     private static int packInto(int packedValue, double value, int bitPosition, long sourcePosition) {
-        if (value == 0.0)
+        if (value <= 0.0)
             return packedValue;
-        else if (value == 1.0)
-            return packedValue | ( 1 << ( 7 - bitPosition ));
         else
-            throw new IllegalArgumentException("The tensor to be packed can only contain 0 or 1 values, " +
-                                               "but has " + value + " at position " + sourcePosition);
+            return packedValue | ( 1 << ( 7 - bitPosition ));
     }
 
 }
