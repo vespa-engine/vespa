@@ -260,7 +260,8 @@ public class ZooKeeperDeployer {
                 writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(USER_DEFCONFIGS_ZK_SUBPATH), contents);
                 writeConfigDefinition(key.getName(), key.getNamespace(), getZooKeeperAppPath(DEFCONFIGS_ZK_SUBPATH), contents);
             }
-            logger.log(Level.FINE, configDefs.size() + " user config definitions");
+            if ( ! configDefs.isEmpty())
+                logger.log(Level.FINE, () -> configDefs.size() + " user config definitions");
         }
 
         private void writeConfigDefinition(String name, String namespace, Path path, String data) {
