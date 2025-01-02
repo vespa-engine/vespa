@@ -408,13 +408,6 @@ public class PermanentFlags {
             "Number of application load balancers to have pre-provisioned at any time",
             "Takes immediate effect");
 
-    public static final UnboundLongFlag CONFIG_SERVER_SESSION_EXPIRY_TIME = defineLongFlag(
-            "config-server-session-expiry-time", 3600,
-            "Expiry time in seconds for remote sessions (session in ZooKeeper). Default should be equal to session lifetime, " +
-            "but can be lowered if there are incidents/bugs where one needs to delete sessions",
-            "Takes effect immediately"
-    );
-
     public static final UnboundLongFlag CONFIG_SERVER_SESSION_LIFETIME = defineLongFlag(
             "config-server-session-lifetime", 3600,
             "Lifetime / expiry time in seconds for config sessions. " +
