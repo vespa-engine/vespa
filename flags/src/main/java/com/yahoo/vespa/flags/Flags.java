@@ -255,14 +255,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2025-01-01",
+            List.of("olaa"), "2022-09-23", "2025-02-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             INSTANCE_ID);
 
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2025-01-01",
+            List.of("olaa"), "2024-01-15", "2025-02-01",
             "Determines log files handled by the OpenTelemetry collector",
             "Takes effect at next tick",
             INSTANCE_ID, HOSTNAME
@@ -314,21 +314,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2025-01-01",
+            List.of("andreer"), "2023-08-21", "2025-02-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2025-01-01",
+            List.of("andreer"), "2023-08-28", "2025-02-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2025-01-01",
+            List.of("andreer"), "2023-08-28", "2025-02-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
@@ -343,7 +343,7 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
             "search-handler-threadpool", 2,
-            List.of("bjorncs", "baldersheim"), "2023-10-01", "2025-01-01",
+            List.of("bjorncs", "baldersheim"), "2023-10-01", "2025-02-01",
             "Adjust search handler threadpool size",
             "Takes effect at redeployment",
             APPLICATION);
@@ -378,13 +378,13 @@ public class Flags {
 
     public static UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
             "hubspot-sync-tenants", false,
-            List.of("bjorncs"), "2024-05-07", "2025-01-01",
+            List.of("bjorncs"), "2024-05-07", "2025-02-01",
             "Whether to sync tenants to HubSpot",
             "Takes effect immediately");
 
     public static UnboundBooleanFlag ATLASSIAN_SYNC_TENANTS = defineFeatureFlag(
             "atlassian-sync-tenants", false,
-            List.of("bjormel"), "2024-11-11", "2025-01-01",
+            List.of("bjormel"), "2024-11-11", "2025-02-01",
             "Whether to sync tenants to Atlassian",
             "Takes effect immediately");
 
@@ -399,7 +399,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_NEW_TRIAL = defineFeatureFlag(
             "enable-new-trial", false,
-            List.of("bjorncs"), "2024-06-18", "2025-01-01",
+            List.of("bjorncs"), "2024-06-18", "2025-02-01",
             "Whether to enable the new trial experience",
             "Takes effect immediately",
             TENANT_ID);
@@ -421,7 +421,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
             "hubspot-sync-contacts", false,
-            List.of("bjorncs"), "2024-05-27", "2025-01-01",
+            List.of("bjorncs"), "2024-05-27", "2025-02-01",
             "Whether to sync contacts to HubSpot",
             "Takes effect immediately");
 
@@ -443,14 +443,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
             "monitoring-jwt", false,
-            List.of("olaa"), "2024-07-05", "2025-01-01",
+            List.of("olaa"), "2024-07-05", "2025-02-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
             "hubspot-sync-companies", false,
-            List.of("bjorncs"), "2024-07-19", "2025-01-01",
+            List.of("bjorncs"), "2024-07-19", "2025-02-01",
             "Whether to sync companies to HubSpot",
             "Takes effect immediately");
 
