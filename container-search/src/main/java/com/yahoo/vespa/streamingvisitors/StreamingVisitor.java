@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
@@ -63,6 +64,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
     private static final Logger log = Logger.getLogger(StreamingVisitor.class.getName());
     private final VisitorParameters params = new VisitorParameters("");
     private List<SearchResult.Hit> hits = new ArrayList<>();
+    private Set<String> errors = new TreeSet<>();
     private int totalHitCount = 0;
 
     private final Map<String, DocumentSummary.Summary> summaryMap = new HashMap<>();
@@ -323,6 +325,10 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         synchronized (this) {
             totalHitCount += result.getTotalHitCount();
             hits = ListMerger.mergeIntoArrayList(hits, newHits, query.getOffset() + query.getHits());
+            var newErrors = result.getErrors();
+            for (var error : newErrors) {
+                errors.add(error);
+            }
         }
 
         Map<Integer, byte[]> newGroupingMap = result.getGroupingList();
@@ -387,4 +393,6 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         return new ArrayList<>(groupings);
     }
 
+    @Override
+    public Set<String> getErrors() { return Set.copyOf(errors); }
 }

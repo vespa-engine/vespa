@@ -65,6 +65,7 @@ public:
     const AggregatorList & getAggregatorList()       const { return _aggregatorList; }
     void getSortBlob(size_t index, const void * & blob, size_t & sz) const { _sortBlob.getBlob(_hits[index].getIndex(), blob, sz); }
     const FeatureValues& get_match_features() const noexcept { return _match_features; }
+    const std::vector<std::string>& get_errors() const noexcept { return _errors; }
     std::span<const FeatureValue> get_match_feature_values(uint32_t index) const noexcept {
         uint32_t num_features = _match_features.names.size();
         return { _match_features.values.data() + _hits[index].getIndex() * num_features, num_features };
@@ -85,6 +86,7 @@ public:
     void addHit(uint32_t lid, const char * docId, RankType rank);
     void addHit(uint32_t lid, const char * docId, RankType rank, const void * sortData, size_t sz);
     void set_match_features(FeatureValues&& match_features);
+    void set_errors(std::vector<std::string>&& errors);
     void sort();
 
     void deserialize(document::ByteBuffer & buf);
@@ -137,6 +139,9 @@ private:
     uint32_t get_match_features_serialized_size(uint32_t hit_count) const noexcept;
     void serialize_match_features(vespalib::GrowableByteBuffer& buf, uint32_t hit_count) const;
     void deserialize_match_features(document::ByteBuffer& buf);
+    uint32_t get_errors_serialized_size() const noexcept;
+    void serialize_errors(vespalib::GrowableByteBuffer& buf) const;
+    void deserialize_errors(document::ByteBuffer& buf);
 
     using DocIdBuffer = std::shared_ptr<vespalib::MallocPtr>;
     uint32_t                     _totalHits;
@@ -148,6 +153,7 @@ private:
     AggregatorList               _groupingList;
     BlobContainer                _sortBlob;
     FeatureValues                _match_features;
+    std::vector<std::string>     _errors;
 };
 
 }

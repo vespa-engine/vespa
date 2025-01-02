@@ -15,6 +15,7 @@ constexpr uint32_t extension_flags_present = 0xffffffffu;
 
 // Extension flag values
 constexpr uint32_t match_features_present_mask = 1;
+constexpr uint32_t errors_present_mask = 2;
 
 // Selector values for feature value
 constexpr uint8_t feature_value_is_double = 0;
@@ -22,6 +23,10 @@ constexpr uint8_t feature_value_is_data = 1;
 
 inline bool has_match_features(uint32_t extension_flags) {
     return ((extension_flags & match_features_present_mask) != 0);
+}
+
+inline bool has_errors(uint32_t extension_flags) {
+    return ((extension_flags & errors_present_mask) != 0);
 }
 
 inline bool must_serialize_extension_flags(uint32_t extension_flags, uint32_t hit_count) {
@@ -125,7 +130,8 @@ SearchResult::SearchResult() :
     _wantedHits(10),
     _hits(),
     _docIdBuffer(),
-    _numDocIdBytes(0)
+    _numDocIdBytes(0),
+    _errors()
 {
     _docIdBuffer.reset(new vespalib::MallocPtr(4_Ki));
 }
@@ -139,7 +145,8 @@ SearchResult::SearchResult(document::ByteBuffer & buf) :
     _aggregatorList(),
     _groupingList(),
     _sortBlob(),
-    _match_features()
+    _match_features(),
+    _errors()
 {
     deserialize(buf);
 }
@@ -181,6 +188,9 @@ SearchResult::deserialize(document::ByteBuffer & buf)
     if (has_match_features(extension_flags)) {
         deserialize_match_features(buf);
     }
+    if (has_errors(extension_flags)) {
+        deserialize_errors(buf);
+    }
 }
 
 void SearchResult::serialize(vespalib::GrowableByteBuffer & buf) const
@@ -220,6 +230,9 @@ void SearchResult::serialize(vespalib::GrowableByteBuffer & buf) const
     if (has_match_features(extension_flags)) {
         serialize_match_features(buf, hitCount);
     }
+    if (has_errors(extension_flags)) {
+        serialize_errors(buf);
+    }
 }
 
 uint32_t SearchResult::getSerializedSize() const
@@ -228,11 +241,13 @@ uint32_t SearchResult::getSerializedSize() const
     uint32_t extension_flags = calc_extension_flags(hitCount);
     uint32_t extension_flags_overhead = must_serialize_extension_flags(extension_flags, hitCount) ? (2 * sizeof(uint32_t)) : 0;
     uint32_t match_features_size = has_match_features(extension_flags) ? get_match_features_serialized_size(hitCount) : 0;
+    uint32_t errors_size = has_errors(extension_flags) ? get_errors_serialized_size() : 0;
     return _aggregatorList.getSerializedSize() +
            _groupingList.getSerializedSize() +
            _sortBlob.getSerializedSize() +
            extension_flags_overhead +
            match_features_size +
+           errors_size +
            ((hitCount > 0) ? ((4 * 3) + getBufCount() + sizeof(RankType)*hitCount) : 8);
 }
 
@@ -242,6 +257,9 @@ SearchResult::calc_extension_flags(uint32_t hit_count) const noexcept
     uint32_t extension_flags = 0u;
     if (!_match_features.names.empty() && hit_count != 0) {
         extension_flags |= match_features_present_mask;
+    }
+    if (!_errors.empty()) {
+        extension_flags |= errors_present_mask;
     }
     return extension_flags;
 }
@@ -328,6 +346,42 @@ SearchResult::deserialize_match_features(document::ByteBuffer& buf)
     }
 }
 
+uint32_t
+SearchResult::get_errors_serialized_size() const noexcept
+{
+    uint32_t size = sizeof(uint32_t);
+    for (auto& error : _errors) {
+        size += sizeof(uint32_t) + error.size();
+    }
+    return size;
+}
+
+void
+SearchResult::serialize_errors(vespalib::GrowableByteBuffer& buf) const
+{
+    buf.putInt(_errors.size());
+    for (auto& error : _errors) {
+        buf.putString(error);
+    }
+}
+
+void
+SearchResult::deserialize_errors(document::ByteBuffer& buf)
+{
+    int32_t tmp(0);
+    std::vector<char> scratch;
+    buf.getIntNetwork(tmp);
+    uint32_t num_errors = tmp;
+    _errors.resize(num_errors);
+    for (auto& error : _errors) {
+        buf.getIntNetwork(tmp);
+        if (tmp > 0) {
+            error.resize(tmp);
+            buf.getBytes(error.data(), tmp);
+        }
+    }
+}
+
 void SearchResult::addHit(uint32_t lid, const char * docId, RankType rank, const void * sortData, size_t sz)
 {
     addHit(lid, docId, rank);
@@ -364,6 +418,12 @@ void
 SearchResult::set_match_features(FeatureValues&& match_features)
 {
     _match_features = std::move(match_features);
+}
+
+void
+SearchResult::set_errors(std::vector<std::string>&& errors)
+{
+    _errors = std::move(errors);
 }
 
 }

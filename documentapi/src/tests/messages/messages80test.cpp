@@ -602,6 +602,20 @@ TEST_F(Messages80Test, query_result_message) {
         EXPECT_EQ(mf_names[0], "foo");
         EXPECT_EQ(mf_names[1], "bar");
     }
+    QueryResultMessage qrm4;
+    auto& sr4 = qrm4.getSearchResult();
+    sr4.set_errors(std::vector<std::string>{"hello", "world!"});
+    sr4.sort();
+    serialize("QueryResultMessage-7", qrm4);
+    {
+        auto routable = deserialize("QueryResultMessage-7", DocumentProtocol::MESSAGE_QUERYRESULT, LANG_CPP);
+        ASSERT_TRUE(routable);
+        auto& dm = dynamic_cast<QueryResultMessage&>(*routable);
+        auto& dr = dm.getSearchResult();
+        EXPECT_EQ(dr.getHitCount(), size_t(0));
+        EXPECT_EQ((std::vector<std::string>{"hello", "world!"}), dr.get_errors());
+    }
+
 }
 
 TEST_F(Messages80Test, query_result_reply) {

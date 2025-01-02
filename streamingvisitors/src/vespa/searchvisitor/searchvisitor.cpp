@@ -26,6 +26,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/fnet/databuffer.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <optional>
@@ -48,6 +49,7 @@ using search::Normalizing;
 using search::streaming::QueryTermList;
 using storage::StorageComponent;
 using storage::VisitorEnvironment;
+using vespalib::Issue;
 using vdslib::Parameters;
 using vsm::DocsumFilter;
 using vsm::FieldPath;
@@ -333,7 +335,8 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
       _rankAttribute(dynamic_cast<search::SingleFloatExtAttribute &>(*_rankAttributeBacking)),
       _shouldFillRankAttribute(false),
       _syntheticFieldsController(),
-      _rankController()
+      _rankController(),
+      _unique_issues()
 {
     LOG(debug, "Created SearchVisitor");
 }
@@ -524,7 +527,7 @@ SearchVisitor::init(const Parameters & params)
             setupAttributeVectorsForSorting(_sortSpec);
 
             _rankController.setRankManagerSnapshot(_env->get_rank_manager_snapshot());
-            _rankController.setupRankProcessors(_query, location, wantedSummaryCount, ! _sortSpec.empty(), _attrMan, _attributeFields);
+            _rankController.setupRankProcessors(_query, location, wantedSummaryCount, ! _sortList.empty(), _attrMan, _attributeFields);
 
             // This depends on _fieldPathMap (from setupScratchDocument),
             // and IQueryEnvironment (from setupRankProcessors).
@@ -1016,13 +1019,13 @@ SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & 
                         }
                         _sortList.push_back(index);
                     } else {
-                        LOG(warning, "Attribute '%s' is not sortable", sInfo._field.c_str());
+                        Issue::report("Attribute '%s' is not sortable", sInfo._field.c_str());
                     }
                 } else {
-                    LOG(warning, "Attribute '%s' is not valid", sInfo._field.c_str());
+                    Issue::report("Attribute '%s' is not valid", sInfo._field.c_str());
                 }
             } else {
-                LOG(warning, "Cannot locate field '%s' in field name registry", sInfo._field.c_str());
+                Issue::report("Cannot locate field '%s' in field name registry", sInfo._field.c_str());
             }
         }
     } else {
@@ -1088,6 +1091,7 @@ SearchVisitor::compatibleDocumentTypes(const document::DocumentType& typeA,
 void
 SearchVisitor::handleDocuments(const document::BucketId&, DocEntryList & entries, HitCounter& )
 {
+    auto capture_issues = Issue::listen(_unique_issues);
     if (!_init_called) {
         init(_params);
     }
@@ -1262,6 +1266,7 @@ SearchVisitor::generate_query_result(HitCounter& counter)
 void
 SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)
 {
+    auto capture_issues = std::make_unique<Issue::Binding>(_unique_issues);
     if (!_init_called) {
         init(_params);
     }
@@ -1287,6 +1292,8 @@ SearchVisitor::completedVisitingInternal(HitCounter& hitCounter)
     generateGroupingResults();
     generateDocumentSummaries();
     documentSummary.sort();
+    capture_issues.reset();
+    generate_errors();
     LOG(debug, "Docsum count: %lu", documentSummary.getSummaryCount());
 }
 
@@ -1339,5 +1346,17 @@ SearchVisitor::generateDocumentSummaries()
     }
 }
 
+void
+SearchVisitor::generate_errors()
+{
+    auto num_issues = _unique_issues.size();
+    if (num_issues == 0) {
+        return;
+    }
+    std::vector<std::string> errors;
+    errors.reserve(num_issues);
+    _unique_issues.for_each_message([&](const std::string &issue) { errors.emplace_back(issue); });
+    _queryResult->getSearchResult().set_errors(std::move(errors));
+}
 
 }

@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -141,6 +142,9 @@ public class StreamingSearcherTestCase {
         public List<Grouping> getGroupings() {
             return groupings;
         }
+
+        @Override
+        public Set<String> getErrors() { return Set.of(); }
 
         @Override
         public Trace getTrace() {
