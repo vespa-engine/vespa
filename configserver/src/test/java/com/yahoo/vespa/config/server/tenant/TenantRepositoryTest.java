@@ -42,7 +42,6 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mock;
 import org.xml.sax.SAXException;
 import java.io.IOException;
 import java.time.Clock;
@@ -220,7 +219,7 @@ public class TenantRepositoryTest {
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new StripedExecutor<>(new InThreadExecutorService()),
-                  new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig)),
+                  new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig), new InMemoryFlagSource()),
                   flagSource,
                   new InThreadExecutorService(),
                   mockSecretStore,

@@ -501,6 +501,12 @@ public class Flags {
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
 
+    public static final UnboundBooleanFlag CONFIG_SERVER_TRIGGER_DOWNLOAD_WITH_SOURCE = defineFeatureFlag(
+            "config-server-trigger-download-with-source", false,
+            List.of("hmusum"), "2024-12-25", "2025-02-01",
+            "Use new RPC method for triggering download of file reference",
+            "Takes effect immediately");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

@@ -155,7 +155,9 @@ public class TestTenantRepository extends TenantRepository {
 
         public TenantRepository build() {
             if (fileDistributionFactory == null)
-                fileDistributionFactory = new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig));
+                fileDistributionFactory = new FileDistributionFactory(configserverConfig,
+                                                                      new FileDirectory(configserverConfig),
+                                                                      new InMemoryFlagSource());
             return new TestTenantRepository(hostRegistry,
                                             curator,
                                             secretStore,

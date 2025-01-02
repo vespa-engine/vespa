@@ -11,6 +11,7 @@ import com.yahoo.vespa.config.protocol.JRTServerConfigRequestV3;
 import com.yahoo.vespa.config.protocol.Payload;
 
 import java.time.Duration;
+import java.util.List;
 
 /**
  * For unit testing
@@ -71,6 +72,9 @@ public class MockConnection implements ConnectionPool, Connection {
     public int getSize() {
         return numSpecs;
     }
+
+    @Override
+    public List<Connection> connections() { return List.of(this); }
 
     public int getNumberOfRequests() {
         return numberOfRequests;
