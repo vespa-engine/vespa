@@ -238,13 +238,6 @@ public class Flags {
                 "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag ENABLE_PROXY_PROTOCOL_MIXED_MODE = defineFeatureFlag(
-            "enable-proxy-protocol-mixed-mode", true,
-            List.of("tokle"), "2022-05-09", "2025-02-01",
-            "Enable or disable proxy protocol mixed mode",
-            "Takes effect on redeployment",
-            INSTANCE_ID);
-
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
             "log-file-compression-algorithm", "",
             List.of("arnej"), "2022-06-14", "2025-02-01",
