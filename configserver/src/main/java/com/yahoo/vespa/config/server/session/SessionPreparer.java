@@ -419,9 +419,9 @@ public class SessionPreparer {
                                        Optional<CloudAccount> cloudAccount,
                                        List<DataplaneToken> dataplaneTokens,
                                        ActivationTriggers activationTriggers) {
-        var zooKeeperDeplyer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
+        var zooKeeperDeployer = new ZooKeeperDeployer(curator, deployLogger, applicationId, zooKeeperClient.sessionId());
         try {
-            zooKeeperDeplyer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
+            zooKeeperDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
             new SessionSerializer().write(zooKeeperClient,
                                           applicationId,
                                           created,
@@ -439,7 +439,7 @@ public class SessionPreparer {
                                           activationTriggers,
                                           writeSessionData);
         } catch (RuntimeException | IOException e) {
-            zooKeeperDeplyer.cleanup();
+            zooKeeperDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);
         }
     }
