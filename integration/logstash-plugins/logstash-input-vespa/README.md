@@ -20,7 +20,9 @@ export LOGSTASH_SOURCE=1
 bundle exec rspec
 ```
 
-To run integration tests, you'll need to have a Vespa instance running + Logstash installed. Check out the `integration-test` directory for more information.
+To run integration tests, you'll need to have a Vespa instance running with an app deployed that supports an "id" field. And Logstash installed.
+
+Check out the `integration-test` directory for more information.
 
 ```
 cd integration-test

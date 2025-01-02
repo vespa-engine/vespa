@@ -16,6 +16,7 @@ plugins {
 ext {
     snakeYamlVersion = '2.2'
     shadowGradlePluginVersion = '8.1.1'
+    log4jVersion = '2.17.1'
 }
 
 apply from: LOGSTASH_CORE_PATH + "/../rubyUtils.gradle"
@@ -47,12 +48,12 @@ repositories {
 
 shadowJar {
     archiveClassifier.set('')
-    configurations = [project.configurations.runtimeClasspath, project.configurations.testRuntimeClasspath]
+    configurations = [project.configurations.runtimeClasspath]
 }
 
 dependencies {
-    implementation 'org.apache.logging.log4j:log4j-api:2.17.0'
-    implementation 'org.apache.logging.log4j:log4j-core:2.17.0'
+    implementation "org.apache.logging.log4j:log4j-api:${log4jVersion}"
+    implementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     implementation fileTree(dir: LOGSTASH_CORE_PATH, include: "**/logstash-core.jar")
 
     implementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
@@ -64,7 +65,7 @@ dependencies {
 
     testImplementation 'org.jruby:jruby-complete:9.4.3.0'
     testImplementation 'org.jruby:jruby-core:9.4.3.0'
-    testImplementation 'org.apache.logging.log4j:log4j-core:2.9.1'
+    testImplementation "org.apache.logging.log4j:log4j-core:${log4jVersion}"
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.mockito:mockito-core:5.11.0'
     testImplementation("com.yahoo.vespa:vespa-feed-client:${VESPA_VERSION}")
@@ -119,13 +120,6 @@ tasks.register("gem"){
     dependsOn = [downloadAndInstallJRuby, removeObsoleteJars, vendor, generateRubySupportFiles]
     doLast {
         buildGem(projectDir, buildDir, pluginInfo.pluginFullName() + ".gemspec")
-    }
-}
-
-test {
-    doFirst {
-        println "Test runtime classpath:"
-        classpath.each { println it }
     }
 }
 

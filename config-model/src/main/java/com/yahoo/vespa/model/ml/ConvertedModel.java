@@ -89,7 +89,7 @@ public class ConvertedModel {
 
         if (sourceModel == null && ! new ModelStore(applicationPackage, modelName).exists())
             throw new IllegalArgumentException("No model '" + modelPath + "' is available. Available models: " +
-                                               context.importedModels().all().stream().map(ImportedMlModel::source).collect(Collectors.joining(", ")));
+                                               context.importedModels().all().stream().map(ImportedMlModel::name).collect(Collectors.joining(", ")));
 
         if (sourceModel != null) {
             if ( ! sourceModel.isNative()) {

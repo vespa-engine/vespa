@@ -17,7 +17,7 @@ If you're developing the plugin, you'll want to do something like:
 # run tests
 ./gradlew test
 # install it as a Logstash plugin
-/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.5.2.gem
+/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.6.1.gem
 # profit
 /opt/logstash/bin/logstash
 ```
@@ -27,7 +27,9 @@ It looks like the JVM options from [here](https://github.com/logstash-plugins/.c
 are useful to make JRuby's `bundle install` work.
 
 ### Integration tests
-To run integration tests, you'll need to have a Vespa instance running + Logstash installed. Check out the `integration-test` directory for more information.
+To run integration tests, you'll need to have a Vespa instance running with an app deployed that supports an "id" field. And Logstash installed.
+
+Check out the `integration-test` directory for more information.
 
 ```
 cd integration-test
@@ -112,6 +114,12 @@ output {
     # take the document ID from this field in each row
     # if the field doesn't exist, we generate a UUID
     id_field => "id"
+
+    # remove fields from the document after using them for writing
+    remove_id => false          # if set to true, remove the ID field after using it
+    remove_namespace => false   # would remove the namespace field (if dynamic)
+    remove_document_type => false # same for document type
+    remove_operation => false   # and operation
 
     # how many HTTP/2 connections to keep open
     max_connections => 1
