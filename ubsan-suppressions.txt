@@ -1,0 +1,6 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Suppressions for undefined sanitizer.
+
+# xxhash considers unaligned load for aarch64 to be OK.
+alignment:XXH_vld1q_u64

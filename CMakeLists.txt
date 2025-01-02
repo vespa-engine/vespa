@@ -92,6 +92,7 @@ install(FILES
 
 vespa_install_data(valgrind-suppressions.txt etc/vespa)
 vespa_install_data(tsan-suppressions.txt etc/vespa)
+vespa_install_data(ubsan-suppressions.txt etc/vespa)
 
 # Include vespa config definitions in every target
 include_directories(BEFORE ${CMAKE_BINARY_DIR}/configdefinitions/src)
