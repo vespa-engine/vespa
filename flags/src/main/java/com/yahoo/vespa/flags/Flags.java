@@ -376,12 +376,6 @@ public class Flags {
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment", INSTANCE_ID);
 
-    public static UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
-            "hubspot-sync-tenants", false,
-            List.of("bjorncs"), "2024-05-07", "2025-02-01",
-            "Whether to sync tenants to HubSpot",
-            "Takes effect immediately");
-
     public static UnboundBooleanFlag ATLASSIAN_SYNC_TENANTS = defineFeatureFlag(
             "atlassian-sync-tenants", false,
             List.of("bjormel"), "2024-11-11", "2025-02-01",
@@ -419,12 +413,6 @@ public class Flags {
             "Takes effect on next deployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
-            "hubspot-sync-contacts", false,
-            List.of("bjorncs"), "2024-05-27", "2025-02-01",
-            "Whether to sync contacts to HubSpot",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
             "distribution-config-from-cluster-controller", true,
             List.of("vekterli"), "2024-07-01", "2025-03-01",
@@ -447,12 +435,6 @@ public class Flags {
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
-
-    public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
-            "hubspot-sync-companies", false,
-            List.of("bjorncs"), "2024-07-19", "2025-02-01",
-            "Whether to sync companies to HubSpot",
-            "Takes effect immediately");
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
