@@ -170,6 +170,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_FAILURE_PERCENTAGE.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_NODE_COUNT_BY_OS_VERSION.max());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_OS_CHANGE_DURATION.max());
+        addMetric(metrics, ControllerMetrics.DEPLOYMENT_QUOTA_EXCEEDED.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_START.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_SUCCESS.count());
         addMetric(metrics, ControllerMetrics.DEPLOYMENT_TEST_FAILURE.count());
