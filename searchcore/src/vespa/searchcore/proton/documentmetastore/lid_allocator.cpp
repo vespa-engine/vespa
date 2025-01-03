@@ -228,7 +228,8 @@ public:
           _lock(),
           _matchDataVector()
     {
-        setEstimate(HitEstimate(numActiveLids, false));
+        // account for DocId 0 (considered active for estimation purposes)
+        setEstimate(HitEstimate(numActiveLids + 1, false));
     }
 
     bool isWhiteList() const noexcept final { return true; }
