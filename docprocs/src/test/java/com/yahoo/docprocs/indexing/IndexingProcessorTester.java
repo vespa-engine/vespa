@@ -37,6 +37,10 @@ public class IndexingProcessorTester {
         indexer = newProcessor("dir:" + configDir);
     }
 
+    public IndexingProcessorTester(DocumentTypeManager documentTypes, ScriptManager scripts) {
+        indexer = newProcessor(documentTypes, scripts);
+    }
+
     public DocumentType getDocumentType(String name) {
         return indexer.getDocumentTypeManager().getDocumentType(name);
     }
@@ -68,6 +72,10 @@ public class IndexingProcessorTester {
                                      ConfigGetter.getConfig(IlscriptsConfig.class, configId),
                                      new SimpleLinguistics(),
                                      new ComponentRegistry<>());
+    }
+
+    private static IndexingProcessor newProcessor(DocumentTypeManager documentTypes, ScriptManager scripts) {
+        return new IndexingProcessor(documentTypes, scripts);
     }
 
 }

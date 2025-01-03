@@ -415,7 +415,7 @@ public interface Tensor {
     int hashCode();
 
     /**
-     * Implement here to make this work across implementations.
+     * Implemented here to make this work across implementations.
      * Implementations must override equals and call this because this is an interface and cannot override equals.
      */
     static boolean equals(Tensor a, Tensor b) {

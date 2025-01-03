@@ -63,7 +63,7 @@ public class EmbeddingScriptTestCase {
     @Test
     public void testEmbedBinarizeAndPack_bits() {
         var tester = new EmbeddingScriptTester(Map.of("emb1", new EmbeddingScriptTester.MockIndexedEmbedder("myDocument.myTensor", -111)));
-        tester.testStatement("input myText | embed | binarize | pack_bits | attribute 'myTensor'", "input text", "tensor<int8>(x[2])", "[58, 192]");
+        tester.testStatement("input myText | embed | binarize | pack_bits | attribute 'myTensor'", "input text", "tensor<int8>(x[2])", "[58, -64]");
     }
 
     @SuppressWarnings("unchecked")

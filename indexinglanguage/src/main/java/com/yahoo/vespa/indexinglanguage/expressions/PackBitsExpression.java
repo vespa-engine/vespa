@@ -77,7 +77,7 @@ public class PackBitsExpression extends Expression  {
 
     /** Returns the type this requires when producing the given output type. */
     private TensorType inputType(TensorType givenType) {
-        var builder = new TensorType.Builder(TensorType.Value.INT8); // Any larger value type is also permissible
+        var builder = new TensorType.Builder(TensorType.Value.DOUBLE); // Any value type is permissible
         for (var d : givenType.dimensions())
             builder.dimension(d.size().isPresent() ? d.withSize(d.size().get() * 8) : d);
         return builder.build();

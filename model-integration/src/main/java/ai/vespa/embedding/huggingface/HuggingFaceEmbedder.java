@@ -110,7 +110,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         tokenizer.close();
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public Tensor embed(String text, Context context, TensorType tensorType) {
         if (tensorType.dimensions().size() != 1) {
@@ -213,6 +212,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     /**
      * Binary quantization of the embedding into a tensor of type int8 with the specified dimensions.
      */
+    // TODO: Call Tensors.packBits instead. It is more general and faster.
     static public Tensor binarize(IndexedTensor embedding, TensorType tensorType) {
         Tensor.Builder builder = Tensor.Builder.of(tensorType);
         BitSet bitSet = new BitSet(8);
