@@ -19,11 +19,11 @@ import org.junit.Test;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class ConfigurableTextGeneratorTest {
+public class LanguageModelTextGeneratorTest {
     @Test
     public void testGenerate() {
-        LanguageModel languageModel1 = new RepeatMockLanguageModel(1);
-        LanguageModel languageModel2 = new RepeatMockLanguageModel(2);
+        LanguageModel languageModel1 = new RepeaterMockLanguageModel(1);
+        LanguageModel languageModel2 = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("mock1", languageModel1, "mock2", languageModel2);
         
         var config1 = new TextGeneratorConfig.Builder().providerId("mock1").build();
@@ -38,17 +38,17 @@ public class ConfigurableTextGeneratorTest {
         assertEquals("hello hello", result2);
     }
 
-    private static ConfigurableTextGenerator createGenerator(TextGeneratorConfig config, Map<String, LanguageModel> languageModels) {
+    private static LanguageModelTextGenerator createGenerator(TextGeneratorConfig config, Map<String, LanguageModel> languageModels) {
         ComponentRegistry<LanguageModel> languageModelsRegistry = new ComponentRegistry<>();
         languageModels.forEach((key, value) -> languageModelsRegistry.register(ComponentId.fromString(key), value));
         languageModelsRegistry.freeze();
-        return new ConfigurableTextGenerator(config, languageModelsRegistry);
+        return new LanguageModelTextGenerator(config, languageModelsRegistry);
     }
     
-    public static class RepeatMockLanguageModel implements LanguageModel {
+    public static class RepeaterMockLanguageModel implements LanguageModel {
         private final int repetitions;
         
-        public RepeatMockLanguageModel(int repetitions) {
+        public RepeaterMockLanguageModel(int repetitions) {
             this.repetitions = repetitions;
         }
         

@@ -11,16 +11,16 @@ import com.yahoo.language.process.TextGenerator;
 import java.util.logging.Logger;
 
 /**
- * Text generator based on a language model, configured with a config definition.
+ * Text generator that uses a language model, configured with a config definition.
  *
  * @author glebashnik
  */
-public class ConfigurableTextGenerator extends AbstractComponent implements TextGenerator {
-    private static final Logger logger = Logger.getLogger(ConfigurableTextGenerator.class.getName());
+public class LanguageModelTextGenerator extends AbstractComponent implements TextGenerator {
+    private static final Logger logger = Logger.getLogger(LanguageModelTextGenerator.class.getName());
     private final LanguageModel languageModel;
 
     @Inject
-    public ConfigurableTextGenerator(TextGeneratorConfig config, ComponentRegistry<LanguageModel> languageModels) {
+    public LanguageModelTextGenerator(TextGeneratorConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.languageModel = LanguageModelUtils.findLanguageModel(config.providerId(), languageModels, logger);
     }
     

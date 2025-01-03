@@ -1,14 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.generation;
 
+import ai.vespa.llm.completion.Prompt;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.TextGenerator;
 import com.yahoo.language.sentencepiece.SentencePieceEmbedder;
-import com.yahoo.llm.GeneratorConfig;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.PartialAddress;
@@ -21,16 +22,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
-* A text generator based on language models (LLMs). By configuring a
- * sentencepience tokenizer and models for encoding and decoding, this
- * component generates text based on the given prompt.
- *
- * See llm.generator.def for configurable parameters.
+ * Component for generating text using SentencePiece tokenizer and encoder and decoder language models in ONNX format.
+ * See onnx-encoder-decoder-text-generator.def for configuration options.
  *
  * @author lesters
  */
 @Beta
-public class OnnxEncoderDecoderGenerator extends AbstractComponent {
+public class OnnxEncoderDecoderTextGenerator extends AbstractComponent implements TextGenerator {
 
     private final static int TOKEN_EOS = 1;  // end of sequence
 
@@ -51,7 +49,7 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
     private final OnnxEvaluator decoder;
 
     @Inject
-    public OnnxEncoderDecoderGenerator(OnnxRuntime onnx, OnnxEncoderDecoderGeneratorConfig config) {
+    public OnnxEncoderDecoderTextGenerator(OnnxRuntime onnx, OnnxEncoderDecoderTextGeneratorConfig config) {
         // Set up tokenizer
         tokenizer = new SentencePieceEmbedder.Builder(config.tokenizerModel().toString()).build();
         tokenizerMaxTokens = config.tokenizerMaxTokens();
@@ -87,11 +85,11 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
      * repeatedly evaluating a decoding model to generate tokens until some
      * stopping criteria has been met.
      *
-     * @param prompt the prompt to generate text from
+     * @param prompt  the prompt to generate text from
      * @param options options for text generation
      * @return a text generated from the prompt
      */
-    public String generate(String prompt, GeneratorOptions options) {
+    public String generate(String prompt, TextGeneratorDecoderOptions options) {
         return switch (options.getSearchMethod()) {
             case GREEDY -> generateGreedy(prompt, options);
             default -> generateNotImplemented(options);
@@ -99,16 +97,25 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
     }
 
     public String generate(String prompt) {
-        return generate(prompt, new GeneratorOptions());
+        return generate(prompt, new TextGeneratorDecoderOptions());
+    }
+    
+    public String generate(Prompt prompt, Context context) {
+        return generate(prompt.asString());
     }
 
-    @Override public void deconstruct() { encoder.close(); decoder.close(); }
-
-    private String generateNotImplemented(GeneratorOptions options) {
-        throw new UnsupportedOperationException("Search method '" + options.getSearchMethod() + "' is currently not implemented");
+    @Override
+    public void deconstruct() {
+        encoder.close();
+        decoder.close();
     }
 
-    private String generateGreedy(String prompt, GeneratorOptions options) {
+    private String generateNotImplemented(TextGeneratorDecoderOptions options) {
+        throw new UnsupportedOperationException(
+                "Search method '" + options.getSearchMethod() + "' is currently not implemented");
+    }
+
+    private String generateGreedy(String prompt, TextGeneratorDecoderOptions options) {
         var generatedTokens = new ArrayList<Integer>();
         generatedTokens.add(0);  // Or target tokens
 
@@ -116,15 +123,16 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
         var inputTokens = tokenize(prompt);  // Or source tokens
 
         // Evaluate encoder
-        var encoderInput  = createTensorRepresentation(inputTokens, SEQUENCE_DIMENSION);
-        var encoderMask   = createAttentionMask(encoderInput).expand(BATCH_DIMENSION);
+        var encoderInput = createTensorRepresentation(inputTokens, SEQUENCE_DIMENSION);
+        var encoderMask = createAttentionMask(encoderInput).expand(BATCH_DIMENSION);
         var encoderOutput = evaluateEncoder(encoderInput.expand(BATCH_DIMENSION), encoderMask);
 
         // Greedy search just grabs the next most probable token
         while (generatedTokens.size() < options.getMaxLength()) {  // Todo: add stopping criteria
             var decoderInput = createTensorRepresentation(generatedTokens, SEQUENCE_DIMENSION).expand(BATCH_DIMENSION);
-            var logits       = evaluateDecoder(decoderInput, encoderMask, encoderOutput);
-            var nextToken    = findMostProbableToken(logits, generatedTokens.size()-1, BATCH_DIMENSION, SEQUENCE_DIMENSION);
+            var logits = evaluateDecoder(decoderInput, encoderMask, encoderOutput);
+            var nextToken = findMostProbableToken(
+                    logits, generatedTokens.size() - 1, BATCH_DIMENSION, SEQUENCE_DIMENSION);
             generatedTokens.add(nextToken);
         }
 
@@ -132,17 +140,21 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
     }
 
     private Tensor evaluateEncoder(Tensor input, Tensor mask) {
-        var encoderInputs = Map.of(encoderInputIdsName, input,
-                                   encoderAttentionMaskName, mask);
+        var encoderInputs = Map.of(
+                encoderInputIdsName, input,
+                encoderAttentionMaskName, mask
+        );
         return encoder.evaluate(encoderInputs, encoderOutputName);
     }
 
     private IndexedTensor evaluateDecoder(Tensor input, Tensor encoderMask, Tensor encoderOutput) {
-        var inputs = Map.of(decoderInputIdsName, input,
-                            decoderAttentionMaskName, encoderMask,  // yes, encoder's attention mask
-                            decoderEncoderHiddenStateName, encoderOutput);
-        var output  = decoder.evaluate(inputs, decoderOutputName);
-        if ( ! (output instanceof IndexedTensor indexedTensor)) {
+        var inputs = Map.of(
+                decoderInputIdsName, input,
+                decoderAttentionMaskName, encoderMask,  // yes, encoder's attention mask
+                decoderEncoderHiddenStateName, encoderOutput
+        );
+        var output = decoder.evaluate(inputs, decoderOutputName);
+        if (!(output instanceof IndexedTensor indexedTensor)) {
             throw new IllegalArgumentException("Output of decoder model is not an 'IndexedTensor'");
         }
         return indexedTensor;
@@ -156,12 +168,14 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
     private static int findMostProbableToken(IndexedTensor logits, int seqIndex, String batchDim, String seqDim) {
         if (logits.type().rank() != 3) {
             throw new IllegalArgumentException("Expected a tensor with rank 3: batch, sequence, and vocabulary size. " +
-                                               "Got: " + logits.type());
+                    "Got: " + logits.type());
         }
-        var iterator = logits.cellIterator(new PartialAddress.Builder(2).
-                                                add(batchDim, 0).
-                                                add(seqDim, seqIndex).build(),
-                                           DimensionSizes.of(logits.type()));
+        var iterator = logits.cellIterator(
+                new PartialAddress.Builder(2).
+                        add(batchDim, 0).
+                        add(seqDim, seqIndex).build(),
+                DimensionSizes.of(logits.type())
+        );
         var maxVal = iterator.next().getValue();
         int maxIndex = 0;
         for (int i = 1; iterator.hasNext(); ++i) {
@@ -176,7 +190,7 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
 
     private List<Integer> tokenize(String text) {
         var tokens = tokenizer.embed(text, new Embedder.Context("tokenizer"));
-        tokens = tokens.size() >= tokenizerMaxTokens ? tokens.subList(0,tokenizerMaxTokens-1): tokens;
+        tokens = tokens.size() >= tokenizerMaxTokens ? tokens.subList(0, tokenizerMaxTokens - 1) : tokens;
         tokens.add(TOKEN_EOS);
         return tokens;
     }
@@ -195,8 +209,8 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
         return builder.build();
     }
 
-    private static Tensor createAttentionMask(Tensor d)  {
-        return d.map((x) -> x > 0 ? 1:0);
+    private static Tensor createAttentionMask(Tensor d) {
+        return d.map((x) -> x > 0 ? 1 : 0);
     }
 
     private void validateModels() {
@@ -217,7 +231,7 @@ public class OnnxEncoderDecoderGenerator extends AbstractComponent {
     }
 
     private void validateName(Map<String, TensorType> types, String name, String type) {
-        if ( ! types.containsKey(name)) {
+        if (!types.containsKey(name)) {
             throw new IllegalArgumentException("Model does not contain required " + type + ": '" + name + "'. " +
                     "Model contains: " + String.join(",", types.keySet()));
         }

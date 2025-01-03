@@ -8,7 +8,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 
-public class OnnxEncoderDecoderGeneratorTest {
+public class OnnxEncoderDecoderTextGeneratorTest {
 
     @Test
     public void testGenerator() {
@@ -17,14 +17,14 @@ public class OnnxEncoderDecoderGeneratorTest {
         String decoderModelPath = "src/test/models/onnx/llm/random_decoder.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(encoderModelPath));
 
-        var builder = new OnnxEncoderDecoderGeneratorConfig.Builder();
+        var builder = new OnnxEncoderDecoderTextGeneratorConfig.Builder();
         builder.tokenizerModel(ModelReference.valueOf(vocabPath));
         builder.encoderModel(ModelReference.valueOf(encoderModelPath));
         builder.decoderModel(ModelReference.valueOf(decoderModelPath));
-        OnnxEncoderDecoderGenerator generator = newGenerator(builder.build());
+        OnnxEncoderDecoderTextGenerator generator = newGenerator(builder.build());
 
-        GeneratorOptions options = new GeneratorOptions();
-        options.setSearchMethod(GeneratorOptions.SearchMethod.GREEDY);
+        TextGeneratorDecoderOptions options = new TextGeneratorDecoderOptions();
+        options.setSearchMethod(TextGeneratorDecoderOptions.SearchMethod.GREEDY);
         options.setMaxLength(10);
 
         String prompt = "generate some random text";
@@ -33,8 +33,8 @@ public class OnnxEncoderDecoderGeneratorTest {
         assertEquals("<unk> linear recruit latest sack annually institutions cert solid references", result);
     }
 
-    private static OnnxEncoderDecoderGenerator newGenerator(OnnxEncoderDecoderGeneratorConfig cfg) {
-        return new OnnxEncoderDecoderGenerator(new OnnxRuntime(), cfg);
+    private static OnnxEncoderDecoderTextGenerator newGenerator(OnnxEncoderDecoderTextGeneratorConfig cfg) {
+        return new OnnxEncoderDecoderTextGenerator(new OnnxRuntime(), cfg);
     }
 
 }
