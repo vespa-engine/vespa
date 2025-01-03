@@ -8,7 +8,6 @@ import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.language.process.TextGenerator;
 import de.kherud.llama.LlamaModel;
 import de.kherud.llama.ModelParameters;
 
