@@ -4,7 +4,7 @@ package ai.vespa.llm.generation;
 import com.yahoo.api.annotations.Beta;
 
 @Beta
-public class GeneratorOptions {
+public class TextGeneratorDecoderOptions {
 
     public enum SearchMethod {
         GREEDY,
@@ -20,7 +20,7 @@ public class GeneratorOptions {
         return searchMethod;
     }
 
-    public GeneratorOptions setSearchMethod(SearchMethod searchMethod) {
+    public TextGeneratorDecoderOptions setSearchMethod(SearchMethod searchMethod) {
         this.searchMethod = searchMethod;
         return this;
     }
@@ -29,7 +29,7 @@ public class GeneratorOptions {
         return maxLength;
     }
 
-    public GeneratorOptions setMaxLength(int maxLength) {
+    public TextGeneratorDecoderOptions setMaxLength(int maxLength) {
         this.maxLength = maxLength;
         return this;
     }

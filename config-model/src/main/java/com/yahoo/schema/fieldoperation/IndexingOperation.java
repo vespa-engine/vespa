@@ -3,6 +3,7 @@ package com.yahoo.schema.fieldoperation;
 
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.TextGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
@@ -34,13 +35,14 @@ public class IndexingOperation implements FieldOperation {
 
     /** Creates an indexing operation which will use the simple linguistics implementation suitable for testing */
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine) throws ParseException {
-        return fromStream(input, multiLine, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+        return fromStream(input, multiLine, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), 
+                TextGenerator.throwsOnUse.asMap());
     }
 
-    public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine,
-                                               Linguistics linguistics, Map<String, Embedder> embedders)
-            throws ParseException {
-        ScriptParserContext config = new ScriptParserContext(linguistics, embedders);
+    public static IndexingOperation fromStream(
+            SimpleCharStream input, boolean multiLine, Linguistics linguistics, Map<String, Embedder> embedders, 
+            Map<String, TextGenerator> generators) throws ParseException {
+        ScriptParserContext config = new ScriptParserContext(linguistics, embedders, generators);
         config.setAnnotatorConfig(new AnnotatorConfig());
         config.setInputStream(input);
         ScriptExpression exp;

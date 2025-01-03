@@ -150,6 +150,4 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         int queueSize = executor.getQueue().size();
         return String.format("%s, %d active, %d in queue", prepend, activeCount, queueSize);
     }
-
-
 }

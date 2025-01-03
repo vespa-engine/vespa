@@ -8,6 +8,7 @@ import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.language.process.TextGenerator;
 
 import java.util.HashMap;
 import java.util.logging.Logger;
@@ -76,5 +77,4 @@ public abstract class ConfigurableLanguageModel implements LanguageModel {
             params.setEndpoint(endpoint);
         }
     }
-
 }

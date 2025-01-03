@@ -2,7 +2,8 @@
   "ai.vespa.llm.clients.ConfigurableLanguageModel" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [
-      "ai.vespa.llm.LanguageModel"
+      "ai.vespa.llm.LanguageModel",
+      "com.yahoo.language.process.Generator"
     ],
     "attributes" : [
       "public",
@@ -14,7 +15,8 @@
       "protected java.lang.String getApiKey(ai.vespa.llm.InferenceParameters)",
       "protected void setApiKey(ai.vespa.llm.InferenceParameters)",
       "protected java.lang.String getEndpoint()",
-      "protected void setEndpoint(ai.vespa.llm.InferenceParameters)"
+      "protected void setEndpoint(ai.vespa.llm.InferenceParameters)",
+      "public java.lang.String generate(ai.vespa.llm.completion.Prompt, com.yahoo.language.process.Generator$Context)"
     ],
     "fields" : [ ]
   },
@@ -157,7 +159,8 @@
   "ai.vespa.llm.clients.LocalLLM" : {
     "superClass" : "com.yahoo.component.AbstractComponent",
     "interfaces" : [
-      "ai.vespa.llm.LanguageModel"
+      "ai.vespa.llm.LanguageModel",
+      "com.yahoo.language.process.Generator"
     ],
     "attributes" : [
       "public"
@@ -166,7 +169,8 @@
       "public void <init>(ai.vespa.llm.clients.LlmLocalClientConfig)",
       "public void deconstruct()",
       "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
-      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)",
+      "public java.lang.String generate(ai.vespa.llm.completion.Prompt, com.yahoo.language.process.Generator$Context)"
     ],
     "fields" : [ ]
   },

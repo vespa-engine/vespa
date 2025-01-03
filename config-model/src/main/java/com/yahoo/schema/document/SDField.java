@@ -13,6 +13,7 @@ import com.yahoo.documentmodel.OwnedTemporaryType;
 import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.TextGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.Schema;
@@ -399,12 +400,13 @@ public class SDField extends Field implements ImmutableSDField {
 
     /** Parse an indexing expression which will use the simple linguistics implementation suitable for testing */
     public void parseIndexingScript(String schemaName, String script) {
-        parseIndexingScript(schemaName, script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+        parseIndexingScript(schemaName, script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), TextGenerator.throwsOnUse.asMap());
     }
 
-    public void parseIndexingScript(String schemaName, String script, Linguistics linguistics, Map<String, Embedder> embedders) {
+    public void parseIndexingScript(String schemaName, String script, Linguistics linguistics, 
+                                    Map<String, Embedder> embedders, Map<String, TextGenerator> generators) {
         try {
-            ScriptParserContext config = new ScriptParserContext(linguistics, embedders);
+            ScriptParserContext config = new ScriptParserContext(linguistics, embedders, generators);
             config.setInputStream(new IndexingInput(script));
             setIndexingScript(schemaName, ScriptExpression.newInstance(config));
         } catch (ParseException e) {
