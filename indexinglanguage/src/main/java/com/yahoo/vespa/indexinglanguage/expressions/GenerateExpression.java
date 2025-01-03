@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Generates text using the configured Generator component
+ * Indexing language expression to generate text with TextGenerator component.
  *
  * @author glebashnik
  */
@@ -65,21 +65,24 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
-    public DataType setInputType(DataType type, VerificationContext context) {
-        super.setInputType(type, context);
-        
-        if (!(type == DataType.STRING) 
-                && !(type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-            throw new VerificationException(this, "This requires either a string or array<string> input type, but got " 
-                    + type.getName());
-        
-        return getOutputType(context); // cannot determine the output type from the input
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        verifyInputOutputType(inputType);
+        super.setInputType(inputType, context);
+        return inputType; // return output type the same as input type: string or array<string>
     }
 
     @Override
-    public DataType setOutputType(DataType type, VerificationContext context) {
-        super.setOutputType(null, type, null, context);
-        return getInputType(context); // cannot determine the input (string vs array of strings) from the output
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        verifyInputOutputType(outputType);
+        super.setOutputType(null, outputType, null, context); // todo: Why not set actualOutput to outputType?
+        return outputType; // return input type the same as output type: string or array<string>
+    }
+    
+    private void verifyInputOutputType(DataType type) {
+        if (!(type == DataType.STRING)
+                && !(type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
+            throw new VerificationException(this, "This requires either a string or array<string> input type, but got "
+                    + type.getName());
     }
 
     @Override
