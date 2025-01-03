@@ -554,6 +554,14 @@ public class PermanentFlags {
             "Whether to sync companies to HubSpot. Use this to block sync for specific companies",
             "Takes effect immediately");
 
+    public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
+            "tls-capabilities-enforcement-mode", "disable",
+            "Configure Vespa TLS capability enforcement mode",
+            "Takes effect on restart of Docker container",
+            INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
+    );
+
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
