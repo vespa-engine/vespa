@@ -2,7 +2,7 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.Generator;
+import com.yahoo.language.process.TextGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.EchoExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
@@ -98,7 +98,7 @@ public class ScriptParserTestCase {
 
     private static ScriptParserContext newContext(String input) {
         return new ScriptParserContext(
-                new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), Generator.throwsOnUse.asMap()
+                new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), TextGenerator.throwsOnUse.asMap()
         ).setInputStream(new IndexingInput(input));
     }
 

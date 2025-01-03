@@ -3,7 +3,7 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.Generator;
+import com.yahoo.language.process.TextGenerator;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.parser.CharStream;
 
@@ -18,11 +18,11 @@ public class ScriptParserContext {
     private AnnotatorConfig annotatorConfig = new AnnotatorConfig();
     private Linguistics linguistics;
     private final Map<String, Embedder> embedders;
-    private final Map<String, Generator> generators;
+    private final Map<String, TextGenerator> generators;
     private String defaultFieldName = null;
     private CharStream inputStream = null;
 
-    public ScriptParserContext(Linguistics linguistics, Map<String, Embedder> embedders, Map<String, Generator> generators) {
+    public ScriptParserContext(Linguistics linguistics, Map<String, Embedder> embedders, Map<String, TextGenerator> generators) {
         this.linguistics = linguistics;
         this.embedders = embedders;
         this.generators = generators;
@@ -50,7 +50,7 @@ public class ScriptParserContext {
         return Collections.unmodifiableMap(embedders);
     }
     
-    public Map<String, Generator> getGenerators() { return Collections.unmodifiableMap(generators);
+    public Map<String, TextGenerator> getGenerators() { return Collections.unmodifiableMap(generators);
     }
 
     public String getDefaultFieldName() {

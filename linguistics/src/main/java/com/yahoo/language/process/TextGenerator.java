@@ -8,27 +8,31 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
 
-public interface Generator {
+/**
+ * Generates text given a prompt.
+ * 
+ * @author glebashnik
+ */
+public interface TextGenerator {
 
     // Name of generator when none is explicitly given
     String defaultGeneratorId = "default";
 
     // An instance of this which throws IllegalStateException if attempted used
-    Generator throwsOnUse = new FailingGenerator();
+    TextGenerator throwsOnUse = new FailingTextGenerator();
 
     // Returns this generator instance as a map with the default generator name
-    default Map<String, Generator> asMap() {
+    default Map<String, TextGenerator> asMap() {
         return asMap(defaultGeneratorId);
     }
 
     // Returns this generator instance as a map with the given name
-    default Map<String, Generator> asMap(String name) {
+    default Map<String, TextGenerator> asMap(String name) {
         return Map.of(name, this);
     }
 
     String generate(Prompt prompt, Context context);
-
-
+    
     class Context {
         private Language language = Language.UNKNOWN;
         private String destination;
@@ -55,7 +59,7 @@ public interface Generator {
             this.cache = other.cache;
         }
 
-        public Generator.Context copy() { return new Context(this); }
+        public TextGenerator.Context copy() { return new Context(this); }
 
         /** Returns the language of the text, or UNKNOWN (default) to use a language independent generation */
         public Language getLanguage() { return language; }
@@ -67,17 +71,16 @@ public interface Generator {
         }
 
         /**
-         * Returns the name of the recipient of this tensor.
-         * This is either a query feature name
-         * ("query(feature)"), or a schema and field name concatenated by a dot ("schema.field").
+         * Returns the name of the recipient of the generated text.
+         * This is a schema and a field name concatenated by a dot ("schema.field").
          * This cannot be null.
          */
         public String getDestination() { return destination; }
 
         /**
-         * Sets the name of the recipient of this tensor.
-         * This is either a query feature name
-         * ("query(feature)"), or a schema and field name concatenated by a dot ("schema.field").
+         * Sets the name of the recipient of the generated text.
+         * This is a schema and a field name concatenated by a dot ("schema.field").
+         * This cannot be null.
          */
         public Context setDestination(String destination) {
             this.destination = destination;
@@ -110,14 +113,14 @@ public interface Generator {
 
     }
     
-    class FailingGenerator implements Generator {
+    class FailingTextGenerator implements TextGenerator {
         private final String message;
 
-        public FailingGenerator() {
+        public FailingTextGenerator() {
             this("No generator has been configured");
         }
 
-        public FailingGenerator(String message) {
+        public FailingTextGenerator(String message) {
             this.message = message;
         }
         
@@ -125,5 +128,5 @@ public interface Generator {
             throw new IllegalStateException(message);
         }
     }
-
+    
 }

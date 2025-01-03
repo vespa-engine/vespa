@@ -22,7 +22,7 @@ import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.Generator;
+import com.yahoo.language.process.TextGenerator;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.language.provider.DefaultGeneratorProvider;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -61,10 +61,10 @@ public class IndexingProcessor extends DocumentProcessor {
                              IlscriptsConfig ilscriptsConfig,
                              Linguistics linguistics,
                              ComponentRegistry<Embedder> embedders,
-                             ComponentRegistry<Generator> generators) {
+                             ComponentRegistry<TextGenerator> generators) {
         this.documentTypeManager = documentTypeManager;
         Map<String, Embedder> embedderMap = toMap(embedders, DefaultEmbedderProvider.class);
-        Map<String, Generator> generatorMap = toMap(generators, DefaultGeneratorProvider.class);
+        Map<String, TextGenerator> generatorMap = toMap(generators, DefaultGeneratorProvider.class);
         scriptManager = new ScriptManager(this.documentTypeManager, ilscriptsConfig, linguistics, embedderMap, generatorMap);
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }

@@ -1,4 +1,4 @@
-package ai.vespa.generative;
+package ai.vespa.llm.generation;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
@@ -13,36 +13,36 @@ import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
-import com.yahoo.document.DataType;
+import com.yahoo.language.process.TextGenerator;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 
-public class LanguageModelGeneratorTest {
+public class ConfigurableTextGeneratorTest {
     @Test
-    public void testGeneration() {
+    public void testGenerate() {
         LanguageModel languageModel1 = new RepeatMockLanguageModel(1);
         LanguageModel languageModel2 = new RepeatMockLanguageModel(2);
         var languageModels = Map.of("mock1", languageModel1, "mock2", languageModel2);
         
-        var config1 = new LanguageModelGeneratorConfig.Builder().providerId("mock1").build();
+        var config1 = new TextGeneratorConfig.Builder().providerId("mock1").build();
         var generator1 = createGenerator(config1, languageModels);
-        var context = new com.yahoo.language.process.Generator.Context("schema.indexing");
+        var context = new TextGenerator.Context("schema.indexing");
         var result1 = generator1.generate(StringPrompt.from("hello"), context);
         assertEquals("hello", result1);
     
-        var config2 = new LanguageModelGeneratorConfig.Builder().providerId("mock2").build();
+        var config2 = new TextGeneratorConfig.Builder().providerId("mock2").build();
         var generator2 = createGenerator(config2, Map.of("mock1", languageModel1, "mock2", languageModel2));
         var result2 = generator2.generate(StringPrompt.from("hello"), context);
         assertEquals("hello hello", result2);
     }
 
-    private static LanguageModelGenerator createGenerator(LanguageModelGeneratorConfig config, Map<String, LanguageModel> languageModels) {
-        ComponentRegistry<LanguageModel> models = new ComponentRegistry<>();
-        languageModels.forEach((key, value) -> models.register(ComponentId.fromString(key), value));
-        models.freeze();
-        return new LanguageModelGenerator(config, models);
+    private static ConfigurableTextGenerator createGenerator(TextGeneratorConfig config, Map<String, LanguageModel> languageModels) {
+        ComponentRegistry<LanguageModel> languageModelsRegistry = new ComponentRegistry<>();
+        languageModels.forEach((key, value) -> languageModelsRegistry.register(ComponentId.fromString(key), value));
+        languageModelsRegistry.freeze();
+        return new ConfigurableTextGenerator(config, languageModelsRegistry);
     }
     
     public static class RepeatMockLanguageModel implements LanguageModel {

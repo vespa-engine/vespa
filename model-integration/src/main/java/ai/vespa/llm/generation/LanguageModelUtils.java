@@ -1,9 +1,6 @@
-package ai.vespa.generative;
+package ai.vespa.llm.generation;
 
-import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.completion.Prompt;
-import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 
@@ -12,10 +9,11 @@ import java.util.stream.Collectors;
 
 
 /**
- *  Provide utilities to implement Generator interface.
- *  It is used by language models as well as other generators.
+ *  Provide utilities for working with language models.
+ *  
+ *  @author glebashnik
  */
-public class GeneratorUtils {
+public class LanguageModelUtils {
     public static LanguageModel findLanguageModel(String providerId, ComponentRegistry<LanguageModel> languageModels, Logger log)
             throws IllegalArgumentException
     {
@@ -45,14 +43,5 @@ public class GeneratorUtils {
         }
         
         return languageModel;
-    }
-    
-    public static String generate(
-            Prompt prompt, LanguageModel languageModel)
-    {
-        var options = new InferenceParameters(s -> "");
-        var completions = languageModel.complete(prompt, options);
-        var firstCompletion = completions.get(0);
-        return firstCompletion.text();
     }
 }

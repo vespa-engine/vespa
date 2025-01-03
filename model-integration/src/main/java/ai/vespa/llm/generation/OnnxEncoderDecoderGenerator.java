@@ -30,7 +30,7 @@ import java.util.Map;
  * @author lesters
  */
 @Beta
-public class Generator extends AbstractComponent {
+public class OnnxEncoderDecoderGenerator extends AbstractComponent {
 
     private final static int TOKEN_EOS = 1;  // end of sequence
 
@@ -51,7 +51,7 @@ public class Generator extends AbstractComponent {
     private final OnnxEvaluator decoder;
 
     @Inject
-    public Generator(OnnxRuntime onnx, GeneratorConfig config) {
+    public OnnxEncoderDecoderGenerator(OnnxRuntime onnx, OnnxEncoderDecoderGeneratorConfig config) {
         // Set up tokenizer
         tokenizer = new SentencePieceEmbedder.Builder(config.tokenizerModel().toString()).build();
         tokenizerMaxTokens = config.tokenizerMaxTokens();

@@ -17,7 +17,6 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.Generator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.schema.DistributableResource;
@@ -32,14 +31,11 @@ import com.yahoo.schema.document.MatchAlgorithm;
 import com.yahoo.schema.document.HnswIndexParams;
 import com.yahoo.schema.document.Sorting;
 import com.yahoo.schema.document.Stemming;
-import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.FeatureNames;
 import com.yahoo.schema.fieldoperation.IndexingOperation;
 import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
@@ -50,7 +46,6 @@ import java.util.Optional;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.logging.Level;
 
 /**
@@ -124,6 +119,7 @@ public class SchemaParser {
                                                       token_source.input_stream.getBeginColumn() + ".").initCause(e);
         }
     }
+}}
 }
 
 PARSER_END(SchemaParser)

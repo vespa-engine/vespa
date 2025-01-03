@@ -1,5 +1,5 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package=ai.vespa.generative
+package=ai.vespa.llm.generation
 
 # The external LLM provider - the id of a LanguageModel component
 providerId string default=""

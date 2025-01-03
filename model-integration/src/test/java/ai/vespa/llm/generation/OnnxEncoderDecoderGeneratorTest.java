@@ -1,17 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.generation;
 
-import ai.vespa.llm.generation.Generator;
-import ai.vespa.llm.generation.GeneratorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
-import com.yahoo.llm.GeneratorConfig;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 
-public class GeneratorTest {
+public class OnnxEncoderDecoderGeneratorTest {
 
     @Test
     public void testGenerator() {
@@ -20,11 +17,11 @@ public class GeneratorTest {
         String decoderModelPath = "src/test/models/onnx/llm/random_decoder.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(encoderModelPath));
 
-        GeneratorConfig.Builder builder = new GeneratorConfig.Builder();
+        var builder = new OnnxEncoderDecoderGeneratorConfig.Builder();
         builder.tokenizerModel(ModelReference.valueOf(vocabPath));
         builder.encoderModel(ModelReference.valueOf(encoderModelPath));
         builder.decoderModel(ModelReference.valueOf(decoderModelPath));
-        Generator generator = newGenerator(builder.build());
+        OnnxEncoderDecoderGenerator generator = newGenerator(builder.build());
 
         GeneratorOptions options = new GeneratorOptions();
         options.setSearchMethod(GeneratorOptions.SearchMethod.GREEDY);
@@ -36,8 +33,8 @@ public class GeneratorTest {
         assertEquals("<unk> linear recruit latest sack annually institutions cert solid references", result);
     }
 
-    private static Generator newGenerator(GeneratorConfig cfg) {
-        return new Generator(new OnnxRuntime(), cfg);
+    private static OnnxEncoderDecoderGenerator newGenerator(OnnxEncoderDecoderGeneratorConfig cfg) {
+        return new OnnxEncoderDecoderGenerator(new OnnxRuntime(), cfg);
     }
 
 }

@@ -1,25 +1,28 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import ai.vespa.llm.completion.StringPrompt;
+import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
-import com.yahoo.language.process.Generator;
+import com.yahoo.language.process.TextGenerator;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
- * Generates a value using the configured Generator component
+ * Generates text using the configured Generator component
  *
  * @author glebashnik
  */
 public class GenerateExpression extends Expression {
     private final Linguistics linguistics;
-    private final Generator generator;
+    private final TextGenerator textGenerator;
     private final String generatorId;
     private final List<String> generatorArguments;
 
@@ -31,11 +34,11 @@ public class GenerateExpression extends Expression {
     
     public GenerateExpression(
             Linguistics linguistics, 
-            Map<String, Generator> generators, 
+            Map<String, TextGenerator> generators, 
             String generatorId, 
             List<String> generatorArguments
     ) {
-        super(DataType.STRING);
+        super(null);
         this.linguistics = linguistics;
         this.generatorId = generatorId;
         this.generatorArguments = List.copyOf(generatorArguments);
@@ -46,29 +49,37 @@ public class GenerateExpression extends Expression {
             throw new IllegalStateException("No generators provided");  // should never happen
         }
         else if (generators.size() == 1 && ! generatorIdProvided) {
-            this.generator = generators.entrySet().stream().findFirst().get().getValue();
+            this.textGenerator = generators.entrySet().stream().findFirst().get().getValue();
         }
         else if (generators.size() > 1 && ! generatorIdProvided) {
-            this.generator = new Generator.FailingGenerator(
+            this.textGenerator = new TextGenerator.FailingTextGenerator(
                     "Multiple generators are provided but no generator id is given. " +
                     "Valid generators are " + validGenerators(generators));
         }
         else if ( ! generators.containsKey(generatorId)) {
-            this.generator = new Generator.FailingGenerator("Can't find generator '" + generatorId + "'. " +
+            this.textGenerator = new TextGenerator.FailingTextGenerator("Can't find generator '" + generatorId + "'. " +
                     "Valid generators are " + validGenerators(generators));
         } else  {
-            this.generator = generators.get(generatorId);
+            this.textGenerator = generators.get(generatorId);
         }
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
-        return super.setInputType(inputType, DataType.STRING, context);
+    public DataType setInputType(DataType type, VerificationContext context) {
+        super.setInputType(type, context);
+        
+        if (!(type == DataType.STRING) 
+                && !(type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
+            throw new VerificationException(this, "This requires either a string or array<string> input type, but got " 
+                    + type.getName());
+        
+        return getOutputType(context); // cannot determine the output type from the input
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        return super.setOutputType(DataType.STRING, outputType, null, context);
+    public DataType setOutputType(DataType type, VerificationContext context) {
+        super.setOutputType(null, type, null, context);
+        return getInputType(context); // cannot determine the input (string vs array of strings) from the output
     }
 
     @Override
@@ -85,32 +96,52 @@ public class GenerateExpression extends Expression {
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        if (context.getCurrentValue() == null) return;
+        if (context.getCurrentValue() == null) {
+            return;
+        }
+
+        FieldValue inputValue = context.getCurrentValue();
+        DataType inputType = inputValue.getDataType();
         
-        String output;
-        if (context.getCurrentValue().getDataType() == DataType.STRING) {
-            output = generateSingleValue(context);
+        if (inputType == DataType.STRING) {
+            context.setCurrentValue(generateSingleValue(context));
+        }
+        else if (inputType instanceof ArrayDataType arrayType && arrayType.getNestedType() == DataType.STRING) {
+            context.setCurrentValue(generateArrayValue(context));
         }
         else {
-            throw new IllegalArgumentException("Generate can only be done on string fields, not " +
+            throw new IllegalArgumentException("Generate can only be done on string or array<string> fields, not " +
                     context.getCurrentValue().getDataType());
         }
-        
-        context.setCurrentValue(new StringFieldValue(output));
+
     }
 
-    private String generateSingleValue(ExecutionContext context) {
+    private StringFieldValue generateSingleValue(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue)context.getCurrentValue();
-        return generate(input.getString(), targetType, context);
+        String output = generate(input.getString(), context);
+        return new StringFieldValue(output);
+    }
+    
+    private Array<StringFieldValue> generateArrayValue(ExecutionContext context) {
+        @SuppressWarnings("unchecked")
+        var inputArrayValue = (Array<StringFieldValue>)context.getCurrentValue();
+        var outputArrayValue = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
+
+        for (StringFieldValue inputStringValue : inputArrayValue) {
+            String output = generate(inputStringValue.getString(), context);
+            outputArrayValue.add(new StringFieldValue(output));
+        }
+        
+        return outputArrayValue;
     }
 
-    private String generate(String input, DataType targetType, ExecutionContext context) {
-        return generator.generate(
-                StringPrompt.from(input),
-                new Generator.Context(destination, context.getCache())
-                        .setLanguage(context.resolveLanguage(linguistics))
-                        .setGeneratorId(generatorId)
-        );
+
+    private String generate(String input, ExecutionContext context) {
+        var textGeneratorContext =  new TextGenerator.Context(destination, context.getCache())
+                .setLanguage(context.resolveLanguage(linguistics))
+                .setGeneratorId(generatorId);
+        
+        return textGenerator.generate(StringPrompt.from(input), textGeneratorContext);
     }
 
     @Override
@@ -118,16 +149,14 @@ public class GenerateExpression extends Expression {
         return targetType;
     }
 
-    private boolean validTarget(DataType target) {
-        return target == DataType.STRING;
-    }
-
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("generate");
+        
         if (this.generatorId != null && !this.generatorId.isEmpty())
             sb.append(" ").append(this.generatorId);
+        
         generatorArguments.forEach(arg -> sb.append(" ").append(arg));
         return sb.toString();
     }
@@ -140,7 +169,7 @@ public class GenerateExpression extends Expression {
         return o instanceof GenerateExpression;
     }
 
-    private static String validGenerators(Map<String, Generator> generators) {
+    private static String validGenerators(Map<String, TextGenerator> generators) {
         List<String> generatorIds = new ArrayList<>();
         generators.forEach((key, value) -> generatorIds.add(key));
         generatorIds.sort(null);
