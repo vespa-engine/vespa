@@ -539,6 +539,29 @@ public class PermanentFlags {
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
+            "hubspot-sync-tenants", true,
+            "Whether to sync tenants to HubSpot. Use this to block sync for specific tenants",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
+            "hubspot-sync-contacts", true,
+            "Whether to sync contacts to HubSpot. Use this to block sync for specific users",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
+            "hubspot-sync-companies", true,
+            "Whether to sync companies to HubSpot. Use this to block sync for specific companies",
+            "Takes effect immediately");
+
+    public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
+            "tls-capabilities-enforcement-mode", "disable",
+            "Configure Vespa TLS capability enforcement mode",
+            "Takes effect on restart of Docker container",
+            INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
+    );
+
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

@@ -245,14 +245,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
-            "tls-capabilities-enforcement-mode", "disable",
-            List.of("bjorncs", "vekterli"), "2022-07-21", "2025-06-01",
-            "Configure Vespa TLS capability enforcement mode",
-            "Takes effect on restart of Docker container",
-            INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
-    );
-
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
             List.of("olaa"), "2022-09-23", "2025-02-01",
@@ -355,12 +347,6 @@ public class Flags {
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundBooleanFlag CLOUD_TRIAL_NOTIFICATIONS = defineFeatureFlag(
-            "cloud-trial-notifications", false,
-            List.of("bjorncs", "oyving"), "2023-10-13", "2025-02-01",
-            "Whether to send cloud trial email notifications",
-            "Takes effect immediately");
-
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 64,
             List.of("vekterli"), "2024-04-12", "2025-03-01",
@@ -375,12 +361,6 @@ public class Flags {
             List.of("olaa"), "2024-04-03", "2025-02-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment", INSTANCE_ID);
-
-    public static UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
-            "hubspot-sync-tenants", false,
-            List.of("bjorncs"), "2024-05-07", "2025-02-01",
-            "Whether to sync tenants to HubSpot",
-            "Takes effect immediately");
 
     public static UnboundBooleanFlag ATLASSIAN_SYNC_TENANTS = defineFeatureFlag(
             "atlassian-sync-tenants", false,
@@ -397,13 +377,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag ENABLE_NEW_TRIAL = defineFeatureFlag(
-            "enable-new-trial", false,
-            List.of("bjorncs"), "2024-06-18", "2025-02-01",
-            "Whether to enable the new trial experience",
-            "Takes effect immediately",
-            TENANT_ID);
-
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", true,
             List.of("vekterli"), "2024-06-03", "2025-03-01",
@@ -418,12 +391,6 @@ public class Flags {
             "Whether to launch an Athenz service unique to the application. Only valid in public systems!",
             "Takes effect on next deployment",
             INSTANCE_ID);
-
-    public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
-            "hubspot-sync-contacts", false,
-            List.of("bjorncs"), "2024-05-27", "2025-02-01",
-            "Whether to sync contacts to HubSpot",
-            "Takes effect immediately");
 
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
             "distribution-config-from-cluster-controller", true,
@@ -447,12 +414,6 @@ public class Flags {
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
-
-    public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
-            "hubspot-sync-companies", false,
-            List.of("bjorncs"), "2024-07-19", "2025-02-01",
-            "Whether to sync companies to HubSpot",
-            "Takes effect immediately");
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
