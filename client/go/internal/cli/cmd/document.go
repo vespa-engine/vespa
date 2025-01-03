@@ -97,17 +97,27 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 	return printResult(cli, operationResult(false, doc, service, result), false)
 }
 
-func readDocument(id string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string) error {
+func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string) error {
+	parsedIds := make([]document.Id, 0, len(ids))
+	for _, id := range ids {
+		parsedId, err := document.ParseId(id)
+		if err != nil {
+			return err
+		}
+		parsedIds = append(parsedIds, parsedId)
+	}
+
 	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl, headers)
 	if err != nil {
 		return err
 	}
-	docId, err := document.ParseId(id)
-	if err != nil {
-		return err
+
+	for _, docId := range parsedIds {
+		result := client.Get(docId, fieldSet)
+		printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true)
 	}
-	result := client.Get(docId, fieldSet)
-	return printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true)
+
+	return nil
 }
 
 func operationResult(read bool, doc document.Document, service *vespa.Service, result document.Result) OperationResult {
@@ -264,14 +274,14 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               "get id",
-		Short:             "Gets a document",
-		Args:              cobra.ExactArgs(1),
+		Short:             "Gets documents",
+		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
-		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
+		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams...`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return readDocument(args[0], timeoutSecs, waiter, printCurl, cli, fieldSet, headers)
+			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers)
 		},
 	}
 	cmd.Flags().StringVar(&fieldSet, "field-set", "", "Fields to include when reading document")
