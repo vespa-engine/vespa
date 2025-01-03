@@ -221,14 +221,14 @@ private:
         return create_search_helper(strict());
     }
 public:
-    WhiteListBlueprint(const search::BitVector &activeLids, bool all_lids_active, uint32_t numActiveLids)
+    WhiteListBlueprint(const search::BitVector &activeLids, bool all_lids_active)
         : SimpleLeafBlueprint(),
           _activeLids(activeLids),
           _all_lids_active(all_lids_active),
           _lock(),
           _matchDataVector()
     {
-        setEstimate(HitEstimate(numActiveLids, false));
+        setEstimate(HitEstimate(_activeLids.size(), false));
     }
 
     bool isWhiteList() const noexcept final { return true; }
@@ -253,8 +253,7 @@ Blueprint::UP
 LidAllocator::createWhiteListBlueprint() const
 {
     return std::make_unique<WhiteListBlueprint>(_activeLids.getBitVector(),
-                                                (getNumUsedLids() == getNumActiveLids()),
-                                                getNumActiveLids());
+                                                (getNumUsedLids() == getNumActiveLids()));
 }
 
 void
