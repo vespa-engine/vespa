@@ -347,12 +347,6 @@ public class Flags {
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
-    public static final UnboundBooleanFlag CLOUD_TRIAL_NOTIFICATIONS = defineFeatureFlag(
-            "cloud-trial-notifications", false,
-            List.of("bjorncs", "oyving"), "2023-10-13", "2025-02-01",
-            "Whether to send cloud trial email notifications",
-            "Takes effect immediately");
-
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 64,
             List.of("vekterli"), "2024-04-12", "2025-03-01",
