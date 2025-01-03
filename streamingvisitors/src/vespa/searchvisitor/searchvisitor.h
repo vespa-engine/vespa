@@ -26,6 +26,7 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/sortspec.h>
+#include <vespa/searchlib/common/unique_issues.h>
 #include <vespa/storage/visiting/visitor.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
@@ -384,6 +385,8 @@ private:
      **/
     void generateDocumentSummaries();
 
+    void generate_errors();
+
     class GroupingEntry : std::shared_ptr<Grouping> {
     public:
         explicit GroupingEntry(Grouping * grouping);
@@ -489,6 +492,7 @@ private:
     SyntheticFieldsController               _syntheticFieldsController;
     RankController                          _rankController;
     vsm::StringFieldIdTMapT                 _fieldsUnion;
+    search::UniqueIssues                    _unique_issues;
 
     void setupAttributeVector(const vsm::FieldPath &fieldPath);
     bool is_text_matching(std::string_view index) const noexcept override;

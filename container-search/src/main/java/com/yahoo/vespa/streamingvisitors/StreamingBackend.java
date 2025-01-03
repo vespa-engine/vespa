@@ -265,6 +265,11 @@ public class StreamingBackend extends VespaBackend {
             result.hits().addError(ErrorMessage.createTimeout("Missing hit summary data for " + skippedHits + " hits"));
         }
 
+        var errors = visitor.getErrors();
+        for (var error : errors) {
+            result.hits().addError(ErrorMessage.createSearchReplyError(error));
+        }
+
         return result;
     }
 
