@@ -66,23 +66,24 @@ public class GenerateExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        verifyInputOutputType(inputType);
+        if (!(inputType == DataType.STRING)
+                && !(inputType instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
+            throw new VerificationException(this, "Generate expression requires either a string or array<string> input type, but got "
+                    + inputType.getName());
+        
         super.setInputType(inputType, context);
         return inputType; // return output type the same as input type: string or array<string>
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        verifyInputOutputType(outputType);
+        if (!(outputType == DataType.STRING)
+                && !(outputType instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
+            throw new VerificationException(this, "Generate expression requires either a string or array<string> output type, but got "
+                    + outputType.getName());
+        
         super.setOutputType(null, outputType, null, context); // todo: Why not set actualOutput to outputType?
         return outputType; // return input type the same as output type: string or array<string>
-    }
-    
-    private void verifyInputOutputType(DataType type) {
-        if (!(type == DataType.STRING)
-                && !(type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-            throw new VerificationException(this, "This requires either a string or array<string> input type, but got "
-                    + type.getName());
     }
 
     @Override
@@ -113,7 +114,7 @@ public class GenerateExpression extends Expression {
             context.setCurrentValue(generateArrayValue(context));
         }
         else {
-            throw new IllegalArgumentException("Generate can only be done on string or array<string> fields, not " +
+            throw new IllegalArgumentException("Generate expression requires either a string or array<string> input type, but got " +
                     context.getCurrentValue().getDataType());
         }
 
