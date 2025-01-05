@@ -183,7 +183,7 @@ Requires: vespa-re2 = 20210801
 %else
 Requires: re2
 %endif
-%if 0%{?fedora} || 0%{?el8} || 0%{?el9}
+%if 0%{?el8} || 0%{?el9} || 0%{?el10} || 0%{?fedora}
 Requires: glibc-langpack-en
 %endif
 
@@ -202,17 +202,9 @@ Requires: vespa-openssl >= 3.1.7
 %else
 Requires: openssl-libs
 %endif
-%if 0%{?el8}
+%if 0%{?el8} || 0%{?el9} || 0%{?el10} || 0%{?fedora}
 Requires: llvm-libs
 Requires: vespa-protobuf = %{_vespa_protobuf_version}
-%endif
-%if 0%{?el9}
-Requires: llvm-libs
-Requires: vespa-protobuf = %{_vespa_protobuf_version}
-%endif
-%if 0%{?fedora}
-Requires: vespa-protobuf = %{_vespa_protobuf_version}
-Requires: llvm-libs
 %endif
 Requires: vespa-onnxruntime = 1.20.1
 Requires: vespa-jllama = %{_vespa_llama_version}
