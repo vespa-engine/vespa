@@ -46,6 +46,9 @@
 %global _vespa_java_version 21
 %endif
 %endif
+%if 0%{?el10}
+%global _vespa_java_version 21
+%endif
 %if ! 0%{?_vespa_java_version:1}
 %global _vespa_java_version 17
 %endif
@@ -107,6 +110,11 @@ Requires: vespa-gtest = %{_vespa_gtest_version}
 Requires: vespa-gtest = %{_vespa_gtest_version}
 %endif
 
+%if 0%{?el10}
+%define _use_vespa_gtest 1
+Requires: vespa-gtest = %{_vespa_gtest_version}
+%endif
+
 %if 0%{?amzn2023}
 %define _java_home /usr/lib/jvm/java-17-amazon-corretto
 %define _use_vespa_gtest 1
@@ -121,7 +129,7 @@ Requires: vespa-xxhash >= 0.8.1
 Requires: gtest
 %endif
 
-%if ! 0%{?el9}
+%if ! 0%{?el9} && ! 0%{?el10}
 Requires: libcgroup-tools
 %endif
 
