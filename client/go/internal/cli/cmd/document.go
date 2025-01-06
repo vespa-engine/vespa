@@ -114,7 +114,9 @@ func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool
 
 	for _, docId := range parsedIds {
 		result := client.Get(docId, fieldSet)
-		printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true)
+		if err := printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true); err != nil {
+			return err
+		}
 	}
 
 	return nil
