@@ -15,6 +15,7 @@ public:
     RawAttribute(const std::string& name, const Config& config);
     ~RawAttribute() override;
 
+    bool is_sortable() const noexcept override;
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const override;
     long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const override;
 };

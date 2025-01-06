@@ -106,7 +106,7 @@ public class RestApiHandler implements HttpRequestHandler {
             result.setJson(jsonWriter.createErrorJson(exception.getMessage()));
             return result;
         } catch (UnknownMasterException exception) {
-            logRequestException(request, exception, Level.WARNING);
+            logRequestException(request, exception, Level.INFO);
             JsonHttpResult result = new JsonHttpResult();
             result.setHttpCode(503, "Service Unavailable");
             result.setJson(jsonWriter.createErrorJson(exception.getMessage()));

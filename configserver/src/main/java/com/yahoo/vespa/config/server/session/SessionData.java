@@ -48,7 +48,8 @@ public record SessionData(ApplicationId applicationId,
                           List<DataplaneToken> dataplaneTokens,
                           ActivationTriggers activationTriggers) {
 
-    // NOTE: Any state added here MUST also be propagated in com.yahoo.vespa.config.server.deploy.Deployment.prepare()
+    // NOTE: Any state added here MUST also be done in SessionPreparer.writeStateToZooKeeper
+    // and SessionSerializer.read()/write()
     static final String APPLICATION_ID_PATH = "applicationId";
     static final String APPLICATION_PACKAGE_REFERENCE_PATH = "applicationPackageReference";
     static final String VERSION_PATH = "version";

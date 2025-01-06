@@ -536,7 +536,7 @@ indexing.threads int default=1 restart
 
 ## How much memory is set aside for caching.
 ## Now only used for caching of dictionary lookups.
-## TODO Still relevant, check config model, seems unused.
+## DEPRECATED - Not used.
 index.cache.size long default=0 restart
 
 ## Configure a shared disk index posting list cache across all document dbs.
@@ -547,6 +547,31 @@ index.cache.size long default=0 restart
 ## A negative number specifies the max size of the cache as a percentage of total memory.
 index.cache.postinglist.maxbytes long default=0 restart
 index.cache.bitvector.maxbytes long default=0 restart
+
+## Configure a size ratio between the probationary and protected segment in
+## the posting list and bitvector caches. A value of zero means that segmented
+## (SLRU) behavior is entirely disabled, and the cache works as a regular
+## LRU. Any other value (0, 1] will scale the cache so that the protected
+## segment will receive `maxbytes` * ratio bytes, and the probationary segment
+## will receive `maxbytes` * (1 - ratio) bytes.
+##
+## Note that it never makes sense with a ratio of 1, as elements must be able
+## to first enter the probationary segment before being allowed a promotion into
+## the protected segment.
+index.cache.postinglist.slru_protected_segment_ratio double default=0.0 restart
+index.cache.bitvector.slru_protected_segment_ratio double default=0.0 restart
+
+## Configures the cache to use a LFU frequency sketch to estimate the frequency
+## of cacheable elements and to prevent less frequently accessed elements from
+## displacing more frequent ones.
+## The specified element count should be at least as high as the expected number
+## of elements the cache could contain (_not_ its size in bytes), as this has
+## direct impact on how accurate the (inherently probabilistic) frequency
+## estimates are.
+##
+## Any value greater than 0 enables LFU semantics, 0 disables LFU (default).
+index.cache.postinglist.lfu_sketch_max_element_count long default=0 restart
+index.cache.bitvector.lfu_sketch_max_element_count long default=0 restart
 
 ## Specifies which tensor implementation to use for all backend code.
 ##

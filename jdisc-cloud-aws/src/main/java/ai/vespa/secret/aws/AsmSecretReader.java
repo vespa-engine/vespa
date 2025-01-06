@@ -18,12 +18,13 @@ import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueRequest;
 import software.amazon.awssdk.services.secretsmanager.model.GetSecretValueResponse;
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsRequest;
-import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsResponse;
+import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
 
 import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -124,16 +125,14 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     }
 
     private static SecretVersionState toSecretVersionState(List<String> versionStages) {
-        if (versionStages.size() != 1) {
-            throw new IllegalArgumentException("Expected exactly one version stage, got: " + versionStages);
+        var stages = new HashSet<>(versionStages);
+        if (stages.contains(AWSCURRENT)) {
+            return SecretVersionState.CURRENT;
+        } else if (stages.contains(AWSPENDING)) {
+            return SecretVersionState.PENDING;
+        } else {
+            return SecretVersionState.DEPRECATED;
         }
-        var state = versionStages.get(0);
-        return switch (state) {
-            case "AWSCURRENT" -> SecretVersionState.CURRENT;
-            case "AWSPENDING" -> SecretVersionState.PENDING;
-            case "AWSPREVIOUS" -> SecretVersionState.PREVIOUS;
-            default -> throw new IllegalArgumentException("Unknown secret version state: " + state);
-        };
     }
 
     /**
@@ -164,12 +163,10 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
     @Override
     public List<Secret> listSecretVersions(Key key) {
         var client = getClient(key.vaultName());
-
         try {
-            ListSecretVersionIdsResponse response = client.listSecretVersionIds(
-                    ListSecretVersionIdsRequest.builder()
-                            .secretId(awsSecretId(key)).build());
-
+            var response = client.listSecretVersionIds(ListSecretVersionIdsRequest.builder()
+                                                               .secretId(awsSecretId(key))
+                                                               .build());
             var secretVersions = response.versions().stream()
                     .map(version -> getSecret(key, SecretVersionId.of(version.versionId())))
                     .sorted().toList();
@@ -177,6 +174,8 @@ public abstract class AsmSecretReader extends AsmSecretStoreBase
             secretVersions.forEach(secret -> cache.put(new VersionKey(key, secret.version()), secret));
 
             return secretVersions;
+        } catch (ResourceNotFoundException e) {
+            return List.of();
         } catch (Exception e) {
             throw new IllegalArgumentException("Failed to list secret versions for %s:\n%s".formatted(key, e.getMessage()));
         }

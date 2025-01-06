@@ -46,6 +46,10 @@ void deserialize(SearchResult& sr, std::span<const char> buf)
     EXPECT_EQ(0, dbuf.getRemaining());
 }
 
+void set_errors(SearchResult& sr, std::vector<std::string> errors) {
+    sr.set_errors(std::move(errors));
+}
+
 void populate(SearchResult& sr, FeatureValues& mf)
 {
     sr.addHit(7, "doc1", 5);
@@ -72,6 +76,12 @@ void check_match_features(const std::vector<char> & buf, const std::string& labe
     SearchResult sr;
     deserialize(sr, buf);
     check_match_features(sr, label, sort_remap);
+}
+
+std::vector<std::string> get_errors(const std::vector<char>& buf) {
+    SearchResult sr;
+    deserialize(sr, buf);
+    return sr.get_errors();
 }
 
 }
@@ -162,6 +172,13 @@ TEST(SearchResultTest, test_deserialized_match_features)
     check_match_features(serialize(sr), "deserialized unsorted", false);
     sr.sort();
     check_match_features(serialize(sr), "deserialized sorted", true);
+}
+
+TEST(SearchResultTest, test_errors)
+{
+    SearchResult sr;
+    set_errors(sr, { "one two", "three four"});
+    EXPECT_EQ((std::vector<std::string>{"one two", "three four"}), get_errors(serialize(sr)));
 }
 
 }

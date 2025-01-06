@@ -105,7 +105,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default int maxCompactBuffers() { return 1; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
-        @ModelFeatureFlag(owners = {"tokle"}) default boolean enableProxyProtocolMixedMode() { return true; }
+        @ModelFeatureFlag(owners = {"tokle"}, removeAfter = "8.458.13") default boolean enableProxyProtocolMixedMode() { return false; }
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
@@ -183,7 +183,8 @@ public interface ModelContext {
 
         default List<String> requestPrefixForLoggingContent() { return List.of(); }
 
-        default boolean launchApplicationAthenzService() { return false; }
+        // Remove after 8.457 is the oldest model
+        default boolean launchApplicationAthenzService() { return true; }
 
     }
 

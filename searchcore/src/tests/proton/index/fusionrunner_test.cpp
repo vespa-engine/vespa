@@ -100,7 +100,7 @@ FusionRunnerTest::FusionRunnerTest()
       _fusion_spec(),
       _fileHeaderContext(),
       _service(1),
-      _ops(_fileHeaderContext,TuneFileIndexManager(), {}, 0, _service.write())
+      _ops(_fileHeaderContext,TuneFileIndexManager(), {}, _service.write())
 { }
 
 FusionRunnerTest::~FusionRunnerTest() = default;

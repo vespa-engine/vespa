@@ -188,7 +188,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useV8GeoPositions;
         private final int maxCompactBuffers;
         private final List<String> ignoredHttpUserAgents;
-        private final boolean enableProxyProtocolMixedMode;
         private final boolean sharedStringRepoNoReclaim;
         private final String logFileCompressionAlgorithm;
         private final int mbus_network_threads;
@@ -240,7 +239,6 @@ public class ModelContextImpl implements ModelContext {
             this.useV8GeoPositions = Flags.USE_V8_GEO_POSITIONS.bindTo(source).with(appId).with(version).value();
             this.maxCompactBuffers = Flags.MAX_COMPACT_BUFFERS.bindTo(source).with(appId).with(version).value();
             this.ignoredHttpUserAgents = PermanentFlags.IGNORED_HTTP_USER_AGENTS.bindTo(source).with(appId).with(version).value();
-            this.enableProxyProtocolMixedMode = Flags.ENABLE_PROXY_PROTOCOL_MIXED_MODE.bindTo(source).with(appId).with(version).value();
             this.sharedStringRepoNoReclaim = Flags.SHARED_STRING_REPO_NO_RECLAIM.bindTo(source).with(appId).with(version).value();
             this.logFileCompressionAlgorithm = Flags.LOG_FILE_COMPRESSION_ALGORITHM.bindTo(source).with(appId).with(version).value();
             this.mbus_java_num_targets = Flags.MBUS_JAVA_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
@@ -297,7 +295,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
-        @Override public boolean enableProxyProtocolMixedMode() { return enableProxyProtocolMixedMode; }
         @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
         @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
         @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
@@ -363,7 +360,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean allowUserFilters;
         private final Duration endpointConnectionTtl;
         private final List<String> requestPrefixForLoggingContent;
-        private final boolean launchApplicationAthenzService;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -414,7 +410,6 @@ public class ModelContextImpl implements ModelContext {
             this.endpointConnectionTtl = Duration.ofSeconds(PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource).with(applicationId).value());
             this.dataplaneTokens = dataplaneTokens;
             this.requestPrefixForLoggingContent = PermanentFlags.LOG_REQUEST_CONTENT.bindTo(flagSource).with(applicationId).value();
-            this.launchApplicationAthenzService = Flags.LAUNCH_APPLICATION_ATHENZ_SERVICE.bindTo(flagSource).with(applicationId).with(modelVersion).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -526,8 +521,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
 
         @Override public List<String> requestPrefixForLoggingContent() { return requestPrefixForLoggingContent; }
-
-        @Override public boolean launchApplicationAthenzService() { return launchApplicationAthenzService; }
     }
 
 }

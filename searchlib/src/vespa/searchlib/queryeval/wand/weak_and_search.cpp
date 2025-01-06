@@ -173,14 +173,13 @@ WeakAndSearch::create(const Terms &terms, const MatchParams & params, const Scor
 SearchIterator::UP
 WeakAndSearch::create(const Terms &terms, const MatchParams & params, uint32_t n, bool strict, bool readonly_scores_heap)
 {
-    return create(terms, params, wand::TermFrequencyScorer(), n, strict, readonly_scores_heap);
+    return create(terms, params, wand::Bm25TermFrequencyScorer(params.docid_limit), n, strict, readonly_scores_heap);
 }
 
 //-----------------------------------------------------------------------------
 
-template SearchIterator::UP WeakAndSearch::create<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
 template SearchIterator::UP WeakAndSearch::create<wand::Bm25TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::Bm25TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
-template SearchIterator::UP WeakAndSearch::createArrayWand<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
-template SearchIterator::UP WeakAndSearch::createHeapWand<wand::TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
+template SearchIterator::UP WeakAndSearch::createArrayWand<wand::Bm25TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::Bm25TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
+template SearchIterator::UP WeakAndSearch::createHeapWand<wand::Bm25TermFrequencyScorer>(const Terms &terms, const MatchParams & params, const wand::Bm25TermFrequencyScorer & scorer, uint32_t n, bool strict, bool readonly_scores_heap);
 
 }

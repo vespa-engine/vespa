@@ -6,12 +6,10 @@
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
 #include <cmath>
 
-using search::queryeval::wand::TermFrequencyScorer;
-
 namespace rise {
 
 template <typename Scorer, typename Cmp>
-RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n)
+RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n, Scorer scorer)
     : _numStreams(0),
       _streams(),
       _lastPivotIdx(0),
@@ -19,7 +17,7 @@ RiseWand<Scorer, Cmp>::RiseWand(const Terms &terms, uint32_t n)
       _streamIndices(new uint16_t[terms.size()]),
       _streamIndicesAux(new uint16_t[terms.size()]),
       _streamComparator(_streamDocIds),
-      _scorer(),
+      _scorer(std::move(scorer)),
       _n(n),
       _limit(1),
       _streamScores(new score_t[terms.size()]),

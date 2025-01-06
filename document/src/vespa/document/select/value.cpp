@@ -9,6 +9,22 @@
 
 namespace document::select {
 
+std::ostream& operator<<(std::ostream& os, Value::Type t) {
+    using Type = Value::Type;
+    switch (t) {
+    case Type::Invalid: os << "Invalid"; break;
+    case Type::Null:    os << "Null";    break;
+    case Type::String:  os << "String";  break;
+    case Type::Integer: os << "Integer"; break;
+    case Type::Float:   os << "Float";   break;
+    case Type::Array:   os << "Array";   break;
+    case Type::Struct:  os << "Struct";  break;
+    case Type::Bucket:  os << "Bucket";  break;
+    case Type::Tensor:  os << "Tensor";  break;
+    }
+    return os;
+}
+
 ResultList
 Value::globCompare(const Value& value) const
 {
@@ -62,9 +78,11 @@ ResultList
 NullValue::operator==(const Value& value) const
 {
     const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-    if (nval != 0) return ResultList(Result::True);
+    if (nval != nullptr) {
+        return ResultList(Result::True);
+    }
     const InvalidValue* ival(dynamic_cast<const InvalidValue*>(&value));
-    return ResultList(ival != 0 ? Result::Invalid : Result::False);
+    return ResultList(ival != nullptr ? Result::Invalid : Result::False);
 }
 
 
@@ -98,7 +116,7 @@ NullValue::print(std::ostream& out, bool verbose,
 }
 
 StringValue::StringValue(std::string_view val)
-    : Value(String),
+    : Value(Type::String),
       _value(val)
 {
 }
@@ -107,7 +125,9 @@ ResultList
 StringValue::operator<(const Value& value) const
 {
     const StringValue* val(dynamic_cast<const StringValue*>(&value));
-    if (val == 0) return ResultList(Result::Invalid);
+    if (val == nullptr) {
+        return ResultList(Result::Invalid);
+    }
     return ResultList(Result::get(_value < val->_value));
 }
 
@@ -115,9 +135,9 @@ ResultList
 StringValue::operator==(const Value& value) const
 {
     const StringValue* val(dynamic_cast<const StringValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-        return ResultList(nval == 0 ? Result::Invalid : Result::False);
+        return ResultList(nval == nullptr ? Result::Invalid : Result::False);
     }
     return ResultList(Result::get(_value == val->_value));
 }
@@ -130,7 +150,7 @@ StringValue::print(std::ostream& out, bool verbose, const std::string& indent) c
 }
 
 IntegerValue::IntegerValue(int64_t val, bool isBucketValue)
-    : NumberValue(isBucketValue ? Bucket : Integer),
+    : NumberValue(isBucketValue ? Type::Bucket : Type::Integer),
       _value(val)
 {
 }
@@ -139,7 +159,9 @@ ResultList
 IntegerValue::operator<(const Value& value) const
 {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
-    if (val == 0) return ResultList(Result::Invalid);
+    if (val == nullptr) {
+        return ResultList(Result::Invalid);
+    }
     return val->operator>(*this);
 }
 
@@ -147,9 +169,9 @@ ResultList
 IntegerValue::operator==(const Value& value) const
 {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-        return ResultList(nval == 0 ? Result::Invalid : Result::False);
+        return ResultList(nval == nullptr ? Result::Invalid : Result::False);
     }
     return val->operator==(*this);
 }
@@ -162,7 +184,7 @@ IntegerValue::print(std::ostream& out, bool verbose, const std::string& indent) 
 }
 
 FloatValue::FloatValue(double val)
-    : NumberValue(Float),
+    : NumberValue(Type::Float),
       _value(val)
 {
 }
@@ -171,7 +193,9 @@ ResultList
 FloatValue::operator<(const Value& value) const
 {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
-    if (val == 0) return ResultList(Result::Invalid);
+    if (val == nullptr) {
+        return ResultList(Result::Invalid);
+    }
     return val->operator>(*this);
 }
 
@@ -179,9 +203,9 @@ ResultList
 FloatValue::operator==(const Value& value) const
 {
     const NumberValue* val(dynamic_cast<const NumberValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-        return ResultList(nval == 0 ? Result::Invalid : Result::False);
+        return ResultList(nval == nullptr ? Result::Invalid : Result::False);
     }
     return val->operator==(*this);
 }
@@ -194,7 +218,7 @@ FloatValue::print(std::ostream& out, bool verbose, const std::string& indent) co
 }
 
 ArrayValue::ArrayValue(std::vector<VariableValue> values)
-    : Value(Array),
+    : Value(Type::Array),
       _values(std::move(values))
 {
 }
@@ -316,7 +340,7 @@ ArrayValue::print(std::ostream& out, bool verbose, const std::string& indent) co
 }
 
 StructValue::StructValue(ValueMap values)
-    : Value(Struct),
+    : Value(Type::Struct),
       _values(std::move(values))
 {
 }
@@ -327,7 +351,7 @@ ResultList
 StructValue::operator<(const Value& value) const
 {
     const StructValue* val(dynamic_cast<const StructValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         return ResultList(Result::Invalid);
     }
     ValueMap::const_iterator it1 = _values.begin();
@@ -355,9 +379,9 @@ ResultList
 StructValue::operator==(const Value& value) const
 {
     const StructValue* val(dynamic_cast<const StructValue*>(&value));
-    if (val == 0) {
+    if (val == nullptr) {
         const NullValue* nval(dynamic_cast<const NullValue*>(&value));
-        return ResultList(nval == 0 ? Result::Invalid : Result::False);
+        return ResultList(nval == nullptr ? Result::Invalid : Result::False);
     }
     ValueMap::const_iterator it1 = _values.begin();
     ValueMap::const_iterator it2 = val->_values.begin();
@@ -391,7 +415,7 @@ namespace {
 fieldvalue::VariableMap
 cloneMap(const fieldvalue::VariableMap &map) {
     fieldvalue::VariableMap m;
-    for (const auto & item : map) {
+    for (const auto& item : map) {
         m.emplace(item.first, item.second);
     }
     return m;
@@ -403,7 +427,7 @@ template <typename Predicate>
 ResultList
 ArrayValue::doCompare(const Value& value, const Predicate& cmp) const
 {
-    if (value.getType() == Array) {
+    if (value.getType() == Type::Array) {
         // If comparing with an array, must match all.
         const ArrayValue* val(static_cast<const ArrayValue*>(&value));
         if (_values.size() != val->_values.size()) {
@@ -422,8 +446,8 @@ ArrayValue::doCompare(const Value& value, const Predicate& cmp) const
 
         std::bitset<3> resultForNoVariables;
         // If comparing with other value, must match one.
-        for (const auto & item : _values) {
-            const Result & result = cmp(*item.second, value).combineResults();
+        for (const auto& item : _values) {
+            const Result& result = cmp(*item.second, value).combineResults();
             if (item.first.empty()) {
                 resultForNoVariables.set(result.toEnum());
             } else {
@@ -438,5 +462,35 @@ ArrayValue::doCompare(const Value& value, const Predicate& cmp) const
         return results;
     }
 }
+
+TensorValue::TensorValue() : Value(Type::Tensor) {}
+TensorValue::~TensorValue() = default;
+
+ResultList
+TensorValue::operator<(const Value&) const {
+    // No other comparisons are well-defined for TensorValue other than null-ness
+    return ResultList(Result::Invalid);
+}
+
+ResultList
+TensorValue::operator==(const Value& rhs) const {
+    // "present tensor == null" is always False, Invalid otherwise.
+    const bool rhs_is_null = (rhs.getType() == Type::Null);
+    return ResultList(rhs_is_null ? Result::False : Result::Invalid);
+}
+
+ResultList
+TensorValue::operator!=(const Value& rhs) const {
+    // "present tensor != null" is always True, Invalid otherwise.
+    const bool rhs_is_null = (rhs.getType() == Type::Null);
+    return ResultList(rhs_is_null ? Result::True : Result::Invalid);
+}
+
+void
+TensorValue::print(std::ostream& out, bool verbose, const std::string& indent) const {
+    (void) verbose; (void) indent;
+    out << "<tensor placeholder value>";
+}
+
 
 }

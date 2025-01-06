@@ -11,29 +11,29 @@ TEST(LruCacheMapTest, cache_basics) {
     // Verify start conditions.
     EXPECT_EQ(cache.size(), 0);
     cache.insert(1, "First inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 1);
     EXPECT_TRUE(cache.hasKey(1));
     cache.insert(2, "Second inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 2);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
     cache.insert(3, "Third inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 3);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
     EXPECT_TRUE(cache.hasKey(3));
     cache.insert(4, "Fourth inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 4);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
     EXPECT_TRUE(cache.hasKey(3));
     EXPECT_TRUE(cache.hasKey(4));
     cache.insert(5, "Fifth inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 5);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
@@ -41,7 +41,7 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(4));
     EXPECT_TRUE(cache.hasKey(5));
     cache.insert(6, "Sixt inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 6);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
@@ -50,7 +50,7 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(5));
     EXPECT_TRUE(cache.hasKey(6));
     cache.insert(7, "Seventh inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 7);
     EXPECT_TRUE(cache.hasKey(1));
     EXPECT_TRUE(cache.hasKey(2));
@@ -60,7 +60,7 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(6));
     EXPECT_TRUE(cache.hasKey(7));
     cache.insert(8, "Eighth inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 7);
     EXPECT_TRUE(cache.hasKey(2));
     EXPECT_TRUE(cache.hasKey(3));
@@ -70,7 +70,7 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(7));
     EXPECT_TRUE(cache.hasKey(8));
     cache.insert(15, "Eighth inserted string");
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_EQ(cache.size(), 7);
     EXPECT_TRUE(cache.hasKey(3));
     EXPECT_TRUE(cache.hasKey(4));
@@ -81,9 +81,9 @@ TEST(LruCacheMapTest, cache_basics) {
     EXPECT_TRUE(cache.hasKey(15));
     // Test get and erase
     (void)cache.get(3);
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     cache.erase(3);
-    EXPECT_TRUE(cache.verifyInternals());
+    cache.verifyInternals();
     EXPECT_TRUE(!cache.hasKey(3));
 }
 
@@ -204,6 +204,7 @@ TEST(LruCacheMapTest, cache_erase_by_iterator) {
     ASSERT_EQ("third", *it);
     cache.erase(it);
     EXPECT_EQ(lru_key_order(cache), "1");
+    cache.verifyInternals();
 }
 
 TEST(LruCacheMapTest, find_no_ref_returns_iterator_if_present_and_does_not_update_lru) {
@@ -267,6 +268,92 @@ TEST(LruCacheMapTest, eager_find_and_ref_always_moves_to_LRU_head) {
     EXPECT_EQ(lru_key_order(cache), "1 5 2 6 4 3");
     EXPECT_EQ(cache.find_and_ref(7), nullptr); // Key not found; no touching the shiny happy LRU
     EXPECT_EQ(lru_key_order(cache), "1 5 2 6 4 3");
+}
+
+TEST(LruCacheMapTest, trimming_removes_old_entries_until_within_capacity) {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(5);
+    cache.insert(1, "a");
+    cache.insert(2, "b");
+    cache.insert(3, "c");
+    cache.insert(4, "d");
+    // Cache is below capacity, trimming should do nothing
+    cache.trim();
+    EXPECT_EQ(lru_key_order(cache), "4 3 2 1");
+    cache.verifyInternals();
+
+    cache.insert(5, "e");
+    // Cache is at capacity, trimming should do nothing
+    cache.trim();
+    EXPECT_EQ(lru_key_order(cache), "5 4 3 2 1");
+    cache.verifyInternals();
+
+    cache.maxElements(3);
+    // maxElements() doesn't trim anything by itself (checking this here in case it changes)
+    EXPECT_EQ(lru_key_order(cache), "5 4 3 2 1");
+    // But trimming should do the deed
+    cache.trim();
+    EXPECT_EQ(lru_key_order(cache), "5 4 3");
+    cache.verifyInternals();
+
+    // Trimming should allow going down to zero size
+    cache.maxElements(0);
+    EXPECT_EQ(lru_key_order(cache), "5 4 3");
+    cache.trim();
+    EXPECT_EQ(cache.size(), 0);
+    EXPECT_EQ(lru_key_order(cache), "");
+    cache.verifyInternals();
+}
+
+TEST(LruCacheMapTest, implicit_lru_trimming_on_oversized_insert_does_not_remove_head_element) {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(0);
+    cache.insert(1, "sneaky");
+    EXPECT_EQ(cache.size(), 1);
+    EXPECT_EQ(lru_key_order(cache), "1");
+    // But head element can be replaced
+    cache.insert(2, "stuff");
+    EXPECT_EQ(cache.size(), 1);
+    EXPECT_EQ(lru_key_order(cache), "2");
+}
+
+TEST(LruCacheMapTest, can_get_iter_to_last_element) {
+    using Cache = lrucache_map<LruParam<int, std::string>>;
+    Cache cache(5);
+    // Returned iterator is end() if the map is empty
+    EXPECT_TRUE(cache.iter_to_last() == cache.end());
+    cache.insert(1, "a");
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 1);
+    cache.insert(2, "b");
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 1); // LRU tail is still 1
+    cache.insert(3, "c");
+    cache.insert(4, "d");
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 1); // ... and still 1.
+    // Move 1 to LRU head. Tail is now 2.
+    ASSERT_TRUE(cache.find_and_ref(1));
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 2);
+    // Move 3 to LRU head. Tail is still 2.
+    ASSERT_TRUE(cache.find_and_ref(3));
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 2);
+    // Move 2 to LRU head. Tail is now 4.
+    ASSERT_TRUE(cache.find_and_ref(2));
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 4);
+
+    EXPECT_EQ(lru_key_order(cache), "2 3 1 4");
+
+    cache.erase(4);
+    ASSERT_TRUE(cache.iter_to_last() != cache.end());
+    EXPECT_EQ(cache.iter_to_last().key(), 1);
+    cache.erase(3);
+    cache.erase(2);
+    cache.erase(1);
+    ASSERT_TRUE(cache.iter_to_last() == cache.end());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

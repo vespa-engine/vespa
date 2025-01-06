@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -64,12 +65,18 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 		id = args[0]
 		filename = args[1]
 	}
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
+	var r io.ReadCloser
+	if filename == "-" {
+		r = io.NopCloser(cli.Stdin)
+	} else {
+		f, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		r = f
 	}
-	defer f.Close()
-	doc, err := document.NewDecoder(f).Decode()
+	doc, err := document.NewDecoder(r).Decode()
 	if errors.Is(err, document.ErrMissingId) {
 		if id == "" {
 			return fmt.Errorf("no document id given neither as argument or as a 'put', 'update' or 'remove' key in the JSON file")
@@ -91,23 +98,35 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 		doc.Operation = op
 	}
 	if doc.Body != nil {
-		service.CurlWriter.InputFile = f.Name()
+		service.CurlWriter.InputFile = filename
 	}
 	result := client.Send(doc)
 	return printResult(cli, operationResult(false, doc, service, result), false)
 }
 
-func readDocument(id string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string) error {
+func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string) error {
+	parsedIds := make([]document.Id, 0, len(ids))
+	for _, id := range ids {
+		parsedId, err := document.ParseId(id)
+		if err != nil {
+			return err
+		}
+		parsedIds = append(parsedIds, parsedId)
+	}
+
 	client, service, err := documentClient(cli, timeoutSecs, waiter, printCurl, headers)
 	if err != nil {
 		return err
 	}
-	docId, err := document.ParseId(id)
-	if err != nil {
-		return err
+
+	for _, docId := range parsedIds {
+		result := client.Get(docId, fieldSet)
+		if err := printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true); err != nil {
+			return err
+		}
 	}
-	result := client.Get(docId, fieldSet)
-	return printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true)
+
+	return nil
 }
 
 func operationResult(read bool, doc document.Document, service *vespa.Service, result document.Result) OperationResult {
@@ -173,7 +192,10 @@ func newDocumentPutCmd(cli *CLI) *cobra.Command {
 		Short: "Writes a document to Vespa",
 		Long: `Writes the document in the given file to Vespa.
 If the document already exists, all its values will be replaced by this document.
-If the document id is specified both as an argument and in the file the argument takes precedence.`,
+If the document id is specified both as an argument and in the file the argument takes precedence.
+
+If json-file is a single dash ('-'), the document will be read from standard input.
+`,
 		Args: cobra.RangeArgs(1, 2),
 		Example: `$ vespa document put src/test/resources/A-Head-Full-of-Dreams.json
 $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,
@@ -264,14 +286,14 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 	)
 	cmd := &cobra.Command{
 		Use:               "get id",
-		Short:             "Gets a document",
-		Args:              cobra.ExactArgs(1),
+		Short:             "Gets documents",
+		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
-		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams`,
+		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams...`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return readDocument(args[0], timeoutSecs, waiter, printCurl, cli, fieldSet, headers)
+			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers)
 		},
 	}
 	cmd.Flags().StringVar(&fieldSet, "field-set", "", "Fields to include when reading document")

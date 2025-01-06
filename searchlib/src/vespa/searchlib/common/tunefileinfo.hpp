@@ -10,7 +10,7 @@ namespace search {
 
 template <typename TuneControlConfig, typename MMapConfig>
 void
-TuneFileRandRead::setFromConfig(const enum TuneControlConfig::Io & tuneControlConfig, const MMapConfig & mmapFlags) {
+TuneFileRandRead::setFromConfig(const enum TuneControlConfig::Io & tuneControlConfig, const MMapConfig & mmapFlags) noexcept {
     switch ( tuneControlConfig) {
         case TuneControlConfig::Io::NORMAL:   _tuneControl = NORMAL; break;
         case TuneControlConfig::Io::DIRECTIO: _tuneControl = DIRECTIO; break;
@@ -22,7 +22,7 @@ TuneFileRandRead::setFromConfig(const enum TuneControlConfig::Io & tuneControlCo
 
 template <typename MMapConfig>
 void
-TuneFileRandRead::setFromMmapConfig(const MMapConfig & mmapFlags) {
+TuneFileRandRead::setFromMmapConfig(const MMapConfig & mmapFlags) noexcept {
     for (size_t i(0), m(mmapFlags.options.size()); i < m; i++) {
 #ifdef __linux__
         switch (mmapFlags.options[i]) {

@@ -92,6 +92,8 @@ public:
     RequestBuilder& rank_profile(const std::string& value) { return set_param("rankprofile", value); }
     RequestBuilder& summary_class(const std::string& value) { return set_param("summaryclass", value); }
     RequestBuilder& summary_count(uint32_t value) { return set_param("summarycount", std::to_string(value)); }
+    RequestBuilder& sort(const std::string& value) { return set_param("sort", value); }
+    RequestBuilder& query_stack_count(uint32_t value) { return set_param("querystackcount", std::to_string(value)); }
     RequestBuilder& string_term(const std::string& term, const std::string& field) {
         _builder.addStringTerm(term, field, _term_id++, Weight(100));
         return *this;
@@ -270,6 +272,30 @@ TEST_F(SearchVisitorTest, visitor_only_require_weak_read_consistency)
     vdslib::Parameters params;
     auto session = make_visitor_session(params);
     EXPECT_TRUE(session->visitor.getRequiredReadConsistency() == spi::ReadConsistency::WEAK);
+}
+
+namespace {
+
+void
+check_sorting(SearchVisitorTest& test, const std::string& sort_spec, const HitVector& exp_hits,
+              const std::vector<std::string>& exp_errors) {
+    SCOPED_TRACE(sort_spec);
+    auto res = test.execute_query(RequestBuilder().rank_profile("default").
+                                      number_term("[4;10]", "id").sort(sort_spec).
+                                      query_stack_count(1).build(),
+                                  {{5}, {4}, {3}, {7}});
+    expect_hits(exp_hits, *res);
+    EXPECT_EQ(exp_errors, res->getSearchResult().get_errors());
+}
+
+}
+
+TEST_F(SearchVisitorTest, sorting_works)
+{
+    check_sorting(*this, "-id", {{7,17.0}, {5,15.0}, {4, 14.0}}, {});
+    check_sorting(*this, "+id", {{4,14.0}, {5,15.0}, {7, 17.0}}, {});
+    check_sorting(*this, "-badid", {{7,17.0}, {5,15.0}, {4, 14.0}},
+                  {"Cannot locate field 'badid' in field name registry"});
 }
 
 }

@@ -9,6 +9,7 @@ import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.defaults.Defaults;
 import java.io.File;
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
@@ -183,6 +184,9 @@ public class FileDownloader implements AutoCloseable {
 
         @Override
         public int getSize() { return 0; }
+
+        @Override
+        public List<Connection> connections() { return List.of(); }
 
     }
 

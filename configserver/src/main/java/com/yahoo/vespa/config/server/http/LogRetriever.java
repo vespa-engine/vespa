@@ -12,6 +12,7 @@ import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.ConnectException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -36,7 +37,7 @@ public class LogRetriever {
         HttpGet get = new HttpGet(logServerUri.asURI());
         try {
             return new ProxyResponse(httpClient.execute(get));
-        } catch (ConnectionRequestTimeoutException e) {
+        } catch (ConnectionRequestTimeoutException | ConnectException e) {
             return new GatewayTimeoutResponse(504);
         } catch (IOException e) {
             if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(5))))

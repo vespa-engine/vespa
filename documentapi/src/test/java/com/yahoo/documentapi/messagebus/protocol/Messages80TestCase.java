@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -458,6 +459,7 @@ public class Messages80TestCase extends MessagesTestBase {
         @Override
         public void run() throws Exception {
             test_result_with_match_features();
+            test_result_with_errors();
 
             Routable routable = deserialize("QueryResultMessage-1", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
             assertTrue(routable instanceof QueryResultMessage);
@@ -551,6 +553,16 @@ public class Messages80TestCase extends MessagesTestBase {
             mf = h.getMatchFeatures().get();
             assertEquals(1.0, mf.field("foo").asDouble(), 1E-6);
             assertEqualsData(new byte[] { 'H', 'i' }, mf.field("bar").asData());
+        }
+
+        void test_result_with_errors() {
+            Routable routable = deserialize("QueryResultMessage-7", DocumentProtocol.MESSAGE_QUERYRESULT, Language.CPP);
+            assertTrue(routable instanceof QueryResultMessage);
+
+            var msg = (QueryResultMessage) routable;
+            assertEquals(0, msg.getResult().getHitCount());
+            var errors = msg.getResult().getErrors();
+            assertArrayEquals(new String[]{"hello", "world!"}, errors);
         }
     }
 

@@ -14,8 +14,10 @@ If you're developing the plugin, you'll want to do something like:
 ```
 # build the gem
 ./gradlew gem
+# run tests
+./gradlew test
 # install it as a Logstash plugin
-/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.4.0.gem
+/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.6.1.gem
 # profit
 /opt/logstash/bin/logstash
 ```
@@ -23,6 +25,18 @@ Some more good info about Logstash Java plugins can be found [here](https://www.
 
 It looks like the JVM options from [here](https://github.com/logstash-plugins/.ci/blob/main/dockerjdk17.env)
 are useful to make JRuby's `bundle install` work.
+
+### Integration tests
+To run integration tests, you'll need to have a Vespa instance running with an app deployed that supports an "id" field. And Logstash installed.
+
+Check out the `integration-test` directory for more information.
+
+```
+cd integration-test
+./run_tests.sh
+```
+
+### Publishing the gem
 
 Note to self: for some reason, `bundle exec rake publish_gem` fails, but `gem push logstash-output-vespa_feed-$VERSION.gem`
 does the trick.
@@ -61,7 +75,9 @@ filter {
     columns => ["id", "description", ...]
   }
 
-  # remove fields that we don't need. Here you can do a lot more processing
+  # remove fields we don't need
+  # NOTE: the fields below are added by Logstash by default. You probably *need* this block
+  # otherwise Vespa will reject documents complaining that e.g. @timestamp is an unknown field
   mutate {
     remove_field => ["@timestamp", "@version", "event", "host", "log", "message"]
   }
@@ -98,6 +114,12 @@ output {
     # take the document ID from this field in each row
     # if the field doesn't exist, we generate a UUID
     id_field => "id"
+
+    # remove fields from the document after using them for writing
+    remove_id => false          # if set to true, remove the ID field after using it
+    remove_namespace => false   # would remove the namespace field (if dynamic)
+    remove_document_type => false # same for document type
+    remove_operation => false   # and operation
 
     # how many HTTP/2 connections to keep open
     max_connections => 1

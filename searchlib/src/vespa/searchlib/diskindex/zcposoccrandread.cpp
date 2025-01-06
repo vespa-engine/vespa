@@ -173,12 +173,18 @@ ZcPosOccRandRead::consider_trim_posting_list(const DictionaryLookupResult &looku
 }
 
 PostingListFileRange
-ZcPosOccRandRead::get_posting_list_file_range(const DictionaryLookupResult& lookup_result) const
+ZcPosOccRandRead::get_posting_list_file_range(const DictionaryLookupResult& lookup_result, uint64_t header_bit_size)
 {
     if (lookup_result.counts._bitLength == 0) {
         return {0, 0};
     }
-    return get_file_range(lookup_result, _headerBitSize);
+    return get_file_range(lookup_result, header_bit_size);
+}
+
+PostingListFileRange
+ZcPosOccRandRead::get_posting_list_file_range(const DictionaryLookupResult& lookup_result) const
+{
+    return get_posting_list_file_range(lookup_result, _headerBitSize);
 }
 
 bool

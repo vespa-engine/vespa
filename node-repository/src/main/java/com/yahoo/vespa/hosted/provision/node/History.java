@@ -141,9 +141,10 @@ public class History {
     }
 
     /** Returns a copy of this history with a record of this state transition added, if applicable */
-    public History recordStateTransition(Node.State from, Node.State to, Agent agent, Instant at) {
+    public History recordStateTransition(Node.State from, Node.State to, Agent agent, Optional<String> reason, Instant at) {
         // If the event is a re-reservation, allow the new one to override the older one.
         if (from == to && from != Node.State.reserved) return this;
+        // Only keeping reason for errored states (failed, parked)
         return switch (to) {
             case provisioned -> this.with(new Event(Event.Type.provisioned, agent, at));
             case deprovisioned -> this.with(new Event(Event.Type.deprovisioned, agent, at));
@@ -151,9 +152,9 @@ public class History {
             case active -> this.with(new Event(Event.Type.activated, agent, at));
             case inactive -> this.with(new Event(Event.Type.deactivated, agent, at));
             case reserved -> this.with(new Event(Event.Type.reserved, agent, at));
-            case failed -> this.with(new Event(Event.Type.failed, agent, at));
+            case failed -> this.with(new Event(Event.Type.failed, agent, at, reason));
             case dirty -> this.with(new Event(Event.Type.deallocated, agent, at));
-            case parked -> this.with(new Event(Event.Type.parked, agent, at));
+            case parked -> this.with(new Event(Event.Type.parked, agent, at, reason));
             case breakfixed -> this.with(new Event(Event.Type.breakfixed, agent, at));
         };
     }
@@ -180,7 +181,10 @@ public class History {
     }
 
     /** An event which may happen to a node */
-    public record Event(Type type, Agent agent, Instant at) {
+    public record Event(Type type, Agent agent, Instant at, Optional<String> reason) {
+        public Event(Type type, Agent agent, Instant at) {
+            this(type, agent, at, Optional.empty());
+        }
 
         public enum Type { 
             // State changes

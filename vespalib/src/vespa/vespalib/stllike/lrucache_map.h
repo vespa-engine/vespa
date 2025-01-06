@@ -116,6 +116,12 @@ public:
     const V & get(const K & key) const { return HashTable::find(key)->second._value; }
 
     /**
+     * Returns an iterator to the tail of the LRU, i.e. the oldest element, or end()
+     * iff the mapping is empty. Note: this is not a reverse iterator.
+     */
+    iterator iter_to_last() noexcept;
+
+    /**
      * This simply erases the object.
      */
     void erase(const K & key);
@@ -124,6 +130,18 @@ public:
      * Erase object pointed to by iterator.
      */
     iterator erase(const iterator & it);
+
+    /**
+     * Trims the cache size so that it is within its capacity limits. Since
+     * the cache itself will normally do this during inserts, this can be
+     * used to explicitly trim the cache when higher-level capacities (used
+     * via removeOldest()) change, which are not picked up directly by the
+     * cache itself.
+     *
+     * Note that this does not use soft limits; if the cache has only a single
+     * element, and it is over-sized, trimming will remove the entry.
+     */
+    void trim();
 
     /**
      * Object is inserted in cache with given key.
@@ -185,7 +203,7 @@ public:
     /**
      * Method for testing that internal consistency is good.
      */
-    bool verifyInternals();
+    void verifyInternals();
 
     /**
      * Implements the move callback from the hashtable
@@ -204,6 +222,14 @@ private:
     void ref(const internal_iterator & it);
     insert_result insert(value_type && value);
     void removeOld();
+    /**
+     * Trims the cache by removing elements in an old-to-new order, stopping as
+     * soon as either removeOldest() returns false, or:
+     *   - if PreserveHead == true, the current element is the LRU head element
+     *   - if PreserveHead == false, if the LRU list is empty
+     */
+    template <bool PreserveHead> void trim_impl();
+
     class RecordMoves {
     public:
         RecordMoves(const RecordMoves &) = delete;

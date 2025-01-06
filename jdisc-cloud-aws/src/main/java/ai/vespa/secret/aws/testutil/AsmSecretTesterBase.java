@@ -8,22 +8,20 @@ package ai.vespa.secret.aws.testutil;
 import ai.vespa.secret.aws.AwsRolePath;
 import ai.vespa.secret.model.Key;
 import ai.vespa.secret.model.SecretVersionState;
-import software.amazon.awssdk.awscore.exception.AwsServiceException;
-import software.amazon.awssdk.core.exception.SdkClientException;
 import software.amazon.awssdk.services.secretsmanager.SecretsManagerClient;
-import software.amazon.awssdk.services.secretsmanager.model.InternalServiceErrorException;
-import software.amazon.awssdk.services.secretsmanager.model.InvalidNextTokenException;
-import software.amazon.awssdk.services.secretsmanager.model.InvalidParameterException;
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsRequest;
 import software.amazon.awssdk.services.secretsmanager.model.ListSecretVersionIdsResponse;
+import software.amazon.awssdk.services.secretsmanager.model.ListSecretsRequest;
+import software.amazon.awssdk.services.secretsmanager.model.ListSecretsResponse;
 import software.amazon.awssdk.services.secretsmanager.model.ResourceNotFoundException;
+import software.amazon.awssdk.services.secretsmanager.model.SecretListEntry;
 import software.amazon.awssdk.services.secretsmanager.model.SecretVersionsListEntry;
-import software.amazon.awssdk.services.secretsmanager.model.SecretsManagerException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
@@ -66,15 +64,28 @@ public class AsmSecretTesterBase {
             clients.add(this);
         }
 
+        @Override
+        public ListSecretsResponse listSecrets(Consumer<ListSecretsRequest.Builder> listSecretsRequest) {
+            return ListSecretsResponse.builder()
+                    .secretList(secrets.keySet().stream()
+                                        .map(name -> SecretListEntry.builder().name(name).build())
+                                        .toList())
+                    .build();
+        }
+
         // Used by both reader and writer testers
         @Override
-        public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) throws InvalidNextTokenException, ResourceNotFoundException, InternalServiceErrorException, InvalidParameterException, AwsServiceException, SdkClientException, SecretsManagerException {
+        public ListSecretVersionIdsResponse listSecretVersionIds(ListSecretVersionIdsRequest request) {
+            if (! secrets.containsKey(request.secretId())) {
+                // Emulate AWS behavior
+                throw ResourceNotFoundException.builder().message("Secret not found: " + request.secretId()).build();
+            }
             return ListSecretVersionIdsResponse.builder()
                     .name(request.secretId())
-                    .versions(secrets.getOrDefault(request.secretId(), List.of()).stream()
+                    .versions(secrets.get(request.secretId()).stream()
                                       .map(version -> SecretVersionsListEntry.builder()
                                               .versionId(version.version())
-                                              .versionStages(List.of(toAwsStage(version.state())))
+                                              .versionStages(toAwsStages(version.state()))
                                               .build())
                                       .toList())
                     .build();
@@ -85,12 +96,12 @@ public class AsmSecretTesterBase {
             isClosed = true;
         }
 
-        protected String toAwsStage(SecretVersionState state) {
+        protected List<String> toAwsStages(SecretVersionState state) {
             return switch (state) {
-                case CURRENT -> "AWSCURRENT";
-                case PENDING -> "AWSPENDING";
-                case PREVIOUS -> "AWSPREVIOUS";
-                default -> throw new IllegalArgumentException("Unknown state: " + state);
+                // We don't remove the AWSPENDING label when setting AWSCURRENT
+                case CURRENT -> List.of("AWSPENDING", "AWSCURRENT");
+                case PENDING -> List.of("AWSPENDING");
+                case PREVIOUS, DEPRECATED -> List.of();
             };
         }
 

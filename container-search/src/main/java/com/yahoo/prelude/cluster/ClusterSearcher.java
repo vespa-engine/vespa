@@ -240,6 +240,9 @@ public class ClusterSearcher extends Searcher {
         }
         Result result = schema2Searcher.get(schema).search(schema, query);
         if (useGlobalPhase) {
+            if (query.getTrace().isTraceable(3)) {
+                query.trace("Use global-phase from [" + schema + "] to re-rank " + rerankCount + " hits", 3);
+            }
             globalPhaseRanker.rerankHits(query, result, schema);
             result.hits().trim(wantOffset, wantHits);
             query.setOffset(wantOffset);

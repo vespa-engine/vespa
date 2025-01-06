@@ -102,6 +102,11 @@ public:
     void addEvent(uint32_t level, std::string_view event);
 
     /**
+     * Will add an 'event' string, with timestamp and tag
+     */
+    void addEvent(uint32_t level, std::string_view event, std::string_view tag);
+
+    /**
      * Will compute and and a final duration timing.
      */
     void done();

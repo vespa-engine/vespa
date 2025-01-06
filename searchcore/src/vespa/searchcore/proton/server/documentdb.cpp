@@ -74,7 +74,7 @@ namespace {
 
 index::IndexConfig
 makeIndexConfig(const ProtonConfig::Index & cfg) {
-    return {WarmupConfig(vespalib::from_s(cfg.warmup.time), cfg.warmup.unpack), size_t(cfg.maxflushed), size_t(cfg.cache.size)};
+    return {WarmupConfig(vespalib::from_s(cfg.warmup.time), cfg.warmup.unpack), size_t(cfg.maxflushed)};
 }
 
 ReplayThrottlingPolicy

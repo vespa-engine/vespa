@@ -434,6 +434,8 @@ public:
      */
     virtual bool has_uncased_matching() const noexcept { return true; }
 
+    virtual bool is_sortable() const noexcept = 0;
+
     /**
      * Will serialize the values for the documentid in ascending order. The serialized form can be used by memcmp and
      * sortorder will be preserved.

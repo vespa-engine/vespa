@@ -42,6 +42,10 @@ Writes documents to Vespa.
 | <<plugins-{type}s-{plugin}-operation>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-create>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-id_field>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-remove_id>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-remove_namespace>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-remove_document_type>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-remove_operation>> |<<boolean,boolean>>|No
 | <<plugins-{type}s-{plugin}-max_retries>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-max_connections>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-max_streams>> |<<number,number>>|No
@@ -77,6 +81,14 @@ Make sure to set the `client_key` as well. The certificate should be in PEM form
 
 Corresponding private key for the `client_cert` certificate. It must not be password-protected, otherwise Logstash will fail to start complaining `Could not find private key in PEM file`.
 
+[id="plugins-{type}s-{plugin}-id_field"]
+===== `id_field`
+
+* Value type is <<string,string>>
+* Default value is `id`
+
+Field to get the document id from. If not present, a UUID will be generated
+
 [id="plugins-{type}s-{plugin}-namespace"]
 ===== `namespace`
 
@@ -104,20 +116,45 @@ Like `namespace`, this can be static or dynamic. So you can use `%{foo}` to use 
 
 Operation to perform. Can be `put`, `update`, or `remove`. Dynamic values are supported (e.g. `%{foo}`). If not present, the plugin will use `put`.
 
+
+[id="plugins-{type}s-{plugin}-remove_id"]
+===== `remove_id`
+
+* Value type is <<boolean,boolean>>
+* Default value is `false`
+
+If set to `true`, removes the ID field from the document after using it for document identification.
+
+[id="plugins-{type}s-{plugin}-remove_namespace"]
+===== `remove_namespace`
+
+* Value type is <<boolean,boolean>>
+* Default value is `false`
+
+When using a dynamic namespace (e.g., `%{my_namespace}`), if set to `true`, removes the field containing the namespace value from the document after using it.
+
+[id="plugins-{type}s-{plugin}-remove_document_type"]
+===== `remove_document_type`
+
+* Value type is <<boolean,boolean>>
+* Default value is `false`
+
+When using a dynamic document type (e.g., `%{my_doc_type}`), if set to `true`, removes the field containing the document type value from the document after using it.
+
+[id="plugins-{type}s-{plugin}-remove_operation"]
+===== `remove_operation`
+
+* Value type is <<boolean,boolean>>
+* Default value is `false`
+
+When using a dynamic operation (e.g., `%{my_operation}`), if set to `true`, removes the field containing the operation value from the document after using it.
+
 [id="plugins-{type}s-{plugin}-create"]
 ===== `create`
 
 * Value type is <<boolean,boolean>>
 
 If set to `true`, the plugin will add the `create=true` parameter to the request. It works for `put` and `update` operations, but mostly used for `update` as https://docs.vespa.ai/en/document-v1-api-guide.html#upserts[upserts].
-
-[id="plugins-{type}s-{plugin}-id_field"]
-===== `id_field`
-
-* Value type is <<string,string>>
-* Default value is `id`
-
-Field to get the document id from. If not present, a UUID will be generated
 
 [id="plugins-{type}s-{plugin}-max_retries"]
 ===== `max_retries`

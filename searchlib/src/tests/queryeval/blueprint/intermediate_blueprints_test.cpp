@@ -796,10 +796,10 @@ struct make {
     static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window)); }
     static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
     static make WEAKAND_ADJUST(double limit) {
-        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy(-limit, 1.0, 0), true));
+        return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(-limit, 1.0, 0), true));
     }
     static make WEAKAND_DROP(double limit) {
-        return make(std::make_unique<WeakAndBlueprint>(100, 0.0, wand::StopWordStrategy(1.0, -limit, 0), true));
+        return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(1.0, -limit, 0), true));
     }
 };
 

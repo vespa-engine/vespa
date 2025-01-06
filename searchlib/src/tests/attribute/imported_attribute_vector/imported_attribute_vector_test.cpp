@@ -530,6 +530,8 @@ struct MockAttributeVector : NotImplementedAttribute {
         _bc = bc;
     }
 
+    bool is_sortable() const noexcept override { return true; }
+
     long onSerializeForAscendingSort(
             DocId doc_id, void* ser_to,
             long available, const common::BlobConverter* bc) const override {

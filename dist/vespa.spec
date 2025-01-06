@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake3
 %global _vespa_abseil_cpp_version 20240116.1
-%global _vespa_build_depencencies_version 1.3.6
+%global _vespa_build_depencencies_version 1.3.7
 %global _vespa_gtest_version 1.14.0
 %global _vespa_protobuf_version 5.26.1
 %global _vespa_openblas_version 0.3.27
@@ -45,6 +45,9 @@
 %if %{fedora} > 41
 %global _vespa_java_version 21
 %endif
+%endif
+%if 0%{?el10}
+%global _vespa_java_version 21
 %endif
 %if ! 0%{?_vespa_java_version:1}
 %global _vespa_java_version 17
@@ -107,6 +110,11 @@ Requires: vespa-gtest = %{_vespa_gtest_version}
 Requires: vespa-gtest = %{_vespa_gtest_version}
 %endif
 
+%if 0%{?el10}
+%define _use_vespa_gtest 1
+Requires: vespa-gtest = %{_vespa_gtest_version}
+%endif
+
 %if 0%{?amzn2023}
 %define _java_home /usr/lib/jvm/java-17-amazon-corretto
 %define _use_vespa_gtest 1
@@ -121,7 +129,7 @@ Requires: vespa-xxhash >= 0.8.1
 Requires: gtest
 %endif
 
-%if ! 0%{?el9}
+%if ! 0%{?el9} && ! 0%{?el10}
 Requires: libcgroup-tools
 %endif
 
@@ -175,7 +183,7 @@ Requires: vespa-re2 = 20210801
 %else
 Requires: re2
 %endif
-%if 0%{?fedora} || 0%{?el8} || 0%{?el9}
+%if 0%{?el8} || 0%{?el9} || 0%{?el10} || 0%{?fedora}
 Requires: glibc-langpack-en
 %endif
 
@@ -194,19 +202,11 @@ Requires: vespa-openssl >= 3.1.7
 %else
 Requires: openssl-libs
 %endif
-%if 0%{?el8}
+%if 0%{?el8} || 0%{?el9} || 0%{?el10} || 0%{?fedora}
 Requires: llvm-libs
 Requires: vespa-protobuf = %{_vespa_protobuf_version}
 %endif
-%if 0%{?el9}
-Requires: llvm-libs
-Requires: vespa-protobuf = %{_vespa_protobuf_version}
-%endif
-%if 0%{?fedora}
-Requires: vespa-protobuf = %{_vespa_protobuf_version}
-Requires: llvm-libs
-%endif
-Requires: vespa-onnxruntime = 1.19.2
+Requires: vespa-onnxruntime = 1.20.1
 Requires: vespa-jllama = %{_vespa_llama_version}
 Requires: vespa-openblas >= %{_vespa_openblas_version}
 

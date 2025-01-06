@@ -62,6 +62,12 @@ long serialize_for_sort(std::span<const char> raw, void* serTo, long available)
 
 }
 
+bool
+RawAttribute::is_sortable() const noexcept
+{
+    return true;
+}
+
 long
 RawAttribute::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
 {

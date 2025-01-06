@@ -212,11 +212,13 @@ public class LoadBalancerProvisioner {
                 newLoadBalancer = loadBalancer.get().with(State.removable, nodeRepository.clock().instant());
                 throw new LoadBalancerServiceException("Could not (re)configure " + id + " due to change in load balancer visibility. The operation will be retried on next deployment");
             }
-            newLoadBalancer = loadBalancer.orElseGet(() -> createNewLoadBalancer(id, zoneEndpoint, requested));      // Determine id-seed.
-            newLoadBalancer = newLoadBalancer.with(provisionInstance(newLoadBalancer, zoneEndpoint, requested)); // Update instance.
-        } catch (LoadBalancerServiceException e) {
-            log.log(Level.WARNING, "Failed to provision load balancer", e);
-            throw e;
+            try {
+                newLoadBalancer = loadBalancer.orElseGet(() -> createNewLoadBalancer(id, zoneEndpoint, requested));      // Determine id-seed.
+                newLoadBalancer = newLoadBalancer.with(provisionInstance(newLoadBalancer, zoneEndpoint, requested)); // Update instance.
+            } catch (LoadBalancerServiceException e) {
+                log.log(Level.WARNING, "Failed to provision load balancer", e);
+                throw e;
+            }
         } finally {
             db.writeLoadBalancer(newLoadBalancer, fromState);
         }

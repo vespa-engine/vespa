@@ -48,7 +48,6 @@ using search::fakedata::FPFactory;
 using search::fakedata::FakePosting;
 using search::fakedata::FakeWord;
 using search::fakedata::getFPFactory;
-using LookupResult = DiskIndex::LookupResult;
 
 namespace {
 

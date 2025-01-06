@@ -372,7 +372,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addAthenzServiceIdentityProvider(ApplicationContainerCluster cluster, ConfigModelContext context) {
         if ( ! context.getDeployState().isHosted()) return;
         if ( ! context.getDeployState().zone().system().isPublic()) return; // Non-public is handled by deployment spec config.
-        if ( ! context.properties().launchApplicationAthenzService()) return;
         var appContext = context.getDeployState().zone().environment().isManuallyDeployed() ? "sandbox" : "production";
         addIdentityProvider(cluster,
                             context.getDeployState().getProperties().configServerSpecs(),

@@ -290,6 +290,12 @@ public class PermanentFlags {
             "Takes effect on next host-admin tick",
             NODE_TYPE);
 
+    public static final UnboundStringFlag HOST_SECURITY_AGENT_VERSION = defineStringFlag(
+            "host-security-agent-version", "",
+            "Upgrades/downgrades the host security agent to the specified version, does nothing if empty. Only effective in public systems.",
+            "Takes effect on next host-admin tick",
+            NODE_TYPE);
+
     // This must be set in a feature flag to avoid flickering between the new and old value during config server upgrade
     public static final UnboundDoubleFlag HOST_MEMORY = defineDoubleFlag(
             "host-memory", -1.0,
@@ -401,13 +407,6 @@ public class PermanentFlags {
             "pre-provisioned-lb-count", 0,
             "Number of application load balancers to have pre-provisioned at any time",
             "Takes immediate effect");
-
-    public static final UnboundLongFlag CONFIG_SERVER_SESSION_EXPIRY_TIME = defineLongFlag(
-            "config-server-session-expiry-time", 3600,
-            "Expiry time in seconds for remote sessions (session in ZooKeeper). Default should be equal to session lifetime, " +
-            "but can be lowered if there are incidents/bugs where one needs to delete sessions",
-            "Takes effect immediately"
-    );
 
     public static final UnboundLongFlag CONFIG_SERVER_SESSION_LIFETIME = defineLongFlag(
             "config-server-session-lifetime", 3600,
@@ -540,12 +539,28 @@ public class PermanentFlags {
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
-    public static final UnboundLongFlag CONFIG_SERVER_UNKNOWN_STATUS_SESSION_EXPIRY_TIME = defineLongFlag(
-            "config-server-unknown-status-session-expiry-time", 6,
-            "Expiry time in hours for sessions with unknown status, can be lowered if there are incidents/bugs " +
-                    " or free disk space is too low and one needs to delete sessions",
-            "Takes effect after reboot of config server node"
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_TENANTS = defineFeatureFlag(
+            "hubspot-sync-tenants", true,
+            "Whether to sync tenants to HubSpot. Use this to block sync for specific tenants",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_CONTACTS = defineFeatureFlag(
+            "hubspot-sync-contacts", true,
+            "Whether to sync contacts to HubSpot. Use this to block sync for specific users",
+            "Takes effect immediately");
+
+    public static final UnboundBooleanFlag HUBSPOT_SYNC_COMPANIES = defineFeatureFlag(
+            "hubspot-sync-companies", true,
+            "Whether to sync companies to HubSpot. Use this to block sync for specific companies",
+            "Takes effect immediately");
+
+    public static final UnboundStringFlag TLS_CAPABILITIES_ENFORCEMENT_MODE = defineStringFlag(
+            "tls-capabilities-enforcement-mode", "disable",
+            "Configure Vespa TLS capability enforcement mode",
+            "Takes effect on restart of Docker container",
+            INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
     );
+
 
     private PermanentFlags() {}
 

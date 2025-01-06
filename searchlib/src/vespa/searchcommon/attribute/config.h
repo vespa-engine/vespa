@@ -97,6 +97,7 @@ public:
 
     uint64_t getMaxUnCommittedMemory() const noexcept { return _maxUnCommittedMemory; }
     Config & setMaxUnCommittedMemory(uint64_t value) { _maxUnCommittedMemory = value; return *this; }
+    std::string type_to_string() const;
 
 private:
     BasicType      _basicType;

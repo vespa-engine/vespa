@@ -65,10 +65,70 @@ public class GroupingValidator extends Searcher {
         return execution.search(query);
     }
 
-    private void verifyHasAttribute(String attributeName) {
-        if (!attributes.containsKey(attributeName)) {
+    static private String datatypeAsString(AttributesConfig.Attribute attribute) {
+        var datatype = attribute.datatype();
+        if (datatype == AttributesConfig.Attribute.Datatype.TENSOR && !attribute.tensortype().isEmpty()) {
+            return attribute.tensortype();
+        }
+        return switch (datatype) {
+            case STRING -> "string";
+            case BOOL -> "bool";
+            case UINT2 -> "uint2";
+            case UINT4 -> "uint4";
+            case INT8 -> "byte";
+            case INT16 -> "short";
+            case INT32 -> "int";
+            case INT64 -> "long";
+            case FLOAT16 -> "float16";
+            case FLOAT -> "float";
+            case DOUBLE -> "double";
+            case PREDICATE -> "predicate";
+            case TENSOR -> "tensor";
+            case REFERENCE -> "reference";
+            case RAW -> "raw";
+            case NONE -> "none";
+        };
+    }
+
+    static private String typeAsString(AttributesConfig.Attribute attribute) {
+        var collectiontype = attribute.collectiontype();
+        return switch(collectiontype) {
+            case SINGLE -> datatypeAsString(attribute);
+            case ARRAY -> "array<" + datatypeAsString(attribute) + ">";
+            case WEIGHTEDSET -> "weightedset<" + datatypeAsString(attribute) + ">";
+        };
+    }
+
+    static private boolean isPrimitiveAttribute(AttributesConfig.Attribute attribute) {
+        var datatype = attribute.datatype();
+        return  datatype == AttributesConfig.Attribute.Datatype.INT8 ||
+                datatype == AttributesConfig.Attribute.Datatype.INT16 ||
+                datatype == AttributesConfig.Attribute.Datatype.INT32 ||
+                datatype == AttributesConfig.Attribute.Datatype.INT64 ||
+                datatype == AttributesConfig.Attribute.Datatype.STRING ||
+                datatype == AttributesConfig.Attribute.Datatype.FLOAT ||
+                datatype == AttributesConfig.Attribute.Datatype.DOUBLE;
+    }
+
+    static private boolean isSingleRawBoolOrReferenceAttribute(AttributesConfig.Attribute attribute) {
+        var datatype = attribute.datatype();
+        return  (datatype == AttributesConfig.Attribute.Datatype.RAW ||
+                datatype == AttributesConfig.Attribute.Datatype.BOOL ||
+                datatype == AttributesConfig.Attribute.Datatype.REFERENCE) &&
+                attribute.collectiontype() == AttributesConfig.Attribute.Collectiontype.SINGLE;
+    }
+
+    private void verifyHasAttribute(String attributeName, boolean isMapLookup) {
+        var attribute = attributes.get(attributeName);
+        if (attribute == null) {
             throw new UnavailableAttributeException(clusterName, attributeName);
         }
+        if (isPrimitiveAttribute(attribute) || (!isMapLookup && isSingleRawBoolOrReferenceAttribute(attribute))) {
+            return;
+        }
+        throw new IllegalInputException("Grouping request references attribute '" +
+                attributeName + "' with unsupported type '" + typeAsString(attribute) + "'" +
+                (isMapLookup ? " for map lookup" : ""));
     }
 
     private void verifyCompatibleAttributeTypes(String keyAttributeName,
@@ -77,13 +137,14 @@ public class GroupingValidator extends Searcher {
         AttributesConfig.Attribute keySourceAttribute = attributes.get(keySourceAttributeName);
         if (!keySourceAttribute.datatype().equals(keyAttribute.datatype())) {
             throw new IllegalInputException("Grouping request references key source attribute '" +
-                                            keySourceAttributeName + "' with data type '" + keySourceAttribute.datatype() +
-                                            "' that is different than data type '" + keyAttribute.datatype() + "' of key attribute '" +
+                                            keySourceAttributeName + "' with data type '" + datatypeAsString(keySourceAttribute) +
+                                            "' that is different than data type '" + datatypeAsString(keyAttribute) + "' of key attribute '" +
                                             keyAttributeName + "'");
         }
         if (!keySourceAttribute.collectiontype().equals(AttributesConfig.Attribute.Collectiontype.Enum.SINGLE)) {
             throw new IllegalInputException("Grouping request references key source attribute '" +
-                                            keySourceAttributeName + "' which is not of single value type");
+                                            keySourceAttributeName + "' with type '" + typeAsString(keySourceAttribute) + "' " +
+                                            "which is not of single value type");
         }
     }
 
@@ -92,14 +153,14 @@ public class GroupingValidator extends Searcher {
         @Override
         public void visitExpression(GroupingExpression exp) {
             if (exp instanceof AttributeMapLookupValue mapLookup) {
-                verifyHasAttribute(mapLookup.getKeyAttribute());
-                verifyHasAttribute(mapLookup.getValueAttribute());
+                verifyHasAttribute(mapLookup.getKeyAttribute(), true);
+                verifyHasAttribute(mapLookup.getValueAttribute(), true);
                 if (mapLookup.hasKeySourceAttribute()) {
-                    verifyHasAttribute(mapLookup.getKeySourceAttribute());
+                    verifyHasAttribute(mapLookup.getKeySourceAttribute(), true);
                     verifyCompatibleAttributeTypes(mapLookup.getKeyAttribute(), mapLookup.getKeySourceAttribute());
                 }
             } else if (exp instanceof AttributeValue) {
-                verifyHasAttribute(((AttributeValue) exp).getAttributeName());
+                verifyHasAttribute(((AttributeValue) exp).getAttributeName(), false);
             }
         }
     }

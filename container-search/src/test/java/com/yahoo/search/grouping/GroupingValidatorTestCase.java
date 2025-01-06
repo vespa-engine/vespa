@@ -126,8 +126,8 @@ public class GroupingValidatorTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Grouping request references key source attribute 'key_source' with data type 'INT32' " +
-                    "that is different than data type 'STRING' of key attribute 'map.key'",
+            assertEquals("Grouping request references key source attribute 'key_source' with data type 'int' " +
+                    "that is different than data type 'string' of key attribute 'map.key'",
                     e.getMessage());
         }
     }
@@ -140,7 +140,74 @@ public class GroupingValidatorTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Grouping request references key source attribute 'key_source' which is not of single value type",
+            assertEquals("Grouping request references key source attribute 'key_source' with type 'array<string>' which is not of single value type",
+                    e.getMessage());
+        }
+    }
+
+    private static void unsupported_attribute_type_throws(String name,
+                                                          AttributesConfig.Attribute.Datatype.Enum datatype,
+                                                          String typeName) {
+        try {
+            validate_attribute_type(name, datatype);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Grouping request references attribute '" + name + "' " +
+                            "with unsupported type '" + typeName + "'",
+                    e.getMessage());
+        }
+    }
+
+    private static void validate_attribute_type(String name, AttributesConfig.Attribute.Datatype.Enum datatype) {
+        var builder = new AttributesConfig.Builder();
+        builder.attribute(new AttributesConfig.Attribute.Builder().name(name).datatype(datatype)
+                .tensortype(datatype == AttributesConfig.Attribute.Datatype.TENSOR ? "tensor(x[2])" : ""));
+        validateGrouping(new AttributesConfig(builder),
+                "all(group(" + name + ") each(output(count())))");
+
+    }
+
+    @Test
+    void tensor_attribute_throws() {
+        unsupported_attribute_type_throws("tensor", AttributesConfig.Attribute.Datatype.TENSOR, "tensor(x[2])");
+    }
+
+    @Test
+    void predicate_attribute_throws() {
+        unsupported_attribute_type_throws("predicate", AttributesConfig.Attribute.Datatype.PREDICATE, "predicate");
+    }
+
+    @Test
+    void reference_attribute_is_ok() {
+        validate_attribute_type("reference", AttributesConfig.Attribute.Datatype.REFERENCE);
+    }
+
+    @Test
+    void raw_attribute_is_ok() {
+        validate_attribute_type("raw", AttributesConfig.Attribute.Datatype.RAW);
+    }
+
+    @Test
+    void bool_attribute_is_ok() {
+        validate_attribute_type("mybool", AttributesConfig.Attribute.Datatype.BOOL);
+    }
+
+    @Test
+    void raw_attribute_cannot_be_used_for_lookup() {
+        try {
+            var builder = new AttributesConfig.Builder();
+            builder.attribute(new AttributesConfig.Attribute.Builder().name("map.key")
+                    .datatype(AttributesConfig.Attribute.Datatype.RAW));
+            builder.attribute(new AttributesConfig.Attribute.Builder().name("map.value")
+                            .datatype(AttributesConfig.Attribute.Datatype.STRING));
+            builder.attribute(new AttributesConfig.Attribute.Builder().name("key_source")
+                            .datatype(AttributesConfig.Attribute.Datatype.RAW));
+            validateGrouping(new AttributesConfig(builder),
+                    "all(group(map{attribute(key_source)}) each(output(count())))");
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Grouping request references attribute 'map.key' " +
+                            "with unsupported type 'raw' for map lookup",
                     e.getMessage());
         }
     }
@@ -149,7 +216,8 @@ public class GroupingValidatorTestCase {
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         builder.attribute(new AttributesConfig.Attribute.Builder().name("map.key")
                 .datatype(AttributesConfig.Attribute.Datatype.Enum.STRING));
-        builder.attribute(new AttributesConfig.Attribute.Builder().name("map.value"));
+        builder.attribute(new AttributesConfig.Attribute.Builder().name("map.value")
+                .datatype(AttributesConfig.Attribute.Datatype.STRING));
         builder.attribute(new AttributesConfig.Attribute.Builder().name("key_source")
                 .datatype(matchingDataType ? AttributesConfig.Attribute.Datatype.Enum.STRING :
                         AttributesConfig.Attribute.Datatype.Enum.INT32)
@@ -172,7 +240,7 @@ public class GroupingValidatorTestCase {
         AttributesConfig.Builder builder = new AttributesConfig.Builder();
         for (String attributeName : attributeNames) {
             builder.attribute(new AttributesConfig.Attribute.Builder()
-                    .name(attributeName));
+                    .name(attributeName).datatype(AttributesConfig.Attribute.Datatype.INT32));
         }
         return new AttributesConfig(builder);
     }

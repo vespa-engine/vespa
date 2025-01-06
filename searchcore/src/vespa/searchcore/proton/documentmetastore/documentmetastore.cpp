@@ -1096,6 +1096,12 @@ DocumentMetaStore::foreach(const search::IGidToLidMapperVisitor &visitor) const
                               { visitor.visit(getRawMetaData(key.get_lid()).getGid(), key.get_lid()); });
 }
 
+bool
+DocumentMetaStore::is_sortable() const noexcept
+{
+    return true;
+}
+
 long
 DocumentMetaStore::onSerializeForAscendingSort(DocId lid, void * serTo, long available, const search::common::BlobConverter *) const {
     if ( ! validLid(lid)) return 0;

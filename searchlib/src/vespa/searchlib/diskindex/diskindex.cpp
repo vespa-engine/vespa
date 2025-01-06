@@ -26,37 +26,13 @@ using namespace search::queryeval;
 
 namespace search::diskindex {
 
-void swap(DiskIndex::LookupResult & a, DiskIndex::LookupResult & b)
-{
-    a.swap(b);
-}
-
-DiskIndex::LookupResult::LookupResult() noexcept
-    : DictionaryLookupResult(),
-      indexId(0u)
-{
-}
-
-DiskIndex::Key::Key() noexcept = default;
-DiskIndex::Key::Key(IndexList indexes, std::string_view word) noexcept :
-    _word(word),
-    _indexes(std::move(indexes))
-{
-}
-
-DiskIndex::Key::Key(const Key &) = default;
-DiskIndex::Key & DiskIndex::Key::operator = (const Key &) = default;
-DiskIndex::Key::~Key() = default;
-
-DiskIndex::DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache, size_t dictionary_cache_size)
+DiskIndex::DiskIndex(const std::string &indexDir, std::shared_ptr<IPostingListCache> posting_list_cache)
     : _indexDir(indexDir),
-      _dictionary_cache_size(dictionary_cache_size),
       _schema(),
       _field_indexes(),
       _nonfield_size_on_disk(0),
       _tuneFileSearch(),
-      _posting_list_cache(std::move(posting_list_cache)),
-      _cache(*this, dictionary_cache_size)
+      _posting_list_cache(std::move(posting_list_cache))
 {
     calculate_nonfield_size_on_disk();
 }
@@ -143,97 +119,15 @@ DiskIndex::setup(const TuneFileSearch &tuneFileSearch, const DiskIndex &old)
     return true;
 }
 
-DiskIndex::LookupResult
+DictionaryLookupResult
 DiskIndex::lookup(uint32_t index, std::string_view word)
 {
     /** Only used for testing */
-    IndexList indexes;
-    indexes.push_back(index);
-    Key key(std::move(indexes), word);
-    LookupResultVector resultV(1);
-    LookupResult result;
-    if ( read(key, resultV)) {
-        result.swap(resultV[0]);
-    }
-    return result;
-}
-
-namespace {
-
-bool
-containsAll(const DiskIndex::IndexList & indexes, const DiskIndex::LookupResultVector & result)
-{
-    for (uint32_t index : indexes) {
-        bool found(false);
-        for (size_t i(0); !found && (i < result.size()); i++) {
-            found = index == result[i].indexId;
-        }
-        if ( ! found ) {
-            return false;
-        }
-    }
-    return true;
-}
-
-DiskIndex::IndexList
-unite(const DiskIndex::IndexList & indexes, const DiskIndex::LookupResultVector & result)
-{
-    vespalib::hash_set<uint32_t> all;
-    for (uint32_t index : indexes) {
-        all.insert(index);
-    }
-    for (const DiskIndex::LookupResult & lr : result) {
-        all.insert(lr.indexId);
-    }
-    DiskIndex::IndexList v;
-    v.reserve(all.size());
-    for (uint32_t indexId : all) {
-        v.push_back(indexId);
-    }
-    return v;
-}
-
-}
-
-DiskIndex::LookupResultVector
-DiskIndex::lookup(const std::vector<uint32_t> & indexes, std::string_view word)
-{
-    Key key(indexes, word);
-    LookupResultVector result;
-    if (_dictionary_cache_size > 0) {
-        result = _cache.read(key);
-        if (!containsAll(indexes, result)) {
-            key = Key(unite(indexes, result), word);
-            _cache.invalidate(key);
-            result = _cache.read(key);
-        }
+    if (index < _field_indexes.size()) {
+        return _field_indexes[index].lookup(word);
     } else {
-        read(key, result);
+        return {};
     }
-    return result;
-}
-
-bool
-DiskIndex::read(const Key & key, LookupResultVector & result)
-{
-    uint64_t wordNum(0);
-    const IndexList & indexes(key.getIndexes());
-    result.resize(indexes.size());
-    for (size_t i(0); i < result.size(); i++) {
-        LookupResult & lr(result[i]);
-        lr.indexId = indexes[i];
-        PostingListOffsetAndCounts offsetAndCounts;
-        wordNum = 0;
-        SchemaUtil::IndexIterator it(_schema, lr.indexId);
-        uint32_t fieldId = it.getIndex();
-        if (fieldId < _field_indexes.size()) {
-            (void) _field_indexes[fieldId].get_dictionary()->lookup(key.getWord(), wordNum,offsetAndCounts);
-        }
-        lr.wordNum = wordNum;
-        lr.counts.swap(offsetAndCounts._counts);
-        lr.bitOffset = offsetAndCounts._offset;
-    }
-    return true;
 }
 
 namespace {
@@ -256,65 +150,32 @@ DiskIndex::calculate_nonfield_size_on_disk()
 
 namespace {
 
-DiskIndex::LookupResult G_nothing;
-
-class LookupCache {
-public:
-    LookupCache(DiskIndex & diskIndex, const std::vector<uint32_t> & fieldIds)
-        : _diskIndex(diskIndex),
-          _fieldIds(fieldIds),
-          _cache()
-    { }
-    const DiskIndex::LookupResult &
-    lookup(const std::string & word, uint32_t fieldId) {
-        auto it = _cache.find(word);
-        if (it == _cache.end()) {
-            _cache[word] = _diskIndex.lookup(_fieldIds, word);
-            it = _cache.find(word);
-        }
-        for (const auto & result : it->second) {
-            if (result.indexId == fieldId) {
-                return result;
-            }
-        }
-        return G_nothing;
-    }
-private:
-
-    using Cache = vespalib::hash_map<std::string, DiskIndex::LookupResultVector>;
-    DiskIndex &                   _diskIndex;
-    const std::vector<uint32_t> & _fieldIds;
-    Cache                         _cache;
-};
-
 class CreateBlueprintVisitor : public CreateBlueprintVisitorHelper {
 private:
-    LookupCache      &_cache;
     DiskIndex        &_diskIndex;
+    const FieldIndex &_field_index;
     const FieldSpec  &_field;
-    const uint32_t    _fieldId;
 
 public:
-    CreateBlueprintVisitor(LookupCache & cache, DiskIndex &diskIndex,
+    CreateBlueprintVisitor(DiskIndex& diskIndex,
                            const IRequestContext & requestContext,
                            const FieldSpec &field,
                            uint32_t fieldId)
         : CreateBlueprintVisitorHelper(diskIndex, field, requestContext),
-          _cache(cache),
           _diskIndex(diskIndex),
-          _field(field),
-          _fieldId(fieldId)
+          _field_index(_diskIndex.get_field_index(fieldId)),
+          _field(field)
     {
     }
 
     template <class TermNode>
     void visitTerm(TermNode &n) {
         const std::string termStr = termAsString(n);
-        const DiskIndex::LookupResult & lookupRes = _cache.lookup(termStr, _fieldId);
-        if (lookupRes.valid()) {
+        auto lookup_result = _field_index.lookup(termStr);
+        if (lookup_result.valid()) {
             double bitvector_limit = getRequestContext().get_create_blueprint_params().disk_index_bitvector_limit;
             setResult(std::make_unique<DiskTermBlueprint>
-                (_field, _diskIndex.get_field_index(_fieldId), termStr, lookupRes, _field.isFilter(), bitvector_limit));
+                (_field, _field_index, termStr, lookup_result, _field.isFilter(), bitvector_limit));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }
@@ -339,11 +200,11 @@ public:
 };
 
 Blueprint::UP
-createBlueprintHelper(LookupCache & cache, DiskIndex & diskIndex, const IRequestContext & requestContext,
+createBlueprintHelper(DiskIndex & diskIndex, const IRequestContext & requestContext,
                       const FieldSpec &field, uint32_t fieldId, const Node &term)
 {
     if (fieldId != Schema::UNKNOWN_FIELD_ID) {
-        CreateBlueprintVisitor visitor(cache, diskIndex, requestContext, field, fieldId);
+        CreateBlueprintVisitor visitor(diskIndex, requestContext, field, fieldId);
         const_cast<Node &>(term).accept(visitor);
         return visitor.getResult();
     }
@@ -357,8 +218,7 @@ DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSp
 {
     std::vector<uint32_t> fieldIds;
     fieldIds.push_back(_schema.getIndexFieldId(field.getName()));
-    LookupCache cache(*this, fieldIds);
-    return createBlueprintHelper(cache, *this, requestContext, field, fieldIds[0], term);
+    return createBlueprintHelper(*this, requestContext, field, fieldIds[0], term);
 }
 
 Blueprint::UP
@@ -378,10 +238,9 @@ DiskIndex::createBlueprint(const IRequestContext & requestContext, const FieldSp
         }
     }
     auto orbp = std::make_unique<OrBlueprint>();
-    LookupCache cache(*this, fieldIds);
     for (size_t i(0); i< fields.size(); i++) {
         const FieldSpec & field = fields[i];
-        orbp->addChild(createBlueprintHelper(cache, *this, requestContext, field, _schema.getIndexFieldId(field.getName()), term));
+        orbp->addChild(createBlueprintHelper(*this, requestContext, field, _schema.getIndexFieldId(field.getName()), term));
     }
     if (orbp->childCnt() == 1) {
         return orbp->removeChild(0);

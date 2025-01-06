@@ -55,13 +55,13 @@ using CacheParams = vespalib::CacheParam<
 class PostingListCache::Cache : public vespalib::cache<CacheParams> {
 public:
     using Parent = vespalib::cache<CacheParams>;
-    Cache(BackingStore& backing_store, size_t max_bytes);
-    ~Cache();
+    Cache(BackingStore& backing_store, size_t max_bytes, size_t max_protected_bytes);
+    ~Cache() override;
     static size_t element_size() { return sizeof(value_type); }
 };
 
-PostingListCache::Cache::Cache(BackingStore& backing_store, size_t max_bytes)
-    : Parent(backing_store, max_bytes)
+PostingListCache::Cache::Cache(BackingStore& backing_store, size_t max_bytes, size_t max_protected_bytes)
+    : Parent(backing_store, max_bytes, max_protected_bytes)
 {
 }
 
@@ -81,25 +81,39 @@ using BitVectorCacheParams = vespalib::CacheParam<
 class PostingListCache::BitVectorCache : public vespalib::cache<BitVectorCacheParams> {
 public:
     using Parent = vespalib::cache<BitVectorCacheParams>;
-    BitVectorCache(BackingStore& backing_store, size_t max_bytes);
-    ~BitVectorCache();
+    BitVectorCache(BackingStore& backing_store, size_t max_bytes, size_t max_protected_bytes);
+    ~BitVectorCache() override;
     static size_t element_size() { return sizeof(value_type); }
 };
 
-PostingListCache::BitVectorCache::BitVectorCache(BackingStore& backing_store, size_t max_bytes)
-    : Parent(backing_store, max_bytes)
+PostingListCache::BitVectorCache::BitVectorCache(BackingStore& backing_store, size_t max_bytes, size_t max_protected_bytes)
+    : Parent(backing_store, max_bytes, max_protected_bytes)
 {
 }
 
 PostingListCache::BitVectorCache::~BitVectorCache() = default;
 
-PostingListCache::PostingListCache(size_t max_bytes, size_t bitvector_max_bytes)
+PostingListCache::PostingListCache(const CacheSizingParams& params)
     : IPostingListCache(),
       _backing_store(std::make_unique<BackingStore>()),
-      _cache(std::make_unique<Cache>(*_backing_store, max_bytes)),
-      _bitvector_cache(std::make_unique<BitVectorCache>(*_backing_store, bitvector_max_bytes))
+      _cache(std::make_unique<Cache>(*_backing_store,
+                                     params.posting_slru_probationary_bytes(),
+                                     params.posting_slru_protected_bytes())),
+      _bitvector_cache(std::make_unique<BitVectorCache>(*_backing_store,
+                                                        params.bitvector_slru_probationary_bytes(),
+                                                        params.bitvector_slru_protected_bytes()))
 {
+    if (params.posting_lfu_max_element_count() > 0) {
+        _cache->set_frequency_sketch_size(params.posting_lfu_max_element_count());
+    }
+    if (params.bitvector_lfu_max_element_count() > 0) {
+        _bitvector_cache->set_frequency_sketch_size(params.bitvector_lfu_max_element_count());
+    }
 }
+
+PostingListCache::PostingListCache(size_t max_bytes, size_t bitvector_max_bytes)
+    : PostingListCache(CacheSizingParams(max_bytes, bitvector_max_bytes, 0.0, 0.0, 0, 0))
+{}
 
 PostingListCache::~PostingListCache() = default;
 

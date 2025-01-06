@@ -94,7 +94,7 @@
         <commons-compress.vespa.version>1.27.0</commons-compress.vespa.version>
         <commons-cli.vespa.version>1.9.0</commons-cli.vespa.version>
         <curator.vespa.version>5.7.0</curator.vespa.version>
-        <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.1 requires this -->
+        <dropwizard.metrics.vespa.version>4.2.26</dropwizard.metrics.vespa.version> <!-- ZK 3.9.x requires this -->
         <eclipse-angus.vespa.version>2.0.2</eclipse-angus.vespa.version>
         <eclipse-collections.vespa.version>11.1.0</eclipse-collections.vespa.version>
         <eclipse-sisu.vespa.version>0.9.0.M3</eclipse-sisu.vespa.version>
@@ -128,9 +128,9 @@
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>5.12.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
-        <netty.vespa.version>4.1.112.Final</netty.vespa.version>
+        <netty.vespa.version>4.1.115.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
-        <onnxruntime.vespa.version>1.19.2</onnxruntime.vespa.version>
+        <onnxruntime.vespa.version>1.20.0</onnxruntime.vespa.version>
         <opennlp.vespa.version>2.4.0</opennlp.vespa.version>
         <opentest4j.vespa.version>1.3.0</opentest4j.vespa.version>
         <org.json.vespa.version>20240303</org.json.vespa.version>

@@ -455,43 +455,17 @@ DualHeap<FutureHeap, PastHeap>::stringify() const {
 
 constexpr double TermFrequencyScorer_TERM_SCORE_FACTOR = 1000000.0;
 
-/**
- * Scorer used with WeakAndAlgorithm that calculates a pseudo term frequency
- * as max score and regular score for a term.
- */
-struct TermFrequencyScorer
-{
-    // weight * idf, scaled to fixedpoint
-    score_t calculateMaxScore(double estHits, double weight) const noexcept {
-        return (score_t) (TermFrequencyScorer_TERM_SCORE_FACTOR * weight / (1.0 + log(1.0 + (estHits / 1000.0))));
-    }
-
-    score_t calculateMaxScore(const Term &term) const noexcept {
-        return calculateMaxScore(term.estHits, term.weight) + 1;
-    }
-
-    template <typename Input>
-    score_t calculate_max_score(const Input &input, ref_t ref) const noexcept {
-        return calculateMaxScore(input.get_est_hits(ref), input.get_weight(ref)) + 1;
-    }
-};
-
 class Bm25TermFrequencyScorer
 {
 public:
     using Bm25Executor = features::Bm25Executor;
-    Bm25TermFrequencyScorer(uint32_t num_docs, float range) noexcept
-        : _num_docs(num_docs),
-          _range(range),
-          _max_idf(Bm25Executor::calculate_inverse_document_frequency({1, _num_docs}))
+    Bm25TermFrequencyScorer(uint32_t num_docs) noexcept
+        : _num_docs(num_docs)
     { }
-    double apply_range(double idf) const noexcept {
-        return (1.0 - _range)*_max_idf + _range * idf;
-    }
     // weight * scaled_bm25_idf, scaled to fixedpoint
     score_t calculateMaxScore(double estHits, double weight) const noexcept {
         return score_t(TermFrequencyScorer_TERM_SCORE_FACTOR * weight *
-                       apply_range(Bm25Executor::calculate_inverse_document_frequency({static_cast<uint64_t>(estHits), _num_docs})));
+                       Bm25Executor::calculate_inverse_document_frequency({static_cast<uint64_t>(estHits), _num_docs}));
     }
 
     score_t calculateMaxScore(const Term &term) const noexcept {
@@ -504,8 +478,6 @@ public:
     }
 private:
     uint32_t _num_docs;
-    float    _range;
-    double   _max_idf;
 };
 
 //-----------------------------------------------------------------------------

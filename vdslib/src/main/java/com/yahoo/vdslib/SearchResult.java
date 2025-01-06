@@ -2,6 +2,7 @@
 package com.yahoo.vdslib;
 
 import com.yahoo.data.access.helpers.MatchFeatureData;
+import com.yahoo.text.Utf8;
 import com.yahoo.vespa.objects.BufferSerializer;
 import com.yahoo.vespa.objects.Deserializer;
 
@@ -64,8 +65,10 @@ public class SearchResult {
     private final Hit[]  hits;
     private final TreeMap<Integer, byte []> aggregatorList;
     private final TreeMap<Integer, byte []> groupingList;
+    private String[] errors;
     private static final int EXTENSION_FLAGS_PRESENT = -1;
     private static final int MATCH_FEATURES_PRESENT_MASK = 1;
+    private static final int ERRORS_PRESENT_MASK = 2;
 
     public SearchResult(Deserializer buf) {
         BufferSerializer bser = (BufferSerializer) buf; // TODO: dirty cast. must do this differently
@@ -123,6 +126,11 @@ public class SearchResult {
         if (hasMatchFeatures(extensionFlags)) {
             deserializeMatchFeatures(buf, numHits);
         }
+        if (hasErrors(extensionFlags)) {
+            deserializeErrors(buf);
+        } else {
+            this.errors = new String[0];
+        }
     }
 
     private void deserializeMatchFeatures(Deserializer buf, int numHits) {
@@ -147,12 +155,24 @@ public class SearchResult {
         }
     }
 
+    private void deserializeErrors(Deserializer buf) {
+        int numErrors = buf.getInt(null);
+        this.errors = new String[numErrors];
+        for (int i = 0; i < numErrors; ++i) {
+            errors[i] = Utf8.toString(buf.getBytes(null, buf.getInt(null)));
+        }
+    }
+
     private static boolean hasExtensionFlags(int numHits) {
         return numHits == EXTENSION_FLAGS_PRESENT;
     }
 
     private static boolean hasMatchFeatures(int extensionFlags) {
         return (extensionFlags & MATCH_FEATURES_PRESENT_MASK) != 0;
+    }
+
+    private static boolean hasErrors(int extensionFlags) {
+        return (extensionFlags & ERRORS_PRESENT_MASK) != 0;
     }
 
     private static boolean isDoubleFeature(byte featureType) {
@@ -163,4 +183,5 @@ public class SearchResult {
     final public int getTotalHitCount() { return (totalHits != 0) ? totalHits : getHitCount(); }
     final public Hit getHit(int hitNo)  { return hits[hitNo]; }
     final public Map<Integer, byte []> getGroupingList() { return groupingList; }
+    final public String[] getErrors() { return errors; }
 }

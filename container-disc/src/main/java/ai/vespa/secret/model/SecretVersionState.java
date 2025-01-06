@@ -50,6 +50,7 @@ public enum SecretVersionState {
     public void validateTransition(SecretVersionState newState) {
         if (this == newState) {
             log.fine("Transition to the same state: " + newState);
+            return;
         }
         if (this == PREVIOUS && newState != DEPRECATED) {
             throw new IllegalArgumentException("Cannot transition from PREVIOUS state to " + newState);

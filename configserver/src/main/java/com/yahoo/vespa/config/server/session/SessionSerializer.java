@@ -38,6 +38,9 @@ public class SessionSerializer {
                List<X509Certificate> operatorCertificates, Optional<CloudAccount> cloudAccount,
                List<DataplaneToken> dataplaneTokens, ActivationTriggers activationTriggers,
                BooleanFlag writeSessionData) {
+
+        // Note: Any changes to SessionData needs to be reflected in the calls below and in the call to writeSessionData()
+        // and readSessionDataFromLegacyPaths
         zooKeeperClient.writeApplicationId(applicationId);
         zooKeeperClient.writeApplicationPackageReference(fileReference);
         zooKeeperClient.writeVespaVersion(vespaVersion);
@@ -51,6 +54,7 @@ public class SessionSerializer {
         zooKeeperClient.writeCloudAccount(cloudAccount);
         zooKeeperClient.writeDataplaneTokens(dataplaneTokens);
         zooKeeperClient.writeActivationTriggers(activationTriggers);
+
         if (writeSessionData.value())
             zooKeeperClient.writeSessionData(new SessionData(applicationId,
                                                              fileReference,

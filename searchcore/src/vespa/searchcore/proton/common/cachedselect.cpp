@@ -80,7 +80,7 @@ AttrVisitor::AttrVisitor(const search::IAttributeManager &amgr,
 AttrVisitor::~AttrVisitor() = default;
 
 bool isSingleValueThatWeHandle(BasicType type) {
-    return (type != BasicType::PREDICATE) && (type != BasicType::TENSOR) && (type != BasicType::REFERENCE) && (type != BasicType::RAW);
+    return (type != BasicType::PREDICATE) && (type != BasicType::REFERENCE) && (type != BasicType::RAW);
 }
 
 void

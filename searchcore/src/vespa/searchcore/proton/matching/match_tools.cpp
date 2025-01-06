@@ -353,7 +353,6 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
     double upper_limit = GlobalFilterUpperLimit::lookup(rank_properties, rank_setup.get_global_filter_upper_limit());
     double target_hits_max_adjustment_factor = TargetHitsMaxAdjustmentFactor::lookup(rank_properties, rank_setup.get_target_hits_max_adjustment_factor());
     auto fuzzy_matching_algorithm = FuzzyAlgorithm::lookup(rank_properties, rank_setup.get_fuzzy_matching_algorithm());
-    double weakand_range = temporary::WeakAndRange::lookup(rank_properties, rank_setup.get_weakand_range());
     double weakand_stop_word_adjust_limit = WeakAndStopWordAdjustLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_adjust_limit());
     double weakand_stop_word_drop_limit = WeakAndStopWordDropLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_drop_limit());
     double disk_index_bitvector_limit = DiskIndexBitvectorLimit::lookup(rank_properties, rank_setup.get_disk_index_bitvector_limit());
@@ -366,7 +365,6 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
             upper_limit * active_hit_ratio,
             target_hits_max_adjustment_factor,
             fuzzy_matching_algorithm,
-            weakand_range,
             StopWordStrategy(weakand_stop_word_adjust_limit,
                                                       weakand_stop_word_drop_limit, docid_limit),
             disk_index_bitvector_limit};

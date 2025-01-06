@@ -83,7 +83,6 @@ private:
     double                   _global_filter_lower_limit;
     double                   _global_filter_upper_limit;
     double                   _target_hits_max_adjustment_factor;
-    double                   _weakand_range;
     double                   _weakand_stop_word_adjust_limit;
     double                   _weakand_stop_word_drop_limit;
     double                   _disk_index_bitvector_limit;
@@ -413,8 +412,6 @@ public:
     double get_target_hits_max_adjustment_factor() const { return _target_hits_max_adjustment_factor; }
     void set_fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm v) { _fuzzy_matching_algorithm = v; }
     vespalib::FuzzyMatchingAlgorithm get_fuzzy_matching_algorithm() const { return _fuzzy_matching_algorithm; }
-    void set_weakand_range(double v) { _weakand_range = v; }
-    double get_weakand_range() const { return _weakand_range; }
     void set_weakand_stop_word_adjust_limit(double v) { _weakand_stop_word_adjust_limit = v; }
     double get_weakand_stop_word_adjust_limit() const { return _weakand_stop_word_adjust_limit; }
     void set_weakand_stop_word_drop_limit(double v) { _weakand_stop_word_drop_limit = v; }

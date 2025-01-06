@@ -419,10 +419,9 @@ WeakAndBlueprint::my_flow(InFlow in_flow) const
     return AnyFlow::create<OrFlow>(in_flow);
 }
 
-WeakAndBlueprint::WeakAndBlueprint(uint32_t n, float idf_range, wand::StopWordStrategy stop_word_strategy, bool thread_safe)
+WeakAndBlueprint::WeakAndBlueprint(uint32_t n, wand::StopWordStrategy stop_word_strategy, bool thread_safe)
     : _scores(WeakAndPriorityQueue::createHeap(n, thread_safe)),
       _n(n),
-      _idf_range(idf_range),
       _stop_word_strategy(stop_word_strategy),
       _weights(),
       _matching_phase(MatchingPhase::FIRST_PHASE)
@@ -520,11 +519,8 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     }
     bool readonly_scores_heap = (_matching_phase != MatchingPhase::FIRST_PHASE);
     wand::MatchParams innerParams{*_scores, _stop_word_strategy, wand::DEFAULT_PARALLEL_WAND_SCORES_ADJUST_FREQUENCY, get_docid_limit()};
-    return (_idf_range == 0.0)
-        ? WeakAndSearch::create(terms, innerParams, wand::TermFrequencyScorer(), _n, strict(),
-                                readonly_scores_heap)
-        : WeakAndSearch::create(terms, innerParams, wand::Bm25TermFrequencyScorer(get_docid_limit(), _idf_range), _n, strict(),
-                                readonly_scores_heap);
+    return WeakAndSearch::create(terms, innerParams, wand::Bm25TermFrequencyScorer(get_docid_limit()), _n, strict(),
+                                 readonly_scores_heap);
 }
 
 SearchIterator::UP

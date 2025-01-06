@@ -78,8 +78,8 @@ io.jsonwebtoken:jjwt-api:${java-jjwt.vespa.version}
 io.jsonwebtoken:jjwt-impl:${java-jjwt.vespa.version}
 io.jsonwebtoken:jjwt-jackson:${java-jjwt.vespa.version}
 io.netty:netty-buffer:${netty.vespa.version}
-io.netty:netty-codec-http2:${netty.vespa.version}
-io.netty:netty-codec-http:${netty.vespa.version}
+io.netty:netty-codec-http2:4.1.112.Final
+io.netty:netty-codec-http:4.1.112.Final
 io.netty:netty-codec:${netty.vespa.version}
 io.netty:netty-common:${netty.vespa.version}
 io.netty:netty-handler:${netty.vespa.version}
@@ -154,7 +154,9 @@ org.apache.opennlp:opennlp-tools:${opennlp.vespa.version}
 org.apache.velocity:velocity-engine-core:${velocity.vespa.version}
 org.apache.yetus:audience-annotations:0.12.0
 org.apache.zookeeper:zookeeper-jute:${zookeeper.client.vespa.version}
+org.apache.zookeeper:zookeeper-jute:3.9.3
 org.apache.zookeeper:zookeeper:${zookeeper.client.vespa.version}
+org.apache.zookeeper:zookeeper:3.9.3
 org.apiguardian:apiguardian-api:${apiguardian.vespa.version}
 org.assertj:assertj-core:${assertj.vespa.version}
 org.bouncycastle:bcpkix-jdk18on:${bouncycastle.vespa.version}

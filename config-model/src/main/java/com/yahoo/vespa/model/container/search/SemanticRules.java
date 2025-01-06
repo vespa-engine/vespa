@@ -74,8 +74,8 @@ public class SemanticRules implements Serializable, SemanticRulesConfig.Producer
             try {
                 toMap(config);  // validates config
                 ensureZeroOrOneDefaultRule(config);
-            } catch (ParseException | IOException e) {
-                throw new RuntimeException(e);
+            } catch (ParseException e) {
+                throw new IllegalArgumentException(e);
             }
             return rules;
         }
@@ -109,7 +109,7 @@ public class SemanticRules implements Serializable, SemanticRulesConfig.Producer
             }
         }
 
-        static Map<String, com.yahoo.prelude.semantics.RuleBase> toMap(SemanticRulesConfig config) throws ParseException, IOException {
+        static Map<String, com.yahoo.prelude.semantics.RuleBase> toMap(SemanticRulesConfig config) throws ParseException {
             RuleImporter ruleImporter = new RuleImporter(config, true, new SimpleLinguistics());
             Map<String, com.yahoo.prelude.semantics.RuleBase> ruleBaseMap = new HashMap<>();
             for (SemanticRulesConfig.Rulebase ruleBaseConfig : config.rulebase()) {

@@ -1,3 +1,5 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package org.logstashplugins;
 
 import ai.vespa.feed.client.*;
@@ -30,10 +32,21 @@ public class VespaFeed implements Output {
             PluginConfigSpec.uriSetting("vespa_url", "http://localhost:8080");
     public static final PluginConfigSpec<String> NAMESPACE =
             PluginConfigSpec.requiredStringSetting("namespace");
+    // if namespace is set to %{field_name} or %{[field_name]}, it's dynamic
+    // if remove_namespace is true, the namespace is removed from the document
+    public static final PluginConfigSpec<Boolean> REMOVE_NAMESPACE =
+            PluginConfigSpec.booleanSetting("remove_namespace", false);
     public static final PluginConfigSpec<String> DOCUMENT_TYPE =
             PluginConfigSpec.requiredStringSetting("document_type");
+    // if remove_document_type is true, the document type is removed from the document (assuming it's dynamic)
+    public static final PluginConfigSpec<Boolean> REMOVE_DOCUMENT_TYPE =
+            PluginConfigSpec.booleanSetting("remove_document_type", false);
+    // field from the event to use as doc ID
     public static final PluginConfigSpec<String> ID_FIELD =
             PluginConfigSpec.stringSetting("id_field", "id");
+    // if remove_id is true, the id field is removed from the document
+    public static final PluginConfigSpec<Boolean> REMOVE_ID =
+            PluginConfigSpec.booleanSetting("remove_id", false);
 
     // client certificate and key
     public static final PluginConfigSpec<String> CLIENT_CERT =
@@ -44,6 +57,9 @@ public class VespaFeed implements Output {
     // put, update or remove
     public static final PluginConfigSpec<String> OPERATION =
             PluginConfigSpec.stringSetting("operation", "put");
+    // if remove_operation is true, the operation field is removed from the document (assuming it's dynamic)
+    public static final PluginConfigSpec<Boolean> REMOVE_OPERATION =
+            PluginConfigSpec.booleanSetting("remove_operation", false);
     // whether to add create=true to the put/update request
     public static final PluginConfigSpec<Boolean> CREATE =
             PluginConfigSpec.booleanSetting("create", false);
@@ -70,19 +86,23 @@ public class VespaFeed implements Output {
     public static final PluginConfigSpec<Long> DOOM_PERIOD =
             PluginConfigSpec.numSetting("doom_period", 60);
 
-    private final FeedClient client;
+    private FeedClient client;
     private final String id;
     private final String namespace;
     private final boolean dynamicNamespace;
+    private final boolean removeNamespace;
     private final String documentType;
     private final boolean dynamicDocumentType;
+    private final boolean removeDocumentType;
     private final String operation;
     private final boolean dynamicOperation;
     private final boolean create;
     private final String idField;
+    private final boolean removeId;
     private final long operationTimeout;
     private volatile boolean stopped = false;
     ObjectMapper objectMapper;
+    private final boolean removeOperation;
 
 
     public VespaFeed(final String id, final Configuration config, final Context context) {
@@ -92,12 +112,12 @@ public class VespaFeed implements Output {
         DynamicOption configOption = new DynamicOption(config.get(NAMESPACE));
         dynamicNamespace = configOption.isDynamic();
         namespace = configOption.getParsedConfigValue();
-
+        removeNamespace = config.get(REMOVE_NAMESPACE);
         // same with document type
         configOption = new DynamicOption(config.get(DOCUMENT_TYPE));
         dynamicDocumentType = configOption.isDynamic();
         documentType = configOption.getParsedConfigValue();
-
+        removeDocumentType = config.get(REMOVE_DOCUMENT_TYPE);
         // and operation
         configOption = new DynamicOption(config.get(OPERATION));
         dynamicOperation = configOption.isDynamic();
@@ -108,7 +128,8 @@ public class VespaFeed implements Output {
         operationTimeout = config.get(OPERATION_TIMEOUT);
 
         idField = config.get(ID_FIELD);
-
+        removeId = config.get(REMOVE_ID);
+        this.removeOperation = config.get(REMOVE_OPERATION);
         FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
                     .setConnectionsPerEndpoint(config.get(MAX_CONNECTIONS).intValue())
                     .setMaxStreamPerConnection(config.get(MAX_STREAMS).intValue())
@@ -143,7 +164,15 @@ public class VespaFeed implements Output {
         objectMapper = ObjectMappers.JSON_MAPPER;
     }
 
-    private void validateOperationAndCreate() {
+    // Constructor for testing
+    protected VespaFeed(String id, Configuration config, Context context, FeedClient testClient) {
+        this(id, config, context);
+        if (testClient != null) {
+            this.client = testClient;
+        }
+    }
+
+    public void validateOperationAndCreate() {
         if (!dynamicOperation) {
             if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
                 throw new IllegalArgumentException("Operation must be put, update or remove");
@@ -154,7 +183,7 @@ public class VespaFeed implements Output {
         }
     }
 
-    private FeedClientBuilder addCertAndKeyToBuilder(Configuration config, FeedClientBuilder builder) {
+    protected static FeedClientBuilder addCertAndKeyToBuilder(Configuration config, FeedClientBuilder builder) {
         String clientCert = config.get(CLIENT_CERT);
         Path clientCertPath = null;
         if (clientCert != null) {
@@ -210,31 +239,36 @@ public class VespaFeed implements Output {
 
     }
 
-    private CompletableFuture<Result> asyncFeed(Event event) throws JsonProcessingException {
-        Map<String, Object> eventData = event.getData();
-
-        // we put the doc ID here
+    protected CompletableFuture<Result> asyncFeed(Event event) throws JsonProcessingException {
+        // try to get the doc ID from the event, otherwise generate a UUID
         String docIdStr;
-
-        // see if the event has an ID field (as configured)
-        // if it does, use it as docIdStr. Otherwise, generate a UUID
-        if (eventData.containsKey(idField)) {
-            docIdStr = eventData.get(idField).toString();
-        } else {
+        Object docIdObj = event.getField(idField);
+        if (docIdObj == null) {
             docIdStr = UUID.randomUUID().toString();
+        } else {
+            docIdStr = docIdObj.toString();
+            // Remove the ID field if configured to do so
+            if (removeId) {
+                event.remove(idField);
+            }
         }
 
         // if the namespace is dynamic, we need to resolve it
-        // the default (if we don't have such a field) is simply the name of the field
         String namespace = this.namespace;
         if (dynamicNamespace) {
             namespace = getDynamicField(event, this.namespace);
+            if (removeNamespace) {
+                event.remove(namespace);
+            }
         }
 
         // similar logic for the document type
         String documentType = this.documentType;
         if (dynamicDocumentType) {
             documentType = getDynamicField(event, this.documentType);
+            if (removeDocumentType) {
+                event.remove(documentType);
+            }
         }
 
         // and the operation
@@ -246,6 +280,9 @@ public class VespaFeed implements Output {
                 // TODO we should put this in the dead letter queue
                 return null;
             }
+            if (removeOperation) {
+                event.remove(this.operation);
+            }
         }
         // add create=true, if applicable
         OperationParameters operationParameters = addCreateIfApplicable(operation, docIdStr);
@@ -255,13 +292,11 @@ public class VespaFeed implements Output {
         DocumentId docId = DocumentId.of(namespace,
                 documentType, docIdStr);
 
-        // create a document from the event data. We need an enclosing "fields" object
-        // to match the Vespa put format
+        // create a document from the event data
         Map<String,Object> doc = new HashMap<>();
-        doc.put("fields", eventData);
+        doc.put("fields", event.getData());  // Use the modified eventData here
 
         // create the request to feed the document
-        //return client.put(docId, toJson(doc), operationParameters);
         if (operation.equals("put")) {
             return client.put(docId, toJson(doc), operationParameters);
         } else if (operation.equals("update")) {
@@ -277,7 +312,7 @@ public class VespaFeed implements Output {
      * @param docId
      * @return The operation parameters with create=true if applicable
      */
-    private OperationParameters addCreateIfApplicable(String operation, String docId) {
+    public OperationParameters addCreateIfApplicable(String operation, String docId) {
         OperationParameters operationParameters = OperationParameters.empty()
                 .timeout(Duration.ofSeconds(operationTimeout));
 
@@ -300,7 +335,7 @@ public class VespaFeed implements Output {
      * @param fieldName The field name to get
      * @return The value of the field or the field name if it doesn't exist
      */
-    private String getDynamicField(Event event, String fieldName) {
+    protected String getDynamicField(Event event, String fieldName) {
         Object namespaceFieldValue = event.getField(fieldName);
         if (namespaceFieldValue != null) {
             return namespaceFieldValue.toString();
@@ -309,7 +344,7 @@ public class VespaFeed implements Output {
         }
     }
 
-    private String toJson(Map<String, Object> eventData) throws JsonProcessingException {
+    protected String toJson(Map<String, Object> eventData) throws JsonProcessingException {
         return objectMapper.writeValueAsString(eventData);
     }
 
@@ -326,12 +361,46 @@ public class VespaFeed implements Output {
 
     @Override
     public Collection<PluginConfigSpec<?>> configSchema() {
-        return List.of(VESPA_URL, CLIENT_CERT, CLIENT_KEY, OPERATION, CREATE, NAMESPACE, DOCUMENT_TYPE, ID_FIELD,
-                MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT);
+        return List.of(VESPA_URL, CLIENT_CERT, CLIENT_KEY, OPERATION, CREATE,
+                NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID,
+                REMOVE_OPERATION,
+                MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD);
     }
 
     @Override
     public String getId() {
         return id;
+    }
+
+    public boolean isDynamicNamespace() {
+        return dynamicNamespace;
+    }
+
+    public String getNamespace() {
+        return namespace;
+    }
+
+    public boolean isDynamicDocumentType() {
+        return dynamicDocumentType;
+    }
+
+    public String getDocumentType() {
+        return documentType;
+    }
+
+    public String getOperation() {
+        return operation;
+    }
+
+    public boolean isCreate() {
+        return create;
+    }
+
+    public boolean isDynamicOperation() {
+        return dynamicOperation;
+    }
+
+    public long getOperationTimeout() {
+        return operationTimeout;
     }
 }

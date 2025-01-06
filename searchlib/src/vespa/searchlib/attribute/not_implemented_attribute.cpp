@@ -1,11 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "not_implemented_attribute.h"
+#include "empty_search_context.h"
 #include "search_context.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vespalib/util/classname.h>
 
+using search::attribute::EmptySearchContext;
+using vespalib::Issue;
 using vespalib::make_string_short::fmt;
 using vespalib::getClassName;
 
@@ -109,6 +113,12 @@ NotImplementedAttribute::findFoldedEnums(const char *) const {
     notImplemented();
 }
 
+bool
+NotImplementedAttribute::is_sortable() const noexcept
+{
+    return false;
+}
+
 long
 NotImplementedAttribute::onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const {
     notImplemented();
@@ -136,7 +146,9 @@ NotImplementedAttribute::addDoc(DocId &) {
 
 std::unique_ptr<SearchContext>
 NotImplementedAttribute::getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const {
-    notImplemented();
+    Issue::report("Search is not supported for attribute '%s' of type '%s' ('%s').",
+                  getName().c_str(), getConfig().type_to_string().c_str(), getClassName(*this).c_str());
+    return std::make_unique<EmptySearchContext>(*this);
 }
 
 void NotImplementedAttribute::onAddDocs(DocId ) { }

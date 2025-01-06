@@ -123,6 +123,8 @@ struct ReferenceAttributeTest : public ::testing::Test {
         return _attr->getReference(doc);
     }
 
+    auto get_enum(uint32_t doc) { return _attr->getEnum(doc); }
+
     void set(uint32_t doc, const GlobalId &gid) {
         _attr->update(doc, gid);
     }
@@ -465,6 +467,23 @@ TEST_F(ReferenceAttributeTest, unique_gids_are_tracked)
     clear(2);
     notifyReferencedRemove(toGid(doc1));
     EXPECT_EQ(0u, getUniqueGids());
+}
+
+TEST_F(ReferenceAttributeTest, getEnum_returns_same_value_for_same_reference)
+{
+    ensureDocIdLimit(7);
+    set(1, toGid(doc1));
+    set(2, toGid(doc2));
+    set(4, toGid(doc1));
+    set(5, toGid(doc2));
+    commit();
+    EXPECT_EQ(get_enum(1), get_enum(4));
+    EXPECT_EQ(get_enum(2), get_enum(5));
+    EXPECT_EQ(get_enum(3), get_enum(6));
+    EXPECT_EQ(get_enum(3), get_enum(7));
+    EXPECT_NE(get_enum(1), get_enum(2));
+    EXPECT_NE(get_enum(1), get_enum(3));
+    EXPECT_NE(get_enum(2), get_enum(3));
 }
 
 struct ReferenceAttributeSearchTest : public ReferenceAttributeTest {

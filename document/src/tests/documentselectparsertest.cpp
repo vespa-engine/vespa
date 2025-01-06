@@ -6,6 +6,7 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/fieldvalue/boolfieldvalue.h>
 #include <vespa/document/fieldvalue/bytefieldvalue.h>
 #include <vespa/document/fieldvalue/intfieldvalue.h>
@@ -14,6 +15,7 @@
 #include <vespa/document/fieldvalue/floatfieldvalue.h>
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/weightedsetfieldvalue.h>
+#include <vespa/document/fieldvalue/tensorfieldvalue.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/document/select/visitor.h>
@@ -206,6 +208,11 @@ DocumentSelectParserTest::createDocs()
         wsbytes.add(ByteFieldValue(static_cast<int8_t>(255)));
         wsbytes.add(ByteFieldValue(0));
         _doc.back()->setValue("byteweightedset", wsbytes);
+        // doc 1 also has a populated tensor field
+        const auto& tensor_type = dynamic_cast<const TensorDataType&>(_doc.back()->getField("dense_tensor").getDataType());
+        TensorFieldValue tfv(tensor_type);
+        tfv.make_empty_if_not_existing();
+        _doc.back()->setValue("dense_tensor", tfv);
     }
 
     _doc.push_back(createDoc("testdoctype1", "id:myspace:testdoctype1:n=1234:footype1", 15, 1.0, "some", "some", 0));  // DOC 2
@@ -945,6 +952,35 @@ TEST_F(DocumentSelectParserTest, can_use_boolean_fields_in_expressions) {
     PARSE("testdoctype1.boolfield == false", *_doc[1], False);
 }
 
+// Note: no support for checking tensor field _contents_, only their presence
+TEST_F(DocumentSelectParserTest, tensor_fields_can_be_null_checked_in_expressions) {
+    createDocs();
+    // Doc 1 has `dense_tensor` field set, the rest have no tensor fields set
+    PARSE("testdoctype1.dense_tensor != null", *_doc[1], True);
+    PARSE("null != testdoctype1.dense_tensor", *_doc[1], True);
+    PARSE("testdoctype1.dense_tensor", *_doc[1], True);
+    PARSE("testdoctype1.dense_tensor == null", *_doc[1], False);
+    PARSE("null == testdoctype1.dense_tensor", *_doc[1], False);
+    // No tensor fields set in doc 0
+    PARSE("testdoctype1.dense_tensor != null", *_doc[0], False);
+    PARSE("testdoctype1.dense_tensor == null", *_doc[0], True);
+    PARSE("testdoctype1.dense_tensor", *_doc[0], False);
+    PARSE("not testdoctype1.dense_tensor", *_doc[0], True);
+    PARSE("testdoctype1.sparse_tensor == null", *_doc[0], True);
+    PARSE("testdoctype1.sparse_tensor != null", *_doc[0], False);
+
+    // Tensors are not defined for any other operations than presence checks
+    PARSE("testdoctype1.dense_tensor == 1234", *_doc[1], Invalid);
+    PARSE("testdoctype1.dense_tensor != false", *_doc[1], Invalid);
+    // ... not even identity checks
+    PARSE("testdoctype1.dense_tensor == testdoctype1.dense_tensor", *_doc[1], Invalid);
+    PARSE("testdoctype1.dense_tensor != testdoctype1.dense_tensor", *_doc[1], Invalid);
+    // ... unless the fields are not set, in which case identity checks will succeed
+    // since the expression degenerates to comparing null values.
+    PARSE("testdoctype1.dense_tensor == testdoctype1.dense_tensor", *_doc[0], True);
+    PARSE("testdoctype1.dense_tensor != testdoctype1.dense_tensor", *_doc[0], False);
+}
+
 namespace {
 
     class TestVisitor : public select::Visitor {
@@ -1084,16 +1120,7 @@ TEST_F(DocumentSelectParserTest, testBodyFieldDetection)
 
 }
 
-TEST_F(DocumentSelectParserTest, testDocumentUpdates)
-{
-    testDocumentUpdates0();
-    testDocumentUpdates1();
-    testDocumentUpdates2();
-    testDocumentUpdates3();
-    testDocumentUpdates4();
-}
-
-void DocumentSelectParserTest::testDocumentUpdates0()
+TEST_F(DocumentSelectParserTest, testDocumentUpdates0)
 {
     createDocs();
 
@@ -1146,7 +1173,7 @@ void DocumentSelectParserTest::testDocumentUpdates0()
     PARSEI("(30 = 30)", *_update[0], True);
 }
 
-void DocumentSelectParserTest::testDocumentUpdates1()
+TEST_F(DocumentSelectParserTest, testDocumentUpdates1)
 {
     createDocs();
 
@@ -1181,7 +1208,7 @@ void DocumentSelectParserTest::testDocumentUpdates1()
     PARSE("testdoctype1.headerval = 10", *_update[4], Invalid);
 }
 
-void DocumentSelectParserTest::testDocumentUpdates2()
+TEST_F(DocumentSelectParserTest, testDocumentUpdates2)
 {
     createDocs();
 
@@ -1234,7 +1261,7 @@ void DocumentSelectParserTest::testDocumentUpdates3()
     PARSE("false or testdoctype1.content = 1", *_update[0], Invalid);
 }
 
-void DocumentSelectParserTest::testDocumentUpdates4()
+TEST_F(DocumentSelectParserTest, testDocumentUpdates4)
 {
     createDocs();
 

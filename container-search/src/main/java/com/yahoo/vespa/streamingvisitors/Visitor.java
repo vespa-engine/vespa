@@ -11,6 +11,7 @@ import com.yahoo.vdslib.VisitorStatistics;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Visitor for performing searches and accessing results.
@@ -30,6 +31,8 @@ interface Visitor {
     int getTotalHitCount();
 
     List<Grouping> getGroupings();
+
+    Set<String> getErrors();
 
     Trace getTrace();
 
