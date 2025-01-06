@@ -204,15 +204,15 @@ public class GenerateExpressionTestCase {
     }
 
     /**
-     * Tests an arguably common use case where several values are extracted from one text input.
+     * Tests an arguably common use case where several strings are generated for one text input.
      * Combines generate with split expression. 
      */
     @Test
     public void testGeneratorWithStringInputArrayOutput() {
         Map<String, TextGenerator> generators = Map.of(
-                "generator", new SplitterMockTextGenerator("myDocument.myGeneratedArray"));
-
-        var expressionString = "input myText | generate | split ', ' | attribute myGeneratedArray";
+                "generator", new SplitterMockTextGenerator("myDocument.myGeneratedArray", " ", "\n"));
+        
+        var expressionString = "input myText | generate | split '\n' | attribute myGeneratedArray";
         var input = "hello world";
         var expected = new String[]{"hello", "world"};
 
@@ -248,14 +248,18 @@ public class GenerateExpressionTestCase {
 
     public static class SplitterMockTextGenerator implements TextGenerator {
         final String expectedDestination;
-
-        public SplitterMockTextGenerator(String expectedDestination) {
+        final String oldDelimiter;
+        final String newDelimiter;
+        
+        public SplitterMockTextGenerator(String expectedDestination, String oldDelimiter, String newDelimiter) {
             this.expectedDestination = expectedDestination;
+            this.oldDelimiter = oldDelimiter;
+            this.newDelimiter = newDelimiter;
         }
 
         public String generate(Prompt prompt, Context context) {
-            var parts = prompt.asString().split(" ");
-            return String.join(", ", parts);
+            var parts = prompt.asString().split(oldDelimiter);
+            return String.join(newDelimiter, parts);
         }
     }
 }

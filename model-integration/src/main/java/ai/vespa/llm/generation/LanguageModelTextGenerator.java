@@ -27,11 +27,13 @@ public class LanguageModelTextGenerator extends AbstractComponent implements Tex
     // Templates without {input} are possible, which will ignore the input, making the prompt static.
     // TODO: Consider not allowing templates without {input} to avoid costly errors when users forget to include {input}.
     private static final String DEFAULT_PROMPT_TEMPLATE = "{input}";
+    private final LanguageModelTextGeneratorConfig config;
     private final String promptTemplate;
 
     @Inject
     public LanguageModelTextGenerator(LanguageModelTextGeneratorConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.languageModel = LanguageModelUtils.findLanguageModel(config.providerId(), languageModels, logger);
+        this.config = config;
         this.promptTemplate = loadPromptTemplate(config);
     }
     
@@ -61,7 +63,13 @@ public class LanguageModelTextGenerator extends AbstractComponent implements Tex
         var options = new InferenceParameters(s -> "");
         var completions = languageModel.complete(finalPrompt, options);
         var firstCompletion = completions.get(0);
-        return firstCompletion.text();
+        var generatedText = firstCompletion.text();
+        
+        if (config.maxLength() > -1) {
+            generatedText = generatedText.substring(0, Math.min(config.maxLength(), generatedText.length()));
+        }
+        
+        return generatedText;
     }
     
     private Prompt buildPrompt(Prompt inputPrompt) {

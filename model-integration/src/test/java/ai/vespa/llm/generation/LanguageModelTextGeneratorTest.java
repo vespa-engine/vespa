@@ -24,7 +24,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 public class LanguageModelTextGeneratorTest {
 
     @Test
-    public void testGenerate() {
+    public void testGenerateWithOneModel() {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
@@ -175,6 +175,22 @@ public class LanguageModelTextGeneratorTest {
 
         var result1 = generator.generate(StringPrompt.from("world"), context);
         assertEquals("bye world bye world", result1);
+    }
+    
+    @Test
+    public void testGenerateWithMaxLength() {
+        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        var languageModels = Map.of("languageModel", languageModel);
+
+        var config = new LanguageModelTextGeneratorConfig.Builder()
+                .providerId("languageModel")
+                .maxLength(8)
+                .build();
+        
+        var generator = createGenerator(config, languageModels);
+        var context = new TextGenerator.Context("schema.indexing");
+        var result = generator.generate(StringPrompt.from("hello"), context);
+        assertEquals("hello he", result);
     }
 
     private static LanguageModelTextGenerator createGenerator(LanguageModelTextGeneratorConfig config, Map<String, LanguageModel> languageModels) {
