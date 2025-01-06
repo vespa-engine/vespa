@@ -216,6 +216,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useLegacyWandQueryParsing;
         private final boolean forwardAllLogLevels;
         private final long zookeeperPreAllocSize;
+        private final int distributionBitsInDev;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
@@ -268,6 +269,7 @@ public class ModelContextImpl implements ModelContext {
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
             this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
             this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
+            this.distributionBitsInDev = Flags.DISTRIBUTION_BITS_IN_DEV.bindTo(source).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -326,6 +328,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useLegacyWandQueryParsing() { return useLegacyWandQueryParsing; }
         @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
         @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }
+        @Override public int distributionBitsInDev() { return distributionBitsInDev; }
     }
 
     public static class Properties implements ModelContext.Properties {

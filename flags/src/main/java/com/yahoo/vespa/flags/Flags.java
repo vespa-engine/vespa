@@ -461,6 +461,13 @@ public class Flags {
             "Use new RPC method for triggering download of file reference",
             "Takes effect immediately");
 
+    public static final UnboundIntFlag DISTRIBUTION_BITS_IN_DEV = defineIntFlag(
+            "distribution-bits-in-dev", 0,
+            List.of("hmusum", "vekterli"), "2025-01-06", "2025-02-01",
+            "If non-zero, override number of distribution bits to use in dev zone in hosted Vespa for an application.",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
