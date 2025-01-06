@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
@@ -64,12 +65,18 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 		id = args[0]
 		filename = args[1]
 	}
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
+	var r io.ReadCloser
+	if filename == "-" {
+		r = io.NopCloser(cli.Stdin)
+	} else {
+		f, err := os.Open(filename)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		r = f
 	}
-	defer f.Close()
-	doc, err := document.NewDecoder(f).Decode()
+	doc, err := document.NewDecoder(r).Decode()
 	if errors.Is(err, document.ErrMissingId) {
 		if id == "" {
 			return fmt.Errorf("no document id given neither as argument or as a 'put', 'update' or 'remove' key in the JSON file")
@@ -91,7 +98,7 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 		doc.Operation = op
 	}
 	if doc.Body != nil {
-		service.CurlWriter.InputFile = f.Name()
+		service.CurlWriter.InputFile = filename
 	}
 	result := client.Send(doc)
 	return printResult(cli, operationResult(false, doc, service, result), false)
@@ -185,7 +192,10 @@ func newDocumentPutCmd(cli *CLI) *cobra.Command {
 		Short: "Writes a document to Vespa",
 		Long: `Writes the document in the given file to Vespa.
 If the document already exists, all its values will be replaced by this document.
-If the document id is specified both as an argument and in the file the argument takes precedence.`,
+If the document id is specified both as an argument and in the file the argument takes precedence.
+
+If json-file is a single dash ('-'), the document will be read from standard input.
+`,
 		Args: cobra.RangeArgs(1, 2),
 		Example: `$ vespa document put src/test/resources/A-Head-Full-of-Dreams.json
 $ vespa document put id:mynamespace:music::a-head-full-of-dreams src/test/resources/A-Head-Full-of-Dreams.json`,

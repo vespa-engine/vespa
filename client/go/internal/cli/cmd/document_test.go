@@ -5,15 +5,17 @@
 package cmd
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
+	"github.com/stretchr/testify/require"
 	"github.com/vespa-engine/vespa/client/go/internal/mock"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
@@ -76,6 +78,23 @@ func TestDocumentRemoveWithoutIdArg(t *testing.T) {
 func TestDocumentRemoveWithoutIdArgVerbose(t *testing.T) {
 	assertDocumentSend([]string{"document", "remove", "-v", "testdata/A-Head-Full-of-Dreams-Remove.json"},
 		"remove", "DELETE", "id:mynamespace:music::a-head-full-of-dreams", "", t)
+}
+
+func TestDocumentSendPutFromStdin(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+	doc, err := os.ReadFile("testdata/A-Head-Full-of-Dreams-Put.json")
+	require.Nil(t, err)
+	var stdin bytes.Buffer
+	stdin.Write(doc)
+	cli.Stdin = &stdin
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put", "-"))
+	assert.Equal(t, "Success: put id:mynamespace:music::a-head-full-of-dreams\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
+	body, err := io.ReadAll(client.LastRequest.Body)
+	require.Nil(t, err)
+	assertFieldsEqual(t, doc, body)
 }
 
 func TestDocumentSendMissingId(t *testing.T) {
@@ -157,16 +176,27 @@ func assertDocumentSend(args []string, expectedOperation string, expectedMethod 
 	assert.Equal(t, expectedMethod, client.LastRequest.Method)
 
 	if expectedPayloadFile != "" {
-		data, err := os.ReadFile(expectedPayloadFile)
+		expected, err := os.ReadFile(expectedPayloadFile)
 		assert.Nil(t, err)
-		var expectedPayload struct {
-			Fields json.RawMessage `json:"fields"`
-		}
-		assert.Nil(t, json.Unmarshal(data, &expectedPayload))
-		assert.Equal(t, `{"fields":`+string(expectedPayload.Fields)+"}", ioutil.ReaderToString(client.LastRequest.Body))
+		actual, err := io.ReadAll(client.LastRequest.Body)
+		assert.Nil(t, err)
+		assertFieldsEqual(t, expected, actual)
 	} else {
 		assert.Nil(t, client.LastRequest.Body)
 	}
+}
+
+func assertFieldsEqual(t *testing.T, a, b []byte) {
+	t.Helper()
+	var document struct {
+		Fields json.RawMessage `json:"fields"`
+	}
+	assert.Nil(t, json.Unmarshal(a, &document))
+	fieldsA := string(document.Fields)
+	document.Fields = nil
+	assert.Nil(t, json.Unmarshal(b, &document))
+	fieldsB := string(document.Fields)
+	assert.Equal(t, fieldsA, fieldsB)
 }
 
 func assertDocumentGet(client *mock.HTTPClient, args []string, documentIds []string, t *testing.T) {
