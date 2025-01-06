@@ -3,14 +3,11 @@ package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
-import ai.vespa.llm.completion.Prompt;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.language.process.TextGenerator;
 
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 
