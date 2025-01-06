@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.content.cluster;
 import com.google.common.base.Preconditions;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -63,9 +64,9 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
-import java.util.logging.Level;
 
 import static com.yahoo.vespa.model.content.DistributionBitCalculator.getDistributionBits;
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -98,6 +99,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     private Integer maxNodesPerMerge;
     private final Zone zone;
     private final Optional<Integer> distributionBitsInPreviousModel;
+    private final ModelContext.FeatureFlags featureFlags;
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
     private DistributionMode distributionMode;
@@ -339,7 +341,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                     if (hosts.size() > 1) {
                         var message = "When having content clusters and more than 1 config server " +
                                       "it is recommended to configure cluster controllers explicitly.";
-                        deployState.getDeployLogger().logApplicationPackage(Level.INFO, message);
+                        deployState.getDeployLogger().logApplicationPackage(INFO, message);
                     }
                     admin.setClusterControllers(createClusterControllers(admin,
                                                                          hosts,
@@ -438,6 +440,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         this.documentSelection = routingSelection;
         this.zone = deployState.zone();
         this.distributionBitsInPreviousModel = distributionBitsInPreviousModel(deployState, clusterId);
+        this.featureFlags = deployState.featureFlags();
     }
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(clusterId); }
@@ -561,8 +564,17 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         // Avoid number of distribution bits being reduced
         if (distributionBitsInPreviousModel.isPresent() && distributionBitsInPreviousModel.get() > distributionBits)
             return distributionBitsInPreviousModel.get();
-        else
+
+        if (isHosted && zone.environment() == Environment.dev) {
+            var overriddenDistributionBits = featureFlags.distributionBitsInDev();
+            if (overriddenDistributionBits == 0) return distributionBits;
+
+            log.log(INFO, "Overriding distribution bits to be " + overriddenDistributionBits);
+            return overriddenDistributionBits;
+        }
+        else {
             return distributionBits;
+        }
     }
 
     private boolean zoneEnvImplies16DistributionBits() {
