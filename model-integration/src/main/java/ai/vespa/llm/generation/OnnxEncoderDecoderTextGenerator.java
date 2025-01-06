@@ -24,7 +24,8 @@ import java.util.Map;
 /**
  * Component for generating text using SentencePiece tokenizer and encoder and decoder language models in ONNX format.
  * See onnx-encoder-decoder-text-generator.def for configuration options.
- *
+ * TODO: Consider if this should be a LanguageModel implementation instead of a TextGenerator.
+ * 
  * @author lesters
  */
 @Beta

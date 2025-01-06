@@ -60,7 +60,9 @@ public class LanguageModelTextGenerator extends AbstractComponent implements Tex
     @Override
     public String generate(Prompt prompt, Context context) {
         var finalPrompt = buildPrompt(prompt);
-        var options = new InferenceParameters(s -> "");
+        // TODO: Consider adding a way to configure inference parameters,
+        //  either in the config of the language model or language model text generator.
+        var options = new InferenceParameters(s -> null);
         var completions = languageModel.complete(finalPrompt, options);
         var firstCompletion = completions.get(0);
         var generatedText = firstCompletion.text();

@@ -10,6 +10,6 @@ promptTemplate string default=""
 # Prompt template in a file, above promptTemplate has precedence if it is set.
 promptTemplateFile path optional
 
-# Generated text will be truncated if it exceeds this length - guardrail to avoid outputs that are too long.
+# Generated text will be truncated if it exceeds this length - guardrail to avoid long outputs.
 # -1 means no limit.
 maxLength int default=-1

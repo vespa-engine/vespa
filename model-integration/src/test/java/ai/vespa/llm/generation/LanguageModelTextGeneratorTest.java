@@ -2,6 +2,8 @@ package ai.vespa.llm.generation;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
+import ai.vespa.llm.clients.LlmLocalClientConfig;
+import ai.vespa.llm.clients.LocalLLM;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
@@ -15,10 +17,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import com.yahoo.config.FileReference;
+import com.yahoo.config.ModelReference;
 import com.yahoo.language.process.TextGenerator;
 import org.junit.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
 public class LanguageModelTextGeneratorTest {
@@ -191,6 +195,26 @@ public class LanguageModelTextGeneratorTest {
         var context = new TextGenerator.Context("schema.indexing");
         var result = generator.generate(StringPrompt.from("hello"), context);
         assertEquals("hello he", result);
+    }
+    
+    @Test
+    public void testGenerateWithLocalLLM() {
+        var localLLMPath = "src/test/models/llm/tinyllm.gguf";
+        var localLLMConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(1)
+                .model(ModelReference.valueOf(localLLMPath));
+        LanguageModel localLLM = new LocalLLM(localLLMConfig.build());
+
+        var languageModels = Map.of("localLLM", localLLM);
+
+        var generatorConfig = new LanguageModelTextGeneratorConfig.Builder()
+                .providerId("localLLM")
+                .build();
+
+        var generator = createGenerator(generatorConfig, languageModels);
+        var context = new TextGenerator.Context("schema.indexing");
+        var result = generator.generate(StringPrompt.from("hello"), context);
+        assertTrue(result.length() > 10);
     }
 
     private static LanguageModelTextGenerator createGenerator(LanguageModelTextGeneratorConfig config, Map<String, LanguageModel> languageModels) {
