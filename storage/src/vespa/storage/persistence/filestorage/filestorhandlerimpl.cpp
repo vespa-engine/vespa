@@ -969,7 +969,7 @@ FileStorHandlerImpl::Stripe::next_message_impl(monitor_guard& guard, vespalib::s
         bool was_throttled = false;
 
         while ((iter != end) && operationIsInhibited(guard, iter->_bucket, *iter->_command)) {
-            iter++;
+            ++iter;
         }
         if (iter != end) {
             const bool should_throttle_op = operation_type_should_be_throttled(iter->_command->getType().getId());
@@ -1069,6 +1069,17 @@ FileStorHandlerImpl::Stripe::fill_feed_op_batch(monitor_guard& guard, LockedMess
     vespalib::hash_set<document::GlobalId, document::GlobalId::hash> gids_in_batch(expected_max_size);
     gids_in_batch.insert(gid_from_feed_op(*batch.messages[0].first));
     for (auto it = bucket_msgs.first; (it != bucket_msgs.second) && (batch.messages.size() < max_batch_size);) {
+        if (it->_command->getPriority() > batch.min_priority()) { // reminder: higher values ==> less prioritized
+            // To avoid priority inversion, skip operations that have a lesser priority than the
+            // operation the batch was initially created around. Otherwise, we risk stalling all
+            // batch filling if there's a lower priority non-batchable operation early in the FIFO
+            // order of the queue. We should not encounter _higher_ priority operations during the
+            // iteration, as such an operation should already have been popped from the queue before
+            // calling the batching functionality (as the higher level queue popping happens with
+            // priority order, not FIFO).
+            ++it;
+            continue;
+        }
         if (!is_batchable_feed_op(it->_command->getType().getId())) {
             break;
         }
@@ -1121,7 +1132,7 @@ FileStorHandlerImpl::Stripe::get_next_async_message(monitor_guard& guard)
 }
 
 FileStorHandler::LockedMessage
-FileStorHandlerImpl::Stripe::getMessage(monitor_guard & guard, PriorityIdx & idx, PriorityIdx::iterator iter,
+FileStorHandlerImpl::Stripe::getMessage(monitor_guard& guard, PriorityIdx& idx, PriorityIdx::iterator iter,
                                         ThrottleToken throttle_token)
 {
     std::chrono::milliseconds waitTime(uint64_t(iter->_timer.stop(

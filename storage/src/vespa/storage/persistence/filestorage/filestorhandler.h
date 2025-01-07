@@ -95,6 +95,10 @@ public:
         [[nodiscard]] size_t size() const noexcept { return messages.size(); }
         // Precondition: messages.size() == 1
         [[nodiscard]] LockedMessage release_as_single_msg() noexcept;
+        // Precondition: !messages.empty()
+        [[nodiscard]] uint8_t min_priority() const noexcept {
+            return messages[0].first->getPriority();
+        }
     };
 
     class ScheduleAsyncResult {
