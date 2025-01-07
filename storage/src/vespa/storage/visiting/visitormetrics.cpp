@@ -20,7 +20,7 @@ VisitorMetrics::VisitorMetrics()
               "that was added to visitor queue but scheduled later", this),
       queueTimeoutWaitTime("cv_queuetimeoutwaittime", {},
               "Milliseconds waiting in create visitor queue, for visitors "
-              "that timed out while in the visitor quueue", this),
+              "that timed out while in the visitor queue", this),
       queueEvictedWaitTime("cv_queueevictedwaittime", {},
               "Milliseconds waiting in create visitor queue, for visitors "
               "that was evicted from queue due to higher priority visitors "

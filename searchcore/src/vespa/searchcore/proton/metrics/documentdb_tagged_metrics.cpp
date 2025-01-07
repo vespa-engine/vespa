@@ -245,7 +245,7 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const std::string &docTypeName,
       feeding(this),
       totalMemoryUsage(this),
       totalDiskUsage("disk_usage", {}, "The total disk usage (in bytes) for this document db", this),
-      heart_beat_age("heart_beat_age", {}, "How long ago (in seconds) heart beat maintenace job was run", this),
+      heart_beat_age("heart_beat_age", {}, "How long ago (in seconds) heart beat maintenance job was run", this),
       maxNumThreads(maxNumThreads_)
 {
 }
