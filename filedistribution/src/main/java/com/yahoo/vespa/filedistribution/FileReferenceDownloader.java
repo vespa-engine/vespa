@@ -46,7 +46,7 @@ public class FileReferenceDownloader {
     private final Downloads downloads;
     private final Duration downloadTimeout;
     private final Duration backoffInitialTime;
-    private final Duration rpcTimeout;
+    private final Optional<Duration> rpcTimeout; // Only used when overridden with env variable
     private final File downloadDirectory;
     private final AtomicBoolean shutDown = new AtomicBoolean(false);
 
@@ -61,8 +61,8 @@ public class FileReferenceDownloader {
         this.backoffInitialTime = backoffInitialTime;
         this.downloadDirectory = downloadDirectory;
         // Undocumented on purpose, might change or be removed at any time
-        String timeoutString = System.getenv("VESPA_FILE_DOWNLOAD_RPC_TIMEOUT");
-        this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
+        var timeoutString = Optional.ofNullable(System.getenv("VESPA_FILE_DOWNLOAD_RPC_TIMEOUT"));
+        this.rpcTimeout = timeoutString.map(t -> Duration.ofSeconds(Integer.parseInt(t)));
     }
 
     private void waitUntilDownloadStarted(FileReferenceDownload fileReferenceDownload) {
@@ -78,7 +78,10 @@ public class FileReferenceDownloader {
                 return;
             if (FileDownloader.fileReferenceExists(fileReference, downloadDirectory))
                 return;
-            if (startDownloadRpc(fileReferenceDownload, retryCount, connection))
+            var timeout = rpcTimeout.orElse(Duration.between(Instant.now(), end));
+            log.log(Level.FINE, "Wait until download of " + fileReference + " has started, retryCount " + retryCount +
+                    " timeout" + timeout + " (request from client " + fileReferenceDownload.client() + ")");
+            if ( ! timeout.isNegative() && startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout))
                 return;
 
             retryCount++;
@@ -113,7 +116,6 @@ public class FileReferenceDownloader {
         Optional<FileReferenceDownload> inProgress = downloads.get(fileReference);
         if (inProgress.isPresent()) return inProgress.get().future();
 
-        log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout);
         downloads.add(fileReferenceDownload);
         downloadExecutor.submit(() -> waitUntilDownloadStarted(fileReferenceDownload));
         return fileReferenceDownload.future();
@@ -129,7 +131,7 @@ public class FileReferenceDownloader {
                 downloadExecutor.submit(() -> {
                     log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec);
                     downloads.add(fileReferenceDownload);
-                    startDownloadRpc(fileReferenceDownload, 1, connection);
+                    startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
                     downloads.remove(fileReference);
                 });
         }
@@ -139,10 +141,9 @@ public class FileReferenceDownloader {
         downloads.remove(fileReference);
     }
 
-    private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection) {
+    private boolean startDownloadRpc(FileReferenceDownload fileReferenceDownload, int retryCount, Connection connection, Duration timeout) {
         Request request = createRequest(fileReferenceDownload);
-        Duration rpcTimeout = rpcTimeout(retryCount);
-        connection.invokeSync(request, rpcTimeout);
+        connection.invokeSync(request, timeout);
 
         Level logLevel = (retryCount > 3 ? Level.INFO : Level.FINE);
         FileReference fileReference = fileReferenceDownload.fileReference();
@@ -162,7 +163,7 @@ public class FileReferenceDownloader {
         } else {
             log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed:" +
                     " error code " + request.errorCode() + " (" + request.errorMessage() + ")." +
-                    " (retry " + retryCount + ", rpc timeout " + rpcTimeout + ")");
+                    " (retry " + retryCount + ", rpc timeout " + timeout + ")");
             return false;
         }
     }
@@ -175,10 +176,6 @@ public class FileReferenceDownloader {
         defaultAcceptedCompressionTypes.stream().map(Enum::name).toList().toArray(temp);
         request.parameters().add(new StringArray(temp));
         return request;
-    }
-
-    private Duration rpcTimeout(int retryCount) {
-        return Duration.ofSeconds(rpcTimeout.getSeconds()).plus(Duration.ofSeconds(retryCount * 5L));
     }
 
     private boolean validateResponse(Request request) {
