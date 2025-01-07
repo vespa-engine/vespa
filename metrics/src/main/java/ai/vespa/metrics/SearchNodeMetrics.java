@@ -19,7 +19,7 @@ public enum SearchNodeMetrics implements VespaMetrics {
     CONTENT_PROTON_DOCUMENTDB_MEMORY_USAGE_DEAD_BYTES("content.proton.documentdb.memory_usage.dead_bytes", Unit.BYTE, "The number of dead bytes (<= used_bytes)"),
     CONTENT_PROTON_DOCUMENTDB_MEMORY_USAGE_ONHOLD_BYTES("content.proton.documentdb.memory_usage.onhold_bytes", Unit.BYTE, "The number of bytes on hold"),
     CONTENT_PROTON_DOCUMENTDB_MEMORY_USAGE_USED_BYTES("content.proton.documentdb.memory_usage.used_bytes", Unit.BYTE, "The number of used bytes (<= allocated_bytes)"),
-    CONTENT_PROTON_DOCUMENTDB_HEART_BEAT_AGE("content.proton.documentdb.heart_beat_age", Unit.SECOND, "How long ago (in seconds) heart beat maintenace job was run"),
+    CONTENT_PROTON_DOCUMENTDB_HEART_BEAT_AGE("content.proton.documentdb.heart_beat_age", Unit.SECOND, "How long ago (in seconds) heart beat maintenance job was run"),
     CONTENT_PROTON_DOCSUM_COUNT("content.proton.docsum.count", Unit.REQUEST, "Docsum requests handled"),
     CONTENT_PROTON_DOCSUM_DOCS("content.proton.docsum.docs", Unit.DOCUMENT, "Total docsums returned"),
     CONTENT_PROTON_DOCSUM_LATENCY("content.proton.docsum.latency", Unit.MILLISECOND, "Docsum request latency"),

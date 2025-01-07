@@ -108,8 +108,8 @@ public enum ConfigServerMetrics implements VespaMetrics {
     LOCK_ATTEMPT_LOCKED_LATENCY("lockAttempt.lockedLatency", Unit.SECOND, "Longest lock duration in the snapshot period"),
     LOCK_ATTEMPT_LOCKED_LOAD("lockAttempt.lockedLoad", Unit.OPERATION, "Average number of locks held concurrently during the snapshot period"),
     LOCK_ATTEMPT_ACQUIRE_TIMED_OUT("lockAttempt.acquireTimedOut", Unit.OPERATION, " Number of locking attempts that timed out during the snapshot period"),
-    LOCK_ATTEMPT_DEADLOCK("lockAttempt.deadlock", Unit.OPERATION, "Number of lock grab deadlocks detected during the snapshont period"),
-    LOCK_ATTEMPT_ERRORS("lockAttempt.errors", Unit.OPERATION, "Number of other lock related errors detected during the snapshont period"),
+    LOCK_ATTEMPT_DEADLOCK("lockAttempt.deadlock", Unit.OPERATION, "Number of lock grab deadlocks detected during the snapshot period"),
+    LOCK_ATTEMPT_ERRORS("lockAttempt.errors", Unit.OPERATION, "Number of other lock related errors detected during the snapshot period"),
 
     HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_CPU("hostedVespa.docker.totalCapacityCpu", Unit.VCPU, "Total number of VCPUs on tenant hosts managed by hosted Vespa in a zone"),
     HOSTED_VESPA_DOCKER_TOTAL_CAPACITY_MEM("hostedVespa.docker.totalCapacityMem", Unit.GIGABYTE, "Total amount of memory on tenant hosts managed by hosted Vespa in a zone"),

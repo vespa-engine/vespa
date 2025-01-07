@@ -222,7 +222,7 @@ public enum StorageMetrics implements VespaMetrics {
     VDS_VISITOR_CV_QUEUEEVICTEDWAITTIME("vds.visitor.cv_queueevictedwaittime", Unit.MILLISECOND, "Milliseconds waiting in create visitor queue, for visitors that was evicted from queue due to higher priority visitors coming"),
     VDS_VISITOR_CV_QUEUEFULL("vds.visitor.cv_queuefull", Unit.OPERATION, "Number of create visitor messages failed as queue is full"),
     VDS_VISITOR_CV_QUEUESIZE("vds.visitor.cv_queuesize", Unit.ITEM, "Size of create visitor queue"),
-    VDS_VISITOR_CV_QUEUETIMEOUTWAITTIME("vds.visitor.cv_queuetimeoutwaittime", Unit.MILLISECOND, "Milliseconds waiting in create visitor queue, for visitors that timed out while in the visitor quueue"),
+    VDS_VISITOR_CV_QUEUETIMEOUTWAITTIME("vds.visitor.cv_queuetimeoutwaittime", Unit.MILLISECOND, "Milliseconds waiting in create visitor queue, for visitors that timed out while in the visitor queue"),
     VDS_VISITOR_CV_QUEUEWAITTIME("vds.visitor.cv_queuewaittime", Unit.MILLISECOND, "Milliseconds waiting in create visitor queue, for visitors that was added to visitor queue but scheduled later"),
     VDS_VISITOR_CV_SKIPQUEUE("vds.visitor.cv_skipqueue", Unit.OPERATION, "Number of times we could skip queue as we had free visitor spots"),
 
