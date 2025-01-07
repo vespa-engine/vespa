@@ -34,10 +34,10 @@ DistributorMetricSet::DistributorMetricSet()
               "time is counted as part of the total time spent for the final, "
               "completed state transition", this),
       set_cluster_state_processing_time("set_cluster_state_processing_time", {},
-              "Elapsed time where the distributor thread is blocked on processing "
+              "Elapsed time in which the distributor thread is blocked on processing "
               "its bucket database upon receiving a new cluster state", this),
       activate_cluster_state_processing_time("activate_cluster_state_processing_time", {},
-              "Elapsed time where the distributor thread is blocked on merging pending "
+              "Elapsed time in which the distributor thread is blocked on merging pending "
               "bucket info into its bucket database upon activating a cluster state", this),
       recoveryModeTime("recoverymodeschedulingtime", {},
               "Time spent scheduling operations in recovery mode "

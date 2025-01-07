@@ -98,7 +98,7 @@ public enum ConfigServerMetrics implements VespaMetrics {
     NUMBER_OF_SERVICES_NOT_CHECKED("numberOfServicesNotChecked", Unit.INSTANCE, "The number of services supposed to run on a node, that has not checked"),
     NUMBER_OF_SERVICES_DOWN("numberOfServicesDown", Unit.INSTANCE, "The number of services confirmed to not be running on a node"),
     SOME_SERVICES_DOWN("someServicesDown", Unit.BINARY, "One if one or more services has been confirmed to not run on a node, zero if not"),
-    NUMBER_OF_SERVICES_UNKNOWN("numberOfServicesUnknown", Unit.INSTANCE, "The number of services the config server does not know if is running on a node"),
+    NUMBER_OF_SERVICES_UNKNOWN("numberOfServicesUnknown", Unit.INSTANCE, "The number of services the config server does not know is running on a node"),
     NODE_FAILER_BAD_NODE("nodeFailerBadNode", Unit.BINARY, "One if the node is failed due to being bad, zero if not"),
     DOWN_IN_NODE_REPO("downInNodeRepo", Unit.BINARY, "One if the node is registered as being down in the node repository, zero if not"),
     NUMBER_OF_SERVICES("numberOfServices", Unit.INSTANCE, "Number of services supposed to run on a node"),
