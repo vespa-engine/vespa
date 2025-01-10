@@ -643,6 +643,14 @@ public class ContentClusterTest extends ContentBaseTest {
 
         ContentCluster stagingNot16Bits = createWithZone(xml, new Zone(Environment.staging, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(stagingNot16Bits, 8);
+
+        // Default should be 8 bits
+        ContentCluster dev8Bits = createWithZone(xml, new Zone(Environment.dev, RegionName.from("us-east-3")));
+        assertDistributionBitsInConfig(dev8Bits, 8);
+
+        // Overriding feature flag with 16 bits
+        ContentCluster dev16Bits = createWithZone(xml, new Zone(Environment.dev, RegionName.from("us-east-3")), 16);
+        assertDistributionBitsInConfig(dev16Bits, 16);
     }
 
     @Test
@@ -1194,10 +1202,19 @@ public class ContentClusterTest extends ContentBaseTest {
         assertRoute(spec.getRoute(9), "storage/cluster.foo_c", "route:foo_c");
     }
 
+
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {
+        return createWithZone(clusterXml, zone, 0);
+    }
+
+    private ContentCluster createWithZone(String clusterXml, Zone zone, int bitsInDev) throws Exception {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
-                .zone(zone)
-                .properties(new TestProperties().setHostedVespa(true));
+                .zone(zone);
+        var properties = new TestProperties().setHostedVespa(true);
+        if (bitsInDev != 0)
+            properties.setDistributionBitsInDev(bitsInDev);
+        deployStateBuilder.properties(properties);
+
         List<String> schemas = SchemaBuilder.createSchemas("test");
         MockRoot root = ContentClusterUtils.createMockRoot(schemas, deployStateBuilder);
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);

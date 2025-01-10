@@ -1,17 +1,32 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.docprocs.indexing;
 
+import com.yahoo.component.AbstractComponent;
+import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentOperation;
 import com.yahoo.document.DocumentPut;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.TextGenerator;
+import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.Tensors;
+import com.yahoo.tensor.TensorType;
+import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import org.junit.Test;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -223,6 +238,65 @@ public class IndexingProcessorTestCase {
         DocumentUpdate input = new DocumentUpdate(new DocumentType("unknown"), "id:ns:music::");
         DocumentOperation output = tester.process(input);
         assertSame(input, output);
+    }
+
+    @Test
+    public void testEmbedBinarizeAndPack() {
+        var documentTypes = new DocumentTypeManager();
+        var test = new DocumentType("test");
+        test.addField("myText", DataType.STRING);
+        test.addField("embedding", new TensorDataType(TensorType.fromSpec("tensor<int8>(x[16])")));
+        documentTypes.register(test);
+
+        IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
+        config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("test")
+                                                              .content("input myText | embed | binarize | pack_bits | attribute embedding")
+                                                              .docfield("myText"));
+        var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null, 
+                Map.of("test", new TestEmbedder()), TextGenerator.throwsOnUse.asMap());
+        
+        assertNotNull(scripts.getScript(documentTypes.getDocumentType("test")));
+
+        var tester = new IndexingProcessorTester(documentTypes, scripts);
+        DocumentUpdate input = new DocumentUpdate(test, "id:ns:test::");
+        input.addFieldUpdate(FieldUpdate.createAssign(test.getField("myText"), new StringFieldValue("my text")));
+        DocumentUpdate output = (DocumentUpdate)tester.process(input);
+        FieldUpdate embeddingUpdate = output.getFieldUpdate("embedding");
+        AssignValueUpdate valueUpdate = (AssignValueUpdate)embeddingUpdate.getValueUpdate(0);
+        assertEquals(Tensor.from("tensor<int8>(x[16]):[-110, 73, 36, -110, 73, 36, -110, 73, 36, -110, 73, 36, -110, 73, 36, -110]"),
+                                 valueUpdate.getValue().getWrappedValue());
+    }
+
+    /** An ebedder which also does its own quantization, similar to HuggingFaceEmbedder. */
+    static class TestEmbedder extends AbstractComponent implements Embedder {
+
+        @Override
+        public List<Integer> embed(String s, Context context) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Tensor embed(String text, Context context, TensorType tensorType) {
+            if (tensorType.dimensions().size() != 1)
+                throw new IllegalArgumentException("Error in embedding to type '" + tensorType + "': should only have one dimension.");
+            if (!tensorType.dimensions().get(0).isIndexed())
+                throw new IllegalArgumentException("Error in embedding to type '" + tensorType + "': dimension should be indexed.");
+            boolean binarize = tensorType.valueType() == TensorType.Value.INT8;
+            long size = tensorType.dimensions().get(0).size().get();
+            if (binarize)
+                size = size * 8;
+            var embeddedType = new TensorType.Builder().indexed(tensorType.dimensions().get(0).name(), size).build();
+            var resultBuilder = Tensor.Builder.of(embeddedType);
+            for (int i = 0; i < size; i++) {
+                int v = ((i % 3) == 0) ? 1 : 0;
+                resultBuilder.cell(v, i);
+            }
+            var result = resultBuilder.build();
+            if (binarize)
+                result = Tensors.packBits(result);
+             return result;
+        }
+
     }
 
 }

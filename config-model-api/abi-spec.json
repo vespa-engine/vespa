@@ -1343,7 +1343,8 @@
       "public boolean distributionConfigFromClusterController()",
       "public boolean useLegacyWandQueryParsing()",
       "public boolean forwardAllLogLevels()",
-      "public long zookeeperPreAllocSize()"
+      "public long zookeeperPreAllocSize()",
+      "public int distributionBitsInDev()"
     ],
     "fields" : [ ]
   },

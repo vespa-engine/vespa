@@ -280,27 +280,27 @@ public class Flags {
 
     public static final UnboundBooleanFlag SORT_BLUEPRINTS_BY_COST = defineFeatureFlag(
             "sort-blueprints-by-cost", false,
-            List.of("baldersheim"), "2023-12-19", "2025-01-10",
+            List.of("baldersheim"), "2023-12-19", "2025-03-01",
             "If true blueprints are sorted based on cost estimate, rather that absolute estimated hits",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
             "always-mark-phrase-expensive", false,
-            List.of("baldersheim"), "2023-11-20", "2025-01-10",
+            List.of("baldersheim"), "2023-11-20", "2025-03-01",
             "If true all phrases will be marked expensive, independent of parents",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2025-01-10",
+            List.of("hmusum"), "2023-07-19", "2025-04-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2025-01-10",
+            List.of("hmusum"), "2023-07-19", "2025-04-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -417,13 +417,13 @@ public class Flags {
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
-            List.of("mpolden"), "2024-10-22", "2025-01-10",
+            List.of("mpolden"), "2024-10-22", "2025-02-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2025-01-11",
+            List.of("hmusum"), "2024-11-11", "2025-02-01",
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
@@ -460,6 +460,13 @@ public class Flags {
             List.of("hmusum"), "2024-12-25", "2025-02-01",
             "Use new RPC method for triggering download of file reference",
             "Takes effect immediately");
+
+    public static final UnboundIntFlag DISTRIBUTION_BITS_IN_DEV = defineIntFlag(
+            "distribution-bits-in-dev", 0,
+            List.of("hmusum", "vekterli"), "2025-01-06", "2025-02-01",
+            "If non-zero, override number of distribution bits to use in dev zone in hosted Vespa for an application.",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

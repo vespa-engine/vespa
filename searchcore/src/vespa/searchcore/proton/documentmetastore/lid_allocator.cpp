@@ -228,6 +228,7 @@ public:
           _lock(),
           _matchDataVector()
     {
+        set_cost_tier(State::COST_TIER_EXPENSIVE);
         // account for DocId 0 (considered active for estimation purposes)
         setEstimate(HitEstimate(numActiveLids + 1, false));
     }

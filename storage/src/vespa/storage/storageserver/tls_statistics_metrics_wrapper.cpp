@@ -28,9 +28,9 @@ TlsStatisticsMetricsWrapper::TlsStatisticsMetricsWrapper(metrics::MetricSet* own
       failed_tls_config_reloads("failed-tls-config-reloads", {}, "Number of times "
               "background reloading of TLS config has failed", this),
       rpc_capability_checks_failed("rpc-capability-checks-failed", {},
-              "Number of RPC operations that failed to due one or more missing capabilities", this),
+              "Number of RPC operations that failed due to one or more missing capabilities", this),
       status_capability_checks_failed("status-capability-checks-failed", {},
-              "Number of status page operations that failed to due one or more missing capabilities", this),
+              "Number of status page operations that failed due to one or more missing capabilities", this),
       last_client_stats_snapshot(),
       last_server_stats_snapshot(),
       last_config_stats_snapshot(),

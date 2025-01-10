@@ -62,10 +62,22 @@ public class IndexingProcessor extends DocumentProcessor {
                              Linguistics linguistics,
                              ComponentRegistry<Embedder> embedders,
                              ComponentRegistry<TextGenerator> generators) {
+        this(
+                documentTypeManager, 
+                new ScriptManager(
+                        documentTypeManager, 
+                        ilscriptsConfig, 
+                        linguistics, 
+                        toMap(embedders, DefaultEmbedderProvider.class), 
+                        toMap(generators, DefaultGeneratorProvider.class)
+                )
+        );
+    }
+
+    public IndexingProcessor(DocumentTypeManager documentTypeManager,
+                             ScriptManager scriptManager) {
         this.documentTypeManager = documentTypeManager;
-        Map<String, Embedder> embedderMap = toMap(embedders, DefaultEmbedderProvider.class);
-        Map<String, TextGenerator> generatorMap = toMap(generators, DefaultGeneratorProvider.class);
-        scriptManager = new ScriptManager(this.documentTypeManager, ilscriptsConfig, linguistics, embedderMap, generatorMap);
+        this.scriptManager = scriptManager;
         adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
     }
 
@@ -137,7 +149,7 @@ public class IndexingProcessor extends DocumentProcessor {
         out.add(input);
     }
 
-    private <T> Map<String, T> toMap(ComponentRegistry<T> registry, Class<?> defaultProviderClass) {
+    private static <T> Map<String, T> toMap(ComponentRegistry<T> registry, Class<?> defaultProviderClass) {
         var map = registry.allComponentsById().entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey().stringValue(), Map.Entry::getValue));
         if (map.size() > 1) {
