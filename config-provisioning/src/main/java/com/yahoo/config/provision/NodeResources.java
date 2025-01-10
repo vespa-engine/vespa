@@ -136,9 +136,6 @@ public class NodeResources {
 
         public boolean isZero() { return this.equals(zero); }
 
-        @Deprecated(forRemoval = true)
-        public double memoryGb() { return memoryGiB; } // Remove after 8.355.18 is gone
-
         public static GpuResources zero() { return zero; }
 
         public boolean isDefault() { return this.equals(getDefault()); }
@@ -215,8 +212,6 @@ public class NodeResources {
     }
 
     public double vcpu() { return vcpu; }
-    @Deprecated(forRemoval = true)
-    public double memoryGb() { return memoryGiB; } // Remove after 8.355.18 is gone
     public double memoryGiB() { return memoryGiB; }
     public double diskGb() { return diskGb; }
     public double bandwidthGbps() { return bandwidthGbps; }
