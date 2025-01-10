@@ -8,6 +8,7 @@
 #include <vespa/searchlib/query/streaming/nearest_neighbor_query_node.h>
 #include <vespa/vsm/vsm/fieldsearchspec.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/issue.h>
 #include <algorithm>
 #include <cmath>
 #include <vespa/log/log.h>
@@ -32,6 +33,7 @@ using search::streaming::MultiTerm;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
+using vespalib::Issue;
 using vdslib::SearchResult;
 
 namespace streaming {
@@ -68,8 +70,8 @@ RankProcessor::resolve_fields_from_children(QueryTermData& qtd, const MultiTerm&
                 field_ids.insert(field_id);
             }
         } else {
-            LOG(warning, "Could not find a view for index '%s'. Ranking no fields.",
-                getIndexName(subterm->index(), expandedIndexName).c_str());
+            Issue::report("Could not find a view for index '%s'. Ranking no fields.",
+                          getIndexName(subterm->index(), expandedIndexName).c_str());
         }
     }
     std::vector<uint32_t> sorted_field_ids;
@@ -93,8 +95,8 @@ RankProcessor::resolve_fields_from_term(QueryTermData& qtd, const search::stream
             qtd.getTermData().addField(field_id).setHandle(_mdLayout.allocTermField(field_id));
         }
     } else {
-        LOG(warning, "Could not find a view for index '%s'. Ranking no fields.",
-            getIndexName(term.index(), expandedIndexName).c_str());
+        Issue::report("Could not find a view for index '%s'. Ranking no fields.",
+                      getIndexName(term.index(), expandedIndexName).c_str());
     }
     LOG(debug, "Setup query term '%s:%s'",
         getIndexName(term.index(), expandedIndexName).c_str(),

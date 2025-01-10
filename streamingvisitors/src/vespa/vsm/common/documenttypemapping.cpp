@@ -4,9 +4,12 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/datatype/documenttype.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.common.documenttypemapping");
+
+using vespalib::Issue;
 
 namespace vsm {
 
@@ -49,8 +52,8 @@ bool DocumentTypeMapping::prepareBaseDoc(SharedFieldPathMap & map) const
         LOG(debug, "Found FieldPathMap for default document type '%s' with %zd elements",
             _defaultDocumentTypeName.c_str(), map->size());
     } else {
-        LOG(warning, "No FieldPathMap found for default document type '%s'. Using empty one",
-            _defaultDocumentTypeName.c_str());
+        Issue::report("No FieldPathMap found for default document type '%s'. Using empty one",
+                      _defaultDocumentTypeName.c_str());
         map = std::make_shared<FieldPathMapT>();
     }
     return true;

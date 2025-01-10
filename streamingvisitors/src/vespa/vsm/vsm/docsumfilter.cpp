@@ -11,6 +11,7 @@
 #include <vespa/document/datatype/datatype.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/data/slime/inserter.h>
+#include <vespa/vespalib/util/issue.h>
 #include <cassert>
 
 #include <vespa/log/log.h>
@@ -19,6 +20,8 @@ LOG_SETUP(".vsm.docsumfilter");
 using namespace search::docsummary;
 using document::FieldPathEntry;
 using FieldMap = vsm::StringFieldIdTMap;
+
+using vespalib::Issue;
 
 namespace vsm {
 
@@ -80,11 +83,11 @@ prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpe
                     spec.set_struct_or_multivalue(true);
                 }
             } else {
-                LOG(warning, "Could not find a field path for field '%s' with id '%d'", name.c_str(), field);
+                Issue::report("Could not find a field path for field '%s' with id '%d'", name.c_str(), field);
                 spec.setOutputField(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));
             }
         } else {
-            LOG(warning, "Could not find output summary field '%s'", name.c_str());
+            Issue::report("Could not find output summary field '%s'", name.c_str());
         }
     }
     // setup input fields
@@ -100,11 +103,11 @@ prepareFieldSpec(DocsumFieldSpec & spec, const DocsumTools::FieldSpec & toolsSpe
                 LOG(debug, "field %u < map size %zu", field, fieldPathMap.size());
                 spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier(field, copyPathButFirst(fieldPathMap[field])));
             } else {
-                LOG(warning, "Could not find a field path for field '%s' with id '%d'", name.c_str(), field);
+                Issue::report("Could not find a field path for field '%s' with id '%d'", name.c_str(), field);
                 spec.getInputFields().push_back(DocsumFieldSpec::FieldIdentifier(field, FieldPath()));
             }
         } else {
-            LOG(warning, "Could not find input summary field '%s'", name.c_str());
+            Issue::report("Could not find input summary field '%s'", name.c_str());
         }
         SlimeFillerFilter::add_remaining(filter, name);
     }
