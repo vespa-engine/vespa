@@ -38,7 +38,10 @@
 %global _vespa_protobuf_version 5.26.1
 %global _vespa_openblas_version 0.3.27
 %global _vespa_llama_version 3.3.0
+%if 0%{?el8} || 0%{?el9} || 0%{?amzn2023}
 %global _use_vespa_abseil_cpp 1
+%global _use_vespa_gtest 1
+%endif
 %global _use_vespa_protobuf 1
 %global _use_vespa_openblas 1
 %if 0%{?fedora}
@@ -90,42 +93,30 @@ Requires: zstd
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 %define _devtoolset_enable /opt/rh/gcc-toolset/enable
 
-%define _use_vespa_gtest 1
 %define _use_vespa_openssl 1
 
 %if 0%{?centos} || 0%{?rocky} || 0%{?oraclelinux}
 %define _command_cmake cmake
 %endif
 
-Requires: vespa-gtest = %{_vespa_gtest_version}
-
 %endif
 
 %if 0%{?el9}
 %global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
 %define _devtoolset_enable /opt/rh/gcc-toolset/enable
-
-%define _use_vespa_gtest 1
-
-Requires: vespa-gtest = %{_vespa_gtest_version}
-%endif
-
-%if 0%{?el10}
-%define _use_vespa_gtest 1
-Requires: vespa-gtest = %{_vespa_gtest_version}
 %endif
 
 %if 0%{?amzn2023}
 %define _java_home /usr/lib/jvm/java-17-amazon-corretto
-%define _use_vespa_gtest 1
 %define _use_vespa_re2 1
 %define _use_vespa_xxhash 1
 
-Requires: vespa-gtest = %{_vespa_gtest_version}
 Requires: vespa-xxhash >= 0.8.1
 %endif
 
-%if 0%{?fedora} && !0%{?amzn2023}
+%if 0%{?_use_vespa_gtest}
+Requires: vespa-gtest = %{_vespa_gtest_version}
+%else
 Requires: gtest
 %endif
 
