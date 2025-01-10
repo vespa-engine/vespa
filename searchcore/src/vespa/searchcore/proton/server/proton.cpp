@@ -173,10 +173,10 @@ make_posting_list_cache(const ProtonConfig& cfg)
     // Until we support "negative values imply percentage of memory" semantics, implicitly
     // disable cache if someone sets negative values after reading proton.def and making
     // assumptions about how things work...! Otherwise, things will likely explode.
-    posting_max_bytes = std::max(posting_max_bytes, 0L);
-    int64_t bitvector_max_bytes = std::max(cfg.index.cache.bitvector.maxbytes, 0L);
-    int64_t posting_lfu_max_element_count = std::max(cfg.index.cache.postinglist.lfuSketchMaxElementCount, 0L);
-    int64_t bitvector_lfu_max_element_count = std::max(cfg.index.cache.bitvector.lfuSketchMaxElementCount, 0L);
+    posting_max_bytes = std::max(posting_max_bytes, INT64_C(0));
+    int64_t bitvector_max_bytes = std::max(cfg.index.cache.bitvector.maxbytes, INT64_C(0));
+    int64_t posting_lfu_max_element_count = std::max(cfg.index.cache.postinglist.lfuSketchMaxElementCount, INT64_C(0));
+    int64_t bitvector_lfu_max_element_count = std::max(cfg.index.cache.bitvector.lfuSketchMaxElementCount, INT64_C(0));
     PostingListCache::CacheSizingParams params(posting_max_bytes, bitvector_max_bytes,
                                                cfg.index.cache.postinglist.slruProtectedSegmentRatio,
                                                cfg.index.cache.bitvector.slruProtectedSegmentRatio,
