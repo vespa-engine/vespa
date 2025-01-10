@@ -17,7 +17,7 @@ If you're developing the plugin, you'll want to do something like:
 # run tests
 ./gradlew test
 # install it as a Logstash plugin
-/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.6.1.gem
+/opt/logstash/bin/logstash-plugin install /path/to/logstash-output-vespa/logstash-output-vespa_feed-0.7.0.gem
 # profit
 /opt/logstash/bin/logstash
 ```
@@ -134,6 +134,23 @@ output {
     
     # how many times to retry on transient failures
     max_retries => 10
+
+    # if we we exceed the number of retries or if there are intransient errors,
+    # like field not in the schema, invalid operation, we can send the document to a dead letter queue
+
+    # you'd need to set this to true, default is false. NOTE: this overrides whatever is in logstash.yml
+    enable_dlq => false
+
+    # the path to the dead letter queue. NOTE: the last part of the path is the pipeline ID,
+    # if you want to use the dead letter queue input plugin
+    dlq_path => "data/dead_letter_queue"
+
+    # max dead letter queue size (bytes)
+    max_queue_size => 1073741824
+    # max segment size (i.e. file from the dead letter queue - also in bytes)
+    max_segment_size => 10485760
+    # flush interval (how often to commit the DLQ to disk, in milliseconds)
+    flush_interval => 5000
   }
 }
 ```

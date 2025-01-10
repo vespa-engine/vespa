@@ -40,6 +40,10 @@ import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.verify;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+
+import org.logstash.common.io.DeadLetterQueueWriter;
 
 public class VespaFeedTest {
 
@@ -394,6 +398,12 @@ public class VespaFeedTest {
         assertTrue(schema.contains(VespaFeed.OPERATION_TIMEOUT));
         assertTrue(schema.contains(VespaFeed.GRACE_PERIOD));
         assertTrue(schema.contains(VespaFeed.DOOM_PERIOD));
+        // DLQ config options
+        assertTrue(schema.contains(VespaFeed.ENABLE_DLQ));
+        assertTrue(schema.contains(VespaFeed.DLQ_PATH));
+        assertTrue(schema.contains(VespaFeed.MAX_QUEUE_SIZE));
+        assertTrue(schema.contains(VespaFeed.MAX_SEGMENT_SIZE));
+        assertTrue(schema.contains(VespaFeed.FLUSH_INTERVAL));
 
     }
     
@@ -482,5 +492,82 @@ public class VespaFeedTest {
         Event event = VespaFeedTestHelper.createMockEvent("doc1", "value1", "operation_field", "put");
         output.output(Collections.singletonList(event));
         verify(event).remove("operation_field");
+    }
+
+    @Test
+    public void testDlqDisabled() throws Exception {
+        // Create config with DLQ disabled (default in helper)
+        Configuration config = VespaFeedTestHelper.createMockConfig("put", false, false);
+        FeedClient mockClient = VespaFeedTestHelper.createMockFeedClient();
+        VespaFeed feed = new VespaFeed("test-id", config, null, mockClient);
+
+        // Create an event that will cause an error
+        Event event = VespaFeedTestHelper.createMockEvent("doc1", "value1");
+        when(event.getData()).thenThrow(new RuntimeException("Serialization error"));
+
+        // Process the event
+        feed.output(Collections.singletonList(event));
+        
+        // Verify no feed operations were attempted since we had an error
+        verify(mockClient, times(0)).put(any(), any(), any());
+        verify(mockClient, times(0)).update(any(), any(), any());
+        verify(mockClient, times(0)).remove(any(), any());
+    }
+
+    @Test
+    public void testDlqEnabled() throws Exception {
+        DeadLetterQueueWriter mockDlqWriter = mock(DeadLetterQueueWriter.class);
+        FeedClient mockClient = VespaFeedTestHelper.createMockFeedClient();
+        VespaFeed feed = VespaFeedTestHelper.createFeedWithDlq(mockDlqWriter, mockClient, "put", false);
+        
+        // Create a Logstash event that will cause an error
+        Event event = VespaFeedTestHelper.createLogstashEvent("doc1", "value1");
+        // Make getData() throw an exception that should make asyncFeed() throw an exception as well,
+        // which should be caught by output() and the event should be written to the DLQ
+        Event spyEvent = spy(event);
+        when(spyEvent.getData()).thenThrow(new RuntimeException("Serialization error"));
+        
+        feed.output(Collections.singletonList(spyEvent));
+        
+        VespaFeedTestHelper.verifyDlqEntry(mockDlqWriter, "Serialization error");
+    }
+
+    @Test
+    public void testDlqEnabled_InvalidOperation() throws Exception {
+        DeadLetterQueueWriter mockDlqWriter = mock(DeadLetterQueueWriter.class);
+        FeedClient mockClient = VespaFeedTestHelper.createMockFeedClient();
+        // config has a dynamic operation, so we can test with an invalid operation from an event
+        VespaFeed feed = VespaFeedTestHelper.createFeedWithDlq(mockDlqWriter, mockClient, "%{operation_field}", true);
+        
+        // Create event with invalid operation
+        Event event = VespaFeedTestHelper.createLogstashEvent("doc1", "value1");
+        Event spyEvent = spy(event);
+        when(spyEvent.getField("operation_field")).thenReturn("invalid_operation");
+        
+        feed.output(Collections.singletonList(spyEvent));
+        
+        VespaFeedTestHelper.verifyDlqEntry(mockDlqWriter, "Invalid operation (must be put, update or remove)");
+        // Verify no feed operations were attempted
+        verify(mockClient, times(0)).put(any(), any(), any());
+        verify(mockClient, times(0)).update(any(), any(), any());
+        verify(mockClient, times(0)).remove(any(), any());
+    }
+
+    @Test
+    public void testDlqEnabled_FeedOperationFailure() throws Exception {
+        DeadLetterQueueWriter mockDlqWriter = mock(DeadLetterQueueWriter.class);
+        FeedClient mockClient = mock(FeedClient.class);
+
+        // Make the feed operation fail
+        CompletableFuture<Result> failedFuture = new CompletableFuture<>();
+        failedFuture.completeExceptionally(new RuntimeException("Feed operation failed"));
+        when(mockClient.put(any(), any(), any())).thenReturn(failedFuture);
+        
+        VespaFeed feed = VespaFeedTestHelper.createFeedWithDlq(mockDlqWriter, mockClient, "put", false);
+        feed.output(Collections.singletonList(VespaFeedTestHelper.createLogstashEvent("doc1", "value1")));
+        
+        VespaFeedTestHelper.verifyDlqEntry(mockDlqWriter, "Error while waiting for async operation to complete");
+        // Verify feed operation was attempted (but failed)
+        verify(mockClient, times(1)).put(any(), any(), any());
     }
 } 

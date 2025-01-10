@@ -15,7 +15,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.logstash.ObjectMappers;
+import org.logstash.common.io.DeadLetterQueueWriter;
 
+import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -85,7 +88,27 @@ public class VespaFeed implements Output {
     // when the connection can work again, Logstash seems to resume sending requests
     public static final PluginConfigSpec<Long> DOOM_PERIOD =
             PluginConfigSpec.numSetting("doom_period", 60);
-
+    
+    /***********
+     * Dead Letter Queue settings
+     ***********/
+    // enable dead letter queue. This overrides the global setting in logstash.yml
+    public static final PluginConfigSpec<Boolean> ENABLE_DLQ =
+            PluginConfigSpec.booleanSetting("enable_dlq", false);
+    // path to the dead letter queue. Similarly, this overrides the global setting in logstash.yml
+    public static final PluginConfigSpec<String> DLQ_PATH =
+            PluginConfigSpec.stringSetting("dlq_path", "data" + File.separator + "dead_letter_queue");
+    // max queue size
+    public static final PluginConfigSpec<Long> MAX_QUEUE_SIZE =
+            PluginConfigSpec.numSetting("max_queue_size", 1024 * 1024 * 1024);
+    // max size of a single segment (file)
+    public static final PluginConfigSpec<Long> MAX_SEGMENT_SIZE =
+            PluginConfigSpec.numSetting("max_segment_size", 10 * 1024 * 1024);
+    // flush interval in millis (i.e. when to write to disk if there are no more events to write for this while)
+    public static final PluginConfigSpec<Long> FLUSH_INTERVAL =
+            PluginConfigSpec.numSetting("flush_interval", 5000);
+    
+    
     private FeedClient client;
     private final String id;
     private final String namespace;
@@ -98,15 +121,31 @@ public class VespaFeed implements Output {
     private final boolean dynamicOperation;
     private final boolean create;
     private final String idField;
-    private final boolean removeId;
+    private final boolean removeId; 
     private final long operationTimeout;
     private volatile boolean stopped = false;
     ObjectMapper objectMapper;
     private final boolean removeOperation;
+    private DeadLetterQueueWriter dlqWriter;
 
 
     public VespaFeed(final String id, final Configuration config, final Context context) {
         this.id = id;
+        if (config.get(ENABLE_DLQ)) {
+            try {
+                Path dlqPath = Paths.get(config.get(DLQ_PATH));
+                dlqWriter = DeadLetterQueueWriter.newBuilder(dlqPath,
+                                config.get(MAX_QUEUE_SIZE).longValue(),
+                                config.get(MAX_SEGMENT_SIZE).longValue(),
+                                Duration.ofMillis(config.get(FLUSH_INTERVAL).longValue()))
+                            .build();
+            } catch (IOException e) {
+                logger.error("Failed to create DLQ writer: ", e);
+                dlqWriter = null;
+            }
+        } else {
+            dlqWriter = null;
+        }
 
         // if the namespace matches %{field_name} or %{[field_name]}, it's dynamic
         DynamicOption configOption = new DynamicOption(config.get(NAMESPACE));
@@ -207,36 +246,47 @@ public class VespaFeed implements Output {
 
     @Override
     public void output(final Collection<Event> events) {
-        // we put (async) indexing requests here
-        List<CompletableFuture<Result>> promises = new ArrayList<>();
+        // track async requests (promises) and their corresponding events here
+        Map<CompletableFuture<Result>, Event> promiseToEventMap = new HashMap<>();
 
         Iterator<Event> eventIterator = events.iterator();
         while (eventIterator.hasNext() && !stopped) {
+            Event event = eventIterator.next();
             try {
-                CompletableFuture<Result> promise = asyncFeed(eventIterator.next());
+                CompletableFuture<Result> promise = asyncFeed(event);
                 if (promise != null) {
-                    promises.add(promise);
+                    promiseToEventMap.put(promise, event);
                 }
-            } catch (JsonProcessingException e) {
-                logger.error("Error serializing event data into JSON: ", e);
+            } catch (JsonProcessingException | RuntimeException e) {
+                // RuntimeException shouldn't really happen here, we use it in tests
+                String errorMessage = String.format("Error processing event to generate async feed request: %s", e.getMessage());
+                logger.error(errorMessage);
+                writeToDlq(event, errorMessage);
             }
         }
 
         // check if we have any promises (we might have dropped some invalid events)
-        if (promises.isEmpty()) {
+        if (promiseToEventMap.isEmpty()) {
             return;
         }
 
         // wait for all futures to complete
         try {
-            FeedClient.await(promises);
+            FeedClient.await(new ArrayList<>(promiseToEventMap.keySet()));
         } catch (MultiFeedException e) {
-            e.feedExceptions().forEach(
-                    exception -> logger.error("Error while waiting for async operation to complete: ",
-                            exception)
-            );
+            // now we need to figure out which events failed
+            promiseToEventMap.forEach((promise, event) -> {
+                if (promise.isCompletedExceptionally()) {
+                    try {
+                        promise.get(); // This will throw the exception
+                    } catch (Exception ex) {
+                        String errorMessage = String.format("Error while waiting for async operation to complete: %s", ex.getMessage());
+                        logger.error(errorMessage);
+                        writeToDlq(event, errorMessage);
+                    }
+                }
+            });
         }
-
     }
 
     protected CompletableFuture<Result> asyncFeed(Event event) throws JsonProcessingException {
@@ -276,8 +326,9 @@ public class VespaFeed implements Output {
         if (dynamicOperation) {
             operation = getDynamicField(event, this.operation);
             if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
-                logger.error("Operation must be put, update or remove. Ignoring operation: {}", operation);
-                // TODO we should put this in the dead letter queue
+                String errorMessage = String.format("Invalid operation (must be put, update or remove): {}", operation);
+                logger.error(errorMessage);
+                writeToDlq(event, errorMessage);
                 return null;
             }
             if (removeOperation) {
@@ -362,9 +413,9 @@ public class VespaFeed implements Output {
     @Override
     public Collection<PluginConfigSpec<?>> configSchema() {
         return List.of(VESPA_URL, CLIENT_CERT, CLIENT_KEY, OPERATION, CREATE,
-                NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID,
-                REMOVE_OPERATION,
-                MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD);
+                NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID, REMOVE_OPERATION,
+                MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD,
+                ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL);
     }
 
     @Override
@@ -402,5 +453,24 @@ public class VespaFeed implements Output {
 
     public long getOperationTimeout() {
         return operationTimeout;
+    }
+
+    protected void writeToDlq(Event event, String errorMessage) {
+        if (dlqWriter != null) {
+            try {
+                // because our event is co.elastic.logstash.api.Event,
+                // we need to cast it to org.logstash.Event
+                // to be able to use writeEntry
+                org.logstash.Event castedEvent = (org.logstash.Event) event;
+                dlqWriter.writeEntry(castedEvent, this.getName(), this.id, errorMessage);
+            } catch (IOException e) {
+                logger.error("Error writing to dead letter queue: ", e);
+            }
+        }
+    }
+
+    // for testing DLQ functionality
+    protected void setDlqWriter(DeadLetterQueueWriter writer) {
+        this.dlqWriter = writer;
     }
 }

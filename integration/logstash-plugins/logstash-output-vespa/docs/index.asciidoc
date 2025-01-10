@@ -198,6 +198,47 @@ After this time (seconds), the circuit breaker will be half-open:
 it will ping the endpoint to see if it's back,
 then resume sending requests when it's back.
 
+[id="plugins-{type}s-{plugin}-enable_dlq"]
+===== `enable_dlq`
+
+* Value type is <<boolean,boolean>>
+* Default value is `false`
+
+Enable Dead Letter Queue for this plugin. This overrides the global DLQ setting in logstash.yml.
+In fact, values from logstash.yml are ignored, only those from the plugin configuration matter.
+
+[id="plugins-{type}s-{plugin}-dlq_path"]
+===== `dlq_path`
+
+* Value type is <<string,string>>
+* Default value is `"data/dead_letter_queue"`
+
+Path to the Dead Letter Queue directory. The last part of the path will be the pipeline ID if you want to use the dead letter queue input plugin.
+
+[id="plugins-{type}s-{plugin}-max_queue_size"]
+===== `max_queue_size`
+
+* Value type is <<number,number>>
+* Default value is `1073741824` (1GB)
+
+Maximum size of the Dead Letter Queue in bytes.
+
+[id="plugins-{type}s-{plugin}-max_segment_size"]
+===== `max_segment_size`
+
+* Value type is <<number,number>>
+* Default value is `10485760` (10MB)
+
+Maximum size of each Dead Letter Queue segment file in bytes.
+
+[id="plugins-{type}s-{plugin}-flush_interval"]
+===== `flush_interval`
+
+* Value type is <<number,number>>
+* Default value is `5000`
+
+How often to commit the Dead Letter Queue to disk, in milliseconds.
+
 // The full list of Value Types is here: 
 // https://www.elastic.co/guide/en/logstash/current/configuration-file-structure.html
 
