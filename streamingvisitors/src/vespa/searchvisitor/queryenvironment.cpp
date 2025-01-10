@@ -4,6 +4,7 @@
 #include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/common/geo_location_spec.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
+#include <vespa/vespalib/util/issue.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchvisitor.queryenvironment");
@@ -13,6 +14,7 @@ using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;
 using search::fef::Properties;
 using std::string;
+using vespalib::Issue;
 
 namespace streaming {
 
@@ -27,8 +29,8 @@ parseLocation(const string & location_str)
     }
     GeoLocationParser locationParser;
     if (!locationParser.parseWithField(location_str)) {
-        LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",
-                     location_str.c_str(), locationParser.getParseError());
+        Issue::report("Location parse error (location: '%s'): %s. Location ignored.",
+                      location_str.c_str(), locationParser.getParseError());
         return fefLocations;
     }
     auto loc = locationParser.getGeoLocation();
@@ -57,8 +59,8 @@ QueryEnvironment::~QueryEnvironment() {}
 void QueryEnvironment::addGeoLocation(const std::string &field, const std::string &location_str) {
     GeoLocationParser locationParser;
     if (! locationParser.parseNoField(location_str)) {
-        LOG(warning, "Location parse error (location: '%s'): %s. Location ignored.",
-                     location_str.c_str(), locationParser.getParseError());
+        Issue::report("Location parse error (location: '%s'): %s. Location ignored.",
+                      location_str.c_str(), locationParser.getParseError());
         return;
     }
     auto loc = locationParser.getGeoLocation();

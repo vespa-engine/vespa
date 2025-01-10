@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/iindexenvironment.h>
 #include <vespa/searchlib/query/streaming/equiv_query_node.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/issue.h>
 #include <vespa/vsm/searcher/boolfieldsearcher.h>
 #include <vespa/vsm/searcher/floatfieldsearcher.h>
 #include <vespa/vsm/searcher/futf8strchrfieldsearcher.h>
@@ -24,6 +25,7 @@ LOG_SETUP(".vsm.fieldsearchspec");
 using search::streaming::ConstQueryTermList;
 using search::streaming::Query;
 using search::streaming::QueryTerm;
+using vespalib::Issue;
 
 namespace vsm {
 
@@ -73,7 +75,7 @@ FieldSearchSpec::FieldSearchSpec(const FieldIdT & fid, const std::string & fname
 {
     switch(searchDef) {
     default:
-        LOG(warning, "Unknown searchdef = %d. Defaulting to AUTOUTF8", static_cast<int>(searchDef));
+        Issue::report("Unknown searchdef = %d. Defaulting to AUTOUTF8", static_cast<int>(searchDef));
         [[fallthrough]];
     case VsmfieldsConfig::Fieldspec::Searchmethod::AUTOUTF8:
     case VsmfieldsConfig::Fieldspec::Searchmethod::NONE:
@@ -211,7 +213,7 @@ FieldSearchSpecMap::addFieldsFromIndex(std::string_view rawIndex, StringFieldIdT
                 }
             }
         } else {
-            LOG(warning, "No valid indexes registered for index %s", std::string(rawIndex).c_str());
+            Issue::report("No valid indexes registered for index %s", std::string(rawIndex).c_str());
         }
     }
 }
@@ -265,7 +267,7 @@ buildFieldSet(const VsmfieldsConfig::Documenttype::Index & ci, const FieldSearch
             if (foundField != specMap.end()) {
                 ifm.push_back(foundField->second.id());
             } else {
-                LOG(warning, "Field %s not defined. Ignoring....", cf.name.c_str());
+                Issue::report("Field %s not defined. Ignoring....", cf.name.c_str());
             }
         }
     }

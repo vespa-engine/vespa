@@ -450,7 +450,7 @@ SearchVisitor::init(const Parameters & params)
         for (uint32_t i = 0; i < cnt; ++i) {
             search::fs4transport::FS4Properties prop;
             if (!prop.decode(src, len)) {
-                LOG(warning, "Could not decode rank properties");
+                Issue::report("Could not decode rank properties");
             } else {
                 LOG(debug, "Properties[%u]: name '%s', size '%u'", i, prop.name().c_str(), prop.size());
                 if (prop.name() == "rank") { // pick up rank properties
@@ -516,7 +516,7 @@ SearchVisitor::init(const Parameters & params)
             if (params.get("querystackcount", stackCount)) {
                 _summaryGenerator.set_stack_dump(std::vector<char>(queryBlob.begin(), queryBlob.end()));
             } else {
-                LOG(warning, "Request without query stack count");
+                Issue::report("Request without query stack count");
             }
 
             StringFieldIdTMap fieldsInQuery = setupFieldSearchers();
@@ -540,7 +540,7 @@ SearchVisitor::init(const Parameters & params)
             // and IQueryEnvironment (from setupRankProcessors).
             prepare_field_searchers();
         } else {
-            LOG(warning, "No query received");
+            Issue::report("No query received");
         }
 
         if (hasGrouping) {
@@ -552,7 +552,7 @@ SearchVisitor::init(const Parameters & params)
         }
 
     } else {
-        LOG(warning, "No searchcluster specified");
+        Issue::report("No searchcluster specified");
     }
 
     if ( params.lookup("unique", valueRef) ) {
@@ -674,13 +674,13 @@ SearchVisitor::RankController::processAccessedAttributes(const QueryEnvironment 
                     LOG(debug, "Add attribute '%s' with field id '%u' to the list of needed attributes", name.c_str(), fid);
                     attributeFields.emplace_back(fid, std::move(attr));
                 } else {
-                    LOG(warning, "Cannot locate attribute '%s' in the attribute manager. "
-                        "Ignore access hint about this attribute", name.c_str());
+                    Issue::report("Cannot locate attribute '%s' in the attribute manager. "
+                                  "Ignore access hint about this attribute", name.c_str());
                 }
             }
         } else {
-            LOG(warning, "Cannot locate field '%s' in the index environment. Ignore access hint about this attribute",
-                name.c_str());
+            Issue::report("Cannot locate field '%s' in the index environment. Ignore access hint about this attribute",
+                          name.c_str());
         }
     }
 }
@@ -902,8 +902,8 @@ SearchVisitor::setupScratchDocument(const StringFieldIdTMap & fieldsInQuery)
     }
     // Setup document type mapping
     if (_fieldSearchSpecMap.documentTypeMap().size() != 1) {
-        LOG(warning, "We have %zd document types in the vsmfields config when we expected 1. Using the first one",
-            _fieldSearchSpecMap.documentTypeMap().size());
+        Issue::report("We have %zd document types in the vsmfields config when we expected 1. Using the first one",
+                      _fieldSearchSpecMap.documentTypeMap().size());
     }
     _fieldsUnion = fieldsInQuery.map();
     for(const auto & entry : _fieldSearchSpecMap.nameIdMap().map()) {
@@ -930,7 +930,7 @@ SearchVisitor::setupDocsumObjects()
     if (docsum_tools) {
         _summaryGenerator.setDocsumWriter(*docsum_tools->getDocsumWriter());
     } else {
-        LOG(warning, "No docsum tools available");
+        Issue::report("No docsum tools available");
     }
 }
 
@@ -977,8 +977,8 @@ void SearchVisitor::setupAttributeVector(const FieldPath &fieldPath) {
         LOG(debug, "Adding attribute '%s' for field '%s' with data type '%s' (%s)",
             attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.className());
         if ( ! _attrMan.add(attr) ) {
-            LOG(warning, "Failed adding attribute '%s' for field '%s' with data type '%s' (%s)",
-                attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.className());
+            Issue::report("Failed adding attribute '%s' for field '%s' with data type '%s' (%s)",
+                          attr->getName().c_str(), attrName.c_str(), fv.getDataType()->getName().c_str(), fv.className());
         }
     } else {
         LOG(debug, "Cannot setup attribute for field '%s' with data type '%s' (%s). Aggregation and sorting will not work for this field",
@@ -1060,12 +1060,12 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
             if (!grouping.getAll() || (preparator.getNumHitsAggregators() == 0)) {
                 _groupingList.push_back(groupingPtr);
             } else {
-                LOG(warning, "You can not collect hits with an all aggregator yet.");
+                Issue::report("You can not collect hits with an all aggregator yet.");
             }
         } catch (const document::FieldNotFoundException & e) {
-            LOG(warning, "Could not locate field for grouping number %ld : %s", i, e.getMessage().c_str());
+            Issue::report("Could not locate field for grouping number %ld : %s", i, e.getMessage().c_str());
         } catch (const std::exception & e) {
-            LOG(error, "Unknown issue for grouping number %ld : %s", i, e.what());
+            Issue::report("Unknown issue for grouping number %ld : %s", i, e.what());
         }
     }
 }
@@ -1118,8 +1118,8 @@ SearchVisitor::handleDocuments(const document::BucketId&, DocEntryList & entries
                 handleDocument(document);
             }
         } catch (const std::exception & e) {
-            LOG(warning, "Caught exception handling document '%s'. Exception='%s'",
-                document->docDoc().getId().getScheme().toString().c_str(), e.what());
+            Issue::report("Caught exception handling document '%s'. Exception='%s'",
+                          document->docDoc().getId().getScheme().toString().c_str(), e.what());
         }
     }
 }
