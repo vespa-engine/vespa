@@ -47,6 +47,8 @@ public final class ScriptParser {
         parser.setDefaultFieldName(context.getDefaultFieldName());
         parser.setLinguistics(context.getLinguistcs());
         parser.setEmbedders(context.getEmbedders());
+        parser.setGenerators(context.getGenerators());
+        
         try {
             return method.call(parser);
         } catch (ParseException e) {

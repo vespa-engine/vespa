@@ -183,21 +183,154 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.generation.Generator" : {
+  "ai.vespa.llm.generation.LanguageModelTextGenerator" : {
     "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
+      "com.yahoo.language.process.TextGenerator"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.llm.generation.LanguageModelTextGeneratorConfig, com.yahoo.component.provider.ComponentRegistry)",
+      "public java.lang.String generate(ai.vespa.llm.completion.Prompt, com.yahoo.language.process.TextGenerator$Context)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.generation.LanguageModelTextGeneratorConfig)",
+      "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder providerId(java.lang.String)",
+      "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder promptTemplate(java.lang.String)",
+      "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder promptTemplateFile(java.util.Optional)",
+      "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder maxLength(int)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void getConfig(ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.generation.LanguageModelTextGeneratorConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public void <init>(ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder)",
+      "public java.lang.String providerId()",
+      "public java.lang.String promptTemplate()",
+      "public java.util.Optional promptTemplateFile()",
+      "public int maxLength()"
+    ],
+    "fields" : [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "ai.vespa.llm.generation.LanguageModelUtils" : {
+    "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
       "public"
     ],
     "methods" : [
-      "public void <init>(ai.vespa.modelintegration.evaluator.OnnxRuntime, com.yahoo.llm.GeneratorConfig)",
-      "public java.lang.String generate(java.lang.String, ai.vespa.llm.generation.GeneratorOptions)",
+      "public void <init>()",
+      "public static ai.vespa.llm.LanguageModel findLanguageModel(java.lang.String, com.yahoo.component.provider.ComponentRegistry, java.util.logging.Logger)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.generation.OnnxEncoderDecoderTextGenerator" : {
+    "superClass" : "com.yahoo.component.AbstractComponent",
+    "interfaces" : [
+      "com.yahoo.language.process.TextGenerator"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(ai.vespa.modelintegration.evaluator.OnnxRuntime, ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig)",
+      "public java.lang.String generate(java.lang.String, ai.vespa.llm.generation.TextGeneratorDecoderOptions)",
       "public java.lang.String generate(java.lang.String)",
+      "public java.lang.String generate(ai.vespa.llm.completion.Prompt, com.yahoo.language.process.TextGenerator$Context)",
       "public void deconstruct()"
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.generation.GeneratorOptions$SearchMethod" : {
+  "ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder tokenizerModel(com.yahoo.config.ModelReference)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder tokenizerMaxTokens(int)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder encoderModel(com.yahoo.config.ModelReference)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder encoderModelInputIdsName(java.lang.String)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder encoderModelAttentionMaskName(java.lang.String)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder encoderModelOutputName(java.lang.String)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder encoderOnnxExecutionMode(ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder encoderOnnxInterOpThreads(int)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder encoderOnnxIntraOpThreads(int)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder decoderModel(com.yahoo.config.ModelReference)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder decoderModelInputIdsName(java.lang.String)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder decoderModelAttentionMaskName(java.lang.String)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder decoderModelEncoderHiddenStateName(java.lang.String)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder decoderModelOutputName(java.lang.String)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder decoderOnnxExecutionMode(ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder decoderOnnxInterOpThreads(int)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder decoderOnnxIntraOpThreads(int)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig build()"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],
     "attributes" : [
@@ -206,17 +339,135 @@
       "enum"
     ],
     "methods" : [
-      "public static ai.vespa.llm.generation.GeneratorOptions$SearchMethod[] values()",
-      "public static ai.vespa.llm.generation.GeneratorOptions$SearchMethod valueOf(java.lang.String)"
+      "public static ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum[] values()",
+      "public static ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum valueOf(java.lang.String)"
     ],
     "fields" : [
-      "public static final enum ai.vespa.llm.generation.GeneratorOptions$SearchMethod GREEDY",
-      "public static final enum ai.vespa.llm.generation.GeneratorOptions$SearchMethod CONTRASTIVE",
-      "public static final enum ai.vespa.llm.generation.GeneratorOptions$SearchMethod BEAM",
-      "public static final enum ai.vespa.llm.generation.GeneratorOptions$SearchMethod SAMPLE"
+      "public static final enum ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum parallel",
+      "public static final enum ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum sequential"
     ]
   },
-  "ai.vespa.llm.generation.GeneratorOptions" : {
+  "ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode" : {
+    "superClass" : "com.yahoo.config.EnumNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum)"
+    ],
+    "fields" : [
+      "public static final ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum parallel",
+      "public static final ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum sequential"
+    ]
+  },
+  "ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum[] values()",
+      "public static ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum parallel",
+      "public static final enum ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum sequential"
+    ]
+  },
+  "ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode" : {
+    "superClass" : "com.yahoo.config.EnumNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum)"
+    ],
+    "fields" : [
+      "public static final ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum parallel",
+      "public static final ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum sequential"
+    ]
+  },
+  "ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Producer" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes" : [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods" : [
+      "public abstract void getConfig(ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig" : {
+    "superClass" : "com.yahoo.config.ConfigInstance",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public void <init>(ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$Builder)",
+      "public java.nio.file.Path tokenizerModel()",
+      "public int tokenizerMaxTokens()",
+      "public java.nio.file.Path encoderModel()",
+      "public java.lang.String encoderModelInputIdsName()",
+      "public java.lang.String encoderModelAttentionMaskName()",
+      "public java.lang.String encoderModelOutputName()",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$EncoderOnnxExecutionMode$Enum encoderOnnxExecutionMode()",
+      "public int encoderOnnxInterOpThreads()",
+      "public int encoderOnnxIntraOpThreads()",
+      "public java.nio.file.Path decoderModel()",
+      "public java.lang.String decoderModelInputIdsName()",
+      "public java.lang.String decoderModelAttentionMaskName()",
+      "public java.lang.String decoderModelEncoderHiddenStateName()",
+      "public java.lang.String decoderModelOutputName()",
+      "public ai.vespa.llm.generation.OnnxEncoderDecoderTextGeneratorConfig$DecoderOnnxExecutionMode$Enum decoderOnnxExecutionMode()",
+      "public int decoderOnnxInterOpThreads()",
+      "public int decoderOnnxIntraOpThreads()"
+    ],
+    "fields" : [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
+  },
+  "ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod[] values()",
+      "public static ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod GREEDY",
+      "public static final enum ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod CONTRASTIVE",
+      "public static final enum ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod BEAM",
+      "public static final enum ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod SAMPLE"
+    ]
+  },
+  "ai.vespa.llm.generation.TextGeneratorDecoderOptions" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
@@ -224,10 +475,10 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public ai.vespa.llm.generation.GeneratorOptions$SearchMethod getSearchMethod()",
-      "public ai.vespa.llm.generation.GeneratorOptions setSearchMethod(ai.vespa.llm.generation.GeneratorOptions$SearchMethod)",
+      "public ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod getSearchMethod()",
+      "public ai.vespa.llm.generation.TextGeneratorDecoderOptions setSearchMethod(ai.vespa.llm.generation.TextGeneratorDecoderOptions$SearchMethod)",
       "public int getMaxLength()",
-      "public ai.vespa.llm.generation.GeneratorOptions setMaxLength(int)"
+      "public ai.vespa.llm.generation.TextGeneratorDecoderOptions setMaxLength(int)"
     ],
     "fields" : [ ]
   }

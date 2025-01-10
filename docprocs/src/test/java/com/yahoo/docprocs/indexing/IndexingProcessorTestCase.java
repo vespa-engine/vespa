@@ -15,6 +15,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.TextGenerator;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.Tensors;
 import com.yahoo.tensor.TensorType;
@@ -251,7 +252,9 @@ public class IndexingProcessorTestCase {
         config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("test")
                                                               .content("input myText | embed | binarize | pack_bits | attribute embedding")
                                                               .docfield("myText"));
-        var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null, Map.of("test", new TestEmbedder()));
+        var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null, 
+                Map.of("test", new TestEmbedder()), TextGenerator.throwsOnUse.asMap());
+        
         assertNotNull(scripts.getScript(documentTypes.getDocumentType("test")));
 
         var tester = new IndexingProcessorTester(documentTypes, scripts);

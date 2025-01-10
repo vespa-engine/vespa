@@ -17,6 +17,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.TextGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.schema.DistributableResource;
@@ -31,14 +32,11 @@ import com.yahoo.schema.document.MatchAlgorithm;
 import com.yahoo.schema.document.HnswIndexParams;
 import com.yahoo.schema.document.Sorting;
 import com.yahoo.schema.document.Stemming;
-import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.FeatureNames;
 import com.yahoo.schema.fieldoperation.IndexingOperation;
 import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
 import com.yahoo.searchlib.rankingexpression.Reference;
-import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
-import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
@@ -49,7 +47,6 @@ import java.util.Optional;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.logging.Level;
 
 /**
@@ -82,7 +79,7 @@ public class SchemaParser {
      */
     @SuppressWarnings("deprecation")
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), TextGenerator.throwsOnUse.asMap());
     }
 
     /**
@@ -91,13 +88,15 @@ public class SchemaParser {
      * @param multiline Whether or not to allow multi-line expressions.
      * @param linguistics What to use for tokenizing.
      */
-    private IndexingOperation newIndexingOperation(boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
+    private IndexingOperation newIndexingOperation(
+            boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders, 
+            Map<String, TextGenerator> generators) throws ParseException {
         SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
         if (token.next != null) {
             input.backup(token.next.image.length());
         }
         try {
-            return IndexingOperation.fromStream(input, multiline, linguistics, embedders);
+            return IndexingOperation.fromStream(input, multiline, linguistics, embedders, generators);
         } finally {
             token.next = null;
             jj_ntk = -1;

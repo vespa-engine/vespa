@@ -33,6 +33,7 @@ INJECT IndexingParser:
     import com.yahoo.vespa.indexinglanguage.expressions.*;
     import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
     import com.yahoo.language.process.Embedder;
+    import com.yahoo.language.process.TextGenerator;
     import com.yahoo.language.Linguistics;
 {
 /**
@@ -43,6 +44,7 @@ INJECT IndexingParser:
     private String defaultFieldName;
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
+    private Map<String, TextGenerator> generators;    
     private AnnotatorConfig annotatorCfg;
 
     private PrintStream logger = new PrintStream(
@@ -71,6 +73,11 @@ INJECT IndexingParser:
 
     public IndexingParser setEmbedders(Map<String, Embedder> embedders) {
         this.embedders = embedders;
+        return this;
+    }
+    
+    public IndexingParser setGenerators(Map<String, TextGenerator> generators) {
+        this.generators = generators;
         return this;
     }
 
@@ -183,6 +190,7 @@ TOKEN :
     <ECHO: "echo"> |
     <ELSE: "else"> |
     <EMBED: "embed"> |
+    <GENERATE: "generate"> |
     <EXACT: "exact"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
@@ -340,6 +348,7 @@ Expression value() :
       val = exactExp()              |
       val = flattenExp()            |
       val = forEachExp()            |
+      val = generateExp()           |
       val = getFieldExp()           |
       val = getVarExp()             |
       val = guardExp()              |
@@ -476,6 +485,23 @@ Expression forEachExp() :
  
     ( <FOR_EACH> <LCURLY> consumeNL() val = statement() consumeNL() <RCURLY> )
     { return new ForEachExpression(val); }
+;
+
+Expression generateExp() :
+{
+    String generatorId = "";
+    String generatorArgument;
+    List<String> generatorArguments = new ArrayList<String>();
+}
+
+    (
+      <GENERATE> [ SCAN((identifierStr)+) => (generatorId = identifierStr()) ]
+      ( SCAN((identifierStr)+) => (generatorArgument = identifierStr()) { generatorArguments.add(generatorArgument); } )*
+    )
+    {
+        // return new GenerateExpression(linguistics, generators, generatorId, generatorArguments);
+        return null;
+    }
 ;
 
 Expression getFieldExp() :
@@ -869,6 +895,7 @@ String identifierStr() :
         <EMBED>                  |
         <FLATTEN>                |
         <FOR_EACH>               |
+        <GENERATE>               |
         <GET_FIELD>              |
         <GET_VAR>                |
         <GUARD>                  |
