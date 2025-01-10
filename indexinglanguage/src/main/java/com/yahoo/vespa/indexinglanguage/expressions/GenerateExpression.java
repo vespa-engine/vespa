@@ -82,7 +82,7 @@ public class GenerateExpression extends Expression {
             throw new VerificationException(this, "Generate expression requires either a string or array<string> output type, but got "
                     + outputType.getName());
         
-        super.setOutputType(null, outputType, null, context); // TODO: Why not set actualOutput to outputType?
+        super.setOutputType(null, outputType, null, context);
         return outputType; // return input type the same as output type: string or array<string>
     }
 
