@@ -117,10 +117,7 @@ public class SchemaDocument implements DocumentManager {
             //CSTUtils.printTree(logger, CST);
         }
 
-
-
         //schemaIndex.dumpIndex();
-
     }
 
     private List<Diagnostic> verifyFileName() {

@@ -8,7 +8,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.eclipse.lemminx.dom.DOMNode;
@@ -78,7 +80,8 @@ public class HoverParticipant implements IHoverParticipant {
             }
         }
 
-        readPath = readPath.resolve(tagName + ".md");
+        String fileName = sanitizeFileName(tagName + ".md");
+        readPath = readPath.resolve(fileName);
 
         if (!readPath.toFile().exists()) {
             logger.warning(readPath.toString() + " did not exist!");
@@ -93,5 +96,14 @@ public class HoverParticipant implements IHoverParticipant {
             logger.severe("Unknown exception: " + ex.getMessage());
         }
         return Optional.empty();
+    }
+
+    private final static Set<Character> DISALLOWED_CHARS = Set.of('/', '<', '>', ':', '"', '\\', '|', '?', '*');
+    private static String sanitizeFileName(String fileName) {
+        // TODO: common logic with schema language server.
+        return fileName.chars()
+                       .filter(c -> !DISALLOWED_CHARS.contains((char) c))
+                       .mapToObj(c -> "" + (char) c)
+                       .collect(Collectors.joining());
     }
 }

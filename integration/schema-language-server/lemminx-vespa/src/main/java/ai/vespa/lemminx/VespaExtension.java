@@ -1,5 +1,6 @@
 package ai.vespa.lemminx;
 
+import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
@@ -44,7 +45,7 @@ public class VespaExtension implements IXMLExtension {
 	@Override
 	public void start(InitializeParams params, XMLExtensionsRegistry registry) {
         try {
-            serverPath = Paths.get(VespaExtension.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
+            serverPath = Paths.get(new File(VespaExtension.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getCanonicalPath()).getParent();
 
             UnpackRNGFiles.unpackRNGFiles(
                 serverPath

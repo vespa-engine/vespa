@@ -75,6 +75,7 @@ public class SchemaDocumentScheduler {
     }
 
     public void updateFile(String fileURI, String content, Integer version) {
+        logger.info("Updating file: " + fileURI);
         Optional<DocumentType> documentType = getDocumentTypeFromURI(fileURI);
         if (documentType.isEmpty()) return;
 
@@ -195,18 +196,19 @@ public class SchemaDocumentScheduler {
     }
 
     public void openDocument(TextDocumentItem document) {
-        logger.info("Opening document: " + document.getUri());
+        String fileURI = FileUtils.decodeURL(document.getUri());
+        logger.info("Opening document: " + fileURI);
 
-        Optional<DocumentType> documentType = getDocumentTypeFromURI(document.getUri());
+        Optional<DocumentType> documentType = getDocumentTypeFromURI(fileURI);
 
         if (workspaceURI == null && documentType.isPresent() && (
             documentType.get() == DocumentType.SCHEMA ||
             documentType.get() == DocumentType.PROFILE
         )) {
-            Optional<URI> workspaceURI = FileUtils.findSchemaDirectory(URI.create(document.getUri()));
+            Optional<URI> workspaceURI = FileUtils.findSchemaDirectory(URI.create(fileURI));
             if (workspaceURI.isEmpty()) {
                 messageHandler.sendMessage(MessageType.Warning, 
-                    "The file " + document.getUri() + 
+                    "The file " + fileURI + 
                     " does not appear to be inside a 'schemas' directory. " + 
                     "Language support will be limited.");
             } else {
@@ -214,8 +216,8 @@ public class SchemaDocumentScheduler {
             }
         }
 
-        updateFile(document.getUri(), document.getText(), document.getVersion());
-        workspaceFiles.get(document.getUri()).setIsOpen(true);
+        updateFile(fileURI, document.getText(), document.getVersion());
+        workspaceFiles.get(fileURI).setIsOpen(true);
     }
 
     /*

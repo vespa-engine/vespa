@@ -12,6 +12,8 @@ import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 import org.eclipse.lsp4j.WorkspaceEdit;
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
 
+import ai.vespa.schemals.common.FileUtils;
+
 
 /**
  * WorkspaceEditBuilder
@@ -34,18 +36,20 @@ public class WorkspaceEditBuilder {
     }
 
     public WorkspaceEditBuilder addTextEdit(VersionedTextDocumentIdentifier identifier, TextEdit edit) {
-        if (!textDocumentBuilders.containsKey(identifier.getUri())) {
+        String fileURI = FileUtils.decodeURL(identifier.getUri());
+        if (!textDocumentBuilders.containsKey(fileURI)) {
             registerVersionedDocumentIdentifier(identifier);
         }
-        textDocumentBuilders.get(identifier.getUri()).addEdit(edit);
+        textDocumentBuilders.get(fileURI).addEdit(edit);
         return this;
     }
 
     public WorkspaceEditBuilder addTextEdits(VersionedTextDocumentIdentifier identifier, Iterable<TextEdit> edits) {
-        if (!textDocumentBuilders.containsKey(identifier.getUri())) {
+        String fileURI = FileUtils.decodeURL(identifier.getUri());
+        if (!textDocumentBuilders.containsKey(fileURI)) {
             registerVersionedDocumentIdentifier(identifier);
         }
-        TextDocumentEditBuilder builder = textDocumentBuilders.get(identifier.getUri());
+        TextDocumentEditBuilder builder = textDocumentBuilders.get(fileURI);
         edits.forEach(edit -> builder.addEdit(edit));
         return this;
     }
@@ -57,7 +61,7 @@ public class WorkspaceEditBuilder {
 
     public WorkspaceEditBuilder registerVersionedDocumentIdentifier(VersionedTextDocumentIdentifier identifier) {
         var builder = new TextDocumentEditBuilder().setVersionedTextDocumentIdentifier(identifier);
-        textDocumentBuilders.put(identifier.getUri(), builder);
+        textDocumentBuilders.put(FileUtils.decodeURL(identifier.getUri()), builder);
         edits.add(Either.forLeft(builder));
         return this;
     }
