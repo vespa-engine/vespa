@@ -468,6 +468,13 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundDoubleFlag RESOURCE_LIMIT_MEMORY_FOR_SMALL_NODES = defineDoubleFlag(
+            "resource-limit-memory-for-small-nodes", 0.8,
+            List.of("hmusum"), "2025-01-12", "2025-02-15",
+            "Resource limit (between 0.0 and 1.0) for memory usage on small content nodes (8 Gib memory or less), used by cluster controller for when to block feed",
+            "Takes effect on next deployment",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
