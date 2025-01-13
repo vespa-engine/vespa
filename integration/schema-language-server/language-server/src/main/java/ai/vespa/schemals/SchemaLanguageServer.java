@@ -89,7 +89,8 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         try {
             serverPath = Paths.get(new File(SchemaLanguageServer.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getCanonicalPath()).getParent();
         } catch(Exception ex) {
-            // How to handle?
+            // This is the old way which crashed on Windows, but works on Unix systems.
+            serverPath = Paths.get(SchemaLanguageServer.class.getProtectionDomain().getCodeSource().getLocation().getPath()).getParent();
         }
     }    
 
