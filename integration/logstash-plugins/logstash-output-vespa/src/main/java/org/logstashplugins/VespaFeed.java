@@ -308,7 +308,7 @@ public class VespaFeed implements Output {
         if (dynamicNamespace) {
             namespace = getDynamicField(event, this.namespace);
             if (removeNamespace) {
-                event.remove(namespace);
+                event.remove(this.namespace);
             }
         }
 
@@ -317,7 +317,7 @@ public class VespaFeed implements Output {
         if (dynamicDocumentType) {
             documentType = getDynamicField(event, this.documentType);
             if (removeDocumentType) {
-                event.remove(documentType);
+                event.remove(this.documentType);
             }
         }
 
@@ -345,7 +345,7 @@ public class VespaFeed implements Output {
 
         // create a document from the event data
         Map<String,Object> doc = new HashMap<>();
-        doc.put("fields", event.getData());  // Use the modified eventData here
+        doc.put("fields", event.getData());
 
         // create the request to feed the document
         if (operation.equals("put")) {
