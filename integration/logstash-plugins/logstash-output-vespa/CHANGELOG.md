@@ -1,3 +1,6 @@
+## 0.7.0
+- adds dead letter queue support
+
 ## 0.6.0
 - adds options to remove fields after using them for writing
 

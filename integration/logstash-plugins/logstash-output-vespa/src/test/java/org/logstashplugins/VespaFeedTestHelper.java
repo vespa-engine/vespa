@@ -12,8 +12,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
+import org.logstash.common.io.DeadLetterQueueWriter;
+
+import java.io.IOException;
+
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 public class VespaFeedTestHelper {
@@ -39,6 +46,12 @@ public class VespaFeedTestHelper {
             when(config.get(VespaFeed.OPERATION_TIMEOUT)).thenReturn(180L);
             when(config.get(VespaFeed.GRACE_PERIOD)).thenReturn(10L);
             when(config.get(VespaFeed.DOOM_PERIOD)).thenReturn(60L);
+            // Add DLQ configuration mocks
+            when(config.get(VespaFeed.ENABLE_DLQ)).thenReturn(false);  // disable DLQ by default in tests
+            when(config.get(VespaFeed.DLQ_PATH)).thenReturn("data/dead_letter_queue");
+            when(config.get(VespaFeed.MAX_QUEUE_SIZE)).thenReturn(1024L * 1024L * 1024L);
+            when(config.get(VespaFeed.MAX_SEGMENT_SIZE)).thenReturn(10L * 1024L * 1024L);
+            when(config.get(VespaFeed.FLUSH_INTERVAL)).thenReturn(5000L);
             return config;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -91,5 +104,32 @@ public class VespaFeedTestHelper {
             org.mockito.ArgumentMatchers.contains("\"fields\":{\"field1\":\"" + value + "\",\"doc_id\":\"" + docId + "\"}"),
             any(OperationParameters.class)
         );
+    }
+
+    public static Event createLogstashEvent(String docId, String value) {
+        Map<String, Object> eventData = new HashMap<>();
+        eventData.put("field1", value);
+        if (docId != null) {
+            eventData.put("doc_id", docId);
+        }
+        return new org.logstash.Event(eventData);
+    }
+
+    public static void verifyDlqEntry(DeadLetterQueueWriter mockDlqWriter, String errorMessagePart) throws IOException {
+        verify(mockDlqWriter).writeEntry(
+            any(org.logstash.Event.class),
+            eq("vespa_feed"),
+            eq("test-id"),
+            contains(errorMessagePart)
+        );
+    }
+
+    public static VespaFeed createFeedWithDlq(DeadLetterQueueWriter mockDlqWriter, FeedClient mockClient, String operation, boolean dynamicOperation) {
+        Configuration config = createMockConfig(operation, false, dynamicOperation);
+        when(config.get(VespaFeed.ENABLE_DLQ)).thenReturn(true);
+        
+        VespaFeed feed = new VespaFeed("test-id", config, null, mockClient);
+        feed.setDlqWriter(mockDlqWriter);
+        return feed;
     }
 } 
