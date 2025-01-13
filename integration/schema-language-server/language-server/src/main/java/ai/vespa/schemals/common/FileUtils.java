@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -15,6 +17,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 import com.yahoo.io.IOUtils;
 
@@ -71,6 +75,26 @@ public class FileUtils {
         return components[0];
     }
 
+    // https://stackoverflow.com/questions/1976007/what-characters-are-forbidden-in-windows-and-linux-directory-names
+    private final static Set<Character> DISALLOWED_CHARS = Set.of('/', '<', '>', ':', '"', '\\', '|', '?', '*');
+    public static String sanitizeFileName(String fileName) {
+        return fileName.chars()
+                       .filter(c -> !DISALLOWED_CHARS.contains((char) c))
+                       .mapToObj(c -> "" + (char) c)
+                       .collect(Collectors.joining());
+    }
+
+    /* 
+     * Decode URL in a kind way
+     */
+    public static String decodeURL(String URL) {
+        try {
+            return URLDecoder.decode(URL, StandardCharsets.UTF_8.name());
+        } catch(Exception e) {
+            return URL;
+        }
+    }
+
     /**
      * Searches among the parents for a directory named "schemas"
      */
@@ -99,7 +123,7 @@ public class FileUtils {
                 @Override
                 public FileVisitResult visitFile(Path path, BasicFileAttributes attrs) throws IOException {
                     if (pathMatcher.matches(path)) {
-                        filePaths.add(path.toUri().toString());
+                        filePaths.add(decodeURL(path.toUri().toString()));
                     }
                     return FileVisitResult.CONTINUE;
                 }

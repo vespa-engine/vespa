@@ -8,6 +8,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import ai.vespa.schemals.common.FileUtils;
 
 /**
  * DocumentationFetcher
@@ -54,6 +58,7 @@ public class FetchDocumentation {
             List<String> fileNamesToWrite = REPLACE_FILENAME_MAP.getOrDefault(tokenName, List.of(tokenName));
 
             for (String fileName : fileNamesToWrite) {
+                fileName = FileUtils.sanitizeFileName(fileName);
                 writeMarkdown(writePath.resolve(fileName + ".md"), content);
             }
         }
@@ -62,7 +67,8 @@ public class FetchDocumentation {
 
         writePath = targetPath.resolve("rankExpression");
         for (var entry : rankFeatureMarkdownContent.entrySet()) {
-            writeMarkdown(writePath.resolve(entry.getKey() + ".md"), entry.getValue());
+            String fileName = FileUtils.sanitizeFileName(entry.getKey());
+            writeMarkdown(writePath.resolve(fileName + ".md"), entry.getValue());
         }
     }
 
@@ -79,10 +85,12 @@ public class FetchDocumentation {
             for (var entry : markdownContent.entrySet()) {
                 if (entry.getKey().contains("/")) continue;
                 String fileName = entry.getKey().toLowerCase();
+                fileName = FileUtils.sanitizeFileName(fileName);
                 writeMarkdown(writePath.resolve(fileName + ".md"), entry.getValue());
             }
         }
     }
+
 
     private static void writeMarkdown(Path writePath, String markdown) throws IOException {
         Files.write(writePath, markdown.getBytes(), StandardOpenOption.CREATE);

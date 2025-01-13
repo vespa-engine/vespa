@@ -2,6 +2,8 @@ package ai.vespa.schemals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
@@ -54,6 +56,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.Either3;
 import org.eclipse.lsp4j.services.TextDocumentService;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.context.InvalidContextException;
@@ -250,8 +253,9 @@ public class SchemaTextDocumentService implements TextDocumentService {
 
         var contentChanges = params.getContentChanges();
         for (int i = 0; i < contentChanges.size(); i++) {
+            String fileURI = FileUtils.decodeURL(document.getUri());
             try {
-                scheduler.updateFile(document.getUri(), contentChanges.get(i).getText());
+                scheduler.updateFile(fileURI, contentChanges.get(i).getText());
             } catch(Exception e) {
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 PrintStream logger = new PrintStream(outputStream);
@@ -259,18 +263,19 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 e.printStackTrace(logger);
 
                 schemaMessageHandler.logMessage(MessageType.Error, 
-                    "Updating file " + document.getUri() + " failed with error: " + outputStream.toString() 
+                    "Updating file " + fileURI + " failed with error: " + outputStream.toString() 
                 );
             }
         }
     }
+
 
     @Override
     public void didClose(DidCloseTextDocumentParams params) {
         TextDocumentIdentifier documentIdentifier = params.getTextDocument();
         SchemaDocumentScheduler scheduler = eventContextCreator.scheduler;
 
-        scheduler.closeDocument(documentIdentifier.getUri());
+        scheduler.closeDocument(FileUtils.decodeURL(documentIdentifier.getUri()));
     }
 
     @Override

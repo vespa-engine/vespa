@@ -14,6 +14,7 @@ import org.eclipse.lsp4j.jsonrpc.CompletableFutures;
 import org.eclipse.lsp4j.services.WorkspaceService;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.common.command.ExecuteCommand;
@@ -44,7 +45,7 @@ public class SchemaWorkspaceService implements WorkspaceService {
         List<FileDelete> deletedFiles = params.getFiles();
         
         for (FileDelete file : deletedFiles) {
-            scheduler.removeDocument(file.getUri());
+            scheduler.removeDocument(FileUtils.decodeURL(file.getUri()));
         }
         
     }

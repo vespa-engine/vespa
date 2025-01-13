@@ -6,6 +6,8 @@ import org.eclipse.lsp4j.TextDocumentEdit;
 import org.eclipse.lsp4j.TextEdit;
 import org.eclipse.lsp4j.VersionedTextDocumentIdentifier;
 
+import ai.vespa.schemals.common.FileUtils;
+
 public class TextDocumentEditBuilder {
     private ArrayList<TextEdit> textEdits;
     private VersionedTextDocumentIdentifier versionedTextDocumentIdentifier;
@@ -31,7 +33,7 @@ public class TextDocumentEditBuilder {
     }
 
     public String getFileURI() {
-        return versionedTextDocumentIdentifier.getUri();
+        return FileUtils.decodeURL(versionedTextDocumentIdentifier.getUri());
     }
 
     public TextDocumentEdit build() {

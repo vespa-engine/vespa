@@ -19,6 +19,7 @@ import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.SchemaLanguageServer;
+import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
@@ -288,13 +289,13 @@ public class SchemaHover {
      * @return Hover with empty range
      */
     public static Optional<Hover> getRankFeatureHover(SpecificFunction function) {
-        Optional<Hover> result = getFileHoverInformation("rankExpression/" + function.getSignatureString(), new Range());
+        Optional<Hover> result = getFileHoverInformation("rankExpression", function.getSignatureString(), new Range());
 
         if (result.isPresent()) {
             return result;
         }
 
-        return getFileHoverInformation("rankExpression/" + function.getSignatureString(true), new Range());
+        return getFileHoverInformation("rankExpression", function.getSignatureString(true), new Range());
     }
 
     public static Hover getHover(EventPositionContext context) {
@@ -329,14 +330,14 @@ public class SchemaHover {
             return getIndexingHover(schemaNode, context);
         }
 
-        Optional<Hover> hoverInfo = getFileHoverInformation("schema/" + schemaNode.getClassLeafIdentifierString(), schemaNode.getRange());
+        Optional<Hover> hoverInfo = getFileHoverInformation("schema", schemaNode.getClassLeafIdentifierString(), schemaNode.getRange());
         if (hoverInfo.isEmpty()) {
             return null;
         }
         return hoverInfo.get();
     }
 
-    public static Optional<Hover> getFileHoverInformation(String markdownKey, Range range) {
+    public static Optional<Hover> getFileHoverInformation(String hoverDirectory, String markdownKey, Range range) {
         // avoid doing unnecessary IO operations
         if (markdownContentCache.containsKey(markdownKey)) {
             Optional<MarkupContent> mdContent = markdownContentCache.get(markdownKey);
@@ -350,8 +351,9 @@ public class SchemaHover {
 
         if (SchemaLanguageServer.serverPath == null)return Optional.empty();
         String fileName = markdownKey + ".md";
+        fileName = FileUtils.sanitizeFileName(fileName);
 
-        Path markdownPath = SchemaLanguageServer.serverPath.resolve("hover").resolve(fileName);
+        Path markdownPath = SchemaLanguageServer.serverPath.resolve("hover").resolve(hoverDirectory).resolve(fileName);
 
         try {
             String markdown = Files.readString(markdownPath);

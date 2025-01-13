@@ -181,8 +181,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
         // compute docs
         for (var entry : this.entrySet()) {
             for (CompletionItem item : entry.getValue()) {
-                String markdownKey = "schema/" + item.getLabel().toUpperCase().replaceAll("-", "_");
-                Optional<Hover> hover = SchemaHover.getFileHoverInformation(markdownKey, new Range());
+                String markdownKey = item.getLabel().toUpperCase().replaceAll("-", "_");
+                Optional<Hover> hover = SchemaHover.getFileHoverInformation("schema", markdownKey, new Range());
                 if (hover.isPresent() && hover.get().getContents().isRight()) {
                     item.setDocumentation(hover.get().getContents().getRight());
                 }
