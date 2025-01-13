@@ -466,7 +466,7 @@ public class VespaFeedTest {
 
         Event event = VespaFeedTestHelper.createMockEvent("doc1", "value1", "namespace_field", "test-ns");
         output.output(Collections.singletonList(event));
-        verify(event).remove("test-ns");
+        verify(event).remove("namespace_field");
     }
 
     @Test
@@ -479,7 +479,7 @@ public class VespaFeedTest {
 
         Event event = VespaFeedTestHelper.createMockEvent("doc1", "value1", "doc_type_field", "test-doc-type");
         output.output(Collections.singletonList(event));
-        verify(event).remove("test-doc-type");
+        verify(event).remove("doc_type_field");
     }
 
     @Test
