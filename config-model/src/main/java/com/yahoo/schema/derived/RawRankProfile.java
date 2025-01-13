@@ -169,6 +169,8 @@ public class RawRankProfile {
         private final OptionalDouble postFilterThreshold;
         private final OptionalDouble approximateThreshold;
         private final OptionalDouble targetHitsMaxAdjustmentFactor;
+        private final OptionalDouble weakandStopwordLimit;
+        private final OptionalDouble weakandAdjustTarget;
         private final double rankScoreDropLimit;
         private final double secondPhaseRankScoreDropLimit;
         private final boolean sortBlueprintsByCost;
@@ -220,6 +222,8 @@ public class RawRankProfile {
             postFilterThreshold = compiled.getPostFilterThreshold();
             approximateThreshold = compiled.getApproximateThreshold();
             targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
+            weakandStopwordLimit = compiled.getWeakandStopwordLimit();
+            weakandAdjustTarget = compiled.getWeakandAdjustTarget();
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             secondPhaseRankScoreDropLimit = compiled.getSecondPhaseRankScoreDropLimit();
@@ -482,6 +486,12 @@ public class RawRankProfile {
             }
             if (targetHitsMaxAdjustmentFactor.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor.getAsDouble())));
+            }
+            if (weakandStopwordLimit.isPresent()) {
+                properties.add(new Pair<>("vespa.matching.weakand.stop_word_drop_limit", String.valueOf(weakandStopwordLimit.getAsDouble())));
+            }
+            if (weakandAdjustTarget.isPresent()) {
+                properties.add(new Pair<>("vespa.matching.weakand.stop_word_adjust_limit", String.valueOf(weakandAdjustTarget.getAsDouble())));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));

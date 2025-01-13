@@ -104,6 +104,8 @@ public class RankProfile implements Cloneable {
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
     private Double targetHitsMaxAdjustmentFactor = null;
+    private Double weakandStopwordLimit = null;
+    private Double weakandAdjustTarget = null;
 
     /** The drop limit used to drop hits with rank score less than or equal to this value */
     private double rankScoreDropLimit = -Double.MAX_VALUE;
@@ -780,6 +782,8 @@ public class RankProfile implements Cloneable {
     public void setPostFilterThreshold(double threshold) { this.postFilterThreshold = threshold; }
     public void setApproximateThreshold(double threshold) { this.approximateThreshold = threshold; }
     public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
+    public void setWeakandStopwordLimit(double limit) { this.weakandStopwordLimit = limit; }
+    public void setWeakandAdjustTarget(double target) { this.weakandAdjustTarget = target; }
 
     public OptionalDouble getTermwiseLimit() {
         if (termwiseLimit != null) return OptionalDouble.of(termwiseLimit);
@@ -806,6 +810,20 @@ public class RankProfile implements Cloneable {
             return OptionalDouble.of(targetHitsMaxAdjustmentFactor);
         }
         return uniquelyInherited(RankProfile::getTargetHitsMaxAdjustmentFactor, OptionalDouble::isPresent, "target-hits-max-adjustment-factor").orElse(OptionalDouble.empty());
+    }
+
+    public OptionalDouble getWeakandStopwordLimit() {
+        if (weakandStopwordLimit != null) {
+            return OptionalDouble.of(weakandStopwordLimit);
+        }
+        return uniquelyInherited(RankProfile::getWeakandStopwordLimit, OptionalDouble::isPresent, "weakand-stopword-limit").orElse(OptionalDouble.empty());
+    }
+
+    public OptionalDouble getWeakandAdjustTarget() {
+        if (weakandAdjustTarget != null) {
+            return OptionalDouble.of(weakandAdjustTarget);
+        }
+        return uniquelyInherited(RankProfile::getWeakandAdjustTarget, OptionalDouble::isPresent, "weakand-adjust-target").orElse(OptionalDouble.empty());
     }
 
     /** Whether we should ignore the default rank features. Set to null to use inherited */
