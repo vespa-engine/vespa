@@ -79,9 +79,12 @@ struct FeedOperationBatchingTest : FileStorTestFixture {
         }
     }
 
-    void send_get(uint32_t bucket_idx, uint32_t doc_idx) {
+    constexpr static uint8_t default_message_priority = 127;
+
+    void send_get(uint32_t bucket_idx, uint32_t doc_idx, uint8_t pri = default_message_priority) {
         auto id = id_of(bucket_idx, doc_idx);
         auto cmd = std::make_shared<api::GetCommand>(makeDocumentBucket({16, bucket_idx}), id, document::AllFields::NAME);
+        cmd->setPriority(pri);
         schedule_msg(cmd);
     }
 
@@ -275,7 +278,7 @@ TEST_F(FeedOperationBatchingTest, non_feed_ops_are_not_batched) {
     assert_batch(next_batch(), 1, {{Get, 3}});
 }
 
-TEST_F(FeedOperationBatchingTest, pipeline_stalled_by_non_feed_op) {
+TEST_F(FeedOperationBatchingTest, pipeline_stalled_by_equal_pri_non_feed_op) {
     // It can reasonably be argued that we could batch _around_ a Get operation and still
     // have correct behavior, but the Get here is just a stand-in for an arbitrary operation such
     // as a Split (which changes the bucket set), which is rather more tricky to reason about.
@@ -289,6 +292,15 @@ TEST_F(FeedOperationBatchingTest, pipeline_stalled_by_non_feed_op) {
     assert_batch(next_batch(), 1, {{Put, 3}, {Put, 4}});
     assert_batch(next_batch(), 1, {{Get, 5}});
     assert_batch(next_batch(), 1, {{Put, 6}, {Put, 7}});
+}
+
+TEST_F(FeedOperationBatchingTest, lower_pri_messages_are_implicitly_skipped) {
+    send_puts({{1, 3}});
+    send_get(1, 2, default_message_priority + 1); // should not stall the pipeline
+    send_puts({{1, 4}, {1, 5}});
+
+    assert_batch(next_batch(), 1, {{Put, 3}, {Put, 4}, {Put, 5}});
+    assert_batch(next_batch(), 1, {{Get, 2}});
 }
 
 TEST_F(FeedOperationBatchingTest, pipeline_stalled_by_concurrent_ops_to_same_document) {

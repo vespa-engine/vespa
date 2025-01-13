@@ -25,7 +25,6 @@
 #include <boost/multi_index_container.hpp>
 #include <boost/multi_index/identity.hpp>
 #include <boost/multi_index/member.hpp>
-#include <boost/multi_index/mem_fun.hpp>
 #include <boost/multi_index/ordered_index.hpp>
 #include <boost/multi_index/sequenced_index.hpp>
 #include <vespa/storage/common/messagesender.h>
@@ -58,12 +57,12 @@ public:
         MessageEntry(const std::shared_ptr<api::StorageMessage>& cmd,
                      const document::Bucket& bucket,
                      vespalib::steady_time scheduled_at_time);
-        MessageEntry(MessageEntry &&) noexcept ;
-        MessageEntry(const MessageEntry &) noexcept;
-        MessageEntry & operator = (const MessageEntry &) = delete;
+        MessageEntry(MessageEntry&&) noexcept;
+        MessageEntry(const MessageEntry&) noexcept;
+        MessageEntry& operator=(const MessageEntry&) = delete;
         ~MessageEntry();
 
-        bool operator<(const MessageEntry& entry) const {
+        bool operator<(const MessageEntry& entry) const noexcept {
             return (_priority < entry._priority);
         }
     };
