@@ -26,6 +26,9 @@ public:
     IndexDiskLayout(const std::string &baseDir);
     std::string getFlushDir(uint32_t sourceId) const;
     std::string getFusionDir(uint32_t sourceId) const;
+    const std::string& get_base_dir() const noexcept { return _baseDir; }
+    std::string get_dir(const IndexDiskDir& index_disk_dir) const;
+
     static IndexDiskDir get_index_disk_dir(const std::string& dir);
 
     static std::string getSerialNumFileName(const std::string &dir);

@@ -74,7 +74,7 @@ class IndexMaintainer : public IIndexManager,
     const std::string _base_dir;
     const WarmupConfig     _warmupConfig;
     std::shared_ptr<DiskIndexes>  _disk_indexes;
-    IndexDiskLayout        _layout;
+    std::shared_ptr<IndexDiskLayout> _layout;
     Schema                  _schema;             // Protected by SL + IUL
     std::shared_ptr<const Schema> _activeFusionSchema; // Protected by SL + IUL
     // Protected by SL + IUL
@@ -129,7 +129,7 @@ class IndexMaintainer : public IIndexManager,
     std::mutex                       _state_lock;        // Outer lock (SL)
     mutable std::mutex               _index_update_lock; // Inner lock (IUL)
     mutable std::mutex               _new_search_lock;   // Inner lock (NSL)
-    std::mutex                       _remove_lock;       // Lock for removing indexes.
+    std::shared_ptr<std::mutex>      _remove_lock;       // Lock for removing indexes.
     FusionSpec                       _fusion_spec;       // Protected by FL
     mutable std::mutex               _fusion_lock;       // Fusion spec lock (FL)
     uint32_t                         _maxFlushed;        // Protected by NSL
@@ -165,7 +165,6 @@ class IndexMaintainer : public IIndexManager,
                             SerialNum serialNum);
 
     void updateActiveFusionPrunedSchema(const Schema &schema);
-    void deactivateDiskIndexes(std::string indexDir);
     std::shared_ptr<IDiskIndex> loadDiskIndex(const std::string &indexDir);
     std::shared_ptr<IDiskIndex> reloadDiskIndex(const IDiskIndex &oldIndex);
 

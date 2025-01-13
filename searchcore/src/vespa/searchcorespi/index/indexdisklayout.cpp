@@ -37,6 +37,13 @@ IndexDiskLayout::getFusionDir(uint32_t sourceId) const
 }
 
 std::string
+IndexDiskLayout::get_dir(const IndexDiskDir& index_disk_dir) const
+{
+    auto id = index_disk_dir.get_id();
+    return index_disk_dir.is_fusion_index() ? getFusionDir(id) : getFlushDir(id);
+}
+
+std::string
 IndexDiskLayout::getSerialNumFileName(const std::string &dir)
 {
     return dir + "/serial.dat";

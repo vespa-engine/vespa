@@ -93,27 +93,31 @@ ReconfigRunnableTask::~ReconfigRunnableTask() = default;
 SerialNum noSerialNumHigh = std::numeric_limits<SerialNum>::max();
 
 
-class DiskIndexWithDestructorCallback : public IDiskIndex {
+class DiskIndexWithDestructorCleanup : public IDiskIndex {
 private:
-    std::shared_ptr<IDestructorCallback> _callback;
+    std::shared_ptr<std::mutex>          _remove_lock;
     std::shared_ptr<IDiskIndex>          _index;
     IndexDiskDir                         _index_disk_dir;
-    IndexDiskLayout&                     _layout;
-    DiskIndexes&                         _disk_indexes;
+    std::shared_ptr<IndexDiskLayout>     _layout;
+    std::shared_ptr<DiskIndexes>         _disk_indexes;
 
 public:
-    DiskIndexWithDestructorCallback(std::shared_ptr<IDiskIndex> index,
-                                    std::shared_ptr<IDestructorCallback> callback,
-                                    IndexDiskLayout& layout,
-                                    DiskIndexes& disk_indexes) noexcept
-        : _callback(std::move(callback)),
+    DiskIndexWithDestructorCleanup(std::shared_ptr<std::mutex> remove_lock,
+                                    std::shared_ptr<IDiskIndex> index,
+                                    std::shared_ptr<IndexDiskLayout> layout,
+                                    std::shared_ptr<DiskIndexes> disk_indexes) noexcept
+        : _remove_lock(std::move(remove_lock)),
           _index(std::move(index)),
           _index_disk_dir(IndexDiskLayout::get_index_disk_dir(_index->getIndexDir())),
-          _layout(layout),
-          _disk_indexes(disk_indexes)
+          _layout(std::move(layout)),
+          _disk_indexes(std::move(disk_indexes))
     {
     }
-    ~DiskIndexWithDestructorCallback() override;
+    DiskIndexWithDestructorCleanup(const DiskIndexWithDestructorCleanup&) = delete;
+    DiskIndexWithDestructorCleanup(DiskIndexWithDestructorCleanup&&) = delete;
+    ~DiskIndexWithDestructorCleanup() override;
+    DiskIndexWithDestructorCleanup& operator=(const DiskIndexWithDestructorCleanup&) = delete;
+    DiskIndexWithDestructorCleanup& operator=(DiskIndexWithDestructorCleanup&&) = delete;
     const IDiskIndex &getWrapped() const { return *_index; }
 
     /**
@@ -158,13 +162,20 @@ public:
 
 };
 
-DiskIndexWithDestructorCallback::~DiskIndexWithDestructorCallback() = default;
+DiskIndexWithDestructorCleanup::~DiskIndexWithDestructorCleanup()
+{
+    auto index_dir = _index->getIndexDir();
+    _index.reset();
+    _disk_indexes->notActive(index_dir);
+    std::lock_guard remove_guard(*_remove_lock);
+    DiskIndexCleaner::removeOldIndexes(_layout->get_base_dir(), *_disk_indexes);
+}
 
 search::IndexStats
-DiskIndexWithDestructorCallback::get_index_stats(bool clear_disk_io_stats) const
+DiskIndexWithDestructorCleanup::get_index_stats(bool clear_disk_io_stats) const
 {
     auto stats = _index->get_index_stats(clear_disk_io_stats);
-    uint64_t transient_size = _disk_indexes.get_transient_size(_layout, _index_disk_dir);
+    uint64_t transient_size = _disk_indexes->get_transient_size(*_layout, _index_disk_dir);
     stats.fusion_size_on_disk(transient_size);
     return stats;
 }
@@ -197,13 +208,13 @@ IndexMaintainer::set_id_for_new_memory_index()
 string
 IndexMaintainer::getFlushDir(uint32_t sourceId) const
 {
-    return _layout.getFlushDir(sourceId);
+    return _layout->getFlushDir(sourceId);
 }
 
 string
 IndexMaintainer::getFusionDir(uint32_t sourceId) const
 {
-    return _layout.getFusionDir(sourceId);
+    return _layout->getFusionDir(sourceId);
 }
 
 bool
@@ -214,7 +225,7 @@ IndexMaintainer::reopenDiskIndexes(ISearchableIndexCollection &coll)
     uint32_t count = coll.getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
         IndexSearchable &is = coll.getSearchable(i);
-        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCallback *>(&is);
+        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCleanup *>(&is);
         if (d == nullptr) {
             continue;	// not a disk index
         }
@@ -252,7 +263,7 @@ IndexMaintainer::updateIndexSchemas(IIndexCollection &coll,
     uint32_t count = coll.getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
         IndexSearchable &is = coll.getSearchable(i);
-        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCallback *>(&is);
+        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCleanup *>(&is);
         if (d == nullptr) {
             IMemoryIndex *const m = dynamic_cast<IMemoryIndex *>(&is);
             if (m != nullptr) {
@@ -299,13 +310,6 @@ IndexMaintainer::updateActiveFusionPrunedSchema(const Schema &schema)
     }
 }
 
-void
-IndexMaintainer::deactivateDiskIndexes(std::string indexDir)
-{
-    _disk_indexes->notActive(indexDir);
-    removeOldDiskIndexes();
-}
-
 std::shared_ptr<IDiskIndex>
 IndexMaintainer::loadDiskIndex(const string &indexDir)
 {
@@ -317,10 +321,8 @@ IndexMaintainer::loadDiskIndex(const string &indexDir)
     auto index = _operations.loadDiskIndex(indexDir);
     auto stats = index->get_index_stats(false);
     _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
-    auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
-            std::move(index),
-            makeSharedLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
-            _layout, *_disk_indexes);
+    auto retval = std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index),
+                                                                   _layout, _disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
@@ -336,14 +338,12 @@ IndexMaintainer::reloadDiskIndex(const IDiskIndex &oldIndex)
         EventLogger::diskIndexLoadStart(indexDir);
     }
     vespalib::Timer timer;
-    const IDiskIndex &wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCallback &>(oldIndex)).getWrapped();
+    const IDiskIndex &wrappedDiskIndex = (dynamic_cast<const DiskIndexWithDestructorCleanup &>(oldIndex)).getWrapped();
     auto index = _operations.reloadDiskIndex(wrappedDiskIndex);
     auto stats = index->get_index_stats(false);
     _disk_indexes->setActive(indexDir, stats.sizeOnDisk());
-    auto retval = std::make_shared<DiskIndexWithDestructorCallback>(
-            std::move(index),
-            makeSharedLambdaCallback([this, indexDir]() { deactivateDiskIndexes(indexDir); }),
-            _layout, *_disk_indexes);
+    auto retval = std::make_shared<DiskIndexWithDestructorCleanup>(_remove_lock, std::move(index),
+                                                                   _layout, _disk_indexes);
     if (LOG_WOULD_LOG(event)) {
         EventLogger::diskIndexLoadComplete(indexDir, vespalib::count_ms(timer.elapsed()));
     }
@@ -858,7 +858,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
     : _base_dir(config.getBaseDir()),
       _warmupConfig(config.getWarmup()),
       _disk_indexes(std::make_shared<DiskIndexes>()),
-      _layout(config.getBaseDir()),
+      _layout(std::make_shared<IndexDiskLayout>(config.getBaseDir())),
       _schema(config.getSchema()),
       _activeFusionSchema(),
       _activeFusionPrunedSchema(),
@@ -878,7 +878,7 @@ IndexMaintainer::IndexMaintainer(const IndexMaintainerConfig &config,
       _state_lock(),
       _index_update_lock(),
       _new_search_lock(),
-      _remove_lock(),
+      _remove_lock(std::make_shared<std::mutex>()),
       _fusion_spec(),
       _fusion_lock(),
       _maxFlushed(config.getMaxFlushed()),
@@ -1137,7 +1137,7 @@ IndexMaintainer::runFusion(const FusionSpec &fusion_spec, std::shared_ptr<search
 void
 IndexMaintainer::removeOldDiskIndexes()
 {
-    LockGuard slock(_remove_lock);
+    LockGuard slock(*_remove_lock);
     DiskIndexCleaner::removeOldIndexes(_base_dir, *_disk_indexes);
 }
 
@@ -1365,7 +1365,7 @@ IndexMaintainer::consider_initial_urgent_flush()
     uint32_t count = coll->getSourceCount();
     for (uint32_t i = 0; i < count; ++i) {
         IndexSearchable &is = coll->getSearchable(i);
-        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCallback *>(&is);
+        const auto *const d = dynamic_cast<const DiskIndexWithDestructorCleanup *>(&is);
         if (d != nullptr) {
             auto schema = &d->getSchema();
             if (prev_schema != nullptr) {
