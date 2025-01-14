@@ -179,6 +179,7 @@ public class ModelContextImpl implements ModelContext {
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
+        private final double resourceLimitMemorySmallNodes;
         private final double minNodeRatioPerGroup;
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final boolean loadCodeAsHugePages;
@@ -231,6 +232,7 @@ public class ModelContextImpl implements ModelContext {
             this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.resourceLimitMemorySmallNodes = Flags.RESOURCE_LIMIT_MEMORY_FOR_SMALL_NODES.bindTo(source).with(appId).with(version).value();
             this.minNodeRatioPerGroup = Flags.MIN_NODE_RATIO_PER_GROUP.bindTo(source).with(appId).with(version).value();
             this.containerDumpHeapOnShutdownTimeout = Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
             this.loadCodeAsHugePages = Flags.LOAD_CODE_AS_HUGEPAGES.bindTo(source).with(appId).with(version).value();
@@ -288,6 +290,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
+        @Override public double resourceLimitMemorySmallNodes() { return resourceLimitMemorySmallNodes; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
         @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }

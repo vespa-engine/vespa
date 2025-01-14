@@ -1319,6 +1319,7 @@
       "public int maxActivationInhibitedOutOfSyncGroups()",
       "public double resourceLimitDisk()",
       "public double resourceLimitMemory()",
+      "public double resourceLimitMemorySmallNodes()",
       "public double minNodeRatioPerGroup()",
       "public boolean forwardIssuesAsErrors()",
       "public boolean useV8GeoPositions()",
