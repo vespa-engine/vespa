@@ -93,4 +93,5 @@ install_config_definition(splade-embedder.def embedding.splade-embedder.def)
 install_config_definition(cloud-data-plane-filter.def jdisc.http.filter.security.cloud.config.cloud-data-plane-filter.def)
 install_config_definition(cloud-token-data-plane-filter.def jdisc.http.filter.security.cloud.config.cloud-token-data-plane-filter.def)
 install_config_definition(significance.def search.significance.config.significance.def)
+install_config_definition(document-operation-executor.def com.yahoo.document.restapi.document-operation-executor.def)
 
