@@ -1708,7 +1708,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(0.864, protonConfigBuilder.build().writefilter().disklimit(), 0.001);
         assertEquals(0.84, protonConfigBuilder.build().writefilter().memorylimit(), 0.001);
 
-        // Resource limits should for content nodes should be changed based on new values above
+        // Resource limits for content nodes should be changed based on new values above
         // Tested since values can be set for both clusters and nodes in general
         var protonConfigBuilder2 = new ProtonConfig.Builder();
         contentCluster.getSearch().getSearchNodes().get(0).getConfig(protonConfigBuilder2);
