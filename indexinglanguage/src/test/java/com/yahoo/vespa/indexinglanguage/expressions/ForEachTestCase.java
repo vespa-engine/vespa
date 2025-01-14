@@ -53,7 +53,7 @@ public class ForEachTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.getArray(DataType.INT), exp, DataType.getArray(DataType.STRING));
-        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected any input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected Array, Struct, WeightedSet or Map input, got no value", null, exp);
         assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected Array, Struct, WeightedSet or Map input, got int", DataType.INT, exp);
         assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.getArray(DataType.STRING), exp);
     }
@@ -64,7 +64,7 @@ public class ForEachTestCase {
         type.addField(new Field("foo", DataType.INT));
         assertVerify(type, new ForEachExpression(new SimpleExpression()), type);
         assertVerifyThrows("Invalid expression 'SimpleExpression': Expected string input, got int", type, new ForEachExpression(SimpleExpression.newConversion(DataType.STRING, DataType.INT)));
-        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected int output, got string", type, new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
+        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Struct field 'foo' has type int but expression produces string", type, new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
     }
 
     @Test
@@ -240,9 +240,6 @@ public class ForEachTestCase {
 
         List<FieldValue> lst = new LinkedList<>();
 
-        MyCollector() {
-            super(null);
-        }
         @Override
         protected void doExecute(ExecutionContext context) {
             lst.add(context.getCurrentValue());
