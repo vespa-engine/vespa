@@ -1,11 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.content.cluster.DomResourceLimitsBuilder;
 
 import java.util.Optional;
 import java.util.function.Consumer;
+
+import static java.util.logging.Level.WARNING;
 
 /**
  * Class tracking the feed block resource limits for a content cluster.
@@ -37,22 +40,29 @@ public class ClusterResourceLimits {
         private final boolean hostedVespa;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
+        private final DeployLogger deployLogger;
 
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
         private ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
 
         public Builder(boolean hostedVespa,
                        double resourceLimitDisk,
-                       double resourceLimitMemory) {
+                       double resourceLimitMemory,
+                       DeployLogger deployLogger) {
             this.hostedVespa = hostedVespa;
             this.resourceLimitDisk = resourceLimitDisk;
             this.resourceLimitMemory = resourceLimitMemory;
+            this.deployLogger = deployLogger;
             verifyLimits(resourceLimitDisk, resourceLimitMemory);
         }
 
         public ClusterResourceLimits build(ModelElement clusterElem) {
             ctrlBuilder = createBuilder(clusterElem.childByPath("tuning"));
             nodeBuilder = createBuilder(clusterElem.childByPath("engine.proton"));
+            if (nodeBuilder.getDiskLimit().isPresent() || nodeBuilder.getMemoryLimit().isPresent())
+                deployLogger.logApplicationPackage(WARNING, "Setting proton resource limits in <engine><proton> " +
+                        "should not be done directly. Set limits for cluster as described in " +
+                        "https://docs.vespa.ai/en/reference/services-content.html#resource-limits instead.");
 
             deriveLimits();
             return new ClusterResourceLimits(this);

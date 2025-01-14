@@ -182,7 +182,8 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
             var resourceLimits = new ClusterResourceLimits.Builder(isHosted,
                                                                    deployState.featureFlags().resourceLimitDisk(),
-                                                                   resourceLimitMemory)
+                                                                   resourceLimitMemory,
+                                                                   deployState.getDeployLogger())
                     .build(contentElement);
 
             // Set resource limits both for nodes and for cluster
