@@ -64,9 +64,10 @@ public class SearchNode extends AbstractService implements
     private final String clusterName;
     private final AbstractService serviceLayerService;
     private final Tuning tuning;
-    private final ResourceLimits resourceLimits;
     private final double fractionOfMemoryReserved;
     private final Boolean syncTransactionLog;
+
+    private ResourceLimits resourceLimits; // Not final, calculated after nodes have been allocated
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<SearchNode> {
 
@@ -76,12 +77,11 @@ public class SearchNode extends AbstractService implements
         private final ContentNode contentNode;
         private final boolean flushOnShutdown;
         private final Tuning tuning;
-        private final ResourceLimits resourceLimits;
         private final double fractionOfMemoryReserved;
         private final Boolean syncTransactionLog;
 
         public Builder(String name, NodeSpec nodeSpec, String clusterName, ContentNode node,
-                       boolean flushOnShutdown, Tuning tuning, ResourceLimits resourceLimits,
+                       boolean flushOnShutdown, Tuning tuning,
                        double fractionOfMemoryReserved, Boolean syncTransactionLog) {
             this.name = name;
             this.nodeSpec = nodeSpec;
@@ -89,7 +89,6 @@ public class SearchNode extends AbstractService implements
             this.contentNode = node;
             this.flushOnShutdown = flushOnShutdown;
             this.tuning = tuning;
-            this.resourceLimits = resourceLimits;
             this.fractionOfMemoryReserved = fractionOfMemoryReserved;
             this.syncTransactionLog = syncTransactionLog;
         }
@@ -97,8 +96,8 @@ public class SearchNode extends AbstractService implements
         @Override
         protected SearchNode doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor,
                                      Element producerSpec) {
-            return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName, contentNode,
-                                     flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
+            return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName,
+                                     contentNode, flushOnShutdown, tuning, deployState.isHosted(),
                                      fractionOfMemoryReserved, deployState.featureFlags(), syncTransactionLog);
         }
 
@@ -106,11 +105,10 @@ public class SearchNode extends AbstractService implements
 
     public static SearchNode create(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                                    Tuning tuning, ResourceLimits resourceLimits,
-                                    boolean isHostedVespa, double fractionOfMemoryReserved,
+                                    Tuning tuning, boolean isHostedVespa, double fractionOfMemoryReserved,
                                     ModelContext.FeatureFlags featureFlags, Boolean syncTransactionLog) {
-        SearchNode node = new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService, flushOnShutdown,
-                              tuning, resourceLimits, isHostedVespa, fractionOfMemoryReserved, syncTransactionLog);
+        SearchNode node = new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService,
+                                         flushOnShutdown, tuning, isHostedVespa, fractionOfMemoryReserved, syncTransactionLog);
         if (featureFlags.loadCodeAsHugePages()) {
             node.addEnvironmentVariable("VESPA_LOAD_CODE_AS_HUGEPAGES", true);
         }
@@ -122,7 +120,7 @@ public class SearchNode extends AbstractService implements
 
     private SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                        String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
-                       Tuning tuning, ResourceLimits resourceLimits, boolean isHostedVespa,
+                       Tuning tuning, boolean isHostedVespa,
                        double fractionOfMemoryReserved, Boolean syncTransactionLog) {
         super(parent, name);
         this.distributionKey = distributionKey;
@@ -140,7 +138,6 @@ public class SearchNode extends AbstractService implements
         portsMeta.on(TLS_PORT).tag("tls");
         // Properties are set in DomSearchBuilder
         this.tuning = tuning;
-        this.resourceLimits = resourceLimits;
         this.syncTransactionLog = syncTransactionLog;
         setPropertiesElastic(clusterName, distributionKey);
         addEnvironmentVariable("OMP_NUM_THREADS", 1);
@@ -319,6 +316,10 @@ public class SearchNode extends AbstractService implements
         } else {
             return Optional.empty();
         }
+    }
+
+    public void setResourceLimits(ResourceLimits resourceLimits) {
+        this.resourceLimits = resourceLimits;
     }
 
 }

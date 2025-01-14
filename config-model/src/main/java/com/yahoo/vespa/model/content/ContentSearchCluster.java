@@ -76,16 +76,13 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         private final Map<String, NewDocumentType> documentDefinitions;
         private final Set<NewDocumentType> globallyDistributedDocuments;
         private final double fractionOfMemoryReserved;
-        private final ResourceLimits resourceLimits;
 
         public Builder(Map<String, NewDocumentType> documentDefinitions,
                        Set<NewDocumentType> globallyDistributedDocuments,
-                       double fractionOfMemoryReserved, ResourceLimits resourceLimits)
-        {
+                       double fractionOfMemoryReserved) {
             this.documentDefinitions = documentDefinitions;
             this.globallyDistributedDocuments = globallyDistributedDocuments;
             this.fractionOfMemoryReserved = fractionOfMemoryReserved;
-            this.resourceLimits = resourceLimits;
         }
 
         @Override
@@ -104,7 +101,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             if (tuning != null) {
                 search.setTuning(new DomSearchTuningBuilder().build(deployState, search, tuning.getXml()));
             }
-            search.setResourceLimits(resourceLimits);
 
             buildSearchCluster(deployState, clusterElem, clusterName, search);
             return search;
@@ -238,13 +234,13 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         SearchNode searchNode;
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
-                                           clusterName, node, flushOnShutdown, tuning, resourceLimits, deployState.isHosted(),
+                                           clusterName, node, flushOnShutdown, tuning, deployState.isHosted(),
                                            fractionOfMemoryReserved, deployState.featureFlags(), syncTransactionLog);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
         } else {
             searchNode = new SearchNode.Builder("" + node.getDistributionKey(), spec, clusterName, node, flushOnShutdown,
-                                                tuning, resourceLimits, fractionOfMemoryReserved, syncTransactionLog)
+                                                tuning, fractionOfMemoryReserved, syncTransactionLog)
                     .build(deployState, parent, element.getXml());
         }
         if (searchCluster != null) {
@@ -270,7 +266,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     public void setTuning(Tuning tuning) { this.tuning = tuning; }
 
-    private void setResourceLimits(ResourceLimits resourceLimits) {
+    public void setResourceLimits(ResourceLimits resourceLimits) {
         this.resourceLimits = resourceLimits;
     }
 

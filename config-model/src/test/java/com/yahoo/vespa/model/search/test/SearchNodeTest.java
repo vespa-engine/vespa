@@ -43,7 +43,7 @@ public class SearchNodeTest {
                                                ModelContext.FeatureFlags featureFlags,
                                                Boolean syncTransactionLog) {
         return SearchNode.create(root, name, distributionKey, nodeSpec, "mycluster", null, flushOnShutDown,
-                null, null, isHosted, 0.0, featureFlags, syncTransactionLog);
+                null, isHosted, 0.0, featureFlags, syncTransactionLog);
     }
 
     private static SearchNode createSearchNode(MockRoot root, Boolean syncTransactionLog) {

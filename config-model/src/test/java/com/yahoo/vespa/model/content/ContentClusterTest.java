@@ -1,18 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ApplicationClusterEndpoint;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
@@ -54,6 +56,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.model.content.utils.ContentClusterUtils.createMockRoot;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -1012,10 +1015,8 @@ public class ContentClusterTest extends ContentBaseTest {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .properties(props)
                 .deployLogger(logger);
-        MockRoot root = flavor.isPresent() ?
-                ContentClusterUtils.createMockRoot(new SingleNodeProvisioner(flavor.get()),
-                        List.of(), deployStateBuilder) :
-                ContentClusterUtils.createMockRoot(List.of(), deployStateBuilder);
+        MockRoot root = flavor.map(value -> createMockRoot(new SingleNodeProvisioner(value), List.of(), deployStateBuilder))
+                              .orElseGet(() -> createMockRoot(List.of(), deployStateBuilder));
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
         root.freezeModelTopology();
         cluster.validate();
@@ -1216,7 +1217,7 @@ public class ContentClusterTest extends ContentBaseTest {
         deployStateBuilder.properties(properties);
 
         List<String> schemas = SchemaBuilder.createSchemas("test");
-        MockRoot root = ContentClusterUtils.createMockRoot(schemas, deployStateBuilder);
+        MockRoot root = createMockRoot(schemas, deployStateBuilder);
         ContentCluster cluster = ContentClusterUtils.createCluster(clusterXml, root);
         root.freezeModelTopology();
         cluster.validate();
@@ -1664,6 +1665,57 @@ public class ContentClusterTest extends ContentBaseTest {
         checkStrictlyIncreasingClusterStateVersionConfig(null, false); // TODO change default
         checkStrictlyIncreasingClusterStateVersionConfig(false, false);
         checkStrictlyIncreasingClusterStateVersionConfig(true, true);
+    }
+
+    @Test
+    void testResourceLimitsForSmallNodes() throws Exception {
+        var services = """
+                <services>
+                  <content version="1.0" id="foo">
+                    <redundancy>1</redundancy>
+                    <documents/>
+                    <nodes count='1'>
+                      <resources vcpu='1' memory='3Gb' />
+                    </nodes>
+                  </content>
+                </services>
+                """;
+        var provisioner = new InMemoryProvisioner(10, false);
+        var properties = new TestProperties()
+                .setHostedVespa(true)
+                .setMultitenant(true)
+                .setResourceLimitDisk(0.66)
+                .setResourceLimitMemory(0.67)
+                .setResourceLimitMemorySmallNodes(0.68);
+        var deployState = new DeployState.Builder()
+                .properties(properties)
+                .modelHostProvisioner(provisioner)
+                .applicationPackage(new MockApplicationPackage.Builder().withServices(services).withSchema(MockApplicationPackage.MUSIC_SCHEMA).build())
+                .endpoints(Set.of(new ContainerEndpoint("foo.indexing", ApplicationClusterEndpoint.Scope.zone, List.of("foo.indexing"))))
+                .build();
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployState);
+
+        var builder = new FleetcontrollerConfig.Builder();
+        ContentCluster contentCluster = model.getContentClusters().get("foo");
+        contentCluster.getClusterControllerConfig().getConfig(builder);
+        var config = builder.build();
+        assertEquals(0.66, config.cluster_feed_block_limit().get("disk"), 0.001);
+        assertEquals(0.68, config.cluster_feed_block_limit().get("memory"), 0.001);
+
+        // Resource limits should for content cluster should be changed based on new values above
+        var protonConfigBuilder = new ProtonConfig.Builder();
+        model.getConfig(protonConfigBuilder, "foo/search/cluster.foo");
+        assertEquals(0.864, protonConfigBuilder.build().writefilter().disklimit(), 0.001);
+        assertEquals(0.84, protonConfigBuilder.build().writefilter().memorylimit(), 0.001);
+
+        // Resource limits should for content nodes should be changed based on new values above
+        // Tested since values can be set for both clusters and nodes in general
+        var protonConfigBuilder2 = new ProtonConfig.Builder();
+        contentCluster.getSearch().getSearchNodes().get(0).getConfig(protonConfigBuilder2);
+        var config2 = protonConfigBuilder2.build();
+        assertEquals(0, config2.distributionkey());
+        assertEquals(0.864, config2.writefilter().disklimit(), 0.001);
+        assertEquals(0.84, config2.writefilter().memorylimit(), 0.001);
     }
 
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {

@@ -127,19 +127,15 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             ContentCluster c = new ContentCluster(context.getParentProducer(), clusterId, documentDefinitions,
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState);
-            var resourceLimits = new ClusterResourceLimits.Builder(stateIsHosted(deployState),
-                                                                   deployState.featureFlags().resourceLimitDisk(),
-                                                                   deployState.featureFlags().resourceLimitMemory())
-                    .build(contentElement);
             c.search = new ContentSearchCluster.Builder(documentDefinitions,
                                                         globallyDistributedDocuments,
-                                                        fractionOfMemoryReserved(clusterId, containers),
-                                                        resourceLimits.getContentNodeLimits())
+                                                        fractionOfMemoryReserved(clusterId, containers))
                     .build(deployState, c, contentElement.getXml());
             c.persistenceFactory = new EngineFactoryBuilder().build(contentElement, c);
             c.storageNodes = new StorageCluster.Builder().build(deployState, c, w3cContentElement);
             c.distributorNodes = new DistributorCluster.Builder(c).build(deployState, c, w3cContentElement);
             c.rootGroup = new StorageGroup.Builder(contentElement, context).buildRootGroup(deployState, c, c.search.isStreaming());
+            var resourceLimits = calculateAndSetResourceLimits(c, deployState, contentElement);
             c.clusterControllerConfig = createClusterControllerConfig(contentElement, deployState, c, resourceLimits);
             validateThatGroupSiblingsAreUnique(c.clusterId, c.rootGroup);
             warnIfDistributionKeyRangeIsSuboptimal(c.clusterId, c.rootGroup, deployState);
@@ -165,6 +161,35 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
 
             addClusterControllers(context, contentElement, c, deployState);
             return c;
+        }
+
+        private static ClusterResourceLimits calculateAndSetResourceLimits(ContentCluster contentCluster,
+                                                                           DeployState deployState,
+                                                                           ModelElement contentElement) {
+            boolean isHosted = stateIsHosted(deployState);
+            var resourceLimitMemory = deployState.featureFlags().resourceLimitMemory();
+            if (isHosted) {
+                double memoryGib = contentCluster.getSearch()
+                                                 .getSearchNodes()
+                                                 .stream()
+                                                 .mapToDouble(s -> s.getHostResource().realResources().memoryGiB())
+                                                 .min()
+                                                 .orElse(16);
+                // Use limit for small nodes when memory < ~8 Gib
+                if (memoryGib < 8.1)
+                    resourceLimitMemory = deployState.featureFlags().resourceLimitMemorySmallNodes();
+            }
+
+            var resourceLimits = new ClusterResourceLimits.Builder(isHosted,
+                                                                   deployState.featureFlags().resourceLimitDisk(),
+                                                                   resourceLimitMemory)
+                    .build(contentElement);
+
+            // Set resource limits both for nodes and for cluster
+            contentCluster.search.getSearchNodes().forEach(node -> node.setResourceLimits(resourceLimits.getContentNodeLimits()));
+            contentCluster.search.setResourceLimits(resourceLimits.getContentNodeLimits());
+
+            return resourceLimits;
         }
 
         private ClusterControllerConfig createClusterControllerConfig(ModelElement contentElement,
