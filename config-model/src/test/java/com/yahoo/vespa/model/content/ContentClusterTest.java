@@ -14,9 +14,9 @@ import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
 import com.yahoo.config.model.test.TestDriver;
 import com.yahoo.config.model.test.TestRoot;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
@@ -1675,12 +1675,12 @@ public class ContentClusterTest extends ContentBaseTest {
                     <redundancy>1</redundancy>
                     <documents/>
                     <nodes count='1'>
-                      <resources vcpu='1' memory='3Gb' />
+                      <resources vcpu='1' memory='8Gb' />
                     </nodes>
                   </content>
                 </services>
                 """;
-        var provisioner = new InMemoryProvisioner(10, false);
+        var provisioner = new InMemoryProvisioner(4, new NodeResources(1, 8, 50, 0.3), false);
         var properties = new TestProperties()
                 .setHostedVespa(true)
                 .setMultitenant(true)
