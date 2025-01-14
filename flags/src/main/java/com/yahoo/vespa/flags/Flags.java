@@ -475,6 +475,13 @@ public class Flags {
             "Takes effect on next deployment",
             INSTANCE_ID);
 
+    public static final UnboundIntFlag DOCUMENT_V1_QUEUE_SIZE = defineIntFlag(
+            "document-v1-queue-size", -1,
+            List.of("bjorncs"), "2025-01-14", "2025-12-01",
+            "Size of the document v1 queue. Use -1 for default as determined by 'document-operation-executor.def'",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
