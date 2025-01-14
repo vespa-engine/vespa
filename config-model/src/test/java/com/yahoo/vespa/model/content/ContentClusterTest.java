@@ -1702,7 +1702,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(0.66, config.cluster_feed_block_limit().get("disk"), 0.001);
         assertEquals(0.68, config.cluster_feed_block_limit().get("memory"), 0.001);
 
-        // Resource limits should for content cluster should be changed based on new values above
+        // Resource limits for content cluster should be changed based on new values above
         var protonConfigBuilder = new ProtonConfig.Builder();
         model.getConfig(protonConfigBuilder, "foo/search/cluster.foo");
         assertEquals(0.864, protonConfigBuilder.build().writefilter().disklimit(), 0.001);
