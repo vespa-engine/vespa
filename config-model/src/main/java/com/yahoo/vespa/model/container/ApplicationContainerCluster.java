@@ -26,6 +26,7 @@ import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.metrics.PrometheusV1Handler;
 import com.yahoo.container.jdisc.ContainerMbusConfig;
 import com.yahoo.container.jdisc.messagebus.MbusServerProvider;
+import com.yahoo.document.restapi.DocumentOperationExecutorConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
@@ -71,6 +72,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         ContainerMbusConfig.Producer,
         MetricsProxyApiConfig.Producer,
         ZookeeperServerConfig.Producer,
+        DocumentOperationExecutorConfig.Producer,
         ApplicationClusterInfo {
 
     public static final String METRICS_V2_HANDLER_CLASS = MetricsV2Handler.class.getName();
@@ -102,6 +104,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
     private int zookeeperSessionTimeoutSeconds = 30;
     private final int transport_events_before_wakeup;
     private final int transport_connections_per_target;
+    private final int documentV1QueueSize;
 
     /** The heap size % of total memory available to the JVM process. */
     private final int heapSizePercentageOfAvailableMemory;
@@ -146,6 +149,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         onnxModelCostCalculator = deployState.onnxModelCost().newCalculator(
                 deployState.getApplicationPackage(), deployState.getProperties().applicationId(), ClusterSpec.Id.from(clusterId));
         logger = deployState.getDeployLogger();
+        documentV1QueueSize = deployState.featureFlags().documentV1QueueSize();
     }
 
     public UserConfiguredUrls userConfiguredUrls() { return userConfiguredUrls; }
@@ -425,6 +429,13 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         if (deployState.getProperties().applicationId().instance().isTester()) return false;
         if (deployState.getProperties().applicationId().tenant().equals(HOSTED_VESPA)) return false;
         return true;
+    }
+
+    @Override
+    public void getConfig(DocumentOperationExecutorConfig.Builder builder) {
+        if (documentV1QueueSize >= 0) {
+            builder.maxThrottled(documentV1QueueSize);
+        }
     }
 
     public static class MbusParams {

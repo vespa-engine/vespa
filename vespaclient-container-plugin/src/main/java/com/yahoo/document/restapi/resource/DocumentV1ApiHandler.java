@@ -222,6 +222,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         this.metric = metric;
         this.metrics = new DocumentApiMetrics(metricReceiver, "documentV1");
         this.maxThrottled = executorConfig.maxThrottled();
+        log.info("maxThrottled=" + maxThrottled);
         this.maxThrottledAgeNS = (long) (executorConfig.maxThrottledAge() * 1_000_000_000.0);
         this.access = access;
         this.asyncSession = access.createAsyncSession(new AsyncParameters());
