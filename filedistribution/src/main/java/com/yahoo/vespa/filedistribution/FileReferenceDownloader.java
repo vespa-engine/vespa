@@ -125,7 +125,6 @@ public class FileReferenceDownloader {
         FileReference fileReference = fileReferenceDownload.fileReference();
         if (downloads.get(fileReference).isPresent()) return;
 
-        log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout);
         for (var connection : connectionPool.connections()) {
             if (connection.getAddress().equals(spec.toString()))
                 downloadExecutor.submit(() -> {
