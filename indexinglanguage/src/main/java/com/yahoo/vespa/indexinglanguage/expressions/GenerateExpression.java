@@ -38,7 +38,6 @@ public class GenerateExpression extends Expression {
             String generatorId, 
             List<String> generatorArguments
     ) {
-        super(null);
         this.linguistics = linguistics;
         this.generatorId = generatorId;
         this.generatorArguments = List.copyOf(generatorArguments);
@@ -66,7 +65,7 @@ public class GenerateExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        if (!(inputType == DataType.STRING)
+        if (! (inputType.isAssignableTo(DataType.STRING))
                 && !(inputType instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
             throw new VerificationException(this, "Generate expression requires either a string or array<string> input type, but got "
                     + inputType.getName());
@@ -77,7 +76,7 @@ public class GenerateExpression extends Expression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        if (!(outputType == DataType.STRING)
+        if (!(DataType.STRING.isAssignableTo(outputType))
                 && !(outputType instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
             throw new VerificationException(this, "Generate expression requires either a string or array<string> output type, but got "
                     + outputType.getName());

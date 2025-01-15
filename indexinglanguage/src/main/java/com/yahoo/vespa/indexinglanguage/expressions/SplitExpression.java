@@ -31,7 +31,8 @@ public final class SplitExpression extends Expression {
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        if (outputType != null && ! (outputType instanceof ArrayDataType) && outputType.getNestedType() == DataType.STRING)
+        if (outputType != null && !(outputType == AnyDataType.instance ||
+                                    (outputType instanceof ArrayDataType) && (DataType.STRING.isAssignableTo(outputType.getNestedType()))))
             throw new VerificationException(this, "This produces a string array, but " + outputType.getName() + " is required");
         return DataType.STRING;
     }

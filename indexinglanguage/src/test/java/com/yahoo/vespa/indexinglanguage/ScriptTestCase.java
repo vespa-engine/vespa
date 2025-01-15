@@ -269,4 +269,23 @@ public class ScriptTestCase {
         assertEquals(13.0f, ((FloatFieldValue)adapter.values.get("myFloat")).getFloat(), 0.000001);
     }
 
+    @Test
+    public void testChoiceExpression() {
+        var tester = new ScriptTester();
+        // Non-sensical expression whose purpose is to test cat being given any as output type
+        var expression = tester.expressionFrom("(get_var A | to_array) . (get_var B | to_array) | get_var B | to_array | index myStringArray");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
+
+        var verificationContext = new VerificationContext(adapter);
+        verificationContext.setVariable("A", DataType.STRING);
+        verificationContext.setVariable("B", DataType.STRING);
+        expression.verify(verificationContext);
+
+        var context = new ExecutionContext(adapter);
+        context.setVariable("B", new StringFieldValue("b_value"));
+        expression.execute(context);
+        assertEquals("b_value", ((Array)adapter.values.get("myStringArray")).get(0).toString());
+    }
 }

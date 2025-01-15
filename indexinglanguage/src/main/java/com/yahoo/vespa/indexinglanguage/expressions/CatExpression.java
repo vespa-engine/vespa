@@ -55,7 +55,7 @@ public final class CatExpression extends ExpressionList<Expression> {
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         if (outputType == null) return null;
-        if (outputType != DataType.STRING && ! (outputType instanceof CollectionDataType))
+        if (! DataType.STRING.isAssignableTo(outputType) && ! (outputType instanceof CollectionDataType))
             throw new VerificationException(this, "Required to produce " + outputType.getName() +
                                                   ", but this produces a string or collection");
         super.setOutputType(outputType, context);
