@@ -5,7 +5,6 @@
 #include "memoryusage.h"
 #include "string_id.h"
 #include "spin_lock.h"
-#include <vespa/vespalib/stllike/small_string.h>
 #include <vespa/vespalib/stllike/identity.h>
 #include <vespa/vespalib/stllike/allocator.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
@@ -14,6 +13,7 @@
 #include <array>
 #include <cctype>
 #include <limits>
+#include <string>
 
 namespace vespalib {
 
@@ -62,7 +62,7 @@ private:
         private:
             uint32_t _hash;
             uint32_t _ref_cnt;
-            vespalib::vespa_string _str;
+            std::string _str;
         public:
             explicit Entry(uint32_t next) noexcept
                 : _hash(next), _ref_cnt(npos), _str() {}
