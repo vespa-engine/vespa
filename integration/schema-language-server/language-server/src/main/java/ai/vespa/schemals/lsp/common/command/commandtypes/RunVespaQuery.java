@@ -108,7 +108,7 @@ public class RunVespaQuery implements SchemaCommand {
         ProcessBuilder builder = new ProcessBuilder();
 
         if (isWindows) {
-            builder.command("cmd.exe", "/c", "vespa", "query", query); // TODO: Test this on windows
+            builder.command("vespa.exe", "query", query);
         } else {
             builder.command("vespa", "query", query);
         }
