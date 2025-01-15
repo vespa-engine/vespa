@@ -294,8 +294,8 @@ TEST("require that initial stats are as expected") {
     size_t num_parts = 256;
     size_t part_size = 128;
     size_t hash_node_size = 12;
-    size_t entry_size = 72;
-    size_t initial_entries = 28;
+    size_t entry_size = 8 + sizeof(std::string);
+    size_t initial_entries = roundUp2inN(16 * entry_size) / entry_size;
     size_t initial_hash_used = 16;
     size_t initial_hash_allocated = 32;
     size_t part_limit = (uint32_t(-1) - 10000001) / num_parts;
