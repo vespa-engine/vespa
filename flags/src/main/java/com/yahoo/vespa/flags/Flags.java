@@ -259,6 +259,12 @@ public class Flags {
             "Takes effect at next tick",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag USE_NEW_RPM_REPO = defineFeatureFlag(
+            "use-new-rpm-repo", true,
+            List.of("freva"), "2025-01-15", "2025-02-01",
+            "Install host packages from the new RPM repository",
+            "Takes effect at next tick or next provisioning");
+
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
             List.of("olaa"), "2024-01-15", "2025-02-01",
