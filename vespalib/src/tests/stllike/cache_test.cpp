@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/stllike/small_string.h>
 #include <vespa/vespalib/stllike/cache.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <map>
+#include <string>
 
 using namespace vespalib;
 using namespace ::testing;
@@ -34,12 +34,45 @@ public:
     }
 };
 
-using P = LruParam<uint32_t, vespa_string>;
-using B = Map<uint32_t, vespa_string>;
+constexpr size_t padded_string_size = 64;
+
+static_assert(sizeof(std::string) <= padded_string_size);
+
+/*
+ * Wrapper for std::string that is padded to 64 bytes.
+ */
+class padded_string {
+    std::string _str;
+    [[maybe_unused]] char _pad_hack[padded_string_size - sizeof(std::string)];
+
+public:
+    padded_string() : _str(), _pad_hack() { }
+    padded_string(const char *v) : _str(v), _pad_hack() { }
+    padded_string(const padded_string& rhs) : _str(rhs._str), _pad_hack() { }
+    padded_string(padded_string&& rhs) : _str(std::move(rhs._str)), _pad_hack() { }
+    padded_string(const std::string& rhs) : _str(rhs), _pad_hack() { }
+    padded_string(std::string&& rhs) : _str(std::move(rhs)), _pad_hack() { }
+    padded_string& operator=(const padded_string& rhs) { _str = rhs._str; return *this; }
+    padded_string& operator=(padded_string&& rhs) { _str = std::move(rhs._str); return *this; }
+    ~padded_string() = default;
+    bool operator==(const padded_string& rhs) const noexcept { return _str == rhs._str; }
+    bool operator==(const std::string& rhs) const noexcept { return _str == rhs; }
+    bool operator==(const char* rhs) const noexcept { return _str == rhs; }
+    operator const std::string&() const noexcept { return _str; }
+    size_t size() const noexcept { return _str.size(); }
+};
+
+static_assert(sizeof(padded_string) == padded_string_size);
+
+using P = LruParam<uint32_t, padded_string>;
+using B = Map<uint32_t, padded_string>;
 
 struct CacheTest : Test {
     B m;
+    ~CacheTest();
 };
+
+CacheTest::~CacheTest() = default;
 
 TEST_F(CacheTest, basic) {
     cache<CacheParam<P, B>> cache(m, -1);
