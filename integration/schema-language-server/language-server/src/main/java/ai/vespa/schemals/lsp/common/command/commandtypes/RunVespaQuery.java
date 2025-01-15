@@ -103,48 +103,49 @@ public class RunVespaQuery implements SchemaCommand {
 
     private CompletableFuture<QueryResult> runVespaQuery(String query, ClientLogger logger) {
 
-        boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
-
-        ProcessBuilder builder = new ProcessBuilder();
-
-        if (isWindows) {
-            builder.command("cmd.exe", "/c", "vespa", "query", query); // TODO: Test this on windows
-        } else {
-            builder.command("vespa", "query", query);
-        }
+        // boolean isWindows = System.getProperty("os.name").toLowerCase().startsWith("windows");
+        //
+        // ProcessBuilder builder = new ProcessBuilder();
+        //
+        // if (isWindows) {
+        //     builder.command("cmd.exe", "/c", "vespa", "query", query); // TODO: Test this on windows
+        // } else {
+        //     builder.command("vespa", "query", query);
+        // }
 
         return CompletableFuture.supplyAsync(() -> {
-            try {
-
-                Process process = builder.start();
-
-                BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-
-                String line;
-                StringBuilder output = new StringBuilder();
-                while ((line = reader.readLine()) != null) {
-                    output.append(line).append("\n");
-                }
-
-                int exitCode = process.waitFor();
-
-                if (exitCode == 0) {
-                    return new QueryResult(true, output.toString());
-                }
-
-                BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
-                StringBuilder error = new StringBuilder();
-                while ((line = errorReader.readLine()) != null) {
-                    error.append(line).append("\n");
-                }
-
-                return new QueryResult(false, error.toString());
-
-            } catch (InterruptedException e) {
-                return new QueryResult(false, "Program interrupted");
-            } catch (IOException e) {
-                return new QueryResult(false, e.getMessage());
-            }
+            return new QueryResult(false, "Running Vespa Queries is not supported.");
+            // try {
+            //
+            //     Process process = builder.start();
+            //
+            //     BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            //
+            //     String line;
+            //     StringBuilder output = new StringBuilder();
+            //     while ((line = reader.readLine()) != null) {
+            //         output.append(line).append("\n");
+            //     }
+            //
+            //     int exitCode = process.waitFor();
+            //
+            //     if (exitCode == 0) {
+            //         return new QueryResult(true, output.toString());
+            //     }
+            //
+            //     BufferedReader errorReader = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+            //     StringBuilder error = new StringBuilder();
+            //     while ((line = errorReader.readLine()) != null) {
+            //         error.append(line).append("\n");
+            //     }
+            //
+            //     return new QueryResult(false, error.toString());
+            //
+            // } catch (InterruptedException e) {
+            //     return new QueryResult(false, "Program interrupted");
+            // } catch (IOException e) {
+            //     return new QueryResult(false, e.getMessage());
+            // }
         });
     }
 

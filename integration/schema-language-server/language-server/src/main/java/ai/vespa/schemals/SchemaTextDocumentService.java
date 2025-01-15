@@ -179,14 +179,14 @@ public class SchemaTextDocumentService implements TextDocumentService {
     public CompletableFuture<List<? extends CodeLens>> codeLens(CodeLensParams codeLensParams) {
 
         return CompletableFutures.computeAsync((cancelChecker) -> {
-            try {
-                EventDocumentContext context = eventContextCreator.createContext(codeLensParams);
-                return YQLPlusCodeLens.codeLens(context);
-            } catch(InvalidContextException ignore) {
-                // Ignore
-            } catch (Exception e) {
-                logger.error("Error during code lens request: " + e.getMessage());
-            }
+            // try {
+            //     EventDocumentContext context = eventContextCreator.createContext(codeLensParams);
+            //     return YQLPlusCodeLens.codeLens(context);
+            // } catch(InvalidContextException ignore) {
+            //     // Ignore
+            // } catch (Exception e) {
+            //     logger.error("Error during code lens request: " + e.getMessage());
+            // }
             return List.of();
         });
     }

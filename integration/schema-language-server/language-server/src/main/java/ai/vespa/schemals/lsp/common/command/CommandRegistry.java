@@ -67,18 +67,18 @@ public class CommandRegistry {
             public String title() { return "Command list"; }
             public SchemaCommand construct() { return new CommandList(); }
         },
-        RUN_VESPA_QUERY {
-            /*
-             * Runs a Vespa query.
-             *
-             * Parameters:
-             *
-             * Return value:
-             * null
-             */
-            public String title() { return "Run Vespa query"; }
-            public SchemaCommand construct() { return new RunVespaQuery(); }
-        },
+        // RUN_VESPA_QUERY {
+        //     /*
+        //      * Runs a Vespa query.
+        //      *
+        //      * Parameters:
+        //      *
+        //      * Return value:
+        //      * null
+        //      */
+        //     public String title() { return "Run Vespa query"; }
+        //     public SchemaCommand construct() { return new RunVespaQuery(); }
+        // },
         FIND_SCHEMA_DEFINITION {
             /*
              * Locates a schema definition. 

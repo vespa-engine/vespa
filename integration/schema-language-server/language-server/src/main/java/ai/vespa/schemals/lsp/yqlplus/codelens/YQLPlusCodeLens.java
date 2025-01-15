@@ -26,16 +26,16 @@ public class YQLPlusCodeLens {
 
         List<CodeLens> ret = new ArrayList<>();
 
-        for (Node child : rootNode) {
-            if (child.size() == 0) continue;
-            String command = child.getText();
-            Range range = child.get(0).getRange();
-            ret.add(new CodeLens(
-                range,
-                CommandRegistry.createLSPCommand(CommandType.RUN_VESPA_QUERY, List.of(command, context.document.getFileURI())),
-                null
-            ));
-        }
+        // for (Node child : rootNode) {
+        //     if (child.size() == 0) continue;
+        //     String command = child.getText();
+        //     Range range = child.get(0).getRange();
+        //     ret.add(new CodeLens(
+        //         range,
+        //         CommandRegistry.createLSPCommand(CommandType.RUN_VESPA_QUERY, List.of(command, context.document.getFileURI())),
+        //         null
+        //     ));
+        // }
 
         return ret;
     }
