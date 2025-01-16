@@ -154,6 +154,36 @@ public class SchemaParserTestCase {
     }
 
     @Test
+    void weakand_stopword_limit_can_be_parsed() throws Exception {
+        String input = joinLines("schema foo {",
+                        "rank-profile rp {",
+                            "weakand {",
+                                "stopword-limit: 0.6",
+                            "}",
+                        "}",
+                    "}");
+        var schema = parseString(input);
+        var limit = schema.getRankProfiles().get(0).getWeakandStopwordLimit();
+        assertTrue(limit.isPresent());
+        assertEquals(0.6, limit.get());
+    }
+
+    @Test
+    void weakand_adjust_target_can_be_parsed() throws Exception {
+        String input = joinLines("schema foo {",
+                        "rank-profile rp {",
+                            "weakand {",
+                                "adjust-target: 0.01",
+                            "}",
+                        "}",
+                    "}");
+        var schema = parseString(input);
+        var target = schema.getRankProfiles().get(0).getWeakandAdjustTarget();
+        assertTrue(target.isPresent());
+        assertEquals(0.01, target.get());
+    }
+
+    @Test
     void maxOccurrencesCanBeParsed() throws Exception {
         String input = joinLines
                 ("schema foo {",

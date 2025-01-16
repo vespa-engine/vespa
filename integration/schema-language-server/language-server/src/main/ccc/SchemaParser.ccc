@@ -380,6 +380,9 @@ TOKEN :
 | < ONNX_MODEL: "onnx-model">
 | < SIGNIFICANCE: "significance">
 | < USE_MODEL: "use-model">
+| < WEAKAND: "weakand">
+| < STOPWORD_LIMIT: "stopword-limit">
+| < ADJUST_TARGET: "adjust-target">
 | < INTRAOP_THREADS: "intraop-threads">
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
@@ -2072,6 +2075,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | onnxModelInProfile(profile)
        | strictElm(profile)
        | significanceElm(profile)
+       | weakandElm(profile)
     )
 ;
 
@@ -2476,6 +2480,36 @@ void significanceItem(ParsedRankProfile profile) :
         ( <TRUE>  { profile.setUseSignificanceModel(true);  } ) |
         ( <FALSE> { profile.setUseSignificanceModel(false); } )
     )
+;
+
+void weakandElm(ParsedRankProfile profile) :
+{}
+
+    <WEAKAND> openLbrace() (weakandItem(profile) | <NL>)* <RBRACE>
+    {}
+;
+
+void weakandItem(ParsedRankProfile profile) :
+{}
+
+    ( weakandStopwordLimit(profile)
+      | weakandAdjustTarget(profile))
+;
+
+void weakandStopwordLimit(ParsedRankProfile profile) :
+{
+    double limit;
+}
+
+    (<STOPWORD_LIMIT> <COLON> limit = floatValue()) { profile.setWeakandStopwordLimit(limit); }
+;
+
+void weakandAdjustTarget(ParsedRankProfile profile) :
+{
+    double target;
+}
+
+    (<ADJUST_TARGET> <COLON> target = floatValue()) { profile.setWeakandAdjustTarget(target); }
 ;
 
 /**
@@ -3028,6 +3062,7 @@ String identifierWithDashStr :
     ( identifier = identifierStr { return identifier; } )
     |
     ( <IDENTIFIER_WITH_DASH>
+    | <ADJUST_TARGET>
     | <APPROXIMATE_THRESHOLD>
     | <CREATE_IF_NONEXISTENT>
     | <CUTOFF_FACTOR>
@@ -3084,6 +3119,7 @@ String identifierWithDashStr :
     | <REMOVE_IF_ZERO>
     | <RERANK_COUNT>
     | <SECOND_PHASE>
+    | <STOPWORD_LIMIT>
     | <STRUCT_FIELD>
     | <SUMMARY_TO>
     | <TARGET_HITS_MAX_ADJUSTMENT_FACTOR>
@@ -3210,6 +3246,7 @@ String identifierStr :
       | <UNCASED>
       | <URI>
       | <VARIABLE>
+      | <WEAKAND>
       | <WEIGHT>
       | <WEIGHTEDSET>
       | <WORD>

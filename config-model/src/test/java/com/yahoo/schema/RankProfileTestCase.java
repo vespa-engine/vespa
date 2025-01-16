@@ -31,7 +31,9 @@ import org.junit.jupiter.api.Test;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.Set;
+import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -526,22 +528,10 @@ rank-profile feature_logging {
         var rp = createRankProfile(postFilterThreshold, approximateThreshold, null);
         var rankProfile = rp.getFirst();
         var rawRankProfile = rp.getSecond();
-
-        if (postFilterThreshold != null) {
-            assertEquals((double)postFilterThreshold, rankProfile.getPostFilterThreshold().getAsDouble(), 0.000001);
-            assertEquals(String.valueOf(postFilterThreshold), findProperty(rawRankProfile.configProperties(), "vespa.matching.global_filter.upper_limit").get());
-        } else {
-            assertTrue(rankProfile.getPostFilterThreshold().isEmpty());
-            assertFalse(findProperty(rawRankProfile.configProperties(), "vespa.matching.global_filter.upper_limit").isPresent());
-        }
-
-        if (approximateThreshold != null) {
-            assertEquals((double)approximateThreshold, rankProfile.getApproximateThreshold().getAsDouble(), 0.000001);
-            assertEquals(String.valueOf(approximateThreshold), findProperty(rawRankProfile.configProperties(), "vespa.matching.global_filter.lower_limit").get());
-        } else {
-            assertTrue(rankProfile.getApproximateThreshold().isEmpty());
-            assertFalse(findProperty(rawRankProfile.configProperties(), "vespa.matching.global_filter.lower_limit").isPresent());
-        }
+        verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getPostFilterThreshold,
+                                 postFilterThreshold, "vespa.matching.global_filter.upper_limit");
+        verifyRankProfileSetting(rankProfile, rawRankProfile, RankProfile::getApproximateThreshold,
+                                 approximateThreshold, "vespa.matching.global_filter.lower_limit");
     }
 
     @Test
@@ -552,25 +542,62 @@ rank-profile feature_logging {
 
     private void verifyTargetHitsMaxAdjustmentFactor(Double targetHitsMaxAdjustmentFactor) throws ParseException {
         var rp = createRankProfile(null, null, targetHitsMaxAdjustmentFactor);
-        var rankProfile = rp.getFirst();
-        var rawRankProfile = rp.getSecond();
-        if (targetHitsMaxAdjustmentFactor != null) {
-            assertEquals((double)targetHitsMaxAdjustmentFactor, rankProfile.getTargetHitsMaxAdjustmentFactor().getAsDouble(), 0.000001);
-            assertEquals(String.valueOf(targetHitsMaxAdjustmentFactor), findProperty(rawRankProfile.configProperties(), "vespa.matching.nns.target_hits_max_adjustment_factor").get());
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getTargetHitsMaxAdjustmentFactor,
+                                 targetHitsMaxAdjustmentFactor, "vespa.matching.nns.target_hits_max_adjustment_factor");
+    }
+
+    @Test
+    void weakand_stopword_limit_is_configurable() throws ParseException {
+        verifyWeakandStopwordLimit(null);
+        verifyWeakandStopwordLimit(0.6);
+    }
+
+    @Test
+    void weakand_adjust_target_is_configurable() throws ParseException {
+        verifyWeakandAdjustTarget(null);
+        verifyWeakandAdjustTarget(0.01);
+    }
+
+    private void verifyWeakandStopwordLimit(Double stopwordLimit) throws ParseException {
+        var rp = createWeakandRankProfile(stopwordLimit, null);
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getWeakandStopwordLimit,
+                                 stopwordLimit, "vespa.matching.weakand.stop_word_drop_limit");
+    }
+
+    private void verifyWeakandAdjustTarget(Double adjustTarget) throws ParseException {
+        var rp = createWeakandRankProfile(null, adjustTarget);
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getWeakandAdjustTarget,
+                                 adjustTarget, "vespa.matching.weakand.stop_word_adjust_limit");
+    }
+
+    private void verifyRankProfileSetting(RankProfile rankProfile, RawRankProfile rawRankProfile, Function<RankProfile, OptionalDouble> func,
+                                          Double expValue, String expPropertyName) {
+        if (expValue != null) {
+            assertEquals((double)expValue, func.apply(rankProfile).getAsDouble(), 0.000001);
+            assertEquals(String.valueOf(expValue), findProperty(rawRankProfile.configProperties(), expPropertyName).get());
         } else {
-            assertTrue(rankProfile.getTargetHitsMaxAdjustmentFactor().isEmpty());
-            assertFalse(findProperty(rawRankProfile.configProperties(), "vespa.matching.nns.target_hits_max_adjustment_factor").isPresent());
+            assertTrue(func.apply(rankProfile).isEmpty());
+            assertFalse(findProperty(rawRankProfile.configProperties(), expPropertyName).isPresent());
         }
     }
 
     private Pair<RankProfile, RawRankProfile> createRankProfile(Double postFilterThreshold,
                                                                 Double approximateThreshold,
                                                                 Double targetHitsMaxAdjustmentFactor) throws ParseException {
+        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, null, null));
+    }
+
+    private Pair<RankProfile, RawRankProfile> createWeakandRankProfile(Double weakAndStopwordLimit,
+                                                                       Double weakAndAdjustTarget) throws ParseException {
+        return createRankProfile(createSDWithRankProfile(null, null, null,  weakAndStopwordLimit, weakAndAdjustTarget));
+    }
+
+    private Pair<RankProfile, RawRankProfile> createRankProfile(String schemaContent) throws ParseException {
         var rankProfileRegistry = new RankProfileRegistry();
         var props = new TestProperties();
         var queryProfileRegistry = new QueryProfileRegistry();
         var builder = new ApplicationBuilder(rankProfileRegistry, queryProfileRegistry, props);
-        builder.addSchema(createSDWithRankProfile(postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor));
+        builder.addSchema(schemaContent);
         builder.build(true);
 
         var schema = builder.getSchema();
@@ -582,7 +609,9 @@ rank-profile feature_logging {
 
     private String createSDWithRankProfile(Double postFilterThreshold,
                                            Double approximateThreshold,
-                                           Double targetHitsMaxAdjustmentFactor) {
+                                           Double targetHitsMaxAdjustmentFactor,
+                                           Double weakandStopwordLimit,
+                                           Double weakandAdjustTarget) {
         return joinLines(
                 "search test {",
                 "    document test {}",
@@ -590,6 +619,8 @@ rank-profile feature_logging {
                 (postFilterThreshold != null ?           ("        post-filter-threshold: " + postFilterThreshold) : ""),
                 (approximateThreshold != null ?          ("        approximate-threshold: " + approximateThreshold) : ""),
                 (targetHitsMaxAdjustmentFactor != null ? ("        target-hits-max-adjustment-factor: " + targetHitsMaxAdjustmentFactor) : ""),
+                (weakandStopwordLimit != null ?          ("        weakand { stopword-limit: " + weakandStopwordLimit + "}") : ""),
+                (weakandAdjustTarget != null ?           ("        weakand { adjust-target: " + weakandAdjustTarget + "}") : ""),
                 "    }",
                 "}");
     }
