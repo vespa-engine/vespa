@@ -611,6 +611,14 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
      * and then attempts to dispatch an enqueued operation from the head of the queue.
      */
     private void enqueueAndDispatch(HttpRequest request, ResponseHandler handler, Supplier<BooleanSupplier> operationParser) {
+        if (maxThrottled == 0) {
+            var operation = new Operation(request, handler, operationParser);
+            if (!operation.dispatch()) {
+                overload(request, "Rejecting execution due to overload: "
+                        + (long)asyncSession.getCurrentWindowSize() + " requests already enqueued", handler);
+            }
+            return;
+        }
         long numQueued = enqueued.incrementAndGet();
         if (numQueued > maxThrottled) {
             enqueued.decrementAndGet();
