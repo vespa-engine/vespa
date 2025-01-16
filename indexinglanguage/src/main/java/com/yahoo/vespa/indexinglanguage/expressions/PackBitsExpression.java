@@ -21,9 +21,13 @@ public class PackBitsExpression extends Expression  {
 
     private TensorType outputTensorType;
 
+    /** Creates a pack_bits expression. */
+    public PackBitsExpression() {
+        super(TensorDataType.any());
+    }
+
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        if (inputType == null) return null;
         super.setInputType(inputType, context);
         if ( ! validType(inputType))
             throw new VerificationException(this, "Require a tensor with one dense dimension, but got " + inputType.getName());
@@ -34,7 +38,7 @@ public class PackBitsExpression extends Expression  {
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        if (outputType != null && ! validType(outputType))
+        if ( ! validType(outputType))
             throw new VerificationException(this, "Required to produce " + outputType.getName() +
                                                   " but this produces a tensor with one dense dimension");
         outputTensorType = ((TensorDataType)outputType).getTensorType();

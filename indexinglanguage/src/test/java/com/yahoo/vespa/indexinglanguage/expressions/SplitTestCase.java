@@ -10,10 +10,7 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -40,7 +37,7 @@ public class SplitTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new SplitExpression(";");
         assertVerify(DataType.STRING, exp, DataType.getArray(DataType.STRING));
-        assertVerifyThrows("Invalid expression 'split \";\"': Expected string input, but no input is provided", null, exp);
+        assertVerifyThrows("Invalid expression 'split \";\"': Expected string input, but no input is specified", null, exp);
         assertVerifyThrows("Invalid expression 'split \";\"': Expected string input, got int", DataType.INT, exp);
     }
 

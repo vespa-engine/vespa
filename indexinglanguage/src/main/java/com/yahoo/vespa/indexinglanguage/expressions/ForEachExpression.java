@@ -1,13 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
-import com.yahoo.document.ArrayDataType;
-import com.yahoo.document.DataType;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.Field;
-import com.yahoo.document.MapDataType;
-import com.yahoo.document.StructDataType;
-import com.yahoo.document.WeightedSetDataType;
+import com.yahoo.document.*;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
@@ -29,6 +23,7 @@ public final class ForEachExpression extends CompositeExpression {
     private final Expression expression;
 
     public ForEachExpression(Expression expression) {
+        super(UnresolvedDataType.INSTANCE);
         this.expression = Objects.requireNonNull(expression);
     }
 
@@ -48,7 +43,6 @@ public final class ForEachExpression extends CompositeExpression {
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
-        if (inputType == null) return null;
 
         if (inputType instanceof ArrayDataType || inputType instanceof WeightedSetDataType) {
             // Value type outside block becomes the collection type having the block output type as argument
@@ -71,7 +65,6 @@ public final class ForEachExpression extends CompositeExpression {
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        if (outputType == null) return null;
         super.setOutputType(outputType, context);
 
         if (outputType instanceof ArrayDataType || outputType instanceof WeightedSetDataType) {
@@ -111,12 +104,12 @@ public final class ForEachExpression extends CompositeExpression {
             DataType fieldType = field.getDataType();
             DataType fieldOutputType = expression.setInputType(fieldType, context);
             if (fieldOutputType != null && ! fieldOutputType.isAssignableTo(fieldType))
-                throw new VerificationException(this, "Struct field '" + field.getName() + "' has type " + fieldType.getName() +
-                                                      " but expression produces " + fieldOutputType.getName());
+                throw new VerificationException(this, "Struct field " + field.getName() + " has type " + fieldType.getName() +
+                                                      " but expression produces " + fieldOutputType);
             DataType fieldInputType = expression.setOutputType(fieldType, context);
             if (fieldOutputType != null && ! fieldType.isAssignableTo(fieldInputType))
-                throw new VerificationException(this, "Struct field '" + field.getName() + "' has type " + fieldType.getName() +
-                                                      " but expression requires " + fieldInputType.getName());
+                throw new VerificationException(this, "Struct field " + field.getName() + " has type " + fieldType.getName() +
+                                                      " but expression requires " + fieldInputType);
             if (fieldOutputType == null && fieldInputType == null)
                 return null; // Neither direction could be inferred
         }
@@ -158,7 +151,7 @@ public final class ForEachExpression extends CompositeExpression {
         }
         else {
             throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
-                                                  (valueType == null ? "no value" : valueType.getName()));
+                                                  valueType.getName());
         }
     }
 

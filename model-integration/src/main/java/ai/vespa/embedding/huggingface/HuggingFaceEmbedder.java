@@ -111,20 +111,20 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     }
 
     @Override
-    public Tensor embed(String text, Context context, TensorType targetType) {
-        if (targetType.dimensions().size() != 1) {
-            throw new IllegalArgumentException("Error in embedding to type '" + targetType + "': should only have one dimension.");
+    public Tensor embed(String text, Context context, TensorType tensorType) {
+        if (tensorType.dimensions().size() != 1) {
+            throw new IllegalArgumentException("Error in embedding to type '" + tensorType + "': should only have one dimension.");
         }
-        if (!targetType.dimensions().get(0).isIndexed()) {
-            throw new IllegalArgumentException("Error in embedding to type '" + targetType + "': dimension should be indexed.");
+        if (!tensorType.dimensions().get(0).isIndexed()) {
+            throw new IllegalArgumentException("Error in embedding to type '" + tensorType + "': dimension should be indexed.");
         }
         var embeddingResult = lookupOrEvaluate(context, prependInstruction(text, context));
         IndexedTensor tokenEmbeddings = embeddingResult.output;
-        if (targetType.valueType() == TensorType.Value.INT8) {
-            return binaryQuantization(embeddingResult, targetType);
+        if (tensorType.valueType() == TensorType.Value.INT8) {
+            return binaryQuantization(embeddingResult, tensorType);
         } else {
-            Tensor result = poolingStrategy.toSentenceEmbedding(targetType, tokenEmbeddings, embeddingResult.attentionMask);
-            return  normalize ? normalize(result, targetType) : result;
+            Tensor result = poolingStrategy.toSentenceEmbedding(tensorType, tokenEmbeddings, embeddingResult.attentionMask);
+            return  normalize ? normalize(result, tensorType) : result;
         }
     }
 
@@ -191,21 +191,21 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         return new HFEmbeddingResult(tokenEmbeddings, attentionMask, context.getEmbedderId());
     }
 
-    private Tensor binaryQuantization(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType targetType) {
+    private Tensor binaryQuantization(HuggingFaceEmbedder.HFEmbeddingResult embeddingResult, TensorType tensorType) {
         long outputDimensions = embeddingResult.output().shape()[2];
-        long targetDimensions = targetType.dimensions().get(0).size().get();
-        //🪆 flexibility - packing only the first 8*targetDimension float values from the model output
-        long targetUnpackagedDimensions = 8 * targetDimensions;
-        if (targetUnpackagedDimensions > outputDimensions) {
-            throw new IllegalArgumentException("Cannot pack " + outputDimensions + " into " + targetDimensions + " int8's");
+        long targetDim = tensorType.dimensions().get(0).size().get();
+        //🪆 flexibility - packing only the first 8*targetDim float values from the model output
+        long floatDimensions = 8 * targetDim;
+        if(floatDimensions > outputDimensions) {
+            throw new IllegalArgumentException("Cannot pack " + outputDimensions + " into " + targetDim + " int8s");
         }
         //perform pooling and normalizing using float version before binary quantization
         TensorType poolingType = new TensorType.Builder(TensorType.Value.FLOAT).
-                                         indexed(targetType.indexedSubtype().dimensions().get(0).name(), targetUnpackagedDimensions)
-                                         .build();
+                indexed(tensorType.indexedSubtype().dimensions().get(0).name(),
+                        floatDimensions).build();
         Tensor result = poolingStrategy.toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
         result = normalize? normalize(result, poolingType) : result;
-        result = binarize((IndexedTensor) result, targetType);
+        result = binarize((IndexedTensor) result, tensorType);
         return result;
     }
 
@@ -248,6 +248,5 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
 
     protected record HFEmbeddingResult(IndexedTensor output, Tensor attentionMask, String embedderId) {}
     protected record HFEmbedderCacheKey(String embedderId, Object embeddedValue) { }
-
 }
 

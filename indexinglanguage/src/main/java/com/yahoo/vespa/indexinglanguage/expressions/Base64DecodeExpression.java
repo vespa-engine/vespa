@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.LongFieldValue;
 
 import java.util.Base64;
@@ -10,6 +11,10 @@ import java.util.Base64;
  * @author Simon Thoresen Hult
  */
 public final class Base64DecodeExpression extends Expression {
+
+    public Base64DecodeExpression() {
+        super(DataType.STRING);
+    }
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {

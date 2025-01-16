@@ -11,22 +11,14 @@ import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
+import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
-import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
-import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
+import com.yahoo.document.datatypes.Struct;
+import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -60,7 +52,7 @@ public class ScriptTestCase {
     }
 
     @Test
-    public void failsWhenOneStatementIsMissingInput() {
+    public void requireThatEachStatementHasEmptyInput() {
         Document input = new Document(type, "id:scheme:mytype::");
         input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
 
@@ -69,36 +61,11 @@ public class ScriptTestCase {
                 new StatementExpression(new AttributeExpression("out-2")));
         try {
             exp.verify(input);
-            fail("Expected exception");
+            fail();
         } catch (VerificationException e) {
-            assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
+            assertEquals(e.getExpressionType(), ScriptExpression.class);
+            assertEquals("Invalid expression '{ input in-1 | attribute out-1; attribute out-2; }': Expected any input, but no input is specified", e.getMessage());
         }
-    }
-
-    @Test
-    public void failsWhenAllStatementIsMissingInput() {
-        Document input = new Document(type, "id:scheme:mytype::");
-        input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
-
-        Expression exp = new ScriptExpression(
-                new StatementExpression(new AttributeExpression("out-2")));
-        try {
-            exp.verify(input);
-            fail("Expected exception");
-        } catch (VerificationException e) {
-            assertEquals(AttributeExpression.class, e.getExpressionType());
-            assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
-        }
-    }
-
-    @Test
-    public void succeedsWhenAllStatementsHaveInput() {
-        Document input = new Document(type, "id:scheme:mytype::");
-        input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
-
-        Expression exp = new ScriptExpression(
-                new StatementExpression(new InputExpression("in-1"), new AttributeExpression("out-1")));
-        exp.verify(input);
     }
 
     @Test
@@ -269,23 +236,4 @@ public class ScriptTestCase {
         assertEquals(13.0f, ((FloatFieldValue)adapter.values.get("myFloat")).getFloat(), 0.000001);
     }
 
-    @Test
-    public void testChoiceExpression() {
-        var tester = new ScriptTester();
-        // Non-sensical expression whose purpose is to test cat being given any as output type
-        var expression = tester.expressionFrom("(get_var A | to_array) . (get_var B | to_array) | get_var B | to_array | index myStringArray");
-
-        SimpleTestAdapter adapter = new SimpleTestAdapter();
-        adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
-
-        var verificationContext = new VerificationContext(adapter);
-        verificationContext.setVariable("A", DataType.STRING);
-        verificationContext.setVariable("B", DataType.STRING);
-        expression.verify(verificationContext);
-
-        var context = new ExecutionContext(adapter);
-        context.setVariable("B", new StringFieldValue("b_value"));
-        expression.execute(context);
-        assertEquals("b_value", ((Array)adapter.values.get("myStringArray")).get(0).toString());
-    }
 }

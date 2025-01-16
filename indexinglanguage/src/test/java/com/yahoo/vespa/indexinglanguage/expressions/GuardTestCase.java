@@ -1,11 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage.expressions;
 
-import com.yahoo.document.DataType;
-import com.yahoo.document.Document;
-import com.yahoo.document.DocumentType;
-import com.yahoo.document.DocumentUpdate;
-import com.yahoo.document.Field;
+import com.yahoo.document.*;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
@@ -21,12 +17,7 @@ import java.util.List;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -55,8 +46,8 @@ public class GuardTestCase {
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new GuardExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.INT, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, but no input is provided", null, exp);
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.STRING, exp);
+        assertVerifyThrows("Invalid expression 'guard { SimpleExpression; }': Expected int input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'guard { SimpleExpression; }': Expected int input, got string", DataType.STRING, exp);
     }
 
     @Test
@@ -67,7 +58,7 @@ public class GuardTestCase {
 
         Document doc = new Document(docType, "id:scheme:my_input::");
         doc.setFieldValue("my_str", new StringFieldValue("69"));
-        assertNotNull(doc = Expression.execute(Expression.fromString("guard { input my_str | to_long | attribute my_lng }"), doc));
+        assertNotNull(doc = Expression.execute(Expression.fromString("guard { input my_str | to_int | attribute my_lng }"), doc));
         assertEquals(new LongFieldValue(69), doc.getFieldValue("my_lng"));
     }
 
@@ -79,7 +70,7 @@ public class GuardTestCase {
 
         DocumentUpdate docUpdate = new DocumentUpdate(docType, "id:scheme:my_input::");
         docUpdate.addFieldUpdate(FieldUpdate.createAssign(docType.getField("my_str"), new StringFieldValue("69")));
-        assertNotNull(docUpdate = Expression.execute(Expression.fromString("guard { input my_str | to_long | attribute my_lng }"), docUpdate));
+        assertNotNull(docUpdate = Expression.execute(Expression.fromString("guard { input my_str | to_int | attribute my_lng }"), docUpdate));
 
         assertEquals(0, docUpdate.fieldPathUpdates().size());
         assertEquals(1, docUpdate.fieldUpdates().size());

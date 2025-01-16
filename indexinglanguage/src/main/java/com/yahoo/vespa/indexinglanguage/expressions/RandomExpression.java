@@ -19,11 +19,9 @@ public final class RandomExpression extends Expression {
     }
 
     public RandomExpression(Integer max) {
+        super(null);
         this.max = max;
     }
-
-    @Override
-    public boolean requiresInput() { return false; }
 
     public Integer getMaxValue() { return max; }
 

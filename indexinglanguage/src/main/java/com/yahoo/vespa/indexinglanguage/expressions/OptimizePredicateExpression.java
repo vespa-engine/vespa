@@ -25,6 +25,7 @@ public final class OptimizePredicateExpression extends Expression {
     }
 
     OptimizePredicateExpression(PredicateProcessor optimizer) {
+        super(DataType.PREDICATE);
         this.optimizer = optimizer;
     }
 

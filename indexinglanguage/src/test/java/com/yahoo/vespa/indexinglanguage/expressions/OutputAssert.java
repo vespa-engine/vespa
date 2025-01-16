@@ -7,9 +7,7 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -29,14 +27,12 @@ class OutputAssert {
     public static void assertVerify(OutputExpression exp) {
         assertVerify(new MyAdapter(null), DataType.INT, exp);
         assertVerify(new MyAdapter(null), DataType.STRING, exp);
-        assertVerifyThrows(new MyAdapter(null), null, exp, "Invalid expression '" + exp + "': Expected input, but no input is specified");
+        assertVerifyThrows(new MyAdapter(null), null, exp, "Invalid expression '" + exp + "': Expected any input, but no input is specified");
         assertVerifyThrows(new MyAdapter(new VerificationException((Expression) null, "foo")), DataType.INT, exp, "Invalid expression 'null': foo");
     }
 
     public static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        var context = new VerificationContext(adapter).setCurrentType(value);
-        assertEquals(value, exp.setInputType(value, context));
-        assertEquals(value, context.verify(exp).getCurrentType());
+        assertEquals(value, new VerificationContext(adapter).setCurrentType(value).verify(exp).getCurrentType());
     }
 
     public static void assertVerifyThrows(FieldTypeAdapter adapter, DataType value, Expression exp,

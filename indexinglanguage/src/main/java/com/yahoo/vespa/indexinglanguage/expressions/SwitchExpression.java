@@ -30,6 +30,7 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     public <T extends Expression> SwitchExpression(Map<String, T> cases, Expression defaultExp) {
+        super(null);
         this.defaultExp = defaultExp;
         this.cases.putAll(cases);
     }
