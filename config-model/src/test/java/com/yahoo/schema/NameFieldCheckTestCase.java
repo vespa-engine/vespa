@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema;
 
+import com.yahoo.schema.derived.TestableDeployLogger;
+import com.yahoo.schema.parser.ParseException;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -73,6 +75,38 @@ public class NameFieldCheckTestCase extends AbstractSchemaTestCase {
         } catch (Exception e) {
             assertTrue(e.getMessage().matches(".*Duplicate.*"));
         }
+    }
+
+    @Test
+    void testDuplicateNameButDifferentDocumentTypes() throws ParseException {
+        /*
+         * Based on example from https://github.com/vespa-engine/vespa/issues/33088
+         */
+        var parent = """
+                schema cities {
+                    document cities {
+                        field id type int {
+                            indexing: summary | attribute
+                        }
+                    }
+                }
+                """;
+        var child = """
+                schema users {
+                    document users {
+                        field id type long {
+                            indexing: summary | attribute
+                        }
+                        field city_ref type reference<cities> {
+                            indexing: attribute
+                        }
+                    }
+                    import field city_ref.id as city_id {}
+                }
+                """;
+        var logger = new TestableDeployLogger();
+        ApplicationBuilder.createFromStrings(logger, child, parent);
+        assertEquals(0, logger.warnings.size());
     }
 
 }
