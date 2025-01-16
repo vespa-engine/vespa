@@ -40,8 +40,10 @@ public class ValidateFieldTypes extends Processor {
     final protected void verifySearchAndDocFields(String searchName, Map<String, DataType> seenFields) {
         schema.allFields().forEach(field -> {
             checkFieldType(searchName, "index field", field.getName(), field.getDataType(), seenFields);
-            for (Map.Entry<String, Attribute> entry : field.getAttributes().entrySet()) {
-                checkFieldType(searchName, "attribute", entry.getKey(), entry.getValue().getDataType(), seenFields);
+            if (!field.isImportedField()) {
+                for (Map.Entry<String, Attribute> entry : field.getAttributes().entrySet()) {
+                    checkFieldType(searchName, "attribute", entry.getKey(), entry.getValue().getDataType(), seenFields);
+                }
             }
         });
 
