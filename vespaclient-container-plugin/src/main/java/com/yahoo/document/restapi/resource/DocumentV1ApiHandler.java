@@ -301,7 +301,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             log.log(WARNING, "Failed to empty request queue before shutdown timeout — " + operations.size() + " requests left");
 
         if ( ! visitOperations.isEmpty())
-            log.log(WARNING, "Failed to empty visitor operations queue before shutdown timeout — " + operations.size() + " operations left");
+            log.log(WARNING, "Failed to empty visitor operations queue before shutdown timeout — " + visitOperations.size() + " operations left");
 
         try {
             while (outstanding.get() > 0 && clock.instant().isBefore(doom))
