@@ -46,6 +46,8 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
         // Stop HuggingFace Tokenizer from reporting usage statistics back to mothership
         // See ai.djl.util.Ec2Utils.callHome()
         System.setProperty("OPT_OUT_TRACKING", "true");
+        // Stop DJL from downloading native libraries on the fly - also disables GPU usage
+        System.setProperty("ai.djl.offline", "true");
     }
 
     private HuggingFaceTokenizer(Builder b) {
