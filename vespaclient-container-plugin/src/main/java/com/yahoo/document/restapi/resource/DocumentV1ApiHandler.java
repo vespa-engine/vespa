@@ -818,17 +818,23 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         /** Writes documents to an internal queue, which is flushed regularly. */
         void writeDocument(DocumentWriter documentWriter, CompletionHandler completionHandler) throws IOException {
-            if (completionHandler != null) {
-                acks.add(completionHandler);
-                ackDocuments();
-            }
-
             // Serialise document and add to queue, not necessarily in the order dictated by "written" above,
             // i.e., the first 128 documents in the queue are not necessarily the ones ack'ed early.
             ByteArrayOutputStream myOut = new ByteArrayOutputStream(1);
             myOut.write(','); // Prepend rather than append, to avoid double memory copying.
             documentWriter.write(myOut);
             docs.add(myOut);
+
+            // It is crucial that ACKing of in-flight operations happens _after_ the document payload is
+            // visible in the `docs` queue. Otherwise, there is a risk that the ACK sets in motion a
+            // full unwind of the entire visitor session from the content node back to the client session
+            // (that's us), triggering the `onDone` callback and transitively the final flush of enqueued
+            // documents. If `myOut` is then not part of `docs`, it won't be rendered at all.
+            // This is a Dark Souls-tier distributed race condition.
+            if (completionHandler != null) {
+                acks.add(completionHandler);
+                ackDocuments();
+            }
 
             // Flush the first FLUSH_SIZE documents in the queue to the network layer if chunk is filled.
             if (documentsWritten.incrementAndGet() % FLUSH_SIZE == 0) {
