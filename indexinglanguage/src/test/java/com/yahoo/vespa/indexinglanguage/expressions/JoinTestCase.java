@@ -9,9 +9,7 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
+import static org.junit.Assert.*;
 
 /**
  * @author Simon Thoresen Hult
@@ -38,7 +36,7 @@ public class JoinTestCase {
         Expression exp = new JoinExpression(";");
         assertVerify(DataType.getArray(DataType.INT), exp, DataType.STRING);
         assertVerify(DataType.getArray(DataType.STRING), exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got no value", null, exp);
+        assertVerifyThrows("Invalid expression 'join \";\"': Expected any input, but no input is specified", null, exp);
         assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got type int", DataType.INT, exp);
     }
 

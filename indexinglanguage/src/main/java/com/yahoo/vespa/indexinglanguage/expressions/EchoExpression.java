@@ -17,6 +17,7 @@ public final class EchoExpression extends Expression {
     }
 
     public EchoExpression(PrintStream out) {
+        super(UnresolvedDataType.INSTANCE);
         this.out = out;
     }
 

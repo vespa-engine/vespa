@@ -27,6 +27,7 @@ public class BinarizeExpression extends Expression  {
      * @param threshold the value which the tensor cell value must be larger than to be set to 1 and not 0.
      */
     public BinarizeExpression(double threshold) {
+        super(TensorDataType.any());
         this.threshold = threshold;
     }
 

@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
+import com.yahoo.document.TensorDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
@@ -11,16 +12,13 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
 
 /**
  * @author Simon Thoresen Hult
  */
-// TODO: Support Map in addition to Array and Weghted Set (doc just says "collection type")
+// TODO: Support Map in addition to Array and Wighted Set (doc just says "collection type")
 public final class CatExpression extends ExpressionList<Expression> {
 
     public CatExpression(Expression... expressions) {
@@ -28,11 +26,8 @@ public final class CatExpression extends ExpressionList<Expression> {
     }
 
     public CatExpression(Collection<? extends Expression> expressions) {
-        super(expressions);
+        super(expressions, resolveInputType(expressions));
     }
-
-    @Override
-    public boolean requiresInput() { return false; }
 
     @Override
     public CatExpression convertChildren(ExpressionConverter converter) {
@@ -47,15 +42,12 @@ public final class CatExpression extends ExpressionList<Expression> {
         for (var expression : expressions())
             outputTypes.add(expression.setInputType(inputType, context));
         DataType outputType = resolveOutputType(outputTypes);
-        if (outputType == null) outputType = getOutputType(context); // TODO: Remove this line
-        super.setOutputType(outputType, context);
-        return outputType;
+        return outputType != null ? outputType : getOutputType(context);
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        if (outputType == null) return null;
-        if (! DataType.STRING.isAssignableTo(outputType) && ! (outputType instanceof CollectionDataType))
+        if (outputType != DataType.STRING && ! (outputType instanceof CollectionDataType))
             throw new VerificationException(this, "Required to produce " + outputType.getName() +
                                                   ", but this produces a string or collection");
         super.setOutputType(outputType, context);
@@ -84,13 +76,41 @@ public final class CatExpression extends ExpressionList<Expression> {
     @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
+        DataType inputType = input != null ? input.getDataType() : null;
+        VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
+        context.fillVariableTypes(verificationContext);
         List<FieldValue> values = new LinkedList<>();
-        for (Expression expression : this)
-            values.add(context.setCurrentValue(input).execute(expression).getCurrentValue());
-        DataType type = getOutputType();
-        if (type == null)
-            throw new RuntimeException("Output type is not resolved in " + this);
+        List<DataType> types = new LinkedList<>();
+        for (Expression expression : this) {
+            FieldValue val = context.setCurrentValue(input).execute(expression).getCurrentValue();
+            values.add(val);
+
+            DataType type;
+            if (val != null) {
+                type = val.getDataType();
+            } else {
+                type = verificationContext.setCurrentType(inputType).verify(this).getCurrentType();
+            }
+            types.add(type);
+        }
+        DataType type = resolveOutputType(types);
         context.setCurrentValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
+    }
+
+    private static DataType resolveInputType(Collection<? extends Expression> list) {
+        DataType prev = null;
+        for (Expression exp : list) {
+            DataType next = exp.requiredInputType();
+            if (next == null) {
+                // ignore
+            } else if (prev == null) {
+                prev = next;
+            } else if (!prev.isAssignableFrom(next)) {
+                throw new VerificationException(CatExpression.class, "Operands require conflicting input types, " +
+                                                                      prev.getName() + " vs " + next.getName());
+            }
+        }
+        return prev;
     }
 
     @Override

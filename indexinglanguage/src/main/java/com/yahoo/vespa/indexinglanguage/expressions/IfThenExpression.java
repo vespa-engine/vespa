@@ -49,16 +49,12 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     public IfThenExpression(Expression lhs, Comparator cmp, Expression right, Expression ifTrue, Expression ifFalse) {
+        super(resolveInputType(lhs, right, ifTrue, ifFalse));
         this.left = lhs;
         this.comparator = cmp;
         this.right = right;
         this.ifTrue = ifTrue;
         this.ifFalse = ifFalse;
-    }
-
-    @Override
-    public boolean requiresInput() {
-        return left.requiresInput() || right.requiresInput() || ifTrue.requiresInput() || (ifFalse != null && ifFalse.requiresInput());
     }
 
     @Override
@@ -75,21 +71,21 @@ public final class IfThenExpression extends CompositeExpression {
         super.setInputType(inputType, context);
         left.setInputType(inputType, context);
         right.setInputType(inputType, context);
-        var outputType = ifTrue.setInputType(inputType, context);
-        if (ifFalse != null)
-            outputType = mostGeneralOf(outputType, ifFalse.setInputType(inputType, context));
-        return outputType != null ? outputType : getOutputType(context);
+        var trueOutputType = ifTrue.setInputType(inputType, context);
+        var falseOutputType = ifFalse.setInputType(inputType, context);
+        DataType output = mostGeneralOf(trueOutputType, falseOutputType);
+        return output != null ? output : getOutputType(context);
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        var inputType = left.setOutputType(AnyDataType.instance, context);
-        inputType = leastGeneralOf(inputType, right.setOutputType(AnyDataType.instance, context));
-        inputType = leastGeneralOf(inputType, ifTrue.setOutputType(outputType, context));
-        if (ifFalse != null)
-            inputType = leastGeneralOf(inputType, ifFalse.setOutputType(outputType, context));
-        return inputType != null ? inputType : getInputType(context);
+        left.setOutputType(AnyDataType.instance, context);
+        right.setOutputType(AnyDataType.instance, context);
+        var trueInputType = ifTrue.setOutputType(outputType, context);
+        var falseInputType = ifFalse.setOutputType(outputType, context);
+        DataType input = leastGeneralOf(trueInputType, falseInputType);
+        return input != null ? input : getInputType(context);
     }
 
     @Override
@@ -149,6 +145,17 @@ public final class IfThenExpression extends CompositeExpression {
         select(ifFalse, predicate, operation);
     }
 
+    private static DataType resolveInputType(Expression lhs, Expression rhs, Expression ifTrue, Expression ifFalse) {
+        DataType input = null;
+        input = resolveRequiredInputType(input, lhs.requiredInputType());
+        input = resolveRequiredInputType(input, rhs.requiredInputType());
+        input = resolveRequiredInputType(input, ifTrue.requiredInputType());
+        if (ifFalse != null) {
+            input = resolveRequiredInputType(input, ifFalse.requiredInputType());
+        }
+        return input;
+    }
+
     @Override
     public DataType createdOutputType() {
         DataType ifTrueType = ifTrue.createdOutputType();
@@ -189,6 +196,20 @@ public final class IfThenExpression extends CompositeExpression {
             ret += ifFalse.hashCode();
         }
         return ret;
+    }
+
+    private static DataType resolveRequiredInputType(DataType prev, DataType next) {
+        if (next == null) {
+            return prev;
+        }
+        if (prev == null) {
+            return next;
+        }
+        if (!prev.equals(next)) {
+            throw new VerificationException(IfThenExpression.class, "Operands require conflicting input types, " +
+                                                                    prev.getName() + " vs " + next.getName());
+        }
+        return prev;
     }
 
     private static boolean isTrue(FieldValue left, Comparator comparator, FieldValue right) {

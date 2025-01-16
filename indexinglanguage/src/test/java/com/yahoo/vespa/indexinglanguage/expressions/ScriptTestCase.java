@@ -16,6 +16,8 @@ import org.junit.Test;
 
 import java.util.List;
 
+import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
+import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -57,6 +59,18 @@ public class ScriptTestCase {
                                        newStatement(new IndexExpression("bar"))));
         assertEquals(exp, newScript(foo, bar));
         assertEquals(exp.hashCode(), newScript(foo, bar).hashCode());
+    }
+
+    @Test
+    public void requireThatExpressionCanBeVerified() {
+        Expression exp = newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)));
+        assertVerify(DataType.INT, exp, DataType.STRING);
+        assertVerifyThrows("Invalid expression '{ SimpleExpression; }': Expected int input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression '{ SimpleExpression; }': Expected int input, got string", DataType.STRING, exp);
+
+        assertVerifyThrows("Invalid expression of type 'ScriptExpression': Statements require conflicting input types, int vs string", null, () -> newScript(newStatement(SimpleExpression.newConversion(DataType.INT, DataType.STRING)),
+                                                                                                                                                          newStatement(SimpleExpression.newConversion(DataType.STRING, DataType.INT)))
+                          );
     }
 
     @Test
@@ -247,6 +261,10 @@ public class ScriptTestCase {
 
     private static class ThrowingExpression extends Expression {
 
+        public ThrowingExpression() {
+            super(null);
+        }
+
         @Override
         protected void doExecute(ExecutionContext context) {
             throw new RuntimeException();
@@ -266,6 +284,7 @@ public class ScriptTestCase {
         private final String valueToSet;
 
         public PutCacheExpression(String keyToSet, String valueToSet) {
+            super(null);
             this.keyToSet = keyToSet;
             this.valueToSet = valueToSet;
         }
@@ -289,6 +308,7 @@ public class ScriptTestCase {
         private final String expectedValue;
 
         public AssertCacheExpression(String expectedKey, String expectedValue) {
+            super(null);
             this.expectedKey = expectedKey;
             this.expectedValue = expectedValue;
         }
