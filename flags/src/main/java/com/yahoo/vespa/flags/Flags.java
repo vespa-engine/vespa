@@ -475,7 +475,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundIntFlag DISTRIBUTION_BITS_IN_DEV = defineIntFlag(
-            "distribution-bits-in-dev", 0,
+            "distribution-bits-in-dev", 16,
             List.of("hmusum", "vekterli"), "2025-01-06", "2025-02-01",
             "If non-zero, override number of distribution bits to use in dev zone in hosted Vespa for an application.",
             "Takes effect at redeployment",
