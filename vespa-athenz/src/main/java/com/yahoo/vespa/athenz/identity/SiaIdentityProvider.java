@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.athenz.identity;
 
-import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
+import com.yahoo.security.AutoReloadingX509KeyManager;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.TrustManagerUtils;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.X509CertificateWithKey;
-import com.yahoo.security.AutoReloadingX509KeyManager;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.utils.SiaUtils;
@@ -17,10 +17,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-
 import java.security.cert.X509Certificate;
 import java.util.List;
-
 import java.util.stream.Stream;
 
 /**
@@ -79,8 +77,8 @@ public class SiaIdentityProvider extends AbstractComponent implements ServiceIde
     @Override public Path certificatePath() { return certificateFile; }
     @Override public Path privateKeyPath() { return privateKeyFile; }
 
-    public SSLContext createIdentitySslContextWithTrustStore(Path trustStoreFile) {
-        return createIdentitySslContext(keyManager, trustStoreFile);
+    public SSLContext createIdentitySslContextWithDefaultTrustStore() {
+        return new SslContextBuilder().withKeyManager(keyManager).build();
     }
 
     /**
