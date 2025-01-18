@@ -2,6 +2,8 @@
 package com.yahoo.search.query;
 
 import com.google.common.base.Preconditions;
+import com.yahoo.prelude.query.FalseItem;
+import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.geo.DistanceParser;
@@ -63,6 +65,7 @@ import java.util.Optional;
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.PREFIX_LENGTH;
 import static com.yahoo.slime.Type.ARRAY;
+import static com.yahoo.slime.Type.BOOL;
 import static com.yahoo.slime.Type.DOUBLE;
 import static com.yahoo.slime.Type.LONG;
 import static com.yahoo.slime.Type.OBJECT;
@@ -181,6 +184,9 @@ public class SelectParser implements Parser {
     }
 
     private Item walkJson(Inspector inspector) {
+        if (inspector.type() == BOOL)
+            return inspector.asBool() ? new TrueItem() : new FalseItem();
+
         Item[] item = {null};
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;

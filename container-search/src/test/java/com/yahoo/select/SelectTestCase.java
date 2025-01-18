@@ -70,6 +70,12 @@ public class SelectTestCase {
     }
 
     @Test
+    void testWhereWithBoolean() {
+        assertParse("true", "TRUE");
+        assertParse("false", "FALSE");
+    }
+
+    @Test
     void testDottedFieldNames() {
         assertParse("{ 'contains' : ['my.nested.title', 'madonna']}",
                     "my.nested.title:madonna");
