@@ -2,6 +2,8 @@
 package com.yahoo.search.query;
 
 import com.google.common.base.Preconditions;
+import com.yahoo.prelude.query.FalseItem;
+import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.geo.DistanceParser;
@@ -63,6 +65,7 @@ import java.util.Optional;
 import static com.yahoo.search.yql.YqlParser.MAX_EDIT_DISTANCE;
 import static com.yahoo.search.yql.YqlParser.PREFIX_LENGTH;
 import static com.yahoo.slime.Type.ARRAY;
+import static com.yahoo.slime.Type.BOOL;
 import static com.yahoo.slime.Type.DOUBLE;
 import static com.yahoo.slime.Type.LONG;
 import static com.yahoo.slime.Type.OBJECT;
@@ -181,19 +184,22 @@ public class SelectParser implements Parser {
     }
 
     private Item walkJson(Inspector inspector) {
+        if (inspector.type() == BOOL)
+            return inspector.asBool() ? new TrueItem() : new FalseItem();
+
         Item[] item = {null};
         inspector.traverse((ObjectTraverser) (key, value) -> {
             String type = (FUNCTION_CALLS.contains(key)) ? CALL : key;
             switch (type) {
                 case AND -> item[0] = buildAnd(key, value);
                 case AND_NOT -> item[0] = buildNotAnd(key, value);
-                case OR -> item[0] = buildOr(key, value);
-                case EQ -> item[0] = buildEquals(key, value);
-                case RANGE -> item[0] = buildRange(key, value);
-                case CONTAINS -> item[0] = buildTermSearch(key, value);
-                case MATCHES -> item[0] = buildRegExpSearch(key, value);
                 case CALL -> item[0] = buildFunctionCall(key, value);
-                default -> throw newUnexpectedArgumentException(key, AND, CALL, CONTAINS, EQ, OR, RANGE, AND_NOT);
+                case CONTAINS -> item[0] = buildTermSearch(key, value);
+                case EQ -> item[0] = buildEquals(key, value);
+                case MATCHES -> item[0] = buildRegExpSearch(key, value);
+                case OR -> item[0] = buildOr(key, value);
+                case RANGE -> item[0] = buildRange(key, value);
+                default -> throw newUnexpectedArgumentException(key, AND, AND_NOT, CALL, CONTAINS, EQ, MATCHES, OR, RANGE);
             }
         });
         return item[0];
