@@ -50,6 +50,7 @@ public class ParsedRankProfile extends ParsedBlock {
     private Boolean useSignificanceModel = null;
     private Double weakandStopwordLimit = null;
     private Double weakandAdjustTarget = null;
+    private Double filterThreshold = null;
     private final List<MutateOperation> mutateOperations = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, Boolean> fieldsRankFilter = new LinkedHashMap<>();
@@ -108,6 +109,7 @@ public class ParsedRankProfile extends ParsedBlock {
 
     Optional<Double> getWeakandStopwordLimit() { return Optional.ofNullable(this.weakandStopwordLimit); }
     Optional<Double> getWeakandAdjustTarget() { return Optional.ofNullable(this.weakandAdjustTarget); }
+    Optional<Double> getFilterThreshold() { return Optional.ofNullable(this.filterThreshold); }
 
     public void addSummaryFeatures(FeatureList features) { this.summaryFeatures.add(features); }
     public void addMatchFeatures(FeatureList features) { this.matchFeatures.add(features); }
@@ -253,6 +255,11 @@ public class ParsedRankProfile extends ParsedBlock {
     public void setWeakandAdjustTarget(double target) {
         verifyThat(this.weakandAdjustTarget == null, "already has weakand adjust-target");
         this.weakandAdjustTarget = target;
+    }
+
+    public void setFilterThreshold(double threshold) {
+        verifyThat(this.filterThreshold == null, "already has filter-threshold");
+        this.filterThreshold = threshold;
     }
 
     public void setTermwiseLimit(double limit) {

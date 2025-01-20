@@ -66,6 +66,7 @@ public class ParsedRankingConverter {
         parsed.getTargetHitsMaxAdjustmentFactor().ifPresent(profile::setTargetHitsMaxAdjustmentFactor);
         parsed.getWeakandStopwordLimit().ifPresent(profile::setWeakandStopwordLimit);
         parsed.getWeakandAdjustTarget().ifPresent(profile::setWeakandAdjustTarget);
+        parsed.getFilterThreshold().ifPresent(profile::setFilterThreshold);
         parsed.getKeepRankCount().ifPresent(profile::setKeepRankCount);
         parsed.getMinHitsPerThread().ifPresent(profile::setMinHitsPerThread);
         parsed.getNumSearchPartitions().ifPresent(profile::setNumSearchPartitions);

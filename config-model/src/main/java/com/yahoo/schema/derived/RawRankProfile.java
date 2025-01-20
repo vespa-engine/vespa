@@ -171,6 +171,7 @@ public class RawRankProfile {
         private final OptionalDouble targetHitsMaxAdjustmentFactor;
         private final OptionalDouble weakandStopwordLimit;
         private final OptionalDouble weakandAdjustTarget;
+        private final OptionalDouble filterThreshold;
         private final double rankScoreDropLimit;
         private final double secondPhaseRankScoreDropLimit;
         private final boolean sortBlueprintsByCost;
@@ -224,6 +225,7 @@ public class RawRankProfile {
             targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
             weakandStopwordLimit = compiled.getWeakandStopwordLimit();
             weakandAdjustTarget = compiled.getWeakandAdjustTarget();
+            filterThreshold = compiled.getFilterThreshold();
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
             secondPhaseRankScoreDropLimit = compiled.getSecondPhaseRankScoreDropLimit();
@@ -492,6 +494,9 @@ public class RawRankProfile {
             }
             if (weakandAdjustTarget.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.weakand.stop_word_adjust_limit", String.valueOf(weakandAdjustTarget.getAsDouble())));
+            }
+            if (filterThreshold.isPresent()) {
+                properties.add(new Pair<>("vespa.matching.filter_threshold", String.valueOf(filterThreshold.getAsDouble())));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));
