@@ -24,13 +24,13 @@ namespace vespalib {
 
 namespace {
 
-std::atomic<bool> _G_hasHugePageFailureJustHappened(false);
-bool _G_SilenceCoreOnOOM(false);
-int  _G_HugeFlags = 0;
-size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
-size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
-std::mutex _G_lock;
-std::atomic<size_t> _G_mmapCount(0);
+std::atomic<bool> _g_hasHugePageFailureJustHappened(false);
+bool _g_SilenceCoreOnOOM(false);
+int  _g_HugeFlags = 0;
+size_t _g_MMapLogLimit = std::numeric_limits<size_t>::max();
+size_t _g_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
+std::mutex _g_lock;
+std::atomic<size_t> _g_mmapCount(0);
 
 struct MMapInfo {
     MMapInfo() :
@@ -48,7 +48,7 @@ struct MMapInfo {
     std::string _stackTrace;
 };
 using MMapStore = std::map<const void *, MMapInfo>;
-MMapStore _G_HugeMappings;
+MMapStore _g_HugeMappings;
 
 size_t
 readOptionalEnvironmentVar(const char * name, size_t defaultValue) {
@@ -67,13 +67,13 @@ readOptionalEnvironmentVar(const char * name, size_t defaultValue) {
 void initializeEnvironment()
 {
 #ifdef __linux__
-    _G_HugeFlags = (getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0;
+    _g_HugeFlags = (getenv("VESPA_USE_HUGEPAGES") != nullptr) ? MAP_HUGETLB : 0;
 #else
-    _G_HugeFlags = 0;
+    _g_HugeFlags = 0;
 #endif
-    _G_SilenceCoreOnOOM = (getenv("VESPA_SILENCE_CORE_ON_OOM") != nullptr) ? true : false;
-    _G_MMapLogLimit = readOptionalEnvironmentVar("VESPA_MMAP_LOG_LIMIT", std::numeric_limits<size_t>::max());
-    _G_MMapNoCoreLimit = readOptionalEnvironmentVar("VESPA_MMAP_NOCORE_LIMIT", std::numeric_limits<size_t>::max());
+    _g_SilenceCoreOnOOM = (getenv("VESPA_SILENCE_CORE_ON_OOM") != nullptr) ? true : false;
+    _g_MMapLogLimit = readOptionalEnvironmentVar("VESPA_MMAP_LOG_LIMIT", std::numeric_limits<size_t>::max());
+    _g_MMapNoCoreLimit = readOptionalEnvironmentVar("VESPA_MMAP_NOCORE_LIMIT", std::numeric_limits<size_t>::max());
 }
 
 class Initialize {
@@ -81,7 +81,7 @@ public:
     Initialize() { initializeEnvironment(); }
 };
 
-Initialize _G_initializer;
+Initialize _g_initializer;
 
 size_t sum(const MMapStore & s)
 {
@@ -244,34 +244,34 @@ availableAutoAllocators() {
 }
 
 
-alloc::HeapAllocator _G_heapAllocatorDefault;
-alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
-alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(1_Ki);
-alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(4_Ki);
-alloc::MMapAllocator _G_mmapAllocatorDefault;
+alloc::HeapAllocator _g_heapAllocatorDefault;
+alloc::AlignedHeapAllocator _g_512BalignedHeapAllocator(512);
+alloc::AlignedHeapAllocator _g_1KalignedHeapAllocator(1_Ki);
+alloc::AlignedHeapAllocator _g_4KalignedHeapAllocator(4_Ki);
+alloc::MMapAllocator _g_mmapAllocatorDefault;
 
 MemoryAllocator &
 HeapAllocator::getDefault() {
-    return _G_heapAllocatorDefault;
+    return _g_heapAllocatorDefault;
 }
 
 MemoryAllocator &
 AlignedHeapAllocator::get4K() {
-    return _G_4KalignedHeapAllocator;
+    return _g_4KalignedHeapAllocator;
 }
 
 MemoryAllocator & AlignedHeapAllocator::get1K() {
-    return _G_1KalignedHeapAllocator;
+    return _g_1KalignedHeapAllocator;
 }
 
 MemoryAllocator &
 AlignedHeapAllocator::get512B() {
-    return _G_512BalignedHeapAllocator;
+    return _g_512BalignedHeapAllocator;
 }
 
 MemoryAllocator &
 MMapAllocator::getDefault() {
-    return _G_mmapAllocatorDefault;
+    return _g_mmapAllocatorDefault;
 }
 
 MemoryAllocator &
@@ -339,16 +339,16 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
-        size_t mmapId = std::atomic_fetch_add(&_G_mmapCount, 1ul);
+        size_t mmapId = std::atomic_fetch_add(&_g_mmapCount, 1ul);
         std::string stackTrace;
-        if (sz >= _G_MMapLogLimit) {
+        if (sz >= _g_MMapLogLimit) {
             stackTrace = getStackTrace(1);
             LOG(info, "mmap %ld of size %ld from %s", mmapId, sz, stackTrace.c_str());
         }
-        buf = mmap(wantedAddress, sz, prot, flags | _G_HugeFlags, -1, 0);
+        buf = mmap(wantedAddress, sz, prot, flags | _g_HugeFlags, -1, 0);
         if (buf == MAP_FAILED) {
-            if ( ! load_relaxed(_G_hasHugePageFailureJustHappened)) {
-                store_relaxed(_G_hasHugePageFailureJustHappened, true);
+            if ( ! load_relaxed(_g_hasHugePageFailureJustHappened)) {
+                store_relaxed(_g_hasHugePageFailureJustHappened, true);
                 LOG(debug, "Failed allocating %ld bytes with hugepages due too '%s'."
                           " Will resort to ordinary mmap until it works again.",
                            sz, FastOS_FileInterface::getLastErrorString().c_str());
@@ -357,7 +357,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
             if (buf == MAP_FAILED) {
                 stackTrace = getStackTrace(1);
                 std::string msg = make_string("Failed mmaping anonymous of size %ld errno(%d) from %s", sz, errno, stackTrace.c_str());
-                if (_G_SilenceCoreOnOOM) {
+                if (_g_SilenceCoreOnOOM) {
                     OOMException oom(msg);
                     oom.setPayload(std::make_unique<SilenceUncaughtException>(oom));
                     throw oom;
@@ -366,22 +366,22 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
                 }
             }
         } else {
-            store_relaxed(_G_hasHugePageFailureJustHappened, false);
+            store_relaxed(_g_hasHugePageFailureJustHappened, false);
         }
 #ifdef __linux__
         if (madvise(buf, sz, MADV_HUGEPAGE) != 0) {
             // Just an advise, not everyone will listen...
         }
-        if (sz >= _G_MMapNoCoreLimit) {
+        if (sz >= _g_MMapNoCoreLimit) {
             if (madvise(buf, sz, MADV_DONTDUMP) != 0) {
                 LOG(warning, "Failed madvise(%p, %ld, MADV_DONTDUMP) = '%s'", buf, sz, FastOS_FileInterface::getLastErrorString().c_str());
             }
         }
 #endif
-        if (sz >= _G_MMapLogLimit) {
-            std::lock_guard guard(_G_lock);
-            _G_HugeMappings[buf] = MMapInfo(mmapId, sz, stackTrace);
-            LOG(info, "%ld mappings of accumulated size %ld", _G_HugeMappings.size(), sum(_G_HugeMappings));
+        if (sz >= _g_MMapLogLimit) {
+            std::lock_guard guard(_g_lock);
+            _g_HugeMappings[buf] = MMapInfo(mmapId, sz, stackTrace);
+            LOG(info, "%ld mappings of accumulated size %ld", _g_HugeMappings.size(), sum(_g_HugeMappings));
         }
     }
     return PtrAndSize(buf, sz);
@@ -442,13 +442,13 @@ void MMapAllocator::sfree(PtrAndSize alloc) noexcept
             LOG(warning, "munmap(%p, %lx)=%d, errno=%s", alloc.get(), alloc.size(), munmap_retval, ec.message().c_str());
             abort();
         }
-        if (alloc.size() >= _G_MMapLogLimit) {
-            std::lock_guard guard(_G_lock);
-            MMapInfo info = _G_HugeMappings[alloc.get()];
+        if (alloc.size() >= _g_MMapLogLimit) {
+            std::lock_guard guard(_g_lock);
+            MMapInfo info = _g_HugeMappings[alloc.get()];
             assert(alloc.size() == info._sz);
-            _G_HugeMappings.erase(alloc.get());
+            _g_HugeMappings.erase(alloc.get());
             LOG(info, "munmap %ld of size %ld", info._id, info._sz);
-            LOG(info, "%ld mappings of accumulated size %ld", _G_HugeMappings.size(), sum(_G_HugeMappings));
+            LOG(info, "%ld mappings of accumulated size %ld", _g_HugeMappings.size(), sum(_g_HugeMappings));
         }
     }
 }

@@ -11,7 +11,7 @@ namespace vespalib::alloc {
  * This represents an allocation.
  * It can be created, moved, swapped.
  * The allocation strategy is decided upon creation.
- * It can also create create additional allocations with the same allocation strategy.
+ * It can also create additional allocations with the same allocation strategy.
 **/
 class Alloc
 {
