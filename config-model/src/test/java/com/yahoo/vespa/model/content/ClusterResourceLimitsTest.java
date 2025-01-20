@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
+import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.text.XML;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 
 import java.util.Optional;
+import java.util.logging.Level;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -50,7 +52,8 @@ public class ClusterResourceLimitsTest {
             ModelContext.FeatureFlags featureFlags = new TestProperties();
             var builder = new ClusterResourceLimits.Builder(hostedVespa,
                                                             featureFlags.resourceLimitDisk(),
-                                                            featureFlags.resourceLimitMemory());
+                                                            featureFlags.resourceLimitMemory(),
+                                                            new TestLogger());
             builder.setClusterControllerBuilder(ctrlBuilder);
             builder.setContentNodeBuilder(nodeBuilder);
             return builder.build();
@@ -166,7 +169,8 @@ public class ClusterResourceLimitsTest {
 
         ClusterResourceLimits.Builder builder = new ClusterResourceLimits.Builder(true,
                                                                                   featureFlags.resourceLimitDisk(),
-                                                                                  featureFlags.resourceLimitMemory());
+                                                                                  featureFlags.resourceLimitMemory(),
+                                                                                  new TestLogger());
         return builder.build(new ModelElement((limitsInXml ? clusterXml : noLimitsXml).getDocumentElement()));
     }
 
@@ -187,6 +191,13 @@ public class ClusterResourceLimitsTest {
         } else {
             assertEquals(expLimit, actLimit.get(), 0.00001, limitType + " limit not as expected");
         }
+    }
+
+    private static class TestLogger implements DeployLogger {
+
+        @Override
+        public void log(Level level, String message) { /* Do nothing */ }
+
     }
 
 }
