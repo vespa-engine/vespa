@@ -31,7 +31,6 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.net.HostName;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.ConfigServerSpec;
@@ -92,7 +91,6 @@ public class SessionPreparer {
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final Curator curator;
     private final Zone zone;
-    private final SecretStore secretStore;
     private final FlagSource flagSource;
     private final ExecutorService executor;
     private final BooleanFlag writeSessionData;
@@ -108,7 +106,6 @@ public class SessionPreparer {
                            Curator curator,
                            Zone zone,
                            FlagSource flagSource,
-                           SecretStore secretStore,
                            OnnxModelCost onnxModelCost,
                            List<EndpointCertificateSecretStore> endpointCertificateSecretStores) {
         this.modelFactoryRegistry = modelFactoryRegistry;
@@ -118,7 +115,6 @@ public class SessionPreparer {
         this.configDefinitionRepo = configDefinitionRepo;
         this.curator = curator;
         this.zone = zone;
-        this.secretStore = secretStore;
         this.flagSource = flagSource;
         this.executor = executor;
         this.writeSessionData = Flags.WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB.bindTo(flagSource);
@@ -221,7 +217,6 @@ public class SessionPreparer {
             this.fileRegistry = fileDistributionFactory.createFileRegistry(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    flagSource,
-                                                                   secretStore,
                                                                    containerEndpoints,
                                                                    endpointCertificateSecrets,
                                                                    configDefinitionRepo,

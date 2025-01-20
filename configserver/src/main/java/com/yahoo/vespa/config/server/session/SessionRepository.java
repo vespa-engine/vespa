@@ -16,7 +16,6 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.AbstractTransaction;
@@ -132,7 +131,6 @@ public class SessionRepository {
     private final OnnxModelCost onnxModelCost;
     private final List<EndpointCertificateSecretStore> endpointCertificateSecretStores;
     private final SessionCounter sessionCounter;
-    private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
     private final ConfigserverConfig configserverConfig;
     private final ConfigServerDB configServerDB;
@@ -152,7 +150,6 @@ public class SessionRepository {
                              FileDistributionFactory fileDistributionFactory,
                              FlagSource flagSource,
                              ExecutorService zkCacheExecutor,
-                             SecretStore secretStore,
                              HostProvisionerProvider hostProvisionerProvider,
                              ConfigserverConfig configserverConfig,
                              ConfigServerDB configServerDB,
@@ -178,7 +175,6 @@ public class SessionRepository {
         this.sessionPreparer = sessionPreparer;
         this.metrics = metrics;
         this.metricUpdater = metrics.getOrCreateMetricUpdater(Metrics.createDimensions(tenantName));
-        this.secretStore = secretStore;
         this.hostProvisionerProvider = hostProvisionerProvider;
         this.configserverConfig = configserverConfig;
         this.configServerDB = configServerDB;
@@ -542,7 +538,6 @@ public class SessionRepository {
                                                                     curator,
                                                                     metrics,
                                                                     flagSource,
-                                                                    secretStore,
                                                                     hostProvisionerProvider,
                                                                     configserverConfig,
                                                                     zone,

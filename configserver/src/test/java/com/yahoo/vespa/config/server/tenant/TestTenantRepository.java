@@ -57,7 +57,6 @@ public class TestTenantRepository extends TenantRepository {
               fileDistributionFactory,
               flagSource,
               new InThreadExecutorService(),
-              secretStore,
               hostProvisionerProvider,
               configserverConfig,
               new ConfigServerDB(configserverConfig),

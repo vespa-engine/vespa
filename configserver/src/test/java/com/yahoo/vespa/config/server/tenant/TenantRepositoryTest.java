@@ -222,7 +222,6 @@ public class TenantRepositoryTest {
                   new FileDistributionFactory(configserverConfig, new FileDirectory(configserverConfig), new InMemoryFlagSource()),
                   flagSource,
                   new InThreadExecutorService(),
-                  mockSecretStore,
                   HostProvisionerProvider.empty(),
                   configserverConfig,
                   new ConfigServerDB(configserverConfig),

@@ -17,7 +17,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.ServerCache;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
@@ -60,7 +59,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
     private final Metrics metrics;
     private final Curator curator;
     private final FlagSource flagSource;
-    private final SecretStore secretStore;
     private final ExecutorService executor;
     private final OnnxModelCost onnxModelCost;
     private final List<EndpointCertificateSecretStore> endpointCertificateSecretStores;
@@ -73,7 +71,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                   Curator curator,
                                   Metrics metrics,
                                   FlagSource flagSource,
-                                  SecretStore secretStore,
                                   HostProvisionerProvider hostProvisionerProvider,
                                   ConfigserverConfig configserverConfig,
                                   Zone zone,
@@ -90,7 +87,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
         this.metrics = metrics;
         this.curator = curator;
         this.flagSource = flagSource;
-        this.secretStore = secretStore;
         this.executor = executor;
         this.onnxModelCost = onnxModelCost;
         this.endpointCertificateSecretStores = endpointCertificateSecretStores;
@@ -166,7 +162,6 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zkClient.readQuota(),
                                                zkClient.readTenantVaults(),
                                                zkClient.readTenantSecretStores(),
-                                               secretStore,
                                                zkClient.readOperatorCertificates(),
                                                zkClient.readCloudAccount(),
                                                zkClient.readDataplaneTokens());
