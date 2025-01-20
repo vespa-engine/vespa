@@ -379,7 +379,7 @@ public class Model implements Cloneable {
 
     /** Sets the set of sources this query will search from a comma-separated string of source names */
     public void setSources(String sourceString) {
-        setFromString(sourceString,sources);
+        setFromString(sourceString, sources);
     }
 
     /**
