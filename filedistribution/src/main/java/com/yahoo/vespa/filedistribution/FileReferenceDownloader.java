@@ -123,15 +123,19 @@ public class FileReferenceDownloader {
 
     void startDownloadFromSource(FileReferenceDownload fileReferenceDownload, Spec spec) {
         FileReference fileReference = fileReferenceDownload.fileReference();
-        if (downloads.get(fileReference).isPresent()) return;
 
         for (var connection : connectionPool.connections()) {
             if (connection.getAddress().equals(spec.toString()))
                 downloadExecutor.submit(() -> {
+                    if (downloads.get(fileReference).isPresent()) return;
+
                     log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec);
                     downloads.add(fileReferenceDownload);
-                    startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
-                    downloads.remove(fileReference);
+                    var downloading = startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
+                    // Need to explicitly remove from downloads if downloading has not started.
+                    // If downloading *has* started FileReceiver will take care of that when download has completed or failed
+                    if ( ! downloading)
+                        downloads.remove(fileReference);
                 });
         }
     }
