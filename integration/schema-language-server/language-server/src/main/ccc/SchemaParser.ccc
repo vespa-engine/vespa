@@ -383,6 +383,7 @@ TOKEN :
 | < WEAKAND: "weakand">
 | < STOPWORD_LIMIT: "stopword-limit">
 | < ADJUST_TARGET: "adjust-target">
+| < FILTER_THRESHOLD: "filter-threshold">
 | < INTRAOP_THREADS: "intraop-threads">
 | < INTEROP_THREADS: "interop-threads">
 | < GPU_DEVICE: "gpu-device">
@@ -2076,6 +2077,7 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | strictElm(profile)
        | significanceElm(profile)
        | weakandElm(profile)
+       | filterThreshold(profile)
     )
 ;
 
@@ -2510,6 +2512,14 @@ void weakandAdjustTarget(ParsedRankProfile profile) :
 }
 
     (<ADJUST_TARGET> <COLON> target = floatValue()) { profile.setWeakandAdjustTarget(target); }
+;
+
+void filterThreshold(ParsedRankProfile profile) :
+{
+    double threshold;
+}
+
+    (<FILTER_THRESHOLD> <COLON> threshold = floatValue()) { profile.setFilterThreshold(threshold); }
 ;
 
 /**
@@ -3079,6 +3089,7 @@ String identifierWithDashStr :
     | <FAST_ACCESS>
     | <FAST_RANK>
     | <FAST_SEARCH>
+    | <FILTER_THRESHOLD>
     | <FIRST_PHASE>
     | <FROM_DISK>
     | <GLOBAL_PHASE>

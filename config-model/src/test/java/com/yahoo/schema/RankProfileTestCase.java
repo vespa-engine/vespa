@@ -570,6 +570,18 @@ rank-profile feature_logging {
                                  adjustTarget, "vespa.matching.weakand.stop_word_adjust_limit");
     }
 
+    @Test
+    void filter_threshold_is_configurable() throws ParseException {
+        verifyFilterThreshold(null);
+        verifyFilterThreshold(0.05);
+    }
+
+    private void verifyFilterThreshold(Double threshold) throws ParseException {
+        var rp = createRankProfile(createSDWithRankProfile(null, null, null, null, null, threshold));
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getFilterThreshold,
+                threshold, "vespa.matching.filter_threshold");
+    }
+
     private void verifyRankProfileSetting(RankProfile rankProfile, RawRankProfile rawRankProfile, Function<RankProfile, OptionalDouble> func,
                                           Double expValue, String expPropertyName) {
         if (expValue != null) {
@@ -584,12 +596,12 @@ rank-profile feature_logging {
     private Pair<RankProfile, RawRankProfile> createRankProfile(Double postFilterThreshold,
                                                                 Double approximateThreshold,
                                                                 Double targetHitsMaxAdjustmentFactor) throws ParseException {
-        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, null, null));
+        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, null, null, null));
     }
 
     private Pair<RankProfile, RawRankProfile> createWeakandRankProfile(Double weakAndStopwordLimit,
                                                                        Double weakAndAdjustTarget) throws ParseException {
-        return createRankProfile(createSDWithRankProfile(null, null, null,  weakAndStopwordLimit, weakAndAdjustTarget));
+        return createRankProfile(createSDWithRankProfile(null, null, null,  weakAndStopwordLimit, weakAndAdjustTarget, null));
     }
 
     private Pair<RankProfile, RawRankProfile> createRankProfile(String schemaContent) throws ParseException {
@@ -611,7 +623,8 @@ rank-profile feature_logging {
                                            Double approximateThreshold,
                                            Double targetHitsMaxAdjustmentFactor,
                                            Double weakandStopwordLimit,
-                                           Double weakandAdjustTarget) {
+                                           Double weakandAdjustTarget,
+                                           Double filterThreshold) {
         return joinLines(
                 "search test {",
                 "    document test {}",
@@ -621,6 +634,7 @@ rank-profile feature_logging {
                 (targetHitsMaxAdjustmentFactor != null ? ("        target-hits-max-adjustment-factor: " + targetHitsMaxAdjustmentFactor) : ""),
                 (weakandStopwordLimit != null ?          ("        weakand { stopword-limit: " + weakandStopwordLimit + "}") : ""),
                 (weakandAdjustTarget != null ?           ("        weakand { adjust-target: " + weakandAdjustTarget + "}") : ""),
+                (filterThreshold != null ?               ("        filter-threshold: " + filterThreshold) : ""),
                 "    }",
                 "}");
     }

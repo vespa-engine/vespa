@@ -106,6 +106,7 @@ public class RankProfile implements Cloneable {
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double weakandStopwordLimit = null;
     private Double weakandAdjustTarget = null;
+    private Double filterThreshold = null;
 
     /** The drop limit used to drop hits with rank score less than or equal to this value */
     private double rankScoreDropLimit = -Double.MAX_VALUE;
@@ -784,6 +785,7 @@ public class RankProfile implements Cloneable {
     public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
     public void setWeakandStopwordLimit(double limit) { this.weakandStopwordLimit = limit; }
     public void setWeakandAdjustTarget(double target) { this.weakandAdjustTarget = target; }
+    public void setFilterThreshold(double threshold) { this.filterThreshold = threshold; }
 
     public OptionalDouble getTermwiseLimit() {
         if (termwiseLimit != null) return OptionalDouble.of(termwiseLimit);
@@ -824,6 +826,13 @@ public class RankProfile implements Cloneable {
             return OptionalDouble.of(weakandAdjustTarget);
         }
         return uniquelyInherited(RankProfile::getWeakandAdjustTarget, OptionalDouble::isPresent, "weakand-adjust-target").orElse(OptionalDouble.empty());
+    }
+
+    public OptionalDouble getFilterThreshold() {
+        if (filterThreshold != null) {
+            return OptionalDouble.of(filterThreshold);
+        }
+        return uniquelyInherited(RankProfile::getFilterThreshold, OptionalDouble::isPresent, "filter-threshold").orElse(OptionalDouble.empty());
     }
 
     /** Whether we should ignore the default rank features. Set to null to use inherited */

@@ -183,6 +183,20 @@ public class SchemaParserTestCase {
         assertEquals(0.01, target.get());
     }
 
+
+    @Test
+    void filter_threshold_can_be_parsed() throws Exception {
+        String input = joinLines("schema foo {",
+                "rank-profile rp {",
+                "filter-threshold: 0.05",
+                "}",
+                "}");
+        var schema = parseString(input);
+        var target = schema.getRankProfiles().get(0).getFilterThreshold();
+        assertTrue(target.isPresent());
+        assertEquals(0.05, target.get());
+    }
+
     @Test
     void maxOccurrencesCanBeParsed() throws Exception {
         String input = joinLines
