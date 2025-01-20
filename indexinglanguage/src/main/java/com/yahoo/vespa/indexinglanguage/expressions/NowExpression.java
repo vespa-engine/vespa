@@ -16,9 +16,11 @@ public final class NowExpression extends Expression {
     }
 
     public NowExpression(Timer timer) {
-        super(null);
         this.timer = timer;
     }
+
+    @Override
+    public boolean requiresInput() { return false; }
 
     public Timer getTimer() { return timer; }
 

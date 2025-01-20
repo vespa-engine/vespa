@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.LongFieldValue;
+
 import java.time.Instant;
 
 /**
@@ -11,10 +12,6 @@ import java.time.Instant;
  * @author bergum
  */
 public class ToEpochSecondExpression extends Expression {
-
-    public ToEpochSecondExpression() {
-        super(DataType.STRING); //only accept string input
-    }
 
     @Override
     public DataType setInputType(DataType input, VerificationContext context) {

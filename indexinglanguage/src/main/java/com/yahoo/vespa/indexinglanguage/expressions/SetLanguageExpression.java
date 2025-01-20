@@ -11,10 +11,6 @@ import com.yahoo.language.Language;
  */
 public final class SetLanguageExpression extends Expression {
 
-    public SetLanguageExpression() {
-        super(DataType.STRING);
-    }
-
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         return super.setInputType(inputType, DataType.STRING, context);

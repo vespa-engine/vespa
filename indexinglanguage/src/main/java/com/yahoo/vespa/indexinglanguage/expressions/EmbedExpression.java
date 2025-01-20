@@ -39,7 +39,6 @@ public class EmbedExpression extends Expression  {
     private TensorType targetType;
 
     public EmbedExpression(Linguistics linguistics, Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
-        super(null);
         this.linguistics = linguistics;
         this.embedderId = embedderId;
         this.embedderArguments = List.copyOf(embedderArguments);
@@ -65,12 +64,13 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public DataType setInputType(DataType type, VerificationContext context) {
-        super.setInputType(type, context);
-        if ( ! (type == DataType.STRING) &&
-             ! (type instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
+    public DataType setInputType(DataType inputType, VerificationContext context) {
+        super.setInputType(inputType, context);
+        if ( inputType != null &&
+             ! (inputType.isAssignableTo(DataType.STRING)) &&
+             ! (inputType instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
             throw new VerificationException(this, "This requires either a string or array<string> input type, but got " +
-                                                  type.getName());
+                                                  inputType.getName());
         return getOutputType(context); // embed cannot determine the output type from the input
     }
 

@@ -10,7 +10,9 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author Simon Thoresen Hult
@@ -30,7 +32,7 @@ public class ToLongTestCase {
         Expression exp = new ToLongExpression();
         assertVerify(DataType.INT, exp, DataType.LONG);
         assertVerify(DataType.STRING, exp, DataType.LONG);
-        assertVerifyThrows("Invalid expression 'to_long': Expected any input, but no input is specified", null, exp);
+        assertVerifyThrows("Invalid expression 'to_long': Expected input, but no input is provided", null, exp);
     }
 
     @Test
