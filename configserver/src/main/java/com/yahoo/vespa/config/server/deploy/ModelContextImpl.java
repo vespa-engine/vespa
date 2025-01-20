@@ -29,7 +29,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources.Architecture;
 import com.yahoo.config.provision.SharedHosts;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.flags.Dimension;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -357,7 +356,6 @@ public class ModelContextImpl implements ModelContext {
         private final Quota quota;
         private final List<TenantVault> tenantVaults;
         private final List<TenantSecretStore> tenantSecretStores;
-        private final SecretStore secretStore;
         private final StringFlag jvmGCOptionsFlag;
         private final boolean allowDisableMtls;
         private final List<X509Certificate> operatorCertificates;
@@ -383,7 +381,6 @@ public class ModelContextImpl implements ModelContext {
                           Optional<Quota> maybeQuota,
                           List<TenantVault> tenantVaults,
                           List<TenantSecretStore> tenantSecretStores,
-                          SecretStore secretStore,
                           List<X509Certificate> operatorCertificates,
                           Optional<CloudAccount> cloudAccount,
                           List<DataplaneToken> dataplaneTokens) {
@@ -405,7 +402,6 @@ public class ModelContextImpl implements ModelContext {
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
             this.tenantVaults = tenantVaults;
             this.tenantSecretStores = tenantSecretStores;
-            this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                     .with(Dimension.INSTANCE_ID, applicationId.serializedForm())
                     .with(Dimension.APPLICATION, applicationId.toSerializedFormWithoutInstance());

@@ -17,7 +17,6 @@ import com.yahoo.config.model.api.OnnxModelCost;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.transaction.Transaction;
@@ -109,7 +108,6 @@ public class TenantRepository {
     private final FileDistributionFactory fileDistributionFactory;
     private final ExecutorService deployHelperExecutor;
     private final FlagSource flagSource;
-    private final SecretStore secretStore;
     private final HostProvisionerProvider hostProvisionerProvider;
     private final ConfigserverConfig configserverConfig;
     private final ConfigServerDB configServerDB;
@@ -133,7 +131,6 @@ public class TenantRepository {
                             Curator curator,
                             Metrics metrics,
                             FlagSource flagSource,
-                            SecretStore secretStore,
                             HostProvisionerProvider hostProvisionerProvider,
                             ConfigserverConfig configserverConfig,
                             ConfigServerDB configServerDB,
@@ -154,7 +151,6 @@ public class TenantRepository {
              new FileDistributionFactory(configserverConfig, fileDirectory, flagSource),
              flagSource,
              Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
-             secretStore,
              hostProvisionerProvider,
              configserverConfig,
              configServerDB,
@@ -177,7 +173,6 @@ public class TenantRepository {
                             FileDistributionFactory fileDistributionFactory,
                             FlagSource flagSource,
                             ExecutorService zkCacheExecutor,
-                            SecretStore secretStore,
                             HostProvisionerProvider hostProvisionerProvider,
                             ConfigserverConfig configserverConfig,
                             ConfigServerDB configServerDB,
@@ -200,7 +195,6 @@ public class TenantRepository {
         this.zkSessionWatcherExecutor = zkSessionWatcherExecutor;
         this.fileDistributionFactory = fileDistributionFactory;
         this.flagSource = flagSource;
-        this.secretStore = secretStore;
         this.hostProvisionerProvider = hostProvisionerProvider;
         this.configServerDB = configServerDB;
         this.zone = zone;
@@ -366,7 +360,6 @@ public class TenantRepository {
                                                               curator,
                                                               zone,
                                                               flagSource,
-                                                              secretStore,
                                                               onnxModelCost,
                                                               endpointCertificateSecretStores);
         SessionRepository sessionRepository = new SessionRepository(tenantName,
@@ -378,7 +371,6 @@ public class TenantRepository {
                                                                     fileDistributionFactory,
                                                                     flagSource,
                                                                     zkCacheExecutor,
-                                                                    secretStore,
                                                                     hostProvisionerProvider,
                                                                     configserverConfig,
                                                                     configServerDB,
