@@ -18,14 +18,14 @@ public final class SetVarExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        setVariableType(inputType, context);
+        context.setVariable(varName, mostGeneralNonNullOf(inputType, context.getVariable(varName)));
         return super.setInputType(inputType, context);
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         if (outputType == null) return null;
-        setVariableType(outputType, context);
+        context.setVariable(varName, leastGeneralNonNullOf(outputType, context.getVariable(varName)));
         return super.setOutputType(outputType, context);
     }
 

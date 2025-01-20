@@ -317,4 +317,22 @@ public abstract class Expression extends Selectable {
                                               "First " + left.getName() + ", second: " + right.getName());
     }
 
+    protected DataType mostGeneralNonNullOf(DataType left, DataType right) {
+        if (left == null) return right;
+        if (right == null) return left;
+        if (left.isAssignableTo(right)) return right;
+        if (right.isAssignableTo(left)) return left;
+        throw new VerificationException(this, "Argument types are incompatible. " +
+                                              "First " + left.getName() + ", second: " + right.getName());
+    }
+
+    protected DataType leastGeneralNonNullOf(DataType left, DataType right) {
+        if (left == null) return right;
+        if (right == null) return left;
+        if (left.isAssignableTo(right)) return left;
+        if (right.isAssignableTo(left)) return right;
+        throw new VerificationException(this, "Argument types are incompatible. " +
+                                              "First " + left.getName() + ", second: " + right.getName());
+    }
+
 }

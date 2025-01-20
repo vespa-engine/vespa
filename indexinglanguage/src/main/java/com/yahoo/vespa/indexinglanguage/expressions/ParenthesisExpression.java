@@ -38,7 +38,7 @@ public class ParenthesisExpression extends CompositeExpression {
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        return innerExpression.setInputType(outputType, context);
+        return innerExpression.setOutputType(outputType, context);
     }
 
     @Override
