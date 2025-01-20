@@ -11,9 +11,11 @@ public final class GetVarExpression extends Expression {
     private final String variableName;
 
     public GetVarExpression(String variableName) {
-        super(null);
         this.variableName = variableName;
     }
+
+    @Override
+    public boolean requiresInput() { return false; }
 
     public String getVariableName() { return variableName; }
 

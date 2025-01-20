@@ -13,72 +13,74 @@ import com.yahoo.vespa.objects.ObjectPredicate;
  */
 public class ParenthesisExpression extends CompositeExpression {
 
-    private final Expression innerExp;
+    private final Expression innerExpression;
 
-    public ParenthesisExpression(Expression innerExp) {
-        super(innerExp.requiredInputType());
-        this.innerExp = innerExp;
+    public ParenthesisExpression(Expression innerExpression) {
+        this.innerExpression = innerExpression;
     }
 
-    public Expression getInnerExpression() { return innerExp; }
+    @Override
+    public boolean requiresInput() { return innerExpression.requiresInput(); }
+
+    public Expression getInnerExpression() { return innerExpression; }
 
     @Override
     public ParenthesisExpression convertChildren(ExpressionConverter converter) {
-        return new ParenthesisExpression(converter.convert(innerExp));
+        return new ParenthesisExpression(converter.convert(innerExpression));
     }
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
-        return innerExp.setInputType(inputType, context);
+        return innerExpression.setInputType(inputType, context);
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
-        return innerExp.setInputType(outputType, context);
+        return innerExpression.setOutputType(outputType, context);
     }
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        innerExp.setStatementOutput(documentType, field);
+        innerExpression.setStatementOutput(documentType, field);
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        innerExp.verify(context);
+        innerExpression.verify(context);
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        innerExp.execute(context);
+        innerExpression.execute(context);
     }
 
     @Override
     public DataType createdOutputType() {
-        return innerExp.createdOutputType();
+        return innerExpression.createdOutputType();
     }
 
     @Override
     public String toString() {
-        return "(" + innerExp + ")";
+        return "(" + innerExpression + ")";
     }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof ParenthesisExpression rhs)) return false;
-        if (!innerExp.equals(rhs.innerExp)) return false;
+        if (!innerExpression.equals(rhs.innerExpression)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + innerExp.hashCode();
+        return getClass().hashCode() + innerExpression.hashCode();
     }
 
     @Override
     public void selectMembers(ObjectPredicate predicate, ObjectOperation operation) {
-        select(innerExp, predicate, operation);
+        select(innerExpression, predicate, operation);
     }
 
 }

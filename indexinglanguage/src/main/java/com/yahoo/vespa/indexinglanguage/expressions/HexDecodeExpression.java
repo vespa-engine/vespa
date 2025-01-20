@@ -13,10 +13,6 @@ public final class HexDecodeExpression extends Expression {
 
     private static final BigInteger ULONG_MAX = new BigInteger("18446744073709551616");
 
-    public HexDecodeExpression() {
-        super(DataType.STRING);
-    }
-
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, DataType.STRING, context);

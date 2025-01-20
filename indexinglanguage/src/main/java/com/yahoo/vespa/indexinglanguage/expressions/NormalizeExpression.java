@@ -6,8 +6,8 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Transformer;
 
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Simon Thoresen Hult
@@ -18,7 +18,6 @@ public final class NormalizeExpression extends Expression {
     private static final Logger logger = Logger.getLogger(NormalizeExpression.class.getName());
 
     public NormalizeExpression(Linguistics linguistics) {
-        super(DataType.STRING);
         this.linguistics = linguistics;
     }
 

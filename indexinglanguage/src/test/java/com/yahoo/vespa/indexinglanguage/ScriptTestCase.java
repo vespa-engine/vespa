@@ -11,14 +11,22 @@ import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
-import com.yahoo.document.datatypes.MapFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.document.datatypes.Struct;
-import com.yahoo.vespa.indexinglanguage.expressions.*;
+import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
+import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
+import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -52,7 +60,7 @@ public class ScriptTestCase {
     }
 
     @Test
-    public void requireThatEachStatementHasEmptyInput() {
+    public void failsWhenOneStatementIsMissingInput() {
         Document input = new Document(type, "id:scheme:mytype::");
         input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
 
@@ -61,11 +69,36 @@ public class ScriptTestCase {
                 new StatementExpression(new AttributeExpression("out-2")));
         try {
             exp.verify(input);
-            fail();
+            fail("Expected exception");
         } catch (VerificationException e) {
-            assertEquals(e.getExpressionType(), ScriptExpression.class);
-            assertEquals("Invalid expression '{ input in-1 | attribute out-1; attribute out-2; }': Expected any input, but no input is specified", e.getMessage());
+            assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
         }
+    }
+
+    @Test
+    public void failsWhenAllStatementIsMissingInput() {
+        Document input = new Document(type, "id:scheme:mytype::");
+        input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
+
+        Expression exp = new ScriptExpression(
+                new StatementExpression(new AttributeExpression("out-2")));
+        try {
+            exp.verify(input);
+            fail("Expected exception");
+        } catch (VerificationException e) {
+            assertEquals(AttributeExpression.class, e.getExpressionType());
+            assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
+        }
+    }
+
+    @Test
+    public void succeedsWhenAllStatementsHaveInput() {
+        Document input = new Document(type, "id:scheme:mytype::");
+        input.setFieldValue(input.getField("in-1"), new StringFieldValue("69"));
+
+        Expression exp = new ScriptExpression(
+                new StatementExpression(new InputExpression("in-1"), new AttributeExpression("out-1")));
+        exp.verify(input);
     }
 
     @Test
@@ -234,6 +267,63 @@ public class ScriptTestCase {
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
         assertEquals(13.0f, ((FloatFieldValue)adapter.values.get("myFloat")).getFloat(), 0.000001);
+    }
+
+    @Test
+    public void testChoiceExpression() {
+        var tester = new ScriptTester();
+        // Nonsensical expression whose purpose is to test cat being given any as output type
+        var expression = tester.expressionFrom("(get_var A | to_array) . (get_var B | to_array) | get_var B | to_array | index myStringArray");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
+
+        var verificationContext = new VerificationContext(adapter);
+        verificationContext.setVariable("A", DataType.STRING);
+        verificationContext.setVariable("B", DataType.STRING);
+        expression.verify(verificationContext);
+
+        var context = new ExecutionContext(adapter);
+        context.setVariable("B", new StringFieldValue("b_value"));
+        expression.execute(context);
+        assertEquals("b_value", ((Array)adapter.values.get("myStringArray")).get(0).toString());
+    }
+
+    @Test
+    public void testChoiceAndVariableExpression() {
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom(
+                "input myString | if ((get_var DX | to_bool) == true) { " +
+                "(get_var A | to_array) . (get_var B | to_array) . (get_var C | to_array) . (get_var D | to_array) | set_var R; } " +
+                "else { if ((get_var CX | to_bool) == true) { " +
+                "(get_var A | to_array) . (get_var B | to_array) . (get_var C | to_array) | set_var R; } " +
+                "else { if ((get_var BX | to_bool) == true) { (get_var A | to_array) . (get_var B | to_array) | set_var R; } " +
+                "else { get_var A | to_array | set_var R; }; }; } | get_var R | for_each { _ } | attribute myStringArray");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myString", DataType.STRING));
+        adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
+
+        var verificationContext = new VerificationContext(adapter);
+        verificationContext.setVariable("BX", DataType.STRING);
+        verificationContext.setVariable("CX", DataType.STRING);
+        verificationContext.setVariable("DX", DataType.STRING);
+        verificationContext.setVariable("A", DataType.STRING);
+        verificationContext.setVariable("B", DataType.STRING);
+        verificationContext.setVariable("C", DataType.STRING);
+        verificationContext.setVariable("D", DataType.STRING);
+        expression.verify(verificationContext);
+
+        var context = new ExecutionContext(adapter);
+        context.setVariable("BX", new StringFieldValue("value 1"));
+        context.setVariable("CX", new StringFieldValue("value 2"));
+        context.setVariable("DX", new StringFieldValue("value 3"));
+        context.setVariable("A", new StringFieldValue("value 4"));
+        context.setVariable("B", new StringFieldValue("value 5"));
+        context.setVariable("C", new StringFieldValue("value 6"));
+        context.setVariable("D", new StringFieldValue("value 7"));
+        expression.execute(context);
+        assertEquals("[value 4, value 5, value 6, value 7]", adapter.values.get("myStringArray").toString());
     }
 
 }
