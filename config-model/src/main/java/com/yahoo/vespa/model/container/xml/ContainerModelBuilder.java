@@ -1034,7 +1034,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         InstanceName instance = context.properties().applicationId().instance();
         ZoneId zone = ZoneId.from(context.properties().zone().environment(),
                                   context.properties().zone().region());
-        return context.getApplicationPackage().getDeploymentSpec().zoneEndpoint(instance, zone, cluster);
+
+        var supportsTokenAuthentication = context.properties()
+                .endpoints()
+                .stream()
+                .anyMatch(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token);
+
+        return context
+                .getApplicationPackage()
+                .getDeploymentSpec()
+                .zoneEndpoint(instance, zone, cluster)
+                .withSupportsTokenAuthentication(supportsTokenAuthentication);
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {

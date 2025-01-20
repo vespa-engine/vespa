@@ -27,16 +27,25 @@ public class ZoneEndpoint {
      * </ol>
      */
     public static final int generation = 0;
-    public static final ZoneEndpoint defaultEndpoint = new ZoneEndpoint(true, false, List.of());
-    public static final ZoneEndpoint privateEndpoint = new ZoneEndpoint(false, false, List.of());
+    public static final ZoneEndpoint defaultEndpoint = new ZoneEndpoint(true, false, false, List.of());
+    public static final ZoneEndpoint privateEndpoint = new ZoneEndpoint(false, false, false, List.of());
 
     private final boolean isPublicEndpoint;
     private final boolean isPrivateEndpoint;
+    private final boolean supportsTokenAuthentication;
     private final List<AllowedUrn> allowedUrns;
 
     public ZoneEndpoint(boolean isPublicEndpoint, boolean isPrivateEndpoint, List<AllowedUrn> allowedUrns) {
         this.isPublicEndpoint = isPublicEndpoint;
         this.isPrivateEndpoint = isPrivateEndpoint;
+        this.supportsTokenAuthentication = false;
+        this.allowedUrns = List.copyOf(allowedUrns);
+    }
+
+    public ZoneEndpoint(boolean isPublicEndpoint, boolean isPrivateEndpoint, boolean supportsTokenAuthentication, List<AllowedUrn> allowedUrns) {
+        this.isPublicEndpoint = isPublicEndpoint;
+        this.isPrivateEndpoint = isPrivateEndpoint;
+        this.supportsTokenAuthentication = supportsTokenAuthentication;
         this.allowedUrns = List.copyOf(allowedUrns);
     }
 
@@ -48,6 +57,11 @@ public class ZoneEndpoint {
     /** Whether this has an endpoint which is visible through private DNS of the cloud. */
     public boolean isPrivateEndpoint() {
         return isPrivateEndpoint;
+    }
+
+    /** Whether this supports token authentication for private endpoints in cloud. */
+    public boolean supportsTokenAuthentication() {
+        return supportsTokenAuthentication;
     }
 
     /** List of allowed URNs, for specified private access types. */
@@ -64,12 +78,22 @@ public class ZoneEndpoint {
         return equals(defaultEndpoint);
     }
 
+    public ZoneEndpoint withSupportsTokenAuthentication(boolean supported) {
+        return new ZoneEndpoint(
+                this.isPublicEndpoint,
+                this.isPrivateEndpoint,
+                supported,
+                this.allowedUrns
+        );
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ZoneEndpoint that = (ZoneEndpoint) o;
-        return isPublicEndpoint == that.isPublicEndpoint && isPrivateEndpoint == that.isPrivateEndpoint && allowedUrns.equals(that.allowedUrns);
+        return isPublicEndpoint == that.isPublicEndpoint && isPrivateEndpoint == that.isPrivateEndpoint &&
+                supportsTokenAuthentication == that.supportsTokenAuthentication && allowedUrns.equals(that.allowedUrns);
     }
 
     @Override
