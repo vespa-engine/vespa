@@ -33,7 +33,7 @@
 %define _defattr_is_vespa_vespa 0
 %define _command_cmake cmake3
 %global _vespa_abseil_cpp_version 20240116.1
-%global _vespa_build_depencencies_version 1.3.7
+%global _vespa_build_depencencies_version 1.3.8
 %global _vespa_gtest_version 1.14.0
 %global _vespa_protobuf_version 5.26.1
 %global _vespa_openblas_version 0.3.27
@@ -380,7 +380,7 @@ getent passwd %{_vespa_user} >/dev/null || \
 %if 0%{?el8} || 0%{?el9}
 # TODO Hardcoded toolset version, should be detected in a better way.
 mkdir -p /opt/rh
-ln -sf /opt/rh/gcc-toolset-13 /opt/rh/gcc-toolset
+ln -sf /opt/rh/gcc-toolset-14 /opt/rh/gcc-toolset
 %endif
 echo "pathmunge %{_prefix}/bin" > /etc/profile.d/vespa.sh
 echo "export VESPA_HOME=%{_prefix}" >> /etc/profile.d/vespa.sh
