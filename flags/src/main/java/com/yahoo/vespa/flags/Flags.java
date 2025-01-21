@@ -55,6 +55,13 @@ public class Flags {
             "Takes effect on the next tick.",
             HOSTNAME, NODE_TYPE);
 
+    public static final UnboundBooleanFlag CLEAR_CONNTRACK = defineFeatureFlag(
+            "clear-conntrack", false,
+            List.of("hakonhall"), "2025-01-14", "2025-03-14",
+            "Whether to clear conntrack entries for a container",
+            "Takes effect immediately",
+            HOSTNAME, NODE_TYPE);
+
     public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
             "default-term-wise-limit", 1.0,
             List.of("baldersheim"), "2020-12-02", "2025-02-01",
