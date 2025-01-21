@@ -158,7 +158,7 @@ public class LoadBalancerSerializer {
 
         Cursor authMethods = settingsObject.setArray(authMethodsField);
         for(AuthMethod method : settings.authMethods()) {
-            authMethods.addString(method.serialize());
+            authMethods.addString(method.name());
         }
 
         if (settings.isPrivateEndpoint()) {
@@ -180,9 +180,7 @@ public class LoadBalancerSerializer {
         return new ZoneEndpoint(settingsObject.field(publicField).asBool(),
                                 settingsObject.field(privateField).asBool(),
                                 SlimeUtils.entriesStream(settingsObject.field(authMethodsField))
-                                        .map(field -> AuthMethod.fromString(field.asString()))
-                                        .filter(Optional::isPresent)
-                                        .map(Optional::get)
+                                        .map(field -> AuthMethod.valueOf(field.asString()))
                                         .toList(),
                                 SlimeUtils.entriesStream(settingsObject.field(allowedUrnsField))
                                         .map(urnObject -> new AllowedUrn(
@@ -191,7 +189,7 @@ public class LoadBalancerSerializer {
                                                     case "gcpServiceConnect" -> AccessType.gcpServiceConnect;
                                                     default -> throw new IllegalArgumentException("unknown service access type in '" + urnObject + "'");
                                                 },
-                                               urnObject.field(urnField).asString()))
+                                                urnObject.field(urnField).asString()))
                                         .toList());
     }
 
