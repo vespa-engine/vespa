@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.collections;
 
+import com.yahoo.text.StringUtilities;
 import com.yahoo.text.Utf8;
 
 import java.security.MessageDigest;
@@ -67,6 +68,11 @@ public class MD5 {
 
     public byte[] hashFull(String s) {
         return digester.digest(Utf8.toBytes(s));
+    }
+
+    /** Returns the 32 byte representation of the MD5 hash of the given string. Compatible with md5sum(1). */
+    public String hashToHex(String s) {
+        return StringUtilities.toHex(hashFull(s));
     }
 
 }
