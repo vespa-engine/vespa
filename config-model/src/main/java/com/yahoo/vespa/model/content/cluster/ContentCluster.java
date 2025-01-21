@@ -591,21 +591,12 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         if (distributionBitsInPreviousModel.isPresent() && distributionBitsInPreviousModel.get() > distributionBits)
             return distributionBitsInPreviousModel.get();
 
-        if (isHosted && zone.environment() == Environment.dev) {
-            var overriddenDistributionBits = featureFlags.distributionBitsInDev();
-            if (overriddenDistributionBits == 0) return distributionBits;
-
-            log.log(INFO, "Overriding distribution bits to be " + overriddenDistributionBits);
-            return overriddenDistributionBits;
-        }
-        else {
-            return distributionBits;
-        }
+        return distributionBits;
     }
 
     private boolean zoneEnvImplies16DistributionBits() {
-        // We want perf to behave like prod as much as possible.
-        return (zone.environment() == Environment.prod) || (zone.environment() == Environment.perf);
+        // We want dev and perf to behave like prod as much as possible.
+        return Set.of(Environment.dev, Environment.perf, Environment.prod).contains(zone.environment());
     }
 
     public boolean isHosted() {

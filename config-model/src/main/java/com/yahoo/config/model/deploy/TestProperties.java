@@ -89,7 +89,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean symmetricPutAndActivateReplicaSelection = false;
     private boolean enforceStrictlyIncreasingClusterStateVersions = false;
     private boolean distributionConfigFromClusterController = false;
-    private int distributionBitsInDev = 0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -153,7 +152,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
     @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
     @Override public boolean distributionConfigFromClusterController() { return distributionConfigFromClusterController; }
-    @Override public int distributionBitsInDev() { return distributionBitsInDev; }
 
     public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
         this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
@@ -416,11 +414,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setContainerEndpoints(Set<ContainerEndpoint> containerEndpoints) {
         this.endpoints = containerEndpoints;
-        return this;
-    }
-
-    public TestProperties setDistributionBitsInDev(int bits) {
-        this.distributionBitsInDev = bits;
         return this;
     }
 
