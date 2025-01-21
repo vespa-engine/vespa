@@ -48,6 +48,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag DISABLE_WG_CONNTRACK = defineFeatureFlag(
+            "disable-wg-conntrack", false,
+            List.of("hakonhall"), "2025-01-17", "2025-03-17",
+            "Disable connection tracking of WireGuard traffic",
+            "Takes effect on the next tick.",
+            HOSTNAME, NODE_TYPE);
+
     public static final UnboundBooleanFlag CLEAR_CONNTRACK = defineFeatureFlag(
             "clear-conntrack", false,
             List.of("hakonhall"), "2025-01-14", "2025-03-14",
