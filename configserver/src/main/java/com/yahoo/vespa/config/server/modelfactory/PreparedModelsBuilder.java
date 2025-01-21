@@ -26,7 +26,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationVersions;
@@ -61,7 +60,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
     private static final Logger log = Logger.getLogger(PreparedModelsBuilder.class.getName());
 
     private final FlagSource flagSource;
-    private final SecretStore secretStore;
     private final List<ContainerEndpoint> containerEndpoints;
     private final Optional<EndpointCertificateSecrets> endpointCertificateSecrets;
     private final ConfigDefinitionRepo configDefinitionRepo;
@@ -75,7 +73,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
     public PreparedModelsBuilder(ModelFactoryRegistry modelFactoryRegistry,
                                  FlagSource flagSource,
-                                 SecretStore secretStore,
                                  List<ContainerEndpoint> containerEndpoints,
                                  Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                                  ConfigDefinitionRepo configDefinitionRepo,
@@ -92,7 +89,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                  OnnxModelCost onnxModelCost) {
         super(modelFactoryRegistry, configserverConfig, zone, hostProvisionerProvider, deployLogger);
         this.flagSource = flagSource;
-        this.secretStore = secretStore;
         this.containerEndpoints = containerEndpoints;
         this.endpointCertificateSecrets = endpointCertificateSecrets;
         this.configDefinitionRepo = configDefinitionRepo;
@@ -224,7 +220,6 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                params.quota(),
                                                params.tenantVaults(),
                                                params.tenantSecretStores(),
-                                               secretStore,
                                                params.operatorCertificates(),
                                                params.cloudAccount(),
                                                params.dataplaneTokens());

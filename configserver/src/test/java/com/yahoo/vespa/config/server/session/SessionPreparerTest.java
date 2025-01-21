@@ -133,7 +133,6 @@ public class SessionPreparerTest {
                 curator,
                 zone,
                 flagSource,
-                secretStore,
                 OnnxModelCost.disabled(),
                 List.of(new DefaultEndpointCertificateSecretStore(secretStore)));
     }
