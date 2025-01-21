@@ -12,6 +12,13 @@ import static org.junit.Assert.assertTrue;
 public class MD5TestCase {
 
     @Test
+    public void testHashToHex() {
+        MD5 md5 = new MD5();
+        // Matches output from `md5sum <<< hello`
+        assertEquals("b1946ac92492d2347c6235b4d2611184", md5.hashToHex("hello\n"));
+    }
+
+    @Test
     public void testMD5() {
         MD5 md5 = new MD5();
         int a = md5.hash("foobar");

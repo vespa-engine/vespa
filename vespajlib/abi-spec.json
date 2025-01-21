@@ -3343,6 +3343,7 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public static java.lang.String toHex(byte[])",
       "public static java.lang.String escape(java.lang.String)",
       "public static java.lang.String escape(java.lang.String, char)",
       "public static java.lang.String unescape(java.lang.String)",

@@ -22,6 +22,16 @@ public class StringUtilities {
 
     private static byte toHex(int val) { return (byte) (val < 10 ? '0' + val : 'a' + (val - 10)); }
 
+    /** Returns a String where each byte b in `bytes` is replaced by "%02x".formatted(b). */
+    public static String toHex(byte[] bytes) {
+        byte[] encoded = new byte[bytes.length * 2];
+        for (int i = 0; i < bytes.length; i++) {
+            encoded[i * 2] = toHex((bytes[i] >> 4) & 0xF);
+            encoded[i * 2 + 1] = toHex(bytes[i] & 0xF);
+        }
+        return new String(encoded, StandardCharsets.US_ASCII);
+    }
+
     private static class ReplacementCharacters {
 
         public byte[] needEscape = new byte[256];
