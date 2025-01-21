@@ -326,4 +326,23 @@ public class ScriptTestCase {
         assertEquals("[value 4, value 5, value 6, value 7]", adapter.values.get("myStringArray").toString());
     }
 
+    @Test
+    public void testMultiStatementInput() {
+        var tester = new ScriptTester();
+        // A multi-statement indexing block as rewritten by the config model:
+        var expression = tester.expressionFrom("clear_state | guard { input myString | { \"en\" | set_language; tokenize normalize stem:\"BEST\" | index myOutputString; }; }");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        var myString = new Field("myString", DataType.STRING);
+        adapter.createField(myString);
+        adapter.setValue("myString", new StringFieldValue("Test value"));
+        adapter.createField(new Field("myOutputString", DataType.STRING));
+
+        expression.verify(adapter);
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertEquals("Test value", ((StringFieldValue)adapter.values.get("myOutputString")).getString());
+    }
+
 }
