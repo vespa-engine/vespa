@@ -9,56 +9,27 @@ import java.util.stream.Collectors;
  * Statistics for feed operations over HTTP against a Vespa cluster.
  *
  * @author jonmv
+ * @author bjorncs
  */
 public class OperationStats {
 
     private final double duration;
     private final long requests;
-    private final Map<Integer, Long> responsesByCode;
     private final long inflight;
     private final long targetInflight;
     private final long exceptions;
-    private final long averageLatencyMillis;
-    private final long minLatencyMillis;
-    private final long maxLatencyMillis;
     private final long bytesSent;
-    private final long bytesReceived;
+    private final Map<Integer, Response> statsByCode;
 
-    public OperationStats(double duration, long requests, Map<Integer, Long> responsesByCode, long exceptions,
-                          long inflight, long targetInFlight, long averageLatencyMillis, long minLatencyMillis,
-                          long maxLatencyMillis, long bytesSent, long bytesReceived) {
+    public OperationStats(double duration, long requests, long exceptions, long inflight, long targetInFlight, long bytesSent,
+                          Map<Integer, Response> statsByCode) {
         this.duration = duration;
         this.requests = requests;
-        this.responsesByCode = responsesByCode;
         this.exceptions = exceptions;
         this.inflight = inflight;
         this.targetInflight = targetInFlight;
-        this.averageLatencyMillis = averageLatencyMillis;
-        this.minLatencyMillis = minLatencyMillis;
-        this.maxLatencyMillis = maxLatencyMillis;
         this.bytesSent = bytesSent;
-        this.bytesReceived = bytesReceived;
-    }
-
-    /** Returns the difference between this and the initial.
-     *  Min and max latency, inflight and targetInflight are not modified.
-     */
-    public OperationStats since(OperationStats initial) {
-        return new OperationStats(duration - initial.duration,
-                         requests - initial.requests,
-                                  responsesByCode.entrySet().stream()
-                                                 .collect(Collectors.toMap(Map.Entry::getKey,
-                                                                           entry -> entry.getValue() - initial.responsesByCode.getOrDefault(entry.getKey(), 0L))),
-                                  exceptions - initial.exceptions,
-                                  inflight,
-                                  targetInflight,
-                                  responsesByCode.size() == initial.responsesByCode.size() ? 0 :
-                                    (averageLatencyMillis * responsesByCode.size() - initial.averageLatencyMillis * initial.responsesByCode.size())
-                                  / (responsesByCode.size() - initial.responsesByCode.size()),
-                                  minLatencyMillis,
-                                  maxLatencyMillis,
-                                  bytesSent - initial.bytesSent,
-                                  bytesReceived - initial.bytesReceived);
+        this.statsByCode = statsByCode;
     }
 
     /** Number of HTTP requests attempted. */
@@ -68,18 +39,18 @@ public class OperationStats {
 
     /** Number of HTTP responses received. */
     public long responses() {
-        return requests - inflight - exceptions;
+        return statsByCode.values().stream().mapToLong(r -> r.count).sum();
     }
 
     /** Number of 200 OK HTTP responses received. */
     public long successes() {
-        return responsesByCode.getOrDefault(200, 0L);
+        var okStats = statsByCode.get(200);
+        if (okStats == null) return 0;
+        return okStats.count;
     }
 
-    /** Number of HTTP responses by status code. */
-    public Map<Integer, Long> responsesByCode() {
-        return responsesByCode;
-    }
+    /** Statistics per response code. */
+    public Map<Integer, Response> statsByCode() { return statsByCode; }
 
     /** Number of exceptions (instead of responses). */
     public long exceptions() {
@@ -93,17 +64,20 @@ public class OperationStats {
 
     /** Average request-response latency, or -1.  */
     public long averageLatencyMillis() {
-        return averageLatencyMillis;
+        var requests = requests();
+        if (requests == 0) return -1;
+        var totalLatencyMillis = statsByCode.values().stream().mapToLong(r -> r.totalLatencyMillis).sum();
+        return totalLatencyMillis / requests;
     }
 
     /** Minimum request-response latency, or -1.  */
     public long minLatencyMillis() {
-        return minLatencyMillis;
+        return statsByCode.values().stream().mapToLong(r -> r.minLatencyMillis).min().orElse(-1L);
     }
 
     /** Maximum request-response latency, or -1.  */
     public long maxLatencyMillis() {
-        return maxLatencyMillis;
+        return statsByCode.values().stream().mapToLong(r -> r.maxLatencyMillis).max().orElse(-1L);
     }
 
     /** Number of bytes sent, for HTTP requests with a response. */
@@ -113,39 +87,62 @@ public class OperationStats {
 
     /** Number of bytes received in HTTP responses. */
     public long bytesReceived() {
-        return bytesReceived;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        OperationStats that = (OperationStats) o;
-        return requests == that.requests && inflight == that.inflight && exceptions == that.exceptions && averageLatencyMillis == that.averageLatencyMillis && minLatencyMillis == that.minLatencyMillis && maxLatencyMillis == that.maxLatencyMillis && bytesSent == that.bytesSent && bytesReceived == that.bytesReceived && responsesByCode.equals(that.responsesByCode);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(requests, responsesByCode, inflight, exceptions, averageLatencyMillis, minLatencyMillis, maxLatencyMillis, bytesSent, bytesReceived);
+        return statsByCode.values().stream().mapToLong(r -> r.bytesReceived).sum();
     }
 
     @Override
     public String toString() {
-        Map<Integer, Double> rateByCode = responsesByCode.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue()/duration));
-        return "Stats{" +
-               "requests=" + requests +
-               ", responsesByCode=" + responsesByCode +
-               ", responseRateByCode=" + rateByCode +
-               ", exceptions=" + exceptions +
-               ", inflight=" + inflight +
-               ", targetInflight=" + targetInflight +
-               ", averageLatencyMillis=" + averageLatencyMillis +
-               ", minLatencyMillis=" + minLatencyMillis +
-               ", maxLatencyMillis=" + maxLatencyMillis +
-               ", bytesSent=" + bytesSent +
-               ", bytesReceived=" + bytesReceived +
-               '}';
+        return "OperationStats{" +
+                "duration=" + duration +
+                ", inflight=" + inflight +
+                ", targetInflight=" + targetInflight +
+                ", exceptions=" + exceptions +
+                ", bytesSent=" + bytesSent +
+                ", statsByCode=" + statsByCode +
+                '}';
+    }
+
+    public static class Response {
+        private final long count;
+        private final long totalLatencyMillis;
+        private final long averageLatencyMillis;
+        private final long minLatencyMillis;
+        private final long maxLatencyMillis;
+        private final long bytesReceived;
+        private final double rate;
+
+        public Response(
+                long count, long totalLatencyMillis, long averageLatencyMillis, long minLatencyMillis,
+                long maxLatencyMillis, long bytesReceived, double rate) {
+            this.count = count;
+            this.totalLatencyMillis = totalLatencyMillis;
+            this.averageLatencyMillis = averageLatencyMillis;
+            this.minLatencyMillis = minLatencyMillis;
+            this.maxLatencyMillis = maxLatencyMillis;
+            this.bytesReceived = bytesReceived;
+            this.rate = rate;
+        }
+
+        // Generate getters for all fields. Should have the same name as the field, and written as a single line
+        public long count() { return count; }
+        public long averageLatencyMillis() { return averageLatencyMillis; }
+        public long minLatencyMillis() { return minLatencyMillis; }
+        public long maxLatencyMillis() { return maxLatencyMillis; }
+        public long bytesReceived() { return bytesReceived; }
+        public double rate() { return rate; }
+
+        @Override
+        public String toString() {
+            return "Response{" +
+                    "count=" + count +
+                    ", totalLatencyMillis=" + totalLatencyMillis +
+                    ", averageLatencyMillis=" + averageLatencyMillis +
+                    ", minLatencyMillis=" + minLatencyMillis +
+                    ", maxLatencyMillis=" + maxLatencyMillis +
+                    ", bytesReceived=" + bytesReceived +
+                    ", rate=" + rate +
+                    '}';
+        }
     }
 
 }

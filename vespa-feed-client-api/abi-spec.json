@@ -302,6 +302,24 @@
     ],
     "fields" : [ ]
   },
+  "ai.vespa.feed.client.OperationStats$Response" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(long, long, long, long, long, long, double)",
+      "public long count()",
+      "public long averageLatencyMillis()",
+      "public long minLatencyMillis()",
+      "public long maxLatencyMillis()",
+      "public long bytesReceived()",
+      "public double rate()",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [ ]
+  },
   "ai.vespa.feed.client.OperationStats" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -309,12 +327,11 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(double, long, java.util.Map, long, long, long, long, long, long, long, long)",
-      "public ai.vespa.feed.client.OperationStats since(ai.vespa.feed.client.OperationStats)",
+      "public void <init>(double, long, long, long, long, long, java.util.Map)",
       "public long requests()",
       "public long responses()",
       "public long successes()",
-      "public java.util.Map responsesByCode()",
+      "public java.util.Map statsByCode()",
       "public long exceptions()",
       "public long inflight()",
       "public long averageLatencyMillis()",
@@ -322,8 +339,6 @@
       "public long maxLatencyMillis()",
       "public long bytesSent()",
       "public long bytesReceived()",
-      "public boolean equals(java.lang.Object)",
-      "public int hashCode()",
       "public java.lang.String toString()"
     ],
     "fields" : [ ]

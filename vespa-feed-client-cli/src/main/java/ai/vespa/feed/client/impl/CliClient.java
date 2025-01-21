@@ -238,8 +238,18 @@ public class CliClient {
             writeFloatField(generator, "http.response.latency.millis.max", stats.maxLatencyMillis(), 3);
 
             generator.writeObjectFieldStart("http.response.code.counts");
-            for (Map.Entry<Integer, Long> entry : stats.responsesByCode().entrySet())
-                generator.writeNumberField(Integer.toString(entry.getKey()), entry.getValue());
+            for (Map.Entry<Integer, OperationStats.Response> entry : stats.statsByCode().entrySet())
+                generator.writeNumberField(Integer.toString(entry.getKey()), entry.getValue().count());
+            generator.writeEndObject();
+
+            generator.writeObjectFieldStart("http.response.code.latencies");
+            for (var e : stats.statsByCode().entrySet()) {
+                generator.writeObjectFieldStart(Integer.toString(e.getKey()));
+                writeFloatField(generator, "avg", e.getValue().averageLatencyMillis(), 3);
+                writeFloatField(generator, "min", e.getValue().minLatencyMillis(), 3);
+                writeFloatField(generator, "max", e.getValue().maxLatencyMillis(), 3);
+                generator.writeEndObject();
+            }
             generator.writeEndObject();
 
             generator.writeEndObject();
