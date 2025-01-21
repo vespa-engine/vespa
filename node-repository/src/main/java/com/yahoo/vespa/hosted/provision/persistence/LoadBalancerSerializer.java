@@ -6,7 +6,6 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
-import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -64,7 +63,6 @@ public class LoadBalancerSerializer {
     private static final String settingsField = "settings";
     private static final String publicField = "public";
     private static final String privateField = "private";
-    private static final String authMethodsField = "authMethods";
     private static final String allowedUrnsField = "allowedUrns";
     private static final String accessTypeField = "type";
     private static final String urnField = "urn";
@@ -155,12 +153,6 @@ public class LoadBalancerSerializer {
     private static void toSlime(Cursor settingsObject, ZoneEndpoint settings) {
         settingsObject.setBool(publicField, settings.isPublicEndpoint());
         settingsObject.setBool(privateField, settings.isPrivateEndpoint());
-
-        Cursor authMethods = settingsObject.setArray(authMethodsField);
-        for(AuthMethod method : settings.authMethods()) {
-            authMethods.addString(method.name());
-        }
-
         if (settings.isPrivateEndpoint()) {
             Cursor allowedUrnsArray = settingsObject.setArray(allowedUrnsField);
             for (AllowedUrn urn : settings.allowedUrns()) {
@@ -179,18 +171,14 @@ public class LoadBalancerSerializer {
         if ( ! settingsObject.valid()) return ZoneEndpoint.defaultEndpoint;
         return new ZoneEndpoint(settingsObject.field(publicField).asBool(),
                                 settingsObject.field(privateField).asBool(),
-                                SlimeUtils.entriesStream(settingsObject.field(authMethodsField))
-                                        .map(field -> AuthMethod.valueOf(field.asString()))
-                                        .toList(),
                                 SlimeUtils.entriesStream(settingsObject.field(allowedUrnsField))
-                                        .map(urnObject -> new AllowedUrn(
-                                                switch (urnObject.field(accessTypeField).asString()) {
-                                                    case "awsPrivateLink" -> AccessType.awsPrivateLink;
-                                                    case "gcpServiceConnect" -> AccessType.gcpServiceConnect;
-                                                    default -> throw new IllegalArgumentException("unknown service access type in '" + urnObject + "'");
-                                                },
-                                                urnObject.field(urnField).asString()))
-                                        .toList());
+                                          .map(urnObject -> new AllowedUrn(switch (urnObject.field(accessTypeField).asString()) {
+                                                                               case "awsPrivateLink" -> AccessType.awsPrivateLink;
+                                                                               case "gcpServiceConnect" -> AccessType.gcpServiceConnect;
+                                                                               default -> throw new IllegalArgumentException("unknown service access type in '" + urnObject + "'");
+                                                                           },
+                                                                           urnObject.field(urnField).asString()))
+                                          .toList());
     }
 
     private static <T> Optional<T> optionalValue(Inspector field, Function<Inspector, T> fieldMapper) {
