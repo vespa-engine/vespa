@@ -126,7 +126,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int distributionBitsInDev() { return 0; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.468") default int distributionBitsInDev() { return 16; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default int documentV1QueueSize() { return -1; }
     }
 

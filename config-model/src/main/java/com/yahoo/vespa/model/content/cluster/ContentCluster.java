@@ -10,7 +10,6 @@ import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.documentmodel.NewDocumentType;
@@ -65,6 +64,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static com.yahoo.config.provision.Environment.dev;
+import static com.yahoo.config.provision.Environment.perf;
+import static com.yahoo.config.provision.Environment.prod;
 import static com.yahoo.vespa.model.content.DistributionBitCalculator.getDistributionBits;
 import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
@@ -591,21 +593,12 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         if (distributionBitsInPreviousModel.isPresent() && distributionBitsInPreviousModel.get() > distributionBits)
             return distributionBitsInPreviousModel.get();
 
-        if (isHosted && zone.environment() == Environment.dev) {
-            var overriddenDistributionBits = featureFlags.distributionBitsInDev();
-            if (overriddenDistributionBits == 0) return distributionBits;
-
-            log.log(INFO, "Overriding distribution bits to be " + overriddenDistributionBits);
-            return overriddenDistributionBits;
-        }
-        else {
-            return distributionBits;
-        }
+        return distributionBits;
     }
 
     private boolean zoneEnvImplies16DistributionBits() {
-        // We want perf to behave like prod as much as possible.
-        return (zone.environment() == Environment.prod) || (zone.environment() == Environment.perf);
+        // We want dev and perf to behave like prod as much as possible.
+        return zone.environment().isAnyOf(dev, perf, prod);
     }
 
     public boolean isHosted() {

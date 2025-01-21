@@ -641,19 +641,14 @@ public class ContentClusterTest extends ContentBaseTest {
         ContentCluster prodWith16Bits = createWithZone(xml, new Zone(Environment.prod, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(prodWith16Bits, 16);
 
+        ContentCluster devWith16Bits = createWithZone(xml, new Zone(Environment.dev, RegionName.from("us-east-3")));
+        assertDistributionBitsInConfig(devWith16Bits, 16);
+
         ContentCluster perfWith16Bits = createWithZone(xml, new Zone(Environment.perf, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(perfWith16Bits, 16);
 
         ContentCluster stagingNot16Bits = createWithZone(xml, new Zone(Environment.staging, RegionName.from("us-east-3")));
         assertDistributionBitsInConfig(stagingNot16Bits, 8);
-
-        // Default should be 8 bits
-        ContentCluster dev8Bits = createWithZone(xml, new Zone(Environment.dev, RegionName.from("us-east-3")));
-        assertDistributionBitsInConfig(dev8Bits, 8);
-
-        // Overriding feature flag with 16 bits
-        ContentCluster dev16Bits = createWithZone(xml, new Zone(Environment.dev, RegionName.from("us-east-3")), 16);
-        assertDistributionBitsInConfig(dev16Bits, 16);
     }
 
     @Test
@@ -1205,15 +1200,9 @@ public class ContentClusterTest extends ContentBaseTest {
 
 
     private ContentCluster createWithZone(String clusterXml, Zone zone) throws Exception {
-        return createWithZone(clusterXml, zone, 0);
-    }
-
-    private ContentCluster createWithZone(String clusterXml, Zone zone, int bitsInDev) throws Exception {
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .zone(zone);
         var properties = new TestProperties().setHostedVespa(true);
-        if (bitsInDev != 0)
-            properties.setDistributionBitsInDev(bitsInDev);
         deployStateBuilder.properties(properties);
 
         List<String> schemas = SchemaBuilder.createSchemas("test");
