@@ -1039,7 +1039,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         var supportsTokenAuthentication = context.properties()
                 .endpoints()
                 .stream()
-                .anyMatch(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token);
+                .anyMatch(endpoint ->
+                        endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token &&
+                        endpoint.clusterId().equals(cluster.value()));
         var authMethods = supportsTokenAuthentication ?
                 List.of(AuthMethod.mtls, AuthMethod.token) :
                 List.of(AuthMethod.mtls);
