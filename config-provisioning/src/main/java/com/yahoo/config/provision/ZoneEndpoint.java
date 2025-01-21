@@ -2,6 +2,7 @@
 package com.yahoo.config.provision;
 
 import ai.vespa.validation.Validation;
+import com.yahoo.config.provision.zone.AuthMethod;
 
 import java.util.List;
 import java.util.Objects;
@@ -27,16 +28,25 @@ public class ZoneEndpoint {
      * </ol>
      */
     public static final int generation = 0;
-    public static final ZoneEndpoint defaultEndpoint = new ZoneEndpoint(true, false, List.of());
-    public static final ZoneEndpoint privateEndpoint = new ZoneEndpoint(false, false, List.of());
+    public static final ZoneEndpoint defaultEndpoint = new ZoneEndpoint(true, false, List.of(AuthMethod.mtls), List.of());
+    public static final ZoneEndpoint privateEndpoint = new ZoneEndpoint(false, false, List.of(AuthMethod.mtls), List.of());
 
     private final boolean isPublicEndpoint;
     private final boolean isPrivateEndpoint;
+    private final List<AuthMethod> authMethods;
     private final List<AllowedUrn> allowedUrns;
 
     public ZoneEndpoint(boolean isPublicEndpoint, boolean isPrivateEndpoint, List<AllowedUrn> allowedUrns) {
         this.isPublicEndpoint = isPublicEndpoint;
         this.isPrivateEndpoint = isPrivateEndpoint;
+        this.authMethods = List.of(AuthMethod.mtls);
+        this.allowedUrns = List.copyOf(allowedUrns);
+    }
+
+    public ZoneEndpoint(boolean isPublicEndpoint, boolean isPrivateEndpoint, List<AuthMethod> authMethods, List<AllowedUrn> allowedUrns) {
+        this.isPublicEndpoint = isPublicEndpoint;
+        this.isPrivateEndpoint = isPrivateEndpoint;
+        this.authMethods = authMethods;
         this.allowedUrns = List.copyOf(allowedUrns);
     }
 
@@ -48,6 +58,11 @@ public class ZoneEndpoint {
     /** Whether this has an endpoint which is visible through private DNS of the cloud. */
     public boolean isPrivateEndpoint() {
         return isPrivateEndpoint;
+    }
+
+    /** List of allowed authentication methods for private endpoints. */
+    public List<AuthMethod> authMethods() {
+        return authMethods;
     }
 
     /** List of allowed URNs, for specified private access types. */
@@ -64,12 +79,22 @@ public class ZoneEndpoint {
         return equals(defaultEndpoint);
     }
 
+    public ZoneEndpoint withAuthMethods(List<AuthMethod> authMethods) {
+        return new ZoneEndpoint(
+                this.isPublicEndpoint,
+                this.isPrivateEndpoint,
+                authMethods,
+                this.allowedUrns
+        );
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ZoneEndpoint that = (ZoneEndpoint) o;
-        return isPublicEndpoint == that.isPublicEndpoint && isPrivateEndpoint == that.isPrivateEndpoint && allowedUrns.equals(that.allowedUrns);
+        return isPublicEndpoint == that.isPublicEndpoint && isPrivateEndpoint == that.isPrivateEndpoint &&
+                authMethods.equals(that.authMethods) && allowedUrns.equals(that.allowedUrns);
     }
 
     @Override

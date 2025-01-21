@@ -247,6 +247,7 @@ public class LoadBalancerProvisioner {
                                              .orElse(Set.of()); // Targeted reals are changed on activation.
         ZoneEndpoint settings = new ZoneEndpoint(zoneEndpoint.isPublicEndpoint(),
                                                  zoneEndpoint.isPrivateEndpoint(),
+                                                 zoneEndpoint.authMethods(),
                                                  currentLoadBalancer.instance()
                                                                     .map(LoadBalancerInstance::settings)
                                                                     .map(ZoneEndpoint::allowedUrns)

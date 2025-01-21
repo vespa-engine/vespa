@@ -33,6 +33,7 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.jdisc.DataplaneProxyService;
@@ -1034,7 +1035,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         InstanceName instance = context.properties().applicationId().instance();
         ZoneId zone = ZoneId.from(context.properties().zone().environment(),
                                   context.properties().zone().region());
-        return context.getApplicationPackage().getDeploymentSpec().zoneEndpoint(instance, zone, cluster);
+
+        var supportsTokenAuthentication = context.properties()
+                .endpoints()
+                .stream()
+                .anyMatch(endpoint -> endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token);
+        var authMethods = supportsTokenAuthentication ?
+                List.of(AuthMethod.mtls, AuthMethod.token) :
+                List.of(AuthMethod.mtls);
+
+        return context
+                .getApplicationPackage()
+                .getDeploymentSpec()
+                .zoneEndpoint(instance, zone, cluster)
+                .withAuthMethods(authMethods);
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
