@@ -538,6 +538,32 @@ public class SchemaTestCase {
         var documentConfig = new DocumentManager().produce(documentManager, new DocumentmanagerConfig.Builder());
     }
 
+    @Test
+    void testDerivingMultiStatementIndexing() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field myString type string {
+                            indexing: {
+                                "en" | set_language;
+                                index | summary;
+                            }
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+        var ilConfigBuilder = new IlscriptsConfig.Builder();
+        derived.getIndexingScript().getConfig(ilConfigBuilder);
+        assertEquals("clear_state | guard { input myString | { \"en\" | set_language; tokenize normalize stem:\"BEST\" | index myString | summary myString; }; }",
+                     ilConfigBuilder.build().ilscript().get(0).content(0));
+    }
+
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {
         assertEquals("pf1", schema.fieldSets().userFieldSets().get("parent_set").getFieldNames().stream().findFirst().get());
         assertEquals(Stemming.NONE, schema.getStemming());

@@ -45,6 +45,11 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     @Override
+    public boolean requiresInput() {
+        return expressions().stream().anyMatch(statement -> statement.requiresInput());
+    }
+
+    @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
         DataType currentOutput = null;
