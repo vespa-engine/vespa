@@ -239,6 +239,12 @@ public class CliClient {
 
             // Hide new experimental output behind feature flag
             if (System.getenv("VESPA_EXTENDED_STATS") != null) {
+                generator.writeObjectFieldStart("operation.latency");
+                generator.writeNumberField("min", stats.operationMinLatencyMillis());
+                generator.writeNumberField("avg", stats.operationAverageLatencyMillis());
+                generator.writeNumberField("max", stats.operationMaxLatencyMillis());
+                generator.writeEndObject();
+
                 generator.writeObjectFieldStart("http.response");
                 for (var e : stats.statsByCode().entrySet()) {
                     generator.writeObjectFieldStart(Integer.toString(e.getKey()));

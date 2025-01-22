@@ -3,6 +3,8 @@ package ai.vespa.feed.client.impl;
 
 import java.time.Duration;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
@@ -16,6 +18,7 @@ class HttpRequest {
     private final Duration timeout;
     private final long deadlineNanos;
     private final LongSupplier nanoClock;
+    private final AtomicLong firstDispatchNanos = new AtomicLong(-1);
 
     public HttpRequest(String method, String path, String query, Map<String, Supplier<String>> headers, byte[] body, Duration timeout, LongSupplier nanoClock) {
         this.method = method;
@@ -51,6 +54,10 @@ class HttpRequest {
     public Duration timeout() {
         return timeout;
     }
+
+    void onDispatch(long timeNs) { firstDispatchNanos.compareAndSet(-1, timeNs); }
+
+    Optional<Long> firstDispatchNanos() { return Optional.of(firstDispatchNanos.get()).filter(ns -> ns >= 0); }
 
     @Override
     public String toString() {

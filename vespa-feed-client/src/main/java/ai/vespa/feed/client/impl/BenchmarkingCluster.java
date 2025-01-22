@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import static java.util.Objects.requireNonNull;
 
@@ -34,6 +35,7 @@ public class BenchmarkingCluster implements Cluster {
         long bytesReceived = 0;
     }
 
+    private final Supplier<Long> nanoClock;
     private final AtomicLong timeOfFirstDispatch = new AtomicLong(0);
     private final AtomicLong requests = new AtomicLong();
     private final Throttler throttler;
@@ -42,28 +44,51 @@ public class BenchmarkingCluster implements Cluster {
     private long exceptions = 0;
     private long bytesSent = 0;
 
-    BenchmarkingCluster(Cluster delegate, Throttler throttler) {
+    private long operations = 0;
+    private long operationTotalLatencyMillis = 0;
+    private long operationMinLatencyMillis = Long.MAX_VALUE;
+    private long operationMaxLatencyMillis = 0;
+
+    BenchmarkingCluster(Cluster delegate, Throttler throttler, Supplier<Long> nanoClock) {
         this.delegate = requireNonNull(delegate);
         this.throttler = throttler;
+        this.nanoClock = requireNonNull(nanoClock);
     }
 
     @Override
     public void dispatch(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
+        dispatchInternal(request, vessel);
+    }
+
+    // Ensure we can wait on the final completion stage to complete in unit tests
+    CompletableFuture<HttpResponse> dispatchInternal(HttpRequest request, CompletableFuture<HttpResponse> vessel) {
         requests.incrementAndGet();
-        long startNanos = System.nanoTime();
+        long startNanos = nanoClock.get();
         timeOfFirstDispatch.compareAndSet(0, startNanos);
+        request.onDispatch(startNanos);
         delegate.dispatch(request, vessel);
-        vessel.whenCompleteAsync((response, thrown) -> {
+        return vessel.whenCompleteAsync((response, thrown) -> {
                     results++;
                     if (thrown == null) {
                         var stats = statsByCode.computeIfAbsent(response.code(), __ -> new ResponseSpecificStats());
-                        long latency = (System.nanoTime() - startNanos) / 1_000_000;
+                        var completeNanos = nanoClock.get();
+                        long latency = (completeNanos - startNanos) / 1_000_000;
                         stats.count++;
                         stats.totalLatencyMillis += latency;
                         stats.minLatencyMillis = Math.min(stats.minLatencyMillis, latency);
                         stats.maxLatencyMillis = Math.max(stats.maxLatencyMillis, latency);
                         stats.bytesReceived += response.body() == null ? 0 : response.body().length;
                         bytesSent += request.body() == null ? 0 : request.body().length;
+
+                        var operationLatency = request.firstDispatchNanos()
+                                .map(ns -> (completeNanos - ns) / 1_000_000)
+                                .orElse(-1L);
+                        if (operationLatency >= 0 && HttpRequestStrategy.isSuccess(response.code())) {
+                            operations++;
+                            operationTotalLatencyMillis += operationLatency;
+                            operationMinLatencyMillis = Math.min(operationMinLatencyMillis, operationLatency);
+                            operationMaxLatencyMillis = Math.max(operationMaxLatencyMillis, operationLatency);
+                        }
                     }
                     else
                         exceptions++;
@@ -99,7 +124,11 @@ public class BenchmarkingCluster implements Cluster {
             ));
         });
         return new OperationStats(
-                duration, requests, exceptions, requests - results, throttler.targetInflight(), bytesSent, statsByCode);
+                duration, requests, exceptions, requests - results, throttler.targetInflight(), bytesSent,
+                operations == 0 ? -1 : operationTotalLatencyMillis / operations,
+                operations == 0 ? -1 : operationMinLatencyMillis,
+                operations == 0 ? -1 : operationMaxLatencyMillis,
+                statsByCode);
     }
 
     @Override

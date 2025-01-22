@@ -2,8 +2,6 @@
 package ai.vespa.feed.client;
 
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Statistics for feed operations over HTTP against a Vespa cluster.
@@ -19,9 +17,13 @@ public class OperationStats {
     private final long targetInflight;
     private final long exceptions;
     private final long bytesSent;
+    private final long averageLatencyMillis;
+    private final long minLatencyMillis;
+    private final long maxLatencyMillis;
     private final Map<Integer, Response> statsByCode;
 
     public OperationStats(double duration, long requests, long exceptions, long inflight, long targetInFlight, long bytesSent,
+                          long averageLatencyMillis, long minLatencyMillis, long maxLatencyMillis,
                           Map<Integer, Response> statsByCode) {
         this.duration = duration;
         this.requests = requests;
@@ -29,6 +31,9 @@ public class OperationStats {
         this.inflight = inflight;
         this.targetInflight = targetInFlight;
         this.bytesSent = bytesSent;
+        this.averageLatencyMillis = averageLatencyMillis;
+        this.minLatencyMillis = minLatencyMillis;
+        this.maxLatencyMillis = maxLatencyMillis;
         this.statsByCode = statsByCode;
     }
 
@@ -90,14 +95,37 @@ public class OperationStats {
         return statsByCode.values().stream().mapToLong(r -> r.bytesReceived).sum();
     }
 
+    /**
+     * Operation latency is the time from the initial HTTP request is sent until the operation was successfully completed
+     * as observed by the client. Time spent on retrying the request will be included. Operations that eventually failed are not included.
+     * @return average latency in milliseconds
+     */
+    public long operationAverageLatencyMillis() { return averageLatencyMillis; }
+
+    /**
+     * @see #operationAverageLatencyMillis()
+     * @return minimum latency as milliseconds
+     */
+    public long operationMinLatencyMillis() { return minLatencyMillis; }
+
+    /**
+     * @see #operationAverageLatencyMillis()
+     * @return max latency as milliseconds
+     */
+    public long operationMaxLatencyMillis() { return maxLatencyMillis; }
+
     @Override
     public String toString() {
         return "OperationStats{" +
                 "duration=" + duration +
+                ", requests=" + requests +
                 ", inflight=" + inflight +
                 ", targetInflight=" + targetInflight +
                 ", exceptions=" + exceptions +
                 ", bytesSent=" + bytesSent +
+                ", averageLatencyMillis=" + averageLatencyMillis +
+                ", minLatencyMillis=" + minLatencyMillis +
+                ", maxLatencyMillis=" + maxLatencyMillis +
                 ", statsByCode=" + statsByCode +
                 '}';
     }

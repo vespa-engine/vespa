@@ -327,7 +327,7 @@
       "public"
     ],
     "methods" : [
-      "public void <init>(double, long, long, long, long, long, java.util.Map)",
+      "public void <init>(double, long, long, long, long, long, long, long, long, java.util.Map)",
       "public long requests()",
       "public long responses()",
       "public long successes()",
@@ -339,6 +339,9 @@
       "public long maxLatencyMillis()",
       "public long bytesSent()",
       "public long bytesReceived()",
+      "public long operationAverageLatencyMillis()",
+      "public long operationMinLatencyMillis()",
+      "public long operationMaxLatencyMillis()",
       "public java.lang.String toString()"
     ],
     "fields" : [ ]

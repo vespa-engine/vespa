@@ -84,7 +84,7 @@ class HttpRequestStrategy implements RequestStrategy {
     HttpRequestStrategy(FeedClientBuilderImpl builder, ClusterFactory clusterFactory) throws IOException {
         this.throttler = new DynamicThrottler(builder);
         this.resettableCluster = new ResettableCluster(clusterFactory);
-        this.cluster = builder.benchmark ? new BenchmarkingCluster(resettableCluster, throttler) : resettableCluster;
+        this.cluster = builder.benchmark ? new BenchmarkingCluster(resettableCluster, throttler, System::nanoTime) : resettableCluster;
         this.strategy = builder.retryStrategy;
         this.breaker = builder.circuitBreaker;
 
@@ -170,9 +170,13 @@ class HttpRequestStrategy implements RequestStrategy {
         return false;
     }
 
+    static boolean isSuccess(int statusCode) {
+        return statusCode / 100 == 2 || statusCode == 404 || statusCode == 412;
+    }
+
     /** Retries throttled requests (429), adjusting the target inflight count, and server unavailable (503). */
     private boolean retry(HttpRequest request, HttpResponse response, int attempt) {
-        if (response.code() / 100 == 2 || response.code() == 404 || response.code() == 412) {
+        if (isSuccess(response.code())) {
             logResponse(FINEST, response, request, attempt);
             breaker.success();
             throttler.success();
