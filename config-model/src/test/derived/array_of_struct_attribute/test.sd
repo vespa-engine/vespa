@@ -15,6 +15,21 @@ schema test {
         indexing: attribute
       }
     }
+    struct mykv {
+      field mykey type string {}
+      field myval type string {}
+    }
+    field kv_array type array<mykv> {
+      struct-field mykey {
+          indexing: attribute
+          match: cased
+          attribute: fast-search
+      }
+      struct-field myval {
+          indexing: attribute
+          match: cased
+      }
+    }
   }
   document-summary rename {
     summary new_elem_array { source: elem_array }
