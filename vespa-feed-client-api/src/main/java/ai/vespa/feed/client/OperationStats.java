@@ -64,10 +64,10 @@ public class OperationStats {
 
     /** Average request-response latency, or -1.  */
     public long averageLatencyMillis() {
-        var requests = requests();
-        if (requests == 0) return -1;
+        var responses = responses();
+        if (responses == 0) return -1;
         var totalLatencyMillis = statsByCode.values().stream().mapToLong(r -> r.totalLatencyMillis).sum();
-        return totalLatencyMillis / requests;
+        return totalLatencyMillis / responses;
     }
 
     /** Minimum request-response latency, or -1.  */
