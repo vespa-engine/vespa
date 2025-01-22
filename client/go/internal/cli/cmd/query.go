@@ -31,6 +31,8 @@ type queryOptions struct {
 	format           string
 	postFile         string
 	headers          []string
+	profile          bool
+	profileFile      string
 }
 
 func newQueryCmd(cli *CLI) *cobra.Command {
@@ -62,6 +64,8 @@ can be set by the syntax [parameter-name]=[value].`,
 	cmd.Flags().StringVarP(&opts.format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain' (no formatting)")
 	cmd.Flags().StringSliceVarP(&opts.headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
 	cmd.Flags().IntVarP(&opts.queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
+	cmd.Flags().BoolVarP(&opts.profile, "profile", "", false, "Enable profiling mode (Note: this feature is experimental)")
+	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "", "vespa_query_profile_result.json", "Profiling result file")
 	cli.bindWaitFlag(cmd, 0, &opts.waitSecs)
 	return cmd
 }
@@ -106,6 +110,13 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 		key, value := splitArg(arguments[i])
 		urlQuery.Set(key, value)
 	}
+	if opts.profile {
+		opts.format = "plain"
+		opts.queryTimeoutSecs *= 2
+		urlQuery.Set("trace.level", "1")
+		urlQuery.Set("trace.explainLevel", "1")
+		urlQuery.Set("trace.profiling.matching.depth", "100")
+	}
 	queryTimeout := urlQuery.Get("timeout")
 	if queryTimeout == "" {
 		// No timeout set by user, use the timeout option
@@ -146,7 +157,17 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
-		if err := printResponse(response.Body, response.Header.Get("Content-Type"), opts.format, cli); err != nil {
+		var output io.Writer = cli.Stdout
+		if opts.profile {
+			profileFile, err := os.Create(opts.profileFile)
+			if err != nil {
+				return fmt.Errorf("failed to create profile file %s: %w", opts.profileFile, err)
+			}
+			defer profileFile.Close()
+			fmt.Fprintf(cli.Stderr, "writing profiling results to: %s\n", opts.profileFile)
+			output = profileFile
+		}
+		if err := printResponse(response.Body, response.Header.Get("Content-Type"), opts.format, output); err != nil {
 			return err
 		}
 	} else if response.StatusCode/100 == 4 {
@@ -157,15 +178,15 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	return nil
 }
 
-func printResponse(body io.Reader, contentType, format string, cli *CLI) error {
+func printResponse(body io.Reader, contentType, format string, output io.Writer) error {
 	contentType = strings.Split(contentType, ";")[0]
 	if contentType == "text/event-stream" {
 		return printResponseBody(body, printOptions{
 			plainStream: format == "plain",
 			tokenStream: format == "human",
-		}, cli)
+		}, output)
 	}
-	return printResponseBody(body, printOptions{parseJSON: format == "human"}, cli)
+	return printResponseBody(body, printOptions{parseJSON: format == "human"}, output)
 }
 
 type printOptions struct {
@@ -174,9 +195,9 @@ type printOptions struct {
 	parseJSON   bool
 }
 
-func printResponseBody(body io.Reader, options printOptions, cli *CLI) error {
+func printResponseBody(body io.Reader, options printOptions, output io.Writer) error {
 	if options.plainStream {
-		_, err := io.Copy(cli.Stdout, body)
+		_, err := io.Copy(output, body)
 		return err
 	} else if options.tokenStream {
 		bufSize := 1024 * 1024 // Handle events up to this size
@@ -200,29 +221,29 @@ func printResponseBody(body io.Reader, options printOptions, cli *CLI) error {
 				if err := json.Unmarshal([]byte(event.Data), &token); err == nil {
 					value = token.Value
 				}
-				fmt.Fprint(cli.Stdout, value)
+				fmt.Fprint(output, value)
 			} else if !event.IsEnd() {
 				if writingLine {
-					fmt.Fprintln(cli.Stdout)
+					fmt.Fprintln(output)
 				}
 				event.Data = ioutil.StringToJSON(event.Data) // Optimistically pretty-print JSON
-				fmt.Fprint(cli.Stdout, event.String())
+				fmt.Fprint(output, event.String())
 			} else {
-				fmt.Fprintln(cli.Stdout)
+				fmt.Fprintln(output)
 				break
 			}
 		}
 		return nil
 	} else if options.parseJSON {
 		text := ioutil.ReaderToJSON(body) // Optimistic, returns body as the raw string if it cannot be parsed to JSON
-		fmt.Fprintln(cli.Stdout, text)
+		fmt.Fprintln(output, text)
 		return nil
 	} else {
 		b, err := io.ReadAll(body)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintln(cli.Stdout, string(b))
+		fmt.Fprintln(output, string(b))
 		return nil
 	}
 }
