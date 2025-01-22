@@ -3,11 +3,12 @@ package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.completion.StringPrompt;
-import com.yahoo.container.jdisc.SecretStoreProvider;
 import com.yahoo.container.jdisc.SecretsProvider;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.Map;
 
 public class OpenAITest {
@@ -31,6 +32,23 @@ public class OpenAITest {
             return null;
         });
         future.join();
+    }
+
+    @Test
+    @Disabled
+    public void testComplete() {
+        var config = new LlmClientConfig.Builder().maxTokens(10).build();
+        var openai = new OpenAI(config, new SecretsProvider().get());
+        var options = Map.of(
+                "model", "gpt-4o-mini"
+        );
+        var prompt = StringPrompt.from("Explain why ducks better than cats in 20 words?");
+        var completions = openai.complete(prompt, new InferenceParameters(apiKey, options::get));
+        assertFalse(completions.isEmpty());
+        
+        // Token is smaller than word. 
+        // Splitting by space is a poor tokenizer but it is good enough for this test.
+        assertTrue(completions.get(0).text().split(" ").length <= 10);
     }
 
 }

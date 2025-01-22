@@ -9,40 +9,59 @@ import ai.vespa.secret.Secrets;
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
  * A configurable OpenAI client.
  *
- * @author lesters
+ * @author lesters glebashnik
  */
 @Beta
 public class OpenAI extends ConfigurableLanguageModel {
-
     private final OpenAiClient client;
+    private final Map<String, String> configOptions;
 
     @Inject
     public OpenAI(LlmClientConfig config, Secrets secretStore) {
         super(config, secretStore);
         client = new OpenAiClient();
+
+        configOptions = new HashMap<>();
+
+        if (!config.model().isBlank()) {
+            configOptions.put(OpenAiClient.OPTION_MODEL, config.model());
+        }
+
+        if (config.temperature() >= 0) {
+            configOptions.put(OpenAiClient.OPTION_TEMPERATURE, String.valueOf(config.temperature()));
+        }
+
+        if (config.maxTokens() >= 0) {
+            configOptions.put(OpenAiClient.OPTION_MAX_TOKENS, String.valueOf(config.maxTokens()));
+        }
+
     }
 
     @Override
     public List<Completion> complete(Prompt prompt, InferenceParameters parameters) {
+        var combinedParameters = parameters.withDefaultOptions(configOptions::get);
         setApiKey(parameters);
         setEndpoint(parameters);
-        return client.complete(prompt, parameters);
+        return client.complete(prompt, combinedParameters);
     }
 
     @Override
     public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
                                                                     InferenceParameters parameters,
                                                                     Consumer<Completion> consumer) {
+        var combinedParameters = parameters.withDefaultOptions(configOptions::get);
         setApiKey(parameters);
         setEndpoint(parameters);
-        return client.completeAsync(prompt, parameters, consumer);
+        return client.completeAsync(prompt, combinedParameters, consumer);
     }
 
 }

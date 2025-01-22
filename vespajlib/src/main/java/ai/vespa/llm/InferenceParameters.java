@@ -24,11 +24,16 @@ public class InferenceParameters {
     private final Function<String, String> options;
 
     public InferenceParameters(Function<String, String> options) {
-        this(null, options);
+        this(null, null, options);
     }
 
     public InferenceParameters(String apiKey, Function<String, String> options) {
+        this(apiKey, null, options);
+    }
+
+    public InferenceParameters(String apiKey, String endpoint, Function<String, String> options) {
         this.apiKey = apiKey;
+        this.endpoint = endpoint;
         this.options = Objects.requireNonNull(options);
     }
 
@@ -71,6 +76,15 @@ public class InferenceParameters {
     public void ifPresent(String option, Consumer<String> func) {
         get(option).ifPresent(func);
     }
-
+    
+    // Creates a new InferenceParameters object with default values for options,
+    // i.e. a value in the given default options is used when a corresponding value in the current options is null.
+    public InferenceParameters withDefaultOptions(Function<String, String> defaultOptions) {
+        Function<String, String> prependedOptions = key -> {
+            var afterValue = options.apply(key);
+            return afterValue != null ? afterValue : defaultOptions.apply(key);
+        };
+        return new InferenceParameters(apiKey, endpoint, prependedOptions);
+    }
 }
 
