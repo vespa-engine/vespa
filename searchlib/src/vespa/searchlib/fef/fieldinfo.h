@@ -3,6 +3,7 @@
 #pragma once
 
 #include "fieldtype.h"
+#include "filter_threshold.h"
 #include <vespa/searchcommon/common/datatype.h>
 #include <cstdint>
 #include <string>
@@ -22,13 +23,13 @@ public:
     using DataType = search::index::schema::DataType;
     using string = std::string;
 private:
-    FieldType      _type;
-    DataType       _data_type;
-    CollectionType _collection;
-    string         _name;
-    uint32_t       _id;
-    bool           _isFilter;
-    bool           _hasAttribute;
+    FieldType       _type;
+    DataType        _data_type;
+    CollectionType  _collection;
+    string          _name;
+    uint32_t        _id;
+    FilterThreshold _threshold;
+    bool            _hasAttribute;
 
 public:
     /**
@@ -96,7 +97,7 @@ public:
      *
      * @param flag true if this field should be treated as a filter
      **/
-    void setFilter(bool flag) { _isFilter = flag; }
+    void setFilter(bool flag) { _threshold = FilterThreshold(flag); }
 
     /**
      * Obtain the flag indicating whether this field should be treated
@@ -104,7 +105,10 @@ public:
      *
      * @return true if this field should be treated as a filter
      **/
-    bool isFilter() const { return _isFilter; }
+    bool isFilter() const { return _threshold.is_filter(); }
+
+    void set_filter_threshold(FilterThreshold threshold) { _threshold = threshold; }
+    FilterThreshold get_filter_threshold() const { return _threshold; }
 };
 
 }

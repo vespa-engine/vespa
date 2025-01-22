@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/fef/fef.h>
+#include <vespa/searchlib/fef/filter_threshold.h>
 #include <vespa/searchlib/fef/objectstore.h>
 
 #include <vespa/log/log.h>
@@ -96,6 +97,30 @@ TEST("verify size of essential fef classes") {
     EXPECT_EQUAL(24u,sizeof(TermFieldMatchData::Features));
     EXPECT_EQUAL(40u,sizeof(TermFieldMatchData));
     EXPECT_EQUAL(48u, sizeof(search::fef::FeatureExecutor));
+}
+
+TEST("FilterThreshold can represent a boolean is filter value")
+{
+    FilterThreshold a;
+    EXPECT_FALSE(a.is_filter());
+
+    FilterThreshold b(false);
+    EXPECT_FALSE(b.is_filter());
+
+    FilterThreshold c(true);
+    EXPECT_TRUE(c.is_filter());
+}
+
+TEST("FilterThreshold can represent a threshold value")
+{
+    FilterThreshold a;
+    EXPECT_FALSE(a.is_filter(1.0));
+
+    FilterThreshold b(0.5);
+    EXPECT_EQUAL((float)0.5, b.threshold());
+    EXPECT_FALSE(b.is_filter());
+    EXPECT_FALSE(b.is_filter(0.5));
+    EXPECT_TRUE(b.is_filter(0.51));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

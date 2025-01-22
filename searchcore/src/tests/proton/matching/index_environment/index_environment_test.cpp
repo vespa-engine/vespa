@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
+#include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/onnx_models.h>
 #include <vespa/searchlib/fef/ranking_expressions.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -14,6 +15,8 @@ using search::fef::OnnxModel;
 using search::fef::OnnxModels;
 using search::fef::Properties;
 using search::fef::RankingExpressions;
+using search::fef::indexproperties::IsFilterField;
+using search::fef::indexproperties::matching::FilterThreshold;
 using search::index::Schema;
 using search::index::schema::CollectionType;
 using search::index::schema::DataType;
@@ -86,10 +89,10 @@ struct Fixture {
     MyRankingAssetsRepo repo;
     Schema::UP schema;
     IndexEnvironment env;
-    explicit Fixture(Schema::UP schema_)
+    explicit Fixture(Schema::UP schema_, Properties props = Properties())
         : repo(make_expressions(), make_models()),
           schema(std::move(schema_)),
-          env(7, *schema, Properties(), repo)
+          env(7, *schema, props, repo)
     {
     }
     ~Fixture();
@@ -235,6 +238,54 @@ TEST(IndexEnvironmentTest, require_that_external_ranking_expressions_can_be_obta
     EXPECT_EQ(expr1, my_expr_ref);
     EXPECT_EQ(expr2, my_expr_ref);
     EXPECT_TRUE(expr3.empty());
+}
+
+Schema::UP
+schema_with_index_fields()
+{
+    auto result = std::make_unique<Schema>();
+    result->addIndexField(SIF("a", DataType::STRING));
+    result->addIndexField(SIF("b", DataType::STRING));
+    result->addIndexField(SIF("c", DataType::STRING));
+    return result;
+}
+
+
+
+TEST(IndexEnvironmentTest, no_filter_threshold_settings_are_default)
+{
+    Fixture f(schema_with_index_fields());
+    auto a = f.env.getFieldByName("a");
+    auto b = f.env.getFieldByName("b");
+    auto c = f.env.getFieldByName("c");
+    EXPECT_FALSE(a->isFilter());
+    EXPECT_FALSE(b->isFilter());
+    EXPECT_FALSE(c->isFilter());
+    EXPECT_FLOAT_EQ(1.0, a->get_filter_threshold().threshold());
+    EXPECT_FLOAT_EQ(1.0, b->get_filter_threshold().threshold());
+    EXPECT_FLOAT_EQ(1.0, c->get_filter_threshold().threshold());
+}
+
+TEST(IndexEnvironmentTest, is_filter_and_filter_threshold_settings_are_extracted_in_precedence_order)
+{
+    Properties p;
+    {
+        IsFilterField::set(p, "a");
+        FilterThreshold::set(p, "0.1");
+        // Note: 'is filter' setting has precedence over 'filter threshold' setting.
+        FilterThreshold::set_for_field(p, "a", "0.3");
+        FilterThreshold::set_for_field(p, "b", "0.2");
+    }
+    Fixture f(schema_with_index_fields(), p);
+    auto a = f.env.getFieldByName("a");
+    auto b = f.env.getFieldByName("b");
+    auto c = f.env.getFieldByName("c");
+    EXPECT_TRUE(a->isFilter());
+    EXPECT_FALSE(b->isFilter());
+    EXPECT_FALSE(c->isFilter());
+    EXPECT_FLOAT_EQ(0.0, a->get_filter_threshold().threshold());
+    EXPECT_FLOAT_EQ(0.2, b->get_filter_threshold().threshold());
+    EXPECT_FLOAT_EQ(0.1, c->get_filter_threshold().threshold());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

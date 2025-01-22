@@ -644,4 +644,20 @@ TEST(PropertiesTest, second_phase_rank_score_drop_limit)
     EXPECT_EQ(std::optional<search::feature_t>(123456789.12345), hitcollector::SecondPhaseRankScoreDropLimit::lookup(p, 4.0));
 }
 
+TEST(PropertiesTest, filter_threshold_setting)
+{
+    Properties p;
+    EXPECT_EQ(std::nullopt, matching::FilterThreshold::lookup(p));
+    matching::FilterThreshold::set(p, "0.5");
+    EXPECT_EQ(std::optional<double>(0.5), matching::FilterThreshold::lookup(p));
+}
+
+TEST(PropertiesTest, per_field_filter_threshold_setting)
+{
+    Properties p;
+    EXPECT_EQ(std::nullopt, matching::FilterThreshold::lookup_for_field(p, "foo"));
+    matching::FilterThreshold::set_for_field(p, "foo", "0.4");
+    EXPECT_EQ(std::optional<double>(0.4), matching::FilterThreshold::lookup_for_field(p, "foo"));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

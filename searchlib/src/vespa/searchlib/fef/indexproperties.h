@@ -364,6 +364,19 @@ namespace matching {
     };
 
     /**
+     * Property to extract the filter threshold settings for a query (see search::fef::FilterThreshold for details).
+     * The per field filter threshold has precedence over the overall filter threshold.
+     */
+    struct FilterThreshold {
+        static const std::string NAME;
+        static const std::optional<feature_t> DEFAULT_VALUE;
+        static std::optional<double> lookup(const Properties& props);
+        static std::optional<double> lookup_for_field(const Properties& props, const std::string& field_name);
+        static void set(Properties& props, const std::string& threshold);
+        static void set_for_field(Properties& props, const std::string& field_name, const std::string& threshold);
+    };
+
+    /**
      * Property to control the algorithm using for fuzzy matching.
      **/
     struct FuzzyAlgorithm {
