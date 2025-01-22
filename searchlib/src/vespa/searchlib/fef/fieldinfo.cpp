@@ -11,7 +11,7 @@ FieldInfo::FieldInfo(FieldType type_in, CollectionType collection_in,
       _collection(collection_in),
       _name(name_in),
       _id(id_in),
-      _isFilter(false),
+      _threshold(false),
       _hasAttribute(type_in == FieldType::ATTRIBUTE)
 {
 }

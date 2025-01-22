@@ -53,12 +53,18 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
         fieldInfo.set_data_type(field.getDataType());
         insertField(fieldInfo);
     }
+    auto filter_threshold = indexproperties::matching::FilterThreshold::lookup(_properties);
     for (uint32_t i = 0; i < schema.getNumIndexFields(); ++i) {
         const SchemaField &field = schema.getIndexField(i);
         FieldInfo fieldInfo(FieldType::INDEX, field.getCollectionType(), field.getName(), _fields.size());
         fieldInfo.set_data_type(field.getDataType());
+        auto field_filter_threshold = indexproperties::matching::FilterThreshold::lookup_for_field(_properties, field.getName());
         if (indexproperties::IsFilterField::check(_properties, field.getName())) {
             fieldInfo.setFilter(true);
+        } else if (field_filter_threshold.has_value()) {
+            fieldInfo.set_filter_threshold(search::fef::FilterThreshold(field_filter_threshold.value()));
+        } else if (filter_threshold.has_value()) {
+            fieldInfo.set_filter_threshold(search::fef::FilterThreshold(filter_threshold.value()));
         }
         auto itr = _fieldNames.find(field.getName());
         if (itr != _fieldNames.end()) { // override the attribute field

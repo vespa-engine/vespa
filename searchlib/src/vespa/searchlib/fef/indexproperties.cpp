@@ -450,6 +450,21 @@ double DiskIndexBitvectorLimit::lookup(const Properties& props, double default_v
     return lookupDouble(props, NAME, default_value);
 }
 
+const std::string FilterThreshold::NAME("vespa.matching.filter_threshold");
+const std::optional<double> FilterThreshold::DEFAULT_VALUE(std::nullopt);
+std::optional<double> FilterThreshold::lookup(const search::fef::Properties &props) {
+    return lookup_opt_double(props, NAME, DEFAULT_VALUE);
+}
+std::optional<double> FilterThreshold::lookup_for_field(const Properties& props, const std::string& field_name) {
+    return lookup_opt_double(props, NAME + "." + field_name, DEFAULT_VALUE);
+}
+void FilterThreshold::set(Properties& props, const std::string& threshold) {
+    props.add(NAME, threshold);
+}
+void FilterThreshold::set_for_field(Properties& props, const std::string& field_name, const std::string& threshold) {
+    props.add(NAME + "." + field_name, threshold);
+}
+
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
 
 const double TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE(20.0);
