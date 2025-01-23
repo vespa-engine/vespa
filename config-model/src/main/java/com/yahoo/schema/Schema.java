@@ -344,6 +344,19 @@ public class Schema implements ImmutableSchema {
     }
 
     /**
+     * as allConcreteFields, but includes sub-fields for arrays of structs etc.
+     */
+    public List<SDField> allConcreteFieldsWithSubFields() {
+        var allFields = allConcreteFields();
+        List<SDField> subFields = new ArrayList<>();
+        for (SDField f : allFields) {
+            subFields.addAll(f.getStructFields());
+        }
+        allFields.addAll(subFields);
+        return allFields;
+    }
+
+    /**
      * Returns the content of a ranking expression file
      */
     @Override
