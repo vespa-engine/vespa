@@ -538,6 +538,24 @@ public class JSONSearchHandlerTestCase {
     }
 
     @Test
+    void testFlatRankingPropertiesRequestMapping() {
+        ObjectNode json = jsonMapper.createObjectNode();
+        json.put("yql", "select * from sources * where sddocname contains \"blog_post\"");
+        json.put("hits", 10);
+        json.put("ranking.properties.freshness(my_field).maxAge", 30);
+
+        // Create mapping
+        Inspector inspector = SlimeUtils.jsonToSlime(json.toString().getBytes(StandardCharsets.UTF_8)).get();
+        Map<String, String> map = new Json2SingleLevelMap(new ByteArrayInputStream(inspector.toString().getBytes(StandardCharsets.UTF_8))).parse();
+
+        // Create GET-request with same query
+        String url = uri + "ranking.properties.freshness(my_field).maxAge=30&hits=10&yql=select+%2A+from+sources+%2A+where+sddocname+contains+%22blog_post%22";
+
+        HttpRequest request = HttpRequest.createTestRequest(url, GET);
+        assertEquals(request.propertyMap(), map);
+    }
+
+    @Test
     void testContentTypeParsing() {
         ObjectNode json = jsonMapper.createObjectNode();
         json.put("query", "abc");
