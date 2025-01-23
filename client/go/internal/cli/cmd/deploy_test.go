@@ -167,7 +167,7 @@ func TestDeployWait(t *testing.T) {
 	mockServiceStatus(client, "foo") // Look up services
 	assert.Nil(t, cli.Run("deploy", "--wait=3", pkg))
 	assert.Equal(t,
-		"\nSuccess: Deployed '"+pkg+"' with session ID 1\n",
+		"Success: Deployed '"+pkg+"' with session ID 1\n",
 		stdout.String())
 }
 
@@ -194,7 +194,7 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 	cli.httpClient = client
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
-		"\nSuccess: Deployed '"+applicationPackage+"' with session ID 0\n",
+		"Success: Deployed '"+applicationPackage+"' with session ID 0\n",
 		stdout.String())
 	assertDeployRequestMade("http://target:19071", client, t)
 }
@@ -234,7 +234,7 @@ func TestDeployIncludesExpectedFiles(t *testing.T) {
 	assert.Nil(t, cli.Run("deploy", "--wait=0", "testdata/applications/withSource"))
 	applicationPackage := "testdata/applications/withSource/src/main/application"
 	assert.Equal(t,
-		"\nSuccess: Deployed '"+applicationPackage+"' with session ID 0\n",
+		"Success: Deployed '"+applicationPackage+"' with session ID 0\n",
 		stdout.String())
 
 	zipName := filepath.Join(t.TempDir(), "tmp.zip")
@@ -296,7 +296,7 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 	cli.httpClient = client
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
-		"\nSuccess: Deployed '"+applicationPackage+"' with session ID 0\n",
+		"Success: Deployed '"+applicationPackage+"' with session ID 0\n",
 		stdout.String())
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }
