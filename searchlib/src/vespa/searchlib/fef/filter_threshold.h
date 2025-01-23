@@ -16,10 +16,10 @@ private:
     float _threshold;
 
 public:
-    FilterThreshold() noexcept : _threshold(1.0) { }
-    FilterThreshold(bool is_filter_in) noexcept : _threshold(is_filter_in ? 0.0 : 1.0) { }
-    FilterThreshold(float threshold) noexcept : _threshold(threshold) { }
-    FilterThreshold(double threshold) noexcept : _threshold(threshold) { }
+    explicit FilterThreshold() noexcept : _threshold(1.0) { }
+    explicit FilterThreshold(bool is_filter_in) noexcept : _threshold(is_filter_in ? 0.0 : 1.0) { }
+    explicit FilterThreshold(float threshold) noexcept : _threshold(threshold) { }
+    explicit FilterThreshold(double threshold) noexcept : _threshold(threshold) { }
     float threshold() const noexcept { return _threshold; }
     bool is_filter() const noexcept { return _threshold == 0.0; }
 

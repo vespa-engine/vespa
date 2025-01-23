@@ -653,7 +653,7 @@ TEST(QueryEvalTest, test_dump)
 
 TEST(QueryEvalTest, test_field_spec) {
     EXPECT_EQ(8u, sizeof(FieldSpecBase));
-    EXPECT_EQ(8u + sizeof(std::string), sizeof(FieldSpec));
+    EXPECT_EQ(16u + sizeof(std::string), sizeof(FieldSpec));
 }
 
 

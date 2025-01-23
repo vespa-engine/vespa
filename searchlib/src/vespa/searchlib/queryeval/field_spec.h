@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include <vespa/searchlib/fef/filter_threshold.h>
 #include <vespa/searchlib/fef/handle.h>
 #include <vespa/vespalib/util/small_vector.h>
 #include <string>
@@ -47,16 +48,18 @@ class FieldSpec : public FieldSpecBase
 {
 public:
     FieldSpec(const std::string & name, uint32_t fieldId, fef::TermFieldHandle handle) noexcept;
-    FieldSpec(const std::string & name, uint32_t fieldId,
-              fef::TermFieldHandle handle, bool isFilter_) noexcept;
+    FieldSpec(const std::string & name, uint32_t fieldId, fef::TermFieldHandle handle, bool isFilter_) noexcept;
+    FieldSpec(const std::string & name, uint32_t fieldId, fef::TermFieldHandle handle, fef::FilterThreshold threshold) noexcept;
     ~FieldSpec();
 
     void setBase(FieldSpecBase base) noexcept {
 	    FieldSpecBase::operator =(base);
     }
     const std::string & getName() const noexcept { return _name; }
+    fef::FilterThreshold get_filter_threshold() const noexcept { return _threshold; }
 private:
-    std::string     _name;     // field name
+    std::string _name; // field name
+    fef::FilterThreshold _threshold;
 };
 
 /**

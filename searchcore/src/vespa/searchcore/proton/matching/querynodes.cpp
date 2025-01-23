@@ -52,7 +52,8 @@ ProtonTermData::resolve(const ViewResolver &resolver, const IIndexEnvironment &i
     for (size_t i = 0; i < fields.size(); ++i) {
         const FieldInfo *info = idxEnv.getFieldByName(fields[i]);
         if (info != nullptr) {
-            _fields.emplace_back(fields[i], info->id(), forceFilter || info->isFilter());
+            _fields.emplace_back(fields[i], info->id(),
+                                (forceFilter ? search::fef::FilterThreshold(true) : info->get_filter_threshold()));
             FieldEntry & field = _fields.back();
             field.attribute_field = is_attribute(info->type());
         } else {

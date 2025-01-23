@@ -41,17 +41,14 @@ getName(uint32_t indexId)
 DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
                                      const FieldIndex& field_index,
                                      const std::string& query_term,
-                                     DictionaryLookupResult lookupRes,
-                                     bool is_filter_field,
-                                     double bitvector_limit)
+                                     DictionaryLookupResult lookupRes)
     : SimpleLeafBlueprint(field),
       _field(field),
       _field_index(field_index),
       _query_term(query_term),
       _lookupRes(std::move(lookupRes)),
       _bitvector_lookup_result(_field_index.lookup_bit_vector(_lookupRes)),
-      _is_filter_field(is_filter_field),
-      _bitvector_limit(bitvector_limit),
+      _is_filter_field(_field.isFilter()),
       _fetchPostingsDone(false),
       _postingHandle(),
       _bitVector(),
@@ -118,8 +115,8 @@ DiskTermBlueprint::calculate_flow_stats(uint32_t docid_limit) const
 bool
 DiskTermBlueprint::use_bitvector() const
 {
-    return _is_filter_field  ||
-        ((get_docid_limit() > 0) && ((double)_lookupRes.counts._numDocs / (double)get_docid_limit()) > _bitvector_limit);
+    return _is_filter_field ||
+        ((get_docid_limit() > 0) && _field.get_filter_threshold().is_filter((double)_lookupRes.counts._numDocs / (double)get_docid_limit()));
 }
 
 const BitVector *
