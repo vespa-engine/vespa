@@ -75,7 +75,7 @@ func TestLogLocalIncompatible(t *testing.T) {
 	cli.httpClient = httpClient
 
 	assert.NotNil(t, cli.Run("log", "--from", "2021-09-27T10:00:00Z", "--to", "2021-09-27T11:00:00Z"))
-	assert.Equal(t, `Error: could not retrieve logs: failed to read logs: aborting wait: got status 404
+	assert.Equal(t, `Error: could not retrieve logs: failed to read logs: got status 404
 Hint: This command requires a newer version of the Vespa platform: platform version is older than required version: 8.358.0 < 8.359.0
 `, stderr.String())
 }
