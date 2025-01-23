@@ -19,7 +19,6 @@ private:
     index::DictionaryLookupResult    _lookupRes;
     index::BitVectorDictionaryLookupResult _bitvector_lookup_result;
     bool                             _is_filter_field;
-    double                           _bitvector_limit;
     bool                             _fetchPostingsDone;
     index::PostingListHandle         _postingHandle;
     std::shared_ptr<BitVector>       _bitVector;
@@ -34,20 +33,21 @@ public:
     /**
      * Create a new blueprint.
      *
+     * The filter threshold setting for the field determines whether bitvector is used for searching.
+     * If the field is a filter: force use of bitvector.
+     * Otherwise the filter threshold is compared against the hit estimate of the query term after dictionary lookup.
+     * If the hit estimate is above the filter threshold: force use of bitvector.
+     * If no bitvector exists for the term, a fake bitvector wrapping the posocc iterator is used.
+     *
      * @param field           The field to search in.
      * @param field_index     The field index used to read the bit vector or posting list.
+     * @param query_term      The query term to search for.
      * @param lookupRes       The result after disk dictionary lookup.
-     * @param is_filter_field Whether this field is filter and we should force use of bit vector.
-     * @param bitvector_limit The hit estimate limit for whether bitvector should be used for searching this term.
-                              This can be used to tune performance at the cost of quality.
-                              If no bitvector exists for the term, a fake bitvector wrapping the posocc iterator is used.
      **/
     DiskTermBlueprint(const queryeval::FieldSpec & field,
                       const FieldIndex& field_index,
                       const std::string& query_term,
-                      index::DictionaryLookupResult lookupRes,
-                      bool is_filter_field,
-                      double bitvector_limit);
+                      index::DictionaryLookupResult lookupRes);
 
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     

@@ -27,6 +27,7 @@ using search::diskindex::DiskTermBlueprint;
 using search::diskindex::FieldIndex;
 using search::diskindex::TestDiskIndex;
 using search::diskindex::ZcRareWordPosOccIterator;
+using search::fef::FilterThreshold;
 using search::fef::TermFieldMatchDataArray;
 using search::index::DictionaryLookupResult;
 using search::index::DummyFileHeaderContext;
@@ -408,22 +409,20 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
         EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
         EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
-    { // bitvector used due to bitvector_limit set.
+    { // bitvector used due to filter threshold set.
         // The term 'w2' hits 17 docs in field 'f2' (bitvector for term exists).
-        double bitvector_limit = 16.0 / 100.0;
-        _requestContext.get_create_blueprint_params().disk_index_bitvector_limit = bitvector_limit;
-        b = create_blueprint(FieldSpec("f2", 0, 0, false), makeTerm("w2"), 100);
+        double threshold = 16.0 / 100.0;
+        b = create_blueprint(FieldSpec("f2", 0, 0, FilterThreshold(threshold)), makeTerm("w2"), 100);
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
         EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
-    { // fake bitvector (wrapping posocc iterator) used due to bitvector_limit set.
+    { // fake bitvector (wrapping posocc iterator) used due to filter threshold set.
         // The term 'w1' hits 2 docs in field 'f1' (bitvector for term doesn't exist).
-        double bitvector_limit = 1.0 / 100.0;
-        _requestContext.get_create_blueprint_params().disk_index_bitvector_limit = bitvector_limit;
-        b = create_blueprint(FieldSpec("f1", 0, 0, false), makeTerm("w1"), 100);
+        double threshold = 1.0 / 100.0;
+        b = create_blueprint(FieldSpec("f1", 0, 0, FilterThreshold(threshold)), makeTerm("w1"), 100);
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
         EXPECT_TRUE((dynamic_cast<BooleanMatchIteratorWrapper *>(s.get()) != nullptr));

@@ -31,8 +31,11 @@ public:
         bool attribute_field;
 
         FieldEntry(const std::string &name, uint32_t fieldId, bool is_filter) noexcept
+            : FieldEntry(name, fieldId, search::fef::FilterThreshold(is_filter))
+        {}
+        FieldEntry(const std::string &name, uint32_t fieldId, search::fef::FilterThreshold threshold) noexcept
             : ITermFieldData(fieldId),
-              _field_spec(name, fieldId, search::fef::IllegalHandle, is_filter),
+              _field_spec(name, fieldId, search::fef::IllegalHandle, threshold),
               attribute_field(false)
         {}
 

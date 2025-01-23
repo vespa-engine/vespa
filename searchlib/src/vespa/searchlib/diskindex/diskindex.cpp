@@ -173,9 +173,7 @@ public:
         const std::string termStr = termAsString(n);
         auto lookup_result = _field_index.lookup(termStr);
         if (lookup_result.valid()) {
-            double bitvector_limit = getRequestContext().get_create_blueprint_params().disk_index_bitvector_limit;
-            setResult(std::make_unique<DiskTermBlueprint>
-                (_field, _field_index, termStr, lookup_result, _field.isFilter(), bitvector_limit));
+            setResult(std::make_unique<DiskTermBlueprint>(_field, _field_index, termStr, lookup_result));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }

@@ -533,11 +533,11 @@ TEST(QueryNodesTest, requireThatSimpleIntermediatesGetProperBlending)
 
 TEST(QueryNodesTest, control_query_nodes_size)
 {
-    EXPECT_EQ(64u + sizeof(std::string), sizeof(ProtonTermData));
+    EXPECT_EQ(72u + sizeof(std::string), sizeof(ProtonTermData));
     EXPECT_EQ(32u + 2 * sizeof(std::string), sizeof(search::query::NumberTerm));
-    EXPECT_EQ(96u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::NumberTerm));
+    EXPECT_EQ(104u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::NumberTerm));
     EXPECT_EQ(32u + 2 * sizeof(std::string), sizeof(search::query::StringTerm));
-    EXPECT_EQ(96u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::StringTerm));
+    EXPECT_EQ(104u + 3 * sizeof(std::string), sizeof(ProtonNodeTypes::StringTerm));
 }
 
 }  // namespace
