@@ -337,7 +337,7 @@ func wait(service *Service, okFn responseFunc, reqFn requestFunc, timeout, retry
 	for time.Now().Before(deadline) || loopOnce {
 		response, err = service.Do(reqFn(), 20*time.Second)
 		if errors.Is(err, errAuth) {
-			return status, fmt.Errorf("aborting wait: %w", err)
+			return status, err
 		} else if err == nil {
 			status = response.StatusCode
 			body, err := io.ReadAll(response.Body)
@@ -347,7 +347,7 @@ func wait(service *Service, okFn responseFunc, reqFn requestFunc, timeout, retry
 			response.Body.Close()
 			ok, err := okFn(status, body)
 			if err != nil {
-				return status, fmt.Errorf("aborting wait: %w", err)
+				return status, err
 			}
 			if ok {
 				return status, nil

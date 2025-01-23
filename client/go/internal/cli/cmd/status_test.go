@@ -45,7 +45,7 @@ func TestStatusCommandMultiCluster(t *testing.T) {
 	client.NextStatus(400) // One cluster is unavilable
 	assert.NotNil(t, cli.Run("status"))
 	assert.Equal(t, `Container bar at http://127.0.0.1:8080 is ready
-Container foo at http://127.0.0.1:8080 is not ready: unhealthy container foo: status 400 at http://127.0.0.1:8080/status.html: aborting wait: got status 400
+Container foo at http://127.0.0.1:8080 is not ready: unhealthy container foo: status 400 at http://127.0.0.1:8080/status.html: got status 400
 `, stdout.String())
 	assert.Equal(t,
 		"Error: services not ready: foo\n",
@@ -66,7 +66,7 @@ func TestStatusCommandMultiClusterWait(t *testing.T) {
 	client.NextStatus(400)
 	assert.NotNil(t, cli.Run("status", "--cluster", "foo", "--wait", "10"))
 	assert.Equal(t, "Waiting up to 10s for cluster discovery...\nWaiting up to 10s for container foo...\n"+
-		"Error: unhealthy container foo after waiting up to 10s: status 400 at http://127.0.0.1:8080/status.html: aborting wait: got status 400\n", stderr.String())
+		"Error: unhealthy container foo after waiting up to 10s: status 400 at http://127.0.0.1:8080/status.html: got status 400\n", stderr.String())
 }
 
 func TestStatusCommandWithUrlTarget(t *testing.T) {
@@ -154,7 +154,7 @@ func TestStatusCloudDeployment(t *testing.T) {
 	})
 	assert.NotNil(t, cli.Run("status", "deployment"))
 	assert.Equal(t, `Deployment is still running. See https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
-Warning: deployment run 1337 not yet complete after waiting up to 3s: wait deadline reached
+Warning: wait deadline reached
 Hint: Consider using the --wait flag to increase the wait period
 Hint: --wait 120 will make this command wait for completion up to 2 minutes
 `, stderr.String())
@@ -184,7 +184,7 @@ Hint: --wait 120 will make this command wait for completion up to 2 minutes
 		Body:   []byte(`{"active": false, "status": "failure"}`),
 	})
 	assert.NotNil(t, cli.Run("status", "deployment", "42", "-w", "10"))
-	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nWarning: deployment run 42 not yet complete after waiting up to 10s: aborting wait: deployment failed: run 42 ended with unsuccessful status: failure\n", stderr.String())
+	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nWarning: deployment failed: run 42 ended with unsuccessful status: failure\n", stderr.String())
 }
 
 func isLocalTarget(args []string) bool {
