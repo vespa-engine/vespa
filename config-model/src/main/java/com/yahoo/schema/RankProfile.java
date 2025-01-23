@@ -138,6 +138,9 @@ public class RankProfile implements Cloneable {
 
     private Set<String> filterFields = new HashSet<>();
 
+    // Field-level `rank my_field { filter-threshold: ... }` that overrides the profile-level `filter-threshold` (if any)
+    private Map<String, Double> explicitFieldRankFilterThresholds = new LinkedHashMap<>();
+
     private final RankProfileRegistry rankProfileRegistry;
 
     private final TypeSettings attributeTypes = new TypeSettings();
@@ -1010,6 +1013,14 @@ public class RankProfile implements Cloneable {
         Set<String> combined = new LinkedHashSet<>(inheritedFilterFields);
         combined.addAll(filterFields());
         return combined;
+    }
+
+    public void setExplicitFieldRankFilterThresholds(Map<String, Double> fieldFilterThresholds) {
+        explicitFieldRankFilterThresholds = new LinkedHashMap<>(fieldFilterThresholds);
+    }
+
+    public Map<String, Double> explicitFieldRankFilterThresholds() {
+        return explicitFieldRankFilterThresholds;
     }
 
     private ExpressionFunction parseRankingExpression(String name, List<String> arguments, String expression) throws ParseException {

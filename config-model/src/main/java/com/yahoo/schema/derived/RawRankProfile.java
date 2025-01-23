@@ -184,6 +184,7 @@ public class RawRankProfile {
         private final Map<String, String> attributeTypes;
         private final Map<Reference, RankProfile.Input> inputs;
         private final Set<String> filterFields = new java.util.LinkedHashSet<>();
+        private Map<String, Double> explicitFieldRankFilterThresholds = new LinkedHashMap<>();
         private final String rankprofileName;
 
         private RankingExpression firstPhaseRanking;
@@ -271,6 +272,7 @@ public class RawRankProfile {
 
         private void deriveFilterFields(RankProfile rp) {
             filterFields.addAll(rp.allFilterFields());
+            explicitFieldRankFilterThresholds.putAll(rp.explicitFieldRankFilterThresholds());
         }
 
         private void derivePropertiesAndFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
@@ -497,6 +499,9 @@ public class RawRankProfile {
             }
             if (filterThreshold.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.filter_threshold", String.valueOf(filterThreshold.getAsDouble())));
+            }
+            for (var fieldAndThreshold : explicitFieldRankFilterThresholds.entrySet()) {
+                properties.add(new Pair<>("vespa.matching.filter_threshold.%s".formatted(fieldAndThreshold.getKey()), String.valueOf(fieldAndThreshold.getValue())));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));

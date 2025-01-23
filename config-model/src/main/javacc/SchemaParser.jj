@@ -2428,10 +2428,15 @@ void fieldRankType(ParsedRankProfile profile) :
 void fieldRankFilter(ParsedRankProfile profile) :
 {
     String name;
+    double filterThreshold;
 }
 {
-    <RANK> name = identifier() <COLON> <FILTER>
-    { profile.addFieldRankFilter(name, true); }
+    <RANK> name = identifier()
+    ( ( <COLON> <FILTER> ) { profile.addFieldRankFilter(name, true); }
+    | ( lbrace() <FILTER_THRESHOLD> <COLON> filterThreshold = floatValue()
+        { profile.addFieldRankFilterThreshold(name, filterThreshold); }
+        ( <NL> )* <RBRACE> )
+    )
 }
 
 /**
