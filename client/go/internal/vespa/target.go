@@ -112,12 +112,18 @@ type Target interface {
 	// DeployService returns the service providing the deploy API on this target.
 	DeployService() (*Service, error)
 
-	// ContainerServices returns all container services of the current deployment. If timeout is positive, wait for
-	// services to be discovered.
+	// ContainerServices returns all container services of the current deployment, retrying until timeout elapses.
+	//
+	// If timeout is zero, a single request is sent to discover services without retrying on failure. No request is sent
+	// to indvidual services in this case.
+	//
+	// If timeout is positive, wait for services to be discovered and then wait for each individual service.
 	ContainerServices(timeout time.Duration) ([]*Service, error)
 
-	// AwaitDeployment waits for a deployment identified by id to succeed. It returns the id that succeeded, or an
-	// error. The exact meaning of id depends on the implementation.
+	// AwaitDeployment waits for a deployment identified by id to succeed, retrying until timeout elapses. It returns
+	// the id that succeeded, or an error. The exact meaning of id depends on the implementation.
+	//
+	// If timeout is zero, a single request is sent, without retrying on failure.
 	AwaitDeployment(id int64, timeout time.Duration) (int64, error)
 
 	// PrintLog writes the logs of this deployment using given options to control output.
