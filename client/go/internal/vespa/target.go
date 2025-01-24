@@ -112,12 +112,18 @@ type Target interface {
 	// DeployService returns the service providing the deploy API on this target.
 	DeployService() (*Service, error)
 
-	// ContainerServices returns all container services of the current deployment. If timeout is positive, wait for
-	// services to be discovered.
+	// ContainerServices returns all container services of the current deployment, retrying until timeout elapses.
+	//
+	// If timeout is zero, a single request is sent to discover services without retrying on failure. No request is sent
+	// to indvidual services in this case.
+	//
+	// If timeout is positive, wait for services to be discovered and then wait for each individual service.
 	ContainerServices(timeout time.Duration) ([]*Service, error)
 
-	// AwaitDeployment waits for a deployment identified by id to succeed. It returns the id that succeeded, or an
-	// error. The exact meaning of id depends on the implementation.
+	// AwaitDeployment waits for a deployment identified by id to succeed, retrying until timeout elapses. It returns
+	// the id that succeeded, or an error. The exact meaning of id depends on the implementation.
+	//
+	// If timeout is zero, a single request is sent, without retrying on failure.
 	AwaitDeployment(id int64, timeout time.Duration) (int64, error)
 
 	// PrintLog writes the logs of this deployment using given options to control output.
@@ -255,7 +261,7 @@ func isOK(status int) (bool, error) {
 	}
 }
 
-func deployServiceWait(target Target, fn responseFunc, reqFn requestFunc, timeout, retryInterval time.Duration) (int, error) {
+func deployRequest(target Target, fn responseFunc, reqFn requestFunc, timeout, retryInterval time.Duration) (int, error) {
 	deployService, err := target.DeployService()
 	if err != nil {
 		return 0, err
@@ -307,7 +313,7 @@ func pollLogs(target Target, logsURL string, options LogOptions, retryInterval t
 		timeout = math.MaxInt64 // No timeout
 	}
 	// Ignore wait error because logFunc has no concept of completion, we just want to print log entries until timeout is reached
-	if _, err := deployServiceWait(target, logFunc, requestFunc, timeout, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
+	if _, err := deployRequest(target, logFunc, requestFunc, timeout, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
 		return fmt.Errorf("failed to read logs: %s", err)
 	}
 	return nil

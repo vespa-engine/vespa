@@ -64,8 +64,9 @@ func TestStatusCommandMultiClusterWait(t *testing.T) {
 	cli.retryInterval = 0
 	mockServiceStatus(client, "foo", "bar")
 	client.NextStatus(400)
+	client.NextStatus(400)
 	assert.NotNil(t, cli.Run("status", "--cluster", "foo", "--wait", "10"))
-	assert.Equal(t, "Waiting up to 10s for cluster discovery...\nWaiting up to 10s for container foo...\n"+
+	assert.Equal(t, "Waiting up to 10s for container foo...\n"+
 		"Error: unhealthy container foo after waiting up to 10s: status 400 at http://127.0.0.1:8080/status.html: got status 400\n", stderr.String())
 }
 
@@ -121,11 +122,13 @@ func TestStatusLocalDeployment(t *testing.T) {
 	// Latest generation without convergence
 	resp.Body = []byte(`{"currentGeneration": 42, "converged": false}`)
 	client.NextResponse(resp)
+	client.NextResponse(resp)
 	assert.NotNil(t, cli.Run("status", "deployment"))
 	assert.Equal(t, "Warning: deployment not converged on latest generation: wait deadline reached\nHint: Consider using the --wait flag to increase the wait period\nHint: --wait 120 will make this command wait for completion up to 2 minutes\n", stderr.String())
 
 	// Explicit generation
 	stderr.Reset()
+	client.NextResponse(resp)
 	client.NextResponse(resp)
 	assert.NotNil(t, cli.Run("status", "deployment", "41"))
 	assert.Equal(t, "Warning: deployment not converged on generation 41: wait deadline reached\nHint: Consider using the --wait flag to increase the wait period\nHint: --wait 120 will make this command wait for completion up to 2 minutes\n", stderr.String())
@@ -142,16 +145,19 @@ func TestStatusCloudDeployment(t *testing.T) {
 	client := &mock.HTTPClient{}
 	cli.httpClient = client
 	// Deployment in progress, with implicit fast wait
-	client.NextResponse(mock.HTTPResponse{
+	latestRun := mock.HTTPResponse{
 		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1?limit=1",
 		Status: 200,
 		Body:   []byte(`{"runs": [{"id": 1337}]}`),
-	})
-	client.NextResponse(mock.HTTPResponse{
+	}
+	client.NextResponse(latestRun)
+	client.NextResponse(latestRun)
+	running := mock.HTTPResponse{
 		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/1337?after=-1",
 		Status: 200,
 		Body:   []byte(`{"active": true, "status": "running"}`),
-	})
+	}
+	client.NextResponse(running)
 	assert.NotNil(t, cli.Run("status", "deployment"))
 	assert.Equal(t, `Deployment is still running. See https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details
 Warning: wait deadline reached
@@ -160,11 +166,8 @@ Hint: --wait 120 will make this command wait for completion up to 2 minutes
 `, stderr.String())
 	assert.Equal(t, "", stdout.String())
 	// Latest run
-	client.NextResponse(mock.HTTPResponse{
-		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1?limit=1",
-		Status: 200,
-		Body:   []byte(`{"runs": [{"id": 1337}]}`),
-	})
+	client.NextResponse(latestRun)
+	client.NextResponse(latestRun)
 	client.NextResponse(mock.HTTPResponse{
 		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/1337?after=-1",
 		Status: 200,
@@ -178,11 +181,13 @@ Hint: --wait 120 will make this command wait for completion up to 2 minutes
 		"Deployment run 1337 has completed\nSee https://console.vespa-cloud.com/tenant/t1/application/a1/dev/instance/i1/job/dev-us-north-1/run/1337 for more details\n",
 		stdout.String())
 	// Explicit run ID and wait period
-	client.NextResponse(mock.HTTPResponse{
+	run := mock.HTTPResponse{
 		URI:    "/application/v4/tenant/t1/application/a1/instance/i1/job/dev-us-north-1/run/42?after=-1",
 		Status: 200,
 		Body:   []byte(`{"active": false, "status": "failure"}`),
-	})
+	}
+	client.NextResponse(run)
+	client.NextResponse(run)
 	assert.NotNil(t, cli.Run("status", "deployment", "42", "-w", "10"))
 	assert.Equal(t, "Waiting up to 10s for deployment to converge...\nWarning: deployment failed: run 42 ended with unsuccessful status: failure\n", stderr.String())
 }

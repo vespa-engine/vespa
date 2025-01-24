@@ -106,6 +106,7 @@ func TestDeployCloudFastWait(t *testing.T) {
 	stderr.Reset()
 	httpClient.NextResponseString(200, `ok`)
 	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
 	require.NotNil(t, cli.Run("deploy", pkgDir))
 	assert.Equal(t, stderr.String(), "Error: deployment failed: run 0 ended with unsuccessful status: unsuccesful\n")
 	assert.True(t, httpClient.Consumed())
@@ -114,6 +115,7 @@ func TestDeployCloudFastWait(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	httpClient.NextResponseString(200, `ok`)
+	httpClient.NextResponseString(200, `{"active": true, "status": "running"}`)
 	httpClient.NextResponseString(200, `{"active": true, "status": "running"}`)
 	require.Nil(t, cli.Run("deploy", pkgDir))
 	assert.Contains(t, stdout.String(), "Success: Triggered deployment")
@@ -165,7 +167,7 @@ func TestDeployWait(t *testing.T) {
 	mockServiceStatus(client, "foo") // Look up services
 	assert.Nil(t, cli.Run("deploy", "--wait=3", pkg))
 	assert.Equal(t,
-		"\nSuccess: Deployed '"+pkg+"' with session ID 1\n",
+		"Success: Deployed '"+pkg+"' with session ID 1\n",
 		stdout.String())
 }
 
@@ -192,7 +194,7 @@ func TestDeployZipWithURLTargetArgument(t *testing.T) {
 	cli.httpClient = client
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
-		"\nSuccess: Deployed '"+applicationPackage+"' with session ID 0\n",
+		"Success: Deployed '"+applicationPackage+"' with session ID 0\n",
 		stdout.String())
 	assertDeployRequestMade("http://target:19071", client, t)
 }
@@ -232,7 +234,7 @@ func TestDeployIncludesExpectedFiles(t *testing.T) {
 	assert.Nil(t, cli.Run("deploy", "--wait=0", "testdata/applications/withSource"))
 	applicationPackage := "testdata/applications/withSource/src/main/application"
 	assert.Equal(t,
-		"\nSuccess: Deployed '"+applicationPackage+"' with session ID 0\n",
+		"Success: Deployed '"+applicationPackage+"' with session ID 0\n",
 		stdout.String())
 
 	zipName := filepath.Join(t.TempDir(), "tmp.zip")
@@ -294,7 +296,7 @@ func assertDeploy(applicationPackage string, arguments []string, t *testing.T) {
 	cli.httpClient = client
 	assert.Nil(t, cli.Run(arguments...))
 	assert.Equal(t,
-		"\nSuccess: Deployed '"+applicationPackage+"' with session ID 0\n",
+		"Success: Deployed '"+applicationPackage+"' with session ID 0\n",
 		stdout.String())
 	assertDeployRequestMade("http://127.0.0.1:19071", client, t)
 }

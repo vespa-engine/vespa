@@ -212,7 +212,7 @@ func (t *cloudTarget) discoverLatestRun(timeout time.Duration) (int64, error) {
 		}
 		return false, nil
 	}
-	_, err = deployServiceWait(t, jobsSuccessFunc, requestFunc, timeout, t.retryInterval)
+	_, err = deployRequest(t, jobsSuccessFunc, requestFunc, timeout, t.retryInterval)
 	return lastRunID, err
 }
 
@@ -257,7 +257,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		success = true
 		return success, nil
 	}
-	_, err = deployServiceWait(t, jobSuccessFunc, requestFunc, timeout, t.retryInterval)
+	_, err = deployRequest(t, jobSuccessFunc, requestFunc, timeout, t.retryInterval)
 	if err != nil {
 		return runID, err
 	}
@@ -321,7 +321,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]strin
 		}
 		return true, nil
 	}
-	if _, err := deployServiceWait(t, endpointFunc, func() *http.Request { return req }, timeout, t.retryInterval); err != nil {
+	if _, err := deployRequest(t, endpointFunc, func() *http.Request { return req }, timeout, t.retryInterval); err != nil {
 		return nil, fmt.Errorf("no endpoints found in zone %s%s: %w", t.deploymentOptions.Deployment.Zone, waitDescription(timeout), err)
 	}
 	if len(urlsByCluster) == 0 {
