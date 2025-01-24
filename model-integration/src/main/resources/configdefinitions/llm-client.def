@@ -6,3 +6,17 @@ apiKeySecretName string default=""
 
 # Endpoint for LLM client - if not set reverts to default for client
 endpoint string default=""
+
+# LLM APIs often provide several models, e.g. gpt-4o and gpt-4o-mini from OpenAI.
+# Specify a model to use by default when not overwritten by inference parameters.
+# Empty means use default for the API.
+model string default=""
+
+# Sampling temperature, between 0 and 1.
+# Higher values make the output more random, while lower values are more focused and deterministic.
+# -1 means use default for the API.
+temperature double default=-1
+
+# The maximum number of tokens that can be generated in the completion.
+# -1 means use default for the API.
+maxTokens int default=-1

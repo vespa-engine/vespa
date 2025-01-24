@@ -4140,6 +4140,7 @@
     "methods" : [
       "public void <init>(java.util.function.Function)",
       "public void <init>(java.lang.String, java.util.function.Function)",
+      "public void <init>(java.lang.String, java.lang.String, java.util.function.Function)",
       "public void setApiKey(java.lang.String)",
       "public java.util.Optional getApiKey()",
       "public void setEndpoint(java.lang.String)",
@@ -4147,7 +4148,8 @@
       "public java.util.Optional get(java.lang.String)",
       "public java.util.Optional getDouble(java.lang.String)",
       "public java.util.Optional getInt(java.lang.String)",
-      "public void ifPresent(java.lang.String, java.util.function.Consumer)"
+      "public void ifPresent(java.lang.String, java.util.function.Consumer)",
+      "public ai.vespa.llm.InferenceParameters withDefaultOptions(java.util.function.Function)"
     ],
     "fields" : [ ]
   },
@@ -4190,7 +4192,11 @@
       "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
       "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String OPTION_MODEL",
+      "public static final java.lang.String OPTION_TEMPERATURE",
+      "public static final java.lang.String OPTION_MAX_TOKENS"
+    ]
   },
   "ai.vespa.llm.completion.Completion$FinishReason" : {
     "superClass" : "java.lang.Enum",

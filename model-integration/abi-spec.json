@@ -32,6 +32,9 @@
       "public void <init>(ai.vespa.llm.clients.LlmClientConfig)",
       "public ai.vespa.llm.clients.LlmClientConfig$Builder apiKeySecretName(java.lang.String)",
       "public ai.vespa.llm.clients.LlmClientConfig$Builder endpoint(java.lang.String)",
+      "public ai.vespa.llm.clients.LlmClientConfig$Builder model(java.lang.String)",
+      "public ai.vespa.llm.clients.LlmClientConfig$Builder temperature(double)",
+      "public ai.vespa.llm.clients.LlmClientConfig$Builder maxTokens(int)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -70,7 +73,10 @@
       "public static java.lang.String getDefNamespace()",
       "public void <init>(ai.vespa.llm.clients.LlmClientConfig$Builder)",
       "public java.lang.String apiKeySecretName()",
-      "public java.lang.String endpoint()"
+      "public java.lang.String endpoint()",
+      "public java.lang.String model()",
+      "public double temperature()",
+      "public int maxTokens()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",

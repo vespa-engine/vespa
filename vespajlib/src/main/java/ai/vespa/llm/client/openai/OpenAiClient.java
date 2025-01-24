@@ -47,9 +47,10 @@ public class OpenAiClient implements LanguageModel {
     private static final int MAX_RETRIES = 3;
     private static final long RETRY_DELAY_MS = 250;
 
-    private static final String OPTION_MODEL = "model";
-    private static final String OPTION_TEMPERATURE = "temperature";
-    private static final String OPTION_MAX_TOKENS = "maxTokens";
+    // These are public so that they can be used to set corresponding InferenceParameters outside of this class.
+    public static final String OPTION_MODEL = "model";
+    public static final String OPTION_TEMPERATURE = "temperature";
+    public static final String OPTION_MAX_TOKENS = "maxTokens";
 
     private final HttpClient httpClient;
 
