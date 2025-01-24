@@ -11,6 +11,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.zone.AuthMethod;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -70,7 +71,7 @@ public class AllocatedHostsSerializerTest {
                                bigSlowDiskSpeedNode,
                                anyDiskSpeedNode,
                                ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                      Optional.empty(), new ZoneEndpoint(true, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "burn")))),
+                                                      Optional.empty(), new ZoneEndpoint(true, true, List.of(AuthMethod.mtls, AuthMethod.token), List.of(new AllowedUrn(AccessType.awsPrivateLink, "burn")))),
                                Optional.empty(),
                                Optional.empty(),
                                Optional.empty()));
