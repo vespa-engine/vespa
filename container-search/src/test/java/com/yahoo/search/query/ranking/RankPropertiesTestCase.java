@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author arnej
@@ -25,11 +26,11 @@ public class RankPropertiesTestCase {
         RankProperties p = new RankProperties();
         f.prepare(p);
         var optT = p.getAsTensor("myDouble");
-        assertEquals(true, optT.isPresent());
+        assertTrue(optT.isPresent());
         assertEquals(TensorType.empty, optT.get().type());
         assertEquals(42.75, optT.get().asDouble());
         optT = p.getAsTensor("myTensor");
-        assertEquals(true, optT.isPresent());
+        assertTrue(optT.isPresent());
         assertEquals(mappedTensor, optT.get());
     }
 
@@ -46,4 +47,11 @@ public class RankPropertiesTestCase {
                      "this usually means that 'myTensor' is not defined in the schema. " +
                      "See https://docs.vespa.ai/en/tensor-user-guide.html#querying-with-tensors", ex.getMessage());
     }
+
+    @Test
+    void testRankPropertyWithParenthesis() {
+        Query q = new Query("?ranking.properties.freshness(my_field).maxAge=50");
+        assertEquals("50", q.getRanking().getProperties().get("freshness(my_field).maxAge").get(0));
+    }
+
 }
