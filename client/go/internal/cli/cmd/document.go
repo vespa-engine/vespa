@@ -101,10 +101,10 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 		service.CurlWriter.InputFile = filename
 	}
 	result := client.Send(doc)
-	return printResult(cli, operationResult(false, doc, service, result), false)
+	return printResult(cli, operationResult(false, doc, service, result), false, false)
 }
 
-func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string) error {
+func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string, ignoreMissing bool) error {
 	parsedIds := make([]document.Id, 0, len(ids))
 	for _, id := range ids {
 		parsedId, err := document.ParseId(id)
@@ -121,7 +121,7 @@ func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool
 
 	for _, docId := range parsedIds {
 		result := client.Get(docId, fieldSet)
-		if err := printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true); err != nil {
+		if err := printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true, ignoreMissing); err != nil {
 			return err
 		}
 	}
@@ -266,7 +266,7 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 				}
 				doc := document.Document{Id: id, Operation: document.OperationRemove}
 				result := client.Send(doc)
-				return printResult(cli, operationResult(false, doc, service, result), false)
+				return printResult(cli, operationResult(false, doc, service, result), false, false)
 			} else {
 				return sendOperation(document.OperationRemove, args, timeoutSecs, waiter, printCurl, cli, headers)
 			}
@@ -278,11 +278,12 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 
 func newDocumentGetCmd(cli *CLI) *cobra.Command {
 	var (
-		printCurl   bool
-		timeoutSecs int
-		waitSecs    int
-		fieldSet    string
-		headers     []string
+		printCurl     bool
+		ignoreMissing bool
+		timeoutSecs   int
+		waitSecs      int
+		fieldSet      string
+		headers       []string
 	)
 	cmd := &cobra.Command{
 		Use:               "get id",
@@ -293,10 +294,11 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams...`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers)
+			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers, ignoreMissing)
 		},
 	}
 	cmd.Flags().StringVar(&fieldSet, "field-set", "", "Fields to include when reading document")
+	cmd.Flags().BoolVar(&ignoreMissing, "ignore-missing", false, "Ignore failure when getting non-existent documents")
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs, &headers)
 	return cmd
 }
@@ -309,7 +311,7 @@ func documentService(cli *CLI, waiter *Waiter) (*vespa.Service, error) {
 	return waiter.Service(target, cli.config.cluster())
 }
 
-func printResult(cli *CLI, result OperationResult, payloadOnlyOnSuccess bool) error {
+func printResult(cli *CLI, result OperationResult, payloadOnlyOnSuccess, ignoreFailure bool) error {
 	out := cli.Stdout
 	if !result.Success {
 		out = cli.Stderr
@@ -332,7 +334,7 @@ func printResult(cli *CLI, result OperationResult, payloadOnlyOnSuccess bool) er
 		fmt.Fprintln(out, result.Payload)
 	}
 
-	if !result.Success {
+	if !result.Success && !ignoreFailure {
 		err := errHint(fmt.Errorf("document operation failed"))
 		err.quiet = true
 		return err
