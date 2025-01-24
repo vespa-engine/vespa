@@ -198,6 +198,31 @@ public class SchemaParserTestCase {
     }
 
     @Test
+    void field_rank_specific_filter_threshold_can_be_parsed() throws Exception {
+        String input = """
+          schema foo {
+            rank-profile rp {
+              rank bar {
+                filter-threshold: 0.05
+              }
+              rank zoid {
+                filter-threshold: 0.07
+              }
+              rank baz: filter
+            }
+          }""";
+        var schema = parseString(input);
+        var rp = schema.getRankProfiles().get(0);
+        var thresholds = rp.getFieldsWithRankFilterThreshold();
+        assertEquals(2, thresholds.size());
+        assertEquals(0.05, thresholds.getOrDefault("bar", 0.0), 0.000001);
+        assertEquals(0.07, thresholds.getOrDefault("zoid", 0.0), 0.000001);
+        // Old-school binary rank filter still supported as expected
+        assertEquals(1, rp.getFieldsWithRankFilter().size());
+        assertTrue(rp.getFieldsWithRankFilter().get("baz"));
+    }
+
+    @Test
     void maxOccurrencesCanBeParsed() throws Exception {
         String input = joinLines
                 ("schema foo {",

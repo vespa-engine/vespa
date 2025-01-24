@@ -54,6 +54,7 @@ public class ParsedRankProfile extends ParsedBlock {
     private final List<MutateOperation> mutateOperations = new ArrayList<>();
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, Boolean> fieldsRankFilter = new LinkedHashMap<>();
+    private final Map<String, Double> fieldsRankFilterThreshold = new LinkedHashMap<>();
     private final Map<String, Integer> fieldsRankWeight = new LinkedHashMap<>();
     private final Map<String, ParsedRankFunction> functions = new LinkedHashMap<>();
     private final Map<String, String> fieldsRankType = new LinkedHashMap<>();
@@ -94,6 +95,7 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<String> getGlobalPhaseExpression() { return Optional.ofNullable(this.globalPhaseExpression); }
 
     Map<String, Boolean> getFieldsWithRankFilter() { return Collections.unmodifiableMap(fieldsRankFilter); }
+    Map<String, Double> getFieldsWithRankFilterThreshold() { return Collections.unmodifiableMap(fieldsRankFilterThreshold); }
     Map<String, Integer> getFieldsWithRankWeight() { return Collections.unmodifiableMap(fieldsRankWeight); }
     Map<String, String> getFieldsWithRankType() { return Collections.unmodifiableMap(fieldsRankType); }
     Map<String, List<String>> getRankProperties() { return Collections.unmodifiableMap(rankProperties); }
@@ -138,6 +140,12 @@ public class ParsedRankProfile extends ParsedBlock {
 
     public void addFieldRankFilter(String field, boolean filter) {
         fieldsRankFilter.put(field, filter);
+    }
+
+    public void addFieldRankFilterThreshold(String field, double filterThreshold) {
+        verifyThat(!fieldsRankFilterThreshold.containsKey(field), "already has rank filter-threshold for field", field);
+        verifyThat(filterThreshold >= 0.0 && filterThreshold <= 1.0, "must be a value in range [0, 1]", field);
+        fieldsRankFilterThreshold.put(field, filterThreshold);
     }
 
     public void addFieldRankType(String field, String type) {

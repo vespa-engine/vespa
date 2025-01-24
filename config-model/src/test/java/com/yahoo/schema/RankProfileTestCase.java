@@ -582,6 +582,49 @@ rank-profile feature_logging {
                 threshold, "vespa.matching.filter_threshold");
     }
 
+    private static OptionalDouble optionalDoubleOfNullable(Double maybeDouble) {
+        // No ofNullable in OptionalDouble, probably due to auto boxing magics
+        return maybeDouble != null ? OptionalDouble.of(maybeDouble) : OptionalDouble.empty();
+    }
+
+    @Test
+    void field_specific_filter_threshold_is_configurable() throws ParseException {
+        var rps = """
+                  search test {
+                    document test {
+                      field f1 type string {
+                        indexing: index
+                      }
+                      field f2 type string {
+                        indexing: index
+                      }
+                      field f3 type string {
+                        indexing: index
+                      }
+                    }
+                    rank-profile my_profile {
+                      rank f1 {
+                        filter-threshold: 0.08
+                      }
+                      rank f2 {
+                        filter-threshold: 0.11
+                      }
+                    }
+                  }
+                  """;
+        var rp = createRankProfile(rps);
+
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(),
+                (myRp) -> optionalDoubleOfNullable(myRp.explicitFieldRankFilterThresholds().get("f1")),
+                0.08, "vespa.matching.filter_threshold.f1");
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(),
+                (myRp) -> optionalDoubleOfNullable(myRp.explicitFieldRankFilterThresholds().get("f2")),
+                0.11, "vespa.matching.filter_threshold.f2");
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(),
+                (myRp) -> optionalDoubleOfNullable(myRp.explicitFieldRankFilterThresholds().get("f3")),
+                null, "vespa.matching.filter_threshold.f3");
+    }
+
     private void verifyRankProfileSetting(RankProfile rankProfile, RawRankProfile rawRankProfile, Function<RankProfile, OptionalDouble> func,
                                           Double expValue, String expPropertyName) {
         if (expValue != null) {
