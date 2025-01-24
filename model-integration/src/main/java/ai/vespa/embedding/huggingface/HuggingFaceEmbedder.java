@@ -48,7 +48,6 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         this.runtime = runtime;
         inputIdsName = config.transformerInputIds();
         attentionMaskName = config.transformerAttentionMask();
-        tokenTypeIdsName = config.transformerTokenTypeIds();
         outputName = config.transformerOutput();
         normalize = config.normalize();
         prependQuery = config.prependQuery();
@@ -75,15 +74,29 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         onnxOpts.setExecutionMode(config.transformerExecutionMode().toString());
         onnxOpts.setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
         evaluator = onnx.evaluatorOf(config.transformerModel().toString(), onnxOpts);
+        tokenTypeIdsName = detectTokenTypeIds(config, evaluator);
         validateModel();
+    }
+
+    private static String detectTokenTypeIds(HuggingFaceEmbedderConfig config, OnnxEvaluator evaluator) {
+        String configured = config.transformerTokenTypeIds();
+        Map<String, TensorType> inputs = evaluator.getInputInfo();
+        if (inputs.size() < 3) {
+            // newer models have only 2 inputs (they do not use token type IDs)
+            return "";
+        } else {
+            // could detect fallback from inputs here, currently set as default in .def file
+            return configured;
+        }
     }
 
     private void validateModel() {
         Map<String, TensorType> inputs = evaluator.getInputInfo();
         validateName(inputs, inputIdsName, "input");
         validateName(inputs, attentionMaskName, "input");
-        if (!tokenTypeIdsName.isEmpty()) validateName(inputs, tokenTypeIdsName, "input");
-
+        if (!tokenTypeIdsName.isEmpty()) {
+            validateName(inputs, tokenTypeIdsName, "input");
+        }
         Map<String, TensorType> outputs = evaluator.getOutputInfo();
         validateName(outputs, outputName, "output");
     }
@@ -250,4 +263,3 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
     protected record HFEmbedderCacheKey(String embedderId, Object embeddedValue) { }
 
 }
-
