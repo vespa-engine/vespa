@@ -86,8 +86,9 @@ std::shared_ptr<AttrVecType> create_array_attribute(BasicType type, std::string_
 template<typename AttrVecType>
 std::shared_ptr<AttrVecType> create_wset_attribute(BasicType type,
                                                    FastSearchConfig fast_search = FastSearchConfig::Default,
+                                                   FilterConfig filter = FilterConfig::Default,
                                                    std::string_view name = "parent") {
-    return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, fast_search, FilterConfig::Default, name);
+    return create_typed_attribute<AttrVecType>(type, CollectionType::WSET, fast_search, filter, name);
 }
 
 template<typename AttrVecType>
@@ -212,8 +213,9 @@ struct ImportedAttributeFixture {
     void reset_with_wset_value_reference_mappings(
             BasicType type,
             const std::vector<LidToLidMapping<std::vector<WeightedValueType>>> &mappings,
-            FastSearchConfig fast_search = FastSearchConfig::Default) {
-        reset_with_new_target_attr(create_wset_attribute<AttrVecType>(type, fast_search));
+            FastSearchConfig fast_search = FastSearchConfig::Default,
+            FilterConfig filter = FilterConfig::Default) {
+        reset_with_new_target_attr(create_wset_attribute<AttrVecType>(type, fast_search, filter));
         set_up_and_map<AttrVecType>(mappings, [](auto &target_vec, auto &mapping) {
             for (const auto &v : mapping._value_in_target_attr) {
                 ASSERT_TRUE(target_vec.append(mapping._to_lid, v.value(), v.weight()));
