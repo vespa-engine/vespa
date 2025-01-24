@@ -134,7 +134,7 @@ public class FileServer {
         if (file.isDirectory()) {
             Path tempFile = Files.createTempFile(tempFilereferencedataDir, tempFilereferencedataPrefix, reference.value());
             CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
-            log.log(Level.FINE, () -> "accepted compression types=" + acceptedCompressionTypes + ", compression type to use=" + compressionType);
+            log.log(Level.FINEST, () -> "accepted compression types=" + acceptedCompressionTypes + ", compression type to use=" + compressionType);
             File compressedFile = new FileReferenceCompressor(compressed, compressionType).compress(file.getParentFile(), tempFile.toFile());
             return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile, compressionType);
         } else {
@@ -172,7 +172,7 @@ public class FileServer {
 
             startFileServing(fileReference, file.get(), receiver, acceptedCompressionTypes);
         } catch (Exception e) {
-            log.warning("Failed serving file reference '" + fileReference + "', request from " + client + " failed with: " + e.getMessage());
+            log.warning("Failed serving '" + fileReference + "', request from " + client + " failed with: " + e.getMessage());
             return TRANSFER_FAILED;
         }
 

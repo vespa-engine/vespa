@@ -589,7 +589,6 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
     }
 
     private void triggerDownload(Request req) {
-        log.log(FINE, () -> "Got request triggerDownload from " + req.target());
         req.detach();
         rpcAuthorizer.authorizeFileRequest(req)
                      .thenRun(() -> { // okay to do in authorizer thread as downloadFromSource is async
@@ -601,7 +600,6 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                          // is the client that sent the request
                          List<String> fileReferenceStrings = List.of(req.parameters().get(0).asStringArray());
                          var peerSpec = new Spec(req.parameters().get(1).asString());
-                         log.log(FINE, () -> "setFileReferencesToDownload: " + fileReferenceStrings + ", spec=" + peerSpec);
                          fileReferenceStrings.stream()
                                              .map(FileReference::new)
                                              .forEach(fileReference -> downloadFromSource(fileReference, peerSpec.host(), peerSpec));
@@ -615,7 +613,7 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
         try {
             var downloading = downloader.downloadFromSource(fileReferenceDownload, peerSpec);
             log.log(FINE, () -> downloading
-                    ? "Downloading file reference " + fileReference.value() + " from " + peerSpec
+                    ? "Downloading file reference " + fileReference.value() + " from " + peerSpec.host()
                     : "File reference " + fileReference.value() + " already exists");
         } catch (Exception e) {
             log.log(WARNING, "download from source failed: ", Exceptions.toMessageString(e));
