@@ -2,6 +2,7 @@
 
 #include "maintenance_jobs_injector.h"
 #include "bucketmovejob.h"
+#include "clear_imported_attribute_search_cache_job.h"
 #include "heart_beat_job.h"
 #include "job_tracked_maintenance_job.h"
 #include "lid_space_compaction_job.h"
@@ -87,6 +88,13 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     AttributeUsageFilter &attributeUsageFilter)
 {
     controller.registerJob(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
+    auto visibility_delay = config.getVisibilityDelay();
+    if (visibility_delay != vespalib::duration::zero()) {
+        if (visibility_delay < 100ms) {
+            visibility_delay = 100ms;
+        }
+        controller.registerJob(std::make_unique<ClearImportedAttributeSearchCacheJob>(readyAttributeManager, config.getVisibilityDelay()));
+    }
 
     const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
