@@ -34,10 +34,6 @@ public enum Environment {
     /** Returns whether this environment is production (prod) */
     public boolean isProduction() { return this == prod; }
 
-    /** Returns whether this environment can exist in multiple regions. @deprecated they all are */
-    @Deprecated // TODO: Remove after June 2023
-    public boolean isMultiRegion() { return true; }
-
     /** Returns the prod environment. This is useful for non-hosted properties where we just need any consistent value */
     public static Environment defaultEnvironment() { return prod; }
 

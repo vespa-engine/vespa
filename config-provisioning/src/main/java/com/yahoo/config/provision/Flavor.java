@@ -111,18 +111,13 @@ public class Flavor {
 
     public Type getType() { return type; }
     
-    /** Convenience, returns getType() == Type.DOCKER_CONTAINER */
-    // TODO: Remove after December 2022
-    public boolean isDocker() { return type == Type.DOCKER_CONTAINER; }
-
     @Override
     public int hashCode() { return Objects.hash(name, flavorOverrides); }
 
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof Flavor)) return false;
-        Flavor other = (Flavor)o;
+        if ( ! (o instanceof Flavor other)) return false;
         if (configured)
             return Objects.equals(this.name, other.name) &&
                     Objects.equals(this.flavorOverrides, other.flavorOverrides);
