@@ -129,6 +129,7 @@ public class FileReceiver {
                     decompressedDir = Files.createTempDirectory(tmpDir.toPath(), "archive").toFile();
                     log.log(Level.FINEST, () -> "compression type to use=" + compressionType);
                     new FileReferenceCompressor(fileType, compressionType).decompress(file, decompressedDir);
+                    log.log(Level.FINE, "Compressed file, moving to " + decompressedDir.getAbsolutePath());
                     moveFileToDestination(decompressedDir, fileReferenceDir);
                 }
             } catch (IOException e) {
