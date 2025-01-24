@@ -132,7 +132,11 @@ ImportedSearchContext::createIterator(fef::TermFieldMatchData* matchData, bool s
             DocIt postings;
             auto array = _merger.getArray();
             postings.set(&array[0], &array[array.size()]);
-            return std::make_unique<AttributePostingListIteratorT<DocIt>>(*this, matchData, postings);
+            if (_target_attribute.getIsFilter()) {
+                return std::make_unique<FilterAttributePostingListIteratorT<DocIt>>(*this, matchData, postings);
+            } else {
+                return std::make_unique<AttributePostingListIteratorT<DocIt>>(*this, matchData, postings);
+            }
         }
     } else if (_merger.hasBitVector()) {
         return BitVectorIterator::create(_merger.getBitVector(), _merger.getDocIdLimit(), *matchData, strict);
@@ -268,12 +272,35 @@ public:
 
 }
 
-void ImportedSearchContext::makeMergedPostings(bool isFilter)
+ImportedSearchContext::MergedPostingsType
+ImportedSearchContext::select_merged_postings_type(bool is_filter)
+{
+    if (!is_filter) {
+        return MergedPostingsType::WEIGHTED_ARRAY;
+    }
+    /*
+     * Select weighted array if the estimated number of hits is low to minimize memory usage. If lid space is 80M, and
+     * we estimate 100 hits then a bitvector will use 10MB while a weighted array will use 800 bytes. Always using
+     * bitvectors can be a problem when we have queries with many terms (e.g. queries using weightedset operator with
+     * 1000 or more terms).
+     */
+    auto hit_estimate = calc_hit_estimate();
+    auto est_hits = hit_estimate.est_hits();
+    uint32_t docid_limit = _targetLids.size();
+    uint32_t bitvector_limit = 1 + docid_limit / bitvector_limit_divisor;
+    if (est_hits < bitvector_limit) {
+        return MergedPostingsType::WEIGHTED_ARRAY;
+    }
+    return MergedPostingsType::BITVECTOR;
+}
+
+void
+ImportedSearchContext::makeMergedPostings(MergedPostingsType merged_postings_type)
 {
     uint32_t committedTargetDocIdLimit = _target_attribute.getCommittedDocIdLimit();
     std::atomic_thread_fence(std::memory_order_acquire);
     const auto &reverseMapping = _reference_attribute.getReverseMapping();
-    if (isFilter) {
+    if (merged_postings_type == MergedPostingsType::BITVECTOR) {
         _merger.allocBitVector();
         TargetResult::getResult(_reference_attribute.getReverseMappingRefs(),
                                 _reference_attribute.getReverseMapping(),
@@ -309,7 +336,7 @@ ImportedSearchContext::fetchPostings(const queryeval::ExecuteInfo &execInfo, boo
     if (!_searchCacheLookup) {
         _target_search_context->fetchPostings(execInfo, strict);
         if (!_merger.merge_done() && (strict || (_target_attribute.getIsFastSearch() && execInfo.hit_rate() > 0.01))) {
-                makeMergedPostings(_target_attribute.getIsFilter());
+                makeMergedPostings(select_merged_postings_type(_target_attribute.getIsFilter()));
                 considerAddSearchCacheEntry();
         }
     }

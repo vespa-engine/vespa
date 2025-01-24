@@ -29,6 +29,10 @@ class SearchContextParams;
 class ImportedSearchContext : public ISearchContext {
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
     using TargetLids = std::span<const AtomicTargetLid>;
+    enum class MergedPostingsType : uint8_t {
+        WEIGHTED_ARRAY,
+        BITVECTOR
+    };
     const ImportedAttributeVector&                  _imported_attribute;
     std::string                                _queryTerm;
     bool                                            _useSearchCache;
@@ -52,7 +56,8 @@ class ImportedSearchContext : public ISearchContext {
         return target_lid < _target_docid_limit ? target_lid : 0u;
     }
 
-    void makeMergedPostings(bool isFilter);
+    MergedPostingsType select_merged_postings_type(bool is_filter);
+    void makeMergedPostings(MergedPostingsType merged_postings_type);
     void considerAddSearchCacheEntry();
     uint32_t calc_approx_hits(uint32_t target_approx_hits) const;
     uint32_t calc_exact_hits() const;
@@ -62,6 +67,13 @@ public:
                           const ImportedAttributeVector& imported_attribute,
                           const attribute::IAttributeVector &target_attribute);
     ~ImportedSearchContext() override;
+
+    /*
+     * Each array element in weighted array uses 8 bytes, thus a weighted array with docid_limit / 64 elements
+     * would use the same amount of memory as the bitvector. The divisor is adjusted to account for extra memory usage
+     * by an addition array (_startPos in posting list merger) and for cpu time spent doing the sorting.
+     */
+    static constexpr uint32_t bitvector_limit_divisor = 150;
 
     std::unique_ptr<queryeval::SearchIterator>
     createIterator(fef::TermFieldMatchData* matchData, bool strict) override;

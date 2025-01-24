@@ -521,15 +521,17 @@ TEST(ImportedSearchContextTest, queryTerm_returns_term_context_was_created_with)
 }
 
 struct SearchCacheFixture : Fixture {
-    SearchCacheFixture() : Fixture(true) {
-        reset_with_single_value_reference_mappings<IntegerAttribute, int32_t>(
+    SearchCacheFixture(FilterConfig filter_config = FilterConfig::ExplicitlyEnabled)
+        : Fixture(true)
+    {
+        reset_with_wset_value_reference_mappings<IntegerAttribute, WeightedInt>(
                 BasicType::INT32,
-                {{DocId(3), dummy_gid(5), DocId(5), 5678},
-                 {DocId(4), dummy_gid(6), DocId(6), 1234},
-                 {DocId(5), dummy_gid(8), DocId(8), 5678},
-                 {DocId(7), dummy_gid(9), DocId(9), 4321}},
+                {{DocId(3), dummy_gid(5), DocId(5), {{5678, 5}}},
+                 {DocId(4), dummy_gid(6), DocId(6), {{1234, 7}}},
+                 {DocId(5), dummy_gid(8), DocId(8), {{5678, 9}}},
+                 {DocId(7), dummy_gid(9), DocId(9), {{4321, 11}}}},
                 FastSearchConfig::ExplicitlyEnabled,
-                FilterConfig::ExplicitlyEnabled);
+                filter_config);
     }
     ~SearchCacheFixture() override;
 };
@@ -567,9 +569,13 @@ get_bitvector_hits(const BitVector &bitVector)
     return actDocsIds;
 }
 
-TEST(ImportedSearchContextTest, entry_is_inserted_into_search_cache_if_bit_vector_posting_list_is_used)
+void test_search_cache(bool increase_child_lidspace, FilterConfig filter_config)
 {
-    SearchCacheFixture f;
+    SearchCacheFixture f(filter_config);
+    if (increase_child_lidspace) {
+        f.reference_attr->addDocs(2 * ImportedSearchContext::bitvector_limit_divisor);
+        f.reference_attr->commit();
+    }
     EXPECT_EQ(0u, f.imported_attr->getSearchCache()->size());
     auto old_mem_usage = f.imported_attr->get_memory_usage();
     auto ctx = f.create_context(word_term("5678"));
@@ -577,15 +583,44 @@ TEST(ImportedSearchContextTest, entry_is_inserted_into_search_cache_if_bit_vecto
     TermFieldMatchData match;
     auto iter = f.create_strict_iterator(*ctx, match);
     EXPECT_EQ(SimpleResult({3, 5}), f.search(*iter));
+    iter->initFullRange();
+    EXPECT_FALSE(iter->seek(1));
+    EXPECT_TRUE(iter->seek(3));
+    iter->unpack(3);
+    EXPECT_EQ(3, match.getDocId());
+    if (filter_config == FilterConfig::ExplicitlyEnabled) {
+        EXPECT_EQ(1, match.getWeight());
+    } else {
+        EXPECT_EQ(5, match.getWeight());
+    }
 
-    EXPECT_EQ(1u, f.imported_attr->getSearchCache()->size());
-    auto new_mem_usage = f.imported_attr->get_memory_usage();
-    EXPECT_LT(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
-    EXPECT_LT(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
-    auto cacheEntry = f.imported_attr->getSearchCache()->find("5678");
-    EXPECT_EQ(cacheEntry->docIdLimit, f.get_imported_attr()->getNumDocs());
-    EXPECT_EQ((std::vector<uint32_t>{3, 5}), get_bitvector_hits(*cacheEntry->bitVector));
-    EXPECT_EQ(1u, f.document_meta_store->get_read_guard_cnt);
+    if (increase_child_lidspace || filter_config == FilterConfig::Default) {
+        // weighted array
+        EXPECT_EQ(0u, f.imported_attr->getSearchCache()->size());
+        EXPECT_EQ(1u, f.document_meta_store->get_read_guard_cnt);
+    } else {
+        // bitvector
+        EXPECT_EQ(1u, f.imported_attr->getSearchCache()->size());
+        auto new_mem_usage = f.imported_attr->get_memory_usage();
+        EXPECT_LT(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
+        EXPECT_LT(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
+        auto cacheEntry = f.imported_attr->getSearchCache()->find("5678");
+        EXPECT_EQ(cacheEntry->docIdLimit, f.get_imported_attr()->getNumDocs());
+        EXPECT_EQ((std::vector<uint32_t>{3, 5}), get_bitvector_hits(*cacheEntry->bitVector));
+        EXPECT_EQ(1u, f.document_meta_store->get_read_guard_cnt);
+    }
+}
+
+TEST(ImportedSearchContextTest, entry_is_inserted_into_search_cache_if_bit_vector_posting_list_is_used) {
+    test_search_cache(false, FilterConfig::ExplicitlyEnabled);
+}
+
+TEST(ImportedSearchContextTest, entry_is_not_inserted_into_search_cache_if_weighted_array_posting_list_is_used) {
+    test_search_cache(true, FilterConfig::ExplicitlyEnabled);
+}
+
+TEST(ImportedSearchContextTest, entry_is_not_inserted_into_search_cache_if_not_filter) {
+    test_search_cache(false, FilterConfig::Default);
 }
 
 }
