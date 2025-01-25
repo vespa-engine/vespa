@@ -18,14 +18,6 @@ import static org.junit.Assert.fail;
 public class ExpressionTestCase {
 
     @Test
-    public void requireThatOutputTypeIsCheckedAfterExecute() {
-        assertExecute(newCreatedOutput(DataType.INT, (FieldValue)null), null);
-        assertExecute(newCreatedOutput(DataType.INT, new IntegerFieldValue(69)), null);
-        assertExecuteThrows(newCreatedOutput(DataType.INT, new StringFieldValue("foo")), null,
-                            new IllegalStateException("expected int output, got string"));
-    }
-
-    @Test
     public void requireThatInputTypeIsCheckedBeforeVerify() {
         assertVerify(newRequiredInput(DataType.INT), DataType.INT);
         assertVerifyThrows(newRequiredInput(DataType.INT), null,

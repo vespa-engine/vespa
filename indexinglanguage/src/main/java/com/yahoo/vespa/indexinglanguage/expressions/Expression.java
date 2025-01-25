@@ -246,14 +246,6 @@ public abstract class Expression extends Selectable {
             if (input == null) return null;
         }
         doExecute(context);
-        DataType outputType = createdOutputType();
-        if (outputType != null) {
-            FieldValue output = context.getCurrentValue();
-            if (output != null && !outputType.isValueCompatible(output)) {
-                throw new IllegalStateException("Expression '" + this + "' expected " + outputType.getName() +
-                                                " output, got " + output.getDataType().getName());
-            }
-        }
         return context.getCurrentValue();
     }
 
