@@ -14,6 +14,7 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -160,7 +161,7 @@ public final class SwitchExpression extends CompositeExpression {
     public boolean equals(Object obj) {
         if (!(obj instanceof SwitchExpression rhs)) return false;
         if (!cases.equals(rhs.cases)) return false;
-        if (!equals(defaultExp, rhs.defaultExp)) return false;
+        if (!Objects.equals(defaultExp, rhs.defaultExp)) return false;
         return true;
     }
 

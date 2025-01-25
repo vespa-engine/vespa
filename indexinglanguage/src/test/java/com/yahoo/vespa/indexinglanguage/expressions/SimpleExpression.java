@@ -4,6 +4,8 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 
+import java.util.Objects;
+
 /**
  * @author Simon Thoresen Hult
  */
@@ -84,10 +86,10 @@ final class SimpleExpression extends Expression {
     public boolean equals(Object o) {
         if (!(o instanceof SimpleExpression other)) return false;
         if (hasExecuteValue != other.hasExecuteValue) return false;
-        if (!equals(executeValue, other.executeValue)) return false;
+        if (!Objects.equals(executeValue, other.executeValue)) return false;
         if (hasVerifyValue != other.hasVerifyValue) return false;
-        if (!equals(verifyValue, other.verifyValue)) return false;
-        if (!equals(createdOutput, other.createdOutput)) return false;
+        if (!Objects.equals(verifyValue, other.verifyValue)) return false;
+        if (!Objects.equals(createdOutput, other.createdOutput)) return false;
         return true;
     }
 

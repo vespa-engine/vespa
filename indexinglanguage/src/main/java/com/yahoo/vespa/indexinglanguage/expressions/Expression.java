@@ -276,17 +276,6 @@ public abstract class Expression extends Selectable {
         return ScriptParser.parseExpression(context);
     }
 
-    protected static boolean equals(Object lhs, Object rhs) {
-        if (lhs == null) {
-            return rhs == null;
-        } else {
-            if (rhs == null) {
-                return false;
-            }
-            return lhs.equals(rhs);
-        }
-    }
-
     // Convenience For testing
     public static Document execute(Expression expression, Document doc) {
         expression.verify(doc);

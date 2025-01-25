@@ -9,7 +9,6 @@ import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -37,25 +36,12 @@ public class ExpressionTestCase {
                            "Invalid expression 'SimpleExpression': Expected int input, got string");
     }
 
-    @Test
-    public void requireThatEqualsMethodWorks() {
-        assertTrue(Expression.equals(null, null));
-        assertTrue(Expression.equals(1, 1));
-        assertFalse(Expression.equals(1, 2));
-        assertFalse(Expression.equals(1, null));
-        assertFalse(Expression.equals(null, 2));
-    }
-
     private static Expression newRequiredInput(DataType requiredInput) {
         return new SimpleExpression(requiredInput);
     }
 
     private static Expression newCreatedOutput(DataType createdOutput, FieldValue actualOutput) {
         return new SimpleExpression().setCreatedOutput(createdOutput).setExecuteValue(actualOutput);
-    }
-
-    private static Expression newCreatedOutput(DataType createdOutput, DataType actualOutput) {
-        return new SimpleExpression().setCreatedOutput(createdOutput).setVerifyValue(actualOutput);
     }
 
     private static void assertExecute(Expression exp, FieldValue val) {
@@ -86,4 +72,5 @@ public class ExpressionTestCase {
             assertEquals(expectedException, e.getMessage());
         }
     }
+
 }
