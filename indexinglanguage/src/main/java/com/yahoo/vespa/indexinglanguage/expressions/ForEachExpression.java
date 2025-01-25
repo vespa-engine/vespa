@@ -227,7 +227,7 @@ public final class ForEachExpression extends CompositeExpression {
         /** Converts a map into an array by passing each entry through the expression. */
         @Override
         protected FieldValue convertMap(MapFieldValue<FieldValue, FieldValue> map) {
-            var values = new Array<>(new ArrayDataType(expression.createdOutputType()), map.size());
+            var values = new Array<>(new ArrayDataType(expression.getOutputType()), map.size());
             for (var entry : map.entrySet())
                 values.add(doConvert(new MapEntryFieldValue(entry.getKey(), entry.getValue())));
             return values;
