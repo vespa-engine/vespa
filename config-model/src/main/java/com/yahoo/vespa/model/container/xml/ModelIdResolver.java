@@ -61,6 +61,12 @@ public class ModelIdResolver {
 
         register(m, "e5-large-v2", "https://data.vespa-cloud.com/onnx_models/e5-large-v2/model.onnx", Set.of(ONNX_MODEL));
         register(m, "e5-large-v2-vocab", "https://data.vespa-cloud.com/onnx_models/e5-large-v2/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "nomic-ai-modernbert", "https://data.vespa-cloud.com/onnx_models/nomic-ai-modernbert-embed-base/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "nomic-ai-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/nomic-ai-modernbert-embed-base/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "lightonai-modernbert-large", "https://data.vespa-cloud.com/onnx_models/lightonai-modernbert-large/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "lightonai-modernbert-large-vocab", "https://data.vespa-cloud.com/onnx_models/lightonai-modernbert-large/tokenizer.json", Set.of(HF_TOKENIZER));
+        register(m, "alibaba-gte-modernbert", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/model.onnx", Set.of(ONNX_MODEL));
+        register(m, "alibaba-gte-modernbert-vocab", "https://data.vespa-cloud.com/onnx_models/alibaba-gte-modernbert-base/tokenizer.json", Set.of(HF_TOKENIZER));
 
         register(m, "llama-3.2-1b-q4", "https://data.vespa-cloud.com/gguf_models/llama-3.2-1b-instruct-q4_k_m.gguf", Set.of(GGUF_MODEL));
         register(m, "llama-3.2-1b",    "https://data.vespa-cloud.com/gguf_models/llama-3.2-1b-instruct-q8_0.gguf", Set.of(GGUF_MODEL));
