@@ -204,7 +204,8 @@ TOKEN :
     <THIS: "this"> |
     <TOKENIZE: "tokenize"> |
     <TO_ARRAY: "to_array"> |
-    <TO_BYTE: "to_byte"> |
+    <TO_BOOL: "to_bool"> |
+     <TO_BYTE: "to_byte"> |
     <TO_DOUBLE: "to_double"> |
     <TO_FLOAT: "to_float"> |
     <TO_INT: "to_int"> |
@@ -212,8 +213,8 @@ TOKEN :
     <TO_POS: "to_pos"> |
     <TO_EPOCH_SECOND: "to_epoch_second"> |
     <TO_STRING: "to_string"> |
+    <TO_URI: "to_uri"> |
     <TO_WSET: "to_wset"> |
-    <TO_BOOL: "to_bool"> |
     <TRIM: "trim"> |
     <ZCURVE: "zcurve"> |
     <TRUE: "true" > |
@@ -352,16 +353,17 @@ Expression value() :
       val = thisExp()               |
       val = tokenizeExp()           |
       val = toArrayExp()            |
+      val = toBoolExp()             |
       val = toByteExp()             |
       val = toDoubleExp()           |
+      val = toEpochSecondExp()      |
       val = toFloatExp()            |
       val = toIntExp()              |
       val = toLongExp()             |
       val = toPosExp()              |
-      val = toEpochSecondExp()      |
       val = toStringExp()           |
+      val = toUriExp()              |
       val = toWsetExp()             |
-      val = toBoolExp()             |
       val = trimExp()               |
       val = zcurveExp()             |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
@@ -741,6 +743,12 @@ Expression toArrayExp() : { }
     { return new ToArrayExpression(); }
 }
 
+Expression toBoolExp() : { }
+{
+    ( <TO_BOOL> )
+    { return new ToBoolExpression(); }
+}
+
 Expression toByteExp() : { }
 {
     ( <TO_BYTE> )
@@ -751,6 +759,12 @@ Expression toDoubleExp() : { }
 {
     ( <TO_DOUBLE> )
     { return new ToDoubleExpression(); }
+}
+
+Expression toEpochSecondExp() : { }
+{
+    ( <TO_EPOCH_SECOND> )
+    { return new ToEpochSecondExpression(); }
 }
 
 Expression toFloatExp() : { }
@@ -777,16 +791,16 @@ Expression toPosExp() : { }
     { return new ToPositionExpression(); }
 }
 
-Expression toEpochSecondExp() : { }
-{
-    ( <TO_EPOCH_SECOND> )
-    { return new ToEpochSecondExpression(); }
-}
-
 Expression toStringExp() : { }
 {
     ( <TO_STRING> )
     { return new ToStringExpression(); }
+}
+
+Expression toUriExp() : { }
+{
+    ( <TO_URI> )
+    { return new ToUriExpression(); }
 }
 
 Expression toWsetExp() :
@@ -798,12 +812,6 @@ Expression toWsetExp() :
     ( <TO_WSET> ( <CREATE_IF_NON_EXISTENT> { createIfNonExistent = true; } |
                   <REMOVE_IF_ZERO>         { removeIfZero = true;        } )* )
     { return new ToWsetExpression(createIfNonExistent, removeIfZero); }
-}
-
-Expression toBoolExp() : { }
-{
-    ( <TO_BOOL> )
-    { return new ToBoolExpression(); }
 }
 
 Expression trimExp() : { }
@@ -894,14 +902,17 @@ String identifier() :
         <SWITCH>                 |
         <THIS>                   |
         <TO_ARRAY>               |
+        <TO_BOOL>                |
+        <TO_BYTE>                |
         <TO_DOUBLE>              |
+        <TO_EPOCH_SECOND>        |
         <TO_FLOAT>               |
         <TO_INT>                 |
         <TO_LONG>                |
         <TO_POS>                 |
         <TO_STRING>              |
+        <TO_URI>                 |
         <TO_WSET>                |
-        <TO_BOOL>                |
         <TOKENIZE>               |
         <TRIM>                   |
         <TRUE>                   |

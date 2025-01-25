@@ -12,6 +12,7 @@ import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.UriFieldValue;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -343,6 +344,23 @@ public class ScriptTestCase {
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
         assertEquals("Test value", ((StringFieldValue)adapter.values.get("myOutputString")).getString());
+    }
+
+    @Test
+    public void testToUri() {
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom("input myString | to_uri | attribute myUri");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        var myString = new Field("myString", DataType.STRING);
+        adapter.createField(myString);
+        adapter.setValue("myString", new StringFieldValue("https://vespa.ai"));
+        adapter.createField(new Field("myUri", DataType.URI));
+
+        expression.verify(adapter);
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        assertEquals(new UriFieldValue("https://vespa.ai"), adapter.values.get("myUri"));
     }
 
 }

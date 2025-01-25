@@ -34,6 +34,7 @@ import com.yahoo.search.yql.yqlplusLexer;
  * Tests that the set of tokens declared in JavaCC parsers are also present in CongoCC parsers.
  */
 public class ParserTokensTest {
+
     // These are special
     public static Set<String> javaCCSpecialTokens = Set.of(
         "DEFAULT", // Lexical State in JavaCC parser
@@ -81,7 +82,6 @@ public class ParserTokensTest {
         Field[] javaCCFields = SchemaParserConstants.class.getDeclaredFields();
 
         Set<String> congoCCTokenStrings = new HashSet<>();
-
         for (var tokenType : SchemaParserLexer.getRegularTokens()) {
             congoCCTokenStrings.add(tokenType.toString());
         }
@@ -96,7 +96,6 @@ public class ParserTokensTest {
         Field[] javaCCFields = IndexingParserConstants.class.getDeclaredFields();
 
         Set<String> congoCCTokenStrings = new HashSet<>();
-
         for (var tokenType : IndexingParserLexer.getRegularTokens()) {
             congoCCTokenStrings.add(tokenType.toString());
         }
@@ -110,7 +109,6 @@ public class ParserTokensTest {
         Field[] javaCCFields = RankingExpressionParserConstants.class.getDeclaredFields();
 
         Set<String> congoCCTokenStrings = new HashSet<>();
-
         for (var tokenType : RankingExpressionParserLexer.getRegularTokens()) {
             congoCCTokenStrings.add(tokenType.toString());
         }
@@ -162,6 +160,6 @@ public class ParserTokensTest {
         }
 
         assertEquals(0, missing.size(), "Missing yqlplus tokens in CongoCC: " + String.join(", ", missing));
-
     }
+
 }
