@@ -22,6 +22,9 @@ public abstract class OutputExpression extends Expression {
         this.fieldName = fieldName;
     }
 
+    @Override
+    public boolean isMutating() { return false; }
+
     public String getFieldName() { return fieldName; }
 
     @Override

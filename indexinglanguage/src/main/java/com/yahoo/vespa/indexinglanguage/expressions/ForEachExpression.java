@@ -32,6 +32,9 @@ public final class ForEachExpression extends CompositeExpression {
         this.expression = Objects.requireNonNull(expression);
     }
 
+    @Override
+    public boolean isMutating() { return expression.isMutating(); }
+
     public Expression getInnerExpression() { return expression; }
 
     @Override

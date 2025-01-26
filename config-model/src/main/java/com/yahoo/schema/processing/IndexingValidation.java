@@ -75,7 +75,7 @@ public class IndexingValidation extends Processor {
                 outputs.add(fieldName);
                 prevNames.add(fieldName);
             }
-            if (expression.createdOutputType() != null) {
+            if (expression.isMutating()) {
                 prevNames.clear();
             }
             return false;

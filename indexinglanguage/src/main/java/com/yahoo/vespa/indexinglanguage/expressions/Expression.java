@@ -45,6 +45,12 @@ public abstract class Expression extends Selectable {
     public boolean requiresInput() { return true; }
 
     /**
+     * Returns whether this expression outputs a different value than what it gets as input.
+     * Annotating a string value does not count as modifying it.
+     */
+    public boolean isMutating() { return true; }
+
+    /**
      * Returns an expression where the children of this has been converted using the given converter.
      * This default implementation returns this as it has no children.
      */

@@ -35,6 +35,9 @@ public final class SwitchExpression extends CompositeExpression {
         this.cases.putAll(cases);
     }
 
+    @Override
+    public boolean isMutating() { return false; }
+
     public boolean isEmpty() {
         return defaultExp == null && cases.isEmpty();
     }
