@@ -22,7 +22,7 @@ class ExpressionAssert {
     }
 
     public static void assertVerifyThrows(String expectedMessage, DataType valueBefore, Expression expression) {
-        assertVerifyThrows(expectedMessage, expression, new VerificationContext(new SimpleTestAdapter()).setCurrentType(valueBefore));
+        assertVerifyThrows(expectedMessage, expression, valueBefore, new VerificationContext(new SimpleTestAdapter()).setCurrentType(valueBefore));
     }
 
     interface CreateExpression {
@@ -42,9 +42,9 @@ class ExpressionAssert {
             assertEquals(expectedMessage, e.getMessage());
         }
     }
-    public static void assertVerifyThrows(String expectedMessage, Expression expression, VerificationContext context) {
+    public static void assertVerifyThrows(String expectedMessage, Expression expression, DataType inputType, VerificationContext context) {
         try {
-            expression.setInputType(context.getCurrentType(), context);
+            expression.setInputType(inputType, context);
             expression.verify(context);
             fail("Expected exception");
         } catch (VerificationException e) {
