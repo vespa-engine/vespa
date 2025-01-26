@@ -170,12 +170,8 @@ public final class ForEachExpression extends CompositeExpression {
         FieldValue input = context.getCurrentValue();
         if (input instanceof Array || input instanceof WeightedSet) {
             FieldValue next = new ExecutionConverter(context, expression).convert(input);
-            if (next == null) {
-                VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
-                context.fillVariableTypes(verificationContext);
-                verificationContext.setCurrentType(input.getDataType()).verify(this);
-                next = verificationContext.getCurrentType().createFieldValue();
-            }
+            if (next == null)
+                next = getOutputType().createFieldValue();
             context.setCurrentValue(next);
         } else if (input instanceof Struct || input instanceof Map) {
             context.setCurrentValue(new ExecutionConverter(context, expression).convert(input));

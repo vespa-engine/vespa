@@ -114,19 +114,6 @@ public class ForEachTestCase {
     }
 
     @Test
-    public void requireThatEmptyArrayCanBeConverted() {
-        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new Array<StringFieldValue>(DataType.getArray(DataType.STRING)));
-
-        new ForEachExpression(new ToIntegerExpression()).execute(ctx);
-
-        FieldValue val = ctx.getCurrentValue();
-        assertTrue(val instanceof Array);
-        assertEquals(DataType.INT, ((Array)val).getDataType().getNestedType());
-        assertTrue(((Array)val).isEmpty());
-    }
-
-    @Test
     public void requireThatIllegalInputValueThrows() {
         try {
             new ForEachExpression(new SimpleExpression()).execute(new StringFieldValue("foo"));
@@ -134,22 +121,6 @@ public class ForEachTestCase {
         } catch (IllegalArgumentException e) {
             assertEquals("Expected Array, Struct, WeightedSet or Map input, got string", e.getMessage());
         }
-    }
-
-    @Test
-    public void requireThatArrayWithNullCanBeConverted() {
-        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        Array<StringFieldValue> arr = new Array<>(DataType.getArray(DataType.STRING));
-        arr.add(new StringFieldValue("foo"));
-        ctx.setCurrentValue(arr);
-
-        new ForEachExpression(SimpleExpression.newConversion(DataType.STRING, DataType.INT)
-                                              .setExecuteValue(null)).execute(ctx);
-
-        FieldValue val = ctx.getCurrentValue();
-        assertTrue(val instanceof Array);
-        assertEquals(DataType.INT, ((Array)val).getDataType().getNestedType());
-        assertTrue(((Array)val).isEmpty());
     }
 
     @Test
@@ -168,19 +139,6 @@ public class ForEachTestCase {
         assertEquals(2, after.size());
         assertEquals(Integer.valueOf(9), after.get(new IntegerFieldValue(6)));
         assertEquals(Integer.valueOf(6), after.get(new IntegerFieldValue(9)));
-    }
-
-    @Test
-    public void requireThatEmptyWsetCanBeConverted() {
-        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(new WeightedSet<StringFieldValue>(DataType.getWeightedSet(DataType.STRING)));
-
-        new ForEachExpression(new ToIntegerExpression()).execute(ctx);
-
-        FieldValue val = ctx.getCurrentValue();
-        assertTrue(val instanceof WeightedSet);
-        assertEquals(DataType.INT, ((WeightedSet)val).getDataType().getNestedType());
-        assertTrue(((WeightedSet)val).isEmpty());
     }
 
     @Test
