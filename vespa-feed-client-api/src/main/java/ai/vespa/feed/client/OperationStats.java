@@ -2,6 +2,7 @@
 package ai.vespa.feed.client;
 
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Statistics for feed operations over HTTP against a Vespa cluster.
@@ -56,6 +57,9 @@ public class OperationStats {
 
     /** Statistics per response code. */
     public Map<Integer, Response> statsByCode() { return statsByCode; }
+
+    /** Statistics for the given code. */
+    public Optional<Response> response(int code) { return Optional.ofNullable(statsByCode.get(code)); }
 
     /** Number of exceptions (instead of responses). */
     public long exceptions() {
