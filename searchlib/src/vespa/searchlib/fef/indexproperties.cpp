@@ -443,13 +443,6 @@ double WeakAndStopWordDropLimit::lookup(const Properties &props, double defaultV
     return lookupDouble(props, NAME, defaultValue);
 }
 
-const std::string DiskIndexBitvectorLimit::NAME("vespa.matching.diskindex.bitvector_limit");
-const double DiskIndexBitvectorLimit::DEFAULT_VALUE(1.0);
-double DiskIndexBitvectorLimit::lookup(const Properties& props) { return lookup(props, DEFAULT_VALUE); }
-double DiskIndexBitvectorLimit::lookup(const Properties& props, double default_value) {
-    return lookupDouble(props, NAME, default_value);
-}
-
 const std::string FilterThreshold::NAME("vespa.matching.filter_threshold");
 const std::optional<double> FilterThreshold::DEFAULT_VALUE(std::nullopt);
 std::optional<double> FilterThreshold::lookup(const search::fef::Properties &props) {
