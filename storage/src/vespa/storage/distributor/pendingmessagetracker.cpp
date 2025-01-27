@@ -58,10 +58,10 @@ struct PairAsRange {
     Pair _pair;
     explicit PairAsRange(Pair pair) : _pair(std::move(pair)) {}
 
-    auto begin() { return _pair.first; }
-    auto end() { return _pair.second; }
-    auto begin() const { return _pair.first; }
-    auto end() const { return _pair.second; }
+    auto begin() noexcept { return _pair.first; }
+    auto end() noexcept { return _pair.second; }
+    auto begin() const noexcept { return _pair.first; }
+    auto end() const noexcept { return _pair.second; }
 };
 
 template <typename Pair>
