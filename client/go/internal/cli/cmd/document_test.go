@@ -224,7 +224,7 @@ func assertDocumentGet(client *mock.HTTPClient, args []string, documentIds []str
 
 func assertDocumentTransportError(t *testing.T, errorMessage string) {
 	client := &mock.HTTPClient{}
-	client.NextResponseError(fmt.Errorf(errorMessage))
+	client.NextResponseError(fmt.Errorf("%s", errorMessage))
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put",
