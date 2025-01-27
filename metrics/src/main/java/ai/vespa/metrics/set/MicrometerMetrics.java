@@ -21,7 +21,7 @@ public enum MicrometerMetrics implements VespaMetrics {
     JVM_BUFFER_TOTAL_CAPACITY("jvm.buffer.total.capacity",Unit.BYTE, "An estimate of the total capacity of the buffers in this pool"),
     JVM_CLASSES_LOADED("jvm.classes.loaded",Unit.CLASS, "The number of classes that are currently loaded in the Java virtual machine"),
     JVM_CLASSES_UNLOADED("jvm.classes.unloaded",Unit.CLASS, "The total number of classes unloaded since the Java virtual machine has started execution"),
-    JVM_GC_PAUSE("jvm.gc.pause",Unit.MILLISECOND, "Time spent in GC pause"),
+    JVM_GC_PAUSE("jvm.gc.pause",Unit.SECOND, "Time spent in GC pause"),
     JVM_THREADS_LIVE("jvm.threads.live",Unit.THREAD, "The current number of live threads including both daemon and non-daemon threads"),
     JVM_THREADS_STATES("jvm.threads.states",Unit.THREAD, "The current number of threads (in each state)"),
     JVM_GC_OVERHEAD("jvm.gc.overhead",Unit.PERCENTAGE, "An approximation of the percent of CPU time used by GC activities"),
