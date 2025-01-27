@@ -21,6 +21,8 @@ public class MatchingTestCase {
         assertNull(query.getRanking().getMatching().getPostFilterThreshold());
         assertNull(query.getRanking().getMatching().getApproximateThreshold());
         assertNull(query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor());
+        assertNull(query.getRanking().getMatching().getWeakAnd().getStopWordLimit());
+        assertNull(query.getRanking().getMatching().getWeakAnd().getAdjustTarget());
     }
 
     @Test
@@ -32,7 +34,9 @@ public class MatchingTestCase {
                 "&ranking.matching.minHitsPerThread=3" +
                 "&ranking.matching.postFilterThreshold=0.8" +
                 "&ranking.matching.approximateThreshold=0.3" +
-                "&ranking.matching.targetHitsMaxAdjustmentFactor=2.5");
+                "&ranking.matching.targetHitsMaxAdjustmentFactor=2.5" +
+                "&ranking.matching.weakand.stopwordLimit=0.6" +
+                "&ranking.matching.weakand.adjustTarget=0.03");
         assertEquals(Double.valueOf(0.7), query.getRanking().getMatching().getTermwiseLimit());
         assertEquals(Integer.valueOf(17), query.getRanking().getMatching().getNumThreadsPerSearch());
         assertEquals(Integer.valueOf(13), query.getRanking().getMatching().getNumSearchPartitions());
@@ -40,6 +44,8 @@ public class MatchingTestCase {
         assertEquals(Double.valueOf(0.8), query.getRanking().getMatching().getPostFilterThreshold());
         assertEquals(Double.valueOf(0.3), query.getRanking().getMatching().getApproximateThreshold());
         assertEquals(Double.valueOf(2.5), query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor());
+        assertEquals(Double.valueOf(0.6), query.getRanking().getMatching().getWeakAnd().getStopWordLimit());
+        assertEquals(Double.valueOf(0.03), query.getRanking().getMatching().getWeakAnd().getAdjustTarget());
 
         query.prepare();
         assertEquals("0.7", query.getRanking().getProperties().get("vespa.matching.termwise_limit").get(0));
@@ -49,6 +55,8 @@ public class MatchingTestCase {
         assertEquals("0.8", query.getRanking().getProperties().get("vespa.matching.global_filter.upper_limit").get(0));
         assertEquals("0.3", query.getRanking().getProperties().get("vespa.matching.global_filter.lower_limit").get(0));
         assertEquals("2.5", query.getRanking().getProperties().get("vespa.matching.nns.target_hits_max_adjustment_factor").get(0));
+        assertEquals("0.6", query.getRanking().getProperties().get("vespa.matching.weakand.stop_word_drop_limit").get(0));
+        assertEquals("0.03", query.getRanking().getProperties().get("vespa.matching.weakand.stop_word_adjust_limit").get(0));
     }
 
     @Test
@@ -65,20 +73,28 @@ public class MatchingTestCase {
         assertEquals(Integer.valueOf(3), query.getRanking().getMatching().getMinHitsPerThread());
     }
 
-    private void verifyException(String key, String value) {
+    private void verifyException(String key, String expectKey, String value) {
         try {
             new Query("?query=test&ranking.matching."+key+"="+value);
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("Could not set 'ranking.matching." + key + "' to '" + value +"'", e.getMessage());
-            assertEquals(key + " must be in the range [0.0, 1.0]. It is " + value, e.getCause().getMessage());
+            assertEquals(expectKey + " must be in the range [0.0, 1.0]. It is " + value, e.getCause().getMessage());
         }
+    }
+
+    private void verifyException(String key, String value) {
+        verifyException(key, key, value);
     }
 
     @Test
     void testLimits() {
         verifyException("termwiselimit", "-0.1");
         verifyException("termwiselimit", "1.1");
+        verifyException("weakand.stopwordLimit", "stopwordLimit", "-0.1");
+        verifyException("weakand.stopwordLimit", "stopwordLimit", "1.1");
+        verifyException("weakand.adjustTarget", "adjustTarget", "-0.1");
+        verifyException("weakand.adjustTarget", "adjustTarget", "1.1");
     }
 
 }

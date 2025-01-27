@@ -4,6 +4,7 @@ package com.yahoo.search.query.ranking;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.Objects;
@@ -25,9 +26,10 @@ public class Matching implements Cloneable {
     public static final String POST_FILTER_THRESHOLD = "postFilterThreshold";
     public static final String APPROXIMATE_THRESHOLD = "approximateThreshold";
     public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
+    public static final String WEAKAND = "weakand";
 
     static {
-        argumentType =new QueryProfileType(Ranking.MATCHING);
+        argumentType = new QueryProfileType(Ranking.MATCHING);
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(TERMWISELIMIT, "double"));
@@ -37,6 +39,7 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(POST_FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(APPROXIMATE_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
+        argumentType.addField(new FieldDescription(WEAKAND, new QueryProfileFieldType(WeakAnd.getArgumentType())));
         argumentType.freeze();
     }
 
@@ -50,6 +53,8 @@ public class Matching implements Cloneable {
     private Double approximateThreshold = null;
     private Double targetHitsMaxAdjustmentFactor = null;
 
+    private WeakAnd weakAnd = new WeakAnd();
+
     public Double getTermwiseLimit() { return termwiseLimit; }
     public Integer getNumThreadsPerSearch() { return numThreadsPerSearch; }
     public Integer getNumSearchPartitions() { return numSearchPartitions; }
@@ -57,6 +62,7 @@ public class Matching implements Cloneable {
     public Double getPostFilterThreshold() { return postFilterThreshold; }
     public Double getApproximateThreshold() { return approximateThreshold; }
     public Double getTargetHitsMaxAdjustmentFactor() { return targetHitsMaxAdjustmentFactor; }
+    public WeakAnd getWeakAnd() { return weakAnd; }
 
     public void setTermwiselimit(double value) {
         if ((value < 0.0) || (value > 1.0)) {
@@ -85,7 +91,6 @@ public class Matching implements Cloneable {
 
     /** Internal operation - DO NOT USE */
     public void prepare(RankProperties rankProperties) {
-
         if (termwiseLimit != null) {
             rankProperties.put("vespa.matching.termwise_limit", String.valueOf(termwiseLimit));
         }
@@ -107,12 +112,15 @@ public class Matching implements Cloneable {
         if (targetHitsMaxAdjustmentFactor != null) {
             rankProperties.put("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor));
         }
+        weakAnd.prepare(rankProperties);
     }
 
     @Override
     public Matching clone() {
         try {
-            return (Matching) super.clone();
+            var clone =  (Matching) super.clone();
+            clone.weakAnd = this.weakAnd.clone();
+            return clone;
         }
         catch (CloneNotSupportedException e) {
             throw new RuntimeException("Won't happen", e);
@@ -130,13 +138,14 @@ public class Matching implements Cloneable {
                 Objects.equals(minHitsPerThread, matching.minHitsPerThread) &&
                 Objects.equals(postFilterThreshold, matching.postFilterThreshold) &&
                 Objects.equals(approximateThreshold, matching.approximateThreshold) &&
-                Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor);
+                Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
+                Objects.equals(weakAnd, matching.weakAnd);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
-                postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor);
+                postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, weakAnd);
     }
 }
 

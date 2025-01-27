@@ -7146,6 +7146,7 @@
       "public java.lang.Double getPostFilterThreshold()",
       "public java.lang.Double getApproximateThreshold()",
       "public java.lang.Double getTargetHitsMaxAdjustmentFactor()",
+      "public com.yahoo.search.query.ranking.WeakAnd getWeakAnd()",
       "public void setTermwiselimit(double)",
       "public void setNumThreadsPerSearch(int)",
       "public void setNumSearchPartitions(int)",
@@ -7167,6 +7168,7 @@
       "public static final java.lang.String POST_FILTER_THRESHOLD",
       "public static final java.lang.String APPROXIMATE_THRESHOLD",
       "public static final java.lang.String TARGET_HITS_MAX_ADJUSTMENT_FACTOR",
+      "public static final java.lang.String WEAKAND",
       "public java.lang.Double termwiseLimit"
     ]
   },
@@ -7298,6 +7300,32 @@
       "public static final java.lang.String FACTOR",
       "public static final java.lang.String TAILCOST",
       "public static final com.yahoo.processing.request.CompoundName enableProperty"
+    ]
+  },
+  "com.yahoo.search.query.ranking.WeakAnd" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "java.lang.Cloneable"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public java.lang.Double getStopWordLimit()",
+      "public java.lang.Double getAdjustTarget()",
+      "public void setStopWordLimit(double)",
+      "public void setAdjustTarget(double)",
+      "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
+      "public com.yahoo.search.query.ranking.WeakAnd clone()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public bridge synthetic java.lang.Object clone()"
+    ],
+    "fields" : [
+      "public static final java.lang.String STOP_WORD_LIMIT",
+      "public static final java.lang.String ADJUST_TARGET"
     ]
   },
   "com.yahoo.search.query.rewrite.QueryRewriteSearcher" : {
