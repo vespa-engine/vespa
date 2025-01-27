@@ -26,6 +26,11 @@ final class SimpleExpression extends Expression {
         this.requiredInput = requiredInput;
     }
 
+    public SimpleExpression(DataType requiredInput, DataType createdOutput) {
+        this.requiredInput = requiredInput;
+        this.createdOutput = createdOutput;
+    }
+
     @Override
     public boolean requiresInput() { return requiredInput != null; }
 

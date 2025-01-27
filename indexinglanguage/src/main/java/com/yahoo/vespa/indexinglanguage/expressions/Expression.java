@@ -158,24 +158,24 @@ public abstract class Expression extends Selectable {
         verify(new DocumentTypeAdapter(type));
     }
 
-    public final Document verify(Document doc) {
-        return verify(new SimpleAdapterFactory(), doc);
+    public final void verify(Document doc) {
+        verify(new SimpleAdapterFactory(), doc);
     }
 
-    public final Document verify(AdapterFactory factory, Document doc) {
-        return verify(factory.newDocumentAdapter(doc));
+    public final void verify(AdapterFactory factory, Document doc) {
+        verify(factory.newDocumentAdapter(doc));
     }
 
-    public final Document verify(DocumentAdapter adapter) {
+    public final void verify(DocumentAdapter adapter) {
         verify((FieldTypeAdapter)adapter);
-        return adapter.getFullOutput();
+        adapter.getFullOutput();
     }
 
-    public final DocumentUpdate verify(DocumentUpdate upd) {
-        return verify(new SimpleAdapterFactory(), upd);
+    public final void verify(DocumentUpdate upd) {
+        verify(new SimpleAdapterFactory(), upd);
     }
 
-    public final DocumentUpdate verify(AdapterFactory factory, DocumentUpdate upd) {
+    public final void verify(AdapterFactory factory, DocumentUpdate upd) {
         DocumentUpdate ret = null;
         for (UpdateAdapter adapter : factory.newUpdateAdapterList(upd)) {
             DocumentUpdate output = verify(adapter);
@@ -187,7 +187,6 @@ public abstract class Expression extends Selectable {
                 ret = output;
             }
         }
-        return ret;
     }
 
     public final DocumentUpdate verify(UpdateAdapter adapter) {
@@ -195,13 +194,12 @@ public abstract class Expression extends Selectable {
         return adapter.getOutput();
     }
 
-    public final DataType verify(FieldTypeAdapter adapter) {
-        return verify(new VerificationContext(adapter));
+    public final void verify(FieldTypeAdapter adapter) {
+        verify(new VerificationContext(adapter));
     }
 
-    public final DataType verify(VerificationContext context) {
+    public final void verify(VerificationContext context) {
         doVerify(context);
-        return context.getCurrentType();
     }
 
     protected void doVerify(VerificationContext context) {}

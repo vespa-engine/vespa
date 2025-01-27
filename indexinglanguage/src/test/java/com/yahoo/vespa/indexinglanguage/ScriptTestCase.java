@@ -143,8 +143,7 @@ public class ScriptTestCase {
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
 
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(DataType.INT, expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -166,8 +165,7 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("second"));
         adapter.setValue("myTextArray", array);
 
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(new ArrayDataType(DataType.INT), expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -187,8 +185,7 @@ public class ScriptTestCase {
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
 
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(DataType.LONG, expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -210,8 +207,7 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("50;60"));
         adapter.setValue("location_str", array);
 
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(DataType.getArray(DataType.LONG), expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);

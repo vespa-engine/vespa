@@ -51,9 +51,8 @@ public class EchoTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        Expression exp = new EchoExpression();
-        assertVerify(DataType.INT, exp, DataType.INT);
-        assertVerify(DataType.STRING, exp, DataType.STRING);
+        assertVerify(DataType.INT, new EchoExpression(), DataType.INT);
+        assertVerify(DataType.STRING, new EchoExpression(), DataType.STRING);
     }
 
 }

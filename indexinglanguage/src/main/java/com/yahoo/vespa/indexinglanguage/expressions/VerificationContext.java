@@ -52,12 +52,6 @@ public class VerificationContext {
         return this;
     }
 
-    /**
-     * Returns the name of the (last) output field of the statement this is executed as a part of,
-     * or null if none or not yet verified
-     */
-    public String getOutputField() { return outputField; }
-
     /** Sets the name of the (last) output field of the statement this is executed as a part of */
     public void setOutputField(String outputField) { this.outputField = outputField; }
 

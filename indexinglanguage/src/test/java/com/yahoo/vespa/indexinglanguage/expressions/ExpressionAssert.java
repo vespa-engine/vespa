@@ -13,12 +13,15 @@ import static org.junit.Assert.fail;
  */
 class ExpressionAssert {
 
-    public static void assertVerifyCtx(Expression expression, DataType expectedValueAfter, VerificationContext context) {
-        assertEquals(expectedValueAfter, expression.verify(context));
+    public static void assertVerifyCtx(Expression expression, VerificationContext context) {
+        expression.verify(context);
     }
 
-    public static void assertVerify(DataType valueBefore, Expression expression, DataType expectedValueAfter) {
-        assertVerifyCtx(expression, expectedValueAfter, new VerificationContext(new SimpleTestAdapter()).setCurrentType(valueBefore));
+    public static void assertVerify(DataType inputType, Expression expression, DataType outputType) {
+        var context = new VerificationContext(new SimpleTestAdapter()).setCurrentType(inputType);
+        assertVerifyCtx(expression, context);
+        assertEquals(outputType, expression.setInputType(inputType, context));
+        assertEquals(inputType, expression.setOutputType(outputType, context));
     }
 
     public static void assertVerifyThrows(String expectedMessage, DataType valueBefore, Expression expression) {

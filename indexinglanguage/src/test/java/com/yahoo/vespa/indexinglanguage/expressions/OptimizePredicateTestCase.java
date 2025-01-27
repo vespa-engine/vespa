@@ -89,15 +89,15 @@ public class OptimizePredicateTestCase {
         context.setVariable("arity", DataType.STRING);
         ExpressionAssert.assertVerifyThrows(prefix + "Variable 'arity' must have type int", exp, DataType.PREDICATE, context);
         context.setVariable("arity", DataType.INT);
-        assertVerifyCtx(exp, DataType.PREDICATE, context);
+        assertVerifyCtx(exp, context);
         context.setVariable("lower_bound", DataType.INT);
         ExpressionAssert.assertVerifyThrows(prefix + "Variable 'lower_bound' must have type long", exp, DataType.PREDICATE, context);
         context.setVariable("lower_bound", DataType.LONG);
-        assertVerifyCtx(exp, DataType.PREDICATE, context);
+        assertVerifyCtx(exp, context);
         context.setVariable("upper_bound", DataType.INT);
         ExpressionAssert.assertVerifyThrows(prefix + "Variable 'upper_bound' must have type long", exp, DataType.PREDICATE, context);
         context.setVariable("upper_bound", DataType.LONG);
-        assertVerifyCtx(exp, DataType.PREDICATE, context);
+        assertVerifyCtx(exp, context);
     }
 
 }

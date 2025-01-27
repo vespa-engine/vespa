@@ -77,7 +77,8 @@ public final class SwitchExpression extends CompositeExpression {
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
 
-        setOutputType(outputType, defaultExp, context);
+        if (defaultExp != null)
+            setOutputType(outputType, defaultExp, context);
         for (Expression expression : cases.values())
             setOutputType(outputType, expression, context);
         return DataType.STRING;

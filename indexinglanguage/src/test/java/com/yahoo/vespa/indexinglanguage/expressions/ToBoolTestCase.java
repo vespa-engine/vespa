@@ -30,10 +30,9 @@ public class ToBoolTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        Expression exp = new ToBoolExpression();
-        assertVerify(DataType.INT, exp, DataType.BOOL);
-        assertVerify(DataType.STRING, exp, DataType.BOOL);
-        assertVerifyThrows("Invalid expression 'to_bool': Expected input, but no input is provided", null, exp);
+        assertVerify(DataType.INT, new ToBoolExpression(), DataType.BOOL);
+        assertVerify(DataType.STRING, new ToBoolExpression(), DataType.BOOL);
+        assertVerifyThrows("Invalid expression 'to_bool': Expected input, but no input is provided", null, new ToBoolExpression());
     }
 
     @Test
