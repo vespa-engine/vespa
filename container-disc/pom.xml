@@ -139,6 +139,19 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <!-- To be used exclusively in the context of container-disc for now -->
+      <groupId>io.micrometer</groupId>
+      <artifactId>micrometer-core</artifactId>
+      <version>${micrometer.vespa.version}</version>
+      <exclusions>
+        <exclusion>
+          <!-- https://docs.micrometer.io/micrometer/reference/concepts/timers.html#_pause_detection -->
+          <groupId>org.latencyutils</groupId>
+          <artifactId>LatencyUtils</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
     <!-- end WARNING -->
 
     <!-- ensure that transitive Jackson dependencies are not included in compile scope -->
