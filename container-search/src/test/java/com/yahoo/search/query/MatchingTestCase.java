@@ -21,7 +21,7 @@ public class MatchingTestCase {
         assertNull(query.getRanking().getMatching().getPostFilterThreshold());
         assertNull(query.getRanking().getMatching().getApproximateThreshold());
         assertNull(query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor());
-        assertNull(query.getRanking().getMatching().getWeakAnd().getStopWordLimit());
+        assertNull(query.getRanking().getMatching().getWeakAnd().getStopwordLimit());
         assertNull(query.getRanking().getMatching().getWeakAnd().getAdjustTarget());
     }
 
@@ -44,7 +44,7 @@ public class MatchingTestCase {
         assertEquals(Double.valueOf(0.8), query.getRanking().getMatching().getPostFilterThreshold());
         assertEquals(Double.valueOf(0.3), query.getRanking().getMatching().getApproximateThreshold());
         assertEquals(Double.valueOf(2.5), query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor());
-        assertEquals(Double.valueOf(0.6), query.getRanking().getMatching().getWeakAnd().getStopWordLimit());
+        assertEquals(Double.valueOf(0.6), query.getRanking().getMatching().getWeakAnd().getStopwordLimit());
         assertEquals(Double.valueOf(0.03), query.getRanking().getMatching().getWeakAnd().getAdjustTarget());
 
         query.prepare();
