@@ -332,6 +332,7 @@
       "public long responses()",
       "public long successes()",
       "public java.util.Map statsByCode()",
+      "public java.util.Optional response(int)",
       "public long exceptions()",
       "public long inflight()",
       "public long averageLatencyMillis()",
