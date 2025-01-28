@@ -173,7 +173,6 @@ public interface ModelContext {
 
         default List<String> tlsCiphersOverride() { return List.of(); }
 
-        default List<String> zoneDnsSuffixes() { return List.of(); }
         List<String> environmentVariables();
 
         default Optional<CloudAccount> cloudAccount() { return Optional.empty(); }
@@ -185,10 +184,6 @@ public interface ModelContext {
         default List<DataplaneToken> dataplaneTokens() { return List.of(); }
 
         default List<String> requestPrefixForLoggingContent() { return List.of(); }
-
-        // Remove after 8.457 is the oldest model
-        default boolean launchApplicationAthenzService() { return true; }
-
     }
 
     @Retention(RetentionPolicy.RUNTIME)

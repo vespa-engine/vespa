@@ -3,18 +3,14 @@ package com.yahoo.vespa.config.server.maintenance;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.subscription.ConfigSourceSet;
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Transport;
-import com.yahoo.vespa.config.ConnectionPool;
 import com.yahoo.vespa.config.server.ApplicationRepository;
+import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.session.RemoteSession;
 import com.yahoo.vespa.config.server.session.Session;
 import com.yahoo.vespa.config.server.session.SessionRepository;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.filedistribution.FileDistributionConnectionPool;
 import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 
@@ -28,7 +24,6 @@ import java.util.concurrent.Future;
 import java.util.logging.Logger;
 
 import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.fileReferenceExistsOnDisk;
-import static com.yahoo.vespa.config.server.filedistribution.FileDistributionUtil.getOtherConfigServersInCluster;
 import static com.yahoo.vespa.config.server.session.Session.Status.ACTIVATE;
 import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 
@@ -43,16 +38,14 @@ import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     private static final Logger log = Logger.getLogger(ApplicationPackageMaintainer.class.getName());
-    private static final Duration fileDownloaderTimeout = Duration.ofSeconds(30);
 
     private final File downloadDirectory;
-    private final Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
     private final FileDownloader fileDownloader;
 
-    ApplicationPackageMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval) {
+    ApplicationPackageMaintainer(ApplicationRepository applicationRepository, Curator curator, Duration interval, FileServer fileServer) {
         super(applicationRepository, curator, applicationRepository.flagSource(), applicationRepository.clock(), interval, false);
         this.downloadDirectory = new File(Defaults.getDefaults().underVespaHome(applicationRepository.configserverConfig().fileReferencesDir()));
-        this.fileDownloader = createFileDownloader(applicationRepository, downloadDirectory, supervisor);
+        this.fileDownloader = fileServer.downloader();
     }
 
     @Override
@@ -121,18 +114,8 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
                 .toList();
     }
 
-    private static FileDownloader createFileDownloader(ApplicationRepository applicationRepository,
-                                                       File downloadDirectory,
-                                                       Supervisor supervisor) {
-        List<String> otherConfigServersInCluster = getOtherConfigServersInCluster(applicationRepository.configserverConfig());
-        ConfigSourceSet configSourceSet = new ConfigSourceSet(otherConfigServersInCluster);
-        ConnectionPool connectionPool = new FileDistributionConnectionPool(configSourceSet, supervisor);
-        return new FileDownloader(connectionPool, supervisor, downloadDirectory, fileDownloaderTimeout);
-    }
-
     @Override
     public void awaitShutdown() {
-        supervisor.transport().shutdown().join();
         fileDownloader.close();
         super.awaitShutdown();
     }

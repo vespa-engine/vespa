@@ -55,8 +55,8 @@ merge_throttling_memory_limit.max_usage_bytes long default=0
 ## content node. Note that the result of this multiplication is capped at both
 ## ends by the auto_(lower|upper)_bound_bytes config values.
 ##
-## Default: 3% of physical memory
-merge_throttling_memory_limit.auto_phys_mem_scale_factor double default=0.03
+## Default: 1.5% of physical memory
+merge_throttling_memory_limit.auto_phys_mem_scale_factor double default=0.015
 
 ## The absolute minimum memory limit that can be set when automatically
 ## deducing the limit from physical memory on the node.

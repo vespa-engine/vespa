@@ -1401,14 +1401,12 @@
       "public boolean allowDisableMtls()",
       "public java.util.List operatorCertificates()",
       "public java.util.List tlsCiphersOverride()",
-      "public java.util.List zoneDnsSuffixes()",
       "public abstract java.util.List environmentVariables()",
       "public java.util.Optional cloudAccount()",
       "public boolean allowUserFilters()",
       "public java.time.Duration endpointConnectionTtl()",
       "public java.util.List dataplaneTokens()",
-      "public java.util.List requestPrefixForLoggingContent()",
-      "public boolean launchApplicationAthenzService()"
+      "public java.util.List requestPrefixForLoggingContent()"
     ],
     "fields" : [ ]
   },

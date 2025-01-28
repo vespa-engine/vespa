@@ -12,6 +12,7 @@ import com.yahoo.config.provision.TransientException;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.container.jdisc.state.StateMonitor;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.maintenance.ConfigServerMaintenance;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
@@ -74,15 +75,15 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                  VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
-                                 FileDirectory fileDirectory) {
+                                 FileDirectory fileDirectory, FileServer fileServer) {
         this(applicationRepository, server, versionState, stateMonitor, vipStatus, EXIT_JVM,
-             vipStatusMode(applicationRepository), fileDirectory);
+             vipStatusMode(applicationRepository), fileDirectory, fileServer);
     }
 
     protected ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
                                     VersionState versionState, StateMonitor stateMonitor, VipStatus vipStatus,
                                     RedeployingApplicationsFails exitIfRedeployingApplicationsFails,
-                                    VipStatusMode vipStatusMode, FileDirectory fileDirectory) {
+                                    VipStatusMode vipStatusMode, FileDirectory fileDirectory, FileServer fileServer) {
         this.applicationRepository = applicationRepository;
         this.server = server;
         this.versionState = versionState;
@@ -94,7 +95,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         this.exitIfRedeployingApplicationsFails = exitIfRedeployingApplicationsFails;
         this.clock = applicationRepository.clock();
         rpcServerExecutor = Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server RPC server"));
-        configServerMaintenance = new ConfigServerMaintenance(applicationRepository, fileDirectory);
+        configServerMaintenance = new ConfigServerMaintenance(applicationRepository, fileDirectory, fileServer);
         configServerMaintenance.startBeforeBootstrap();
         log.log(Level.FINE, () -> "VIP status mode: " + vipStatusMode);
         initializing(vipStatusMode);

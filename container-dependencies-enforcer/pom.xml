@@ -158,6 +158,9 @@
                                         <include>de.kherud:llama:${kherud.llama.vespa.version}:test</include>
                                         <include>io.airlift:aircompressor:${aircompressor.vespa.version}:test</include>
                                         <include>io.airlift:airline:${airline.vespa.version}:test</include>
+                                        <include>io.micrometer:micrometer-commons:${micrometer.vespa.version}:test</include>
+                                        <include>io.micrometer:micrometer-core:${micrometer.vespa.version}:test</include>
+                                        <include>io.micrometer:micrometer-observation:${micrometer.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient:${prometheus.client.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient_common:${prometheus.client.vespa.version}:test</include>
                                         <include>io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}:test</include>

@@ -10,6 +10,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
@@ -45,6 +46,7 @@ public class AllocatedHostsSerializer {
     private static final String loadBalancerSettingsKey = "zoneEndpoint";
     private static final String publicField = "public";
     private static final String privateField = "private";
+    private static final String authMethodsField = "authMethods";
     private static final String allowedUrnsField = "allowedUrns";
     private static final String accessTypeField = "type";
     private static final String urnField = "urn";
@@ -233,6 +235,12 @@ public class AllocatedHostsSerializer {
     private static void toSlime(Cursor settingsObject, ZoneEndpoint settings) {
         settingsObject.setBool(publicField, settings.isPublicEndpoint());
         settingsObject.setBool(privateField, settings.isPrivateEndpoint());
+
+        Cursor authMethods = settingsObject.setArray(authMethodsField);
+        for(AuthMethod method : settings.authMethods()) {
+            authMethods.addString(method.name());
+        }
+
         if (settings.isPrivateEndpoint()) {
             Cursor allowedUrnsArray = settingsObject.setArray(allowedUrnsField);
             for (AllowedUrn urn : settings.allowedUrns()) {
@@ -251,6 +259,9 @@ public class AllocatedHostsSerializer {
         if ( ! settingsObject.valid()) return ZoneEndpoint.defaultEndpoint;
         return new ZoneEndpoint(settingsObject.field(publicField).asBool(),
                                 settingsObject.field(privateField).asBool(),
+                                SlimeUtils.entriesStream(settingsObject.field(authMethodsField))
+                                        .map(value -> AuthMethod.valueOf(value.asString()))
+                                        .toList(),
                                 SlimeUtils.entriesStream(settingsObject.field(allowedUrnsField))
                                           .map(urnObject -> new AllowedUrn(switch (urnObject.field(accessTypeField).asString()) {
                                                                                case "awsPrivateLink" ->  AccessType.awsPrivateLink;
@@ -260,7 +271,6 @@ public class AllocatedHostsSerializer {
                                                                            urnObject.field(urnField).asString()))
                                           .toList());
     }
-
 
     private static Optional<String> optionalString(Inspector inspector) {
         if ( ! inspector.valid()) return Optional.empty();

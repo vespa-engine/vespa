@@ -195,7 +195,7 @@ public class StorageClusterTest {
     void assertMergeAutoScaleConfigHasExpectedValues(StorServerConfig.Merge_throttling_memory_limit limit) {
         assertEquals(128L*1024*1024,    limit.auto_lower_bound_bytes());
         assertEquals(2L*1024*1024*1024, limit.auto_upper_bound_bytes());
-        assertEquals(0.03,              limit.auto_phys_mem_scale_factor(), 0.000001);
+        assertEquals(0.015,             limit.auto_phys_mem_scale_factor(), 0.000001);
     }
 
     @Test

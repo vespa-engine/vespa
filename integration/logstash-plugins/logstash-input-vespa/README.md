@@ -89,3 +89,5 @@ output {
   stdout {}
 }
 ```
+
+To migrate from one Vespa cluster to another, see [this blog post](https://blog.vespa.ai/logstash-vespa-tutorials/).
