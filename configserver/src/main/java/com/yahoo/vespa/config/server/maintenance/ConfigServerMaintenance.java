@@ -5,6 +5,7 @@ import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.curator.Curator;
 
 import java.time.Clock;
@@ -28,19 +29,21 @@ public class ConfigServerMaintenance {
     private final Curator curator;
     private final ConfigConvergenceChecker convergenceChecker;
     private final FileDirectory fileDirectory;
+    private final FileServer fileServer;
     private final Duration interval;
 
-    public ConfigServerMaintenance(ApplicationRepository applicationRepository, FileDirectory fileDirectory) {
+    public ConfigServerMaintenance(ApplicationRepository applicationRepository, FileDirectory fileDirectory, FileServer fileServer) {
         this.applicationRepository = applicationRepository;
         this.curator = applicationRepository.tenantRepository().getCurator();
         this.convergenceChecker = applicationRepository.configConvergenceChecker();
         this.fileDirectory = fileDirectory;
+        this.fileServer = fileServer;
         this.interval = Duration.ofMinutes(applicationRepository.configserverConfig().maintainerIntervalMinutes());
     }
 
     public void startBeforeBootstrap() {
         if (moreThanOneConfigServer())
-            maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(15)));
+            maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(15), fileServer));
         maintainers.add(new TenantsMaintainer(applicationRepository, curator, interval, Clock.systemUTC()));
     }
 
