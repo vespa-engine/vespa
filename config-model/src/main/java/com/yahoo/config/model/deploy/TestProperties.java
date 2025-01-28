@@ -66,7 +66,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
     private int maxUnCommittedMemory = 123456;
-    private List<String> zoneDnsSuffixes = List.of();
     private int maxCompactBuffers = 1;
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
@@ -127,7 +126,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-    @Override public List<String> zoneDnsSuffixes() { return zoneDnsSuffixes; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
@@ -318,11 +316,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMinNodeRatioPerGroup(double value) {
         this.minNodeRatioPerGroup = value;
-        return this;
-    }
-
-    public TestProperties setZoneDnsSuffixes(List<String> zoneDnsSuffixes) {
-        this.zoneDnsSuffixes = List.copyOf(zoneDnsSuffixes);
         return this;
     }
 

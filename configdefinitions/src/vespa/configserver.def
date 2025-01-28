@@ -44,6 +44,7 @@ cloud string default="default"
 environment string default="prod"
 region string default="default"
 system string default="main"
+# TODO: Unused, remove in Vespa 9 at the latest
 zoneDnsSuffixes[] string
 
 # RPC protocol

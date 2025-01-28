@@ -357,7 +357,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean allowDisableMtls;
         private final List<X509Certificate> operatorCertificates;
         private final List<String> tlsCiphersOverride;
-        private final List<String> zoneDnsSuffixes;
         private final List<String> environmentVariables;
         private final Optional<CloudAccount> cloudAccount;
         private final List<DataplaneToken> dataplaneTokens;
@@ -405,7 +404,6 @@ public class ModelContextImpl implements ModelContext {
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource).with(applicationId).value();
             this.operatorCertificates = operatorCertificates;
             this.tlsCiphersOverride = PermanentFlags.TLS_CIPHERS_OVERRIDE.bindTo(flagSource).with(applicationId).value();
-            this.zoneDnsSuffixes = configserverConfig.zoneDnsSuffixes();
             this.environmentVariables = PermanentFlags.ENVIRONMENT_VARIABLES.bindTo(flagSource).with(applicationId).value();
             this.cloudAccount = cloudAccount;
             this.allowUserFilters = PermanentFlags.ALLOW_USER_FILTERS.bindTo(flagSource).with(applicationId).value();
@@ -493,11 +491,6 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public List<String> tlsCiphersOverride() { return tlsCiphersOverride; }
-
-        @Override
-        public List<String> zoneDnsSuffixes() {
-            return zoneDnsSuffixes;
-        }
 
         public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
             return clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
