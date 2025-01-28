@@ -405,15 +405,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
-            "distribution-config-from-cluster-controller", true,
-            List.of("vekterli"), "2024-07-01", "2025-03-01",
-            "Iff true, the cluster controller will be the authoritative source of distribution " +
-            "config changes in a content cluster, and distribution changes will be part of explicitly " +
-            "versioned cluster states.",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2025-12-31",
