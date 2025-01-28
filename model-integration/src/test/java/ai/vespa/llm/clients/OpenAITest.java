@@ -3,52 +3,84 @@ package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.completion.StringPrompt;
-import com.yahoo.container.jdisc.SecretsProvider;
+import ai.vespa.secret.Secret;
+import ai.vespa.secret.Secrets;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
 import java.util.Map;
 
 public class OpenAITest {
 
-    private static final String apiKey = "<your-api-key>";
+    private static final String API_KEY = "<YOUR_API_KEY>";
+    
+    @Test
+    @Disabled
+    public void testComplete() {
+        var config = new LlmClientConfig.Builder()
+                .apiKeySecretName("openai")
+                .maxTokens(10)
+                .build();
+        var openai = new OpenAI(config, new MockSecrets());
+        var options = Map.of(
+                "model", "gpt-4o-mini"
+        );
+        var prompt = StringPrompt.from("Explain why ducks better than cats in 20 words?");
+        var completions = openai.complete(prompt, new InferenceParameters(options::get));
+        var text = completions.get(0).text();
+        
+        System.out.print(text);
+        assertNumTokens(text, 3, 10);
+    }
 
     @Test
     @Disabled
-    public void testOpenAIGeneration() {
-        var config = new LlmClientConfig.Builder().build();
-        var openai = new OpenAI(config, new SecretsProvider().get());
+    public void testCompleteAsync() {
+        var config = new LlmClientConfig.Builder()
+                .apiKeySecretName("openai")
+                .maxTokens(10)
+                .build();
+        var openai = new OpenAI(config, new MockSecrets());
         var options = Map.of(
-                "maxTokens", "10"
+                "model", "gpt-4o-mini"
         );
-
-        var prompt = StringPrompt.from("why are ducks better than cats?");
-        var future = openai.completeAsync(prompt, new InferenceParameters(apiKey, options::get), completion -> {
-            System.out.print(completion.text());
+        var prompt = StringPrompt.from("Explain why ducks better than cats in 20 words?");
+        var text = new StringBuilder();
+        
+        var future = openai.completeAsync(prompt, new InferenceParameters(API_KEY, options::get), completion -> {
+            text.append(completion.text());
         }).exceptionally(exception -> {
             System.out.println("Error: " + exception);
             return null;
         });
         future.join();
-    }
-
-    @Test
-    @Disabled
-    public void testComplete() {
-        var config = new LlmClientConfig.Builder().maxTokens(10).build();
-        var openai = new OpenAI(config, new SecretsProvider().get());
-        var options = Map.of(
-                "model", "gpt-4o-mini"
-        );
-        var prompt = StringPrompt.from("Explain why ducks better than cats in 20 words?");
-        var completions = openai.complete(prompt, new InferenceParameters(apiKey, options::get));
-        assertFalse(completions.isEmpty());
         
-        // Token is smaller than word. 
+        System.out.print(text);
+        assertNumTokens(text.toString(), 3, 10);
+    }
+    
+    private void assertNumTokens(String completion, int minTokens, int maxTokens) {
         // Splitting by space is a poor tokenizer but it is good enough for this test.
-        assertTrue(completions.get(0).text().split(" ").length <= 10);
+        var numTokens = completion.split(" ").length;
+        assertTrue( minTokens <= numTokens && numTokens <= maxTokens);
+    }
+    
+    static class MockSecrets implements Secrets {
+        @Override
+        public Secret get(String key) {
+            if (key.equals("openai")) {
+                return new Secret() {
+                    @Override
+                    public String current() {
+                        return API_KEY;
+                    }
+                };
+            }
+            
+            return null;
+        }
     }
 
 }
