@@ -405,13 +405,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag LAUNCH_APPLICATION_ATHENZ_SERVICE = defineFeatureFlag(
-            "launch-application-athenz-service", true,
-            List.of("hmusum"), "2024-06-11", "2025-02-01",
-            "Whether to launch an Athenz service unique to the application. Only valid in public systems!",
-            "Takes effect on next deployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag DISTRIBUTION_CONFIG_FROM_CLUSTER_CONTROLLER = defineFeatureFlag(
             "distribution-config-from-cluster-controller", true,
             List.of("vekterli"), "2024-07-01", "2025-03-01",
