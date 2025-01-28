@@ -43,7 +43,7 @@ does the trick.
 
 ## Usage
 
-Logstash config example:
+Some more Logstash config examples can be found [in this blog post](https://blog.vespa.ai/logstash-vespa-tutorials/), but here's one with all the output plugin options:
 
 ```
 # read stuff
