@@ -77,6 +77,11 @@ public class AthenzX509CertificateUtils {
         return getLastSegmentFromSanUri(sans, "athenz://instancename/");
     }
 
+    /** @return Athenz URI hostname from the Subject Alternative Name extension */
+    public static Optional<String> getHostname(List<SubjectAlternativeName> sans) {
+        return getLastSegmentFromSanUri(sans, "athenz://hostname/");
+    }
+
     private static Optional<String> getLastSegmentFromSanUri(List<SubjectAlternativeName> sans, String uriPrefix) {
         return sans.stream()
                 .filter(san -> {
