@@ -49,7 +49,6 @@ import static com.yahoo.config.model.api.ApplicationClusterEndpoint.Scope.zone;
 import static com.yahoo.config.provision.SystemName.main;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -374,8 +373,7 @@ public class ContainerClusterTest {
                 .endpoints(globalEndpoints)
                 .properties(new TestProperties()
                                     .setHostedVespa(true)
-                                    .setApplicationId(appId)
-                                    .setZoneDnsSuffixes(List.of(".endpoint.suffix")))
+                                    .setApplicationId(appId))
                 .build();
         MockRoot root = new MockRoot("foo", state);
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
