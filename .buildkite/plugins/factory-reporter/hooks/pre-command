@@ -19,17 +19,15 @@ if [[ -z $PIPELINE ]]; then
     exit 0
 fi
 
-if [[ -z $FIRST_STEP ]] || [[ $FIRST_STEP != "true" ]]; then
-    echo "Not first step, skipping build creation"
-    exit 0
-fi
-
 JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
 
 echo "Output from creating build : $JSON"
 
 VESPA_FACTORY_BUILD_ID=$(jq -re '.buildId' <<< "$JSON")
 export VESPA_FACTORY_BUILD_ID
+
+VARIABLES=$(jq -r '.variables | to_entries | .[] | "export \(.key)=\(.value|tojson)"' <<< "$JSON")
+eval "$VARIABLES"
 
 VESPA_VERSION=$(jq -re .version <<< "$JSON")
 export VESPA_VERSION
