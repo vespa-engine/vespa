@@ -10,31 +10,32 @@ if [[ $SKIP_BUILDKITE_PLUGINS == "true" ]]; then
     echo "SKIP_BUILDKITE_PLUGINS is set. Skipping factory reporter"
     exit 0
 fi
-if [[ $BUILDKITE_PULL_REQUEST != "false" ]]; then
-    echo "This is a pull request, skipping factory reporter"
-    exit 0
-fi
 if [[ -z $PIPELINE ]]; then
     echo "No pipeline ID found, skipping factory reporter"
     exit 0
 fi
 
-JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
+if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
+  JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
 
-echo "Output from creating build : $JSON"
+  echo "Output from creating build : $JSON"
 
-VESPA_FACTORY_BUILD_ID=$(jq -re '.buildId' <<< "$JSON")
-export VESPA_FACTORY_BUILD_ID
+  VESPA_FACTORY_BUILD_ID=$(jq -re '.buildId' <<< "$JSON")
+  export VESPA_FACTORY_BUILD_ID
 
-VARIABLES=$(jq -r '.variables | to_entries | .[] | "export \(.key)=\(.value|tojson)"' <<< "$JSON")
-eval "$VARIABLES"
+  VARIABLES=$(jq -r '.variables | to_entries | .[] | "export \(.key)=\(.value|tojson)"' <<< "$JSON")
+  eval "$VARIABLES"
 
-VESPA_VERSION=$(jq -re .version <<< "$JSON")
-export VESPA_VERSION
-buildkite-agent meta-data set vespa-version $VESPA_VERSION
+  VESPA_VERSION=$(jq -re .version <<< "$JSON")
+  export VESPA_VERSION
+  buildkite-agent meta-data set vespa-version $VESPA_VERSION
 
-echo "Created factory build $VESPA_FACTORY_BUILD_ID for pipeline $PIPELINE"
+  echo "Created factory build $VESPA_FACTORY_BUILD_ID for pipeline $PIPELINE"
 
-$BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE running "Building"
+  $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE running "Building"
 
-echo "Set factory build $VESPA_FACTORY_BUILD_ID status to running"
+  echo "Set factory build $VESPA_FACTORY_BUILD_ID status to running"
+else
+  VESPA_VERSION="$(curl -sSLf 'https://api.factory.vespa.ai/factory/v1/latest-successful-build?platform=opensource_centos7&vespaMajor=8' | jq -re .version)"
+  export VESPA_VERSION
+fi
