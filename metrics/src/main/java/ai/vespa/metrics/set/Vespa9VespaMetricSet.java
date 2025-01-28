@@ -25,6 +25,7 @@ import java.util.Set;
 
 import static ai.vespa.metrics.Suffix.average;
 import static ai.vespa.metrics.Suffix.count;
+import static ai.vespa.metrics.Suffix.last;
 import static ai.vespa.metrics.Suffix.max;
 import static ai.vespa.metrics.Suffix.min;
 import static ai.vespa.metrics.Suffix.ninety_five_percentile;
@@ -47,7 +48,8 @@ public class Vespa9VespaMetricSet {
         return new MetricSet("vespa9vespa",
                 getVespaMetrics(),
                 List.of(defaultVespaMetricSet,
-                        BasicMetricSets.containerHttpStatusMetrics()));
+                        BasicMetricSets.containerHttpStatusMetrics(),
+                        MicrometerMetrics.asMetricSet()));
     }
 
     private static Set<Metric> getVespaMetrics() {
@@ -113,7 +115,6 @@ public class Vespa9VespaMetricSet {
 
         // Routing layer metrics
         addMetric(metrics, RoutingLayerMetrics.WORKER_CONNECTIONS.max()); // Hosted Vespa only (routing layer)
-
         return metrics;
     }
 

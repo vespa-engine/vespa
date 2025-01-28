@@ -77,6 +77,9 @@ io.dropwizard.metrics:metrics-core:${dropwizard.metrics.vespa.version}
 io.jsonwebtoken:jjwt-api:${java-jjwt.vespa.version}
 io.jsonwebtoken:jjwt-impl:${java-jjwt.vespa.version}
 io.jsonwebtoken:jjwt-jackson:${java-jjwt.vespa.version}
+io.micrometer:micrometer-commons:${micrometer.vespa.version}
+io.micrometer:micrometer-core:${micrometer.vespa.version}
+io.micrometer:micrometer-observation:${micrometer.vespa.version}
 io.netty:netty-buffer:${netty.vespa.version}
 io.netty:netty-codec-http2:4.1.112.Final
 io.netty:netty-codec-http:4.1.112.Final
