@@ -85,7 +85,6 @@ private:
     double                   _target_hits_max_adjustment_factor;
     double                   _weakand_stop_word_adjust_limit;
     double                   _weakand_stop_word_drop_limit;
-    double                   _disk_index_bitvector_limit;
     vespalib::FuzzyMatchingAlgorithm _fuzzy_matching_algorithm;
     MutateOperation          _mutateOnMatch;
     MutateOperation          _mutateOnFirstPhase;
@@ -416,8 +415,6 @@ public:
     double get_weakand_stop_word_adjust_limit() const { return _weakand_stop_word_adjust_limit; }
     void set_weakand_stop_word_drop_limit(double v) { _weakand_stop_word_drop_limit = v; }
     double get_weakand_stop_word_drop_limit() const { return _weakand_stop_word_drop_limit; }
-    void set_disk_index_bitvector_limit(double v) { _disk_index_bitvector_limit = v; }
-    double get_disk_index_bitvector_limit() const { return _disk_index_bitvector_limit; }
 
     /**
      * This method may be used to indicate that certain features

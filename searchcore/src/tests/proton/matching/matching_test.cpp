@@ -1281,13 +1281,11 @@ struct CreateBlueprintParamsFixture {
    }
    void set_query_properties(std::string_view lower_limit, std::string_view upper_limit,
                              std::string_view target_hits_max_adjustment_factor,
-                             std::string_view fuzzy_matching_algorithm,
-                             std::string_view disk_index_bitvector_limit) {
+                             std::string_view fuzzy_matching_algorithm) {
        rank_properties.add(GlobalFilterLowerLimit::NAME, lower_limit);
        rank_properties.add(GlobalFilterUpperLimit::NAME, upper_limit);
        rank_properties.add(TargetHitsMaxAdjustmentFactor::NAME, target_hits_max_adjustment_factor);
        rank_properties.add(FuzzyAlgorithm::NAME, fuzzy_matching_algorithm);
-       rank_properties.add(DiskIndexBitvectorLimit::NAME, disk_index_bitvector_limit);
    }
    ~CreateBlueprintParamsFixture();
    CreateBlueprintParams extract(uint32_t active_docids = 9, uint32_t docid_limit = 10) const {
@@ -1300,25 +1298,22 @@ CreateBlueprintParamsFixture::~CreateBlueprintParamsFixture() = default;
 TEST_F(MatchingTest, create_blueprint_params_are_extracted_from_rank_profile)
 {
     CreateBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
-    f.rank_setup.set_disk_index_bitvector_limit(0.04);
     auto params = f.extract();
     EXPECT_EQ(0.2, params.global_filter_lower_limit);
     EXPECT_EQ(0.8, params.global_filter_upper_limit);
     EXPECT_EQ(5.0, params.target_hits_max_adjustment_factor);
     EXPECT_EQ(FMA::DfaTable, params.fuzzy_matching_algorithm);
-    EXPECT_EQ(0.04, params.disk_index_bitvector_limit);
 }
 
 TEST_F(MatchingTest, create_blueprint_params_are_extracted_from_query)
 {
     CreateBlueprintParamsFixture f(0.2, 0.8, 5.0, FMA::DfaTable);
-    f.set_query_properties("0.15", "0.75", "3.0", "dfa_explicit", "0.02");
+    f.set_query_properties("0.15", "0.75", "3.0", "dfa_explicit");
     auto params = f.extract();
     EXPECT_EQ(0.15, params.global_filter_lower_limit);
     EXPECT_EQ(0.75, params.global_filter_upper_limit);
     EXPECT_EQ(3.0, params.target_hits_max_adjustment_factor);
     EXPECT_EQ(FMA::DfaExplicit, params.fuzzy_matching_algorithm);
-    EXPECT_EQ(0.02, params.disk_index_bitvector_limit);
 }
 
 TEST_F(MatchingTest, global_filter_params_are_scaled_with_active_hit_ratio)
