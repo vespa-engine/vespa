@@ -142,6 +142,7 @@ struct MyResourceWriteFilter : public IResourceWriteFilter
         : _acceptWriteOperation(true),
           _message()
     {}
+    ~MyResourceWriteFilter() override;
 
     bool acceptWriteOperation() const override { return _acceptWriteOperation; }
     State getAcceptState() const override {
@@ -149,6 +150,7 @@ struct MyResourceWriteFilter : public IResourceWriteFilter
     }
 };
 
+MyResourceWriteFilter::~MyResourceWriteFilter() = default;
 
 struct MyReplayConfig : public IReplayConfig {
     void replayConfig(SerialNum) override {}

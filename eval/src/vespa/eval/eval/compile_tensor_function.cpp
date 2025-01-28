@@ -92,6 +92,7 @@ ProgramCompiler::~ProgramCompiler() = default;
 
 } // namespace vespalib::eval::<unnamed>
 
+CTFMetaData::Step::~Step() = default;
 CTFMetaData::~CTFMetaData() = default;
 
 std::vector<Instruction> compile_tensor_function(const ValueBuilderFactory &factory, const TensorFunction &function, Stash &stash, CTFMetaData *meta) {

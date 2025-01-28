@@ -13,12 +13,15 @@ struct Task {
 
     Task(const std::string& name, uint8_t priority)
         : _name(name), _priority(priority) {}
+    ~Task();
 
     bool operator<(const Task& other) const {
         return (_priority > other._priority);
     }
     uint8_t getPriority() const { return _priority; }
 };
+
+Task::~Task() = default;
 
 struct MyThread : public TaskThread<Task> {
     MyThread(ThreadLock& lock) : TaskThread<Task>(lock) {}

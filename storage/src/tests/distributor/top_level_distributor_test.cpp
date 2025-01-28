@@ -238,6 +238,7 @@ public:
     explicit StatusRequestThread(StatusReporterDelegate& reporter)
         : _reporter(reporter)
     {}
+    ~StatusRequestThread() override;
     void run(framework::ThreadHandle&) override {
         framework::HttpUrlPath path("/distributor?page=buckets");
         std::ostringstream stream;
@@ -249,6 +250,8 @@ public:
         return _result;
     }
 };
+
+StatusRequestThread::~StatusRequestThread() = default;
 
 }
 

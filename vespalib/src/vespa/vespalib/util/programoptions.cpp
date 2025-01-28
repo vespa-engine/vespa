@@ -33,6 +33,8 @@ namespace {
 
 }
 
+ProgramOptions::OptionHeader::~OptionHeader() = default;
+
 template<typename Number>
 std::string ProgramOptions::NumberOptionParser<Number>::getStringValue(Number n)
 {
@@ -643,6 +645,8 @@ ProgramOptions::BoolOptionParser::BoolOptionParser(
 {
 }
 
+ProgramOptions::BoolOptionParser::~BoolOptionParser() = default;
+
 ProgramOptions::FlagOptionParser::FlagOptionParser(
         const std::string& nameList, bool& value, const std::string& desc)
     : OptionParser(nameList, 0, UNSET_TOKEN, desc),
@@ -686,6 +690,8 @@ ProgramOptions::MapOptionParser::MapOptionParser(
       _value(value)
 {
 }
+
+ProgramOptions::MapOptionParser::~MapOptionParser() = default;
 
 #define VESPALIB_PROGRAMOPTIONS_IMPL_NODEF_ADDOPTION(type, parsertype) \
 template<> \

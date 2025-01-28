@@ -645,7 +645,11 @@ namespace {
               _createdVersion(version)
         {
         }
+        ~TestDoc();
     };
+
+    TestDoc::~TestDoc() = default;
+
 }
 
 /**

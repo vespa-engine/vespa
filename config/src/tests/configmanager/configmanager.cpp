@@ -77,6 +77,7 @@ namespace {
               _data(data)
         {
         }
+        ~MySpec() override;
         SourceSpecKey createKey() const { return SourceSpecKey(_key); }
         std::unique_ptr<SourceFactory> createSourceFactory(const TimingValues & timingValues) const override {
             (void) timingValues;
@@ -87,6 +88,8 @@ namespace {
         const std::string _key;
         TestContext * _data;
     };
+
+    MySpec::~MySpec() = default;
 
     static TimingValues testTimingValues(
             2000ms,  // successTimeout

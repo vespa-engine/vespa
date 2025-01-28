@@ -19,6 +19,7 @@ using DiskGain = IFlushTarget::DiskGain;
 class MyFlushHandler : public IFlushHandler {
 public:
     MyFlushHandler(const std::string &name) noexcept : IFlushHandler(name) {}
+    ~MyFlushHandler() override;
     std::vector<IFlushTarget::SP> getFlushTargets() override {
         return std::vector<IFlushTarget::SP>();
     }
@@ -26,6 +27,8 @@ public:
     void flushDone(SerialNum oldestSerial) override { (void) oldestSerial; }
     void syncTls(search::SerialNum syncTo) override {(void) syncTo;}
 };
+
+MyFlushHandler::~MyFlushHandler() = default;
 
 class MyFlushTarget : public test::DummyFlushTarget {
 private:

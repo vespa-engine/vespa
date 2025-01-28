@@ -44,6 +44,7 @@ class SingleExtAttribute
     IExtendAttribute * getExtendInterface() override { return this; }
 public:
     SingleExtAttribute(const std::string &name);
+    ~SingleExtAttribute() override;
 
     bool addDoc(typename Super::DocId &docId) override;
     bool add(typename AddValueType<T>::Type v, int32_t = 1) override;
@@ -67,6 +68,7 @@ class SingleStringExtAttribute
     IExtendAttribute * getExtendInterface() override { return this; }
 public:
     SingleStringExtAttribute(const std::string & name);
+    ~SingleStringExtAttribute() override;
     bool addDoc(DocId & docId) override;
     bool add(const char * v, int32_t w = 1) override;
     bool onLoad(vespalib::Executor *) override {
