@@ -75,6 +75,9 @@ struct DiffTable {
         std::string tag;
         std::string lhs;
         std::string rhs;
+        Entry(const std::string& tag_in, const std::string& lhs_in, const std::string& rhs_in);
+        Entry(const Entry&);
+        Entry(Entry&&) noexcept = default;
         bool is_separator() const {
             return (tag.empty() && lhs.empty() && rhs.empty());
         }
@@ -164,6 +167,15 @@ struct DiffTable {
         return std::move(res.str);
     }
 };
+
+DiffTable::Entry::Entry(const std::string& tag_in, const std::string& lhs_in, const std::string& rhs_in)
+    : tag(tag_in),
+      lhs(lhs_in),
+      rhs(rhs_in)
+{
+}
+
+DiffTable::Entry::Entry(const Entry&) = default;
 DiffTable::Entry::~Entry() = default;
 
 struct NormalizeTensorSpec {

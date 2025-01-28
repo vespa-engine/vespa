@@ -237,6 +237,7 @@ struct WeightedSetFactory : SparseVectorFactory {
             tfmd.tagAsNotNeeded();
         }
     }
+    ~WeightedSetFactory() override;
     std::string name() const override {
         return vespalib::make_string("WeightedSet%s%s", (field_is_filter ? "-filter" : ""), (tfmd.isNotNeeded() ? "-unranked" : ""));
     }
@@ -251,6 +252,8 @@ struct WeightedSetFactory : SparseVectorFactory {
         return WeightedSetTermSearch::create(terms, tfmd, field_is_filter, weights, MatchData::UP(nullptr));
     }
 };
+
+WeightedSetFactory::~WeightedSetFactory() = default;
 
 struct DotProductFactory : SparseVectorFactory {
     mutable TermFieldMatchData tfmd;
