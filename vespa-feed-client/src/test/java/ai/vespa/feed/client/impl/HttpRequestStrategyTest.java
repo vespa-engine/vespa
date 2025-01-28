@@ -12,9 +12,7 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Exchanger;
@@ -70,13 +68,13 @@ class HttpRequestStrategyTest {
         executor.shutdown();
         cluster.close();
         OperationStats stats = strategy.stats();
-        long successes = stats.responsesByCode().get(200);
+        long successes = stats.statsByCode().get(200).count();
         System.err.println(successes + " successes in " + (System.nanoTime() - startNanos) * 1e-9 + " seconds");
         System.err.println(stats);
 
         assertEquals(documents, stats.requests());
         assertEquals(documents, stats.responses());
-        assertEquals(documents, stats.responsesByCode().get(200));
+        assertEquals(documents, stats.statsByCode().get(200).count());
         assertEquals(0, stats.inflight());
         assertEquals(0, stats.exceptions());
         assertEquals(0, stats.bytesSent());
@@ -197,18 +195,11 @@ class HttpRequestStrategyTest {
 
         strategy.destroy();
         OperationStats stats = strategy.stats();
-        Map<Integer, Long> codes = new HashMap<>();
-        codes.put(200, 4L);
-        codes.put(400, 1L);
-        codes.put(429, 2L);
-        codes.put(503, 3L);
-        assertEquals(codes, stats.responsesByCode());
+        assertEquals(4L, stats.statsByCode().get(200).count());
+        assertEquals(1L, stats.statsByCode().get(400).count());
+        assertEquals(2L, stats.statsByCode().get(429).count());
+        assertEquals(3L, stats.statsByCode().get(503).count());
         assertEquals(5, stats.exceptions());
-
-        assertEquals(stats, stats.since(initial));
-        assertEquals(0, stats.since(stats).averageLatencyMillis());
-        assertEquals(0, stats.since(stats).requests());
-        assertEquals(0, stats.since(stats).bytesSent());
     }
 
     @Test

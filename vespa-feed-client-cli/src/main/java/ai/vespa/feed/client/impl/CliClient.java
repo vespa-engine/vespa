@@ -237,11 +237,32 @@ public class CliClient {
             writeFloatField(generator, "http.response.latency.millis.avg", stats.averageLatencyMillis(), 3);
             writeFloatField(generator, "http.response.latency.millis.max", stats.maxLatencyMillis(), 3);
 
-            generator.writeObjectFieldStart("http.response.code.counts");
-            for (Map.Entry<Integer, Long> entry : stats.responsesByCode().entrySet())
-                generator.writeNumberField(Integer.toString(entry.getKey()), entry.getValue());
-            generator.writeEndObject();
+            // Hide new experimental output behind feature flag
+            if (System.getenv("VESPA_EXTENDED_STATS") != null) {
+                generator.writeObjectFieldStart("operation.latency");
+                generator.writeNumberField("min", stats.operationMinLatencyMillis());
+                generator.writeNumberField("avg", stats.operationAverageLatencyMillis());
+                generator.writeNumberField("max", stats.operationMaxLatencyMillis());
+                generator.writeEndObject();
 
+                generator.writeObjectFieldStart("http.response");
+                for (var e : stats.statsByCode().entrySet()) {
+                    generator.writeObjectFieldStart(Integer.toString(e.getKey()));
+                    generator.writeNumberField("count", e.getValue().count());
+                    generator.writeObjectFieldStart("latency");
+                    generator.writeNumberField("min", e.getValue().minLatencyMillis());
+                    generator.writeNumberField("avg", e.getValue().averageLatencyMillis());
+                    generator.writeNumberField("max", e.getValue().maxLatencyMillis());
+                    generator.writeEndObject();
+                    generator.writeEndObject();
+                }
+                generator.writeEndObject();
+            } else {
+                generator.writeObjectFieldStart("http.response.code.counts");
+                for (Map.Entry<Integer, OperationStats.Response> entry : stats.statsByCode().entrySet())
+                    generator.writeNumberField(Integer.toString(entry.getKey()), entry.getValue().count());
+                generator.writeEndObject();
+            }
             generator.writeEndObject();
         }
     }
