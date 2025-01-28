@@ -31,6 +31,10 @@ echo "Output from creating build : $JSON"
 VESPA_FACTORY_BUILD_ID=$(jq -re '.buildId' <<< "$JSON")
 export VESPA_FACTORY_BUILD_ID
 
+VESPA_VERSION=$(jq -re .version <<< "$JSON")
+export VESPA_VERSION
+buildkite-agent meta-data set vespa-version $VESPA_VERSION
+
 echo "Created factory build $VESPA_FACTORY_BUILD_ID for pipeline $PIPELINE"
 
 $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE running "Building"
