@@ -71,6 +71,7 @@ public class Processing {
                 TextMatch::new,
                 MultifieldIndexHarmonizer::new,
                 FilterFieldNames::new,
+                ValidateNoFieldRankFilterOverlap::new,
                 MatchConsistency::new,
                 ValidateStructTypeInheritance::new,
                 ValidateFieldTypes::new,
