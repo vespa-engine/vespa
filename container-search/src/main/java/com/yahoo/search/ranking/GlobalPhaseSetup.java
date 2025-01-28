@@ -171,6 +171,8 @@ class GlobalPhaseSetup {
                 }
             }
         }
+        // ignore renamed summary features (not available as match features)
+        renameFeatures.entrySet().removeIf(entry -> !matchFeatures.contains(entry.getKey()));
         if (rerankCount < 0) {
             rerankCount = 100;
         }
