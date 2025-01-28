@@ -2,7 +2,6 @@
 package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
-import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.StringPrompt;
 import ai.vespa.secret.Secret;
 import ai.vespa.secret.Secrets;
@@ -30,8 +29,10 @@ public class OpenAITest {
         );
         var prompt = StringPrompt.from("Explain why ducks better than cats in 20 words?");
         var completions = openai.complete(prompt, new InferenceParameters(options::get));
-        System.out.print(completions.get(0).text());
-        assertCompletionSize(completions.get(0), 3, 10);
+        var text = completions.get(0).text();
+        
+        System.out.print(text);
+        assertNumTokens(text, 3, 10);
     }
 
     @Test
@@ -46,20 +47,23 @@ public class OpenAITest {
                 "model", "gpt-4o-mini"
         );
         var prompt = StringPrompt.from("Explain why ducks better than cats in 20 words?");
-
+        var text = new StringBuilder();
+        
         var future = openai.completeAsync(prompt, new InferenceParameters(API_KEY, options::get), completion -> {
-            System.out.print(completion.text());
-            //assertCompletionSize(completion, 3, 10);
+            text.append(completion.text());
         }).exceptionally(exception -> {
             System.out.println("Error: " + exception);
             return null;
         });
         future.join();
+        
+        System.out.print(text);
+        assertNumTokens(text.toString(), 3, 10);
     }
     
-    private void assertCompletionSize(Completion completion, int minTokens, int maxTokens) {
+    private void assertNumTokens(String completion, int minTokens, int maxTokens) {
         // Splitting by space is a poor tokenizer but it is good enough for this test.
-        var numTokens = completion.text().split(" ").length;
+        var numTokens = completion.split(" ").length;
         assertTrue( minTokens <= numTokens && numTokens <= maxTokens);
     }
     
