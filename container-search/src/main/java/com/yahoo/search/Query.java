@@ -836,11 +836,18 @@ public class Query extends com.yahoo.processing.Request implements Cloneable {
                 }
                 yql.append("}]");
             }
-            yql.append(f.getFieldName());
+            yql.append(maybeQuote(f.getFieldName()));
             if (f.getSortOrder() == Order.DESCENDING) {
                 yql.append(" desc");
             }
         }
+    }
+
+    private static String maybeQuote(String sortField) {
+        if (sortField.startsWith("[")) {
+            return '"' + sortField + '"';
+        }
+        return sortField;
     }
 
     /** Returns the context of this query, possibly creating it if missing. Returns the context, or null */
