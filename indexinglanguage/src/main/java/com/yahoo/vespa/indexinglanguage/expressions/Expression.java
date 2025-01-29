@@ -176,17 +176,8 @@ public abstract class Expression extends Selectable {
     }
 
     public final void verify(AdapterFactory factory, DocumentUpdate upd) {
-        DocumentUpdate ret = null;
-        for (UpdateAdapter adapter : factory.newUpdateAdapterList(upd)) {
-            DocumentUpdate output = verify(adapter);
-            if (output == null) {
-                // ignore
-            } else if (ret != null) {
-                ret.addAll(output);
-            } else {
-                ret = output;
-            }
-        }
+        for (UpdateAdapter adapter : factory.newUpdateAdapterList(upd))
+            verify(adapter);
     }
 
     public final DocumentUpdate verify(UpdateAdapter adapter) {
