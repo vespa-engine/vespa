@@ -52,7 +52,7 @@ private:
     static uint32_t asMask(DataType dataType) {
         return (1u << static_cast<unsigned int>(dataType));
     }
-    static uint32_t normalTypesMask() {
+    static uint32_t primitiveTypesMask() {
         return (asMask(DataType::BOOL)  |
                 asMask(DataType::UINT2)  |
                 asMask(DataType::UINT4)  |
@@ -62,7 +62,10 @@ private:
                 asMask(DataType::INT64)  |
                 asMask(DataType::FLOAT)  |
                 asMask(DataType::DOUBLE) |
-                asMask(DataType::STRING) |
+                asMask(DataType::STRING));
+    }
+    static uint32_t normalTypesMask() {
+        return (primitiveTypesMask() |
                 asMask(DataType::RAW));
     }
     static uint32_t allTypesMask() {
@@ -87,6 +90,9 @@ public:
     }
     static ParameterDataTypeSet int32OrInt64TypeSet() {
         return ParameterDataTypeSet(asMask(DataType::INT32) | asMask(DataType::INT64));
+    }
+    static ParameterDataTypeSet primitiveOrTensorTypeSet() {
+        return ParameterDataTypeSet(primitiveTypesMask() | tensor_type_mask());
     }
     static ParameterDataTypeSet normalOrTensorTypeSet() {
         return ParameterDataTypeSet(normalTypesMask() | tensor_type_mask());
