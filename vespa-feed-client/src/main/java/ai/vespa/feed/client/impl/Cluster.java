@@ -22,4 +22,6 @@ interface Cluster extends Closeable {
 
     default OperationStats stats() { throw new UnsupportedOperationException("Benchmarking has been disabled"); }
 
+    default void resetStats() {}
+
 }

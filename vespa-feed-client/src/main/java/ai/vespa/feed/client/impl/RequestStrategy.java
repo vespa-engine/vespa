@@ -18,6 +18,9 @@ interface RequestStrategy {
     /** Stats for operations sent through this. */
     OperationStats stats();
 
+    /** Resets statistics */
+    void resetStats();
+
     /** State of the circuit breaker. */
     State circuitBreakerState();
 
