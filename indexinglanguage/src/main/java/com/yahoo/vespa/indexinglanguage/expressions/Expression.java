@@ -180,9 +180,8 @@ public abstract class Expression extends Selectable {
             verify(adapter);
     }
 
-    public final DocumentUpdate verify(UpdateAdapter adapter) {
+    public final void verify(UpdateAdapter adapter) {
         verify((FieldTypeAdapter)adapter);
-        return adapter.getOutput();
     }
 
     public final void verify(FieldTypeAdapter adapter) {
