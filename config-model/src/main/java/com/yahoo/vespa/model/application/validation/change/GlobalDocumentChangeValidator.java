@@ -33,14 +33,22 @@ public class GlobalDocumentChangeValidator implements ChangeValidator {
             if (nextDocumentType != null) {
                 boolean currentIsGlobal = currentCluster.isGloballyDistributed(currentDocumentType);
                 boolean nextIsGlobal = nextCluster.isGloballyDistributed(nextDocumentType);
+                boolean hosted = context.deployState().isHosted();
                 if (currentIsGlobal != nextIsGlobal) {
-                    String reason = "Document type %s in cluster %s changed global from %s to %s. ".formatted(documentTypeName, clusterName, currentIsGlobal, nextIsGlobal) +
-                                    "To handle this change, first stop services on all content nodes. Then, deploy with validation override. Finally, start services on all content nodes";
-                    if ( ! context.deployState().validationOverrides().allows(ValidationId.globalDocumentChange, context.deployState().now()))
+                    String reason = "Document type %s in cluster %s changed global from %s to %s".formatted(documentTypeName, clusterName, currentIsGlobal, nextIsGlobal);
+                    if ( ! context.deployState().validationOverrides().allows(ValidationId.globalDocumentChange, context.deployState().now())) {
+                        if (! hosted)
+                            reason = reason + "To handle this change, first stop services on all content nodes. Then, deploy with validation override. Finally, start services on all content nodes";
                         context.invalid(ValidationId.globalDocumentChange, reason);
-                    else if (context.deployState().isHosted())
-                        context.require(new VespaRestartAction(ClusterSpec.Id.from(clusterName), reason,
-                                                               nextCluster.getSearch().getSearchNodes().stream().map(AbstractService::getServiceInfo).toList()));
+                    } else if (hosted) {
+                            reason = reason + "Content nodes will be restarted automatically";
+                            context.require(new VespaRestartAction(ClusterSpec.Id.from(clusterName), reason,
+                                                                   nextCluster.getSearch()
+                                                                              .getSearchNodes()
+                                                                              .stream()
+                                                                              .map(AbstractService::getServiceInfo)
+                                                                              .toList()));
+                    }
                 }
             }
         });
