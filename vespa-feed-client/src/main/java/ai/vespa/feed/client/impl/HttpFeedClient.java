@@ -95,6 +95,11 @@ class HttpFeedClient implements FeedClient {
     }
 
     @Override
+    public void resetStats() {
+        requestStrategy.resetStats();
+    }
+
+    @Override
     public CircuitBreaker.State circuitBreakerState() {
         return requestStrategy.circuitBreakerState();
     }

@@ -1,6 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.feed.client;
 
+import com.yahoo.api.annotations.Beta;
+
+import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
 
@@ -10,6 +13,7 @@ import java.util.Optional;
  * @author jonmv
  * @author bjorncs
  */
+@Beta
 public class OperationStats {
 
     private final double duration;
@@ -57,6 +61,8 @@ public class OperationStats {
 
     /** Statistics per response code. */
     public Map<Integer, Response> statsByCode() { return statsByCode; }
+
+    public Duration duration() { return Duration.ofNanos((long)(duration * 1_000_000_000)); }
 
     /** Statistics for the given code. */
     public Optional<Response> response(int code) { return Optional.ofNullable(statsByCode.get(code)); }

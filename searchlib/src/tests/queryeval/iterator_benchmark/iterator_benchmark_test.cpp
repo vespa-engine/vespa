@@ -77,11 +77,18 @@ struct BenchmarkResult {
           iterator_name(iterator_name_in),
           blueprint_name(blueprint_name_in)
     {}
+    BenchmarkResult(const BenchmarkResult&);
+    BenchmarkResult(BenchmarkResult&&) noexcept = default;
     ~BenchmarkResult();
+    BenchmarkResult& operator=(const BenchmarkResult&);
+    BenchmarkResult& operator=(BenchmarkResult&&) noexcept = default;
     double ns_per_seek() const { return (time_ms / seeks) * 1000.0 * 1000.0; }
     double ms_per_actual_cost() const { return (time_ms / actual_cost); }
 };
+
+BenchmarkResult::BenchmarkResult(const BenchmarkResult&) = default;
 BenchmarkResult::~BenchmarkResult() = default;
+BenchmarkResult& BenchmarkResult::operator=(const BenchmarkResult&) = default;
 
 struct Stats {
     double average;

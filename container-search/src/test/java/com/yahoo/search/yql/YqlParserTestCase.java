@@ -582,6 +582,14 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testWeight() {
+        QueryTree parsed = parse("select * from sources * where " +
+                                 "weakAnd(field1 contains ({weight: 120}'term1'), " +
+                                 "        field1 contains ({weight: 70}'term2'))");
+        assertEquals("WEAKAND(100) field1:term1!120 field1:term2!70", parsed.toString());
+    }
+
+    @Test
     void testAnnotatedPhrase() {
         QueryTree parsed =
                 parse("select foo from bar where baz contains ({label: \"hello world\"}phrase(\"a\", \"b\"))");

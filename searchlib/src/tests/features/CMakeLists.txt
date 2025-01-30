@@ -10,8 +10,10 @@ vespa_add_executable(searchlib_prod_features_test_app TEST
     vespa_searchlib
     searchlib_test
 )
-vespa_add_test(NAME searchlib_prod_features_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/prod_features_test.sh
-               DEPENDS searchlib_prod_features_test_app COST 80)
+vespa_add_test(NAME searchlib_prod_features_test_app
+               COMMAND searchlib_prod_features_test_app
+               ENVIRONMENT "VESPA_LOG_TARGET=file:vlog2.txt"
+               COST 80)
 vespa_add_executable(searchlib_featurebenchmark_app
     SOURCES
     featurebenchmark.cpp

@@ -33,6 +33,7 @@ struct CTFMetaData {
               symbol_name(std::move(symbol_name_in))
         {
         }
+        ~Step();
     };
     std::vector<Step> steps;
     ~CTFMetaData();

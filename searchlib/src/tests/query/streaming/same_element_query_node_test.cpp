@@ -34,10 +34,13 @@ class AllowRewrite : public QueryNodeResultFactory
 {
 public:
     explicit AllowRewrite(std::string_view index) noexcept : _allowedIndex(index) {}
+    ~AllowRewrite() override;
     bool allow_float_terms_rewrite(std::string_view index) const noexcept override { return index == _allowedIndex; }
 private:
     std::string _allowedIndex;
 };
+
+AllowRewrite::~AllowRewrite() = default;
 
 }
 

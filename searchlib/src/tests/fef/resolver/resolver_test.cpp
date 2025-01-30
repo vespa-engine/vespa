@@ -13,6 +13,7 @@ using search::features::RankingExpressionBlueprint;
 class BaseBlueprint : public Blueprint {
 public:
     BaseBlueprint() : Blueprint("base") { }
+    ~BaseBlueprint() override;
     virtual void visitDumpFeatures(const IIndexEnvironment &,
                                    IDumpFeatureVisitor &) const override {}
     virtual Blueprint::UP createInstance() const override { return Blueprint::UP(new BaseBlueprint()); }
@@ -33,9 +34,12 @@ public:
     }
 };
 
+BaseBlueprint::~BaseBlueprint() = default;
+
 class CombineBlueprint : public Blueprint {
 public:
     CombineBlueprint() : Blueprint("combine") { }
+    ~CombineBlueprint() override;
     virtual void visitDumpFeatures(const IIndexEnvironment &,
                                    IDumpFeatureVisitor &) const override {}
     virtual Blueprint::UP createInstance() const override { return Blueprint::UP(new CombineBlueprint()); }
@@ -52,6 +56,8 @@ public:
         return stash.create<features::SingleZeroValueExecutor>();
     }
 };
+
+CombineBlueprint::~CombineBlueprint() = default;
 
 struct Fixture {
     BlueprintFactory factory;    

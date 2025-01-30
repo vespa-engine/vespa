@@ -90,12 +90,13 @@ func (p *Path) Field(name string) {
 	p.list = append(p.list, &selectField{name})
 }
 
-func (p *Path) Trim(n int) {
+func (p *Path) Trim(n int) *Path {
 	end := len(p.list) - n
 	if end < 0 {
 		end = 0
 	}
 	p.list = p.list[:end]
+	return p
 }
 
 func (p *Path) Apply(value Value) Value {

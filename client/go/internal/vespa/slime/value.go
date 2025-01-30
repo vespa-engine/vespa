@@ -25,6 +25,15 @@ type Value interface {
 	Set(name string, value Value) Value
 }
 
+func Valid(values ...Value) bool {
+	for _, v := range values {
+		if !v.Valid() {
+			return false
+		}
+	}
+	return true
+}
+
 type emptyValue struct{}
 
 func (*emptyValue) Valid() bool                              { return true }

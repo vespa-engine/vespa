@@ -38,6 +38,9 @@ public final class NGramExpression extends Expression {
         this.gramSize = gramSize;
     }
 
+    @Override
+    public boolean isMutating() { return false; }
+
     public Linguistics getLinguistics() { return linguistics; }
 
     public int getGramSize() { return gramSize; }

@@ -236,6 +236,7 @@ struct ProgramOptions::OptionParser {
 
 struct ProgramOptions::OptionHeader : public OptionParser {
     OptionHeader(const std::string& desc) : OptionParser("", 0, desc) {}
+    ~OptionHeader() override;
     void set(const std::vector<std::string>&) override {}
     void setDefault() override {}
     bool isHeader() const override { return true; }
@@ -279,6 +280,7 @@ struct ProgramOptions::BoolOptionParser : public OptionParser {
     bool _defaultValue;
 
     BoolOptionParser(const std::string& nameList, bool& value, const std::string& description);
+    ~BoolOptionParser() override;
     void set(const std::vector<std::string>&) override { _value = true; }
     void setDefault() override { _value = false; }
 };
@@ -316,6 +318,7 @@ struct ProgramOptions::MapOptionParser : public OptionParser {
     MapOptionParser(const std::string& nameList,
                     std::map<std::string, std::string>& value,
                     const std::string& description);
+    ~MapOptionParser() override;
 
     void set(const std::vector<std::string>& arguments) override {
         _value[arguments[0]] = arguments[1];

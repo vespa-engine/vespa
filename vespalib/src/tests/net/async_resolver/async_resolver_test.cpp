@@ -50,6 +50,7 @@ struct MyHostResolver : public AsyncResolver::HostResolver {
     std::map<std::string,std::string> ip_map;
     std::map<std::string, size_t> ip_cnt;
     MyHostResolver() : ip_lock(), ip_map(), ip_cnt() {}
+    ~MyHostResolver() override;
     std::string ip_address(const std::string &host) override {
         std::lock_guard<std::mutex> guard(ip_lock);
         ++ip_cnt[host];
@@ -72,6 +73,8 @@ struct MyHostResolver : public AsyncResolver::HostResolver {
         return total;
     }
 };
+
+MyHostResolver::~MyHostResolver() = default;
 
 struct ResolveFixture {
     std::shared_ptr<MyClock> clock;

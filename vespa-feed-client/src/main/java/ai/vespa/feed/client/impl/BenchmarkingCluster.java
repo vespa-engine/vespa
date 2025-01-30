@@ -112,6 +112,27 @@ public class BenchmarkingCluster implements Cluster {
         }
     }
 
+    @Override
+    public void resetStats() {
+        try {
+            executor.submit(() -> {
+                requests.set(0);
+                results = 0;
+                exceptions = 0;
+                bytesSent = 0;
+                statsByCode.clear();
+                operations = 0;
+                operationTotalLatencyMillis = 0;
+                operationMinLatencyMillis = Long.MAX_VALUE;
+                operationMaxLatencyMillis = 0;
+                return null;
+            }).get();
+        }
+        catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private OperationStats getStats() {
         var requests = this.requests.get();
         var duration = (System.nanoTime() - timeOfFirstDispatch.get()) * 1e-9;

@@ -26,6 +26,9 @@ SingleExtAttribute<T>::SingleExtAttribute(const std::string &name)
 {}
 
 template <typename T>
+SingleExtAttribute<T>::~SingleExtAttribute() = default;
+
+template <typename T>
 bool
 SingleExtAttribute<T>::addDoc(typename Super::DocId &docId) {
     docId = this->_data.size();

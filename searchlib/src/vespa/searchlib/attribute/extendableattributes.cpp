@@ -22,6 +22,8 @@ SingleStringExtAttribute::SingleStringExtAttribute(const std::string & name) :
     setEnum(false);
 }
 
+SingleStringExtAttribute::~SingleStringExtAttribute() = default;
+
 bool SingleStringExtAttribute::addDoc(DocId & docId)
 {
     size_t offset(_buffer.size());

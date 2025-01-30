@@ -119,7 +119,8 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 // caused by the state of the system, not the model version/application combination
                 throw e;
             }
-            catch (RuntimeException e) {
+            // Catch NoSuchMethodError as well, otherwise the JVM will shut down
+            catch (RuntimeException | NoSuchMethodError e) {
                 if (shouldSkipCreatingMajorVersionOnError(majorVersions, majorVersion, wantedNodeVespaVersion, allocatedHosts)) {
                     log.log(Level.FINE, applicationId + ": Skipping major version " + majorVersion, e);
                 }
@@ -131,7 +132,9 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                     }
                     else {
                         log.log(Level.WARNING, "Unexpected error building " + applicationId, e);
-                        throw new InternalServerException("Unexpected error building " + applicationId, e);
+                        // Wrap it in a RuntimeException if it is an Error
+                        Exception ex = (e instanceof RuntimeException re) ? re : new RuntimeException(e);
+                        throw new InternalServerException("Unexpected error building " + applicationId, ex);
                     }
                 }
             }

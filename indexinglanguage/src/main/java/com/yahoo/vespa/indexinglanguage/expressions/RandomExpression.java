@@ -62,7 +62,7 @@ public final class RandomExpression extends Expression {
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof RandomExpression rhs)) return false;
-        if (!equals(max, rhs.max)) return false;
+        if (!Objects.equals(max, rhs.max)) return false;
         return true;
     }
 

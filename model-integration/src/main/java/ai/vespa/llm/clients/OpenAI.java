@@ -18,7 +18,8 @@ import java.util.function.Consumer;
 /**
  * A configurable OpenAI client.
  *
- * @author lesters glebashnik
+ * @author lesters
+ * @author glebashnik
  */
 @Beta
 public class OpenAI extends ConfigurableLanguageModel {
@@ -45,23 +46,26 @@ public class OpenAI extends ConfigurableLanguageModel {
         }
 
     }
-
-    @Override
-    public List<Completion> complete(Prompt prompt, InferenceParameters parameters) {
-        var combinedParameters = parameters.withDefaultOptions(configOptions::get);
+    
+    private InferenceParameters prepareParameters(InferenceParameters parameters) {
         setApiKey(parameters);
         setEndpoint(parameters);
-        return client.complete(prompt, combinedParameters);
+        var combinedParameters = parameters.withDefaultOptions(configOptions::get);
+        return combinedParameters;
     }
 
     @Override
-    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
-                                                                    InferenceParameters parameters,
-                                                                    Consumer<Completion> consumer) {
-        var combinedParameters = parameters.withDefaultOptions(configOptions::get);
-        setApiKey(parameters);
-        setEndpoint(parameters);
-        return client.completeAsync(prompt, combinedParameters, consumer);
+    public List<Completion> complete(
+            Prompt prompt, InferenceParameters parameters) {
+        var preparedParameters = prepareParameters(parameters);
+        return client.complete(prompt, preparedParameters);
+    }
+
+    @Override
+    public CompletableFuture<Completion.FinishReason> completeAsync(
+            Prompt prompt, InferenceParameters parameters, Consumer<Completion> consumer) {
+        var preparedParameters = prepareParameters(parameters);
+        return client.completeAsync(prompt, preparedParameters, consumer);
     }
 
 }
