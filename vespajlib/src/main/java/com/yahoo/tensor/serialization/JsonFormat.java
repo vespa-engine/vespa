@@ -17,6 +17,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import java.util.Iterator;
+import java.util.function.Function;
 
 /**
  * Writes tensors on the JSON format used in Vespa tensor document fields:
@@ -170,13 +171,24 @@ public class JsonFormat {
         '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
     };
 
+
     private static String asHexString(IndexedTensor tensor) {
+        return asHexString(tensor.sizeAsInt(),
+                           tensor.type().valueType(),
+                           i -> tensor.get(i),
+                           i -> tensor.getFloat(i));
+    }
+
+    private static String asHexString(int denseSize,
+                                      TensorType.Value cellType,
+                                      Function<Integer, Double> dblSrc,
+                                      Function<Integer, Float> fltSrc)
+    {
         StringBuilder buf = new StringBuilder();
-        TensorType.Value cellType = tensor.type().valueType();
         switch (cellType) {
             case DOUBLE:
-                for (int i = 0; i < tensor.sizeAsInt(); i++) {
-                    double d = tensor.get(i);
+                for (int i = 0; i < denseSize; i++) {
+                    double d = dblSrc.apply(i);
                     long bits = Double.doubleToRawLongBits(d);
                     for (int nibble = 16; nibble-- > 0; ) {
                         int digit = (int) (bits >> (4 * nibble)) & 0xF;
@@ -185,8 +197,8 @@ public class JsonFormat {
                 }
                 break;
             case FLOAT:
-                for (int i = 0; i < tensor.sizeAsInt(); i++) {
-                    float f = tensor.getFloat(i);
+                for (int i = 0; i < denseSize; i++) {
+                    float f = fltSrc.apply(i);
                     int bits = Float.floatToRawIntBits(f);
                     for (int nibble = 8; nibble-- > 0; ) {
                         int digit = (bits >> (4 * nibble)) & 0xF;
@@ -195,9 +207,9 @@ public class JsonFormat {
                 }
                 break;
             case BFLOAT16:
-                for (int i = 0; i < tensor.sizeAsInt(); i++) {
-                    float f = tensor.getFloat(i);
-                    int bits = Float.floatToIntBits(f);
+                for (int i = 0; i < denseSize; i++) {
+                    float f = fltSrc.apply(i);
+                    int bits = Float.floatToRawIntBits(f);
                     for (int nibble = 8; nibble-- > 4; ) {
                         int digit = (bits >> (4 * nibble)) & 0xF;
                         buf.append(hexDigits[digit]);
@@ -205,8 +217,8 @@ public class JsonFormat {
                 }
                 break;
             case INT8:
-                for (int i = 0; i < tensor.sizeAsInt(); i++) {
-                    byte bits = (byte)tensor.getFloat(i);
+                for (int i = 0; i < denseSize; i++) {
+                    byte bits = fltSrc.apply(i).byteValue();
                     for (int nibble = 2; nibble-- > 0; ) {
                         int digit = (bits >> (4 * nibble)) & 0xF;
                         buf.append(hexDigits[digit]);
@@ -237,13 +249,16 @@ public class JsonFormat {
     }
 
     private static void encodeLabeledBlocks(MixedTensor tensor, Cursor cursor, boolean hexForDensePart) {
-        TensorType denseSubType = tensor.type().indexedSubtype();
         for (var subspace : tensor.getInternalDenseSubspaces()) {
             String label = subspace.sparseAddress.label(0);
-            IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
             if (hexForDensePart) {
-                cursor.setString(label, asHexString(denseSubspace));
+                cursor.setString(label, asHexString(subspace.cells.length,
+                                                    tensor.type().valueType(),
+                                                    i -> subspace.cells[i],
+                                                    i -> (float)subspace.cells[i]));
             } else {
+                TensorType denseSubType = tensor.type().indexedSubtype();
+                IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
                 var target = cursor.setArray(label);
                 encodeDenseValues(denseSubspace, target);
             }
@@ -263,10 +278,13 @@ public class JsonFormat {
         for (var subspace : tensor.getInternalDenseSubspaces()) {
             Cursor block = cursor.addObject();
             encodeAddress(mappedSubType, subspace.sparseAddress, block.setObject("address"));
-            IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
             if (hexForDensePart) {
-                cursor.setString("values", asHexString(denseSubspace));
+                cursor.setString("values", asHexString(subspace.cells.length,
+                                                    tensor.type().valueType(),
+                                                    i -> subspace.cells[i],
+                                                    i -> (float)subspace.cells[i]));
             } else {
+                IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
                 var target = block.setArray("values");
                 encodeDenseValues(denseSubspace, target);
             }

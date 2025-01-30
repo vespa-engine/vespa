@@ -510,8 +510,7 @@ public class JsonFormatTestCase {
         Tensor decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
         var encoded = JsonFormat.encode(decoded, true, true, true);
-        // note: all NaN bit-patterns will give same NaN
-        assertEquals("\"422849803580C37F0000800000807F7F7F80FF807FC07FC0\"",
+        assertEquals("\"422849803580C37F0000800000807F7F7F80FF807FC0FFC0\"",
                      new String(encoded, StandardCharsets.UTF_8));
     }
 
