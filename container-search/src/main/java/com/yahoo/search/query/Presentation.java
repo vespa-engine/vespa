@@ -74,6 +74,9 @@ public class Presentation implements Cloneable {
     /** Whether optional timing data should be rendered */
     private boolean timing = false;
 
+    /** Whether to dense (part of ) tensors in hex string form */
+    private boolean tensorHexDense = false;
+
     /** Whether to renders tensors in short form */
     private boolean tensorShortForm = true;
 
@@ -186,6 +189,9 @@ public class Presentation implements Cloneable {
      */
     public boolean getTensorShortForm() { return tensorShortForm; }
 
+    /** whether dense part of tensors should be represented as a string of hex digits */
+    public boolean getTensorHexDense() { return tensorHexDense; }
+
     /** @deprecated use setTensorFormat(). */
     @Deprecated // TODO: Remove on Vespa 9
     public void setTensorShortForm(String value) {
@@ -199,6 +205,16 @@ public class Presentation implements Cloneable {
      */
     public void setTensorFormat(String value) {
         switch (value) {
+            case "hex" :
+                tensorHexDense = true;
+                tensorShortForm = true;
+                tensorDirectValues = false;
+                break;
+            case "hex-value" :
+                tensorHexDense = true;
+                tensorShortForm = true;
+                tensorDirectValues = true;
+                break;
             case "short" :
                 tensorShortForm = true;
                 tensorDirectValues = false;
@@ -254,4 +270,3 @@ public class Presentation implements Cloneable {
     }
 
 }
-

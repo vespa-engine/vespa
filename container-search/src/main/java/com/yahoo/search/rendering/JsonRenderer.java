@@ -132,6 +132,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         volatile boolean jsonWsets = true;
         volatile boolean jsonMapsAll = true;
         volatile boolean jsonWsetsAll = false;
+        volatile boolean tensorHexDense = false;
         volatile boolean tensorShortForm = true;
         volatile boolean tensorDirectValues = false;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }

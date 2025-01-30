@@ -28,6 +28,10 @@ import java.util.Iterator;
  */
 public class JsonFormat {
 
+    /** Options for encode */
+    public record EncodeOptions(boolean shortForm, boolean directValues, boolean hexForDensePart) {
+        // TODO - consider "compact" flag
+    }
     /**
      * Serializes the given tensor value into JSON format.
      *
@@ -36,38 +40,81 @@ public class JsonFormat {
      * @param directValues whether to encode values directly, or wrapped in am object containing "type" and "cells"
      */
     public static byte[] encode(Tensor tensor, boolean shortForm, boolean directValues) {
+        return encode(tensor, new EncodeOptions(shortForm, directValues, false));
+    }
+    public static byte[] encode(Tensor tensor, boolean shortForm, boolean directValues, boolean hexForDense) {
+        return encode(tensor, new EncodeOptions(shortForm, directValues, hexForDense));
+    }
+
+    private static abstract class OptionalKey {
+        abstract Cursor setObject(String key);
+        abstract Cursor setArray(String key);
+        abstract void setString(String key, String value);
+        static OptionalKey of(Slime s) {
+            return new OptionalKey() {
+                final Slime target = s;
+                Cursor setObject(String key) { return target.setObject(); }
+                Cursor setArray(String key) { return target.setArray(); }
+                void setString(String key, String value) { target.setString(value); }
+            };
+        }
+        static OptionalKey of(Cursor c) {
+            return new OptionalKey() {
+                final private Cursor target = c;
+                Cursor setObject(String key) { return target.setObject(key); }
+                Cursor setArray(String key) { return target.setArray(key); }
+                void setString(String key, String value) { target.setString(key, value); }
+            };
+        }
+    }
+
+    /**
+     * Serializes the given tensor value into JSON format.
+     *
+     * @param tensor the tensor to serialize
+     * @param options format options for short/long, wrapped/direct, etc
+     */
+    public static byte[] encode(Tensor tensor, EncodeOptions options) {
         Slime slime = new Slime();
+        var target = OptionalKey.of(slime);
         Cursor root = null;
-        if ( ! directValues) {
+        if ( ! options.directValues()) {
             root = slime.setObject();
             root.setString("type", tensor.type().toString());
+            target = OptionalKey.of(root);
         }
 
-        if (shortForm) {
+        if (options.shortForm()) {
             if (tensor instanceof IndexedTensor denseTensor) {
-                // Encode as nested lists if indexed tensor
-                Cursor parent = root == null ? slime.setArray() : root.setArray("values");
-                encodeValues(denseTensor, parent, new long[denseTensor.dimensionSizes().dimensions()], 0);
-            } else if (tensor instanceof MappedTensor && tensor.type().dimensions().size() == 1) {
+                if (options.hexForDensePart()) {
+                    target.setString("values", asHexString(denseTensor));
+                } else {
+                    // Encode as nested arrays if indexed tensor
+                    Cursor parent = target.setArray("values");
+                    encodeDenseValues(denseTensor, parent);
+                }
+            } else if (tensor instanceof MappedTensor mapped && tensor.type().dimensions().size() == 1) {
                 // Short form for a single mapped dimension
-                Cursor parent = root == null ? slime.setObject() : root.setObject("cells");
-                encodeSingleDimensionCells((MappedTensor) tensor, parent);
-            } else if (tensor instanceof MixedTensor && tensor.type().hasMappedDimensions()) {
+                Cursor parent = target.setObject("cells");
+                encodeSingleDimensionCells(mapped, parent);
+            } else if (tensor instanceof MixedTensor mixed && tensor.type().hasMappedDimensions()) {
                 // Short form for a mixed tensor
                 boolean singleMapped = tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() == 1;
-                Cursor parent = root == null ? ( singleMapped ? slime.setObject() : slime.setArray() )
-                                             : ( singleMapped ? root.setObject("blocks") : root.setArray("blocks"));
-                encodeBlocks((MixedTensor) tensor, parent);
+                if (singleMapped) {
+                    encodeLabeledBlocks(mixed, target.setObject("blocks"), options.hexForDensePart());
+                } else {
+                    encodeAddressedBlocks(mixed, target.setArray("blocks"), options.hexForDensePart());
+                }
             } else {
                 // default to standard cell address output
-                Cursor parent = root == null ? slime.setArray() : root.setArray("cells");
+                Cursor parent = target.setArray("cells");
                 encodeCells(tensor, parent);
             }
 
             return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
         }
         else {
-            Cursor parent = root == null ? slime.setArray() : root.setArray("cells");
+            Cursor parent = target.setArray("cells");
             encodeCells(tensor, parent);
         }
         return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
@@ -118,6 +165,62 @@ public class JsonFormat {
             addressObject.setString(type.dimensions().get(i).name(), address.label(i));
     }
 
+    private static final char[] hexDigits = {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'
+    };
+
+    private static String asHexString(IndexedTensor tensor) {
+        StringBuilder buf = new StringBuilder();
+        TensorType.Value cellType = tensor.type().valueType();
+        switch (cellType) {
+            case DOUBLE:
+                for (int i = 0; i < tensor.sizeAsInt(); i++) {
+                    double d = tensor.get(i);
+                    long bits = Double.doubleToRawLongBits(d);
+                    for (int nibble = 16; nibble-- > 0; ) {
+                        int digit = (int) (bits >> (4 * nibble)) & 0xF;
+                        buf.append(hexDigits[digit]);
+                    }
+                }
+                break;
+            case FLOAT:
+                for (int i = 0; i < tensor.sizeAsInt(); i++) {
+                    float f = tensor.getFloat(i);
+                    int bits = Float.floatToRawIntBits(f);
+                    for (int nibble = 8; nibble-- > 0; ) {
+                        int digit = (bits >> (4 * nibble)) & 0xF;
+                        buf.append(hexDigits[digit]);
+                    }
+                }
+                break;
+            case BFLOAT16:
+                for (int i = 0; i < tensor.sizeAsInt(); i++) {
+                    float f = tensor.getFloat(i);
+                    int bits = Float.floatToIntBits(f);
+                    for (int nibble = 8; nibble-- > 4; ) {
+                        int digit = (bits >> (4 * nibble)) & 0xF;
+                        buf.append(hexDigits[digit]);
+                    }
+                }
+                break;
+            case INT8:
+                for (int i = 0; i < tensor.sizeAsInt(); i++) {
+                    byte bits = (byte)tensor.getFloat(i);
+                    for (int nibble = 2; nibble-- > 0; ) {
+                        int digit = (bits >> (4 * nibble)) & 0xF;
+                        buf.append(hexDigits[digit]);
+                    }
+                }
+                break;
+        }
+        return buf.toString();
+    }
+
+    private static void encodeDenseValues(IndexedTensor tensor, Cursor target) {
+        encodeValues(tensor, target, new long[tensor.dimensionSizes().dimensions()], 0);
+    }
+
     private static void encodeValues(IndexedTensor tensor, Cursor cursor, long[] indexes, int dimension) {
         DimensionSizes sizes = tensor.dimensionSizes();
         if (indexes.length == 0) {
@@ -133,26 +236,40 @@ public class JsonFormat {
         }
     }
 
-    private static void encodeBlocks(MixedTensor tensor, Cursor cursor) {
-        var mappedDimensions = tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped)
-                .map(d -> TensorType.Dimension.mapped(d.name())).toList();
+    private static void encodeLabeledBlocks(MixedTensor tensor, Cursor cursor, boolean hexForDensePart) {
+        TensorType denseSubType = tensor.type().indexedSubtype();
+        for (var subspace : tensor.getInternalDenseSubspaces()) {
+            String label = subspace.sparseAddress.label(0);
+            IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
+            if (hexForDensePart) {
+                cursor.setString(label, asHexString(denseSubspace));
+            } else {
+                var target = cursor.setArray(label);
+                encodeDenseValues(denseSubspace, target);
+            }
+        }
+    }
+
+    private static void encodeAddressedBlocks(MixedTensor tensor, Cursor cursor, boolean hexForDensePart) {
+        var mappedDimensions = tensor.type().dimensions().stream()
+                .filter(TensorType.Dimension::isMapped)
+                .toList();
         if (mappedDimensions.isEmpty()) {
             throw new IllegalArgumentException("Should be ensured by caller");
         }
-
         // Create tensor type for mapped dimensions subtype
         TensorType mappedSubType = new TensorType.Builder(mappedDimensions).build();
         TensorType denseSubType = tensor.type().indexedSubtype();
         for (var subspace : tensor.getInternalDenseSubspaces()) {
+            Cursor block = cursor.addObject();
+            encodeAddress(mappedSubType, subspace.sparseAddress, block.setObject("address"));
             IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
-            if (mappedDimensions.size() == 1) {
-                encodeValues(denseSubspace, cursor.setArray(subspace.sparseAddress.label(0)), new long[denseSubspace.dimensionSizes().dimensions()], 0);
+            if (hexForDensePart) {
+                cursor.setString("values", asHexString(denseSubspace));
             } else {
-                Cursor block = cursor.addObject();
-                encodeAddress(mappedSubType, subspace.sparseAddress, block.setObject("address"));
-                encodeValues(denseSubspace, block.setArray("values"), new long[denseSubspace.dimensionSizes().dimensions()], 0);
+                var target = block.setArray("values");
+                encodeDenseValues(denseSubspace, target);
             }
-
         }
     }
 

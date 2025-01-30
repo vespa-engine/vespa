@@ -187,6 +187,8 @@ public class JsonFormatTestCase {
         assertEqualJson(shortJson, new String(shortEncoded, StandardCharsets.UTF_8));
         assertEquals(tensor, JsonFormat.decode(tensor.type(), shortEncoded));
 
+        assertEquals("\"02030507\"", new String(JsonFormat.encode(tensor, true, true, true), StandardCharsets.UTF_8));
+
         String longJson = """
                 {
                   "type":"tensor<int8>(x[2],y[2])",
@@ -481,6 +483,8 @@ public class JsonFormatTestCase {
         String shortJson = "{\"a\": \"020304\", \"b\": \"050607\"}";
         decoded = JsonFormat.decode(expected.type(), shortJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
+        var encoded = JsonFormat.encode(decoded, true, true, true);
+        assertEquals("{\"a\":\"020304\",\"b\":\"050607\"}", new String(encoded, StandardCharsets.UTF_8));
     }
 
     @Test
@@ -505,6 +509,10 @@ public class JsonFormatTestCase {
         String denseJson = "{\"values\":\"422849803580c37f0000800000807f7f7f80ff807fc0ffc0\"}";
         Tensor decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
+        var encoded = JsonFormat.encode(decoded, true, true, true);
+        // note: all NaN bit-patterns will give same NaN
+        assertEquals("\"422849803580C37F0000800000807F7F7F80FF807FC07FC0\"",
+                     new String(encoded, StandardCharsets.UTF_8));
     }
 
     @Test
@@ -533,6 +541,13 @@ public class JsonFormatTestCase {
             +"\"}";
         Tensor decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
+        var encoded = JsonFormat.encode(decoded, true, true, true);
+        assertEquals("\""
+                     +"42280000"+"49800008"+"35800000"+"C37F0000"
+                     +"00000000"+"80000000"+"00000001"+"7F7FFFFF"
+                     +"7F800000"+"FF800000"+"7FC00000"+"FFC00000"
+                     +"\"",
+                     new String(encoded, StandardCharsets.UTF_8));
     }
 
     @Test
