@@ -60,6 +60,9 @@ public interface FeedClient extends Closeable {
     /** Returns a snapshot of the stats for this feed client, such as requests made, and responses by status. */
     OperationStats stats();
 
+    /** Reset statistics. Useful for filtering out warmup operations. */
+    void resetStats();
+
     /** Current state of the circuit breaker. */
     CircuitBreaker.State circuitBreakerState();
 

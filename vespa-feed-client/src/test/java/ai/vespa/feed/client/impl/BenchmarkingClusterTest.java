@@ -47,6 +47,12 @@ class BenchmarkingClusterTest {
         assertEquals(6333, stats.operationAverageLatencyMillis());
         assertEquals(4000, stats.operationMinLatencyMillis());
         assertEquals(8000, stats.operationMaxLatencyMillis());
+
+        cluster.resetStats();
+        stats = cluster.stats();
+        assertEquals(-1, stats.operationAverageLatencyMillis());
+        assertEquals(-1, stats.operationMinLatencyMillis());
+        assertEquals(-1, stats.operationMaxLatencyMillis());
     }
 
     private static void dispatchRequest(BenchmarkingCluster cluster, HttpRequest request) {

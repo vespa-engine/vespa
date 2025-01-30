@@ -98,6 +98,8 @@ class HttpRequestStrategy implements RequestStrategy {
         return cluster.stats();
     }
 
+    @Override public void resetStats() { cluster.resetStats(); }
+
     @Override
     public CircuitBreaker.State circuitBreakerState() {
         return breaker.state();

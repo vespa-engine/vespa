@@ -106,6 +106,7 @@
       "public static java.util.List await(java.util.List)",
       "public static varargs java.util.List await(java.util.concurrent.CompletableFuture[])",
       "public abstract ai.vespa.feed.client.OperationStats stats()",
+      "public abstract void resetStats()",
       "public abstract ai.vespa.feed.client.FeedClient$CircuitBreaker$State circuitBreakerState()",
       "public abstract void close(boolean)",
       "public void close()"
@@ -332,6 +333,7 @@
       "public long responses()",
       "public long successes()",
       "public java.util.Map statsByCode()",
+      "public java.time.Duration duration()",
       "public java.util.Optional response(int)",
       "public long exceptions()",
       "public long inflight()",

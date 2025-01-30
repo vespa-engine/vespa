@@ -192,6 +192,8 @@ class JsonFeederTest {
         @Override
         public OperationStats stats() { return null; }
 
+        @Override public void resetStats() {}
+
         @Override
         public CircuitBreaker.State circuitBreakerState() { return null; }
 

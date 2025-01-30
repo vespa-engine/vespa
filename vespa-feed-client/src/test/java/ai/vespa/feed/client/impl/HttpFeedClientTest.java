@@ -38,6 +38,7 @@ class HttpFeedClientTest {
         AtomicReference<BiFunction<DocumentId, HttpRequest, CompletableFuture<HttpResponse>>> dispatch = new AtomicReference<>();
         class MockRequestStrategy implements RequestStrategy {
             @Override public OperationStats stats() { throw new UnsupportedOperationException(); }
+            @Override public void resetStats() { throw new UnsupportedOperationException(); }
             @Override public FeedClient.CircuitBreaker.State circuitBreakerState() { return FeedClient.CircuitBreaker.State.CLOSED; }
             @Override public void destroy() { throw new UnsupportedOperationException(); }
             @Override public void await() { throw new UnsupportedOperationException(); }
