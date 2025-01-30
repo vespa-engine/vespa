@@ -79,7 +79,6 @@ using DataType = FieldInfo::DataType;
 
 const double EPS = 10e-6;
 
-
 Test::Test()
 {
     // Configure factory with all known blueprints.
@@ -317,17 +316,25 @@ TEST_F(ProdFeaturesTest, test_attribute)
         ASSERT_TRUE(ft.setup());
         ASSERT_TRUE(ft.execute(exp));
     }
-    { // unique only attribute
+    { // unique only attribute, i.e. enumerated attribute
         RankResult exp;
-        exp.addScore("attribute(unique).value", 0).
+        exp.addScore("attribute(unique).value", 10).
             addScore("attribute(unique).weight", 0).
             addScore("attribute(unique).contains", 0).
-            addScore("attribute(unique).count", 0);
+            addScore("attribute(unique).count", 1);
 
         FtFeatureTest ft(_factory, exp.getKeys());
         setupForAttributeTest(ft);
         ASSERT_TRUE(ft.setup());
-        //ASSERT_TRUE(ft.execute(exp));
+        ASSERT_TRUE(ft.execute(exp));
+    }
+    { // raw attributes are not allowed
+        RankResult exp;
+        exp.addScore("attribute(raw)", 0.0);
+
+        FtFeatureTest ft(_factory, exp.getKeys());
+        setupForAttributeTest(ft);
+        ASSERT_FALSE(ft.setup());
     }
 }
 
@@ -366,7 +373,7 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     // simulate a unique only attribute as specified in sd
     AVC cfg(AVBT::INT32, AVCT::SINGLE);
     cfg.setFastSearch(true);
-    avs.push_back(AttributeFactory::createAttribute("unique", cfg)); // 9
+    avs.push_back(AttributeFactory::createAttribute("unique", cfg)); // 21
 
     if (setup_env) {
         // register attributes in index environment
@@ -412,6 +419,7 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     (dynamic_cast<IntegerAttribute *>(avs[2].get()))->append(1, 40, 10);
     (dynamic_cast<IntegerAttribute *>(avs[2].get()))->append(1, 50, 20);
     (dynamic_cast<IntegerAttribute *>(avs[9].get()))->update(1, search::attribute::getUndefined<int32_t>());
+    dynamic_cast<IntegerAttribute&>(*avs[21]).update(1, 10);
     // feature_t attributes
     (dynamic_cast<FloatingPointAttribute *>(avs[3].get()))->update(1, 60.5f);
     (dynamic_cast<FloatingPointAttribute *>(avs[4].get()))->append(1, 70.5f, 0);
@@ -428,14 +436,9 @@ Test::setupForAttributeTest(FtFeatureTest &ft, bool setup_env)
     (dynamic_cast<StringAttribute *>(avs[8].get()))->append(1, "quux", 12);
     (dynamic_cast<StringAttribute *>(avs[11].get()))->update(1, "");
 
-    for (uint32_t i = 0; i < avs.size() - 1; ++i) { // do not commit the noupdate attribute
-        avs[i]->commit();
+    for (auto& av : avs) {
+        av->commit();
     }
-
-    // save 'sint' and load it into 'unique' (only way to set a noupdate attribute)
-    ASSERT_TRUE(avs[0]->save(avs[9]->getBaseFileName()));
-    avs[9] = AttributeFactory::createAttribute("udefint", AVC(AVBT::INT32, AVCT::SINGLE));
-    ASSERT_TRUE(avs[9]->load());
 }
 
 TEST_F(ProdFeaturesTest, test_closeness)
