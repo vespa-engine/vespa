@@ -81,6 +81,17 @@ public class UserInputTestCase {
     }
 
     @Test
+    void testMustAndShouldUserInput() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                             "select * from sources * where " +
+                             "{grammar: 'all'}rank(userInput('must terms'), {grammar: 'any'}userInput('should terms'))"
+                            );
+        Query query = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where rank((default contains \"must\" AND default contains \"terms\"), (default contains \"should\" OR default contains \"terms\"))", query.yqlRepresentation());
+    }
+
+    @Test
     void testSegmentedUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",
