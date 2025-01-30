@@ -218,7 +218,7 @@ public class RawRankProfile {
             numThreadsPerSearch = compiled.getNumThreadsPerSearch();
             minHitsPerThread = compiled.getMinHitsPerThread();
             numSearchPartitions = compiled.getNumSearchPartitions();
-            termwiseLimit = compiled.getTermwiseLimit().orElse(deployProperties.featureFlags().defaultTermwiseLimit());
+            termwiseLimit = compiled.getTermwiseLimit().orElse(1.0);
             sortBlueprintsByCost = deployProperties.featureFlags().sortBlueprintsByCost();
             alwaysMarkPhraseExpensive = deployProperties.featureFlags().alwaysMarkPhraseExpensive();
             postFilterThreshold = compiled.getPostFilterThreshold();
