@@ -76,7 +76,7 @@ public class SelectInputTestCase {
     }
 
     private static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        exp.verify(new VerificationContext(adapter).setCurrentType(value));
+        assertEquals(value, exp.verify(new VerificationContext(adapter).setCurrentType(value)));
     }
 
     private static void assertVerifyThrows(FieldTypeAdapter adapter, Expression exp, String expectedException) {

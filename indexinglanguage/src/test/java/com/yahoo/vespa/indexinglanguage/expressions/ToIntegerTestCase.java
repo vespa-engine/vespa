@@ -29,9 +29,10 @@ public class ToIntegerTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(DataType.INT, new ToIntegerExpression(), DataType.INT);
-        assertVerify(DataType.STRING, new ToIntegerExpression(), DataType.INT);
-        assertVerifyThrows("Invalid expression 'to_int': Expected input, but no input is provided", null, new ToIntegerExpression());
+        Expression exp = new ToIntegerExpression();
+        assertVerify(DataType.INT, exp, DataType.INT);
+        assertVerify(DataType.STRING, exp, DataType.INT);
+        assertVerifyThrows("Invalid expression 'to_int': Expected input, but no input is provided", null, exp);
     }
 
     @Test

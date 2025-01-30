@@ -32,9 +32,6 @@ public final class ForEachExpression extends CompositeExpression {
         this.expression = Objects.requireNonNull(expression);
     }
 
-    @Override
-    public boolean isMutating() { return expression.isMutating(); }
-
     public Expression getInnerExpression() { return expression; }
 
     @Override
@@ -170,8 +167,12 @@ public final class ForEachExpression extends CompositeExpression {
         FieldValue input = context.getCurrentValue();
         if (input instanceof Array || input instanceof WeightedSet) {
             FieldValue next = new ExecutionConverter(context, expression).convert(input);
-            if (next == null)
-                next = getOutputType().createFieldValue();
+            if (next == null) {
+                VerificationContext verificationContext = new VerificationContext(context.getFieldValue());
+                context.fillVariableTypes(verificationContext);
+                verificationContext.setCurrentType(input.getDataType()).verify(this);
+                next = verificationContext.getCurrentType().createFieldValue();
+            }
             context.setCurrentValue(next);
         } else if (input instanceof Struct || input instanceof Map) {
             context.setCurrentValue(new ExecutionConverter(context, expression).convert(input));
@@ -226,7 +227,7 @@ public final class ForEachExpression extends CompositeExpression {
         /** Converts a map into an array by passing each entry through the expression. */
         @Override
         protected FieldValue convertMap(MapFieldValue<FieldValue, FieldValue> map) {
-            var values = new Array<>(new ArrayDataType(expression.getOutputType()), map.size());
+            var values = new Array<>(new ArrayDataType(expression.createdOutputType()), map.size());
             for (var entry : map.entrySet())
                 values.add(doConvert(new MapEntryFieldValue(entry.getKey(), entry.getValue())));
             return values;

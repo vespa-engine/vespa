@@ -26,9 +26,10 @@ public class ThisTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(DataType.INT, new ThisExpression(), DataType.INT);
-        assertVerify(DataType.STRING, new ThisExpression(), DataType.STRING);
-        assertVerifyThrows("Invalid expression 'this': Expected input, but no input is provided", null, new ThisExpression());
+        Expression exp = new ThisExpression();
+        assertVerify(DataType.INT, exp, DataType.INT);
+        assertVerify(DataType.STRING, exp, DataType.STRING);
+        assertVerifyThrows("Invalid expression 'this': Expected input, but no input is provided", null, exp);
     }
 
     @Test

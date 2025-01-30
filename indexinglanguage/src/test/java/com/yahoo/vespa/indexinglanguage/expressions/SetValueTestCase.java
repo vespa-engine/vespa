@@ -35,7 +35,10 @@ public class SetValueTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(AnyDataType.instance, new ConstantExpression(new StringFieldValue("foo")), DataType.STRING);
+        Expression exp = new ConstantExpression(new StringFieldValue("foo"));
+        assertVerify(null, exp, DataType.STRING);
+        assertVerify(DataType.INT, exp, DataType.STRING);
+        assertVerify(DataType.STRING, exp, DataType.STRING);
     }
 
     @Test

@@ -55,12 +55,11 @@ public class ToWsetTestCase {
     }
 
     private static void assertVerify(boolean createIfNonExistent, boolean removeIfZero) {
-        ExpressionAssert.assertVerify(DataType.INT, new ToWsetExpression(createIfNonExistent, removeIfZero),
-                                      DataType.getWeightedSet(DataType.INT, createIfNonExistent, removeIfZero));
-        ExpressionAssert.assertVerify(DataType.STRING, new ToWsetExpression(createIfNonExistent, removeIfZero),
-                                      DataType.getWeightedSet(DataType.STRING, createIfNonExistent, removeIfZero));
-
         Expression expression = new ToWsetExpression(createIfNonExistent, removeIfZero);
+        ExpressionAssert.assertVerify(DataType.INT, expression,
+                                      DataType.getWeightedSet(DataType.INT, createIfNonExistent, removeIfZero));
+        ExpressionAssert.assertVerify(DataType.STRING, expression,
+                                      DataType.getWeightedSet(DataType.STRING, createIfNonExistent, removeIfZero));
         assertVerifyThrows("Invalid expression '" + expression + "': " +
                            "Expected input, but no input is provided", null, expression);
     }

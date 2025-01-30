@@ -17,6 +17,14 @@ public class ExpressionAssertTestCase {
     public void requireThatAssertVerifyMethodThrowsWhenAppropriate() {
         Throwable thrown = null;
         try {
+            assertVerify(DataType.INT, new SimpleExpression(), DataType.STRING);
+        } catch (Throwable t) {
+            thrown = t;
+        }
+        assertNotNull(thrown);
+
+        thrown = null;
+        try {
             assertVerifyThrows("unchecked expected exception message", DataType.INT, new SimpleExpression()
                               );
         } catch (Throwable t) {

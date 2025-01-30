@@ -6,7 +6,6 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.FloatFieldValue;
@@ -14,7 +13,6 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.UriFieldValue;
-import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -143,7 +141,8 @@ public class ScriptTestCase {
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
 
-        expression.verify(new VerificationContext(adapter));
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(DataType.INT, expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -165,7 +164,8 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("second"));
         adapter.setValue("myTextArray", array);
 
-        expression.verify(new VerificationContext(adapter));
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new ArrayDataType(DataType.INT), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -185,7 +185,8 @@ public class ScriptTestCase {
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
 
-        expression.verify(new VerificationContext(adapter));
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(DataType.LONG, expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -207,7 +208,8 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("50;60"));
         adapter.setValue("location_str", array);
 
-        expression.verify(new VerificationContext(adapter));
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(DataType.getArray(DataType.LONG), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -359,60 +361,6 @@ public class ScriptTestCase {
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
         assertEquals(new UriFieldValue("https://vespa.ai"), adapter.values.get("myUri"));
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testForEachWithWeightedSet() {
-        var tester = new ScriptTester();
-        var expression = tester.expressionFrom("input myWeightedSet | for_each { to_int } | attribute myInts");
-
-        SimpleTestAdapter adapter = new SimpleTestAdapter();
-        var myWeightedSet = new WeightedSet<StringFieldValue>(WeightedSetDataType.getWeightedSet(DataType.STRING));
-        adapter.createField(new Field("myWeightedSet", myWeightedSet.getDataType()));
-        adapter.setValue("myWeightedSet", myWeightedSet);
-        adapter.createField(new Field("myInts", WeightedSetDataType.getWeightedSet(DataType.INT)));
-
-        expression.verify(adapter);
-        ExecutionContext context = new ExecutionContext(adapter);
-        expression.execute(context);
-        assertTrue(((WeightedSet<IntegerFieldValue>)adapter.values.get("myInts")).isEmpty());
-
-        myWeightedSet.put(new StringFieldValue("3"), 37);
-        adapter.createField(new Field("myWeightedSet", myWeightedSet.getDataType()));
-        adapter.setValue("myWeightedSet", myWeightedSet);
-        adapter.createField(new Field("myInts", WeightedSetDataType.getWeightedSet(DataType.INT)));
-
-        expression.verify(adapter);
-        expression.execute(context);
-        assertEquals(37, ((WeightedSet<IntegerFieldValue>)adapter.values.get("myInts")).get(new IntegerFieldValue(3)).intValue());
-    }
-
-    @SuppressWarnings("unchecked")
-    @Test
-    public void testForEachArray() {
-        var tester = new ScriptTester();
-        var expression = tester.expressionFrom("input myArray | for_each { to_int } | attribute myInts");
-
-        SimpleTestAdapter adapter = new SimpleTestAdapter();
-        var myArray = new Array<StringFieldValue>(DataType.getArray(DataType.STRING));
-        adapter.createField(new Field("myArray", myArray.getDataType()));
-        adapter.setValue("myArray", myArray);
-        adapter.createField(new Field("myInts", DataType.getArray(DataType.INT)));
-
-        expression.verify(adapter);
-        ExecutionContext context = new ExecutionContext(adapter);
-        expression.execute(context);
-        assertTrue(((Array<IntegerFieldValue>)adapter.values.get("myInts")).isEmpty());
-
-        myArray.add(new StringFieldValue("37"));
-        adapter.createField(new Field("myArray", myArray.getDataType()));
-        adapter.setValue("myArray", myArray);
-        adapter.createField(new Field("myInts", DataType.getArray(DataType.INT)));
-
-        expression.verify(adapter);
-        expression.execute(context);
-        assertEquals(37, ((Array<IntegerFieldValue>)adapter.values.get("myInts")).get(0).getInteger());
     }
 
 }

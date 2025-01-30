@@ -45,12 +45,6 @@ public abstract class Expression extends Selectable {
     public boolean requiresInput() { return true; }
 
     /**
-     * Returns whether this expression outputs a different value than what it gets as input.
-     * Annotating a string value does not count as modifying it.
-     */
-    public boolean isMutating() { return true; }
-
-    /**
      * Returns an expression where the children of this has been converted using the given converter.
      * This default implementation returns this as it has no children.
      */
@@ -158,38 +152,50 @@ public abstract class Expression extends Selectable {
         verify(new DocumentTypeAdapter(type));
     }
 
-    public final void verify(Document doc) {
-        verify(new SimpleAdapterFactory(), doc);
+    public final Document verify(Document doc) {
+        return verify(new SimpleAdapterFactory(), doc);
     }
 
-    public final void verify(AdapterFactory factory, Document doc) {
-        verify(factory.newDocumentAdapter(doc));
+    public final Document verify(AdapterFactory factory, Document doc) {
+        return verify(factory.newDocumentAdapter(doc));
     }
 
-    public final void verify(DocumentAdapter adapter) {
+    public final Document verify(DocumentAdapter adapter) {
         verify((FieldTypeAdapter)adapter);
-        adapter.getFullOutput();
+        return adapter.getFullOutput();
     }
 
-    public final void verify(DocumentUpdate upd) {
-        verify(new SimpleAdapterFactory(), upd);
+    public final DocumentUpdate verify(DocumentUpdate upd) {
+        return verify(new SimpleAdapterFactory(), upd);
     }
 
-    public final void verify(AdapterFactory factory, DocumentUpdate upd) {
-        for (UpdateAdapter adapter : factory.newUpdateAdapterList(upd))
-            verify(adapter);
+    public final DocumentUpdate verify(AdapterFactory factory, DocumentUpdate upd) {
+        DocumentUpdate ret = null;
+        for (UpdateAdapter adapter : factory.newUpdateAdapterList(upd)) {
+            DocumentUpdate output = verify(adapter);
+            if (output == null) {
+                // ignore
+            } else if (ret != null) {
+                ret.addAll(output);
+            } else {
+                ret = output;
+            }
+        }
+        return ret;
     }
 
-    public final void verify(UpdateAdapter adapter) {
+    public final DocumentUpdate verify(UpdateAdapter adapter) {
         verify((FieldTypeAdapter)adapter);
+        return adapter.getOutput();
     }
 
-    public final void verify(FieldTypeAdapter adapter) {
-        verify(new VerificationContext(adapter));
+    public final DataType verify(FieldTypeAdapter adapter) {
+        return verify(new VerificationContext(adapter));
     }
 
-    public final void verify(VerificationContext context) {
+    public final DataType verify(VerificationContext context) {
         doVerify(context);
+        return context.getCurrentType();
     }
 
     protected void doVerify(VerificationContext context) {}
@@ -240,6 +246,14 @@ public abstract class Expression extends Selectable {
             if (input == null) return null;
         }
         doExecute(context);
+        DataType outputType = createdOutputType();
+        if (outputType != null) {
+            FieldValue output = context.getCurrentValue();
+            if (output != null && !outputType.isValueCompatible(output)) {
+                throw new IllegalStateException("Expression '" + this + "' expected " + outputType.getName() +
+                                                " output, got " + output.getDataType().getName());
+            }
+        }
         return context.getCurrentValue();
     }
 
@@ -260,6 +274,17 @@ public abstract class Expression extends Selectable {
 
     public static Expression newInstance(ScriptParserContext context) throws ParseException {
         return ScriptParser.parseExpression(context);
+    }
+
+    protected static boolean equals(Object lhs, Object rhs) {
+        if (lhs == null) {
+            return rhs == null;
+        } else {
+            if (rhs == null) {
+                return false;
+            }
+            return lhs.equals(rhs);
+        }
     }
 
     // Convenience For testing

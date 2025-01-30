@@ -37,8 +37,8 @@ public class SetVarTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new SetVarExpression("foo");
-        assertVerify(DataType.INT, new SetVarExpression("foo"), DataType.INT);
-        assertVerify(DataType.STRING, new SetVarExpression("foo"), DataType.STRING);
+        assertVerify(DataType.INT, exp, DataType.INT);
+        assertVerify(DataType.STRING, exp, DataType.STRING);
         assertVerifyThrows("Invalid expression 'set_var foo': Expected input, but no input is provided", null, exp);
 
         try {

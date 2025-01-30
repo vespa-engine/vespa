@@ -32,8 +32,10 @@ public class ClearStateTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(DataType.INT, new ClearStateExpression(), DataType.INT);
-        assertVerify(DataType.STRING, new ClearStateExpression(), DataType.STRING);
+        Expression exp = new ClearStateExpression();
+        assertVerify(null, exp, null);
+        assertVerify(DataType.INT, exp, null);
+        assertVerify(DataType.STRING, exp, null);
     }
 
     @Test

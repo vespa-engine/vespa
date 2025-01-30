@@ -14,11 +14,27 @@ import static org.junit.Assert.assertSame;
 public class VerificationContextTestCase {
 
     @Test
+    public void requireThatValueCanBeSet() {
+        VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
+        DataType val = DataType.STRING;
+        ctx.setCurrentType(val);
+        assertSame(val, ctx.getCurrentType());
+    }
+
+    @Test
     public void requireThatVariablesCanBeSet() {
         VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
         DataType val = DataType.STRING;
         ctx.setVariable("foo", val);
         assertSame(val, ctx.getVariable("foo"));
+    }
+
+    @Test
+    public void requireThatClearRemovesValue() {
+        VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
+        ctx.setCurrentType(DataType.STRING);
+        ctx.clear();
+        assertNull(ctx.getCurrentType());
     }
 
     @Test

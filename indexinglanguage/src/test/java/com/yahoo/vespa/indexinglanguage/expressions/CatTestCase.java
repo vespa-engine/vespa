@@ -83,6 +83,14 @@ public class CatTestCase {
     }
 
     @Test
+    public void requireThatPrimitiveVerificationWorks() {
+        assertEquals(DataType.STRING, evaluate(DataType.getArray(DataType.STRING), DataType.STRING));
+        assertEquals(DataType.STRING, evaluate(DataType.STRING, DataType.getArray(DataType.STRING)));
+        assertEquals(DataType.STRING, evaluate(DataType.getWeightedSet(DataType.STRING), DataType.STRING));
+        assertEquals(DataType.STRING, evaluate(DataType.STRING, DataType.getWeightedSet(DataType.STRING)));
+    }
+
+    @Test
     public void inputValueIsAvailableToAllInnerExpressions() {
         var expression = new StatementExpression(new ConstantExpression(new StringFieldValue("foo")),
                                                  new CatExpression(new ThisExpression(),
@@ -165,6 +173,22 @@ public class CatTestCase {
     }
 
     @Test
+    public void requireThatCollectionTypesMustBeCompatible() {
+        assertEquals(DataType.getArray(DataType.STRING), evaluate(DataType.getArray(DataType.STRING),
+                                                                  DataType.getArray(DataType.STRING)));
+        assertEquals(DataType.STRING, evaluate(DataType.getArray(DataType.STRING), DataType.getArray(DataType.INT)));
+        assertEquals(DataType.STRING,
+                     evaluate(DataType.getArray(DataType.STRING), DataType.getWeightedSet(DataType.STRING)));
+
+        assertEquals(DataType.getWeightedSet(DataType.STRING), evaluate(DataType.getWeightedSet(DataType.STRING),
+                                                                        DataType.getWeightedSet(DataType.STRING)));
+        assertEquals(DataType.STRING,
+                     evaluate(DataType.getWeightedSet(DataType.STRING), DataType.getWeightedSet(DataType.INT)));
+        assertEquals(DataType.STRING,
+                     evaluate(DataType.getWeightedSet(DataType.STRING), DataType.getArray(DataType.STRING)));
+    }
+
+    @Test
     public void requireThatCollectionValuesMustBeCompatible() {
         {
             Array<StringFieldValue> arrA = new Array<>(DataType.getArray(DataType.STRING));
@@ -226,4 +250,10 @@ public class CatTestCase {
         return context.getCurrentValue();
     }
 
+    private static DataType evaluate(DataType typeA, DataType typeB) {
+        SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("a", typeA), new Field("b", typeB));
+        VerificationContext ctx = new VerificationContext(adapter);
+        new CatExpression(new InputExpression("a"), new InputExpression("b")).verify(ctx);
+        return ctx.getCurrentType();
+    }
 }

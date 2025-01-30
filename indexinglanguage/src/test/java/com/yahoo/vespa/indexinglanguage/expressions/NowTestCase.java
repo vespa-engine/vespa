@@ -34,7 +34,10 @@ public class NowTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(AnyDataType.instance, new NowExpression(), DataType.LONG);
+        Expression exp = new NowExpression();
+        assertVerify(null, exp, DataType.LONG);
+        assertVerify(DataType.INT, exp, DataType.LONG);
+        assertVerify(DataType.STRING, exp, DataType.LONG);
     }
 
     @Test
