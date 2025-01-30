@@ -1154,11 +1154,13 @@ public class DocumentV1ApiTest {
 
     @Test
     public void testThroughput() throws InterruptedException {
-        DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder().build();
+        int writers = 4;
+        DocumentOperationExecutorConfig executorConfig = new DocumentOperationExecutorConfig.Builder()
+                .maxThrottled(writers + 12) // Tests verifies behaviour when requestes are queued
+                .build();
         handler = new DocumentV1ApiHandler(clock, Duration.ofMillis(1), metric, metrics, access, docConfig,
                                            executorConfig, clusterConfig, bucketConfig);
 
-        int writers = 4;
         int queueFill = executorConfig.maxThrottled() - writers;
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
         ScheduledExecutorService writer = Executors.newScheduledThreadPool(writers);
