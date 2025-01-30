@@ -312,6 +312,7 @@ private:
 public:
     Collector()
       : _slime(), _obj(_slime.setObject()), _arr(_obj.setArray("f")), _enabled(false) {}
+    ~Collector();
     void enable() {
         _enabled = true;
     }
@@ -349,6 +350,8 @@ public:
         return buf.get().make_string();
     }
 };
+
+Collector::~Collector() = default;
 
 struct EditLineWrapper {
     EditLine *my_el;

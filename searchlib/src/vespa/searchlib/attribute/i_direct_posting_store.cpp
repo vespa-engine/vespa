@@ -10,11 +10,15 @@ public:
     StringAsKey(std::string_view key)
         : _key(key)
     { }
+    ~StringAsKey() override;
 
     std::string_view asString() const override { return _key; }
 private:
     std::string _key;
 };
+
+StringAsKey::~StringAsKey() = default;
+
 }
 
 bool

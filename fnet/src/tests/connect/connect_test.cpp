@@ -22,6 +22,7 @@ struct BlockingHostResolver : public AsyncResolver::HostResolver {
     Gate caller;
     Gate barrier;
     BlockingHostResolver() : resolver(), caller(), barrier() {}
+    ~BlockingHostResolver() override;
     std::string ip_address(const std::string &host) override {
         fprintf(stderr, "blocking resolve request: '%s'\n", host.c_str());
         caller.countDown();
@@ -33,6 +34,8 @@ struct BlockingHostResolver : public AsyncResolver::HostResolver {
     void wait_for_caller() { caller.await(); }
     void release_caller() { barrier.countDown(); }
 };
+
+BlockingHostResolver::~BlockingHostResolver() = default;
 
 AsyncResolver::SP make_resolver(AsyncResolver::HostResolver::SP host_resolver) {
     AsyncResolver::Params params;
@@ -72,6 +75,7 @@ struct BlockingCryptoEngine : public CryptoEngine {
     Gate handshake_work_enter;
     Gate handshake_work_exit;
     Gate handshake_socket_deleted;
+    ~BlockingCryptoEngine() override;
     bool use_tls_when_client() const override { return false; }
     bool always_use_tls_when_server() const override { return false; }
     CryptoSocket::UP create_client_crypto_socket(SocketHandle socket, const SocketSpec &) override {
@@ -83,6 +87,8 @@ struct BlockingCryptoEngine : public CryptoEngine {
                 handshake_work_enter, handshake_work_exit, handshake_socket_deleted);
     }
 };
+
+BlockingCryptoEngine::~BlockingCryptoEngine() = default;
 
 //-----------------------------------------------------------------------------
 
