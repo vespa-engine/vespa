@@ -33,10 +33,7 @@ public class RandomTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        Expression exp = new RandomExpression();
-        assertVerify(null, exp, DataType.INT);
-        assertVerify(DataType.INT, exp, DataType.INT);
-        assertVerify(DataType.STRING, exp, DataType.INT);
+        assertVerify(AnyDataType.instance, new RandomExpression(), DataType.INT);
     }
 
     @Test

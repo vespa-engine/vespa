@@ -14,6 +14,7 @@ import com.yahoo.vespa.objects.ObjectPredicate;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -33,6 +34,9 @@ public final class SwitchExpression extends CompositeExpression {
         this.defaultExp = defaultExp;
         this.cases.putAll(cases);
     }
+
+    @Override
+    public boolean isMutating() { return false; }
 
     public boolean isEmpty() {
         return defaultExp == null && cases.isEmpty();
@@ -73,7 +77,8 @@ public final class SwitchExpression extends CompositeExpression {
     public DataType setOutputType(DataType outputType, VerificationContext context) {
         super.setOutputType(outputType, context);
 
-        setOutputType(outputType, defaultExp, context);
+        if (defaultExp != null)
+            setOutputType(outputType, defaultExp, context);
         for (Expression expression : cases.values())
             setOutputType(outputType, expression, context);
         return DataType.STRING;
@@ -160,7 +165,7 @@ public final class SwitchExpression extends CompositeExpression {
     public boolean equals(Object obj) {
         if (!(obj instanceof SwitchExpression rhs)) return false;
         if (!cases.equals(rhs.cases)) return false;
-        if (!equals(defaultExp, rhs.defaultExp)) return false;
+        if (!Objects.equals(defaultExp, rhs.defaultExp)) return false;
         return true;
     }
 

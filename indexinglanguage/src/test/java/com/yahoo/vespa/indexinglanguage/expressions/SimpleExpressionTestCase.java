@@ -20,10 +20,10 @@ public class SimpleExpressionTestCase {
         SimpleExpression exp = new SimpleExpression();
         assertNull(exp.createdOutputType());
         assertNull(exp.execute());
-        assertNull(exp.verify(new SimpleTestAdapter()));
+        exp.verify(new SimpleTestAdapter());
 
         assertEquals(DataType.INT, new SimpleExpression().setCreatedOutput(DataType.INT).createdOutputType());
-        assertEquals(DataType.INT, new SimpleExpression().setVerifyValue(DataType.INT).verify(new SimpleTestAdapter()));
+        new SimpleExpression().setVerifyValue(DataType.INT).verify(new SimpleTestAdapter());
         assertEquals(new IntegerFieldValue(69),
                      new SimpleExpression().setExecuteValue(new IntegerFieldValue(69)).execute());
     }

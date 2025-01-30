@@ -13,6 +13,9 @@ import com.yahoo.document.datatypes.NumericFieldValue;
 public final class BusyWaitExpression extends Expression {
 
     @Override
+    public boolean isMutating() { return false; }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue value = context.getCurrentValue();
         if (value instanceof NumericFieldValue num) {

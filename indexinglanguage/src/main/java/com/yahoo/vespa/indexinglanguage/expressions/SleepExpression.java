@@ -13,6 +13,9 @@ import com.yahoo.document.datatypes.NumericFieldValue;
 public final class SleepExpression extends Expression {
 
     @Override
+    public boolean isMutating() { return false; }
+
+    @Override
     protected void doVerify(VerificationContext context) { }
 
     @Override
