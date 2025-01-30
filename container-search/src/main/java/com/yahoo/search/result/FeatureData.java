@@ -42,9 +42,6 @@ public class FeatureData implements Inspectable, JsonProducer {
     /** The lazily computed feature names of this */
     private Set<String> featureNames = null;
 
-    /** The lazily computed json form of this */
-    private String jsonForm = null;
-
     public FeatureData(Inspector encodedValues) {
         this.encodedValues = Objects.requireNonNull(encodedValues);
     }
@@ -71,40 +68,43 @@ public class FeatureData implements Inspectable, JsonProducer {
 
     @Override
     public String toJson() {
-        return toJson(false, false);
+        return toJson(new JsonFormat.EncodeOptions(false, false, false));
     }
 
     public String toJson(boolean tensorShortForm) {
-        return toJson(tensorShortForm, false);
+        return toJson(new JsonFormat.EncodeOptions(tensorShortForm, false, false));
     }
 
     public String toJson(boolean tensorShortForm, boolean tensorDirectValues) {
-        return writeJson(tensorShortForm, tensorDirectValues, new StringBuilder()).toString();
+        return toJson(new JsonFormat.EncodeOptions(tensorShortForm, tensorDirectValues, false));
+    }
+
+    public String toJson(JsonFormat.EncodeOptions tensorOptions) {
+        return writeJson(tensorOptions, new StringBuilder()).toString();
     }
 
     @Override
     public StringBuilder writeJson(StringBuilder target) {
-        return JsonRender.render(encodedValues, new Encoder(target, true, false, false));
+        return writeJson(new JsonFormat.EncodeOptions(false, false, false), target);
     }
 
-    private StringBuilder writeJson(boolean tensorShortForm, boolean tensorDirectValues, StringBuilder target) {
+    private StringBuilder writeJson(JsonFormat.EncodeOptions tensorOptions, StringBuilder target) {
         if (this == empty) return target.append("{}");
-        if (jsonForm != null) return target.append(jsonForm);
 
         if (encodedValues != null)
-            return JsonRender.render(encodedValues, new Encoder(target, true, tensorShortForm, tensorDirectValues));
+            return JsonRender.render(encodedValues, new Encoder(target, true, tensorOptions));
         else
-            return writeJson(values, tensorShortForm, tensorDirectValues, target);
+            return writeJson(values, tensorOptions, target);
     }
 
-    private StringBuilder writeJson(Map<String, Tensor> values, boolean tensorShortForm, boolean tensorDirectValues, StringBuilder target) {
+    private StringBuilder writeJson(Map<String, Tensor> values, JsonFormat.EncodeOptions tensorOptions, StringBuilder target) {
         target.append("{");
         for (Map.Entry<String, Tensor> entry : values.entrySet()) {
             target.append("\"").append(entry.getKey()).append("\":");
             if (entry.getValue().type().rank() == 0) {
                 target.append(entry.getValue().asDouble());
             } else {
-                byte[] encodedTensor = JsonFormat.encode(entry.getValue(), tensorShortForm, tensorDirectValues);
+                byte[] encodedTensor = JsonFormat.encode(entry.getValue(), tensorOptions);
                 target.append(new String(encodedTensor, StandardCharsets.UTF_8));
             }
             target.append(",");
@@ -192,20 +192,18 @@ public class FeatureData implements Inspectable, JsonProducer {
     /** A JSON encoder which encodes DATA as a tensor */
     private static class Encoder extends JsonRender.StringEncoder {
 
-        private final boolean tensorShortForm;
-        private final boolean tensorDirectValues;
+        private final JsonFormat.EncodeOptions tensorOptions;
 
-        Encoder(StringBuilder out, boolean compact, boolean tensorShortForm, boolean tensorDirectValues) {
+        Encoder(StringBuilder out, boolean compact, JsonFormat.EncodeOptions tensorOptions) {
             super(out, compact);
-            this.tensorShortForm = tensorShortForm;
-            this.tensorDirectValues = tensorDirectValues;
+            this.tensorOptions = tensorOptions;
         }
 
         @Override
         public void encodeDATA(byte[] value) {
             // This could be done more efficiently ...
             Tensor tensor = TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(value));
-            byte[] encodedTensor = JsonFormat.encode(tensor, tensorShortForm, tensorDirectValues);
+            byte[] encodedTensor = JsonFormat.encode(tensor, tensorOptions);
             target().append(new String(encodedTensor, StandardCharsets.UTF_8));
         }
 

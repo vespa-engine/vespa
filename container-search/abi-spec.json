@@ -5443,6 +5443,7 @@
       "public java.util.Set getSummaryFields()",
       "public void setSummaryFields(java.lang.String)",
       "public boolean getTensorShortForm()",
+      "public boolean getTensorHexDense()",
       "public void setTensorShortForm(java.lang.String)",
       "public void setTensorFormat(java.lang.String)",
       "public void setTensorShortForm(boolean)",
@@ -7637,7 +7638,7 @@
       "public"
     ],
     "methods" : [
-      "protected void <init>(boolean, boolean, boolean)",
+      "protected void <init>(boolean, com.yahoo.tensor.serialization.JsonFormat$EncodeOptions, boolean)",
       "public void accept(java.lang.String, java.lang.Object)",
       "public void accept(java.lang.String, byte[], int, int)",
       "protected boolean shouldRender(java.lang.String, java.lang.Object)",
@@ -8067,6 +8068,7 @@
       "public java.lang.String toJson()",
       "public java.lang.String toJson(boolean)",
       "public java.lang.String toJson(boolean, boolean)",
+      "public java.lang.String toJson(com.yahoo.tensor.serialization.JsonFormat$EncodeOptions)",
       "public java.lang.StringBuilder writeJson(java.lang.StringBuilder)",
       "public java.lang.Double getDouble(java.lang.String)",
       "public com.yahoo.tensor.Tensor getTensor(java.lang.String)",

@@ -133,8 +133,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         volatile boolean jsonMapsAll = true;
         volatile boolean jsonWsetsAll = false;
         volatile boolean tensorHexDense = false;
-        volatile boolean tensorShortForm = true;
-        volatile boolean tensorDirectValues = false;
+        volatile JsonFormat.EncodeOptions tensorOptions;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
             this.debugRendering = false;
@@ -142,8 +141,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.jsonWsets = true;
             this.jsonMapsAll = true;
             this.jsonWsetsAll = true;
-            this.tensorShortForm = true;
-            this.tensorDirectValues = false;
+            this.tensorOptions = new JsonFormat.EncodeOptions(true, false, false);
         }
         void getSettings(Query q) {
             if (q == null) {
@@ -157,9 +155,11 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             // we may need more fine tuning, but for now use the same query parameters here:
             this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, true);
-            this.tensorShortForm = q.getPresentation().getTensorShortForm();
-            this.tensorDirectValues = q.getPresentation().getTensorDirectValues();
-            }
+            this.tensorOptions = new JsonFormat.EncodeOptions(
+                    q.getPresentation().getTensorShortForm(),
+                    q.getPresentation().getTensorDirectValues(),
+                    q.getPresentation().getTensorHexDense());
+        }
     }
 
     private volatile FieldConsumerSettings fieldConsumerSettings;
@@ -560,15 +560,17 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private MutableBoolean hasFieldsField;
 
         /** Invoke this from your constructor when sub-classing {@link FieldConsumer} */
-        protected FieldConsumer(boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
-            this(null, debugRendering, tensorShortForm, jsonMaps);
+        protected FieldConsumer(boolean debugRendering, JsonFormat.EncodeOptions tensorOptions, boolean jsonMaps) {
+            this(null, debugRendering, tensorOptions, jsonMaps);
         }
 
-        private FieldConsumer(JsonGenerator generator, boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
+        private FieldConsumer(JsonGenerator generator, boolean debugRendering,
+                              JsonFormat.EncodeOptions tensorOptions,
+                              boolean jsonMaps) {
             this.generator = generator;
             this.settings = new FieldConsumerSettings();
             this.settings.debugRendering = debugRendering;
-            this.settings.tensorShortForm = tensorShortForm;
+            this.settings.tensorOptions = tensorOptions;
             this.settings.jsonDeepMaps = jsonMaps;
         }
 
@@ -777,8 +779,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 generator().writeTree((TreeNode) field);
             } else if (field instanceof Tensor) {
                 renderTensor(Optional.of((Tensor)field));
-            } else if (field instanceof FeatureData) {
-                generator().writeRawValue(((FeatureData)field).toJson(settings.tensorShortForm, settings.tensorDirectValues));
+            } else if (field instanceof FeatureData featureData) {
+                generator().writeRawValue(featureData.toJson(settings.tensorOptions));
             } else if (field instanceof Inspectable) {
                 renderInspectorDirect(((Inspectable)field).inspect());
             } else if (field instanceof JsonProducer) {
@@ -817,7 +819,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private void renderTensor(Optional<Tensor> tensor) throws IOException {
             generator().writeRawValue(new String(JsonFormat.encode(tensor.orElse(Tensor.Builder.of(TensorType.empty).build()),
-                                                                   settings.tensorShortForm, settings.tensorDirectValues),
+                                                                   settings.tensorOptions),
                                                  StandardCharsets.UTF_8));
         }
 

@@ -175,14 +175,14 @@ public class JsonRendererTestCase {
                       "relevance":1.0,
                       "fields":{
                         "tensor_standard":{"type":"tensor(x{},y{})","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}]},
-                        "tensor_indexed":{"type":"tensor(x[2],y[3])","values":[[1.0,2.0,3.0],[4.0,5.0,6.0]]},
+                        "tensor_indexed":{"type":"tensor<bfloat16>(x[2],y[3])","values":[[1.0,2.0,3.0],[4.0,5.0,6.0]]},
                         "tensor_single_mapped":{"type":"tensor(x{})","cells":{"a":1.0,"b":2.0}},
-                        "tensor_mixed":{"type":"tensor(x{},y[2])","blocks":{"a":[1.0,2.0],"b":[3.0,4.0]}},
+                        "tensor_mixed":{"type":"tensor<bfloat16>(x{},y[2])","blocks":{"a":[1.0,2.0],"b":[3.0,4.0]}},
                         "summaryfeatures":{
                           "tensor_standard":{"type":"tensor(x{},y{})","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}]},
-                          "tensor_indexed":{"type":"tensor(x[2],y[3])","values":[[1.0,2.0,3.0],[4.0,5.0,6.0]]},
+                          "tensor_indexed":{"type":"tensor<bfloat16>(x[2],y[3])","values":[[1.0,2.0,3.0],[4.0,5.0,6.0]]},
                           "tensor_single_mapped":{"type":"tensor(x{})","cells":{"a":1.0,"b":2.0}},
-                          "tensor_mixed":{"type":"tensor(x{},y[2])","blocks":{"a":[1.0,2.0],"b":[3.0,4.0]}}
+                          "tensor_mixed":{"type":"tensor<bfloat16>(x{},y[2])","blocks":{"a":[1.0,2.0],"b":[3.0,4.0]}}
                         }
                       }
                     }]
@@ -202,14 +202,14 @@ public class JsonRendererTestCase {
                       "relevance":1.0,
                       "fields":{
                         "tensor_standard":{"type":"tensor(x{},y{})","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}]},
-                        "tensor_indexed":{"type":"tensor(x[2],y[3])","cells":[{"address":{"x":"0","y":"0"},"value":1.0},{"address":{"x":"0","y":"1"},"value":2.0},{"address":{"x":"0","y":"2"},"value":3.0},{"address":{"x":"1","y":"0"},"value":4.0},{"address":{"x":"1","y":"1"},"value":5.0},{"address":{"x":"1","y":"2"},"value":6.0}]},
+                        "tensor_indexed":{"type":"tensor<bfloat16>(x[2],y[3])","cells":[{"address":{"x":"0","y":"0"},"value":1.0},{"address":{"x":"0","y":"1"},"value":2.0},{"address":{"x":"0","y":"2"},"value":3.0},{"address":{"x":"1","y":"0"},"value":4.0},{"address":{"x":"1","y":"1"},"value":5.0},{"address":{"x":"1","y":"2"},"value":6.0}]},
                         "tensor_single_mapped":{"type":"tensor(x{})","cells":[{"address":{"x":"a"},"value":1.0},{"address":{"x":"b"},"value":2.0}]},
-                        "tensor_mixed":{"type":"tensor(x{},y[2])","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"a","y":"1"},"value":2.0},{"address":{"x":"b","y":"0"},"value":3.0},{"address":{"x":"b","y":"1"},"value":4.0}]},
+                        "tensor_mixed":{"type":"tensor<bfloat16>(x{},y[2])","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"a","y":"1"},"value":2.0},{"address":{"x":"b","y":"0"},"value":3.0},{"address":{"x":"b","y":"1"},"value":4.0}]},
                         "summaryfeatures":{
                           "tensor_standard":{"type":"tensor(x{},y{})","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"b","y":"1"},"value":2.0}]},
-                          "tensor_indexed":{"type":"tensor(x[2],y[3])","cells":[{"address":{"x":"0","y":"0"},"value":1.0},{"address":{"x":"0","y":"1"},"value":2.0},{"address":{"x":"0","y":"2"},"value":3.0},{"address":{"x":"1","y":"0"},"value":4.0},{"address":{"x":"1","y":"1"},"value":5.0},{"address":{"x":"1","y":"2"},"value":6.0}]},
+                          "tensor_indexed":{"type":"tensor<bfloat16>(x[2],y[3])","cells":[{"address":{"x":"0","y":"0"},"value":1.0},{"address":{"x":"0","y":"1"},"value":2.0},{"address":{"x":"0","y":"2"},"value":3.0},{"address":{"x":"1","y":"0"},"value":4.0},{"address":{"x":"1","y":"1"},"value":5.0},{"address":{"x":"1","y":"2"},"value":6.0}]},
                           "tensor_single_mapped":{"type":"tensor(x{})","cells":[{"address":{"x":"a"},"value":1.0},{"address":{"x":"b"},"value":2.0}]},
-                          "tensor_mixed":{"type":"tensor(x{},y[2])","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"a","y":"1"},"value":2.0},{"address":{"x":"b","y":"0"},"value":3.0},{"address":{"x":"b","y":"1"},"value":4.0}]}
+                          "tensor_mixed":{"type":"tensor<bfloat16>(x{},y[2])","cells":[{"address":{"x":"a","y":"0"},"value":1.0},{"address":{"x":"a","y":"1"},"value":2.0},{"address":{"x":"b","y":"0"},"value":3.0},{"address":{"x":"b","y":"1"},"value":4.0}]}
                         }
                       }
                     }]
@@ -275,6 +275,73 @@ public class JsonRendererTestCase {
         assertTensorRendering(shortDirectJson, "short-value");
         assertTensorRendering(longDirectJson, "long-value");
 
+        String hexJson = """
+                {
+                  "root": {
+                    "id": "toplevel",
+                    "relevance": 1.0,
+                    "fields": {
+                      "totalCount": 1
+                    },
+                    "children": [
+                      {
+                        "id": "tensors",
+                        "relevance": 1.0,
+                        "fields": {
+                          "tensor_standard": { "type": "tensor(x{},y{})", "cells": [ { "address": { "x": "a", "y": "0" }, "value": 1.0 }, { "address": { "x": "b", "y": "1" }, "value": 2.0 } ] },
+                          "tensor_indexed": { "type": "tensor<bfloat16>(x[2],y[3])", "values": "3F8040004040408040A040C0" },
+                          "tensor_single_mapped": { "type": "tensor(x{})", "cells": { "a": 1.0, "b": 2.0 } },
+                          "tensor_mixed": { "type": "tensor<bfloat16>(x{},y[2])", "blocks": { "a": "3F804000", "b": "40404080" } },
+                          "summaryfeatures": {
+                            "tensor_standard": { "type": "tensor(x{},y{})", "cells": [ { "address": { "x": "a", "y": "0" }, "value": 1.0 }, { "address": { "x": "b", "y": "1" }, "value": 2.0 } ] },
+                            "tensor_indexed": { "type": "tensor<bfloat16>(x[2],y[3])", "values": "3F8040004040408040A040C0" },
+                            "tensor_single_mapped": { "type": "tensor(x{})", "cells": { "a": 1.0, "b": 2.0 } },
+                            "tensor_mixed": { "type": "tensor<bfloat16>(x{},y[2])", "blocks": { "a": "3F804000", "b": "40404080" } }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }""";
+
+        String hexDirectJson = """
+                {
+                  "root": {
+                    "id": "toplevel",
+                    "relevance": 1.0,
+                    "fields": {
+                      "totalCount": 1
+                    },
+                    "children": [
+                      {
+                        "id": "tensors",
+                        "relevance": 1.0,
+                        "fields": {
+                          "tensor_standard": [
+                            { "address": { "x": "a", "y": "0" }, "value": 1.0 },
+                            { "address": { "x": "b", "y": "1" }, "value": 2.0 }
+                          ],
+                          "tensor_indexed": "3F8040004040408040A040C0",
+                          "tensor_single_mapped": { "a": 1.0, "b": 2.0 },
+                          "tensor_mixed": { "a": "3F804000", "b": "40404080" },
+                          "summaryfeatures": {
+                            "tensor_standard": [
+                              { "address": { "x": "a", "y": "0" }, "value": 1.0 },
+                              { "address": { "x": "b", "y": "1" }, "value": 2.0 }
+                            ],
+                            "tensor_indexed": "3F8040004040408040A040C0",
+                            "tensor_single_mapped": { "a": 1.0, "b": 2.0 },
+                            "tensor_mixed": { "a": "3F804000", "b": "40404080" }
+                          }
+                        }
+                      }
+                    ]
+                  }
+                }""";
+
+        assertTensorRendering(hexJson, "hex");
+        assertTensorRendering(hexDirectJson, "hex-value");
+
         try {
             render(new Result(new Query("/?presentation.format.tensors=unknown")));
             fail("Expected exception");
@@ -285,20 +352,32 @@ public class JsonRendererTestCase {
         }
     }
 
+    static Tensor mmTensor() {
+        return Tensor.from("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:1}:2.0 }");
+    }
+    static Tensor iiTensor() {
+        return Tensor.from("tensor<bfloat16>(x[2],y[3]):[[1,2,3],[4,5,6]]");
+    }
+    static Tensor mTensor() {
+        return Tensor.from("tensor(x{}):{ a:1, b:2 }");
+    }
+    static Tensor miTensor() {
+        return Tensor.from("tensor<bfloat16>(x{},y[2]):{a:[1,2], b:[3,4]}");
+    }
     private void assertTensorRendering(String expected, String format) throws ExecutionException, InterruptedException, IOException {
         Slime slime = new Slime();
         Cursor features = slime.setObject();
-        features.setData("tensor_standard", TypedBinaryFormat.encode(Tensor.from("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:1}:2.0 }")));
-        features.setData("tensor_indexed", TypedBinaryFormat.encode(Tensor.from("tensor(x[2],y[3]):[[1,2,3],[4,5,6]]")));
-        features.setData("tensor_single_mapped", TypedBinaryFormat.encode(Tensor.from("tensor(x{}):{ a:1, b:2 }")));
-        features.setData("tensor_mixed", TypedBinaryFormat.encode(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
+        features.setData("tensor_standard", TypedBinaryFormat.encode(mmTensor()));
+        features.setData("tensor_indexed", TypedBinaryFormat.encode(iiTensor()));
+        features.setData("tensor_single_mapped", TypedBinaryFormat.encode(mTensor()));
+        features.setData("tensor_mixed", TypedBinaryFormat.encode(miTensor()));
         FeatureData summaryFeatures = new FeatureData(new SlimeAdapter(slime.get()));
 
         Hit h = new Hit("tensors");
-        h.setField("tensor_standard", new TensorFieldValue(Tensor.from("tensor(x{},y{}):{ {x:a,y:0}:1.0, {x:b,y:1}:2.0 }")));
-        h.setField("tensor_indexed", new TensorFieldValue(Tensor.from("tensor(x[2],y[3]):[[1,2,3],[4,5,6]]")));
-        h.setField("tensor_single_mapped", new TensorFieldValue(Tensor.from("tensor(x{}):{ a:1, b:2 }")));
-        h.setField("tensor_mixed", new TensorFieldValue(Tensor.from("tensor(x{},y[2]):{a:[1,2], b:[3,4]}")));
+        h.setField("tensor_standard", new TensorFieldValue(mmTensor()));
+        h.setField("tensor_indexed", new TensorFieldValue(iiTensor()));
+        h.setField("tensor_single_mapped", new TensorFieldValue(mTensor()));
+        h.setField("tensor_mixed", new TensorFieldValue(miTensor()));
         h.setField("summaryfeatures", summaryFeatures);
 
         Result result1 = new Result(new Query("/?presentation.format.tensors=" + format));
@@ -311,6 +390,17 @@ public class JsonRendererTestCase {
         result2.hits().add(h);
         result2.setTotalHitCount(1L);
         assertEqualJson(expected, render(result2));
+
+        summaryFeatures = new FeatureData(
+                Map.of("tensor_standard", mmTensor(),
+                       "tensor_indexed", iiTensor(),
+                       "tensor_single_mapped", mTensor(),
+                       "tensor_mixed", miTensor()));
+        h.setField("summaryfeatures", summaryFeatures);
+        Result result3 = new Result(new Query("/?presentation.format.tensors=" + format));
+        result3.hits().add(h);
+        result3.setTotalHitCount(1L);
+        assertEqualJson(expected, render(result3));
     }
 
     @Test
@@ -1643,7 +1733,9 @@ public class JsonRendererTestCase {
     private void assertEqualJson(String expected, String generated) {
         assertEquals("", validateJSON(expected));
         assertEquals("", validateJSON(generated));
-        assertEquals(JSON.canonical(expected), JSON.canonical(generated));
+        if (! JSON.equals(expected, generated)) {
+            assertEquals(JSON.canonical(expected), JSON.canonical(generated));
+        }
     }
 
     @SuppressWarnings("unchecked")
