@@ -133,7 +133,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                     else {
                         log.log(Level.WARNING, "Unexpected error building " + applicationId, e);
                         // Wrap it in a RuntimeException if it is an Error
-                        Exception ex = (e instanceof RuntimeException) ? (RuntimeException) e : new RuntimeException(e);
+                        Exception ex = (e instanceof RuntimeException re) ? re : new RuntimeException(e);
                         throw new InternalServerException("Unexpected error building " + applicationId, ex);
                     }
                 }
