@@ -12,14 +12,26 @@ import java.util.*;
  */
 public abstract class FieldValueConverter {
 
-    @SuppressWarnings({ "rawtypes", "unchecked" })
+    @SuppressWarnings({ "unchecked" })
     public final FieldValue convert(FieldValue value) {
-        if (value == null) return null;
-        if (shouldConvert(value)) return doConvert(value);
-        if (value instanceof Array arrayValue) return convertArray(arrayValue);
-        if (value instanceof MapFieldValue mapValue) return convertMap(mapValue);
-        if (value instanceof WeightedSet weightedSetValue) return convertWset(weightedSetValue);
-        if (value instanceof StructuredFieldValue structuredFieldValue) return convertStructured(structuredFieldValue);
+        if (value == null) {
+            return null;
+        }
+        if (shouldConvert(value)) {
+            return doConvert(value);
+        }
+        if (value instanceof Array) {
+            return convertArray((Array)value);
+        }
+        if (value instanceof MapFieldValue) {
+            return convertMap((MapFieldValue)value);
+        }
+        if (value instanceof WeightedSet) {
+            return convertWset((WeightedSet)value);
+        }
+        if (value instanceof StructuredFieldValue) {
+            return convertStructured((StructuredFieldValue)value);
+        }
         return value;
     }
 

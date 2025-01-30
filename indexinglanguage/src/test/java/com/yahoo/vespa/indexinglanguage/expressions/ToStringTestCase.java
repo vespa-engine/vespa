@@ -29,9 +29,10 @@ public class ToStringTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(DataType.INT, new ToStringExpression(), DataType.STRING);
-        assertVerify(DataType.STRING, new ToStringExpression(), DataType.STRING);
-        assertVerifyThrows("Invalid expression 'to_string': Expected input, but no input is provided", null, new ToStringExpression());
+        Expression exp = new ToStringExpression();
+        assertVerify(DataType.INT, exp, DataType.STRING);
+        assertVerify(DataType.STRING, exp, DataType.STRING);
+        assertVerifyThrows("Invalid expression 'to_string': Expected input, but no input is provided", null, exp);
     }
 
     @Test

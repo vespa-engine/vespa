@@ -47,7 +47,9 @@ public class EmbeddingScriptTester {
             adapter.setValue("myText", new StringFieldValue(input));
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(TensorDataType.class, expression.verify(verificationContext).getClass());
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -73,7 +75,9 @@ public class EmbeddingScriptTester {
             adapter.setValue("myText", new StringFieldValue(input));
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(TensorDataType.class, expression.verify(verificationContext).getClass());
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);

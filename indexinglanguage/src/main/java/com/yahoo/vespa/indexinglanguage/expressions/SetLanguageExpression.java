@@ -12,9 +12,6 @@ import com.yahoo.language.Language;
 public final class SetLanguageExpression extends Expression {
 
     @Override
-    public boolean isMutating() { return false; }
-
-    @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         return super.setInputType(inputType, DataType.STRING, context);
     }

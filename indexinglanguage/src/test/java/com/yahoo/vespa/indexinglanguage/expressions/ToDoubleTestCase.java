@@ -29,9 +29,10 @@ public class ToDoubleTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(DataType.INT, new ToDoubleExpression(), DataType.DOUBLE);
-        assertVerify(DataType.STRING, new ToDoubleExpression(), DataType.DOUBLE);
-        assertVerifyThrows("Invalid expression 'to_double': Expected input, but no input is provided", null, new ToDoubleExpression());
+        Expression exp = new ToDoubleExpression();
+        assertVerify(DataType.INT, exp, DataType.DOUBLE);
+        assertVerify(DataType.STRING, exp, DataType.DOUBLE);
+        assertVerifyThrows("Invalid expression 'to_double': Expected input, but no input is provided", null, exp);
     }
 
     @Test

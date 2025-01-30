@@ -11,7 +11,6 @@ import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
 import java.math.BigDecimal;
-import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -55,11 +54,6 @@ public final class IfThenExpression extends CompositeExpression {
         this.right = right;
         this.ifTrue = ifTrue;
         this.ifFalse = ifFalse;
-    }
-
-    @Override
-    public boolean isMutating() {
-        return ifTrue.isMutating() || (ifFalse != null && ifFalse.isMutating());
     }
 
     @Override
@@ -184,7 +178,7 @@ public final class IfThenExpression extends CompositeExpression {
         if ( ! comparator.equals(exp.comparator)) return false;
         if ( ! right.equals(exp.right)) return false;
         if ( ! ifTrue.equals(exp.ifTrue)) return false;
-        if ( ! Objects.equals(ifFalse, exp.ifFalse)) return false;
+        if ( ! equals(ifFalse, exp.ifFalse)) return false;
         return true;
     }
 

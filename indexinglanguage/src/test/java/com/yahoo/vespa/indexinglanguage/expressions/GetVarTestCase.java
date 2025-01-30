@@ -39,7 +39,7 @@ public class GetVarTestCase {
         VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
         ctx.setVariable("foo", DataType.STRING);
 
-        new GetVarExpression("foo").verify(ctx);
+        assertEquals(DataType.STRING, new GetVarExpression("foo").verify(ctx));
         try {
             new GetVarExpression("bar").verify(ctx);
             fail();

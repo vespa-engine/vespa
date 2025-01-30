@@ -41,7 +41,7 @@ public class InputTestCase {
     public void requireThatExpressionCanBeVerified() {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("foo", DataType.STRING));
         adapter.setOutputValue(null, "foo", new StringFieldValue("69"));
-        new InputExpression("foo").verify(adapter);
+        assertEquals(DataType.STRING, new InputExpression("foo").verify(adapter));
         try {
             new InputExpression("bar").verify(adapter);
             fail();

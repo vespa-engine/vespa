@@ -90,9 +90,10 @@ public class ExactMatch extends Processor {
 
     private static class MyProvider extends TypedTransformProvider {
 
-        private final int maxTokenLength;
+        private int maxTokenLength;
 
-        MyProvider(Schema schema, int maxTokenLength) {
+        MyProvider(Schema schema, int maxTokenLength)
+        {
             super(ExactExpression.class, schema);
             this.maxTokenLength = maxTokenLength;
         }

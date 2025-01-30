@@ -136,8 +136,8 @@ public class ArithmeticTestCase {
     }
 
     private void assertType(DataType lhs, Operator op, DataType rhs, DataType expected) {
-        newArithmetic(SimpleExpression.newOutput(lhs), op, SimpleExpression.newOutput(rhs))
-                                       .verify(new VerificationContext(new SimpleTestAdapter()));
+        assertEquals(expected, newArithmetic(SimpleExpression.newOutput(lhs), op,
+                                             SimpleExpression.newOutput(rhs)).verify(new VerificationContext(new SimpleTestAdapter())));
         assertEquals(expected, newArithmetic(lhs.createFieldValue(6), op,
                                              rhs.createFieldValue(9)).execute().getDataType());
     }

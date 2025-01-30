@@ -14,9 +14,6 @@ public final class SetVarExpression extends Expression {
         this.varName = varName;
     }
 
-    @Override
-    public boolean isMutating() { return false; }
-
     public String getVariableName() { return varName; }
 
     @Override

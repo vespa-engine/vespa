@@ -37,7 +37,7 @@ public final class ConstantExpression extends Expression {
             throw new VerificationException(this, "Produces type " + value.getDataType().getName() + ", but type " +
                                             outputType.getName() + " is required");
         super.setOutputType(outputType, context);
-        return AnyDataType.instance;
+        return null;
     }
 
     @Override

@@ -86,7 +86,9 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new ArrayDataType(new TensorDataType(tensorType)), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -121,7 +123,9 @@ public class EmbeddingScriptTestCase {
 
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -152,7 +156,9 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -183,7 +189,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        assertEquals(new TensorDataType(tensorType), expression.verify(new VerificationContext(adapter)));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -285,7 +291,9 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("text", text);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        // Necessary to resolve output type
+        VerificationContext verificationContext = new VerificationContext(adapter);
+        assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(text);
@@ -341,7 +349,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        assertEquals(new TensorDataType(tensorType), expression.verify(new VerificationContext(adapter)));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);

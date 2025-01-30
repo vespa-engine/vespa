@@ -45,13 +45,6 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     @Override
-    public boolean isMutating() {
-        var expressions = asList();
-        if (expressions.isEmpty()) return false;
-        return (expressions.get(expressions.size() - 1)).isMutating();
-    }
-
-    @Override
     public boolean requiresInput() {
         return expressions().stream().anyMatch(statement -> statement.requiresInput());
     }

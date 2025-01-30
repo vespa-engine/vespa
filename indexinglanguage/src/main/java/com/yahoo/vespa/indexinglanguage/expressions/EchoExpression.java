@@ -20,9 +20,6 @@ public final class EchoExpression extends Expression {
         this.out = out;
     }
 
-    @Override
-    public boolean isMutating() { return false; }
-
     public PrintStream getOutputStream() { return out; }
 
     @Override

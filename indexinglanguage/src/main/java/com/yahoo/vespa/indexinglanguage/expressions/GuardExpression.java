@@ -24,9 +24,6 @@ public final class GuardExpression extends CompositeExpression {
     }
 
     @Override
-    public boolean isMutating() { return innerExpression.isMutating(); }
-
-    @Override
     public boolean requiresInput() { return innerExpression.requiresInput(); }
 
     public Expression getInnerExpression() { return innerExpression; }

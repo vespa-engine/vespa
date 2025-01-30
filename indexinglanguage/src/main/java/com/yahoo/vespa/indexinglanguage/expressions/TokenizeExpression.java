@@ -22,9 +22,6 @@ public final class TokenizeExpression extends Expression {
         this.config = config;
     }
 
-    @Override
-    public boolean isMutating() { return false; }
-
     public Linguistics getLinguistics() { return linguistics; }
 
     public AnnotatorConfig getConfig() { return config; }

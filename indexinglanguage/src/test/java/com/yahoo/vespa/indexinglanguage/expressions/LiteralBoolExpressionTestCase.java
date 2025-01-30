@@ -31,7 +31,9 @@ public class LiteralBoolExpressionTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        assertVerify(AnyDataType.instance, new LiteralBoolExpression(true), DataType.BOOL);
+        Expression exp = new LiteralBoolExpression(true);
+        assertVerify(DataType.INT, exp, DataType.BOOL);
+        assertVerify(DataType.STRING, exp, DataType.BOOL);
     }
 
     @Test
