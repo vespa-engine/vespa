@@ -248,20 +248,24 @@ public class JsonFormat {
         }
     }
 
+    private static void encodeLabeledSubspace(String label, MixedTensor.DenseSubspace subspace, TensorType denseSubType, Cursor cursor, boolean hexForDensePart) {
+        if (hexForDensePart) {
+            cursor.setString(label, asHexString(subspace.cells.length,
+                                                denseSubType.valueType(),
+                                                i -> subspace.cells[i],
+                                                i -> (float)subspace.cells[i]));
+        } else {
+            IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
+            var target = cursor.setArray(label);
+            encodeDenseValues(denseSubspace, target);
+        }
+    }
+
     private static void encodeLabeledBlocks(MixedTensor tensor, Cursor cursor, boolean hexForDensePart) {
+        TensorType denseSubType = tensor.type().indexedSubtype();
         for (var subspace : tensor.getInternalDenseSubspaces()) {
             String label = subspace.sparseAddress.label(0);
-            if (hexForDensePart) {
-                cursor.setString(label, asHexString(subspace.cells.length,
-                                                    tensor.type().valueType(),
-                                                    i -> subspace.cells[i],
-                                                    i -> (float)subspace.cells[i]));
-            } else {
-                TensorType denseSubType = tensor.type().indexedSubtype();
-                IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
-                var target = cursor.setArray(label);
-                encodeDenseValues(denseSubspace, target);
-            }
+            encodeLabeledSubspace(label, subspace, denseSubType, cursor, hexForDensePart);
         }
     }
 
@@ -278,16 +282,7 @@ public class JsonFormat {
         for (var subspace : tensor.getInternalDenseSubspaces()) {
             Cursor block = cursor.addObject();
             encodeAddress(mappedSubType, subspace.sparseAddress, block.setObject("address"));
-            if (hexForDensePart) {
-                cursor.setString("values", asHexString(subspace.cells.length,
-                                                    tensor.type().valueType(),
-                                                    i -> subspace.cells[i],
-                                                    i -> (float)subspace.cells[i]));
-            } else {
-                IndexedTensor denseSubspace = IndexedTensor.Builder.of(denseSubType, subspace.cells).build();
-                var target = block.setArray("values");
-                encodeDenseValues(denseSubspace, target);
-            }
+            encodeLabeledSubspace("values", subspace, denseSubType, block, hexForDensePart);
         }
     }
 
