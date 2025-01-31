@@ -42,6 +42,11 @@ public final class StatementExpression extends ExpressionList<Expression> {
         inputFields = List.copyOf(InputExpression.InputFieldNameExtractor.runOn(this));
     }
 
+    @Override
+    public boolean isMutating() {
+        return expressions().stream().anyMatch(expression -> expression.isMutating());
+    }
+
     /** Returns the input fields which are (perhaps optionally) consumed by some expression in this statement. */
     public List<String> getInputFields() { return inputFields; }
 

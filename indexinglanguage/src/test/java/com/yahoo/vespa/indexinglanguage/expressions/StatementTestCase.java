@@ -85,8 +85,6 @@ public class StatementTestCase {
         exp = newStatement(SimpleExpression.newOutput(DataType.INT),
                            SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(null, exp, DataType.STRING);
-        assertVerify(DataType.INT, exp, DataType.STRING);
-        assertVerify(DataType.STRING, exp, DataType.STRING);
     }
 
     @Test

@@ -27,10 +27,7 @@ public class HostNameTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        Expression exp = new HostNameExpression();
-        assertVerify(null, exp, DataType.STRING);
-        assertVerify(DataType.INT, exp, DataType.STRING);
-        assertVerify(DataType.STRING, exp, DataType.STRING);
+        assertVerify(AnyDataType.instance, new HostNameExpression(), DataType.STRING);
     }
 
     @Test
