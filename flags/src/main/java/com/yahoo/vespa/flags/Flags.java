@@ -76,13 +76,6 @@ public class Flags {
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
-    public static final UnboundStringFlag FEED_SEQUENCER_TYPE = defineStringFlag(
-            "feed-sequencer-type", "THROUGHPUT",
-            List.of("baldersheim"), "2020-12-02", "2025-03-01",
-            "Selects type of sequenced executor used for feeding in proton, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
-            "Takes effect at redeployment (requires restart)",
-            INSTANCE_ID);
-
     public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
             "max-uncommitted-memory", 130000,
             List.of("geirst"), "2021-10-21", "2025-03-01",

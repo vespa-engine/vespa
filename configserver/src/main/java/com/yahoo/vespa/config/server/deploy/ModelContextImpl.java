@@ -167,7 +167,6 @@ public class ModelContextImpl implements ModelContext {
 
         private final double queryDispatchWarmup;
         private final double defaultTermwiseLimit;
-        private final String feedSequencer;
         private final String responseSequencer;
         private final int numResponseThreads;
         private final boolean useAsyncMessageHandlingOnSchedule;
@@ -218,7 +217,6 @@ public class ModelContextImpl implements ModelContext {
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.defaultTermwiseLimit = Flags.DEFAULT_TERM_WISE_LIMIT.bindTo(source).with(appId).with(version).value();
-            this.feedSequencer = Flags.FEED_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
             this.responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
             this.numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(source).with(appId).with(version).value();
             this.useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(source).with(appId).with(version).value();
@@ -273,7 +271,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
         @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
-        @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }

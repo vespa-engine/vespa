@@ -62,7 +62,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
 
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private ResourceLimits resourceLimits;
-    private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
@@ -129,14 +128,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         }
     }
 
-    private static ProtonConfig.Indexing.Optimize.Enum convertFeedSequencerType(String sequencerType) {
-        try {
-            return ProtonConfig.Indexing.Optimize.Enum.valueOf(sequencerType);
-        } catch (Throwable t) {
-            return ProtonConfig.Indexing.Optimize.Enum.LATENCY;
-        }
-    }
-
     private ContentSearchCluster(TreeConfigProducer<?> parent,
                                  String clusterName,
                                  ModelContext.FeatureFlags featureFlags,
@@ -155,7 +146,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.syncTransactionLog = syncTransactionLog;
 
         this.fractionOfMemoryReserved = fractionOfMemoryReserved;
-        this.feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
@@ -358,7 +348,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             redundancy.getConfig(builder);
         }
 
-        builder.indexing.optimize(feedSequencerType);
         setMaxFlushed(builder);
     }
 
