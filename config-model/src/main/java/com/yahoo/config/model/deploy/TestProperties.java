@@ -40,7 +40,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Zone zone = Zone.defaultZone();
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
-    private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
     private String summaryDecodePolicy = "eager";
     private String sequencerType = "THROUGHPUT";
@@ -104,7 +103,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean isFirstTimeDeployment() { return firstTimeDeployment; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
-    @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
     @Override public String responseSequencerType() { return responseSequencerType; }
     @Override public int defaultNumResponseThreads() { return responseNumThreads; }
@@ -214,11 +212,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setResponseNumThreads(int numThreads) {
         responseNumThreads = numThreads;
-        return this;
-    }
-
-    public TestProperties setDefaultTermwiseLimit(double limit) {
-        defaultTermwiseLimit = limit;
         return this;
     }
 

@@ -62,13 +62,6 @@ public class Flags {
             "Takes effect immediately",
             HOSTNAME, NODE_TYPE);
 
-    public static final UnboundDoubleFlag DEFAULT_TERM_WISE_LIMIT = defineDoubleFlag(
-            "default-term-wise-limit", 1.0,
-            List.of("baldersheim"), "2020-12-02", "2025-03-01",
-            "Default limit for when to apply termwise query evaluation",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
             List.of("baldersheim"), "2023-03-30", "2025-03-01",
