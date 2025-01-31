@@ -328,7 +328,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
         var memoryPct = getMemoryPercentage().orElse(null);
         int heapsize = truncateTo4SignificantBits(memoryPct != null && memoryPct.asAbsoluteGb().isPresent()
                                                   ? (int) (memoryPct.asAbsoluteGb().getAsDouble() * 1024) : 1536);
-        builder.jvm.verbosegc(true)
+        builder.jvm.verbosegc(false)
                 .availableProcessors(0)
                 .compressedClassSpaceSize(0)
                 .minHeapsize(heapsize) // These cause restarts when changed, so we try to keep them stable.

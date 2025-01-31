@@ -182,7 +182,7 @@ public class DocprocBuilderTest extends DomBuilderTest {
     void testQrStartConfig() {
         QrStartConfig.Jvm jvm = qrStartConfig.jvm();
         assertTrue(jvm.server());
-        assertTrue(jvm.verbosegc());
+        assertFalse(jvm.verbosegc());
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", jvm.gcopts());
         assertEquals(1536, jvm.minHeapsize());
         assertEquals(1536, jvm.heapsize());
