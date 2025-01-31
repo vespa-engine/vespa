@@ -4,10 +4,13 @@ package com.yahoo.tensor.serialization;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inserter;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonDecoder;
+import com.yahoo.slime.ObjectInserter;
 import com.yahoo.slime.ObjectTraverser;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeInserter;
 import com.yahoo.slime.Type;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
@@ -43,31 +46,6 @@ public class JsonFormat {
     public static byte[] encode(Tensor tensor, boolean shortForm, boolean directValues) {
         return encode(tensor, new EncodeOptions(shortForm, directValues, false));
     }
-    public static byte[] encode(Tensor tensor, boolean shortForm, boolean directValues, boolean hexForDense) {
-        return encode(tensor, new EncodeOptions(shortForm, directValues, hexForDense));
-    }
-
-    private static abstract class OptionalKey {
-        abstract Cursor setObject(String key);
-        abstract Cursor setArray(String key);
-        abstract void setString(String key, String value);
-        static OptionalKey of(Slime s) {
-            return new OptionalKey() {
-                final Slime target = s;
-                Cursor setObject(String key) { return target.setObject(); }
-                Cursor setArray(String key) { return target.setArray(); }
-                void setString(String key, String value) { target.setString(value); }
-            };
-        }
-        static OptionalKey of(Cursor c) {
-            return new OptionalKey() {
-                final private Cursor target = c;
-                Cursor setObject(String key) { return target.setObject(key); }
-                Cursor setArray(String key) { return target.setArray(key); }
-                void setString(String key, String value) { target.setString(key, value); }
-            };
-        }
-    }
 
     /**
      * Serializes the given tensor value into JSON format.
@@ -77,45 +55,44 @@ public class JsonFormat {
      */
     public static byte[] encode(Tensor tensor, EncodeOptions options) {
         Slime slime = new Slime();
-        var target = OptionalKey.of(slime);
-        Cursor root = null;
+        Function<String, Inserter> target = (key -> new SlimeInserter(slime));
+        final Cursor root = options.directValues() ? null : slime.setObject();
         if ( ! options.directValues()) {
-            root = slime.setObject();
             root.setString("type", tensor.type().toString());
-            target = OptionalKey.of(root);
+            target = (key -> new ObjectInserter(root, key));
         }
 
         if (options.shortForm()) {
             if (tensor instanceof IndexedTensor denseTensor) {
                 if (options.hexForDensePart()) {
-                    target.setString("values", asHexString(denseTensor));
+                    target.apply("values").insertSTRING(asHexString(denseTensor));
                 } else {
                     // Encode as nested arrays if indexed tensor
-                    Cursor parent = target.setArray("values");
+                    Cursor parent = target.apply("values").insertARRAY();
                     encodeDenseValues(denseTensor, parent);
                 }
             } else if (tensor instanceof MappedTensor mapped && tensor.type().dimensions().size() == 1) {
                 // Short form for a single mapped dimension
-                Cursor parent = target.setObject("cells");
+                Cursor parent = target.apply("cells").insertOBJECT();
                 encodeSingleDimensionCells(mapped, parent);
             } else if (tensor instanceof MixedTensor mixed && tensor.type().hasMappedDimensions()) {
                 // Short form for a mixed tensor
                 boolean singleMapped = tensor.type().dimensions().stream().filter(TensorType.Dimension::isMapped).count() == 1;
                 if (singleMapped) {
-                    encodeLabeledBlocks(mixed, target.setObject("blocks"), options.hexForDensePart());
+                    encodeLabeledBlocks(mixed, target.apply("blocks").insertOBJECT(), options.hexForDensePart());
                 } else {
-                    encodeAddressedBlocks(mixed, target.setArray("blocks"), options.hexForDensePart());
+                    encodeAddressedBlocks(mixed, target.apply("blocks").insertARRAY(), options.hexForDensePart());
                 }
             } else {
                 // default to standard cell address output
-                Cursor parent = target.setArray("cells");
+                Cursor parent = target.apply("cells").insertARRAY();
                 encodeCells(tensor, parent);
             }
 
             return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
         }
         else {
-            Cursor parent = target.setArray("cells");
+            Cursor parent = target.apply("cells").insertARRAY();
             encodeCells(tensor, parent);
         }
         return com.yahoo.slime.JsonFormat.toJsonBytes(slime);
