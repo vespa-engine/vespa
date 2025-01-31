@@ -32,7 +32,7 @@ function is_published {
     if ! mvn -V -B versions:set-property -Dproperty=vespa_version -DnewVersion="$VESPA_RELEASE"; then
         return 1
     fi
-    if mvn -V -B -pl ai.vespa.examples:album-recommendation-java -Dmaven.repo.local="$TMP_MVN_REPO" -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -DskipTests clean package; then
+    if mvn -V -B -U -pl ai.vespa.examples:album-recommendation-java -Dmaven.repo.local="$TMP_MVN_REPO" -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -DskipTests clean package; then
         return 0
     else
         return 1
