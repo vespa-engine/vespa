@@ -21,8 +21,7 @@ com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
 com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
-com.google.code.gson:gson:2.10.1
-com.google.code.gson:gson:2.11.0
+com.google.code.gson:gson:${gson.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
 com.google.guava:failureaccess:${failureaccess.vespa.version}
 com.google.guava:guava:${guava.vespa.version}
