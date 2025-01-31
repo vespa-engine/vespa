@@ -289,12 +289,13 @@ func newDocumentGetCmd(cli *CLI) *cobra.Command {
 		headers        []string
 	)
 	cmd := &cobra.Command{
-		Use:               "get id",
-		Short:             "Gets documents",
+		Use:               "get id(s)",
+		Short:             "Gets one or more documents",
 		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
-		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams...`,
+		Example: `$ vespa document get id:mynamespace:music::song-1
+$ vespa document get id:mynamespace:music::song-1 id:mynamespace:music::song-2`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
 			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers, ignoreNotFound)
