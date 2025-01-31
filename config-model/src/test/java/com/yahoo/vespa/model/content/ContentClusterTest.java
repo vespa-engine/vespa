@@ -1242,37 +1242,6 @@ public class ContentClusterTest extends ContentBaseTest {
         verifyTopKProbabilityPropertiesControl();
     }
 
-    private void verifyQueryDispatchPolicy(String policy, DispatchConfig.DistributionPolicy.Enum expected) {
-        TestProperties properties = new TestProperties();
-        if (policy != null) {
-            properties.setQueryDispatchPolicy(policy);
-        }
-        VespaModel model = createEnd2EndOneNode(properties);
-
-        ContentCluster cc = model.getContentClusters().get("storage");
-        DispatchConfig.Builder builder = new DispatchConfig.Builder();
-        cc.getSearch().getConfig(builder);
-
-        DispatchConfig cfg = new DispatchConfig(builder);
-        assertEquals(expected, cfg.distributionPolicy());
-    }
-
-    @Test
-    public void default_dispatch_controlled_by_properties() {
-        verifyQueryDispatchPolicy(null, DispatchConfig.DistributionPolicy.ADAPTIVE);
-        verifyQueryDispatchPolicy("adaptive", DispatchConfig.DistributionPolicy.ADAPTIVE);
-        verifyQueryDispatchPolicy("round-robin", DispatchConfig.DistributionPolicy.ROUNDROBIN);
-        verifyQueryDispatchPolicy("best-of-random-2", DispatchConfig.DistributionPolicy.BEST_OF_RANDOM_2);
-        verifyQueryDispatchPolicy("latency-amortized-over-requests", DispatchConfig.DistributionPolicy.LATENCY_AMORTIZED_OVER_REQUESTS);
-        verifyQueryDispatchPolicy("latency-amortized-over-time", DispatchConfig.DistributionPolicy.LATENCY_AMORTIZED_OVER_TIME);
-        try {
-            verifyQueryDispatchPolicy("unknown", DispatchConfig.DistributionPolicy.ADAPTIVE);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertEquals("Unknown dispatch policy 'unknown'", e.getMessage());
-        }
-    }
-
     private void verifySummaryDecodeType(String policy, DispatchConfig.SummaryDecodePolicy.Enum expected) {
         TestProperties properties = new TestProperties();
         if (policy != null) {
