@@ -23,20 +23,34 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	if !root.Valid() {
 		return fmt.Errorf("profile file '%s' does not contain valid JSON", opts.profileFile)
 	}
-	var cnt int
-	var maxTime float64
-	var maxTrace *tracedoctor.ProtonTrace = nil
-	for _, trace := range tracedoctor.FindProtonTraces(root.Field("trace")) {
-		cnt++
-		if trace.DurationMs > maxTime {
-			maxTime = trace.DurationMs
-			maxTrace = trace
+	list := tracedoctor.FindProtonTraces(root.Field("trace"))
+	if len(list) == 0 {
+		return fmt.Errorf("could not locate and searches in profile(%s)", opts.profileFile)
+	}
+	var mp int = -1
+	for i, p := range list {
+		if mp < 0 || p.DurationMs() > list[mp].DurationMs() {
+			mp = i
 		}
 	}
-	if maxTrace != nil {
-		fmt.Fprintf(cli.Stdout, "found %d searches, slowest search was: %s[%d]: %10.3f ms\n",
-			cnt, maxTrace.DocumentType, maxTrace.DistributionKey, maxTrace.DurationMs)
-		return maxTrace.MatchProfiling().Render(cli.Stdout)
+	fmt.Fprintf(cli.Stdout, "found %d searches, slowest search was: %s[%d]: %10.3f ms\n",
+		len(list), list[mp].DocumentType(), list[mp].DistributionKey(), list[mp].DurationMs())
+	threads := list[mp].FindThreadTraces()
+	if len(threads) == 0 {
+		return fmt.Errorf("search thread information is missing from profile(%s)", opts.profileFile)
+	}
+	var mt int = -1
+	for i, t := range threads {
+		if mt < 0 || t.MatchTimeMs() > threads[mt].MatchTimeMs() {
+			mt = i
+		}
+	}
+	fmt.Fprintf(cli.Stdout, "found %d threads, slowest matching was thread #%d: %10.3f ms\n",
+		len(threads), mt, threads[mt].MatchTimeMs())
+	queryPerf := list[mp].ExtractQuery()
+	queryPerf.ImportMatchPerf(threads[mt])
+	if err := queryPerf.Render(cli.Stdout); err != nil {
+		return err
 	}
 	return nil
 }
