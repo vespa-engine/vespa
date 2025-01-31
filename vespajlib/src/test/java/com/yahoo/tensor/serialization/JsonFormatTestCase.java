@@ -187,7 +187,7 @@ public class JsonFormatTestCase {
         assertEqualJson(shortJson, new String(shortEncoded, StandardCharsets.UTF_8));
         assertEquals(tensor, JsonFormat.decode(tensor.type(), shortEncoded));
 
-        assertEquals("\"02030507\"", new String(JsonFormat.encode(tensor, true, true, true), StandardCharsets.UTF_8));
+        assertEquals("\"02030507\"", new String(JsonFormat.encode(tensor, new JsonFormat.EncodeOptions(true, true, true)), StandardCharsets.UTF_8));
 
         String longJson = """
                 {
@@ -483,7 +483,7 @@ public class JsonFormatTestCase {
         String shortJson = "{\"a\": \"020304\", \"b\": \"050607\"}";
         decoded = JsonFormat.decode(expected.type(), shortJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
-        var encoded = JsonFormat.encode(decoded, true, true, true);
+        var encoded = JsonFormat.encode(decoded, new JsonFormat.EncodeOptions(true, true, true));
         assertEquals("{\"a\":\"020304\",\"b\":\"050607\"}", new String(encoded, StandardCharsets.UTF_8));
     }
 
@@ -509,7 +509,7 @@ public class JsonFormatTestCase {
         String denseJson = "{\"values\":\"422849803580c37f0000800000807f7f7f80ff807fc0ffc0\"}";
         Tensor decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
-        var encoded = JsonFormat.encode(decoded, true, true, true);
+        var encoded = JsonFormat.encode(decoded, new JsonFormat.EncodeOptions(true, true, true));
         assertEquals("\"422849803580C37F0000800000807F7F7F80FF807FC0FFC0\"",
                      new String(encoded, StandardCharsets.UTF_8));
     }
@@ -540,7 +540,7 @@ public class JsonFormatTestCase {
             +"\"}";
         Tensor decoded = JsonFormat.decode(expected.type(), denseJson.getBytes(StandardCharsets.UTF_8));
         assertEquals(expected, decoded);
-        var encoded = JsonFormat.encode(decoded, true, true, true);
+        var encoded = JsonFormat.encode(decoded, new JsonFormat.EncodeOptions(true, true, true));
         assertEquals("\""
                      +"42280000"+"49800008"+"35800000"+"C37F0000"
                      +"00000000"+"80000000"+"00000001"+"7F7FFFFF"
