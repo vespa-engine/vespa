@@ -75,7 +75,7 @@ public interface ModelContext {
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.473") default double defaultTermwiseLimit() { return 1.0; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { return "THROUGHPUT"; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.473") default String feedSequencerType() { return "THROUGHPUT"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.473") default String queryDispatchPolicy() { return "adaptive"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double queryDispatchWarmup() { return 5.0; }

@@ -770,28 +770,6 @@ public class ContentBuilderTest extends DomBuilderTest {
         return getProtonConfig(model.getContentClusters().values().iterator().next());
     }
 
-    private void verifyFeedSequencer(String input, String expected) {
-        verifyFeedSequencer(input, expected, 0);
-    }
-
-    private void verifyFeedSequencer(String input, String expected, double visibilityDelay) {
-        String hostedXml = xmlWithVisibilityDelay(visibilityDelay);
-        var config = resolveProtonConfig(new TestProperties().setFeedSequencerType(input), hostedXml);
-        assertEquals(expected, config.indexing().optimize().toString());
-    }
-
-    @Test
-    void ensureFeedSequencerIsControlledByFlag() {
-        verifyFeedSequencer("LATENCY", "LATENCY");
-        verifyFeedSequencer("ADAPTIVE", "ADAPTIVE");
-        verifyFeedSequencer("THROUGHPUT", "THROUGHPUT", 0);
-        verifyFeedSequencer("THROUGHPUT", "THROUGHPUT", 0.1);
-
-        verifyFeedSequencer("THOUGHPUT", "LATENCY");
-        verifyFeedSequencer("adaptive", "LATENCY");
-
-    }
-
     private void verifyThatFeatureFlagControlsVisibilityDelayDefault(Double xmlOverride, double expected) {
         String hostedXml = xmlWithVisibilityDelay(xmlOverride);
         var config = resolveProtonConfig(new TestProperties(), hostedXml);
