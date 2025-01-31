@@ -809,7 +809,7 @@ DotProductBlueprint::setup(const IIndexEnvironment&, const ParameterList & param
 
 ParameterDescriptions
 DotProductBlueprint::getDescriptions() const {
-    return ParameterDescriptions().desc().attribute(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY).string();
+    return ParameterDescriptions().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY).string();
 }
 
 Blueprint::UP

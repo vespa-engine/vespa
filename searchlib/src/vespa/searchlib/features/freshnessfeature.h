@@ -32,6 +32,7 @@ private:
 
 public:
     FreshnessBlueprint();
+    ~FreshnessBlueprint() override;
 
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;

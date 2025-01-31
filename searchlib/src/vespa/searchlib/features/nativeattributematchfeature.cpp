@@ -93,11 +93,13 @@ NativeAttributeMatchExecutorSingle::handle_bind_match_data(const MatchData &md)
     _md = &md;
 }
 
-NativeAttributeMatchBlueprint::NativeAttributeMatchBlueprint() :
-    Blueprint("nativeAttributeMatch"),
-    _params()
+NativeAttributeMatchBlueprint::NativeAttributeMatchBlueprint()
+    : Blueprint("nativeAttributeMatch"),
+      _params()
 {
 }
+
+NativeAttributeMatchBlueprint::~NativeAttributeMatchBlueprint() = default;
 
 namespace {
 const std::string DefaultWeightTable = "linear(1,0)";
@@ -121,7 +123,7 @@ NativeAttributeMatchBlueprint::createInstance() const
 fef::ParameterDescriptions
 NativeAttributeMatchBlueprint::getDescriptions() const
 {
-    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY).repeat();
+    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::primitiveTypeSet(), fef::ParameterCollection::ANY).repeat();
 }
 
 bool

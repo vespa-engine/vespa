@@ -24,6 +24,11 @@ AgeExecutor::AgeExecutor(const IAttributeVector *attribute) :
     }
 }
 
+AgeBlueprint::AgeBlueprint()
+    : fef::Blueprint("age")
+{
+}
+
 AgeBlueprint::~AgeBlueprint() = default;
 
 void
@@ -77,7 +82,7 @@ AgeBlueprint::createExecutor(const search::fef::IQueryEnvironment &env, vespalib
 fef::ParameterDescriptions
 AgeBlueprint::getDescriptions() const
 {
-    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY);
+    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::numericTypeSet(), fef::ParameterCollection::ANY);
 }
 
 }

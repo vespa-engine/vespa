@@ -52,27 +52,27 @@ private:
     static uint32_t asMask(DataType dataType) {
         return (1u << static_cast<unsigned int>(dataType));
     }
-    static uint32_t primitiveTypesMask() {
+    static uint32_t numericTypesMask() {
         return (asMask(DataType::BOOL)  |
-                asMask(DataType::UINT2)  |
-                asMask(DataType::UINT4)  |
-                asMask(DataType::INT8)   |
-                asMask(DataType::INT16)  |
-                asMask(DataType::INT32)  |
-                asMask(DataType::INT64)  |
-                asMask(DataType::FLOAT)  |
-                asMask(DataType::DOUBLE) |
+                asMask(DataType::UINT2) |
+                asMask(DataType::UINT4) |
+                asMask(DataType::INT8)  |
+                asMask(DataType::INT16) |
+                asMask(DataType::INT32) |
+                asMask(DataType::INT64) |
+                asMask(DataType::FLOAT) |
+                asMask(DataType::DOUBLE));
+    }
+    static uint32_t primitiveTypesMask() {
+        return (numericTypesMask() |
                 asMask(DataType::STRING));
     }
-    static uint32_t normalTypesMask() {
-        return (primitiveTypesMask() |
-                asMask(DataType::RAW));
-    }
     static uint32_t allTypesMask() {
-        return (normalTypesMask()        |
+        return (primitiveTypesMask()          |
+                asMask(DataType::RAW)         |
                 asMask(DataType::BOOLEANTREE) |
                 asMask(DataType::TENSOR)      |
-                asMask(DataType::REFERENCE) |
+                asMask(DataType::REFERENCE)   |
                 asMask(DataType::COMBINED));
     }
     static uint32_t tensor_type_mask() { return asMask(DataType::TENSOR); }
@@ -85,17 +85,17 @@ public:
         : ParameterDataTypeSet(allTypesMask())
     {
     }
-    static ParameterDataTypeSet normalTypeSet() {
-        return ParameterDataTypeSet(normalTypesMask());
+    static ParameterDataTypeSet numericTypeSet() {
+        return ParameterDataTypeSet(numericTypesMask());
+    }
+    static ParameterDataTypeSet primitiveTypeSet() {
+        return ParameterDataTypeSet(primitiveTypesMask());
     }
     static ParameterDataTypeSet int32OrInt64TypeSet() {
         return ParameterDataTypeSet(asMask(DataType::INT32) | asMask(DataType::INT64));
     }
     static ParameterDataTypeSet primitiveOrTensorTypeSet() {
         return ParameterDataTypeSet(primitiveTypesMask() | tensor_type_mask());
-    }
-    static ParameterDataTypeSet normalOrTensorTypeSet() {
-        return ParameterDataTypeSet(normalTypesMask() | tensor_type_mask());
     }
     static ParameterDataTypeSet tensor_type_set() { return ParameterDataTypeSet(tensor_type_mask()); }
     bool allowedType(DataType dataType) const {

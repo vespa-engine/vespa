@@ -30,13 +30,15 @@ FreshnessExecutor::execute(uint32_t)
 }
 
 
-FreshnessBlueprint::FreshnessBlueprint() :
-    Blueprint("freshness"),
-    _maxAge(3*30*24*60*60), // default value (90 days)
-    _halfResponse(7*24*60*60), // makes sure freshness.logscale = 0.5 when age is 7 days
-    _scaleAge(LogarithmCalculator::getScale(_halfResponse, _maxAge))
+FreshnessBlueprint::FreshnessBlueprint()
+    : Blueprint("freshness"),
+      _maxAge(3*30*24*60*60), // default value (90 days)
+      _halfResponse(7*24*60*60), // makes sure freshness.logscale = 0.5 when age is 7 days
+      _scaleAge(LogarithmCalculator::getScale(_halfResponse, _maxAge))
 {
 }
+
+FreshnessBlueprint::~FreshnessBlueprint() = default;
 
 void
 FreshnessBlueprint::visitDumpFeatures(const IIndexEnvironment &,
@@ -92,7 +94,7 @@ FreshnessBlueprint::createInstance() const
 fef::ParameterDescriptions
 FreshnessBlueprint::getDescriptions() const
 {
-    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::normalTypeSet(), fef::ParameterCollection::ANY);
+    return fef::ParameterDescriptions().desc().attribute(fef::ParameterDataTypeSet::numericTypeSet(), fef::ParameterCollection::ANY);
 }
 
 FeatureExecutor &

@@ -273,6 +273,8 @@ AttributeMatchBlueprint::AttributeMatchBlueprint() :
     // empty
 }
 
+AttributeMatchBlueprint::~AttributeMatchBlueprint() = default;
+
 void
 AttributeMatchBlueprint::visitDumpFeatures(const IIndexEnvironment &env,
                                            IDumpFeatureVisitor &visitor) const
@@ -280,7 +282,7 @@ AttributeMatchBlueprint::visitDumpFeatures(const IIndexEnvironment &env,
     for (uint32_t i = 0; i < env.getNumFields(); ++i) {
         const FieldInfo * field = env.getField(i);
         if (field->type() == FieldType::ATTRIBUTE &&
-            ParameterDataTypeSet::normalTypeSet().allowedType(field->get_data_type())) {
+            ParameterDataTypeSet::primitiveTypeSet().allowedType(field->get_data_type())) {
             FeatureNameBuilder fnb;
             fnb.baseName(getBaseName()).parameter(field->name());
             visitor.visitDumpFeature(fnb.buildName());
@@ -305,6 +307,14 @@ AttributeMatchBlueprint::createInstance() const
 {
     return std::make_unique<AttributeMatchBlueprint>();
 }
+
+fef::ParameterDescriptions
+AttributeMatchBlueprint::getDescriptions() const
+{
+    return fef::ParameterDescriptions().desc().attributeField(fef::ParameterDataTypeSet::primitiveTypeSet(),
+                                                              fef::ParameterCollection::ANY);
+}
+
 
 bool
 AttributeMatchBlueprint::setup(const IIndexEnvironment & env,
