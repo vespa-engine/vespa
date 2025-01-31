@@ -771,27 +771,27 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         public void accept(Object field) throws IOException {
             if (field == null) {
                 generator().writeNull();
-            } else if (field instanceof Boolean) {
-                generator().writeBoolean((Boolean)field);
-            } else if (field instanceof Number) {
-                renderNumberField((Number) field);
-            } else if (field instanceof TreeNode) {
-                generator().writeTree((TreeNode) field);
-            } else if (field instanceof Tensor) {
-                renderTensor(Optional.of((Tensor)field));
+            } else if (field instanceof Boolean bool) {
+                generator().writeBoolean(bool);
+            } else if (field instanceof Number num) {
+                renderNumberField(num);
+            } else if (field instanceof TreeNode treenode) {
+                generator().writeTree(treenode);
+            } else if (field instanceof Tensor t) {
+                renderTensor(Optional.of(t));
             } else if (field instanceof FeatureData featureData) {
                 generator().writeRawValue(featureData.toJson(settings.tensorOptions));
-            } else if (field instanceof Inspectable) {
-                renderInspectorDirect(((Inspectable)field).inspect());
-            } else if (field instanceof JsonProducer) {
-                generator().writeRawValue(((JsonProducer) field).toJson());
-            } else if (field instanceof StringFieldValue) {
-                generator().writeString(((StringFieldValue)field).getString());
-            } else if (field instanceof TensorFieldValue) {
-                renderTensor(((TensorFieldValue)field).getTensor());
-            } else if (field instanceof FieldValue) {
-                // the null below is the field which has already been written
-                ((FieldValue) field).serialize(null, new JsonWriter(generator));
+            } else if (field instanceof Inspectable i) {
+                renderInspectorDirect(i.inspect());
+            } else if (field instanceof JsonProducer jp) {
+                generator().writeRawValue(jp.toJson());
+            } else if (field instanceof StringFieldValue sfv) {
+                generator().writeString(sfv.getString());
+            } else if (field instanceof TensorFieldValue tfv) {
+                renderTensor(tfv.getTensor());
+            } else if (field instanceof FieldValue fv) {
+                // the null below is the field name which has already been written
+                fv.serialize(null, new JsonWriter(generator));
             } else {
                 generator().writeString(field.toString());
             }
@@ -800,27 +800,27 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         private void renderNumberField(Number field) throws IOException {
             if (field instanceof Integer) {
                 generator().writeNumber(field.intValue());
-            }  else if (field instanceof Float) {
+            } else if (field instanceof Float) {
                 generator().writeNumber(field.floatValue());
-            }  else if (field instanceof Double) {
+            } else if (field instanceof Double) {
                 generator().writeNumber(field.doubleValue());
             } else if (field instanceof Long) {
                 generator().writeNumber(field.longValue());
             } else if (field instanceof Byte || field instanceof Short) {
                 generator().writeNumber(field.intValue());
-            } else if (field instanceof BigInteger) {
-                generator().writeNumber((BigInteger) field);
-            } else if (field instanceof BigDecimal) {
-                generator().writeNumber((BigDecimal) field);
+            } else if (field instanceof BigInteger bigint) {
+                generator().writeNumber(bigint);
+            } else if (field instanceof BigDecimal bigdec) {
+                generator().writeNumber(bigdec);
             } else {
                 generator().writeNumber(field.doubleValue());
             }
         }
 
         private void renderTensor(Optional<Tensor> tensor) throws IOException {
-            generator().writeRawValue(new String(JsonFormat.encode(tensor.orElse(Tensor.Builder.of(TensorType.empty).build()),
-                                                                   settings.tensorOptions),
-                                                 StandardCharsets.UTF_8));
+            var t = tensor.orElse(Tensor.Builder.of(TensorType.empty).build());
+            byte[] json = JsonFormat.encode(t, settings.tensorOptions);
+            generator().writeRawValue(new String(json, StandardCharsets.UTF_8));
         }
 
         private JsonGenerator generator() {

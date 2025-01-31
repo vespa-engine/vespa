@@ -149,7 +149,7 @@ public class FeatureData implements Inspectable, JsonProducer {
 
         return switch (featureValue.type()) {
             case DOUBLE -> Tensor.from(featureValue.asDouble());
-            case DATA -> TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(featureValue.asData()));
+            case DATA -> tensorFromData(featureValue.asData());
             default -> throw new IllegalStateException("Unexpected feature value type " + featureValue.type());
         };
     }
@@ -202,11 +202,14 @@ public class FeatureData implements Inspectable, JsonProducer {
         @Override
         public void encodeDATA(byte[] value) {
             // This could be done more efficiently ...
-            Tensor tensor = TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(value));
+            Tensor tensor = tensorFromData(value);
             byte[] encodedTensor = JsonFormat.encode(tensor, tensorOptions);
             target().append(new String(encodedTensor, StandardCharsets.UTF_8));
         }
 
     }
 
+    private static Tensor tensorFromData(byte[] value) {
+        return TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(value));
+    }
 }
