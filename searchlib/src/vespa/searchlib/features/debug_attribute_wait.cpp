@@ -56,6 +56,8 @@ DebugAttributeWaitBlueprint::DebugAttributeWaitBlueprint()
 {
 }
 
+DebugAttributeWaitBlueprint::~DebugAttributeWaitBlueprint() = default;
+
 void
 DebugAttributeWaitBlueprint::visitDumpFeatures(const IIndexEnvironment &, IDumpFeatureVisitor &) const
 {
@@ -88,7 +90,7 @@ DebugAttributeWaitBlueprint::createExecutor(const IQueryEnvironment &env, vespal
 fef::ParameterDescriptions
 DebugAttributeWaitBlueprint::getDescriptions() const
 {
-    return fef::ParameterDescriptions().desc().attribute(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY).number();
+    return fef::ParameterDescriptions().desc().attribute(ParameterDataTypeSet::numericTypeSet(), ParameterCollection::ANY).number();
 }
 
 }

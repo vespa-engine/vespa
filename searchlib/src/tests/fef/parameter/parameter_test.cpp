@@ -139,6 +139,8 @@ TEST_F(ParameterTest, test_validator)
     IndexEnvironmentBuilder builder(env);
     builder.addField(FieldType::INDEX, CollectionType::SINGLE, "foo")
         .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, "bar")
+        .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::RAW, "rbar")
+        .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::STRING, "sbar")
         .addField(FieldType::ATTRIBUTE, CollectionType::SINGLE, DataType::TENSOR, "tbar")
         .addField(FieldType::INDEX, CollectionType::ARRAY, "afoo")
         .addField(FieldType::INDEX, CollectionType::WEIGHTEDSET, "wfoo")
@@ -161,6 +163,8 @@ TEST_F(ParameterTest, test_validator)
     EXPECT_TRUE(validate(env, SL().add("baz"), PDS().desc().feature()));
     EXPECT_TRUE(validate(env, SL().add("123"), PDS().desc().number()));
     EXPECT_TRUE(validate(env, SL().add("baz"), PDS().desc().string()));
+    EXPECT_TRUE(validate(env, SL().add("sbar"), PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_TRUE(validate(env, SL().add("sbar"), PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
     EXPECT_TRUE(validate(env, SL().add("tbar"), PDS().desc().attributeField(ParameterCollection::ANY)));
     EXPECT_TRUE(validate(env, SL().add("tbar"), PDS().desc().attribute(ParameterCollection::ANY)));
     // first fail but second pass
@@ -187,8 +191,12 @@ TEST_F(ParameterTest, test_validator)
     EXPECT_FALSE(validate(env, SL().add("hybrid"), PDS().desc().attributeField(ParameterCollection::ANY)));
     EXPECT_FALSE(validate(env, SL().add("12a"), PDS().desc().number()));
     EXPECT_FALSE(validate(env, SL().add("a12"), PDS().desc().number()));
-    EXPECT_FALSE(validate(env, SL().add("tbar"), PDS().desc().attributeField(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY)));
-    EXPECT_FALSE(validate(env, SL().add("tbar"), PDS().desc().attribute(ParameterDataTypeSet::normalTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(validate(env, SL().add("sbar"), PDS().desc().attributeField(ParameterDataTypeSet::numericTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(validate(env, SL().add("sbar"), PDS().desc().attribute(ParameterDataTypeSet::numericTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(validate(env, SL().add("rbar"), PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(validate(env, SL().add("rbar"), PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(validate(env, SL().add("tbar"), PDS().desc().attributeField(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
+    EXPECT_FALSE(validate(env, SL().add("tbar"), PDS().desc().attribute(ParameterDataTypeSet::primitiveTypeSet(), ParameterCollection::ANY)));
 
     // test repeat
     PDS d1 = PDS().desc().field().repeat();

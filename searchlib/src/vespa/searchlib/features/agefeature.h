@@ -29,8 +29,8 @@ private:
     std::string _attribute;
 
 public:
-    AgeBlueprint() : fef::Blueprint("age") { }
-    ~AgeBlueprint();
+    AgeBlueprint();
+    ~AgeBlueprint() override;
 
     void visitDumpFeatures(const fef::IIndexEnvironment &env, fef::IDumpFeatureVisitor &) const override;
     fef::Blueprint::UP createInstance() const override;
