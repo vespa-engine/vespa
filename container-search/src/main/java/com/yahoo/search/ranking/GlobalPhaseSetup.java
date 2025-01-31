@@ -148,7 +148,7 @@ class GlobalPhaseSetup {
         Set<String> namesToHide = new HashSet<>();
         Set<String> matchFeatures = new HashSet<>();
         Map<String, String> renameFeatures = new HashMap<>();
-        String toRename = null;
+        String renameFrom = null;
         for (var prop : rp.fef().property()) {
             if (prop.name().equals("vespa.globalphase.rerankcount")) {
                 rerankCount = Integer.parseInt(prop.value());
@@ -163,14 +163,16 @@ class GlobalPhaseSetup {
                 matchFeatures.add(prop.value());
             }
             if (prop.name().equals("vespa.feature.rename")) {
-                if (toRename == null) {
-                    toRename = prop.value();
+                if (renameFrom == null) {
+                    renameFrom = prop.value();
                 } else {
-                    renameFeatures.put(toRename, prop.value());
-                    toRename = null;
+                    renameFeatures.put(renameFrom, prop.value());
+                    renameFrom = null;
                 }
             }
         }
+        // ignore renamed summary features (not available as match features)
+        renameFeatures.entrySet().removeIf(entry -> !matchFeatures.contains(entry.getKey()));
         if (rerankCount < 0) {
             rerankCount = 100;
         }
