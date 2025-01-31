@@ -1,9 +1,11 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa/tracedoctor"
 	"os"
 )
 
@@ -17,12 +19,25 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 		return fmt.Errorf("failed to open profile file '%s': %w", opts.profileFile, err)
 	}
 	defer file.Close()
-	root := slime.DecodeJson(file)
+	root := slime.DecodeJson(bufio.NewReaderSize(file, 64*1024))
 	if !root.Valid() {
 		return fmt.Errorf("profile file '%s' does not contain valid JSON", opts.profileFile)
 	}
-	trace := root.Field("trace")
-	slime.EncodeJson(trace, false, cli.Stdout)
+	var cnt int
+	var maxTime float64
+	var maxTrace *tracedoctor.ProtonTrace = nil
+	for _, trace := range tracedoctor.FindProtonTraces(root.Field("trace")) {
+		cnt++
+		if trace.DurationMs > maxTime {
+			maxTime = trace.DurationMs
+			maxTrace = trace
+		}
+	}
+	if maxTrace != nil {
+		fmt.Fprintf(cli.Stdout, "found %d searches, slowest search was: %s[%d]: %10.3f ms\n",
+			cnt, maxTrace.DocumentType, maxTrace.DistributionKey, maxTrace.DurationMs)
+		return maxTrace.MatchProfiling().Render(cli.Stdout)
+	}
 	return nil
 }
 

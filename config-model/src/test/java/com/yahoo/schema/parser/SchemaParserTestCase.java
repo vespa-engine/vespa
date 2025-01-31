@@ -183,7 +183,6 @@ public class SchemaParserTestCase {
         assertEquals(0.01, target.get());
     }
 
-
     @Test
     void filter_threshold_can_be_parsed() throws Exception {
         String input = joinLines("schema foo {",
@@ -195,6 +194,22 @@ public class SchemaParserTestCase {
         var target = schema.getRankProfiles().get(0).getFilterThreshold();
         assertTrue(target.isPresent());
         assertEquals(0.05, target.get());
+    }
+
+    private void assertRankProfileWithOutOfRangeThrows(String rpContent) {
+        var input = "schema foo { rank-profile rp { %s } }".formatted(rpContent);
+        var e = assertThrows(IllegalArgumentException.class, () -> parseString(input));
+        assertTrue(e.getMessage().contains("must be in range [0, 1]"));
+    }
+
+    @Test
+    void range_bounded_properties_fail_parsing_on_out_of_range_input() {
+        assertRankProfileWithOutOfRangeThrows("filter-threshold: -0.1");
+        assertRankProfileWithOutOfRangeThrows("filter-threshold: 1.1");
+        assertRankProfileWithOutOfRangeThrows("weakand { stopword-limit: -0.1 }");
+        assertRankProfileWithOutOfRangeThrows("weakand { stopword-limit: 1.1 }");
+        assertRankProfileWithOutOfRangeThrows("weakand { adjust-target: -0.1 }");
+        assertRankProfileWithOutOfRangeThrows("weakand { adjust-target: 1.1 }");
     }
 
     @Test

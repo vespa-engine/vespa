@@ -80,6 +80,7 @@ struct BoundTerm {
         : BoundTerm(std::string(bound_term))
     {
     }
+    ~BoundTerm();
     std::string index() const {
         auto pos = _bound_term.find(':');
         return _bound_term.substr(0, pos != std::string::npos ? pos : 0);
@@ -89,6 +90,8 @@ struct BoundTerm {
         return _bound_term.substr(pos != std::string::npos ? (pos + 1) : 0);
     }
 };
+
+BoundTerm::~BoundTerm() = default;
 
 Query make_query(std::unique_ptr<search::query::Node> root) {
     std::string stack_dump = StackDumpCreator::create(*root);

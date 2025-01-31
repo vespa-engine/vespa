@@ -104,7 +104,7 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 	return printResult(cli, operationResult(false, doc, service, result), false)
 }
 
-func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string) error {
+func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool, cli *CLI, fieldSet string, headers []string, ignoreNotFound bool) error {
 	parsedIds := make([]document.Id, 0, len(ids))
 	for _, id := range ids {
 		parsedId, err := document.ParseId(id)
@@ -122,7 +122,10 @@ func readDocuments(ids []string, timeoutSecs int, waiter *Waiter, printCurl bool
 	for _, docId := range parsedIds {
 		result := client.Get(docId, fieldSet)
 		if err := printResult(cli, operationResult(true, document.Document{Id: docId}, service, result), true); err != nil {
-			return err
+			ignoreErr := ignoreNotFound && result.HTTPStatus == 404
+			if !ignoreErr {
+				return err
+			}
 		}
 	}
 
@@ -278,25 +281,28 @@ $ vespa document remove id:mynamespace:music::a-head-full-of-dreams`,
 
 func newDocumentGetCmd(cli *CLI) *cobra.Command {
 	var (
-		printCurl   bool
-		timeoutSecs int
-		waitSecs    int
-		fieldSet    string
-		headers     []string
+		printCurl      bool
+		ignoreNotFound bool
+		timeoutSecs    int
+		waitSecs       int
+		fieldSet       string
+		headers        []string
 	)
 	cmd := &cobra.Command{
-		Use:               "get id",
-		Short:             "Gets documents",
+		Use:               "get id(s)",
+		Short:             "Gets one or more documents",
 		Args:              cobra.MinimumNArgs(1),
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
-		Example:           `$ vespa document get id:mynamespace:music::a-head-full-of-dreams...`,
+		Example: `$ vespa document get id:mynamespace:music::song-1
+$ vespa document get id:mynamespace:music::song-1 id:mynamespace:music::song-2`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
-			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers)
+			return readDocuments(args, timeoutSecs, waiter, printCurl, cli, fieldSet, headers, ignoreNotFound)
 		},
 	}
 	cmd.Flags().StringVar(&fieldSet, "field-set", "", "Fields to include when reading document")
+	cmd.Flags().BoolVar(&ignoreNotFound, "ignore-missing", false, "Do not treat non-existent document as an error")
 	addDocumentFlags(cli, cmd, &printCurl, &timeoutSecs, &waitSecs, &headers)
 	return cmd
 }
@@ -331,7 +337,6 @@ func printResult(cli *CLI, result OperationResult, payloadOnlyOnSuccess bool) er
 		}
 		fmt.Fprintln(out, result.Payload)
 	}
-
 	if !result.Success {
 		err := errHint(fmt.Errorf("document operation failed"))
 		err.quiet = true

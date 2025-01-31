@@ -67,6 +67,10 @@ FeatureTest::setup()
     }
 
     if (!_resolver->compile()) {
+        auto& warnings = _resolver->getWarnings();
+        for (auto& warning : warnings) {
+            LOG(warning, "%s", warning.c_str());
+        }
         LOG(error, "Failed to compile blueprint resolver.");
         return false;
     }

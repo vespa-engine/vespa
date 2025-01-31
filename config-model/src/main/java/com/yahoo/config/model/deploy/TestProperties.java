@@ -41,7 +41,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
-    private String queryDispatchPolicy = "adaptive";
     private String summaryDecodePolicy = "eager";
     private String sequencerType = "THROUGHPUT";
     private boolean firstTimeDeployment = false;
@@ -136,7 +135,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int rpcNumTargets() { return rpc_num_targets; }
     @Override public int heapSizePercentage() { return heapSizePercentage; }
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
-    @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
     @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
@@ -195,10 +193,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         jvmGCOptions = gcOptions;
         return this;
     }
-    public TestProperties setQueryDispatchPolicy(String policy) {
-        queryDispatchPolicy = policy;
-        return this;
-    }
+
     public TestProperties setSummaryDecodePolicy(String type) {
         summaryDecodePolicy = type;
         return this;

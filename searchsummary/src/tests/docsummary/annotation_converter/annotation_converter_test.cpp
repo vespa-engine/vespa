@@ -47,11 +47,14 @@ class MockJuniperConverter : public IJuniperConverter
 {
     std::string _result;
 public:
+    ~MockJuniperConverter() override;
     void convert(std::string_view input, vespalib::slime::Inserter&) override {
         _result = input;
     }
     const std::string& get_result() const noexcept { return _result; }
 };
+
+MockJuniperConverter::~MockJuniperConverter() = default;
 
 }
 

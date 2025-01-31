@@ -561,7 +561,7 @@ AttributeBlueprint::createExecutor(const fef::IQueryEnvironment &env, vespalib::
 fef::ParameterDescriptions
 AttributeBlueprint::getDescriptions() const
 {
-    auto dataTypeSet = fef::ParameterDataTypeSet::normalOrTensorTypeSet();
+    auto dataTypeSet = fef::ParameterDataTypeSet::primitiveOrTensorTypeSet();
     return fef::ParameterDescriptions().
         desc().attribute(dataTypeSet, fef::ParameterCollection::ANY).
         desc().attribute(dataTypeSet, fef::ParameterCollection::ANY).string();

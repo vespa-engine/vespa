@@ -23,6 +23,7 @@ class PredicateQueryTerm {
     public:
         Entry(std::string key, ValueType value, uint64_t sub_query_bitmap = ALL_SUB_QUERIES) noexcept
             : _key(std::move(key)), _value(std::move(value)), _sub_query_bitmap(sub_query_bitmap) {}
+        ~Entry();
 
         const std::string & getKey() const { return _key; }
         const ValueType & getValue() const { return _value; }
@@ -60,5 +61,8 @@ public:
             && _range_features == other._range_features;
     }
 };
+
+template <typename ValueType>
+PredicateQueryTerm::Entry<ValueType>::~Entry() = default;
 
 }

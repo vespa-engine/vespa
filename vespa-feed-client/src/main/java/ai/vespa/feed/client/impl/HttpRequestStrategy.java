@@ -409,6 +409,8 @@ class HttpRequestStrategy implements RequestStrategy {
             return delegate.stats();
         }
 
+        @Override public void resetStats() { delegate.resetStats(); }
+
         void reset() throws IOException {
             synchronized (monitor) {
                 log.log(INFO, "Replacing underlying HTTP client to attempt recovery");

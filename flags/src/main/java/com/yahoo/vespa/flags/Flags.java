@@ -62,14 +62,6 @@ public class Flags {
             "Takes effect immediately",
             HOSTNAME, NODE_TYPE);
 
-    public static final UnboundStringFlag QUERY_DISPATCH_POLICY = defineStringFlag(
-            "query-dispatch-policy", "adaptive",
-            List.of("baldersheim"), "2022-08-20", "2025-03-01",
-            "Select query dispatch policy, valid values are adaptive, round-robin, best-of-random-2," +
-                    " latency-amortized-over-requests, latency-amortized-over-time",
-            "Takes effect at redeployment (requires restart)",
-            INSTANCE_ID);
-
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
             List.of("baldersheim"), "2023-03-30", "2025-03-01",

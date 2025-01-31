@@ -257,16 +257,19 @@ public class ParsedRankProfile extends ParsedBlock {
 
     public void setWeakandStopwordLimit(double limit) {
         verifyThat(this.weakandStopwordLimit == null, "already has weakand stopword-limit");
+        verifyThat(limit >= 0.0 && limit <= 1.0, "weakand stopword-limit must be in range [0, 1]");
         this.weakandStopwordLimit = limit;
     }
 
     public void setWeakandAdjustTarget(double target) {
         verifyThat(this.weakandAdjustTarget == null, "already has weakand adjust-target");
+        verifyThat(target >= 0.0 && target <= 1.0, "weakand adjust-target must be in range [0, 1]");
         this.weakandAdjustTarget = target;
     }
 
     public void setFilterThreshold(double threshold) {
         verifyThat(this.filterThreshold == null, "already has filter-threshold");
+        verifyThat(threshold >= 0.0 && threshold <= 1.0, "filter-threshold must be in range [0, 1]");
         this.filterThreshold = threshold;
     }
 

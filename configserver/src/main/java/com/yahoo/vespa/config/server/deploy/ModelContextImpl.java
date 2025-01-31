@@ -165,7 +165,6 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
-        private final String queryDispatchPolicy;
         private final double queryDispatchWarmup;
         private final String feedSequencer;
         private final String responseSequencer;
@@ -246,7 +245,6 @@ public class ModelContextImpl implements ModelContext {
             this.mbus_cpp_events_before_wakeup = Flags.MBUS_CPP_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
             this.rpc_num_targets = Flags.RPC_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
             this.rpc_events_before_wakeup = Flags.RPC_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
-            this.queryDispatchPolicy = Flags.QUERY_DISPATCH_POLICY.bindTo(source).with(appId).with(version).value();
             this.queryDispatchWarmup = PermanentFlags.QUERY_DISPATCH_WARMUP.bindTo(source).with(appId).with(version).value();
             this.heapPercentage = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version).value();
             this.summaryDecodePolicy = Flags.SUMMARY_DECODE_POLICY.bindTo(source).with(appId).with(version).value();
@@ -270,7 +268,6 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
-        @Override public String queryDispatchPolicy() { return queryDispatchPolicy; }
         @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
         @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
         @Override public String feedSequencerType() { return feedSequencer; }
