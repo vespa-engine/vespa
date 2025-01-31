@@ -7,7 +7,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io"
 	"os"
 	"strconv"
@@ -131,6 +131,17 @@ func TestDocumentGet(t *testing.T) {
 		[]string{"id:mynamespace:music::a-head-full-of-dreams"}, t)
 }
 
+func TestDocumentGetIgnoreMissing(t *testing.T) {
+	client := &mock.HTTPClient{}
+	client.NextResponseString(404, "{\"message\":\"not found\"}")
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+	assert.Nil(t, cli.Run("document", "get", "-t", "http://127.0.0.1:8080", "--ignore-missing",
+		"id:mynamespace:music::no-such-doc-1", "id:mynamespace:music::a-head-full-of-dreams"))
+	assert.Equal(t, "Success: Read id:mynamespace:music::a-head-full-of-dreams\n", stdout.String())
+	assert.Equal(t, "Error: Invalid document operation: Status 404\n{\n    \"message\": \"not found\"\n}\n", stderr.String())
+}
+
 func TestDocumentGetWithHeader(t *testing.T) {
 	client := &mock.HTTPClient{}
 	assertDocumentGet(client, []string{"document", "get", "--header", "X-Foo: Bar", "id:mynamespace:music::a-head-full-of-dreams"},
@@ -224,7 +235,7 @@ func assertDocumentGet(client *mock.HTTPClient, args []string, documentIds []str
 
 func assertDocumentTransportError(t *testing.T, errorMessage string) {
 	client := &mock.HTTPClient{}
-	client.NextResponseError(fmt.Errorf("%s", errorMessage))
+	client.NextResponseError(errors.New(errorMessage))
 	cli, _, stderr := newTestCLI(t)
 	cli.httpClient = client
 	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put",
