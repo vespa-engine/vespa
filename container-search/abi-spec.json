@@ -5444,6 +5444,7 @@
       "public void setSummaryFields(java.lang.String)",
       "public boolean getTensorShortForm()",
       "public boolean getTensorHexDense()",
+      "public java.lang.String getTensorFormat()",
       "public void setTensorShortForm(java.lang.String)",
       "public void setTensorFormat(java.lang.String)",
       "public void setTensorShortForm(boolean)",

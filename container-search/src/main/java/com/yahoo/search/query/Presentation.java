@@ -74,14 +74,14 @@ public class Presentation implements Cloneable {
     /** Whether optional timing data should be rendered */
     private boolean timing = false;
 
-    /** Whether to dense (part of ) tensors in hex string form */
-    private boolean tensorHexDense = false;
-
     /** Whether to renders tensors in short form */
     private boolean tensorShortForm = true;
 
     /** Whether to renders tensors in short form */
     private boolean tensorDirectValues = false; // TODO: Flip default on Vespa 9
+
+    /** Whether to dense (part of) tensors in hex string form */
+    private boolean tensorHexDense = false;
 
     /** Set of explicitly requested summary fields, instead of summary classes */
     private Set<String> summaryFields = LazySet.newHashSet();
@@ -191,6 +191,17 @@ public class Presentation implements Cloneable {
 
     /** whether dense part of tensors should be represented as a string of hex digits */
     public boolean getTensorHexDense() { return tensorHexDense; }
+
+    /** the current tensor format, see setTensorFormat() */
+    public String getTensorFormat() {
+        String format = "long";
+        if (tensorShortForm) format = "short";
+        if (tensorHexDense) format = "hex";
+        if (tensorDirectValues) {
+            return (format + "-value");
+        }
+        return format;
+    }
 
     /** @deprecated use setTensorFormat(). */
     @Deprecated // TODO: Remove on Vespa 9
