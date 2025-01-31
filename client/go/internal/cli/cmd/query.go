@@ -66,6 +66,8 @@ can be set by the syntax [parameter-name]=[value].`,
 	cmd.Flags().IntVarP(&opts.queryTimeoutSecs, "timeout", "T", 10, "Timeout for the query in seconds")
 	cmd.Flags().BoolVarP(&opts.profile, "profile", "", false, "Enable profiling mode (Note: this feature is experimental)")
 	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "", "vespa_query_profile_result.json", "Profiling result file")
+	cmd.Flags().MarkHidden("profile")
+	cmd.Flags().MarkHidden("profile-file")
 	cli.bindWaitFlag(cmd, 0, &opts.waitSecs)
 	return cmd
 }
