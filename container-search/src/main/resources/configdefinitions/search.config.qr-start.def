@@ -6,7 +6,7 @@ namespace=search.config
 jvm.server bool default=true restart
 
 ## Debug logging of Garbage Collection
-jvm.verbosegc bool default=true restart
+jvm.verbosegc bool default=false restart
 
 ## Garbage Collection tuning parameters
 jvm.gcopts string default="-XX:+UseG1GC -XX:MaxTenuringThreshold=15 -XX:NewRatio=1" restart
