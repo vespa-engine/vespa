@@ -1325,7 +1325,6 @@
       "public boolean useV8GeoPositions()",
       "public int maxCompactBuffers()",
       "public java.util.List ignoredHttpUserAgents()",
-      "public boolean enableProxyProtocolMixedMode()",
       "public java.lang.String logFileCompressionAlgorithm(java.lang.String)",
       "public java.lang.String summaryDecodePolicy()",
       "public int contentLayerMetadataFeatureLevel()",
