@@ -80,6 +80,9 @@ public class Presentation implements Cloneable {
     /** Whether to renders tensors in short form */
     private boolean tensorDirectValues = false; // TODO: Flip default on Vespa 9
 
+    /** Whether to dense (part of) tensors in hex string form */
+    private boolean tensorHexDense = false;
+
     /** Set of explicitly requested summary fields, instead of summary classes */
     private Set<String> summaryFields = LazySet.newHashSet();
 
@@ -186,6 +189,20 @@ public class Presentation implements Cloneable {
      */
     public boolean getTensorShortForm() { return tensorShortForm; }
 
+    /** whether dense part of tensors should be represented as a string of hex digits */
+    public boolean getTensorHexDense() { return tensorHexDense; }
+
+    /** the current tensor format, see setTensorFormat() */
+    public String getTensorFormat() {
+        String format = "long";
+        if (tensorShortForm) format = "short";
+        if (tensorHexDense) format = "hex";
+        if (tensorDirectValues) {
+            return (format + "-value");
+        }
+        return format;
+    }
+
     /** @deprecated use setTensorFormat(). */
     @Deprecated // TODO: Remove on Vespa 9
     public void setTensorShortForm(String value) {
@@ -199,6 +216,16 @@ public class Presentation implements Cloneable {
      */
     public void setTensorFormat(String value) {
         switch (value) {
+            case "hex" :
+                tensorHexDense = true;
+                tensorShortForm = true;
+                tensorDirectValues = false;
+                break;
+            case "hex-value" :
+                tensorHexDense = true;
+                tensorShortForm = true;
+                tensorDirectValues = true;
+                break;
             case "short" :
                 tensorShortForm = true;
                 tensorDirectValues = false;
@@ -254,4 +281,3 @@ public class Presentation implements Cloneable {
     }
 
 }
-
