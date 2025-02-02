@@ -360,4 +360,18 @@ public class EmbeddingScriptTestCase {
                 sparse2DTensor.getTensor().get());
     }
 
+    @Test
+    public void testIt() {
+        var tester = new EmbeddingScriptTester(Map.of("emb1", new EmbeddingScriptTester.MockMappedEmbedder("myDocument.sections_embeddings")));
+        var expression = tester.expressionFrom("input sections | for_each { ( _ || \"\") } | embed emb1 passage | attribute sections_embeddings | index sections_embeddings");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("sections", new ArrayDataType(DataType.STRING)));
+        TensorType tensorType = TensorType.fromSpec("tensor(passage{}, token{})");
+        var tensorField = new Field("sections_embeddings", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
+
+        expression.verify(new VerificationContext(adapter));
+    }
+
 }

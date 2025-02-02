@@ -42,7 +42,7 @@ public class ArrayDataType extends CollectionDataType {
     @Override
     public FieldPath buildFieldPath(String remainFieldName)
     {
-        if (remainFieldName.length() > 0 && remainFieldName.charAt(0) == '[') {
+        if (!remainFieldName.isEmpty() && remainFieldName.charAt(0) == '[') {
             int endPos = remainFieldName.indexOf(']');
             if (endPos == -1) {
                 throw new IllegalArgumentException("Array subscript must be closed with ]");
