@@ -20,26 +20,4 @@ TEST("require that can subscribe with empty config id") {
     ASSERT_EQUAL("myfoo", cfg->myField);
 }
 
-/*
- * TODO: Convert to frt test.
-TEST_MT_FFF("require that source may be unable to serve config temporarily", 2, ConfigContext::SP(new ConfigContext()),
-                                                                                 ConfigSet(),
-                                                                                 MyConfigBuilder()) {
-    if (thread_id == 0) {
-        ConfigSubscriber subscriber(f1, f2);
-        ConfigHandle<MyConfig>::UP handle = subscriber.subscribe<MyConfig>("myid", 10000);
-        ASSERT_TRUE(subscriber.nextConfig(10000));
-        std::unique_ptr<MyConfig> cfg(handle->getConfig());
-        ASSERT_TRUE(cfg.get() != NULL);
-        ASSERT_EQUAL("myfoo", cfg->myField);
-    } else {
-        std::this_thread::sleep_for(1s);
-        f3.myField = "myfoo";
-        f2.addBuilder("myid", &f3);
-        f1->reload();
-
-    }
-}
-*/
-
 TEST_MAIN() { TEST_RUN_ALL(); }
