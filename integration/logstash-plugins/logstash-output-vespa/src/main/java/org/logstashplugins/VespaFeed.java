@@ -56,6 +56,10 @@ public class VespaFeed implements Output {
             PluginConfigSpec.stringSetting("client_cert", null);
     public static final PluginConfigSpec<String> CLIENT_KEY =
             PluginConfigSpec.stringSetting("client_key", null);
+    
+    // authentication token (for Vespa Cloud)
+    public static final PluginConfigSpec<String> AUTH_TOKEN =
+            PluginConfigSpec.stringSetting("auth_token", null);
 
     // put, update or remove
     public static final PluginConfigSpec<String> OPERATION =
@@ -193,8 +197,8 @@ public class VespaFeed implements Output {
                             )
                     );
 
-        // set client certificate and key if they are provided
-        builder = addCertAndKeyToBuilder(config, builder);
+        // set client certificate and key (or auth token) if they are provided
+        builder = addAuthOptionsToBuilder(config, builder);
 
         // now we should have the client
         client = builder.build();
@@ -222,7 +226,7 @@ public class VespaFeed implements Output {
         }
     }
 
-    protected static FeedClientBuilder addCertAndKeyToBuilder(Configuration config, FeedClientBuilder builder) {
+    protected static FeedClientBuilder addAuthOptionsToBuilder(Configuration config, FeedClientBuilder builder) {
         String clientCert = config.get(CLIENT_CERT);
         Path clientCertPath = null;
         if (clientCert != null) {
@@ -237,10 +241,16 @@ public class VespaFeed implements Output {
 
         if (clientCertPath != null && clientKeyPath != null) {
             builder.setCertificate(clientCertPath, clientKeyPath);
-        } else {
-            logger.warn("Client certificate and key not provided. Using insecure connection.");
+            return builder;
         }
 
+        String authToken = config.get(AUTH_TOKEN);
+        if (authToken != null) {
+            builder.addRequestHeader("Authorization", "Bearer " + authToken);
+            return builder;
+        }
+        
+        logger.warn("Client certificate + key combination not provided. Auth token not provided, either. Using insecure connection.");
         return builder;
     }
 
@@ -415,7 +425,7 @@ public class VespaFeed implements Output {
         return List.of(VESPA_URL, CLIENT_CERT, CLIENT_KEY, OPERATION, CREATE,
                 NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID, REMOVE_OPERATION,
                 MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD,
-                ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL);
+                ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, AUTH_TOKEN);
     }
 
     @Override
