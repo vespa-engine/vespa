@@ -365,7 +365,7 @@ public class Flags {
 
     public static UnboundBooleanFlag ATLASSIAN_SYNC_TENANTS = defineFeatureFlag(
             "atlassian-sync-tenants", false,
-            List.of("bjormel"), "2024-11-11", "2025-02-01",
+            List.of("bjormel"), "2024-11-11", "2025-03-01",
             "Whether to sync tenants to Atlassian",
             "Takes effect immediately");
 
