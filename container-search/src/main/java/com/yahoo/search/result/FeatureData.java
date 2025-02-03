@@ -68,15 +68,15 @@ public class FeatureData implements Inspectable, JsonProducer {
 
     @Override
     public String toJson() {
-        return toJson(new JsonFormat.EncodeOptions(false, false, false));
+        return toJson(new JsonFormat.EncodeOptions());
     }
 
     public String toJson(boolean tensorShortForm) {
-        return toJson(new JsonFormat.EncodeOptions(tensorShortForm, false, false));
+        return toJson(new JsonFormat.EncodeOptions(tensorShortForm));
     }
 
     public String toJson(boolean tensorShortForm, boolean tensorDirectValues) {
-        return toJson(new JsonFormat.EncodeOptions(tensorShortForm, tensorDirectValues, false));
+        return toJson(new JsonFormat.EncodeOptions(tensorShortForm, tensorDirectValues));
     }
 
     public String toJson(JsonFormat.EncodeOptions tensorOptions) {
