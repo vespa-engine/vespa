@@ -58,7 +58,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<X509Certificate> operatorCertificates = List.of();
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
-    private double resourceLimitMemorySmallNodes = 0.8;
+    private double resourceLimitMemorySmallNodes = 0.75;
     private double minNodeRatioPerGroup = 0.0;
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;

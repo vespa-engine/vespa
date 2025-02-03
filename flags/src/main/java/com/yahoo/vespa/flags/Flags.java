@@ -440,7 +440,7 @@ public class Flags {
             "Takes effect immediately");
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_MEMORY_FOR_SMALL_NODES = defineDoubleFlag(
-            "resource-limit-memory-for-small-nodes", 0.8,
+            "resource-limit-memory-for-small-nodes", 0.75,
             List.of("hmusum"), "2025-01-12", "2025-02-15",
             "Resource limit (between 0.0 and 1.0) for memory usage on small content nodes (8 Gib memory or less), used by cluster controller for when to block feed",
             "Takes effect on next deployment",
