@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.document;
 
+import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.MapFieldValue;
 
@@ -41,7 +42,10 @@ public class MapDataType extends DataType {
 
     @Override
     public boolean isValueCompatible(FieldValue value) {
-        return value.getDataType().equals(this);
+        if (!(value instanceof MapFieldValue<?,?> mapValue)) return false;
+        if (mapValue.getDataType().getClass() != this.getClass()) return false;
+        return mapValue.getDataType().getKeyType().isAssignableTo(this.getKeyType()) &&
+               mapValue.getDataType().getValueType().isAssignableTo(this.getValueType());
     }
 
     public DataType getKeyType() {
