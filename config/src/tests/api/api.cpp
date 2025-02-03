@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/configcontext.h>
 #include <config-my.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace config;
 
-TEST("require that can subscribe with empty config id") {
+TEST(ConfigApiTest, require_that_can_subscribe_with_empty_config_id)
+{
     ConfigSet set;
     auto ctx = std::make_shared<ConfigContext>(set);
     MyConfigBuilder builder;
@@ -17,7 +18,7 @@ TEST("require that can subscribe with empty config id") {
     ASSERT_TRUE(subscriber.nextConfigNow());
     std::unique_ptr<MyConfig> cfg(handle->getConfig());
     ASSERT_TRUE(cfg);
-    ASSERT_EQUAL("myfoo", cfg->myField);
+    ASSERT_EQ("myfoo", cfg->myField);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
