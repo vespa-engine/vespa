@@ -10,7 +10,7 @@ import java.util.Optional;
 
 /**
  * This represents a query where all terms are required to match in the same element id.
- * The primary usecase is to allow efficient search in arrays and maps of struct.
+ * The primary use case is to allow efficient search in arrays and maps of struct.
  * The common path is the field name containing the struct.
  *
  * @author baldersheim

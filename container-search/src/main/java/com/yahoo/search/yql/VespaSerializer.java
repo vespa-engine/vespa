@@ -762,6 +762,16 @@ public class VespaSerializer {
                     new WordSerializer().serialize(destination, (WordItem)current);
                 } else if (current instanceof IntItem) {
                     new NumberSerializer().serialize(destination, (IntItem)current);
+                } else if (current instanceof FuzzyItem) {
+                    new FuzzySerializer().serialize(destination, (FuzzyItem)current);
+                } else if (current instanceof BoolItem) {
+                    new BoolSerializer().serialize(destination, (BoolItem)current);
+                } else if (current instanceof GeoLocationItem) {
+                    new GeoLocationSerializer().serialize(destination, (GeoLocationItem)current);
+                } else if (current instanceof RegExpItem) {
+                    new RegExpSerializer().serialize(destination, (RegExpItem)current);
+                } else if (current instanceof WordAlternativesItem) {
+                    new WordAlternativesSerializer().serialize(destination, (WordAlternativesItem)current);
                 } else {
                     throw new IllegalArgumentException("Serializing of " + current.getClass().getSimpleName() +
                                                        " in same_element is not implemented, please report this as a bug.");
