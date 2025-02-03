@@ -436,7 +436,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
             "use-legacy-trust-store", true,
-            List.of("marlon"), "2024-12-05", "2025-02-01",
+            List.of("marlon"), "2024-12-05", "2025-03-01",
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
 
