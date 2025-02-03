@@ -218,7 +218,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
-            List.of("arnej"), "2021-11-15", "2025-02-01",
+            List.of("arnej"), "2021-11-15", "2025-03-01",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -232,7 +232,7 @@ public class Flags {
 
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
             "log-file-compression-algorithm", "",
-            List.of("arnej"), "2022-06-14", "2025-02-01",
+            List.of("arnej"), "2022-06-14", "2025-03-01",
             "Which algorithm to use for compressing log files. Valid values: empty string (default), gzip, zstd",
             "Takes effect immediately",
             INSTANCE_ID);
