@@ -16,7 +16,7 @@ namespace search::features {
 
 namespace {
 
-auto attribute_match_data_types = ParameterDataTypeSet::normalTypeSet();
+auto attribute_match_data_types = ParameterDataTypeSet::primitiveTypeSet();
 
 bool matchable_field(const FieldInfo& info)
 {
@@ -63,10 +63,9 @@ MatchExecutor::execute(uint32_t)
     outputs().set_number(1, totalWeight);
 }
 
-
-MatchBlueprint::MatchBlueprint() :
-    Blueprint("match"),
-    _params()
+MatchBlueprint::MatchBlueprint()
+    : Blueprint("match"),
+      _params()
 {
 }
 

@@ -32,7 +32,7 @@ private:
     MatchParams _params;
 public:
     MatchBlueprint();
-    ~MatchBlueprint();
+    ~MatchBlueprint() override;
 
     void visitDumpFeatures(const fef::IIndexEnvironment & env, fef::IDumpFeatureVisitor & visitor) const override;
     fef::Blueprint::UP createInstance() const override;
