@@ -16,3 +16,6 @@ done
 
 mkdir -p "$WORKDIR/artifacts/$ARCH/rpms"
 mkdir -p "$WORKDIR/artifacts/$ARCH/maven-repo"
+
+# Make sure we use the latest python3 version installed
+alternatives --set python3 "$(ls /usr/bin/python3* | grep -E "/usr/bin/python3.[0-9]+$" |sort -n -k2 -t.|tail -1)"
