@@ -31,6 +31,7 @@ import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.document.serialization.DocumentWriter;
+import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.vespa.objects.FieldBase;
 import com.yahoo.vespa.objects.Serializer;
 
@@ -83,9 +84,7 @@ public class JsonWriter implements DocumentWriter {
             .build();
 
     private final JsonGenerator generator;
-
-    private final boolean tensorShortForm;
-    private final boolean tensorDirectValues;
+    private final JsonFormat.EncodeOptions tensorOptions;
 
     /**
      * Creates a JsonWriter.
@@ -97,8 +96,25 @@ public class JsonWriter implements DocumentWriter {
         this(createPrivateGenerator(out));
     }
 
+    // do not use
     public JsonWriter(OutputStream out, boolean tensorShortForm, boolean tensorDirectValues) {
         this(createPrivateGenerator(out), tensorShortForm, tensorDirectValues);
+    }
+
+    public JsonWriter(OutputStream out, JsonFormat.EncodeOptions tensorOptions) {
+        this(createPrivateGenerator(out), tensorOptions);
+    }
+
+    /**
+     * Create a Document writer which will write to the input JSON generator.
+     * TODO: remove.
+     *
+     * @param generator the output JSON generator
+     * @param tensorShortForm whether to use the short type-dependent form for tensor values
+     * @param tensorDirectValues whether to output tensor values directly or wrapped in a map also containing the type
+     */
+    public JsonWriter(JsonGenerator generator, boolean tensorShortForm, boolean tensorDirectValues) {
+        this(generator, new JsonFormat.EncodeOptions(tensorShortForm, tensorDirectValues));
     }
 
     /**
@@ -108,14 +124,13 @@ public class JsonWriter implements DocumentWriter {
      * will <i>not</i> take ownership of the generator.
      *
      * @param generator the output JSON generator
-     * @param tensorShortForm whether to use the short type-dependent form for tensor values
-     * @param tensorDirectValues whether to output tensor values directly or wrapped in a map also containing the type
+     * @param tensorOptions tensor formatting options (short/long, direct/wrapped, hexdump or not)
      */
-    public JsonWriter(JsonGenerator generator, boolean tensorShortForm, boolean tensorDirectValues) {
+    public JsonWriter(JsonGenerator generator, JsonFormat.EncodeOptions tensorOptions) {
         this.generator = generator;
-        this.tensorShortForm = tensorShortForm;
-        this.tensorDirectValues = tensorDirectValues;
+        this.tensorOptions = tensorOptions;
     }
+
 
     private static JsonGenerator createPrivateGenerator(OutputStream out) {
         try {
@@ -221,7 +236,7 @@ public class JsonWriter implements DocumentWriter {
 
     @Override
     public void write(FieldBase field, TensorFieldValue value) {
-        serializeTensorField(generator, field, value, tensorShortForm, tensorDirectValues);
+        serializeTensorField(generator, field, value, tensorOptions);
     }
 
     @Override
@@ -287,6 +302,7 @@ public class JsonWriter implements DocumentWriter {
 
     /**
      * Utility method to easily serialize a single document.
+     * TODO: remove
      *
      * @param document the document to be serialized
      * @param tensorShortForm whether tensors should be serialized in a type-dependent short form
@@ -297,6 +313,20 @@ public class JsonWriter implements DocumentWriter {
     public static byte[] toByteArray(Document document, boolean tensorShortForm, boolean tensorDirectValues) {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         JsonWriter writer = new JsonWriter(out, tensorShortForm, tensorDirectValues);
+        writer.write(document);
+        return out.toByteArray();
+    }
+
+    /**
+     * Utility method to easily serialize a single document.
+     *
+     * @param document the document to be serialized
+     * @param tensorOptions tensor formatting options (short/long, direct/wrapped, hexdump or not)
+     * @return the input document serialised as UTF-8 encoded JSON
+     */
+    public static byte[] toByteArray(Document document, JsonFormat.EncodeOptions tensorOptions) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        JsonWriter writer = new JsonWriter(out, tensorOptions);
         writer.write(document);
         return out.toByteArray();
     }

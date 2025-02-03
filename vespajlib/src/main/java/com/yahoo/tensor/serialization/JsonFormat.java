@@ -35,6 +35,11 @@ public class JsonFormat {
     /** Options for encode */
     public record EncodeOptions(boolean shortForm, boolean directValues, boolean hexForDensePart) {
         // TODO - consider "compact" flag
+        public EncodeOptions() { this(false); }
+        public EncodeOptions(boolean shortForm) { this(shortForm, false); }
+        public EncodeOptions(boolean shortForm, boolean directValues) {
+            this(shortForm, directValues, false);
+        }
     }
     /**
      * Serializes the given tensor value into JSON format.

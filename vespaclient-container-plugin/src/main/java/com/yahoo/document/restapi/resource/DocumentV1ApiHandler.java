@@ -70,6 +70,7 @@ import com.yahoo.messagebus.TraceNode;
 import com.yahoo.metrics.simple.MetricReceiver;
 import com.yahoo.restapi.Path;
 import com.yahoo.search.query.ParameterParser;
+import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.text.Text;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.http.server.Headers;
@@ -771,22 +772,42 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
             }
         }
 
+        private JsonFormat.EncodeOptions tensorOptions() {
+            // TODO: Flip default on Vespa 9 to "short-value"
+            String format = "short";
+            if (request != null && request.parameters().containsKey("format.tensors")) {
+                var params = request.parameters().get("format.tensors");
+                if (params.size() == 1) {
+                    format = params.get(0);
+                }
+            }
+            return switch (format) {
+                case "hex" ->
+                        new JsonFormat.EncodeOptions(true, false, true);
+                case "hex-value" ->
+                        new JsonFormat.EncodeOptions(true, true, true);
+                default ->
+                        // aka "short"
+                        new JsonFormat.EncodeOptions(true, false, false);
+                case "short-value" ->
+                        new JsonFormat.EncodeOptions(true, true, false);
+                case "long" ->
+                        new JsonFormat.EncodeOptions(false, false, false);
+                case "long-value" ->
+                        new JsonFormat.EncodeOptions(false, true, false);
+            };
+        }
+
         private boolean tensorShortForm() {
-            return request == null ||
-                    !request.parameters().containsKey("format.tensors") ||
-                    (!request.parameters().get("format.tensors").contains("long")
-                            && !request.parameters().get("format.tensors").contains("long-value"));// default
+            return tensorOptions().shortForm();
         }
 
         private boolean tensorDirectValues() {
-            return request != null &&
-                    request.parameters().containsKey("format.tensors") &&
-                    (request.parameters().get("format.tensors").contains("short-value")
-                            || request.parameters().get("format.tensors").contains("long-value"));// TODO: Flip default on Vespa 9
+            return tensorOptions().directValues();
         }
 
         synchronized void writeSingleDocument(Document document) throws IOException {
-            new JsonWriter(json, tensorShortForm(), tensorDirectValues()).writeFields(document);
+            new JsonWriter(json, tensorOptions()).writeFields(document);
         }
 
         synchronized void writeDocumentsArrayStart() throws IOException {
