@@ -27,11 +27,6 @@ public class VerificationContext {
         return this;
     }
 
-    /** Returns the type of the field processed by this. */
-    public DataType getFieldType(Expression expression) {
-        return fieldTypes.getInputType(expression, getOutputField());
-    }
-
     /** Returns the type of the given field. */
     public DataType getFieldType(String fieldName, Expression expression) {
         return fieldTypes.getInputType(expression, fieldName);
@@ -56,12 +51,6 @@ public class VerificationContext {
         variables.put(name, value);
         return this;
     }
-
-    /**
-     * Returns the name of the (last) output field of the statement this is executed as a part of,
-     * or null if none or not yet verified
-     */
-    public String getOutputField() { return outputField; }
 
     /** Sets the name of the (last) output field of the statement this is executed as a part of */
     public void setOutputField(String outputField) { this.outputField = outputField; }

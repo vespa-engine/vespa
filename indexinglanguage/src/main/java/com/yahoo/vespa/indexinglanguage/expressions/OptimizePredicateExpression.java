@@ -28,6 +28,10 @@ public final class OptimizePredicateExpression extends Expression {
         this.optimizer = optimizer;
     }
 
+    // Not technically true, but the semantics are not changed. */
+    @Override
+    public boolean isMutating() { return false; }
+
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         return super.setInputType(inputType, DataType.PREDICATE, context);

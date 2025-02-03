@@ -26,7 +26,8 @@ public final class NowExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        return super.setInputType(inputType, context);
+        super.setInputType(inputType, context);
+        return DataType.LONG;
     }
 
     @Override

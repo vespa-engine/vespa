@@ -75,7 +75,7 @@ public class IndexingValidation extends Processor {
                 outputs.add(fieldName);
                 prevNames.add(fieldName);
             }
-            if (expression.createdOutputType() != null) {
+            if (expression.isMutating()) {
                 prevNames.clear();
             }
             return false;
@@ -98,9 +98,8 @@ public class IndexingValidation extends Processor {
         @Override
         public DataType getInputType(Expression exp, String fieldName) {
             SDField field = schema.getDocumentField(fieldName);
-            if (field == null) {
-                throw new VerificationException(exp, "Input field '" + fieldName + "' not found.");
-            }
+            if (field == null)
+                throw new VerificationException(exp, "Input field '" + fieldName + "' not found");
             return field.getDataType();
         }
 
@@ -110,16 +109,14 @@ public class IndexingValidation extends Processor {
             DataType fieldType;
             if (expression instanceof AttributeExpression) {
                 Attribute attribute = schema.getAttribute(fieldName);
-                if (attribute == null) {
-                    throw new VerificationException(expression, "Attribute '" + fieldName + "' not found.");
-                }
+                if (attribute == null)
+                    throw new VerificationException(expression, "Attribute '" + fieldName + "' not found");
                 fieldDesc = "attribute";
                 fieldType = attribute.getDataType();
             } else if (expression instanceof IndexExpression) {
                 SDField field = schema.getConcreteField(fieldName);
-                if (field == null) {
-                    throw new VerificationException(expression, "Index field '" + fieldName + "' not found.");
-                }
+                if (field == null)
+                    throw new VerificationException(expression, "Index field '" + fieldName + "' not found");
                 fieldDesc = "index field";
                 fieldType = field.getDataType();
             } else if (expression instanceof SummaryExpression) {
@@ -131,7 +128,7 @@ public class IndexingValidation extends Processor {
                         fieldDesc = "document field";
                         fieldType = sdField.getDataType();
                     } else {
-                        throw new VerificationException(expression, "Summary field '" + fieldName + "' not found.");
+                        throw new VerificationException(expression, "Summary field '" + fieldName + "' not found");
                     }
                 } else {
                     fieldDesc = "summary field";
@@ -142,7 +139,7 @@ public class IndexingValidation extends Processor {
             }
             if ( ! fieldType.isAssignableFrom(valueType))
                 throw new VerificationException(expression, "Can not assign " + valueType.getName() + " to " + fieldDesc +
-                                                            " '" + fieldName + "' which is " + fieldType.getName() + ".");
+                                                            " '" + fieldName + "' which is " + fieldType.getName());
         }
 
     }

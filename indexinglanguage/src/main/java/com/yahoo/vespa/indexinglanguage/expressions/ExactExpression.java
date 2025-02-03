@@ -38,6 +38,9 @@ public final class ExactExpression extends Expression {
     }
 
     @Override
+    public boolean isMutating() { return false; }
+
+    @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         return super.setInputType(inputType, DataType.STRING, context);
     }

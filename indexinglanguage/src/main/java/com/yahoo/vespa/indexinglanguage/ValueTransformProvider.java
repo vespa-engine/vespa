@@ -25,8 +25,8 @@ public abstract class ValueTransformProvider extends ExpressionConverter {
     }
 
     @Override
-    protected final boolean shouldConvert(Expression exp) {
-        if (transformClass.isInstance(exp)) {
+    protected final boolean shouldConvert(Expression expression) {
+        if (transformClass.isInstance(expression)) {
             if (transformed) {
                 duplicate = true;
                 return true;
@@ -34,16 +34,8 @@ public abstract class ValueTransformProvider extends ExpressionConverter {
             transformed = true;
             return false;
         }
-        if (exp.createdOutputType() != null) {
-            transformed = false;
-            return false;
-        }
-        if ( ! requiresTransform(exp)) {
-            return false;
-        }
-        if (transformed) {
-            return false;
-        }
+        if ( ! requiresTransform(expression)) return false;
+        if (transformed) return false;
         return true;
     }
 

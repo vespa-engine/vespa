@@ -36,7 +36,6 @@ class OutputAssert {
     public static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
         var context = new VerificationContext(adapter).setCurrentType(value);
         assertEquals(value, exp.setInputType(value, context));
-        assertEquals(value, context.verify(exp).getCurrentType());
     }
 
     public static void assertVerifyThrows(FieldTypeAdapter adapter, DataType value, Expression exp,

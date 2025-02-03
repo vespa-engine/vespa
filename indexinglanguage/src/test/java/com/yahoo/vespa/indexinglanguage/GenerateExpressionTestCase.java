@@ -162,9 +162,7 @@ public class GenerateExpressionTestCase {
         adapter.setValue("myArray", inputArray);
         expression.setStatementOutput(new DocumentType("myDocument"), outputField);
         
-        // Necessary to resolve output type
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(new ArrayDataType(DataType.STRING), expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -230,9 +228,7 @@ public class GenerateExpressionTestCase {
         
         expression.setStatementOutput(new DocumentType("myDocument"), outputField);
 
-        // Necessary to resolve output type
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(new ArrayDataType(DataType.STRING), expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);

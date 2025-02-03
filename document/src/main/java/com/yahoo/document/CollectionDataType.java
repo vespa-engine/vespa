@@ -46,11 +46,9 @@ public abstract class CollectionDataType extends DataType {
 
     @Override
     public boolean isValueCompatible(FieldValue value) {
-        if (!(value instanceof CollectionFieldValue)) {
-            return false;
-        }
-        CollectionFieldValue<?> cfv = (CollectionFieldValue<?>) value;
-        return equals(cfv.getDataType());
+        if (!(value instanceof CollectionFieldValue<?> collectionValue)) return false;
+        if (collectionValue.getDataType().getClass() != this.getClass()) return false;
+        return collectionValue.getDataType().getNestedType().isAssignableTo(this.getNestedType());
     }
 
     @Override

@@ -36,10 +36,10 @@ public class JoinTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         Expression exp = new JoinExpression(";");
-        assertVerify(DataType.getArray(DataType.INT), exp, DataType.STRING);
-        assertVerify(DataType.getArray(DataType.STRING), exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got no value", null, exp);
-        assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got type int", DataType.INT, exp);
+        assertVerify(DataType.getArray(DataType.INT), new JoinExpression(";"), DataType.STRING);
+        assertVerify(DataType.getArray(DataType.STRING), new JoinExpression(";"), DataType.STRING);
+        assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got no value", null, new JoinExpression(";"));
+        assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got type int", DataType.INT, new JoinExpression(";"));
     }
 
     @Test

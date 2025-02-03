@@ -57,7 +57,7 @@ public class IndexingValues extends Processor {
             }
             if (exp instanceof InputExpression && ((InputExpression)exp).getFieldName().equals(field.getName())) {
                 mutatedBy = null;
-            } else if (exp.createdOutputType() != null) {
+            } else if (exp.isMutating()) {
                 mutatedBy = exp;
             }
             return false;

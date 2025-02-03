@@ -86,9 +86,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        // Necessary to resolve output type
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(new ArrayDataType(new TensorDataType(tensorType)), expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -123,9 +121,7 @@ public class EmbeddingScriptTestCase {
 
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        // Necessary to resolve output type
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -156,9 +152,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        // Necessary to resolve output type
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -189,7 +183,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        assertEquals(new TensorDataType(tensorType), expression.verify(new VerificationContext(adapter)));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -291,9 +285,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("text", text);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        // Necessary to resolve output type
-        VerificationContext verificationContext = new VerificationContext(adapter);
-        assertEquals(new TensorDataType(tensorType), expression.verify(verificationContext));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(text);
@@ -349,7 +341,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        assertEquals(new TensorDataType(tensorType), expression.verify(new VerificationContext(adapter)));
+        expression.verify(new VerificationContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -366,6 +358,20 @@ public class EmbeddingScriptTestCase {
                                 "{passage:1,token:101}:101.0, " +
                                 "{passage:1,token:99}:99.0}"),
                 sparse2DTensor.getTensor().get());
+    }
+
+    @Test
+    public void testIt() {
+        var tester = new EmbeddingScriptTester(Map.of("emb1", new EmbeddingScriptTester.MockMappedEmbedder("myDocument.sections_embeddings")));
+        var expression = tester.expressionFrom("input sections | for_each { ( _ || \"\") } | embed emb1 passage | attribute sections_embeddings | index sections_embeddings");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("sections", new ArrayDataType(DataType.STRING)));
+        TensorType tensorType = TensorType.fromSpec("tensor(passage{}, token{})");
+        var tensorField = new Field("sections_embeddings", new TensorDataType(tensorType));
+        adapter.createField(tensorField);
+
+        expression.verify(new VerificationContext(adapter));
     }
 
 }
