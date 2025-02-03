@@ -42,7 +42,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
     private String summaryDecodePolicy = "eager";
-    private String sequencerType = "THROUGHPUT";
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
     private int responseNumThreads = 2;
@@ -98,7 +97,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Zone zone() { return zone; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
     @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) { return jvmGCOptions; }
-    @Override public String feedSequencerType() { return sequencerType; }
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return firstTimeDeployment; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
@@ -198,10 +196,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         summaryDecodePolicy = type;
         return this;
     }
-    public TestProperties setFeedSequencerType(String type) {
-        sequencerType = type;
-        return this;
-    }
+
     public TestProperties setResponseSequencerType(String type) {
         responseSequencerType = type;
         return this;
