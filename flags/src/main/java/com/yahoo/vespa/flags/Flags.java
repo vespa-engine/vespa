@@ -417,7 +417,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
-            List.of("mpolden"), "2024-10-22", "2025-02-01",
+            List.of("mpolden"), "2024-10-22", "2025-06-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
