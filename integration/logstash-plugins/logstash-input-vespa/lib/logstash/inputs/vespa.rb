@@ -37,6 +37,10 @@ class LogStash::Inputs::Vespa < LogStash::Inputs::Base
   # Path to the client key file for mTLS.
   config :client_key, :validate => :path
 
+  # Authentication token for Vespa Cloud
+  # it will be sent as a Bearer token in the Authorization header
+  config :auth_token, :validate => :string
+
   # desired page size for the visit request, i.e. the wantedDocumentCount parameter
   config :page_size, :validate => :number, :default => 100
 
@@ -160,12 +164,19 @@ class LogStash::Inputs::Vespa < LogStash::Inputs::Base
       http = Net::HTTP.new(uri.host, uri.port)
       if uri.scheme == "https"
         http.use_ssl = true
-        http.cert = @cert
-        http.key = @key
-        http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        if @client_cert && @client_key
+          http.cert = @cert
+          http.key = @key
+          http.verify_mode = OpenSSL::SSL::VERIFY_PEER
+        end
       end
 
       request = Net::HTTP::Get.new(uri.request_uri)
+      # Add auth token if provided
+      if @auth_token
+        request['Authorization'] = "Bearer #{@auth_token}"
+      end
+
       http.request(request)
     rescue => e
       retries += 1
