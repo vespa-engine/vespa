@@ -788,10 +788,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addDocumentApi(DeployState deployState, Element spec, ApplicationContainerCluster cluster, ConfigModelContext context) {
-        ContainerDocumentApi containerDocumentApi = buildDocumentApi(deployState, cluster, spec, context);
-        if (containerDocumentApi == null) return;
-
-        cluster.setDocumentApi(containerDocumentApi);
+        cluster.setDocumentApi(buildDocumentApi(deployState, cluster, spec, context));
     }
 
     private void addDocproc(DeployState deployState, Element spec, ApplicationContainerCluster cluster) {
@@ -1278,7 +1275,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private ContainerDocumentApi buildDocumentApi(DeployState deployState, ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         Element documentApiElement = XML.getChild(spec, "document-api");
-        if (documentApiElement == null) return null;
+        if (documentApiElement == null) return ContainerDocumentApi.createDummyApi(cluster);
 
         ContainerDocumentApi.HandlerOptions documentApiOptions = DocumentApiOptionsBuilder.build(documentApiElement);
         Element ignoreUndefinedFields = XML.getChild(documentApiElement, "ignore-undefined-fields");

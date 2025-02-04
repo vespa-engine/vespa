@@ -5,6 +5,7 @@ import com.yahoo.api.annotations.Beta;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.google.inject.name.Names;
+import com.yahoo.application.Application;
 import com.yahoo.application.Networking;
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.application.container.handler.Response;
@@ -47,6 +48,7 @@ public final class JDisc implements AutoCloseable {
     private final boolean deletePathWhenClosing;
 
     private JDisc(Path path, boolean deletePathWhenClosing, Networking networking, ConfigModelRepo configModelRepo) {
+        System.setProperty(Application.vespaLocalProperty, "true");
         this.path = path;
         this.deletePathWhenClosing = deletePathWhenClosing;
         testDriver = TestDriver.newInstance(osgiFramework, "", false, //StandaloneContainerApplication.class,

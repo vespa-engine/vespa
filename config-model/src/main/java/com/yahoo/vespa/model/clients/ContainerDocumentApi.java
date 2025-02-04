@@ -11,6 +11,7 @@ import com.yahoo.vespa.model.container.component.BindingPattern;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 import com.yahoo.vespa.model.container.component.UserBindingPattern;
+import com.yahoo.vespa.model.container.xml.DocumentApiOptionsBuilder;
 import org.w3c.dom.Element;
 
 import java.nio.file.Path;
@@ -37,6 +38,22 @@ public class ContainerDocumentApi {
         addRestApiHandler(cluster, handlerOptions, portOverride);
         addFeedHandler(ds, cluster, handlerOptions, portOverride);
         addVespaClientContainerBundle(cluster);
+    }
+
+    // Used for creating dummy document api that will be used when document api is not configured
+    private ContainerDocumentApi(ContainerCluster<?> cluster) {
+        this.ignoreUndefinedFields = true;
+        var handlerOptions = DocumentApiOptionsBuilder.build(null);
+        var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DummyDocumentV1ApiHandler",
+                                            DOCUMENT_V1_PREFIX + "/*", handlerOptions, null, Set.of());
+        cluster.addComponent(handler);
+        addVespaClientContainerBundle(cluster);
+    }
+
+    public static ContainerDocumentApi createDummyApi(ContainerCluster<?> cluster) {
+        return System.getProperty("vespa.local", "false").equals("true") // set by Application when running locally
+                ? null
+                : new ContainerDocumentApi(cluster);
     }
 
     public static void addVespaClientContainerBundle(ContainerCluster<?> c) {

@@ -28,6 +28,7 @@ import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
+import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
@@ -37,6 +38,7 @@ import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
+import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.prelude.cluster.QrMonitorConfig;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.AbstractService;
@@ -815,6 +817,19 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
             } catch (IllegalArgumentException ignored) {
             }
         }
+    }
+
+    @Test
+    void dummy_document_api() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                nodesXml,
+                "</container>");
+        var models = createModel(root, clusterElem);
+        assertEquals(1, models.get(0).getCluster().getAllComponents().stream()
+              .filter(component -> component.getComponentId().equals(
+                      new ComponentModel("com.yahoo.document.restapi.resource.DummyDocumentV1ApiHandler", null, "vespaclient-container-plugin").getComponentId()))
+                .count());
     }
 
     private void assertComponentConfigured(ApplicationContainer container, String id) {
