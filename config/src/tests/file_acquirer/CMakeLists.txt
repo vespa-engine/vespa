@@ -4,5 +4,6 @@ vespa_add_executable(config_file_acquirer_test_app TEST
     file_acquirer_test.cpp
     DEPENDS
     vespa_config
+    GTest::gtest
 )
 vespa_add_test(NAME config_file_acquirer_test_app COMMAND config_file_acquirer_test_app)

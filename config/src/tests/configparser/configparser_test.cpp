@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
+#include "config-foo.h"
 #include <vespa/config/common/configparser.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/configvalue.h>
 #include <vespa/config/common/misc.h>
-#include "config-foo.h"
-#include <fstream>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <fstream>
 
 using namespace config;
 using vespalib::asciistream;
@@ -28,29 +29,29 @@ namespace {
     }
 }
 
-TEST("require that default value exception provides error message")
+TEST(ConfigParserTest, require_that_default_value_exception_provides_error_message)
 {
     writeFile("foo.cfg", "blabla foo\n");
     try {
         FooConfig config(readConfig("foo.cfg"));
         ASSERT_TRUE(false);
     } catch (InvalidConfigException & ice) {
-        ASSERT_EQUAL("Error parsing config 'foo' in namespace 'config': Config parameter fooValue has no default value and is not specified in config", ice.getMessage());
+        ASSERT_EQ("Error parsing config 'foo' in namespace 'config': Config parameter fooValue has no default value and is not specified in config", ice.getMessage());
     }
 }
 
-TEST("require that unknown fields can exist in config payload")
+TEST(ConfigParserTest, require_that_unknown_fields_can_exist_in_config_payload)
 {
     writeFile("foo.cfg", "blablabla foo\nfooValue \"hello\"\n");
     try {
         FooConfig config(readConfig("foo.cfg"));
-        ASSERT_EQUAL("hello", config.fooValue);
+        ASSERT_EQ("hello", config.fooValue);
     } catch (InvalidConfigException & ice) {
         ASSERT_FALSE(true);
     }
 }
 
-TEST("require that required fields will throw error with unknown fields")
+TEST(ConfigParserTest, require_that_required_fields_will_throw_error_with_unknown_fields)
 {
     writeFile("foo.cfg", "blablabla foo\nfooValu \"hello\"\n");
     try {
@@ -61,73 +62,76 @@ TEST("require that required fields will throw error with unknown fields")
     }
 }
 
-TEST("require that array lengths does not have to be specified")
+TEST(ConfigParserTest, require_that_array_lengths_does_not_have_to_be_specified)
 {
     writeFile("foo.cfg", "\nfooValue \"hello\"\nfooArray[0] 3\nfooArray[1] 9\nfooArray[2] 33\nfooStruct[0].innerStruct[0].bar 2\nfooStruct[0].innerStruct[1].bar 3\nfooStruct[1].innerStruct[0].bar 4");
     try {
         FooConfig config(readConfig("foo.cfg"));
-        ASSERT_EQUAL("hello", config.fooValue);
-        ASSERT_EQUAL(3u, config.fooArray.size());
-        ASSERT_EQUAL(3, config.fooArray[0]);
-        ASSERT_EQUAL(9, config.fooArray[1]);
-        ASSERT_EQUAL(33, config.fooArray[2]);
-        ASSERT_EQUAL(2u, config.fooStruct.size());
-        ASSERT_EQUAL(2u, config.fooStruct[0].innerStruct.size());
-        ASSERT_EQUAL(1u, config.fooStruct[1].innerStruct.size());
-        ASSERT_EQUAL(2, config.fooStruct[0].innerStruct[0].bar);
-        ASSERT_EQUAL(3, config.fooStruct[0].innerStruct[1].bar);
-        ASSERT_EQUAL(4, config.fooStruct[1].innerStruct[0].bar);
+        ASSERT_EQ("hello", config.fooValue);
+        ASSERT_EQ(3u, config.fooArray.size());
+        ASSERT_EQ(3, config.fooArray[0]);
+        ASSERT_EQ(9, config.fooArray[1]);
+        ASSERT_EQ(33, config.fooArray[2]);
+        ASSERT_EQ(2u, config.fooStruct.size());
+        ASSERT_EQ(2u, config.fooStruct[0].innerStruct.size());
+        ASSERT_EQ(1u, config.fooStruct[1].innerStruct.size());
+        ASSERT_EQ(2, config.fooStruct[0].innerStruct[0].bar);
+        ASSERT_EQ(3, config.fooStruct[0].innerStruct[1].bar);
+        ASSERT_EQ(4, config.fooStruct[1].innerStruct[0].bar);
     } catch (InvalidConfigException & ice) {
         ASSERT_TRUE(false);
     }
 }
 
-TEST("require that array lengths may be specified")
+TEST(ConfigParserTest, require_that_array_lengths_may_be_specified)
 {
     writeFile("foo.cfg", "\nfooValue \"hello\"\nfooArray[3]\nfooArray[0] 3\nfooArray[1] 9\nfooArray[2] 33\nfooStruct[2]\nfooStruct[0].innerStruct[2]\nfooStruct[0].innerStruct[0].bar 2\nfooStruct[0].innerStruct[1].bar 3\nfooStruct[1].innerStruct[1]\nfooStruct[1].innerStruct[0].bar 4");
     try {
         FooConfig config(readConfig("foo.cfg"));
-        ASSERT_EQUAL("hello", config.fooValue);
-        ASSERT_EQUAL(3u, config.fooArray.size());
-        ASSERT_EQUAL(3, config.fooArray[0]);
-        ASSERT_EQUAL(9, config.fooArray[1]);
-        ASSERT_EQUAL(33, config.fooArray[2]);
-        ASSERT_EQUAL(2u, config.fooStruct[0].innerStruct.size());
-        ASSERT_EQUAL(1u, config.fooStruct[1].innerStruct.size());
-        ASSERT_EQUAL(2, config.fooStruct[0].innerStruct[0].bar);
-        ASSERT_EQUAL(3, config.fooStruct[0].innerStruct[1].bar);
-        ASSERT_EQUAL(4, config.fooStruct[1].innerStruct[0].bar);
+        ASSERT_EQ("hello", config.fooValue);
+        ASSERT_EQ(3u, config.fooArray.size());
+        ASSERT_EQ(3, config.fooArray[0]);
+        ASSERT_EQ(9, config.fooArray[1]);
+        ASSERT_EQ(33, config.fooArray[2]);
+        ASSERT_EQ(2u, config.fooStruct[0].innerStruct.size());
+        ASSERT_EQ(1u, config.fooStruct[1].innerStruct.size());
+        ASSERT_EQ(2, config.fooStruct[0].innerStruct[0].bar);
+        ASSERT_EQ(3, config.fooStruct[0].innerStruct[1].bar);
+        ASSERT_EQ(4, config.fooStruct[1].innerStruct[0].bar);
     } catch (InvalidConfigException & ice) {
         ASSERT_TRUE(false);
     }
 }
 
-TEST("require that escaped values are properly unescaped") {
+TEST(ConfigParserTest, require_that_escaped_values_are_properly_unescaped)
+{
     StringVector payload;
     payload.push_back("foo \"a\\nb\\rc\\\\d\\\"e\x42g\"");
     std::string value(ConfigParser::parse<std::string>("foo", payload));
-    ASSERT_EQUAL("a\nb\rc\\d\"eBg", value);
+    ASSERT_EQ("a\nb\rc\\d\"eBg", value);
 }
 
-TEST("verify that locale does not affect double parsing") {
+TEST(ConfigParserTest, verify_that_locale_does_not_affect_double_parsing)
+{
     StringVector payload;
     setlocale(LC_NUMERIC, "nb_NO.UTF-8");
     payload.push_back("foo 3,14");
-    ASSERT_EXCEPTION(ConfigParser::parse<double>("foo", payload), InvalidConfigException, "Value 3,14 is not a legal double");
+    VESPA_EXPECT_EXCEPTION(ConfigParser::parse<double>("foo", payload), InvalidConfigException, "Value 3,14 is not a legal double");
     setlocale(LC_NUMERIC, "C");
 }
 
-TEST("require that maps can be parsed")
+TEST(ConfigParserTest, require_that_maps_can_be_parsed)
 {
     writeFile("foo.cfg", "\nfooValue \"a\"\nfooMap{\"foo\"} 1336\nfooMap{\"bar\"} 1337\n");
     FooConfig config(readConfig("foo.cfg"));
-    ASSERT_EQUAL("a", config.fooValue);
-    ASSERT_EQUAL(2u, config.fooMap.size());
-    ASSERT_EQUAL(1336, config.fooMap.at("foo"));
-    ASSERT_EQUAL(1337, config.fooMap.at("bar"));
+    ASSERT_EQ("a", config.fooValue);
+    ASSERT_EQ(2u, config.fooMap.size());
+    ASSERT_EQ(1336, config.fooMap.at("foo"));
+    ASSERT_EQ(1337, config.fooMap.at("bar"));
 }
 
-TEST("handles quotes for bool values") {
+TEST(ConfigParserTest, handles_quotes_for_bool_values)
+{
     StringVector payload;
     payload.push_back("foo \"true\"");
     payload.push_back("bar \"123\"");
@@ -137,10 +141,10 @@ TEST("handles quotes for bool values") {
     int32_t i(ConfigParser::parse<int32_t>("bar", payload));
     int64_t l(ConfigParser::parse<int64_t>("baz", payload));
     double d(ConfigParser::parse<double>("quux", payload));
-    EXPECT_EQUAL(true, b);
-    EXPECT_EQUAL(123, i);
-    EXPECT_EQUAL(1234, l);
-    EXPECT_APPROX(3.2, d, 0.001);
+    EXPECT_EQ(true, b);
+    EXPECT_EQ(123, i);
+    EXPECT_EQ(1234, l);
+    EXPECT_NEAR(3.2, d, 0.001);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

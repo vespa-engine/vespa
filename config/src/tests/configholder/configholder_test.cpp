@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/configholder.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
+#include <barrier>
 #include <thread>
 
 using namespace config;
+using vespalib::test::Nexus;
 
 namespace {
 
@@ -12,7 +15,7 @@ constexpr vespalib::duration ONE_MINUTE = 60s;
 
 }
 
-TEST("Require that element order is correct")
+TEST(ConfigHolderTest, Require_that_element_order_is_correct)
 {
     ConfigValue value(StringVector(), "foo");
     ConfigValue value2(StringVector(), "bar");
@@ -28,21 +31,21 @@ TEST("Require that element order is correct")
     ASSERT_TRUE(value2 == update->getValue());
 }
 
-TEST("Require that waiting is done")
+TEST(ConfigHolderTest, Require_that_waiting_is_done)
 {
     ConfigValue value;
 
     ConfigHolder holder;
     vespalib::Timer timer;
     holder.wait_for(1000ms);
-    EXPECT_GREATER_EQUAL(timer.elapsed(), ONE_SEC);
-    EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
+    EXPECT_GE(timer.elapsed(), ONE_SEC);
+    EXPECT_LT(timer.elapsed(), ONE_MINUTE);
 
     holder.handle(std::make_unique<ConfigUpdate>(value, true, 0));
     ASSERT_TRUE(holder.wait_for(100ms));
 }
 
-TEST("Require that polling for elements work")
+TEST(ConfigHolderTest, Require_that_polling_for_elements_work)
 {
     ConfigValue value;
 
@@ -54,7 +57,8 @@ TEST("Require that polling for elements work")
     ASSERT_FALSE(holder.poll());
 }
 
-TEST("Require that negative time does not mean forever.") {
+TEST(ConfigHolderTest, Require_that_negative_time_does_not_mean_forever)
+{
     ConfigHolder holder;
     vespalib::Timer timer;
     ASSERT_FALSE(holder.poll());
@@ -62,24 +66,30 @@ TEST("Require that negative time does not mean forever.") {
     ASSERT_FALSE(holder.wait_for(0ms));
     ASSERT_FALSE(holder.wait_for(-1ms));
     ASSERT_FALSE(holder.wait_for(-7ms));
-    EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
+    EXPECT_LT(timer.elapsed(), ONE_MINUTE);
 }
 
-TEST_MT_F("Require that wait is interrupted on close", 2, ConfigHolder)
-{
-    if (thread_id == 0) {
-        vespalib::Timer timer;
-        TEST_BARRIER();
-        f.wait_for(1000ms);
-        EXPECT_LESS(timer.elapsed(), ONE_MINUTE);
-        EXPECT_GREATER(timer.elapsed(), 400ms);
-        TEST_BARRIER();
-    } else {
-        TEST_BARRIER();
-        std::this_thread::sleep_for(500ms);
-        f.close();
-        TEST_BARRIER();
-    }
+TEST(ConfigHolderTest, Require_that_wait_is_interrupted_on_close) {
+    constexpr size_t num_threads = 2;
+    ConfigHolder f;
+    std::barrier barrier(num_threads);
+    auto task = [&f,&barrier](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            vespalib::Timer timer;
+            barrier.arrive_and_wait();
+            f.wait_for(1000ms);
+            EXPECT_LT(timer.elapsed(), ONE_MINUTE);
+            EXPECT_GT(timer.elapsed(), 400ms);
+            barrier.arrive_and_wait();
+        } else {
+            barrier.arrive_and_wait();
+            std::this_thread::sleep_for(500ms);
+            f.close();
+            barrier.arrive_and_wait();
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

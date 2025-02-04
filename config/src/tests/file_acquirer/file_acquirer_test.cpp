@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/config/file_acquirer/file_acquirer.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace config;
@@ -48,9 +49,12 @@ struct ServerFixture : FRT_Invokable {
     }
 };
 
-TEST_FF("require that files can be acquired over rpc", ServerFixture(), RpcFileAcquirer(f1.transport, f1.spec)) {
-    EXPECT_EQUAL("my_path", f2.wait_for("my_ref", 60.0));
-    EXPECT_EQUAL("", f2.wait_for("bogus_ref", 60.0));
+TEST(FileAcquirerTest, require_that_files_can_be_acquired_over_rpc)
+{
+    ServerFixture f1;
+    RpcFileAcquirer f2(f1.transport, f1.spec);
+    EXPECT_EQ("my_path", f2.wait_for("my_ref", 60.0));
+    EXPECT_EQ("", f2.wait_for("bogus_ref", 60.0));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

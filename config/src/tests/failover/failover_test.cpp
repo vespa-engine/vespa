@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/frt/protocol.h>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
@@ -10,16 +9,19 @@
 #include "config-my.h"
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/simple_buffer.h>
-#include <vespa/vespalib/util/barrier.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/test/nexus.h>
+#include <barrier>
+#include <latch>
 
 #include <vespa/log/log.h>
 LOG_SETUP("failover");
 
 using namespace config;
-using vespalib::Barrier;
 using namespace config::protocol::v2;
 using namespace vespalib::slime;
 using namespace vespalib;
+using vespalib::test::Nexus;
 
 namespace {
 
@@ -35,7 +37,7 @@ const std::string requestTypes = "s";
 const std::string responseTypes = "sx";
 
 struct RPCServer : public FRT_Invokable {
-    vespalib::Barrier barrier;
+    std::barrier<> barrier;
     int64_t gen;
 
     RPCServer() : barrier(2), gen(1) { }
@@ -77,23 +79,16 @@ struct RPCServer : public FRT_Invokable {
         LOG(info, "Answering...");
     }
     void wait() {
-        barrier.await();
+        barrier.arrive_and_wait();
     }
     void reload() { gen++; }
 };
-
-
-void verifyConfig(std::unique_ptr<MyConfig> config)
-{
-    ASSERT_TRUE(config);
-    ASSERT_EQUAL("myval", config->myField);
-}
 
 struct ServerFixture {
     using UP = std::unique_ptr<ServerFixture>;
     std::unique_ptr<fnet::frt::StandaloneFRT> frt;
     RPCServer server;
-    Barrier b;
+    std::barrier<> b;
     const std::string listenSpec;
     ServerFixture(const std::string & ls)
         : frt(),
@@ -105,7 +100,7 @@ struct ServerFixture {
 
     void wait()
     {
-        b.await();
+        b.arrive_and_wait();
     }
 
     void start()
@@ -219,44 +214,6 @@ struct ConfigCheckFixture {
     }
 };
 
-struct ConfigReloadFixture {
-    std::shared_ptr<IConfigContext> ctx;
-    NetworkFixture & nf;
-    ConfigSubscriber s;
-    ConfigHandle<MyConfig>::UP handle;
-
-    ConfigReloadFixture(NetworkFixture & f2)
-        : ctx(std::make_shared<ConfigContext>(testTimingValues, f2.spec)),
-          nf(f2),
-          s(ctx),
-          handle(s.subscribe<MyConfig>("myId"))
-    {
-    }
-
-    void verifyReload()
-    {
-        nf.reload();
-        ASSERT_TRUE(s.nextGeneration());
-        verifyConfig(handle->getConfig());
-    }
-
-    void verifyReloadFailover(size_t index)
-    {
-        nf.stop(index);
-        verifyReload();
-        nf.wait(index);
-    }
-
-    void verifyReloadFailover(size_t indexA, size_t indexB)
-    {
-        nf.stop(indexA);
-        nf.stop(indexB);
-        verifyReload();
-        nf.wait(indexA);
-        nf.wait(indexB);
-    }
-};
-
 struct ThreeServersFixture {
     std::vector<std::string> specs;
     ThreeServersFixture() : specs() {
@@ -266,92 +223,31 @@ struct ThreeServersFixture {
     }
 };
 
-struct OneServerFixture {
-    std::vector<std::string> specs;
-    OneServerFixture() : specs() {
-        specs.push_back("tcp/localhost:18590");
-    }
-};
-
 }
 
-TEST_MT_FF("require that any node can be down when subscribing",
-             4,
-             ThreeServersFixture(),
-             NetworkFixture(f1.specs))
+TEST(FailoverTest, require_that_any_node_can_be_down_when_subscribing)
 {
-    if (thread_id == 0) {
-        ConfigCheckFixture ccf(f2);
-        f2.waitAll();
-        ccf.checkSubscribe();
-        ccf.verifySubscribeFailover(0);
-        ccf.verifySubscribeFailover(1);
-        ccf.verifySubscribeFailover(2);
-        f2.stopAll();
-        TEST_BARRIER();
-    } else {
-        f2.run(thread_id - 1);
-        TEST_BARRIER();
-    }
-}
-/*
-TEST_MT_FF("require that two out of three nodes can be down when subscribing",
-             4,
-             ThreeServersFixture(),
-             NetworkFixture(f1.specs))
-{
-    if (thread_id == 0) {
-        ConfigCheckFixture ccf(f2);
-        f2.waitAll();
-        ccf.checkSubscribe();
-        ccf.verifySubscribeFailover(0, 1);
-        ccf.verifySubscribeFailover(1, 2);
-        ccf.verifySubscribeFailover(0, 2);
-        f2.stopAll();
-        TEST_BARRIER();
-    } else {
-        f2.run(thread_id - 1);
-        TEST_BARRIER();
-    }
+    constexpr size_t num_threads = 4;
+    ThreeServersFixture f1;
+    NetworkFixture f2(f1.specs);
+    std::latch latch(num_threads);
+    auto task = [&f2,&latch](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            ConfigCheckFixture ccf(f2);
+            f2.waitAll();
+            ccf.checkSubscribe();
+            ccf.verifySubscribeFailover(0);
+            ccf.verifySubscribeFailover(1);
+            ccf.verifySubscribeFailover(2);
+            f2.stopAll();
+            latch.arrive_and_wait();
+        } else {
+            f2.run(thread_id - 1);
+            latch.arrive_and_wait();
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_FF("require that any node can be down when waiting for next generation",
-             4,
-             ThreeServersFixture(),
-             NetworkFixture(f1.specs))
-{
-    if (thread_id == 0) {
-        f2.waitAll();
-        ConfigReloadFixture crf(f2);
-        crf.verifyReload();
-        crf.verifyReloadFailover(0);
-        crf.verifyReloadFailover(1);
-        crf.verifyReloadFailover(2);
-        f2.stopAll();
-        TEST_BARRIER();
-    } else { f2.run(thread_id - 1); TEST_BARRIER();
-    }
-}
-
-TEST_MT_FF("require that two out of three nodes can be down when waiting for next generation",
-             4,
-             ThreeServersFixture(),
-             NetworkFixture(f1.specs))
-{
-    if (thread_id == 0) {
-        f2.waitAll();
-        ConfigReloadFixture crf(f2);
-        crf.verifyReload();
-        crf.verifyReloadFailover(0, 1);
-        crf.verifyReloadFailover(1, 2);
-        crf.verifyReloadFailover(0, 2);
-        f2.stopAll();
-        TEST_BARRIER();
-    } else {
-        f2.run(thread_id - 1);
-        TEST_BARRIER();
-    }
-}
-*/
-
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

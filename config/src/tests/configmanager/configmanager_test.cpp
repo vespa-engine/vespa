@@ -1,14 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include "config-my.h"
 #include <vespa/config/common/configmanager.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/config/common/timingvalues.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/iconfigholder.h>
-
 #include <vespa/config/raw/rawsource.h>
-#include "config-my.h"
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace config;
 
@@ -127,7 +126,8 @@ namespace {
 
 }
 
-TEST("requireThatSubscriptionTimesout") {
+TEST(ConfigManagerTest, requireThatSubscriptionTimesout)
+{
     const ConfigKey key(ConfigKey::create<MyConfig>("myid"));
     const ConfigValue testValue(createValue("l33t", "a"));
 
@@ -143,24 +143,26 @@ TEST("requireThatSubscriptionTimesout") {
             thrown = true;
         }
         ASSERT_TRUE(thrown);
-        ASSERT_EQUAL(1, data.numGetConfig);
+        ASSERT_EQ(1, data.numGetConfig);
     }
 }
-TEST("requireThatSourceIsAskedForRequest") {
+TEST(ConfigManagerTest, requireThatSourceIsAskedForRequest)
+{
     TestContext data;
     const ConfigKey key(ConfigKey::create<MyConfig>("myid"));
     const ConfigValue testValue(createValue("l33t", "a"));
     try {
         ManagerTester tester(key, MySpec(&data));
         tester.subscribe();
-        ASSERT_EQUAL(1, data.numGetConfig);
+        ASSERT_EQ(1, data.numGetConfig);
     } catch (ConfigRuntimeException & e) {
         ASSERT_TRUE(false);
     }
-    ASSERT_EQUAL(1, data.numClose);
+    ASSERT_EQ(1, data.numClose);
 }
 
-TEST("require that new sources are given the correct generation") {
+TEST(ConfigManagerTest, require_that_new_sources_are_given_the_correct_generation)
+{
     TestContext data;
     const ConfigKey key(ConfigKey::create<MyConfig>("myid"));
     const ConfigValue testValue(createValue("l33t", "a"));
@@ -168,10 +170,10 @@ TEST("require that new sources are given the correct generation") {
         ManagerTester tester(key, MySpec(&data));
         tester._mgr.reload(30);
         tester.subscribe();
-        ASSERT_EQUAL(30, data.generation);
+        ASSERT_EQ(30, data.generation);
     } catch (ConfigRuntimeException & e) {
         ASSERT_TRUE(false);
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

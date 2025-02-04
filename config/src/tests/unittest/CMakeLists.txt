@@ -4,6 +4,7 @@ vespa_add_executable(config_unittest_test_app TEST
     unittest.cpp
     DEPENDS
     vespa_config
+    GTest::gtest
 )
 vespa_add_test(NAME config_unittest_test_app COMMAND config_unittest_test_app)
 vespa_generate_config(config_unittest_test_app ../../test/resources/configdefinitions/my.def)

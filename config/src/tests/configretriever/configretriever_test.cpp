@@ -3,10 +3,10 @@
 #include "config-bootstrap.h"
 #include "config-foo.h"
 #include "config-bar.h"
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/config/frt/protocol.h>
 #include <vespa/config/print.h>
 #include <vespa/config/retriever/configretriever.h>
+#include <vespa/config/retriever/configsnapshot.hpp>
 #include <vespa/config/retriever/simpleconfigretriever.h>
 #include <vespa/config/retriever/simpleconfigurer.h>
 #include <vespa/config/common/configholder.h>
@@ -14,10 +14,10 @@
 #include <vespa/config/subscription/configsubscription.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/exceptions.h>
-#include <vespa/config/frt/protocol.h>
-#include <vespa/config/retriever/configsnapshot.hpp>
-#include <thread>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <atomic>
+#include <thread>
 
 using namespace config;
 using namespace std;
@@ -48,6 +48,7 @@ struct ConfigTestFixture {
     {
         set.addBuilder(configId, &bootstrapBuilder);
     }
+    ~ConfigTestFixture();
 
     void addComponent(const std::string & name, const std::string & fooValue, const std::string & barValue)
     {
@@ -92,6 +93,8 @@ struct ConfigTestFixture {
     void reload() { context->reload(); }
 };
 
+ConfigTestFixture::~ConfigTestFixture() = default;
+
 struct SimpleSetup
 {
     ConfigKeySet bootstrapKeys;
@@ -104,15 +107,20 @@ struct SimpleSetup
         bootstrapKeys.add<BootstrapConfig>(f1.configId);
         retriever.reset(new ConfigRetriever(bootstrapKeys, f1.context));
     }
-
+    ~SimpleSetup();
 };
+
+SimpleSetup::~SimpleSetup() = default;
 
 struct MySource : public Source
 {
+    ~MySource() override;
     void getConfig() override { }
     void close() override { }
     void reload(int64_t gen) override { (void) gen; }
 };
+
+MySource::~MySource() = default;
 
 struct SubscriptionFixture
 {
@@ -123,11 +131,13 @@ struct SubscriptionFixture
           sub(std::make_shared<ConfigSubscription>(0, key, holder, std::make_unique<MySource>()))
     {
         holder->handle(std::make_unique<ConfigUpdate>(value, 3, 3));
-        ASSERT_TRUE(sub->nextUpdate(0, steady_clock::now()));
+        EXPECT_TRUE(sub->nextUpdate(0, steady_clock::now()));
         sub->flip();
     }
+    ~SubscriptionFixture();
 };
 
+SubscriptionFixture::~SubscriptionFixture() = default;
 
 namespace {
 
@@ -158,7 +168,9 @@ ConfigValue createKeyValueV2(const std::string & key, const std::string & value)
 }
 
 
-TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
+TEST(ConfigRetrieverTest, require_that_basic_retriever_usage_works)
+{
+    ConfigTestFixture f1("myid");
     f1.addComponent("c1", "foo1", "bar1");
     f1.addComponent("c2", "foo2", "bar2");
 
@@ -167,7 +179,7 @@ TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
 
     ConfigRetriever ret(keys, f1.context);
     ConfigSnapshot configs = ret.getBootstrapConfigs();
-    ASSERT_EQUAL(1u, configs.size());
+    ASSERT_EQ(1u, configs.size());
 
     std::unique_ptr<BootstrapConfig> bootstrapConfig = configs.getConfig<BootstrapConfig>(f1.configId);
     ASSERT_TRUE(f1.configEqual(*bootstrapConfig));
@@ -179,7 +191,7 @@ TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
             componentKeys.add<FooConfig>(configId);
         }
         configs = ret.getConfigs(componentKeys);
-        ASSERT_EQUAL(2u, configs.size());
+        ASSERT_EQ(2u, configs.size());
         ASSERT_TRUE(f1.configEqual("c1", *configs.getConfig<FooConfig>(bootstrapConfig->component[0].configid)));
         ASSERT_TRUE(f1.configEqual("c2", *configs.getConfig<FooConfig>(bootstrapConfig->component[1].configid)));
     }
@@ -190,7 +202,7 @@ TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
             componentKeys.add<BarConfig>(configId);
         }
         configs = ret.getConfigs(componentKeys);
-        ASSERT_EQUAL(2u, configs.size());
+        ASSERT_EQ(2u, configs.size());
         ASSERT_TRUE(f1.configEqual("c1", *configs.getConfig<BarConfig>(bootstrapConfig->component[0].configid)));
         ASSERT_TRUE(f1.configEqual("c2", *configs.getConfig<BarConfig>(bootstrapConfig->component[1].configid)));
     }
@@ -203,7 +215,7 @@ TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
         }
         configs = ret.getConfigs(componentKeys);
 
-        ASSERT_EQUAL(4u, configs.size());
+        ASSERT_EQ(4u, configs.size());
         ASSERT_TRUE(f1.configEqual("c1", *configs.getConfig<FooConfig>(bootstrapConfig->component[0].configid)));
         ASSERT_TRUE(f1.configEqual("c1", *configs.getConfig<BarConfig>(bootstrapConfig->component[0].configid)));
         ASSERT_TRUE(f1.configEqual("c2", *configs.getConfig<FooConfig>(bootstrapConfig->component[1].configid)));
@@ -211,7 +223,7 @@ TEST_F("require that basic retriever usage works", ConfigTestFixture("myid")) {
     }
 }
 
-TEST("require that SimpleConfigRetriever usage works") {
+TEST(ConfigRetrieverTest, require_that_SimpleConfigRetriever_usage_works) {
     ConfigSet set;
     FooConfigBuilder fooBuilder;
     BarConfigBuilder barBuilder;
@@ -226,11 +238,11 @@ TEST("require that SimpleConfigRetriever usage works") {
     SimpleConfigRetriever retr(sub, ctx);
     ConfigSnapshot snap = retr.getConfigs();
     ASSERT_FALSE(snap.empty());
-    ASSERT_EQUAL(2u, snap.size());
+    ASSERT_EQ(2u, snap.size());
     std::unique_ptr<FooConfig> foo = snap.getConfig<FooConfig>("id");
     std::unique_ptr<BarConfig> bar = snap.getConfig<BarConfig>("id");
-    ASSERT_EQUAL("barz", foo->fooValue);
-    ASSERT_EQUAL("fooz", bar->barValue);
+    ASSERT_EQ("barz", foo->fooValue);
+    ASSERT_EQ("fooz", bar->barValue);
 }
 
 class ConfigurableFixture : public SimpleConfigurable
@@ -277,7 +289,9 @@ ConfigurableFixture::~ConfigurableFixture()
 {
 }
 
-TEST_F("require that SimpleConfigurer usage works", ConfigurableFixture()) {
+TEST(ConfigRetrieverTest, require_that_SimpleConfigurer_usage_works)
+{
+    ConfigurableFixture f1;
     ConfigSet set;
     FooConfigBuilder fooBuilder;
     BarConfigBuilder barBuilder;
@@ -292,12 +306,12 @@ TEST_F("require that SimpleConfigurer usage works", ConfigurableFixture()) {
     SimpleConfigurer configurer(SimpleConfigRetriever::UP(new SimpleConfigRetriever(sub, ctx)), &f1);
     configurer.start();
     ASSERT_FALSE(f1.snap.empty());
-    ASSERT_EQUAL(2u, f1.snap.size());
+    ASSERT_EQ(2u, f1.snap.size());
     ConfigSnapshot snap = f1.snap;
     std::unique_ptr<FooConfig> foo = snap.getConfig<FooConfig>("id");
     std::unique_ptr<BarConfig> bar = snap.getConfig<BarConfig>("id");
-    ASSERT_EQUAL("barz", foo->fooValue);
-    ASSERT_EQUAL("fooz", bar->barValue);
+    ASSERT_EQ("barz", foo->fooValue);
+    ASSERT_EQ("fooz", bar->barValue);
 
     f1.configured = false;
     fooBuilder.fooValue = "bimz";
@@ -305,7 +319,7 @@ TEST_F("require that SimpleConfigurer usage works", ConfigurableFixture()) {
     ASSERT_TRUE(f1.waitUntilConfigured(60s));
     snap = f1.snap;
     foo = snap.getConfig<FooConfig>("id");
-    ASSERT_EQUAL("bimz", foo->fooValue);
+    ASSERT_EQ("bimz", foo->fooValue);
     configurer.close();
     fooBuilder.fooValue = "bamz";
     f1.configured = false;
@@ -314,17 +328,21 @@ TEST_F("require that SimpleConfigurer usage works", ConfigurableFixture()) {
 
     SimpleConfigurer configurer2(SimpleConfigRetriever::UP(new SimpleConfigRetriever(sub, ctx)), &f1);
     f1.throwException = true;
-    ASSERT_EXCEPTION(configurer2.start(), ConfigRuntimeException, "foo");
+    VESPA_EXPECT_EXCEPTION(configurer2.start(), ConfigRuntimeException, "foo");
     configurer2.close();
 }
 
-TEST("require that variadic templates can be used to create key sets") {
+TEST(ConfigRetrieverTest, require_that_variadic_templates_can_be_used_to_create_key_sets)
+{
     ConfigKeySet set;
     set.add<FooConfig, BarConfig, BootstrapConfig>("myid");
-    ASSERT_EQUAL(3u, set.size());
+    ASSERT_EQ(3u, set.size());
 }
 
-TEST_FF("require that getBootstrapConfigs returns empty snapshot when closed", ConfigTestFixture("myid"), SimpleSetup(f1)) {
+TEST(ConfigRetrieverTest, require_that_getBootstrapConfigs_returns_empty_snapshot_when_closed)
+{
+    ConfigTestFixture f1("myid");
+    SimpleSetup f2(f1);
     ConfigSnapshot configs = f2.retriever->getBootstrapConfigs();
     ASSERT_TRUE(!configs.empty());
     ASSERT_FALSE(f2.retriever->isClosed());
@@ -334,7 +352,10 @@ TEST_FF("require that getBootstrapConfigs returns empty snapshot when closed", C
     ASSERT_TRUE(configs.empty());
 }
 
-TEST_FF("require that getConfigs throws exception when closed", ConfigTestFixture("myid"), SimpleSetup(f1)) {
+TEST(ConfigRetrieverTest, require_that_getConfigs_throws_exception_when_closed)
+{
+    ConfigTestFixture f1("myid");
+    SimpleSetup f2(f1);
     ConfigSnapshot configs = f2.retriever->getBootstrapConfigs();
     std::unique_ptr<BootstrapConfig> bootstrapConfig = configs.getConfig<BootstrapConfig>(f1.configId);
     ConfigKeySet componentKeys;
@@ -351,23 +372,29 @@ TEST_FF("require that getConfigs throws exception when closed", ConfigTestFixtur
 }
 
 
-TEST_FF("require that snapshots throws exception if invalid key", ConfigTestFixture("myid"), SimpleSetup(f1)) {
+TEST(ConfigRetrieverTest, require_that_snapshots_throws_exception_if_invalid_key)
+{
+    ConfigTestFixture f1("myid");
+    SimpleSetup f2(f1);
     f1.addComponent("c3", "foo3", "bar3");
     ConfigSnapshot snap1 = f2.retriever->getBootstrapConfigs();
     ASSERT_FALSE(snap1.hasConfig<BarConfig>("doesnotexist"));
-    ASSERT_EXCEPTION(snap1.getConfig<BarConfig>("doesnotexist"), IllegalConfigKeyException, "Unable to find config for key name=config.bar,configId=doesnotexist");
-    ASSERT_EXCEPTION(snap1.isChanged<BarConfig>("doesnotexist", 0), IllegalConfigKeyException, "Unable to find config for key name=config.bar,configId=doesnotexist");
+    VESPA_EXPECT_EXCEPTION(snap1.getConfig<BarConfig>("doesnotexist"), IllegalConfigKeyException, "Unable to find config for key name=config.bar,configId=doesnotexist");
+    VESPA_EXPECT_EXCEPTION(snap1.isChanged<BarConfig>("doesnotexist", 0), IllegalConfigKeyException, "Unable to find config for key name=config.bar,configId=doesnotexist");
     ASSERT_TRUE(snap1.hasConfig<BootstrapConfig>("myid"));
 }
 
-TEST_FF("require that snapshots can be ignored", ConfigTestFixture("myid"), SimpleSetup(f1)) {
+TEST(ConfigRetrieverTest, require_that_snapshots_can_be_ignored)
+{
+    ConfigTestFixture f1("myid");
+    SimpleSetup f2(f1);
     f1.addComponent("c3", "foo3", "bar3");
     ConfigSnapshot snap1 = f2.retriever->getBootstrapConfigs();
     int64_t lastGen = snap1.getGeneration();
     f1.reload();
-    ASSERT_EQUAL(lastGen, snap1.getGeneration());
+    ASSERT_EQ(lastGen, snap1.getGeneration());
     ConfigSnapshot snap2 = f2.retriever->getBootstrapConfigs();
-    ASSERT_EQUAL(snap2.getGeneration(), 2);
+    ASSERT_EQ(snap2.getGeneration(), 2);
     ASSERT_TRUE(snap2.isChanged<BootstrapConfig>("myid", lastGen));
     ASSERT_FALSE(snap2.isChanged<BootstrapConfig>("myid", lastGen + 1));
     f1.reload();
@@ -376,48 +403,52 @@ TEST_FF("require that snapshots can be ignored", ConfigTestFixture("myid"), Simp
     ASSERT_FALSE(snap3.isChanged<BootstrapConfig>("myid", lastGen + 1));
 }
 
-TEST_FFF("require that snapshots can produce subsets", SubscriptionFixture(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar")),
-                                                       SubscriptionFixture(ConfigKey::create<BarConfig>("id"), createKeyValueV2("barValue", "foo")),
-                                                       ConfigSnapshot::SubscriptionList()) {
+TEST(ConfigRetrieverTest, require_that_snapshots_can_produce_subsets)
+{
+    SubscriptionFixture f1(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar"));
+    SubscriptionFixture f2(ConfigKey::create<BarConfig>("id"), createKeyValueV2("barValue", "foo"));
+    ConfigSnapshot::SubscriptionList f3;
     f3.push_back(f1.sub);
     f3.push_back(f2.sub);
     ConfigSnapshot parent(f3, 3);
     ASSERT_FALSE(parent.empty());
-    ASSERT_EQUAL(3, parent.getGeneration());
-    ASSERT_EQUAL(2u, parent.size());
+    ASSERT_EQ(3, parent.getGeneration());
+    ASSERT_EQ(2u, parent.size());
 
     ConfigSnapshot subset1(parent.subset(ConfigKeySet().add<FooConfig>("id")));
     ASSERT_FALSE(subset1.empty());
-    ASSERT_EQUAL(3, subset1.getGeneration());
-    ASSERT_EQUAL(1u, subset1.size());
+    ASSERT_EQ(3, subset1.getGeneration());
+    ASSERT_EQ(1u, subset1.size());
     std::unique_ptr<FooConfig> cfg1(subset1.getConfig<FooConfig>("id"));
     ASSERT_TRUE(cfg1);
 
     ConfigSnapshot subset2(parent.subset(ConfigKeySet().add<BarConfig>("id")));
     ASSERT_FALSE(subset2.empty());
-    ASSERT_EQUAL(3, subset2.getGeneration());
-    ASSERT_EQUAL(1u, subset2.size());
+    ASSERT_EQ(3, subset2.getGeneration());
+    ASSERT_EQ(1u, subset2.size());
     std::unique_ptr<BarConfig> cfg2(subset2.getConfig<BarConfig>("id"));
     ASSERT_TRUE(cfg2);
 
     ConfigSnapshot subset3(parent.subset(ConfigKeySet().add<BarConfig>("doesnotexist")));
     ASSERT_TRUE(subset3.empty());
-    ASSERT_EQUAL(3, subset3.getGeneration());
-    ASSERT_EQUAL(0u, subset3.size());
+    ASSERT_EQ(3, subset3.getGeneration());
+    ASSERT_EQ(0u, subset3.size());
 
     ConfigSnapshot subset4(parent.subset(ConfigKeySet().add<BarConfig>("doesnotexist").add<FooConfig>("id").add<FooConfig>("nosuchthing").add<BarConfig>("id").add<BarConfig>("nothere")));
     ASSERT_FALSE(subset4.empty());
-    ASSERT_EQUAL(3, subset4.getGeneration());
-    ASSERT_EQUAL(2u, subset4.size());
+    ASSERT_EQ(3, subset4.getGeneration());
+    ASSERT_EQ(2u, subset4.size());
     cfg1 = subset4.getConfig<FooConfig>("id");
     ASSERT_TRUE(cfg1);
     cfg2 = subset4.getConfig<BarConfig>("id");
     ASSERT_TRUE(cfg2);
 }
 
-TEST_FFF("require that snapshots can be serialized", SubscriptionFixture(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar")),
-                                                     SubscriptionFixture(ConfigKey::create<BarConfig>("id"), createKeyValueV2("barValue", "foo")),
-                                                     ConfigSnapshot::SubscriptionList()) {
+TEST(ConfigRetrieverTest, require_that_snapshots_can_be_serialized)
+{
+    SubscriptionFixture f1(ConfigKey::create<FooConfig>("id"), createKeyValueV2("fooValue", "bar"));
+    SubscriptionFixture f2(ConfigKey::create<BarConfig>("id"), createKeyValueV2("barValue", "foo"));
+    ConfigSnapshot::SubscriptionList f3;
     f3.push_back(f1.sub);
     f3.push_back(f2.sub);
     ConfigSnapshot parent(f3, 3);
@@ -435,15 +466,15 @@ TEST_FFF("require that snapshots can be serialized", SubscriptionFixture(ConfigK
     for (Vec::iterator it(vec.begin()), mt(vec.end()); it != mt; it++) {
         ASSERT_TRUE(it->first->write(parent));
         ConfigSnapshot deser(it->second->read());
-        ASSERT_EQUAL(parent.getGeneration(), deser.getGeneration());
-        ASSERT_EQUAL(parent.size(), deser.size());
+        ASSERT_EQ(parent.getGeneration(), deser.getGeneration());
+        ASSERT_EQ(parent.size(), deser.size());
         ASSERT_TRUE(deser.hasConfig<FooConfig>("id"));
         ASSERT_TRUE(deser.hasConfig<BarConfig>("id"));
         std::unique_ptr<FooConfig> foo = deser.getConfig<FooConfig>("id");
         std::unique_ptr<BarConfig> bar = deser.getConfig<BarConfig>("id");
-        ASSERT_EQUAL("bar", foo->fooValue);
-        ASSERT_EQUAL("foo", bar->barValue);
+        ASSERT_EQ("bar", foo->fooValue);
+        ASSERT_EQ("foo", bar->barValue);
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
