@@ -51,7 +51,9 @@ public class ContainerDocumentApi {
     }
 
     public static ContainerDocumentApi createDummyApi(ContainerCluster<?> cluster) {
-        return new ContainerDocumentApi(cluster);
+        return System.getProperty("vespa.local", "false").equals("true") // set by Application when running locally
+                ? null
+                : new ContainerDocumentApi(cluster);
     }
 
     public static void addVespaClientContainerBundle(ContainerCluster<?> c) {
