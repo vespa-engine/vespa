@@ -29,7 +29,7 @@ function is_published {
     # check that the publication is complete enough to compile a Java sample app
 
     # Update Vespa version property in pom.xml
-    if ! mvn -V -B versions:set-property -Dproperty=vespa_version -DnewVersion="$VESPA_RELEASE"; then
+    if ! mvn -V -B -U versions:set-property -Dmaven.repo.local="$TMP_MVN_REPO" -Dproperty=vespa_version -DnewVersion="$VESPA_RELEASE"; then
         return 1
     fi
     if mvn -V -B -U -pl ai.vespa.examples:album-recommendation-java -Dmaven.repo.local="$TMP_MVN_REPO" -Dmaven.javadoc.skip=true -Dmaven.source.skip=true -DskipTests clean package; then
