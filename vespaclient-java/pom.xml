@@ -120,6 +120,12 @@
                     <descriptors>
                         <descriptor>assembly.xml</descriptor>
                     </descriptors>
+                    <archive>
+                        <manifestEntries>
+                            <!-- Required for BouncyCastle artifacts -->
+                            <Multi-Release>true</Multi-Release>
+                        </manifestEntries>
+                    </archive>
                 </configuration>
                 <executions>
                     <execution>
