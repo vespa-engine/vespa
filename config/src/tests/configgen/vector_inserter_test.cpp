@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/types.h>
 #include <vespa/config/configgen/vector_inserter.hpp>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace config;
 using namespace config::internal;
@@ -21,7 +21,8 @@ struct MyType{
     int bar;
 };
 
-TEST("require that vector of ints can be inserted") {
+TEST(VectorInserterTest, require_that_vector_of_ints_can_be_inserted)
+{
     std::vector<int32_t> vector;
     Slime slime;
     Cursor & root = slime.setArray();
@@ -30,13 +31,14 @@ TEST("require that vector of ints can be inserted") {
     root.addLong(6);
     VectorInserter inserter(vector);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, vector.size());
-    ASSERT_EQUAL(3, vector[0]);
-    ASSERT_EQUAL(2, vector[1]);
-    ASSERT_EQUAL(6, vector[2]);
+    ASSERT_EQ(3u, vector.size());
+    ASSERT_EQ(3, vector[0]);
+    ASSERT_EQ(2, vector[1]);
+    ASSERT_EQ(6, vector[2]);
 }
 
-TEST("require that vector of struct can be inserted") {
+TEST(VectorInserterTest, require_that_vector_of_struct_can_be_inserted)
+{
     std::vector<MyType> typeVector;
     Slime slime;
     Cursor & root = slime.setArray();
@@ -48,14 +50,15 @@ TEST("require that vector of struct can be inserted") {
     two.setLong("bar", 6);
     VectorInserter inserter(typeVector);
     root.traverse(inserter);
-    ASSERT_EQUAL(2u, typeVector.size());
-    ASSERT_EQUAL(3, typeVector[0].foo);
-    ASSERT_EQUAL(4, typeVector[0].bar);
-    ASSERT_EQUAL(1, typeVector[1].foo);
-    ASSERT_EQUAL(6, typeVector[1].bar);
+    ASSERT_EQ(2u, typeVector.size());
+    ASSERT_EQ(3, typeVector[0].foo);
+    ASSERT_EQ(4, typeVector[0].bar);
+    ASSERT_EQ(1, typeVector[1].foo);
+    ASSERT_EQ(6, typeVector[1].bar);
 }
 
-TEST("require that vector of long can be inserted") {
+TEST(VectorInserterTest, require_that_vector_of_long_can_be_inserted)
+{
     std::vector<int64_t> vector;
     Slime slime;
     Cursor & root = slime.setArray();
@@ -64,13 +67,14 @@ TEST("require that vector of long can be inserted") {
     root.addLong(6);
     VectorInserter inserter(vector);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, vector.size());
-    ASSERT_EQUAL(3, vector[0]);
-    ASSERT_EQUAL(2, vector[1]);
-    ASSERT_EQUAL(6, vector[2]);
+    ASSERT_EQ(3u, vector.size());
+    ASSERT_EQ(3, vector[0]);
+    ASSERT_EQ(2, vector[1]);
+    ASSERT_EQ(6, vector[2]);
 }
 
-TEST("require that vector of double can be inserted") {
+TEST(VectorInserterTest, require_that_vector_of_double_can_be_inserted)
+{
     std::vector<double> vector;
     Slime slime;
     Cursor & root = slime.setArray();
@@ -79,13 +83,14 @@ TEST("require that vector of double can be inserted") {
     root.addDouble(6.6);
     VectorInserter inserter(vector);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, vector.size());
-    ASSERT_EQUAL(3.1, vector[0]);
-    ASSERT_EQUAL(2.4, vector[1]);
-    ASSERT_EQUAL(6.6, vector[2]);
+    ASSERT_EQ(3u, vector.size());
+    ASSERT_EQ(3.1, vector[0]);
+    ASSERT_EQ(2.4, vector[1]);
+    ASSERT_EQ(6.6, vector[2]);
 }
 
-TEST("require that vector of bool can be inserted") {
+TEST(VectorInserterTest, require_that_vector_of_bool_can_be_inserted)
+{
     std::vector<bool> vector;
     Slime slime;
     Cursor & root = slime.setArray();
@@ -94,7 +99,7 @@ TEST("require that vector of bool can be inserted") {
     root.addBool(true);
     VectorInserter inserter(vector);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, vector.size());
+    ASSERT_EQ(3u, vector.size());
     ASSERT_TRUE(vector[0]);
     ASSERT_FALSE(vector[1]);
     ASSERT_TRUE(vector[2]);
@@ -110,15 +115,16 @@ verify_vector_strings_can_be_inserted(V vector) {
     root.addString("baz");
     VectorInserter inserter(vector);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, vector.size());
-    ASSERT_EQUAL("foo", vector[0]);
-    ASSERT_EQUAL("bar", vector[1]);
-    ASSERT_EQUAL("baz", vector[2]);
+    ASSERT_EQ(3u, vector.size());
+    ASSERT_EQ("foo", vector[0]);
+    ASSERT_EQ("bar", vector[1]);
+    ASSERT_EQ("baz", vector[2]);
 }
 
-TEST("require that different vectors of strings can be inserted") {
+TEST(VectorInserterTest, require_that_different_vectors_of_strings_can_be_inserted)
+{
     verify_vector_strings_can_be_inserted(std::vector<std::string>());
     verify_vector_strings_can_be_inserted(StringVector());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

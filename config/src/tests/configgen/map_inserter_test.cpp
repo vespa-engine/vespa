@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/config/configgen/map_inserter.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace config;
 using namespace config::internal;
@@ -20,7 +20,8 @@ struct MyType{
     int bar;
 };
 
-TEST("require that map of ints can be inserted") {
+TEST(MapInserterTest, require_that_map_of_ints_can_be_inserted)
+{
     std::map<std::string, int32_t> map;
     Slime slime;
     Cursor & root = slime.setObject();
@@ -29,13 +30,14 @@ TEST("require that map of ints can be inserted") {
     root.setLong("baz", 6);
     MapInserter<int32_t> inserter(map);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, map.size());
-    ASSERT_EQUAL(3, map["foo"]);
-    ASSERT_EQUAL(2, map["bar"]);
-    ASSERT_EQUAL(6, map["baz"]);
+    ASSERT_EQ(3u, map.size());
+    ASSERT_EQ(3, map["foo"]);
+    ASSERT_EQ(2, map["bar"]);
+    ASSERT_EQ(6, map["baz"]);
 }
 
-TEST("require that map of struct can be inserted") {
+TEST(MapInserterTest, require_that_map_of_struct_can_be_inserted)
+{
     std::map<std::string, MyType> map;
     Slime slime;
     Cursor & root = slime.setObject();
@@ -47,14 +49,15 @@ TEST("require that map of struct can be inserted") {
     two.setLong("bar", 6);
     MapInserter<MyType> inserter(map);
     root.traverse(inserter);
-    ASSERT_EQUAL(2u, map.size());
-    ASSERT_EQUAL(3, map["foo"].foo);
-    ASSERT_EQUAL(4, map["foo"].bar);
-    ASSERT_EQUAL(1, map["bar"].foo);
-    ASSERT_EQUAL(6, map["bar"].bar);
+    ASSERT_EQ(2u, map.size());
+    ASSERT_EQ(3, map["foo"].foo);
+    ASSERT_EQ(4, map["foo"].bar);
+    ASSERT_EQ(1, map["bar"].foo);
+    ASSERT_EQ(6, map["bar"].bar);
 }
 
-TEST("require that map of long can be inserted") {
+TEST(MapInserterTest, require_that_map_of_long_can_be_inserted)
+{
     std::map<std::string, int64_t> map;
     Slime slime;
     Cursor & root = slime.setObject();
@@ -63,13 +66,14 @@ TEST("require that map of long can be inserted") {
     root.setLong("baz", 6);
     MapInserter<int64_t> inserter(map);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, map.size());
-    ASSERT_EQUAL(3, map["foo"]);
-    ASSERT_EQUAL(2, map["bar"]);
-    ASSERT_EQUAL(6, map["baz"]);
+    ASSERT_EQ(3u, map.size());
+    ASSERT_EQ(3, map["foo"]);
+    ASSERT_EQ(2, map["bar"]);
+    ASSERT_EQ(6, map["baz"]);
 }
 
-TEST("require that map of double can be inserted") {
+TEST(MapInserterTest, require_that_map_of_double_can_be_inserted)
+{
     std::map<std::string, double> map;
     Slime slime;
     Cursor & root = slime.setObject();
@@ -78,13 +82,14 @@ TEST("require that map of double can be inserted") {
     root.setDouble("baz", 6.6);
     MapInserter<double> inserter(map);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, map.size());
-    ASSERT_EQUAL(3.1, map["foo"]);
-    ASSERT_EQUAL(2.4, map["bar"]);
-    ASSERT_EQUAL(6.6, map["baz"]);
+    ASSERT_EQ(3u, map.size());
+    ASSERT_EQ(3.1, map["foo"]);
+    ASSERT_EQ(2.4, map["bar"]);
+    ASSERT_EQ(6.6, map["baz"]);
 }
 
-TEST("require that map of bool can be inserted") {
+TEST(MapInserterTest, require_that_map_of_bool_can_be_inserted)
+{
     std::map<std::string, bool> map;
     Slime slime;
     Cursor & root = slime.setObject();
@@ -93,13 +98,14 @@ TEST("require that map of bool can be inserted") {
     root.setBool("baz", true);
     MapInserter<bool> inserter(map);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, map.size());
+    ASSERT_EQ(3u, map.size());
     ASSERT_TRUE(map["foo"]);
     ASSERT_FALSE(map["bar"]);
     ASSERT_TRUE(map["baz"]);
 }
 
-TEST("require that map of string can be inserted") {
+TEST(MapInserterTest, require_that_map_of_string_can_be_inserted)
+{
     std::map<std::string, std::string> map;
     Slime slime;
     Cursor & root = slime.setObject();
@@ -108,10 +114,10 @@ TEST("require that map of string can be inserted") {
     root.setString("baz", "foo");
     MapInserter<std::string> inserter(map);
     root.traverse(inserter);
-    ASSERT_EQUAL(3u, map.size());
-    ASSERT_EQUAL("foo", map["baz"]);
-    ASSERT_EQUAL("bar", map["bar"]);
-    ASSERT_EQUAL("baz", map["foo"]);
+    ASSERT_EQ(3u, map.size());
+    ASSERT_EQ("foo", map["baz"]);
+    ASSERT_EQ("bar", map["bar"]);
+    ASSERT_EQ("baz", map["foo"]);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
