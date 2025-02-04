@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/helper/configfetcher.hpp>
 #include <vespa/config/common/configcontext.h>
 #include <vespa/vespalib/util/exception.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include "config-my.h"
 #include <atomic>
 #include <thread>
@@ -31,7 +31,8 @@ public:
 MyCallback::MyCallback(const std::string & badConfig) : _config(), _configured(false), _badConfig(badConfig) { }
 MyCallback::~MyCallback() = default;
 
-TEST("requireThatConfigIsAvailableOnConstruction") {
+TEST(ConfigFetcherTest, requireThatConfigIsAvailableOnConstruction)
+{
     RawSpec spec("myField \"foo\"\n");
     MyCallback cb;
 
@@ -40,13 +41,14 @@ TEST("requireThatConfigIsAvailableOnConstruction") {
         fetcher.subscribe<MyConfig>("myid", &cb);
         fetcher.start();
         ASSERT_TRUE(cb._config);
-        ASSERT_EQUAL("my", cb._config->defName());
-        ASSERT_EQUAL("foo", cb._config->myField);
+        ASSERT_EQ("my", cb._config->defName());
+        ASSERT_EQ("foo", cb._config->myField);
     }
 }
 
 #if 0
-TEST("requireThatConfigUpdatesArePerformed") {
+TEST(ConfigFetcherTest, requireThatConfigUpdatesArePerformed)
+{
     writeFile("test1.cfg", "foo");
     FileSpec spec("test1.cfg");
     MyCallback cb;
@@ -59,8 +61,8 @@ TEST("requireThatConfigUpdatesArePerformed") {
         fetcher.start();
         ASSERT_TRUE(cb._configured);
         ASSERT_TRUE(cb._config.get() != NULL);
-        ASSERT_EQUAL("my", cb._config->defName());
-        ASSERT_EQUAL("foo", cb._config->myField);
+        ASSERT_EQ("my", cb._config->defName());
+        ASSERT_EQ("foo", cb._config->myField);
 
         sleep(2);
         writeFile("test1.cfg", "bar");
@@ -74,13 +76,14 @@ TEST("requireThatConfigUpdatesArePerformed") {
         }
         ASSERT_TRUE(cb._configured);
         ASSERT_TRUE(cb._config);
-        ASSERT_EQUAL("my", cb._config->defName());
-        ASSERT_EQUAL("bar", cb._config->myField);
+        ASSERT_EQ("my", cb._config->defName());
+        ASSERT_EQ("bar", cb._config->myField);
     }
 }
 #endif
 
-TEST("requireThatFetcherCanHandleMultipleConfigs") {
+TEST(ConfigFetcherTest, requireThatFetcherCanHandleMultipleConfigs)
+{
     MyConfigBuilder b1, b2;
     b1.myField = "foo";
     b2.myField = "bar";
@@ -100,14 +103,15 @@ TEST("requireThatFetcherCanHandleMultipleConfigs") {
         ASSERT_TRUE(cb2._configured);
         ASSERT_TRUE(cb1._config);
         ASSERT_TRUE(cb2._config);
-        ASSERT_EQUAL("my", cb1._config->defName());
-        ASSERT_EQUAL("foo", cb1._config->myField);
-        ASSERT_EQUAL("my", cb2._config->defName());
-        ASSERT_EQUAL("bar", cb2._config->myField);
+        ASSERT_EQ("my", cb1._config->defName());
+        ASSERT_EQ("foo", cb1._config->myField);
+        ASSERT_EQ("my", cb2._config->defName());
+        ASSERT_EQ("bar", cb2._config->myField);
     }
 }
 
-TEST("verify that exceptions in callback is thrown on initial subscribe") {
+TEST(ConfigFetcherTest, verify_that_exceptions_in_callback_is_thrown_on_initial_subscribe)
+{
     MyConfigBuilder b1;
     b1.myField = "foo";
     ConfigSet set;
@@ -116,7 +120,7 @@ TEST("verify that exceptions in callback is thrown on initial subscribe") {
     {
         ConfigFetcher fetcher(set);
         fetcher.subscribe<MyConfig>("test1", &cb);
-        ASSERT_EXCEPTION(fetcher.start(), vespalib::Exception, "Buhu");
+        VESPA_EXPECT_EXCEPTION(fetcher.start(), vespalib::Exception, "Buhu");
     }
 }
 
@@ -134,15 +138,17 @@ struct ConfigFixture {
 
 } // namespace <unnamed>
 
-TEST_F("verify that config generation can be obtained from config fetcher", ConfigFixture) {
+TEST(ConfigFetcherTest, verify_that_config_generation_can_be_obtained_from_config_fetcher)
+{
+    ConfigFixture f1;
     f1.builder.myField = "foo";
     MyCallback cb;
     {
         ConfigFetcher fetcher(f1.context);
         fetcher.subscribe<MyConfig>("cfgid", &cb);
         fetcher.start();
-        EXPECT_EQUAL("foo", cb._config.get()->myField);
-        EXPECT_EQUAL(1, fetcher.getGeneration());
+        EXPECT_EQ("foo", cb._config.get()->myField);
+        EXPECT_EQ(1, fetcher.getGeneration());
         f1.builder.myField = "bar";
         cb._configured = false;
         f1.context->reload();
@@ -153,9 +159,9 @@ TEST_F("verify that config generation can be obtained from config fetcher", Conf
             }
             std::this_thread::sleep_for(10ms);;
         }
-        EXPECT_EQUAL(2, fetcher.getGeneration());
-        EXPECT_EQUAL("bar", cb._config.get()->myField);
+        EXPECT_EQ(2, fetcher.getGeneration());
+        EXPECT_EQ("bar", cb._config.get()->myField);
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
