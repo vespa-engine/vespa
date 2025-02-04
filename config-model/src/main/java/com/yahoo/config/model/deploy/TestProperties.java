@@ -58,7 +58,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<X509Certificate> operatorCertificates = List.of();
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
-    private double resourceLimitMemorySmallNodes = 0.75;
     private double minNodeRatioPerGroup = 0.0;
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private double containerShutdownTimeout = 50.0;
@@ -115,7 +114,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<X509Certificate> operatorCertificates() { return operatorCertificates; }
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
-    @Override public double resourceLimitMemorySmallNodes() { return resourceLimitMemorySmallNodes; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
@@ -287,11 +285,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setResourceLimitMemory(double value) {
         this.resourceLimitMemory = value;
-        return this;
-    }
-
-    public TestProperties setResourceLimitMemorySmallNodes(double value) {
-        this.resourceLimitMemorySmallNodes = value;
         return this;
     }
 

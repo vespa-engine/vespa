@@ -1642,9 +1642,7 @@ public class ContentClusterTest extends ContentBaseTest {
         var properties = new TestProperties()
                 .setHostedVespa(true)
                 .setMultitenant(true)
-                .setResourceLimitDisk(0.66)
-                .setResourceLimitMemory(0.67)
-                .setResourceLimitMemorySmallNodes(0.68);
+                .setResourceLimitDisk(0.66);
         var deployState = new DeployState.Builder()
                 .properties(properties)
                 .modelHostProvisioner(provisioner)
@@ -1658,13 +1656,14 @@ public class ContentClusterTest extends ContentBaseTest {
         contentCluster.getClusterControllerConfig().getConfig(builder);
         var config = builder.build();
         assertEquals(0.66, config.cluster_feed_block_limit().get("disk"), 0.001);
-        assertEquals(0.68, config.cluster_feed_block_limit().get("memory"), 0.001);
+        // Memory resource limit for small nodes is 0.75
+        assertEquals(0.75, config.cluster_feed_block_limit().get("memory"), 0.001);
 
         // Resource limits for content cluster should be changed based on new values above
         var protonConfigBuilder = new ProtonConfig.Builder();
         model.getConfig(protonConfigBuilder, "foo/search/cluster.foo");
         assertEquals(0.864, protonConfigBuilder.build().writefilter().disklimit(), 0.001);
-        assertEquals(0.84, protonConfigBuilder.build().writefilter().memorylimit(), 0.001);
+        assertEquals(0.875, protonConfigBuilder.build().writefilter().memorylimit(), 0.001);
 
         // Resource limits for content nodes should be changed based on new values above
         // Tested since values can be set for both clusters and nodes in general
@@ -1673,7 +1672,7 @@ public class ContentClusterTest extends ContentBaseTest {
         var config2 = protonConfigBuilder2.build();
         assertEquals(0, config2.distributionkey());
         assertEquals(0.864, config2.writefilter().disklimit(), 0.001);
-        assertEquals(0.84, config2.writefilter().memorylimit(), 0.001);
+        assertEquals(0.875, config2.writefilter().memorylimit(), 0.001);
     }
 
     private String servicesWithGroups(int groupCount, double minGroupUpRatio) {
