@@ -40,6 +40,7 @@ public final class DummyDocumentV1ApiHandler extends ThreadedHttpRequestHandler 
         public HttpErrorResponse(int code, String msg) {
             super(code);
             Cursor root = slime.setObject();
+            root.setString("error-code", "NOT_FOUND");
             root.setString("message", msg);
         }
 
