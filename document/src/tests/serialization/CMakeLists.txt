@@ -4,6 +4,7 @@ vespa_add_executable(document_vespadocumentserializer_test_app TEST
     vespadocumentserializer_test.cpp
     DEPENDS
     vespa_document
+    GTest::gtest
 )
 vespa_add_test(NAME document_vespadocumentserializer_test_app COMMAND document_vespadocumentserializer_test_app)
 vespa_add_executable(document_annotationserializer_test_app TEST
