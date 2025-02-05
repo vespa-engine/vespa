@@ -51,6 +51,7 @@ Writes documents to Vespa.
 | <<plugins-{type}s-{plugin}-max_streams>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-operation_timeout>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-grace_period>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-auth_token>> |<<string,string>>|No
 |=======================================================================
 
 [id="plugins-{type}s-{plugin}-vespa_url"]
@@ -238,6 +239,16 @@ Maximum size of each Dead Letter Queue segment file in bytes.
 * Default value is `5000`
 
 How often to commit the Dead Letter Queue to disk, in milliseconds.
+
+[id="plugins-{type}s-{plugin}-auth_token"]
+===== `auth_token`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+Authentication token for Vespa Cloud. If provided, it will be sent as a Bearer token in the Authorization header.
+
+Note: This is mutually exclusive with client certificate authentication (`client_cert` and `client_key`). If both are provided, the client certificate will be used.
 
 // The full list of Value Types is here: 
 // https://www.elastic.co/guide/en/logstash/current/configuration-file-structure.html

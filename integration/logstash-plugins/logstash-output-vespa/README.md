@@ -99,6 +99,9 @@ output {
     # if it is, you can create a new key without a password like this:
     # openssl rsa -in myapp_key_with_pass.pem -out myapp_key.pem
     client_key => "/home/radu/vespa_apps/myapp_key.pem"
+
+    # or you can use an auth token (for Vespa Cloud)
+    auth_token => "vespa_cloud_TOKEN_GOES_HERE"
     
     # namespace could be static or in the %{field} format, picking from a field in the document
     namespace => "no_default_provide_yours"

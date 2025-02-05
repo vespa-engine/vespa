@@ -114,6 +114,23 @@ describe LogStash::Inputs::Vespa do
         expect(a_request(:get, "#{base_uri}?#{uri_params}&continuation=AAAAAA")).to have_been_made.once
       end
     end
+
+    context "when using authentication" do
+      it "adds Bearer token to request headers when auth_token is provided" do
+        config_with_token = config.merge({"auth_token" => "test-token"})
+        plugin = described_class.new(config_with_token)
+        plugin.register
+
+        stub_request(:get, "#{base_uri}?#{uri_params}")
+          .with(headers: { 'Authorization' => 'Bearer test-token' })
+          .to_return(status: 200, body: '{"documents": [], "documentCount": 0}')
+
+        plugin.run(queue)
+        expect(a_request(:get, "#{base_uri}?#{uri_params}")
+          .with(headers: { 'Authorization' => 'Bearer test-token' }))
+          .to have_been_made.once
+      end
+    end
   end
 
   describe "#register" do

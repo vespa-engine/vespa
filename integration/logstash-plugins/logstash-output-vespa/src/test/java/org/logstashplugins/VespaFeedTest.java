@@ -173,12 +173,12 @@ public class VespaFeedTest {
             // Test with both cert and key. It should not throw an exception
             when(config.get(VespaFeed.CLIENT_CERT)).thenReturn(certPath.toString());
             when(config.get(VespaFeed.CLIENT_KEY)).thenReturn(keyPath.toString());
-            VespaFeed.addCertAndKeyToBuilder(config, builder);
+            VespaFeed.addAuthOptionsToBuilder(config, builder);
 
             // Test with missing cert/key. Similarly, it should not throw an exception
             when(config.get(VespaFeed.CLIENT_CERT)).thenReturn(null);
             when(config.get(VespaFeed.CLIENT_KEY)).thenReturn(null);
-            VespaFeed.addCertAndKeyToBuilder(config, builder);
+            VespaFeed.addAuthOptionsToBuilder(config, builder);
         } finally {
             // Clean up
             Files.deleteIfExists(certPath);
@@ -384,6 +384,7 @@ public class VespaFeedTest {
         assertTrue(schema.contains(VespaFeed.VESPA_URL));
         assertTrue(schema.contains(VespaFeed.CLIENT_CERT));
         assertTrue(schema.contains(VespaFeed.CLIENT_KEY));
+        assertTrue(schema.contains(VespaFeed.AUTH_TOKEN));
         assertTrue(schema.contains(VespaFeed.OPERATION));
         assertTrue(schema.contains(VespaFeed.CREATE));
         assertTrue(schema.contains(VespaFeed.NAMESPACE));
@@ -569,5 +570,19 @@ public class VespaFeedTest {
         VespaFeedTestHelper.verifyDlqEntry(mockDlqWriter, "Error while waiting for async operation to complete");
         // Verify feed operation was attempted (but failed)
         verify(mockClient, times(1)).put(any(), any(), any());
+    }
+
+    @Test
+    public void testAddAuthOptionsToBuilder_AuthToken() {
+        Configuration config = VespaFeedTestHelper.createMockConfig("put", false, false);
+        when(config.get(VespaFeed.AUTH_TOKEN)).thenReturn("my-secret-token");
+        
+        FeedClientBuilder builder = spy(FeedClientBuilder.create(URI.create("http://localhost:8080")));
+        builder = VespaFeed.addAuthOptionsToBuilder(config, builder);
+        
+        // Verify that the builder was configured with the auth token
+        verify(builder).addRequestHeader("Authorization", "Bearer my-secret-token");
+        // Verify that the builder was not configured with a client certificate or key
+        verify(builder, times(0)).setCertificate(any(Path.class), any(Path.class));
     }
 } 

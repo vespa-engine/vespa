@@ -59,6 +59,9 @@ input {
     client_cert => "/Users/myuser/.vespa/mytenant.myapp.default/data-plane-public-cert.pem"
     client_key => "/Users/myuser/.vespa/mytenant.myapp.default/data-plane-private-key.pem"
 
+    # as an alternative to mTLS, you can use an authentication token for Vespa Cloud
+    auth_token => "vespa_cloud_TOKEN_GOES_HERE"
+
     # page size
     page_size => 100
 
