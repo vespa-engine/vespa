@@ -177,9 +177,9 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                                                  .mapToDouble(s -> s.getHostResource().realResources().memoryGiB())
                                                  .min()
                                                  .orElse(16);
-                // Use limit for small nodes when memory < ~8 Gib
+                // Use smaller limit for small nodes (when memory < ~8 Gib)
                 if (memoryGib < 8.1)
-                    resourceLimitMemory = deployState.featureFlags().resourceLimitMemorySmallNodes();
+                    resourceLimitMemory = 0.75;
             }
 
             var resourceLimits = new ClusterResourceLimits.Builder(isHosted,
