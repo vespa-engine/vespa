@@ -26,7 +26,7 @@ private:
     Properties                  _properties;
     std::vector<GeoLocationSpec> _locations;
     search::attribute::IAttributeContext::UP _attrCtx;
-    std::unordered_map<std::string, double> _avg_field_lengths;
+    std::unordered_map<std::string, index::FieldLengthInfo> _field_length_info;
 
 public:
     /**
@@ -48,12 +48,12 @@ public:
         return locations;
     }
     const search::attribute::IAttributeContext &getAttributeContext() const override { return *_attrCtx; }
-    double get_average_field_length(const std::string& field_name) const override {
-        auto itr = _avg_field_lengths.find(field_name);
-        if (itr != _avg_field_lengths.end()) {
+    index::FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
+        auto itr = _field_length_info.find(field_name);
+        if (itr != _field_length_info.end()) {
             return itr->second;
         }
-        return 1.0;
+        return index::FieldLengthInfo(1.0, 1.0, 1);
     }
     const IIndexEnvironment &getIndexEnvironment() const override { assert(_indexEnv != NULL); return *_indexEnv; }
 
@@ -92,7 +92,7 @@ public:
     /** Returns a reference to the location of this. */
     void addLocation(const GeoLocationSpec &spec) { _locations.push_back(spec); }
 
-    std::unordered_map<std::string, double>& get_avg_field_lengths() { return _avg_field_lengths; }
+    std::unordered_map<std::string, index::FieldLengthInfo>& get_field_length_info_map() { return _field_length_info; }
 };
 
 }

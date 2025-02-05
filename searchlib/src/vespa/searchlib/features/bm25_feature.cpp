@@ -201,6 +201,13 @@ make_avg_field_length_key(const std::string& base_name, const std::string& field
     return base_name + ".afl." + field_name;
 }
 
+double
+get_average_field_length(const search::fef::IQueryEnvironment& env, const std::string& field_name)
+{
+    auto info = env.get_field_length_info(field_name);
+    return info.get_average_field_length();
+}
+
 }
 
 void
@@ -208,7 +215,7 @@ Bm25Blueprint::prepareSharedState(const fef::IQueryEnvironment& env, fef::IObjec
 {
     std::string key = make_avg_field_length_key(getBaseName(), _field->name());
     if (store.get(key) == nullptr) {
-        double avg_field_length = _avg_field_length.value_or(env.get_average_field_length(_field->name()));
+        double avg_field_length = _avg_field_length.value_or(get_average_field_length(env, _field->name()));
         store.add(key, std::make_unique<AnyWrapper<double>>(avg_field_length));
     }
 }
@@ -219,7 +226,7 @@ Bm25Blueprint::createExecutor(const fef::IQueryEnvironment& env, vespalib::Stash
     const auto* lookup_result = env.getObjectStore().get(make_avg_field_length_key(getBaseName(), _field->name()));
     double avg_field_length = lookup_result != nullptr ?
                               as_value<double>(*lookup_result) :
-                              _avg_field_length.value_or(env.get_average_field_length(_field->name()));
+                              _avg_field_length.value_or(get_average_field_length(env, _field->name()));
     return stash.create<Bm25Executor>(*_field, env, avg_field_length, _k1_param, _b_param);
 }
 
