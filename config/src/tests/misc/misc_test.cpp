@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/config/common/configupdate.h>
 #include <vespa/config/common/misc.h>
 #include <vespa/config/common/configvalue.h>
@@ -7,25 +7,28 @@
 #include <vespa/config/common/errorcode.h>
 #include <vespa/config/common/vespa_version.h>
 #include <vespa/config/subscription/sourcespec.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <map>
 
 using namespace config;
 
-TEST("requireThatConfigUpdateWorks") {
+TEST(MiscTest, requireThatConfigUpdateWorks)
+{
     StringVector lines;
     lines.push_back("foo");
 
     ConfigUpdate up(ConfigValue(lines, "myxxhash"), true, 1337);
-    ASSERT_EQUAL(1337, up.getGeneration());
+    ASSERT_EQ(1337, up.getGeneration());
     ASSERT_TRUE(up.hasChanged());
 
     ConfigUpdate up2(ConfigValue(lines, "myxxhash2"), false, 1338);
-    ASSERT_EQUAL(1338, up2.getGeneration());
+    ASSERT_EQ(1338, up2.getGeneration());
     ASSERT_FALSE(up2.hasChanged());
 }
 
-TEST("requireThatConfigValueWorks") {
+TEST(MiscTest, requireThatConfigValueWorks)
+{
     StringVector lines;
     lines.push_back("myFooField \"bar\"");
     ConfigValue v1(lines);
@@ -37,7 +40,8 @@ TEST("requireThatConfigValueWorks") {
     ASSERT_TRUE(v1 == v3);
 }
 
-TEST("requireThatConfigKeyWorks") {
+TEST(MiscTest, requireThatConfigKeyWorks)
+{
     ConfigKey key1("id1", "def1", "namespace1", "xxhash1");
     ConfigKey key2("id1", "def1", "namespace1", "xxhash1");
     ConfigKey key3("id2", "def1", "namespace1", "xxhash1");
@@ -96,18 +100,18 @@ TEST("requireThatConfigKeyWorks") {
     keymap[key4] = 4;
     keymap[key5] = 5;
 
-    ASSERT_EQUAL(2, keymap[key1]);
-    ASSERT_EQUAL(2, keymap[key2]);
-    ASSERT_EQUAL(3, keymap[key3]);
-    ASSERT_EQUAL(4, keymap[key4]);
-    ASSERT_EQUAL(5, keymap[key5]);
+    ASSERT_EQ(2, keymap[key1]);
+    ASSERT_EQ(2, keymap[key2]);
+    ASSERT_EQ(3, keymap[key3]);
+    ASSERT_EQ(4, keymap[key4]);
+    ASSERT_EQ(5, keymap[key5]);
     keymap[key6] = 6;
-    ASSERT_EQUAL(6, keymap[key1]);
-    ASSERT_EQUAL(6, keymap[key2]);
-    ASSERT_EQUAL(6, keymap[key6]);
+    ASSERT_EQ(6, keymap[key1]);
+    ASSERT_EQ(6, keymap[key2]);
+    ASSERT_EQ(6, keymap[key6]);
 }
 
-TEST("require that config key initializes schema")
+TEST(MiscTest, require_that_config_key_initializes_schema)
 {
     StringVector schema;
     schema.push_back("foo");
@@ -115,12 +119,13 @@ TEST("require that config key initializes schema")
     ConfigKey key("id1", "def1", "namespace1", "xxhash1", schema);
     const StringVector &vref(key.getDefSchema());
     for (size_t i = 0; i < schema.size(); i++) {
-        ASSERT_EQUAL(schema[i], vref[i]);
+        ASSERT_EQ(schema[i], vref[i]);
     }
 }
 
-TEST("require that error codes are correctly translated to strings") {
-#define ASSERT_CONFIG(name) ASSERT_EQUAL(#name, ErrorCode::getName(ErrorCode::name))
+TEST(MiscTest, require_that_error_codes_are_correctly_translated_to_strings)
+{
+#define ASSERT_CONFIG(name) ASSERT_EQ(#name, ErrorCode::getName(ErrorCode::name))
     ASSERT_CONFIG(UNKNOWN_CONFIG);
     ASSERT_CONFIG(UNKNOWN_DEFINITION);
     ASSERT_CONFIG(UNKNOWN_VERSION);
@@ -142,37 +147,39 @@ TEST("require that error codes are correctly translated to strings") {
     ASSERT_CONFIG(INTERNAL_ERROR);
     ASSERT_CONFIG(APPLICATION_NOT_LOADED);
     ASSERT_CONFIG(INCONSISTENT_CONFIG_MD5);
-    ASSERT_EQUAL("Unknown error", ErrorCode::getName(13434));
+    ASSERT_EQ("Unknown error", ErrorCode::getName(13434));
 #undef ASSERT_CONFIG
 }
 
-TEST("require that source spec parses protocol version") {
+TEST(MiscTest, require_that_source_spec_parses_protocol_version)
+{
     const char * envName = "VESPA_CONFIG_PROTOCOL_VERSION";
-    EXPECT_EQUAL(3, ServerSpec().protocolVersion());
+    EXPECT_EQ(3, ServerSpec().protocolVersion());
     setenv(envName, "2", 1);
-    EXPECT_EQUAL(2, ServerSpec().protocolVersion());
+    EXPECT_EQ(2, ServerSpec().protocolVersion());
     setenv(envName, "3", 1);
-    EXPECT_EQUAL(3, ServerSpec().protocolVersion());
+    EXPECT_EQ(3, ServerSpec().protocolVersion());
     setenv(envName, "4", 1);
-    EXPECT_EQUAL(3, ServerSpec().protocolVersion());
+    EXPECT_EQ(3, ServerSpec().protocolVersion());
     setenv(envName, "illegal", 1);
-    EXPECT_EQUAL(3, ServerSpec().protocolVersion());
+    EXPECT_EQ(3, ServerSpec().protocolVersion());
     setenv(envName, "1", 1);
-    EXPECT_EQUAL(1, ServerSpec().protocolVersion());
+    EXPECT_EQ(1, ServerSpec().protocolVersion());
     unsetenv(envName);
 }
 
-TEST("require that source spec parses trace level") {
+TEST(MiscTest, require_that_source_spec_parses_trace_level)
+{
     const char * envName = "VESPA_CONFIG_PROTOCOL_TRACELEVEL";
-    EXPECT_EQUAL(0, ServerSpec().traceLevel());
+    EXPECT_EQ(0, ServerSpec().traceLevel());
     setenv(envName, "3", 1);
-    EXPECT_EQUAL(3, ServerSpec().traceLevel());
+    EXPECT_EQ(3, ServerSpec().traceLevel());
     setenv(envName, "illegal", 1);
-    EXPECT_EQUAL(0, ServerSpec().traceLevel());
+    EXPECT_EQ(0, ServerSpec().traceLevel());
     unsetenv(envName);
 }
 
-TEST("require that source spec parses compression type") {
+TEST(MiscTest, require_that_source_spec_parses_compression_type) {
     const char * envName = "VESPA_CONFIG_PROTOCOL_COMPRESSION";
     EXPECT_TRUE(CompressionType::LZ4 == ServerSpec().compressionType());
     setenv(envName, "UNCOMPRESSED", 1);
@@ -184,7 +191,8 @@ TEST("require that source spec parses compression type") {
     unsetenv(envName);
 }
 
-TEST("require that vespa version is set") {
+TEST(MiscTest, require_that_vespa_version_is_set)
+{
     VespaVersion vespaVersion = VespaVersion::getCurrentVersion();
     std::string str = vespaVersion.toString();
 
@@ -192,4 +200,4 @@ TEST("require that vespa version is set") {
 }
 
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

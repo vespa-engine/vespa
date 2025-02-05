@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/payload_converter.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -12,7 +12,8 @@ using namespace config;
 using namespace vespalib;
 using namespace vespalib::slime;
 
-TEST("require that v2 payload leaf values can be converted to cfg format") {
+TEST(PayloadConverterTest, require_that_v2_payload_leaf_values_can_be_converted_to_cfg_format)
+{
     Slime slime;
     Cursor & root(slime.setObject());
     root.setString("foo", "bar");
@@ -23,14 +24,15 @@ TEST("require that v2 payload leaf values can be converted to cfg format") {
     StringVector lines(converter.convert());
     std::sort(lines.begin(), lines.end());
     
-    ASSERT_EQUAL(4u, lines.size());
-    EXPECT_EQUAL("bar 8", lines[0]);
-    EXPECT_EQUAL("baz 3.1", lines[1]);
-    EXPECT_EQUAL("foo \"bar\"", lines[2]);
-    EXPECT_EQUAL("quux true", lines[3]);
+    ASSERT_EQ(4u, lines.size());
+    EXPECT_EQ("bar 8", lines[0]);
+    EXPECT_EQ("baz 3.1", lines[1]);
+    EXPECT_EQ("foo \"bar\"", lines[2]);
+    EXPECT_EQ("quux true", lines[3]);
 }
 
-TEST("require that v2 payload struct values can be converted to cfg format") {
+TEST(PayloadConverterTest, require_that_v2_payload_struct_values_can_be_converted_to_cfg_format)
+{
     Slime slime;
     Cursor & root(slime.setObject());
     Cursor & inner(root.setObject("obj"));
@@ -40,12 +42,13 @@ TEST("require that v2 payload struct values can be converted to cfg format") {
     StringVector lines(converter.convert());
     std::sort(lines.begin(), lines.end());
 
-    ASSERT_EQUAL(2u, lines.size());
-    EXPECT_EQUAL("obj.bar 8", lines[0]);
-    EXPECT_EQUAL("obj.foo \"bar\"", lines[1]);
+    ASSERT_EQ(2u, lines.size());
+    EXPECT_EQ("obj.bar 8", lines[0]);
+    EXPECT_EQ("obj.foo \"bar\"", lines[1]);
 }
 
-TEST("require that v2 payload array values can be converted to cfg format") {
+TEST(PayloadConverterTest, require_that_v2_payload_array_values_can_be_converted_to_cfg_format)
+{
     Slime slime;
     Cursor & root(slime.setObject());
     Cursor & inner(root.setArray("arr"));
@@ -53,13 +56,14 @@ TEST("require that v2 payload array values can be converted to cfg format") {
     inner.addLong(8);
     PayloadConverter converter(root);
     StringVector lines(converter.convert());
-    ASSERT_EQUAL(2u, lines.size());
-    EXPECT_EQUAL("arr[0] \"foo\"", lines[0]);
-    EXPECT_EQUAL("arr[1] 8", lines[1]);
+    ASSERT_EQ(2u, lines.size());
+    EXPECT_EQ("arr[0] \"foo\"", lines[0]);
+    EXPECT_EQ("arr[1] 8", lines[1]);
 }
 
 
-TEST("require that v2 payload nested structures can be converted to cfg format") {
+TEST(PayloadConverterTest, require_that_v2_payload_nested_structures_can_be_converted_to_cfg_format)
+{
     Slime slime;
     Cursor & root(slime.setObject());
     Cursor & inner(root.setArray("arr"));
@@ -75,10 +79,10 @@ TEST("require that v2 payload nested structures can be converted to cfg format")
     PayloadConverter converter(root);
     StringVector lines(converter.convert());
     std::sort(lines.begin(), lines.end());
-    ASSERT_EQUAL(3u, lines.size());
-    EXPECT_EQUAL("arr[0].foo \"bar\"", lines[0]);
-    EXPECT_EQUAL("arr[1].bar 5", lines[1]);
-    EXPECT_EQUAL("obj.arr[0].arr2[0] \"muhaha\"", lines[2]);
+    ASSERT_EQ(3u, lines.size());
+    EXPECT_EQ("arr[0].foo \"bar\"", lines[0]);
+    EXPECT_EQ("arr[1].bar 5", lines[1]);
+    EXPECT_EQ("obj.arr[0].arr2[0] \"muhaha\"", lines[2]);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

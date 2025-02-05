@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/trace.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 
 using namespace config;
@@ -19,7 +19,8 @@ struct FixedClock : public Clock
 
 FixedClock::~FixedClock() = default;
 
-TEST("that trace can be serialized and deserialized") {
+TEST(TraceTest, that_trace_can_be_serialized_and_deserialized)
+{
     Trace trace(4);
     trace.trace(4, "foo");
     trace.trace(3, "bar");
@@ -37,15 +38,17 @@ TEST("that trace can be serialized and deserialized") {
     Trace trace3;
     trace3.deserialize(slime2.get());
 
-    EXPECT_EQUAL(trace.toString(), trace3.toString());
+    EXPECT_EQ(trace.toString(), trace3.toString());
 }
 
-TEST_F("that trace level is taken into account", FixedClock) {
+TEST(TraceTest, that_trace_level_is_taken_into_account)
+{
+    FixedClock f1;
     f1._currentTime = vespalib::system_time(3ms);
     Trace trace(4, f1);
     trace.trace(4, "foo");
     trace.trace(5, "bar");
-    EXPECT_EQUAL("[\n"
+    EXPECT_EQ("[\n"
 "    {\n"
 "        \"timestamp\": 3,\n"
 "        \"payload\": \"foo\"\n"
@@ -53,21 +56,23 @@ TEST_F("that trace level is taken into account", FixedClock) {
 "]\n", trace.toString());
 }
 
-TEST("that trace can be copied") {
+TEST(TraceTest, that_trace_can_be_copied)
+{
     Trace trace(3);
     trace.trace(2, "foo");
     trace.trace(3, "bar");
     Trace trace2(trace);
-    EXPECT_EQUAL(trace.toString(), trace2.toString());
+    EXPECT_EQ(trace.toString(), trace2.toString());
 }
 
 constexpr vespalib::system_time epoch;
 
-TEST("ensure that system clock is used by default") {
+TEST(TraceTest, ensure_that_system_clock_is_used_by_default)
+{
     Trace trace(2);
     trace.trace(1, "foo");
     TraceNode child(trace.getRoot().getChild(0));
     EXPECT_TRUE(child.getTimestamp() > epoch);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

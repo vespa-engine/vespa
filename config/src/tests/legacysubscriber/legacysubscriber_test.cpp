@@ -1,10 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
+#include "config-my.h"
+#include "config-foo.h"
+#include "config-bar.h"
 #include <vespa/config/helper/legacysubscriber.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <fstream>
-#include <config-my.h>
-#include <config-foo.h>
-#include <config-bar.h>
 
 using namespace config;
 
@@ -30,26 +32,29 @@ struct ConfigIdGenerator
     }
 };
 
-TEST("requireThatFileLegacyWorks") {
+TEST(LegacySubscriberTest, requireThatFileLegacyWorks)
+{
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
-    ASSERT_EQUAL("bar", cb._config->myField);
+    ASSERT_EQ("bar", cb._config->myField);
 }
 
-TEST("requireThatDirLegacyWorks") {
+TEST(LegacySubscriberTest, requireThatDirLegacyWorks)
+{
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("dir","testdir"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
-    ASSERT_EQUAL("bar", cb._config->myField);
+    ASSERT_EQ("bar", cb._config->myField);
 }
 
 
-TEST("requireThatDirMultiFileLegacyWorks") {
+TEST(LegacySubscriberTest, requireThatDirMultiFileLegacyWorks)
+{
     MyCallback<FooConfig> cb1;
     MyCallback<BarConfig> cb2;
 
@@ -59,35 +64,37 @@ TEST("requireThatDirMultiFileLegacyWorks") {
 
     ASSERT_TRUE(cb1._configured);
     ASSERT_TRUE(cb1._config.get() != NULL);
-    ASSERT_EQUAL("bar", cb1._config->fooValue);
+    ASSERT_EQ("bar", cb1._config->fooValue);
 
     ASSERT_TRUE(cb2._configured);
     ASSERT_TRUE(cb2._config.get() != NULL);
-    ASSERT_EQUAL("foo", cb2._config->barValue);
+    ASSERT_EQ("foo", cb2._config->barValue);
 }
 
-TEST("requireThatFileLegacyWorksMultipleTimes") {
+TEST(LegacySubscriberTest, requireThatFileLegacyWorksMultipleTimes)
+{
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
-    ASSERT_EQUAL("bar", cb._config->myField);
+    ASSERT_EQ("bar", cb._config->myField);
     cb._configured = false;
     LegacySubscriber s2;
     s2.subscribe<MyConfig>(ConfigIdGenerator::id("file", "test1.cfg"), &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
-    ASSERT_EQUAL("bar", cb._config->myField);
+    ASSERT_EQ("bar", cb._config->myField);
 }
 
-TEST("requireThatRawLegacyWorks") {
+TEST(LegacySubscriberTest, requireThatRawLegacyWorks)
+{
     LegacySubscriber s;
     MyCallback<MyConfig> cb;
     s.subscribe<MyConfig>("raw:myField \"bar\"\n", &cb);
     ASSERT_TRUE(cb._configured);
     ASSERT_TRUE(cb._config.get() != NULL);
-    ASSERT_EQUAL("bar", cb._config->myField);
+    ASSERT_EQ("bar", cb._config->myField);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

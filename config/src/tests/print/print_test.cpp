@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include "config-my.h"
+#include "config-motd.h"
 #include <vespa/config/print.h>
 #include <vespa/config/print/fileconfigreader.hpp>
 #include <vespa/config/print/istreamconfigreader.hpp>
 #include <vespa/config/helper/configgetter.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include "config-my.h"
-#include "config-motd.h"
 #include <sys/stat.h>
 
 using namespace config;
@@ -20,19 +21,26 @@ struct RawFixture {
         : spec("myField \"foo\"\n"),
           cfg(ConfigGetter<T>::getConfig("test", spec))
     { }
+    ~RawFixture();
 };
 
+template <typename T>
+RawFixture<T>::~RawFixture() = default;
 
-TEST_F("requireThatConfigIsWrittenToFile", RawFixture<MyConfig>) {
+TEST(PrintTest, requireThatConfigIsWrittenToFile)
+{
+    RawFixture<MyConfig> f;
     FileConfigWriter writer("test_1.json");
     ASSERT_TRUE(writer.write(*f.cfg, JsonConfigFormatter()));
     struct stat st;
     int ret = stat("test_1.json", &st);
-    ASSERT_EQUAL(0, ret);
+    ASSERT_EQ(0, ret);
     ASSERT_TRUE(st.st_size > 0);
 }
 
-TEST_F("requireThatCanPrintAsJson", RawFixture<MyConfig>) {
+TEST(PrintTest, requireThatCanPrintAsJson)
+{
+    RawFixture<MyConfig> f;
     FileConfigWriter writer("test_2.json");
     ASSERT_TRUE(writer.write(*f.cfg, JsonConfigFormatter()));
     FileConfigReader<MyConfig> reader("test_2.json");
@@ -40,29 +48,37 @@ TEST_F("requireThatCanPrintAsJson", RawFixture<MyConfig>) {
     ASSERT_TRUE(*cfg2 == *f.cfg);
 }
 
-TEST_F("requireThatCanPrintToOstream", RawFixture<MyConfig>) {
+TEST(PrintTest, requireThatCanPrintToOstream)
+{
+    RawFixture<MyConfig> f;
     std::ostringstream ss;
     OstreamConfigWriter writer(ss);
     ASSERT_TRUE(writer.write(*f.cfg));
-    ASSERT_EQUAL("myField \"foo\"\n", ss.str());
+    ASSERT_EQ("myField \"foo\"\n", ss.str());
 }
 
-TEST_F("requireThatCanReadFromIstream", RawFixture<MyConfig>) {
+TEST(PrintTest, requireThatCanReadFromIstream)
+{
+    RawFixture<MyConfig> f;
     std::stringstream ss;
     ss << "myField \"foo\"\n";
     IstreamConfigReader<MyConfig> reader(ss);
     std::unique_ptr<MyConfig> cfg = reader.read();
-    ASSERT_EQUAL(std::string("foo"), cfg->myField);
+    ASSERT_EQ(std::string("foo"), cfg->myField);
 }
 
-TEST_F("requireThatCanPrintToAscii", RawFixture<MyConfig>) {
+TEST(PrintTest, requireThatCanPrintToAscii)
+{
+    RawFixture<MyConfig> f;
     vespalib::asciistream ss;
     AsciiConfigWriter writer(ss);
     ASSERT_TRUE(writer.write(*f.cfg));
-    ASSERT_EQUAL("myField \"foo\"\n", ss.view());
+    ASSERT_EQ("myField \"foo\"\n", ss.view());
 }
 
-TEST_F("requireThatCanPrintAsConfigFormat", RawFixture<MyConfig>) {
+TEST(PrintTest, requireThatCanPrintAsConfigFormat)
+{
+    RawFixture<MyConfig> f;
     FileConfigWriter writer("test_3.cfg");
     ASSERT_TRUE(writer.write(*f.cfg));
     FileConfigReader<MyConfig> reader("test_3.cfg");
@@ -70,20 +86,24 @@ TEST_F("requireThatCanPrintAsConfigFormat", RawFixture<MyConfig>) {
     ASSERT_TRUE(*cfg2 == *f.cfg);
 }
 
-TEST_F("require that invalid file throws exception", RawFixture<MyConfig>) {
+TEST(PrintTest, require_that_invalid_file_throws_exception)
+{
+    RawFixture<MyConfig> f;
     FileConfigReader<MyConfig> reader("nonexistant.cfg");
-    EXPECT_EXCEPTION(reader.read(), vespalib::IllegalArgumentException, "Unable to open file");
-
+    VESPA_EXPECT_EXCEPTION(reader.read(), vespalib::IllegalArgumentException, "Unable to open file");
 }
 
-TEST_F("requireThatCanLoadWrittenWithConfigFormat", RawFixture<MyConfig>) {
+TEST(PrintTest, requireThatCanLoadWrittenWithConfigFormat)
+{
+    RawFixture<MyConfig> f;
     FileConfigWriter writer("test_3.cfg");
     ASSERT_TRUE(writer.write(*f.cfg));
     std::unique_ptr<MyConfig> cfg2 = ConfigGetter<MyConfig>::getConfig("test_3", FileSpec("test_3.cfg"));
     ASSERT_TRUE(*cfg2 == *f.cfg);
 }
 
-TEST("requireThatAllFieldsArePrintedCorrectly") {
+TEST(PrintTest, requireThatAllFieldsArePrintedCorrectly)
+{
     std::unique_ptr<MotdConfig> cfg = ConfigGetter<MotdConfig>::getConfig(
         "motd", FileSpec(TEST_PATH("motd.cfg")));
     FileConfigWriter writer("motd2.cfg");
@@ -93,10 +113,9 @@ TEST("requireThatAllFieldsArePrintedCorrectly") {
     ASSERT_TRUE(*cfg2 == *cfg);
 }
 
-TEST("require that reading cfg format throws exception") {
+TEST(PrintTest, require_that_reading_cfg_format_throws_exception) {
     FileConfigReader<MyConfig> reader("test_1.json");
-    EXPECT_EXCEPTION(reader.read(FileConfigFormatter()), vespalib::IllegalArgumentException, "Reading cfg format is not supported");
+    VESPA_EXPECT_EXCEPTION(reader.read(FileConfigFormatter()), vespalib::IllegalArgumentException, "Reading cfg format is not supported");
 }
 
-
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

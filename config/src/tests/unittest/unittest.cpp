@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/config/common/configcontext.h>
 #include "config-my.h"
 #include "config-foo.h"
 #include "config-bar.h"
+#include <vespa/config/common/configcontext.h>
 #include <vespa/config/subscription/configsubscriber.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("unittest");
@@ -16,26 +16,18 @@ namespace {
     void verifyConfig(const std::string & expected, std::unique_ptr<FooConfig> cfg)
     {
         ASSERT_TRUE(cfg);
-        ASSERT_EQUAL(expected, cfg->fooValue);
+        ASSERT_EQ(expected, cfg->fooValue);
     }
 
     void verifyConfig(const std::string & expected, std::unique_ptr<BarConfig> cfg)
     {
         ASSERT_TRUE(cfg);
-        ASSERT_EQUAL(expected, cfg->barValue);
+        ASSERT_EQ(expected, cfg->barValue);
     }
 }
-#if 0
-TEST("requireThatUnitTestsCanBeCreated") {
-    MyConfigBuilder builder;
-    builder.myField = "myval";
-    ConfigSet set;
-    set.addBuilder("myid", &builder);
-    std::unique_ptr<MyConfig> cfg = ConfigGetter<MyConfig>::getConfig("myid", set);
-}
-#endif
 
-TEST("requireThatConfigCanBeReloaded") {
+TEST(UnitTest, requireThatConfigCanBeReloaded)
+{
     ConfigSet set;
     auto ctx = std::make_shared<ConfigContext>(set);
     MyConfigBuilder builder;
@@ -47,7 +39,7 @@ TEST("requireThatConfigCanBeReloaded") {
     ASSERT_TRUE(subscriber.nextConfigNow());
     std::unique_ptr<MyConfig> cfg(handle->getConfig());
     ASSERT_TRUE(cfg);
-    ASSERT_EQUAL("myfoo", cfg->myField);
+    ASSERT_EQ("myfoo", cfg->myField);
     ctx->reload();
     ASSERT_FALSE(subscriber.nextConfig(1000ms));
     builder.myField = "foobar";
@@ -55,10 +47,11 @@ TEST("requireThatConfigCanBeReloaded") {
     ASSERT_TRUE(subscriber.nextConfig(10000ms));
     cfg = handle->getConfig();
     ASSERT_TRUE(cfg);
-    ASSERT_EQUAL("foobar", cfg->myField);
+    ASSERT_EQ("foobar", cfg->myField);
 }
 
-TEST("requireThatCanSubscribeWithSameIdToDifferentDefs") {
+TEST(UnitTest, requireThatCanSubscribeWithSameIdToDifferentDefs)
+{
     ConfigSet set;
     auto ctx = std::make_shared<ConfigContext>(set);
     FooConfigBuilder fooBuilder;
@@ -93,4 +86,4 @@ TEST("requireThatCanSubscribeWithSameIdToDifferentDefs") {
     verifyConfig("blabar", h2->getConfig());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

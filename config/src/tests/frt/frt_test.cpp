@@ -2,9 +2,9 @@
 
 #include "config-my.h"
 #include "config-bar.h"
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/config/common/trace.h>
 #include <vespa/config/common/configdefinition.h>
+#include <vespa/config/common/configvalue.hpp>
 #include <vespa/config/frt/connection.h>
 #include <vespa/config/frt/frtsource.h>
 #include <vespa/config/frt/frtconfigrequestv3.h>
@@ -18,7 +18,7 @@
 #include <vespa/fnet/frt/error.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/config/frt/protocol.h>
-#include <vespa/config/common/configvalue.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <lz4.h>
 #include <thread>
@@ -217,14 +217,18 @@ struct Response {
 }
 
 
-TEST_F("require that empty config response does not validate", RPCFixture()) {
+TEST(FrtTest, require_that_empty_config_response_does_not_validate)
+{
+    RPCFixture f1;
     FRTConfigResponseV3 fail1(f1.createEmptyRequest());
     ASSERT_FALSE(fail1.validateResponse());
     ASSERT_FALSE(fail1.hasValidResponse());
     ASSERT_TRUE(fail1.isError());
 }
 
-TEST_F("require that response containing errors does not validate", RPCFixture()) {
+TEST(FrtTest, require_that_response_containing_errors_does_not_validate)
+{
+    RPCFixture f1;
     FRTConfigResponseV3 fail1(f1.createErrorRequest());
     ASSERT_FALSE(fail1.validateResponse());
     ASSERT_FALSE(fail1.hasValidResponse());
@@ -232,14 +236,18 @@ TEST_F("require that response containing errors does not validate", RPCFixture()
     ASSERT_TRUE(fail1.errorCode() != 0);
 }
 
-TEST_F("require that response contains all values", RPCFixture()) {
+TEST(FrtTest, require_that_response_contains_all_values)
+{
+    RPCFixture f1;
     FRTConfigResponseV3 ok(f1.createOKRequest(Response("foo", "baz", "bim", "boo", 12, 15)));
     ASSERT_FALSE(ok.validateResponse());
     ASSERT_FALSE(ok.hasValidResponse());
 }
 
-TEST_FF("require that request is config task is scheduled", SourceFixture(), FRTFixture(f1))
+TEST(FrtTest, require_that_request_is_config_task_is_scheduled)
 {
+    SourceFixture f1;
+    FRTFixture f2(f1);
     f2.src.getConfig();
     ASSERT_TRUE(f2.result.notified);
     f2.result.notified = false;
@@ -254,7 +262,8 @@ TEST_FF("require that request is config task is scheduled", SourceFixture(), FRT
     f2.src.close();
 }
 
-TEST("require that v3 request is correctly initialized") {
+TEST(FrtTest, require_that_v3_request_is_correctly_initialized)
+{
     ConnectionMock conn;
     ConfigKey key = ConfigKey::create<MyConfig>("foobi");
     std::string xxhash64 = "myxxhash64";
@@ -279,26 +288,26 @@ TEST("require that v3 request is correctly initialized") {
     Slime slime;
     JsonFormat::decode(Memory(json), slime);
     Inspector & root(slime.get());
-    EXPECT_EQUAL(3, root[REQUEST_VERSION].asLong());
-    EXPECT_EQUAL(key.getDefName(), root[REQUEST_DEF_NAME].asString().make_string());
-    EXPECT_EQUAL(key.getDefNamespace(), root[REQUEST_DEF_NAMESPACE].asString().make_string());
-    EXPECT_EQUAL(key.getDefMd5(), root[REQUEST_DEF_MD5].asString().make_string());
-    EXPECT_EQUAL(key.getConfigId(), root[REQUEST_CLIENT_CONFIGID].asString().make_string());
-    EXPECT_EQUAL(hostName, root[REQUEST_CLIENT_HOSTNAME].asString().make_string());
-    EXPECT_EQUAL(currentGeneration, root[REQUEST_CURRENT_GENERATION].asLong());
-    EXPECT_EQUAL(xxhash64, root[REQUEST_CONFIG_XXHASH64].asString().make_string());
-    EXPECT_EQUAL(count_ms(timeout), root[REQUEST_TIMEOUT].asLong());
-    EXPECT_EQUAL("LZ4", root[REQUEST_COMPRESSION_TYPE].asString().make_string());
-    EXPECT_EQUAL(root[REQUEST_VESPA_VERSION].asString().make_string(), "1.2.3");
+    EXPECT_EQ(3, root[REQUEST_VERSION].asLong());
+    EXPECT_EQ(key.getDefName(), root[REQUEST_DEF_NAME].asString().make_string());
+    EXPECT_EQ(key.getDefNamespace(), root[REQUEST_DEF_NAMESPACE].asString().make_string());
+    EXPECT_EQ(key.getDefMd5(), root[REQUEST_DEF_MD5].asString().make_string());
+    EXPECT_EQ(key.getConfigId(), root[REQUEST_CLIENT_CONFIGID].asString().make_string());
+    EXPECT_EQ(hostName, root[REQUEST_CLIENT_HOSTNAME].asString().make_string());
+    EXPECT_EQ(currentGeneration, root[REQUEST_CURRENT_GENERATION].asLong());
+    EXPECT_EQ(xxhash64, root[REQUEST_CONFIG_XXHASH64].asString().make_string());
+    EXPECT_EQ(count_ms(timeout), root[REQUEST_TIMEOUT].asLong());
+    EXPECT_EQ("LZ4", root[REQUEST_COMPRESSION_TYPE].asString().make_string());
+    EXPECT_EQ(root[REQUEST_VESPA_VERSION].asString().make_string(), "1.2.3");
     Trace trace;
     trace.deserialize(root[REQUEST_TRACE]);
     EXPECT_TRUE(trace.shouldTrace(2));
     EXPECT_TRUE(trace.shouldTrace(3));
     EXPECT_FALSE(trace.shouldTrace(4));
-    EXPECT_EQUAL(count_ms(timeout), root[REQUEST_TIMEOUT].asLong());
+    EXPECT_EQ(count_ms(timeout), root[REQUEST_TIMEOUT].asLong());
     ConfigDefinition def;
     def.deserialize(root[REQUEST_DEF_CONTENT]);
-    EXPECT_EQUAL(origDef.asString(), def.asString());
+    EXPECT_EQ(origDef.asString(), def.asString());
     std::unique_ptr<ConfigResponse> response(v3req.createResponse(req));
     req->GetReturn()->AddString("foobar");
     req->GetReturn()->AddData("foo", 3);
@@ -362,21 +371,23 @@ struct V3RequestFixture {
         EXPECT_TRUE(trace.shouldTrace(3));
         EXPECT_FALSE(trace.shouldTrace(4));
         ConfigKey responseKey(response.getKey());
-        EXPECT_EQUAL(key.getDefName(), responseKey.getDefName());
-        EXPECT_EQUAL(key.getDefNamespace(), responseKey.getDefNamespace());
-        EXPECT_EQUAL(key.getDefMd5(), responseKey.getDefMd5());
-        EXPECT_EQUAL(key.getConfigId(), responseKey.getConfigId());
-        EXPECT_EQUAL(hostname, response.getHostName());
+        EXPECT_EQ(key.getDefName(), responseKey.getDefName());
+        EXPECT_EQ(key.getDefNamespace(), responseKey.getDefNamespace());
+        EXPECT_EQ(key.getDefMd5(), responseKey.getDefMd5());
+        EXPECT_EQ(key.getConfigId(), responseKey.getConfigId());
+        EXPECT_EQ(hostname, response.getHostName());
         ConfigState state(response.getConfigState());
-        EXPECT_EQUAL(xxhash64, state.xxhash64);
-        EXPECT_EQUAL(generation, state.generation);
+        EXPECT_EQ(xxhash64, state.xxhash64);
+        EXPECT_EQ(generation, state.generation);
         ConfigValue value(response.getValue());
         BarConfig::UP config(value.newInstance<BarConfig>());
-        EXPECT_EQUAL(expectedValue, config->barValue);
+        EXPECT_EQ(expectedValue, config->barValue);
     }
 };
 
-TEST_F("require that v3 uncompressed reponse is correctly initialized", V3RequestFixture()) {
+TEST(FrtTest, require_that_v3_uncompressed_reponse_is_correctly_initialized)
+{
+    V3RequestFixture f1;
     const char *payload = "{\"barValue\":\"foobiar\"}";
     f1.encodePayload(payload, strlen(payload), strlen(payload), CompressionType::UNCOMPRESSED);
     std::unique_ptr<FRTConfigResponseV3> response(f1.createResponse());
@@ -385,7 +396,9 @@ TEST_F("require that v3 uncompressed reponse is correctly initialized", V3Reques
     f1.assertResponse(*response, "foobiar");
 }
 
-TEST_F("require that v3 compressed reponse is correctly initialized", V3RequestFixture()) {
+TEST(FrtTest, require_that_v3_compressed_reponse_is_correctly_initialized)
+{
+    V3RequestFixture f1;
     const char *payload = "{\"barValue\":\"foobiar\"}";
     int maxSize = LZ4_compressBound(strlen(payload));
     char *output = (char *)malloc(maxSize);
@@ -399,7 +412,9 @@ TEST_F("require that v3 compressed reponse is correctly initialized", V3RequestF
     free(output);
 }
 
-TEST_F("require that empty v3 reponse is correctly initialized", V3RequestFixture()) {
+TEST(FrtTest, require_that_empty_v3_reponse_is_correctly_initialized)
+{
+    V3RequestFixture f1;
     const char *payload = "";
     f1.encodePayload(payload, strlen(payload), strlen(payload), CompressionType::UNCOMPRESSED);
     std::unique_ptr<FRTConfigResponseV3> response(f1.createResponse());
@@ -408,4 +423,4 @@ TEST_F("require that empty v3 reponse is correctly initialized", V3RequestFixtur
     f1.assertResponse(*response, "defaultBar");
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
