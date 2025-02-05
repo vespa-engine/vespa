@@ -79,7 +79,7 @@ QueryEnvironmentBuilder::add_node(const FieldInfo &info)
 QueryEnvironmentBuilder&
 QueryEnvironmentBuilder::set_avg_field_length(const std::string& field_name, double avg_field_length)
 {
-    _queryEnv.get_avg_field_lengths()[field_name] = avg_field_length;
+    _queryEnv.get_field_length_info_map()[field_name] = index::FieldLengthInfo(avg_field_length, avg_field_length, 1);
     return *this;
 }
 

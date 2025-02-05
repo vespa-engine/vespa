@@ -77,7 +77,7 @@ public:
         return _queryEnv.getAllLocations();
     }
     const attribute::IAttributeContext & getAttributeContext() const override { return _queryEnv.getAttributeContext(); }
-    double get_average_field_length(const std::string &field_name) const override { return _queryEnv.get_average_field_length(field_name); }
+    index::FieldLengthInfo get_field_length_info(const std::string &field_name) const override { return _queryEnv.get_field_length_info(field_name); }
     const IIndexEnvironment & getIndexEnvironment() const override { return _queryEnv.getIndexEnvironment(); }
 
     // Accessor methods used by PhraseSplitter

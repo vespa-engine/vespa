@@ -49,10 +49,10 @@ QueryEnvironment::getAttributeContext() const
     return _attrContext;
 }
 
-double
-QueryEnvironment::get_average_field_length(const std::string &field_name) const
+search::index::FieldLengthInfo
+QueryEnvironment::get_field_length_info(const std::string &field_name) const
 {
-    return _field_length_inspector.get_field_length_info(field_name).get_average_field_length();
+    return _field_length_inspector.get_field_length_info(field_name);
 }
 
 const search::fef::IIndexEnvironment &

@@ -96,10 +96,11 @@ TEST_F(Bm25BlueprintTest, blueprint_can_prepare_shared_state_with_average_field_
 {
     auto blueprint = expect_setup_succeed({"is"});
     test::QueryEnvironment query_env;
-    query_env.get_avg_field_lengths()["is"] = 10;
+    query_env.get_field_length_info_map()["is"] =
+        search::index::FieldLengthInfo(10.0, 10.0, 1);
     ObjectStore store;
     blueprint->prepareSharedState(query_env, store);
-    EXPECT_DOUBLE_EQ(10, as_value<double>(*store.get("bm25.afl.is")));
+    EXPECT_DOUBLE_EQ(10.0, as_value<double>(*store.get("bm25.afl.is")));
 }
 
 TEST_F(Bm25BlueprintTest, dump_features_for_all_index_fields)

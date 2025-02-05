@@ -46,7 +46,9 @@ public:
 
     GeoLocationSpecPtrs getAllLocations() const override;
     const search::attribute::IAttributeContext & getAttributeContext() const override { return *_attrCtx; }
-    double get_average_field_length(const std::string &) const override { return 100.0; }
+    search::index::FieldLengthInfo get_field_length_info(const std::string &) const override {
+        return search::index::FieldLengthInfo(100.0, 100.0, 1);
+    }
     const search::fef::IIndexEnvironment & getIndexEnvironment() const override { return _indexEnv; }
     void addTerm(const search::fef::ITermData *term) { _queryTerms.push_back(term); }
 

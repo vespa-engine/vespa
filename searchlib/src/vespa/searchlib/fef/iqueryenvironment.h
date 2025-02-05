@@ -5,6 +5,7 @@
 #include "iindexenvironment.h"
 #include "objectstore.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/index/field_length_info.h>
 
 namespace search::common { struct GeoLocationSpec; }
 
@@ -80,7 +81,7 @@ public:
      *
      * @return average field length
      **/
-    virtual double get_average_field_length(const std::string &field_name) const = 0;
+    virtual index::FieldLengthInfo get_field_length_info(const std::string &field_name) const = 0;
 
     /**
      * Returns a const view of the index environment.
