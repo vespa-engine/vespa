@@ -233,7 +233,7 @@ PosOccFieldParams::writeHeader(GenericHeader &header,
     header.putTag(Tag(avgElemLenKey, _avgElemLen));
     header.putTag(Tag(field_length_keys._average, _field_length_info.get_average_field_length()));
     header.putTag(Tag(field_length_keys._samples, static_cast<int64_t>(_field_length_info.get_num_samples())));
-    header.putTag(Tag(field_length_keys._average_element_length,_field_length_info.get_average_element_length()));
+    header.putTag(Tag(field_length_keys._average_element_length, _field_length_info.get_average_element_length()));
 }
 
 }
