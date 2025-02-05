@@ -92,8 +92,8 @@ public:
 
     IndexCollectionTest()
         : _selector(std::make_shared<FixedSourceSelector>(0, "fs1")),
-          _source1(std::make_shared<MockIndexSearchable>(FieldLengthInfo(3, 5))),
-          _source2(std::make_shared<MockIndexSearchable>(FieldLengthInfo(7, 11))),
+          _source1(std::make_shared<MockIndexSearchable>(FieldLengthInfo(3.0, 3.0, 5))),
+          _source2(std::make_shared<MockIndexSearchable>(FieldLengthInfo(7.0, 7.0, 11))),
           _fusion_source(std::make_shared<FakeIndexSearchable>()),
           _executor(1),
           _warmup(std::make_shared<FakeIndexSearchable>())

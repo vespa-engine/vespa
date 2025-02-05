@@ -23,9 +23,9 @@ namespace {
 class MockFieldLengthInspector : public IFieldLengthInspector {
     FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         if (field_name == "f1") {
-            return {3.5, 21};
+            return {3.5, 3.5, 21};
         } else if (field_name == "f2") {
-            return {4.0, 23};
+            return {4.0, 4.0, 23};
         } else {
             return {};
         }

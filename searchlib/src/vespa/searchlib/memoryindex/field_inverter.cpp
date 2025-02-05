@@ -182,7 +182,7 @@ FieldInverter::endDoc()
             ++itr;
         }
     }
-    _calculator.add_field_length(field_length);
+    _calculator.add_field_length(field_length, _elem);
     uint32_t newPosSize = static_cast<uint32_t>(_positions.size());
     _pendingDocs.insert({ _docId, { _oldPosSize, newPosSize - _oldPosSize } });
     _docId = 0;
