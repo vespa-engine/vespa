@@ -137,13 +137,15 @@ std::string field_length_infix = "field_length.";
 struct FieldLengthKeys {
     std::string _average;
     std::string _samples;
+    std::string _average_element_length;
     FieldLengthKeys(const std::string &prefix);
     ~FieldLengthKeys();
 };
 
 FieldLengthKeys::FieldLengthKeys(const std::string &prefix)
     : _average(prefix + field_length_infix + "average"),
-      _samples(prefix + field_length_infix + "samples")
+      _samples(prefix + field_length_infix + "samples"),
+      _average_element_length(prefix + field_length_infix + "average_element_length")
 {
 }
 
@@ -189,7 +191,15 @@ PosOccFieldParams::readHeader(const GenericHeader &header,
         const auto &field_length_samples_tag = header.getTag(field_length_keys._samples);
         if (average_field_length_tag.getType() == Tag::Type::TYPE_FLOAT &&
             field_length_samples_tag.getType() == Tag::Type::TYPE_INTEGER) {
-            _field_length_info = index::FieldLengthInfo(average_field_length_tag.asFloat(), field_length_samples_tag.asInteger());
+            double average_field_length = average_field_length_tag.asFloat();
+            double average_element_length = average_field_length;
+            if (header.hasTag(field_length_keys._average_element_length)) {
+                const auto& average_element_length_tag = header.getTag(field_length_keys._average_element_length);
+                if (average_element_length_tag.getType() == Tag::Type::TYPE_FLOAT) {
+                    average_element_length = average_element_length_tag.asFloat();
+                }
+            }
+            _field_length_info = index::FieldLengthInfo(average_field_length, average_element_length, field_length_samples_tag.asInteger());
         }
     }
 }
@@ -223,6 +233,7 @@ PosOccFieldParams::writeHeader(GenericHeader &header,
     header.putTag(Tag(avgElemLenKey, _avgElemLen));
     header.putTag(Tag(field_length_keys._average, _field_length_info.get_average_field_length()));
     header.putTag(Tag(field_length_keys._samples, static_cast<int64_t>(_field_length_info.get_num_samples())));
+    header.putTag(Tag(field_length_keys._average_element_length, _field_length_info.get_average_element_length()));
 }
 
 }

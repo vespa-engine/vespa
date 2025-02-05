@@ -62,7 +62,7 @@ namespace diskindex {
 class MyMockFieldLengthInspector : public IFieldLengthInspector {
     FieldLengthInfo get_field_length_info(const std::string& field_name) const override {
         if (field_name == "f0") {
-            return FieldLengthInfo(3.5, 21);
+            return FieldLengthInfo(3.5, 3.5, 21);
         } else {
             return FieldLengthInfo();
         }

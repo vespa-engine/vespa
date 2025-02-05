@@ -211,7 +211,7 @@ WrappedFieldWriter::open()
     _fieldWriter->open(minSkipDocs, minChunkDocs,
                        _dynamicK, _encode_interleaved_features,
                        _schema, _indexId,
-                       FieldLengthInfo(4.5, 42),
+                       FieldLengthInfo(4.5, 4.5, 42),
                        tuneFileWrite, fileHeaderContext);
 }
 

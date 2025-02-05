@@ -552,8 +552,8 @@ TEST(MemoryIndexTest, require_that_we_can_fake_bit_vector)
 TEST(MemoryIndexTest, field_length_info_can_be_retrieved_per_field)
 {
     Index index(MySetup().field(title).field(body)
-                        .field_length("title", FieldLengthInfo(3, 5))
-                        .field_length("body", FieldLengthInfo(7, 11)));
+                        .field_length("title", FieldLengthInfo(3.0, 3.0, 5))
+                        .field_length("body", FieldLengthInfo(7.0, 7.0, 11)));
 
     EXPECT_EQ(3, index.index.get_field_length_info("title").get_average_field_length());
     EXPECT_EQ(5, index.index.get_field_length_info("title").get_num_samples());
