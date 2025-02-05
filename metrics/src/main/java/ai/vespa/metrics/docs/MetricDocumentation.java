@@ -24,7 +24,7 @@ public class MetricDocumentation {
 
                         <table class="table">
                           <thead>
-                              <tr><th>Name</th><th>Description</th><th>Unit</th></tr>
+                              <tr><th>Name</th><th>Unit</th><th>Description</th></tr>
                           </thead>
                           <tbody>
                         %s  </tbody>
@@ -51,8 +51,8 @@ public class MetricDocumentation {
                                  """,
                                 metric.baseName().replaceAll("\\.", "_"),
                                 metric.baseName(),
-                                metric.description(),
-                                metric.unit().toString().toLowerCase())
+                                metric.unit().toString().toLowerCase(),
+                                metric.description())
                 ).collect(Collectors.joining());
     }
 }
