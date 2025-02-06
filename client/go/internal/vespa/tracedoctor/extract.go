@@ -204,24 +204,10 @@ func (q *queryNode) applySample(sample slime.Value) {
 	}
 }
 
-type ProtonTrace struct {
-	DistributionKey int64
-	DocumentType    string
-	DurationMs      float64
-	Root            slime.Value
-	Query           slime.Value
-}
-
-func findField(node slime.Value, fieldName string) []*slime.Path {
-	return slime.Find(node, func(path *slime.Path, value slime.Value) bool {
-		return path.At(-1).WouldSelectField(fieldName)
-	})
-}
-
-func findTagged(node slime.Value, tag string) []*slime.Path {
-	return slime.Find(node, func(path *slime.Path, value slime.Value) bool {
-		return value.Field("tag").AsString() == tag
-	})
+func hasTag(tag string) func(p *slime.Path, v slime.Value) bool {
+	return func(p *slime.Path, v slime.Value) bool {
+		return v.Field("tag").AsString() == tag
+	}
 }
 
 func eachSampleList(list slime.Value, f func(sample slime.Value)) {
@@ -235,33 +221,71 @@ func eachSample(prof slime.Value, f func(sample slime.Value)) {
 	eachSampleList(prof.Field("roots"), f)
 }
 
-func (pt *ProtonTrace) MatchProfiling() *queryNode {
-	queryRoot := extractQueryNode(pt.Query)
-	for _, profPath := range findTagged(pt.Root, "match_profiling") {
-		prof := profPath.Apply(pt.Root)
-		if prof.Field("profiler").AsString() == "tree" {
-			eachSample(prof, func(sample slime.Value) {
-				if sampleType(sample) == "seek" {
-					queryRoot.applySample(sample)
+func (q *queryNode) ImportMatchPerf(t ThreadTrace) {
+	slime.Select(t.root, hasTag("match_profiling"), func(p *slime.Path, v slime.Value) {
+		if v.Field("profiler").AsString() == "tree" {
+			eachSample(v, func(sample slime.Value) {
+				if sampleType(sample) != "unknown" {
+					q.applySample(sample)
 				}
 			})
 		}
-	}
-	return queryRoot
+	})
 }
 
-func FindProtonTraces(root slime.Value) []*ProtonTrace {
-	var traces []*ProtonTrace
-	for _, path := range findField(root, "optimized") {
-		node := path.Clone().Trim(3).Apply(root)
-		distKey := node.Field("distribution-key")
-		docType := node.Field("document-type")
-		duration := node.Field("duration_ms")
-		if slime.Valid(distKey, docType, duration) {
-			traces = append(traces, &ProtonTrace{distKey.AsLong(),
-				docType.AsString(),
-				duration.AsDouble(), node, path.Apply(root)})
-		}
+type ThreadTrace struct {
+	root slime.Value
+}
+
+func (t ThreadTrace) MatchTimeMs() float64 {
+	p := slime.Find(t.root, hasTag("match_profiling"))
+	if len(p) == 1 {
+		return p[0].Apply(t.root).Field("total_time_ms").AsDouble()
 	}
+	return 0.0
+}
+
+type ProtonTrace struct {
+	root slime.Value
+}
+
+func (p ProtonTrace) FindThreadTraces() []ThreadTrace {
+	var traces []ThreadTrace
+	slime.Select(p.root, hasTag("query_execution"), func(p *slime.Path, v slime.Value) {
+		v.Field("threads").EachEntry(func(idx int, v slime.Value) {
+			traces = append(traces, ThreadTrace{v})
+		})
+	})
+	return traces
+}
+
+func (p ProtonTrace) ExtractQuery() *queryNode {
+	query := slime.Invalid
+	plan := slime.Find(p.root, hasTag("query_execution_plan"))
+	if len(plan) == 1 {
+		query = plan[0].Apply(p.root).Field("optimized")
+	}
+	return extractQueryNode(query)
+}
+
+func (p ProtonTrace) DistributionKey() int64 {
+	return p.root.Field("distribution-key").AsLong()
+}
+
+func (p ProtonTrace) DocumentType() string {
+	return p.root.Field("document-type").AsString()
+}
+
+func (p ProtonTrace) DurationMs() float64 {
+	return p.root.Field("duration_ms").AsDouble()
+}
+
+func FindProtonTraces(root slime.Value) []ProtonTrace {
+	var traces []ProtonTrace
+	slime.Select(root, func(p *slime.Path, v slime.Value) bool {
+		return slime.Valid(v.Field("distribution-key"), v.Field("document-type"), v.Field("duration_ms"))
+	}, func(p *slime.Path, v slime.Value) {
+		traces = append(traces, ProtonTrace{v})
+	})
 	return traces
 }

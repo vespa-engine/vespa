@@ -118,6 +118,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 		urlQuery.Set("trace.level", "1")
 		urlQuery.Set("trace.explainLevel", "1")
 		urlQuery.Set("trace.profiling.matching.depth", "100")
+		urlQuery.Set("presentation.timing", "true")
 	}
 	queryTimeout := urlQuery.Get("timeout")
 	if queryTimeout == "" {
