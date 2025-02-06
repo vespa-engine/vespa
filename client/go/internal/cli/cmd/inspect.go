@@ -25,7 +25,7 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	}
 	list := tracedoctor.FindProtonTraces(root.Field("trace"))
 	if len(list) == 0 {
-		return fmt.Errorf("could not locate and searches in profile(%s)", opts.profileFile)
+		return fmt.Errorf("could not locate any searches in profile(%s)", opts.profileFile)
 	}
 	var mp int = -1
 	for i, p := range list {
