@@ -567,6 +567,12 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundDoubleFlag FEED_NICENESS = defineDoubleFlag(
+            "feed-niceness", 0.0,
+            "How nice feeding shall be",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
