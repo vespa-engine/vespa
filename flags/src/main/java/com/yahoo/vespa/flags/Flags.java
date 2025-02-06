@@ -97,13 +97,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundDoubleFlag FEED_NICENESS = defineDoubleFlag(
-            "feed-niceness", 0.0,
-            List.of("baldersheim"), "2022-06-24", "2025-03-01",
-            "How nice feeding shall be",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
             "mbus-java-num-targets", 2,
             List.of("baldersheim"), "2022-07-05", "2025-03-01",
