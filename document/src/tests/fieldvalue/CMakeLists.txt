@@ -4,6 +4,7 @@ vespa_add_executable(document_document_test_app TEST
     document_test.cpp
     DEPENDS
     vespa_document
+    GTest::gtest
 )
 vespa_add_test(NAME document_document_test_app COMMAND document_document_test_app)
 vespa_add_executable(document_fieldvalue_test_app TEST
@@ -11,6 +12,7 @@ vespa_add_executable(document_fieldvalue_test_app TEST
     fieldvalue_test.cpp
     DEPENDS
     vespa_document
+    GTest::gtest
 )
 vespa_add_test(NAME document_fieldvalue_test_app COMMAND document_fieldvalue_test_app)
 vespa_add_executable(document_predicatefieldvalue_test_app TEST
@@ -18,6 +20,7 @@ vespa_add_executable(document_predicatefieldvalue_test_app TEST
     predicatefieldvalue_test.cpp
     DEPENDS
     vespa_document
+    GTest::gtest
 )
 vespa_add_test(NAME document_predicatefieldvalue_test_app COMMAND document_predicatefieldvalue_test_app)
 
@@ -26,5 +29,6 @@ vespa_add_executable(document_referencefieldvalue_test_app TEST
     referencefieldvalue_test.cpp
     DEPENDS
     vespa_document
+    GTest::gtest
 )
 vespa_add_test(NAME document_referencefieldvalue_test_app COMMAND document_referencefieldvalue_test_app)

@@ -7,7 +7,7 @@ LOG_SETUP("predicate_builder_test");
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_builder.h>
 #include <vespa/vespalib/data/slime/slime.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using std::string;
 using vespalib::Slime;
@@ -16,7 +16,8 @@ using namespace document;
 
 namespace {
 
-TEST("require that a predicate tree can be built from a slime object") {
+TEST(PredicateBuilderTest, require_that_a_predicate_tree_can_be_built_from_a_slime_object)
+{
     const string feature_name = "feature name";
     Slime input;
     Cursor &obj = input.setObject();
@@ -60,12 +61,12 @@ TEST("require that a predicate tree can be built from a slime object") {
     PredicateNode::UP node = PredicateBuilder().build(input.get());
     Disjunction *disjunction = dynamic_cast<Disjunction *>(node.get());
     ASSERT_TRUE(disjunction);
-    ASSERT_EQUAL(2u, disjunction->getSize());
+    ASSERT_EQ(2u, disjunction->getSize());
     FeatureSet *feature_set = dynamic_cast<FeatureSet *>((*disjunction)[0]);
     ASSERT_TRUE(feature_set);
     Conjunction *conjunction = dynamic_cast<Conjunction *>((*disjunction)[1]);
     ASSERT_TRUE(conjunction);
-    ASSERT_EQUAL(2u, conjunction->getSize());
+    ASSERT_EQ(2u, conjunction->getSize());
     FeatureRange *feature_range =
         dynamic_cast<FeatureRange *>((*conjunction)[0]);
     ASSERT_TRUE(feature_range);
@@ -77,4 +78,4 @@ TEST("require that a predicate tree can be built from a slime object") {
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

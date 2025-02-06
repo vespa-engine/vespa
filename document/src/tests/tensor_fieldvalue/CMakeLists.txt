@@ -4,5 +4,6 @@ vespa_add_executable(document_tensor_fieldvalue_test_app TEST
     tensor_fieldvalue_test.cpp
     DEPENDS
     vespa_document
+    GTest::gtest
 )
 vespa_add_test(NAME document_tensor_fieldvalue_test_app COMMAND document_tensor_fieldvalue_test_app)

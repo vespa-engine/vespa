@@ -16,8 +16,7 @@
 #include <vespa/document/fieldvalue/arrayfieldvalue.h>
 #include <vespa/document/fieldvalue/doublefieldvalue.h>
 #include <vespa/document/fieldvalue/structfieldvalue.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using std::unique_ptr;
 using namespace document;
@@ -35,7 +34,8 @@ AnnotationType markup_type(7, "markup");
 template <typename T>
 unique_ptr<T> makeUP(T *p) { return unique_ptr<T>(p); }
 
-TEST("requireThatSpansHaveOrder") {
+TEST(AnnotationTest, requireThatSpansHaveOrder)
+{
     Span span(10, 10);
     Span before(5, 3);
     Span overlap_start(8, 10);
@@ -56,7 +56,8 @@ TEST("requireThatSpansHaveOrder") {
     EXPECT_TRUE(!(span < span));
 }
 
-TEST("requireThatSimpleSpanTreeCanBeBuilt") {
+TEST(AnnotationTest, requireThatSimpleSpanTreeCanBeBuilt)
+{
     SpanList::UP root(new SpanList);
     root->add(makeUP(new Span(0, 19)));
     root->add(makeUP(new Span(19, 5)));
@@ -64,19 +65,20 @@ TEST("requireThatSimpleSpanTreeCanBeBuilt") {
     root->add(makeUP(new Span(45, 23)));
     root->add(makeUP(new Span(68, 14)));
 
-    EXPECT_EQUAL(5u, root->size());
+    EXPECT_EQ(5u, root->size());
     SpanList::const_iterator it = root->begin();
-    EXPECT_EQUAL(Span(0, 19), *(static_cast<Span *>(*it++)));
-    EXPECT_EQUAL(Span(19, 5), *(static_cast<Span *>(*it++)));
-    EXPECT_EQUAL(Span(24, 21), *(static_cast<Span *>(*it++)));
-    EXPECT_EQUAL(Span(45, 23), *(static_cast<Span *>(*it++)));
-    EXPECT_EQUAL(Span(68, 14), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(0, 19), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(19, 5), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(24, 21), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(45, 23), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(68, 14), *(static_cast<Span *>(*it++)));
     EXPECT_TRUE(it == root->end());
 
     SpanTree tree("html", std::move(root));
 }
 
-TEST("requireThatSpanTreeCanHaveAnnotations") {
+TEST(AnnotationTest, requireThatSpanTreeCanHaveAnnotations)
+{
     SpanList::UP root_owner(new SpanList);
     SpanList *root = root_owner.get();
     SpanTree tree("html", std::move(root_owner));
@@ -87,15 +89,16 @@ TEST("requireThatSpanTreeCanHaveAnnotations") {
     Span &span2 = root->add(makeUP(new Span(19, 5)));
     tree.annotate(span2, text_type);
 
-    EXPECT_EQUAL(2u, tree.numAnnotations());
+    EXPECT_EQ(2u, tree.numAnnotations());
     SpanTree::const_iterator it = tree.begin();
 
-    EXPECT_EQUAL(Annotation(markup_type), *it++);
-    EXPECT_EQUAL(Annotation(text_type), *it++);
+    EXPECT_EQ(Annotation(markup_type), *it++);
+    EXPECT_EQ(Annotation(text_type), *it++);
     EXPECT_TRUE(it == tree.end());
 }
 
-TEST("requireThatSpanTreeCanHaveMultipleLevels") {
+TEST(AnnotationTest, requireThatSpanTreeCanHaveMultipleLevels)
+{
     SpanList::UP root_owner(new SpanList);
     SpanList *root = root_owner.get();
     SpanTree tree("html", std::move(root_owner));
@@ -119,24 +122,25 @@ TEST("requireThatSpanTreeCanHaveMultipleLevels") {
     root->add(std::move(std::move(body)));
     tree.annotate(root->add(makeUP(new Span(75, 7))), end_tag);
 
-    EXPECT_EQUAL(12u, tree.numAnnotations());
+    EXPECT_EQ(12u, tree.numAnnotations());
     SpanTree::const_iterator it = tree.begin();
-    EXPECT_EQUAL(Annotation(begin_tag), *it++);
-    EXPECT_EQUAL(Annotation(begin_tag), *it++);
-    EXPECT_EQUAL(Annotation(text_type), *it++);
-    EXPECT_EQUAL(Annotation(end_tag), *it++);
-    EXPECT_EQUAL(Annotation(end_tag), *it++);
-    EXPECT_EQUAL(Annotation(header_type), *it++);
-    EXPECT_EQUAL(Annotation(begin_tag), *it++);
-    EXPECT_EQUAL(Annotation(text_type), *it++);
-    EXPECT_EQUAL(Annotation(end_tag), *it++);
-    EXPECT_EQUAL(Annotation(body_type), *it++);
-    EXPECT_EQUAL(Annotation(begin_tag), *it++);
-    EXPECT_EQUAL(Annotation(end_tag), *it++);
+    EXPECT_EQ(Annotation(begin_tag), *it++);
+    EXPECT_EQ(Annotation(begin_tag), *it++);
+    EXPECT_EQ(Annotation(text_type), *it++);
+    EXPECT_EQ(Annotation(end_tag), *it++);
+    EXPECT_EQ(Annotation(end_tag), *it++);
+    EXPECT_EQ(Annotation(header_type), *it++);
+    EXPECT_EQ(Annotation(begin_tag), *it++);
+    EXPECT_EQ(Annotation(text_type), *it++);
+    EXPECT_EQ(Annotation(end_tag), *it++);
+    EXPECT_EQ(Annotation(body_type), *it++);
+    EXPECT_EQ(Annotation(begin_tag), *it++);
+    EXPECT_EQ(Annotation(end_tag), *it++);
     EXPECT_TRUE(it == tree.end());
 }
 
-TEST("requireThatAnnotationsCanHaveValues") {
+TEST(AnnotationTest, requireThatAnnotationsCanHaveValues)
+{
     PrimitiveDataType double_type(DataType::T_DOUBLE);
     StructDataType city_data_type("city");
     city_data_type.addField(Field("latitude", 0, double_type));
@@ -152,7 +156,8 @@ TEST("requireThatAnnotationsCanHaveValues") {
     EXPECT_TRUE(*city.getFieldValue() == original);
 }
 
-TEST("requireThatAnnotationsCanReferenceAnnotations") {
+TEST(AnnotationTest, requireThatAnnotationsCanReferenceAnnotations)
+{
     auto root = std::make_unique<SpanList>();
     SpanTree tree("html", std::move(root));
     size_t san_index = tree.annotate(Annotation(text_type));
@@ -173,13 +178,14 @@ TEST("requireThatAnnotationsCanReferenceAnnotations") {
     Annotation city(city_type, std::move(city_data));
 
     ASSERT_TRUE(city.getFieldValue());
-    EXPECT_EQUAL(original, *city.getFieldValue());
+    EXPECT_EQ(original, *city.getFieldValue());
 }
 
 const double prob0 = 0.6;
 const double prob1 = 0.4;
 
-TEST("requireThatAlternateSpanListHoldsMultipleLists") {
+TEST(AnnotationTest, requireThatAlternateSpanListHoldsMultipleLists)
+{
     AlternateSpanList span_list;
     span_list.add(0, makeUP(new Span(0, 19)));
     span_list.add(0, makeUP(new Span(19, 5)));
@@ -188,20 +194,20 @@ TEST("requireThatAlternateSpanListHoldsMultipleLists") {
     span_list.setProbability(0, prob0);
     span_list.setProbability(1, prob1);
 
-    EXPECT_EQUAL(2u, span_list.getNumSubtrees());
-    EXPECT_EQUAL(2u, span_list.getSubtree(0).size());
-    EXPECT_EQUAL(2u, span_list.getSubtree(1).size());
-    EXPECT_EQUAL(prob0, span_list.getProbability(0));
-    EXPECT_EQUAL(prob1, span_list.getProbability(1));
+    EXPECT_EQ(2u, span_list.getNumSubtrees());
+    EXPECT_EQ(2u, span_list.getSubtree(0).size());
+    EXPECT_EQ(2u, span_list.getSubtree(1).size());
+    EXPECT_EQ(prob0, span_list.getProbability(0));
+    EXPECT_EQ(prob1, span_list.getProbability(1));
 
     SpanList::const_iterator it = span_list.getSubtree(0).begin();
-    EXPECT_EQUAL(Span(0, 19), *(static_cast<Span *>(*it++)));
-    EXPECT_EQUAL(Span(19, 5), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(0, 19), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(19, 5), *(static_cast<Span *>(*it++)));
     EXPECT_TRUE(it == span_list.getSubtree(0).end());
 
     it = span_list.getSubtree(1).begin();
-    EXPECT_EQUAL(Span(0, 5), *(static_cast<Span *>(*it++)));
-    EXPECT_EQUAL(Span(5, 19), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(0, 5), *(static_cast<Span *>(*it++)));
+    EXPECT_EQ(Span(5, 19), *(static_cast<Span *>(*it++)));
     EXPECT_TRUE(it == span_list.getSubtree(1).end());
 }
 
@@ -244,7 +250,8 @@ struct MySpanTreeVisitor : SpanTreeVisitor {
     }
 };
 
-TEST("requireThatSpanTreeCanBeVisited") {
+TEST(AnnotationTest, requireThatSpanTreeCanBeVisited)
+{
     SpanList::UP root(new SpanList);
     root->add(makeUP(new Span(0, 19)));
     AlternateSpanList::UP alt_list(new AlternateSpanList);
@@ -257,19 +264,21 @@ TEST("requireThatSpanTreeCanBeVisited") {
     MySpanTreeVisitor visitor;
     tree.accept(visitor);
 
-    EXPECT_EQUAL(3, visitor.span_count);
-    EXPECT_EQUAL(1, visitor.span_list_count);
-    EXPECT_EQUAL(1, visitor.alt_span_list_count);
+    EXPECT_EQ(3, visitor.span_count);
+    EXPECT_EQ(1, visitor.span_list_count);
+    EXPECT_EQ(1, visitor.alt_span_list_count);
 }
 
-TEST("requireThatDefaultAnnotationTypesHaveDefaultDataTypes") {
+TEST(AnnotationTest, requireThatDefaultAnnotationTypesHaveDefaultDataTypes)
+{
     ASSERT_TRUE(AnnotationType::TERM->getDataType());
-    EXPECT_EQUAL(*DataType::STRING, *AnnotationType::TERM->getDataType());
+    EXPECT_EQ(*DataType::STRING, *AnnotationType::TERM->getDataType());
     ASSERT_TRUE(AnnotationType::TOKEN_TYPE->getDataType());
-    EXPECT_EQUAL(*DataType::INT, *AnnotationType::TOKEN_TYPE->getDataType());
+    EXPECT_EQ(*DataType::INT, *AnnotationType::TOKEN_TYPE->getDataType());
 }
 
-TEST("require that SpanTrees can be compared") {
+TEST(AnnotationTest, require_that_SpanTrees_can_be_compared)
+{
     SpanList::UP root(new SpanList);
     root->add(makeUP(new Span(0, 19)));
     SpanTree tree1("html", std::move(root));
@@ -278,11 +287,11 @@ TEST("require that SpanTrees can be compared") {
     root->add(makeUP(new Span(0, 18)));
     SpanTree tree2("html", std::move(root));
 
-    EXPECT_EQUAL(0, tree1.compare(tree1));
-    EXPECT_LESS(0, tree1.compare(tree2));
-    EXPECT_GREATER(0, tree2.compare(tree1));
+    EXPECT_EQ(0, tree1.compare(tree1));
+    EXPECT_LT(0, tree1.compare(tree2));
+    EXPECT_GT(0, tree2.compare(tree1));
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
