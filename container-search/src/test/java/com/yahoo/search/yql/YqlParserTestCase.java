@@ -918,6 +918,18 @@ public class YqlParserTestCase {
     }
 
     @Test
+    void testYqlRepresentationOfOrdering() {
+        var newTree = parse("select foo from bar where price < 100 order by \"[rank]\" limit 5");
+        var query = new Query();
+        query.getModel().getQueryTree().setRoot(newTree.getRoot());
+        query.setHits(parser.getHits());
+        query.getRanking().setSorting(parser.getSorting());
+        String got = query.yqlRepresentation(true);
+        // note: above code does not transfer selection or source, so we get '*' here:
+        assertEquals("select * from sources * where price < 100 order by \"[rank]\" limit 5", got);
+    }
+
+    @Test
     void testAnnotatedOrdering() {
         assertParse(
                 "select foo from bar where title contains \"madonna\""
