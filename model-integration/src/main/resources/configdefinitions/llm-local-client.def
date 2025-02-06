@@ -10,7 +10,7 @@ parallelRequests int default=1
 # Additional number of requests to put in queue for processing before starting to reject new requests
 maxQueueSize int default=100
 
-# Max number of milliseoncds to wait in the queue before rejecting a request
+# Max number of milliseconds to wait in the queue before rejecting a request
 maxQueueWait int default=10000
 
 # Use GPU
@@ -30,3 +30,9 @@ contextSize int default=4096
 # Maximum number of tokens to process in one request - overridden by inference parameters
 maxTokens int default=512
 
+# Specifies what to do when LLM context size is too small to process prompt + completion tokens.
+# IGNORE is the default behaviour that runs inference anyway, 
+# which can lead to poor output, performance issues or errors.
+# SKIP skips the inference for prompts when context size is too small for prompt + completion tokens.
+# ERROR throws an exception "Context size is too small for ..."
+contextSizeTooSmallBehaviour enum {IGNORE, SKIP, ERROR} default=IGNORE

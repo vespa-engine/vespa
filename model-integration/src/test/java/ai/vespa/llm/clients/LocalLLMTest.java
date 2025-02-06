@@ -10,6 +10,10 @@ import com.yahoo.config.ModelReference;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -22,6 +26,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.io.InputStream;
+import java.net.URL;
 
 /**
  * Tests for LocalLLM.
@@ -138,6 +145,7 @@ public class LocalLLMTest {
 
         var rejected = new AtomicInteger(0);
         var timedOut = new AtomicInteger(0);
+        
         try {
             for (int i = 0; i < promptsToUse; i++) {
                 final var seq = i;
@@ -193,5 +201,71 @@ public class LocalLLMTest {
         prompts.add("Discuss the impact of social media on interpersonal communication in the 21st century.");
         return prompts;
     }
+    
+    
+    private void downloadFileIfMissing(String fileUrl, String filePath) {
+        Path targetPath = Paths.get(filePath);
 
+        // Check if the file already exists
+        if (Files.exists(targetPath)) {
+            System.out.println("File already exists: " + filePath);
+            return;
+        }
+
+        // Create directories if they do not exist
+        try {
+            Files.createDirectories(targetPath.getParent());
+        } catch (IOException e) {
+            System.err.println("Failed to create parent directories: " + e.getMessage());
+            return;
+        }
+
+        // Download file from URL
+        try (InputStream in = new URL(fileUrl).openStream()) {
+            Files.copy(in, targetPath);
+            System.out.println("File downloaded successfully: " + filePath);
+        } catch (IOException e) {
+            System.err.println("Failed to download file: " + e.getMessage());
+        }
+    }
+    
+
+    @Test
+    @Disabled
+    public void testPromptLargerThanContextSize() {
+        var llmUrl = "https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+        var llmPath = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+        downloadFileIfMissing(llmUrl, llmPath);
+
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(1)
+                .contextSize(60)
+//                .contextOverflowBehaviour(LLMContextOverflowBehaviour.Ignore) // Ignore, Error, Warn, TruncatePrompt
+//                .maxPromptTokens()
+//                .maxTokens()
+                .model(ModelReference.valueOf(llmPath));
+        
+        var llm = new LocalLLM(llmConfig.build());
+
+        var inferenceOptions = new InferenceParameters(
+                Map.of("temperature", "0", "npredict", "100")::get);
+        
+        var promptStr = """
+                Translate this text to Norwegian, don't add any notes or other information.
+                Text:
+                Life is really simple, but we insist on making it complicated.
+                Translation:
+                """;
+        
+        var expectedResult = "Livet er virkelig enkelt, men vi vil gerne gjøre det komplisert.";
+        
+        try {
+            var result = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
+            assertEquals(Completion.FinishReason.stop, result.get(0).finishReason());
+            assertEquals(expectedResult, result.get(0).text().strip());
+        } finally {
+            llm.deconstruct();
+        }
+    }
+    
 }

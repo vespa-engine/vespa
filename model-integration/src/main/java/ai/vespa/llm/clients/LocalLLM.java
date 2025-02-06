@@ -26,10 +26,13 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
+import ai.vespa.llm.clients.LlmLocalClientConfig.ContextSizeTooSmallBehaviour;
+
 /**
  * A language model running locally on the container node.
  *
  * @author lesters
+ * @author glebashnik
  */
 public class LocalLLM extends AbstractComponent implements LanguageModel {
 
@@ -43,6 +46,10 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     private final int contextSize;
     private final int maxTokens;
 
+    private final ContextSizeTooSmallBehaviour.Enum contextSizeTooSmallBehaviour;
+    private int numUsedContextTokens = 0;
+    private final Object usedContextLock = new Object();
+    
     @Inject
     public LocalLLM(LlmLocalClientConfig config) {
         executor = createExecutor(config);
@@ -59,6 +66,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 .setModelFilePath(modelFile)
                 .setContinuousBatching(true)
                 .setNParallel(config.parallelRequests())
+                .setNSequences(config.parallelRequests())
                 .setNThreads(config.threads() <= 0 ? defaultThreadCount : config.threads())
                 .setNCtx(config.contextSize())
                 .setNGpuLayers(config.useGpu() ? config.gpuLayers() : 0);
@@ -67,9 +75,9 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         model = new LlamaModel(modelParams);
         long loadTime = System.nanoTime() - startLoad;
         logger.info(String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
-
-        // Todo: handle prompt context size - such as give a warning when prompt exceeds context size
+        
         contextSize = config.contextSize();
+        contextSizeTooSmallBehaviour = config.contextSizeTooSmallBehaviour();
     }
 
     private ThreadPoolExecutor createExecutor(LlmLocalClientConfig config) {
@@ -81,27 +89,13 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
     @Override
     public void deconstruct() {
-        logger.info("Closing LLM model...");
         model.close();
         executor.shutdownNow();
         scheduler.shutdownNow();
     }
-
-    @Override
-    public List<Completion> complete(Prompt prompt, InferenceParameters options) {
-        StringBuilder result = new StringBuilder();
-        var future = completeAsync(prompt, options, completion -> {
-            result.append(completion.text());
-        }).exceptionally(exception -> Completion.FinishReason.error);
-        var reason = future.join();
-
-        List<Completion> completions = new ArrayList<>();
-        completions.add(new Completion(result.toString(), reason));
-        return completions;
-    }
-
-    @Override
-    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
+    
+    
+    private de.kherud.llama.InferenceParameters setInferenceParameters(Prompt prompt, InferenceParameters options) {
         var inferParams = new de.kherud.llama.InferenceParameters(prompt.asString().stripLeading());
 
         // We always set this to some value to avoid infinite token generation
@@ -115,16 +109,84 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         // Todo: more options?
 
         inferParams.setUseChatTemplate(true);
+        return inferParams;
+    } 
+    
 
+    @Override
+    public List<Completion> complete(Prompt prompt, InferenceParameters options) {
+        StringBuilder result = new StringBuilder();
+        
+        var future = completeAsync(prompt, options, completion -> {
+            result.append(completion.text());
+        }).exceptionally(exception -> Completion.FinishReason.error);
+        var reason = future.join();
+
+        List<Completion> completions = new ArrayList<>();
+        completions.add(new Completion(result.toString(), reason));
+        return completions;
+    }
+
+    @Override
+    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
+        var inferParams = setInferenceParameters(prompt, options);
+
+        // Calculate how many tokens are needed for inference
+        var numPromptTokens = model.encode(prompt.asString().stripLeading()).length;
+        var numRequestedTokens = numPromptTokens + maxTokens;
         var completionFuture = new CompletableFuture<Completion.FinishReason>();
+
+        // Fail or skip if context size is too small for this prompt
+        if (numRequestedTokens > contextSize) {
+            if (contextSizeTooSmallBehaviour == ContextSizeTooSmallBehaviour.Enum.ERROR) {
+                completionFuture.completeExceptionally(new LanguageModelException(
+                        400,
+                        "Context size is too small to fit prompt and completions tokens. " +
+                                "Either increase context size, reduce prompt size or maxTokens parameter."
+                ));
+            } else if (contextSizeTooSmallBehaviour == ContextSizeTooSmallBehaviour.Enum.SKIP) {
+                completionFuture.complete(Completion.FinishReason.skip);
+            }
+        }
+        
+        // Wait for context to be free enough to start generating
+        if (contextSizeTooSmallBehaviour != ContextSizeTooSmallBehaviour.Enum.IGNORE)
+            try {
+                synchronized (usedContextLock) {
+                    while (numUsedContextTokens + numRequestedTokens > contextSize) {
+                        // Consider time-limit, e.g wait(millis)
+                        usedContextLock.wait();
+                    }
+    
+                    // Reserve context tokens
+                    numUsedContextTokens += numRequestedTokens;
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new LanguageModelException(500, "Interrupted while waiting for context reservation");
+            }
+        
         var hasStarted = new AtomicBoolean(false);
         try {
             Future<?> future = executor.submit(() -> {
                 hasStarted.set(true);
-                for (var output : model.generate(inferParams)) {
-                    consumer.accept(Completion.from(output.text, Completion.FinishReason.none));
+                try {
+                    // Actual generation, stream outputs
+                    for (var output : model.generate(inferParams)) {
+                        consumer.accept(Completion.from(output.text, Completion.FinishReason.none));
+                    }
+                    completionFuture.complete(Completion.FinishReason.stop);
+                } catch (Exception e) {
+                    completionFuture.completeExceptionally(e);
+                } finally {
+                    if (contextSizeTooSmallBehaviour != ContextSizeTooSmallBehaviour.Enum.IGNORE) {
+                        // Release context usage
+                        synchronized (usedContextLock) {
+                            numUsedContextTokens -= numRequestedTokens;
+                            usedContextLock.notifyAll(); // Let others proceed
+                        }
+                    }
                 }
-                completionFuture.complete(Completion.FinishReason.stop);
             });
 
             if (queueTimeoutMilliseconds > 0) {
