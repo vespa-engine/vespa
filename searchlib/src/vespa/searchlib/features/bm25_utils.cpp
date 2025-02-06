@@ -71,16 +71,14 @@ Bm25Utils::calculate_inverse_document_frequency(DocumentFrequency doc_freq) noex
 }
 
 double
-Bm25Utils::get_inverse_document_frequency(const ITermFieldData& term_field,
-                               const IQueryEnvironment& env,
-                               const ITermData& term)
-
+Bm25Utils::get_inverse_document_frequency(const ITermFieldData& term_field, const IQueryEnvironment& env,
+                                          const ITermData &term)
 {
     auto doc_freq = util::lookup_document_frequency(env, term);
     if (doc_freq.has_value()) {
-        return Bm25Utils::calculate_inverse_document_frequency(doc_freq.value());
+        return calculate_inverse_document_frequency(doc_freq.value());
     }
-    double fallback = Bm25Utils::calculate_inverse_document_frequency(term_field.get_doc_freq());
+    double fallback = calculate_inverse_document_frequency(term_field.get_doc_freq());
     return util::lookupSignificance(env, term, fallback);
 }
 
