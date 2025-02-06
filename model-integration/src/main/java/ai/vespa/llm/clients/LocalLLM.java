@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-import ai.vespa.llm.clients.LlmLocalClientConfig.ContextSizeTooSmallBehaviour;
+import ai.vespa.llm.clients.LlmLocalClientConfig.ContextSizeManagement;
 
 /**
  * A language model running locally on the container node.
@@ -46,7 +46,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     private final int contextSize;
     private final int maxTokens;
 
-    private final ContextSizeTooSmallBehaviour.Enum contextSizeTooSmallBehaviour;
+    private final ContextSizeManagement.Enum contextSizeManagement;
     private int numUsedContextTokens = 0;
     private final Object usedContextLock = new Object();
     
@@ -77,7 +77,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         logger.info(String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
         
         contextSize = config.contextSize();
-        contextSizeTooSmallBehaviour = config.contextSizeTooSmallBehaviour();
+        contextSizeManagement = config.contextSizeManagement();
     }
 
     private ThreadPoolExecutor createExecutor(LlmLocalClientConfig config) {
@@ -138,19 +138,19 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
         // Fail or skip if context size is too small for this prompt
         if (numRequestedTokens > contextSize) {
-            if (contextSizeTooSmallBehaviour == ContextSizeTooSmallBehaviour.Enum.ERROR) {
+            if (contextSizeManagement == ContextSizeManagement.Enum.ERROR) {
                 completionFuture.completeExceptionally(new LanguageModelException(
                         400,
                         "Context size is too small to fit prompt and completions tokens. " +
                                 "Either increase context size, reduce prompt size or maxTokens parameter."
                 ));
-            } else if (contextSizeTooSmallBehaviour == ContextSizeTooSmallBehaviour.Enum.SKIP) {
+            } else if (contextSizeManagement == ContextSizeManagement.Enum.SKIP) {
                 completionFuture.complete(Completion.FinishReason.skip);
             }
         }
         
         // Wait for context to be free enough to start generating
-        if (contextSizeTooSmallBehaviour != ContextSizeTooSmallBehaviour.Enum.IGNORE)
+        if (contextSizeManagement != ContextSizeManagement.Enum.NONE)
             try {
                 synchronized (usedContextLock) {
                     while (numUsedContextTokens + numRequestedTokens > contextSize) {
@@ -179,7 +179,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 } catch (Exception e) {
                     completionFuture.completeExceptionally(e);
                 } finally {
-                    if (contextSizeTooSmallBehaviour != ContextSizeTooSmallBehaviour.Enum.IGNORE) {
+                    if (contextSizeManagement != ContextSizeManagement.Enum.NONE) {
                         // Release context usage
                         synchronized (usedContextLock) {
                             numUsedContextTokens -= numRequestedTokens;
