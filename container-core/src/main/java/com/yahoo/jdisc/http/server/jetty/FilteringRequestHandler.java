@@ -45,9 +45,9 @@ class FilteringRequestHandler extends AbstractRequestHandler {
     };
 
     private final FilterResolver filterResolver;
-    private final org.eclipse.jetty.server.Request jettyRequest;
+    private final org.eclipse.jetty.ee9.nested.Request jettyRequest;
 
-    public FilteringRequestHandler(FilterResolver filterResolver, org.eclipse.jetty.server.Request jettyRequest) {
+    public FilteringRequestHandler(FilterResolver filterResolver, org.eclipse.jetty.ee9.nested.Request jettyRequest) {
         this.filterResolver = filterResolver;
         this.jettyRequest = jettyRequest;
     }

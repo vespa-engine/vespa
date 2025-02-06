@@ -124,7 +124,7 @@ public class HttpRequestFactoryTest {
             fail("Above statement should throw");
         } catch (RequestException e) {
             assertThat(e.getResponseStatus(), is(Response.Status.BAD_REQUEST));
-            assertThat(e.getMessage(), equalTo("URL violates RFC 2396: Not valid UTF8! byte C0 in state 0"));
+            assertThat(e.getMessage(), equalTo("URL violates RFC 2396: Invalid UTF-8"));
         }
     }
 

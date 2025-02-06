@@ -11,7 +11,8 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
-import org.eclipse.jetty.http.HttpField;
+import org.eclipse.jetty.ee9.servlet.ServletContextHandler;
+import org.eclipse.jetty.ee9.servlet.ServletHolder;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -19,15 +20,9 @@ import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
-import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.HandlerCollection;
-import org.eclipse.jetty.server.handler.HandlerWrapper;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
-import org.eclipse.jetty.server.handler.gzip.GzipHttpOutputInterceptor;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
 import javax.management.remote.JMXServiceURL;
@@ -73,22 +68,36 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         server.setRequestLog(new AccessLogRequestLog(requestLog));
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
-        JettyConnectionLogger connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog);
-        ConnectionMetricAggregator connectionMetricAggregator = new ConnectionMetricAggregator(serverConfig, metric);
 
+        var jdiscServlet = new ServletHolder(new JDiscHttpServlet(this::newestContext));
+
+        var perConnectorHandlers = new ContextHandlerCollection();
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
-            server.addConnector(connectorFactory.createConnector(metric, server, connectionLogger, connectionMetricAggregator));
+            var connector = connectorFactory.createConnector(metric, server);
+            server.addConnector(connector);
             listenedPorts.add(connectorConfig.listenPort());
+            var connectorCfg = connector.connectorConfig();
+            var servletHandler = newServletHandler(jdiscServlet);
+            var authEnforcerEnabled = connectorCfg.tlsClientAuthEnforcer().enable();
+            var contextHandler = new ConnectorSpecificContextHandler(
+                    connector,
+                    authEnforcerEnabled ? newTlsClientAuthEnforcerHandler(connectorCfg, servletHandler.get()) : servletHandler.get());
+            server.addBean(contextHandler);
+            perConnectorHandlers.addHandler(contextHandler);
         }
-        server.addBeanToAllConnectors(new ResponseMetricAggregator(serverConfig.metric()));
 
-        ServletHolder jdiscServlet = new ServletHolder(new JDiscHttpServlet(this::newestContext));
-        List<JDiscServerConnector> connectors = Arrays.stream(server.getConnectors())
-                                                      .map(JDiscServerConnector.class::cast)
-                                                      .toList();
-        server.setHandler(createRootHandler(connectors, jdiscServlet));
-        this.metricsReporter = new ServerMetricReporter(metric, server);
+        var statisticsHandler = new StatisticsHandler(newGzipHandler(perConnectorHandlers));
+        var connectionMetricAggregator = new ConnectionMetricAggregator(serverConfig, metric, statisticsHandler);
+        var responseMetricAggregator = new ResponseMetricAggregator(serverConfig.metric(), connectionMetricAggregator);
+        var connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog, responseMetricAggregator);
+
+        server.addBeanToAllConnectors(connectionLogger);
+        server.addBeanToAllConnectors(connectionMetricAggregator);
+        server.addBean(responseMetricAggregator);
+        server.setHandler(connectionLogger);
+
+        this.metricsReporter = new ServerMetricReporter(metric, server, statisticsHandler, responseMetricAggregator);
     }
 
     JDiscContext registerContext(FilterBindings filterBindings, CurrentContainer container, Janitor janitor, Metric metric) {
@@ -131,36 +140,6 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
             return new JMXServiceURL("rmi", "localhost", port, "/jndi/rmi://localhost:" + port + "/jmxrmi");
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    private Handler createRootHandler(List<JDiscServerConnector> connectors, ServletHolder jdiscServlet) {
-        HandlerCollection perConnectorHandlers = new ContextHandlerCollection();
-        for (JDiscServerConnector connector : connectors) {
-            ConnectorConfig connectorCfg = connector.connectorConfig();
-            List<Handler> connectorChain = new ArrayList<>();
-            if (connectorCfg.tlsClientAuthEnforcer().enable()) {
-                connectorChain.add(newTlsClientAuthEnforcerHandler(connectorCfg));
-            }
-            if (connectorCfg.healthCheckProxy().enable()) {
-                connectorChain.add(newHealthCheckProxyHandler(connectors));
-            } else {
-                connectorChain.add(newServletHandler(jdiscServlet));
-            }
-            ContextHandler connectorRoot = newConnectorContextHandler(connector);
-            addChainToRoot(connectorRoot, connectorChain);
-            perConnectorHandlers.addHandler(connectorRoot);
-        }
-        StatisticsHandler root = newGenericStatisticsHandler();
-        addChainToRoot(root, List.of(newGzipHandler(), perConnectorHandlers));
-        return root;
-    }
-
-    private static void addChainToRoot(Handler root, List<Handler> chain) {
-        Handler parent = root;
-        for (Handler h : chain) {
-            ((HandlerWrapper)parent).setHandler(h);
-            parent = h;
         }
     }
 
@@ -213,9 +192,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         metricsReporter.shutdown();
     }
 
-    private boolean isGracefulShutdownEnabled() {
-        return server.getChildHandlersByClass(StatisticsHandler.class).length > 0 && server.getStopTimeout() > 0;
-    }
+    private boolean isGracefulShutdownEnabled() { return server.getStopTimeout() > 0; }
 
     public int getListenPort() {
         return ((ServerConnector)server.getConnectors()[0]).getLocalPort();
@@ -231,36 +208,14 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         return h;
     }
 
-    private static ContextHandler newConnectorContextHandler(JDiscServerConnector c) {
-        return new ConnectorSpecificContextHandler(c);
+    private static TlsClientAuthenticationEnforcer newTlsClientAuthEnforcerHandler(ConnectorConfig cfg, Handler handler) {
+        return new TlsClientAuthenticationEnforcer(cfg.tlsClientAuthEnforcer(), handler);
     }
 
-    private static HealthCheckProxyHandler newHealthCheckProxyHandler(List<JDiscServerConnector> connectors) {
-        return new HealthCheckProxyHandler(connectors);
+    private static GzipHandler newGzipHandler(Handler handler) {
+        var h = new GzipHandler(handler);
+        h.setInflateBufferSize(8 * 1024);
+        h.setIncludedMethods("GET", "POST", "PUT", "PATCH");
+        return h;
     }
-
-    private static TlsClientAuthenticationEnforcer newTlsClientAuthEnforcerHandler(ConnectorConfig cfg) {
-        return new TlsClientAuthenticationEnforcer(cfg.tlsClientAuthEnforcer());
-    }
-
-    private static StatisticsHandler newGenericStatisticsHandler() {
-        StatisticsHandler statisticsHandler = new StatisticsHandler();
-        statisticsHandler.statsReset();
-        return statisticsHandler;
-    }
-
-    private static GzipHandler newGzipHandler() { return new GzipHandlerWithVaryHeaderFixed(); }
-
-    /** A subclass which overrides Jetty's default behavior of including user-agent in the vary field */
-    private static class GzipHandlerWithVaryHeaderFixed extends GzipHandler {
-
-        GzipHandlerWithVaryHeaderFixed() {
-            setInflateBufferSize(8 * 1024);
-            setIncludedMethods("GET", "POST", "PUT", "PATCH");
-        }
-
-        @Override public HttpField getVaryField() { return GzipHttpOutputInterceptor.VARY_ACCEPT_ENCODING; }
-
-    }
-
 }
