@@ -25,7 +25,10 @@ public record Completion(String text, FinishReason finishReason) {
         none,
 
         /** An error occurred while generating the completion */
-        error
+        error,
+
+        /** The completion was skipped */
+        skip 
     }
 
     public Completion(String text, FinishReason finishReason) {
