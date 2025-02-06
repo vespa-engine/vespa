@@ -18,7 +18,7 @@ class WeightedSetTermMatchingElementsSearch : public MatchingElementsSearch
     std::string                       _field_name;
     const std::vector<Blueprint::UP>      &_terms;
     std::unique_ptr<WeightedSetTermSearch> _search;
-    
+
 public:
     WeightedSetTermMatchingElementsSearch(const WeightedSetTermBlueprint& bp, const std::string& field_name, const std::vector<Blueprint::UP> &terms);
     ~WeightedSetTermMatchingElementsSearch() override;
@@ -144,10 +144,8 @@ WeightedSetTermBlueprint::createFilterSearch(FilterConstraint constraint) const
 std::unique_ptr<MatchingElementsSearch>
 WeightedSetTermBlueprint::create_matching_elements_search(const MatchingElementsFields &fields) const
 {
-    if (fields.has_struct_field(_children_field.getName())) {
-        return std::make_unique<WeightedSetTermMatchingElementsSearch>(*this, fields.get_enclosing_field(_children_field.getName()), _terms);
-    } else if (fields.has_field(_children_field.getName())) {
-        return std::make_unique<WeightedSetTermMatchingElementsSearch>(*this, _children_field.getName(), _terms);
+    if (fields.has_field(_children_field.getName())) {
+        return std::make_unique<WeightedSetTermMatchingElementsSearch>(*this, fields.enclosing_field(_children_field.getName()), _terms);
     } else {
         return {};
     }

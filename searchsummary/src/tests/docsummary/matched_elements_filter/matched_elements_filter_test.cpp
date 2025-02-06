@@ -261,9 +261,9 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_array_field_value)
 {
     auto writer = make_field_writer("array");
-    EXPECT_TRUE(fields().has_field("array"));
-    EXPECT_EQ("", fields().get_enclosing_field("array.name"));
-    EXPECT_EQ("array", fields().get_enclosing_field("array.weight"));
+    EXPECT_TRUE(fields().has_field("array.weight"));
+    EXPECT_EQ("array.name", fields().enclosing_field("array.name"));
+    EXPECT_EQ("array", fields().enclosing_field("array.weight"));
 }
 
 TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
@@ -301,16 +301,20 @@ TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_fiel
     {
         auto writer = make_field_writer("map");
         EXPECT_TRUE(fields().has_field("map"));
-        EXPECT_EQ("", fields().get_enclosing_field("map.key"));
-        EXPECT_EQ("map", fields().get_enclosing_field("map.value.name"));
-        EXPECT_EQ("", fields().get_enclosing_field("map.value.weight"));
+        EXPECT_TRUE(!fields().has_field("map.key"));
+        EXPECT_TRUE(fields().has_field("map.value.name"));
+        EXPECT_TRUE(!fields().has_field("map.value.weight"));
+        EXPECT_EQ("map.key", fields().enclosing_field("map.key"));
+        EXPECT_EQ("map", fields().enclosing_field("map.value.name"));
+        EXPECT_EQ("map.value.weight", fields().enclosing_field("map.value.weight"));
     }
     {
         auto writer = make_field_writer("map2");
         EXPECT_TRUE(fields().has_field("map2"));
-        EXPECT_EQ("map2", fields().get_enclosing_field("map2.key"));
-        EXPECT_EQ("", fields().get_enclosing_field("map2.value.name"));
-        EXPECT_EQ("", fields().get_enclosing_field("map2.value.weight"));
+        EXPECT_TRUE(fields().has_field("map2.key"));
+        EXPECT_EQ("map2", fields().enclosing_field("map2.key"));
+        EXPECT_EQ("map2.value.name", fields().enclosing_field("map2.value.name"));
+        EXPECT_EQ("map2.value.weight", fields().enclosing_field("map2.value.weight"));
     }
 }
 
