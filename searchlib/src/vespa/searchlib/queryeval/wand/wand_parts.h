@@ -5,7 +5,7 @@
 #include <vespa/searchlib/fef/document_frequency.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
-#include <vespa/searchlib/features/bm25_feature.h>
+#include <vespa/searchlib/features/bm25_utils.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/iterator_pack.h>
 #include <vespa/searchlib/attribute/posting_iterator_pack.h>
@@ -458,14 +458,14 @@ constexpr double TermFrequencyScorer_TERM_SCORE_FACTOR = 1000000.0;
 class Bm25TermFrequencyScorer
 {
 public:
-    using Bm25Executor = features::Bm25Executor;
+    using Bm25Utils = features::Bm25Utils;
     Bm25TermFrequencyScorer(uint32_t num_docs) noexcept
         : _num_docs(num_docs)
     { }
     // weight * scaled_bm25_idf, scaled to fixedpoint
     score_t calculateMaxScore(double estHits, double weight) const noexcept {
         return score_t(TermFrequencyScorer_TERM_SCORE_FACTOR * weight *
-                       Bm25Executor::calculate_inverse_document_frequency({static_cast<uint64_t>(estHits), _num_docs}));
+                       Bm25Utils::calculate_inverse_document_frequency({static_cast<uint64_t>(estHits), _num_docs}));
     }
 
     score_t calculateMaxScore(const Term &term) const noexcept {
