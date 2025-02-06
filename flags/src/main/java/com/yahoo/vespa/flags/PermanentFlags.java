@@ -561,6 +561,11 @@ public class PermanentFlags {
             INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
     );
 
+    public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
+            "feed-concurrency", 0.5,
+            "How much concurrency should be allowed for feed",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
 
     private PermanentFlags() {}
 

@@ -217,7 +217,7 @@ public class ModelContextImpl implements ModelContext {
             this.responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
             this.numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(source).with(appId).with(version).value();
             this.useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(source).with(appId).with(version).value();
-            this.feedConcurrency = Flags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
+            this.feedConcurrency = PermanentFlags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.feedNiceness = Flags.FEED_NICENESS.bindTo(source).with(appId).with(version).value();
             this.mbus_network_threads = Flags.MBUS_NUM_NETWORK_THREADS.bindTo(source).with(appId).with(version).value();
             this.allowedAthenzProxyIdentities = PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();

@@ -97,13 +97,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
-            "feed-concurrency", 0.5,
-            List.of("baldersheim"), "2020-12-02", "2025-03-01",
-            "How much concurrency should be allowed for feed",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundDoubleFlag FEED_NICENESS = defineDoubleFlag(
             "feed-niceness", 0.0,
             List.of("baldersheim"), "2022-06-24", "2025-03-01",

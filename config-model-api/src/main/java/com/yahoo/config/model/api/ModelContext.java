@@ -88,7 +88,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default int rpcNumTargets() { return 2; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int rpcEventsBeforeWakeup() { return 1; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { return 0.5; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxUnCommittedMemory() { return 130000; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sharedStringRepoNoReclaim() { return false; }
@@ -100,7 +100,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.75; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.474") default double resourceLimitMemorySmallNodes() { return 0.75; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.475") default double resourceLimitMemorySmallNodes() { return 0.75; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default double minNodeRatioPerGroup() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
