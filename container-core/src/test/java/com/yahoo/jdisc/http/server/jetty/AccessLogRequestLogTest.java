@@ -29,7 +29,8 @@ public class AccessLogRequestLogTest {
     void requireThatQueryWithUnquotedSpecialCharactersIsHandled() {
         Request jettyRequest = createRequestBuilder()
                 .uri("http", "localhost", 12345, "/search/", "query=year:>2010")
-                .build();
+                .build()
+                .getCoreRequest();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -44,14 +45,15 @@ public class AccessLogRequestLogTest {
     void requireThatStatusCodeCanBeOverridden() {
         Request jettyRequest = createRequestBuilder()
                 .uri("http", "localhost", 12345, "/api/", null)
-                .build();
+                .build()
+                .getCoreRequest();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
-        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder().build());
+        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder(jettyRequest).build());
         assertEquals(200, requestLog.entries().remove(0).statusCode().getAsInt());
 
         jettyRequest.setAttribute(HttpRequestDispatch.ACCESS_LOG_STATUS_CODE_OVERRIDE, 404);
-        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder().build());
+        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder(jettyRequest).build());
         assertEquals(404, requestLog.entries().remove(0).statusCode().getAsInt());
     }
 
@@ -61,7 +63,8 @@ public class AccessLogRequestLogTest {
         String query = "query=year%252010+%3B&customParameter=something";
         Request jettyRequest = createRequestBuilder()
                 .uri("http", "localhost", 12345, path, query)
-                .build();
+                .build()
+                .getCoreRequest();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -78,7 +81,8 @@ public class AccessLogRequestLogTest {
         String rawQuery = "q=%%2";
         Request jettyRequest = createRequestBuilder()
                 .uri("http", "localhost", 12345, rawPath, rawQuery)
-                .build();
+                .build()
+                .getCoreRequest();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -95,7 +99,8 @@ public class AccessLogRequestLogTest {
                 .uri("http", "localhost", 12345, "//search/", "q=%%2")
                 .header("x-forwarded-for", List.of("1.2.3.4"))
                 .header("y-ra", List.of("2.3.4.5"))
-                .build();
+                .build()
+                .getCoreRequest();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -109,7 +114,8 @@ public class AccessLogRequestLogTest {
                 .uri("http", "localhost", 12345, "//search/", "q=%%2")
                 .header("X-Forwarded-Port", List.of("80"))
                 .header("y-rp", List.of("8080"))
-                .build();
+                .build()
+                .getCoreRequest();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -124,7 +130,8 @@ public class AccessLogRequestLogTest {
                 .header("X-Forwarded-Port", List.of("8o8o"))
                 .header("y-rp", List.of("8o8o"))
                 .remote("2.3.4.5", "localhost", 80)
-                .build();
+                .build()
+                .getCoreRequest();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -134,7 +141,7 @@ public class AccessLogRequestLogTest {
     }
 
     private void doAccessLoggingOfRequest(RequestLog requestLog, Request jettyRequest) {
-        new AccessLogRequestLog(requestLog).log(jettyRequest, createResponseMock());
+        new AccessLogRequestLog(requestLog).log(jettyRequest, createResponseMock(jettyRequest));
     }
 
     private static JettyMockRequestBuilder createRequestBuilder() {
@@ -144,8 +151,9 @@ public class AccessLogRequestLogTest {
                 .localPort(1234);
     }
 
-    private Response createResponseMock() {
-        return JettyMockResponseBuilder.newBuilder().build();
+    private Response createResponseMock(Request req) {
+        return JettyMockResponseBuilder.newBuilder(req)
+                .build();
     }
 
 }

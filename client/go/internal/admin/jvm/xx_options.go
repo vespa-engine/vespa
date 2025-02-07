@@ -19,5 +19,6 @@ func (opts *Options) AddCommonXX() {
 	// not common after all:
 	opts.AddOption("-XX:MaxJavaStackTraceDepth=1000000")
 	// Aid debugging for slight cost in performance
-	opts.AddOption("-XX:-OmitStackTraceInFastThrow")
+	// TODO(2025-02-06, bjorncs): Disabled due to https://github.com/jetty/jetty.project/issues/12775
+	//opts.AddOption("-XX:-OmitStackTraceInFastThrow")
 }
