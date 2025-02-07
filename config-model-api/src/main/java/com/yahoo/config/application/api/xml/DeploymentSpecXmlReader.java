@@ -35,6 +35,7 @@ import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.io.IOUtils;
 import com.yahoo.text.XML;
@@ -382,7 +383,15 @@ public class DeploymentSpecXmlReader {
             illegal(msgPrefix + "invalid element '" + invalidChild + "'");
 
         boolean enabled = readEnabled(endpointElement, zoneEndpointType, msgPrefix);
+
         List<AllowedUrn> allowedUrns = readAllowedUrns(endpointElement, zoneEndpointType, containerId, msgPrefix);
+        Optional<String> authMethod = stringAttribute("auth-method", endpointElement);
+
+        if(authMethod.isPresent() && ! zoneEndpointType.orElse("").equals("private"))
+            illegal(msgPrefix + "cannot declare 'auth-method' with endpoint type '" + zoneEndpointType.orElse("") + "', must be type 'private'");
+
+        if(authMethod.isPresent() && !authMethod.get().equals("token") && !authMethod.get().equals("mtls"))
+            illegal(msgPrefix + "cannot declare auth-method '" + authMethod.get() + "', must be one of 'mtls' and 'token'");
 
         List<Endpoint.Target> targets = new ArrayList<>();
         if (level == Endpoint.Level.application) {
@@ -433,7 +442,8 @@ public class DeploymentSpecXmlReader {
                 if (regions.isEmpty()) regions.add(null);
                 ZoneEndpoint endpoint = switch (zoneEndpointType.get()) {
                     case "zone" -> new ZoneEndpoint(enabled, false, List.of());
-                    case "private" -> new ZoneEndpoint(true, true, allowedUrns); // Doesn't turn off public visibility.
+                    case "private" -> new ZoneEndpoint(true, true,  allowedUrns)  // Doesn't turn off public visibility.
+                            .withAuthMethods(authMethod.orElse("").equals("token") ? List.of(AuthMethod.token) : List.of(AuthMethod.mtls));
                     default -> throw new IllegalArgumentException("unsupported zone endpoint type '" + zoneEndpointType.get() + "'");
                 };
                 for (RegionName region : regions) endpointsByZone.computeIfAbsent(containerId, __ -> new LinkedHashMap<>())
@@ -598,11 +608,13 @@ public class DeploymentSpecXmlReader {
                 out.computeIfAbsent(ClusterSpec.Id.from(cluster), __ -> new LinkedHashMap<>())
                    .put(ZoneId.from(Environment.prod, region), new ZoneEndpoint(zoneEndpoint == null || zoneEndpoint.isPublicEndpoint(),
                                                                                 privateEndpoint != null,
+                                                                                privateEndpoint != null ? privateEndpoint.authMethods() : List.of(AuthMethod.mtls),
                                                                                 privateEndpoint != null ? privateEndpoint.allowedUrns() : List.of()));
             }
             out.computeIfAbsent(ClusterSpec.Id.from(cluster), __ -> new LinkedHashMap<>())
                .put(null, new ZoneEndpoint(wildcardZoneEndpoint == null || wildcardZoneEndpoint.isPublicEndpoint(),
                                            wildcardPrivateEndpoint != null,
+                                           wildcardPrivateEndpoint != null ? wildcardPrivateEndpoint.authMethods() : List.of(AuthMethod.mtls),
                                            wildcardPrivateEndpoint != null ? wildcardPrivateEndpoint.allowedUrns() : List.of()));
         });
     }
