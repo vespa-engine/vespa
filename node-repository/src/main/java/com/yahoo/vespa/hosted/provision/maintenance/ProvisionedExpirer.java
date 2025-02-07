@@ -39,6 +39,10 @@ public class ProvisionedExpirer extends Expirer {
             if (expiredNode.type() != NodeType.host)
                 continue;
             boolean forceDeprovision = MAXIMUM_ALLOWED_EXPIRED_HOSTS < ++previouslyExpired;
+            // Deallocate all children of the expired node to avoid them being stuck in dirty
+            nodeRepository.nodes().list().childrenOf(expiredNode.hostname())
+                    .forEach(child -> nodeRepository.nodes().deallocate(child, Agent.ProvisionedExpirer,
+                            "Parent host is stuck in provisioned"));
             nodeRepository().nodes().parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer,
                     forceDeprovision, "Node is stuck in provisioned");
         }
