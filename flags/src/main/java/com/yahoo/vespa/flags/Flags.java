@@ -48,6 +48,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag UPGRADE_WIREGUARD = defineFeatureFlag(
+            "upgrade-wireguard", false,
+            List.of("hakonhall"), "2025-02-04", "2025-04-04",
+            "Whether to upgrade vespa-wireguard-go to latest",
+            "Takes effect on start of host-admin.",
+            HOSTNAME);
+
     public static final UnboundBooleanFlag DISABLE_WG_CONNTRACK = defineFeatureFlag(
             "disable-wg-conntrack", false,
             List.of("hakonhall"), "2025-01-17", "2025-03-17",
@@ -314,7 +321,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
-            "search-handler-threadpool", 2,
+            "search-handler-threadpool", 10,
             List.of("bjorncs"), "2023-10-01", "2025-03-01",
             "Adjust search handler threadpool size",
             "Takes effect at redeployment",
@@ -394,21 +401,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2025-02-07",
+            List.of("eirik"), "2024-11-07", "2025-05-07",
             "Enforce SSO login for an email domain",
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
     public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
             "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2025-02-07",
+            List.of("eirik"), "2024-11-07", "2025-05-07",
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
 
     public static final UnboundBooleanFlag LEGACY_AUTH0_FILTER = defineFeatureFlag(
             "use-legacy-auth0-filter", true,
-            List.of("eirik"), "2024-11-07", "2025-02-07",
+            List.of("eirik"), "2024-11-07", "2025-03-07",
             "Use legacy auth0 request filter, or new one",
             "Takes after controller restart",
             SYSTEM);
