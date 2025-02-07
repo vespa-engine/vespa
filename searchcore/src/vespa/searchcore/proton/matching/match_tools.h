@@ -30,6 +30,28 @@ namespace search::fef {
 
 namespace proton::matching {
 
+class FieldIdToNameMapper {
+public:
+    const std::string & lookup(uint32_t fieldId) const {
+        static const std::string lookupFailed;
+        if (auto fieldInfo = _indexEnv.getField(fieldId)) {
+            return fieldInfo->name();
+        }
+        return lookupFailed;
+    }
+    uint32_t lookup(const std::string& fieldName) const {
+        if (auto fieldInfo = _indexEnv.getFieldByName(fieldName)) {
+            return fieldInfo->id();
+        }
+        return -1;
+    }
+    FieldIdToNameMapper(const search::fef::IIndexEnvironment &indexEnv)
+      : _indexEnv(indexEnv)
+    {}
+private:
+    const search::fef::IIndexEnvironment &_indexEnv;
+};
+
 class MatchTools
 {
 private:
@@ -192,6 +214,9 @@ public:
                                     uint32_t active_docids, uint32_t docid_limit);
     FirstPhaseRankLookup* get_first_phase_rank_lookup() const noexcept { return _first_phase_rank_lookup; }
     const search::IDocumentMetaStore & metaStore() const noexcept { return _metaStore; }
+    FieldIdToNameMapper getFieldIdToNameMapper() const {
+        return FieldIdToNameMapper(_queryEnv.getIndexEnvironment());
+    }
 };
 
 }
