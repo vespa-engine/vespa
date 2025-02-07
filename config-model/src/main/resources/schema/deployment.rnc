@@ -170,6 +170,7 @@ Endpoint = element endpoint {
     attribute region { xsd:string }? &
     attribute type { xsd:string }? &
     attribute enabled { xsd:boolean }? &
+    attribute auth-method { xsd:string }? &
     EndpointRegion* &
     EndpointInstance* &
     AllowedUrn*
