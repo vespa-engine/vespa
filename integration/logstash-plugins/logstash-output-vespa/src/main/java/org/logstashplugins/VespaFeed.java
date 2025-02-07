@@ -43,10 +43,13 @@ public class VespaFeed implements Output {
     // should we deploy the application after generating it?
     public static final PluginConfigSpec<Boolean> DEPLOY_PACKAGE =
             PluginConfigSpec.booleanSetting("deploy_package", true);
+    // when? What do we consider idle time in terms of empty pipeline batches?
+    public static final PluginConfigSpec<Long> IDLE_BATCHES =
+            PluginConfigSpec.numSetting("idle_batches", 10);
     // where? what's the config server endpoint?
-    // TODO: this should default to vespa_url if not set, with port 19070
+    // TODO: this should default to vespa_url if not set, with port 19071
     public static final PluginConfigSpec<String> CONFIG_SERVER =
-            PluginConfigSpec.stringSetting("config_server", "http://localhost:19070");
+            PluginConfigSpec.stringSetting("config_server", "http://localhost:19071");
     // TODO add maps here for "mapping" (e.g. integers should be long, what to do on conflict with existing fields)
     
     /***********************
@@ -133,7 +136,6 @@ public class VespaFeed implements Output {
     public static final PluginConfigSpec<Long> FLUSH_INTERVAL =
             PluginConfigSpec.numSetting("flush_interval", 5000);
     
-    
     private FeedClient client;
     private final String id;
     private final String namespace;
@@ -189,9 +191,12 @@ public class VespaFeed implements Output {
                 config.get(DEPLOY_PACKAGE),
                 config.get(CONFIG_SERVER),
                 documentType,
+                config.get(IDLE_BATCHES).longValue(),
                 config.get(APPLICATION_PACKAGE_DIR),
                 Collections.emptyMap(), // TODO: Add mapping config
-                Collections.emptyMap()  // TODO: Add conflict resolution config
+                Collections.emptyMap(),  // TODO: Add conflict resolution config
+                config.get(MAX_RETRIES),
+                config.get(GRACE_PERIOD)
             );
             dryRunner = new VespaDryRunner(dryRunConfig);
             logger.warn("Dry run mode enabled! We will not send documents to Vespa, but will generate an application package.");
@@ -455,14 +460,26 @@ public class VespaFeed implements Output {
     @Override
     public void stop() {
         stopped = true;
+        // close the client, if we're in standard mode
         if (client != null) {
             client.close();
+        }
+
+        // deploy the application package, if we're in dry run mode
+        if (dryRunner != null) {
+            logger.info("Giving other threads a couple of seconds to write to the application package");
+            try {
+                Thread.sleep(2000);
+            } catch (InterruptedException e) {
+                logger.error("Interrupted while waiting for dry runner to deploy application package: {}", e.getMessage());
+            }
+            dryRunner.deployApplicationPackage();
         }
     }
 
     @Override
     public void awaitStop() throws InterruptedException {
-        // nothing to do here
+        // do nothing
     }
 
     @Override
@@ -471,7 +488,7 @@ public class VespaFeed implements Output {
                 NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID, REMOVE_OPERATION,
                 MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD,
                 ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, AUTH_TOKEN,
-                DRY_RUN, DEPLOY_PACKAGE, CONFIG_SERVER, APPLICATION_PACKAGE_DIR);
+                DRY_RUN, DEPLOY_PACKAGE, CONFIG_SERVER, APPLICATION_PACKAGE_DIR, IDLE_BATCHES);
     }
 
     @Override
