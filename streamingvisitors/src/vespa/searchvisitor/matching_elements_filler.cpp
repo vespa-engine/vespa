@@ -99,10 +99,8 @@ Matcher::matching_elements_field(const MatchingElementsFields& fields, FieldIdT 
     auto* field_info = _index_env.getField(field_id);
     if (field_info != nullptr) {
         auto &field_name = field_info->name();
-        if (fields.has_struct_field(field_name)) {
-            return &fields.get_enclosing_field(field_name);
-        } else if (fields.has_field(field_name)) {
-            return &field_name;
+        if (fields.has_field(field_name)) {
+            return &fields.enclosing_field(field_name);
         }
     }
     return nullptr;
@@ -179,7 +177,7 @@ Matcher::add_matching_elements(const std::string& field_name, std::optional<Fiel
     }
     matching_elements.add_matching_elements(doc_lid, field_name, _elements);
 }
-                               
+
 void
 Matcher::find_matching_elements(const SameElementQueryNode& same_element, uint32_t doc_lid, MatchingElements& matching_elements)
 {
