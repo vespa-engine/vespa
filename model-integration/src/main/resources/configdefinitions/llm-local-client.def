@@ -27,13 +27,20 @@ threads int default=-1
 # Context is divided between parallel requests. So for 10 parallel requests, each "slot" gets 1/10 of the context
 contextSize int default=4096
 
-# Maximum number of tokens to process in one request - overridden by inference parameters
+# Maximum number of tokens to generate in one request - can be overridden by inference parameters
 maxTokens int default=512
 
-# Specifies what to do when LLM context size is too small to process prompt and completion tokens.
-# NONE ignore context size and runs inference no matter prompt and completion size. 
-# It can lead to nonsense output and performance issues.
-# To avoid this, application developers can adjust prompts and maxTokens to fit into contextSize.
-# SKIP skip inference for prompts when context size is too small for prompt + completion tokens.
-# ERROR throws an exception "Context size is too small ..."
-contextSizeManagement enum {NONE, SKIP, ERROR} default=NONE
+# Specifies number of tokens to truncate prompts to, should be > 0
+# 0 or less means that prompts will not be truncated.  
+# To avoid nonsense completions: maxPromptTokens + maxTokens <= contextSize
+# To increase parallelism: maxPromptTokens + maxTokens -> contextSize / parallelRequests
+maxPromptTokens int default=0
+
+# Specifies what to do when prompt + maxTokens > contextSize.
+# NONE - default option, runs inference no matter context and prompt size.
+# In this case, newer tokens overwrite older ones and the model looses access to part of the prompt and generated tokens. 
+# It might lead to nonsense completions and performance issues.
+# To avoid this, set maxPromptTokens and maxTokens so that maxPromptTokens + maxTokens <= contextSize.
+# SKIP - skip inference when prompt + maxTokens > contextSize
+# ERROR - return exception "Context size is too small ..."
+contextOverflowPolicy enum {NONE, SKIP, ERROR} default=NONE

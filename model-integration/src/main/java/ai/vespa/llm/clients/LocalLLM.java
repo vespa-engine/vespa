@@ -6,12 +6,14 @@ import ai.vespa.llm.LanguageModel;
 import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
+import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import de.kherud.llama.LlamaModel;
 import de.kherud.llama.ModelParameters;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
@@ -26,7 +28,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.logging.Logger;
 
-import ai.vespa.llm.clients.LlmLocalClientConfig.ContextSizeManagement;
+import ai.vespa.llm.clients.LlmLocalClientConfig.ContextOverflowPolicy;
 
 /**
  * A language model running locally on the container node.
@@ -46,7 +48,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     private final int contextSize;
     private final int maxTokens;
 
-    private final ContextSizeManagement.Enum contextSizeManagement;
+    private final ContextOverflowPolicy.Enum contextOverflowPolicy;
+    private final int maxPromptTokens;
     private int numUsedContextTokens = 0;
     private final Object usedContextLock = new Object();
     
@@ -75,9 +78,10 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         model = new LlamaModel(modelParams);
         long loadTime = System.nanoTime() - startLoad;
         logger.info(String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
-        
+
+        maxPromptTokens = config.maxPromptTokens();
         contextSize = config.contextSize();
-        contextSizeManagement = config.contextSizeManagement();
+        contextOverflowPolicy = config.contextOverflowPolicy();
     }
 
     private ThreadPoolExecutor createExecutor(LlmLocalClientConfig config) {
@@ -129,60 +133,71 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
     @Override
     public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
-        var inferParams = setInferenceParameters(prompt, options);
-
-        // Calculate how many tokens are needed for inference
-        var numPromptTokens = model.encode(prompt.asString().stripLeading()).length;
-        var numRequestedTokens = numPromptTokens + maxTokens;
         var completionFuture = new CompletableFuture<Completion.FinishReason>();
+        
+        var promptStr = prompt.asString().stripLeading();
+        var promptTokens = model.encode(promptStr);
+        
+        //Truncate prompt
+        if (maxPromptTokens > 0 && promptTokens.length > maxPromptTokens) {
+            promptTokens = Arrays.copyOfRange(promptTokens, 0, maxPromptTokens + 1);
+            promptStr = model.decode(promptTokens);
+            prompt = StringPrompt.from(promptStr);
+        }
 
-        // Fail or skip if context size is too small for this prompt
-        if (numRequestedTokens > contextSize) {
-            if (contextSizeManagement == ContextSizeManagement.Enum.ERROR) {
-                completionFuture.completeExceptionally(new LanguageModelException(
-                        400,
-                        "Context size is too small to fit prompt and completions tokens. " +
-                                "Either increase context size, reduce prompt size or maxTokens parameter."
+        // Do something when context size is too small for this request
+        var numRequestTokens = promptTokens.length + maxTokens;
+        
+        if (numRequestTokens > contextSize) {
+            if (contextOverflowPolicy == ContextOverflowPolicy.Enum.ERROR) {
+                completionFuture.completeExceptionally(new LanguageModelException(400, String.format(
+                        "Context size (%d tokens) is too small to fit prompt (%d tokens) + completion (%d tokens).", 
+                        contextSize, promptTokens.length, maxTokens)
                 ));
-            } else if (contextSizeManagement == ContextSizeManagement.Enum.SKIP) {
+                return completionFuture;
+            } else if (contextOverflowPolicy == ContextOverflowPolicy.Enum.SKIP) {
                 completionFuture.complete(Completion.FinishReason.skip);
+                return completionFuture;
             }
         }
-        
-        // Wait for context to be free enough to start generating
-        if (contextSizeManagement != ContextSizeManagement.Enum.NONE)
-            try {
-                synchronized (usedContextLock) {
-                    while (numUsedContextTokens + numRequestedTokens > contextSize) {
-                        // Consider time-limit, e.g wait(millis)
-                        usedContextLock.wait();
-                    }
-    
-                    // Reserve context tokens
-                    numUsedContextTokens += numRequestedTokens;
-                }
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                throw new LanguageModelException(500, "Interrupted while waiting for context reservation");
-            }
-        
+
+        var inferenceParams = setInferenceParameters(prompt, options);
         var hasStarted = new AtomicBoolean(false);
+        
         try {
             Future<?> future = executor.submit(() -> {
+                // Wait for context to be free enough to start generating
+                if (contextOverflowPolicy != ContextOverflowPolicy.Enum.NONE) {
+                    try {
+                        synchronized (usedContextLock) {
+                            while (numUsedContextTokens + numRequestTokens > contextSize) {
+                                // Consider time-limit, e.g wait(millis)
+                                usedContextLock.wait();
+                            }
+
+                            // Reserve context tokens
+                            numUsedContextTokens += numRequestTokens;
+                        }
+                    } catch (InterruptedException e) {
+                        completionFuture.completeExceptionally(e);
+                    }
+                }
+
                 hasStarted.set(true);
+                
                 try {
                     // Actual generation, stream outputs
-                    for (var output : model.generate(inferParams)) {
+                    for (var output : model.generate(inferenceParams)) {
                         consumer.accept(Completion.from(output.text, Completion.FinishReason.none));
                     }
                     completionFuture.complete(Completion.FinishReason.stop);
                 } catch (Exception e) {
                     completionFuture.completeExceptionally(e);
                 } finally {
-                    if (contextSizeManagement != ContextSizeManagement.Enum.NONE) {
-                        // Release context usage
+                    if (contextOverflowPolicy != ContextOverflowPolicy.Enum.NONE) {
+                        // Release used context tokens
                         synchronized (usedContextLock) {
-                            numUsedContextTokens -= numRequestedTokens;
+                            numUsedContextTokens -= numRequestTokens;
                             usedContextLock.notifyAll(); // Let others proceed
                         }
                     }

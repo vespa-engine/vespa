@@ -34,6 +34,7 @@ import java.net.URL;
  * Tests for LocalLLM.
  *
  * @author lesters
+ * @author glebashnik
  */
 public class LocalLLMTest {
 
@@ -205,14 +206,12 @@ public class LocalLLMTest {
     
     private void downloadFileIfMissing(String fileUrl, String filePath) {
         Path targetPath = Paths.get(filePath);
-
-        // Check if the file already exists
+        
         if (Files.exists(targetPath)) {
             System.out.println("File already exists: " + filePath);
             return;
         }
 
-        // Create directories if they do not exist
         try {
             Files.createDirectories(targetPath.getParent());
         } catch (IOException e) {
@@ -220,7 +219,6 @@ public class LocalLLMTest {
             return;
         }
 
-        // Download file from URL
         try (InputStream in = new URL(fileUrl).openStream()) {
             Files.copy(in, targetPath);
             System.out.println("File downloaded successfully: " + filePath);
@@ -228,36 +226,33 @@ public class LocalLLMTest {
             System.err.println("Failed to download file: " + e.getMessage());
         }
     }
-    
 
+    // Small LLM, ca. 4.3 GB 
+    private static String SMALL_LLM_URL = "https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+    private static String SMALL_LLM_PATH = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+    
     @Test
     @Disabled
-    public void testPromptLargerThanContextSize() {
-        var llmUrl = "https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
-        var llmPath = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
-        downloadFileIfMissing(llmUrl, llmPath);
-
+    public void testMaxPromptTokens() {
+        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
+        
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(60)
-//                .contextOverflowBehaviour(LLMContextOverflowBehaviour.Ignore) // Ignore, Error, Warn, TruncatePrompt
-//                .maxPromptTokens()
-//                .maxTokens()
-                .model(ModelReference.valueOf(llmPath));
-        
-        var llm = new LocalLLM(llmConfig.build());
+                .maxPromptTokens(25)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
 
-        var inferenceOptions = new InferenceParameters(
-                Map.of("temperature", "0", "npredict", "100")::get);
-        
+        var inferenceOptions = new InferenceParameters(Map.of("temperature", "0")::get);
+
+        var llm = new LocalLLM(llmConfig.build());
         var promptStr = """
-                Translate this text to Norwegian, don't add any notes or other information.
-                Text:
-                Life is really simple, but we insist on making it complicated.
-                Translation:
-                """;
+        Translate this text to Norwegian, don't add any notes or other information.
+        Text:
+        Life is really simple, but we insist on making it complicated.
+        Translation:
+        """;
         
-        var expectedResult = "Livet er virkelig enkelt, men vi vil gerne gjøre det komplisert.";
+        var expectedResult = "Livet er virkelig enkelt";
         
         try {
             var result = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
@@ -267,5 +262,76 @@ public class LocalLLMTest {
             llm.deconstruct();
         }
     }
+    
+    @Test
+    @Disabled
+    public void testContextOverflowPolicySkip() {
+        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
+
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(1)
+                .contextSize(25)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.SKIP)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+
+        var inferenceOptions = new InferenceParameters(Map.of("temperature", "0")::get);
+
+        var llm = new LocalLLM(llmConfig.build());
+        var promptStr = """
+        Translate this text to Norwegian, don't add any notes or other information.
+        Text:
+        Life is really simple, but we insist on making it complicated.
+        Translation:
+        """;
+
+        var expectedResult = "";
+
+        try {
+            var result = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
+            assertEquals(Completion.FinishReason.skip, result.get(0).finishReason());
+            assertEquals(expectedResult, result.get(0).text().strip());
+        } finally {
+            llm.deconstruct();
+        }
+    }
+    
+//
+//    @Test
+//    @Disabled
+//    public void testPromptLargerThanContextSize() {
+//        var llmUrl = "https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+//        var llmPath = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+//        downloadFileIfMissing(llmUrl, llmPath);
+//
+//        var llmConfig = new LlmLocalClientConfig.Builder()
+//                .parallelRequests(1)
+//                .contextSize(60)
+////                .contextOverflowBehaviour(LLMContextOverflowBehaviour.Ignore) // Ignore, Error, Warn, TruncatePrompt
+////                .maxPromptTokens()
+////                .maxTokens()
+//                .model(ModelReference.valueOf(llmPath));
+//        
+//        var llm = new LocalLLM(llmConfig.build());
+//
+//        var inferenceOptions = new InferenceParameters(
+//                Map.of("temperature", "0", "npredict", "100")::get);
+//        
+//        var promptStr = """
+//                Translate this text to Norwegian, don't add any notes or other information.
+//                Text:
+//                Life is really simple, but we insist on making it complicated.
+//                Translation:
+//                """;
+//        
+//        var expectedResult = "Livet er virkelig enkelt, men vi vil gerne gjøre det komplisert.";
+//        
+//        try {
+//            var result = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
+//            assertEquals(Completion.FinishReason.stop, result.get(0).finishReason());
+//            assertEquals(expectedResult, result.get(0).text().strip());
+//        } finally {
+//            llm.deconstruct();
+//        }
+//    }
     
 }
