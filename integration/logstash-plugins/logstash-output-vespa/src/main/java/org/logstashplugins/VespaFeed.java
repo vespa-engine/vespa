@@ -31,6 +31,27 @@ import java.util.concurrent.CompletableFuture;
 public class VespaFeed implements Output {
     private static final Logger logger = LogManager.getLogger(VespaFeed.class);
 
+    /***********************
+     * Dry run mode settings
+     ***********************/
+    // dry run mode. This will not send documents to Vespa, but will generate an application package
+    public static final PluginConfigSpec<Boolean> DRY_RUN =
+            PluginConfigSpec.booleanSetting("dry_run", false);
+    // save the generated application package in this directory
+    public static final PluginConfigSpec<String> APPLICATION_PACKAGE_DIR =
+            PluginConfigSpec.stringSetting("application_package_dir", "/tmp/vespa_app");
+    // should we deploy the application after generating it?
+    public static final PluginConfigSpec<Boolean> DEPLOY_PACKAGE =
+            PluginConfigSpec.booleanSetting("deploy_package", true);
+    // where? what's the config server endpoint?
+    // TODO: this should default to vespa_url if not set, with port 19070
+    public static final PluginConfigSpec<String> CONFIG_SERVER =
+            PluginConfigSpec.stringSetting("config_server", "http://localhost:19070");
+    // TODO add maps here for "mapping" (e.g. integers should be long, what to do on conflict with existing fields)
+    
+    /***********************
+     * Vespa API settings
+     ***********************/
     public static final PluginConfigSpec<URI> VESPA_URL =
             PluginConfigSpec.uriSetting("vespa_url", "http://localhost:8080");
     public static final PluginConfigSpec<String> NAMESPACE =
@@ -131,25 +152,11 @@ public class VespaFeed implements Output {
     ObjectMapper objectMapper;
     private final boolean removeOperation;
     private DeadLetterQueueWriter dlqWriter;
+    private VespaDryRunner dryRunner;
 
 
     public VespaFeed(final String id, final Configuration config, final Context context) {
         this.id = id;
-        if (config.get(ENABLE_DLQ)) {
-            try {
-                Path dlqPath = Paths.get(config.get(DLQ_PATH));
-                dlqWriter = DeadLetterQueueWriter.newBuilder(dlqPath,
-                                config.get(MAX_QUEUE_SIZE).longValue(),
-                                config.get(MAX_SEGMENT_SIZE).longValue(),
-                                Duration.ofMillis(config.get(FLUSH_INTERVAL).longValue()))
-                            .build();
-            } catch (IOException e) {
-                logger.error("Failed to create DLQ writer: ", e);
-                dlqWriter = null;
-            }
-        } else {
-            dlqWriter = null;
-        }
 
         // if the namespace matches %{field_name} or %{[field_name]}, it's dynamic
         DynamicOption configOption = new DynamicOption(config.get(NAMESPACE));
@@ -173,38 +180,68 @@ public class VespaFeed implements Output {
         idField = config.get(ID_FIELD);
         removeId = config.get(REMOVE_ID);
         this.removeOperation = config.get(REMOVE_OPERATION);
-        FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
-                    .setConnectionsPerEndpoint(config.get(MAX_CONNECTIONS).intValue())
-                    .setMaxStreamPerConnection(config.get(MAX_STREAMS).intValue())
-                    .setRetryStrategy(
-                            new FeedClient.RetryStrategy() {
-                                @Override
-                                public boolean retry(FeedClient.OperationType type) {
-                                    // retry all operations
-                                    return true;
-                                }
-
-                                @Override
-                                public int retries() {
-                                    return config.get(MAX_RETRIES).intValue();
-                                }
-                            }
-                    )
-                    .setCircuitBreaker(
-                            new GracePeriodCircuitBreaker(
-                                    Duration.ofSeconds(config.get(GRACE_PERIOD)),
-                                    Duration.ofSeconds(config.get(DOOM_PERIOD))
-                            )
-                    );
-
-        // set client certificate and key (or auth token) if they are provided
-        builder = addAuthOptionsToBuilder(config, builder);
-
-        // now we should have the client
-        client = builder.build();
 
         // for JSON serialization
         objectMapper = ObjectMappers.JSON_MAPPER;
+
+        if (config.get(DRY_RUN)) {
+            DryRunConfig dryRunConfig = new DryRunConfig(
+                config.get(DEPLOY_PACKAGE),
+                config.get(CONFIG_SERVER),
+                documentType,
+                config.get(APPLICATION_PACKAGE_DIR),
+                Collections.emptyMap(), // TODO: Add mapping config
+                Collections.emptyMap()  // TODO: Add conflict resolution config
+            );
+            dryRunner = new VespaDryRunner(dryRunConfig);
+            logger.warn("Dry run mode enabled! We will not send documents to Vespa, but will generate an application package.");
+        } else {
+            if (config.get(ENABLE_DLQ)) {
+                try {
+                    Path dlqPath = Paths.get(config.get(DLQ_PATH));
+                    dlqWriter = DeadLetterQueueWriter.newBuilder(dlqPath,
+                                    config.get(MAX_QUEUE_SIZE).longValue(),
+                                    config.get(MAX_SEGMENT_SIZE).longValue(),
+                                    Duration.ofMillis(config.get(FLUSH_INTERVAL).longValue()))
+                                .build();
+                } catch (IOException e) {
+                    logger.error("Failed to create DLQ writer: ", e);
+                    dlqWriter = null;
+                }
+            } else {
+                dlqWriter = null;
+            }
+
+            FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
+                        .setConnectionsPerEndpoint(config.get(MAX_CONNECTIONS).intValue())
+                        .setMaxStreamPerConnection(config.get(MAX_STREAMS).intValue())
+                        .setRetryStrategy(
+                                new FeedClient.RetryStrategy() {
+                                    @Override
+                                    public boolean retry(FeedClient.OperationType type) {
+                                        // retry all operations
+                                        return true;
+                                    }
+
+                                    @Override
+                                    public int retries() {
+                                        return config.get(MAX_RETRIES).intValue();
+                                    }
+                                }
+                        )
+                        .setCircuitBreaker(
+                                new GracePeriodCircuitBreaker(
+                                        Duration.ofSeconds(config.get(GRACE_PERIOD)),
+                                        Duration.ofSeconds(config.get(DOOM_PERIOD))
+                                )
+                        );
+
+            // set client certificate and key (or auth token) if they are provided
+            builder = addAuthOptionsToBuilder(config, builder);
+
+            // now we should have the client
+            client = builder.build();
+        }
     }
 
     // Constructor for testing
@@ -256,6 +293,12 @@ public class VespaFeed implements Output {
 
     @Override
     public void output(final Collection<Event> events) {
+        // TODO: maaaybe better here to have an interface with two implementations for dry run and non-dry run?
+        if (dryRunner != null) {
+            dryRunner.run(events);
+            return;
+        }
+
         // track async requests (promises) and their corresponding events here
         Map<CompletableFuture<Result>, Event> promiseToEventMap = new HashMap<>();
 
@@ -412,7 +455,9 @@ public class VespaFeed implements Output {
     @Override
     public void stop() {
         stopped = true;
-        client.close();
+        if (client != null) {
+            client.close();
+        }
     }
 
     @Override
@@ -425,7 +470,8 @@ public class VespaFeed implements Output {
         return List.of(VESPA_URL, CLIENT_CERT, CLIENT_KEY, OPERATION, CREATE,
                 NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID, REMOVE_OPERATION,
                 MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD,
-                ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, AUTH_TOKEN);
+                ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, AUTH_TOKEN,
+                DRY_RUN, DEPLOY_PACKAGE, CONFIG_SERVER, APPLICATION_PACKAGE_DIR);
     }
 
     @Override
