@@ -401,21 +401,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2025-02-07",
+            List.of("eirik"), "2024-11-07", "2025-05-07",
             "Enforce SSO login for an email domain",
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
     public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
             "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2025-02-07",
+            List.of("eirik"), "2024-11-07", "2025-05-07",
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
 
     public static final UnboundBooleanFlag LEGACY_AUTH0_FILTER = defineFeatureFlag(
             "use-legacy-auth0-filter", true,
-            List.of("eirik"), "2024-11-07", "2025-02-07",
+            List.of("eirik"), "2024-11-07", "2025-03-07",
             "Use legacy auth0 request filter, or new one",
             "Takes after controller restart",
             SYSTEM);
