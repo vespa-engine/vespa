@@ -7,7 +7,6 @@ import jakarta.servlet.ServletRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.server.ConnectionFactory;
-import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
@@ -29,7 +28,8 @@ class JDiscServerConnector extends ServerConnector {
     private final int listenPort;
     private final List<String> knownServerNames;
 
-    JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, ConnectionFactory... factories) {
+    JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, JettyConnectionLogger connectionLogger,
+                         ConnectionMetricAggregator connectionMetricAggregator, ConnectionFactory... factories) {
         super(server, factories);
         this.config = config;
         this.metric = metric;
@@ -45,6 +45,8 @@ class JDiscServerConnector extends ServerConnector {
         if (throttlingConfig.enabled()) {
             new ConnectionThrottler(this, throttlingConfig).registerWithConnector();
         }
+        addBean(connectionLogger);
+        addBean(connectionMetricAggregator);
         setPort(config.listenPort());
         setName(config.name());
         setAcceptQueueSize(config.acceptQueueSize());
@@ -67,7 +69,7 @@ class JDiscServerConnector extends ServerConnector {
     public Metric.Context createRequestMetricContext(HttpServletRequest request, Map<String, String> extraDimensions) {
         String method = request.getMethod();
         String scheme = request.getScheme();
-        boolean clientAuthenticated = request.getAttribute(SecureRequestCustomizer.X509_ATTRIBUTE) != null;
+        boolean clientAuthenticated = request.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT) != null;
         Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName, extraDimensions.size() + 5);
         dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
         dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
