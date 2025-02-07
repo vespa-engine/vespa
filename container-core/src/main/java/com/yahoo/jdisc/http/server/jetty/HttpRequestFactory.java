@@ -4,16 +4,14 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 import jakarta.servlet.http.HttpServletRequest;
-import org.eclipse.jetty.ee9.nested.Request;
-import org.eclipse.jetty.io.EndPoint;
-import org.eclipse.jetty.server.SecureRequestCustomizer;
-import org.eclipse.jetty.util.ssl.X509;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.util.Utf8Appendable;
 
+import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Enumeration;
-import java.util.Optional;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
@@ -35,15 +33,15 @@ class HttpRequestFactory {
                     getMethod(servletRequest),
                     HttpRequest.Version.fromString(servletRequest.getProtocol()),
                     new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
-                    getConnection(jettyRequest.getCoreRequest()).getCreatedTimeStamp(),
-                    org.eclipse.jetty.server.Request.getTimeStamp(jettyRequest.getCoreRequest()));
+                    getConnection(jettyRequest).getCreatedTimeStamp(),
+                    jettyRequest.getTimeStamp());
             jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
             jdiscHttpReq.context().put(RequestUtils.JDICS_REQUEST_PORT, servletRequest.getLocalPort());
-            var sslSessionData = (EndPoint.SslSessionData) jettyRequest.getAttribute(EndPoint.SslSessionData.ATTRIBUTE);
-            if (sslSessionData != null) jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_SSLSESSION, sslSessionData.sslSession());
+            SSLSession sslSession = (SSLSession) servletRequest.getAttribute(RequestUtils.JETTY_REQUEST_SSLSESSION);
+            jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_SSLSESSION, sslSession);
             servletRequest.setAttribute(HttpRequest.class.getName(), jdiscHttpReq);
             return jdiscHttpReq;
-        } catch (IllegalArgumentException e) {
+        } catch (Utf8Appendable.NotUtf8Exception e) {
             throw createBadQueryException(e);
         }
     }
@@ -62,7 +60,7 @@ class HttpRequestFactory {
         try {
             String scheme = servletRequest.getScheme();
             String host = servletRequest.getServerName();
-            int port = getConnectorLocalPort(((org.eclipse.jetty.ee9.nested.Request) servletRequest).getCoreRequest());
+            int port = getConnectorLocalPort((Request) servletRequest);
             String path = servletRequest.getRequestURI();
             String query = servletRequest.getQueryString();
 
@@ -88,8 +86,7 @@ class HttpRequestFactory {
     }
 
     private static RequestException createBadQueryException(IllegalArgumentException e) {
-        var cause = e.getCause() != null ? e.getCause() : e;
-        return new RequestException(BAD_REQUEST, "URL violates RFC 2396: " + cause.getMessage(), cause);
+        return new RequestException(BAD_REQUEST, "URL violates RFC 2396: " + e.getMessage(), e);
     }
 
     public static void copyHeaders(HttpServletRequest from, HttpRequest to) {
@@ -102,9 +99,6 @@ class HttpRequestFactory {
     }
 
     private static X509Certificate[] getCertChain(HttpServletRequest servletRequest) {
-        return Optional.ofNullable(servletRequest.getAttribute(EndPoint.SslSessionData.ATTRIBUTE))
-                .map(EndPoint.SslSessionData.class::cast)
-                .map(EndPoint.SslSessionData::peerCertificates)
-                .orElse(null);
+        return (X509Certificate[]) servletRequest.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT);
     }
 }
