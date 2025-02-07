@@ -48,6 +48,13 @@ public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
+    public static final UnboundBooleanFlag UPGRADE_WIREGUARD = defineFeatureFlag(
+            "upgrade-wireguard", false,
+            List.of("hakonhall"), "2025-02-04", "2025-04-04",
+            "Whether to upgrade vespa-wireguard-go to latest",
+            "Takes effect on start of host-admin.",
+            HOSTNAME);
+
     public static final UnboundBooleanFlag DISABLE_WG_CONNTRACK = defineFeatureFlag(
             "disable-wg-conntrack", false,
             List.of("hakonhall"), "2025-01-17", "2025-03-17",
