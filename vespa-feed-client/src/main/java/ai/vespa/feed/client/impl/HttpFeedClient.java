@@ -17,7 +17,6 @@ import com.fasterxml.jackson.core.JsonToken;
 import com.fasterxml.jackson.core.StreamReadConstraints;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.time.Duration;
@@ -48,7 +47,9 @@ class HttpFeedClient implements FeedClient {
 
     private static final Duration maxTimeout = Duration.ofMinutes(15);
     private static final JsonFactory jsonParserFactory = new JsonFactoryBuilder()
-            .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+            .streamReadConstraints(StreamReadConstraints.builder()
+                                                        .maxStringLength(Integer.MAX_VALUE)
+                                                        .build())
             .build();
 
     private final Map<String, Supplier<String>> requestHeaders;
@@ -122,7 +123,8 @@ class HttpFeedClient implements FeedClient {
                                               getQuery(params, speedTest),
                                               requestHeaders,
                                               operationJson == null ? null : operationJson.getBytes(UTF_8), // TODO: make it bytes all the way?
-                                              params.timeout().orElse(maxTimeout),
+                                              params.timeout()
+                                                    .orElse(maxTimeout),
                                               nanoClock);
 
         CompletableFuture<Result> promise = new CompletableFuture<>();
@@ -134,8 +136,7 @@ class HttpFeedClient implements FeedClient {
                                    thrown = thrown.getCause();
 
                                promise.completeExceptionally(thrown);
-                           }
-                           else
+                           } else
                                promise.complete(result);
                        });
         return promise;
@@ -155,61 +156,76 @@ class HttpFeedClient implements FeedClient {
             cluster.dispatch(request, future);
             HttpResponse response = future.get(20, TimeUnit.SECONDS);
             if (response.code() != 200) {
-                String message;
-                if (response.body() != null) switch (response.contentType()) {
-                    case "application/json": message = parseMessage(response.body()); break;
-                    case "text/plain": message = new String(response.body(), UTF_8); break;
-                    default: message = response.toString(); break;
-                }
-                else message = response.toString();
-
+                String message = getMessageFromResponse(response);
                 // Old server ignores ?dryRun=true, but getting this particular error message means everything else is OK.
                 if (response.code() == 400 && "Could not read document, no document?".equals(message)) {
-                    if (builder.speedTest) throw new FeedException("server does not support speed test; upgrade to a newer version");
+                    if (builder.speedTest)
+                        throw new FeedException("server does not support speed test; upgrade to a newer version");
                     return;
                 }
                 throw new FeedException("server responded non-OK to handshake: " + message);
             }
-        }
-        catch (ExecutionException e) {
+        } catch (ExecutionException e) {
             Duration duration = Duration.between(start, Instant.now());
             throw new FeedException("failed handshake with server after " + duration + ": " + e.getCause(), e.getCause());
-        }
-        catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+        } catch (InterruptedException e) {
+            Thread.currentThread()
+                  .interrupt();
             throw new FeedException("interrupted during handshake with server", e);
-        }
-        catch (TimeoutException e) {
+        } catch (TimeoutException e) {
             throw new FeedException("timed out during handshake with server", e);
         }
+    }
+
+    private static String getMessageFromResponse(HttpResponse response) {
+        byte[] body = response.body();
+        if (body == null) return response.toString();
+
+        String message;
+        String contentType = response.contentType();
+        if (contentType.equals("application/json"))
+            message = parseMessage(body);
+        else if (contentType.startsWith("text/"))
+            message = new String(body, UTF_8);
+        else
+            message = response.toString();
+
+        return message;
     }
 
     private static String parseMessage(byte[] json) {
         try {
             return parse(null, json).message;
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             return new String(json, UTF_8);
         }
     }
 
-    private enum Outcome { success, conditionNotMet, vespaFailure, transportFailure };
+    private enum Outcome {success, conditionNotMet, vespaFailure, transportFailure}
+
+    ;
 
     static Result.Type toResultType(Outcome outcome) {
         switch (outcome) {
-            case success: return Result.Type.success;
-            case conditionNotMet: return Result.Type.conditionNotMet;
-            default: throw new IllegalArgumentException("No corresponding result type for '" + outcome + "'");
+            case success:
+                return Result.Type.success;
+            case conditionNotMet:
+                return Result.Type.conditionNotMet;
+            default:
+                throw new IllegalArgumentException("No corresponding result type for '" + outcome + "'");
         }
     }
 
     private static class MessageAndTrace {
+
         final String message;
         final String trace;
+
         MessageAndTrace(String message, String trace) {
             this.message = message;
             this.trace = trace;
         }
+
     }
 
     static MessageAndTrace parse(DocumentId documentId, byte[] json) {
@@ -220,7 +236,7 @@ class HttpFeedClient implements FeedClient {
                 throw new ResultParseException(
                         documentId,
                         "Expected '" + JsonToken.START_OBJECT + "', but found '" + parser.currentToken() + "' in: " +
-                        new String(json, UTF_8));
+                                new String(json, UTF_8));
 
             String name;
             while ((name = parser.nextFieldName()) != null) {
@@ -232,14 +248,20 @@ class HttpFeedClient implements FeedClient {
                         if (parser.nextToken() != JsonToken.START_ARRAY)
                             throw new ResultParseException(documentId,
                                                            "Expected 'trace' to be an array, but got '" + parser.currentToken() + "' in: " +
-                                                           new String(json, UTF_8));
-                        int start = (int) parser.currentTokenLocation().getByteOffset();
+                                                                   new String(json, UTF_8));
+                        int start = (int) parser.currentTokenLocation()
+                                                .getByteOffset();
                         int depth = 1;
                         while (depth > 0) switch (parser.nextToken()) {
-                            case START_ARRAY: ++depth; break;
-                            case END_ARRAY: --depth; break;
+                            case START_ARRAY:
+                                ++depth;
+                                break;
+                            case END_ARRAY:
+                                --depth;
+                                break;
                         }
-                        int end = (int) parser.currentTokenLocation().getByteOffset() + 1;
+                        int end = (int) parser.currentTokenLocation()
+                                              .getByteOffset() + 1;
                         trace = new String(json, start, end - start, UTF_8);
                         break;
                     default:
@@ -252,9 +274,8 @@ class HttpFeedClient implements FeedClient {
                 throw new ResultParseException(
                         documentId,
                         "Expected '" + JsonToken.END_OBJECT + "', but found '" + parser.currentToken() + "' in: "
-                        + new String(json, UTF_8));
-        }
-        catch (IOException e) {
+                                + new String(json, UTF_8));
+        } catch (IOException e) {
             throw new ResultParseException(documentId, e);
         }
 
@@ -264,12 +285,20 @@ class HttpFeedClient implements FeedClient {
     static Result toResult(HttpRequest request, HttpResponse response, DocumentId documentId) {
         Outcome outcome;
         switch (response.code()) {
-            case 200: outcome = Outcome.success; break;
-            case 412: outcome = Outcome.conditionNotMet; break;
+            case 200:
+                outcome = Outcome.success;
+                break;
+            case 412:
+                outcome = Outcome.conditionNotMet;
+                break;
             case 502:
             case 504:
-            case 507: outcome = Outcome.vespaFailure; break;
-            default: outcome = Outcome.transportFailure; break;
+            case 507:
+                outcome = Outcome.vespaFailure;
+                break;
+            default:
+                outcome = Outcome.transportFailure;
+                break;
         }
 
         MessageAndTrace mat = parse(documentId, response.body());
@@ -292,15 +321,17 @@ class HttpFeedClient implements FeedClient {
         path.add("v1");
         path.add(encode(documentId.namespace()));
         path.add(encode(documentId.documentType()));
-        if (documentId.number().isPresent()) {
+        if (documentId.number()
+                      .isPresent()) {
             path.add("number");
-            path.add(Long.toUnsignedString(documentId.number().getAsLong()));
-        }
-        else if (documentId.group().isPresent()) {
+            path.add(Long.toUnsignedString(documentId.number()
+                                                     .getAsLong()));
+        } else if (documentId.group()
+                             .isPresent()) {
             path.add("group");
-            path.add(encode(documentId.group().get()));
-        }
-        else {
+            path.add(encode(documentId.group()
+                                      .get()));
+        } else {
             path.add("docid");
         }
         path.add(encode(documentId.userSpecific()));
@@ -311,8 +342,7 @@ class HttpFeedClient implements FeedClient {
     static String encode(String raw) {
         try {
             return URLEncoder.encode(raw, UTF_8.name());
-        }
-        catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             throw new IllegalStateException(e);
         }
     }
@@ -320,14 +350,19 @@ class HttpFeedClient implements FeedClient {
     static String getQuery(OperationParameters params, boolean speedTest) {
         StringJoiner query = new StringJoiner("&", "?", "").setEmptyValue("");
         if (params.createIfNonExistent()) query.add("create=true");
-        params.testAndSetCondition().ifPresent(condition -> query.add("condition=" + encode(condition)));
-        params.route().ifPresent(route -> query.add("route=" + encode(route)));
-        params.tracelevel().ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
+        params.testAndSetCondition()
+              .ifPresent(condition -> query.add("condition=" + encode(condition)));
+        params.route()
+              .ifPresent(route -> query.add("route=" + encode(route)));
+        params.tracelevel()
+              .ifPresent(tracelevel -> query.add("tracelevel=" + tracelevel));
         if (speedTest) query.add("dryRun=true");
         return query.toString();
     }
 
-    /** Factory for creating a new {@link Cluster} to dispatch operations to. Used for resetting the active cluster. */
+    /**
+     * Factory for creating a new {@link Cluster} to dispatch operations to. Used for resetting the active cluster.
+     */
     interface ClusterFactory {
 
         Cluster create() throws IOException;
