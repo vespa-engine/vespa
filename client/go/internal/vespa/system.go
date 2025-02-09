@@ -18,7 +18,7 @@ var PublicCDSystem = System{
 	URL:            "https://api-ctl.cd.vespa-cloud.com:4443",
 	ConsoleURL:     "https://console.cd.vespa-cloud.com",
 	DefaultZone:    ZoneID{Environment: "dev", Region: "aws-us-east-1c"},
-	EndpointDomain: "cd.vespa-app.cloud",
+	EndpointDomain: "cd-vespa-app.cloud",
 }
 
 // MainSystem represents the main hosted Vespa system.
