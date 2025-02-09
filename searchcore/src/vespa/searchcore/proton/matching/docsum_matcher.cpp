@@ -161,12 +161,15 @@ void find_matching_elements(const MatchingElementsFields &fields,
             find_matching_elements(fields, docs, intermediate->getChild(i), result, idToName);
         }
     } else if (bp.getState().numFields() == 1) {
-        const std::string& fieldName = idToName.lookup(bp.getState().field(0).getFieldId());
+        uint32_t currentField = bp.getState().field(0).getFieldId();
+        const std::string& fieldName = idToName.lookup(currentField);
         if (fields.has_field(fieldName)) {
-            using search::fef::MatchData;
-            MatchData md(MatchData::params().numTermFields(1));
-            SearchIterator::UP child = bp.createSearch(md);
-            auto * tfmd(md.resolveTermField(0));
+            auto handle = bp.getState().field(0).getHandle();
+            search::fef::MatchDataLayout layout;
+            while (layout.allocTermField(currentField) < handle) {}
+            auto mdp = layout.createMatchData();
+            auto * tfmd(mdp->resolveTermField(handle));
+            SearchIterator::UP child = bp.createSearch(*mdp);
             auto ei = std::make_unique<search::queryeval::ElementIteratorWrapper>(std::move(child), *tfmd);
             find_matching_elements(docs, *ei, fieldName, result);
         }
