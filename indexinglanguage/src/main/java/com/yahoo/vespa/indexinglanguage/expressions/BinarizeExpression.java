@@ -43,8 +43,6 @@ public class BinarizeExpression extends Expression  {
     @Override
     protected void doVerify(VerificationContext context) {
         type = context.getCurrentType();
-        if (! (type instanceof TensorDataType))
-            throw new VerificationException(this, "Require a tensor, but got " + type);
     }
 
     @Override

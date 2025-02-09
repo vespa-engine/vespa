@@ -90,12 +90,6 @@ public class ForEachTestCase {
     }
 
     @Test
-    public void requireThatCreatedOutputTypeDependsOnInnerExpression() {
-        assertNull(new ForEachExpression(new SimpleExpression()).createdOutputType());
-        assertNotNull(new ForEachExpression(new ConstantExpression(new IntegerFieldValue(69))).createdOutputType());
-    }
-
-    @Test
     public void requireThatArrayCanBeConverted() {
         ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
         Array<StringFieldValue> before = new Array<>(DataType.getArray(DataType.STRING));

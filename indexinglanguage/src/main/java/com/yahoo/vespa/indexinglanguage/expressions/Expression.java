@@ -89,7 +89,7 @@ public abstract class Expression extends Selectable {
         return assignInputType(inputType);
     }
 
-    private DataType assignInputType(DataType inputType) {
+    DataType assignInputType(DataType inputType) {
         // Since we assign in both directions, in both orders, we may already know
         if (this.inputType == null)
             this.inputType = inputType;
@@ -145,7 +145,7 @@ public abstract class Expression extends Selectable {
         return assignOutputType(outputType);
     }
 
-    private DataType assignOutputType(DataType outputType) {
+    DataType assignOutputType(DataType outputType) {
         // Since we assign in both directions, in both orders, we may already know
         if (this.outputType == null)
             this.outputType = outputType;
