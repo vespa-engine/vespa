@@ -112,9 +112,6 @@ public class SearchNode extends AbstractService implements
         if (featureFlags.loadCodeAsHugePages()) {
             node.addEnvironmentVariable("VESPA_LOAD_CODE_AS_HUGEPAGES", true);
         }
-        if (featureFlags.sharedStringRepoNoReclaim()) {
-            node.addEnvironmentVariable("VESPA_SHARED_STRING_REPO_NO_RECLAIM", true);
-        }
         return node;
     }
 

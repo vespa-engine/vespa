@@ -66,7 +66,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private boolean loadCodeAsHugePages = false;
-    private boolean sharedStringRepoNoReclaim = false;
     private int mbus_java_num_targets = 2;
     private int mbus_java_events_before_wakeup = 1;
     private int mbus_cpp_num_targets = 2;
@@ -121,7 +120,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
-    @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
     @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
     @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
@@ -140,11 +138,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
     @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
-
-    public TestProperties sharedStringRepoNoReclaim(boolean sharedStringRepoNoReclaim) {
-        this.sharedStringRepoNoReclaim = sharedStringRepoNoReclaim;
-        return this;
-    }
 
     public TestProperties loadCodeAsHugePages(boolean loadCodeAsHugePages) {
         this.loadCodeAsHugePages = loadCodeAsHugePages;
