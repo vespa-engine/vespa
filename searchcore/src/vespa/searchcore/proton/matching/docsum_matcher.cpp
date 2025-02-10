@@ -4,6 +4,7 @@
 #include "match_tools.h"
 #include "search_session.h"
 #include "extract_features.h"
+#include "field_id_to_name_mapper.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/elementiterator.h>
