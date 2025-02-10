@@ -19,12 +19,13 @@ using vespalib::Trinary;
 
 namespace search::features {
 
+std::string Bm25Utils::_average_element_length("averageElementLength");
 std::string Bm25Utils::_average_field_length("averageFieldLength");
 std::string Bm25Utils::_b("b");
 std::string Bm25Utils::_k1("k1");
 
-Bm25Utils::Bm25Utils(const std::string &base_name, const std::string &field_name, const fef::Properties& properties)
-    : _property_key_prefix(base_name + "(" + field_name + ")."),
+Bm25Utils::Bm25Utils(const std::string& property_key_prefix, const fef::Properties& properties)
+    : _property_key_prefix(property_key_prefix),
       _properties(properties)
 {
 }
