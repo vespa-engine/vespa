@@ -148,13 +148,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SHARED_STRING_REPO_NO_RECLAIM = defineFeatureFlag(
-            "shared-string-repo-no-reclaim", false,
-            List.of("baldersheim"), "2022-06-14", "2025-03-01",
-            "Controls whether we do track usage and reclaim unused enum values in shared string repo",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
             "container-dump-heap-on-shutdown-timeout", false,
             List.of("baldersheim"), "2021-09-25", "2025-03-01",
