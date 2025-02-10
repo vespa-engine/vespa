@@ -196,6 +196,9 @@ public:
     FieldIdToNameMapper getFieldIdToNameMapper() const {
         return FieldIdToNameMapper(_queryEnv.getIndexEnvironment());
     }
+    search::fef::MatchData::UP createMatchData() const {
+        return _mdl.createMatchData();
+    }
 };
 
 }
