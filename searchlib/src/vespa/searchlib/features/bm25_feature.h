@@ -1,5 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#pragma once
+
+#include "bm25_utils.h"
 #include <vespa/searchlib/fef/blueprint.h>
 #include <vespa/searchlib/fef/featureexecutor.h>
 
@@ -9,20 +12,7 @@ namespace search::features {
  * Executor for the BM25 ranking algorithm over a single index field.
  */
 class Bm25Executor : public fef::FeatureExecutor {
-private:
-    struct QueryTerm {
-        fef::TermFieldHandle handle;
-        const fef::TermFieldMatchData* tfmd;
-        double idf_mul_k1_plus_one;
-        double degraded_score;
-        QueryTerm(fef::TermFieldHandle handle_, double inverse_doc_freq, double k1_param) noexcept
-            : handle(handle_),
-              tfmd(nullptr),
-              idf_mul_k1_plus_one(inverse_doc_freq * (k1_param + 1)),
-              degraded_score(inverse_doc_freq)
-        {}
-    };
-
+    using QueryTerm = Bm25Utils::QueryTerm;
     using QueryTermVector = std::vector<QueryTerm>;
 
     QueryTermVector _terms;

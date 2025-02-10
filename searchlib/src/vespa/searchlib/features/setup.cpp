@@ -16,6 +16,7 @@
 #include "dotproductfeature.h"
 #include "element_completeness_feature.h"
 #include "element_similarity_feature.h"
+#include "elementwise_blueprint.h"
 #include "euclidean_distance_feature.h"
 #include "fieldinfofeature.h"
 #include "fieldlengthfeature.h"
@@ -86,6 +87,7 @@ void setup_search_features(fef::IBlueprintRegistry & registry)
     registry.addPrototype(std::make_shared<DotProductBlueprint>());
     registry.addPrototype(std::make_shared<ElementCompletenessBlueprint>());
     registry.addPrototype(std::make_shared<ElementSimilarityBlueprint>());
+    registry.addPrototype(std::make_shared<ElementwiseBlueprint>());
     registry.addPrototype(std::make_shared<EuclideanDistanceBlueprint>());
     registry.addPrototype(std::make_shared<FieldInfoBlueprint>());
     registry.addPrototype(std::make_shared<FieldLengthBlueprint>());

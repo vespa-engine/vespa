@@ -133,6 +133,11 @@ protected:
     lookupAttribute(const std::string & key, std::string_view attrName, const IQueryEnvironment & env);
     static std::string createAttributeKey(std::string_view attrName);
 
+    /*
+     * Used by elementwise blueprint to forward dependency handler.
+     */
+    DependencyHandler *get_dependency_handler() const noexcept { return _dependency_handler; }
+
 public:
     Blueprint(const Blueprint &) = delete;
     Blueprint &operator=(const Blueprint &) = delete;

@@ -123,7 +123,7 @@ Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList
     if (_field == nullptr) {
         return false;
     }
-    Bm25Utils bm25_utils(getBaseName(), _field->name(), env.getProperties());
+    Bm25Utils bm25_utils(getBaseName() + "(" + _field->name() + ").", env.getProperties());
 
     if (bm25_utils.lookup_param(Bm25Utils::k1(), _k1_param) == Trinary::Undefined) {
         return false;
