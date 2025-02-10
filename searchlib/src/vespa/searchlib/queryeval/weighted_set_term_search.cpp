@@ -79,8 +79,13 @@ private:
             _children.unpack(child, docId);
             const auto * tfmd = child_blueprints[child]->getState().field(0).resolve(_children.match_data());
             if (tfmd) {
+                uint32_t last_id = -1;
                 for (const fef::TermFieldMatchDataPosition& pos : *tfmd) {
-                    dst.push_back(pos.getElementId());
+                    uint32_t elem_id = pos.getElementId();
+                    if (elem_id != last_id) {
+                        dst.push_back(elem_id);
+                        last_id = elem_id;
+                    }
                 }
             }
         }
