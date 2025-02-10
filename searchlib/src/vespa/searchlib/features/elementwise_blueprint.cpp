@@ -103,9 +103,8 @@ ElementwiseBlueprint::setup(const fef::IIndexEnvironment& env, const fef::Parame
     const auto& nested_feature_base_name = feature_name_parser.baseName();
     auto itr = _nested_blueprints->find(nested_feature_base_name);
     if (itr == _nested_blueprints->end()) {
-        return fail("'%s' is not supported as first argument to %s feature",
-                    nested_feature_base_name.c_str(),
-                    getBaseName().c_str());
+        return fail("'%s' is not a feature with elementwise support",
+                    nested_feature_base_name.c_str());
     }
     _inner_blueprint = itr->second->createInstance();
     DependencyHandlerGuard dependency_handler_guard(*_inner_blueprint, get_dependency_handler());

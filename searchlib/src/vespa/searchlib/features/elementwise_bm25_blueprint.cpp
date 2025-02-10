@@ -99,7 +99,7 @@ ElementwiseBm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::Pa
     }
     _empty_output = vespalib::eval::value_from_spec(_output_tensor_type.to_spec(), FastValueBuilderFactory::get());
     FeatureType output_type = FeatureType::object(_output_tensor_type);
-    describeOutput("score", "The bm25 score for all terms searching in the given index field", output_type);
+    describeOutput("score", "The elementwise bm25 score for all terms searching in the given index field", output_type);
     return true;
 }
 
