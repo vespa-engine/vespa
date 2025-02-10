@@ -123,12 +123,18 @@ void find_matching_elements(const std::vector<uint32_t> &docs,
     }
 }
 
-void find_matching_elements(const MatchingElementsFields &fields,
-                            const std::vector<uint32_t> &docs,
-                            const Blueprint &bp,
-                            MatchingElements &result,
-                            const FieldIdToNameMapper &idToName,
-                            search::fef::MatchData &matchData)
+struct FindMatchingElements {
+    const MatchingElementsFields &fields;
+    MatchingElements &result;
+    const FieldIdToNameMapper idToName;
+    search::fef::MatchData &matchData;
+
+    void process(const std::vector<uint32_t> &docs, const Blueprint &bp);
+};
+
+void FindMatchingElements::process(
+        const std::vector<uint32_t> &docs,
+        const Blueprint &bp)
 {
     if (auto same_element = as<SameElementBlueprint>(bp)) {
         if (fields.has_field(same_element->field_name())) {
@@ -141,7 +147,7 @@ void find_matching_elements(const MatchingElementsFields &fields,
             find_matching_elements(docs, fields.enclosing_field(attr_ctx->attributeName()), *attr_ctx, result);
         }
     } else if (auto and_not = as<AndNotBlueprint>(bp)) {
-        find_matching_elements(fields, docs, and_not->getChild(0), result, idToName, matchData);
+        process(docs, and_not->getChild(0));
     } else if (auto source_blender = as<SourceBlenderBlueprint>(bp)) {
         const auto & selector = source_blender->getSelector();
         auto iterator = selector.createIterator();
@@ -155,12 +161,12 @@ void find_matching_elements(const MatchingElementsFields &fields,
                 }
             }
             if (! child_docs.empty()) {
-                find_matching_elements(fields, child_docs, child_bp, result, idToName, matchData);
+                process(child_docs, child_bp);
             }
         }
     } else if (auto intermediate = as<IntermediateBlueprint>(bp)) {
         for (size_t i = 0; i < intermediate->childCnt(); ++i) {
-            find_matching_elements(fields, docs, intermediate->getChild(i), result, idToName, matchData);
+            process(docs, intermediate->getChild(i));
         }
     } else if (bp.getState().numFields() == 1) {
         uint32_t currentField = bp.getState().field(0).getFieldId();
@@ -232,7 +238,8 @@ DocsumMatcher::get_matching_elements(const MatchingElementsFields &fields) const
     if (_mtf && !fields.empty()) {
         if (const Blueprint *root = _mtf->query().peekRoot()) {
             auto match_data = _mtf->createMatchData();
-            find_matching_elements(fields, _docs, *root, *result, _mtf->getFieldIdToNameMapper(), *match_data);
+            FindMatchingElements finder(fields, *result, _mtf->getFieldIdToNameMapper(), *match_data);
+            finder.process(_docs, *root);
         }
     }
     return result;
