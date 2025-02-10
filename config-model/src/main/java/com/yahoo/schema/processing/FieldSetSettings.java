@@ -149,11 +149,9 @@ public class FieldSetSettings extends Processor {
             }
         }
         if (!tensorFields.isEmpty() && !nonTensorFields.isEmpty()) {
-            var fullMsg = "For schema '" + schema.getName() + "', fieldset '" + fieldSet.getName() + "': " +
-                    "Tensor fields ['" + String.join("', '", tensorFields) + "'] " +
-                    "cannot be mixed with non-tensor fields ['" + String.join("', '", nonTensorFields) + "'] " +
-                    "in the same fieldset. See " + fieldSetDocUrl;
-            deployLogger.logApplicationPackage(Level.WARNING, fullMsg);
+            throw new IllegalArgumentException("For schema '" + schema.getName() + "', fieldset '" + fieldSet.getName() + "': " +
+                    "Illegal mixing of tensor fields ['" + String.join("','", tensorFields) + "'] " +
+                    "and non-tensor fields ['" + String.join("','", nonTensorFields) + "']");
         }
     }
 }

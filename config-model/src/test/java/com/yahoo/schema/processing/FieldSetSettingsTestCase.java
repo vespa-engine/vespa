@@ -15,6 +15,7 @@ import static com.yahoo.schema.document.MatchType.WORD;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class FieldSetSettingsTestCase {
 
@@ -42,10 +43,8 @@ public class FieldSetSettingsTestCase {
 
     @Test
     public void illegalFieldTypeMix() {
-        var logger = new TestableDeployLogger();
-        assertDoesNotThrow(() -> createFromStrings(logger, childSd( "fieldset default { fields: ci, pt }"), parentSd()));
-        assertArrayEquals(new String[]{"For schema 'child', fieldset 'default': Tensor fields ['pt'] cannot be mixed with non-tensor fields ['ci'] in the same fieldset. " +
-                "See https://docs.vespa.ai/en/reference/schema-reference.html#fieldset"}, logger.warnings.toArray());
+        var e = assertThrows(IllegalArgumentException.class, () -> createFromStrings(new BaseDeployLogger(), childSd( "fieldset default { fields: ci, pt }"), parentSd()));
+        assertEquals("For schema 'child', fieldset 'default': Illegal mixing of tensor fields ['pt'] and non-tensor fields ['ci']", e.getMessage());
     }
 
     @Test
