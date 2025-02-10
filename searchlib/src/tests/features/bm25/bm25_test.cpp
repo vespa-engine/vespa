@@ -10,7 +10,6 @@
 #define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <cmath>
@@ -18,7 +17,6 @@
 using namespace search::features;
 using namespace search::fef;
 using namespace search::fef::objectstore;
-using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using CollectionType = FieldInfo::CollectionType;
 using StringVector = std::vector<std::string>;
@@ -269,10 +267,6 @@ struct Bm25ExecutorTest : public ::testing::TestWithParam<TestParam> {
         clear_term(2, 1);
     }
     std::string feature_name() const { return GetParam().feature_name({"foo"}); }
-    TensorSpec normalize_spec(TensorSpec spec) {
-        auto tensor = value_from_spec(spec, FastValueBuilderFactory::get());
-        return spec_from_value(*tensor);
-    }
     bool execute(feature_t exp_score) {
         constexpr double epsilon = 0.000001;
         if (!GetParam()._elementwise) {
@@ -282,7 +276,7 @@ struct Bm25ExecutorTest : public ::testing::TestWithParam<TestParam> {
         if (exp_score != 0.0) {
             exp_spec.add({{"x", "0"}}, exp_score);
         }
-        exp_spec = normalize_spec(exp_spec);
+        exp_spec = exp_spec.normalize();
         auto value = test.resolveObjectFeature();
         auto spec = spec_from_value(value.get());
         bool success = true;
@@ -449,7 +443,7 @@ TEST_P(Bm25ExecutorTest, multiple_elements)
         TensorSpec exp_spec(GetParam()._tensor_type_spec);
         exp_spec.add({{"x", "0"}}, score(3, 20, idf(25)));
         exp_spec.add({{"x", "7"}}, score(2, 5, idf(25)));
-        exp_spec = normalize_spec(exp_spec);
+        exp_spec = exp_spec.normalize();
         EXPECT_EQ(exp_spec, spec);
     }
 }
