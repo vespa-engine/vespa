@@ -66,10 +66,10 @@ public:
             _children[i] = f(std::move(_children[i]), i);
         }
     }
+    const fef::MatchData& match_data() const { return *_md; }
 };
 
 using SearchIteratorPack = SearchIteratorPackT<uint16_t>;
 using SearchIteratorPackUint32 = SearchIteratorPackT<uint32_t>;
 
 }
-

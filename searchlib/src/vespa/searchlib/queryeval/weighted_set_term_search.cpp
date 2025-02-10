@@ -24,6 +24,12 @@ enum class UnpackType {
     None
 };
 
+template <typename Pack, typename Ref>
+concept HasUnpackAndMatchData = requires(Pack& pack, Ref ref, uint32_t docid) {
+    { pack.unpack(ref, docid) };
+    { pack.match_data() } -> std::same_as<const fef::MatchData&>;
+};
+
 template <UnpackType unpack_type, typename HEAP, typename IteratorPack>
 class WeightedSetTermSearchImpl : public WeightedSetTermSearch
 {
@@ -57,7 +63,6 @@ private:
     ref_t                                         *_data_stash;
     ref_t                                         *_data_end;
     IteratorPack                                   _children;
-    const fef::MatchData                          *_childrenMD;
 
     void seek_child(ref_t child, uint32_t docId) {
         _termPos[child] = _children.seek(child, docId);
@@ -70,9 +75,9 @@ private:
                 dst.push_back(id);
             }
         }
-        else if constexpr (requires(IteratorPack& pack, ref_t ref, uint32_t docid) {  pack.unpack(ref, docid); }) {
+        else if constexpr (HasUnpackAndMatchData<IteratorPack, ref_t>) {
             _children.unpack(child, docId);
-            const auto * tfmd = child_blueprints[child]->getState().field(0).resolve(*_childrenMD);
+            const auto * tfmd = child_blueprints[child]->getState().field(0).resolve(_children.match_data());
             if (tfmd) {
                 for (const fef::TermFieldMatchDataPosition& pos : *tfmd) {
                     dst.push_back(pos.getElementId());
@@ -84,8 +89,7 @@ private:
 public:
     WeightedSetTermSearchImpl(fef::TermFieldMatchData &tmd,
                               std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
-                              IteratorPack &&iteratorPack,
-                              fef::MatchData *childrenMD)
+                              IteratorPack &&iteratorPack)
         : _tmd(tmd),
           _weights_data((weights.index() == 1) ? std::move(std::get<1>(weights)) : std::vector<int32_t>()),
           _weights((weights.index() == 1) ? _weights_data : std::get<0>(weights).get()),
@@ -96,8 +100,7 @@ public:
           _data_begin(nullptr),
           _data_stash(nullptr),
           _data_end(nullptr),
-          _children(std::move(iteratorPack)),
-          _childrenMD(childrenMD)
+          _children(std::move(iteratorPack))
     {
         HEAP::require_left_heap();
         assert(_children.size() > 0);
@@ -186,19 +189,18 @@ SearchIterator::UP
 create_helper(fef::TermFieldMatchData& tmd,
               bool is_filter_search,
               std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
-              IteratorPackType&& pack,
-              fef::MatchData *mdp)
+              IteratorPackType&& pack)
 {
     bool match_data_needed = !tmd.isNotNeeded();
     if (is_filter_search && match_data_needed) {
         return std::make_unique<WeightedSetTermSearchImpl<UnpackType::Docid, HeapType, IteratorPackType>>
-                (tmd, std::move(weights), std::move(pack), mdp);
+                (tmd, std::move(weights), std::move(pack));
     } else if (!is_filter_search && match_data_needed) {
         return std::make_unique<WeightedSetTermSearchImpl<UnpackType::DocidAndWeights, HeapType, IteratorPackType>>
-                (tmd, std::move(weights), std::move(pack), mdp);
+                (tmd, std::move(weights), std::move(pack));
     } else {
         return std::make_unique<WeightedSetTermSearchImpl<UnpackType::None, HeapType, IteratorPackType>>
-                (tmd, std::move(weights), std::move(pack), mdp);
+                (tmd, std::move(weights), std::move(pack));
     }
 }
 
@@ -209,22 +211,21 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
                               const std::vector<int32_t> &weights,
                               fef::MatchData::UP match_data)
 {
-    fef::MatchData *mdp = match_data.get();
     if (children.size() < 128) {
         if (SearchIteratorPack::can_handle_iterators(children.size())) {
             return create_helper<vespalib::LeftArrayHeap, SearchIteratorPack>(tmd, is_filter_search, std::cref(weights),
-                                                                              SearchIteratorPack(children, std::move(match_data)), mdp);
+                                                                              SearchIteratorPack(children, std::move(match_data)));
         } else {
             return create_helper<vespalib::LeftArrayHeap, SearchIteratorPackUint32>(tmd, is_filter_search, std::cref(weights),
-                                                                                    SearchIteratorPackUint32(children, std::move(match_data)), mdp);
+                                                                                    SearchIteratorPackUint32(children, std::move(match_data)));
         }
     }
     if (SearchIteratorPack::can_handle_iterators(children.size())) {
         return create_helper<vespalib::LeftHeap, SearchIteratorPack>(tmd, is_filter_search, std::cref(weights),
-                                                                     SearchIteratorPack(children, std::move(match_data)), mdp);
+                                                                     SearchIteratorPack(children, std::move(match_data)));
     } else {
         return create_helper<vespalib::LeftHeap, SearchIteratorPackUint32>(tmd, is_filter_search, std::cref(weights),
-                                                                           SearchIteratorPackUint32(children, std::move(match_data)), mdp);
+                                                                           SearchIteratorPackUint32(children, std::move(match_data)));
     }
 }
 
@@ -239,12 +240,10 @@ create_helper_resolve_pack(fef::TermFieldMatchData& tmd,
 {
     if (iterators.size() < 128) {
         return create_helper<vespalib::LeftArrayHeap, IteratorPackType>(tmd, is_filter_search, std::move(weights),
-                                                                        IteratorPackType(std::move(iterators)),
-                                                                        nullptr);
+                                                                        IteratorPackType(std::move(iterators)));
     }
     return create_helper<vespalib::LeftHeap, IteratorPackType>(tmd, is_filter_search, std::move(weights),
-                                                               IteratorPackType(std::move(iterators)),
-                                                               nullptr);
+                                                               IteratorPackType(std::move(iterators)));
 }
 
 }
