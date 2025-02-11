@@ -289,8 +289,11 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
                                                      estimated_hit_ratio, global_filter_upper_limit));
         }
         global_filter = GlobalFilter::create(blueprint, docid_limit, thread_bundle, trace);
-        if (!global_filter->is_active() && trace && trace->shouldTrace(5)) {
-            trace->addEvent(5, "Global filter matches everything");
+        if (!global_filter->is_active()) {
+            estimated_hit_ratio = 1.0;
+            if (trace && trace->shouldTrace(5)) {
+                trace->addEvent(5, "Global filter matches everything");
+            }
         }
     } else {
         if (trace && trace->shouldTrace(5)) {
