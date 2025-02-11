@@ -5,7 +5,6 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
-#include <optional>
 #include <variant>
 
 namespace search::features {
@@ -18,7 +17,7 @@ namespace search::features {
 class ElementwiseOutput {
         struct CallBuilderHelper;
         friend struct CallBuilderHelper;
-        std::optional<vespalib::SharedStringRepo::Handles> _labels;
+        vespalib::SharedStringRepo::Handles _labels;
         std::variant<std::monostate, std::vector<double>, std::vector<float>, std::vector<vespalib::BFloat16>, std::vector<vespalib::eval::Int8Float>> _cells;
         const vespalib::eval::Value& _empty_output;
         std::unique_ptr<vespalib::eval::Value> _output;

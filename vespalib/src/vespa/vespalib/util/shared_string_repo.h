@@ -139,6 +139,8 @@ private:
     void reclaim(string_id id);
 
     static SharedStringRepo _repo;
+
+    struct access_token { };
 public:
     static bool will_reclaim() { return should_reclaim; }
     static Stats stats();
@@ -167,6 +169,11 @@ public:
             _id = rhs._id;
             rhs._id = string_id();
             return *this;
+        }
+        string_id release(access_token) noexcept {
+            auto res = _id;
+            _id = string_id();
+            return res;
         }
         // NB: not lexical sorting order, but can be used in maps
         bool operator<(const Handle &rhs) const noexcept { return (_id < rhs._id); }
@@ -197,6 +204,7 @@ public:
         Handles &operator=(const Handles &) = delete;
         Handles &operator=(Handles &&) = delete;
         ~Handles();
+        void clear();
         string_id add(std::string_view str) {
             string_id id = _repo.resolve(str);
             _handles.push_back(id);
@@ -206,6 +214,9 @@ public:
         void push_back(string_id handle) {
             string_id id = _repo.copy(handle);
             _handles.push_back(id);
+        }
+        void push_back(Handle&& handle) {
+            _handles.push_back(handle.release(access_token()));
         }
         [[nodiscard]] const StringIdVector &view() const { return _handles; }
     };

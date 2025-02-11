@@ -299,4 +299,15 @@ SharedStringRepo::Handles::~Handles()
     }
 }
 
+void
+SharedStringRepo::Handles::clear()
+{
+    if (should_reclaim) {
+        for (string_id handle : _handles) {
+            _repo.reclaim(handle);
+        }
+    }
+    _handles.clear();
+}
+
 }
