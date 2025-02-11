@@ -1,0 +1,16 @@
+# Default type mappings for Vespa schema fields
+string:
+  - |1
+          field {{FIELD_NAME}} type string {
+              indexing: summary | index
+          }
+  - |1
+       field {{FIELD_NAME}}_att type string {
+           indexing: input {{FIELD_NAME}} | attribute
+       }
+
+long:
+  - |1
+          field {{FIELD_NAME}} type long {
+              indexing: summary | attribute
+          }

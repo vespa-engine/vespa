@@ -3,4 +3,5 @@ schema document_type {
     document document_type {
         # Fields will be added here
     }
+    # synthetic fields can be added here
 } 

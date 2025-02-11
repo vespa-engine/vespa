@@ -50,7 +50,11 @@ public class VespaFeed implements Output {
     // TODO: this should default to vespa_url if not set, with port 19071
     public static final PluginConfigSpec<String> CONFIG_SERVER =
             PluginConfigSpec.stringSetting("config_server", "http://localhost:19071");
-    // TODO add maps here for "mapping" (e.g. integers should be long, what to do on conflict with existing fields)
+    // TODO add option on what to do on conflict with existing fields
+
+    // custom type mappings file
+    public static final PluginConfigSpec<String> TYPE_MAPPINGS_FILE =
+    PluginConfigSpec.stringSetting("type_mappings_file", null);
     
     /***********************
      * Vespa API settings
@@ -155,7 +159,7 @@ public class VespaFeed implements Output {
     private final boolean removeOperation;
     private DeadLetterQueueWriter dlqWriter;
     private VespaDryRunner dryRunner;
-
+    private final DryRunConfig dryRunConfig;
 
     public VespaFeed(final String id, final Configuration config, final Context context) {
         this.id = id;
@@ -187,13 +191,13 @@ public class VespaFeed implements Output {
         objectMapper = ObjectMappers.JSON_MAPPER;
 
         if (config.get(DRY_RUN)) {
-            DryRunConfig dryRunConfig = new DryRunConfig(
+            dryRunConfig = new DryRunConfig(
                 config.get(DEPLOY_PACKAGE),
                 config.get(CONFIG_SERVER),
                 documentType,
                 config.get(IDLE_BATCHES).longValue(),
                 config.get(APPLICATION_PACKAGE_DIR),
-                Collections.emptyMap(), // TODO: Add mapping config
+                config.get(TYPE_MAPPINGS_FILE),
                 Collections.emptyMap(),  // TODO: Add conflict resolution config
                 config.get(MAX_RETRIES),
                 config.get(GRACE_PERIOD)
@@ -201,6 +205,7 @@ public class VespaFeed implements Output {
             dryRunner = new VespaDryRunner(dryRunConfig);
             logger.warn("Dry run mode enabled! We will not send documents to Vespa, but will generate an application package.");
         } else {
+            dryRunConfig = null;
             if (config.get(ENABLE_DLQ)) {
                 try {
                     Path dlqPath = Paths.get(config.get(DLQ_PATH));
@@ -473,7 +478,9 @@ public class VespaFeed implements Output {
             } catch (InterruptedException e) {
                 logger.error("Interrupted while waiting for dry runner to deploy application package: {}", e.getMessage());
             }
-            dryRunner.deployApplicationPackage();
+            if (dryRunConfig.isDeployPackage()) {
+                dryRunner.deployer.deployApplicationPackage();
+            }
         }
     }
 
@@ -488,7 +495,7 @@ public class VespaFeed implements Output {
                 NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID, REMOVE_OPERATION,
                 MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD,
                 ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, AUTH_TOKEN,
-                DRY_RUN, DEPLOY_PACKAGE, CONFIG_SERVER, APPLICATION_PACKAGE_DIR, IDLE_BATCHES);
+                DRY_RUN, DEPLOY_PACKAGE, CONFIG_SERVER, APPLICATION_PACKAGE_DIR, IDLE_BATCHES, TYPE_MAPPINGS_FILE);
     }
 
     @Override
