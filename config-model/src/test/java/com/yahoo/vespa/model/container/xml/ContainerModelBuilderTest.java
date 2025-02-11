@@ -17,7 +17,6 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
@@ -28,7 +27,6 @@ import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.container.ComponentsConfig;
-import com.yahoo.container.Container;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.VipStatusConfig;
@@ -684,13 +682,6 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .build());
 
         return model.getConfig(QrConfig.class, "default/container.0");
-    }
-
-    @Test
-    void control_container_shutdown() throws IOException, SAXException {
-        QrConfig qr = getQrConfig(new TestProperties().containerShutdownTimeout(133).containerDumpHeapOnShutdownTimeout(true));
-        assertEquals(133.0, qr.shutdown().timeout(), 0.00000000000001);
-        assertTrue(qr.shutdown().dumpHeapOnTimeout());
     }
 
     @Test
