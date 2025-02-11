@@ -72,12 +72,8 @@ public final class CatExpression extends ExpressionList<Expression> {
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();
         List<DataType> types = new LinkedList<>();
-        for (Expression expression : this) {
-            DataType type = context.setCurrentType(input).verify(expression).getCurrentType();
-            if (type == null)
-                throw new VerificationException(this, "In " + expression + ": Attempting to concatenate a null value");
-            types.add(type);
-        }
+        for (Expression expression : this)
+            types.add(context.setCurrentType(input).verify(expression).getCurrentType());
         context.setCurrentType(resolveOutputType(types));
     }
 

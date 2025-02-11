@@ -148,9 +148,9 @@ public final class ForEachExpression extends CompositeExpression {
             for (Field field : ((StructDataType)valueType).getFields()) {
                 DataType fieldType = field.getDataType();
                 DataType structValueType = context.setCurrentType(fieldType).verify(expression).getCurrentType();
-                if (!fieldType.isAssignableFrom(structValueType))
-                    throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
-                                                          structValueType.getName());
+                //if (!fieldType.isAssignableFrom(structValueType))
+                //    throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
+                //                                          structValueType.getName());
             }
             context.setCurrentType(valueType);
         }
@@ -160,8 +160,8 @@ public final class ForEachExpression extends CompositeExpression {
             context.setCurrentType(new ArrayDataType(outputType));
         }
         else {
-            throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
-                                                  (valueType == null ? "no value" : valueType.getName()));
+            //throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
+            //                                      (valueType == null ? "no value" : valueType.getName()));
         }
     }
 

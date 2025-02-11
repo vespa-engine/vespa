@@ -40,9 +40,10 @@ public final class ToWsetExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        if (context.getCurrentType() == null)
-            throw new VerificationException(this, "Expected input, but no input is provided");
-        context.setCurrentType(outputType(context.getCurrentType()));
+        //if (context.getCurrentType() == null)
+        //    throw new VerificationException(this, "Expected input, but no input is provided");
+        if (context.getCurrentType() != null)
+            context.setCurrentType(outputType(context.getCurrentType()));
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
