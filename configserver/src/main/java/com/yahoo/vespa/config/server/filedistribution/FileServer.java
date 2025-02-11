@@ -196,7 +196,7 @@ public class FileServer {
             return file;
 
         if (fileReferenceDownload.downloadFromOtherSourceIfNotFound()) {
-            log.log(Level.FINE, "File not found, downloading from another source");
+            log.log(Level.FINE, fileReferenceDownload + " not found, downloading from another source");
             // Create new FileReferenceDownload with downloadFromOtherSourceIfNotFound set to false
             // to avoid requesting a file reference perpetually, e.g. for a file that does not exist anymore
             FileReferenceDownload newDownload = new FileReferenceDownload(fileReference,
