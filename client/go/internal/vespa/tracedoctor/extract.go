@@ -20,6 +20,13 @@ type queryNode struct {
 	children    []*queryNode
 }
 
+func (q *queryNode) each(f func(q *queryNode)) {
+	f(q)
+	for _, child := range q.children {
+		child.each(f)
+	}
+}
+
 func (qn *queryNode) desc() string {
 	if qn.queryTerm != "" {
 		if qn.fieldName != "" {
@@ -109,7 +116,7 @@ func extractQueryNode(obj slime.Value) *queryNode {
 	if res.queryTerm != "" {
 		if attr := obj.Field("attribute"); attr.Valid() {
 			res.fieldName = attr.Field("name").AsString()
-			if res.class == "AttributeFieldBlueprint" {
+			if strings.Contains(res.class, "Attribute") {
 				caps := "lookup"
 				if attr.Field("fast_search").AsBool() {
 					caps = "fs"
@@ -149,18 +156,13 @@ func stripClassName(name string) string {
 	return name[begin:end]
 }
 
-func sampleType(sample slime.Value) string {
+func isMatchSample(sample slime.Value) bool {
 	name := sample.Field("name").AsString()
-	if strings.HasSuffix(name, "/init") {
-		return "init"
-	} else if strings.HasSuffix(name, "/seek") {
-		return "seek"
-	} else if strings.HasSuffix(name, "/unpack") {
-		return "unpack"
-	} else if strings.HasSuffix(name, "/termwise") {
-		return "termwise"
-	}
-	return "unknown"
+	return strings.HasPrefix(name, "/") &&
+		(strings.HasSuffix(name, "/init") ||
+			strings.HasSuffix(name, "/seek") ||
+			strings.HasSuffix(name, "/unpack") ||
+			strings.HasSuffix(name, "/termwise"))
 }
 
 func samplePath(sample slime.Value) []int {
@@ -185,8 +187,11 @@ func samplePath(sample slime.Value) []int {
 }
 
 func (q *queryNode) applySample(sample slime.Value) {
-	path := samplePath(sample)
+	if !isMatchSample(sample) {
+		return
+	}
 	node := q
+	path := samplePath(sample)
 	for _, child := range path {
 		if child < len(node.children) {
 			node = node.children[child]
@@ -223,13 +228,9 @@ func eachSample(prof slime.Value, f func(sample slime.Value)) {
 
 func (q *queryNode) ImportMatchPerf(t ThreadTrace) {
 	slime.Select(t.root, hasTag("match_profiling"), func(p *slime.Path, v slime.Value) {
-		if v.Field("profiler").AsString() == "tree" {
-			eachSample(v, func(sample slime.Value) {
-				if sampleType(sample) != "unknown" {
-					q.applySample(sample)
-				}
-			})
-		}
+		eachSample(v, func(sample slime.Value) {
+			q.applySample(sample)
+		})
 	})
 }
 
@@ -282,7 +283,7 @@ func (p ProtonTrace) DurationMs() float64 {
 
 func FindProtonTraces(root slime.Value) []ProtonTrace {
 	var traces []ProtonTrace
-	slime.Select(root, func(p *slime.Path, v slime.Value) bool {
+	slime.Select(root.Field("trace"), func(p *slime.Path, v slime.Value) bool {
 		return slime.Valid(v.Field("distribution-key"), v.Field("document-type"), v.Field("duration_ms"))
 	}, func(p *slime.Path, v slime.Value) {
 		traces = append(traces, ProtonTrace{v})

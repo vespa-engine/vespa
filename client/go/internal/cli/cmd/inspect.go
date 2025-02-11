@@ -23,7 +23,7 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	if !root.Valid() {
 		return fmt.Errorf("profile file '%s' does not contain valid JSON", opts.profileFile)
 	}
-	list := tracedoctor.FindProtonTraces(root.Field("trace"))
+	list := tracedoctor.FindProtonTraces(root)
 	if len(list) == 0 {
 		return fmt.Errorf("could not locate any searches in profile(%s)", opts.profileFile)
 	}
