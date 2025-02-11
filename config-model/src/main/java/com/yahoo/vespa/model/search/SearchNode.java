@@ -2,7 +2,6 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -98,7 +97,7 @@ public class SearchNode extends AbstractService implements
                                      Element producerSpec) {
             return SearchNode.create(ancestor, name, contentNode.getDistributionKey(), nodeSpec, clusterName,
                                      contentNode, flushOnShutdown, tuning, deployState.isHosted(),
-                                     fractionOfMemoryReserved, deployState.featureFlags(), syncTransactionLog);
+                                     fractionOfMemoryReserved, syncTransactionLog);
         }
 
     }
@@ -106,13 +105,9 @@ public class SearchNode extends AbstractService implements
     public static SearchNode create(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,
                                     String clusterName, AbstractService serviceLayerService, boolean flushOnShutdown,
                                     Tuning tuning, boolean isHostedVespa, double fractionOfMemoryReserved,
-                                    ModelContext.FeatureFlags featureFlags, Boolean syncTransactionLog) {
-        SearchNode node = new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService,
-                                         flushOnShutdown, tuning, isHostedVespa, fractionOfMemoryReserved, syncTransactionLog);
-        if (featureFlags.loadCodeAsHugePages()) {
-            node.addEnvironmentVariable("VESPA_LOAD_CODE_AS_HUGEPAGES", true);
-        }
-        return node;
+                                    Boolean syncTransactionLog) {
+        return new SearchNode(parent, name, distributionKey, nodeSpec, clusterName, serviceLayerService,
+                              flushOnShutdown, tuning, isHostedVespa, fractionOfMemoryReserved, syncTransactionLog);
     }
 
     private SearchNode(TreeConfigProducer<?> parent, String name, int distributionKey, NodeSpec nodeSpec,

@@ -225,7 +225,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, deployState.isHosted(),
-                                           fractionOfMemoryReserved, deployState.featureFlags(), syncTransactionLog);
+                                           fractionOfMemoryReserved, syncTransactionLog);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
         } else {
