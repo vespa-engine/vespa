@@ -27,11 +27,12 @@ import static org.junit.jupiter.api.Assertions.assertNull;
  * @author alexeyche
  */
 public class ValidateFuzzySearcherTestCase {
+
     ValidateFuzzySearcher searcher;
 
     List<String> attributes;
 
-    private List<Index> indexes;
+    private final List<Index> indexes;
 
     private static final String CMD_ATTRIBUTE = "attribute";
     private static final String CMD_STRING = "string";
@@ -66,6 +67,16 @@ public class ValidateFuzzySearcherTestCase {
 
 
     @Test
+    void testQueryInsideSameElement() {
+        Index index = new Index("myMap.value");
+        index.setAttribute(true);
+        index.setString(true);
+        String q = "select * from sources * where myMap contains sameElement(value contains fuzzy('fuzzy'))";
+        Result r = doSearch(searcher, q, List.of(index));
+        assertNull(r.hits().getError());
+    }
+
+    @Test
     void testQueriesToAllAttributes() {
         final Set<String> validAttributes = Set.of("string_single", "string_array", "string_weightedset");
 
@@ -75,7 +86,7 @@ public class ValidateFuzzySearcherTestCase {
             if (validAttributes.contains(attribute)) {
                 assertNull(r.hits().getError());
             } else {
-                assertErrMsg("FUZZY(fuzzy,2,0,false) " + attribute + ":fuzzy field is not a string attribute", r);
+                assertErrMsg("Fuzzy items require a string attribute field, but '" + attribute + "' is not", r);
             }
         }
     }
@@ -105,7 +116,7 @@ public class ValidateFuzzySearcherTestCase {
     void testInvalidQueryWrongAttributeName() {
         String q = makeQuery("wrong_name", "fuzzy");
         Result r = doSearch(searcher, q);
-        assertErrMsg("FUZZY(fuzzy,2,0,false) wrong_name:fuzzy field is not a string attribute", r);
+        assertErrMsg("Fuzzy items require a string attribute field, but 'wrong_name' is not", r);
     }
 
     private static void assertErrMsg(String message, Result r) {
@@ -113,6 +124,10 @@ public class ValidateFuzzySearcherTestCase {
     }
 
     private Result doSearch(ValidateFuzzySearcher searcher, String yqlQuery) {
+        return doSearch(searcher, yqlQuery, indexes);
+    }
+
+    private Result doSearch(ValidateFuzzySearcher searcher, String yqlQuery, List<Index> indexes) {
         QueryTree queryTree = new YqlParser(new ParserEnvironment()).parse(new Parsable().setQuery(yqlQuery));
         Query query = new Query();
         query.getModel().getQueryTree().setRoot(queryTree.getRoot());
@@ -123,4 +138,5 @@ public class ValidateFuzzySearcherTestCase {
         IndexFacts indexFacts = new IndexFacts(new IndexModel(searchDefinition));
         return new Execution(searcher, Execution.Context.createContextStub(indexFacts)).search(query);
     }
+
 }

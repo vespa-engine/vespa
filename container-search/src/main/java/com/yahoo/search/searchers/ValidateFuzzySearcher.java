@@ -5,6 +5,7 @@ import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.prelude.query.ToolBox;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -65,10 +66,10 @@ public class ValidateFuzzySearcher extends Searcher {
 
         /** Returns an error message if this is invalid, or null if it is valid */
         private String validate(FuzzyItem item) {
-            String indexName = item.getIndexName();
-            Index index = getIndexFromUnionOfDocumentTypes(indexName);
+            String fieldName = item.getFieldName();
+            Index index = getIndexFromUnionOfDocumentTypes(fieldName);
             if (!index.isAttribute() || !index.isString()) {
-                return item + " field is not a string attribute";
+                return "Fuzzy items require a string attribute field, but '" + fieldName + "' is not";
             }
             if (item.getPrefixLength() < 0) {
                 return item + " has invalid prefixLength " + item.getPrefixLength() + ": Must be >= 0";
