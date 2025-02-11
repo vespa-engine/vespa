@@ -205,7 +205,7 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
     // If true, this is not the first configure.
     const bool liveUpdate = ! _threads.empty();
 
-    _use_async_message_handling_on_schedule = config.useAsyncMessageHandlingOnSchedule;
+    _use_async_message_handling_on_schedule.store(config.useAsyncMessageHandlingOnSchedule, std::memory_order_relaxed);
     _host_info_reporter.set_noise_level(config.resourceUsageReporterNoiseLevel);
     const bool use_dynamic_throttling = (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC);
 
@@ -329,7 +329,7 @@ FileStorManager::handlePersistenceMessage(const shared_ptr<api::StorageMessage>&
     api::ReturnCode errorCode(api::ReturnCode::OK);
     LOG(spam, "Received %s. Attempting to queue it.", msg->getType().getName().c_str());
 
-    if (_use_async_message_handling_on_schedule) {
+    if (use_async_message_handling_on_schedule()) {
        auto result = _filestorHandler->schedule_and_get_next_async_message(msg);
        if (result.was_scheduled()) {
            if (result.has_async_message()) {
