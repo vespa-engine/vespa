@@ -1,10 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.ranking;
 
-import com.yahoo.data.access.Inspectable;
-import com.yahoo.data.access.Type;
 import com.yahoo.data.access.helpers.MatchFeatureData;
-import com.yahoo.data.access.simple.Value;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.FeatureData;
@@ -13,7 +10,6 @@ import com.yahoo.tensor.Tensor;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
-import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -32,6 +28,24 @@ public class GlobalPhaseRerankHitsImplTest {
                 result += value.asDouble();
             }
             return result;
+        }
+    }
+    // The idea is to give monotonically increasing score to items
+    static class EvalIncrement implements Evaluator {
+        double initialValue;
+        List<Tensor> values = new ArrayList<>();
+        EvalIncrement(double initialValue) {
+            this.initialValue = initialValue;
+        }
+        @Override
+        public Evaluator bind(String name, Tensor value) {
+            values.add(value);
+            return this;
+        }
+
+        @Override
+        public double evaluateScore() {
+            return this.initialValue++;
         }
     }
     static FunEvalSpec makeConstSpec(double constValue) {
@@ -67,15 +81,17 @@ public class GlobalPhaseRerankHitsImplTest {
     static class SetupBuilder {
         FunEvalSpec mainSpec = makeConstSpec(0.0);
         int rerankCount = 100;
+        double rankScoreDropLimit = -Double.MAX_VALUE;
         List<String> hiddenMF = new ArrayList<>();
         List<NormalizerSetup> normalizers = new ArrayList<>();
         Map<String, Tensor> defaultValues = new HashMap<>();
         SetupBuilder eval(FunEvalSpec spec) { mainSpec = spec; return this; }
         SetupBuilder rerank(int value) { rerankCount = value; return this; }
+        SetupBuilder rankScoreDropLimit(double value) { rankScoreDropLimit = value; return this; }
         SetupBuilder hide(String mf) { hiddenMF.add(mf); return this; }
         SetupBuilder addNormalizer(NormalizerSetup normalizer) { normalizers.add(normalizer); return this; }
         SetupBuilder addDefault(String name, Tensor value) { defaultValues.put(name, value); return this; }
-        GlobalPhaseSetup build() { return new GlobalPhaseSetup(mainSpec, rerankCount, hiddenMF, normalizers, defaultValues); }
+        GlobalPhaseSetup build() { return new GlobalPhaseSetup(mainSpec, rerankCount, rankScoreDropLimit, hiddenMF, normalizers, defaultValues); }
     }
     static SetupBuilder setup() { return new SetupBuilder(); }
     static record NamedValue(String name, double value) {}
@@ -178,6 +194,32 @@ public class GlobalPhaseRerankHitsImplTest {
         var query = makeQuery(List.of());
         var result = makeResult(query, List.of(hit("a", 3), hit("b", 4), hit("c", 5), hit("d", 6)));
         var expect = Expect.make(List.of(hit("a", 1), hit("b", 2), hit("c", 3), hit("d", 3)));
+        GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
+        expect.verifyScores(result);
+    }
+    @Test void rankScoreDropLimitingWithDefaultRerankCount() {
+        var incrementEval = new EvalIncrement(1.0);
+        var setup = setup()
+                .rankScoreDropLimit(2.0)
+                .eval(new FunEvalSpec(() -> incrementEval, List.of(), List.of()))
+                .build();
+        var query = makeQuery(List.of());
+        var result = makeResult(query, List.of(hit("a", 4), hit("b", 3), hit("c", 2), hit("d", 1)));
+        var expect = Expect.make(List.of(hit("d", 4), hit("c", 3)));
+        GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
+        System.out.println(result.hits().asList());
+        expect.verifyScores(result);
+    }
+    @Test void rankScoreDropLimiting() {
+        var incrementEval = new EvalIncrement(10.0);
+        var setup = setup()
+                .rerank(2)
+                .rankScoreDropLimit(1.0)
+                .eval(new FunEvalSpec(() -> incrementEval, List.of(), List.of()))
+                .build();
+        var query = makeQuery(List.of());
+        var result = makeResult(query, List.of(hit("a", 4), hit("b", 3), hit("c", 2), hit("d", 1)));
+        var expect = Expect.make(List.of(hit("b", 11), hit("a", 10), hit("c", 2)));
         GlobalPhaseRanker.rerankHitsImpl(setup, query, result);
         expect.verifyScores(result);
     }

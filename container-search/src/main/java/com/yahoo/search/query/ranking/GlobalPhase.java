@@ -28,6 +28,7 @@ public class GlobalPhase implements Cloneable {
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     private Integer rerankCount = null;
+    private Double rankScoreDropLimit = null;
 
     /**
      * Sets the number of hits for which the global-phase function will be evaluated.
@@ -38,9 +39,22 @@ public class GlobalPhase implements Cloneable {
     /** Returns the rerank-count that will be used, or null if not set */
     public Integer getRerankCount() { return rerankCount; }
 
+    /**
+     * Sets the number of hits for which the global-phase function will be evaluated.
+     * When set, this overrides the setting in the rank profile.
+     */
+    public void setRankScoreDropLimit(double rankScoreDropLimit) {
+        this.rankScoreDropLimit = rankScoreDropLimit;
+    }
+
+    /** Returns the rankScoreDropLimit that will be used, or null if not set */
+    public Double getRankScoreDropLimit() {
+        return rankScoreDropLimit;
+    }
+
     @Override
     public int hashCode() {
-        return Objects.hashCode(this.rerankCount);
+        return Objects.hash(this.rerankCount, this.rankScoreDropLimit);
     }
 
     @Override
@@ -48,6 +62,7 @@ public class GlobalPhase implements Cloneable {
         if (o == this) return true;
         if (o instanceof GlobalPhase other) {
             if ( ! Objects.equals(this.rerankCount, other.rerankCount)) return false;
+            if ( ! Objects.equals(this.rankScoreDropLimit, other.rankScoreDropLimit)) return false;
             return true;
         }
         return false;
@@ -58,6 +73,7 @@ public class GlobalPhase implements Cloneable {
         try {
             GlobalPhase clone = (GlobalPhase)super.clone();
             clone.rerankCount = this.rerankCount;
+            clone.rankScoreDropLimit = this.rankScoreDropLimit;
             return clone;
         }
         catch (CloneNotSupportedException e) {
