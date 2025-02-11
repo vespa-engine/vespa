@@ -25,7 +25,7 @@ public:
     ~MultiTermOrFilterSearchImpl() override;
 
     void doSeek(uint32_t docId) override;
-    
+
     void doUnpack(uint32_t docid) override {
         if (_tfmd != nullptr) {
             _tfmd->resetOnlyDocId(docid);
@@ -96,7 +96,7 @@ MultiTermOrFilterSearchImpl<IteratorPack>::doSeek(uint32_t docId)
             return;
         }
         min_doc_id = std::min(min_doc_id, next);
-    }                
+    }
     setDocId(min_doc_id);
 }
 
