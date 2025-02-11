@@ -30,11 +30,21 @@ concept HasUnpackAndMatchData = requires(Pack& pack, Ref ref, uint32_t docid) {
     { pack.match_data() } -> std::same_as<const fef::MatchData&>;
 };
 
-template <UnpackType unpack_type, typename HEAP, typename IteratorPack>
+template <typename RefType, typename IteratorPack>
+struct PackTraits {
+    using ref_t = RefType;
+    using PackType = IteratorPack;
+    static inline bool can_handle_iterators(size_t num_iterators) {
+        return num_iterators <= std::numeric_limits<ref_t>::max();
+    }
+};
+
+template <UnpackType unpack_type, typename HEAP, typename Traits>
 class WeightedSetTermSearchImpl : public WeightedSetTermSearch
 {
 private:
-    using ref_t = IteratorPack::ref_t;
+    using ref_t = Traits::ref_t;
+    using IteratorPack = Traits::PackType;
 
     struct CmpDocId {
         const uint32_t *termPos;
@@ -189,22 +199,22 @@ public:
     }
 };
 
-template <typename HeapType, typename IteratorPackType>
+template <typename HeapType, typename Traits>
 SearchIterator::UP
 create_helper(fef::TermFieldMatchData& tmd,
               bool is_filter_search,
               std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
-              IteratorPackType&& pack)
+              typename Traits::PackType&& pack)
 {
     bool match_data_needed = !tmd.isNotNeeded();
     if (is_filter_search && match_data_needed) {
-        return std::make_unique<WeightedSetTermSearchImpl<UnpackType::Docid, HeapType, IteratorPackType>>
+        return std::make_unique<WeightedSetTermSearchImpl<UnpackType::Docid, HeapType, Traits>>
                 (tmd, std::move(weights), std::move(pack));
     } else if (!is_filter_search && match_data_needed) {
-        return std::make_unique<WeightedSetTermSearchImpl<UnpackType::DocidAndWeights, HeapType, IteratorPackType>>
+        return std::make_unique<WeightedSetTermSearchImpl<UnpackType::DocidAndWeights, HeapType, Traits>>
                 (tmd, std::move(weights), std::move(pack));
     } else {
-        return std::make_unique<WeightedSetTermSearchImpl<UnpackType::None, HeapType, IteratorPackType>>
+        return std::make_unique<WeightedSetTermSearchImpl<UnpackType::None, HeapType, Traits>>
                 (tmd, std::move(weights), std::move(pack));
     }
 }
@@ -216,27 +226,28 @@ WeightedSetTermSearch::create(const std::vector<SearchIterator *> &children,
                               const std::vector<int32_t> &weights,
                               fef::MatchData::UP match_data)
 {
+    using IteratorPack = SearchIteratorPack;
+    using SmallTraits = PackTraits<uint16_t, IteratorPack>;
+    using LargeTraits = PackTraits<uint32_t, IteratorPack>;
+
+    IteratorPack pack(children, std::move(match_data));
     if (children.size() < 128) {
-        if (SearchIteratorPack::can_handle_iterators(children.size())) {
-            return create_helper<vespalib::LeftArrayHeap, SearchIteratorPack>(tmd, is_filter_search, std::cref(weights),
-                                                                              SearchIteratorPack(children, std::move(match_data)));
+        if (SmallTraits::can_handle_iterators(children.size())) {
+            return create_helper<vespalib::LeftArrayHeap, SmallTraits>(tmd, is_filter_search, std::cref(weights), std::move(pack));
         } else {
-            return create_helper<vespalib::LeftArrayHeap, SearchIteratorPackUint32>(tmd, is_filter_search, std::cref(weights),
-                                                                                    SearchIteratorPackUint32(children, std::move(match_data)));
+            return create_helper<vespalib::LeftArrayHeap, LargeTraits>(tmd, is_filter_search, std::cref(weights), std::move(pack));
         }
     }
-    if (SearchIteratorPack::can_handle_iterators(children.size())) {
-        return create_helper<vespalib::LeftHeap, SearchIteratorPack>(tmd, is_filter_search, std::cref(weights),
-                                                                     SearchIteratorPack(children, std::move(match_data)));
+    if (SmallTraits::can_handle_iterators(children.size())) {
+        return create_helper<vespalib::LeftHeap, SmallTraits>(tmd, is_filter_search, std::cref(weights), std::move(pack));
     } else {
-        return create_helper<vespalib::LeftHeap, SearchIteratorPackUint32>(tmd, is_filter_search, std::cref(weights),
-                                                                           SearchIteratorPackUint32(children, std::move(match_data)));
+        return create_helper<vespalib::LeftHeap, LargeTraits>(tmd, is_filter_search, std::cref(weights), std::move(pack));
     }
 }
 
 namespace {
 
-template <typename IteratorType, typename IteratorPackType>
+template <typename IteratorType, typename Traits>
 SearchIterator::UP
 create_helper_resolve_pack(fef::TermFieldMatchData& tmd,
                            bool is_filter_search,
@@ -244,11 +255,11 @@ create_helper_resolve_pack(fef::TermFieldMatchData& tmd,
                            std::vector<IteratorType>&& iterators)
 {
     if (iterators.size() < 128) {
-        return create_helper<vespalib::LeftArrayHeap, IteratorPackType>(tmd, is_filter_search, std::move(weights),
-                                                                        IteratorPackType(std::move(iterators)));
+        return create_helper<vespalib::LeftArrayHeap, Traits>(tmd, is_filter_search, std::move(weights),
+                                                              typename Traits::PackType(std::move(iterators)));
     }
-    return create_helper<vespalib::LeftHeap, IteratorPackType>(tmd, is_filter_search, std::move(weights),
-                                                               IteratorPackType(std::move(iterators)));
+    return create_helper<vespalib::LeftHeap, Traits>(tmd, is_filter_search, std::move(weights),
+                                                     typename Traits::PackType(std::move(iterators)));
 }
 
 }
@@ -259,10 +270,14 @@ WeightedSetTermSearch::create(fef::TermFieldMatchData& tmd,
                               std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
                               std::vector<DocidIterator>&& iterators)
 {
-    if (DocidIteratorPack::can_handle_iterators(iterators.size())) {
-        return create_helper_resolve_pack<DocidIterator, DocidIteratorPack>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+    using IteratorPack = DocidIteratorPack;
+    using SmallTraits = PackTraits<uint16_t, IteratorPack>;
+    using LargeTraits = PackTraits<uint32_t, IteratorPack>;
+
+    if (SmallTraits::can_handle_iterators(iterators.size())) {
+        return create_helper_resolve_pack<DocidIterator, SmallTraits>(tmd, is_filter_search, std::move(weights), std::move(iterators));
     } else {
-        return create_helper_resolve_pack<DocidIterator, DocidIteratorPackUint32>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+        return create_helper_resolve_pack<DocidIterator, LargeTraits>(tmd, is_filter_search, std::move(weights), std::move(iterators));
     }
 }
 
@@ -272,10 +287,14 @@ WeightedSetTermSearch::create(fef::TermFieldMatchData &tmd,
                               std::variant<std::reference_wrapper<const std::vector<int32_t>>, std::vector<int32_t>> weights,
                               std::vector<DocidWithWeightIterator> &&iterators)
 {
-    if (DocidWithWeightIteratorPack::can_handle_iterators(iterators.size())) {
-        return create_helper_resolve_pack<DocidWithWeightIterator, DocidWithWeightIteratorPack>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+    using IteratorPack = DocidWithWeightIteratorPack;
+    using SmallTraits = PackTraits<uint16_t, IteratorPack>;
+    using LargeTraits = PackTraits<uint32_t, IteratorPack>;
+
+    if (SmallTraits::can_handle_iterators(iterators.size())) {
+        return create_helper_resolve_pack<DocidWithWeightIterator, SmallTraits>(tmd, is_filter_search, std::move(weights), std::move(iterators));
     } else {
-        return create_helper_resolve_pack<DocidWithWeightIterator, DocidWithWeightIteratorPackUint32>(tmd, is_filter_search, std::move(weights), std::move(iterators));
+        return create_helper_resolve_pack<DocidWithWeightIterator, LargeTraits>(tmd, is_filter_search, std::move(weights), std::move(iterators));
     }
 }
 
