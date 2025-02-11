@@ -19,6 +19,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executors;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,17 +33,20 @@ import java.net.URL;
 
 /**
  * Tests for LocalLLM.
- *
+ * Tests are disabled to avoid running them automatically as part of the CI/CD.
+ * The reason for this is the long time it takes to download (2-5 min) and run LLMs (10-60 seconds).
+ * Still, these tests can be triggered manually and are useful for debugging runtime issues.
+ * 
  * @author lesters
  * @author glebashnik
  */
+@Disabled
 public class LocalLLMTest {
-
-    private static String model = "src/test/models/llm/tinyllm.gguf";
-    private static Prompt prompt = StringPrompt.from("A random prompt");
+    // Tiny LLM tests, which don't verify that the completions make sense.
+    private static final String model = "src/test/models/llm/tinyllm.gguf";
+    private static final Prompt prompt = StringPrompt.from("A random prompt");
 
     @Test
-    @Disabled
     public void testGeneration() {
         var config = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
@@ -59,7 +63,6 @@ public class LocalLLMTest {
     }
 
     @Test
-    @Disabled
     public void testAsyncGeneration() {
         var sb = new StringBuilder();
         var tokenCount = new AtomicInteger(0);
@@ -77,7 +80,7 @@ public class LocalLLMTest {
             assertFalse(future.isDone());
             var reason = future.join();
             assertTrue(future.isDone());
-            assertNotEquals(reason, Completion.FinishReason.error);
+            assertNotEquals(Completion.FinishReason.error, reason);
 
         } finally {
             llm.deconstruct();
@@ -87,7 +90,6 @@ public class LocalLLMTest {
     }
 
     @Test
-    @Disabled
     public void testParallelGeneration() {
         var prompts = testPrompts();
         var promptsToUse = prompts.size();
@@ -113,7 +115,7 @@ public class LocalLLMTest {
             }
             for (int i = 0; i < promptsToUse; i++) {
                 var reason = futures.get(i).join();
-                assertNotEquals(reason, Completion.FinishReason.error);
+                assertNotEquals(Completion.FinishReason.error, reason);
             }
         } finally {
             llm.deconstruct();
@@ -125,7 +127,6 @@ public class LocalLLMTest {
     }
 
     @Test
-    @Disabled
     public void testRejection() {
         var prompts = testPrompts();
         var promptsToUse = prompts.size();
@@ -134,7 +135,8 @@ public class LocalLLMTest {
         var queueWaitTime = 10;
         // 8 should be rejected due to queue wait time
 
-        var futures = new ArrayList<CompletableFuture<Completion.FinishReason>>(Collections.nCopies(promptsToUse, null));
+        var futures = new ArrayList<CompletableFuture<Completion.FinishReason>>(
+                Collections.nCopies(promptsToUse, null));
         var completions = new ArrayList<StringBuilder>(Collections.nCopies(promptsToUse, null));
 
         var config = new LlmLocalClientConfig.Builder()
@@ -146,7 +148,7 @@ public class LocalLLMTest {
 
         var rejected = new AtomicInteger(0);
         var timedOut = new AtomicInteger(0);
-        
+
         try {
             for (int i = 0; i < promptsToUse; i++) {
                 final var seq = i;
@@ -203,10 +205,9 @@ public class LocalLLMTest {
         return prompts;
     }
     
-    
     private void downloadFileIfMissing(String fileUrl, String filePath) {
         Path targetPath = Paths.get(filePath);
-        
+
         if (Files.exists(targetPath)) {
             System.out.println("File already exists: " + filePath);
             return;
@@ -227,111 +228,306 @@ public class LocalLLMTest {
         }
     }
 
-    // Small LLM, ca. 4.3 GB 
-    private static String SMALL_LLM_URL = "https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
-    private static String SMALL_LLM_PATH = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
-    
+    // Small LLM tests use a quantized Mistral model ca. 4.3 GB.
+    // It produces sensible completions which can be verified as part of the test.
+    private static final String SMALL_LLM_URL = "https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+    private static final String SMALL_LLM_PATH = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+
+    // Using translation task to test that LLM output makes sense with context overflow.
+    // If context overflow is not handled correctly, part of the task description will be overwritten and 
+    // the output will not be in a target language.
+    // This is easier to verify than question-answering tasks.
+    private static final String TASK_PROMPT_TEMPLATE = """
+            Translate this text to Norwegian, without notes or explanations:
+            Text:
+            {input}
+            Translation:""";
+
+    private record LLMTask(String input, String output) {
+    }
+
+    private static final List<LLMTask> TASKS = List.of(
+            new LLMTask(
+                    "Life is really simple, but we insist on making it complicated.",
+                    "Livet er virkelig enkelt, men vi vil gerne gjøre det komplisert."
+            ),
+            new LLMTask(
+                    "It does not matter how slowly you go as long as you do not stop. " +
+                            "Persistence and determination are what truly lead to success. " +
+                            "Every small step forward builds the foundation for achieving greatness, " +
+                            "even when the journey feels endless.",
+                    "Det er ikke viktig hvor langsomt du går, så lange du ikke stopper. " +
+                            "Persistens og bestemthed er det som egentlig fører til succes. " +
+                            "Hver liten steg fremover bygger grunnlaget for å nå storhet, " +
+                            "selv når reisen føler seg uendelig."
+            ),
+            new LLMTask(
+                    "Our greatest glory is not in never falling, but in rising every time we fall.",
+                    "Vores største ære er ikke i aldri å falle, men i å stå opp hver gang vi faller."
+            ),
+            new LLMTask(
+                    "Real knowledge is to know the extent of one’s ignorance.",
+                    "Verdenslige kunnskap er å vite grænserne for sin egen uvitenhet."
+            ),
+            new LLMTask(
+                    "When we see men of a contrary character, we should turn inwards and examine ourselves.",
+                    "Når vi ser människer med en modsat karakter, bør vi se innad og undersøke oss selv."
+            ),
+            new LLMTask(
+                    "Success depends upon previous preparation, and without such preparation there is sure to be failure.",
+                    "Suksess avhenger av forhåndsforberedelse, og uten denne er det sikkerhet for feil."
+            ),
+            new LLMTask(
+                    "The man who moves a mountain begins by carrying away small stones, " +
+                            "then moves on to medium-sized rocks, gradually clears larger rocks and boulders, " +
+                            "and finally overcomes the most formidable obstacles to achieve his goal, " +
+                            "displaying extraordinary perseverance and determination.",
+                    "Mannen som flyttet berget starter med å bære borte små sten, " +
+                            "derefter flyttet han på med mellemstørre steiner, gradvis fjernet større steiner og stenblokker, " +
+                            "og sluttelig overkommet de mest formidable hindrerne for å nå sin mål, " +
+                            "med utmærkt tenasje og bestemthet."
+            )
+    );
+
+    private void testTaskCompletion(LocalLLM llm, String input, String expectedOutput, 
+                                    Completion.FinishReason expectedFinishReason, boolean isOutputEqual) {
+        var promptStr = TASK_PROMPT_TEMPLATE.replace("{input}", input);
+        var inferenceOptions = new InferenceParameters(Map.of("temperature", "0")::get);
+        var completion = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
+        var completionStr = completion.get(0).text().split("\n")[0].strip();
+
+        if (!completionStr.equals(expectedOutput)) {
+            System.err.println("Prompt: " + promptStr);
+            System.err.println("Expected output: " + expectedOutput);
+            System.err.println("Actual output: " + completionStr);
+        }
+        
+        var reason = completion.get(0).finishReason();
+        assertEquals(expectedFinishReason, reason);
+        
+        if (isOutputEqual) {
+            assertEquals(expectedOutput, completionStr);
+        } else {
+            assertNotEquals(expectedOutput, completionStr);
+        }
+    }
+
     @Test
-    @Disabled
     public void testMaxPromptTokens() {
         downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
-        
+
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(60)
                 .maxPromptTokens(25)
+                .randomSeed(42)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
-
-        var inferenceOptions = new InferenceParameters(Map.of("temperature", "0")::get);
-
         var llm = new LocalLLM(llmConfig.build());
-        var promptStr = """
-        Translate this text to Norwegian, don't add any notes or other information.
-        Text:
-        Life is really simple, but we insist on making it complicated.
-        Translation:
-        """;
         
-        var expectedResult = "Livet er virkelig enkelt";
+        var task = TASKS.get(0); 
         
         try {
-            var result = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
-            assertEquals(Completion.FinishReason.stop, result.get(0).finishReason());
-            assertEquals(expectedResult, result.get(0).text().strip());
+            testTaskCompletion(llm, task.input, "Livet er virkelig enkelt, men vi ønsker alligevel.", Completion.FinishReason.stop, true);
         } finally {
             llm.deconstruct();
         }
     }
-    
+
     @Test
-    @Disabled
     public void testContextOverflowPolicySkip() {
         downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
 
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(25)
+                .randomSeed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.SKIP)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
-
-        var inferenceOptions = new InferenceParameters(Map.of("temperature", "0")::get);
-
         var llm = new LocalLLM(llmConfig.build());
-        var promptStr = """
-        Translate this text to Norwegian, don't add any notes or other information.
-        Text:
-        Life is really simple, but we insist on making it complicated.
-        Translation:
-        """;
 
-        var expectedResult = "";
-
+        var task = TASKS.get(0);
         try {
-            var result = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
-            assertEquals(Completion.FinishReason.skip, result.get(0).finishReason());
-            assertEquals(expectedResult, result.get(0).text().strip());
+            testTaskCompletion(llm, task.input, "", Completion.FinishReason.skip, true);
         } finally {
             llm.deconstruct();
         }
     }
-    
-//
-//    @Test
-//    @Disabled
-//    public void testPromptLargerThanContextSize() {
-//        var llmUrl = "https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
-//        var llmPath = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
-//        downloadFileIfMissing(llmUrl, llmPath);
-//
-//        var llmConfig = new LlmLocalClientConfig.Builder()
-//                .parallelRequests(1)
-//                .contextSize(60)
-////                .contextOverflowBehaviour(LLMContextOverflowBehaviour.Ignore) // Ignore, Error, Warn, TruncatePrompt
-////                .maxPromptTokens()
-////                .maxTokens()
-//                .model(ModelReference.valueOf(llmPath));
-//        
-//        var llm = new LocalLLM(llmConfig.build());
-//
-//        var inferenceOptions = new InferenceParameters(
-//                Map.of("temperature", "0", "npredict", "100")::get);
-//        
-//        var promptStr = """
-//                Translate this text to Norwegian, don't add any notes or other information.
-//                Text:
-//                Life is really simple, but we insist on making it complicated.
-//                Translation:
-//                """;
-//        
-//        var expectedResult = "Livet er virkelig enkelt, men vi vil gerne gjøre det komplisert.";
-//        
-//        try {
-//            var result = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
-//            assertEquals(Completion.FinishReason.stop, result.get(0).finishReason());
-//            assertEquals(expectedResult, result.get(0).text().strip());
-//        } finally {
-//            llm.deconstruct();
-//        }
-//    }
-    
+
+    @Test
+    public void testContextOverflowPolicyError() {
+        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
+
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(1)
+                .contextSize(25)
+                .randomSeed(42)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.ERROR)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+        var llm = new LocalLLM(llmConfig.build());
+
+        var task = TASKS.get(0);
+        try {
+            testTaskCompletion(llm, task.input, "", Completion.FinishReason.error, true);
+        } finally {
+            llm.deconstruct();
+        }
+    }
+
+    @Test
+    public void testParallelGenerationWithLargeContext() {
+        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
+
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(5)
+                .contextSize(5 * 1024)
+                .randomSeed(42)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+
+        var llm = new LocalLLM(llmConfig.build());
+        
+        var executor = Executors.newFixedThreadPool(5);
+        var futures = new ArrayList<CompletableFuture<Void>>();
+        
+        try {
+            for (var task : TASKS) {
+                var future = CompletableFuture.runAsync(() -> 
+                        testTaskCompletion(llm, task.input, task.output, Completion.FinishReason.stop, true), executor);
+                futures.add(future);
+            }
+
+            for (var future : futures) {
+                future.join();
+            }
+
+            executor.shutdown();
+        } finally {
+             llm.deconstruct();
+        }
+    }
+
+    @Test
+    public void testParallelGenerationWithSmallContextOverflowPolicyNone() {
+        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
+
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(5)
+                .contextSize( 5 * 100)
+                .randomSeed(42)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+
+        var llm = new LocalLLM(llmConfig.build());
+        var executor = Executors.newFixedThreadPool(5);
+        var futures = new ArrayList<CompletableFuture<Void>>();
+
+        try {
+           futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(0).input, TASKS.get(0).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(1).input, TASKS.get(1).output, Completion.FinishReason.stop, false), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(2).input, TASKS.get(2).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(3).input, TASKS.get(3).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(4).input, TASKS.get(4).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(5).input, TASKS.get(5).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(6).input, TASKS.get(6).output, Completion.FinishReason.stop, false), executor));
+            
+            for (var future : futures) {
+                future.join();
+            }
+
+            executor.shutdown();
+        } finally {
+            llm.deconstruct();
+        }
+    }
+
+    @Test
+    public void testParallelGenerationWithSmallContextOverflowPolicySkip() {
+        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
+
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(5)
+                .contextSize( 5 * 100)
+                .maxTokens(50)
+                .randomSeed(42)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.SKIP)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+
+        var llm = new LocalLLM(llmConfig.build());
+        var executor = Executors.newFixedThreadPool(5);
+        var futures = new ArrayList<CompletableFuture<Void>>();
+
+        try {
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(0).input, TASKS.get(0).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(1).input, "", Completion.FinishReason.skip, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(2).input, TASKS.get(2).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(3).input, TASKS.get(3).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(4).input, TASKS.get(4).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(5).input, TASKS.get(5).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(6).input, "", Completion.FinishReason.skip, true), executor));
+
+            for (var future : futures) {
+                future.join();
+            }
+
+            executor.shutdown();
+        } finally {
+            llm.deconstruct();
+        }
+    }
+
+    @Test
+    public void testParallelGenerationWithSmallContextOverflowPolicyError() {
+        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
+
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(5)
+                .contextSize( 5 * 100)
+                .maxTokens(50)
+                .randomSeed(42)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.ERROR)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+
+        var llm = new LocalLLM(llmConfig.build());
+        var executor = Executors.newFixedThreadPool(5);
+        var futures = new ArrayList<CompletableFuture<Void>>();
+
+        try {
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(0).input, TASKS.get(0).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(1).input, "", Completion.FinishReason.error, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(2).input, TASKS.get(2).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(3).input, TASKS.get(3).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(4).input, TASKS.get(4).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(5).input, TASKS.get(5).output, Completion.FinishReason.stop, true), executor));
+            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
+                    llm, TASKS.get(6).input, "", Completion.FinishReason.error, true), executor));
+
+            for (var future : futures) {
+                future.join();
+            }
+
+            executor.shutdown();
+        } finally {
+            llm.deconstruct();
+        }
+    }
 }

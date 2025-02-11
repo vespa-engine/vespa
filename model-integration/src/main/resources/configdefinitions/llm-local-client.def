@@ -30,17 +30,21 @@ contextSize int default=4096
 # Maximum number of tokens to generate in one request - can be overridden by inference parameters
 maxTokens int default=512
 
-# Specifies number of tokens to truncate prompts to, should be > 0
+# Specifies number of tokens to truncate prompts to, should be > 0.
 # 0 or less means that prompts will not be truncated.  
-# To avoid nonsense completions: maxPromptTokens + maxTokens <= contextSize
-# To increase parallelism: maxPromptTokens + maxTokens -> contextSize / parallelRequests
-maxPromptTokens int default=0
+# To avoid context overflow: maxPromptTokens + maxTokens <= contextSize / parallelRequests
+maxPromptTokens int default = 0
 
-# Specifies what to do when prompt + maxTokens > contextSize.
-# NONE - default option, runs inference no matter context and prompt size.
-# In this case, newer tokens overwrite older ones and the model looses access to part of the prompt and generated tokens. 
+# Specifies what to do when the number of tokens in a prompt + maxTokens > contextSize / parallelRequests.
+# NONE - default option, run inference no matter context and prompt sizes.
+# In this case, newer tokens overwrite older ones and the model looses part of the prompt. 
 # It might lead to nonsense completions and performance issues.
-# To avoid this, set maxPromptTokens and maxTokens so that maxPromptTokens + maxTokens <= contextSize.
-# SKIP - skip inference when prompt + maxTokens > contextSize
-# ERROR - return exception "Context size is too small ..."
+# SKIP - skip inference
+# ERROR - skip inference with error
 contextOverflowPolicy enum {NONE, SKIP, ERROR} default=NONE
+
+# Random seed used by LLM runtime during inference.
+# It can be used for better reproducibility of LLM completions.
+# Still, it doesn't guarantee reproducibility, especially on different hardware.
+# -1 means no random seed will be set.
+randomSeed int default = -1 

@@ -29,7 +29,6 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import ai.vespa.llm.clients.LlmLocalClientConfig.ContextOverflowPolicy;
-
 /**
  * A language model running locally on the container node.
  *
@@ -45,14 +44,12 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     private final LlamaModel model;
     private final ThreadPoolExecutor executor;
     private final long queueTimeoutMilliseconds;
-    private final int contextSize;
-    private final int maxTokens;
 
-    private final ContextOverflowPolicy.Enum contextOverflowPolicy;
+    private final int maxTokens;
     private final int maxPromptTokens;
-    private int numUsedContextTokens = 0;
-    private final Object usedContextLock = new Object();
-    
+    private final ContextOverflowPolicy.Enum contextOverflowPolicy;
+    private final int contextSizePerRequest;
+ 
     @Inject
     public LocalLLM(LlmLocalClientConfig config) {
         executor = createExecutor(config);
@@ -69,18 +66,21 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 .setModelFilePath(modelFile)
                 .setContinuousBatching(true)
                 .setNParallel(config.parallelRequests())
-                .setNSequences(config.parallelRequests())
                 .setNThreads(config.threads() <= 0 ? defaultThreadCount : config.threads())
                 .setNCtx(config.contextSize())
                 .setNGpuLayers(config.useGpu() ? config.gpuLayers() : 0);
-
+        
+        if (config.randomSeed() != -1)
+            modelParams.setSeed(config.randomSeed());    
+            
         long startLoad = System.nanoTime();
         model = new LlamaModel(modelParams);
         long loadTime = System.nanoTime() - startLoad;
         logger.info(String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
 
         maxPromptTokens = config.maxPromptTokens();
-        contextSize = config.contextSize();
+        contextSizePerRequest = config.contextSize() / config.parallelRequests();
+        // logger.info("Context size per request: " + contextSizePerRequest);
         contextOverflowPolicy = config.contextOverflowPolicy();
     }
 
@@ -110,7 +110,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         options.ifPresent("topp", (v) -> inferParams.setTopP(Integer.parseInt(v)));
         options.ifPresent("npredict", (v) -> inferParams.setNPredict(Integer.parseInt(v)));
         options.ifPresent("repeatpenalty", (v) -> inferParams.setRepeatPenalty(Float.parseFloat(v)));
-        // Todo: more options?
+        options.ifPresent("seed", (v) -> inferParams.setSeed(Integer.parseInt(v)));
 
         inferParams.setUseChatTemplate(true);
         return inferParams;
@@ -138,26 +138,31 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         var promptStr = prompt.asString().stripLeading();
         var promptTokens = model.encode(promptStr);
         
-        //Truncate prompt
+        // Truncate prompt
         if (maxPromptTokens > 0 && promptTokens.length > maxPromptTokens) {
             promptTokens = Arrays.copyOfRange(promptTokens, 0, maxPromptTokens + 1);
             promptStr = model.decode(promptTokens);
             prompt = StringPrompt.from(promptStr);
         }
+        
+        var numRequestTokens = promptTokens.length + maxTokens;
+        // logger.info("Prompt tokens: " + promptTokens.length + ", max tokens: " + maxTokens + ", request tokens: " + numRequestTokens);
 
         // Do something when context size is too small for this request
-        var numRequestTokens = promptTokens.length + maxTokens;
-        
-        if (numRequestTokens > contextSize) {
-            if (contextOverflowPolicy == ContextOverflowPolicy.Enum.ERROR) {
-                completionFuture.completeExceptionally(new LanguageModelException(400, String.format(
-                        "Context size (%d tokens) is too small to fit prompt (%d tokens) + completion (%d tokens).", 
-                        contextSize, promptTokens.length, maxTokens)
-                ));
-                return completionFuture;
-            } else if (contextOverflowPolicy == ContextOverflowPolicy.Enum.SKIP) {
-                completionFuture.complete(Completion.FinishReason.skip);
-                return completionFuture;
+        if (numRequestTokens > contextSizePerRequest) {
+            switch (contextOverflowPolicy) {
+                case ERROR -> {
+                    var errorMessage = String.format(
+                            "Context size per request (%d tokens) is too small " +
+                                    "to fit the prompt (%d) and completion (%d) tokens.",
+                            contextSizePerRequest, promptTokens.length, maxTokens);
+                    completionFuture.completeExceptionally(new LanguageModelException(400, errorMessage));
+                    return completionFuture;
+                }
+                case SKIP -> {
+                    completionFuture.complete(Completion.FinishReason.skip);
+                    return completionFuture;
+                }
             }
         }
 
@@ -166,23 +171,6 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         
         try {
             Future<?> future = executor.submit(() -> {
-                // Wait for context to be free enough to start generating
-                if (contextOverflowPolicy != ContextOverflowPolicy.Enum.NONE) {
-                    try {
-                        synchronized (usedContextLock) {
-                            while (numUsedContextTokens + numRequestTokens > contextSize) {
-                                // Consider time-limit, e.g wait(millis)
-                                usedContextLock.wait();
-                            }
-
-                            // Reserve context tokens
-                            numUsedContextTokens += numRequestTokens;
-                        }
-                    } catch (InterruptedException e) {
-                        completionFuture.completeExceptionally(e);
-                    }
-                }
-
                 hasStarted.set(true);
                 
                 try {
@@ -193,14 +181,6 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                     completionFuture.complete(Completion.FinishReason.stop);
                 } catch (Exception e) {
                     completionFuture.completeExceptionally(e);
-                } finally {
-                    if (contextOverflowPolicy != ContextOverflowPolicy.Enum.NONE) {
-                        // Release used context tokens
-                        synchronized (usedContextLock) {
-                            numUsedContextTokens -= numRequestTokens;
-                            usedContextLock.notifyAll(); // Let others proceed
-                        }
-                    }
                 }
             });
 

@@ -1,6 +1,0 @@
-Translate this text to Norwegian.
-The output should only include translated text.
-No notes or any other information.
-Text: 
-The presence of communication amid scientific minds was equally important to the success of the Manhattan Project as scientific intellect was. 
-The only cloud hanging over the impressive achievement of the atomic researchers and engineers is what their success truly meant; hundreds of thousands of innocent lives obliterated.

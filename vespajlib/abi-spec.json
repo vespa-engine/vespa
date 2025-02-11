@@ -4214,7 +4214,8 @@
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason length",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason stop",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason none",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason error"
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason error",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason skip"
     ]
   },
   "ai.vespa.llm.completion.Completion" : {
