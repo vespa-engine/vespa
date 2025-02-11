@@ -35,7 +35,7 @@ bucket_merge_chunk_size int default=16772216 restart
 ## gets the next async message to handle (if any) as part of scheduling a storage message.
 ## This async message is then handled by the calling thread immediately,
 ## instead of going via a persistence thread.
-use_async_message_handling_on_schedule bool default=false restart
+use_async_message_handling_on_schedule bool default=false
 
 ## The noise level used when deciding whether a resource usage sample should be reported to the cluster controller.
 ##

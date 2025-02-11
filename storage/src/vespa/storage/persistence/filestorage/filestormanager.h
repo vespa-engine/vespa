@@ -66,7 +66,7 @@ class FileStorManager : public StorageLinkQueued,
     std::unique_ptr<BucketOwnershipNotifier>         _bucketOwnershipNotifier;
 
     std::unique_ptr<StorFilestorConfig> _config;
-    bool                                _use_async_message_handling_on_schedule;
+    std::atomic<bool>                   _use_async_message_handling_on_schedule;
     std::shared_ptr<FileStorMetrics>    _metrics;
     std::unique_ptr<FileStorHandler>    _filestorHandler;
     std::unique_ptr<vespalib::ISequencedTaskExecutor> _sequencedExecutor;
@@ -138,6 +138,10 @@ private:
     StorBucketDatabase::WrappedEntry mapOperationToDisk(api::StorageMessage&, const document::Bucket&);
     StorBucketDatabase::WrappedEntry mapOperationToBucketAndDisk(api::BucketCommand&, const document::DocumentId*);
     bool handlePersistenceMessage(const std::shared_ptr<api::StorageMessage>&);
+
+    [[nodiscard]] bool use_async_message_handling_on_schedule() const noexcept {
+        return _use_async_message_handling_on_schedule.load(std::memory_order_relaxed);
+    }
 
     // Document operations
     bool onPut(const std::shared_ptr<api::PutCommand>&) override;
