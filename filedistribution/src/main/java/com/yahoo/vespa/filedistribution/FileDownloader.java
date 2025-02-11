@@ -158,7 +158,7 @@ public class FileDownloader implements AutoCloseable {
     }
 
     /** Start downloading, the future returned will be complete()d by receiving method in {@link FileReceiver} */
-    private synchronized CompletableFuture<Optional<File>> startDownload(FileReferenceDownload fileReferenceDownload) {
+    private CompletableFuture<Optional<File>> startDownload(FileReferenceDownload fileReferenceDownload) {
         return fileReferenceDownloader.startDownload(fileReferenceDownload);
     }
 
