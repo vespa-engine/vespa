@@ -2,14 +2,15 @@
 
 #pragma once
 
-#include "queryenvironment.h"
-#include "isearchcontext.h"
-#include "query.h"
-#include "viewresolver.h"
-#include "querylimiter.h"
-#include "match_phase_limiter.h"
+#include "field_id_to_name_mapper.h"
 #include "handlerecorder.h"
+#include "isearchcontext.h"
+#include "match_phase_limiter.h"
+#include "query.h"
+#include "queryenvironment.h"
+#include "querylimiter.h"
 #include "requestcontext.h"
+#include "viewresolver.h"
 #include <vespa/searchcommon/attribute/i_attribute_functor.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
@@ -192,6 +193,12 @@ public:
                                     uint32_t active_docids, uint32_t docid_limit);
     FirstPhaseRankLookup* get_first_phase_rank_lookup() const noexcept { return _first_phase_rank_lookup; }
     const search::IDocumentMetaStore & metaStore() const noexcept { return _metaStore; }
+    FieldIdToNameMapper getFieldIdToNameMapper() const {
+        return FieldIdToNameMapper(_queryEnv.getIndexEnvironment());
+    }
+    search::fef::MatchData::UP createMatchData() const {
+        return _mdl.createMatchData();
+    }
 };
 
 }

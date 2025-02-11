@@ -6,6 +6,7 @@
 #include <vespa/searchlib/attribute/i_direct_posting_store.h>
 #include <vespa/searchlib/attribute/multi_term_hash_filter.hpp>
 #include <vespa/searchlib/common/bitvector.h>
+#include <vespa/searchlib/queryeval/field_spec.hpp>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
@@ -21,6 +22,12 @@ enum class UnpackType {
     DocidAndWeights,
     Docid,
     None
+};
+
+template <typename Pack, typename Ref>
+concept HasUnpackAndMatchData = requires(Pack& pack, Ref ref, uint32_t docid) {
+    { pack.unpack(ref, docid) };
+    { pack.match_data() } -> std::same_as<const fef::MatchData&>;
 };
 
 template <UnpackType unpack_type, typename HEAP, typename IteratorPack>
@@ -66,6 +73,20 @@ private:
             int32_t weight(0);
             for (int32_t id = sc->find(docId, 0, weight); id >= 0; id = sc->find(docId, id + 1, weight)) {
                 dst.push_back(id);
+            }
+        }
+        else if constexpr (HasUnpackAndMatchData<IteratorPack, ref_t>) {
+            _children.unpack(child, docId);
+            const auto * tfmd = child_blueprints[child]->getState().field(0).resolve(_children.match_data());
+            if (tfmd) {
+                uint32_t last_id = -1;
+                for (const fef::TermFieldMatchDataPosition& pos : *tfmd) {
+                    uint32_t elem_id = pos.getElementId();
+                    if (elem_id != last_id) {
+                        dst.push_back(elem_id);
+                        last_id = elem_id;
+                    }
+                }
             }
         }
     }
@@ -178,7 +199,7 @@ create_helper(fef::TermFieldMatchData& tmd,
     bool match_data_needed = !tmd.isNotNeeded();
     if (is_filter_search && match_data_needed) {
         return std::make_unique<WeightedSetTermSearchImpl<UnpackType::Docid, HeapType, IteratorPackType>>
-            (tmd, std::move(weights), std::move(pack));
+                (tmd, std::move(weights), std::move(pack));
     } else if (!is_filter_search && match_data_needed) {
         return std::make_unique<WeightedSetTermSearchImpl<UnpackType::DocidAndWeights, HeapType, IteratorPackType>>
                 (tmd, std::move(weights), std::move(pack));
