@@ -164,7 +164,8 @@ public class FileReferenceDownloader {
                 return false;
             }
         } else {
-            log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed:" +
+            log.log(logLevel, "Downloading " + fileReference + " from " + address +
+                    " (client " + fileReferenceDownload.client() + ") failed:" +
                     " error code " + request.errorCode() + " (" + request.errorMessage() + ")." +
                     " (retry " + retryCount + ", rpc timeout " + timeout + ")");
             return false;
