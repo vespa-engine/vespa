@@ -4175,6 +4175,7 @@
     ],
     "methods" : [
       "public void <init>(int, java.lang.String)",
+      "public void <init>(int, java.lang.String, java.lang.Throwable)",
       "public int code()"
     ],
     "fields" : [ ]

@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.io.InputStream;
@@ -288,27 +289,70 @@ public class LocalLLMTest {
                             "med utmærkt tenasje og bestemthet."
             )
     );
-
-    private void testTaskCompletion(LocalLLM llm, String input, String expectedOutput, 
-                                    Completion.FinishReason expectedFinishReason, boolean isOutputEqual) {
-        var promptStr = TASK_PROMPT_TEMPLATE.replace("{input}", input);
-        var inferenceOptions = new InferenceParameters(Map.of("temperature", "0")::get);
-        var completion = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
-        var completionStr = completion.get(0).text().split("\n")[0].strip();
-
-        if (!completionStr.equals(expectedOutput)) {
-            System.err.println("Prompt: " + promptStr);
-            System.err.println("Expected output: " + expectedOutput);
-            System.err.println("Actual output: " + completionStr);
+    
+    private static class CompletionTest {
+        private final LocalLLM llm;
+        private final String input;
+        
+        private String expectOutput;
+        private String expectNotOutput;
+        private Completion.FinishReason expectFinishReason;
+        private LanguageModelException expectException;
+        
+        public CompletionTest(LocalLLM llm, String input) {
+            this.llm = llm;
+            this.input = input;
         }
         
-        var reason = completion.get(0).finishReason();
-        assertEquals(expectedFinishReason, reason);
+        public CompletionTest expectOutput(String output) {
+            this.expectOutput = output;
+            return this;
+        }
+
+        public CompletionTest expectNotOutput(String output) {
+            this.expectNotOutput = output;
+            return this;
+        }
         
-        if (isOutputEqual) {
-            assertEquals(expectedOutput, completionStr);
-        } else {
-            assertNotEquals(expectedOutput, completionStr);
+        public CompletionTest expectFinishReason(Completion.FinishReason finishReason) {
+            this.expectFinishReason = finishReason;
+            return this;
+        }
+        
+        public CompletionTest expectException(LanguageModelException exception) {
+            this.expectException = exception;
+            return this;
+        }
+        
+        public void test() {
+            var promptStr = TASK_PROMPT_TEMPLATE.replace("{input}", input);
+            var inferenceOptions = new InferenceParameters(Map.of("temperature", "0")::get);
+            
+            if (expectException != null) {
+                var exception = assertThrows(LanguageModelException.class, () -> llm.complete(StringPrompt.from(promptStr), inferenceOptions));
+                assertEquals(expectException.code(), exception.code());
+                assertTrue(exception.getMessage().toLowerCase().contains(expectException.getMessage().toLowerCase()));
+                return;
+            }
+
+            var completion = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
+            var finishReason = completion.get(0).finishReason();
+            assertEquals(expectFinishReason, finishReason);
+            var completionStr = completion.get(0).text().split("\n")[0].strip();
+
+            if (!completionStr.equals(expectOutput)) {
+                System.err.println("Prompt: " + promptStr);
+                System.err.println("Expected output: " + expectOutput);
+                System.err.println("Actual output: " + completionStr);
+            }
+
+            if (expectOutput != null) {
+                assertEquals(expectOutput, completionStr);
+            }
+            
+            if (expectNotOutput != null) {
+                assertNotEquals(expectNotOutput, completionStr);
+            }
         }
     }
 
@@ -320,14 +364,17 @@ public class LocalLLMTest {
                 .parallelRequests(1)
                 .contextSize(60)
                 .maxPromptTokens(25)
-                .randomSeed(42)
+                .seed(42)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
         var llm = new LocalLLM(llmConfig.build());
         
         var task = TASKS.get(0); 
         
         try {
-            testTaskCompletion(llm, task.input, "Livet er virkelig enkelt, men vi ønsker alligevel.", Completion.FinishReason.stop, true);
+            new CompletionTest(llm, task.input)
+                    .expectOutput("Livet er virkelig enkelt, men vi ønsker alligevel.")
+                    .expectFinishReason(Completion.FinishReason.stop)
+                    .test();
         } finally {
             llm.deconstruct();
         }
@@ -340,14 +387,17 @@ public class LocalLLMTest {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(25)
-                .randomSeed(42)
+                .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.SKIP)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
         var llm = new LocalLLM(llmConfig.build());
 
         var task = TASKS.get(0);
         try {
-            testTaskCompletion(llm, task.input, "", Completion.FinishReason.skip, true);
+            new CompletionTest(llm, task.input)
+                    .expectOutput("")
+                    .expectFinishReason(Completion.FinishReason.skip)
+                    .test();
         } finally {
             llm.deconstruct();
         }
@@ -360,14 +410,16 @@ public class LocalLLMTest {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(25)
-                .randomSeed(42)
+                .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.ERROR)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
         var llm = new LocalLLM(llmConfig.build());
 
         var task = TASKS.get(0);
         try {
-            testTaskCompletion(llm, task.input, "", Completion.FinishReason.error, true);
+            new CompletionTest(llm, task.input)
+                    .expectException(new LanguageModelException(413, "context size per request"))
+                    .test();
         } finally {
             llm.deconstruct();
         }
@@ -380,7 +432,7 @@ public class LocalLLMTest {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(5)
                 .contextSize(5 * 1024)
-                .randomSeed(42)
+                .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
 
@@ -392,7 +444,11 @@ public class LocalLLMTest {
         try {
             for (var task : TASKS) {
                 var future = CompletableFuture.runAsync(() -> 
-                        testTaskCompletion(llm, task.input, task.output, Completion.FinishReason.stop, true), executor);
+                        new CompletionTest(llm, task.input)
+                                .expectOutput(task.output)
+                                .expectFinishReason(Completion.FinishReason.stop)
+                                .test()
+                        , executor);
                 futures.add(future);
             }
 
@@ -413,7 +469,7 @@ public class LocalLLMTest {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(5)
                 .contextSize( 5 * 100)
-                .randomSeed(42)
+                .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
 
@@ -422,20 +478,23 @@ public class LocalLLMTest {
         var futures = new ArrayList<CompletableFuture<Void>>();
 
         try {
-           futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(0).input, TASKS.get(0).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(1).input, TASKS.get(1).output, Completion.FinishReason.stop, false), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(2).input, TASKS.get(2).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(3).input, TASKS.get(3).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(4).input, TASKS.get(4).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(5).input, TASKS.get(5).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(6).input, TASKS.get(6).output, Completion.FinishReason.stop, false), executor));
+            for (var i : List.of(0, 2, 3, 4, 5)) {
+                futures.add(CompletableFuture.runAsync(
+                        () -> new CompletionTest(llm, TASKS.get(i).input)
+                                .expectOutput(TASKS.get(i).output)
+                                .expectFinishReason(Completion.FinishReason.stop)
+                                .test()
+                ));
+            }
+
+            for (var i : List.of(1, 6)) {
+                futures.add(CompletableFuture.runAsync(
+                        () -> new CompletionTest(llm, TASKS.get(i).input)
+                                .expectNotOutput(TASKS.get(i).output)
+                                .expectFinishReason(Completion.FinishReason.stop)
+                                .test()
+                ));
+            }
             
             for (var future : futures) {
                 future.join();
@@ -455,7 +514,7 @@ public class LocalLLMTest {
                 .parallelRequests(5)
                 .contextSize( 5 * 100)
                 .maxTokens(50)
-                .randomSeed(42)
+                .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.SKIP)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
 
@@ -464,21 +523,24 @@ public class LocalLLMTest {
         var futures = new ArrayList<CompletableFuture<Void>>();
 
         try {
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(0).input, TASKS.get(0).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(1).input, "", Completion.FinishReason.skip, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(2).input, TASKS.get(2).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(3).input, TASKS.get(3).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(4).input, TASKS.get(4).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(5).input, TASKS.get(5).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(6).input, "", Completion.FinishReason.skip, true), executor));
+            for (var i : List.of(0, 2, 3, 4, 5)) {
+                futures.add(CompletableFuture.runAsync(
+                        () -> new CompletionTest(llm, TASKS.get(i).input)
+                                .expectOutput(TASKS.get(i).output)
+                                .expectFinishReason(Completion.FinishReason.stop)
+                                .test()
+                ));
+            }
 
+            for (var i : List.of(1, 6)) {
+                futures.add(CompletableFuture.runAsync(
+                        () -> new CompletionTest(llm, TASKS.get(i).input)
+                                .expectOutput("")
+                                .expectFinishReason(Completion.FinishReason.skip)
+                                .test()
+                ));
+            }
+            
             for (var future : futures) {
                 future.join();
             }
@@ -497,7 +559,7 @@ public class LocalLLMTest {
                 .parallelRequests(5)
                 .contextSize( 5 * 100)
                 .maxTokens(50)
-                .randomSeed(42)
+                .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.ERROR)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
 
@@ -506,20 +568,22 @@ public class LocalLLMTest {
         var futures = new ArrayList<CompletableFuture<Void>>();
 
         try {
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(0).input, TASKS.get(0).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(1).input, "", Completion.FinishReason.error, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(2).input, TASKS.get(2).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(3).input, TASKS.get(3).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(4).input, TASKS.get(4).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(5).input, TASKS.get(5).output, Completion.FinishReason.stop, true), executor));
-            futures.add(CompletableFuture.runAsync(() -> testTaskCompletion(
-                    llm, TASKS.get(6).input, "", Completion.FinishReason.error, true), executor));
+            for (var i : List.of(0, 2, 3, 4, 5)) {
+                futures.add(CompletableFuture.runAsync(
+                        () -> new CompletionTest(llm, TASKS.get(i).input)
+                                .expectOutput(TASKS.get(i).output)
+                                .expectFinishReason(Completion.FinishReason.stop)
+                                .test()
+                ));
+            }
+
+            for (var i : List.of(1, 6)) {
+                futures.add(CompletableFuture.runAsync(
+                        () -> new CompletionTest(llm, TASKS.get(i).input)
+                                .expectException(new LanguageModelException(413, "context size per request"))
+                                .test()
+                ));
+            }
 
             for (var future : futures) {
                 future.join();

@@ -43,8 +43,8 @@ maxPromptTokens int default = 0
 # ERROR - skip inference with error
 contextOverflowPolicy enum {NONE, SKIP, ERROR} default=NONE
 
-# Random seed used by LLM runtime during inference.
+# Random number generator seed used by LLM runtime during inference.
 # It can be used for better reproducibility of LLM completions.
 # Still, it doesn't guarantee reproducibility, especially on different hardware.
-# -1 means no random seed will be set.
-randomSeed int default = -1 
+# -1 means no specific seed will be set.
+seed int default = -1 

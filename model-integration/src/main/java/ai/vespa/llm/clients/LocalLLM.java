@@ -17,6 +17,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
@@ -29,6 +30,7 @@ import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 import ai.vespa.llm.clients.LlmLocalClientConfig.ContextOverflowPolicy;
+
 /**
  * A language model running locally on the container node.
  *
@@ -70,8 +72,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 .setNCtx(config.contextSize())
                 .setNGpuLayers(config.useGpu() ? config.gpuLayers() : 0);
         
-        if (config.randomSeed() != -1)
-            modelParams.setSeed(config.randomSeed());    
+        if (config.seed() != -1)
+            modelParams.setSeed(config.seed());    
             
         long startLoad = System.nanoTime();
         model = new LlamaModel(modelParams);
@@ -80,7 +82,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
         maxPromptTokens = config.maxPromptTokens();
         contextSizePerRequest = config.contextSize() / config.parallelRequests();
-        // logger.info("Context size per request: " + contextSizePerRequest);
+        logger.fine("Context size per request: " + contextSizePerRequest);
         contextOverflowPolicy = config.contextOverflowPolicy();
     }
 
@@ -120,12 +122,29 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     @Override
     public List<Completion> complete(Prompt prompt, InferenceParameters options) {
         StringBuilder result = new StringBuilder();
-        
-        var future = completeAsync(prompt, options, completion -> {
-            result.append(completion.text());
-        }).exceptionally(exception -> Completion.FinishReason.error);
-        var reason = future.join();
 
+        var future = completeAsync(prompt, options, completion -> result.append(completion.text()));
+
+        Completion.FinishReason reason;
+    
+        try {
+            reason = future.get();
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+          throw new LanguageModelException(500, "Interruption while generating completion.");
+        } catch (ExecutionException e) {
+            var cause = e.getCause();
+
+            if (cause instanceof LanguageModelException languageModelException) {
+                throw languageModelException;
+            }
+            else if (cause instanceof RejectedExecutionException rejectedExecutionException) {
+                throw rejectedExecutionException;
+            } else {
+                throw new LanguageModelException(500, "Error while generating completion.", cause);
+            }
+        }
+        
         List<Completion> completions = new ArrayList<>();
         completions.add(new Completion(result.toString(), reason));
         return completions;
@@ -146,7 +165,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         }
         
         var numRequestTokens = promptTokens.length + maxTokens;
-        // logger.info("Prompt tokens: " + promptTokens.length + ", max tokens: " + maxTokens + ", request tokens: " + numRequestTokens);
+        logger.fine("Prompt tokens: " + promptTokens.length + ", max tokens: " + maxTokens + ", request tokens: " + numRequestTokens);
 
         // Do something when context size is too small for this request
         if (numRequestTokens > contextSizePerRequest) {
@@ -156,7 +175,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                             "Context size per request (%d tokens) is too small " +
                                     "to fit the prompt (%d) and completion (%d) tokens.",
                             contextSizePerRequest, promptTokens.length, maxTokens);
-                    completionFuture.completeExceptionally(new LanguageModelException(400, errorMessage));
+                    completionFuture.completeExceptionally(new LanguageModelException(413, errorMessage));
                     return completionFuture;
                 }
                 case SKIP -> {
@@ -180,7 +199,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                     }
                     completionFuture.complete(Completion.FinishReason.stop);
                 } catch (Exception e) {
-                    completionFuture.completeExceptionally(e);
+                    var errorMessage = "Error while generating completion in executor thread.";
+                    completionFuture.completeExceptionally(new LanguageModelException(500, errorMessage, e));
                 }
             });
 
@@ -188,21 +208,23 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 scheduler.schedule(() -> {
                     if ( ! hasStarted.get()) {
                         future.cancel(false);
-                        String error = rejectedExecutionReason("Rejected completion due to timeout waiting to start");
+                        String error = rejectedExecutionErrorMessage("Rejected completion due to timeout waiting to start");
+                        // RejectedExecutionException makes more sense here than LanguageModelException.
+                        // Keeping LanguageModelException for backwards compatibility.
                         completionFuture.completeExceptionally(new LanguageModelException(504, error));
                     }
                 }, queueTimeoutMilliseconds, TimeUnit.MILLISECONDS);
             }
-
         } catch (RejectedExecutionException e) {
             // If we have too many requests (active + any waiting in queue), we reject the completion
-            String error = rejectedExecutionReason("Rejected completion due to too many requests");
-            throw new RejectedExecutionException(error);
+            var error = rejectedExecutionErrorMessage("Rejected completion due to too many requests");
+            completionFuture.completeExceptionally(new RejectedExecutionException(error));
         }
+        
         return completionFuture;
     }
 
-    private String rejectedExecutionReason(String prepend) {
+    private String rejectedExecutionErrorMessage(String prepend) {
         int activeCount = executor.getActiveCount();
         int queueSize = executor.getQueue().size();
         return String.format("%s, %d active, %d in queue", prepend, activeCount, queueSize);

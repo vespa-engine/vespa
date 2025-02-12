@@ -108,7 +108,7 @@
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxTokens(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxPromptTokens(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder contextOverflowPolicy(ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum)",
-      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder randomSeed(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder seed(int)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -192,7 +192,7 @@
       "public int maxTokens()",
       "public int maxPromptTokens()",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum contextOverflowPolicy()",
-      "public int randomSeed()"
+      "public int seed()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
