@@ -1033,15 +1033,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         ZoneId zone = ZoneId.from(context.properties().zone().environment(),
                                   context.properties().zone().region());
 
-        var supportsTokenAuthentication = context.properties()
+        var useTokenAuthentication = context.properties()
                 .endpoints()
                 .stream()
                 .anyMatch(endpoint ->
+                        endpoint.scope() == ApplicationClusterEndpoint.Scope.zone &&
                         endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token &&
                         endpoint.clusterId().equals(cluster.value()));
-        var authMethods = supportsTokenAuthentication ?
-                List.of(AuthMethod.mtls, AuthMethod.token) :
-                List.of(AuthMethod.mtls);
+        var authMethods = useTokenAuthentication ? List.of(AuthMethod.token) : List.of(AuthMethod.mtls);
 
         return context
                 .getApplicationPackage()
