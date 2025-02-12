@@ -78,7 +78,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         long startLoad = System.nanoTime();
         model = new LlamaModel(modelParams);
         long loadTime = System.nanoTime() - startLoad;
-        logger.info(String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
+        logger.fine(() -> String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
 
         maxPromptTokens = config.maxPromptTokens();
         contextSizePerRequest = config.contextSize() / config.parallelRequests();
@@ -164,8 +164,9 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
             prompt = StringPrompt.from(promptStr);
         }
         
-        var numRequestTokens = promptTokens.length + maxTokens;
-        logger.fine("Prompt tokens: " + promptTokens.length + ", max tokens: " + maxTokens + ", request tokens: " + numRequestTokens);
+        var numPromptTokens = promptTokens.length;
+        var numRequestTokens = numPromptTokens + maxTokens;
+        logger.fine(() -> "Prompt tokens: " + numPromptTokens + ", max tokens: " + maxTokens + ", request tokens: " + numRequestTokens);
 
         // Do something when context size is too small for this request
         if (numRequestTokens > contextSizePerRequest) {
