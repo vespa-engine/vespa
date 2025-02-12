@@ -146,5 +146,6 @@ public class FuzzyItem extends TermItem {
         IntegerCompressor.putCompressedPositiveNumber(this.maxEditDistance, buffer);
         IntegerCompressor.putCompressedPositiveNumber(this.prefixLength, buffer);
     }
+
 }
 

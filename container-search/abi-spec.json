@@ -1570,6 +1570,7 @@
     "methods" : [
       "public void <init>()",
       "public java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",
