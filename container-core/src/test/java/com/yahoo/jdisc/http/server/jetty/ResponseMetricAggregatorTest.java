@@ -4,19 +4,13 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.http.server.jetty.ResponseMetricAggregator.StatisticsEntry;
 import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpVersion;
-import org.eclipse.jetty.http.MetaData;
-import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.server.Response;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Set;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author ollivir
@@ -136,7 +130,7 @@ public class ResponseMetricAggregatorTest {
                 .protocol(HttpVersion.HTTP_1_1.asString());
         if (explicitRequestType != null)
             builder.attribute(ResponseMetricAggregator.requestTypeAttribute, explicitRequestType);
-        collector.onResponseBegin(builder.build().getCoreRequest(), responseCode, HttpFields.EMPTY);
+        collector.onResponseBegin(builder.build(), responseCode, HttpFields.EMPTY);
     }
 
     private static void assertStatisticsEntry(List<StatisticsEntry> result, String scheme, String method, String name,

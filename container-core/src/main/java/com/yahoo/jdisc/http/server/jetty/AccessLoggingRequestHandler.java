@@ -48,7 +48,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
                 (AccessLogEntry) requestContextMap.get(CONTEXT_KEY_ACCESS_LOG_ENTRY));
     }
 
-    private final org.eclipse.jetty.ee9.nested.Request jettyRequest;
+    private final org.eclipse.jetty.server.Request jettyRequest;
     private final RequestHandler delegateRequestHandler;
     private final AccessLogEntry accessLogEntry;
     private final List<String> pathPrefixes;
@@ -57,13 +57,13 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
     private final Random rng = new Random();
 
     public AccessLoggingRequestHandler(
-            org.eclipse.jetty.ee9.nested.Request jettyRequest,
+            org.eclipse.jetty.server.Request jettyRequest,
             RequestHandler delegateRequestHandler,
             AccessLogEntry accessLogEntry) {
         this.jettyRequest = jettyRequest;
         this.delegateRequestHandler = delegateRequestHandler;
         this.accessLogEntry = accessLogEntry;
-        var cfg = getConnector(jettyRequest.getCoreRequest().getWrapped()).connectorConfig().accessLog().content();
+        var cfg = getConnector(jettyRequest).connectorConfig().accessLog().content();
         this.pathPrefixes = cfg.stream().map(e -> e.pathPrefix()).toList();
         this.samplingRate = cfg.stream().map(e -> e.sampleRate()).toList();
         this.maxSize = cfg.stream().map(e -> e.maxSize()).toList();
@@ -102,15 +102,25 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         public ContentLoggingContentChannel(ContentChannel originalContentChannel, long contentLoggingMaxSize) {
             this.originalContentChannel = originalContentChannel;
             this.contentLoggingMaxSize = contentLoggingMaxSize;
-            var contentLength = jettyRequest.getContentLength();
-            this.accumulatedRequestContent = new ByteArrayOutputStream(contentLength == -1 ? 128 : contentLength);
+            var contentLength = jettyRequest.getLength();
+            this.accumulatedRequestContent =
+                    new ByteArrayOutputStream(contentLength == -1 ? 128 : Math.toIntExact(contentLength));
         }
 
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
             length.addAndGet(buf.remaining());
-            var bytesToLog = Math.min(buf.remaining(), contentLoggingMaxSize - accumulatedRequestContent.size());
-            if (bytesToLog > 0) accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), (int)bytesToLog);
+            var bytesToLog = Math.toIntExact(Math.min(buf.remaining(), contentLoggingMaxSize - accumulatedRequestContent.size()));
+            if (bytesToLog > 0) {
+                if (buf.hasArray()) {
+                    accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), bytesToLog);
+                } else {
+                    byte[] temp = new byte[bytesToLog];
+                    buf.get(temp);
+                    accumulatedRequestContent.write(temp, 0, bytesToLog);
+                    buf.position(buf.position() - bytesToLog); // Reset position to original
+                }
+            }
             if (originalContentChannel != null) originalContentChannel.write(buf, handler);
         }
 
@@ -118,7 +128,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         public void close(CompletionHandler handler) {
             var bytes = accumulatedRequestContent.toByteArray();
             accessLogEntry.setContent(new AccessLogEntry.Content(
-                    Objects.requireNonNullElse(jettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE), ""),
+                    Objects.requireNonNullElse(jettyRequest.getHeaders().get(HttpHeaders.Names.CONTENT_TYPE), ""),
                     length.get(),
                     bytes));
             accumulatedRequestContent.reset();

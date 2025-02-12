@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Request handler that invokes request and response filters in addition to the bound request handler.
  *
  * @author Øyvind Bakksjø
+ * @author bjorncs
  */
 class FilteringRequestHandler extends AbstractRequestHandler {
 
@@ -45,9 +46,9 @@ class FilteringRequestHandler extends AbstractRequestHandler {
     };
 
     private final FilterResolver filterResolver;
-    private final org.eclipse.jetty.ee9.nested.Request jettyRequest;
+    private final org.eclipse.jetty.server.Request jettyRequest;
 
-    public FilteringRequestHandler(FilterResolver filterResolver, org.eclipse.jetty.ee9.nested.Request jettyRequest) {
+    public FilteringRequestHandler(FilterResolver filterResolver, org.eclipse.jetty.server.Request jettyRequest) {
         this.filterResolver = filterResolver;
         this.jettyRequest = jettyRequest;
     }

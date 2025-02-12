@@ -3,35 +3,62 @@ package com.yahoo.container.jdisc.utils;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.yolean.Exceptions;
-import jakarta.servlet.http.Part;
-import org.eclipse.jetty.ee9.nested.MultiPartFormInputStream;
+import org.eclipse.jetty.http.HttpHeader;
+import org.eclipse.jetty.http.MultiPart;
+import org.eclipse.jetty.http.MultiPartCompliance;
+import org.eclipse.jetty.http.MultiPartConfig;
+import org.eclipse.jetty.http.MultiPartFormData;
+import org.eclipse.jetty.io.Content;
+import org.eclipse.jetty.util.Attributes;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.TreeMap;
 
 /**
- * Wrapper around Jetty's {@link MultiPartFormInputStream}.
+ * Wrapper around Jetty's {@link MultiPart}.
  *
  * @author bjorncs
  */
-// TODO(bjorncs, 2024-11-19): Remove dependency on Jakarta EE API
 public class MultiPartFormParser {
 
-    private final MultiPartFormInputStream multipart;
+    private final Path partsTempDir;
+    private final long maxMemoryPartSize;
 
-    public MultiPartFormParser(InputStream in, String contentType) {
-        this.multipart = new MultiPartFormInputStream(in, contentType, /*config*/null, /*contextTmpDir*/null);
+    public MultiPartFormParser(Path partsTempDir, long maxMemoryPartSize) {
+        this.partsTempDir = partsTempDir;
+        this.maxMemoryPartSize = maxMemoryPartSize;
     }
 
-    public MultiPartFormParser(HttpRequest request) { this(request.getData(), request.getHeader("Content-Type")); }
+    public Map<String, PartItem> readParts(HttpRequest request) throws MultiPartException {
+        return readParts(request.getData(), request.getHeader("Content-Type"));
+    }
 
-    public Map<String, PartItem> readParts() throws MultiPartException {
+    public Map<String, PartItem> readParts(InputStream input, String contentType) throws MultiPartException {
         try {
+            var multipart = MultiPartFormData.getParts(
+                Content.Source.from(input),
+                new Attributes.Mapped(),
+                contentType,
+                new MultiPartConfig.Builder()
+                        .maxPartSize(-1)
+                        .maxSize(-1)
+                        .maxHeadersSize(-1)
+                        .maxParts(-1)
+                        .maxMemoryPartSize(maxMemoryPartSize)
+                        .location(partsTempDir)
+                        .complianceMode(MultiPartCompliance.RFC7578)
+                        .build());
+
             Map<String, PartItem> result = new TreeMap<>();
-            for (Part servletPart : multipart.getParts()) {
-                result.put(servletPart.getName(), new PartItem(servletPart));
+            for (var part : multipart) {
+                var item = new PartItem(
+                    part.getName(),
+                    Content.Source.asInputStream(part.getContentSource()),
+                    part.getHeaders().get(HttpHeader.CONTENT_TYPE));
+                result.put(part.getName(), item);
             }
             return result;
         } catch (Exception e) {
@@ -43,10 +70,6 @@ public class MultiPartFormParser {
         private final String name;
         private final InputStream data;
         private final String contentType;
-
-        private PartItem(Part servletPart) throws IOException {
-            this(servletPart.getName(), servletPart.getInputStream(), servletPart.getContentType());
-        }
 
         public PartItem(String name, InputStream data, String contentType) {
             this.name = name;

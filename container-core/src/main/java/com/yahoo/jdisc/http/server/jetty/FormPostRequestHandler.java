@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
-import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
 
 /**
  * Request handler that wraps POST requests of application/x-www-form-urlencoded data.
@@ -39,6 +38,7 @@ import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMP
  * parsed the form parameters and merged them into the request's parameters.
  *
  * @author bakksjo
+ * @author bjorncs
  */
 class FormPostRequestHandler extends AbstractRequestHandler implements ContentChannel, DelegatedRequestHandler {
 
@@ -79,8 +79,13 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
 
     @Override
     public void write(ByteBuffer buf, CompletionHandler completionHandler) {
-        assert buf.hasArray();
-        accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
+        if (buf.hasArray()) {
+            accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
+        } else {
+            var bytes = new byte[buf.remaining()];
+            buf.get(bytes);
+            accumulatedRequestContent.write(bytes, 0, bytes.length);
+        }
         completionHandler.completed();
     }
 
@@ -89,24 +94,31 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
         try (ResourceReference ref = requestReference) {
             byte[] requestContentBytes = accumulatedRequestContent.toByteArray();
             String content = new String(requestContentBytes, contentCharset);
-            completionHandler.completed();
             Map<String, List<String>> parameterMap;
             try {
                 parameterMap = parseFormParameters(content);
             } catch (IllegalArgumentException e) {
                 // Log for now until this is solved properly
                 log.log(Level.INFO, "Failed to parse form parameters: %s".formatted(e.getMessage()));
-                throw new RequestException(BAD_REQUEST, "Failed to parse form parameters", e);
+                completionHandler.failed(new RequestException(BAD_REQUEST, "Failed to parse form parameters", e));
+                return;
             }
             mergeParameters(parameterMap, request.parameters());
-            ContentChannel contentChannel = delegateHandler.handleRequest(request, responseHandler);
+            ContentChannel contentChannel = null;
+            try {
+                contentChannel = delegateHandler.handleRequest(request, responseHandler);
+            } catch (Throwable t) {
+                completionHandler.failed(t);
+                return;
+            }
             if (contentChannel != null) {
                 if (!removeBody) {
                     ByteBuffer byteBuffer = ByteBuffer.wrap(requestContentBytes);
-                    contentChannel.write(byteBuffer, NOOP_COMPLETION_HANDLER);
+                    contentChannel.write(byteBuffer, CompletionHandlers.noop());
                 }
-                contentChannel.close(NOOP_COMPLETION_HANDLER);
+                contentChannel.close(CompletionHandlers.noop());
             }
+            completionHandler.completed();
         }
     }
 

@@ -1211,11 +1211,6 @@
                 <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.eclipse.jetty.ee9</groupId>
-                <artifactId>jetty-ee9-servlet</artifactId>
-                <version>${jetty.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-util</artifactId>
                 <version>${jetty.vespa.version}</version>
