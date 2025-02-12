@@ -82,7 +82,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
         maxPromptTokens = config.maxPromptTokens();
         contextSizePerRequest = config.contextSize() / config.parallelRequests();
-        logger.fine("Context size per request: " + contextSizePerRequest);
+        logger.fine(() -> String.format("Context size per request: %d", contextSizePerRequest));
         contextOverflowPolicy = config.contextOverflowPolicy();
     }
 
@@ -166,7 +166,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         
         var numPromptTokens = promptTokens.length;
         var numRequestTokens = numPromptTokens + maxTokens;
-        logger.fine(() -> "Prompt tokens: " + numPromptTokens + ", max tokens: " + maxTokens + ", request tokens: " + numRequestTokens);
+        logger.fine(() -> String.format("Prompt tokens: %d, max tokens: %d, request tokens: %d", 
+                numPromptTokens, maxTokens, numRequestTokens));
 
         // Do something when context size is too small for this request
         if (numRequestTokens > contextSizePerRequest) {
