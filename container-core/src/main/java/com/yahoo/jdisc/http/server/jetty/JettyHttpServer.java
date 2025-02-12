@@ -11,8 +11,6 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
-import org.eclipse.jetty.ee9.servlet.ServletContextHandler;
-import org.eclipse.jetty.ee9.servlet.ServletHolder;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -69,8 +67,6 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
 
-        var jdiscServlet = new ServletHolder(new JDiscHttpServlet(this::newestContext));
-
         var perConnectorHandlers = new ContextHandlerCollection();
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
@@ -78,11 +74,11 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
             server.addConnector(connector);
             listenedPorts.add(connectorConfig.listenPort());
             var connectorCfg = connector.connectorConfig();
-            var servletHandler = newServletHandler(jdiscServlet);
+            var jdiscHandler = new JdiscDispatchingHandler(this::newestContext);
             var authEnforcerEnabled = connectorCfg.tlsClientAuthEnforcer().enable();
             var contextHandler = new ConnectorSpecificContextHandler(
                     connector,
-                    authEnforcerEnabled ? newTlsClientAuthEnforcerHandler(connectorCfg, servletHandler.get()) : servletHandler.get());
+                    authEnforcerEnabled ? newTlsClientAuthEnforcerHandler(connectorCfg, jdiscHandler) : jdiscHandler);
             server.addBean(contextHandler);
             perConnectorHandlers.addHandler(contextHandler);
         }
@@ -199,14 +195,6 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
     }
 
     Server server() { return server; }
-
-    private ServletContextHandler newServletHandler(ServletHolder servlet) {
-        var h = new ServletContextHandler(ServletContextHandler.NO_SECURITY | ServletContextHandler.NO_SESSIONS);
-        h.setContextPath("/");
-        h.setDisplayName(getDisplayName(listenedPorts));
-        h.addServlet(servlet, "/*");
-        return h;
-    }
 
     private static TlsClientAuthenticationEnforcer newTlsClientAuthEnforcerHandler(ConnectorConfig cfg, Handler handler) {
         return new TlsClientAuthenticationEnforcer(cfg.tlsClientAuthEnforcer(), handler);

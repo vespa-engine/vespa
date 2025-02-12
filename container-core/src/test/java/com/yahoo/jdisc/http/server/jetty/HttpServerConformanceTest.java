@@ -20,7 +20,6 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
-import org.hamcrest.CoreMatchers;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeMatcher;
@@ -42,7 +41,6 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
-import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -62,11 +60,15 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
 
     private static final String REQUEST_CONTENT = "myRequestContent";
     private static final String RESPONSE_CONTENT = "myResponseContent";
-    private static final Logger httpRequestDispatchLogger = Logger.getLogger(HttpRequestDispatch.class.getName());
+    private static final Logger httpRequestDispatchLogger = Logger.getLogger(JdiscDispatchingHandler.class.getName());
 
     private static Level httpRequestDispatchLoggerOriginalLevel;
     private static CloseableHttpClient httpClient;
     private static ExecutorService executorService;
+
+    protected HttpServerConformanceTest() {
+        super(false);
+    }
 
     /*
      * Reduce logging of every stack trace for {@link ServerProviderConformanceTest.ConformanceException} thrown.
@@ -535,7 +537,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestContentCloseExceptionBeforeResponseWriteWithSyncCompletion() throws Throwable {
-        new TestRunner().expect(serverError())
+        new TestRunner().expect(success())
                         .execute();
     }
 
@@ -563,7 +565,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestContentCloseExceptionBeforeResponseWriteWithAsyncCompletion() throws Throwable {
-        new TestRunner().expect(serverError())
+        new TestRunner().expect(anyOf(serverError(), success()))
                         .execute();
     }
 

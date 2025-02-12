@@ -94,7 +94,6 @@ import static org.hamcrest.Matchers.matchesPattern;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeast;
@@ -861,7 +860,7 @@ public class HttpServerTest {
     @Test
     void exceedingMaxContentSizeReturns413() throws IOException {
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
-                new EchoRequestHandler(),
+                new ReadBeforeWriteRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().maxContentSize(4));
         driver.client().newPost("/").setBinaryContent(new byte[4]).execute().expectStatusCode(is(OK));
@@ -934,6 +933,26 @@ public class HttpServerTest {
             ch.write(ByteBuffer.wrap(connectedAt.getBytes(UTF_8)), null);
             ch.close(null);
             return null;
+        }
+    }
+
+
+    private static class ReadBeforeWriteRequestHandler extends AbstractRequestHandler implements ContentChannel {
+
+        private ResponseHandler responseHandler;
+
+        @Override
+        public synchronized ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
+            this.responseHandler = handler;
+            return this;
+        }
+
+        @Override public void write(ByteBuffer buf, CompletionHandler ch) { ch.completed(); }
+
+        @Override
+        public void close(CompletionHandler completionHandler) {
+            completionHandler.completed();
+            responseHandler.handleResponse(new Response(OK)).close(null);
         }
     }
 

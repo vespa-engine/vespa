@@ -10,10 +10,8 @@ import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
-import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
-import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -54,7 +52,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
             int peerPort = Request.getRemotePort(request);
             long startTime = Request.getTimeStamp(request);
             long endTime = System.currentTimeMillis();
-            Integer statusCodeOverride = (Integer) request.getAttribute(HttpRequestDispatch.ACCESS_LOG_STATUS_CODE_OVERRIDE);
+            Integer statusCodeOverride = (Integer) request.getAttribute(JdiscDispatchingHandler.ACCESS_LOG_STATUS_CODE_OVERRIDE);
             builder.peerAddress(peerAddress)
                     .peerPort(peerPort)
                     .localPort(getLocalPort(request))
@@ -110,7 +108,7 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                 }
             }
 
-            AccessLogEntry accessLogEntry = (AccessLogEntry) request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
+            AccessLogEntry accessLogEntry = (AccessLogEntry) request.getAttribute(JdiscDispatchingHandler.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
             if (accessLogEntry != null) {
                 var extraAttributes = accessLogEntry.getKeyValues();
                 if (extraAttributes != null) {

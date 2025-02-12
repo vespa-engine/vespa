@@ -130,10 +130,6 @@
           <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>org.eclipse.jetty.ee9</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-alpn-java-server</artifactId>
         </exclusion>

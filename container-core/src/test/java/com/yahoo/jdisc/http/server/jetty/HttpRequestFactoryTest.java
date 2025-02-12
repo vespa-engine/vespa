@@ -8,7 +8,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
-import jakarta.servlet.http.HttpServletRequest;
+import org.eclipse.jetty.server.Request;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -136,7 +136,7 @@ public class HttpRequestFactoryTest {
         assertEquals(LOCAL_PORT, request.getUri().getPort());
     }
 
-    private HttpServletRequest createMockRequest(String scheme, String host, String path, String query) {
+    private Request createMockRequest(String scheme, String host, String path, String query) {
         return JettyMockRequestBuilder.newBuilder()
                 .uri(scheme, host, LOCAL_PORT, path, query)
                 .remote("127.0.0.1", "localhost", 1234)
