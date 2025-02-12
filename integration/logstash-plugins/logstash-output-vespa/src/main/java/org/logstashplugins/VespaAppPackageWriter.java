@@ -118,6 +118,18 @@ public class VespaAppPackageWriter {
         }
     }
 
+    /* 
+     * Replace the {{FIELD_NAME}} and {{ARRAY_SIZE}} placeholders in the template read from the file
+     * with the actual field name and array size.
+     */
+    private String processTemplate(String template, String fieldName, String arraySize) {
+        String result = template.replace("{{FIELD_NAME}}", fieldName);
+        if (arraySize != null) {
+            result = result.replace("{{ARRAY_SIZE}}", arraySize);
+        }
+        return result;
+    }
+
     // TODO: handle multiple/new schemas
     private void writeSchemas(Map<String, String> detectedFields) throws IOException {
         Path schemaPath = Paths.get("schemas", "document_type.sd");
@@ -132,17 +144,23 @@ public class VespaAppPackageWriter {
         for (Map.Entry<String, String> entry : detectedFields.entrySet()) {
             String fieldName = entry.getKey();
             String fieldType = entry.getValue();
+            String arraySize = null;
+
+            if (fieldType.contains("[")) {
+                // array field, we need to extract the size
+                String[] parts = fieldType.split("\\[");
+                arraySize = parts[1].replace("]", "");
+                fieldType = parts[0];
+            }
             
             List<String> fieldTemplates = typeMappings.get(fieldType);
             if (fieldTemplates != null && !fieldTemplates.isEmpty()) {
                 // First template goes into the document block
-                String documentField = fieldTemplates.get(0).replace("{{FIELD_NAME}}", fieldName);
-                documentFieldsBuilder.append(documentField);
+                documentFieldsBuilder.append(processTemplate(fieldTemplates.get(0), fieldName, arraySize));
                 
                 // Additional templates are synthetic fields
                 for (int i = 1; i < fieldTemplates.size(); i++) {
-                    String syntheticField = fieldTemplates.get(i).replace("{{FIELD_NAME}}", fieldName);
-                    syntheticFieldsBuilder.append(syntheticField);
+                    syntheticFieldsBuilder.append(processTemplate(fieldTemplates.get(i), fieldName, arraySize));
                 }
             } else {
                 logger.warn("No mapping found for field {} of type {}", fieldName, fieldType);
@@ -150,13 +168,20 @@ public class VespaAppPackageWriter {
         }
         
         // Replace placeholders with generated fields, removing the last newline
-        String documentFields = documentFieldsBuilder.toString().substring(0, documentFieldsBuilder.length() - 1);
-        String syntheticFields = syntheticFieldsBuilder.toString().substring(0, syntheticFieldsBuilder.length() - 1);
+        String documentFields = removeTrailingNewline(documentFieldsBuilder.toString());
+        String syntheticFields = removeTrailingNewline(syntheticFieldsBuilder.toString());
         
         schema = schema.replace("        # Fields will be added here", documentFields)
                       .replace("    # synthetic fields can be added here", syntheticFields);
 
         writeSchemaFile(schema, config.getDocumentType());
+    }
+
+    private String removeTrailingNewline(String str) {
+        if (str.endsWith("\n")) {
+            return str.substring(0, str.length() - 1);
+        }
+        return str;
     }
 
     private void writeSchemaFile(String schema, String documentType) throws IOException {

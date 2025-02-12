@@ -1,9 +1,12 @@
 # Default type mappings for Vespa schema fields
+
+# single-valued fields
 string:
   - |1
           field {{FIELD_NAME}} type string {
               indexing: summary | index
           }
+
   - |1
        field {{FIELD_NAME}}_att type string {
            indexing: input {{FIELD_NAME}} | attribute
@@ -14,3 +17,116 @@ long:
           field {{FIELD_NAME}} type long {
               indexing: summary | attribute
           }
+
+float:
+  - |1
+          field {{FIELD_NAME}} type float {
+              indexing: summary | attribute
+          }
+
+bool:
+  - |1
+          field {{FIELD_NAME}} type bool {
+              indexing: summary | attribute
+          }
+
+# array fields
+array<string>:
+  - |1
+          field {{FIELD_NAME}} type array<string> {
+              indexing: summary | index
+          }
+  
+  - |1
+       field {{FIELD_NAME}}_att type array<string> {
+           indexing: input {{FIELD_NAME}} | attribute
+       }
+
+array<long>:
+  - |1
+          field {{FIELD_NAME}} type array<long> {
+              indexing: summary | index
+          }
+
+array<int8>:
+  # this is the only integer tensor type supported by Vespa (you can use it to store size * 8 bits)
+  - |1
+          field {{FIELD_NAME}} type tensor<int8>(x[{{ARRAY_SIZE}}]) {
+              indexing: summary | attribute | index
+              attribute {
+                # we assume this is a bit vector, which typically uses hamming distance
+                distance-metric: hamming
+              }
+          }
+
+array<float>:
+  - |1
+          field {{FIELD_NAME}} type tensor<float>(x[{{ARRAY_SIZE}}]) {
+              indexing: summary | attribute | index
+              attribute {
+                # angular distance is the most common one for float tensors
+                distance-metric: angular
+              }
+          }
+
+array<bool>:
+  - |1
+          field {{FIELD_NAME}} type array<bool> {
+              indexing: summary | index
+          }
+
+position:
+  - |1
+          field {{FIELD_NAME}} type position {
+              indexing: summary | attribute
+          }
+
+object<float>:
+  - |1
+          field {{FIELD_NAME}} type tensor<float>(category{}) {
+              indexing: summary | attribute
+          }
+
+object<int8>:
+  - |1
+          field {{FIELD_NAME}} type tensor<int8>(category{}) {
+              indexing: summary | attribute
+          }
+
+object<bool>:
+  - |1
+          field {{FIELD_NAME}} type map<string, bool> {
+              indexing: summary
+              struct-field key {
+                indexing: attribute
+              }
+              struct-field value {
+                indexing: attribute
+              }
+          }
+
+object<long>:
+  - |1
+          field {{FIELD_NAME}} type map<string, long> {
+              indexing: summary
+              struct-field key {
+                indexing: attribute
+              }
+              struct-field value {
+                indexing: attribute
+              }
+          }
+
+object<string>:
+  - |1
+          field {{FIELD_NAME}} type map<string, string> {
+              indexing: summary
+              struct-field key {
+                indexing: attribute
+              }
+              struct-field value {
+                indexing: attribute
+              }
+          }
+
+# END

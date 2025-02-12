@@ -30,7 +30,7 @@ public class VespaDeployer {
         try {
             Files.createFile(writeLockFile);
         } catch (FileAlreadyExistsException e) {
-            logger.error("Write lock file exists. Either the application is already being deployed or something went wrong.");
+            logger.warn("Write lock file exists. We'll assume another thread is already deploying the application package.");
             return;
         } catch (IOException e) {
             logger.error("Error creating write lock file: {}", e.getMessage());

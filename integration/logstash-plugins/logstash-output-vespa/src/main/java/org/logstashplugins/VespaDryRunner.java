@@ -79,6 +79,8 @@ public class VespaDryRunner {
                         if (existingType != null && !existingType.equals(type)) {
                             logger.warn("Field {} type changed from {} to {}", fieldName, existingType, type);
                             // TODO: handle type conflicts (e.g. use the more general type)
+                            // e.g. if the int8 tensor size is different, let's
+                            // treat it as a long array
                         }
                         detectedFields.put(fieldName, type);
                     }
@@ -96,13 +98,54 @@ public class VespaDryRunner {
     }
 
     private String detectType(Object value) {
+        // TODO should we also handle suffixes like _att, _tensor, etc.?
         if (value instanceof String) {
             return "string";
-        } else if (value instanceof Integer || value instanceof Long) {
+        } else if (value instanceof Integer) {
+            // we really care if this is an int8 (byte) so that it fits in a tensor
+            // otherwise we can just assume it's a long
+            int intValue = (Integer) value;
+            if (intValue >= Byte.MIN_VALUE && intValue <= Byte.MAX_VALUE) {
+                return "int8";
+            }
             return "long";
+        } else if (value instanceof Long) {
+            return "long";
+        } else if (value instanceof Double) {
+            // Jackson always returns double for float values,
+            // but most of them are actually floats
+            return "float";
+        } else if (value instanceof Boolean) {
+            return "bool";
+        } else if (value instanceof Map) {
+            // lat + lng => position type
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) value;
+            if (map.containsKey("lat") && map.containsKey("lng")) {
+                return "position";
+            }
+
+            Object firstValue = map.values().iterator().next();
+            String firstValueType = detectType(firstValue);
+            if (firstValueType != null) {
+                return "object<" + firstValueType + ">";
+            }
+            logger.error("Unsupported map type: {}", value.getClass().getName());
+            return null;
+        } else if (value instanceof List) {
+            List<?> list = (List<?>) value;
+            if (!list.isEmpty()) {
+                Object firstElement = list.get(0);
+                String elementType = detectType(firstElement);
+                if (elementType != null) {
+                    return "array<" + elementType + ">[" + list.size() + "]";
+                }
+            }
+            logger.error("Empty array or array with unsupported element type for field");
+            return null;
         }
-        // For now we only handle string and int
-        logger.warn("Unsupported type: {}", value.getClass().getName());
+        
+        logger.error("Unsupported type: {}", value.getClass().getName());
         return null;
     }
 
