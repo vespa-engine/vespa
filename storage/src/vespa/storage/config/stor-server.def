@@ -67,8 +67,8 @@ merge_throttling_memory_limit.auto_lower_bound_bytes long default=134217728
 ## The absolute maximum memory limit that can be set when automatically
 ## deducing the limit from physical memory on the node.
 ##
-## Default: 2GiB
-merge_throttling_memory_limit.auto_upper_bound_bytes long default=2147483648
+## Default: 1GiB
+merge_throttling_memory_limit.auto_upper_bound_bytes long default=1073741824
 
 ## If the persistence provider indicates that it has exhausted one or more
 ## of its internal resources during a mutating operation, new merges will
