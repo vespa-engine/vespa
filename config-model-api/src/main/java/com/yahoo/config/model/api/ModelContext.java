@@ -92,7 +92,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxUnCommittedMemory() { return 130000; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.477") default boolean sharedStringRepoNoReclaim() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean loadCodeAsHugePages() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.479") default boolean loadCodeAsHugePages() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean containerDumpHeapOnShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.478") default double containerShutdownTimeout() { return 50.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int heapSizePercentage() { return 0; }
