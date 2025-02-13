@@ -88,6 +88,11 @@ public class PermanentFlags {
                     "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
             "Takes effect on next run of NodeRebooter");
 
+    public static final UnboundIntFlag KEEP_PROVISIONED_EXPIRED_HOSTS_MAX = defineIntFlag(
+            "keep-provisioned-expired-hosts-max", 0,
+            "The maximum number of provisioned expired hosts to keep for investigation of provisioning issues.",
+            "Takes effect on next run of ProvisionedExpirer");
+
     public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
             "shared-host", SharedHost.createDisabled(), SharedHost.class,
             "Specifies whether shared hosts can be provisioned, and if so, the advertised " +

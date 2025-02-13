@@ -1,24 +1,18 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.maintenance;
 
-import com.yahoo.config.provision.Cloud;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
-import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static org.junit.Assert.*;
@@ -33,10 +27,13 @@ public class ProvisionedExpirerTest {
     @Test
     public void deprovisions_hosts_if_excessive_expiry() {
         tester = new ProvisioningTester.Builder().build();
+        InMemoryFlagSource flagSource = new InMemoryFlagSource();
+        flagSource = flagSource.withIntFlag(PermanentFlags.KEEP_PROVISIONED_EXPIRED_HOSTS_MAX.id(), 5);
+
         populateNodeRepo();
 
         tester.clock().advance(Duration.ofMinutes(5));
-        new ProvisionedExpirer(tester.nodeRepository(), Duration.ofMinutes(4), new TestMetric()).maintain();
+        new ProvisionedExpirer(tester.nodeRepository(), Duration.ofMinutes(4), flagSource, new TestMetric()).maintain();
 
         assertEquals(10, tester.nodeRepository().nodes().list().deprovisioning().size());
         assertEquals(5, tester.nodeRepository().nodes().list().not().deprovisioning().size());
