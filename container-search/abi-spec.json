@@ -7089,6 +7089,8 @@
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public void setRerankCount(int)",
       "public java.lang.Integer getRerankCount()",
+      "public void setRankScoreDropLimit(double)",
+      "public java.lang.Double getRankScoreDropLimit()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public com.yahoo.search.query.ranking.GlobalPhase clone()",
