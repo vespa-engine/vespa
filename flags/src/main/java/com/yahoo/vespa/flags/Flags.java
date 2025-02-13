@@ -195,13 +195,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundIntFlag MAX_COMPACT_BUFFERS = defineIntFlag(
-                "max-compact-buffers", 1,
-                List.of("geirst", "toregge"), "2021-12-15", "2025-03-01",
-                "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
-                "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
             "log-file-compression-algorithm", "",
             List.of("arnej"), "2022-06-14", "2025-03-01",

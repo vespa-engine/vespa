@@ -65,7 +65,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
-    private final int defaultMaxCompactBuffers;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
@@ -149,7 +148,6 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
-        this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -304,8 +302,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             ddbB.inputdoctypename(docTypeName)
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
-                .global(globalDocType)
-                .allocation.max_compact_buffers(defaultMaxCompactBuffers);
+                .global(globalDocType);
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedSchema = true;

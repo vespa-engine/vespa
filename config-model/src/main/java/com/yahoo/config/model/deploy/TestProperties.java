@@ -61,7 +61,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double minNodeRatioPerGroup = 0.0;
     private boolean containerDumpHeapOnShutdownTimeout = false;
     private int maxUnCommittedMemory = 123456;
-    private int maxCompactBuffers = 1;
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private int mbus_java_num_targets = 2;
@@ -114,7 +113,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
-    @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
@@ -270,11 +268,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMinNodeRatioPerGroup(double value) {
         this.minNodeRatioPerGroup = value;
-        return this;
-    }
-
-    public TestProperties maxCompactBuffers(int maxCompactBuffers) {
-        this.maxCompactBuffers = maxCompactBuffers;
         return this;
     }
 
