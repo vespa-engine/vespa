@@ -578,6 +578,12 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
+            "container-dump-heap-on-shutdown-timeout", false,
+            "Will trigger a heap dump during if container shutdown times out",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

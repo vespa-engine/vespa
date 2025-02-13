@@ -59,7 +59,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
     private double minNodeRatioPerGroup = 0.0;
-    private boolean containerDumpHeapOnShutdownTimeout = false;
     private int maxUnCommittedMemory = 123456;
     private int maxCompactBuffers = 1;
     private boolean useV8GeoPositions = true;
@@ -112,7 +111,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
-    @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public int maxCompactBuffers() { return maxCompactBuffers; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
@@ -137,11 +135,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
-        return this;
-    }
-
-    public TestProperties containerDumpHeapOnShutdownTimeout(boolean value) {
-        containerDumpHeapOnShutdownTimeout = value;
         return this;
     }
 

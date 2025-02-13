@@ -222,7 +222,7 @@ public class ModelContextImpl implements ModelContext {
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
             this.minNodeRatioPerGroup = Flags.MIN_NODE_RATIO_PER_GROUP.bindTo(source).with(appId).with(version).value();
-            this.containerDumpHeapOnShutdownTimeout = Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
+            this.containerDumpHeapOnShutdownTimeout = PermanentFlags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
             this.maxUnCommittedMemory = Flags.MAX_UNCOMMITTED_MEMORY.bindTo(source).with(appId).with(version).value();
             this.forwardIssuesAsErrors = PermanentFlags.FORWARD_ISSUES_AS_ERRORS.bindTo(source).with(appId).with(version).value();
             this.useV8GeoPositions = Flags.USE_V8_GEO_POSITIONS.bindTo(source).with(appId).with(version).value();
