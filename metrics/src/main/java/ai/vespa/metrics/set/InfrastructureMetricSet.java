@@ -198,6 +198,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.max());
         addMetric(metrics, ControllerMetrics.CERTIFICATE_COUNT.max());
         addMetric(metrics, ControllerMetrics.CERTIFICATE_NAME_COUNT.max());
+        addMetric(metrics, ControllerMetrics.CERTIFICATE_REQUEST_EXCEPTIONS.count());
 
         addMetric(metrics, ControllerMetrics.METERING_AGE_SECONDS.min());
         addMetric(metrics, ControllerMetrics.METERING_LAST_REPORTED.max());
