@@ -50,7 +50,8 @@ public class Flags {
 
     public static final UnboundBooleanFlag UPGRADE_WIREGUARD = defineFeatureFlag(
             "upgrade-wireguard", false,
-            List.of("hakonhall"), "2025-02-04", "2025-04-04",
+            List.of("hakonhall"), "2025-02-04",
+            "2025-04-04", // TODO: Remove flag once all machine images have been built after 2025-02-13
             "Whether to upgrade vespa-wireguard-go to latest",
             "Takes effect on start of host-admin.",
             HOSTNAME);
