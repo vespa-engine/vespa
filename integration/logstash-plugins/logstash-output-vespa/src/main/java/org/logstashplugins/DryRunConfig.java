@@ -1,17 +1,15 @@
 package org.logstashplugins;
 
-import java.util.Map;
-
 public class DryRunConfig {
     private final boolean deployPackage;
     private final String configServer;
     private final String documentType;
-    private final Map<String, String> conflictResolution;
     private final String applicationPackageDir;
     private final long idleBatches;
     private final long maxRetries;
     private final long gracePeriod;
     private final String typeMappingsFile;
+    private final String typeConflictResolutionFile;
 
     public DryRunConfig(boolean deployPackage, 
                        String configServer, 
@@ -19,13 +17,13 @@ public class DryRunConfig {
                        long idleBatches,
                        String applicationPackageDir,
                        String typeMappingsFile,
-                       Map<String, String> conflictResolution,
+                       String typeConflictResolutionFile,
                        long maxRetries,
                        long gracePeriod) {
         this.deployPackage = deployPackage;
         this.configServer = configServer;
         this.documentType = documentType;
-        this.conflictResolution = conflictResolution;
+        this.typeConflictResolutionFile = typeConflictResolutionFile;
         this.applicationPackageDir = applicationPackageDir;
         this.idleBatches = idleBatches;
         this.maxRetries = maxRetries;
@@ -37,7 +35,7 @@ public class DryRunConfig {
     public String getConfigServer() { return configServer; }
     public String getDocumentType() { return documentType; }
     public String getApplicationPackageDir() { return applicationPackageDir; }
-    public Map<String, String> getConflictResolution() { return conflictResolution; }
+    public String getTypeConflictResolutionFile() { return typeConflictResolutionFile; }
     public long getIdleBatches() { return idleBatches; }
     public long getMaxRetries() { return maxRetries; }
     public long getGracePeriod() { return gracePeriod; }

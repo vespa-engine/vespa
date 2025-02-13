@@ -7,12 +7,16 @@ import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.logstash.LockException;
+import org.yaml.snakeyaml.Yaml;
 
 public class VespaAppPackageWriter {
     private final DryRunConfig config;
@@ -80,6 +84,21 @@ public class VespaAppPackageWriter {
             }
         }
 
+        // do we already have a schema for this document type?
+        // if so, we need to merge the new fields with the existing ones
+        try {
+            Map<String, String> existingFields = readExistingFields();
+
+            for (Map.Entry<String, String> entry : existingFields.entrySet()) {
+                logger.debug("Found existing field: {} {}", entry.getKey(), entry.getValue());
+            }
+
+            detectedFields = reconcileFields(detectedFields, existingFields);
+        } catch (IOException e) {
+            logger.info("No schema found for document type {}, creating new one",
+                        config.getDocumentType());
+        }
+
         try {
             writeServicesXml();
             writeSchemas(detectedFields);
@@ -87,6 +106,107 @@ public class VespaAppPackageWriter {
         } finally {
             Files.delete(writeLockFile);
         }
+    }
+
+    private Map<String, String> reconcileFields(Map<String, String> detectedFields, Map<String, String> existingFields) {
+        Map<String, String> result = new HashMap<>();
+        Map<String, Map<String, String>> typeConflictResolution = loadTypeConflictResolution();
+        
+        // First add all fields that only exist in one of the maps
+        for (Map.Entry<String, String> entry : detectedFields.entrySet()) {
+            String fieldName = entry.getKey();
+            if (!existingFields.containsKey(fieldName)) {
+                result.put(fieldName, entry.getValue());
+            }
+        }
+        
+        for (Map.Entry<String, String> entry : existingFields.entrySet()) {
+            String fieldName = entry.getKey();
+            if (!detectedFields.containsKey(fieldName)) {
+                result.put(fieldName, entry.getValue());
+            }
+        }
+        
+        // Now handle conflicts
+        for (String fieldName : detectedFields.keySet()) {
+            if (existingFields.containsKey(fieldName)) {
+                String detectedFieldType = detectedFields.get(fieldName);
+                String existingFieldType = existingFields.get(fieldName);
+                
+                if (detectedFieldType.equals(existingFieldType)) {
+                    result.put(fieldName, detectedFieldType);
+                } else {
+                    String resolvedType = resolveTypeConflict(detectedFieldType, existingFieldType, typeConflictResolution);
+                    if (resolvedType == null) {
+                        logger.error("Cannot resolve type conflict for field {} ({}) vs ({})", 
+                                        fieldName, detectedFieldType, existingFieldType);
+                        logger.warn("Leaving field {} as is", fieldName);
+                        result.put(fieldName, existingFieldType);
+                    } else {
+                        result.put(fieldName, resolvedType);
+                    }
+                }
+            }
+        }
+        
+        return result;
+    }
+
+    private String resolveTypeConflict(String type1, String type2, Map<String, Map<String, String>> resolutions) {
+        // Try both orderings since the resolution might only be defined one way
+        Map<String, String> type1Resolutions = resolutions.get(type1);
+        if (type1Resolutions != null && type1Resolutions.containsKey(type2)) {
+            return type1Resolutions.get(type2);
+        }
+        
+        Map<String, String> type2Resolutions = resolutions.get(type2);
+        if (type2Resolutions != null && type2Resolutions.containsKey(type1)) {
+            return type2Resolutions.get(type1);
+        }
+        
+        return null;
+    }
+
+    private Map<String, Map<String, String>> loadTypeConflictResolution() {
+        String source = "built-in type conflict resolution";
+        InputStream resolutionStream = getClass().getClassLoader().getResourceAsStream("type_conflict_resolution.yml");
+
+        if (config.getTypeConflictResolutionFile() != null) {
+            try {
+                resolutionStream = Files.newInputStream(Paths.get(config.getTypeConflictResolutionFile()));
+                source = config.getTypeConflictResolutionFile();
+            } catch (IOException e) {
+                logger.warn("Could not load custom type conflict resolution file: {}. Using built-in defaults.", e.getMessage());
+            }
+        }
+
+        logger.info("Loading type conflict resolution from {}", source);
+        try (InputStream is = resolutionStream) {
+            Yaml yaml = new Yaml();
+            return yaml.load(is);
+        } catch (IOException e) {
+            logger.error("Error loading type conflict resolution: {}", e.getMessage());
+            return new HashMap<>();
+        }
+    }
+
+    private Map<String, String> readExistingFields() throws IOException {
+        Path schemaPath = Paths.get(config.getApplicationPackageDir(),
+                            "schemas", config.getDocumentType() + ".sd");
+        String schema = Files.readString(schemaPath, StandardCharsets.UTF_8);
+        Map<String, String> existingFields = new HashMap<>();
+        
+        // read from annotation lines like
+        //       # price: long
+        Pattern annotationPattern = Pattern.compile("       # (\\w+): (.+)");
+        Matcher matcher = annotationPattern.matcher(schema);
+        while (matcher.find()) {
+            String fieldName = matcher.group(1);
+            String fieldType = matcher.group(2);
+            existingFields.put(fieldName, fieldType);
+        }
+        
+        return existingFields;
     }
 
     private void writeServicesXml() throws IOException {
@@ -122,10 +242,20 @@ public class VespaAppPackageWriter {
      * Replace the {{FIELD_NAME}} and {{ARRAY_SIZE}} placeholders in the template read from the file
      * with the actual field name and array size.
      */
-    private String processTemplate(String template, String fieldName, String arraySize) {
+    private String processTemplate(String template, String fieldName, String fieldType,
+                                  String arraySize, boolean isDocumentField) {
         String result = template.replace("{{FIELD_NAME}}", fieldName);
         if (arraySize != null) {
             result = result.replace("{{ARRAY_SIZE}}", arraySize);
+        }
+        if (isDocumentField) {
+            // To make reading easier, let's pre-pend the field definition
+            // with the field name and type
+            String annotation = "       # " + fieldName + ": " + fieldType;
+            if (arraySize != null) {
+                annotation += "[" + arraySize + "]";
+            }
+            result = annotation + "\n" + result;
         }
         return result;
     }
@@ -156,11 +286,13 @@ public class VespaAppPackageWriter {
             List<String> fieldTemplates = typeMappings.get(fieldType);
             if (fieldTemplates != null && !fieldTemplates.isEmpty()) {
                 // First template goes into the document block
-                documentFieldsBuilder.append(processTemplate(fieldTemplates.get(0), fieldName, arraySize));
+                documentFieldsBuilder.append(processTemplate(fieldTemplates.get(0),
+                                            fieldName, fieldType, arraySize, true));
                 
                 // Additional templates are synthetic fields
                 for (int i = 1; i < fieldTemplates.size(); i++) {
-                    syntheticFieldsBuilder.append(processTemplate(fieldTemplates.get(i), fieldName, arraySize));
+                    syntheticFieldsBuilder.append(processTemplate(fieldTemplates.get(i),
+                                            fieldName, fieldType, arraySize, false));
                 }
             } else {
                 logger.warn("No mapping found for field {} of type {}", fieldName, fieldType);

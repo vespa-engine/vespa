@@ -86,19 +86,18 @@ public class VespaDryRunner {
                     }
                 }
             } catch (JsonProcessingException e) {
-                logger.error("Error processing event JSON: {}", e.getMessage());
+                logger.error("Error processing event JSON: {} {}", e.getMessage(), e.getStackTrace());
             }
         }
 
         try {
             appPackageWriter.writeApplicationPackage(detectedFields);
         } catch (IOException e) {
-            logger.error("Error writing application package: {}", e.getMessage());
+            logger.error("Error writing application package: {} {}", e.getMessage(), e.getStackTrace());
         }
     }
 
     private String detectType(Object value) {
-        // TODO should we also handle suffixes like _att, _tensor, etc.?
         if (value instanceof String) {
             return "string";
         } else if (value instanceof Integer) {

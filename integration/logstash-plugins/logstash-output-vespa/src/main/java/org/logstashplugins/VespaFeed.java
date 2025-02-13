@@ -50,11 +50,12 @@ public class VespaFeed implements Output {
     // TODO: this should default to vespa_url if not set, with port 19071
     public static final PluginConfigSpec<String> CONFIG_SERVER =
             PluginConfigSpec.stringSetting("config_server", "http://localhost:19071");
-    // TODO add option on what to do on conflict with existing fields
-
     // custom type mappings file
     public static final PluginConfigSpec<String> TYPE_MAPPINGS_FILE =
     PluginConfigSpec.stringSetting("type_mappings_file", null);
+    // custom type conflict resolution file
+    public static final PluginConfigSpec<String> TYPE_CONFLICT_RESOLUTION_FILE =
+            PluginConfigSpec.stringSetting("type_conflict_resolution_file", null);
     
     /***********************
      * Vespa API settings
@@ -198,7 +199,7 @@ public class VespaFeed implements Output {
                 config.get(IDLE_BATCHES).longValue(),
                 config.get(APPLICATION_PACKAGE_DIR),
                 config.get(TYPE_MAPPINGS_FILE),
-                Collections.emptyMap(),  // TODO: Add conflict resolution config
+                config.get(TYPE_CONFLICT_RESOLUTION_FILE),
                 config.get(MAX_RETRIES),
                 config.get(GRACE_PERIOD)
             );
