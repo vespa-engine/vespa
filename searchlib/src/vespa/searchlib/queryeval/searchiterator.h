@@ -22,6 +22,7 @@ namespace search::attribute { class ISearchContext; }
 namespace search::queryeval {
 
 struct WeakAndSearch;
+class MultiBitVectorIteratorBase;
 
 /**
  * This is the abstract superclass of all search objects. Each search
@@ -361,6 +362,7 @@ public:
     virtual bool isMultiSearch() const { return false; }
 
     virtual WeakAndSearch *as_weak_and() noexcept { return nullptr; }
+    virtual MultiBitVectorIteratorBase *as_multi_bit_vector_base() noexcept { return nullptr; }
 
     /**
      * This is used for adding an extra filter. If it is accepted it will return an empty UP.
@@ -388,6 +390,20 @@ public:
     // of the child in the originating blueprint. This is used for
     // deep decoration when doing match profiling.
     virtual void transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)> f);
+
+    // Help implementors of SearchIterator::transform_children account for the changes
+    // done to the iterator tree by MultiBitVector iterators. Assumes the function passed
+    // to transform_children will never delete MultiBitVector iterators.
+    // (pre-transformed MultiBitVector iterators are used to map the indexes of later siblings)
+    // Needed by iterators where children might be partially optimized by a MultiBitVector iterator
+    // (currently only MultiSearch since it handles and/or/andnot)
+    class TransformChildrenHelper {
+    private:
+        size_t _idx = 0;
+        std::vector<MultiBitVectorIteratorBase *> _list;
+    public:
+        size_t index_of(SearchIterator &next);
+    };
 };
 
 }
