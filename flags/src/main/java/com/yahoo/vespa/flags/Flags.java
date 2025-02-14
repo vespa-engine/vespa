@@ -181,15 +181,6 @@ public class Flags {
             "Takes effect on next tick.",
             NODE_TYPE);
 
-    public static final UnboundStringFlag SYSTEM_MEMORY_MAX = defineStringFlag(
-            "system-memory-max", "",
-            List.of("baldersheim"), "2023-02-14", "2025-03-01",
-            "The value to write to /sys/fs/cgroup/system.slice/memory.max, if non-empty. " +
-            "You may want lower memory.high before lowering memory.max, " +
-            "and raise memory.high after raising memory.max.",
-            "Takes effect on next tick.",
-            NODE_TYPE);
-
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
             List.of("arnej"), "2021-11-15", "2025-03-01",
