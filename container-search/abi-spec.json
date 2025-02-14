@@ -5361,6 +5361,7 @@
       "public void setQueryString(java.lang.String)",
       "public java.lang.String getQueryString()",
       "public com.yahoo.search.query.QueryTree getQueryTree()",
+      "public com.yahoo.search.query.QueryTree getQueryTree(boolean)",
       "public void clearQueryTree()",
       "public java.lang.String getFilter()",
       "public void setFilter(java.lang.String)",
@@ -5491,6 +5492,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>()",
       "public void <init>(com.yahoo.prelude.query.Item)",
       "public void setIndexName(java.lang.String)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
