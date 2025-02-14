@@ -64,7 +64,7 @@ public class Flags {
             HOSTNAME, NODE_TYPE);
 
     public static final UnboundBooleanFlag CLEAR_CONNTRACK = defineFeatureFlag(
-            "clear-conntrack", false,
+            "clear-conntrack", true,
             List.of("hakonhall"), "2025-01-14", "2025-03-14",
             "Whether to clear conntrack entries for a container",
             "Takes effect immediately",
