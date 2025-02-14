@@ -10,10 +10,6 @@ import com.yahoo.config.ModelReference;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -28,9 +24,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import java.io.InputStream;
-import java.net.URL;
 
 /**
  * Tests for LocalLLM.
@@ -205,33 +198,10 @@ public class LocalLLMTest {
         prompts.add("Discuss the impact of social media on interpersonal communication in the 21st century.");
         return prompts;
     }
-    
-    private void downloadFileIfMissing(String fileUrl, String filePath) {
-        Path targetPath = Paths.get(filePath);
-
-        if (Files.exists(targetPath)) {
-            System.out.println("File already exists: " + filePath);
-            return;
-        }
-
-        try {
-            Files.createDirectories(targetPath.getParent());
-        } catch (IOException e) {
-            System.err.println("Failed to create parent directories: " + e.getMessage());
-            return;
-        }
-
-        try (InputStream in = new URL(fileUrl).openStream()) {
-            Files.copy(in, targetPath);
-            System.out.println("File downloaded successfully: " + filePath);
-        } catch (IOException e) {
-            System.err.println("Failed to download file: " + e.getMessage());
-        }
-    }
 
     // Small LLM tests use a quantized Mistral model ca. 4.3 GB.
     // It produces sensible completions which can be verified as part of the test.
-    private static final String SMALL_LLM_URL = "https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/blob/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+    // Download model from here https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf
     private static final String SMALL_LLM_PATH = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
 
     // Using translation task to test that LLM output makes sense with context overflow.
@@ -358,8 +328,6 @@ public class LocalLLMTest {
 
     @Test
     public void testMaxPromptTokens() {
-        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
-
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(60)
@@ -382,7 +350,6 @@ public class LocalLLMTest {
 
     @Test
     public void testContextOverflowPolicySkip() {
-        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
 
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
@@ -405,8 +372,6 @@ public class LocalLLMTest {
 
     @Test
     public void testContextOverflowPolicyError() {
-        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
-
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(25)
@@ -427,11 +392,10 @@ public class LocalLLMTest {
 
     @Test
     public void testParallelGenerationWithLargeContext() {
-        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
-
         var llmConfig = new LlmLocalClientConfig.Builder()
-                .parallelRequests(5)
-                .contextSize(5 * 1024)
+                .parallelRequests(3)
+                .contextSize(3 * 1024)
+                .maxQueueSize(2)
                 .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
@@ -464,8 +428,6 @@ public class LocalLLMTest {
 
     @Test
     public void testParallelGenerationWithSmallContextOverflowPolicyNone() {
-        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
-
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(5)
                 .contextSize( 5 * 100)
@@ -508,8 +470,6 @@ public class LocalLLMTest {
 
     @Test
     public void testParallelGenerationWithSmallContextOverflowPolicySkip() {
-        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
-
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(5)
                 .contextSize( 5 * 100)
@@ -553,8 +513,6 @@ public class LocalLLMTest {
 
     @Test
     public void testParallelGenerationWithSmallContextOverflowPolicyError() {
-        downloadFileIfMissing(SMALL_LLM_URL, SMALL_LLM_PATH);
-
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(5)
                 .contextSize( 5 * 100)

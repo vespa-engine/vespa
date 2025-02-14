@@ -20,6 +20,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
@@ -45,7 +46,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
     private final LlamaModel model;
     private final ThreadPoolExecutor executor;
-    private final long queueTimeoutMilliseconds;
+    private final long maxQueueWait;
 
     private final int maxTokens;
     private final int maxPromptTokens;
@@ -54,15 +55,9 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
  
     @Inject
     public LocalLLM(LlmLocalClientConfig config) {
-        executor = createExecutor(config);
-        queueTimeoutMilliseconds = config.maxQueueWait();
-
-        // Maximum number of tokens to generate - need this since some models can just generate infinitely
-        maxTokens = config.maxTokens();
-
+        
         // Only used if GPU is not used
         var defaultThreadCount = Math.max(Runtime.getRuntime().availableProcessors() - 2, 1);
-
         var modelFile = config.model().toFile().getAbsolutePath();
         var modelParams = new ModelParameters()
                 .setModelFilePath(modelFile)
@@ -74,32 +69,41 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         
         if (config.seed() != -1)
             modelParams.setSeed(config.seed());    
-            
+        
+        // Load model
         long startLoad = System.nanoTime();
         model = new LlamaModel(modelParams);
         long loadTime = System.nanoTime() - startLoad;
         logger.fine(() -> String.format("Loaded model %s in %.2f sec", modelFile, (loadTime*1.0/1000000000)));
 
+        // Executor for continuously batching requests that are fed to LLM to maximizing compute utilization.
+        executor = new ThreadPoolExecutor(
+                config.parallelRequests(),
+                config.parallelRequests(),
+                0L, TimeUnit.MILLISECONDS,
+                config.maxQueueSize() > 0 ? new ArrayBlockingQueue<>(config.maxQueueSize()) : new SynchronousQueue<>(),
+                new ThreadPoolExecutor.AbortPolicy()
+        );
+        
+        // Staring all threads manually because we are using `executor.getQueue().offer(...)` to add tasks 
+        // instead of higher-level methods like `executor.submit(...)` that automatically start threads when needed.
+        executor.prestartAllCoreThreads();
+        
+        // Setting other config parameters
+        maxQueueWait = config.maxQueueWait();
+        maxTokens = config.maxTokens();
         maxPromptTokens = config.maxPromptTokens();
         contextSizePerRequest = config.contextSize() / config.parallelRequests();
         logger.fine(() -> String.format("Context size per request: %d", contextSizePerRequest));
         contextOverflowPolicy = config.contextOverflowPolicy();
     }
-
-    private ThreadPoolExecutor createExecutor(LlmLocalClientConfig config) {
-        return new ThreadPoolExecutor(config.parallelRequests(), config.parallelRequests(),
-                0L, TimeUnit.MILLISECONDS,
-                config.maxQueueSize() > 0 ? new ArrayBlockingQueue<>(config.maxQueueSize()) : new SynchronousQueue<>(),
-                new ThreadPoolExecutor.AbortPolicy());
-    }
-
+    
     @Override
     public void deconstruct() {
         model.close();
         executor.shutdownNow();
         scheduler.shutdownNow();
     }
-    
     
     private de.kherud.llama.InferenceParameters setInferenceParameters(Prompt prompt, InferenceParameters options) {
         var inferParams = new de.kherud.llama.InferenceParameters(prompt.asString().stripLeading());
@@ -113,7 +117,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         options.ifPresent("npredict", (v) -> inferParams.setNPredict(Integer.parseInt(v)));
         options.ifPresent("repeatpenalty", (v) -> inferParams.setRepeatPenalty(Float.parseFloat(v)));
         options.ifPresent("seed", (v) -> inferParams.setSeed(Integer.parseInt(v)));
-
+       
         inferParams.setUseChatTemplate(true);
         return inferParams;
     } 
@@ -122,9 +126,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     @Override
     public List<Completion> complete(Prompt prompt, InferenceParameters options) {
         StringBuilder result = new StringBuilder();
-
-        var future = completeAsync(prompt, options, completion -> result.append(completion.text()));
-
+        var future = completeWithOffer(prompt, options, 
+                completion -> result.append(completion.text()), maxQueueWait);
         Completion.FinishReason reason;
     
         try {
@@ -137,9 +140,6 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
             if (cause instanceof LanguageModelException languageModelException) {
                 throw languageModelException;
-            }
-            else if (cause instanceof RejectedExecutionException rejectedExecutionException) {
-                throw rejectedExecutionException;
             } else {
                 throw new LanguageModelException(500, "Error while generating completion.", cause);
             }
@@ -150,8 +150,19 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         return completions;
     }
 
-    @Override
-    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
+    public CompletableFuture<Completion.FinishReason> completeAsync(
+            Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
+        return completeWithOffer(prompt, options, consumer, 0);
+    }
+    
+    /**
+     * Completes the given prompt, mostly asynchronously but with a blocking timeout while waiting for a free slot in the queue.
+     * It is used by both `complete()` and `completeAsync()` depending on the `offerTimeout` value.
+     * When set to 0, there is no waiting, completing with exception immediately.
+     * When larger than 0, it will wait for up to `offerTimeout` blocking the thread, throttling the incoming requests.
+     */
+    private CompletableFuture<Completion.FinishReason> completeWithOffer(
+            Prompt prompt, InferenceParameters options, Consumer<Completion> consumer, long offerTimeout) {
         var completionFuture = new CompletableFuture<Completion.FinishReason>();
         
         var promptStr = prompt.asString().stripLeading();
@@ -189,38 +200,50 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
 
         var inferenceParams = setInferenceParameters(prompt, options);
         var hasStarted = new AtomicBoolean(false);
+        var future = new FutureTask<>(() -> {
+            hasStarted.set(true);
+
+            try {
+                // Actual generation, stream outputs
+                for (var output : model.generate(inferenceParams)) {
+                    consumer.accept(Completion.from(output.text, Completion.FinishReason.none));
+                }
+                completionFuture.complete(Completion.FinishReason.stop);
+            } catch (Exception e) {
+                var errorMessage = "Error while generating completion in executor thread.";
+                completionFuture.completeExceptionally(new LanguageModelException(500, errorMessage, e));
+            }
+        }, null);
         
         try {
-            Future<?> future = executor.submit(() -> {
-                hasStarted.set(true);
+            var accepted = offerTimeout > 0 
+                    ? executor.getQueue().offer(future, offerTimeout, TimeUnit.MILLISECONDS) 
+                    : executor.getQueue().offer(future);
                 
-                try {
-                    // Actual generation, stream outputs
-                    for (var output : model.generate(inferenceParams)) {
-                        consumer.accept(Completion.from(output.text, Completion.FinishReason.none));
-                    }
-                    completionFuture.complete(Completion.FinishReason.stop);
-                } catch (Exception e) {
-                    var errorMessage = "Error while generating completion in executor thread.";
-                    completionFuture.completeExceptionally(new LanguageModelException(500, errorMessage, e));
-                }
-            });
-
-            if (queueTimeoutMilliseconds > 0) {
-                scheduler.schedule(() -> {
-                    if ( ! hasStarted.get()) {
-                        future.cancel(false);
-                        String error = rejectedExecutionErrorMessage("Rejected completion due to timeout waiting to start");
-                        // RejectedExecutionException makes more sense here than LanguageModelException.
-                        // Keeping LanguageModelException for backwards compatibility.
-                        completionFuture.completeExceptionally(new LanguageModelException(504, error));
-                    }
-                }, queueTimeoutMilliseconds, TimeUnit.MILLISECONDS);
+            if (!accepted) {
+                String error = rejectedExecutionErrorMessage("Rejected completion due to full queue when offering the request to the executor queue.");
+                completionFuture.completeExceptionally(new LanguageModelException(503, error));
+                return completionFuture;
             }
-        } catch (RejectedExecutionException e) {
-            // If we have too many requests (active + any waiting in queue), we reject the completion
-            var error = rejectedExecutionErrorMessage("Rejected completion due to too many requests");
-            completionFuture.completeExceptionally(new RejectedExecutionException(error));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            String error = rejectedExecutionErrorMessage("Rejected completion due to interruption when offering the request to the executor queue.");
+            completionFuture.completeExceptionally(new LanguageModelException(503, error));
+            return completionFuture;
+        }
+        
+        if (maxQueueWait > 0) {
+            scheduler.schedule(
+                    () -> {
+                        if (!hasStarted.get()) {
+                            future.cancel(false);
+                            executor.remove(future);
+                            String error = rejectedExecutionErrorMessage(
+                                    "Rejected completion due to timeout waiting to start precessing the request.");
+                            completionFuture.completeExceptionally(new LanguageModelException(504, error));
+                        }
+                    }, maxQueueWait, TimeUnit.MILLISECONDS
+            );
         }
         
         return completionFuture;
