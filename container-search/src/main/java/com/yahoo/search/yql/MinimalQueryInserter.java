@@ -115,7 +115,7 @@ public class MinimalQueryInserter extends Searcher {
                                                                            maxHits + "."));
             }
         }
-        query.getModel().getQueryTree().setRoot(newTree.getRoot());
+        query.getModel().getQueryTree(false).setRoot(newTree.getRoot());
         query.getPresentation().getSummaryFields().addAll(parser.getYqlSummaryFields());
 
         GroupingQueryParser.validate(query);

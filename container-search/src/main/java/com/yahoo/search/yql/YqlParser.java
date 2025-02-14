@@ -799,7 +799,6 @@ public class YqlParser implements Parser {
         // TODO: Add support for default arguments if property results in nothing
         List<OperatorNode<ExpressionOperator>> args = ast.getArgument(1);
         String wordData = getStringContents(args.get(0));
-
         Boolean allowEmpty = getAnnotation(ast, USER_INPUT_ALLOW_EMPTY, Boolean.class,
                                            Boolean.FALSE, "flag for allowing NullItem to be returned");
         if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();

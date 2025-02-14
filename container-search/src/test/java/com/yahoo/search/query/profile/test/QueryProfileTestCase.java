@@ -17,6 +17,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
 import com.yahoo.search.searchchain.Execution;
+import com.yahoo.search.yql.MinimalQueryInserter;
 import com.yahoo.yolean.trace.TraceNode;
 import org.junit.jupiter.api.Test;
 
@@ -345,6 +346,30 @@ public class QueryProfileTestCase {
         assertEquals("default", query.getModel().getDefaultIndex());
         assertEquals("de", query.getModel().getLanguage().languageCode());
     }
+
+    @Test
+    void testEscaping() {
+        QueryProfile profile = new QueryProfile("test");
+        var q = """
+        select * from sources * where
+        (
+            rank(
+                {grammar:"tokenize"}userInput(@query),
+                {grammar:"tokenize",defaultIndex:'url_text'}userInput(@query)
+            )
+        )
+        """;
+        profile.set("yql", q, null);
+
+        String userQuery = "(from -r requirements.txt (line 11)) ";
+        var request = HttpRequest.createTestRequest("", Method.GET, null, Map.of("query", userQuery));
+        var query = new Query(request, profile.compile(null));
+        var searcher = new MinimalQueryInserter();
+        var execution = new Execution(searcher, Execution.Context.createContextStub());
+        var result = execution.search(query);
+        assertNull(result.hits().getError());
+    }
+
 
     /** Tests that the ref: here is not mistaken for a query profile reference. */
     @Test
