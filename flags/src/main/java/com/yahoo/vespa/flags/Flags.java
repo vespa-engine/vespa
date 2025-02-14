@@ -315,12 +315,6 @@ public class Flags {
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment", INSTANCE_ID);
 
-    public static UnboundBooleanFlag ATLASSIAN_SYNC_TENANTS = defineFeatureFlag(
-            "atlassian-sync-tenants", false,
-            List.of("bjormel"), "2024-11-11", "2025-03-01",
-            "Whether to sync tenants to Atlassian",
-            "Takes effect immediately");
-
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", true,
             List.of("vekterli"), "2024-05-23", "2025-03-01",
