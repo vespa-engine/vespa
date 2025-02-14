@@ -15,7 +15,9 @@ import org.eclipse.jetty.util.Callback;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.ByteBuffer;
+import java.util.LinkedList;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Consumer;
@@ -47,7 +49,9 @@ class JettyResponseWriter implements ResponseHandler {
         this.metricReporter = metricReporter;
     }
 
-    CompletableFuture<Void> writeCompletion() { return responseCompletion; }
+    CompletableFuture<Void> writeCompletion() {
+        return responseCompletion;
+    }
 
     @Override
     public ContentChannel handleResponse(Response jdiscResponse) {
@@ -82,7 +86,7 @@ class JettyResponseWriter implements ResponseHandler {
         if (t instanceof BindingNotFoundException || t instanceof BindingSetNotFoundException) {
             return HttpStatus.NOT_FOUND_404;
         } else if (t instanceof RequestException) {
-            return ((RequestException)t).getResponseStatus();
+            return ((RequestException) t).getResponseStatus();
         } else if (t instanceof TimeoutException) {
             // E.g stream idle timeout for HTTP/2
             return HttpStatus.SERVICE_UNAVAILABLE_503;
@@ -104,65 +108,92 @@ class JettyResponseWriter implements ResponseHandler {
     }
 
     private class ResponseContentChannel implements ContentChannel {
+        private record WriteTask(ByteBuffer buf, CompletionHandler handler) {}
+
         boolean invalidated = false;
+        private final Queue<WriteTask> writeQueue = new LinkedList<>();
+        private boolean canWrite = true;
 
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
-            doWrite(Objects.requireNonNull(buf, "Buffer is null"), handler);
+            Objects.requireNonNull(buf, "Buffer is null");
+            enqueueTask(new WriteTask(buf, handler));
         }
 
         @Override
         public void close(CompletionHandler handler) {
-            doWrite(null, handler);
+            enqueueTask(new WriteTask(null, handler));
         }
 
-        void doWrite(ByteBuffer buf, CompletionHandler handler) {
-            var bytesToSend = buf == null ? 0 : buf.remaining();
+        private void enqueueTask(WriteTask task) {
             synchronized (monitor) {
-                if (invalidated) return;
-                if (!jettyResponse.isCommitted()) {
-                    jettyResponse.setStatus(jdiscResponse.getStatus());
-                    var jettyHeaders = jettyResponse.getHeaders();
-                    jdiscResponse.headers().forEach((name, values) -> {
-                        values.stream()
-                                .filter(Objects::nonNull)
-                                .forEach(value -> jettyHeaders.add(name, value));
-                    });
-                    if (jettyHeaders.get(HttpHeader.CONTENT_TYPE) == null) {
-                        jettyHeaders.add(HttpHeader.CONTENT_TYPE, "text/plain;charset=utf-8");
-                    }
-                    jettyRequest.setAttribute(ResponseMetricAggregator.requestTypeAttribute, jdiscResponse.getRequestType());
-                }
-                try {
-                    jettyResponse.write(buf == null, buf, new Callback() {
-                        @Override
-                        public void succeeded() {
-                            if (buf == null) responseCompletion.complete(null);
-                            if (bytesToSend > 0) metricReporter.successfulWrite(bytesToSend);
-                            tryInvokeCompletionHandler(handler, CompletionHandler::completed);
-                        }
-
-                        @Override
-                        public void failed(Throwable x) {
-                            responseCompletion.completeExceptionally(x);
-                            metricReporter.failedWrite();
-                            tryInvokeCompletionHandler(handler, h -> h.failed(x));
-                        }
-                    });
-                } catch (Throwable t) {
-                    responseCompletion.completeExceptionally(t);
-                    metricReporter.failedWrite();
-                    tryInvokeCompletionHandler(handler, h -> h.failed(t));
-                }
+                writeQueue.add(task);
+                tryProcessQueue();
             }
         }
 
-        private static void tryInvokeCompletionHandler(CompletionHandler handler, Consumer<CompletionHandler> completionCall) {
-            var nonNullHandler = handler != null ? handler : CompletionHandlers.noop();
+        private void tryProcessQueue() {
+            if (canWrite && !writeQueue.isEmpty()) {
+                performWrite(writeQueue.poll());
+            }
+        }
+
+        private void performWrite(WriteTask task) {
             try {
-                completionCall.accept(nonNullHandler);
-            } catch (Throwable e) {
-                log.log(Level.WARNING, "Failed to call completion handler", e);
+                synchronized (monitor) {
+                    if (invalidated) {
+                        task.handler.failed(new IllegalStateException("Content channel is invalidated"));
+                        return;
+                    }
+                    if (!jettyResponse.isCommitted()) {
+                        jettyResponse.setStatus(jdiscResponse.getStatus());
+                        var jettyHeaders = jettyResponse.getHeaders();
+                        jdiscResponse.headers().forEach((name, values) -> {
+                            values.stream()
+                                    .filter(Objects::nonNull)
+                                    .forEach(value -> jettyHeaders.add(name, value));
+                        });
+                        if (jettyHeaders.get(HttpHeader.CONTENT_TYPE) == null) {
+                            jettyHeaders.add(HttpHeader.CONTENT_TYPE, "text/plain;charset=utf-8");
+                        }
+                        jettyRequest.setAttribute(ResponseMetricAggregator.requestTypeAttribute,
+                                jdiscResponse.getRequestType());
+                    }
+                }
+
+                canWrite = false;
+                jettyResponse.write(task.buf == null, task.buf, new Callback() {
+                    @Override
+                    public void succeeded() {
+                        if (task.buf == null) responseCompletion.complete(null);
+                        completeAndFinishTask(task.handler, CompletionHandler::completed);
+                        if (task.buf != null) metricReporter.successfulWrite(task.buf.remaining());
+                    }
+
+                    @Override
+                    public void failed(Throwable x) {
+                        responseCompletion.completeExceptionally(x);
+                        completeAndFinishTask(task.handler, h -> h.failed(x));
+                        metricReporter.failedWrite();
+                    }
+                });
+            } catch (Throwable t) {
+                responseCompletion.completeExceptionally(t);
+                completeAndFinishTask(task.handler, h -> h.failed(t));
+                metricReporter.failedWrite();
+            }
+        }
+
+        private void completeAndFinishTask(CompletionHandler handler, Consumer<CompletionHandler> invocation) {
+            try {
+                invocation.accept(handler != null ? handler : CompletionHandlers.noop());
+            } catch (Throwable ex) {
+                log.log(Level.WARNING, "Failed to call completion handler", ex);
+            } finally {
+                synchronized (monitor) {
+                    canWrite = true;
+                    tryProcessQueue();
+                }
             }
         }
     }

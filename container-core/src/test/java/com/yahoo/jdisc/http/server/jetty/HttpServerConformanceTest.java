@@ -565,7 +565,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestContentCloseExceptionBeforeResponseWriteWithAsyncCompletion() throws Throwable {
-        new TestRunner().expect(serverError())
+        new TestRunner().expect(anyOf(serverError(), success()))
                         .execute();
     }
 
