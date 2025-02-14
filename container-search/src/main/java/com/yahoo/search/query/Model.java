@@ -242,7 +242,7 @@ public class Model implements Cloneable {
     /**
      * Returns the query as an object structure. Remember to have the correct Query.Type set.
      * This causes parsing of the query string if it has changed since this was last called
-     * (i.e query parsing is lazy).
+     * (i.e. query parsing is lazy).
      */
     public QueryTree getQueryTree() {
         return getQueryTree(true);
@@ -256,26 +256,29 @@ public class Model implements Cloneable {
      *              an empty root if it's currently null.
      */
     public QueryTree getQueryTree(boolean parse) {
-        if (queryTree == null)
+        if (queryTree == null) {
             queryTree = parse ? parse() : new QueryTree();
+            if (parse)
+                traceParsing();
+        }
         return queryTree;
     }
 
     private QueryTree parse() {
         try {
             Parser parser = ParserFactory.newInstance(type, ParserEnvironment.fromExecutionContext(execution.context()));
-            var query = parser.parse(Parsable.fromQueryModel(this));
-            if (query.getRoot() == null || query.getRoot() instanceof NullItem) {
-                if (parent.getTrace().getLevel() >= 5)
-                    parent.trace("Query parsing deferred", 5);
-                else if (parent.getTrace().getLevel() >= 2)
-                    parent.trace("Query parsed to: " + parent.yqlRepresentation(), 2);
-            }
-            return query;
+            return parser.parse(Parsable.fromQueryModel(this));
         }
         catch (IllegalArgumentException e) {
             throw new IllegalInputException("Failed parsing query", e);
         }
+    }
+
+    private void traceParsing() {
+        if (queryTree.getRoot() == null || queryTree.getRoot() instanceof NullItem)
+            parent.trace("Query parsing deferred", 5);
+        else if (parent.getTrace().getLevel() >= 2)
+            parent.trace("Query parsed to: " + parent.yqlRepresentation(), 2);
     }
 
     /**
