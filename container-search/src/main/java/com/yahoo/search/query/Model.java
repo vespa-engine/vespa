@@ -242,27 +242,40 @@ public class Model implements Cloneable {
     /**
      * Returns the query as an object structure. Remember to have the correct Query.Type set.
      * This causes parsing of the query string if it has changed since this was last called
-     * (i.e query parsing is lazy)
+     * (i.e query parsing is lazy).
      */
     public QueryTree getQueryTree() {
-        if (queryTree == null) {
-            try {
-                Parser parser = ParserFactory.newInstance(type, ParserEnvironment.fromExecutionContext(execution.context()));
-                queryTree = parser.parse(Parsable.fromQueryModel(this));
-                if (queryTree.getRoot() == null || queryTree.getRoot() instanceof NullItem) {
-                    if (parent.getTrace().getLevel() >= 5) {
-                        parent.trace("Query parsing deferred", 5);
-                    }
-                }
-                else if (parent.getTrace().getLevel() >= 2) {
-                    parent.trace("Query parsed to: " + parent.yqlRepresentation(), 2);
-                }
-            }
-            catch (IllegalArgumentException e) {
-                throw new IllegalInputException("Failed parsing query", e);
-            }
-        }
+        return getQueryTree(true);
+    }
+
+    /**
+     * Returns the query as an object structure.
+     *
+     * @param parse if true, the query string is parsed into a query tree if it is currently null,
+     *              if false, the query string is ignored and the query tree is initialized to
+     *              an empty root if it's currently null.
+     */
+    public QueryTree getQueryTree(boolean parse) {
+        if (queryTree == null)
+            queryTree = parse ? parse() : new QueryTree();
         return queryTree;
+    }
+
+    private QueryTree parse() {
+        try {
+            Parser parser = ParserFactory.newInstance(type, ParserEnvironment.fromExecutionContext(execution.context()));
+            var query = parser.parse(Parsable.fromQueryModel(this));
+            if (query.getRoot() == null || query.getRoot() instanceof NullItem) {
+                if (parent.getTrace().getLevel() >= 5)
+                    parent.trace("Query parsing deferred", 5);
+                else if (parent.getTrace().getLevel() >= 2)
+                    parent.trace("Query parsed to: " + parent.yqlRepresentation(), 2);
+            }
+            return query;
+        }
+        catch (IllegalArgumentException e) {
+            throw new IllegalInputException("Failed parsing query", e);
+        }
     }
 
     /**

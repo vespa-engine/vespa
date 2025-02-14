@@ -27,6 +27,10 @@ import java.util.ListIterator;
  */
 public class QueryTree extends CompositeItem {
 
+    public QueryTree() {
+        setRoot(new NullItem());
+    }
+
     public QueryTree(Item root) {
         setRoot(root);
     }
@@ -104,7 +108,7 @@ public class QueryTree extends CompositeItem {
 
     /** Returns true if this represents the null query */
     public boolean isEmpty() {
-        return getRoot() instanceof NullItem || getItemCount() == 0;
+        return getRoot() == null || getRoot() instanceof NullItem || getItemCount() == 0;
     }
 
     // -------------- Facade
