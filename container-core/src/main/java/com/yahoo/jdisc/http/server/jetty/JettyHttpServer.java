@@ -63,7 +63,7 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         this.config = serverConfig;
         server = new Server();
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
-        server.setRequestLog(new AccessLogRequestLog(requestLog));
+        if (!(requestLog instanceof VoidRequestLog)) server.setRequestLog(new AccessLogRequestLog(requestLog));
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
 
@@ -86,12 +86,17 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         var statisticsHandler = new StatisticsHandler(newGzipHandler(perConnectorHandlers));
         var connectionMetricAggregator = new ConnectionMetricAggregator(serverConfig, metric, statisticsHandler);
         var responseMetricAggregator = new ResponseMetricAggregator(serverConfig.metric(), connectionMetricAggregator);
-        var connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog, responseMetricAggregator);
 
-        server.addBeanToAllConnectors(connectionLogger);
+        if (!(connectionLog instanceof VoidConnectionLog)) {
+            var connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog, responseMetricAggregator);
+            server.addBeanToAllConnectors(connectionLogger);
+            server.setHandler(connectionLogger);
+        } else {
+            server.setHandler(responseMetricAggregator);
+        }
+
         server.addBeanToAllConnectors(connectionMetricAggregator);
         server.addBean(responseMetricAggregator);
-        server.setHandler(connectionLogger);
 
         this.metricsReporter = new ServerMetricReporter(metric, server, statisticsHandler, responseMetricAggregator);
     }
