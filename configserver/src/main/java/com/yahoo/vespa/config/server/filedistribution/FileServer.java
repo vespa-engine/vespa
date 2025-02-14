@@ -147,7 +147,7 @@ public class FileServer {
                           Set<CompressionType> acceptedCompressionTypes,
                           Request request,
                           Receiver receiver) {
-        log.log(Level.FINE, () -> "Received request for file reference '" + fileReference + "' from " + request.target() +
+        log.log(Level.FINE, () -> "Received request for '" + fileReference + "' from " + request.target().peerSpec().host() +
                 ", download from other source: " + downloadFromOtherSourceIfNotFound);
         String client = request.target().toString();
         executor.execute(() -> {
@@ -155,7 +155,7 @@ public class FileServer {
             request.returnValues()
                    .add(new Int32Value(result.code()))
                    .add(new StringValue(result.description()));
-            log.log(Level.FINE, () -> "Returning request for file reference '" + fileReference + "' from " + request.target());
+            log.log(Level.FINE, () -> "Returning request for '" + fileReference + "' from " + request.target());
             request.returnRequest();
         });
     }

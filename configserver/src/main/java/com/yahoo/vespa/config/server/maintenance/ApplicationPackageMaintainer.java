@@ -104,7 +104,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     private Future<Optional<File>> startDownload(FileReference fileReference, long sessionId, ApplicationId applicationId) {
-        log.fine(() -> "Downloading application package with file reference " + fileReference +
+        log.fine(() -> "Downloading application package with " + fileReference +
                 " for " + applicationId + " (session " + sessionId + ")");
         return fileDownloader.getFutureFileOrTimeout(new FileReferenceDownload(fileReference,
                                                                                this.getClass().getSimpleName(),

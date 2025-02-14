@@ -60,6 +60,7 @@ public class ParsedRankingConverter {
 
         parsed.getRankScoreDropLimit().ifPresent(profile::setRankScoreDropLimit);
         parsed.getSecondPhaseRankScoreDropLimit().ifPresent(profile::setSecondPhaseRankScoreDropLimit);
+        parsed.getGlobalPhaseRankScoreDropLimit().ifPresent(profile::setGlobalPhaseRankScoreDropLimit);
         parsed.getTermwiseLimit().ifPresent(profile::setTermwiseLimit);
         parsed.getPostFilterThreshold().ifPresent(profile::setPostFilterThreshold);
         parsed.getApproximateThreshold().ifPresent(profile::setApproximateThreshold);

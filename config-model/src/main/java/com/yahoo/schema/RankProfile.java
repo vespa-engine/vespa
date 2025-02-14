@@ -111,6 +111,7 @@ public class RankProfile implements Cloneable {
     /** The drop limit used to drop hits with rank score less than or equal to this value */
     private double rankScoreDropLimit = -Double.MAX_VALUE;
     private double secondPhaseRankScoreDropLimit = -Double.MAX_VALUE;
+    private double globalPhaseRankScoreDropLimit = -Double.MAX_VALUE;
 
     private Set<ReferenceNode> summaryFeatures;
     private String inheritedSummaryFeaturesProfileName;
@@ -871,6 +872,16 @@ public class RankProfile implements Cloneable {
         }
         return uniquelyInherited(RankProfile::getSecondPhaseRankScoreDropLimit, c -> c > -Double.MAX_VALUE, "second-phase rank-score-drop-limit")
                 .orElse(secondPhaseRankScoreDropLimit);
+    }
+
+    public void setGlobalPhaseRankScoreDropLimit(double limit) { this.globalPhaseRankScoreDropLimit = limit; }
+
+    public double getGlobalPhaseRankScoreDropLimit() {
+        if (globalPhaseRankScoreDropLimit > -Double.MAX_VALUE) {
+            return globalPhaseRankScoreDropLimit;
+        }
+        return uniquelyInherited(RankProfile::getGlobalPhaseRankScoreDropLimit, c -> c > -Double.MAX_VALUE, "global-phase rank-score-drop-limit")
+                .orElse(globalPhaseRankScoreDropLimit);
     }
 
     public void addFunction(String name, List<String> arguments, String expression, boolean inline) {

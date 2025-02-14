@@ -40,7 +40,7 @@ public class ConfigServerMaintenance {
 
     public void startBeforeBootstrap() {
         if (moreThanOneConfigServer())
-            maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(15)));
+            maintainers.add(new ApplicationPackageMaintainer(applicationRepository, curator, Duration.ofSeconds(30)));
         maintainers.add(new TenantsMaintainer(applicationRepository, curator, interval, Clock.systemUTC()));
     }
 

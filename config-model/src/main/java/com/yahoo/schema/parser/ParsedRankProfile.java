@@ -28,6 +28,7 @@ public class ParsedRankProfile extends ParsedBlock {
     private boolean ignoreDefaultRankFeatures = false;
     private Double rankScoreDropLimit = null;
     private Double secondPhaseRankScoreDropLimit = null;
+    private Double globalPhaseRankScoreDropLimit = null;
     private Double termwiseLimit = null;
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
@@ -92,6 +93,7 @@ public class ParsedRankProfile extends ParsedBlock {
     List<MutateOperation> getMutateOperations() { return List.copyOf(mutateOperations); }
     List<String> getInherited() { return List.copyOf(inherited); }
     Optional<Integer> getGlobalPhaseRerankCount() { return Optional.ofNullable(this.globalPhaseRerankCount); }
+    Optional<Double> getGlobalPhaseRankScoreDropLimit() { return Optional.ofNullable(this.globalPhaseRankScoreDropLimit); }
     Optional<String> getGlobalPhaseExpression() { return Optional.ofNullable(this.globalPhaseExpression); }
 
     Map<String, Boolean> getFieldsWithRankFilter() { return Collections.unmodifiableMap(fieldsRankFilter); }
@@ -223,6 +225,11 @@ public class ParsedRankProfile extends ParsedBlock {
     public void setSecondPhaseRankScoreDropLimit(double limit) {
         verifyThat(secondPhaseRankScoreDropLimit == null, "already has rank-score-drop-limit for second phase");
         this.secondPhaseRankScoreDropLimit = limit;
+    }
+
+    public void setGlobalPhaseRankScoreDropLimit(double limit) {
+        verifyThat(globalPhaseRankScoreDropLimit == null, "already has global-phase rank-score-drop-limit");
+        this.globalPhaseRankScoreDropLimit = limit;
     }
 
     public void setRerankCount(int count) {

@@ -50,7 +50,8 @@ public class Flags {
 
     public static final UnboundBooleanFlag UPGRADE_WIREGUARD = defineFeatureFlag(
             "upgrade-wireguard", false,
-            List.of("hakonhall"), "2025-02-04", "2025-04-04",
+            List.of("hakonhall"), "2025-02-04",
+            "2025-04-04", // TODO: Remove flag once all machine images have been built after 2025-02-13
             "Whether to upgrade vespa-wireguard-go to latest",
             "Takes effect on start of host-admin.",
             HOSTNAME);
@@ -63,7 +64,7 @@ public class Flags {
             HOSTNAME, NODE_TYPE);
 
     public static final UnboundBooleanFlag CLEAR_CONNTRACK = defineFeatureFlag(
-            "clear-conntrack", false,
+            "clear-conntrack", true,
             List.of("hakonhall"), "2025-01-14", "2025-03-14",
             "Whether to clear conntrack entries for a container",
             "Takes effect immediately",
@@ -148,13 +149,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
-            "container-dump-heap-on-shutdown-timeout", false,
-            List.of("baldersheim"), "2021-09-25", "2025-03-01",
-            "Will trigger a heap dump during if container shutdown times out",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
             List.of("vekterli"), "2021-02-19", "2025-06-01",
@@ -193,13 +187,6 @@ public class Flags {
             List.of("arnej"), "2021-11-15", "2025-03-01",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundIntFlag MAX_COMPACT_BUFFERS = defineIntFlag(
-                "max-compact-buffers", 1,
-                List.of("geirst", "toregge"), "2021-12-15", "2025-03-01",
-                "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
-                "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(

@@ -1032,22 +1032,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         InstanceName instance = context.properties().applicationId().instance();
         ZoneId zone = ZoneId.from(context.properties().zone().environment(),
                                   context.properties().zone().region());
-
-        var supportsTokenAuthentication = context.properties()
-                .endpoints()
-                .stream()
-                .anyMatch(endpoint ->
-                        endpoint.authMethod() == ApplicationClusterEndpoint.AuthMethod.token &&
-                        endpoint.clusterId().equals(cluster.value()));
-        var authMethods = supportsTokenAuthentication ?
-                List.of(AuthMethod.mtls, AuthMethod.token) :
-                List.of(AuthMethod.mtls);
-
         return context
                 .getApplicationPackage()
                 .getDeploymentSpec()
-                .zoneEndpoint(instance, zone, cluster)
-                .withAuthMethods(authMethods);
+                .zoneEndpoint(instance, zone, cluster);
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {

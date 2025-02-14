@@ -2027,10 +2027,12 @@ void globalPhaseItem(ParsedRankProfile profile) :
 {
     String expression;
     int rerankCount;
+    double dropLimit;
 }
 {
     ( expression = expression()                       { profile.setGlobalPhaseExpression(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integer()) { profile.setGlobalPhaseRerankCount(rerankCount); }
+    | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setGlobalPhaseRankScoreDropLimit(dropLimit); }
     )
 }
 

@@ -43,7 +43,7 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
         NodeList expired = getExpiredNodes();
 
         if ( ! expired.isEmpty()) {
-            log.info(fromState + " expirer found " + expired.size() + " expired nodes: " + expired);
+            log.info(this.getClass().getSimpleName() + " found " + expired.size() + " expired nodes: " + expired);
             expire(expired.asList());
         }
 
