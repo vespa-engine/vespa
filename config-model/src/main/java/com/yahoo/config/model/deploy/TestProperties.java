@@ -60,6 +60,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitMemory = 0.8;
     private double minNodeRatioPerGroup = 0.0;
     private int maxUnCommittedMemory = 123456;
+    private String searchMmapAdvise = "NORMAL";
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private int mbus_java_num_targets = 2;
@@ -111,6 +112,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
+    @Override public String searchMmapAdvise() { return searchMmapAdvise; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
     @Override public List<String> environmentVariables() { return environmentVariables; }
     @Override public int mbusNetworkThreads() { return mbus_network_threads; }
@@ -133,6 +135,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
+        return this;
+    }
+
+    public TestProperties setSearchMmapAdvise(String searchMmapAdvise) {
+        this.searchMmapAdvise = searchMmapAdvise;
         return this;
     }
 

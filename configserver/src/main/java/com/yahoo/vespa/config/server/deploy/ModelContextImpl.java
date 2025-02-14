@@ -178,6 +178,7 @@ public class ModelContextImpl implements ModelContext {
         private final double minNodeRatioPerGroup;
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final int maxUnCommittedMemory;
+        private final String searchMmapAdvise;
         private final boolean forwardIssuesAsErrors;
         private final boolean useV8GeoPositions;
         private final List<String> ignoredHttpUserAgents;
@@ -223,6 +224,7 @@ public class ModelContextImpl implements ModelContext {
             this.minNodeRatioPerGroup = Flags.MIN_NODE_RATIO_PER_GROUP.bindTo(source).with(appId).with(version).value();
             this.containerDumpHeapOnShutdownTimeout = PermanentFlags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
             this.maxUnCommittedMemory = Flags.MAX_UNCOMMITTED_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.searchMmapAdvise = Flags.SEARCH_MMAP_ADVISE.bindTo(source).with(appId).with(version).value();
             this.forwardIssuesAsErrors = PermanentFlags.FORWARD_ISSUES_AS_ERRORS.bindTo(source).with(appId).with(version).value();
             this.useV8GeoPositions = Flags.USE_V8_GEO_POSITIONS.bindTo(source).with(appId).with(version).value();
             this.ignoredHttpUserAgents = PermanentFlags.IGNORED_HTTP_USER_AGENTS.bindTo(source).with(appId).with(version).value();
@@ -271,6 +273,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
+        @Override public String searchMmapAdvise() { return searchMmapAdvise; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }

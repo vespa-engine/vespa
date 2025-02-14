@@ -1310,6 +1310,7 @@
       "public double feedConcurrency()",
       "public double feedNiceness()",
       "public int maxUnCommittedMemory()",
+      "public java.lang.String searchMmapAdvise()",
       "public boolean sharedStringRepoNoReclaim()",
       "public boolean loadCodeAsHugePages()",
       "public boolean containerDumpHeapOnShutdownTimeout()",

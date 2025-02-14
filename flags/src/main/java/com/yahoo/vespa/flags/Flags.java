@@ -84,6 +84,14 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundStringFlag SEARCH_MMAP_ADVISE = defineStringFlag(
+            "search-mmap-advise", "NORMAL",
+            List.of("vekterli"), "2025-02-14", "2025-06-01",
+            "Sets the MMAP advise setting used for disk based posting lists on the content node. " +
+            "Valid values are [NORMAL, RANDOM, SEQUENTIAL]",
+            "Takes effect at redeployment (requires restart)",
+            INSTANCE_ID);
+
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
             List.of("baldersheim"), "2020-12-02", "2025-03-01",

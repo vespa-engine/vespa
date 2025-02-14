@@ -91,6 +91,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { return 0.5; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxUnCommittedMemory() { return 130000; }
+        @ModelFeatureFlag(owners = {"vekterli"}) default String searchMmapAdvise() { return "NORMAL"; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.477") default boolean sharedStringRepoNoReclaim() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.479") default boolean loadCodeAsHugePages() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
