@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.content.cluster;
 import com.google.common.base.Preconditions;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -101,7 +100,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     private Integer maxNodesPerMerge;
     private final Zone zone;
     private final Optional<Integer> distributionBitsInPreviousModel;
-    private final ModelContext.FeatureFlags featureFlags;
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
     private DistributionMode distributionMode;
@@ -185,6 +183,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             var resourceLimits = new ClusterResourceLimits.Builder(isHosted,
                                                                    deployState.featureFlags().resourceLimitDisk(),
                                                                    resourceLimitMemory,
+                                                                   deployState.featureFlags().resourceLimitLowWatermarkDifference(),
                                                                    deployState.getDeployLogger())
                     .build(contentElement);
 
@@ -468,7 +467,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         this.documentSelection = routingSelection;
         this.zone = deployState.zone();
         this.distributionBitsInPreviousModel = distributionBitsInPreviousModel(deployState, clusterId);
-        this.featureFlags = deployState.featureFlags();
     }
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(clusterId); }
