@@ -689,4 +689,36 @@ TEST_F(MultiBitVectorIteratorTest, test_iterator_conformance)
     }
 }
 
+TEST(MultiBitVectorTest, test_transform_children_numbering) {
+    TermFieldMatchData tfmd;
+    auto bv = BitVector::create(1000);
+    auto vec = [&](){ return BitVectorIterator::create(bv.get(), tfmd, false, false); };
+    MultiSearch::Children list;
+    list.push_back(AndSearch::create({vec(), vec()}, false)); // 0->0
+    list.emplace_back(new EmptySearch());                                 // 1->1
+    list.push_back(vec());                                                  // 2->2
+    list.emplace_back(new EmptySearch());                                 // 3->3
+    list.push_back(vec());                                                  // 4->X
+    list.push_back(OrSearch::create({vec(), vec()}, false));  // 5->4
+    list.emplace_back(new EmptySearch());                                 // 6->5
+    list.push_back(vec());                                                  // 7->X
+    list.push_back(vec());                                                  // 8->X
+    list.emplace_back(new EmptySearch());                                 // 9->6
+    std::vector<size_t> expect = {0,1,2,3,5,6,9}; // 2 replaced, 4,7,8 removed
+    std::set<size_t> mbv = {0, 2, 4}; // which are multi-bit-vector iterators (new order)
+    auto search = MultiBitVectorIteratorBase::optimize(AndSearch::create(std::move(list), false));
+    EXPECT_TRUE(search->as_multi_bit_vector_base() == nullptr);
+    // fprintf(stdout, "%s\n", search->asString().c_str());
+    size_t new_idx = 0;
+    auto transform = [&](std::unique_ptr<SearchIterator> s, size_t old_idx){
+        SCOPED_TRACE("checking entry: " + std::to_string(old_idx) + " -> " + std::to_string(new_idx));
+        EXPECT_EQ(mbv.contains(new_idx), s->as_multi_bit_vector_base() != nullptr);
+        EXPECT_EQ(old_idx, expect[new_idx]);
+        ++new_idx;
+        return s;
+    };
+    search->transform_children(transform);
+    EXPECT_EQ(new_idx, expect.size());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
