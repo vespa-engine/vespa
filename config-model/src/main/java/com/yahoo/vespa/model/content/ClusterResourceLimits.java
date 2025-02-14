@@ -40,6 +40,7 @@ public class ClusterResourceLimits {
         private final boolean hostedVespa;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
+        private final double resourceLimitLowWatermarkDifference;
         private final DeployLogger deployLogger;
 
         private ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
@@ -48,12 +49,19 @@ public class ClusterResourceLimits {
         public Builder(boolean hostedVespa,
                        double resourceLimitDisk,
                        double resourceLimitMemory,
+                       double resourceLimitLowWatermarkDifference,
                        DeployLogger deployLogger) {
             this.hostedVespa = hostedVespa;
             this.resourceLimitDisk = resourceLimitDisk;
             this.resourceLimitMemory = resourceLimitMemory;
+            this.resourceLimitLowWatermarkDifference = requireNonNegative(resourceLimitLowWatermarkDifference);
             this.deployLogger = deployLogger;
             verifyLimits(resourceLimitDisk, resourceLimitMemory);
+        }
+
+        private static double requireNonNegative(double value) {
+            if (value < 0) throw new IllegalArgumentException(value + " must be non-negative, but was " + value);
+            return value;
         }
 
         public ClusterResourceLimits build(ModelElement clusterElem) {
@@ -103,6 +111,9 @@ public class ClusterResourceLimits {
 
             deriveContentNodeLimit(nodeBuilder.getDiskLimit(), ctrlBuilder.getDiskLimit(), 0.6, nodeBuilder::setDiskLimit);
             deriveContentNodeLimit(nodeBuilder.getMemoryLimit(), ctrlBuilder.getMemoryLimit(), 0.5, nodeBuilder::setMemoryLimit);
+
+            ctrlBuilder.setLowWatermarkDifference(resourceLimitLowWatermarkDifference);
+            nodeBuilder.setLowWatermarkDifference(resourceLimitLowWatermarkDifference);
         }
 
         private void considerSettingDefaultClusterControllerLimit(Optional<Double> clusterControllerLimit,

@@ -175,6 +175,7 @@ public class ModelContextImpl implements ModelContext {
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
+        private final double resourceLimitLowWatermarkDifference;
         private final double minNodeRatioPerGroup;
         private final boolean containerDumpHeapOnShutdownTimeout;
         private final int maxUnCommittedMemory;
@@ -220,6 +221,7 @@ public class ModelContextImpl implements ModelContext {
             this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.resourceLimitLowWatermarkDifference = PermanentFlags.RESOURCE_LIMIT_LOW_WATERMARK_DIFFERENCE.bindTo(source).with(appId).with(version).value();
             this.minNodeRatioPerGroup = Flags.MIN_NODE_RATIO_PER_GROUP.bindTo(source).with(appId).with(version).value();
             this.containerDumpHeapOnShutdownTimeout = PermanentFlags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
             this.maxUnCommittedMemory = Flags.MAX_UNCOMMITTED_MEMORY.bindTo(source).with(appId).with(version).value();
@@ -268,6 +270,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
+        @Override public double resourceLimitLowWatermarkDifference() { return resourceLimitLowWatermarkDifference; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
