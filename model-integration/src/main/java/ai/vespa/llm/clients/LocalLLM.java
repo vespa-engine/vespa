@@ -19,9 +19,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -156,10 +154,11 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     }
     
     /**
-     * Completes the given prompt, mostly asynchronously but with a blocking timeout while waiting for a free slot in the queue.
-     * It is used by both `complete()` and `completeAsync()` depending on the `offerTimeout` value.
-     * When set to 0, there is no waiting, completing with exception immediately.
-     * When larger than 0, it will wait for up to `offerTimeout` blocking the thread, throttling the incoming requests.
+     * Completes the given prompt, mostly asynchronously with or without a blocking wait.
+     * It is used by both `complete()` and `completeAsync()` with different `offerTimeout` values.
+     * When set to 0, there is no blocking wait, the request is either added to the queue or rejected immediately.
+     * When larger than 0 and the queue is full, there will be a blocking wait up to `offerTimeout` milliseconds.
+     * This blocking is used for throttling the incoming requests, propagating the delay up the stack.
      */
     private CompletableFuture<Completion.FinishReason> completeWithOffer(
             Prompt prompt, InferenceParameters options, Consumer<Completion> consumer, long offerTimeout) {
@@ -221,14 +220,16 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                     : executor.getQueue().offer(future);
                 
             if (!accepted) {
-                String error = rejectedExecutionErrorMessage("Rejected completion due to full queue when offering the request to the executor queue.");
-                completionFuture.completeExceptionally(new LanguageModelException(503, error));
+                String errorMessage = rejectedExecutionErrorMessage(
+                        "Rejected completion due to full queue when offering the request to the executor queue.");
+                completionFuture.completeExceptionally(new LanguageModelException(503, errorMessage));
                 return completionFuture;
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            String error = rejectedExecutionErrorMessage("Rejected completion due to interruption when offering the request to the executor queue.");
-            completionFuture.completeExceptionally(new LanguageModelException(503, error));
+            String errorMessage = rejectedExecutionErrorMessage(
+                    "Rejected completion due to interruption when offering the request to the executor queue.");
+            completionFuture.completeExceptionally(new LanguageModelException(503, errorMessage));
             return completionFuture;
         }
         
@@ -238,9 +239,9 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                         if (!hasStarted.get()) {
                             future.cancel(false);
                             executor.remove(future);
-                            String error = rejectedExecutionErrorMessage(
+                            String errorMessage = rejectedExecutionErrorMessage(
                                     "Rejected completion due to timeout waiting to start precessing the request.");
-                            completionFuture.completeExceptionally(new LanguageModelException(504, error));
+                            completionFuture.completeExceptionally(new LanguageModelException(504, errorMessage));
                         }
                     }, maxQueueWait, TimeUnit.MILLISECONDS
             );
@@ -249,9 +250,9 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         return completionFuture;
     }
 
-    private String rejectedExecutionErrorMessage(String prepend) {
+    private String rejectedExecutionErrorMessage(String prefix) {
         int activeCount = executor.getActiveCount();
         int queueSize = executor.getQueue().size();
-        return String.format("%s, %d active, %d in queue", prepend, activeCount, queueSize);
+        return String.format("%s, %d active, %d in queue", prefix, activeCount, queueSize);
     }
 }
