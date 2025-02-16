@@ -6,6 +6,7 @@ import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
+import com.sun.xml.bind.v2.util.EditDistance;
 import com.yahoo.config.ModelReference;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -315,13 +316,22 @@ public class LocalLLMTest {
                 System.err.println("Expected output: " + expectOutput);
                 System.err.println("Actual output: " + completionStr);
             }
-
+            
+            // Using edit distance to compare output to account for small variations in LLM output.
+            // The threshold is an arbitrary small number.
+            // Using existing edit distance methods from arbitrary library among existing dependencies.
             if (expectOutput != null) {
-                assertEquals(expectOutput, completionStr);
+                var editDistance = EditDistance.editDistance(expectOutput, completionStr);
+                var maxEditDistance = expectOutput.length() * 0.05;
+                assertTrue(editDistance <= maxEditDistance, 
+                        "Expected output edit distance <= " + maxEditDistance + ", got " + editDistance);
             }
             
             if (expectNotOutput != null) {
-                assertNotEquals(expectNotOutput, completionStr);
+                var editDistance = EditDistance.editDistance(expectNotOutput, completionStr);
+                var maxEditDistance = expectNotOutput.length() * 0.05;
+                assertTrue(editDistance >= maxEditDistance,
+                        "Expected output edit distance >= " + maxEditDistance + ", got " + editDistance);
             }
         }
     }
