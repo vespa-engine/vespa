@@ -2637,4 +2637,9 @@ public class ParseTestCase {
         tester.assertParsed("WEAKAND(100) index:search index:terms", "{search terms}", Query.Type.WEAKAND);
     }
 
+    @Test
+    void testParenthesisAndNegative() {
+        tester.assertParsed("WEAKAND(100) (+(OR (AND requirements txt) from line 11) -r)", "(from -r requirements.txt (line 11)) ", Query.Type.WEAKAND);
+    }
+
 }

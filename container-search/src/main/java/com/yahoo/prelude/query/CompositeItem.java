@@ -44,7 +44,7 @@ public abstract class CompositeItem extends Item {
     public void ensureNotInSubtree(CompositeItem item) {
         for (Item i = this; i != null; i = i.getParent()) {
             if (i == item) {
-                throw new IllegalArgumentException("Cannot add " + item + " to " + this + " as it would create a cycle");
+                throw new IllegalArgumentException("Cannot add '" + item + "' to '" + this + "' as it would create a cycle");
             }
         }
     }

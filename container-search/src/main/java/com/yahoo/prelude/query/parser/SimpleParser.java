@@ -200,15 +200,12 @@ abstract class SimpleParser extends StructuredParser {
      * (+ items) are not found, but negatives are.
      */
     private Item getItemAsPositiveItem(Item item, NotItem not) {
-        if (!(item instanceof RankItem rank)) {
-            return item;
-        }
+        if (!(item instanceof CompositeItem rank)) return item;
 
         // Remove the not from the rank item, the rank should generally
         // be the first, but this is not always the case
         int limit = rank.getItemCount();
         int n = 0;
-
         while (n < limit) {
             if (rank.getItem(n) == not) {
                 rank.removeItem(n);
