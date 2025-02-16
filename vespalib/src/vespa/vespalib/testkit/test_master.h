@@ -32,7 +32,7 @@ public:
         std::string file;
         uint32_t    line;
         std::string msg;
-        TraceItem(std::string file_in, uint32_t line_in, std::string msg_in);
+        TraceItem(std::string file_in, uint32_t line_in, std::string msg_in) noexcept;
         TraceItem(TraceItem &&) noexcept;
         TraceItem & operator=(TraceItem &&) noexcept;
         TraceItem(const TraceItem &);

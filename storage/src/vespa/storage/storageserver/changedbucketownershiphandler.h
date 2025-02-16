@@ -85,7 +85,7 @@ public:
         using CSP = std::shared_ptr<const OwnershipState>;
 
         OwnershipState(std::shared_ptr<const lib::ClusterStateBundle> state,
-                       std::shared_ptr<const lib::DistributionConfigBundle> distributions);
+                       std::shared_ptr<const lib::DistributionConfigBundle> distributions) noexcept;
         ~OwnershipState();
 
         static const uint16_t FAILED_TO_RESOLVE = 0xffff;
