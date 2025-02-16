@@ -113,7 +113,7 @@ ChangedBucketOwnershipHandler::Metrics::Metrics(metrics::MetricSet* owner)
 ChangedBucketOwnershipHandler::Metrics::~Metrics() = default;
 
 ChangedBucketOwnershipHandler::OwnershipState::OwnershipState(std::shared_ptr<const lib::ClusterStateBundle> state,
-                                                              std::shared_ptr<const lib::DistributionConfigBundle> distributions)
+                                                              std::shared_ptr<const lib::DistributionConfigBundle> distributions) noexcept
     : _state(std::move(state)),
       _distributions(std::move(distributions))
 {

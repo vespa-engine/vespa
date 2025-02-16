@@ -58,8 +58,8 @@ class VisitorThread : public framework::Runnable,
         Event& operator= (Event&& other) noexcept;
         Event(const Event& other) = delete;
         Event& operator= (const Event& other) = delete;
-        Event(api::VisitorId visitor, mbus::Reply::UP reply);
-        Event(api::VisitorId visitor, std::shared_ptr<api::StorageMessage> msg);
+        Event(api::VisitorId visitor, mbus::Reply::UP reply) noexcept;
+        Event(api::VisitorId visitor, std::shared_ptr<api::StorageMessage> msg) noexcept;
         ~Event();
 
         [[nodiscard]] bool empty() const noexcept {

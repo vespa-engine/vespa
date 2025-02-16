@@ -73,7 +73,7 @@ ClusterStateBundle::ClusterStateBundle(std::shared_ptr<const ClusterState> basel
                                        BucketSpaceStateMapping derived_bucket_space_states,
                                        std::optional<FeedBlock> feed_block_in,
                                        std::shared_ptr<const DistributionConfigBundle> distribution_bundle,
-                                       bool deferred_activation)
+                                       bool deferred_activation) noexcept
     : _baselineClusterState(std::move(baseline_cluster_state)),
       _derivedBucketSpaceStates(std::move(derived_bucket_space_states)),
       _feed_block(std::move(feed_block_in)),

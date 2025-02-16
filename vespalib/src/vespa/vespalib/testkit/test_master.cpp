@@ -29,7 +29,7 @@ TestMaster TestMaster::master;
 __thread TestMaster::ThreadState *TestMaster::_threadState = nullptr;
 
 //-----------------------------------------------------------------------------
-TestMaster::TraceItem::TraceItem(std::string file_in, uint32_t line_in, std::string msg_in)
+TestMaster::TraceItem::TraceItem(std::string file_in, uint32_t line_in, std::string msg_in) noexcept
     : file(std::move(file_in)), line(line_in), msg(std::move(msg_in))
 {}
 TestMaster::TraceItem::TraceItem(TraceItem &&) noexcept = default;

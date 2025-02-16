@@ -128,7 +128,7 @@ struct DummyRankingAssetsRepo : IRankingAssetsRepo {
     const RankingConstantsConfig &cfg;
     RankingExpressions _expressions;
     OnnxModels _onnxModels;
-    DummyRankingAssetsRepo(const RankingConstantsConfig &cfg_in, RankingExpressions expressions, OnnxModels onnxModels);
+    DummyRankingAssetsRepo(const RankingConstantsConfig &cfg_in, RankingExpressions expressions, OnnxModels onnxModels) noexcept;
     ~DummyRankingAssetsRepo() override;
     [[nodiscard]] vespalib::eval::ConstantValue::UP getConstant(const std::string &name) const override;
 
@@ -141,7 +141,7 @@ struct DummyRankingAssetsRepo : IRankingAssetsRepo {
     }
 };
 
-DummyRankingAssetsRepo::DummyRankingAssetsRepo(const RankingConstantsConfig &cfg_in, RankingExpressions expressions, OnnxModels onnxModels)
+DummyRankingAssetsRepo::DummyRankingAssetsRepo(const RankingConstantsConfig &cfg_in, RankingExpressions expressions, OnnxModels onnxModels) noexcept
     : cfg(cfg_in),
       _expressions(std::move(expressions)),
       _onnxModels(std::move(onnxModels))
