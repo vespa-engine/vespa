@@ -101,6 +101,7 @@
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder parallelRequests(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxQueueSize(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxQueueWait(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxEnqueueWait(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder useGpu(boolean)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder gpuLayers(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder threads(int)",
@@ -133,8 +134,8 @@
     ],
     "fields" : [
       "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum NONE",
-      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum SKIP",
-      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum ERROR"
+      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum DISCARD",
+      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum ABORT"
     ]
   },
   "ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy" : {
@@ -150,8 +151,8 @@
     ],
     "fields" : [
       "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum NONE",
-      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum SKIP",
-      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum ERROR"
+      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum DISCARD",
+      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum ABORT"
     ]
   },
   "ai.vespa.llm.clients.LlmLocalClientConfig$Producer" : {
@@ -185,6 +186,7 @@
       "public int parallelRequests()",
       "public int maxQueueSize()",
       "public int maxQueueWait()",
+      "public int maxEnqueueWait()",
       "public boolean useGpu()",
       "public int gpuLayers()",
       "public int threads()",
