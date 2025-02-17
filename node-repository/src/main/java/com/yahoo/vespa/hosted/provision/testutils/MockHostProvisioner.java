@@ -94,6 +94,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                           hostHostname,
                                           hostFlavor,
                                           request.type(),
+                                          request.sharing() == HostSharing.provision ? Optional.of(request.owner()) : Optional.empty(),
                                           request.sharing().isExclusiveAllocation() ? Optional.of(request.owner()) : Optional.empty(),
                                           Optional.empty(),
                                           createHostnames(request.type(), hostFlavor, index),
