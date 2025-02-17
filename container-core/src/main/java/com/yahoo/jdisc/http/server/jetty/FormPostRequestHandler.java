@@ -51,7 +51,6 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
 
     private Charset contentCharset;
     private HttpRequest request;
-    private ResourceReference requestReference;
     private ResponseHandler responseHandler;
 
     /**
@@ -72,7 +71,6 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
         this.contentCharset = getCharsetByName(contentCharsetName);
         this.responseHandler = responseHandler;
         this.request = (HttpRequest) request;
-        this.requestReference = request.refer(this);
 
         return this;
     }
@@ -91,35 +89,33 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
 
     @Override
     public void close(CompletionHandler completionHandler) {
-        try (ResourceReference ref = requestReference) {
-            byte[] requestContentBytes = accumulatedRequestContent.toByteArray();
-            String content = new String(requestContentBytes, contentCharset);
-            Map<String, List<String>> parameterMap;
-            try {
-                parameterMap = parseFormParameters(content);
-            } catch (IllegalArgumentException e) {
-                // Log for now until this is solved properly
-                log.log(Level.INFO, "Failed to parse form parameters: %s".formatted(e.getMessage()));
-                completionHandler.failed(new RequestException(BAD_REQUEST, "Failed to parse form parameters", e));
-                return;
-            }
-            mergeParameters(parameterMap, request.parameters());
-            ContentChannel contentChannel = null;
-            try {
-                contentChannel = delegateHandler.handleRequest(request, responseHandler);
-            } catch (Throwable t) {
-                completionHandler.failed(t);
-                return;
-            }
-            if (contentChannel != null) {
-                if (!removeBody) {
-                    ByteBuffer byteBuffer = ByteBuffer.wrap(requestContentBytes);
-                    contentChannel.write(byteBuffer, CompletionHandlers.noop());
-                }
-                contentChannel.close(CompletionHandlers.noop());
-            }
-            completionHandler.completed();
+        byte[] requestContentBytes = accumulatedRequestContent.toByteArray();
+        String content = new String(requestContentBytes, contentCharset);
+        Map<String, List<String>> parameterMap;
+        try {
+            parameterMap = parseFormParameters(content);
+        } catch (IllegalArgumentException e) {
+            // Log for now until this is solved properly
+            log.log(Level.INFO, "Failed to parse form parameters: %s".formatted(e.getMessage()));
+            completionHandler.failed(new RequestException(BAD_REQUEST, "Failed to parse form parameters", e));
+            return;
         }
+        mergeParameters(parameterMap, request.parameters());
+        ContentChannel contentChannel = null;
+        try {
+            contentChannel = delegateHandler.handleRequest(request, responseHandler);
+        } catch (Throwable t) {
+            completionHandler.failed(t);
+            return;
+        }
+        if (contentChannel != null) {
+            if (!removeBody) {
+                ByteBuffer byteBuffer = ByteBuffer.wrap(requestContentBytes);
+                contentChannel.write(byteBuffer, CompletionHandlers.noop());
+            }
+            contentChannel.close(CompletionHandlers.noop());
+        }
+        completionHandler.completed();
     }
 
     /**
