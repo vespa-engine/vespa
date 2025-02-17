@@ -24,6 +24,9 @@ public interface HostProvisioner {
 
     enum HostSharing {
 
+        /** The host must be provisioned exclusively for the application ID. */
+        provision,
+
         /** The host must be exclusive to a single application ID */
         exclusive,
 
@@ -31,7 +34,7 @@ public interface HostProvisioner {
         shared;
 
         public boolean isExclusiveAllocation() {
-            return this == exclusive;
+            return this == provision || this == exclusive;
         }
 
     }
