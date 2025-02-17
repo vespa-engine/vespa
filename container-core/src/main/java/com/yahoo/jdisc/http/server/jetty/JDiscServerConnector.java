@@ -3,10 +3,10 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
-import jakarta.servlet.ServletRequest;
-import jakarta.servlet.http.HttpServletRequest;
 import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.server.ConnectionFactory;
+import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 
@@ -28,8 +28,7 @@ class JDiscServerConnector extends ServerConnector {
     private final int listenPort;
     private final List<String> knownServerNames;
 
-    JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, JettyConnectionLogger connectionLogger,
-                         ConnectionMetricAggregator connectionMetricAggregator, ConnectionFactory... factories) {
+    JDiscServerConnector(ConnectorConfig config, Metric metric, Server server, ConnectionFactory... factories) {
         super(server, factories);
         this.config = config;
         this.metric = metric;
@@ -45,8 +44,6 @@ class JDiscServerConnector extends ServerConnector {
         if (throttlingConfig.enabled()) {
             new ConnectionThrottler(this, throttlingConfig).registerWithConnector();
         }
-        addBean(connectionLogger);
-        addBean(connectionMetricAggregator);
         setPort(config.listenPort());
         setName(config.name());
         setAcceptQueueSize(config.acceptQueueSize());
@@ -66,23 +63,19 @@ class JDiscServerConnector extends ServerConnector {
         return metricCtx;
     }
 
-    public Metric.Context createRequestMetricContext(HttpServletRequest request, Map<String, String> extraDimensions) {
+    public Metric.Context createRequestMetricContext(Request request, Map<String, String> extraDimensions) {
         String method = request.getMethod();
-        String scheme = request.getScheme();
-        boolean clientAuthenticated = request.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT) != null;
+        String scheme = request.getHttpURI().getScheme();
+        boolean clientAuthenticated = request.getAttribute(SecureRequestCustomizer.X509_ATTRIBUTE) != null;
         Map<String, Object> dimensions = createConnectorDimensions(listenPort, connectorName, extraDimensions.size() + 5);
         dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
         dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
         dimensions.put(MetricDefinitions.CLIENT_AUTHENTICATED_DIMENSION, Boolean.toString(clientAuthenticated));
-        dimensions.put(MetricDefinitions.PROTOCOL_DIMENSION, request.getProtocol());
-        String serverName = knownServerNames.stream().filter(name -> name.equalsIgnoreCase(request.getServerName())).findFirst().orElse("unknown");
+        dimensions.put(MetricDefinitions.PROTOCOL_DIMENSION, request.getConnectionMetaData().getProtocol());
+        String serverName = knownServerNames.stream().filter(name -> name.equalsIgnoreCase(Request.getServerName(request))).findFirst().orElse("unknown");
         dimensions.put(MetricDefinitions.REQUEST_SERVER_NAME_DIMENSION, serverName);
         dimensions.putAll(extraDimensions);
         return metric.createContext(dimensions);
-    }
-
-    public static JDiscServerConnector fromRequest(ServletRequest request) {
-        return (JDiscServerConnector) request.getAttribute(REQUEST_ATTRIBUTE);
     }
 
     ConnectorConfig connectorConfig() {

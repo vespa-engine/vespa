@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import ai.vespa.utils.BytesQuantity;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
@@ -10,7 +9,6 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 
@@ -21,14 +19,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Random;
-import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 
@@ -111,15 +102,25 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         public ContentLoggingContentChannel(ContentChannel originalContentChannel, long contentLoggingMaxSize) {
             this.originalContentChannel = originalContentChannel;
             this.contentLoggingMaxSize = contentLoggingMaxSize;
-            var contentLength = jettyRequest.getContentLength();
-            this.accumulatedRequestContent = new ByteArrayOutputStream(contentLength == -1 ? 128 : contentLength);
+            var contentLength = jettyRequest.getLength();
+            this.accumulatedRequestContent =
+                    new ByteArrayOutputStream(contentLength == -1 ? 128 : Math.toIntExact(contentLength));
         }
 
         @Override
         public void write(ByteBuffer buf, CompletionHandler handler) {
             length.addAndGet(buf.remaining());
-            var bytesToLog = Math.min(buf.remaining(), contentLoggingMaxSize - accumulatedRequestContent.size());
-            if (bytesToLog > 0) accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), (int)bytesToLog);
+            var bytesToLog = Math.toIntExact(Math.min(buf.remaining(), contentLoggingMaxSize - accumulatedRequestContent.size()));
+            if (bytesToLog > 0) {
+                if (buf.hasArray()) {
+                    accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), bytesToLog);
+                } else {
+                    byte[] temp = new byte[bytesToLog];
+                    buf.get(temp);
+                    accumulatedRequestContent.write(temp, 0, bytesToLog);
+                    buf.position(buf.position() - bytesToLog); // Reset position to original
+                }
+            }
             if (originalContentChannel != null) originalContentChannel.write(buf, handler);
         }
 
@@ -127,7 +128,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         public void close(CompletionHandler handler) {
             var bytes = accumulatedRequestContent.toByteArray();
             accessLogEntry.setContent(new AccessLogEntry.Content(
-                    Objects.requireNonNullElse(jettyRequest.getHeader(HttpHeaders.Names.CONTENT_TYPE), ""),
+                    Objects.requireNonNullElse(jettyRequest.getHeaders().get(HttpHeaders.Names.CONTENT_TYPE), ""),
                     length.get(),
                     bytes));
             accumulatedRequestContent.reset();
