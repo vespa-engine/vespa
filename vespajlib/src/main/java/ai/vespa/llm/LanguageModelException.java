@@ -13,6 +13,12 @@ public class LanguageModelException extends RuntimeException {
         this.code = code;
     }
 
+    public LanguageModelException(int code, String message, Throwable cause) {
+        super(message, cause);
+        this.code = code;
+    }
+
+
     public int code() {
         return code;
     }

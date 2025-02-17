@@ -24,8 +24,11 @@ public record Completion(String text, FinishReason finishReason) {
         /** The completion is not finished yet, more tokens are incoming. */
         none,
 
-        /** An error occurred while generating the completion */
-        error
+        /** An error occurred while generating the completion. */
+        error,
+
+        /** The request for the completion was discarded without raising an error. */
+        discard 
     }
 
     public Completion(String text, FinishReason finishReason) {

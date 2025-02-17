@@ -101,11 +101,15 @@
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder parallelRequests(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxQueueSize(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxQueueWait(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxEnqueueWait(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder useGpu(boolean)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder gpuLayers(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder threads(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder contextSize(int)",
       "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxTokens(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder maxPromptTokens(int)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder contextOverflowPolicy(ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum)",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$Builder seed(int)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -115,6 +119,41 @@
       "public ai.vespa.llm.clients.LlmLocalClientConfig build()"
     ],
     "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum[] values()",
+      "public static ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum NONE",
+      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum DISCARD",
+      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum ABORT"
+    ]
+  },
+  "ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy" : {
+    "superClass" : "com.yahoo.config.EnumNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum)"
+    ],
+    "fields" : [
+      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum NONE",
+      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum DISCARD",
+      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum ABORT"
+    ]
   },
   "ai.vespa.llm.clients.LlmLocalClientConfig$Producer" : {
     "superClass" : "java.lang.Object",
@@ -147,11 +186,15 @@
       "public int parallelRequests()",
       "public int maxQueueSize()",
       "public int maxQueueWait()",
+      "public int maxEnqueueWait()",
       "public boolean useGpu()",
       "public int gpuLayers()",
       "public int threads()",
       "public int contextSize()",
-      "public int maxTokens()"
+      "public int maxTokens()",
+      "public int maxPromptTokens()",
+      "public ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum contextOverflowPolicy()",
+      "public int seed()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
