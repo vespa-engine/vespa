@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <lib/modelinspect.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <sstream>
 
 class Model {
@@ -100,7 +102,9 @@ public:
 };
 
 
-TEST_F("yamlDump", Model) {
+TEST(ModelInspectTest, yamlDump)
+{
+    Model f1;
     ModelInspect & inspect = f1.model;
     inspect.yamlDump();
 
@@ -109,163 +113,200 @@ TEST_F("yamlDump", Model) {
     f1.contains("- servicename: logd");
 }
 
-TEST_F("listHosts", Model) {
+TEST(ModelInspectTest, listHosts)
+{
+    Model f1;
     f1.model.listHosts();
     f1.contains("example.yahoo.com");
 }
 
-TEST_F("listServices", Model) {
+TEST(ModelInspectTest, listServices)
+{
+    Model f1;
     f1.model.listServices();
     f1.contains("logd");
     f1.contains("qrserver");
 }
 
-TEST_F("listClusters", Model) {
+TEST(ModelInspectTest, listClusters)
+{
+    Model f1;
     f1.model.listClusters();
     f1.contains("admin");
     f1.contains("default");
     f1.contains("music");
 }
 
-TEST_F("listConfigIds", Model) {
+TEST(ModelInspectTest, listConfigIds)
+{
+    Model f1;
     f1.model.listConfigIds();
     f1.contains("search/qrsclusters/default/qrserver.0");
     f1.contains("admin/configservers/configserver.0");
 }
 
-TEST_F("listHost", Model) {
-    ASSERT_EQUAL(0, f1.model.listHost("example.yahoo.com"));
+TEST(ModelInspectTest, listHost)
+{
+    Model f1;
+    ASSERT_EQ(0, f1.model.listHost("example.yahoo.com"));
     f1.contains("search/qrsclusters/default/qrserver.0");
-    ASSERT_EQUAL(1, f1.model.listHost("nothere"));
+    ASSERT_EQ(1, f1.model.listHost("nothere"));
 }
 
-TEST_F("listCluster", Model) {
-    ASSERT_EQUAL(0, f1.model.listCluster("default"));
+TEST(ModelInspectTest, listCluster)
+{
+    Model f1;
+    ASSERT_EQ(0, f1.model.listCluster("default"));
     f1.contains("search/qrsclusters/default/qrserver.0");
 
-    ASSERT_EQUAL(1, f1.model.listCluster("nothere"));
+    ASSERT_EQ(1, f1.model.listCluster("nothere"));
 }
 
-TEST_F("listAllPorts", Model) {
+TEST(ModelInspectTest, listAllPorts)
+{
+    Model f1;
     f1.model.listAllPorts();
     f1.contains("example.yahoo.com:19080");
 }
 
-TEST_F("listService", Model) {
-    ASSERT_EQUAL(0, f1.model.listService("qrserver"));
+TEST(ModelInspectTest, listService)
+{
+    Model f1;
+    ASSERT_EQ(0, f1.model.listService("qrserver"));
     f1.contains("search/qrsclusters/default/qrserver.0");
-    ASSERT_EQUAL(1, f1.model.listService("nothere"));
+    ASSERT_EQ(1, f1.model.listService("nothere"));
 }
 
-TEST_F("listService with cluster", Model) {
-    ASSERT_EQUAL(0, f1.model.listService("default", "qrserver"));
+TEST(ModelInspectTest, listService_with_cluster)
+{
+    Model f1;
+    ASSERT_EQ(0, f1.model.listService("default", "qrserver"));
     f1.contains("search/qrsclusters/default/qrserver.0");
-    ASSERT_EQUAL(1, f1.model.listService("notacluster", "qrserver"));
+    ASSERT_EQ(1, f1.model.listService("notacluster", "qrserver"));
 }
 
-TEST_F("listConfigId", Model) {
-    ASSERT_EQUAL(0, f1.model.listConfigId("hosts/example.yahoo.com/logd"));
+TEST(ModelInspectTest, listConfigId)
+{
+    Model f1;
+    ASSERT_EQ(0, f1.model.listConfigId("hosts/example.yahoo.com/logd"));
     f1.contains("logd @ example.yahoo.com : hosts");
-    ASSERT_EQUAL(1, f1.model.listConfigId("nothere"));
+    ASSERT_EQ(1, f1.model.listConfigId("nothere"));
 }
 
-TEST_F("getIndexOf", Model) {
-    ASSERT_EQUAL(0, f1.model.getIndexOf("logd", "example.yahoo.com"));
-    ASSERT_EQUAL(1, f1.model.getIndexOf("nothere", "example.yahoo.com"));
-    ASSERT_EQUAL(1, f1.model.getIndexOf("nothere", "nothere"));
+TEST(ModelInspectTest, getIndexOf)
+{
+    Model f1;
+    ASSERT_EQ(0, f1.model.getIndexOf("logd", "example.yahoo.com"));
+    ASSERT_EQ(1, f1.model.getIndexOf("nothere", "example.yahoo.com"));
+    ASSERT_EQ(1, f1.model.getIndexOf("nothere", "nothere"));
 }
 
-TEST_FF("tag filter match", TagFilterFlags("http"), Model(f1)) {
+TEST(ModelInspectTest, tag_filter_match)
+{
+    TagFilterFlags f1("http");
+    Model f2(f1);
     f2.model.listService("qrserver");
     f2.contains("tcp/example.yahoo.com:4080");
 }
 
-TEST_FF("tag filter no match", TagFilterFlags("nothing"), Model(f1)) {
+TEST(ModelInspectTest, tag_filter_no_match)
+{
+    TagFilterFlags f1("nothing");
+    Model f2(f1);
     f2.model.listService("qrserver");
     f2.missing("tcp/example.yahoo.com:4080");
 }
 
-TEST_FF("makeuri", MakeUriFlags(), Model(f1)) {
+TEST(ModelInspectTest, makeuri)
+{
+    MakeUriFlags f1;
+    Model f2(f1);
     f2.model.listService("qrserver");
     f2.contains("http://example.yahoo.com:4080");
 }
 
-TEST_FF("action no command", std::stringstream, ModelDummy(f1)) {
+TEST(ModelInspectTest, action_no_command)
+{
+    std::stringstream f1;
+    ModelDummy f2(f1);
     char *argv[] = { strdup("notacommand"), NULL, NULL };
-    ASSERT_EQUAL(1, f2.action(1, argv));
-    ASSERT_EQUAL(1, f2.action(2, argv));
-    ASSERT_EQUAL(1, f2.action(3, argv));
+    ASSERT_EQ(1, f2.action(1, argv));
+    ASSERT_EQ(1, f2.action(2, argv));
+    ASSERT_EQ(1, f2.action(3, argv));
     free(argv[0]);
 }
 
-TEST_FF("action", std::stringstream, ModelDummy(f1)) {
+TEST(ModelInspectTest, action)
+{
+    std::stringstream f1;
+    ModelDummy f2(f1);
     {
         char *arg[] = { strdup("yamldump") };
-        ASSERT_EQUAL(0, f2.action(1, arg));
+        ASSERT_EQ(0, f2.action(1, arg));
         ASSERT_TRUE(f2._yamlDump);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("hosts") };
-        ASSERT_EQUAL(0, f2.action(1, arg));
+        ASSERT_EQ(0, f2.action(1, arg));
         ASSERT_TRUE(f2._listHosts);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("services") };
-        ASSERT_EQUAL(0, f2.action(1, arg));
+        ASSERT_EQ(0, f2.action(1, arg));
         ASSERT_TRUE(f2._listServices);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("clusters") };
-        ASSERT_EQUAL(0, f2.action(1, arg));
+        ASSERT_EQ(0, f2.action(1, arg));
         ASSERT_TRUE(f2._listClusters);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("configids") };
-        ASSERT_EQUAL(0, f2.action(1, arg));
+        ASSERT_EQ(0, f2.action(1, arg));
         ASSERT_TRUE(f2._listConfigIds);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("host"), NULL };
-        ASSERT_EQUAL(0, f2.action(2, arg));
+        ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listHost);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("cluster"), NULL };
-        ASSERT_EQUAL(0, f2.action(2, arg));
+        ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listCluster);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("service"), NULL };
-        ASSERT_EQUAL(0, f2.action(2, arg));
+        ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listService);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("configid"), NULL };
-        ASSERT_EQUAL(0, f2.action(2, arg));
+        ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listConfigId);
         free(arg[0]);
     }
     {
         char *arg[] = { strdup("service"), strdup("a:b") };
-        ASSERT_EQUAL(0, f2.action(2, arg));
+        ASSERT_EQ(0, f2.action(2, arg));
         ASSERT_TRUE(f2._listService2);
         free(arg[0]);
         free(arg[1]);
     }
     {
         char *arg[] = { strdup("get-index-of"), NULL, NULL };
-        ASSERT_EQUAL(0, f2.action(3, arg));
+        ASSERT_EQ(0, f2.action(3, arg));
         ASSERT_TRUE(f2._getIndexOf);
         free(arg[0]);
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

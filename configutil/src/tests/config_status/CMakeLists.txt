@@ -4,5 +4,6 @@ vespa_add_executable(configutil_config_status_test_app TEST
     config_status_test.cpp
     DEPENDS
     configutil_util
+    GTest::gtest
 )
 vespa_add_test(NAME configutil_config_status_test_app COMMAND configutil_config_status_test_app)
