@@ -30,7 +30,6 @@ public class ProvisionedHost {
     private final String hostHostname;
     private final Flavor hostFlavor;
     private final NodeType hostType;
-    private final Optional<ApplicationId> provisionedForApplicationId;
     private final Optional<ApplicationId> exclusiveToApplicationId;
     private final Optional<ClusterSpec.Type> exclusiveToClusterType;
     private final List<HostName> nodeHostnames;
@@ -39,7 +38,6 @@ public class ProvisionedHost {
     private final CloudAccount cloudAccount;
 
     public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType,
-                           Optional<ApplicationId> provisionedForApplicationId,
                            Optional<ApplicationId> exclusiveToApplicationId,
                            Optional<ClusterSpec.Type> exclusiveToClusterType,
                            List<HostName> nodeHostnames, NodeResources nodeResources,
@@ -49,7 +47,6 @@ public class ProvisionedHost {
         this.hostHostname = Objects.requireNonNull(hostHostname, "Host hostname must be set");
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
         this.hostType = Objects.requireNonNull(hostType, "Host type must be set");
-        this.provisionedForApplicationId = Objects.requireNonNull(provisionedForApplicationId, "provisionedForApplicationId must be set");
         this.exclusiveToApplicationId = Objects.requireNonNull(exclusiveToApplicationId, "exclusiveToApplicationId must be set");
         this.exclusiveToClusterType = Objects.requireNonNull(exclusiveToClusterType, "exclusiveToClusterType must be set");
         this.nodeHostnames = validateNodeAddresses(nodeHostnames);
@@ -71,7 +68,6 @@ public class ProvisionedHost {
         Node.Builder builder = Node.create(id, IP.Config.of(List.of(), List.of(), nodeHostnames), hostHostname, hostFlavor, hostType)
                                    .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))))
                                    .cloudAccount(cloudAccount);
-        provisionedForApplicationId.ifPresent(builder::provisionedForApplicationId);
         exclusiveToApplicationId.ifPresent(builder::exclusiveToApplicationId);
         exclusiveToClusterType.ifPresent(builder::exclusiveToClusterType);
         if ( ! hostTTL.isZero()) builder.hostTTL(hostTTL);
@@ -89,7 +85,6 @@ public class ProvisionedHost {
     public String hostHostname() { return hostHostname; }
     public Flavor hostFlavor() { return hostFlavor; }
     public NodeType hostType() { return hostType; }
-    public Optional<ApplicationId> provisionedForApplicationId() { return provisionedForApplicationId; }
     public Optional<ApplicationId> exclusiveToApplicationId() { return exclusiveToApplicationId; }
     public Optional<ClusterSpec.Type> exclusiveToClusterType() { return exclusiveToClusterType; }
     public List<HostName> nodeHostnames() { return nodeHostnames; }
@@ -108,7 +103,6 @@ public class ProvisionedHost {
                hostHostname.equals(that.hostHostname) &&
                hostFlavor.equals(that.hostFlavor) &&
                hostType == that.hostType &&
-               provisionedForApplicationId.equals(that.provisionedForApplicationId) &&
                exclusiveToApplicationId.equals(that.exclusiveToApplicationId) &&
                exclusiveToClusterType.equals(that.exclusiveToClusterType) &&
                nodeHostnames.equals(that.nodeHostnames) &&
@@ -119,7 +113,7 @@ public class ProvisionedHost {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, hostHostname, hostFlavor, hostType, provisionedForApplicationId, exclusiveToApplicationId, exclusiveToClusterType, nodeHostnames, nodeResources, osVersion, cloudAccount);
+        return Objects.hash(id, hostHostname, hostFlavor, hostType, exclusiveToApplicationId, exclusiveToClusterType, nodeHostnames, nodeResources, osVersion, cloudAccount);
     }
 
     @Override
@@ -129,7 +123,6 @@ public class ProvisionedHost {
                ", hostHostname='" + hostHostname + '\'' +
                ", hostFlavor=" + hostFlavor +
                ", hostType=" + hostType +
-               ", provisionedForApplicationId=" + provisionedForApplicationId +
                ", exclusiveToApplicationId=" + exclusiveToApplicationId +
                ", exclusiveToClusterType=" + exclusiveToClusterType +
                ", nodeHostnames=" + nodeHostnames +
