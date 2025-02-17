@@ -13,6 +13,11 @@ maxQueueSize int default=100
 # Max number of milliseconds to wait in the queue before rejecting a request
 maxQueueWait int default=10000
 
+# Max number of milliseconds to wait for adding a request to the queue before rejecting it
+# This only applies for when using synchronous processing.
+# Asynchronous processing will reject a request immediately if the queue is full.
+maxEnqueueWait int default=10000
+
 # Use GPU
 useGpu bool default=true
 
@@ -36,12 +41,12 @@ maxTokens int default=512
 maxPromptTokens int default = 0
 
 # Specifies what to do when the number of tokens in a prompt + maxTokens > contextSize / parallelRequests.
-# NONE - default option, run inference no matter context and prompt sizes.
+# NONE - run inference no matter context and prompt sizes.
 # In this case, newer tokens overwrite older ones and the model looses part of the prompt. 
 # It might lead to nonsense completions and performance issues.
-# SKIP - skip inference
-# ERROR - skip inference with error
-contextOverflowPolicy enum {NONE, SKIP, ERROR} default=NONE
+# DISCARD - silently discard the request - don't run inference
+# ABORT - discard the request and raise an error
+contextOverflowPolicy enum {NONE, DISCARD, ABORT} default=NONE
 
 # Random number generator seed used by LLM runtime during inference.
 # It can be used for better reproducibility of LLM completions.

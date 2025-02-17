@@ -319,7 +319,7 @@ public class LocalLLMTest {
             
             // Using edit distance to compare output to account for small variations in LLM output.
             // The threshold is an arbitrary small number.
-            // Using existing edit distance methods from arbitrary library among existing dependencies.
+            // Using an edit distance method from arbitrary library among existing dependencies.
             if (expectOutput != null) {
                 var editDistance = EditDistance.editDistance(expectOutput, completionStr);
                 var maxEditDistance = expectOutput.length() * 0.05;
@@ -357,23 +357,68 @@ public class LocalLLMTest {
             llm.deconstruct();
         }
     }
+    
+    @Test
+    public void testMaxEnqueueWait() {
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(3)
+                .contextSize(2 * 1024)
+                .maxQueueSize(3)
+                .maxEnqueueWait(100)
+                .seed(42)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+
+        var llm = new LocalLLM(llmConfig.build());
+        var executor = Executors.newFixedThreadPool(7);
+        var futures = new ArrayList<CompletableFuture<Void>>();
+
+        try {
+            for (var task : TASKS.subList(0, 6)) {
+                futures.add(CompletableFuture.runAsync(
+                        () ->
+                                new CompletionTest(llm, task.input)
+                                        .expectOutput(task.output)
+                                        .expectFinishReason(Completion.FinishReason.stop)
+                                        .test()
+                        , executor
+                ));
+            }
+
+            futures.add(CompletableFuture.runAsync(
+                    () ->
+                            new CompletionTest(llm, TASKS.get(6).input)
+                                    .expectException(new LanguageModelException(504, "Rejected completion due to timeout waiting to add the request to the executor queue"))
+                                    .test()
+                    , executor
+            ));
+            
+            for (var future : futures) {
+                future.join();
+            }
+
+            executor.shutdown();
+        } finally {
+            llm.deconstruct();
+        }
+    }
 
     @Test
-    public void testContextOverflowPolicySkip() {
-
+    public void testContextOverflowPolicyDiscard() {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(25)
                 .seed(42)
-                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.SKIP)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.DISCARD)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
+        
         var llm = new LocalLLM(llmConfig.build());
 
         var task = TASKS.get(0);
         try {
             new CompletionTest(llm, task.input)
                     .expectOutput("")
-                    .expectFinishReason(Completion.FinishReason.skip)
+                    .expectFinishReason(Completion.FinishReason.discard)
                     .test();
         } finally {
             llm.deconstruct();
@@ -381,13 +426,14 @@ public class LocalLLMTest {
     }
 
     @Test
-    public void testContextOverflowPolicyError() {
+    public void testContextOverflowPolicyAbort() {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(25)
                 .seed(42)
-                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.ERROR)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.ABORT)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
+        
         var llm = new LocalLLM(llmConfig.build());
 
         var task = TASKS.get(0);
@@ -411,7 +457,6 @@ public class LocalLLMTest {
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());
-        
         var executor = Executors.newFixedThreadPool(5);
         var futures = new ArrayList<CompletableFuture<Void>>();
         
@@ -479,13 +524,13 @@ public class LocalLLMTest {
     }
 
     @Test
-    public void testParallelGenerationWithSmallContextOverflowPolicySkip() {
+    public void testParallelGenerationWithSmallContextOverflowPolicyDiscard() {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(5)
                 .contextSize( 5 * 100)
                 .maxTokens(50)
                 .seed(42)
-                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.SKIP)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.DISCARD)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());
@@ -506,7 +551,7 @@ public class LocalLLMTest {
                 futures.add(CompletableFuture.runAsync(
                         () -> new CompletionTest(llm, TASKS.get(i).input)
                                 .expectOutput("")
-                                .expectFinishReason(Completion.FinishReason.skip)
+                                .expectFinishReason(Completion.FinishReason.discard)
                                 .test()
                 ));
             }
@@ -522,13 +567,13 @@ public class LocalLLMTest {
     }
 
     @Test
-    public void testParallelGenerationWithSmallContextOverflowPolicyError() {
+    public void testParallelGenerationWithSmallContextOverflowPolicyAbort() {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(5)
                 .contextSize( 5 * 100)
                 .maxTokens(50)
                 .seed(42)
-                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.ERROR)
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.ABORT)
                 .model(ModelReference.valueOf(SMALL_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());

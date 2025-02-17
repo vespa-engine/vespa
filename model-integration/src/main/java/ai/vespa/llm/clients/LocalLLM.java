@@ -45,6 +45,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     private final LlamaModel model;
     private final ThreadPoolExecutor executor;
     private final long maxQueueWait;
+    private final long maxEnqueueWait;
 
     private final int maxTokens;
     private final int maxPromptTokens;
@@ -89,6 +90,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         
         // Setting other config parameters
         maxQueueWait = config.maxQueueWait();
+        maxEnqueueWait = config.maxEnqueueWait();
         maxTokens = config.maxTokens();
         maxPromptTokens = config.maxPromptTokens();
         contextSizePerRequest = config.contextSize() / config.parallelRequests();
@@ -125,7 +127,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
     public List<Completion> complete(Prompt prompt, InferenceParameters options) {
         StringBuilder result = new StringBuilder();
         var future = completeWithOffer(prompt, options, 
-                completion -> result.append(completion.text()), maxQueueWait);
+                completion -> result.append(completion.text()), maxEnqueueWait);
         Completion.FinishReason reason;
     
         try {
@@ -182,7 +184,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         // Do something when context size is too small for this request
         if (numRequestTokens > contextSizePerRequest) {
             switch (contextOverflowPolicy) {
-                case ERROR -> {
+                case ABORT -> {
                     var errorMessage = String.format(
                             "Context size per request (%d tokens) is too small " +
                                     "to fit the prompt (%d) and completion (%d) tokens.",
@@ -190,8 +192,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                     completionFuture.completeExceptionally(new LanguageModelException(413, errorMessage));
                     return completionFuture;
                 }
-                case SKIP -> {
-                    completionFuture.complete(Completion.FinishReason.skip);
+                case DISCARD -> {
+                    completionFuture.complete(Completion.FinishReason.discard);
                     return completionFuture;
                 }
             }
@@ -221,15 +223,15 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                 
             if (!accepted) {
                 String errorMessage = rejectedExecutionErrorMessage(
-                        "Rejected completion due to full queue when offering the request to the executor queue.");
-                completionFuture.completeExceptionally(new LanguageModelException(503, errorMessage));
+                        "Rejected completion due to timeout waiting to add the request to the executor queue");
+                completionFuture.completeExceptionally(new LanguageModelException(504, errorMessage));
                 return completionFuture;
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             String errorMessage = rejectedExecutionErrorMessage(
-                    "Rejected completion due to interruption when offering the request to the executor queue.");
-            completionFuture.completeExceptionally(new LanguageModelException(503, errorMessage));
+                    "Rejected completion due to interruption when adding the request to the executor queue");
+            completionFuture.completeExceptionally(new LanguageModelException(500, errorMessage));
             return completionFuture;
         }
         
@@ -240,7 +242,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
                             future.cancel(false);
                             executor.remove(future);
                             String errorMessage = rejectedExecutionErrorMessage(
-                                    "Rejected completion due to timeout waiting to start precessing the request.");
+                                    "Rejected completion due to timeout waiting to start processing the request");
                             completionFuture.completeExceptionally(new LanguageModelException(504, errorMessage));
                         }
                     }, maxQueueWait, TimeUnit.MILLISECONDS
