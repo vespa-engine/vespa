@@ -73,8 +73,7 @@ class FilteringRequestHandler extends AbstractRequestHandler {
         getRequestHandlerSpec(resolvedRequestHandler)
                 .ifPresent(requestHandlerSpec -> request.context().put(RequestHandlerSpec.ATTRIBUTE_NAME, requestHandlerSpec));
 
-        RequestHandler requestHandler = new ReferenceCountingRequestHandler(
-                new CapabilityEnforcingRequestHandler(resolvedRequestHandler));
+        var requestHandler = new CapabilityEnforcingRequestHandler(resolvedRequestHandler);
 
         ResponseHandler responseHandler;
         if (responseFilter != null) {

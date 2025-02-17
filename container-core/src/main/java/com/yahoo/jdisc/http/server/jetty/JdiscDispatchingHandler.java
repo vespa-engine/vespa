@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.References;
+import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.handler.BindingNotFoundException;
 import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.handler.RequestHandler;
@@ -96,27 +97,37 @@ class JdiscDispatchingHandler extends Handler.Abstract.NonBlocking {
         shutdownConnectionGracefullyIfThresholdReached(connector, jettyRequest);
         metricReporter.uriLength(jettyRequest.getHttpURI().getPath().length());
 
-        JettyRequestContentReader contentReader;
-
-        // Prepare async wiring of request completion (success and failure)
         var requestCompletion = new CompletableFuture<Void>();
-        requestCompletion
-                .whenComplete((result, error) -> {
-                    if (error != null) {
-                        onFailure(metricReporter, responseWriter, jettyRequest, callback, error, context.developerMode());
-                    } else {
-                        onSuccess(metricReporter, callback);
-                    }
-                });
+
+        // Create jdisc http request
+        ResourceReference requestRef = null;
+        HttpRequest jdiscRequest;
+        try {
+            jdiscRequest = HttpRequestFactory.newJDiscRequest(context.container(), jettyRequest);
+            requestRef = References.fromResource(jdiscRequest);
+        } catch (Throwable error) {
+            // Fail if an exception is thrown when constructing the jdisc request
+            requestCompletion.completeExceptionally(error);
+            return;
+        } finally {
+            // Prepare async wiring of request completion (success and failure)
+            final var finalRequestRef = requestRef;
+            requestCompletion
+                    .whenComplete((result, error) -> {
+                        if (error != null) {
+                            onFailure(metricReporter, responseWriter, jettyRequest, callback, error, context.developerMode(), finalRequestRef);
+                        } else {
+                            onSuccess(metricReporter, callback, finalRequestRef);
+                        }
+                    });
+        }
 
         // Invoke request handler
+        JettyRequestContentReader contentReader;
         try {
-            var jdiscRequest = HttpRequestFactory.newJDiscRequest(context.container(), jettyRequest);
-            try (var ignored = References.fromResource(jdiscRequest)) {
-                var requestContentChannel = requestHandler.handleRequest(jdiscRequest, responseWriter);
-                contentReader = new JettyRequestContentReader(
-                        metricReporter, context.janitor(), jettyRequest, requestContentChannel);
-            }
+            var requestContentChannel = requestHandler.handleRequest(jdiscRequest, responseWriter);
+            contentReader = new JettyRequestContentReader(
+                    metricReporter, context.janitor(), jettyRequest, requestContentChannel);
         } catch (Throwable error) {
             // Fail if an exception is thrown when constructing the jdisc request or in the request handler
             requestCompletion.completeExceptionally(error);
@@ -144,7 +155,10 @@ class JdiscDispatchingHandler extends Handler.Abstract.NonBlocking {
     }
 
     private void onFailure(RequestMetricReporter metricReporter, JettyResponseWriter responseWriter,
-                           Request jettyRequest, Callback callback, Throwable error, boolean developerMode) {
+                           Request jettyRequest, Callback callback, Throwable error, boolean developerMode,
+                           ResourceReference requestRef) {
+        releaseReference(requestRef);
+
         // tryWriteErrorResponse is responsible for invoking the callback
         responseWriter.tryWriteErrorResponse(unwrapException(error), callback, developerMode);
 
@@ -174,9 +188,18 @@ class JdiscDispatchingHandler extends Handler.Abstract.NonBlocking {
         return t instanceof CompletionException || t instanceof ExecutionException ? t.getCause() : t;
     }
 
-    private void onSuccess(RequestMetricReporter metricReporter, Callback callback) {
+    private void onSuccess(RequestMetricReporter metricReporter, Callback callback, ResourceReference requestRef) {
+        releaseReference(requestRef);
         callback.succeeded();
         metricReporter.successfulResponse();
+    }
+
+    private static void releaseReference(ResourceReference ref) {
+        try {
+            if (ref != null) ref.close();
+        } catch (Throwable t) {
+            log.log(Level.WARNING, "Failed to close request reference", t);
+        }
     }
 
     private static void shutdownConnectionGracefullyIfThresholdReached(JDiscServerConnector connector, Request jettyRequest) {
