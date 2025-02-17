@@ -212,6 +212,18 @@ public class OpenNlpTokenizationTestCase {
     }
 
     @Test
+    public void testStemGreek() {
+        var stemmer = new OpenNlpLinguistics().getStemmer();
+        String input = "οὖν";
+        String output = "ουν";
+        List<StemList> stems = stemmer.stem(input, Language.GREEK, StemMode.ALL, true);
+        assertEquals(1, stems.size());
+        var stemList = stems.get(0);
+        assertEquals(1, stemList.size());
+        assertEquals(output, stemList.get(0));
+    }
+
+    @Test
     public void testTokenTypes() {
         testTokenTypes(Language.ENGLISH);
         testTokenTypes(Language.SPANISH);
