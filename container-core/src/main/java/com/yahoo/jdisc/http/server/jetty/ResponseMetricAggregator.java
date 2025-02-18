@@ -120,7 +120,6 @@ class ResponseMetricAggregator extends EventsHandler {
         Map<String, Object> asMap() {
             Map<String, Object> builder = new HashMap<>();
             builder.put(MetricDefinitions.PROTOCOL_DIMENSION, protocol);
-            builder.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
             builder.put(MetricDefinitions.METHOD_DIMENSION, method);
             builder.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, requestType);
             builder.put(MetricDefinitions.STATUS_CODE_DIMENSION, (long) statusCode);
