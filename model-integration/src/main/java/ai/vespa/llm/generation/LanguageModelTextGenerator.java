@@ -16,17 +16,14 @@ import java.util.HashMap;
 import java.util.logging.Logger;
 
 /**
- * Text generator that uses a language model, configured with a config definition.
- *
+ * Configurable component to generate text using a language model.
+ * 
  * @author glebashnik
  */
 public class LanguageModelTextGenerator extends AbstractComponent implements TextGenerator {
     private static final Logger logger = Logger.getLogger(LanguageModelTextGenerator.class.getName());
     private final LanguageModel languageModel;
 
-    // Template usually contains {input} placeholder for the dynamic part of the prompt, replaced with the actual input.
-    // Templates without {input} are possible, which will ignore the input, making the prompt static.
-    // TODO: Consider not allowing templates without {input} to avoid costly errors when users forget to include {input}.
     private static final String DEFAULT_PROMPT_TEMPLATE = "{input}";
     private final LanguageModelTextGeneratorConfig config;
     private final String promptTemplate;
@@ -47,9 +44,11 @@ public class LanguageModelTextGenerator extends AbstractComponent implements Tex
             try {
                 String promptTemplate = new String(Files.readAllBytes(path));
 
-                if (!promptTemplate.isEmpty()) {  // TODO: Consider throwing an exception if the template is empty.
-                    return promptTemplate;
+                if (promptTemplate.isEmpty()) {
+                    throw new IllegalArgumentException("Prompt template file is empty: " + path);
                 }
+                
+                return promptTemplate;
             } catch (IOException e) {
                 throw new IllegalArgumentException("Could not read prompt template file: " + path, e);
             }
@@ -63,14 +62,10 @@ public class LanguageModelTextGenerator extends AbstractComponent implements Tex
         var options = new HashMap<String, String>();
         var jsonSchema = "";
 
-        if (config.responseFormatType().equals(InferenceParameters.OPTION_RESPONSE_FORMAT_JSON_SCHEMA)) {
-            options.put(
-                    InferenceParameters.OPTION_RESPONSE_FORMAT_TYPE,
-                    InferenceParameters.OPTION_RESPONSE_FORMAT_JSON_SCHEMA
-            );
-            jsonSchema = JsonSchemaUtils.generateJsonSchemaForDocumentField(
+        if (config.responseFormatType().equals(InferenceParameters.OPTION_JSON_SCHEMA)) {
+            jsonSchema = LanguageModelUtils.generateJsonSchemaForDocumentField(
                     context.getDestination(), context.getDestinationType());
-            options.put(InferenceParameters.OPTION_RESPONSE_FORMAT_JSON_SCHEMA, jsonSchema);
+            options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
         }
 
         var finalPrompt = buildPrompt(prompt, jsonSchema);

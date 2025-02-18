@@ -4,7 +4,8 @@ package=ai.vespa.llm.generation
 # Id of a LanguageModel component specified in services.xml, e.g. OpenAI, LocalLLM.
 providerId string
 
-# Prompt template, e.g. "Extract named entities from this text, output one entity per line: {input}"
+# Prompt template, usually contains {input} placeholder for the dynamic part of the prompt,
+# which is replaced with the actual input.
 promptTemplate string default=""
 
 # Prompt template in a file, above promptTemplate has precedence if it is set.

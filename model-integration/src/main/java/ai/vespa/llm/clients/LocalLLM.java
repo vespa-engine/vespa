@@ -7,6 +7,8 @@ import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
+import ai.vespa.llm.generation.LanguageModelUtils;
+
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import de.kherud.llama.LlamaModel;
@@ -111,13 +113,17 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         // We always set this to some value to avoid infinite token generation
         inferParams.setNPredict(maxTokens);
 
-        options.ifPresent("temperature", (v) -> inferParams.setTemperature(Float.parseFloat(v)));
-        options.ifPresent("topk", (v) -> inferParams.setTopK(Integer.parseInt(v)));
-        options.ifPresent("topp", (v) -> inferParams.setTopP(Integer.parseInt(v)));
-        options.ifPresent("npredict", (v) -> inferParams.setNPredict(Integer.parseInt(v)));
-        options.ifPresent("repeatpenalty", (v) -> inferParams.setRepeatPenalty(Float.parseFloat(v)));
-        options.ifPresent("seed", (v) -> inferParams.setSeed(Integer.parseInt(v)));
-       
+        options.ifPresent(InferenceParameters.OPTION_TEMPERATURE, (v) -> inferParams.setTemperature(Float.parseFloat(v)));
+        options.ifPresent(InferenceParameters.OPTION_TOP_K, (v) -> inferParams.setTopK(Integer.parseInt(v)));
+        options.ifPresent(InferenceParameters.OPTION_TOP_P, (v) -> inferParams.setTopP(Integer.parseInt(v)));
+        options.ifPresent(InferenceParameters.OPTION_N_PREDICT, (v) -> inferParams.setNPredict(Integer.parseInt(v)));
+        options.ifPresent(InferenceParameters.OPTION_REPEAT_PENALTY, (v) -> inferParams.setRepeatPenalty(Float.parseFloat(v)));
+        options.ifPresent(InferenceParameters.OPTION_SEED, (v) -> inferParams.setSeed(Integer.parseInt(v)));
+        options.ifPresent(InferenceParameters.OPTION_JSON_SCHEMA, (v) -> {
+            var gramma = LanguageModelUtils.convertJsonSchemaToGrammar(v);
+            inferParams.setGrammar(gramma);
+        });
+        
         inferParams.setUseChatTemplate(true);
         return inferParams;
     } 
@@ -184,18 +190,18 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         // Do something when context size is too small for this request
         if (numRequestTokens > contextSizePerRequest) {
             switch (contextOverflowPolicy) {
-                case ABORT -> {
+                case ABORT:
                     var errorMessage = String.format(
                             "Context size per request (%d tokens) is too small " +
                                     "to fit the prompt (%d) and completion (%d) tokens.",
                             contextSizePerRequest, promptTokens.length, maxTokens);
                     completionFuture.completeExceptionally(new LanguageModelException(413, errorMessage));
                     return completionFuture;
-                }
-                case DISCARD -> {
+                case DISCARD:
                     completionFuture.complete(Completion.FinishReason.discard);
                     return completionFuture;
-                }
+                case NONE:
+                    break;
             }
         }
 

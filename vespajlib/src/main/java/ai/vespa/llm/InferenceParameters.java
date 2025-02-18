@@ -23,9 +23,12 @@ public class InferenceParameters {
     public static final String OPTION_MODEL = "model";
     public static final String OPTION_TEMPERATURE = "temperature";
     public static final String OPTION_MAX_TOKENS = "maxTokens";
-    public static final String OPTION_RESPONSE_FORMAT_TYPE = "response_format_type";
-    public static final String OPTION_RESPONSE_FORMAT_JSON_SCHEMA = "json_schema";
-    public static final String OPTION_RESPONSE_FORMAT_TEXT = "text";
+    public static final String OPTION_TOP_K = "topk";
+    public static final String OPTION_TOP_P = "topp";
+    public static final String OPTION_N_PREDICT = "npredict";
+    public static final String OPTION_REPEAT_PENALTY = "repeatpenalty";
+    public static final String OPTION_SEED = "seed";
+    public static final String OPTION_JSON_SCHEMA = "json_schema";
     
     private String apiKey;
     private String endpoint;
