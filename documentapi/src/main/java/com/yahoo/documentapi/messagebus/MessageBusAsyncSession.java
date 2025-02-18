@@ -279,8 +279,10 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED))
             return CONDITION_FAILED;
         if (   reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
-            || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound())
+            || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound()
+            || reply.getErrorCodes().contains(DocumentProtocol.ERROR_DOCUMENT_NOT_FOUND)) {
             return NOT_FOUND;
+        }
         if (reply.getErrorCodes().contains(ErrorCode.TIMEOUT))
             return TIMEOUT;
         return ERROR;
