@@ -6,27 +6,26 @@
 
 namespace search {
 
-template <typename IteratorType, typename RefType>
-PostingIteratorPack<IteratorType, RefType>::~PostingIteratorPack() = default;
+template <typename IteratorType>
+PostingIteratorPack<IteratorType>::~PostingIteratorPack() = default;
 
-template <typename IteratorType, typename RefType>
-PostingIteratorPack<IteratorType, RefType>::PostingIteratorPack(std::vector<IteratorType> &&children) noexcept
+template <typename IteratorType>
+PostingIteratorPack<IteratorType>::PostingIteratorPack(std::vector<IteratorType> &&children) noexcept
     : _children(std::move(children))
 {
-    assert(_children.size() <= std::numeric_limits<ref_t>::max());
 }
 
-template <typename IteratorType, typename RefType>
+template <typename IteratorType>
 std::unique_ptr<BitVector>
-PostingIteratorPack<IteratorType, RefType>::get_hits(uint32_t begin_id, uint32_t end_id) {
+PostingIteratorPack<IteratorType>::get_hits(uint32_t begin_id, uint32_t end_id) {
     BitVector::UP result(BitVector::create(begin_id, end_id));
     or_hits_into(*result, begin_id);
     return result;
 }
 
-template <typename IteratorType, typename RefType>
+template <typename IteratorType>
 void
-PostingIteratorPack<IteratorType, RefType>::or_hits_into(BitVector &result, uint32_t begin_id) {
+PostingIteratorPack<IteratorType>::or_hits_into(BitVector &result, uint32_t begin_id) {
     for (size_t i = 0; i < size(); ++i) {
         uint32_t docId = get_docid(i);
         if (begin_id > docId) {
@@ -41,21 +40,13 @@ PostingIteratorPack<IteratorType, RefType>::or_hits_into(BitVector &result, uint
 
 template <>
 int32_t
-PostingIteratorPack<DocidIterator, uint16_t>::get_weight(ref_t, uint32_t) noexcept
+PostingIteratorPack<DocidIterator>::get_weight(uint32_t, uint32_t) noexcept
 {
     return 1;
 }
 
-template <>
-int32_t
-PostingIteratorPack<DocidIterator, uint32_t>::get_weight(ref_t, uint32_t) noexcept
-{
-    return 1;
-}
 
-template class PostingIteratorPack<DocidIterator, uint16_t>;
-template class PostingIteratorPack<DocidIterator, uint32_t>;
-template class PostingIteratorPack<DocidWithWeightIterator, uint16_t>;
-template class PostingIteratorPack<DocidWithWeightIterator, uint32_t>;
+template class PostingIteratorPack<DocidIterator>;
+template class PostingIteratorPack<DocidWithWeightIterator>;
 
 }

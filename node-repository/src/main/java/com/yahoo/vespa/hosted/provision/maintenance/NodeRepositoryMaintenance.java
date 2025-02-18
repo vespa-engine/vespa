@@ -52,7 +52,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, metric));
         maintainers.add(new FailedExpirer(nodeRepository, zone, defaults.failedExpirerInterval, metric));
         maintainers.add(new DirtyExpirer(nodeRepository, defaults.dirtyExpiry, metric));
-        maintainers.add(new ProvisionedExpirer(nodeRepository, defaults.provisionedExpiry, metric));
+        maintainers.add(new ProvisionedExpirer(nodeRepository, defaults.provisionedExpiry, flagSource, metric));
         maintainers.add(new NodeRebooter(nodeRepository, flagSource, metric));
         maintainers.add(new MetricsReporter(nodeRepository, metric, serviceMonitor, periodicApplicationMaintainer::pendingDeployments, defaults.metricsInterval));
         maintainers.add(new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval));

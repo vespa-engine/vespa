@@ -127,8 +127,10 @@ public class OpenNlpTokenizer implements Tokenizer {
         token = LinguisticsCase.toLowerCase(token);
         if (removeAccents)
             token = transformer.accentDrop(token, language);
-        if (stemMode != StemMode.NONE)
-            token = stemmer.stem(token).toString();
+        if (stemMode != StemMode.NONE) {
+            String tmp = stemmer.stem(token).toString();
+            if (tmp.length() > 0) token = tmp;
+        }
         return token;
     }
 

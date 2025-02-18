@@ -302,7 +302,7 @@ struct Bm25ExecutorTest : public ::testing::TestWithParam<TestParam> {
         }
     }
 
-    void append_term(uint32_t term_id, uint32_t field_id, uint32_t element_id, uint32_t element_length, uint16_t num_occs) {
+    void append_term(uint32_t term_id, uint32_t field_id, uint32_t element_id, uint16_t num_occs, uint32_t element_length) {
         auto* tfmd = match_data->getTermFieldMatchData(term_id, field_id);
         ASSERT_TRUE(tfmd != nullptr);
         if (!GetParam()._elementwise) {
@@ -428,21 +428,26 @@ TEST_P(Bm25ExecutorTest, missing_interleaved_features_are_handled)
     EXPECT_TRUE(execute(score(GetParam()._elementwise ? 0.0 : 1.0, 10, idf(25))));
 }
 
-TEST_P(Bm25ExecutorTest, multiple_elements)
+TEST_P(Bm25ExecutorTest, multiple_elements_and_terms)
 {
     setup();
-    prepare_term(0, 0, 3, 20);
-    append_term(0, 0, 7, 5, 2);
+    prepare_term(0, 0, 0, 0);
+    append_term(0, 0, 1, 3, 20);
+    append_term(0, 0, 7, 2, 5);
+    prepare_term(1, 0, 0, 0);
+    append_term(1, 0, 7, 1, 5);
+    append_term(1, 0, 9, 2, 7);
     if (!GetParam()._elementwise) {
         // flattened
-        EXPECT_TRUE(execute(score(5, 25, idf(25))));
+        EXPECT_TRUE(execute(score(5, 25, idf(25))) + score(3, 25, idf(35)));
     } else {
         // One tensor cell for each matching element
         auto value = test.resolveObjectFeature();
         auto spec = spec_from_value(value.get());
         TensorSpec exp_spec(GetParam()._tensor_type_spec);
-        exp_spec.add({{"x", "0"}}, score(3, 20, idf(25)));
-        exp_spec.add({{"x", "7"}}, score(2, 5, idf(25)));
+        exp_spec.add({{"x", "1"}}, score(3, 20, idf(25)));
+        exp_spec.add({{"x", "7"}}, score(2, 5, idf(25)) + score(1, 5, idf(35)));
+        exp_spec.add({{"x", "9"}}, score(2, 7, idf(35)));
         exp_spec = exp_spec.normalize();
         EXPECT_EQ(exp_spec, spec);
     }

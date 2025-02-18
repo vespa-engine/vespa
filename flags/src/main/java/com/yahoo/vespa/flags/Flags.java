@@ -50,7 +50,8 @@ public class Flags {
 
     public static final UnboundBooleanFlag UPGRADE_WIREGUARD = defineFeatureFlag(
             "upgrade-wireguard", false,
-            List.of("hakonhall"), "2025-02-04", "2025-04-04",
+            List.of("hakonhall"), "2025-02-04",
+            "2025-04-04", // TODO: Remove flag once all machine images have been built after 2025-02-13
             "Whether to upgrade vespa-wireguard-go to latest",
             "Takes effect on start of host-admin.",
             HOSTNAME);
@@ -63,7 +64,7 @@ public class Flags {
             HOSTNAME, NODE_TYPE);
 
     public static final UnboundBooleanFlag CLEAR_CONNTRACK = defineFeatureFlag(
-            "clear-conntrack", false,
+            "clear-conntrack", true,
             List.of("hakonhall"), "2025-01-14", "2025-03-14",
             "Whether to clear conntrack entries for a container",
             "Takes effect immediately",
@@ -76,11 +77,12 @@ public class Flags {
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
-    public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
-            "max-uncommitted-memory", 130000,
-            List.of("geirst"), "2021-10-21", "2025-03-01",
-            "Max amount of memory holding updates to an attribute before we do a commit.",
-            "Takes effect at redeployment",
+    public static final UnboundStringFlag SEARCH_MMAP_ADVISE = defineStringFlag(
+            "search-mmap-advise", "NORMAL",
+            List.of("vekterli"), "2025-02-14", "2025-06-01",
+            "Sets the MMAP advise setting used for disk based posting lists on the content node. " +
+            "Valid values are [NORMAL, RANDOM, SEQUENTIAL]",
+            "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
@@ -148,20 +150,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
-            "container-dump-heap-on-shutdown-timeout", false,
-            List.of("baldersheim"), "2021-09-25", "2025-03-01",
-            "Will trigger a heap dump during if container shutdown times out",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundBooleanFlag LOAD_CODE_AS_HUGEPAGES = defineFeatureFlag(
-            "load-code-as-hugepages", false,
-            List.of("baldersheim"), "2022-05-13", "2025-03-01",
-            "Will try to map the code segment with huge (2M) pages",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
             List.of("vekterli"), "2021-02-19", "2025-06-01",
@@ -177,36 +165,11 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundStringFlag SYSTEM_MEMORY_HIGH = defineStringFlag(
-            "system-memory-high", "",
-            List.of("baldersheim"), "2023-02-14", "2025-03-01",
-            "The value to write to /sys/fs/cgroup/system.slice/memory.high, if non-empty. " +
-            "You may want lower memory.high before lowering memory.max, " +
-            "and raise memory.high after raising memory.max.",
-            "Takes effect on next tick.",
-            NODE_TYPE);
-
-    public static final UnboundStringFlag SYSTEM_MEMORY_MAX = defineStringFlag(
-            "system-memory-max", "",
-            List.of("baldersheim"), "2023-02-14", "2025-03-01",
-            "The value to write to /sys/fs/cgroup/system.slice/memory.max, if non-empty. " +
-            "You may want lower memory.high before lowering memory.max, " +
-            "and raise memory.high after raising memory.max.",
-            "Takes effect on next tick.",
-            NODE_TYPE);
-
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
             List.of("arnej"), "2021-11-15", "2025-03-01",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
-            INSTANCE_ID);
-
-    public static final UnboundIntFlag MAX_COMPACT_BUFFERS = defineIntFlag(
-                "max-compact-buffers", 1,
-                List.of("geirst", "toregge"), "2021-12-15", "2025-03-01",
-                "Upper limit of buffers to compact in a data store at the same time for each reason (memory usage, address space usage)",
-                "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
@@ -253,14 +216,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag SORT_BLUEPRINTS_BY_COST = defineFeatureFlag(
             "sort-blueprints-by-cost", false,
-            List.of("baldersheim"), "2023-12-19", "2025-03-01",
-            "If true blueprints are sorted based on cost estimate, rather that absolute estimated hits",
+            List.of("havardpe"), "2023-12-19", "2025-04-01",
+            "If true blueprints are sorted based on cost estimate, rather than absolute estimated hits",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
             "always-mark-phrase-expensive", false,
-            List.of("baldersheim"), "2023-11-20", "2025-03-01",
+            List.of("havardpe"), "2023-11-20", "2025-04-01",
             "If true all phrases will be marked expensive, independent of parents",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -334,12 +297,6 @@ public class Flags {
             List.of("olaa"), "2024-04-03", "2025-06-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment", INSTANCE_ID);
-
-    public static UnboundBooleanFlag ATLASSIAN_SYNC_TENANTS = defineFeatureFlag(
-            "atlassian-sync-tenants", false,
-            List.of("bjormel"), "2024-11-11", "2025-03-01",
-            "Whether to sync tenants to Atlassian",
-            "Takes effect immediately");
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", true,

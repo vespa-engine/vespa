@@ -61,6 +61,17 @@ public:
     ~MultiBitVectorIteratorBase() override;
     void initRange(uint32_t beginId, uint32_t endId) override;
     void addUnpackIndex(size_t index) { _unpackInfo.add(index); }
+    // Which siblings have we stolen. We have taken the place of the first one.
+    void set_stolen_indexes(std::vector<size_t> stolen_indexes) {
+        _stolen_indexes = std::move(stolen_indexes);
+    }
+    // Given the index of a sibling of this iterator;
+    // at what position was it placed before this iterator stole its siblings.
+    // Note that an iterator may have multiple MultiBitVector iterators as siblings,
+    // but only one who has stolen its siblings.
+    size_t remap_index(size_t index);
+    MultiBitVectorIteratorBase *as_multi_bit_vector_base() noexcept override { return this; }
+
     /**
      * Will steal and optimize bitvectoriterators if it can
      * Might return itself or a new structure.
@@ -74,6 +85,7 @@ private:
     static SearchIterator::UP optimizeMultiSearch(SearchIterator::UP parent);
 
     UnpackInfo  _unpackInfo;
+    std::vector<size_t> _stolen_indexes;
 };
 
 }

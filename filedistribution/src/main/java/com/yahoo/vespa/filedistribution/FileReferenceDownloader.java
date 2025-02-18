@@ -80,7 +80,7 @@ public class FileReferenceDownloader {
                 return;
             var timeout = rpcTimeout.orElse(Duration.between(Instant.now(), end));
             log.log(Level.FINE, "Wait until download of " + fileReference + " has started, retryCount " + retryCount +
-                    " timeout" + timeout + " (request from client " + fileReferenceDownload.client() + ")");
+                    ", timeout" + timeout + " (request from " + fileReferenceDownload.client() + ")");
             if ( ! timeout.isNegative() && startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout))
                 return;
 
@@ -129,7 +129,7 @@ public class FileReferenceDownloader {
                 downloadExecutor.submit(() -> {
                     if (downloads.get(fileReference).isPresent()) return;
 
-                    log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec);
+                    log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec.host());
                     downloads.add(fileReferenceDownload);
                     var downloading = startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
                     // Need to explicitly remove from downloads if downloading has not started.

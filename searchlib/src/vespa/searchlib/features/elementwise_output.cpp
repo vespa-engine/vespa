@@ -46,7 +46,7 @@ ElementwiseOutput::build_helper(const vespalib::hash_map<uint32_t, double>& scor
     auto& cells = std::get<std::vector<CT>>(_cells);
     cells.clear();
     for (auto& elem : scores) {
-        _labels->push_back(SharedStringRepo::Handle::handle_from_number(elem.first).id());
+        _labels.push_back(SharedStringRepo::Handle::handle_from_number(elem.first));
         cells.emplace_back(static_cast<CT>(elem.second));
     }
     return TypedCells(cells);
@@ -58,10 +58,9 @@ ElementwiseOutput::build(const vespalib::hash_map<uint32_t, double>& scores)
     if (scores.empty()) {
         return _empty_output;
     }
-    _labels.reset();
-    _labels.emplace();
+    _labels.clear();
     auto cells = typify_invoke<1, TypifyCellType, CallBuilderHelper>(_empty_output.type().cell_type(), *this, scores);
-    _output = std::make_unique<FastValueView>(_empty_output.type(), _labels->view(), cells, 1, (size_t)cells.size);
+    _output = std::make_unique<FastValueView>(_empty_output.type(), _labels.view(), cells, 1, (size_t)cells.size);
     return *_output;
 }
 

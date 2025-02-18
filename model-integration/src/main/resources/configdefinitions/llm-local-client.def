@@ -10,8 +10,13 @@ parallelRequests int default=1
 # Additional number of requests to put in queue for processing before starting to reject new requests
 maxQueueSize int default=100
 
-# Max number of milliseoncds to wait in the queue before rejecting a request
+# Max number of milliseconds to wait in the queue before rejecting a request
 maxQueueWait int default=10000
+
+# Max number of milliseconds to wait for adding a request to the queue before rejecting it
+# This only applies for when using synchronous processing.
+# Asynchronous processing will reject a request immediately if the queue is full.
+maxEnqueueWait int default=10000
 
 # Use GPU
 useGpu bool default=true
@@ -27,6 +32,24 @@ threads int default=-1
 # Context is divided between parallel requests. So for 10 parallel requests, each "slot" gets 1/10 of the context
 contextSize int default=4096
 
-# Maximum number of tokens to process in one request - overridden by inference parameters
+# Maximum number of tokens to generate in one request - can be overridden by inference parameters
 maxTokens int default=512
 
+# Specifies number of tokens to truncate prompts to, should be > 0.
+# 0 or less means that prompts will not be truncated.  
+# To avoid context overflow: maxPromptTokens + maxTokens <= contextSize / parallelRequests
+maxPromptTokens int default = 0
+
+# Specifies what to do when the number of tokens in a prompt + maxTokens > contextSize / parallelRequests.
+# NONE - run inference no matter context and prompt sizes.
+# In this case, newer tokens overwrite older ones and the model looses part of the prompt. 
+# It might lead to nonsense completions and performance issues.
+# DISCARD - silently discard the request - don't run inference
+# ABORT - discard the request and raise an error
+contextOverflowPolicy enum {NONE, DISCARD, ABORT} default=NONE
+
+# Random number generator seed used by LLM runtime during inference.
+# It can be used for better reproducibility of LLM completions.
+# Still, it doesn't guarantee reproducibility, especially on different hardware.
+# -1 means no specific seed will be set.
+seed int default = -1 

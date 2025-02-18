@@ -91,20 +91,22 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { return 0.5; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxUnCommittedMemory() { return 130000; }
+        @ModelFeatureFlag(owners = {"vekterli"}) default String searchMmapAdvise() { return "NORMAL"; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.477") default boolean sharedStringRepoNoReclaim() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean loadCodeAsHugePages() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean containerDumpHeapOnShutdownTimeout() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.479") default boolean loadCodeAsHugePages() { return false; }
+        @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.478") default double containerShutdownTimeout() { return 50.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int heapSizePercentage() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.75; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitLowWatermarkDifference() { return 0.0; }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.475") default double resourceLimitMemorySmallNodes() { return 0.75; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default double minNodeRatioPerGroup() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default int maxCompactBuffers() { return 1; }
+        @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}, removeAfter = "8.480") default int maxCompactBuffers() { return 1; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }

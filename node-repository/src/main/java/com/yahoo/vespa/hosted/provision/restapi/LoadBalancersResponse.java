@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
@@ -48,6 +49,7 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
     private void toSlime(List<LoadBalancer> loadBalancers, Cursor object) {
         Cursor loadBalancerArray = object.setArray("loadBalancers");
         loadBalancers.forEach(lb -> {
+
             Cursor lbObject = loadBalancerArray.addObject();
             lbObject.setString("id", lb.id().serializedForm());
             lbObject.setString("idSeed", lb.idSeed());
@@ -79,7 +81,8 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
             });
             lb.instance().ifPresent(instance -> {
                 if ( ! instance.settings().isDefault()) {
-                    Cursor urnsArray = lbObject.setObject("settings").setArray("allowedUrns");
+                    Cursor settingsObject = lbObject.setObject("settings");
+                    Cursor urnsArray =settingsObject.setArray("allowedUrns");
                     for (AllowedUrn urn : instance.settings().allowedUrns()) {
                         Cursor urnObject = urnsArray.addObject();
                         urnObject.setString("type", switch (urn.type()) {
@@ -87,6 +90,10 @@ public class LoadBalancersResponse extends SlimeJsonResponse {
                                                         case gcpServiceConnect -> "gcp-service-connect";
                                                     });
                         urnObject.setString("urn", urn.urn());
+                    }
+                    Cursor authMethodsArray = settingsObject.setArray("authMethods");
+                    for (AuthMethod authMethod : instance.settings().authMethods()) {
+                        authMethodsArray.addString(authMethod.name());
                     }
                 }
                 instance.serviceId().ifPresent(serviceId -> lbObject.setString("serviceId", serviceId.value()));

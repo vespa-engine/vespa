@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -23,12 +26,13 @@ import java.util.List;
  */
 public class ProvisionedExpirer extends Expirer {
 
-    private static final int MAXIMUM_ALLOWED_EXPIRED_HOSTS = 5;
+    private final IntFlag maximumAllowedExpiredHosts;
 
     private final NodeRepository nodeRepository;
 
-    ProvisionedExpirer(NodeRepository nodeRepository, Duration expiryTime, Metric metric) {
+    ProvisionedExpirer(NodeRepository nodeRepository, Duration expiryTime, FlagSource flagSource, Metric metric) {
         super(Node.State.provisioned, History.Event.Type.provisioned, nodeRepository, expiryTime, metric);
+        this.maximumAllowedExpiredHosts = PermanentFlags.KEEP_PROVISIONED_EXPIRED_HOSTS_MAX.bindTo(flagSource);
         this.nodeRepository = nodeRepository;
     }
 
@@ -38,7 +42,7 @@ public class ProvisionedExpirer extends Expirer {
         for (Node expiredNode : expired) {
             if (expiredNode.type() != NodeType.host)
                 continue;
-            boolean forceDeprovision = MAXIMUM_ALLOWED_EXPIRED_HOSTS < ++previouslyExpired;
+            boolean forceDeprovision = maximumAllowedExpiredHosts.value() < ++previouslyExpired;
             nodeRepository().nodes().parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer,
                     forceDeprovision, "Node is stuck in provisioned");
         }

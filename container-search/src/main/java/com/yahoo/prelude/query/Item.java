@@ -386,7 +386,7 @@ public abstract class Item implements Cloneable {
      * <pre>
      * ([itemName] [body])
      * </pre>
-     * The body must be appended appended by this method.
+     * The body must be appended by this method.
      */
     protected abstract void appendBodyString(StringBuilder buffer);
 

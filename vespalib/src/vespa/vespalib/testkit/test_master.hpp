@@ -28,8 +28,8 @@ TestMaster::compare(const char *file, uint32_t line,
         return true;
     }
     report_compare(file, line, aName, bName, opText, fatal,
-                   [&](std::ostream & os) { os << a;},
-                   [&](std::ostream & os) { os << b;});
+                   [&](std::ostream & os) noexcept(noexcept(os << a)) { os << a;},
+                   [&](std::ostream & os) noexcept(noexcept(os << b)) { os << b;});
     return false;
 }
 

@@ -7,6 +7,7 @@ import com.yahoo.api.annotations.Beta;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.function.Consumer;
 
 /**
@@ -16,11 +17,13 @@ import java.util.function.Consumer;
  */
 @Beta
 public interface LanguageModel {
-
+    /**
+     * @throws RejectedExecutionException – if the completion task cannot be scheduled for execution or timeouts
+     * @throws LanguageModelException – if the completion task fails
+     */
     List<Completion> complete(Prompt prompt, InferenceParameters options);
 
     CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
                                                              InferenceParameters options,
                                                              Consumer<Completion> consumer);
-
 }
