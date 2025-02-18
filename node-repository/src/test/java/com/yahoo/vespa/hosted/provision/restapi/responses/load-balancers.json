@@ -36,6 +36,9 @@
             "type": "aws-private-link",
             "urn": "arne"
           }
+        ],
+        "authMethods": [
+          "mtls"
         ]
       },
       "state": "active",

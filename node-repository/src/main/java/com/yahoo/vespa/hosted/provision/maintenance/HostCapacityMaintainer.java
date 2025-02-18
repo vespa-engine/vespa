@@ -297,7 +297,6 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
                                                                                                  application,
                                                                                                  nodeRepository().exclusivity().clusterType(cluster),
                                                                                                  nodeRepository().exclusivity().allocation(cluster),
-                                                                                                 false,
                                                                                                  nodeRepository().zone().cloud().allowHostSharing(),
                                                                                                  allNodes)
                                                                         != NodeCandidate.ExclusivityViolation.YES)

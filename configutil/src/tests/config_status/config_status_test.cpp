@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <lib/configstatus.h>
-#include <vespa/vespalib/portal/portal.h>
 #include <vespa/config-model.h>
 #include <vespa/config/subscription/sourcespec.h>
 #include <vespa/config/common/configcontext.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/portal/portal.h>
 
 using namespace config;
 using vespalib::Portal;
@@ -95,29 +96,43 @@ std::string ok_json_at_gen_1() {
     return "{\"config\": { \"all\": { \"generation\": 1 } }}";
 }
 
-TEST_FF("all ok", HTTPStatus(ok_json_at_gen_1()), Status(f1.getListenPort())) {
-    ASSERT_EQUAL(0, f2.status->action());
+TEST(ConfigStatusTest, all_ok)
+{
+    HTTPStatus f1(ok_json_at_gen_1());
+    Status f2(f1.getListenPort());
+    ASSERT_EQ(0, f2.status->action());
 }
 
-TEST_FF("generation too old", HTTPStatus(std::string("{\"config\": { \"all\": { \"generation\": 0 } }}")), Status(f1.getListenPort())) {
-    ASSERT_EQUAL(1, f2.status->action());
+TEST(ConfigStatusTest, generation_too_old)
+{
+    HTTPStatus f1(std::string("{\"config\": { \"all\": { \"generation\": 0 } }}"));
+    Status f2(f1.getListenPort());
+    ASSERT_EQ(1, f2.status->action());
 }
 
-TEST_FF("bad json", HTTPStatus(std::string("{")), Status(f1.getListenPort())) {
-    ASSERT_EQUAL(1, f2.status->action());
+TEST(ConfigStatusTest, bad_json)
+{
+    HTTPStatus f1(std::string("{"));
+    Status f2(f1.getListenPort());
+    ASSERT_EQ(1, f2.status->action());
 }
 
-TEST_FF("http failure", HTTPStatus(true), Status(f1.getListenPort())) {
-    ASSERT_EQUAL(1, f2.status->action());
+TEST(ConfigStatusTest, http_failure)
+{
+    HTTPStatus f1(true);
+    Status f2(f1.getListenPort());
+    ASSERT_EQ(1, f2.status->action());
 }
 
-TEST_F("queried host set can be constrained", HTTPStatus(ok_json_at_gen_1())) {
+TEST(ConfigStatusTest, queried_host_set_can_be_constrained)
+{
+    HTTPStatus f1(ok_json_at_gen_1());
     HostFilter filter({"localhost"});
     std::vector<std::string> hosts(
             {"localhost", "no-such-host.foo.yahoo.com"});
     Status status(f1.getListenPort(), ConfigStatus::Flags(filter), hosts);
     // Non-existing host should never be contacted.
-    ASSERT_EQUAL(0, status.status->action());
+    ASSERT_EQ(0, status.status->action());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

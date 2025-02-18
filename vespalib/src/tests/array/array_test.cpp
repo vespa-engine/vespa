@@ -68,7 +68,7 @@ private:
     static std::atomic<size_t> _global;
 };
 
-std::ostream & operator << (std::ostream & os, const Clever & clever)
+std::ostream & operator << (std::ostream & os, const Clever & clever) noexcept
 {
     (void) clever;
     return os;

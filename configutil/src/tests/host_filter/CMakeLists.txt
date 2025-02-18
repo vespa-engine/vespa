@@ -4,5 +4,6 @@ vespa_add_executable(configutil_host_filter_test_app TEST
     host_filter_test.cpp
     DEPENDS
     configutil_util
+    GTest::gtest
 )
 vespa_add_test(NAME configutil_host_filter_test_app COMMAND configutil_host_filter_test_app)

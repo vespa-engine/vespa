@@ -31,8 +31,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -47,6 +47,7 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static com.yahoo.yolean.Exceptions.uncheck;
+import static java.util.logging.Level.FINE;
 
 public class FileServer {
 
@@ -59,7 +60,7 @@ public class FileServer {
     private static final Path tempFilereferencedataDir = Paths.get(System.getProperty("java.io.tmpdir"));
 
     private final FileDirectory fileDirectory;
-    private final ExecutorService executor;
+    private final ThreadPoolExecutor executor;
     private final FileDownloader downloader;
     private final List<CompressionType> compressionTypes; // compression types to use, in preferred order
 
@@ -94,8 +95,8 @@ public class FileServer {
     FileServer(FileDownloader fileDownloader, List<CompressionType> compressionTypes, FileDirectory fileDirectory) {
         this.downloader = fileDownloader;
         this.fileDirectory = fileDirectory;
-        this.executor = Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
-                                                     new DaemonThreadFactory("file-server-"));
+        this.executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
+                                                                          new DaemonThreadFactory("file-server-"));
         this.compressionTypes = compressionTypes;
     }
 
@@ -108,7 +109,7 @@ public class FileServer {
         if (file.isPresent())
             return file.get().exists();
 
-        log.log(Level.FINE, () -> "Failed locating " + reference);
+        log.log(FINE, () -> "Failed locating " + reference);
         return false;
     }
 
@@ -117,9 +118,9 @@ public class FileServer {
     void startFileServing(FileReference reference, File file, Receiver target, Set<CompressionType> acceptedCompressionTypes) {
         var absolutePath = file.getAbsolutePath();
         try (FileReferenceData fileData = fileReferenceData(reference, acceptedCompressionTypes, file)) {
-            log.log(Level.FINE, () -> "Start serving " + reference.value() + " with file '" + absolutePath + "'");
+            log.log(FINE, () -> "Start serving " + reference.value() + " with file '" + absolutePath + "'");
             target.receive(fileData, new ReplayStatus(0, "OK"));
-            log.log(Level.FINE, () -> "Done serving " + reference.value() + " with file '" + absolutePath + "'");
+            log.log(FINE, () -> "Done serving " + reference.value() + " with file '" + absolutePath + "'");
         } catch (IOException ioe) {
             throw new UncheckedIOException("For " + reference.value() + ": failed reading file '" + absolutePath + "'" +
                                            " for sending to '" + target.toString() + "'. ", ioe);
@@ -147,15 +148,16 @@ public class FileServer {
                           Set<CompressionType> acceptedCompressionTypes,
                           Request request,
                           Receiver receiver) {
-        log.log(Level.FINE, () -> "Received request for '" + fileReference + "' from " + request.target().peerSpec().host() +
+        log.log(FINE, () -> "Received request for '" + fileReference + "' from " + request.target().peerSpec().host() +
                 ", download from other source: " + downloadFromOtherSourceIfNotFound);
         String client = request.target().toString();
+        log.log(FINE, executor.getActiveCount() + " out of " + executor.getMaximumPoolSize() + " threads are active");
         executor.execute(() -> {
             var result = serveFileInternal(fileReference, downloadFromOtherSourceIfNotFound, client, receiver, acceptedCompressionTypes);
             request.returnValues()
                    .add(new Int32Value(result.code()))
                    .add(new StringValue(result.description()));
-            log.log(Level.FINE, () -> "Returning request for '" + fileReference + "' from " + request.target());
+            log.log(FINE, () -> "Returning request for '" + fileReference + "' from " + request.target());
             request.returnRequest();
         });
     }
@@ -196,7 +198,7 @@ public class FileServer {
             return file;
 
         if (fileReferenceDownload.downloadFromOtherSourceIfNotFound()) {
-            log.log(Level.FINE, fileReferenceDownload + " not found, downloading from another source");
+            log.log(FINE, fileReferenceDownload + " not found, downloading from another source");
             // Create new FileReferenceDownload with downloadFromOtherSourceIfNotFound set to false
             // to avoid requesting a file reference perpetually, e.g. for a file that does not exist anymore
             FileReferenceDownload newDownload = new FileReferenceDownload(fileReference,
@@ -207,7 +209,7 @@ public class FileServer {
                 log.log(Level.INFO, "Failed downloading '" + fileReferenceDownload + "'");
             return file;
         } else {
-            log.log(Level.FINE, "File not found, will not download from another source");
+            log.log(FINE, "File not found, will not download from another source");
             return Optional.empty();
         }
     }

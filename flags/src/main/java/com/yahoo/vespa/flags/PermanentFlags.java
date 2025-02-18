@@ -593,6 +593,20 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundStringFlag SYSTEM_MEMORY_MAX = defineStringFlag(
+            "system-memory-max", "",
+            "The value to write to /sys/fs/cgroup/system.slice/memory.max, if non-empty. " +
+                    "You may want lower memory.high before lowering memory.max, " +
+                    "and raise memory.high after raising memory.max.",
+            "Takes effect on next tick.",
+            NODE_TYPE);
+
+    public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
+            "max-uncommitted-memory", 130000,
+            "Max amount of memory holding updates to an attribute before we do a commit.",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

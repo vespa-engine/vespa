@@ -28,7 +28,10 @@ public record Completion(String text, FinishReason finishReason) {
         other,
 
         /** An error occurred while generating the completion */
-        error
+        error,
+
+        /** The request for the completion was discarded without raising an error. */
+        discard 
     }
 
     public Completion(String text, FinishReason finishReason) {
