@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.SUPPORTED_METHODS;
 
 /**
  * Implementation of a Jetty {@link Handler} that dispatches requests to JDisc's {@link com.yahoo.jdisc.handler.RequestHandler}.
@@ -50,13 +51,6 @@ class JdiscDispatchingHandler extends Handler.Abstract.NonBlocking {
     public static final String ACCESS_LOG_STATUS_CODE_OVERRIDE = "ai.vespa.jetty.ACCESS_LOG_STATUS_CODE_OVERRIDE";
 
     private static final Logger log = Logger.getLogger(JdiscDispatchingHandler.class.getName());
-
-    private static final Set<String> SUPPORTED_METHODS =
-            Stream.of(HttpRequest.Method.OPTIONS, HttpRequest.Method.GET, HttpRequest.Method.HEAD,
-                            HttpRequest.Method.POST, HttpRequest.Method.PUT, HttpRequest.Method.DELETE,
-                            HttpRequest.Method.TRACE, HttpRequest.Method.PATCH)
-                    .map(HttpRequest.Method::name)
-                    .collect(Collectors.toSet());
 
     private final Supplier<JDiscContext> contextSupplier;
 
@@ -80,7 +74,7 @@ class JdiscDispatchingHandler extends Handler.Abstract.NonBlocking {
         var connector = RequestUtils.getConnector(jettyRequest);
         jettyRequest.setAttribute(JDiscServerConnector.REQUEST_ATTRIBUTE, connector);
 
-        var metricContext = connector.createRequestMetricContext(jettyRequest, Map.of());
+        var metricContext = connector.createRequestMetricContext(jettyRequest);
         context.metric().add(MetricDefinitions.NUM_REQUESTS, 1, metricContext);
         context.metric().add(MetricDefinitions.JDISC_HTTP_REQUESTS, 1, metricContext);
 

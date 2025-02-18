@@ -1,10 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import com.yahoo.jdisc.http.HttpRequest;
 import org.eclipse.jetty.http2.server.internal.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.internal.HttpConnection;
+
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author bjorncs
@@ -19,6 +24,14 @@ public class RequestUtils {
     // The request URI uses the local listen port as the URI is used for handler routing/bindings.
     // Use this attribute for generating URIs that is presented to client.
     public static final String JDICS_REQUEST_PORT = "jdisc.request.port";
+
+    static final Set<String> SUPPORTED_METHODS =
+            Stream.of(HttpRequest.Method.OPTIONS, HttpRequest.Method.GET, HttpRequest.Method.HEAD,
+                            HttpRequest.Method.POST, HttpRequest.Method.PUT, HttpRequest.Method.DELETE,
+                            HttpRequest.Method.TRACE, HttpRequest.Method.PATCH)
+                    .map(HttpRequest.Method::name)
+                    .collect(Collectors.toSet());
+
 
     private RequestUtils() {}
 
