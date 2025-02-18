@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/input.h>
 #include <vespa/vespalib/data/output.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/eval/eval/test/test_io.h>
 
@@ -39,12 +39,12 @@ struct Result {
         }
     }
     void verify_result(const std::string &expect) {
-        EXPECT_EQUAL(error, "");
-        EXPECT_EQUAL(result, expect);
+        EXPECT_EQ(error, "");
+        EXPECT_EQ(result, expect);
     }
     void verify_error(const std::string &expect) {
-        EXPECT_EQUAL(steps.size(), 0u);
-        EXPECT_EQUAL(result, "");
+        EXPECT_EQ(steps.size(), 0u);
+        EXPECT_EQ(result, "");
         fprintf(stderr, "... does error '%s' contain message '%s'?\n",
                 error.c_str(), expect.c_str());
         EXPECT_TRUE(error.find(expect) != error.npos);
@@ -70,50 +70,103 @@ struct Server : public ServerCmd {
         return {reply.get()};
     }
     ~Server() {
-        EXPECT_EQUAL(shutdown(), 0);
+        EXPECT_EQ(shutdown(), 0);
     }
 };
 
 //-----------------------------------------------------------------------------
 
-TEST("print server command") {
+TEST(EvalExprTest, print_server_command)
+{
     fprintf(stderr, "server cmd: %s\n", server_cmd.c_str());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that simple evaluation works", Server()) {
-    TEST_DO(f1.eval("2+2").verify_result("4"));
+TEST(EvalExprTest, require_that_simple_evaluation_works)
+{
+    Server f1;
+    f1.eval("2+2").verify_result("4");
 }
 
-TEST_F("require that multiple dependent expressions work", Server()) {
-    TEST_DO(f1.eval("2+2", "a").verify_result("4"));
-    TEST_DO(f1.eval("a+2", "b").verify_result("6"));
-    TEST_DO(f1.eval("a+b").verify_result("10"));
+TEST(EvalExprTest, require_that_multiple_dependent_expressions_work)
+{
+    Server f1;
+    {
+        SCOPED_TRACE("2+2");
+        f1.eval("2+2", "a").verify_result("4");
+    }
+    {
+        SCOPED_TRACE("a+2");
+        f1.eval("a+2", "b").verify_result("6");
+    }
+    {
+        SCOPED_TRACE("a+b");
+        f1.eval("a+b").verify_result("10");
+    }
 }
 
-TEST_F("require that symbols can be overwritten", Server()) {
-    TEST_DO(f1.eval("1", "a").verify_result("1"));
-    TEST_DO(f1.eval("a+1", "a").verify_result("2"));
-    TEST_DO(f1.eval("a+1", "a").verify_result("3"));
-    TEST_DO(f1.eval("a+1", "a").verify_result("4"));
+TEST(EvalExprTest, require_that_symbols_can_be_overwritten)
+{
+    Server f1;
+    {
+        SCOPED_TRACE("1");
+        f1.eval("1", "a").verify_result("1");
+    }
+    {
+        SCOPED_TRACE("1st 'a+1'");
+        f1.eval("a+1", "a").verify_result("2");
+    }
+    {
+        SCOPED_TRACE("2nd 'a+1'");
+        f1.eval("a+1", "a").verify_result("3");
+    }
+    {
+        SCOPED_TRACE("3rd 'a+1'");
+        f1.eval("a+1", "a").verify_result("4");
+    }
 }
 
-TEST_F("require that tensor result is returned in verbose verbatim form", Server()) {
-    TEST_DO(f1.eval("1", "a").verify_result("1"));
-    TEST_DO(f1.eval("2", "b").verify_result("2"));
-    TEST_DO(f1.eval("3", "c").verify_result("3"));
-    TEST_DO(f1.eval("tensor(x[3]):[a,b,c]").verify_result("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}"));
+TEST(EvalExprTest, require_that_tensor_result_is_returned_in_verbose_verbatim_form)
+{
+    Server f1;
+    {
+        SCOPED_TRACE("1");
+        f1.eval("1", "a").verify_result("1");
+    }
+    {
+        SCOPED_TRACE("2");
+        f1.eval("2", "b").verify_result("2");
+    }
+    {
+        SCOPED_TRACE("3");
+        f1.eval("3", "c").verify_result("3");
+    }
+    {
+        SCOPED_TRACE("tensor");
+        f1.eval("tensor(x[3]):[a,b,c]").verify_result("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}");
+    }
 }
 
-TEST_F("require that execution steps can be extracted", Server()) {
-    TEST_DO(f1.eval("1", "a").verify_result("1"));
-    TEST_DO(f1.eval("2", "b").verify_result("2"));
-    TEST_DO(f1.eval("3", "c").verify_result("3"));
+TEST(EvalExprTest, require_that_execution_steps_can_be_extracted)
+{
+    Server f1;
+    {
+        SCOPED_TRACE("1");
+        f1.eval("1", "a").verify_result("1");
+    }
+    {
+        SCOPED_TRACE("2");
+        f1.eval("2", "b").verify_result("2");
+    }
+    {
+        SCOPED_TRACE("3");
+        f1.eval("3", "c").verify_result("3");
+    }
     auto res1 = f1.eval("a+b+c");
     auto res2 = f1.eval("a+b+c", "", true);
-    EXPECT_EQUAL(res1.steps.size(), 0u);
-    EXPECT_EQUAL(res2.steps.size(), 5u);
+    EXPECT_EQ(res1.steps.size(), 0u);
+    EXPECT_EQ(res2.steps.size(), 5u);
     for (const auto &step: res2.steps) {
         fprintf(stderr, "step:\n  class: %s\n    symbol: %s\n",
                 step.first.c_str(), step.second.c_str());
@@ -122,7 +175,9 @@ TEST_F("require that execution steps can be extracted", Server()) {
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that operation batching works", Server()) {
+TEST(EvalExprTest, require_that_operation_batching_works)
+{
+    Server f1;
     Slime req;
     auto &arr = req.setArray();
     auto &req1 = arr.addObject();
@@ -136,35 +191,52 @@ TEST_F("require that operation batching works", Server()) {
     auto &req4 = arr.addObject();
     req4.setString("expr", "a+b");
     Slime reply = f1.invoke(req);
-    EXPECT_EQUAL(reply.get().entries(), 4u);
+    EXPECT_EQ(reply.get().entries(), 4u);
     EXPECT_TRUE(reply[2]["error"].asString().size > 0);
-    EXPECT_EQUAL(reply[3]["result"].asString().make_string(), "10");
+    EXPECT_EQ(reply[3]["result"].asString().make_string(), "10");
 }
 
-TEST_F("require that empty operation batch works", Server()) {
+TEST(EvalExprTest, require_that_empty_operation_batch_works)
+{
+    Server f1;
     Slime req;
     req.setArray();
     Slime reply = f1.invoke(req);
     EXPECT_TRUE(reply.get().type().getId() == slime::ARRAY::ID);
-    EXPECT_EQUAL(reply.get().entries(), 0u);
+    EXPECT_EQ(reply.get().entries(), 0u);
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that empty expression produces error", Server()) {
-    TEST_DO(f1.eval("").verify_error("missing expression"));
+TEST(EvalExprTest, require_that_empty_expression_produces_error)
+{
+    Server f1;
+    f1.eval("").verify_error("missing expression");
 }
 
-TEST_F("require that parse error produces error", Server()) {
-    TEST_DO(f1.eval("this does not parse").verify_error("expression parsing failed"));
+TEST(EvalExprTest, require_that_parse_error_produces_error)
+{
+    Server f1;
+    f1.eval("this does not parse").verify_error("expression parsing failed");
 }
 
-TEST_F("require that type issues produces error", Server()) {
-    TEST_DO(f1.eval("tensor(x[3]):[1,2,3]", "a").verify_result("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}"));
-    TEST_DO(f1.eval("tensor(x[2]):[4,5]", "b").verify_result("tensor(x[2]):{{x:0}:4,{x:1}:5}"));
-    TEST_DO(f1.eval("a+b").verify_error("type resolving failed"));
+TEST(EvalExprTest, require_that_type_issues_produces_error)
+{
+    Server f1;
+    {
+        SCOPED_TRACE("a");
+        f1.eval("tensor(x[3]):[1,2,3]", "a").verify_result("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}");
+    }
+    {
+        SCOPED_TRACE("b");
+        f1.eval("tensor(x[2]):[4,5]", "b").verify_result("tensor(x[2]):{{x:0}:4,{x:1}:5}");
+    }
+    {
+        SCOPED_TRACE("error");
+        f1.eval("a+b").verify_error("type resolving failed");
+    }
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

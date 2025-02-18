@@ -4,5 +4,6 @@ vespa_add_executable(eval_name_extractor_test_app TEST
     feature_name_extractor_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_name_extractor_test_app COMMAND eval_name_extractor_test_app)
