@@ -221,7 +221,8 @@ public class OpenAiClient implements LanguageModel {
             case "length" -> Completion.FinishReason.length;
             case "stop" -> Completion.FinishReason.stop;
             case "", "null" -> Completion.FinishReason.none;
-            default -> throw new IllegalStateException("Unknown OpenAi completion finish reason '" + finishReasonString + "'");
+            case "error" -> throw new IllegalStateException("OpenAI-client returned finish_reason=error");
+            default -> Completion.FinishReason.other;
         };
     }
 
