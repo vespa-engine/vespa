@@ -601,6 +601,12 @@ public class PermanentFlags {
             "Takes effect on next tick.",
             NODE_TYPE);
 
+    public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
+            "max-uncommitted-memory", 130000,
+            "Max amount of memory holding updates to an attribute before we do a commit.",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

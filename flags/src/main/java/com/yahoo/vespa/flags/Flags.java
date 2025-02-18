@@ -77,13 +77,6 @@ public class Flags {
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
 
-    public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
-            "max-uncommitted-memory", 130000,
-            List.of("geirst"), "2021-10-21", "2025-03-01",
-            "Max amount of memory holding updates to an attribute before we do a commit.",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundStringFlag SEARCH_MMAP_ADVISE = defineStringFlag(
             "search-mmap-advise", "NORMAL",
             List.of("vekterli"), "2025-02-14", "2025-06-01",
