@@ -221,13 +221,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
-            "always-mark-phrase-expensive", false,
-            List.of("havardpe"), "2023-11-20", "2025-04-01",
-            "If true all phrases will be marked expensive, independent of parents",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
             List.of("hmusum"), "2023-07-19", "2025-04-01",

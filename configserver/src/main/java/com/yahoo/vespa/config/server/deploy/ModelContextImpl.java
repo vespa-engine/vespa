@@ -194,7 +194,6 @@ public class ModelContextImpl implements ModelContext {
         private final int heapPercentage;
         private final String summaryDecodePolicy;
         private final boolean sortBlueprintsByCost;
-        private final boolean alwaysMarkPhraseExpensive;
         private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
         private final int searchHandlerThreadpool;
@@ -243,7 +242,6 @@ public class ModelContextImpl implements ModelContext {
             this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
             this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
             this.searchHandlerThreadpool = Flags.SEARCH_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
-            this.alwaysMarkPhraseExpensive = Flags.ALWAYS_MARK_PHRASE_EXPENSIVE.bindTo(source).with(appId).with(version).value();
             this.sortBlueprintsByCost = Flags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
             this.persistenceThreadMaxFeedOpBatchSize = Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE.bindTo(source).with(appId).with(version).value();
             this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
@@ -293,7 +291,6 @@ public class ModelContextImpl implements ModelContext {
             }
             return defVal;
         }
-        @Override public boolean alwaysMarkPhraseExpensive() { return alwaysMarkPhraseExpensive; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
         @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
