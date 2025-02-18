@@ -639,6 +639,8 @@
       "public com.yahoo.language.process.TextGenerator$Context setLanguage(com.yahoo.language.Language)",
       "public java.lang.String getDestination()",
       "public com.yahoo.language.process.TextGenerator$Context setDestination(java.lang.String)",
+      "public com.yahoo.document.DataType getDestinationType()",
+      "public com.yahoo.language.process.TextGenerator$Context setDestinationType(com.yahoo.document.DataType)",
       "public java.lang.String getGeneratorId()",
       "public com.yahoo.language.process.TextGenerator$Context setGeneratorId(java.lang.String)",
       "public void putCachedValue(java.lang.Object, java.lang.Object)",

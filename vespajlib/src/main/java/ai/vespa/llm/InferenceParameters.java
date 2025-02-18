@@ -15,10 +15,18 @@ import java.util.function.Function;
  * the language model used.
  *
  * author lesters
+ * author glebashnik
  */
 @Beta
 public class InferenceParameters {
-
+    // Consider replacing these options with fields.
+    public static final String OPTION_MODEL = "model";
+    public static final String OPTION_TEMPERATURE = "temperature";
+    public static final String OPTION_MAX_TOKENS = "maxTokens";
+    public static final String OPTION_RESPONSE_FORMAT_TYPE = "response_format_type";
+    public static final String OPTION_RESPONSE_FORMAT_JSON_SCHEMA = "json_schema";
+    public static final String OPTION_RESPONSE_FORMAT_TEXT = "text";
+    
     private String apiKey;
     private String endpoint;
     private final Function<String, String> options;
@@ -80,11 +88,11 @@ public class InferenceParameters {
     // Creates a new InferenceParameters object with default values for options,
     // i.e. a value in the given default options is used when a corresponding value in the current options is null.
     public InferenceParameters withDefaultOptions(Function<String, String> defaultOptions) {
-        Function<String, String> prependedOptions = key -> {
-            var afterValue = options.apply(key);
-            return afterValue != null ? afterValue : defaultOptions.apply(key);
+        Function<String, String> optionsWithDefault = key -> {
+            var value = options.apply(key);
+            return value != null ? value : defaultOptions.apply(key);
         };
-        return new InferenceParameters(apiKey, endpoint, prependedOptions);
+        return new InferenceParameters(apiKey, endpoint, optionsWithDefault);
     }
 }
 

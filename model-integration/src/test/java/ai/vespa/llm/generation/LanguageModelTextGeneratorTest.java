@@ -19,7 +19,8 @@ import java.util.function.Consumer;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.language.process.TextGenerator;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -179,22 +180,6 @@ public class LanguageModelTextGeneratorTest {
 
         var result1 = generator.generate(StringPrompt.from("world"), context);
         assertEquals("bye world bye world", result1);
-    }
-    
-    @Test
-    public void testGenerateWithMaxLength() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
-        var languageModels = Map.of("languageModel", languageModel);
-
-        var config = new LanguageModelTextGeneratorConfig.Builder()
-                .providerId("languageModel")
-                .maxLength(8)
-                .build();
-        
-        var generator = createGenerator(config, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
-        var result = generator.generate(StringPrompt.from("hello"), context);
-        assertEquals("hello he", result);
     }
     
     @Test

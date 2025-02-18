@@ -2,6 +2,7 @@ package com.yahoo.language.process;
 
 import ai.vespa.llm.completion.Prompt;
 import com.yahoo.collections.LazyMap;
+import com.yahoo.document.DataType;
 import com.yahoo.language.Language;
 
 import java.util.Map;
@@ -36,6 +37,7 @@ public interface TextGenerator {
     class Context {
         private Language language = Language.UNKNOWN;
         private String destination;
+        private DataType destinationType;
         private String generatorId = "unknown";
         private final Map<Object, Object> cache;
 
@@ -55,6 +57,7 @@ public interface TextGenerator {
         private Context(Context other) {
             language = other.language;
             destination = other.destination;
+            destinationType = other.destinationType;
             generatorId = other.generatorId;
             this.cache = other.cache;
         }
@@ -84,6 +87,16 @@ public interface TextGenerator {
          */
         public Context setDestination(String destination) {
             this.destination = destination;
+            return this;
+        }
+
+        /** Returns the target type of the generated text, or null if not set/ */
+        public DataType getDestinationType() { return destinationType; }
+
+
+        /** Sets the target type of the generated text, or null if not set/ */
+        public Context setDestinationType(DataType destinationType) {
+            this.destinationType = destinationType;
             return this;
         }
 

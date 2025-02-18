@@ -127,7 +127,8 @@ public class GenerateExpression extends Expression {
     private String generate(String input, ExecutionContext context) {
         var textGeneratorContext =  new TextGenerator.Context(destination, context.getCache())
                 .setLanguage(context.resolveLanguage(linguistics))
-                .setGeneratorId(generatorId);
+                .setGeneratorId(generatorId)
+                .setDestinationType(targetType);
         
         return textGenerator.generate(StringPrompt.from(input), textGeneratorContext);
     }

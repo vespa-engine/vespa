@@ -4151,7 +4151,14 @@
       "public void ifPresent(java.lang.String, java.util.function.Consumer)",
       "public ai.vespa.llm.InferenceParameters withDefaultOptions(java.util.function.Function)"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String OPTION_MODEL",
+      "public static final java.lang.String OPTION_TEMPERATURE",
+      "public static final java.lang.String OPTION_MAX_TOKENS",
+      "public static final java.lang.String OPTION_RESPONSE_FORMAT_TYPE",
+      "public static final java.lang.String OPTION_RESPONSE_FORMAT_JSON_SCHEMA",
+      "public static final java.lang.String OPTION_RESPONSE_FORMAT_TEXT"
+    ]
   },
   "ai.vespa.llm.LanguageModel" : {
     "superClass" : "java.lang.Object",
@@ -4193,11 +4200,7 @@
       "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
       "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
     ],
-    "fields" : [
-      "public static final java.lang.String OPTION_MODEL",
-      "public static final java.lang.String OPTION_TEMPERATURE",
-      "public static final java.lang.String OPTION_MAX_TOKENS"
-    ]
+    "fields" : [ ]
   },
   "ai.vespa.llm.completion.Completion$FinishReason" : {
     "superClass" : "java.lang.Enum",

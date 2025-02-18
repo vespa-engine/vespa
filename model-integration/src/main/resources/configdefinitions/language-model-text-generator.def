@@ -10,6 +10,7 @@ promptTemplate string default=""
 # Prompt template in a file, above promptTemplate has precedence if it is set.
 promptTemplateFile path optional
 
-# Generated text will be truncated if it exceeds this length - guardrail to avoid long outputs.
-# -1 means no limit.
-maxLength int default=-1
+# Format for an LLM response, can be "json_schema" or "text".
+# If "json_schema" (recommended), a json schema will be generated based on the destination - document field name and type.
+# If "text", the response will be a string, use it if an LLM used have a poor support for json output. 
+responseFormatType string default="json_schema"

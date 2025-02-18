@@ -232,6 +232,18 @@
     ],
     "fields" : [ ]
   },
+  "ai.vespa.llm.generation.JsonSchemaUtils" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static java.lang.String generateJsonSchemaForDocumentField(java.lang.String, com.yahoo.document.DataType)"
+    ],
+    "fields" : [ ]
+  },
   "ai.vespa.llm.generation.LanguageModelTextGenerator" : {
     "superClass" : "com.yahoo.component.AbstractComponent",
     "interfaces" : [
@@ -261,7 +273,7 @@
       "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder providerId(java.lang.String)",
       "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder promptTemplate(java.lang.String)",
       "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder promptTemplateFile(java.util.Optional)",
-      "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder maxLength(int)",
+      "public ai.vespa.llm.generation.LanguageModelTextGeneratorConfig$Builder responseFormatType(java.lang.String)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -302,7 +314,7 @@
       "public java.lang.String providerId()",
       "public java.lang.String promptTemplate()",
       "public java.util.Optional promptTemplateFile()",
-      "public int maxLength()"
+      "public java.lang.String responseFormatType()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",
