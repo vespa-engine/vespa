@@ -12,7 +12,10 @@ class MetricDefinitions {
     static final String NAME_DIMENSION = "serverName";
     static final String PORT_DIMENSION = "serverPort";
     static final String METHOD_DIMENSION = "httpMethod";
+    static final String SCHEME_DIMENSION = "scheme";
     static final String REQUEST_TYPE_DIMENSION = "requestType";
+    static final String CLIENT_AUTHENTICATED_DIMENSION = "clientAuthenticated";
+    static final String REQUEST_SERVER_NAME_DIMENSION = "requestServerName";
     static final String FILTER_CHAIN_ID_DIMENSION = "chainId";
     static final String PROTOCOL_DIMENSION = "protocol";
     static final String STATUS_CODE_DIMENSION = "statusCode";

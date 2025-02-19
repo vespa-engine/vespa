@@ -79,7 +79,7 @@ class RequestMetricReporter {
         metric.set(MetricDefinitions.URI_LENGTH, length, context);
     }
 
-    void contentSize(long size) {
+    void contentSize(int size) {
         metric.set(MetricDefinitions.CONTENT_SIZE, size, context);
     }
 }
