@@ -232,7 +232,35 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.generation.JsonSchemaUtils" : {
+  "ai.vespa.llm.generation.JsonSchemaToGrammarConverter$BuiltinRule" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, java.util.List)"
+    ],
+    "fields" : [
+      "public java.lang.String content",
+      "public java.util.List deps"
+    ]
+  },
+  "ai.vespa.llm.generation.JsonSchemaToGrammarConverter$SchemaConverter" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.util.Map, boolean, boolean, boolean)",
+      "public java.lang.String formatGrammar()",
+      "public com.fasterxml.jackson.databind.JsonNode resolveRefs(com.fasterxml.jackson.databind.JsonNode, java.lang.String)",
+      "public java.lang.String visit(com.fasterxml.jackson.databind.JsonNode, java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
+  "ai.vespa.llm.generation.JsonSchemaToGrammarConverter" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
@@ -240,7 +268,7 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public static java.lang.String generateJsonSchemaForDocumentField(java.lang.String, com.yahoo.document.DataType)"
+      "public static java.lang.String convert(java.lang.String, boolean, boolean, boolean, java.util.Map)"
     ],
     "fields" : [ ]
   },
@@ -331,7 +359,9 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public static ai.vespa.llm.LanguageModel findLanguageModel(java.lang.String, com.yahoo.component.provider.ComponentRegistry, java.util.logging.Logger)"
+      "public static ai.vespa.llm.LanguageModel findLanguageModel(java.lang.String, com.yahoo.component.provider.ComponentRegistry, java.util.logging.Logger)",
+      "public static java.lang.String generateJsonSchemaForDocumentField(java.lang.String, com.yahoo.document.DataType)",
+      "public static java.lang.String convertJsonSchemaToGrammar(java.lang.String)"
     ],
     "fields" : [ ]
   },

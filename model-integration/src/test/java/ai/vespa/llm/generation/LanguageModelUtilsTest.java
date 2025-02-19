@@ -5,10 +5,10 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class JsonSchemaUtilsTest {
+public class LanguageModelUtilsTest {
     @Test
     void testGenerateJsonSchemaForDocumentField() {
-        var schema = JsonSchemaUtils.generateJsonSchemaForDocumentField("title", DataType.STRING);
+        var schema = LanguageModelUtils.generateJsonSchemaForDocumentField("title", DataType.STRING);
         var expectedSchema = """
                 {
                   "type": "object",

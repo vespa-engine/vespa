@@ -4155,9 +4155,12 @@
       "public static final java.lang.String OPTION_MODEL",
       "public static final java.lang.String OPTION_TEMPERATURE",
       "public static final java.lang.String OPTION_MAX_TOKENS",
-      "public static final java.lang.String OPTION_RESPONSE_FORMAT_TYPE",
-      "public static final java.lang.String OPTION_RESPONSE_FORMAT_JSON_SCHEMA",
-      "public static final java.lang.String OPTION_RESPONSE_FORMAT_TEXT"
+      "public static final java.lang.String OPTION_TOP_K",
+      "public static final java.lang.String OPTION_TOP_P",
+      "public static final java.lang.String OPTION_N_PREDICT",
+      "public static final java.lang.String OPTION_REPEAT_PENALTY",
+      "public static final java.lang.String OPTION_SEED",
+      "public static final java.lang.String OPTION_JSON_SCHEMA"
     ]
   },
   "ai.vespa.llm.LanguageModel" : {
