@@ -224,7 +224,7 @@ public class TensorType {
 
     /**
      * Returns whether this type can be assigned to the given type,
-     * i.e if the given type is a generalization of this type.
+     * i.e. if the given type is a generalization of this type.
      */
     public boolean isAssignableTo(TensorType generalization) {
         return isConvertibleOrAssignableTo(generalization, false, true);

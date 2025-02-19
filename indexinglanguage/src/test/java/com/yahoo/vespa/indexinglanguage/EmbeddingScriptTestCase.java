@@ -13,6 +13,8 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
+import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import org.junit.Ignore;
@@ -372,6 +374,37 @@ public class EmbeddingScriptTestCase {
         adapter.createField(tensorField);
 
         expression.verify(new VerificationContext(adapter));
+    }
+
+    @Test
+    public void binarizeFromSeparateField() {
+        /*
+        field text_embeddings type tensor<float>(c{},x[768]) {
+            indexing: attribute | summary
+            attribute: paged
+        }
+        field text_embeddings_quant_binary type tensor<int8>(c{},x[96]) {
+            indexing: input text_embeddings | binarize | pack_bits | attribute | index
+            attribute {
+                distance-metric: hamming
+            }
+        }
+        */
+
+        var tester = new EmbeddingScriptTester(Map.of("emb1", new EmbeddingScriptTester.MockMappedEmbedder("myDocument.my2DSparseTensor")));
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        TensorType textEmbeddingsType = TensorType.fromSpec("tensor<float>(c{},x[768])");
+        adapter.createField(new Field("text_embeddings", new TensorDataType(textEmbeddingsType)));
+
+        TensorType textEmbeddingsQuantBinaryType = TensorType.fromSpec("tensor<int8>(c{},x[96])");
+        adapter.createField(new Field("text_embeddings_quant_binary", new TensorDataType(textEmbeddingsQuantBinaryType)));
+
+        var text_embeddings_expression = (StatementExpression)tester.expressionFrom("input text_embeddings | summary text_embeddings | attribute text_embeddings");
+        var text_embeddings_quant_binary_expression = (StatementExpression)tester.expressionFrom("input text_embeddings | binarize | pack_bits | attribute text_embeddings_quant_binary | index text_embeddings_quant_binary");
+
+        var script = new ScriptExpression(text_embeddings_expression, text_embeddings_quant_binary_expression);
+        script.verify(adapter);
     }
 
 }
