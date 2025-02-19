@@ -77,7 +77,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.473") default double defaultTermwiseLimit() { return 1.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.473") default String feedSequencerType() { return "THROUGHPUT"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.473") default String queryDispatchPolicy() { return "adaptive"; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.483") default String queryDispatchPolicy() { return "adaptive"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double queryDispatchWarmup() { return 5.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int defaultNumResponseThreads() { return 2; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int mbusNetworkThreads() { return 1; }
@@ -114,7 +114,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 2; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.483") default boolean alwaysMarkPhraseExpensive() { return false; }
-        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean sortBlueprintsByCost() { return false; }
+        @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int persistenceThreadMaxFeedOpBatchSize() { return 1; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }

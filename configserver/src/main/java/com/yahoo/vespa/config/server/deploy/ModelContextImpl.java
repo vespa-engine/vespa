@@ -242,7 +242,7 @@ public class ModelContextImpl implements ModelContext {
             this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
             this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
             this.searchHandlerThreadpool = Flags.SEARCH_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
-            this.sortBlueprintsByCost = Flags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
+            this.sortBlueprintsByCost = PermanentFlags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
             this.persistenceThreadMaxFeedOpBatchSize = Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE.bindTo(source).with(appId).with(version).value();
             this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
             this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with(appId).with(version).value();

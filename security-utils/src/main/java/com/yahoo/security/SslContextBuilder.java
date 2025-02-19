@@ -68,9 +68,22 @@ public class SslContextBuilder {
     }
 
     public SslContextBuilder withKeyStore(PrivateKey privateKey, List<X509Certificate> certificates) {
-        char[] pwd = new char[0];
-        this.keyStoreSupplier = () -> KeyStoreBuilder.withType(KeyStoreType.JKS).withKeyEntry("default", privateKey, certificates).build();
-        this.keyStorePassword = pwd;
+        return withKeyStore(List.of(new X509CertificateWithKey(certificates, privateKey)));
+    }
+
+    public SslContextBuilder withKeyStore(List<X509CertificateWithKey> clientCertificatesAndKeys) {
+        if (clientCertificatesAndKeys.isEmpty()) {
+            throw new IllegalArgumentException("clientCertificatesAndKeys cannot be empty");
+        }
+        this.keyStoreSupplier = () -> {
+            KeyStoreBuilder keyStore = KeyStoreBuilder.withType(KeyStoreType.JKS);
+            for (int i = 0; i < clientCertificatesAndKeys.size(); i++) {
+                X509CertificateWithKey certWithKey = clientCertificatesAndKeys.get(i);
+                keyStore = keyStore.withKeyEntry("key"+i, certWithKey.privateKey(), certWithKey.certificate());
+            }
+            return keyStore.build();
+        };
+        this.keyStorePassword = new char[0];
         return this;
     }
 

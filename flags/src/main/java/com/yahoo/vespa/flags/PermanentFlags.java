@@ -607,6 +607,12 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag SORT_BLUEPRINTS_BY_COST = defineFeatureFlag(
+            "sort-blueprints-by-cost", false,
+            "If true blueprints are sorted based on cost estimate, rather than absolute estimated hits",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
