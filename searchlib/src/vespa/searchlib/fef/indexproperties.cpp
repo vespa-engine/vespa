@@ -496,12 +496,6 @@ bool SortBlueprintsByCost::check(const Properties &props, bool fallback) {
     return lookupBool(props, NAME, fallback);
 }
 
-const std::string AlwaysMarkPhraseExpensive::NAME("vespa.matching.always_mark_phrase_expensive");
-const bool AlwaysMarkPhraseExpensive::DEFAULT_VALUE(false);
-bool AlwaysMarkPhraseExpensive::check(const Properties &props, bool fallback) {
-    return lookupBool(props, NAME, fallback);
-}
-
 } // namespace matching
 
 namespace softtimeout {
