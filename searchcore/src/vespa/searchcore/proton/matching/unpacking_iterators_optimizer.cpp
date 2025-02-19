@@ -74,8 +74,6 @@ struct TermExpander : QueryVisitor {
 
 struct NodeTraverser : TemplateTermVisitor<NodeTraverser, ProtonNodeTypes>
 {
-    bool _always_mark_phrase_expensive;
-    NodeTraverser(bool always_mark_phrase_expensive) : _always_mark_phrase_expensive(always_mark_phrase_expensive) {}
     template <class TermNode> void visitTerm(TermNode &) {}
     void visit(ProtonNodeTypes::And &n) override {
         for (Node *child: n.getChildren()) {
@@ -87,19 +85,14 @@ struct NodeTraverser : TemplateTermVisitor<NodeTraverser, ProtonNodeTypes>
         }
         expander.flush(n);
     }
-    void visit(Phrase &n) override {
-        if (_always_mark_phrase_expensive) {
-            n.set_expensive(true);
-        }
-    }
 };
 
 } // namespace proton::matching::<unnamed>
 
 search::query::Node::UP
-UnpackingIteratorsOptimizer::optimize(search::query::Node::UP root, bool has_white_list, bool always_mark_phrase_expensive)
+UnpackingIteratorsOptimizer::optimize(search::query::Node::UP root, bool has_white_list)
 {
-    NodeTraverser traverser(always_mark_phrase_expensive);
+    NodeTraverser traverser;
     root->accept(traverser);
     if (has_white_list) {
         TermExpander expander;

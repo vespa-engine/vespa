@@ -278,11 +278,7 @@ std::string split_query_tree_dump_always_expensive =
 //-----------------------------------------------------------------------------
 
 Node::UP optimize(Node::UP root, bool white_list) {
-    return UnpackingIteratorsOptimizer::optimize(std::move(root), white_list, false);
-}
-
-Node::UP optimize(Node::UP root, bool white_list, bool always_mark_phrase_expensive) {
-    return UnpackingIteratorsOptimizer::optimize(std::move(root), white_list, always_mark_phrase_expensive);
+    return UnpackingIteratorsOptimizer::optimize(std::move(root), white_list);
 }
 
 TEST(UnpackingIteratorsOptimizerTest, require_that_root_phrase_node_can_be_left_alone) {
@@ -322,16 +318,6 @@ TEST(UnpackingIteratorsOptimizerTest, require_that_query_tree_can_be_split) {
     std::string expect = split_query_tree_dump;
     EXPECT_EQ(actual1, expect);
     EXPECT_EQ(actual2, expect);
-}
-
-TEST(UnpackingIteratorsOptimizerTest, require_that_query_tree_can_be_split_always) {
-    std::string actual1 = dump_query(*optimize(make_query_tree(), false, false));
-    std::string actual2 = dump_query(*optimize(make_query_tree(), true, false));
-    std::string actual3 = dump_query(*optimize(make_query_tree(), true, true));
-    std::string expect = split_query_tree_dump;
-    EXPECT_EQ(actual1, expect);
-    EXPECT_EQ(actual2, expect);
-    EXPECT_EQ(actual3, split_query_tree_dump_always_expensive);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
