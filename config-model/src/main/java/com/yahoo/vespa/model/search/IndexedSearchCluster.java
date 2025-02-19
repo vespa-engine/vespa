@@ -16,17 +16,16 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * @author baldersheim
+ * @author Henning Baldersheim
  */
-public class IndexedSearchCluster extends SearchCluster
-{
+public class IndexedSearchCluster extends SearchCluster {
+
     private Tuning tuning;
     private SearchCoverage searchCoverage;
 
     private final Redundancy.Provider redundancyProvider;
 
     private final List<SearchNode> searchNodes = new ArrayList<>();
-    private final DispatchTuning.DispatchPolicy defaultDispatchPolicy;
     private final double dispatchWarmup;
     private final String summaryDecodePolicy;
 
@@ -34,7 +33,6 @@ public class IndexedSearchCluster extends SearchCluster
                                 Redundancy.Provider redundancyProvider, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName);
         this.redundancyProvider = redundancyProvider;
-        defaultDispatchPolicy = DispatchTuning.Builder.toDispatchPolicy(featureFlags.queryDispatchPolicy());
         dispatchWarmup = featureFlags.queryDispatchWarmup();
         summaryDecodePolicy = featureFlags.summaryDecodePolicy();
     }
@@ -64,6 +62,7 @@ public class IndexedSearchCluster extends SearchCluster
             case LATENCY_AMORTIZED_OVER_TIME: yield DistributionPolicy.LATENCY_AMORTIZED_OVER_TIME;
         };
     }
+
     public void getConfig(DispatchNodesConfig.Builder builder) {
         for (SearchNode node : getSearchNodes()) {
             DispatchNodesConfig.Node.Builder nodeBuilder = new DispatchNodesConfig.Node.Builder();
@@ -74,6 +73,7 @@ public class IndexedSearchCluster extends SearchCluster
             builder.node(nodeBuilder);
         }
     }
+
     public void getConfig(DispatchConfig.Builder builder) {
         if (tuning.dispatch.getTopkProbability() != null) {
             builder.topKProbability(tuning.dispatch.getTopkProbability());
@@ -82,8 +82,6 @@ public class IndexedSearchCluster extends SearchCluster
             builder.minActivedocsPercentage(tuning.dispatch.getMinActiveDocsCoverage());
         if (tuning.dispatch.getDispatchPolicy() != null) {
             builder.distributionPolicy(toDistributionPolicy(tuning.dispatch.getDispatchPolicy()));
-        } else {
-            builder.distributionPolicy(toDistributionPolicy(defaultDispatchPolicy));
         }
         if (tuning.dispatch.getMaxHitsPerPartition() != null)
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());
