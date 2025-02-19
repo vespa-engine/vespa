@@ -42,15 +42,15 @@ struct MyExecutor : public Executor {
 TEST(CompileCacheTest, require_that_parameter_passing_selection_affects_function_key)
 {
     EXPECT_NE(gen_key(*Function::parse("a+b"), PassParams::SEPARATE),
-                     gen_key(*Function::parse("a+b"), PassParams::ARRAY));
+              gen_key(*Function::parse("a+b"), PassParams::ARRAY));
 }
 
 TEST(CompileCacheTest, require_that_the_number_of_parameters_affects_function_key)
 {
     EXPECT_NE(gen_key(*Function::parse({"a", "b"}, "a+b"), PassParams::SEPARATE),
-                     gen_key(*Function::parse({"a", "b", "c"}, "a+b"), PassParams::SEPARATE));
+              gen_key(*Function::parse({"a", "b", "c"}, "a+b"), PassParams::SEPARATE));
     EXPECT_NE(gen_key(*Function::parse({"a", "b"}, "a+b"), PassParams::ARRAY),
-                     gen_key(*Function::parse({"a", "b", "c"}, "a+b"), PassParams::ARRAY));
+              gen_key(*Function::parse({"a", "b", "c"}, "a+b"), PassParams::ARRAY));
 }
 
 TEST(CompileCacheTest, require_that_implicit_and_explicit_parameters_give_the_same_function_key)
@@ -64,25 +64,25 @@ TEST(CompileCacheTest, require_that_implicit_and_explicit_parameters_give_the_sa
 TEST(CompileCacheTest, require_that_symbol_names_does_not_affect_function_key)
 {
     EXPECT_EQ(gen_key(*Function::parse("a+b"), PassParams::SEPARATE),
-                 gen_key(*Function::parse("x+y"), PassParams::SEPARATE));
+              gen_key(*Function::parse("x+y"), PassParams::SEPARATE));
     EXPECT_EQ(gen_key(*Function::parse("a+b"), PassParams::ARRAY),
-                 gen_key(*Function::parse("x+y"), PassParams::ARRAY));
+              gen_key(*Function::parse("x+y"), PassParams::ARRAY));
 }
 
 TEST(CompileCacheTest, require_that_different_values_give_different_function_keys)
 {
     EXPECT_NE(gen_key(*Function::parse("1"), PassParams::SEPARATE),
-                     gen_key(*Function::parse("2"), PassParams::SEPARATE));
+              gen_key(*Function::parse("2"), PassParams::SEPARATE));
     EXPECT_NE(gen_key(*Function::parse("1"), PassParams::ARRAY),
-                     gen_key(*Function::parse("2"), PassParams::ARRAY));
+              gen_key(*Function::parse("2"), PassParams::ARRAY));
 }
 
 TEST(CompileCacheTest, require_that_different_strings_give_different_function_keys)
 {
     EXPECT_NE(gen_key(*Function::parse("\"a\""), PassParams::SEPARATE),
-                     gen_key(*Function::parse("\"b\""), PassParams::SEPARATE));
+              gen_key(*Function::parse("\"b\""), PassParams::SEPARATE));
     EXPECT_NE(gen_key(*Function::parse("\"a\""), PassParams::ARRAY),
-                     gen_key(*Function::parse("\"b\""), PassParams::ARRAY));
+              gen_key(*Function::parse("\"b\""), PassParams::ARRAY));
 }
 
 //-----------------------------------------------------------------------------
