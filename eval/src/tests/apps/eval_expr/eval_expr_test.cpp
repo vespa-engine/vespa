@@ -74,24 +74,37 @@ struct Server : public ServerCmd {
     }
 };
 
+class EvalExprTest : public ::testing::Test {
+protected:
+    Server f1;
+    EvalExprTest();
+    ~EvalExprTest() override;
+};
+
+EvalExprTest::EvalExprTest()
+    : ::testing::Test(),
+      f1()
+{
+}
+
+EvalExprTest::~EvalExprTest() = default;
+
 //-----------------------------------------------------------------------------
 
-TEST(EvalExprTest, print_server_command)
+TEST_F(EvalExprTest, print_server_command)
 {
     fprintf(stderr, "server cmd: %s\n", server_cmd.c_str());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST(EvalExprTest, require_that_simple_evaluation_works)
+TEST_F(EvalExprTest, require_that_simple_evaluation_works)
 {
-    Server f1;
     f1.eval("2+2").verify_result("4");
 }
 
-TEST(EvalExprTest, require_that_multiple_dependent_expressions_work)
+TEST_F(EvalExprTest, require_that_multiple_dependent_expressions_work)
 {
-    Server f1;
     {
         SCOPED_TRACE("2+2");
         f1.eval("2+2", "a").verify_result("4");
@@ -106,9 +119,8 @@ TEST(EvalExprTest, require_that_multiple_dependent_expressions_work)
     }
 }
 
-TEST(EvalExprTest, require_that_symbols_can_be_overwritten)
+TEST_F(EvalExprTest, require_that_symbols_can_be_overwritten)
 {
-    Server f1;
     {
         SCOPED_TRACE("1");
         f1.eval("1", "a").verify_result("1");
@@ -127,9 +139,8 @@ TEST(EvalExprTest, require_that_symbols_can_be_overwritten)
     }
 }
 
-TEST(EvalExprTest, require_that_tensor_result_is_returned_in_verbose_verbatim_form)
+TEST_F(EvalExprTest, require_that_tensor_result_is_returned_in_verbose_verbatim_form)
 {
-    Server f1;
     {
         SCOPED_TRACE("1");
         f1.eval("1", "a").verify_result("1");
@@ -148,9 +159,8 @@ TEST(EvalExprTest, require_that_tensor_result_is_returned_in_verbose_verbatim_fo
     }
 }
 
-TEST(EvalExprTest, require_that_execution_steps_can_be_extracted)
+TEST_F(EvalExprTest, require_that_execution_steps_can_be_extracted)
 {
-    Server f1;
     {
         SCOPED_TRACE("1");
         f1.eval("1", "a").verify_result("1");
@@ -175,9 +185,8 @@ TEST(EvalExprTest, require_that_execution_steps_can_be_extracted)
 
 //-----------------------------------------------------------------------------
 
-TEST(EvalExprTest, require_that_operation_batching_works)
+TEST_F(EvalExprTest, require_that_operation_batching_works)
 {
-    Server f1;
     Slime req;
     auto &arr = req.setArray();
     auto &req1 = arr.addObject();
@@ -196,9 +205,8 @@ TEST(EvalExprTest, require_that_operation_batching_works)
     EXPECT_EQ(reply[3]["result"].asString().make_string(), "10");
 }
 
-TEST(EvalExprTest, require_that_empty_operation_batch_works)
+TEST_F(EvalExprTest, require_that_empty_operation_batch_works)
 {
-    Server f1;
     Slime req;
     req.setArray();
     Slime reply = f1.invoke(req);
@@ -208,21 +216,18 @@ TEST(EvalExprTest, require_that_empty_operation_batch_works)
 
 //-----------------------------------------------------------------------------
 
-TEST(EvalExprTest, require_that_empty_expression_produces_error)
+TEST_F(EvalExprTest, require_that_empty_expression_produces_error)
 {
-    Server f1;
     f1.eval("").verify_error("missing expression");
 }
 
-TEST(EvalExprTest, require_that_parse_error_produces_error)
+TEST_F(EvalExprTest, require_that_parse_error_produces_error)
 {
-    Server f1;
     f1.eval("this does not parse").verify_error("expression parsing failed");
 }
 
-TEST(EvalExprTest, require_that_type_issues_produces_error)
+TEST_F(EvalExprTest, require_that_type_issues_produces_error)
 {
-    Server f1;
     {
         SCOPED_TRACE("a");
         f1.eval("tensor(x[3]):[1,2,3]", "a").verify_result("tensor(x[3]):{{x:0}:1,{x:1}:2,{x:2}:3}");
