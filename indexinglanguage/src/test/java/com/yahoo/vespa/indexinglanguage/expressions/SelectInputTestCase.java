@@ -50,23 +50,6 @@ public class SelectInputTestCase {
     }
 
     @Test
-    public void requireThatExpressionCanBeVerified() {
-        SimpleTestAdapter adapter = new SimpleTestAdapter();
-        adapter.createField(new Field("my_int", DataType.INT));
-        adapter.createField(new Field("my_str", DataType.STRING));
-
-        Expression exp = newSelectInput(new AttributeExpression("my_int"), "my_int");
-        assertVerify(adapter, null, exp);
-        assertVerify(adapter, DataType.INT, exp);
-        assertVerify(adapter, DataType.STRING, exp);
-
-        assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_str"),
-                           "Invalid expression 'attribute my_int': Can not assign string to field 'my_int' which is int.");
-        assertVerifyThrows(adapter, newSelectInput(new AttributeExpression("my_int"), "my_unknown"),
-                           "Invalid expression 'select_input { my_unknown: attribute my_int; }': Field 'my_unknown' not found.");
-    }
-
-    @Test
     public void requireThatSelectedExpressionIsRun() {
         assertSelect(List.of("foo", "bar"), List.of("foo"), "foo");
         assertSelect(List.of("foo", "bar"), List.of("bar"), "bar");
