@@ -5,7 +5,6 @@ package tracedoctor
 import (
 	"fmt"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
-	"io"
 	"strings"
 )
 
@@ -38,8 +37,7 @@ func (qn *queryNode) desc() string {
 }
 
 type perfDumpCtx struct {
-	dst io.Writer
-	err error
+	dst *output
 }
 
 func perfPad(last, self bool) string {
@@ -56,9 +54,7 @@ func perfPad(last, self bool) string {
 }
 
 func (ctx *perfDumpCtx) fmt(format string, args ...interface{}) {
-	if ctx.err == nil {
-		_, ctx.err = fmt.Fprintf(ctx.dst, format, args...)
-	}
+	ctx.dst.fmt(format, args...)
 }
 
 func (ctx *perfDumpCtx) printSeparator() {
@@ -90,14 +86,13 @@ func (ctx *perfDumpCtx) printLine(qn *queryNode, prefix, padSelf, padChild strin
 	}
 }
 
-func (q *queryNode) Render(output io.Writer) error {
+func (q *queryNode) render(output *output) {
 	dst := perfDumpCtx{dst: output}
 	dst.printSeparator()
 	dst.printHeader()
 	dst.printSeparator()
 	dst.printLine(q, "", "", "")
 	dst.printSeparator()
-	return dst.err
 }
 
 func extractQueryNode(obj slime.Value) *queryNode {
@@ -226,7 +221,7 @@ func eachSample(prof slime.Value, f func(sample slime.Value)) {
 	eachSampleList(prof.Field("roots"), f)
 }
 
-func (q *queryNode) ImportMatchPerf(t ThreadTrace) {
+func (q *queryNode) importMatchPerf(t threadTrace) {
 	slime.Select(t.root, hasTag("match_profiling"), func(p *slime.Path, v slime.Value) {
 		eachSample(v, func(sample slime.Value) {
 			q.applySample(sample)
@@ -234,11 +229,11 @@ func (q *queryNode) ImportMatchPerf(t ThreadTrace) {
 	})
 }
 
-type ThreadTrace struct {
+type threadTrace struct {
 	root slime.Value
 }
 
-func (t ThreadTrace) MatchTimeMs() float64 {
+func (t threadTrace) matchTimeMs() float64 {
 	p := slime.Find(t.root, hasTag("match_profiling"))
 	if len(p) == 1 {
 		return p[0].Apply(t.root).Field("total_time_ms").AsDouble()
@@ -246,21 +241,41 @@ func (t ThreadTrace) MatchTimeMs() float64 {
 	return 0.0
 }
 
-type ProtonTrace struct {
+func (t threadTrace) firstPhaseTimeMs() float64 {
+	p := slime.Find(t.root, hasTag("first_phase_profiling"))
+	if len(p) == 1 {
+		return p[0].Apply(t.root).Field("total_time_ms").AsDouble()
+	}
+	return 0.0
+}
+
+func (t threadTrace) secondPhaseTimeMs() float64 {
+	p := slime.Find(t.root, hasTag("second_phase_profiling"))
+	if len(p) == 1 {
+		return p[0].Apply(t.root).Field("total_time_ms").AsDouble()
+	}
+	return 0.0
+}
+
+func (t threadTrace) profTimeMs() float64 {
+	return t.matchTimeMs() + t.firstPhaseTimeMs() + t.secondPhaseTimeMs()
+}
+
+type protonTrace struct {
 	root slime.Value
 }
 
-func (p ProtonTrace) FindThreadTraces() []ThreadTrace {
-	var traces []ThreadTrace
+func (p protonTrace) findThreadTraces() []threadTrace {
+	var traces []threadTrace
 	slime.Select(p.root, hasTag("query_execution"), func(p *slime.Path, v slime.Value) {
 		v.Field("threads").EachEntry(func(idx int, v slime.Value) {
-			traces = append(traces, ThreadTrace{v})
+			traces = append(traces, threadTrace{v})
 		})
 	})
 	return traces
 }
 
-func (p ProtonTrace) ExtractQuery() *queryNode {
+func (p protonTrace) extractQuery() *queryNode {
 	query := slime.Invalid
 	plan := slime.Find(p.root, hasTag("query_execution_plan"))
 	if len(plan) == 1 {
@@ -269,24 +284,59 @@ func (p ProtonTrace) ExtractQuery() *queryNode {
 	return extractQueryNode(query)
 }
 
-func (p ProtonTrace) DistributionKey() int64 {
+type protonSummaryCtx struct {
+	out *output
+}
+
+func (p *protonSummaryCtx) fmt(format string, args ...interface{}) {
+	p.out.fmt(format, args...)
+}
+
+func (p *protonSummaryCtx) render(trace slime.Value) {
+	if !trace.Valid() {
+		return
+	}
+	if trace.Type() == slime.ARRAY {
+		trace.EachEntry(func(_ int, value slime.Value) {
+			p.render(value)
+		})
+	}
+	tag := trace.Field("tag").AsString()
+	ms := trace.Field("timestamp_ms").AsDouble()
+	if event := trace.Field("event"); event.Valid() {
+		p.out.fmt("%10.3f ms: %s\n", ms, event.AsString())
+	}
+	if tag == "query_setup" {
+		p.render(trace.Field("traces"))
+	}
+	if tag == "query_execution" {
+		p.out.fmt("%s%s\n", strings.Repeat(" ", 15), "(query execution happens here, analyzed below)")
+	}
+}
+
+func (p protonTrace) renderSummary(out *output) {
+	ctx := &protonSummaryCtx{out: out}
+	ctx.render(p.root.Field("traces"))
+}
+
+func (p protonTrace) distributionKey() int64 {
 	return p.root.Field("distribution-key").AsLong()
 }
 
-func (p ProtonTrace) DocumentType() string {
+func (p protonTrace) documentType() string {
 	return p.root.Field("document-type").AsString()
 }
 
-func (p ProtonTrace) DurationMs() float64 {
+func (p protonTrace) durationMs() float64 {
 	return p.root.Field("duration_ms").AsDouble()
 }
 
-func FindProtonTraces(root slime.Value) []ProtonTrace {
-	var traces []ProtonTrace
+func findProtonTraces(root slime.Value) []protonTrace {
+	var traces []protonTrace
 	slime.Select(root.Field("trace"), func(p *slime.Path, v slime.Value) bool {
 		return slime.Valid(v.Field("distribution-key"), v.Field("document-type"), v.Field("duration_ms"))
 	}, func(p *slime.Path, v slime.Value) {
-		traces = append(traces, ProtonTrace{v})
+		traces = append(traces, protonTrace{v})
 	})
 	return traces
 }
