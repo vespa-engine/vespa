@@ -177,7 +177,8 @@ public class LLMSearcher extends Searcher {
         } else if (exception.getCause() instanceof LanguageModelException) {
             errorCode = ((LanguageModelException) exception.getCause()).code();
         }
-        eventStream.error(languageModelId, new ErrorMessage(errorCode, exception.getMessage()));
+        eventStream.error(languageModelId, new ErrorMessage(errorCode, exception.getMessage() +
+                (exception.getCause() != null ? ": " + exception.getCause().getMessage() : "")));
     }
 
     private Result completeSync(Query query, Prompt prompt, InferenceParameters options, Result result, Execution execution) {
