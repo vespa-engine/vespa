@@ -23,6 +23,7 @@ public class GlobalPhase implements Cloneable {
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(Ranking.RERANKCOUNT, FieldType.integerType));
+        argumentType.addField(new FieldDescription(Ranking.RANKSCOREDROPLIMIT, FieldType.doubleType));
         argumentType.freeze();
     }
     public static QueryProfileType getArgumentType() { return argumentType; }
