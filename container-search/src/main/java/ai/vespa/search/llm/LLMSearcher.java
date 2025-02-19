@@ -177,8 +177,7 @@ public class LLMSearcher extends Searcher {
         } else if (exception.getCause() instanceof LanguageModelException) {
             errorCode = ((LanguageModelException) exception.getCause()).code();
         }
-        eventStream.error(languageModelId, new ErrorMessage(errorCode, exception.getMessage() +
-                (exception.getCause() != null ? ": " + exception.getCause().getMessage() : "")));
+        eventStream.error(languageModelId, new ErrorMessage(errorCode, "Error in LLM text generation", com.yahoo.yolean.Exceptions.toMessageString(exception)));
     }
 
     private Result completeSync(Query query, Prompt prompt, InferenceParameters options, Result result, Execution execution) {
