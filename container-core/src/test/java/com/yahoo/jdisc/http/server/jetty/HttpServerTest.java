@@ -37,12 +37,8 @@ import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.StringBody;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.apache.hc.core5.http.ConnectionClosedException;
 import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.io.HttpClientResponseHandler;
-import org.apache.hc.core5.http.io.entity.EntityUtils;
-import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -53,6 +49,7 @@ import java.io.IOException;
 import java.net.BindException;
 import java.net.URI;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
@@ -187,13 +184,12 @@ public class HttpServerTest {
                 binder -> binder.bind(MetricConsumer.class).toInstance(metricConsumer.mockitoMock()));
         driver.client()
                 .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
-                .expectStatusCode(is(BAD_REQUEST)).expectContent(containsString("HTTP ERROR 400 Duplicate Host Header"));
-        // TODO figure out what to do with this metric - currently missing for built-in responses
-//        var aggregator = ResponseMetricAggregator.getBean(driver.server());
-//        var metric = waitForStatistics(aggregator);
-//        assertEquals(400, metric.dimensions.statusCode);
-//        assertEquals("GET", metric.dimensions.method);
-//        assertTrue(driver.close());
+                .expectStatusCode(is(BAD_REQUEST)).expectContent(containsString("reason: Duplicate Host Header"));
+        var aggregator = ResponseMetricAggregator.getBean(driver.server());
+        var metric = waitForStatistics(aggregator);
+        assertEquals(400, metric.dimensions.statusCode);
+        assertEquals("GET", metric.dimensions.method);
+        assertTrue(driver.close());
     }
 
     @Test
@@ -670,7 +666,8 @@ public class HttpServerTest {
         assertTrue(driver.close());
     }
 
-    private ResponseMetricAggregator.StatisticsEntry waitForStatistics(ResponseMetricAggregator statisticsCollector) {
+    private ResponseMetricAggregator.StatisticsEntry waitForStatistics(ResponseMetricAggregator
+                                                                                      statisticsCollector) {
         List<ResponseMetricAggregator.StatisticsEntry> entries = List.of();
         int tries = 0;
         // Wait up to 30 seconds before giving up
@@ -808,38 +805,21 @@ public class HttpServerTest {
     }
 
     @Test
-    void requireThatMissingOrBlankHostHeaderFailsWith400() throws Exception {
-        // Jetty requires that Host header is present and non-blank.
-        var driver = JettyTestDriver.newInstance(new EchoRequestHandler());
+    void fallbackServerNameCanBeOverridden() throws Exception {
+        String fallbackHostname = "myhostname";
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new UriRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder()
+                        .serverName(new ConnectorConfig.ServerName.Builder().fallback(fallbackHostname)));
         int listenPort = driver.server().getListenPort();
-
-        try (var client = HttpClients.custom()
-                .addRequestInterceptorLast((req, entityDetails, httpCtx) -> req.removeHeaders(HttpHeaders.HOST))
-                .build()) {
-            var req = new HttpGet("http://localhost:" + listenPort + "/");
-            client.execute(req, (HttpClientResponseHandler<Void>) response -> {
-                assertEquals(BAD_REQUEST, response.getCode());
-                var content = EntityUtils.toString(response.getEntity());
-                assertTrue(content.contains("HTTP ERROR 400 No Host"), content);
-                return null;
-            });
-        }
-
-        try (var client = HttpClients.custom()
-                .addRequestInterceptorLast((req, entityDetails, httpCtx) -> req.setHeader(HttpHeaders.HOST, ""))
-                .build()) {
-            var req = new HttpGet("http://localhost:" + listenPort + "/");
-            client.execute(req, (HttpClientResponseHandler<Void>) response -> {
-                assertEquals(BAD_REQUEST, response.getCode());
-                var content = EntityUtils.toString(response.getEntity());
-                assertTrue(content.contains("HTTP ERROR 400 Blank Host"), content);
-                return null;
-            });
-
-        }
+        HttpGet req = new HttpGet("http://localhost:" + listenPort + "/");
+        req.setHeader("Host", null);
+        driver.client().execute(req)
+                .expectStatusCode(is(OK))
+                .expectContent(containsString("http://" + fallbackHostname + ":" + listenPort + "/"));
         assertTrue(driver.close());
     }
-
 
     @Test
     void acceptedServerNamesCanBeRestricted() throws Exception {
@@ -860,7 +840,7 @@ public class HttpServerTest {
     @Test
     void exceedingMaxContentSizeReturns413() throws IOException {
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
-                new ReadBeforeWriteRequestHandler(),
+                new EchoRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().maxContentSize(4));
         driver.client().newPost("/").setBinaryContent(new byte[4]).execute().expectStatusCode(is(OK));
@@ -933,26 +913,6 @@ public class HttpServerTest {
             ch.write(ByteBuffer.wrap(connectedAt.getBytes(UTF_8)), null);
             ch.close(null);
             return null;
-        }
-    }
-
-
-    private static class ReadBeforeWriteRequestHandler extends AbstractRequestHandler implements ContentChannel {
-
-        private ResponseHandler responseHandler;
-
-        @Override
-        public synchronized ContentChannel handleRequest(final Request request, final ResponseHandler handler) {
-            this.responseHandler = handler;
-            return this;
-        }
-
-        @Override public void write(ByteBuffer buf, CompletionHandler ch) { ch.completed(); }
-
-        @Override
-        public void close(CompletionHandler completionHandler) {
-            completionHandler.completed();
-            responseHandler.handleResponse(new Response(OK)).close(null);
         }
     }
 

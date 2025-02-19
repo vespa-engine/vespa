@@ -127,7 +127,11 @@
         <!-- START JETTY embedded jars -->
         <exclusion>
           <groupId>org.eclipse.jetty.http2</groupId>
-          <artifactId>*</artifactId>
+          <artifactId>http2-common</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.http2</groupId>
+          <artifactId>http2-server</artifactId>
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
@@ -159,7 +163,15 @@
         </exclusion>
         <exclusion>
           <groupId>org.eclipse.jetty</groupId>
+          <artifactId>jetty-servlet</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty</groupId>
           <artifactId>jetty-util</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.eclipse.jetty.toolchain</groupId>
+          <artifactId>jetty-jakarta-servlet-api</artifactId>
         </exclusion>
         <!-- END JETTY embedded jars -->
       </exclusions>

@@ -1,8 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
@@ -16,6 +16,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
@@ -36,24 +37,18 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
 
     public static final String CONTENT_TYPE = "Content-Type";
     private static final String RENDERING_ERRORS = "rendering_errors";
+    private static final String UNHANDLED_EXCEPTIONS_METRIC = ContainerMetrics.JDISC_HTTP_HANDLER_UNHANDLED_EXCEPTIONS.baseName();
 
     /** Logger for subclasses */
     protected final Logger log;
-
-
 
     public ThreadedHttpRequestHandler(Executor executor) {
         this(executor, null);
     }
 
-    // TODO: deprecate this and other overloads taking executor as argument
+    @Inject
     public ThreadedHttpRequestHandler(Executor executor, Metric metric) {
         this(executor, metric, false);
-    }
-
-    @Inject
-    public ThreadedHttpRequestHandler(ContainerThreadPool pool, Metric metric) {
-        this(pool.executor(), metric, false);
     }
 
     // TODO: deprecate this and the Context class. The context component set up in the model does not get a dedicated thread pool.
@@ -93,7 +88,7 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
             channel.setHttpResponse(httpResponse); // may or may not have already been done
             render(httpRequest, httpResponse, channel, httpRequest.creationTime(TimeUnit.MILLISECONDS));
         } catch (Exception e) {
-            metricUtil.onUnhandledException(request);
+            metric.add(UNHANDLED_EXCEPTIONS_METRIC, 1L, contextFor(request, Map.of("exception", e.getClass().getSimpleName())));
             metric.add(RENDERING_ERRORS, 1, null);
             log.log(Level.SEVERE, "Uncaught exception handling request", e);
             if (channel != null) {

@@ -4,30 +4,28 @@ package ai.vespa.feed.client.impl;
 
 import ai.vespa.feed.client.FeedClientBuilder.Compression;
 import ai.vespa.feed.client.HttpResponse;
-import org.eclipse.jetty.client.Authentication;
-import org.eclipse.jetty.client.BufferingResponseListener;
-import org.eclipse.jetty.client.BytesRequestContent;
-import org.eclipse.jetty.client.Destination;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.HttpProxy;
 import org.eclipse.jetty.client.MultiplexConnectionPool;
 import org.eclipse.jetty.client.Origin;
-import org.eclipse.jetty.client.Request;
-import org.eclipse.jetty.client.Response;
-import org.eclipse.jetty.client.Result;
 import org.eclipse.jetty.client.WWWAuthenticationProtocolHandler;
-import org.eclipse.jetty.client.transport.HttpClientConnectionFactory;
-import org.eclipse.jetty.client.transport.HttpClientTransportDynamic;
-import org.eclipse.jetty.http.HttpCookieStore;
+import org.eclipse.jetty.client.api.Authentication;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.client.api.Result;
+import org.eclipse.jetty.client.dynamic.HttpClientTransportDynamic;
+import org.eclipse.jetty.client.http.HttpClientConnectionFactory;
+import org.eclipse.jetty.client.util.BufferingResponseListener;
+import org.eclipse.jetty.client.util.BytesRequestContent;
 import org.eclipse.jetty.http.HttpField;
 import org.eclipse.jetty.http.HttpHeader;
 import org.eclipse.jetty.http.HttpMethod;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.http2.client.HTTP2Client;
-import org.eclipse.jetty.http2.client.transport.ClientConnectionFactoryOverHTTP2;
+import org.eclipse.jetty.http2.client.http.ClientConnectionFactoryOverHTTP2;
 import org.eclipse.jetty.io.ClientConnectionFactory;
 import org.eclipse.jetty.io.ClientConnector;
-import org.eclipse.jetty.util.ConcurrentPool;
+import org.eclipse.jetty.util.HttpCookieStore;
 import org.eclipse.jetty.util.Jetty;
 import org.eclipse.jetty.util.Pool;
 import org.eclipse.jetty.util.Promise;
@@ -170,8 +168,17 @@ class JettyCluster implements Cluster {
         ClientConnectionFactory.Info http2 = new ClientConnectionFactoryOverHTTP2.HTTP2(h2Client);
         HttpClientTransportDynamic transport = new HttpClientTransportDynamic(connector, http2, h1);
         int connectionsPerEndpoint = b.connectionsPerEndpoint;
-        transport.setConnectionPoolFactory(dest ->
-                new MaxMultiplexConnectionPool(dest, connectionsPerEndpoint, secureProxy, b.connectionTtl));
+        transport.setConnectionPoolFactory(dest -> {
+            MultiplexConnectionPool pool = new MultiplexConnectionPool(
+                    dest, Pool.StrategyType.RANDOM, connectionsPerEndpoint, false, dest, Integer.MAX_VALUE);
+            pool.preCreateConnections(connectionsPerEndpoint);
+            if (secureProxy) pool.setMaxDuration(Duration.ofMinutes(1).toMillis());
+            else {
+                pool.setMaximizeConnections(true);
+                pool.setMaxDuration(b.connectionTtl.toMillis());
+            }
+            return pool;
+        });
         HttpClient httpClient = new HttpClient(transport);
         httpClient.setMaxRequestsQueuedPerDestination(Integer.MAX_VALUE);
         httpClient.setFollowRedirects(false);
@@ -179,7 +186,7 @@ class JettyCluster implements Cluster {
                 new HttpField(HttpHeader.USER_AGENT, String.format("vespa-feed-client/%s (Jetty:%s)", Vespa.VERSION, Jetty.VERSION)));
         // Stop client from trying different IP address when TLS handshake fails
         httpClient.setSocketAddressResolver(new Ipv4PreferringResolver(httpClient, Duration.ofSeconds(10)));
-        httpClient.setHttpCookieStore(new HttpCookieStore.Empty());
+        httpClient.setCookieStore(new HttpCookieStore.Empty());
 
         if (b.proxy != null) addProxyConfiguration(b, httpClient);
         try { httpClient.start(); } catch (Exception e) { throw new IOException(e); }
@@ -214,7 +221,7 @@ class JettyCluster implements Cluster {
             httpClient.getProxyConfiguration().addProxy(
                     new HttpProxy(address, false, new Origin.Protocol(List.of("http/1.1"), false)));
             // Bug in Jetty cause authentication result to be ignored for HTTP/1.1 CONNECT requests
-            httpClient.getRequestListeners().addHeadersListener(new Request.Listener() {
+            httpClient.getRequestListeners().add(new Request.Listener() {
                 @Override
                 public void onHeaders(Request r) {
                     if (HttpMethod.CONNECT.is(r.getMethod()))
@@ -294,28 +301,6 @@ class JettyCluster implements Cluster {
                     getPromise().succeeded(ipv4Addresses);
                 }
             });
-        }
-    }
-
-    private static class MaxMultiplexConnectionPool extends MultiplexConnectionPool {
-        static final int MAX_MULTIPLEX = 512;
-        final int maxConnections;
-
-        MaxMultiplexConnectionPool(Destination dest, int maxConnections, boolean secureProxy, Duration ttl) {
-            super(dest, () -> new ConcurrentPool<>(
-                    ConcurrentPool.StrategyType.RANDOM, maxConnections, newMaxMultiplexer(MAX_MULTIPLEX)), MAX_MULTIPLEX);
-            this.maxConnections = maxConnections;
-            if (secureProxy) setMaxDuration(Duration.ofMinutes(1).toMillis());
-            else {
-                setMaximizeConnections(true);
-                setMaxDuration(ttl.toMillis());
-            }
-        }
-
-        @Override
-        protected void doStart() throws Exception {
-            super.doStart();
-            preCreateConnections(maxConnections);
         }
     }
 }
