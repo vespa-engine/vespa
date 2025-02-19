@@ -39,11 +39,6 @@ public abstract class OutputExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        //context.tryOutputType(fieldName, context.getCurrentType(), this);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         context.setFieldValue(fieldName, context.getCurrentValue(), this);
     }

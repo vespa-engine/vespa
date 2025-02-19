@@ -94,9 +94,8 @@ public final class StatementExpression extends ExpressionList<Expression> {
         var outputType = getOutputType(context); // A nested statement; output imposed from above
         if (outputType == null) // otherwise the last expression will be an output deciding the type
             outputType = expressions().get(--i).getInputType(context);
-        while (--i >= 0) {
+        while (--i >= 0)
             outputType = expressions().get(i).setOutputType(outputType, context);
-        }
         return outputType;
     }
 
