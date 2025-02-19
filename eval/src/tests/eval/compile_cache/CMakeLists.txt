@@ -4,5 +4,6 @@ vespa_add_executable(eval_compile_cache_test_app TEST
     compile_cache_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_compile_cache_test_app COMMAND eval_compile_cache_test_app)

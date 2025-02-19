@@ -4,6 +4,7 @@ vespa_add_executable(eval_analyze_onnx_model_test_app TEST
     analyze_onnx_model_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
     AFTER
     eval_analyze_onnx_model_app
 )
