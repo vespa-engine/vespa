@@ -732,7 +732,7 @@ TEST(FunctionTest, require_that_custom_symbol_extractor_may_be_used)
     EXPECT_EQ("[x+*y]...[unknown symbol: 'x+*y']...[]", Function::parse(params, "x+*y", MySymbolExtractor({'+', '*'}))->dump());
 }
 
-TEST(FunctionTest, require_that_unknown_function_works_as_expected__with_custom_symbol_extractor)
+TEST(FunctionTest, require_that_unknown_function_works_as_expected_with_custom_symbol_extractor)
 {
     EXPECT_EQ("[bogus(]...[unknown function: 'bogus']...[x)+y]", Function::parse(params, "bogus(x)+y")->dump());
     EXPECT_EQ("[bogus]...[unknown symbol: 'bogus']...[(x)+y]", Function::parse(params, "bogus(x)+y", MySymbolExtractor())->dump());
