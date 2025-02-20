@@ -9,7 +9,16 @@ import java.util.List;
 /**
  * @author Simon Thoresen Hult
  */
-public class CompletionHandlers {
+class CompletionHandlers {
+
+    private CompletionHandlers() {}
+
+    private static final CompletionHandler NOOP_COMPLETION_HANDLER = new CompletionHandler() {
+        @Override public void completed() {}
+        @Override public void failed(final Throwable t) {}
+    };
+
+    static CompletionHandler noop() { return NOOP_COMPLETION_HANDLER; }
 
     public static void tryComplete(CompletionHandler handler) {
         if (handler == null) {

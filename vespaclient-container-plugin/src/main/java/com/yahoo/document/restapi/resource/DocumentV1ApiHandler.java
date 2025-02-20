@@ -201,6 +201,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
     private final ScheduledExecutorService dispatcher = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("document-api-handler-"));
     private final ScheduledExecutorService visitDispatcher = Executors.newSingleThreadScheduledExecutor(new DaemonThreadFactory("document-api-handler-visit-"));
     private final Map<String, Map<Method, Handler>> handlers = defineApi();
+    private final HandlerMetricContextUtil metricUtil;
 
     @Inject
     public DocumentV1ApiHandler(Metric metric,
@@ -234,15 +235,16 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
         // TODO: Here it would be better to have dedicated threads with different wait depending on blocked or empty.
         this.dispatcher.scheduleWithFixedDelay(this::dispatchEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
         this.visitDispatcher.scheduleWithFixedDelay(this::dispatchVisitEnqueued, resendDelayMS, resendDelayMS, MILLISECONDS);
+        this.metricUtil = new HandlerMetricContextUtil(this.metric, this.getClass().getName());
     }
 
     // ------------------------------------------------ Requests -------------------------------------------------
 
     @Override
     public ContentChannel handleRequest(Request rawRequest, ResponseHandler rawResponseHandler) {
-        HandlerMetricContextUtil.onHandle(rawRequest, metric, getClass());
+        metricUtil.onHandle(rawRequest);
         ResponseHandler responseHandler = response -> {
-            HandlerMetricContextUtil.onHandled(rawRequest, metric, getClass());
+            metricUtil.onHandled(rawRequest);
             return rawResponseHandler.handleResponse(response);
         };
 

@@ -47,11 +47,11 @@ public class AccessLogRequestLogTest {
                 .build();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
-        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder().build());
+        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder(jettyRequest).build());
         assertEquals(200, requestLog.entries().remove(0).statusCode().getAsInt());
 
-        jettyRequest.setAttribute(HttpRequestDispatch.ACCESS_LOG_STATUS_CODE_OVERRIDE, 404);
-        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder().build());
+        jettyRequest.setAttribute(JdiscDispatchingHandler.ACCESS_LOG_STATUS_CODE_OVERRIDE, 404);
+        new AccessLogRequestLog(requestLog).log(jettyRequest, JettyMockResponseBuilder.newBuilder(jettyRequest).build());
         assertEquals(404, requestLog.entries().remove(0).statusCode().getAsInt());
     }
 
@@ -134,18 +134,19 @@ public class AccessLogRequestLogTest {
     }
 
     private void doAccessLoggingOfRequest(RequestLog requestLog, Request jettyRequest) {
-        new AccessLogRequestLog(requestLog).log(jettyRequest, createResponseMock());
+        new AccessLogRequestLog(requestLog).log(jettyRequest, createResponseMock(jettyRequest));
     }
 
     private static JettyMockRequestBuilder createRequestBuilder() {
         return JettyMockRequestBuilder.newBuilder()
-                .attribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY, new AccessLogEntry())
+                .attribute(JdiscDispatchingHandler.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY, new AccessLogEntry())
                 .remote("2.3.4.5", "localhost", 12345)
                 .localPort(1234);
     }
 
-    private Response createResponseMock() {
-        return JettyMockResponseBuilder.newBuilder().build();
+    private Response createResponseMock(Request req) {
+        return JettyMockResponseBuilder.newBuilder(req)
+                .build();
     }
 
 }
