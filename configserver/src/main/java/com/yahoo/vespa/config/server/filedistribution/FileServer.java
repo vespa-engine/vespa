@@ -95,7 +95,7 @@ public class FileServer {
     FileServer(FileDownloader fileDownloader, List<CompressionType> compressionTypes, FileDirectory fileDirectory) {
         this.downloader = fileDownloader;
         this.fileDirectory = fileDirectory;
-        this.executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
+        this.executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(Math.max(16, Runtime.getRuntime().availableProcessors() * 2),
                                                                           new DaemonThreadFactory("file-server-"));
         this.compressionTypes = compressionTypes;
     }
