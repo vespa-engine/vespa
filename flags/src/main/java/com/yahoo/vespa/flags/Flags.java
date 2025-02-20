@@ -56,20 +56,6 @@ public class Flags {
             "Takes effect on start of host-admin.",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag DISABLE_WG_CONNTRACK = defineFeatureFlag(
-            "disable-wg-conntrack", false,
-            List.of("hakonhall"), "2025-01-17", "2025-03-17",
-            "Disable connection tracking of WireGuard traffic",
-            "Takes effect on the next tick.",
-            HOSTNAME, NODE_TYPE);
-
-    public static final UnboundBooleanFlag CLEAR_CONNTRACK = defineFeatureFlag(
-            "clear-conntrack", true,
-            List.of("hakonhall"), "2025-01-14", "2025-03-14",
-            "Whether to clear conntrack entries for a container",
-            "Takes effect immediately",
-            HOSTNAME, NODE_TYPE);
-
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
             List.of("baldersheim"), "2023-03-30", "2025-03-01",
@@ -214,13 +200,6 @@ public class Flags {
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
-    public static final UnboundBooleanFlag ALWAYS_MARK_PHRASE_EXPENSIVE = defineFeatureFlag(
-            "always-mark-phrase-expensive", false,
-            List.of("havardpe"), "2023-11-20", "2025-04-01",
-            "If true all phrases will be marked expensive, independent of parents",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
             List.of("hmusum"), "2023-07-19", "2025-04-01",
@@ -348,13 +327,6 @@ public class Flags {
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
-
-    public static final UnboundBooleanFlag LEGACY_AUTH0_FILTER = defineFeatureFlag(
-            "use-legacy-auth0-filter", true,
-            List.of("eirik"), "2024-11-07", "2025-03-07",
-            "Use legacy auth0 request filter, or new one",
-            "Takes after controller restart",
-            SYSTEM);
 
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
             "use-legacy-trust-store", true,

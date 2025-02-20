@@ -176,7 +176,6 @@ public class RawRankProfile {
         private final double secondPhaseRankScoreDropLimit;
         private final double globalPhaseRankScoreDropLimit;
         private final boolean sortBlueprintsByCost;
-        private final boolean alwaysMarkPhraseExpensive;
 
         /**
          * The rank type definitions used to derive settings for the native rank features
@@ -221,7 +220,6 @@ public class RawRankProfile {
             numSearchPartitions = compiled.getNumSearchPartitions();
             termwiseLimit = compiled.getTermwiseLimit().orElse(1.0);
             sortBlueprintsByCost = deployProperties.featureFlags().sortBlueprintsByCost();
-            alwaysMarkPhraseExpensive = deployProperties.featureFlags().alwaysMarkPhraseExpensive();
             postFilterThreshold = compiled.getPostFilterThreshold();
             approximateThreshold = compiled.getApproximateThreshold();
             targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
@@ -480,9 +478,6 @@ public class RawRankProfile {
             }
             if (sortBlueprintsByCost) {
                 properties.add(new Pair<>("vespa.matching.sort_blueprints_by_cost", String.valueOf(sortBlueprintsByCost)));
-            }
-            if (alwaysMarkPhraseExpensive) {
-                properties.add(new Pair<>("vespa.matching.always_mark_phrase_expensive", String.valueOf(alwaysMarkPhraseExpensive)));
             }
             if (postFilterThreshold.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.global_filter.upper_limit", String.valueOf(postFilterThreshold.getAsDouble())));

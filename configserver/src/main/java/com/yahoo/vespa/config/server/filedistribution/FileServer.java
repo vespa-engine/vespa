@@ -132,14 +132,14 @@ public class FileServer {
     private FileReferenceData fileReferenceData(FileReference reference,
                                                 Set<CompressionType> acceptedCompressionTypes,
                                                 File file) throws IOException {
+        CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
+        log.log(Level.FINE, () -> "accepted compression types: " + acceptedCompressionTypes + ", will use " + compressionType);
         if (file.isDirectory()) {
             Path tempFile = Files.createTempFile(tempFilereferencedataDir, tempFilereferencedataPrefix, reference.value());
-            CompressionType compressionType = chooseCompressionType(acceptedCompressionTypes);
-            log.log(Level.FINEST, () -> "accepted compression types=" + acceptedCompressionTypes + ", compression type to use=" + compressionType);
             File compressedFile = new FileReferenceCompressor(compressed, compressionType).compress(file.getParentFile(), tempFile.toFile());
             return new LazyTemporaryStorageFileReferenceData(reference, file.getName(), compressed, compressedFile, compressionType);
         } else {
-            return new LazyFileReferenceData(reference, file.getName(), Type.file, file, gzip);
+            return new LazyFileReferenceData(reference, file.getName(), Type.file, file, compressionType);
         }
     }
 
@@ -148,7 +148,7 @@ public class FileServer {
                           Set<CompressionType> acceptedCompressionTypes,
                           Request request,
                           Receiver receiver) {
-        log.log(FINE, () -> "Received request for '" + fileReference + "' from " + request.target().peerSpec().host() +
+        log.log(FINE, () -> "Received request for " + fileReference + " from " + request.target().peerSpec().host() +
                 ", download from other source: " + downloadFromOtherSourceIfNotFound);
         String client = request.target().toString();
         log.log(FINE, executor.getActiveCount() + " out of " + executor.getMaximumPoolSize() + " threads are active");
@@ -157,7 +157,7 @@ public class FileServer {
             request.returnValues()
                    .add(new Int32Value(result.code()))
                    .add(new StringValue(result.description()));
-            log.log(FINE, () -> "Returning request for '" + fileReference + "' from " + request.target());
+            log.log(FINE, () -> "Returning request for " + fileReference + " from " + request.target());
             request.returnRequest();
         });
     }
@@ -174,7 +174,7 @@ public class FileServer {
 
             startFileServing(fileReference, file.get(), receiver, acceptedCompressionTypes);
         } catch (Exception e) {
-            log.warning("Failed serving '" + fileReference + "', request from " + client + " failed with: " + e.getMessage());
+            log.warning("Failed serving " + fileReference + ", request from " + client + " failed with: " + e.getMessage());
             return TRANSFER_FAILED;
         }
 

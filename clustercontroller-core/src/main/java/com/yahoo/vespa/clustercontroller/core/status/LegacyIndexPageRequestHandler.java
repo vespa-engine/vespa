@@ -326,7 +326,8 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                                        .map(kv -> String.format("%s: %.2f%%", escaped(kv.getKey()), kv.getValue() * 100.0))
                                        .sorted()
                                        .collect(Collectors.joining("<br/>"))).append("</td></tr>");
-
+        sb.append("<tr><td><nobr>Feed block noise level (low watermark limit will be feed block limit minus this value)</nobr></td><td align=\"right\">")
+          .append(options.clusterFeedBlockNoiseLevel()).append("</td></tr>");
         sb.append("</table>");
     }
 
