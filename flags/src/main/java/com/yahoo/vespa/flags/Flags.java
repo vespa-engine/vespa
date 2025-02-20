@@ -56,20 +56,6 @@ public class Flags {
             "Takes effect on start of host-admin.",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag DISABLE_WG_CONNTRACK = defineFeatureFlag(
-            "disable-wg-conntrack", false,
-            List.of("hakonhall"), "2025-01-17", "2025-03-17",
-            "Disable connection tracking of WireGuard traffic",
-            "Takes effect on the next tick.",
-            HOSTNAME, NODE_TYPE);
-
-    public static final UnboundBooleanFlag CLEAR_CONNTRACK = defineFeatureFlag(
-            "clear-conntrack", true,
-            List.of("hakonhall"), "2025-01-14", "2025-03-14",
-            "Whether to clear conntrack entries for a container",
-            "Takes effect immediately",
-            HOSTNAME, NODE_TYPE);
-
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
             List.of("baldersheim"), "2023-03-30", "2025-03-01",
