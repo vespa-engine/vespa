@@ -356,13 +356,6 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID);
 
-    public static final UnboundBooleanFlag LEGACY_AUTH0_FILTER = defineFeatureFlag(
-            "use-legacy-auth0-filter", true,
-            List.of("eirik"), "2024-11-07", "2025-03-07",
-            "Use legacy auth0 request filter, or new one",
-            "Takes after controller restart",
-            SYSTEM);
-
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
             "use-legacy-trust-store", true,
             List.of("marlon"), "2024-12-05", "2025-03-01",
