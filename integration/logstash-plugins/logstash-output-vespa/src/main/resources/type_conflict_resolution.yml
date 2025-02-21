@@ -1,0 +1,30 @@
+# Type conflict resolution map
+# Format: type1: { type2: resolved_type }
+# Example: if we see both "long" and "string" for the same field,
+# resolve it to "string"
+
+# we don't bother long->string because there are other problems
+# like missing quotes when we detected the long in the first place
+long:
+  float: float
+
+array<int8>:
+  array<long>: array<long>
+  array<float>: array<float>
+
+array<long>:
+  array<float>: array<float>
+
+position:
+  object<float>: object<float>
+  # if we see an integer value, we don't know if the lat/lng was float before or not
+  # so let's play it safe and use float
+  object<int8>: object<float>
+  object<long>: object<float>
+
+object<int8>:
+  object<float>: object<float>
+  object<long>: object<long>
+
+object<long>:
+  object<float>: object<float>
