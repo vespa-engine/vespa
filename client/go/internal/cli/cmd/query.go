@@ -159,8 +159,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	if err != nil {
 		// Hint for timeout exception in cloud
 		if err, ok := err.(net.Error); ok && err.Timeout() && target.IsCloud() {
-			cli.printErr(err, "No nodes are responsive", "Check application status in the console")
-			return nil
+			return errHint(err, "No nodes are responsive", "Check application status in the console")
 		}
 		return fmt.Errorf("request failed: %w", err)
 	}
