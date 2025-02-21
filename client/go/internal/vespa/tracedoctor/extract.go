@@ -26,14 +26,14 @@ func (q *queryNode) each(f func(q *queryNode)) {
 	}
 }
 
-func (qn *queryNode) desc() string {
-	if qn.queryTerm != "" {
-		if qn.fieldName != "" {
-			return fmt.Sprintf("%s %s:%s", qn.class, qn.fieldName, qn.queryTerm)
+func (q *queryNode) desc() string {
+	if q.queryTerm != "" {
+		if q.fieldName != "" {
+			return fmt.Sprintf("%s %s:%s", q.class, q.fieldName, q.queryTerm)
 		}
-		return fmt.Sprintf("%s %s", qn.class, qn.queryTerm)
+		return fmt.Sprintf("%s %s", q.class, q.queryTerm)
 	}
-	return qn.class
+	return q.class
 }
 
 type perfDumpCtx struct {
@@ -231,6 +231,57 @@ func (q *queryNode) importMatchPerf(t threadTrace) {
 
 type threadTrace struct {
 	root slime.Value
+	id   int
+}
+
+func (t threadTrace) makeTimeline(trace slime.Value, timeline *timeline) {
+	if !trace.Valid() {
+		return
+	}
+	if trace.Type() == slime.ARRAY {
+		trace.EachEntry(func(_ int, value slime.Value) {
+			t.makeTimeline(value, timeline)
+		})
+		return
+	}
+	ms := trace.Field("timestamp_ms").AsDouble()
+	if event := trace.Field("event"); event.Valid() {
+		timeline.add(ms, event.AsString())
+	}
+}
+
+func (t threadTrace) timeline() *timeline {
+	res := &timeline{}
+	t.makeTimeline(t.root.Field("traces"), res)
+	return res
+}
+
+func (t threadTrace) firstPhasePerf() *topNPerf {
+	perf := newTopNPerf()
+	slime.Select(t.root, hasTag("first_phase_profiling"), func(p *slime.Path, v slime.Value) {
+		eachSample(v, func(sample slime.Value) {
+			t := v.Field("total_time_ms").AsDouble()
+			if selfTime := sample.Field("self_time_ms"); selfTime.Valid() {
+				t = selfTime.AsDouble()
+			}
+			perf.addSample(sample.Field("name").AsString(), sample.Field("count").AsLong(), t)
+		})
+	})
+	return perf
+}
+
+func (t threadTrace) secondPhasePerf() *topNPerf {
+	perf := newTopNPerf()
+	slime.Select(t.root, hasTag("second_phase_profiling"), func(p *slime.Path, v slime.Value) {
+		eachSample(v, func(sample slime.Value) {
+			t := v.Field("total_time_ms").AsDouble()
+			if selfTime := sample.Field("self_time_ms"); selfTime.Valid() {
+				t = selfTime.AsDouble()
+			}
+			perf.addSample(sample.Field("name").AsString(), sample.Field("count").AsLong(), t)
+		})
+	})
+	return perf
 }
 
 func (t threadTrace) matchTimeMs() float64 {
@@ -268,8 +319,10 @@ type protonTrace struct {
 func (p protonTrace) findThreadTraces() []threadTrace {
 	var traces []threadTrace
 	slime.Select(p.root, hasTag("query_execution"), func(p *slime.Path, v slime.Value) {
+		id := 0
 		v.Field("threads").EachEntry(func(idx int, v slime.Value) {
-			traces = append(traces, threadTrace{v})
+			traces = append(traces, threadTrace{root: v, id: id})
+			id++
 		})
 	})
 	return traces
@@ -284,39 +337,33 @@ func (p protonTrace) extractQuery() *queryNode {
 	return extractQueryNode(query)
 }
 
-type protonSummaryCtx struct {
-	out *output
-}
-
-func (p *protonSummaryCtx) fmt(format string, args ...interface{}) {
-	p.out.fmt(format, args...)
-}
-
-func (p *protonSummaryCtx) render(trace slime.Value) {
+func (p protonTrace) makeTimeline(trace slime.Value, t *timeline) {
 	if !trace.Valid() {
 		return
 	}
 	if trace.Type() == slime.ARRAY {
 		trace.EachEntry(func(_ int, value slime.Value) {
-			p.render(value)
+			p.makeTimeline(value, t)
 		})
+		return
 	}
 	tag := trace.Field("tag").AsString()
 	ms := trace.Field("timestamp_ms").AsDouble()
 	if event := trace.Field("event"); event.Valid() {
-		p.out.fmt("%10.3f ms: %s\n", ms, event.AsString())
+		t.add(ms, event.AsString())
 	}
 	if tag == "query_setup" {
-		p.render(trace.Field("traces"))
+		p.makeTimeline(trace.Field("traces"), t)
 	}
 	if tag == "query_execution" {
-		p.out.fmt("%s%s\n", strings.Repeat(" ", 15), "(query execution happens here, analyzed below)")
+		t.addComment("(query execution happens here, analyzed below)")
 	}
 }
 
-func (p protonTrace) renderSummary(out *output) {
-	ctx := &protonSummaryCtx{out: out}
-	ctx.render(p.root.Field("traces"))
+func (p protonTrace) timeline() *timeline {
+	res := &timeline{}
+	p.makeTimeline(p.root.Field("traces"), res)
+	return res
 }
 
 func (p protonTrace) distributionKey() int64 {
