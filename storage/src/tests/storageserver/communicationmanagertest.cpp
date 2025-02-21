@@ -345,7 +345,7 @@ TEST_F(CommunicationManagerTest, unmapped_bucket_space_documentapi_request_retur
     ASSERT_EQ(1, f.reply_handler.replies.size());
     auto& reply = *f.reply_handler.replies[0];
     ASSERT_TRUE(reply.hasErrors());
-    EXPECT_EQ(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
+    EXPECT_EQ(static_cast<uint32_t>(documentapi::DocumentProtocol::ERROR_DOCUMENT_NOT_FOUND), reply.getError(0).getCode());
 
     EXPECT_EQ(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
@@ -361,7 +361,7 @@ TEST_F(CommunicationManagerTest, unmapped_bucket_space_for_get_documentapi_reque
     ASSERT_EQ(1, f.reply_handler.replies.size());
     auto& reply = *f.reply_handler.replies[0];
     ASSERT_TRUE(reply.hasErrors());
-    EXPECT_EQ(static_cast<uint32_t>(api::ReturnCode::REJECTED), reply.getError(0).getCode());
+    EXPECT_EQ(static_cast<uint32_t>(documentapi::DocumentProtocol::ERROR_DOCUMENT_NOT_FOUND), reply.getError(0).getCode());
     EXPECT_EQ(uint64_t(1), f.comm_mgr->metrics().bucketSpaceMappingFailures.getValue());
 }
 
