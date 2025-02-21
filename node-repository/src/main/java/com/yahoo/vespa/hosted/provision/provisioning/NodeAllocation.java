@@ -83,7 +83,6 @@ class NodeAllocation {
     private final Supplier<Integer> nextIndex;
 
     private final NodeRepository nodeRepository;
-    private final Optional<String> requiredHostFlavor;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requested,
                    Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
@@ -93,12 +92,6 @@ class NodeAllocation {
         this.requested = requested;
         this.nextIndex = nextIndex;
         this.nodeRepository = nodeRepository;
-        this.requiredHostFlavor = Optional.of(PermanentFlags.HOST_FLAVOR.bindTo(nodeRepository.flagSource())
-                                                                        .with(Dimension.INSTANCE_ID, application.serializedForm())
-                                                                        .with(Dimension.CLUSTER_TYPE, cluster.type().name())
-                                                                        .with(Dimension.CLUSTER_ID, cluster.id().value())
-                                                                        .value())
-                                          .filter(s -> !s.isBlank());
     }
 
     /**
@@ -177,7 +170,6 @@ class NodeAllocation {
         if (candidate.wantToRetire()) return Retirement.hardRequest;
         if (candidate.preferToRetire() && candidate.replaceableBy(candidates)) return Retirement.softRequest;
         if (violatesExclusivity(candidate) != NodeCandidate.ExclusivityViolation.NONE) return Retirement.violatesExclusivity;
-        if (requiredHostFlavor.isPresent() && ! candidate.parent.map(node -> node.flavor().name()).equals(requiredHostFlavor)) return Retirement.violatesHostFlavor;
         if (candidate.violatesSpares) return Retirement.violatesSpares;
 
         var group = candidate.allocation().get().membership().cluster().group();
