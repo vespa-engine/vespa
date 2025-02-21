@@ -4,5 +4,6 @@ vespa_add_executable(eval_node_types_test_app TEST
     node_types_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_node_types_test_app COMMAND eval_node_types_test_app)

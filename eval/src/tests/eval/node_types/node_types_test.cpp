@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/node_types.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/value_type_spec.h>
-#include <vespa/eval/eval/node_types.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib::eval;
@@ -28,11 +29,9 @@ void print_errors(const NodeTypes &types) {
 }
 
 void verify(const std::string &type_expr, const std::string &type_spec) {
+    SCOPED_TRACE(type_expr);
     auto function = Function::parse(type_expr, TypeSpecExtractor());
-    if (!EXPECT_TRUE(!function->has_error())) {
-        fprintf(stderr, "parse error: %s\n", function->get_error().c_str());
-        return;
-    }
+    ASSERT_TRUE(!function->has_error()) << "parse error: " << function->get_error();
     std::vector<ValueType> input_types;
     for (size_t i = 0; i < function->num_params(); ++i) {
         input_types.push_back(ValueType::from_spec(function->param_name(i)));
@@ -41,92 +40,98 @@ void verify(const std::string &type_expr, const std::string &type_spec) {
     print_errors(types);
     ValueType expected_type = ValueType::from_spec(type_spec);
     ValueType actual_type = types.get_type(function->root());
-    EXPECT_EQUAL(expected_type, actual_type);
+    EXPECT_EQ(expected_type, actual_type);
 }
 
-TEST("require that error nodes have error type") {
+TEST(NodeTypesTest, require_that_error_nodes_have_error_type)
+{
     auto function = Function::parse("1 2 3 4 5", TypeSpecExtractor());
     EXPECT_TRUE(function->has_error());
     NodeTypes types(*function, std::vector<ValueType>());
     ValueType expected_type = ValueType::from_spec("error");
     ValueType actual_type = types.get_type(function->root());
-    EXPECT_EQUAL(expected_type, actual_type);
+    EXPECT_EQ(expected_type, actual_type);
 }
 
-TEST("require that leaf constants have appropriate type") {
-    TEST_DO(verify("123", "double"));
-    TEST_DO(verify("\"string values are hashed\"", "double"));
+TEST(NodeTypesTest, require_that_leaf_constants_have_appropriate_type)
+{
+    verify("123", "double");
+    verify("\"string values are hashed\"", "double");
 }
 
-TEST("require that input parameters preserve their type") {
-    TEST_DO(verify("error", "error"));
-    TEST_DO(verify("double", "double"));
-    TEST_DO(verify("tensor()", "double"));
-    TEST_DO(verify("tensor(x{},y[10],z[5])", "tensor(x{},y[10],z[5])"));
-    TEST_DO(verify("tensor<float>(x{},y[10],z[5])", "tensor<float>(x{},y[10],z[5])"));
-    TEST_DO(verify("tensor<bfloat16>(x{},y[10],z[5])", "tensor<bfloat16>(x{},y[10],z[5])"));
-    TEST_DO(verify("tensor<int8>(x{},y[10],z[5])", "tensor<int8>(x{},y[10],z[5])"));
+TEST(NodeTypesTest, require_that_input_parameters_preserve_their_type)
+{
+    verify("error", "error");
+    verify("double", "double");
+    verify("tensor()", "double");
+    verify("tensor(x{},y[10],z[5])", "tensor(x{},y[10],z[5])");
+    verify("tensor<float>(x{},y[10],z[5])", "tensor<float>(x{},y[10],z[5])");
+    verify("tensor<bfloat16>(x{},y[10],z[5])", "tensor<bfloat16>(x{},y[10],z[5])");
+    verify("tensor<int8>(x{},y[10],z[5])", "tensor<int8>(x{},y[10],z[5])");
 }
 
-TEST("require that if resolves to the appropriate type") {
-    TEST_DO(verify("if(error,1,2)", "error"));
-    TEST_DO(verify("if(1,error,2)", "error"));
-    TEST_DO(verify("if(1,2,error)", "error"));
-    TEST_DO(verify("if(double,1,2)", "double"));
-    TEST_DO(verify("if(tensor(x[10]),1,2)", "double"));
-    TEST_DO(verify("if(double,tensor(a{}),tensor(a{}))", "tensor(a{})"));
-    TEST_DO(verify("if(double,tensor(a[2]),tensor(a[2]))", "tensor(a[2])"));
-    TEST_DO(verify("if(double,tensor<float>(a[2]),tensor<float>(a[2]))", "tensor<float>(a[2])"));
-    TEST_DO(verify("if(double,tensor<bfloat16>(a[2]),tensor<bfloat16>(a[2]))", "tensor<bfloat16>(a[2])"));
-    TEST_DO(verify("if(double,tensor<int8>(a[2]),tensor<int8>(a[2]))", "tensor<int8>(a[2])"));
-    TEST_DO(verify("if(double,tensor(a[2]),tensor<float>(a[2]))", "error"));
-    TEST_DO(verify("if(double,tensor<float>(a[2]),tensor<bfloat16>(a[2]))", "error"));
-    TEST_DO(verify("if(double,tensor<float>(a[2]),tensor<int8>(a[2]))", "error"));
-    TEST_DO(verify("if(double,tensor<bfloat16>(a[2]),tensor<int8>(a[2]))", "error"));
-    TEST_DO(verify("if(double,tensor(a[2]),tensor(a[3]))", "error"));
-    TEST_DO(verify("if(double,tensor(a[2]),tensor(a{}))", "error"));
-    TEST_DO(verify("if(double,tensor(a{}),tensor(b{}))", "error"));
-    TEST_DO(verify("if(double,tensor(a{}),double)", "error"));
+TEST(NodeTypesTest, require_that_if_resolves_to_the_appropriate_type)
+{
+    verify("if(error,1,2)", "error");
+    verify("if(1,error,2)", "error");
+    verify("if(1,2,error)", "error");
+    verify("if(double,1,2)", "double");
+    verify("if(tensor(x[10]),1,2)", "double");
+    verify("if(double,tensor(a{}),tensor(a{}))", "tensor(a{})");
+    verify("if(double,tensor(a[2]),tensor(a[2]))", "tensor(a[2])");
+    verify("if(double,tensor<float>(a[2]),tensor<float>(a[2]))", "tensor<float>(a[2])");
+    verify("if(double,tensor<bfloat16>(a[2]),tensor<bfloat16>(a[2]))", "tensor<bfloat16>(a[2])");
+    verify("if(double,tensor<int8>(a[2]),tensor<int8>(a[2]))", "tensor<int8>(a[2])");
+    verify("if(double,tensor(a[2]),tensor<float>(a[2]))", "error");
+    verify("if(double,tensor<float>(a[2]),tensor<bfloat16>(a[2]))", "error");
+    verify("if(double,tensor<float>(a[2]),tensor<int8>(a[2]))", "error");
+    verify("if(double,tensor<bfloat16>(a[2]),tensor<int8>(a[2]))", "error");
+    verify("if(double,tensor(a[2]),tensor(a[3]))", "error");
+    verify("if(double,tensor(a[2]),tensor(a{}))", "error");
+    verify("if(double,tensor(a{}),tensor(b{}))", "error");
+    verify("if(double,tensor(a{}),double)", "error");
 }
 
-TEST("require that reduce resolves correct type") {
-    TEST_DO(verify("reduce(error,sum)", "error"));
-    TEST_DO(verify("reduce(tensor(x{}),sum)", "double"));
-    TEST_DO(verify("reduce(double,sum)", "double"));
-    TEST_DO(verify("reduce(error,sum,x)", "error"));
-    TEST_DO(verify("reduce(double,sum,x)", "error"));
-    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,y)", "tensor(x{},z{})"));
-    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,x,z)", "tensor(y{})"));
-    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,y,z,x)", "double"));
-    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,w)", "error"));
-    TEST_DO(verify("reduce(tensor(x{},y{},z{}),sum,a,b,c)", "error"));
-    TEST_DO(verify("reduce(tensor(x{}),sum,x)", "double"));
-    TEST_DO(verify("reduce(tensor<float>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
-    TEST_DO(verify("reduce(tensor<bfloat16>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
-    TEST_DO(verify("reduce(tensor<int8>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})"));
-    TEST_DO(verify("reduce(tensor<float>(x{}),sum,x)", "double"));
-    TEST_DO(verify("reduce(tensor<float>(x{}),sum)", "double"));
-    TEST_DO(verify("reduce(tensor<bfloat16>(x{}),sum,x)", "double"));
-    TEST_DO(verify("reduce(tensor<bfloat16>(x{}),sum)", "double"));
-    TEST_DO(verify("reduce(tensor<int8>(x{}),sum,x)", "double"));
-    TEST_DO(verify("reduce(tensor<int8>(x{}),sum)", "double"));
+TEST(NodeTypesTest, require_that_reduce_resolves_correct_type)
+{
+    verify("reduce(error,sum)", "error");
+    verify("reduce(tensor(x{}),sum)", "double");
+    verify("reduce(double,sum)", "double");
+    verify("reduce(error,sum,x)", "error");
+    verify("reduce(double,sum,x)", "error");
+    verify("reduce(tensor(x{},y{},z{}),sum,y)", "tensor(x{},z{})");
+    verify("reduce(tensor(x{},y{},z{}),sum,x,z)", "tensor(y{})");
+    verify("reduce(tensor(x{},y{},z{}),sum,y,z,x)", "double");
+    verify("reduce(tensor(x{},y{},z{}),sum,w)", "error");
+    verify("reduce(tensor(x{},y{},z{}),sum,a,b,c)", "error");
+    verify("reduce(tensor(x{}),sum,x)", "double");
+    verify("reduce(tensor<float>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})");
+    verify("reduce(tensor<bfloat16>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})");
+    verify("reduce(tensor<int8>(x{},y{},z{}),sum,x,z)", "tensor<float>(y{})");
+    verify("reduce(tensor<float>(x{}),sum,x)", "double");
+    verify("reduce(tensor<float>(x{}),sum)", "double");
+    verify("reduce(tensor<bfloat16>(x{}),sum,x)", "double");
+    verify("reduce(tensor<bfloat16>(x{}),sum)", "double");
+    verify("reduce(tensor<int8>(x{}),sum,x)", "double");
+    verify("reduce(tensor<int8>(x{}),sum)", "double");
 }
 
-TEST("require that rename resolves correct type") {
-    TEST_DO(verify("rename(error,x,y)", "error"));
-    TEST_DO(verify("rename(double,x,y)", "error"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),a,b)", "error"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),x,y)", "error"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),x,x)", "tensor(x{},y[1],z[5])"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),x,w)", "tensor(w{},y[1],z[5])"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),y,w)", "tensor(x{},w[1],z[5])"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),z,w)", "tensor(x{},y[1],w[5])"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),(x,y,z),(z,y,x))", "tensor(z{},y[1],x[5])"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),(x,z),(z,x))", "tensor(z{},y[1],x[5])"));
-    TEST_DO(verify("rename(tensor(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor(a{},b[1],c[5])"));
-    TEST_DO(verify("rename(tensor<float>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<float>(a{},b[1],c[5])"));
-    TEST_DO(verify("rename(tensor<bfloat16>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<bfloat16>(a{},b[1],c[5])"));
-    TEST_DO(verify("rename(tensor<int8>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<int8>(a{},b[1],c[5])"));
+TEST(NodeTypesTest, require_that_rename_resolves_correct_type)
+{
+    verify("rename(error,x,y)", "error");
+    verify("rename(double,x,y)", "error");
+    verify("rename(tensor(x{},y[1],z[5]),a,b)", "error");
+    verify("rename(tensor(x{},y[1],z[5]),x,y)", "error");
+    verify("rename(tensor(x{},y[1],z[5]),x,x)", "tensor(x{},y[1],z[5])");
+    verify("rename(tensor(x{},y[1],z[5]),x,w)", "tensor(w{},y[1],z[5])");
+    verify("rename(tensor(x{},y[1],z[5]),y,w)", "tensor(x{},w[1],z[5])");
+    verify("rename(tensor(x{},y[1],z[5]),z,w)", "tensor(x{},y[1],w[5])");
+    verify("rename(tensor(x{},y[1],z[5]),(x,y,z),(z,y,x))", "tensor(z{},y[1],x[5])");
+    verify("rename(tensor(x{},y[1],z[5]),(x,z),(z,x))", "tensor(z{},y[1],x[5])");
+    verify("rename(tensor(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor(a{},b[1],c[5])");
+    verify("rename(tensor<float>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<float>(a{},b[1],c[5])");
+    verify("rename(tensor<bfloat16>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<bfloat16>(a{},b[1],c[5])");
+    verify("rename(tensor<int8>(x{},y[1],z[5]),(x,y,z),(a,b,c))", "tensor<int8>(a{},b[1],c[5])");
 }
 
 std::string strfmt(const char *pattern, const char *a) {
@@ -138,259 +143,274 @@ std::string strfmt(const char *pattern, const char *a, const char *b) {
 }
 
 void verify_op1(const char *pattern) {
-    TEST_DO(verify(strfmt(pattern, "error"), "error"));
-    TEST_DO(verify(strfmt(pattern, "double"), "double"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{},y[10],z[1])"), "tensor(x{},y[10],z[1])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<float>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<int8>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])"));
+    SCOPED_TRACE(strfmt("verify_op1(\"%s\")", pattern));
+    verify(strfmt(pattern, "error"), "error");
+    verify(strfmt(pattern, "double"), "double");
+    verify(strfmt(pattern, "tensor(x{},y[10],z[1])"), "tensor(x{},y[10],z[1])");
+    verify(strfmt(pattern, "tensor<float>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])");
+    verify(strfmt(pattern, "tensor<bfloat16>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])");
+    verify(strfmt(pattern, "tensor<int8>(x{},y[10],z[1])"), "tensor<float>(x{},y[10],z[1])");
 }
 
 void verify_op2(const char *pattern) {
-    TEST_DO(verify(strfmt(pattern, "error", "error"), "error"));
-    TEST_DO(verify(strfmt(pattern, "double", "error"), "error"));
-    TEST_DO(verify(strfmt(pattern, "error", "double"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "error"), "error"));
-    TEST_DO(verify(strfmt(pattern, "error", "tensor(x{})"), "error"));
-    TEST_DO(verify(strfmt(pattern, "double", "double"), "double"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "double"), "tensor(x{})"));
-    TEST_DO(verify(strfmt(pattern, "double", "tensor(x{})"), "tensor(x{})"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x{})"), "tensor(x{})"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(y{})"), "tensor(x{},y{})"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x[3])", "tensor(x[5])"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor(x[3])"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x[5])"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<bfloat16>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "double"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<int8>(x[5])",     "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])",    "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x[5])",           "tensor<int8>(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "double",                 "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
+    SCOPED_TRACE(strfmt("verify_op2(\"%s\")", pattern));
+    verify(strfmt(pattern, "error", "error"), "error");
+    verify(strfmt(pattern, "double", "error"), "error");
+    verify(strfmt(pattern, "error", "double"), "error");
+    verify(strfmt(pattern, "tensor(x{})", "error"), "error");
+    verify(strfmt(pattern, "error", "tensor(x{})"), "error");
+    verify(strfmt(pattern, "double", "double"), "double");
+    verify(strfmt(pattern, "tensor(x{})", "double"), "tensor(x{})");
+    verify(strfmt(pattern, "double", "tensor(x{})"), "tensor(x{})");
+    verify(strfmt(pattern, "tensor(x{})", "tensor(x{})"), "tensor(x{})");
+    verify(strfmt(pattern, "tensor(x{})", "tensor(y{})"), "tensor(x{},y{})");
+    verify(strfmt(pattern, "tensor(x[5])", "tensor(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "tensor(x[3])", "tensor(x[5])"), "error");
+    verify(strfmt(pattern, "tensor(x[5])", "tensor(x[3])"), "error");
+    verify(strfmt(pattern, "tensor(x{})", "tensor(x[5])"), "error");
+    verify(strfmt(pattern, "tensor<float>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<float>(x[5])", "tensor(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<bfloat16>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "double"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<int8>(x[5])",     "tensor<int8>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<int8>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<float>(x[5])",    "tensor<int8>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor(x[5])",           "tensor<int8>(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "double",                 "tensor<int8>(x[5])"), "tensor<float>(x[5])");
 }
 
-TEST("require that various operations resolve appropriate type") {
-    TEST_DO(verify_op1("-%s"));          // Neg
-    TEST_DO(verify_op1("!%s"));          // Not
-    TEST_DO(verify_op2("%s+%s"));        // Add
-    TEST_DO(verify_op2("%s-%s"));        // Sub
-    TEST_DO(verify_op2("%s*%s"));        // Mul
-    TEST_DO(verify_op2("%s/%s"));        // Div
-    TEST_DO(verify_op2("%s^%s"));        // Pow
-    TEST_DO(verify_op2("%s==%s"));       // Equal
-    TEST_DO(verify_op2("%s!=%s"));       // NotEqual
-    TEST_DO(verify_op2("%s~=%s"));       // Approx
-    TEST_DO(verify_op2("%s<%s"));        // Less
-    TEST_DO(verify_op2("%s<=%s"));       // LessEqual
-    TEST_DO(verify_op2("%s>%s"));        // Greater
-    TEST_DO(verify_op2("%s>=%s"));       // GreaterEqual
-    TEST_DO(verify_op2("%s&&%s"));       // And
-    TEST_DO(verify_op2("%s||%s"));       // Or
-    TEST_DO(verify_op1("cos(%s)"));      // Cos
-    TEST_DO(verify_op1("sin(%s)"));      // Sin
-    TEST_DO(verify_op1("tan(%s)"));      // Tan
-    TEST_DO(verify_op1("cosh(%s)"));     // Cosh
-    TEST_DO(verify_op1("sinh(%s)"));     // Sinh
-    TEST_DO(verify_op1("tanh(%s)"));     // Tanh
-    TEST_DO(verify_op1("acos(%s)"));     // Acos
-    TEST_DO(verify_op1("asin(%s)"));     // Asin
-    TEST_DO(verify_op1("atan(%s)"));     // Atan
-    TEST_DO(verify_op1("exp(%s)"));      // Exp
-    TEST_DO(verify_op1("log10(%s)"));    // Log10
-    TEST_DO(verify_op1("log(%s)"));      // Log
-    TEST_DO(verify_op1("sqrt(%s)"));     // Sqrt
-    TEST_DO(verify_op1("ceil(%s)"));     // Ceil
-    TEST_DO(verify_op1("fabs(%s)"));     // Fabs
-    TEST_DO(verify_op1("floor(%s)"));    // Floor
-    TEST_DO(verify_op2("atan2(%s,%s)")); // Atan2
-    TEST_DO(verify_op2("ldexp(%s,%s)")); // Ldexp
-    TEST_DO(verify_op2("pow(%s,%s)"));   // Pow2
-    TEST_DO(verify_op2("fmod(%s,%s)"));  // Fmod
-    TEST_DO(verify_op2("min(%s,%s)"));   // min
-    TEST_DO(verify_op2("max(%s,%s)"));   // max
-    TEST_DO(verify_op1("isNan(%s)"));    // IsNan
-    TEST_DO(verify_op1("relu(%s)"));     // Relu
-    TEST_DO(verify_op1("sigmoid(%s)"));  // Sigmoid
-    TEST_DO(verify_op1("elu(%s)"));      // Elu
-    TEST_DO(verify_op1("erf(%s)"));      // Erf
-    TEST_DO(verify_op2("bit(%s,%s)"));   // Bit
-    TEST_DO(verify_op2("hamming(%s,%s)")); // Hamming
+TEST(NodeTypesTest, require_that_various_operations_resolve_appropriate_type)
+{
+    verify_op1("-%s");          // Neg
+    verify_op1("!%s");          // Not
+    verify_op2("%s+%s");        // Add
+    verify_op2("%s-%s");        // Sub
+    verify_op2("%s*%s");        // Mul
+    verify_op2("%s/%s");        // Div
+    verify_op2("%s^%s");        // Pow
+    verify_op2("%s==%s");       // Equal
+    verify_op2("%s!=%s");       // NotEqual
+    verify_op2("%s~=%s");       // Approx
+    verify_op2("%s<%s");        // Less
+    verify_op2("%s<=%s");       // LessEqual
+    verify_op2("%s>%s");        // Greater
+    verify_op2("%s>=%s");       // GreaterEqual
+    verify_op2("%s&&%s");       // And
+    verify_op2("%s||%s");       // Or
+    verify_op1("cos(%s)");      // Cos
+    verify_op1("sin(%s)");      // Sin
+    verify_op1("tan(%s)");      // Tan
+    verify_op1("cosh(%s)");     // Cosh
+    verify_op1("sinh(%s)");     // Sinh
+    verify_op1("tanh(%s)");     // Tanh
+    verify_op1("acos(%s)");     // Acos
+    verify_op1("asin(%s)");     // Asin
+    verify_op1("atan(%s)");     // Atan
+    verify_op1("exp(%s)");      // Exp
+    verify_op1("log10(%s)");    // Log10
+    verify_op1("log(%s)");      // Log
+    verify_op1("sqrt(%s)");     // Sqrt
+    verify_op1("ceil(%s)");     // Ceil
+    verify_op1("fabs(%s)");     // Fabs
+    verify_op1("floor(%s)");    // Floor
+    verify_op2("atan2(%s,%s)"); // Atan2
+    verify_op2("ldexp(%s,%s)"); // Ldexp
+    verify_op2("pow(%s,%s)");   // Pow2
+    verify_op2("fmod(%s,%s)");  // Fmod
+    verify_op2("min(%s,%s)");   // min
+    verify_op2("max(%s,%s)");   // max
+    verify_op1("isNan(%s)");    // IsNan
+    verify_op1("relu(%s)");     // Relu
+    verify_op1("sigmoid(%s)");  // Sigmoid
+    verify_op1("elu(%s)");      // Elu
+    verify_op1("erf(%s)");      // Erf
+    verify_op2("bit(%s,%s)");   // Bit
+    verify_op2("hamming(%s,%s)"); // Hamming
 }
 
-TEST("require that map resolves correct type") {
-    TEST_DO(verify_op1("map(%s,f(x)(sin(x)))"));
+TEST(NodeTypesTest, require_that_map_resolves_correct_type)
+{
+    verify_op1("map(%s,f(x)(sin(x)))");
 }
 
-TEST("require that set membership resolves correct type") {
-    TEST_DO(verify_op1("%s in [1,2,3]"));
+TEST(NodeTypesTest, require_that_set_membership_resolves_correct_type)
+{
+    verify_op1("%s in [1,2,3]");
 }
 
-TEST("require that join resolves correct type") {
-    TEST_DO(verify_op2("join(%s,%s,f(x,y)(x+y))"));
+TEST(NodeTypesTest, require_that_join_resolves_correct_type)
+{
+    verify_op2("join(%s,%s,f(x,y)(x+y))");
 }
 
-TEST("require that merge resolves to the appropriate type") {
+TEST(NodeTypesTest, require_that_merge_resolves_to_the_appropriate_type)
+{
     const char *pattern = "merge(%s,%s,f(x,y)(x+y))";
-    TEST_DO(verify(strfmt(pattern, "error", "error"), "error"));
-    TEST_DO(verify(strfmt(pattern, "double", "error"), "error"));
-    TEST_DO(verify(strfmt(pattern, "error", "double"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "error"), "error"));
-    TEST_DO(verify(strfmt(pattern, "error", "tensor(x{})"), "error"));
-    TEST_DO(verify(strfmt(pattern, "double", "double"), "double"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "double"), "error"));
-    TEST_DO(verify(strfmt(pattern, "double", "tensor(x{})"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x{})"), "tensor(x{})"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(y{})"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x[3])", "tensor(x[5])"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor(x[3])"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x{})", "tensor(x[5])"), "error"));
-    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<bfloat16>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<int8>(x[5])", "tensor<int8>(x[5])"), "tensor<float>(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<int8>(x[5])", "tensor(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor(x[5])", "tensor<float>(x[5])"), "tensor(x[5])"));
-    TEST_DO(verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "error"));
+    verify(strfmt(pattern, "error", "error"), "error");
+    verify(strfmt(pattern, "double", "error"), "error");
+    verify(strfmt(pattern, "error", "double"), "error");
+    verify(strfmt(pattern, "tensor(x{})", "error"), "error");
+    verify(strfmt(pattern, "error", "tensor(x{})"), "error");
+    verify(strfmt(pattern, "double", "double"), "double");
+    verify(strfmt(pattern, "tensor(x{})", "double"), "error");
+    verify(strfmt(pattern, "double", "tensor(x{})"), "error");
+    verify(strfmt(pattern, "tensor(x{})", "tensor(x{})"), "tensor(x{})");
+    verify(strfmt(pattern, "tensor(x{})", "tensor(y{})"), "error");
+    verify(strfmt(pattern, "tensor(x[5])", "tensor(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "tensor(x[3])", "tensor(x[5])"), "error");
+    verify(strfmt(pattern, "tensor(x[5])", "tensor(x[3])"), "error");
+    verify(strfmt(pattern, "tensor(x{})", "tensor(x[5])"), "error");
+    verify(strfmt(pattern, "tensor<float>(x[5])", "tensor<float>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor<bfloat16>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<int8>(x[5])", "tensor<int8>(x[5])"), "tensor<float>(x[5])");
+    verify(strfmt(pattern, "tensor<float>(x[5])", "tensor(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "tensor<bfloat16>(x[5])", "tensor(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "tensor<int8>(x[5])", "tensor(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "tensor(x[5])", "tensor<float>(x[5])"), "tensor(x[5])");
+    verify(strfmt(pattern, "tensor<float>(x[5])", "double"), "error");
 }
 
-TEST("require that static tensor lambda resolves correct type") {
-    TEST_DO(verify("tensor(x[5])(1.0)", "tensor(x[5])"));
-    TEST_DO(verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])"));
-    TEST_DO(verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])"));
-    TEST_DO(verify("tensor<double>(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])"));
-    TEST_DO(verify("tensor<float>(x[5],y[10],z[15])(1.0)", "tensor<float>(x[5],y[10],z[15])"));
-    TEST_DO(verify("tensor<bfloat16>(x[5],y[10],z[15])(1.0)", "tensor<bfloat16>(x[5],y[10],z[15])"));
-    TEST_DO(verify("tensor<int8>(x[5],y[10],z[15])(1.0)", "tensor<int8>(x[5],y[10],z[15])"));
+TEST(NodeTypesTest, require_that_static_tensor_lambda_resolves_correct_type)
+{
+    verify("tensor(x[5])(1.0)", "tensor(x[5])");
+    verify("tensor(x[5],y[10])(1.0)", "tensor(x[5],y[10])");
+    verify("tensor(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])");
+    verify("tensor<double>(x[5],y[10],z[15])(1.0)", "tensor(x[5],y[10],z[15])");
+    verify("tensor<float>(x[5],y[10],z[15])(1.0)", "tensor<float>(x[5],y[10],z[15])");
+    verify("tensor<bfloat16>(x[5],y[10],z[15])(1.0)", "tensor<bfloat16>(x[5],y[10],z[15])");
+    verify("tensor<int8>(x[5],y[10],z[15])(1.0)", "tensor<int8>(x[5],y[10],z[15])");
 }
 
-TEST("require that tensor create resolves correct type") {
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor(x[3])"));
-    TEST_DO(verify("tensor(x{}):{{x:a}:double,{x:b}:double,{x:c}:double}", "tensor(x{})"));
-    TEST_DO(verify("tensor(x{},y[2]):{{x:a,y:0}:double,{x:a,y:1}:double}", "tensor(x{},y[2])"));
-    TEST_DO(verify("tensor<float>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<float>(x[3])"));
-    TEST_DO(verify("tensor<bfloat16>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<bfloat16>(x[3])"));
-    TEST_DO(verify("tensor<int8>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<int8>(x[3])"));
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double+double,{x:1}:double-double,{x:2}:double/double}", "tensor(x[3])"));
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:reduce(tensor(x[2]),sum),{x:2}:double}", "tensor(x[3])"));
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:tensor(x[2]),{x:2}:double}", "error"));
-    TEST_DO(verify("tensor(x[3]):{{x:0}:double,{x:1}:error,{x:2}:double}", "error"));
+TEST(NodeTypesTest, require_that_tensor_create_resolves_correct_type)
+{
+    verify("tensor(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor(x[3])");
+    verify("tensor(x{}):{{x:a}:double,{x:b}:double,{x:c}:double}", "tensor(x{})");
+    verify("tensor(x{},y[2]):{{x:a,y:0}:double,{x:a,y:1}:double}", "tensor(x{},y[2])");
+    verify("tensor<float>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<float>(x[3])");
+    verify("tensor<bfloat16>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<bfloat16>(x[3])");
+    verify("tensor<int8>(x[3]):{{x:0}:double,{x:1}:double,{x:2}:double}", "tensor<int8>(x[3])");
+    verify("tensor(x[3]):{{x:0}:double+double,{x:1}:double-double,{x:2}:double/double}", "tensor(x[3])");
+    verify("tensor(x[3]):{{x:0}:double,{x:1}:reduce(tensor(x[2]),sum),{x:2}:double}", "tensor(x[3])");
+    verify("tensor(x[3]):{{x:0}:double,{x:1}:tensor(x[2]),{x:2}:double}", "error");
+    verify("tensor(x[3]):{{x:0}:double,{x:1}:error,{x:2}:double}", "error");
 }
 
-TEST("require that dynamic tensor lambda resolves correct type") {
-    TEST_DO(verify("tensor(x[3])(error)", "error"));
-    TEST_DO(verify("tensor(x[3])(double)", "tensor(x[3])"));
-    TEST_DO(verify("tensor<float>(x[3])(double)", "tensor<float>(x[3])"));
-    TEST_DO(verify("tensor<bfloat16>(x[3])(double)", "tensor<bfloat16>(x[3])"));
-    TEST_DO(verify("tensor<int8>(x[3])(double)", "tensor<int8>(x[3])"));
-    TEST_DO(verify("tensor(x[3])(tensor(x[2]))", "error"));
-    TEST_DO(verify("tensor(x[3])(reduce(tensor(x[2])+tensor(x[4]),sum))", "error"));
+TEST(NodeTypesTest, require_that_dynamic_tensor_lambda_resolves_correct_type)
+{
+    verify("tensor(x[3])(error)", "error");
+    verify("tensor(x[3])(double)", "tensor(x[3])");
+    verify("tensor<float>(x[3])(double)", "tensor<float>(x[3])");
+    verify("tensor<bfloat16>(x[3])(double)", "tensor<bfloat16>(x[3])");
+    verify("tensor<int8>(x[3])(double)", "tensor<int8>(x[3])");
+    verify("tensor(x[3])(tensor(x[2]))", "error");
+    verify("tensor(x[3])(reduce(tensor(x[2])+tensor(x[4]),sum))", "error");
 }
 
-TEST("require that tensor peek resolves correct type") {
-    TEST_DO(verify("tensor(x[3]){x:1}", "double"));
-    TEST_DO(verify("tensor(x[3]){x:double}", "error"));
-    TEST_DO(verify("tensor(x[3]){x:(double)}", "double"));
-    TEST_DO(verify("tensor(x[3]){x:3}", "error"));
-    TEST_DO(verify("tensor(x{}){x:1}", "double"));
-    TEST_DO(verify("tensor(x{}){x:foo}", "double"));
-    TEST_DO(verify("tensor(x{}){x:(double)}", "double"));
-    TEST_DO(verify("tensor(x{}){x:(tensor(x[3]))}", "error"));
-    TEST_DO(verify("tensor(x{},y[3]){x:foo,y:2}", "double"));
-    TEST_DO(verify("tensor(x{},y[3]){x:foo}", "tensor(y[3])"));
-    TEST_DO(verify("tensor(x{},y[3]){y:2}", "tensor(x{})"));
-    TEST_DO(verify("tensor<float>(x[3]){x:1}", "double"));
-    TEST_DO(verify("tensor<float>(x[3]){x:double}", "error"));
-    TEST_DO(verify("tensor<float>(x[3]){x:(double)}", "double"));
-    TEST_DO(verify("tensor<float>(x[3]){x:3}", "error"));
-    TEST_DO(verify("tensor<float>(x{}){x:1}", "double"));
-    TEST_DO(verify("tensor<float>(x{}){x:foo}", "double"));
-    TEST_DO(verify("tensor<bfloat16>(x{}){x:foo}", "double"));
-    TEST_DO(verify("tensor<int8>(x{}){x:foo}", "double"));
-    TEST_DO(verify("tensor<float>(x{}){x:(double)}", "double"));
-    TEST_DO(verify("tensor<float>(x{}){x:(tensor(x[3]))}", "error"));
-    TEST_DO(verify("tensor<float>(x{},y[3]){x:foo,y:2}", "double"));
-    TEST_DO(verify("tensor<float>(x{},y[3]){x:foo}", "tensor<float>(y[3])"));
-    TEST_DO(verify("tensor<float>(x{},y[3]){y:2}", "tensor<float>(x{})"));
-    TEST_DO(verify("tensor<bfloat16>(x{},y[3]){y:2}", "tensor<bfloat16>(x{})"));
-    TEST_DO(verify("tensor<int8>(x{},y[3]){y:2}", "tensor<int8>(x{})"));
+TEST(NodeTypesTest, require_that_tensor_peek_resolves_correct_type)
+{
+    verify("tensor(x[3]){x:1}", "double");
+    verify("tensor(x[3]){x:double}", "error");
+    verify("tensor(x[3]){x:(double)}", "double");
+    verify("tensor(x[3]){x:3}", "error");
+    verify("tensor(x{}){x:1}", "double");
+    verify("tensor(x{}){x:foo}", "double");
+    verify("tensor(x{}){x:(double)}", "double");
+    verify("tensor(x{}){x:(tensor(x[3]))}", "error");
+    verify("tensor(x{},y[3]){x:foo,y:2}", "double");
+    verify("tensor(x{},y[3]){x:foo}", "tensor(y[3])");
+    verify("tensor(x{},y[3]){y:2}", "tensor(x{})");
+    verify("tensor<float>(x[3]){x:1}", "double");
+    verify("tensor<float>(x[3]){x:double}", "error");
+    verify("tensor<float>(x[3]){x:(double)}", "double");
+    verify("tensor<float>(x[3]){x:3}", "error");
+    verify("tensor<float>(x{}){x:1}", "double");
+    verify("tensor<float>(x{}){x:foo}", "double");
+    verify("tensor<bfloat16>(x{}){x:foo}", "double");
+    verify("tensor<int8>(x{}){x:foo}", "double");
+    verify("tensor<float>(x{}){x:(double)}", "double");
+    verify("tensor<float>(x{}){x:(tensor(x[3]))}", "error");
+    verify("tensor<float>(x{},y[3]){x:foo,y:2}", "double");
+    verify("tensor<float>(x{},y[3]){x:foo}", "tensor<float>(y[3])");
+    verify("tensor<float>(x{},y[3]){y:2}", "tensor<float>(x{})");
+    verify("tensor<bfloat16>(x{},y[3]){y:2}", "tensor<bfloat16>(x{})");
+    verify("tensor<int8>(x{},y[3]){y:2}", "tensor<int8>(x{})");
 }
 
-TEST("require that tensor concat resolves correct type") {
-    TEST_DO(verify("concat(double,double,x)", "tensor(x[2])"));
-    TEST_DO(verify("concat(tensor(x[2]),tensor(x[3]),x)", "tensor(x[5])"));
-    TEST_DO(verify("concat(tensor(x[2]),tensor(x[2]),y)", "tensor(x[2],y[2])"));
-    TEST_DO(verify("concat(tensor(x[2]),tensor(x[3]),y)", "error"));
-    TEST_DO(verify("concat(tensor(x[2]),tensor(x{}),x)", "error"));
-    TEST_DO(verify("concat(tensor(x[2]),tensor(y{}),x)", "tensor(x[3],y{})"));
-    TEST_DO(verify("concat(tensor<float>(x[2]),tensor<float>(x[3]),x)", "tensor<float>(x[5])"));
-    TEST_DO(verify("concat(tensor<float>(x[2]),tensor(x[3]),x)", "tensor(x[5])"));
-    TEST_DO(verify("concat(tensor<float>(x[2]),double,x)", "tensor<float>(x[3])"));
-    TEST_DO(verify("concat(tensor<bfloat16>(x[2]),tensor<bfloat16>(x[3]),x)", "tensor<bfloat16>(x[5])"));
-    TEST_DO(verify("concat(tensor<bfloat16>(x[2]),tensor<float>(x[3]),x)", "tensor<float>(x[5])"));
-    TEST_DO(verify("concat(tensor<bfloat16>(x[2]),tensor(x[3]),x)", "tensor(x[5])"));
-    TEST_DO(verify("concat(tensor<bfloat16>(x[2]),double,x)", "tensor<bfloat16>(x[3])"));
-    TEST_DO(verify("concat(tensor<int8>(x[3]),tensor<int8>(x[2]),x)", "tensor<int8>(x[5])"));
-    TEST_DO(verify("concat(tensor<bfloat16>(x[3]),tensor<int8>(x[2]),x)", "tensor<float>(x[5])"));
-    TEST_DO(verify("concat(tensor<float>(x[3]),tensor<int8>(x[2]),x)", "tensor<float>(x[5])"));
-    TEST_DO(verify("concat(tensor(x[3]),tensor<int8>(x[2]),x)", "tensor(x[5])"));
-    TEST_DO(verify("concat(double,tensor<int8>(x[2]),x)", "tensor<int8>(x[3])"));
+TEST(NodeTypesTest, require_that_tensor_concat_resolves_correct_type)
+{
+    verify("concat(double,double,x)", "tensor(x[2])");
+    verify("concat(tensor(x[2]),tensor(x[3]),x)", "tensor(x[5])");
+    verify("concat(tensor(x[2]),tensor(x[2]),y)", "tensor(x[2],y[2])");
+    verify("concat(tensor(x[2]),tensor(x[3]),y)", "error");
+    verify("concat(tensor(x[2]),tensor(x{}),x)", "error");
+    verify("concat(tensor(x[2]),tensor(y{}),x)", "tensor(x[3],y{})");
+    verify("concat(tensor<float>(x[2]),tensor<float>(x[3]),x)", "tensor<float>(x[5])");
+    verify("concat(tensor<float>(x[2]),tensor(x[3]),x)", "tensor(x[5])");
+    verify("concat(tensor<float>(x[2]),double,x)", "tensor<float>(x[3])");
+    verify("concat(tensor<bfloat16>(x[2]),tensor<bfloat16>(x[3]),x)", "tensor<bfloat16>(x[5])");
+    verify("concat(tensor<bfloat16>(x[2]),tensor<float>(x[3]),x)", "tensor<float>(x[5])");
+    verify("concat(tensor<bfloat16>(x[2]),tensor(x[3]),x)", "tensor(x[5])");
+    verify("concat(tensor<bfloat16>(x[2]),double,x)", "tensor<bfloat16>(x[3])");
+    verify("concat(tensor<int8>(x[3]),tensor<int8>(x[2]),x)", "tensor<int8>(x[5])");
+    verify("concat(tensor<bfloat16>(x[3]),tensor<int8>(x[2]),x)", "tensor<float>(x[5])");
+    verify("concat(tensor<float>(x[3]),tensor<int8>(x[2]),x)", "tensor<float>(x[5])");
+    verify("concat(tensor(x[3]),tensor<int8>(x[2]),x)", "tensor(x[5])");
+    verify("concat(double,tensor<int8>(x[2]),x)", "tensor<int8>(x[3])");
 }
 
-TEST("require that tensor cell_cast resolves correct type") {
-    TEST_DO(verify("cell_cast(double,double)", "double"));
-    TEST_DO(verify("cell_cast(double,float)", "error"));
-    TEST_DO(verify("cell_cast(tensor<double>(x{},y[5]),float)", "tensor<float>(x{},y[5])"));
-    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),double)", "tensor<double>(x{},y[5])"));
-    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),float)", "tensor<float>(x{},y[5])"));
-    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),bfloat16)", "tensor<bfloat16>(x{},y[5])"));
-    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),int8)", "tensor<int8>(x{},y[5])"));
+TEST(NodeTypesTest, require_that_tensor_cell_cast_resolves_correct_type)
+{
+    verify("cell_cast(double,double)", "double");
+    verify("cell_cast(double,float)", "error");
+    verify("cell_cast(tensor<double>(x{},y[5]),float)", "tensor<float>(x{},y[5])");
+    verify("cell_cast(tensor<float>(x{},y[5]),double)", "tensor<double>(x{},y[5])");
+    verify("cell_cast(tensor<float>(x{},y[5]),float)", "tensor<float>(x{},y[5])");
+    verify("cell_cast(tensor<float>(x{},y[5]),bfloat16)", "tensor<bfloat16>(x{},y[5])");
+    verify("cell_cast(tensor<float>(x{},y[5]),int8)", "tensor<int8>(x{},y[5])");
 }
 
-TEST("require that tensor map_subspace resolves correct type") {
+TEST(NodeTypesTest, require_that_tensor_map_subspace_resolves_correct_type)
+{
     // double input
-    TEST_DO(verify("map_subspaces(double, f(a)(a))", "double"));
-    TEST_DO(verify("map_subspaces(double, f(a)(tensor<int8>(y[2]):[a,a]))", "tensor<int8>(y[2])"));
+    verify("map_subspaces(double, f(a)(a))", "double");
+    verify("map_subspaces(double, f(a)(tensor<int8>(y[2]):[a,a]))", "tensor<int8>(y[2])");
 
     // sparse input
-    TEST_DO(verify("map_subspaces(tensor<float>(x{}), f(a)(a))", "tensor<float>(x{})"));
-    TEST_DO(verify("map_subspaces(tensor<int8>(x{}), f(a)(a))", "tensor<float>(x{})")); // NB: decay
-    TEST_DO(verify("map_subspaces(tensor<float>(x{}), f(a)(tensor<int8>(y[2]):[a,a]))", "tensor<int8>(x{},y[2])"));
+    verify("map_subspaces(tensor<float>(x{}), f(a)(a))", "tensor<float>(x{})");
+    verify("map_subspaces(tensor<int8>(x{}), f(a)(a))", "tensor<float>(x{})"); // NB: decay
+    verify("map_subspaces(tensor<float>(x{}), f(a)(tensor<int8>(y[2]):[a,a]))", "tensor<int8>(x{},y[2])");
 
     // dense input
-    TEST_DO(verify("map_subspaces(tensor<float>(y[10]), f(a)(a))", "tensor<float>(y[10])"));
-    TEST_DO(verify("map_subspaces(tensor<int8>(y[10]), f(a)(a))", "tensor<int8>(y[10])")); // NB: no decay
-    TEST_DO(verify("map_subspaces(tensor<float>(y[10]), f(a)(reduce(a,sum)))", "double"));
-    TEST_DO(verify("map_subspaces(tensor<float>(y[10]), f(a)(cell_cast(a,int8)))", "tensor<int8>(y[10])"));
-    TEST_DO(verify("map_subspaces(tensor<int8>(y[10]), f(a)(a*tensor<int8>(z[2]):[a{y:0},a{y:1}]))", "tensor<float>(y[10],z[2])"));
+    verify("map_subspaces(tensor<float>(y[10]), f(a)(a))", "tensor<float>(y[10])");
+    verify("map_subspaces(tensor<int8>(y[10]), f(a)(a))", "tensor<int8>(y[10])"); // NB: no decay
+    verify("map_subspaces(tensor<float>(y[10]), f(a)(reduce(a,sum)))", "double");
+    verify("map_subspaces(tensor<float>(y[10]), f(a)(cell_cast(a,int8)))", "tensor<int8>(y[10])");
+    verify("map_subspaces(tensor<int8>(y[10]), f(a)(a*tensor<int8>(z[2]):[a{y:0},a{y:1}]))", "tensor<float>(y[10],z[2])");
 
     // mixed input
-    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(a)(a))", "tensor<float>(x{},y[10])"));
-    TEST_DO(verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(a))", "tensor<int8>(x{},y[10])"));
-    TEST_DO(verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(map_subspaces(a, f(b)(b))))", "tensor<int8>(x{},y[10])"));
-    TEST_DO(verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(map(a, f(b)(b))))", "tensor<float>(x{},y[10])"));
-    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(cell_cast(y,int8)))", "tensor<int8>(x{},y[10])"));
-    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(reduce(y,sum)))", "tensor<float>(x{})"));
-    TEST_DO(verify("map_subspaces(tensor<int8>(x{},y[10]), f(y)(reduce(y,sum)))", "tensor<float>(x{})"));
-    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(concat(concat(y,y,y),y,y)))", "tensor<float>(x{},y[30])"));
-    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(y*tensor<float>(z[5])(z+3)))", "tensor<float>(x{},y[10],z[5])"));
+    verify("map_subspaces(tensor<float>(x{},y[10]), f(a)(a))", "tensor<float>(x{},y[10])");
+    verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(a))", "tensor<int8>(x{},y[10])");
+    verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(map_subspaces(a, f(b)(b))))", "tensor<int8>(x{},y[10])");
+    verify("map_subspaces(tensor<int8>(x{},y[10]), f(a)(map(a, f(b)(b))))", "tensor<float>(x{},y[10])");
+    verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(cell_cast(y,int8)))", "tensor<int8>(x{},y[10])");
+    verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(reduce(y,sum)))", "tensor<float>(x{})");
+    verify("map_subspaces(tensor<int8>(x{},y[10]), f(y)(reduce(y,sum)))", "tensor<float>(x{})");
+    verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(concat(concat(y,y,y),y,y)))", "tensor<float>(x{},y[30])");
+    verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(y*tensor<float>(z[5])(z+3)))", "tensor<float>(x{},y[10],z[5])");
 
     // error cases
-    TEST_DO(verify("map_subspaces(error, f(a)(a))", "error"));
-    TEST_DO(verify("map_subspaces(double, f(a)(tensor(x[5])(x)+tensor(x[7])(x)))", "error"));
-    TEST_DO(verify("map_subspaces(tensor<float>(x{}), f(a)(tensor(y{}):{a:3}))", "error"));
-    TEST_DO(verify("map_subspaces(tensor<float>(y[10]), f(a)(a+tensor(y[7])(y)))", "error"));
-    TEST_DO(verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(y*tensor<float>(x[5])(x+3)))", "error"));
+    verify("map_subspaces(error, f(a)(a))", "error");
+    verify("map_subspaces(double, f(a)(tensor(x[5])(x)+tensor(x[7])(x)))", "error");
+    verify("map_subspaces(tensor<float>(x{}), f(a)(tensor(y{}):{a:3}))", "error");
+    verify("map_subspaces(tensor<float>(y[10]), f(a)(a+tensor(y[7])(y)))", "error");
+    verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(y*tensor<float>(x[5])(x+3)))", "error");
 }
 
-TEST("require that double only expressions can be detected") {
+TEST(NodeTypesTest, require_that_double_only_expressions_can_be_detected)
+{
     auto plain_fun = Function::parse("1+2");
     auto complex_fun = Function::parse("reduce(a,sum)");
     NodeTypes plain_types(*plain_fun, {});
@@ -401,7 +421,8 @@ TEST("require that double only expressions can be detected") {
     EXPECT_FALSE(complex_types.all_types_are_double());
 }
 
-TEST("require that empty type repo works as expected") {
+TEST(NodeTypesTest, require_that_empty_type_repo_works_as_expected)
+{
     NodeTypes types;
     auto function = Function::parse("1+2");
     EXPECT_FALSE(function->has_error());
@@ -409,19 +430,20 @@ TEST("require that empty type repo works as expected") {
     EXPECT_FALSE(types.all_types_are_double());
 }
 
-TEST("require that types for a subtree can be exported") {
+TEST(NodeTypesTest, require_that_types_for_a_subtree_can_be_exported)
+{
     auto function = Function::parse("(1+2)+3");
     const auto &root = function->root();
-    ASSERT_EQUAL(root.num_children(), 2u);
+    ASSERT_EQ(root.num_children(), 2u);
     const auto &n_1_2 = root.get_child(0);
     const auto &n_3 = root.get_child(1);
-    ASSERT_EQUAL(n_1_2.num_children(), 2u);
+    ASSERT_EQ(n_1_2.num_children(), 2u);
     const auto &n_1 = n_1_2.get_child(0);
     const auto &n_2 = n_1_2.get_child(1);
     NodeTypes all_types(*function, {});
     NodeTypes some_types = all_types.export_types(n_1_2);
-    EXPECT_EQUAL(all_types.errors().size(), 0u);
-    EXPECT_EQUAL(some_types.errors().size(), 0u);
+    EXPECT_EQ(all_types.errors().size(), 0u);
+    EXPECT_EQ(some_types.errors().size(), 0u);
     for (const auto node: {&root, &n_3}) {
         EXPECT_TRUE(all_types.get_type(*node).is_double());
         EXPECT_TRUE(some_types.get_type(*node).is_error());
@@ -432,15 +454,16 @@ TEST("require that types for a subtree can be exported") {
     }
 }
 
-TEST("require that export_types produces an error for missing types") {
+TEST(NodeTypesTest, require_that_export_types_produces_an_error_for_missing_types)
+{
     auto fun1 = Function::parse("1+2");
     auto fun2 = Function::parse("1+2");
     NodeTypes fun1_types(*fun1, {});
     NodeTypes bad_export = fun1_types.export_types(fun2->root());
-    EXPECT_EQUAL(bad_export.errors().size(), 1u);
+    EXPECT_EQ(bad_export.errors().size(), 1u);
     print_errors(bad_export);
     EXPECT_TRUE(fun1_types.get_type(fun1->root()).is_double());
     EXPECT_TRUE(bad_export.get_type(fun2->root()).is_error());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

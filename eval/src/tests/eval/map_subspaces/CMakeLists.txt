@@ -4,5 +4,6 @@ vespa_add_executable(eval_map_subspaces_test_app TEST
     map_subspaces_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_map_subspaces_test_app COMMAND eval_map_subspaces_test_app)

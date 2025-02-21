@@ -4,5 +4,6 @@ vespa_add_executable(eval_tensor_lambda_test_app TEST
     tensor_lambda_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_tensor_lambda_test_app COMMAND eval_tensor_lambda_test_app)

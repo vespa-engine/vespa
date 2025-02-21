@@ -4,5 +4,6 @@ vespa_add_executable(eval_function_speed_test_app TEST
     function_speed_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_function_speed_test_app NO_VALGRIND COMMAND eval_function_speed_test_app)
