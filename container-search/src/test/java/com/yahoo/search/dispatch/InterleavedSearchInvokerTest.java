@@ -72,7 +72,7 @@ public class InterleavedSearchInvokerTest {
 
             expectedEvents.add(new Event(5000, 300, 0));
             expectedEvents.add(new Event(4700, 300, 1));
-            expectedEvents.add(new Event(4400, 5000, null));
+            expectedEvents.add(null);
 
             Result result = invoker.search(query);
 
@@ -99,7 +99,7 @@ public class InterleavedSearchInvokerTest {
             assertNull(result.hits().getErrorHit(), "Result is not marked as an error");
             var message = findTrace(result, "Backend communication timeout");
             assertTrue(message.isPresent(), "Timeout should be reported in a trace message");
-            assertTrue(result.getCoverage(false).isDegradedByAdapativeTimeout(), "Degradation reason is an adaptive timeout");
+            assertTrue(result.getCoverage(false).isDegradedByAdapativeTimeout(), "Degradataion reason is an adaptive timeout");
         }
     }
 
@@ -142,7 +142,6 @@ public class InterleavedSearchInvokerTest {
             assertEquals(23, cov.getResultPercentage());
             assertEquals(1, cov.getResultSets());
             assertEquals(0, cov.getFullResultSets());
-            assertTrue(cov.isDegraded());
             assertTrue(cov.isDegradedByMatchPhase());
         }
     }
@@ -153,8 +152,8 @@ public class InterleavedSearchInvokerTest {
         invokers.add(new MockInvoker(1, createCoverage(4900, 49845, 49845, 1, 1, DEGRADED_BY_TIMEOUT)));
         try (SearchInvoker invoker = createInterleavedInvoker(new Group(0, List.of()), 0)) {
 
-            expectedEvents.add(new Event(5000, 100, 0));
-            expectedEvents.add(new Event(null, 5200, 1));
+            expectedEvents.add(new Event(null, 100, 0));
+            expectedEvents.add(new Event(null, 200, 1));
 
             Result result = invoker.search(query);
 
@@ -165,7 +164,6 @@ public class InterleavedSearchInvokerTest {
             assertEquals(10, cov.getResultPercentage());
             assertEquals(1, cov.getResultSets());
             assertEquals(0, cov.getFullResultSets());
-            assertTrue(cov.isDegraded());
             assertTrue(cov.isDegradedByTimeout());
         }
     }
@@ -189,9 +187,7 @@ public class InterleavedSearchInvokerTest {
             assertEquals(50, cov.getResultPercentage());
             assertEquals(1, cov.getResultSets());
             assertEquals(0, cov.getFullResultSets());
-            assertTrue(cov.isDegraded());
-            assertTrue(cov.isDegradedByNonIdealState());
-            assertFalse(cov.isDegradedByTimeout());
+            assertTrue(cov.isDegradedByTimeout());
         }
     }
 
@@ -417,9 +413,7 @@ public class InterleavedSearchInvokerTest {
             assertEquals(expectedCoverage, cov.getResultPercentage());
             assertEquals(1, cov.getResultSets());
             assertEquals(0, cov.getFullResultSets());
-            assertTrue(cov.isDegraded());
-            assertTrue(cov.isDegradedByNonIdealState());
-            assertFalse(cov.isDegradedByTimeout());
+            assertTrue(cov.isDegradedByTimeout());
         }
     }
 
@@ -476,13 +470,10 @@ public class InterleavedSearchInvokerTest {
         long delay;
         Integer invokerIndex;
 
-        public Event(int expectedTimeout, int delay, Integer invokerIndex) {
-            this.expectedTimeout = (long)expectedTimeout;
-            this.delay = delay;
-            this.invokerIndex = invokerIndex;
-        }
-        public Event(Long expectedTimeout, int delay, Integer invokerIndex) {
-            this.expectedTimeout = expectedTimeout;
+        public Event(Integer expectedTimeout, int delay, Integer invokerIndex) {
+            if (expectedTimeout != null) {
+                this.expectedTimeout = (long) expectedTimeout;
+            }
             this.delay = delay;
             this.invokerIndex = invokerIndex;
         }
@@ -491,10 +482,10 @@ public class InterleavedSearchInvokerTest {
             if (expectedTimeout != null) {
                 assertEquals((long) expectedTimeout, currentTimeout, "Expecting timeout to be " + expectedTimeout);
             }
+            clock.advance(Duration.ofMillis(delay));
             if (query.getTimeLeft() < 0) {
                 fail("Test sequence ran out of time window");
             }
-            clock.advance(Duration.ofMillis(delay));
             if (invokerIndex == null) {
                 return null;
             } else {

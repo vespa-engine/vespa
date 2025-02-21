@@ -22,9 +22,6 @@ public class SimpleTimeoutHandler implements TimeoutHandler {
 
     @Override
     public int reason() {
-        if (query.getTimeLeft() > 0) {
-            return 0;
-        }
         return DEGRADED_BY_TIMEOUT;
     }
 }
