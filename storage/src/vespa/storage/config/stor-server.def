@@ -125,4 +125,4 @@ write_pid_file_on_startup bool default=true
 ## are the leader during overlapping time intervals, as only the most recent leader
 ## is able to increment the current state version in ZooKeeper, but the old controller
 ## may still attempt to publish its old state.
-require_strictly_increasing_cluster_state_versions bool default=false
+require_strictly_increasing_cluster_state_versions bool default=true
