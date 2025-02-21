@@ -102,6 +102,11 @@ VisitorOperation::VisitorOperation(
     if (_toTime == 0) {
         _toTime = _op_ctx.generate_unique_timestamp();
     }
+    if (matches_visitor_library(_msg->getLibraryName(), "searchvisitor")) {
+        LOG(debug, "Implicitly expediting priority of visitor '%s' due to it being a search visitor",
+            _msg->getInstanceId().c_str());
+        _msg->setPriority(100); // TODO less magic numbers, and remove this workaround
+    }
 }
 
 VisitorOperation::~VisitorOperation() = default;
