@@ -133,6 +133,11 @@ public class NodeResources {
             return GpuType.valueOf(type);
         }
 
+        // backwards compatibility:
+        public GpuResources(int count, double memoryGiB) {
+            this(typeFrom(null, count), count, memoryGiB);
+        }
+
         public GpuResources(String t, int count, double memoryGiB) {
             this(typeFrom(t, count), count, memoryGiB);
         }
