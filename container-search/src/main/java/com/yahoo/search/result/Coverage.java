@@ -44,4 +44,5 @@ public class Coverage extends com.yahoo.container.handler.Coverage {
 
     public Coverage setNodesTried(int nodesTried) { super.setNodesTried(nodesTried); return this; }
 
+    public int getDegradedReason() { return this.degradedReason; }
 }
