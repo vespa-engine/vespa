@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -153,8 +154,14 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 			return err
 		}
 	}
+
 	response, err := service.Do(hReq, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {
+		// Hint for timeout exception
+		if err, ok := err.(net.Error); ok && err.Timeout() {
+			cli.printErr(err, "No nodes are responsive", "Check application status in the console")
+			return nil
+		}
 		return fmt.Errorf("request failed: %w", err)
 	}
 	defer response.Body.Close()
