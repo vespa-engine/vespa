@@ -26,23 +26,17 @@ import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 class FilterResolver {
 
     private final FilterBindings bindings;
-    private final Metric metric;
 
-    FilterResolver(FilterBindings bindings, Metric metric) {
+    FilterResolver(FilterBindings bindings) {
         this.bindings = bindings;
-        this.metric = metric;
     }
 
     Optional<RequestFilter> resolveRequestFilter(Request request, URI jdiscUri) {
         Optional<String> maybeFilterId = bindings.resolveRequestFilter(jdiscUri, getConnector(request).listenPort());
         if (maybeFilterId.isPresent()) {
-            metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
             request.setAttribute(RequestUtils.JDISC_REQUEST_CHAIN, maybeFilterId.get());
-        } else if (!bindings.strictFiltering()) {
-            metric.add(MetricDefinitions.FILTERING_REQUEST_UNHANDLED, 1L, createMetricContext(request, null));
-        } else {
+        } else if (bindings.strictFiltering()) {
             String syntheticFilterId = RejectingRequestFilter.SYNTHETIC_FILTER_CHAIN_ID;
-            metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(request, syntheticFilterId));
             request.setAttribute(RequestUtils.JDISC_REQUEST_CHAIN, syntheticFilterId);
             return Optional.of(RejectingRequestFilter.INSTANCE);
         }
@@ -51,20 +45,8 @@ class FilterResolver {
 
     Optional<ResponseFilter> resolveResponseFilter(Request request, URI jdiscUri) {
         Optional<String> maybeFilterId = bindings.resolveResponseFilter(jdiscUri, getConnector(request).listenPort());
-        if (maybeFilterId.isPresent()) {
-            metric.add(MetricDefinitions.FILTERING_RESPONSE_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
-            request.setAttribute(RequestUtils.JDISC_RESPONSE_CHAIN, maybeFilterId.get());
-        } else {
-            metric.add(MetricDefinitions.FILTERING_RESPONSE_UNHANDLED, 1L, createMetricContext(request, null));
-        }
+        maybeFilterId.ifPresent(s -> request.setAttribute(RequestUtils.JDISC_RESPONSE_CHAIN, s));
         return maybeFilterId.map(bindings::getResponseFilter);
-    }
-
-    private Metric.Context createMetricContext(Request request, String filterId) {
-        Map<String, String> extraDimensions = filterId != null
-                ? Map.of(MetricDefinitions.FILTER_CHAIN_ID_DIMENSION, filterId)
-                : Map.of();
-        return getConnector(request).createRequestMetricContext(request, extraDimensions);
     }
 
     private static class RejectingRequestFilter extends NoopSharedResource implements RequestFilter {
