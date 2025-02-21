@@ -175,6 +175,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     msg->setVisitRemoves();
     msg->setTimeout(1234ms);
     msg->getTrace().setLevel(7);
+    msg->setPriority(123);
 
     auto op = createOpWithDefaultConfig(std::move(msg));
 
@@ -200,6 +201,7 @@ VisitorOperationTest::doStandardVisitTest(const std::string& clusterState)
     EXPECT_TRUE(cvc->visitRemoves());
     EXPECT_EQ(1234ms, cvc->getTimeout());
     EXPECT_EQ(7, cvc->getTrace().getLevel());
+    EXPECT_EQ(123, static_cast<int>(cvc->getPriority()));
 
     sendReply(*op);
 
@@ -1116,6 +1118,23 @@ TEST_F(VisitorOperationTest, assigning_put_lock_access_token_sets_special_visito
     EXPECT_EQ(cmd->getParameters().get(reindexing_bucket_lock_visitor_parameter_key(),
                                        std::string_view("")),
               "its-a me, mario");
+}
+
+// TODO remove this workaround once pri can be set on visitors via document API once more...
+TEST_F(VisitorOperationTest, searchvisitor_implicitly_gets_priority_boost) {
+    BucketId id(0x400000000000007bULL);
+    enable_cluster_state("distributor:1 storage:1");
+    addNodesToBucketDB(id, "0=1/1/1/t");
+
+    auto in_cmd = createVisitorCommand("foo", id, nullId, 8, 500ms, false, false, "searchvisitor");
+    in_cmd->setPriority(123);
+    auto op = createOpWithDefaultConfig(in_cmd);
+
+    op->start(_sender);
+    ASSERT_EQ("Visitor Create => 0", _sender.getCommands(true));
+    auto out_cmd = std::dynamic_pointer_cast<CreateVisitorCommand>(_sender.command(0));
+    ASSERT_TRUE(out_cmd);
+    EXPECT_EQ(100, static_cast<int>(out_cmd->getPriority()));
 }
 
 }
