@@ -1,14 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/replace_type_function.h>
-#include <vespa/eval/instruction/fast_rename_optimizer.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-
-#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stash.h>
 
 using namespace vespalib;
@@ -29,80 +26,92 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify_optimized(const std::string &expr) {
+    SCOPED_TRACE(expr);
     EvalFixture fixture(prod_factory, expr, param_repo, true);
-    EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<ReplaceTypeFunction>();
-    EXPECT_EQUAL(info.size(), 1u);
+    EXPECT_EQ(info.size(), 1u);
 }
 
 void verify_not_optimized(const std::string &expr) {
+    SCOPED_TRACE(expr);
     EvalFixture fixture(prod_factory, expr, param_repo, true);
-    EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_TRUE(info.empty());
 }
 
-TEST("require that dimension addition can be optimized") {
-    TEST_DO(verify_optimized("join(x5,tensor(y[1])(1),f(a,b)(a*b))"));
-    TEST_DO(verify_optimized("join(tensor(y[1])(1),x5,f(a,b)(a*b))"));
-    TEST_DO(verify_optimized("x5*tensor(y[1])(1)"));
-    TEST_DO(verify_optimized("tensor(y[1])(1)*x5"));
-    TEST_DO(verify_optimized("x5y1*tensor(z[1])(1)"));
-    TEST_DO(verify_optimized("tensor(z[1])(1)*x5y1"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_dimension_addition_can_be_optimized)
+{
+    verify_optimized("join(x5,tensor(y[1])(1),f(a,b)(a*b))");
+    verify_optimized("join(tensor(y[1])(1),x5,f(a,b)(a*b))");
+    verify_optimized("x5*tensor(y[1])(1)");
+    verify_optimized("tensor(y[1])(1)*x5");
+    verify_optimized("x5y1*tensor(z[1])(1)");
+    verify_optimized("tensor(z[1])(1)*x5y1");
 }
 
-TEST("require that multi-dimension addition can be optimized") {
-    TEST_DO(verify_optimized("x5*tensor(a[1],b[1],c[1])(1)"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_multi_dimension_addition_can_be_optimized)
+{
+    verify_optimized("x5*tensor(a[1],b[1],c[1])(1)");
 }
 
-TEST("require that dimension addition can be chained (and compacted)") {
-    TEST_DO(verify_optimized("tensor(z[1])(1)*x5*tensor(y[1])(1)"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_dimension_addition_can_be_chained_and_compacted)
+{
+    verify_optimized("tensor(z[1])(1)*x5*tensor(y[1])(1)");
 }
 
-TEST("require that constant dimension addition is optimized") {
-    TEST_DO(verify_optimized("tensor(x[1])(1)*tensor(y[1])(1)"));
-    TEST_DO(verify_optimized("tensor(x[1])(1.1)*tensor(y[1])(1)"));
-    TEST_DO(verify_optimized("tensor(x[1])(1)*tensor(y[1])(1.1)"));
-    TEST_DO(verify_optimized("tensor(x[2])(1)*tensor(y[1])(1)"));
-    TEST_DO(verify_optimized("tensor(x[1])(1)*tensor(y[2])(1)"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_constant_dimension_addition_is_optimized)
+{
+    verify_optimized("tensor(x[1])(1)*tensor(y[1])(1)");
+    verify_optimized("tensor(x[1])(1.1)*tensor(y[1])(1)");
+    verify_optimized("tensor(x[1])(1)*tensor(y[1])(1.1)");
+    verify_optimized("tensor(x[2])(1)*tensor(y[1])(1)");
+    verify_optimized("tensor(x[1])(1)*tensor(y[2])(1)");
 }
 
-TEST("require that non-canonical dimension addition is not optimized") {
-    TEST_DO(verify_not_optimized("x5+tensor(y[1])(0)"));
-    TEST_DO(verify_not_optimized("tensor(y[1])(0)+x5"));
-    TEST_DO(verify_not_optimized("x5-tensor(y[1])(0)"));
-    TEST_DO(verify_not_optimized("x5/tensor(y[1])(1)"));
-    TEST_DO(verify_not_optimized("tensor(y[1])(1)/x5"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_non_canonical_dimension_addition_is_not_optimized)
+{
+    verify_not_optimized("x5+tensor(y[1])(0)");
+    verify_not_optimized("tensor(y[1])(0)+x5");
+    verify_not_optimized("x5-tensor(y[1])(0)");
+    verify_not_optimized("x5/tensor(y[1])(1)");
+    verify_not_optimized("tensor(y[1])(1)/x5");
 }
 
-TEST("require that dimension addition with overlapping dimensions is optimized") {
-    TEST_DO(verify_optimized("x5y1*tensor(y[1],z[1])(1)"));
-    TEST_DO(verify_optimized("tensor(y[1],z[1])(1)*x5y1"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_dimension_addition_with_overlapping_dimensions_is_optimized)
+{
+    verify_optimized("x5y1*tensor(y[1],z[1])(1)");
+    verify_optimized("tensor(y[1],z[1])(1)*x5y1");
 }
 
-TEST("require that dimension addition with mixed dimensions is optimized") {
-    TEST_DO(verify_optimized("x_m*tensor(y[1])(1)"));
-    TEST_DO(verify_optimized("tensor(y[1])(1)*x_m"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_dimension_addition_with_mixed_dimensions_is_optimized)
+{
+    verify_optimized("x_m*tensor(y[1])(1)");
+    verify_optimized("tensor(y[1])(1)*x_m");
 }
 
-TEST("require that dimension addition optimization requires unit constant tensor") {
-    TEST_DO(verify_not_optimized("x5*tensor(y[1])(0.9)"));
-    TEST_DO(verify_not_optimized("tensor(y[1])(1.1)*x5"));
-    TEST_DO(verify_not_optimized("x5*tensor(y[1],z[2])(1)"));
-    TEST_DO(verify_not_optimized("tensor(y[1],z[2])(1)*x5"));
-    TEST_DO(verify_not_optimized("x5*y1z1"));
-    TEST_DO(verify_not_optimized("y1z1*x5"));
-    TEST_DO(verify_not_optimized("tensor(x[1])(1.1)*tensor(y[1])(1.1)"));
-    TEST_DO(verify_not_optimized("tensor(x[2])(1)*tensor(y[2])(1)"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_dimension_addition_optimization_requires_unit_constant_tensor)
+{
+    verify_not_optimized("x5*tensor(y[1])(0.9)");
+    verify_not_optimized("tensor(y[1])(1.1)*x5");
+    verify_not_optimized("x5*tensor(y[1],z[2])(1)");
+    verify_not_optimized("tensor(y[1],z[2])(1)*x5");
+    verify_not_optimized("x5*y1z1");
+    verify_not_optimized("y1z1*x5");
+    verify_not_optimized("tensor(x[1])(1.1)*tensor(y[1])(1.1)");
+    verify_not_optimized("tensor(x[2])(1)*tensor(y[2])(1)");
 }
 
-TEST("require that optimization also works for float cells") {
-    TEST_DO(verify_optimized("x5*tensor<float>(a[1],b[1],c[1])(1)"));
-    TEST_DO(verify_optimized("x5f*tensor<float>(a[1],b[1],c[1])(1)"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_optimization_also_works_for_float_cells)
+{
+    verify_optimized("x5*tensor<float>(a[1],b[1],c[1])(1)");
+    verify_optimized("x5f*tensor<float>(a[1],b[1],c[1])(1)");
 }
 
-TEST("require that optimization is disabled if unit vector would promote tensor cell types") {
-    TEST_DO(verify_not_optimized("x5f*tensor(a[1],b[1],c[1])(1)"));
+TEST(AddTrivialDimensionOptimizerTest, require_that_optimization_is_disabled_if_unit_vector_would_promote_tensor_cell_types)
+{
+    verify_not_optimized("x5f*tensor(a[1],b[1],c[1])(1)");
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

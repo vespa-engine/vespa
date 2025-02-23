@@ -4,5 +4,6 @@ vespa_add_executable(eval_vector_from_doubles_function_test_app TEST
     vector_from_doubles_function_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_vector_from_doubles_function_test_app COMMAND eval_vector_from_doubles_function_test_app)

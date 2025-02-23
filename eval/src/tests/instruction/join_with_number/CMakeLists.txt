@@ -4,5 +4,6 @@ vespa_add_executable(eval_join_with_number_function_test_app TEST
     join_with_number_function_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_join_with_number_function_test_app COMMAND eval_join_with_number_function_test_app)
