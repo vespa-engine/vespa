@@ -44,6 +44,7 @@ import static com.yahoo.vespa.filedistribution.FileApiErrorCodes.TRANSFER_FAILED
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.none;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
@@ -58,7 +59,7 @@ public class FileServer {
     /* In preferred order, the one used will be the first one matching one of the accepted compression
      * types sent in client request.
      */
-    private static final List<CompressionType> compressionTypesToServe = List.of(zstd, lz4, gzip);
+    private static final List<CompressionType> compressionTypesToServe = List.of(zstd, lz4, gzip, none);
     private static final String tempFilereferencedataPrefix = "filereferencedata";
     private static final Path tempFilereferencedataDir = Paths.get(System.getProperty("java.io.tmpdir"));
 

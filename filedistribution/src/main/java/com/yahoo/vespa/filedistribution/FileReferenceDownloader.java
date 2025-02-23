@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.none;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 
 /**
@@ -37,7 +38,7 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType
 public class FileReferenceDownloader {
 
     private static final Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
-    private static final Set<CompressionType> defaultAcceptedCompressionTypes = Set.of(gzip, lz4, zstd);
+    private static final Set<CompressionType> defaultAcceptedCompressionTypes = Set.of(gzip, lz4, none, zstd);
 
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
@@ -80,7 +81,7 @@ public class FileReferenceDownloader {
                 return;
             var timeout = rpcTimeout.orElse(Duration.between(Instant.now(), end));
             log.log(Level.FINE, "Wait until download of " + fileReference + " has started, retryCount " + retryCount +
-                    ", timeout" + timeout + " (request from " + fileReferenceDownload.client() + ")");
+                    ", timeout " + timeout + " (request from " + fileReferenceDownload.client() + ")");
             if ( ! timeout.isNegative() && startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout))
                 return;
 
