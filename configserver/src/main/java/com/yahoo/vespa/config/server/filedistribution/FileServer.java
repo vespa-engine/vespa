@@ -44,7 +44,6 @@ import static com.yahoo.vespa.filedistribution.FileApiErrorCodes.TRANSFER_FAILED
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
-import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.none;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
@@ -55,8 +54,7 @@ public class FileServer {
 
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
 
-    // Set this low, to make sure we don't wait for a long time trying to download file
-    private static final Duration timeout = Duration.ofSeconds(10);
+    private static final Duration timeout = Duration.ofSeconds(30);
     /* In preferred order, the one used will be the first one matching one of the accepted compression
      * types sent in client request.
      */
