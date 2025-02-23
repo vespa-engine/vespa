@@ -7,6 +7,7 @@
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <iomanip>
 #include <ios>
 #include <sstream>
 
@@ -84,7 +85,7 @@ void verify_simple(const std::string &expr, Primary primary, Overlap overlap, si
                    bool l_mut, bool r_mut, bool inplace)
 {
     std::ostringstream os;
-    os << "verify_simple(\"" << expr << "\", " << primary << ", " << overlap << ", " << factor << ", " <<
+    os << "verify_simple(" << std::quoted(expr) << ", " << primary << ", " << overlap << ", " << factor << ", " <<
         std::boolalpha << l_mut << ", " << r_mut << ", " << inplace << ")";
     SCOPED_TRACE(os.str());
     FunInfo details{overlap, factor, primary, l_mut, r_mut, inplace};
@@ -104,7 +105,7 @@ void verify_optimized(const std::string &expr, Primary primary, Overlap overlap,
                       bool l_mut = false, bool r_mut = false, bool inplace = false)
 {
     std::ostringstream os;
-    os << "verify_optimized(\"" << expr << "\", " << primary << ", " << overlap << ", " << factor << ", " <<
+    os << "verify_optimized(" << std::quoted(expr) << ", " << primary << ", " << overlap << ", " << factor << ", " <<
         std::boolalpha << l_mut << ", " << r_mut << ", " << inplace << ")";
     SCOPED_TRACE(os.str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);

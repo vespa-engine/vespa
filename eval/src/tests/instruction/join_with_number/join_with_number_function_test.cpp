@@ -7,6 +7,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/unwind_message.h>
+#include <iomanip>
 #include <ios>
 #include <sstream>
 
@@ -50,7 +51,7 @@ struct FunInfo {
 
 void verify_optimized(const std::string &expr, Primary primary, bool pri_mut) {
     std::ostringstream os;
-    os << "verify_uptimized(\"" << expr << "\", " << primary << ", " << std::boolalpha << pri_mut << ")";
+    os << "verify_uptimized(" << std::quoted(expr) << ", " << primary << ", " << std::boolalpha << pri_mut << ")";
     SCOPED_TRACE(os.str());
     UNWIND_MSG("optimize %s", expr.c_str());
     const CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 2);
