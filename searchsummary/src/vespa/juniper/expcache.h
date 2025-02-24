@@ -6,19 +6,18 @@
 
 class MatchObject;
 
-class ExpansionCache
-{
+class ExpansionCache {
 public:
     explicit ExpansionCache(MatchObject* default_obj);
 
     virtual ~ExpansionCache();
 
     MatchObject* Lookup(uint32_t langid);
+
 private:
-    MatchObject* _default;
+    MatchObject*                      _default;
     simplemap<uint32_t, MatchObject*> _cache;
 
-    ExpansionCache(ExpansionCache &);
-    ExpansionCache &operator=(ExpansionCache &);
+    ExpansionCache(ExpansionCache&);
+    ExpansionCache& operator=(ExpansionCache&);
 };
-

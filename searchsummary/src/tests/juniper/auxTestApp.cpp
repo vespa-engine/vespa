@@ -2,15 +2,13 @@
 #include "auxTest.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 
-void Usage(char* s)
-{
+void Usage(char* s) {
     fprintf(stderr, "Usage: %s [-d debug_level]\n", s);
 }
 
-
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     juniper::TestEnv te(argc, argv, TEST_PATH("./testclient.rc").c_str());
-    AuxTest pta;
+    AuxTest          pta;
     pta.SetStream(&std::cout);
     pta.Run(argc, argv);
     return pta.Report();

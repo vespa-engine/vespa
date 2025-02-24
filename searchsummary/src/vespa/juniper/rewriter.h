@@ -19,15 +19,12 @@
  *  Multiple AddRewriter calls with different creator values are accepted.
  */
 
-namespace juniper
-{
+namespace juniper {
 
 // Opaque handle only used by implementer:
 struct RewriteHandle;
 
-
-class IRewriter
-{
+class IRewriter {
 public:
     virtual ~IRewriter() {}
 
@@ -55,4 +52,3 @@ public:
 };
 
 } // end namespace juniper
-

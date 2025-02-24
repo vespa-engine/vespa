@@ -3,8 +3,8 @@
 #include "mcandTest.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 
-int main(int argc, char **argv) {
-    juniper::TestEnv te(argc, argv, TEST_PATH("./testclient.rc").c_str());
+int main(int argc, char** argv) {
+    juniper::TestEnv   te(argc, argv, TEST_PATH("./testclient.rc").c_str());
     MatchCandidateTest test;
     test.SetStream(&std::cout);
     test.Run(argc, argv);

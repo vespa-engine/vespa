@@ -4,11 +4,11 @@
  */
 #pragma once
 
-#include "testenv.h"
 #include "test.h"
-#include <vespa/juniper/queryparser.h>
-#include <vespa/juniper/rewriter.h>
+#include "testenv.h"
 #include <map>
+#include "queryparser.h"
+#include <vespa/juniper/rewriter.h>
 
 /**
  * The QueryParserTest class holds
@@ -31,30 +31,25 @@ class QueryParserTest : public Test {
      */
     void testUsefulIndex();
 
-
     /**
      * Test of the Index method.
      */
     void testIndex();
-
 
     /**
      * Test of the Creator method.
      */
     void testCreator();
 
-
     /**
      * Test of the Weight method.
      */
     void testWeight();
 
-
     /**
      * Test of the Traverse method.
      */
     void testTraverse();
-
 
     /*************************************************************************
      *                      Test administration methods
@@ -72,13 +67,12 @@ class QueryParserTest : public Test {
      */
     void tearDown();
 
-    typedef void(QueryParserTest::* tst_method_ptr) ();
+    typedef void (QueryParserTest::*tst_method_ptr)();
     using MethodContainer = std::map<std::string, tst_method_ptr>;
     MethodContainer test_methods_;
-    void init();
+    void            init();
 
 protected:
-
     /**
      * Since we are running within Emacs, the default behavior of
      * print_progress which includes backspace does not work.
@@ -87,19 +81,17 @@ protected:
     void print_progress() override { *m_osptr << '.' << std::flush; }
 
 public:
-
     QueryParserTest() : Test("QueryParser"), test_methods_() { init(); }
     ~QueryParserTest() {}
 
     /*************************************************************************
      *                         main entry points
      *************************************************************************/
-    void Run(MethodContainer::iterator &itr);
+    void Run(MethodContainer::iterator& itr);
     void Run() override;
-    void Run(const char *method);
+    void Run(const char* method);
     void Run(int argc, char* argv[]);
 };
-
 
 // Local Variables:
 // mode:c++

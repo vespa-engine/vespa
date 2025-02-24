@@ -4,55 +4,41 @@
  */
 
 #include "testenv.h"
-#include <vespa/juniper/propreader.h>
 #include <unistd.h>
+#include <vespa/juniper/propreader.h>
 
-namespace juniper
-{
+namespace juniper {
 
 bool color_highlight = false;
 // Easy access in tests..
-Config* TestConfig;
-Juniper * _Juniper;
+Config*  TestConfig;
+Juniper* _Juniper;
 
-
-TestEnv::TestEnv(int argc, char **argv, const char* propfile) :
-    _props(), _config(), _juniper(), _wordFolder()
-{
+TestEnv::TestEnv(int argc, char** argv, const char* propfile) : _props(), _config(), _juniper(), _wordFolder() {
     int c;
 
-    while ((c = getopt(argc, argv, "d:hcm:")) != EOF)
-    {
-        switch (c)
-        {
-	case 'd':
-            fprintf(stderr, "This version of Juniper compiled without debug\n");
-            break;
-	case 'c':
-            color_highlight = true;
-            break;
-	case 'm':
+    while ((c = getopt(argc, argv, "d:hcm:")) != EOF) {
+        switch (c) {
+        case 'd': fprintf(stderr, "This version of Juniper compiled without debug\n"); break;
+        case 'c': color_highlight = true; break;
+        case 'm':
             // option handled by test framework
             break;
-	case 'h':
-	default:
-            Usage(argv[0]);
-            return;
+        case 'h':
+        default:  Usage(argv[0]); return;
         }
     }
 
     int expected_args = 0;
 
-    if (argc - optind < expected_args)
-    {
+    if (argc - optind < expected_args) {
         Usage(argv[0]);
         return;
     }
 
     _props.reset(new PropReader(propfile));
 
-    if (color_highlight)
-    {
+    if (color_highlight) {
         _props->UpdateProperty("juniper.dynsum.highlight_on", "\\1b[1;31m");
         _props->UpdateProperty("juniper.dynsum.highlight_off", "\\1b[0m");
     }
@@ -63,53 +49,32 @@ TestEnv::TestEnv(int argc, char **argv, const char* propfile) :
     TestConfig = _config.get();
 }
 
-TestEnv::~TestEnv()
-{
-}
+TestEnv::~TestEnv() {}
 
-void TestEnv::Usage(char* s)
-{
+void TestEnv::Usage(char* s) {
     fprintf(stderr, "Usage: %s [options]\n", s);
     fprintf(stderr, "Available options:\n");
     fprintf(stderr, "  -d<debugmask>: Turn on debugging\n");
     fprintf(stderr, "  -h: This help\n");
 }
 
+TestQuery::TestQuery(const char* qexp, const char* options)
+  : _qparser(qexp),
+    _qhandle(_qparser, options, _Juniper->getModifier()) {}
 
-TestQuery::TestQuery(const char* qexp, const char* options) :
-    _qparser(qexp),
-    _qhandle(_qparser, options, _Juniper->getModifier())
-{ }
+PropertyMap::PropertyMap() : _map() {}
 
+PropertyMap::~PropertyMap() {}
 
-PropertyMap::PropertyMap()
-    : _map()
-{
-}
-
-
-PropertyMap::~PropertyMap()
-{
-}
-
-
-PropertyMap &
-PropertyMap::set(const char *name, const char *value)
-{
+PropertyMap& PropertyMap::set(const char* name, const char* value) {
     _map[std::string(name)] = std::string(value);
     return *this;
 }
 
-
-const char *
-PropertyMap::GetProperty(const char* name, const char* def) const
-{
+const char* PropertyMap::GetProperty(const char* name, const char* def) const {
     auto res = _map.find(std::string(name));
-    if (res != _map.end()) {
-        return res->second.c_str();
-    }
+    if (res != _map.end()) { return res->second.c_str(); }
     return def;
 }
-
 
 } // end namespace juniper

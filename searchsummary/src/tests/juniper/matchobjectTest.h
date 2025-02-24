@@ -4,8 +4,8 @@
  */
 #pragma once
 
-#include "testenv.h"
 #include "test.h"
+#include "testenv.h"
 #include <map>
 
 /**
@@ -29,7 +29,6 @@ class MatchObjectTest : public Test {
      */
     void testTerm();
 
-
     /**
      * Test of performance
      */
@@ -51,11 +50,9 @@ class MatchObjectTest : public Test {
     void testLangid();
     void testCombined();
 
-
     /** Test parameter input via query handle options
      */
     void testParams();
-
 
     /*************************************************************************
      *                      Test administration methods
@@ -73,33 +70,31 @@ class MatchObjectTest : public Test {
      */
     void tearDown();
 
-    typedef void(MatchObjectTest::* tst_method_ptr) ();
+    typedef void (MatchObjectTest::*tst_method_ptr)();
     using MethodContainer = std::map<std::string, tst_method_ptr>;
     MethodContainer test_methods_;
-    void init();
+    void            init();
 
 protected:
-
     /**
      * Since we are running within Emacs, the default behavior of
      * print_progress which includes backspace does not work.
      * We'll use a single '.' instead.
      */
     void print_progress() override { *m_osptr << '.' << std::flush; }
-public:
 
+public:
     MatchObjectTest() : Test("MatchObject"), test_methods_() { init(); }
     ~MatchObjectTest() {}
 
     /*************************************************************************
      *                         main entry points
      *************************************************************************/
-    void Run(MethodContainer::iterator &itr);
+    void Run(MethodContainer::iterator& itr);
     void Run() override;
-    void Run(const char *method);
+    void Run(const char* method);
     void Run(int argc, char* argv[]);
 };
-
 
 // Local Variables:
 // mode:c++

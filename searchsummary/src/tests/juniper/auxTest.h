@@ -3,28 +3,29 @@
 
 // Auxiliary tests for juniper - based on Juniper 1.x proximitytest.cpp
 
-#include "testenv.h"
 #include "test.h"
+#include "testenv.h"
 #include <map>
 
-class AuxTest : public Test
-{
+class AuxTest : public Test {
 private:
     AuxTest(const AuxTest&);
     AuxTest& operator=(const AuxTest&);
+
 public:
     AuxTest();
     virtual ~AuxTest();
 
-    typedef void(AuxTest::* tst_method_ptr) ();
+    typedef void (AuxTest::*tst_method_ptr)();
     using MethodContainer = std::map<std::string, tst_method_ptr>;
     MethodContainer test_methods_;
-    void init();
+    void            init();
 
-    void Run(MethodContainer::iterator &itr);
+    void Run(MethodContainer::iterator& itr);
     void Run(const char* method);
     void Run(int argc, char* argv[]);
     void Run() override;
+
 protected:
     /**
      * Since we are running within Emacs, the default behavior of
@@ -32,6 +33,7 @@ protected:
      * We'll use a single '.' instead.
      */
     void print_progress() override { *m_osptr << '.' << std::flush; }
+
 private:
     // tests:
     void TestPropertyMap();
@@ -53,13 +55,12 @@ private:
     bool assertChar(ucs4_t act, char exp);
 
     // Utilities
-    char* IsoToUtf8 (const char* iso, size_t size);
-    char* Utf8ToIso (const char* iso, size_t size);
-    void test_summary(Matcher& m, const char* input, size_t input_len,
-                      int size, int matches, int surround, size_t& charsize);
-    void TestUTF8(unsigned int size);
+    char* IsoToUtf8(const char* iso, size_t size);
+    char* Utf8ToIso(const char* iso, size_t size);
+    void  test_summary(Matcher& m, const char* input, size_t input_len, int size, int matches, int surround,
+                       size_t& charsize);
+    void  TestUTF8(unsigned int size);
 
-    bool _split_char;
+    bool           _split_char;
     SummaryConfig* _sumconf;
 };
-

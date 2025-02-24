@@ -1,39 +1,35 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "auxTest.h"
-#include <vespa/juniper/juniper_separators.h>
-#include <vespa/fastos/file.h>
 #include <cctype>
+#include <vespa/fastos/file.h>
+#include <vespa/juniper/juniper_separators.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".auxtest");
 
 // Using separator definitions only from here:
 
-#define COLOR_HIGH_ON "\e[1;31m"
+#define COLOR_HIGH_ON  "\e[1;31m"
 #define COLOR_HIGH_OFF "\e[0m"
 
 static int debug_level = 0;
 
-bool color_highlight = false;
-bool verbose = false;
+bool                 color_highlight = false;
+bool                 verbose = false;
 const unsigned char* connectors = reinterpret_cast<const unsigned char*>("-'");
 
 using juniper::SpecialTokenRegistry;
 
-AuxTest::AuxTest() : Test("Auxiliary"), test_methods_(), _sumconf(0)
-{
+AuxTest::AuxTest() : Test("Auxiliary"), test_methods_(), _sumconf(0) {
     init();
 }
 
-AuxTest::~AuxTest()
-{
+AuxTest::~AuxTest() {
     DeleteSummaryConfig(_sumconf);
 }
 
-
-void AuxTest::init()
-{
+void AuxTest::init() {
     test_methods_["TestExample"] = &AuxTest::TestExample;
     test_methods_["TestPropertyMap"] = &AuxTest::TestPropertyMap;
     test_methods_["TestRerase"] = &AuxTest::TestRerase;
@@ -51,23 +47,17 @@ void AuxTest::init()
     test_methods_["TestWhiteSpacePreserved"] = &AuxTest::TestWhiteSpacePreserved;
 }
 
-
 // needed closures
 
-void AuxTest::TestUTF811()
-{
+void AuxTest::TestUTF811() {
     TestUTF8(11);
 }
 
-void AuxTest::TestUTF812()
-{
+void AuxTest::TestUTF812() {
     TestUTF8(12);
 }
 
-
-int
-countBrokenUTF8(const char *data, uint32_t len)
-{
+int countBrokenUTF8(const char* data, uint32_t len) {
     int broken = 0;
     int remain = 0;
 
@@ -104,11 +94,8 @@ countBrokenUTF8(const char *data, uint32_t len)
     return broken;
 }
 
-void
-AuxTest::TestDoubleWidth()
-{
-    char input[17] =
-	"[\x1f\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99\x1f]";
+void AuxTest::TestDoubleWidth() {
+    char input[17] = "[\x1f\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99\x1f]";
 
     juniper::PropertyMap myprops;
     myprops // no fallback, should get match
@@ -117,28 +104,23 @@ AuxTest::TestDoubleWidth()
         .set("juniper.dynsum.continuation", "<sep />")
         .set("juniper.dynsum.highlight_on", "<hi>");
     Fast_NormalizeWordFolder wf;
-    juniper::Juniper juniper(&myprops, &wf);
-    juniper::Config myConfig("best", juniper);
+    juniper::Juniper         juniper(&myprops, &wf);
+    juniper::Config          myConfig("best", juniper);
 
     juniper::QueryParser q("\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto res = juniper::Analyse(myConfig, qh,
-                                input, 17, 0, 0);
+    auto                 res = juniper::Analyse(myConfig, qh, input, 17, 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
-    (void) sum;
+    (void)sum;
     // this should work
     // _test(sum->Length() != 0);
 }
 
-
-
-void
-AuxTest::TestPartialUTF8()
-{
+void AuxTest::TestPartialUTF8() {
     const int inputSize = 5769; // NB: update this if input is changed
-    char input[inputSize];
+    char      input[inputSize];
     {
         FastOS_File file((GetSourceDirectory() + "partialutf8.input.utf8").c_str());
         _test(file.OpenReadOnly());
@@ -150,18 +132,17 @@ AuxTest::TestPartialUTF8()
     juniper::PropertyMap myprops;
     myprops // config taken from vespa test case
         .set("juniper.dynsum.escape_markup", "off")
-        .set("juniper.dynsum.highlight_off", "")
+        .set("juniper.dynsum.highlight_off", "\x1F")
         .set("juniper.dynsum.continuation", "")
         .set("juniper.dynsum.fallback", "prefix")
-        .set("juniper.dynsum.highlight_on", "");
+        .set("juniper.dynsum.highlight_on", "\x1F");
     Fast_NormalizeWordFolder wf;
-    juniper::Juniper juniper(&myprops, &wf);
-    juniper::Config myConfig("best", juniper);
+    juniper::Juniper         juniper(&myprops, &wf);
+    juniper::Config          myConfig("best", juniper);
 
     juniper::QueryParser q("ipod");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto res = juniper::Analyse(myConfig, qh,
-                                input, inputSize, 0, 0);
+    auto                 res = juniper::Analyse(myConfig, qh, input, inputSize, 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -171,10 +152,9 @@ AuxTest::TestPartialUTF8()
     _test(countBrokenUTF8(sum->Text(), sum->Length()) == 0);
 }
 
-void AuxTest::TestLargeBlockChinese()
-{
+void AuxTest::TestLargeBlockChinese() {
     const int inputSize = 10410; // NB: update this if input is changed
-    char input[inputSize];
+    char      input[inputSize];
     {
         FastOS_File file((GetSourceDirectory() + "largeblockchinese.input.utf8").c_str());
         _test(file.OpenReadOnly());
@@ -188,18 +168,17 @@ void AuxTest::TestLargeBlockChinese()
         .set("juniper.dynsum.length", "50")
         .set("juniper.dynsum.min_length", "20")
         .set("juniper.dynsum.escape_markup", "off")
-        .set("juniper.dynsum.highlight_off", "")
+        .set("juniper.dynsum.highlight_off", "\x1F")
         .set("juniper.dynsum.continuation", "")
         .set("juniper.dynsum.fallback", "prefix")
-        .set("juniper.dynsum.highlight_on", "");
+        .set("juniper.dynsum.highlight_on", "\x1F");
     Fast_NormalizeWordFolder wf;
-    juniper::Juniper juniper(&myprops, &wf);
-    juniper::Config myConfig("best", juniper);
+    juniper::Juniper         juniper(&myprops, &wf);
+    juniper::Config          myConfig("best", juniper);
 
     juniper::QueryParser q("希望");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto res = juniper::Analyse(myConfig, qh,
-                                input, inputSize, 0, 0);
+    auto                 res = juniper::Analyse(myConfig, qh, input, inputSize, 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -212,8 +191,7 @@ void AuxTest::TestLargeBlockChinese()
     _test(countBrokenUTF8(sum->Text(), sum->Length()) == 0);
 }
 
-void AuxTest::TestExample()
-{
+void AuxTest::TestExample() {
     juniper::QueryParser q("AND(consume,sleep,tree)");
     juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
 
@@ -221,10 +199,8 @@ void AuxTest::TestExample()
     const char* content = "the monkey consumes bananas and sleeps afterwards."
                           "&%#%&! cries the sleepy monkey and jumps down from the tree."
                           "the last token here is split across lines consumed";
-    int content_len = strlen(content);
-    auto res = juniper::Analyse(*juniper::TestConfig, qh,
-                                content, content_len,
-                                0, 0);
+    int         content_len = strlen(content);
+    auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0, 0);
     _test(static_cast<bool>(res));
 
     res->Scan();
@@ -232,12 +208,9 @@ void AuxTest::TestExample()
     _test(m.TotalMatchCnt(0) == 2 && m.ExactMatchCnt(0) == 0);
 }
 
-
-void
-AuxTest::TestPropertyMap()
-{
+void AuxTest::TestPropertyMap() {
     juniper::PropertyMap map;
-    IJuniperProperties *props = &map;
+    IJuniperProperties*  props = &map;
     map.set("foo", "bar").set("one", "two");
     _test(props->GetProperty("bogus") == nullptr);
     _test(strcmp(props->GetProperty("bogus", "default"), "default") == 0);
@@ -245,44 +218,32 @@ AuxTest::TestPropertyMap()
     _test(strcmp(props->GetProperty("one", "default"), "two") == 0);
 }
 
-
-void AuxTest::TestRerase()
-{
+void AuxTest::TestRerase() {
     std::list<int> ls;
 
-    for (int i = 0; i < 10; i++)
-        ls.push_back(i);
+    for (int i = 0; i < 10; i++) ls.push_back(i);
 
-    for (std::list<int>::reverse_iterator rit = ls.rbegin();
-         rit != ls.rend();)
-    {
-        if (*rit == 5 || *rit == 6)
-        {
+    for (std::list<int>::reverse_iterator rit = ls.rbegin(); rit != ls.rend();) {
+        if (*rit == 5 || *rit == 6) {
             // STL hackers heaven - puh this was cumbersome..
             std::list<int>::reverse_iterator new_it(ls.erase((++rit).base()));
             rit = new_it;
-        }
-        else
+        } else
             ++rit;
     }
 
     std::string s;
-    for (std::list<int>::iterator it = ls.begin();
-         it != ls.end(); ++it)
-        s += ('0' + *it);
+    for (std::list<int>::iterator it = ls.begin(); it != ls.end(); ++it) s += ('0' + *it);
     _test(s == std::string("01234789"));
 }
 
 // Debug dump with positions for reference
-void test_dump(const char* s, unsigned int len)
-{
+void test_dump(const char* s, unsigned int len) {
     printf("test_dump: length %u\n", len);
-    for (unsigned int i = 0; i < len;)
-    {
+    for (unsigned int i = 0; i < len;) {
         unsigned int start = i;
-        for (; i < len;)
-        {
-            if ((signed char) s[i] < 0) {
+        for (; i < len;) {
+            if ((signed char)s[i] < 0) {
                 printf("�");
             } else {
                 printf("%c", s[i]);
@@ -292,8 +253,7 @@ void test_dump(const char* s, unsigned int len)
         }
         printf("\n");
         i = start + 10;
-        for (; i < len && i % 100; i+= 10)
-            printf("%7s%3d", "", i);
+        for (; i < len && i % 100; i += 10) printf("%7s%3d", "", i);
         printf("\n");
     }
 }
@@ -301,27 +261,23 @@ void test_dump(const char* s, unsigned int len)
 namespace {
 
 #if defined(__cpp_char8_t)
-const char *
-char_from_u8(const char8_t * p) {
-    return reinterpret_cast<const char *>(p);
+const char* char_from_u8(const char8_t* p) {
+    return reinterpret_cast<const char*>(p);
 }
 #else
-const char *
-char_from_u8(const char * p) {
+const char* char_from_u8(const char* p) {
     return p;
 }
 #endif
 
-}
+} // namespace
 
-void AuxTest::TestUTF8(unsigned int size)
-{
+void AuxTest::TestUTF8(unsigned int size) {
     const char* s = char_from_u8(u8"\u00e5pent s\u00f8k\u00e6\u00f8\u00e5\u00e6\u00f8\u00e5\u00e6\u00f8\u00e5");
     const unsigned char* p = (const unsigned char*)s;
 
     int moved = 0;
-    for (int i = 0; i < (int)size + 2; i++)
-    {
+    for (int i = 0; i < (int)size + 2; i++) {
         // Forward tests:
         p = (const unsigned char*)(s + i);
         moved = Fast_UnicodeUtil::UTF8move((const unsigned char*)s, size, p, +1);
@@ -358,40 +314,39 @@ void AuxTest::TestUTF8(unsigned int size)
 
     // Assumption about equality of UCS4 IsWordChar and isalnum for
     // ascii (c < 128) :
-    for (unsigned char c = 0; c < 128; c++)
-    {
+    for (unsigned char c = 0; c < 128; c++) {
         const unsigned char* pc = &c;
-        ucs4_t u = Fast_UnicodeUtil::GetUTF8Char(pc);
-        bool utf8res = Fast_UnicodeUtil::IsWordChar(u);
-        bool asciires = std::isalnum(c);
+        ucs4_t               u = Fast_UnicodeUtil::GetUTF8Char(pc);
+        bool                 utf8res = Fast_UnicodeUtil::IsWordChar(u);
+        bool                 asciires = std::isalnum(c);
         _test(utf8res == asciires);
-        if (utf8res != asciires)
-            fprintf(stderr, ":%c:%d != :%c:%d\n", u, utf8res, c, asciires);
+        if (utf8res != asciires) fprintf(stderr, ":%c:%d != :%c:%d\n", u, utf8res, c, asciires);
     }
 }
 
-
-void AuxTest::TestUTF8context()
-{
-    const char* iso_cont = char_from_u8(u8"AND(m\u00b5ss,fast,s\u00f8kemotor,\u00e5relang)");
+void AuxTest::TestUTF8context() {
+    const char*          iso_cont = char_from_u8(u8"AND(m\u00b5ss,fast,s\u00f8kemotor,\u00e5relang)");
     juniper::QueryParser q(iso_cont);
     juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
 
     // some content
-    std::string s(char_from_u8(u8"Fast leverer s\u00d8kemotorer og andre nyttige ting for \u00e5 finne frem p\u00e5 "));
+    std::string s(
+        char_from_u8(u8"Fast leverer s\u00d8kemotorer og andre nyttige ting for \u00e5 finne frem p\u00e5 "));
     s.append(char_from_u8(u8"internett. Teknologien er basert p\u00e5 \u00c5relang"));
     s += juniper::separators::unit_separator_string;
     s.append(char_from_u8(u8"norsk innsats og forskning i"));
     s += juniper::separators::group_separator_string;
-    s.append(char_from_u8(u8"trondheimsmilj\u00f8et. M\u00b5ss med denne nye funksjonaliteten for \u00e5 vise frem"));
+    s.append(
+        char_from_u8(u8"trondheimsmilj\u00f8et. M\u00b5ss med denne nye funksjonaliteten for \u00e5 vise frem"));
     s += juniper::separators::unit_separator_string;
-    s.append(char_from_u8(u8" beste forekomst av s\u00f8ket med s\u00f8kemotor til brukeren blir det enda bedre. "));
+    s.append(
+        char_from_u8(u8" beste forekomst av s\u00f8ket med s\u00f8kemotor til brukeren blir det enda bedre. "));
     s.append(char_from_u8(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn \u00e9n byte."));
 
     auto res = juniper::Analyse(*juniper::TestConfig, qh, s.c_str(), s.size(), 0, 0);
     _test(static_cast<bool>(res));
 
-    size_t charsize;
+    size_t   charsize;
     Matcher& m = *res->_matcher;
 
     res->Scan();
@@ -409,12 +364,11 @@ void AuxTest::TestUTF8context()
         _sumconf = CreateSummaryConfig(COLOR_HIGH_ON, COLOR_HIGH_OFF, "...", separators, connectors);
     else
         _sumconf = CreateSummaryConfig("<hit>", "</hit>", "...", separators, connectors);
-    for (int i = 1; i <= 10; i++)
-    {
+    for (int i = 1; i <= 10; i++) {
         // Short summaries with many matches
-        test_summary(m, s.c_str(), s.size(), i*30, i / 3, i*10, charsize);
+        test_summary(m, s.c_str(), s.size(), i * 30, i / 3, i * 10, charsize);
         // fewer matches, longer summaries
-        test_summary(m, s.c_str(), s.size(), i*60, i / 6, i*20, charsize);
+        test_summary(m, s.c_str(), s.size(), i * 60, i / 6, i * 20, charsize);
     }
     // Summary som er stort nok til � ta hele teksten
     test_summary(m, s.c_str(), s.size(), 800, 100, 300, charsize);
@@ -426,54 +380,59 @@ void AuxTest::TestUTF8context()
     // fprintf(stderr, "charsize %d s.size %d\n", charsize, s.size());
     _test(charsize == s.size() - 3 - 11); // Subtract eliminated separators and dual bytes
 
-    if (GetNumFailed() > 0 && debug_level > 0)
-    {
+    if (GetNumFailed() > 0 && debug_level > 0) {
         fprintf(stderr, "Characters in original text: %ld\n", s.size());
         test_dump(s.c_str(), s.size());
         m.dump_statistics();
     }
 }
 
-
-struct TermTextPair
-{
+struct TermTextPair {
     const char* term;
     const char* text;
 };
 
-static TermTextPair testjap[] =
-{
+static TermTextPair testjap[] = {
     // japanese string as term
-    { "私はガラスを食べられます",
-      "this is some japanese: 私はガラスを食べられます。それは私を傷つけません。 ending here" },
+    {"私はガラスを食べられます",
+     "this is some japanese: 私はガラスを食べられます。それは私を傷つけません。 ending here"},
 
     // HUGE japanese prefix and postfix and simple match in middle:
-    { "bond",
-      "私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。 bond 私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。" },
-    { "japanese", "Simple。match。check。for。japanese。sep" },
-    { "hit", " -. hit at start" },
-    { "hit", "hit at end .,: " },
-    { "hit", "---------------------------------------------------------------------------------------------------------------------this is a text that is long enough to generate a hit that does have dots on both sides ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; " },
-    { nullptr, nullptr }
-};
+    {"bond",
+     "私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラ"
+     "スを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べ"
+     "られます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます"
+     "。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは"
+     "私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つ"
+     "けません。私はガラスを食べられます。それは私を傷つけません。 bond "
+     "私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラ"
+     "スを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べ"
+     "られます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます"
+     "。それは私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは"
+     "私を傷つけません。私はガラスを食べられます。それは私を傷つけません。私はガラスを食べられます。それは私を傷つ"
+     "けません。私はガラスを食べられます。それは私を傷つけません。"},
+    {"japanese", "Simple。match。check。for。japanese。sep"},
+    {"hit", " -. hit at start"},
+    {"hit", "hit at end .,: "},
+    {"hit",
+     "------------------------------------------------------------------------------------------------------------"
+     "---------this is a text that is long enough to generate a hit that does have dots on both sides "
+     ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;"
+     ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; "},
+    {nullptr, nullptr}};
 
-
-void AuxTest::TestJapanese()
-{
-    for (int i = 0; testjap[i].term != nullptr; i++)
-    {
-        const char* qstr = testjap[i].term;
+void AuxTest::TestJapanese() {
+    for (int i = 0; testjap[i].term != nullptr; i++) {
+        const char*          qstr = testjap[i].term;
         juniper::QueryParser q(qstr);
         juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
 
         const char* content = testjap[i].text;
-        int content_len = strlen(content);
-        auto res = juniper::Analyse(*juniper::TestConfig, qh,
-                                    content, content_len,
-                                    0, 0);
+        int         content_len = strlen(content);
+        auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0, 0);
         _test(static_cast<bool>(res));
 
-        size_t charsize;
+        size_t   charsize;
         Matcher& m = *res->_matcher;
 
         res->Scan();
@@ -484,12 +443,10 @@ void AuxTest::TestJapanese()
 
         SummaryDesc* sumdesc = m.CreateSummaryDesc(256, 256, 4, 80);
         _test(sumdesc != nullptr);
-        if (!sumdesc)
-            return;
+        if (!sumdesc) return;
         std::string sum = BuildSummary(content, content_len, sumdesc, _sumconf, charsize);
 
-        switch (i)
-        {
+        switch (i) {
         case 0:
             // Matching a multibyte sequence
             _test(m.TotalMatchCnt(0) == 1 && m.ExactMatchCnt(0) == 1);
@@ -519,80 +476,66 @@ void AuxTest::TestJapanese()
             _test(sum.size() == 103 && charsize == 86);
             // printf("sz %d charsz %d :%s:\n", sum.size(), charsize, sum.c_str());
             break;
-        default:
-            break;
+        default: break;
         }
         DeleteSummaryDesc(sumdesc);
         DeleteSummaryConfig(_sumconf);
     }
 }
 
-
-void AuxTest::test_summary(Matcher& m, const char* content, size_t content_len,
-                           int size, int matches, int surround, size_t& charsize)
-{
+void AuxTest::test_summary(Matcher& m, const char* content, size_t content_len, int size, int matches,
+                           int surround, size_t& charsize) {
     SummaryDesc* sum = m.CreateSummaryDesc(size, size, matches, surround);
     _test(sum != nullptr);
-    if (!sum)
-    {
+    if (!sum) {
         // No summary generated!
         return;
     }
     std::string res = BuildSummary(content, content_len, sum, _sumconf, charsize);
 
     if ((verbose || GetNumFailed() > 0) && debug_level > 0) {
-        printf("\nRequested size: %d, matches: %d, surround: %d, Summary size %lu :%s:\n",
-               size, matches, surround, static_cast<unsigned long>(res.size()), res.c_str());
+        printf("\nRequested size: %d, matches: %d, surround: %d, Summary size %lu :%s:\n", size, matches, surround,
+               static_cast<unsigned long>(res.size()), res.c_str());
     }
     DeleteSummaryDesc(sum);
 }
 
-void AuxTest::TestStartHits()
-{
+void AuxTest::TestStartHits() {
     juniper::QueryParser q("elvis");
     juniper::QueryHandle qh(q, "dynlength.120", juniper::_Juniper->getModifier());
 
-    const char* content =
-        "Elvis, this is a long match before matching Elvis again and then som more text at"
-        " the end. But this text at the end must be much longer than this to trigger the case."
-        " In fact it must be much longer. And then som more text at the end. But this text at "
-        "the end must be much longer than this to trigger the case";
-    int content_len = strlen(content);
-    auto res = juniper::Analyse(*juniper::TestConfig, qh,
-                                content, content_len,
-                                0, 0);
+    const char* content = "Elvis, this is a long match before matching Elvis again and then som more text at"
+                          " the end. But this text at the end must be much longer than this to trigger the case."
+                          " In fact it must be much longer. And then som more text at the end. But this text at "
+                          "the end must be much longer than this to trigger the case";
+    int         content_len = strlen(content);
+    auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
-    (void) sum;
+    (void)sum;
     // TODO: ReEnable    _test(sum->Length() != 0);
 }
 
-
-void AuxTest::TestEndHit()
-{
+void AuxTest::TestEndHit() {
     juniper::QueryParser q("match");
     juniper::QueryHandle qh(q, "dynlength.120", juniper::_Juniper->getModifier());
 
-    const char* content =
-        "In this case we need a fairly long text that does not fit entirely into the resulting"
-        " summary, but that has a hit towards the end of the document where the expected length"
-        " extends the end of the doc. This means that the prefix must be more than 256 bytes"
-        " long. Here is the stuff we are looking for to match in a case where we have "
-        "surround_len bytes closer than good towardstheend�����������������������������������";
-    size_t content_len = strlen(content) - 55;
+    const char* content = "In this case we need a fairly long text that does not fit entirely into the resulting"
+                          " summary, but that has a hit towards the end of the document where the expected length"
+                          " extends the end of the doc. This means that the prefix must be more than 256 bytes"
+                          " long. Here is the stuff we are looking for to match in a case where we have "
+                          "surround_len bytes closer than good towardstheend�����������������������������������";
+    size_t      content_len = strlen(content) - 55;
 
-    auto res = juniper::Analyse(*juniper::TestConfig, qh,
-                                content, content_len,
-                                0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
     _test(sum->Length() != 0);
 }
 
-void AuxTest::TestJuniperStack()
-{
+void AuxTest::TestJuniperStack() {
     // Stack simplification tests
     QueryExpr* q = new QueryNode(1, 0, 0);
     QueryExpr* q1 = new QueryNode(1, 0, 0);
@@ -604,11 +547,10 @@ void AuxTest::TestJuniperStack()
 
     std::string s;
     q->Dump(s);
-    _test(strcmp(s.c_str(),"Hepp:100") == 0);
+    _test(strcmp(s.c_str(), "Hepp:100") == 0);
     delete q;
 
-    if (GetNumFailed() > 0)
-        fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
+    if (GetNumFailed() > 0) fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
 
     q = new QueryNode(2, 0, 0);
     q->_arity = 0;
@@ -616,74 +558,77 @@ void AuxTest::TestJuniperStack()
     std::string s1;
     _test(q == nullptr);
 
-    if (GetNumFailed() > 0)
-        fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
+    if (GetNumFailed() > 0) fprintf(stderr, "TestJuniperStack: %s\n", s.c_str());
 }
 
 class TokenProcessor : public ITokenProcessor {
 private:
-    const std::string      & _text;
+    const std::string&       _text;
     std::vector<std::string> _tokens;
+
 public:
-    TokenProcessor(const std::string & text) : _text(text), _tokens() {}
-    void handle_token(Token & t) override {
+    TokenProcessor(const std::string& text) : _text(text), _tokens() {}
+    void handle_token(Token& t) override {
         _tokens.push_back(std::string(_text.c_str() + t.bytepos, t.bytelen));
-        //LOG(info, "handle_token(%s): bytepos(%d), wordpos(%d), bytelen(%d), curlen(%d)",
-            //_tokens.back().c_str(),
-            //(int)t.bytepos, (int)t.wordpos, t.bytelen, t.curlen);
+        // LOG(info, "handle_token(%s): bytepos(%d), wordpos(%d), bytelen(%d), curlen(%d)",
+        //_tokens.back().c_str(),
+        //(int)t.bytepos, (int)t.wordpos, t.bytelen, t.curlen);
     }
-    void handle_end(Token & t) override {
+    void handle_end(Token& t) override {
         _tokens.push_back(std::string(_text.c_str() + t.bytepos, t.bytelen));
-        //LOG(info, "handle_end(%s): bytepos(%d), wordpos(%d), bytelen(%d), curlen(%d)",
-            //_tokens.back().c_str(),
-            //(int)t.bytepos, (int)t.wordpos, t.bytelen, t.curlen);
+        // LOG(info, "handle_end(%s): bytepos(%d), wordpos(%d), bytelen(%d), curlen(%d)",
+        //_tokens.back().c_str(),
+        //(int)t.bytepos, (int)t.wordpos, t.bytelen, t.curlen);
     }
-    const std::vector<std::string> & getTokens() const { return _tokens; }
+    const std::vector<std::string>& getTokens() const { return _tokens; }
 };
 
-
-bool
-AuxTest::assertChar(ucs4_t act, char exp)
-{
-    //LOG(info, "assertChar(%d(%c), %c)", act, (char)act, exp);
-    return _test((char) act == exp);
+bool AuxTest::assertChar(ucs4_t act, char exp) {
+    // LOG(info, "assertChar(%d(%c), %c)", act, (char)act, exp);
+    return _test((char)act == exp);
 }
 
 using QueryNodeUP = std::unique_ptr<QueryNode>;
 struct QB {
     QueryNodeUP q;
     QB(size_t numTerms) : q(new QueryNode(numTerms, 0, 0)) {}
-    QB(QB & rhs) : q(std::move(rhs.q)) { }
-    QB & add(const char * t, bool st = true) {
-        QueryTerm * qt = new QueryTerm(t, 0, 100);
+    QB(QB& rhs) : q(std::move(rhs.q)) {}
+    QB& add(const char* t, bool st = true) {
+        QueryTerm* qt = new QueryTerm(t, 0, 100);
         if (st) qt->_options |= X_SPECIALTOKEN;
         q->AddChild(qt);
         return *this;
     }
 };
 struct Ctx {
-    std::string text;
-    QB qb;
-    SpecialTokenRegistry str;
+    std::string              text;
+    QB                       qb;
+    SpecialTokenRegistry     str;
     Fast_NormalizeWordFolder wf;
-    TokenProcessor tp;
-    JuniperTokenizer jt;
-    Ctx(const std::string & text_, QB & qb_);
+    TokenProcessor           tp;
+    JuniperTokenizer         jt;
+    Ctx(const std::string& text_, QB& qb_);
     ~Ctx();
 };
 
-Ctx::Ctx(const std::string & text_, QB & qb_) : text(text_), qb(qb_), str(qb.q.get()), wf(), tp(text), jt(&wf, text.c_str(), text.size(), &tp, &str) { jt.scan(); }
+Ctx::Ctx(const std::string& text_, QB& qb_)
+  : text(text_),
+    qb(qb_),
+    str(qb.q.get()),
+    wf(),
+    tp(text),
+    jt(&wf, text.c_str(), text.size(), &tp, &str) {
+    jt.scan();
+}
 Ctx::~Ctx() = default;
 
-void
-AuxTest::TestSpecialTokenRegistry()
-{
+void AuxTest::TestSpecialTokenRegistry() {
     {
         using CharStream = SpecialTokenRegistry::CharStream;
         ucs4_t buf[16];
         {
             std::string text = " c+-";
-            CharStream cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
+            CharStream  cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
             _test(!cs.isStartWordChar());
             _test(cs.hasMoreChars());
             _test(assertChar(cs.getNextChar(), ' '));
@@ -719,7 +664,7 @@ AuxTest::TestSpecialTokenRegistry()
         }
         { // test reset with increase to next char
             std::string text = " c+-";
-            CharStream cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
+            CharStream  cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
             _test(cs.resetAndInc());
             _test(cs.isStartWordChar());
             _test(cs.hasMoreChars());
@@ -749,7 +694,7 @@ AuxTest::TestSpecialTokenRegistry()
         }
         { // test lower case
             std::string text = "C";
-            CharStream cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
+            CharStream  cs(text.c_str(), text.c_str() + text.size(), buf, buf + 16);
             _test(assertChar(cs.getNextChar(), 'c'));
         }
     }
@@ -762,7 +707,7 @@ AuxTest::TestSpecialTokenRegistry()
         { // various matches
             std::string annotation = "\357\277\271dvdplusminus\357\277\272dvd+-\357\277\273";
             std::string text = "c++ !my C++ text ?.net dvd+- stuff " + annotation;
-            Ctx c(text, QB(3).add("c++").add(".net").add("dvd+-", false));
+            Ctx         c(text, QB(3).add("c++").add(".net").add("dvd+-", false));
             _test(c.str.getSpecialTokens().size() == 2);
             _test(c.tp.getTokens().size() == 9);
             _test(c.tp.getTokens()[0] == "c++");
@@ -826,49 +771,45 @@ AuxTest::TestSpecialTokenRegistry()
     }
 }
 
-void
-AuxTest::TestWhiteSpacePreserved()
-{
+void AuxTest::TestWhiteSpacePreserved() {
     std::string input = "\x1f"
-        "best"
-        "\x1f"
-        "  "
-        "\x1f"
-        "of"
-        "\x1f"
-        "  "
-        "\n"
-        "\x1f"
-        "metallica"
-        "\x1f";
+                        "best"
+                        "\x1f"
+                        "  "
+                        "\x1f"
+                        "of"
+                        "\x1f"
+                        "  "
+                        "\n"
+                        "\x1f"
+                        "metallica"
+                        "\x1f";
 
     juniper::PropertyMap myprops;
     myprops.set("juniper.dynsum.escape_markup", "off")
-                .set("juniper.dynsum.highlight_off", "</hi>")
-                .set("juniper.dynsum.continuation", "<sep />")
-                .set("juniper.dynsum.highlight_on", "<hi>")
-                .set("juniper.dynsum.preserve_white_space", "on");
+        .set("juniper.dynsum.highlight_off", "</hi>")
+        .set("juniper.dynsum.continuation", "<sep />")
+        .set("juniper.dynsum.highlight_on", "<hi>")
+        .set("juniper.dynsum.preserve_white_space", "on");
     Fast_NormalizeWordFolder wf;
-    juniper::Juniper juniper(&myprops, &wf);
-    juniper::Config myConfig("myconfig", juniper);
+    juniper::Juniper         juniper(&myprops, &wf);
+    juniper::Config          myConfig("myconfig", juniper);
 
     juniper::QueryParser q("best");
     juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto res = juniper::Analyse(myConfig, qh, input.c_str(), input.size(), 0, 0);
+    auto                 res = juniper::Analyse(myConfig, qh, input.c_str(), input.size(), 0, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
-    std::string expected = "<hi>best</hi>  of  \nmetallica";
-    std::string actual(sum->Text(), sum->Length());
+    std::string       expected = "<hi>best</hi>  of  \nmetallica";
+    std::string       actual(sum->Text(), sum->Length());
     _test(actual == expected);
 }
 
-void AuxTest::Run(MethodContainer::iterator &itr) {
+void AuxTest::Run(MethodContainer::iterator& itr) {
     try {
         (this->*itr->second)();
-    } catch (...) {
-        _fail("Got unknown exception in test method " + itr->first);
-    }
+    } catch (...) { _fail("Got unknown exception in test method " + itr->first); }
 }
 
 void AuxTest::Run(const char* method) {
@@ -876,26 +817,18 @@ void AuxTest::Run(const char* method) {
     if (pos != test_methods_.end()) {
         Run(pos);
     } else {
-        std::cerr << "ERROR: No test method named \""
-                  << method << "\"" << std::endl;
+        std::cerr << "ERROR: No test method named \"" << method << "\"" << std::endl;
         _fail("No such method");
     }
 }
 
 void AuxTest::Run() {
-    for (MethodContainer::iterator itr(test_methods_.begin());
-         itr != test_methods_.end();
-         ++itr)
-        Run(itr);
+    for (MethodContainer::iterator itr(test_methods_.begin()); itr != test_methods_.end(); ++itr) Run(itr);
 }
 
-
-void AuxTest::Run(int argc, char* argv[])
-{
-    for (int i = 1; i < argc; ++i)
-    {
-        if (strcmp(argv[i], "-m") == 0 && argc > i + 1)
-        {
+void AuxTest::Run(int argc, char* argv[]) {
+    for (int i = 1; i < argc; ++i) {
+        if (strcmp(argv[i], "-m") == 0 && argc > i + 1) {
             Run(argv[++i]);
             return;
         }
