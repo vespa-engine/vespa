@@ -12,7 +12,7 @@ namespace juniper {
 
 class Result {
 public:
-    Result(const Config& config, QueryHandle& qhandle, const char* docsum, size_t docsum_len, uint32_t langid);
+    Result(const Config& config, QueryHandle& qhandle, const char* docsum, size_t docsum_len);
     ~Result();
 
     inline void Scan() {
@@ -36,7 +36,6 @@ public:
     MatchObject*                          _mo;
     const char*                           _docsum;
     size_t                                _docsum_len;
-    uint32_t                              _langid;
     const Config*                         _config;
     std::unique_ptr<Matcher>              _matcher;
     std::unique_ptr<SpecialTokenRegistry> _registry;

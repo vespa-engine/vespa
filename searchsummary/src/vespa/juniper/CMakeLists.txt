@@ -21,9 +21,6 @@ vespa_add_library(searchsummary_juniper OBJECT
     result.cpp
     config.cpp
     matchelem.cpp
-    querymodifier.cpp
-    expcache.cpp
-    reducematcher.cpp
     specialtokenregistry.cpp
     DEPENDS
 )

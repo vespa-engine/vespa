@@ -8,7 +8,6 @@
 class Matcher;
 class MatchObject;
 
-#include "expcache.h"
 #include "queryvisitor.h"
 #include <vector>
 
@@ -27,7 +26,7 @@ namespace juniper {
 
 class QueryHandle {
 public:
-    QueryHandle(const IQuery& fquery, const char* options, QueryModifier& modifier);
+    QueryHandle(const IQuery& fquery, const char* options);
     ~QueryHandle();
 
     void        SetSimpleQuery(Matcher* m);
@@ -35,13 +34,8 @@ public:
     inline bool Privileged() { return _privileged_port; }
     inline void SetLog(uint32_t mask) { _log_mask = mask; }
 
-    /** Find the currect match object to use for this language and query */
-    MatchObject* MatchObj(uint32_t langid);
-
-    /** Inform handle that there are expansions */
-    void SetExpansions();
-    /** Inform handle that there are reductions */
-    void SetReductions();
+    /** Find the currect match object to use for this query */
+    MatchObject* MatchObj();
 
 protected:
     void parse_parameters(const char* options);
@@ -64,15 +58,12 @@ public:
     int64_t         _winsize;
     double          _winsize_fallback_multiplier;
     int64_t         _max_match_candidates;
-    ExpansionCache* _expansion_cache;
 
     // parameter settings that are taken directly from
     // this handle (eg. not overrides for config settings)
     uint32_t _log_mask;
     int      _options;        // query constraint bitmap as defined in querynode.h
     int      _limit;          // WITHIN/NEAR limit by parameter
-    bool     _has_expansions; // If set, the query must be replaced by a language dependent expansion (?)
-    bool     _has_reductions;
 };
 
 void SetDebug(unsigned int mask);

@@ -22,7 +22,7 @@ unsigned debug_level = 0;
 Matcher::Matcher(Result* result)
   : _result(result),
     _qhandle(result->_qhandle),
-    _mo(_qhandle->MatchObj(result->_langid)),
+    _mo(_qhandle->MatchObj()),
     _match_iter(_mo, result),
     _winsize(600),
     _winsizeFallback(_winsize * 10),

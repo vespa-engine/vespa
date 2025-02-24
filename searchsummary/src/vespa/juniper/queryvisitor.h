@@ -13,17 +13,13 @@ using QueryHandle = juniper::QueryHandle;
 
 class Matcher;
 
-namespace juniper {
-class QueryModifier;
-}
-
 /** See IQueryVisitor for detailed interface description
  */
 class QueryVisitor : public juniper::IQueryVisitor {
 public:
     QueryVisitor(QueryVisitor&) = delete;
     QueryVisitor& operator=(QueryVisitor&) = delete;
-    QueryVisitor(const IQuery& query, QueryHandle* qhandle, juniper::QueryModifier& queryModifier);
+    QueryVisitor(const IQuery& query, QueryHandle* qhandle);
     ~QueryVisitor() override;
 
     bool VisitAND(const QueryItem* item, int arity) override;
@@ -51,7 +47,6 @@ private:
     // Helper functions/members for use during construction only.
     void                    insert(QueryExpr* expr);
     void                    postprocess_query();
-    juniper::QueryModifier& _queryModifier;
 
     const IQuery* _fquery; // Temp.pointer to the input query (valid in constructor only..
 

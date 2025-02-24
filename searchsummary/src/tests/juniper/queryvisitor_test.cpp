@@ -35,14 +35,12 @@ public:
 
 struct Fixture {
     MyQuery       query;
-    QueryModifier modifier;
     QueryHandle   handle;
     QueryVisitor  visitor;
     explicit Fixture(const std::string& term)
       : query(term),
-        modifier(),
-        handle(query, "", modifier),
-        visitor(query, &handle, modifier) {}
+        handle(query, ""),
+        visitor(query, &handle) {}
 };
 
 TEST_F("require that terms are picked up by the query visitor", Fixture("my_term")) {

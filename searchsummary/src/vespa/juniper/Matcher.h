@@ -15,7 +15,6 @@
 
 #include "ITokenProcessor.h"
 #include "matchobject.h"
-#include "querymodifier.h"
 #include "querynode.h"
 #include <list>
 #include <map>

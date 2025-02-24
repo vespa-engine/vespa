@@ -5,7 +5,6 @@
 #include "hashbase.h"
 #include "queryhandle.h"
 #include "querynode.h"
-#include "reducematcher.h"
 #include <vespa/fastlib/text/unicodeutil.h>
 
 using Result = juniper::Result;
@@ -59,11 +58,7 @@ class MatchObject {
 public:
     // Constructor for the default match object.
     // Resumes ownership of query
-    MatchObject(QueryExpr* query, bool has_reductions);
-
-    // Constructor for language specific extensions:
-    // Creates a duplicate of query
-    MatchObject(QueryExpr* query, bool has_reductions, uint32_t langid);
+    MatchObject(QueryExpr* query);
 
     ~MatchObject();
 
@@ -93,7 +88,6 @@ public:
     // internal use only..
     void add_queryterm(QueryTerm* term);
     void add_nonterm(QueryNode* n);
-    void add_reduction_term(QueryTerm* term, juniper::Rewriter*);
 
 private:
     friend class match_iterator;
@@ -104,7 +98,6 @@ private:
     int                     _max_arity;
     bool                    _has_reductions; // query contains terms that reqs reduction of tokens before matching
     queryterm_hashtable     _qt_byname;      // fast lookup by name
-    juniper::ReduceMatcher  _reduce_matchers;
 
     MatchObject(MatchObject&);
     MatchObject& operator=(MatchObject&);

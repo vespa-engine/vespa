@@ -60,7 +60,7 @@ void TestEnv::Usage(char* s) {
 
 TestQuery::TestQuery(const char* qexp, const char* options)
   : _qparser(qexp),
-    _qhandle(_qparser, options, _Juniper->getModifier()) {}
+    _qhandle(_qparser, options) {}
 
 PropertyMap::PropertyMap() : _map() {}
 

@@ -4,13 +4,12 @@
 #include "Matcher.h"
 #include "juniperdebug.h"
 #include "query.h"
-#include "querymodifier.h"
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.queryhandle");
 
 namespace juniper {
 
-QueryHandle::QueryHandle(const IQuery& fquery, const char* options, QueryModifier& modifier)
+QueryHandle::QueryHandle(const IQuery& fquery, const char* options)
   : _mo(NULL),
     _privileged_port(false),
     _dynsum_len(-1),
@@ -21,12 +20,9 @@ QueryHandle::QueryHandle(const IQuery& fquery, const char* options, QueryModifie
     _winsize(-1),
     _winsize_fallback_multiplier(-1),
     _max_match_candidates(-1),
-    _expansion_cache(NULL),
     _log_mask(0),
     _options(0),
-    _limit(0),
-    _has_expansions(false),
-    _has_reductions(false) {
+    _limit(0) {
     QueryVisitor* vis;
 
     /* Parse the options parameter structure, the parameter
@@ -35,7 +31,7 @@ QueryHandle::QueryHandle(const IQuery& fquery, const char* options, QueryModifie
     parse_parameters(options);
 
     /* Then parse the original query */
-    vis = new QueryVisitor(fquery, this, modifier);
+    vis = new QueryVisitor(fquery, this);
 
     QueryExpr* query = vis->GetQuery();
     if (query) {
@@ -49,10 +45,7 @@ QueryHandle::QueryHandle(const IQuery& fquery, const char* options, QueryModifie
          * original query (no language dependent expansion or rewriting (reduction)
          * applied)
          */
-        _mo = new MatchObject(query, _has_reductions);
-        if (_has_expansions) { // set by query visitor...
-            _expansion_cache = new ExpansionCache(_mo);
-        }
+        _mo = new MatchObject(query);
     } else {
         LOG(debug, "juniper::QueryHandle: stack dump: (no stack)");
     }
@@ -62,21 +55,11 @@ QueryHandle::QueryHandle(const IQuery& fquery, const char* options, QueryModifie
 
 QueryHandle::~QueryHandle() {
     LOG(debug, "juniper: Deleting query handle");
-    if (_expansion_cache) delete _expansion_cache;
     if (_mo) delete _mo;
 }
 
-MatchObject* QueryHandle::MatchObj(uint32_t langid) {
-    if (!_expansion_cache || (int)langid < 0) return _mo;
-    return _expansion_cache->Lookup(langid);
-}
-
-void QueryHandle::SetExpansions() {
-    _has_expansions = true;
-}
-
-void QueryHandle::SetReductions() {
-    _has_reductions = true;
+MatchObject* QueryHandle::MatchObj() {
+    return _mo;
 }
 
 // small utility

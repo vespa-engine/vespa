@@ -8,7 +8,6 @@
 #include "testenv.h"
 #include <map>
 #include "queryparser.h"
-#include <vespa/juniper/rewriter.h>
 
 /**
  * The QueryParserTest class holds
@@ -30,11 +29,6 @@ class QueryParserTest : public Test {
      * Test of the UsefulIndex method.
      */
     void testUsefulIndex();
-
-    /**
-     * Test of the Index method.
-     */
-    void testIndex();
 
     /**
      * Test of the Creator method.

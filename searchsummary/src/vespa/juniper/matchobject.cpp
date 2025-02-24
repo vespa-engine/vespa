@@ -23,12 +23,7 @@ public:
 
     void RevisitQueryNode(QueryNode* n) override { _mo.add_nonterm(n); }
 
-    void VisitQueryTerm(QueryTerm* t) override {
-        if (t->rewriter && t->rewriter->ForDocument())
-            _mo.add_reduction_term(t, t->rewriter);
-        else
-            _mo.add_queryterm(t);
-    }
+    void VisitQueryTerm(QueryTerm* t) override { _mo.add_queryterm(t); }
 
 private:
     MatchObject& _mo;
@@ -36,59 +31,12 @@ private:
 
 class query_expander : public IQueryExprVisitor {
 public:
-    query_expander(MatchObject& mo, uint32_t langid) noexcept : _caller(), _mo(mo), _langid(langid) {}
+    query_expander(MatchObject& mo) noexcept : _caller(), _mo(mo) {}
 
     void VisitQueryTerm(QueryTerm* orig) override {
-        const char*             nt = nullptr;
-        size_t                  length;
-        juniper::RewriteHandle* te = nullptr;
-        bool                    reduction = false;
-
-        if (orig->rewriter) {
-            // Check if expansions are necessary
-            if (orig->rewriter->ForQuery()) {
-                te = orig->rewriter->Rewrite(_langid, orig->term());
-                if (te) nt = orig->rewriter->NextTerm(te, length);
-            }
-
-            // If this rewriter is both an expander and a reducer, only matches
-            // of reduced forms will be valid, need to take steps to add expansions
-            // to a separate mapping
-            reduction = orig->rewriter->ForDocument();
-        }
-        if (nt == nullptr) {
-            QueryTerm* t = new QueryTerm(orig); // No matches found, just clone term..
-            if (!reduction)
-                _mo.add_queryterm(t);
-            else
-                _mo.add_reduction_term(t, orig->rewriter);
-            update(t);
-            return;
-        }
-        // Start expanding...
-        std::vector<QueryTerm*> newterms;
-        while (nt != nullptr) {
-            QueryTerm* nqt = new QueryTerm(std::string_view(nt, length), -1, 100);
-            // Copy options but do not apply juniper stem match for expanded terms
-            nqt->_options = orig->_options | X_EXACT;
-            if (!reduction)
-                _mo.add_queryterm(nqt);
-            else
-                _mo.add_reduction_term(nqt, orig->rewriter);
-            newterms.push_back(nqt);
-            nt = orig->rewriter->NextTerm(te, length);
-        }
-        if (newterms.size() == 1) {
-            update(newterms.front());
-            return;
-        }
-
-        QueryNode* qn = new QueryNode(newterms.size(), orig->_weight, orig->_weight);
-        // preserve options for nodes too, but make the node an OR..
-        qn->_options = orig->_options | X_OR;
-        for (QueryTerm* newTerm : newterms) { qn->AddChild(newTerm); }
-        update(qn);
-        _mo.add_nonterm(qn);
+        QueryTerm* t = new QueryTerm(orig); // just clone term
+        _mo.add_queryterm(t);
+        update(t);
     }
 
     // Visit on descent:
@@ -117,44 +65,19 @@ private:
 
     std::stack<QueryNode*> _caller; // Recursion emulator..
     MatchObject&           _mo;
-    uint32_t               _langid;
 }; // class query_expander
 
-MatchObject::MatchObject(QueryExpr* query, bool has_reductions)
+MatchObject::MatchObject(QueryExpr* query)
   : _query(query),
     _qt(),
     _nonterms(),
     _match_overlap(false),
     _max_arity(0),
-    _has_reductions(has_reductions),
-    _qt_byname(),
-    _reduce_matchers() {
+    _qt_byname() {
     LOG(debug, "MatchObject(default)");
     traverser tr(*this);
     query->Accept(tr); // Initialize structure for the query
     _max_arity = query->MaxArity();
-}
-
-MatchObject::MatchObject(QueryExpr* query, bool has_reductions, uint32_t langid)
-  : _query(nullptr),
-    _qt(),
-    _nonterms(),
-    _match_overlap(false),
-    _max_arity(0),
-    _has_reductions(has_reductions),
-    _qt_byname(),
-    _reduce_matchers() {
-    LOG(debug, "MatchObject(language %d)", langid);
-    query_expander qe(*this, langid);
-    query->Accept(qe);      // Create a new, modified query
-    _query = qe.NewQuery(); // Fetch the new query..
-
-    if (LOG_WOULD_LOG(debug)) {
-        std::string s;
-        _query->Dump(s);
-        LOG(debug, "juniper::MatchObject(language id %d): modified stack: %s", langid, s.c_str());
-    }
-    _max_arity = _query->MaxArity();
 }
 
 MatchObject::~MatchObject() {
@@ -186,16 +109,6 @@ void MatchObject::add_queryterm(QueryTerm* nt) {
     _qt_byname.Insert(*(reinterpret_cast<const queryterm_hashtable::keytype*>(nt->ucs4_term())), nt);
 
     LOG(debug, "MatchObject: adding term '%s'", nt->term());
-}
-
-void MatchObject::add_reduction_term(QueryTerm* nt, juniper::Rewriter* rw) {
-    // All terms go here:
-    _qt.push_back(nt);
-    nt->idx = _qt.size() - 1;
-
-    LOG(debug, "MatchObject: adding reduction term '%s'", nt->term());
-    if (!nt->reduce_matcher) nt->reduce_matcher = _reduce_matchers.find(rw);
-    nt->reduce_matcher->add_term(nt);
 }
 
 match_iterator::match_iterator(MatchObject* mo, Result* rhandle)
@@ -311,16 +224,6 @@ QueryTerm* match_iterator::first_match(Token& token) {
         if ((rtrn = first()) == 0) {
             _el = _table.FindRef('?');
             rtrn = first();
-        }
-    }
-    if (_reductions) {
-        _reduce_matches =
-            _mo->_reduce_matchers.match(_rhandle->_langid, &_rhandle->_docsum[token.bytepos], token.bytelen);
-        if (_reduce_matches) {
-            _reduce_matches_it = _reduce_matches->begin();
-
-            // Find the first reduce match only if no other match was found
-            if (!rtrn) rtrn = current();
         }
     }
     return rtrn;

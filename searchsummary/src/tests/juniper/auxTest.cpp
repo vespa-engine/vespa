@@ -108,8 +108,8 @@ void AuxTest::TestDoubleWidth() {
     juniper::Config          myConfig("best", juniper);
 
     juniper::QueryParser q("\xef\xbd\x93\xef\xbd\x8f\xef\xbd\x8e\xef\xbd\x99");
-    juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto                 res = juniper::Analyse(myConfig, qh, input, 17, 0, 0);
+    juniper::QueryHandle qh(q, nullptr);
+    auto                 res = juniper::Analyse(myConfig, qh, input, 17, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -141,8 +141,8 @@ void AuxTest::TestPartialUTF8() {
     juniper::Config          myConfig("best", juniper);
 
     juniper::QueryParser q("ipod");
-    juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto                 res = juniper::Analyse(myConfig, qh, input, inputSize, 0, 0);
+    juniper::QueryHandle qh(q, nullptr);
+    auto                 res = juniper::Analyse(myConfig, qh, input, inputSize, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -177,8 +177,8 @@ void AuxTest::TestLargeBlockChinese() {
     juniper::Config          myConfig("best", juniper);
 
     juniper::QueryParser q("希望");
-    juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto                 res = juniper::Analyse(myConfig, qh, input, inputSize, 0, 0);
+    juniper::QueryHandle qh(q, nullptr);
+    auto                 res = juniper::Analyse(myConfig, qh, input, inputSize, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -193,14 +193,14 @@ void AuxTest::TestLargeBlockChinese() {
 
 void AuxTest::TestExample() {
     juniper::QueryParser q("AND(consume,sleep,tree)");
-    juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
+    juniper::QueryHandle qh(q, nullptr);
 
     // some content
     const char* content = "the monkey consumes bananas and sleeps afterwards."
                           "&%#%&! cries the sleepy monkey and jumps down from the tree."
                           "the last token here is split across lines consumed";
     int         content_len = strlen(content);
-    auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0, 0);
+    auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     res->Scan();
@@ -327,7 +327,7 @@ void AuxTest::TestUTF8(unsigned int size) {
 void AuxTest::TestUTF8context() {
     const char*          iso_cont = char_from_u8(u8"AND(m\u00b5ss,fast,s\u00f8kemotor,\u00e5relang)");
     juniper::QueryParser q(iso_cont);
-    juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
+    juniper::QueryHandle qh(q, nullptr);
 
     // some content
     std::string s(
@@ -343,7 +343,7 @@ void AuxTest::TestUTF8context() {
         char_from_u8(u8" beste forekomst av s\u00f8ket med s\u00f8kemotor til brukeren blir det enda bedre. "));
     s.append(char_from_u8(u8"Hvis bare UTF8-kodingen virker som den skal for tegn som tar mer enn \u00e9n byte."));
 
-    auto res = juniper::Analyse(*juniper::TestConfig, qh, s.c_str(), s.size(), 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, qh, s.c_str(), s.size(), 0);
     _test(static_cast<bool>(res));
 
     size_t   charsize;
@@ -425,11 +425,11 @@ void AuxTest::TestJapanese() {
     for (int i = 0; testjap[i].term != nullptr; i++) {
         const char*          qstr = testjap[i].term;
         juniper::QueryParser q(qstr);
-        juniper::QueryHandle qh(q, nullptr, juniper::_Juniper->getModifier());
+        juniper::QueryHandle qh(q, nullptr);
 
         const char* content = testjap[i].text;
         int         content_len = strlen(content);
-        auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0, 0);
+        auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0);
         _test(static_cast<bool>(res));
 
         size_t   charsize;
@@ -502,14 +502,14 @@ void AuxTest::test_summary(Matcher& m, const char* content, size_t content_len, 
 
 void AuxTest::TestStartHits() {
     juniper::QueryParser q("elvis");
-    juniper::QueryHandle qh(q, "dynlength.120", juniper::_Juniper->getModifier());
+    juniper::QueryHandle qh(q, "dynlength.120");
 
     const char* content = "Elvis, this is a long match before matching Elvis again and then som more text at"
                           " the end. But this text at the end must be much longer than this to trigger the case."
                           " In fact it must be much longer. And then som more text at the end. But this text at "
                           "the end must be much longer than this to trigger the case";
     int         content_len = strlen(content);
-    auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0, 0);
+    auto        res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -519,7 +519,7 @@ void AuxTest::TestStartHits() {
 
 void AuxTest::TestEndHit() {
     juniper::QueryParser q("match");
-    juniper::QueryHandle qh(q, "dynlength.120", juniper::_Juniper->getModifier());
+    juniper::QueryHandle qh(q, "dynlength.120");
 
     const char* content = "In this case we need a fairly long text that does not fit entirely into the resulting"
                           " summary, but that has a hit towards the end of the document where the expected length"
@@ -528,7 +528,7 @@ void AuxTest::TestEndHit() {
                           "surround_len bytes closer than good towardstheend�����������������������������������";
     size_t      content_len = strlen(content) - 55;
 
-    auto res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, qh, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
@@ -796,8 +796,8 @@ void AuxTest::TestWhiteSpacePreserved() {
     juniper::Config          myConfig("myconfig", juniper);
 
     juniper::QueryParser q("best");
-    juniper::QueryHandle qh(q, nullptr, juniper.getModifier());
-    auto                 res = juniper::Analyse(myConfig, qh, input.c_str(), input.size(), 0, 0);
+    juniper::QueryHandle qh(q, nullptr);
+    auto                 res = juniper::Analyse(myConfig, qh, input.c_str(), input.size(), 0);
     _test(static_cast<bool>(res));
 
     juniper::Summary* sum = juniper::GetTeaser(*res, nullptr);
