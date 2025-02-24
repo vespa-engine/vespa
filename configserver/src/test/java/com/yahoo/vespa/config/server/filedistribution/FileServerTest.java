@@ -11,6 +11,7 @@ import com.yahoo.vespa.filedistribution.FileDownloader;
 import com.yahoo.vespa.filedistribution.FileReferenceCompressor;
 import com.yahoo.vespa.filedistribution.FileReferenceData;
 import com.yahoo.vespa.filedistribution.FileReferenceDownload;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -24,8 +25,9 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
-import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.none;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -41,7 +43,7 @@ public class FileServerTest {
     @Before
     public void setup() throws IOException {
         File rootDir = new File(temporaryFolder.newFolder("fileserver-root").getAbsolutePath());
-        fileServer = new FileServer(new MockFileDownloader(rootDir), List.of(gzip, lz4), new FileDirectory(rootDir));
+        fileServer = new FileServer(new MockFileDownloader(rootDir), List.of(lz4, zstd, none), new FileDirectory(rootDir));
     }
 
     @Test
@@ -75,26 +77,30 @@ public class FileServerTest {
     }
 
     @Test
-    public void requireThatWeCanReplayFile() throws IOException, InterruptedException, ExecutionException {
-        File dir = getFileServerRootDir();
-        IOUtils.writeFile(dir + "/12y/f1", "dummy-data", true);
-        CompletableFuture<byte []> content = new CompletableFuture<>();
-        FileReference fileReference = new FileReference("12y");
-        var file = fileServer.getFileDownloadIfNeeded(new FileReferenceDownload(fileReference, "test"));
-        fileServer.startFileServing(fileReference, file.get(), new FileReceiver(content), Set.of(gzip));
-        assertEquals(new String(content.get()), "dummy-data");
+    public void requireThatWeCanReplayFileWithZstd() throws IOException, InterruptedException, ExecutionException {
+        requireThatWeCanReplayFile(zstd);
+    }
+
+    @Test
+    public void requireThatWeCanReplayFileWithLz4() throws IOException, InterruptedException, ExecutionException {
+        requireThatWeCanReplayFile(lz4);
+    }
+
+    @Test
+    public void requireThatWeCanReplayFileWithNoCompression() throws IOException, InterruptedException, ExecutionException {
+        requireThatWeCanReplayFile(none);
     }
 
     @Test
     public void requireThatWeCanReplayDirWithLz4() throws IOException, InterruptedException, ExecutionException {
         File rootDir = new File(temporaryFolder.newFolder("fileserver-root-3").getAbsolutePath());
-        fileServer = new FileServer(new MockFileDownloader(rootDir), List.of(lz4, gzip), new FileDirectory(rootDir)); // prefer lz4
+        fileServer = new FileServer(new MockFileDownloader(rootDir), List.of(lz4, zstd), new FileDirectory(rootDir)); // prefer lz4
         File dir = getFileServerRootDir();
         IOUtils.writeFile(dir + "/subdir/12z/f1", "dummy-data-2", true);
         CompletableFuture<byte []> content = new CompletableFuture<>();
         FileReference fileReference = new FileReference("subdir");
         var file = fileServer.getFileDownloadIfNeeded(new FileReferenceDownload(fileReference, "test"));
-        fileServer.startFileServing(fileReference, file.get(), new FileReceiver(content), Set.of(gzip, lz4));
+        fileServer.startFileServing(fileReference, file.get(), new FileReceiver(content), Set.of(zstd, lz4));
 
         // Decompress with lz4 and check contents
         var compressor = new FileReferenceCompressor(FileReferenceData.Type.compressed, lz4);
@@ -146,13 +152,13 @@ public class FileServerTest {
         FileReference reference = new FileReference("12y");
         var file = fileServer.getFileDownloadIfNeeded(new FileReferenceDownload(reference, "test"));
         try {
-            fileServer.startFileServing(reference, file.get(), fileReceiver, Set.of(gzip));
+            fileServer.startFileServing(reference, file.get(), fileReceiver, Set.of(lz4));
             fail("Should have failed");
         } catch (RuntimeException e) {
             // expected
         }
 
-        fileServer.startFileServing(reference, file.get(), fileReceiver, Set.of(gzip));
+        fileServer.startFileServing(reference, file.get(), fileReceiver, Set.of(lz4));
         assertEquals(new String(content.get()), "dummy-data");
     }
 
@@ -165,7 +171,7 @@ public class FileServerTest {
     private FileServer createFileServer(ConfigserverConfig.Builder configBuilder) throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
         configBuilder.fileReferencesDir(fileReferencesDir.getAbsolutePath());
-        return new FileServer(new ConfigserverConfig(configBuilder), new FileDirectory(fileReferencesDir));
+        return new FileServer(new ConfigserverConfig(configBuilder), new InMemoryFlagSource(), new FileDirectory(fileReferencesDir));
     }
 
     private static class FileReceiver implements FileServer.Receiver {
@@ -198,6 +204,17 @@ public class FileServerTest {
 
     private File getFileServerRootDir() {
         return fileServer.getRootDir().getRoot();
+    }
+
+
+    private void requireThatWeCanReplayFile(FileReferenceData.CompressionType compressionType) throws IOException, InterruptedException, ExecutionException {
+        File dir = getFileServerRootDir();
+        IOUtils.writeFile(dir + "/12y/f1", "dummy-data", true);
+        CompletableFuture<byte []> content = new CompletableFuture<>();
+        FileReference fileReference = new FileReference("12y");
+        var file = fileServer.getFileDownloadIfNeeded(new FileReferenceDownload(fileReference, "test"));
+        fileServer.startFileServing(fileReference, file.get(), new FileReceiver(content), Set.of(compressionType));
+        assertEquals(new String(content.get()), "dummy-data");
     }
 
     private static class MockFileDownloader extends FileDownloader {
