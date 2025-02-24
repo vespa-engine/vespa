@@ -347,6 +347,14 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundListFlag<String> FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE = defineListFlag(
+            "file-distribution-compression-types-to-serve", List.of("zstd", "lz4", "none", "gzip"), String.class,
+            List.of("hmusum"), "2025-02-24", "2025-04-01",
+            "List of compression type to use when distributing files, in preferred order, depends " +
+                    "on what the client accepts (sent in request from client)",
+            "Takes effect at restart of config server",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
