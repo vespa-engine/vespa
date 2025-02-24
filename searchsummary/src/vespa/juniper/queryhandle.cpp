@@ -5,7 +5,6 @@
 #include "juniperdebug.h"
 #include "query.h"
 #include "querymodifier.h"
-#include "queryparser.h"
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.queryhandle");
 

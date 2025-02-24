@@ -7,7 +7,7 @@
 #include "test.h"
 #include "testenv.h"
 #include <map>
-#include <vespa/juniper/queryparser.h>
+#include "queryparser.h"
 #include <vespa/juniper/rewriter.h>
 
 /**

@@ -3,8 +3,8 @@
 /* Simple prefix query parser for Juniper for debugging purposes */
 
 #include "queryparser.h"
-#include "juniperdebug.h"
-#include "query_item.h"
+#include <vespa/juniper/juniperdebug.h>
+#include <vespa/juniper/query_item.h>
 #include <cassert>
 #include <vector>
 

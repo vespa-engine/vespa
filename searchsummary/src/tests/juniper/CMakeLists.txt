@@ -9,6 +9,7 @@ vespa_add_executable(juniper_mcandTest_app TEST
     SOURCES
     mcandTest.cpp
     mcandTestApp.cpp
+    queryparser.cpp
     testenv.cpp
     DEPENDS
     vespa_searchsummary
@@ -17,6 +18,7 @@ vespa_add_executable(juniper_mcandTest_app TEST
 vespa_add_test(NAME juniper_mcandTest_app COMMAND juniper_mcandTest_app)
 vespa_add_executable(juniper_queryparserTest_app TEST
     SOURCES
+    queryparser.cpp
     queryparserTest.cpp
     queryparserTestApp.cpp
     fakerewriter.cpp
@@ -30,6 +32,7 @@ vespa_add_executable(juniper_matchobjectTest_app TEST
     SOURCES
     matchobjectTest.cpp
     matchobjectTestApp.cpp
+    queryparser.cpp
     testenv.cpp
     fakerewriter.cpp
     DEPENDS
@@ -46,6 +49,7 @@ vespa_add_executable(juniper_appender_test_app TEST
 vespa_add_test(NAME juniper_appender_test_app COMMAND juniper_appender_test_app)
 vespa_add_executable(juniper_queryvisitor_test_app TEST
     SOURCES
+    queryparser.cpp
     queryvisitor_test.cpp
     DEPENDS
     vespa_searchsummary
@@ -55,6 +59,7 @@ vespa_add_executable(juniper_auxTest_app TEST
     SOURCES
     auxTest.cpp
     auxTestApp.cpp
+    queryparser.cpp
     testenv.cpp
     DEPENDS
     vespa_searchsummary
@@ -64,6 +69,7 @@ vespa_add_test(NAME juniper_auxTest_app COMMAND juniper_auxTest_app)
 vespa_add_executable(juniper_SrcTestSuite_app TEST
     SOURCES
     mcandTest.cpp
+    queryparser.cpp
     queryparserTest.cpp
     fakerewriter.cpp
     SrcTestSuite.cpp

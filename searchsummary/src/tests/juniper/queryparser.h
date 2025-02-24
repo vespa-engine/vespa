@@ -4,7 +4,7 @@
 /* Simple prefix syntax advanced query parser for Juniper debug/testing */
 
 #include "latintokenizer.h"
-#include "query.h"
+#include <vespa/juniper/query.h>
 #include <map>
 #include <memory>
 #include <string>

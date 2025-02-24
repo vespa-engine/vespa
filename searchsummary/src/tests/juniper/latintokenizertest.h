@@ -2,7 +2,7 @@
 #pragma once
 
 #include "test.h"
-#include <vespa/juniper/latintokenizer.h>
+#include "latintokenizer.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
 class Mapel_Pucntuation {

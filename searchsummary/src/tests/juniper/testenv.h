@@ -14,7 +14,7 @@
 #include <vespa/juniper/propreader.h>
 #include <vespa/juniper/query.h>
 #include <vespa/juniper/queryhandle.h>
-#include <vespa/juniper/queryparser.h>
+#include "queryparser.h"
 #include <vespa/juniper/queryvisitor.h>
 #include <vespa/juniper/result.h>
 #include <vespa/juniper/rpinterface.h>
