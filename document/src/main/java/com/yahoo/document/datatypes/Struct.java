@@ -127,11 +127,12 @@ public class Struct extends StructuredFieldValue {
             throw new IllegalArgumentException("Invalid null field pointer");
         }
         Field myField = getDataType().getField(field.getId());
-        if (myField==null) {
-            throw new IllegalArgumentException("No such field in "+getDataType()+" : "+field.getName());
+        if (myField == null) {
+            throw new IllegalArgumentException("No such field in " + getDataType() + ": " + field.getName());
         }
         if (!myField.getDataType().isValueCompatible(value)) {
-            throw new IllegalArgumentException("Incompatible data types. Got " + value.getDataType() + ", expected " + myField.getDataType());
+            throw new IllegalArgumentException("Incompatible data types in field '" + field.getName() +
+                                               "'. Got " + value.getDataType() + ", expected " + myField.getDataType());
         }
 
         if (myField.getId() != field.getId()) {
