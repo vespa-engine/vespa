@@ -20,60 +20,56 @@ struct gtematch_cand {
 };
 using match_candidate_set = std::multiset<MatchCandidate*, gtematch_cand>;
 
-class MatchCandidate : public MatchElement
-{
+class MatchCandidate : public MatchElement {
 public:
     MatchElement** element;
 
-    enum accept_state
-    {
-        M_OK,
-        M_EXISTS,
-        M_OVERLAP,
-        M_EXPIRED,
-        M_MAX
-    };
+    enum accept_state { M_OK, M_EXISTS, M_OVERLAP, M_EXPIRED, M_MAX };
+
 private:
     QueryExpr* _match;
-    int _nelems, _elems;
+    int        _nelems, _elems;
     // _startpos in superclass
-    off_t _endpos;
-    off_t _endtoken;
-    long _docid;
-    off_t _ctxt_start;
-    size_t _elem_weight; // Combination of #elements and their weight, normal weight ~ 100
-    int _options;
-    int _overlap; // Handle terms matching multiple elements in ordered (distinct) mode
+    off_t    _endpos;
+    off_t    _endtoken;
+    long     _docid;
+    off_t    _ctxt_start;
+    size_t   _elem_weight; // Combination of #elements and their weight, normal weight ~ 100
+    int      _options;
+    int      _overlap; // Handle terms matching multiple elements in ordered (distinct) mode
     uint32_t _refcnt;  // reference count for this object
 
-    MatchCandidate(MatchCandidate &);
-    MatchCandidate &operator=(MatchCandidate &);
+    MatchCandidate(MatchCandidate&);
+    MatchCandidate& operator=(MatchCandidate&);
 
 public:
     keylist _klist;
 
     MatchCandidate(QueryExpr* query, MatchElement** elms, off_t ctxt_start);
     ~MatchCandidate();
-    void ref() { ++_refcnt; }
-    uint32_t deref() { --_refcnt; return _refcnt; }
+    void     ref() { ++_refcnt; }
+    uint32_t deref() {
+        --_refcnt;
+        return _refcnt;
+    }
     void set_valid() override;
     void dump(std::string& s) override;
 
-    int elems() const { return _nelems; }
-    int elem_store_sz() const { return _elems; }
-    int word_distance() const { return _elems ? _endtoken - _starttoken - (_elems - 1) : 0; }
-    off_t ctxt_startpos() const { return _ctxt_start; }
-    off_t endtoken() const override { return _endtoken; }
-    off_t endpos() const override { return _endpos; }
-    ssize_t size() const { return _endpos - _startpos; }
-    bool order() const { return _options & X_ORDERED; }
-    bool partial_ok() const { return !(_options & X_COMPLETE); }
+    int        elems() const { return _nelems; }
+    int        elem_store_sz() const { return _elems; }
+    int        word_distance() const { return _elems ? _endtoken - _starttoken - (_elems - 1) : 0; }
+    off_t      ctxt_startpos() const { return _ctxt_start; }
+    off_t      endtoken() const override { return _endtoken; }
+    off_t      endpos() const override { return _endpos; }
+    ssize_t    size() const { return _endpos - _startpos; }
+    bool       order() const { return _options & X_ORDERED; }
+    bool       partial_ok() const { return !(_options & X_COMPLETE); }
     QueryExpr* match() { return _match; }
-    int weight() const { return _elem_weight; }
-    size_t word_length() const override { return _endtoken - _starttoken; }
+    int        weight() const { return _elem_weight; }
+    size_t     word_length() const override { return _endtoken - _starttoken; }
 
     bool complete() override;
-    int weight(MatchElement* me, QueryExpr* mexp);
+    int  weight(MatchElement* me, QueryExpr* mexp);
 
     size_t length() const override { return _endpos - _startpos; }
 
@@ -110,8 +106,7 @@ public:
     // equals a 16-byte distance, while a 100 byte weight increase (typical term addition)
     // equals 1600 bytes of distance increase.
     //
-    inline int rank() const
-    {
+    inline int rank() const {
 #ifdef JUNIPER_1_0_RANK
         // Just kept this here for reference..
         return (_nelems << 14) - ((_distance & ~0x7) << 5) - (_startpos >> 8);
@@ -127,4 +122,3 @@ public:
     void log(std::string& logobj);
     void SetDocid(long id) { _docid = id; }
 };
-

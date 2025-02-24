@@ -1,14 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/replace_type_function.h>
-#include <vespa/eval/instruction/fast_rename_optimizer.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
-
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;
@@ -27,55 +23,64 @@ EvalFixture::ParamRepo make_params() {
 EvalFixture::ParamRepo param_repo = make_params();
 
 void verify_optimized(const std::string &expr) {
+    SCOPED_TRACE(expr);
     EvalFixture fixture(prod_factory, expr, param_repo, true);
-    EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<ReplaceTypeFunction>();
-    EXPECT_EQUAL(info.size(), 1u);
+    EXPECT_EQ(info.size(), 1u);
 }
 
 void verify_not_optimized(const std::string &expr) {
+    SCOPED_TRACE(expr);
     EvalFixture fixture(prod_factory, expr, param_repo, true);
-    EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
+    EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     auto info = fixture.find_all<ReplaceTypeFunction>();
     EXPECT_TRUE(info.empty());
 }
 
-TEST("require that dimension removal can be optimized for appropriate aggregators") {
-    TEST_DO(verify_optimized("reduce(x1y5z1,avg,x)"));
-    TEST_DO(verify_not_optimized("reduce(x1y5z1,count,x)")); // NB
-    TEST_DO(verify_optimized("reduce(x1y5z1,prod,x)"));
-    TEST_DO(verify_optimized("reduce(x1y5z1,sum,x)"));
-    TEST_DO(verify_optimized("reduce(x1y5z1,max,x)"));
-    TEST_DO(verify_optimized("reduce(x1y5z1,min,x)"));    
+TEST(RemoveTrivialDimensionOptimizerTest, require_that_dimension_removal_can_be_optimized_for_appropriate_aggregators)
+{
+    verify_optimized("reduce(x1y5z1,avg,x)");
+    verify_not_optimized("reduce(x1y5z1,count,x)"); // NB
+    verify_optimized("reduce(x1y5z1,prod,x)");
+    verify_optimized("reduce(x1y5z1,sum,x)");
+    verify_optimized("reduce(x1y5z1,max,x)");
+    verify_optimized("reduce(x1y5z1,min,x)");
 }
 
-TEST("require that multi-dimension removal can be optimized") {
-    TEST_DO(verify_optimized("reduce(x1y5z1,sum,x,z)"));
+TEST(RemoveTrivialDimensionOptimizerTest, require_that_multi_dimension_removal_can_be_optimized)
+{
+    verify_optimized("reduce(x1y5z1,sum,x,z)");
 }
 
-TEST("require that chained dimension removal can be optimized (and compacted)") {
-    TEST_DO(verify_optimized("reduce(reduce(x1y5z1,sum,x),sum,z)"));
+TEST(RemoveTrivialDimensionOptimizerTest, require_that_chained_dimension_removal_can_be_optimized_and_compacted)
+{
+    verify_optimized("reduce(reduce(x1y5z1,sum,x),sum,z)");
 }
 
-TEST("require that reducing non-trivial dimension is not optimized") {
-    TEST_DO(verify_not_optimized("reduce(x1y5z1,sum,y)"));
-    TEST_DO(verify_not_optimized("reduce(x1y5z1,sum,x,y)"));
-    TEST_DO(verify_not_optimized("reduce(x1y5z1,sum,y,z)"));
+TEST(RemoveTrivialDimensionOptimizerTest, require_that_reducing_non_trivial_dimension_is_not_optimized)
+{
+    verify_not_optimized("reduce(x1y5z1,sum,y)");
+    verify_not_optimized("reduce(x1y5z1,sum,x,y)");
+    verify_not_optimized("reduce(x1y5z1,sum,y,z)");
 }
 
-TEST("require that full reduce is not optimized") {
-    TEST_DO(verify_not_optimized("reduce(x1y1z1,sum)"));
-    TEST_DO(verify_not_optimized("reduce(x1y1z1,sum,x,y,z)"));
+TEST(RemoveTrivialDimensionOptimizerTest, require_that_full_reduce_is_not_optimized)
+{
+    verify_not_optimized("reduce(x1y1z1,sum)");
+    verify_not_optimized("reduce(x1y1z1,sum,x,y,z)");
 }
 
-TEST("require that mixed tensor types can be optimized") {
-    TEST_DO(verify_optimized("reduce(x1y5z_m,sum,x)"));
-    TEST_DO(verify_not_optimized("reduce(x1y5z_m,sum,y)"));
-    TEST_DO(verify_not_optimized("reduce(x1y5z_m,sum,z)"));
+TEST(RemoveTrivialDimensionOptimizerTest, require_that_mixed_tensor_types_can_be_optimized)
+{
+    verify_optimized("reduce(x1y5z_m,sum,x)");
+    verify_not_optimized("reduce(x1y5z_m,sum,y)");
+    verify_not_optimized("reduce(x1y5z_m,sum,z)");
 }
 
-TEST("require that optimization works for float cells") {
-    TEST_DO(verify_optimized("reduce(x1y5z1f,avg,x)"));
+TEST(RemoveTrivialDimensionOptimizerTest, require_that_optimization_works_for_float_cells)
+{
+    verify_optimized("reduce(x1y5z1f,avg,x)");
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

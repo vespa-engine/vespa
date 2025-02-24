@@ -19,7 +19,9 @@ namespace matching {
  * The DocsumContext class is responsible for performing a docsum request and
  * creating a docsum reply.
  **/
-class DocsumContext : public search::docsummary::GetDocsumsStateCallback {
+class DocsumContext : public search::docsummary::GetDocsumsStateCallback,
+                      public search::QueryNormalization
+{
 private:
     const search::engine::DocsumRequest  & _request;
     search::docsummary::IDocsumWriter    & _docsumWriter;
@@ -52,7 +54,8 @@ public:
     void fillSummaryFeatures(search::docsummary::GetDocsumsState& state) override;
     void fillRankFeatures(search::docsummary::GetDocsumsState& state) override;
     std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields &fields) override;
+    bool is_text_matching(std::string_view index) const noexcept override;
+    Normalizing normalizing_mode(std::string_view index) const noexcept override;
 };
 
 } // namespace proton
-

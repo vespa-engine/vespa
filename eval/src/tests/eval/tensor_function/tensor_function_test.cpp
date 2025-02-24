@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <map>
@@ -191,61 +192,67 @@ struct EvalCtx {
 void verify_equal(const Value &expect, const Value &value) {
     auto expect_spec = spec_from_value(expect);
     auto value_spec = spec_from_value(value);
-    EXPECT_EQUAL(expect_spec, value_spec);
+    EXPECT_EQ(expect_spec, value_spec);
 }
 
-TEST("require that const_value works") {
+TEST(TensorFunctionTest, require_that_const_value_works)
+{
     EvalCtx ctx(simple_factory);
     Value::UP my_const = ctx.make_tensor_matrix();
     Value::UP expect = ctx.make_tensor_matrix();
     const auto &fun = const_value(*my_const, ctx.stash);
     EXPECT_TRUE(!fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that tensor injection works") {
+TEST(TensorFunctionTest, require_that_tensor_injection_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
     Value::UP expect = ctx.make_tensor_matrix();
     const auto &fun = inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash);
     EXPECT_TRUE(!fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that partial tensor reduction works") {
+TEST(TensorFunctionTest, require_that_partial_tensor_reduction_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     Value::UP expect = ctx.make_tensor_reduce_y_output();
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {"y"}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that full tensor reduction works") {
+TEST(TensorFunctionTest, require_that_full_tensor_reduction_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(ValueType::double_type(), fun.result_type());
+    EXPECT_EQ(ValueType::double_type(), fun.result_type());
     const Value &result = ctx.eval(fun);
     EXPECT_TRUE(result.type().is_double());
-    EXPECT_EQUAL(21.0, result.as_double());
+    EXPECT_EQ(21.0, result.as_double());
 }
 
-TEST("require that tensor map works") {
+TEST(TensorFunctionTest, require_that_tensor_map_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_map_input());
     Value::UP expect = ctx.make_tensor_map_output();
     const auto &fun = map(inject(ValueType::from_spec("tensor(x{},y{})"), a_id, ctx.stash), operation::Neg::f, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that tensor join works") {
+TEST(TensorFunctionTest, require_that_tensor_join_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_join_lhs());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_join_rhs());
@@ -254,11 +261,12 @@ TEST("require that tensor join works") {
                            inject(ValueType::from_spec("tensor(y{},z{})"), b_id, ctx.stash),
                            operation::Mul::f, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that tensor merge works") {
+TEST(TensorFunctionTest, require_that_tensor_merge_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_merge_lhs());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_merge_rhs());
@@ -267,11 +275,12 @@ TEST("require that tensor merge works") {
                             inject(ValueType::from_spec("tensor(x{})"), b_id, ctx.stash),
                             operation::Add::f, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that tensor concat works") {
+TEST(TensorFunctionTest, require_that_tensor_concat_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix_first_half());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_matrix_second_half());
@@ -280,21 +289,23 @@ TEST("require that tensor concat works") {
                              inject(ValueType::from_spec("tensor(x[2])"), b_id, ctx.stash),
                              "y", ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that tensor cell cast works") {
+TEST(TensorFunctionTest, require_that_tensor_cell_cast_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
     Value::UP expect = ctx.make_float_tensor_matrix();
     const auto &fun = cell_cast(inject(ctx.type_of(a_id), a_id, ctx.stash), CellType::FLOAT, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that tensor create works") {
+TEST(TensorFunctionTest, require_that_tensor_create_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     size_t b_id = ctx.add_tensor(ctx.make_double(2.0));
@@ -311,11 +322,12 @@ TEST("require that tensor create works") {
                              },
                              ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that single value tensor peek works") {
+TEST(TensorFunctionTest, require_that_single_value_tensor_peek_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     size_t b_id = ctx.add_tensor(ctx.make_double(1000.0));
@@ -335,22 +347,24 @@ TEST("require that single value tensor peek works") {
                              },
                              ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that tensor subspace tensor peek works") {
+TEST(TensorFunctionTest, require_that_tensor_subspace_tensor_peek_works)
+{
     EvalCtx ctx(simple_factory);
     Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
     Value::UP expect = ctx.make_vector({3.0, 4.0}, "y");
     const auto &t = const_value(*my_const, ctx.stash);
     const auto &fun = peek(t, {{"x", "bar"}}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that automatic string conversion tensor peek works") {
+TEST(TensorFunctionTest, require_that_automatic_string_conversion_tensor_peek_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     Value::UP my_const = ctx.make_vector({1.0, 2.0, 3.0}, "x", true);
@@ -361,21 +375,23 @@ TEST("require that automatic string conversion tensor peek works") {
     EXPECT_TRUE(fun.result_type().is_double());
     const Value &result = ctx.eval(fun);
     EXPECT_TRUE(result.type().is_double());
-    EXPECT_EQUAL(2.0, result.as_double());
+    EXPECT_EQ(2.0, result.as_double());
 }
 
-TEST("require that tensor rename works") {
+TEST(TensorFunctionTest, require_that_tensor_rename_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
     Value::UP expect = ctx.make_tensor_matrix_renamed();
     const auto &fun = rename(inject(ValueType::from_spec("tensor(x[2],y[2])"), a_id, ctx.stash),
                              {"x"}, {"z"}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(expect->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+    EXPECT_EQ(expect->type(), fun.result_type());
+    verify_equal(*expect, ctx.eval(fun));
 }
 
-TEST("require that if_node works") {
+TEST(TensorFunctionTest, require_that_if_node_works)
+{
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_true());
     size_t b_id = ctx.add_tensor(ctx.make_tensor_matrix_first_half());
@@ -386,13 +402,20 @@ TEST("require that if_node works") {
                               inject(ValueType::from_spec("tensor(x[2])"), b_id, ctx.stash),
                               inject(ValueType::from_spec("tensor(x[2])"), c_id, ctx.stash), ctx.stash);
     EXPECT_TRUE(!fun.result_is_mutable());
-    EXPECT_EQUAL(expect_true->type(), fun.result_type());
-    TEST_DO(verify_equal(*expect_true, ctx.eval(fun)));
+    EXPECT_EQ(expect_true->type(), fun.result_type());
+    {
+        SCOPED_TRACE("expect true");
+        verify_equal(*expect_true, ctx.eval(fun));
+    }
     ctx.replace_tensor(a_id, ctx.make_false());
-    TEST_DO(verify_equal(*expect_false, ctx.eval(fun)));
+    {
+        SCOPED_TRACE("expect false");
+        verify_equal(*expect_false, ctx.eval(fun));
+    }
 }
 
-TEST("require that if_node result is mutable only when both children produce mutable results") {
+TEST(TensorFunctionTest, require_that_if_node_result_is_mutable_only_when_both_children_produce_mutable_results)
+{
     Stash stash;
     const TensorFunction &cond = inject(DoubleValue::shared_type(), 0, stash);
     const TensorFunction &a = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
@@ -403,17 +426,18 @@ TEST("require that if_node result is mutable only when both children produce mut
     const TensorFunction &if_mut_con = if_node(cond, tmp, c, stash);
     const TensorFunction &if_con_mut = if_node(cond, c, tmp, stash);
     const TensorFunction &if_mut_mut = if_node(cond, tmp, tmp, stash);
-    EXPECT_EQUAL(if_con_con.result_type(), c.result_type());
-    EXPECT_EQUAL(if_con_mut.result_type(), c.result_type());
-    EXPECT_EQUAL(if_mut_con.result_type(), c.result_type());
-    EXPECT_EQUAL(if_mut_mut.result_type(), c.result_type());
+    EXPECT_EQ(if_con_con.result_type(), c.result_type());
+    EXPECT_EQ(if_con_mut.result_type(), c.result_type());
+    EXPECT_EQ(if_mut_con.result_type(), c.result_type());
+    EXPECT_EQ(if_mut_mut.result_type(), c.result_type());
     EXPECT_TRUE(!if_con_con.result_is_mutable());
     EXPECT_TRUE(!if_mut_con.result_is_mutable());
     EXPECT_TRUE(!if_con_mut.result_is_mutable());
     EXPECT_TRUE(if_mut_mut.result_is_mutable());
 }
 
-TEST("require that if_node gets expected result type") {
+TEST(TensorFunctionTest, require_that_if_node_gets_expected_result_type)
+{
     Stash stash;
     const TensorFunction &a = inject(DoubleValue::shared_type(), 0, stash);
     const TensorFunction &b = inject(ValueType::from_spec("tensor(x[2])"), 0, stash);
@@ -422,12 +446,13 @@ TEST("require that if_node gets expected result type") {
     const TensorFunction &if_same = if_node(a, b, b, stash);
     const TensorFunction &if_different = if_node(a, b, c, stash);
     const TensorFunction &if_with_error = if_node(a, b, d, stash);
-    EXPECT_EQUAL(if_same.result_type(), ValueType::from_spec("tensor(x[2])"));
-    EXPECT_EQUAL(if_different.result_type(), ValueType::from_spec("error"));
-    EXPECT_EQUAL(if_with_error.result_type(), ValueType::from_spec("error"));
+    EXPECT_EQ(if_same.result_type(), ValueType::from_spec("tensor(x[2])"));
+    EXPECT_EQ(if_different.result_type(), ValueType::from_spec("error"));
+    EXPECT_EQ(if_with_error.result_type(), ValueType::from_spec("error"));
 }
 
-TEST("require that push_children works") {
+TEST(TensorFunctionTest, require_that_push_children_works)
+{
     Stash stash;
     std::vector<TensorFunction::Child::CREF> refs;
     const TensorFunction &a = inject(DoubleValue::shared_type(), 0, stash);
@@ -436,48 +461,49 @@ TEST("require that push_children works") {
     a.push_children(refs);
     b.push_children(refs);
     c.push_children(refs);
-    ASSERT_EQUAL(refs.size(), 0u);
+    ASSERT_EQ(refs.size(), 0u);
     //-------------------------------------------------------------------------
     reduce(a, Aggr::SUM, {}, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 1u);
-    EXPECT_EQUAL(&refs[0].get().get(), &a);
+    ASSERT_EQ(refs.size(), 1u);
+    EXPECT_EQ(&refs[0].get().get(), &a);
     //-------------------------------------------------------------------------
     map(b, operation::Neg::f, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 2u);
-    EXPECT_EQUAL(&refs[1].get().get(), &b);
+    ASSERT_EQ(refs.size(), 2u);
+    EXPECT_EQ(&refs[1].get().get(), &b);
     //-------------------------------------------------------------------------
     join(a, b, operation::Add::f, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 4u);
-    EXPECT_EQUAL(&refs[2].get().get(), &a);
-    EXPECT_EQUAL(&refs[3].get().get(), &b);
+    ASSERT_EQ(refs.size(), 4u);
+    EXPECT_EQ(&refs[2].get().get(), &a);
+    EXPECT_EQ(&refs[3].get().get(), &b);
     //-------------------------------------------------------------------------
     merge(a, b, operation::Add::f, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 6u);
-    EXPECT_EQUAL(&refs[4].get().get(), &a);
-    EXPECT_EQUAL(&refs[5].get().get(), &b);
+    ASSERT_EQ(refs.size(), 6u);
+    EXPECT_EQ(&refs[4].get().get(), &a);
+    EXPECT_EQ(&refs[5].get().get(), &b);
     //-------------------------------------------------------------------------
     concat(a, b, "x", stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 8u);
-    EXPECT_EQUAL(&refs[6].get().get(), &a);
-    EXPECT_EQUAL(&refs[7].get().get(), &b);
+    ASSERT_EQ(refs.size(), 8u);
+    EXPECT_EQ(&refs[6].get().get(), &a);
+    EXPECT_EQ(&refs[7].get().get(), &b);
     //-------------------------------------------------------------------------
     rename(c, {}, {}, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 9u);
-    EXPECT_EQUAL(&refs[8].get().get(), &c);
+    ASSERT_EQ(refs.size(), 9u);
+    EXPECT_EQ(&refs[8].get().get(), &c);
     //-------------------------------------------------------------------------
     if_node(a, b, c, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 12u);
-    EXPECT_EQUAL(&refs[9].get().get(), &a);
-    EXPECT_EQUAL(&refs[10].get().get(), &b);
-    EXPECT_EQUAL(&refs[11].get().get(), &c);
+    ASSERT_EQ(refs.size(), 12u);
+    EXPECT_EQ(&refs[9].get().get(), &a);
+    EXPECT_EQ(&refs[10].get().get(), &b);
+    EXPECT_EQ(&refs[11].get().get(), &c);
     //-------------------------------------------------------------------------
     cell_cast(a, CellType::FLOAT, stash).push_children(refs);
-    ASSERT_EQUAL(refs.size(), 13u);
-    EXPECT_EQUAL(&refs[12].get().get(), &a);
+    ASSERT_EQ(refs.size(), 13u);
+    EXPECT_EQ(&refs[12].get().get(), &a);
     //-------------------------------------------------------------------------
 }
 
-TEST("require that tensor function can be dumped for debugging") {
+TEST(TensorFunctionTest, require_that_tensor_function_can_be_dumped_for_debugging)
+{
     Stash stash;
     auto my_value_1 = stash.create<DoubleValue>(1.0);
     auto my_value_2 = stash.create<DoubleValue>(2.0);
@@ -506,11 +532,12 @@ TEST("require that tensor function can be dumped for debugging") {
     const auto &const_3 = const_value(my_value_3, stash);
     const auto &merged_double = merge(const_2, const_3, operation::Less::f, stash);
     const auto &root = if_node(merged_double, joined_x5, concat_x5, stash);
-    EXPECT_EQUAL(root.result_type(), ValueType::from_spec("tensor(x[5])"));
+    EXPECT_EQ(root.result_type(), ValueType::from_spec("tensor(x[5])"));
     fprintf(stderr, "function dump -->[[%s]]<-- function dump\n", root.as_string().c_str());
 }
 
-TEST("require that full tensor reduce expands dimension list") {
+TEST(TensorFunctionTest, require_that_full_tensor_reduce_expands_dimension_list)
+{
     Stash stash;
     const auto &num = inject(ValueType::from_spec("double"), 0, stash);
     const auto &mat = inject(ValueType::from_spec("tensor(x[5],y[5])"), 1, stash);
@@ -518,10 +545,10 @@ TEST("require that full tensor reduce expands dimension list") {
     const auto *reduce_mat = as<Reduce>(reduce(mat, Aggr::SUM, {}, stash));
     ASSERT_TRUE(reduce_num);
     ASSERT_TRUE(reduce_mat);
-    EXPECT_EQUAL(reduce_num->dimensions().size(), 0u);
-    ASSERT_EQUAL(reduce_mat->dimensions().size(), 2u);
-    EXPECT_EQUAL(reduce_mat->dimensions()[0], "x");
-    EXPECT_EQUAL(reduce_mat->dimensions()[1], "y");
+    EXPECT_EQ(reduce_num->dimensions().size(), 0u);
+    ASSERT_EQ(reduce_mat->dimensions().size(), 2u);
+    EXPECT_EQ(reduce_mat->dimensions()[0], "x");
+    EXPECT_EQ(reduce_mat->dimensions()[1], "y");
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

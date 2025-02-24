@@ -66,18 +66,66 @@ public class EmbedExpression extends Expression  {
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
-        if ( inputType != null &&
-             ! (inputType.isAssignableTo(DataType.STRING)) &&
-             ! (inputType instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-            throw new VerificationException(this, "This requires either a string or array<string> input type, but got " +
-                                                  inputType.getName());
-        return getOutputType(context); // embed cannot determine the output type from the input
+        var outputType = getOutputType(context); // Cannot be determined from input
+        validateInputAndOutput(inputType, outputType);
+        return outputType;
     }
 
     @Override
-    public DataType setOutputType(DataType type, VerificationContext context) {
-        super.setOutputType(null, type, TensorDataType.any(), context);
-        return getInputType(context); // the input (string vs. array of string) cannot be determined from the output
+    public DataType setOutputType(DataType outputType, VerificationContext context) {
+        super.setOutputType(null, outputType, TensorDataType.any(), context);
+        var inputType = getInputType(context); // Cannot be determined from output
+        validateInputAndOutput(inputType, outputType);
+        return inputType;
+    }
+
+    private void validateInputAndOutput(DataType input, DataType output) {
+        if (input != null) {
+            if (! (input.isAssignableTo(DataType.STRING)) &&
+                ! (input instanceof ArrayDataType array && array.getNestedType().isAssignableTo(DataType.STRING)))
+                invalid("This requires either a string or array<string> input type, but got " + input.getName());
+        }
+        if (output != null) {
+            var outputTensor = toTargetTensor(output);
+            if ( ! validTarget(outputTensor))
+                invalid("The embedding target field must either be a dense 1d tensor, a mapped 1d tensor, a mapped 2d tensor, " +
+                        "an array of dense 1d tensors, or a mixed 2d or 3d tensor");
+            if (outputTensor.rank() == 2 && outputTensor.mappedSubtype().rank() == 2) {
+                if (embedderArguments.size() != 1)
+                    invalid("When the embedding target field is a 2d mapped tensor " +
+                            "the name of the tensor dimension that corresponds to the input array elements must " +
+                            "be given as a second argument to embed, e.g: ... | embed splade paragraph | ...");
+                if ( ! outputTensor.mappedSubtype().dimensionNames().contains(embedderArguments.get(0))) {
+                    invalid("The dimension '" + embedderArguments.get(0) + "' given to embed " +
+                            "is not a sparse dimension of the target type " + outputTensor);
+
+                }
+            }
+            if (outputTensor.rank() == 3) {
+                if (embedderArguments.size() != 1)
+                    invalid("When the embedding target field is a 3d tensor " +
+                            "the name of the tensor dimension that corresponds to the input array elements must " +
+                            "be given as a second argument to embed, e.g: ... | embed colbert paragraph | ...");
+                if ( ! outputTensor.mappedSubtype().dimensionNames().contains(embedderArguments.get(0)))
+                    invalid("The dimension '" + embedderArguments.get(0) + "' given to embed " +
+                            "is not a sparse dimension of the target type " + outputTensor);
+            }
+        }
+        if (input != null && output != null) { // verify input/output consistency
+            var outputTensor = toTargetTensor(output);
+            if (input.isAssignableTo(DataType.STRING)
+                && !(outputTensor.rank() == 1 || (outputTensor.rank() == 2 && outputTensor.mappedSubtype().rank() > 0)))
+                invalid("Input is a string, so output must be a rank 1 tensor, or a rank 2 tensor with " +
+                        "one mapped dimension, but got " + outputTensor);
+            if ((input instanceof ArrayDataType)
+                && !(outputTensor.rank() > 1 && outputTensor.mappedSubtype().rank() > 0))
+                invalid("Input is an array, so output must be a rank 2 or 3 tensor with " +
+                        "at least one mapped dimension, but got " + outputTensor);
+        }
+    }
+
+    private void invalid(String message) {
+        throw new VerificationException(this, message);
     }
 
     @Override

@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/eval/eval/function.h>
-#include <vespa/eval/eval/llvm/compiled_function.h>
-#include <vespa/vespalib/util/benchmark_timer.h>
-#include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/llvm/compiled_function.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 
 using namespace vespalib::eval;
 using vespalib::BenchmarkTimer;
@@ -71,12 +71,13 @@ double estimate_cost_us(const std::vector<double> &params, CompiledFunction::exp
     return BenchmarkTimer::benchmark(actual, baseline, budget) * 1000.0 * 1000.0;
 }
 
-TEST("measure small function eval/jit/gcc speed") {
+TEST(FunctionSpeedTest, measure_small_function_eval_jit_gcc_speed)
+{
     Fixture &fixture = small;
     CompiledFunction::expand<5>::type fun = gcc_function;
 
-    EXPECT_EQUAL(fixture.separate.get_function<5>()(1,2,3,4,5), fun(1,2,3,4,5));
-    EXPECT_EQUAL(fixture.separate.get_function<5>()(5,4,3,2,1), fun(5,4,3,2,1));
+    EXPECT_DOUBLE_EQ(fixture.separate.get_function<5>()(1,2,3,4,5), fun(1,2,3,4,5));
+    EXPECT_DOUBLE_EQ(fixture.separate.get_function<5>()(5,4,3,2,1), fun(5,4,3,2,1));
 
     double interpret_simple_time = fixture.interpreted_simple.estimate_cost_us(test_params, budget);
     fprintf(stderr, "interpret (simple): %g us\n", interpret_simple_time);
@@ -105,12 +106,13 @@ TEST("measure small function eval/jit/gcc speed") {
     fprintf(stderr, "array params speed compared to lazy params: %g\n", array_vs_lazy_speed);
 }
 
-TEST("measure big function eval/jit/gcc speed") {
+TEST(FunctionSpeedTest, measure_big_function_eval_jit_gcc_speed)
+{
     Fixture &fixture = big;
     CompiledFunction::expand<5>::type fun = big_gcc_function;
 
-    EXPECT_EQUAL(fixture.separate.get_function<5>()(1,2,3,4,5), fun(1,2,3,4,5));
-    EXPECT_EQUAL(fixture.separate.get_function<5>()(5,4,3,2,1), fun(5,4,3,2,1));
+    EXPECT_DOUBLE_EQ(fixture.separate.get_function<5>()(1,2,3,4,5), fun(1,2,3,4,5));
+    EXPECT_DOUBLE_EQ(fixture.separate.get_function<5>()(5,4,3,2,1), fun(5,4,3,2,1));
 
     double interpret_simple_time = fixture.interpreted_simple.estimate_cost_us(test_params, budget);
     fprintf(stderr, "interpret (simple): %g us\n", interpret_simple_time);
@@ -139,4 +141,4 @@ TEST("measure big function eval/jit/gcc speed") {
     fprintf(stderr, "array params speed compared to lazy params: %g\n", array_vs_lazy_speed);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

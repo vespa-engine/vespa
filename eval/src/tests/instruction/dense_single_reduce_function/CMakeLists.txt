@@ -4,5 +4,6 @@ vespa_add_executable(eval_dense_single_reduce_function_test_app TEST
     dense_single_reduce_function_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_dense_single_reduce_function_test_app COMMAND eval_dense_single_reduce_function_test_app)

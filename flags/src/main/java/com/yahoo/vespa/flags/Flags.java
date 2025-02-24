@@ -56,20 +56,6 @@ public class Flags {
             "Takes effect on start of host-admin.",
             HOSTNAME);
 
-    public static final UnboundBooleanFlag DISABLE_WG_CONNTRACK = defineFeatureFlag(
-            "disable-wg-conntrack", false,
-            List.of("hakonhall"), "2025-01-17", "2025-03-17",
-            "Disable connection tracking of WireGuard traffic",
-            "Takes effect on the next tick.",
-            HOSTNAME, NODE_TYPE);
-
-    public static final UnboundBooleanFlag CLEAR_CONNTRACK = defineFeatureFlag(
-            "clear-conntrack", true,
-            List.of("hakonhall"), "2025-01-14", "2025-03-14",
-            "Whether to clear conntrack entries for a container",
-            "Takes effect immediately",
-            HOSTNAME, NODE_TYPE);
-
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
             List.of("baldersheim"), "2023-03-30", "2025-03-01",
@@ -359,6 +345,14 @@ public class Flags {
             List.of("bjorncs"), "2025-01-14", "2025-12-01",
             "Size of the document v1 queue. Use -1 for default as determined by 'document-operation-executor.def'",
             "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundListFlag<String> FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE = defineListFlag(
+            "file-distribution-compression-types-to-serve", List.of("zstd", "lz4", "none", "gzip"), String.class,
+            List.of("hmusum"), "2025-02-24", "2025-04-01",
+            "List of compression type to use when distributing files, in preferred order, depends " +
+                    "on what the client accepts (sent in request from client)",
+            "Takes effect at restart of config server",
             INSTANCE_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

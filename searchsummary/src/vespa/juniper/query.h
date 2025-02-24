@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/parsequery/item_creator.h>
 #include <cstddef>
 #include <cstdint>
 #include <string>
+#include <vespa/searchlib/parsequery/item_creator.h>
 
 #ifndef JUNIPER_RPIF
 #define JUNIPER_RPIF 1
@@ -41,8 +41,7 @@ class QueryItem;
 
 /** This is the basic query type, implemented by the query provider
  */
-class IQuery
-{
+class IQuery {
 public:
     virtual ~IQuery() = default;
 
@@ -60,14 +59,11 @@ public:
     virtual bool UsefulIndex(const QueryItem* item) const = 0;
 };
 
-
 /** IQueryVisitor is implemented by Juniper to enable Juniper to traverse the
  *  structure of an input query (Visitor pattern)
  */
-class IQueryVisitor
-{
+class IQueryVisitor {
 public:
-
     /** To be called upon by IQuery::Traverse visiting an AND query item
      * @param item The (opaque to IQueryVisitor) item that is visited
      * @param arity The number of children of this item
@@ -159,4 +155,4 @@ public:
     virtual ~IQueryVisitor() = default;
 };
 
-}
+} // namespace juniper

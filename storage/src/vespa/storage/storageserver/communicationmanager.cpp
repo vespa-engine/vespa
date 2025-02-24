@@ -184,7 +184,7 @@ void CommunicationManager::fail_with_unresolvable_bucket_space(
     MBUS_TRACE(msg->getTrace(), 6, "Communication manager: Failing message as its document type has no known bucket space mapping");
     std::unique_ptr<mbus::Reply> reply;
     reply = std::make_unique<mbus::EmptyReply>();
-    reply->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_REJECTED, error_message));
+    reply->addError(mbus::Error(documentapi::DocumentProtocol::ERROR_DOCUMENT_NOT_FOUND, error_message));
     msg->swapState(*reply);
     _metrics.bucketSpaceMappingFailures.inc();
     _messageBusSession->reply(std::move(reply));

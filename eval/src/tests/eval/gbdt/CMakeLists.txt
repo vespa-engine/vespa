@@ -4,6 +4,7 @@ vespa_add_executable(eval_gbdt_test_app TEST
     gbdt_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_gbdt_test_app NO_VALGRIND COMMAND eval_gbdt_test_app)
 vespa_add_executable(eval_gbdt_benchmark_app
@@ -11,6 +12,7 @@ vespa_add_executable(eval_gbdt_benchmark_app
     gbdt_benchmark.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_gbdt_benchmark_app COMMAND eval_gbdt_benchmark_app BENCHMARK)
 vespa_add_executable(eval_fast_forest_bench_app

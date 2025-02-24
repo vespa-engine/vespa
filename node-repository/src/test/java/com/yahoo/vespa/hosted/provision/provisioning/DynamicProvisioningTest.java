@@ -18,7 +18,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.HostResources;
 import com.yahoo.vespa.flags.custom.SharedHost;
@@ -288,50 +287,6 @@ public class DynamicProvisioningTest {
                            2, 1, 2, 20, 40,
                            app1, cluster1);
     }
-
-    @Test
-    public void migrates_nodes_on_host_flavor_flag_change() {
-        InMemoryFlagSource flagSource = new InMemoryFlagSource();
-        List<Flavor> flavors = List.of(new Flavor("x86", new NodeResources(2, 8, 50, 0.1, fast, local, Architecture.x86_64)),
-                                       new Flavor("arm", new NodeResources(2, 8, 50, 0.1, fast, local, Architecture.arm64)));
-        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors);
-        ProvisioningTester tester = new ProvisioningTester.Builder()
-                .dynamicProvisioning(true, false)
-                .flavors(flavors)
-                .hostProvisioner(hostProvisioner)
-                .resourcesCalculator(0, 0)
-                .nameResolver(nameResolver)
-                .flagSource(flagSource)
-                .build();
-
-        ApplicationId app = applicationId("a1");
-        ClusterSpec cluster = ClusterSpec.request(content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
-        Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 8, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
-
-        hostProvisioner.setHostFlavor("x86", content);
-        tester.activate(app, cluster, capacity);
-        NodeList nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(active).size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(nodes.owner(app).state(active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-
-        hostProvisioner.setHostFlavor("arm", content);
-        flagSource.withStringFlag(PermanentFlags.HOST_FLAVOR.id(), "arm");
-        tester.activate(app, cluster, capacity);
-        nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(active).retired().size());
-        assertEquals(4, nodes.owner(app).state(active).not().retired().size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-
-        flagSource.removeFlag(PermanentFlags.HOST_FLAVOR.id()); // Resetting flag does not move the nodes back
-        tester.activate(app, cluster, capacity);
-        nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(active).retired().size());
-        assertEquals(4, nodes.owner(app).state(active).not().retired().size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-    }
-
 
     @Test
     public void reduces_container_node_count() {

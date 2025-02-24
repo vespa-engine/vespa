@@ -2,19 +2,17 @@
 
 #include "matchobjectTest.h"
 #include "testenv.h"
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/juniper/wildcard_match.h>
 #include <iostream>
+#include <vespa/juniper/wildcard_match.h>
+#include <vespa/vespalib/testkit/test_kit.h>
 
 namespace {
-void test(const char * word, const char * pattern, bool expect) {
+void test(const char* word, const char* pattern, bool expect) {
     EXPECT_EQUAL(expect, fast::util::wildcard_match(word, pattern));
 }
-}
+} // namespace
 
-void
-test_wildcard()
-{
+void test_wildcard() {
     test("a", "b", false);
     test("b", "b", true);
     test("abc", "def", false);
@@ -32,10 +30,10 @@ test_wildcard()
     test("abcdef", "*def", true);
 }
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     test_wildcard();
     juniper::TestEnv te(argc, argv, TEST_PATH("./testclient.rc").c_str());
-    MatchObjectTest test;
+    MatchObjectTest  test;
     test.SetStream(&std::cout);
     test.Run(argc, argv);
     return (int)test.Report();

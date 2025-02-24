@@ -2,47 +2,47 @@
 //
 #include "tokenizer.h"
 #include "juniperdebug.h"
-#include <vespa/fastlib/text/wordfolder.h>
 #include <cinttypes>
+#include <vespa/fastlib/text/wordfolder.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.tokenizer");
 
 JuniperTokenizer::JuniperTokenizer(const Fast_WordFolder* wordfolder, const char* text, size_t len,
-                                   ITokenProcessor* successor, const juniper::SpecialTokenRegistry * registry) :
-    _wordfolder(wordfolder), _text(text), _len(len), _successor(successor), _registry(registry),
-    _charpos(0), _wordpos(0), _buffer()
-{ }
+                                   ITokenProcessor* successor, const juniper::SpecialTokenRegistry* registry)
+  : _wordfolder(wordfolder),
+    _text(text),
+    _len(len),
+    _successor(successor),
+    _registry(registry),
+    _charpos(0),
+    _wordpos(0),
+    _buffer() {}
 
-
-void JuniperTokenizer::SetText(const char* text, size_t len)
-{
+void JuniperTokenizer::SetText(const char* text, size_t len) {
     _text = text;
     _len = len;
     _charpos = 0;
     _wordpos = 0;
 }
 
-
 // Scan the input and dispatch to the successor
-void JuniperTokenizer::scan()
-{
+void JuniperTokenizer::scan() {
     ITokenProcessor::Token token;
 
     const char* src = _text;
     const char* src_end = _text + _len;
     const char* startpos = nullptr;
-    ucs4_t* dst = _buffer;
-    ucs4_t* dst_end = dst + TOKEN_DSTLEN;
-    size_t result_len;
+    ucs4_t*     dst = _buffer;
+    ucs4_t*     dst_end = dst + TOKEN_DSTLEN;
+    size_t      result_len;
 
-    while (src < src_end)
-    {
+    while (src < src_end) {
         if (_registry == nullptr) {
             // explicit prefetching seems to have negative effect with many threads
             src = _wordfolder->UCS4Tokenize(src, src_end, dst, dst_end, startpos, result_len);
         } else {
-            const char * tmpSrc = _registry->tokenize(src, src_end, dst, dst_end, startpos, result_len);
+            const char* tmpSrc = _registry->tokenize(src, src_end, dst, dst_end, startpos, result_len);
             if (tmpSrc == nullptr) {
                 src = _wordfolder->UCS4Tokenize(src, src_end, dst, dst_end, startpos, result_len);
             } else {
@@ -55,8 +55,8 @@ void JuniperTokenizer::scan()
         token.wordpos = _wordpos++;
         token.bytepos = startpos - _text;
         token.bytelen = src - startpos;
-        LOG(debug, "curlen %d, bytepos %" PRId64 ", bytelen %d",
-            token.curlen, static_cast<int64_t>(token.bytepos), token.bytelen);
+        LOG(debug, "curlen %d, bytepos %" PRId64 ", bytelen %d", token.curlen, static_cast<int64_t>(token.bytepos),
+            token.bytelen);
         // NB! not setting charlen/charpos/_utf8pos/_utf8len yet...!
         _successor->handle_token(token);
     }

@@ -2,45 +2,37 @@
 #pragma once
 
 #include "test.h"
-#include <vespa/juniper/latintokenizer.h>
+#include "latintokenizer.h"
 #include <vespa/vespalib/util/stringfmt.h>
 
 class Mapel_Pucntuation {
 private:
     /** Member variables. */
-    static bool *_lookup;
-public:
+    static bool* _lookup;
 
+public:
     /** Constructors */
     Mapel_Pucntuation();
 
     /** Punctuation predicate. */
-    bool operator()(char c) const {
-        return _lookup[static_cast<unsigned char>(c)];
-    }
-
+    bool operator()(char c) const { return _lookup[static_cast<unsigned char>(c)]; }
 };
 
 class Maple_Space {
 private:
-
     /** Member variables. */
-    static bool *_lookup;
+    static bool* _lookup;
 
 public:
-
     /** Constructors */
     Maple_Space();
 
     /** Space predicate. */
-    bool operator()(char c) const {
-        return _lookup[static_cast<unsigned char>(c)];
-    }
-
+    bool operator()(char c) const { return _lookup[static_cast<unsigned char>(c)]; }
 };
 
-bool *Maple_Space::_lookup       = NULL;
-bool *Mapel_Pucntuation::_lookup = NULL;
+bool* Maple_Space::_lookup = NULL;
+bool* Mapel_Pucntuation::_lookup = NULL;
 
 Mapel_Pucntuation::Mapel_Pucntuation() {
 
@@ -49,34 +41,30 @@ Mapel_Pucntuation::Mapel_Pucntuation() {
 
         _lookup = new bool[256];
 
-        for (unsigned int i = 0; i < 256; ++i) {
-            _lookup[i] = false;
-        }
+        for (unsigned int i = 0; i < 256; ++i) { _lookup[i] = false; }
 
-        _lookup[static_cast<unsigned char>('.')]  = true;
-        _lookup[static_cast<unsigned char>(',')]  = true;
-        _lookup[static_cast<unsigned char>(':')]  = true;
-        _lookup[static_cast<unsigned char>(';')]  = true;
-        _lookup[static_cast<unsigned char>('|')]  = true;
-        _lookup[static_cast<unsigned char>('!')]  = true;
-        _lookup[static_cast<unsigned char>('?')]  = true;
-        _lookup[static_cast<unsigned char>('@')]  = true;
-        _lookup[static_cast<unsigned char>('/')]  = true;
-        _lookup[static_cast<unsigned char>('(')]  = true;
-        _lookup[static_cast<unsigned char>(')')]  = true;
-        _lookup[static_cast<unsigned char>('[')]  = true;
-        _lookup[static_cast<unsigned char>(']')]  = true;
-        _lookup[static_cast<unsigned char>('{')]  = true;
-        _lookup[static_cast<unsigned char>('}')]  = true;
-        _lookup[static_cast<unsigned char>('<')]  = true;
-        _lookup[static_cast<unsigned char>('>')]  = true;
-        _lookup[static_cast<unsigned char>('*')]  = true;
-        _lookup[static_cast<unsigned char>('=')]  = true;
-        _lookup[static_cast<unsigned char>('%')]  = true;
+        _lookup[static_cast<unsigned char>('.')] = true;
+        _lookup[static_cast<unsigned char>(',')] = true;
+        _lookup[static_cast<unsigned char>(':')] = true;
+        _lookup[static_cast<unsigned char>(';')] = true;
+        _lookup[static_cast<unsigned char>('|')] = true;
+        _lookup[static_cast<unsigned char>('!')] = true;
+        _lookup[static_cast<unsigned char>('?')] = true;
+        _lookup[static_cast<unsigned char>('@')] = true;
+        _lookup[static_cast<unsigned char>('/')] = true;
+        _lookup[static_cast<unsigned char>('(')] = true;
+        _lookup[static_cast<unsigned char>(')')] = true;
+        _lookup[static_cast<unsigned char>('[')] = true;
+        _lookup[static_cast<unsigned char>(']')] = true;
+        _lookup[static_cast<unsigned char>('{')] = true;
+        _lookup[static_cast<unsigned char>('}')] = true;
+        _lookup[static_cast<unsigned char>('<')] = true;
+        _lookup[static_cast<unsigned char>('>')] = true;
+        _lookup[static_cast<unsigned char>('*')] = true;
+        _lookup[static_cast<unsigned char>('=')] = true;
+        _lookup[static_cast<unsigned char>('%')] = true;
         _lookup[static_cast<unsigned char>('\\')] = true;
-
     }
-
 }
 
 Maple_Space::Maple_Space() {
@@ -86,24 +74,20 @@ Maple_Space::Maple_Space() {
 
         _lookup = new bool[256];
 
-        for (unsigned int i = 0; i < 256; ++i) {
-            _lookup[i] = false;
-        }
+        for (unsigned int i = 0; i < 256; ++i) { _lookup[i] = false; }
 
-        _lookup[static_cast<unsigned char>(' ')]  = true;
+        _lookup[static_cast<unsigned char>(' ')] = true;
         _lookup[static_cast<unsigned char>('\n')] = true;
         _lookup[static_cast<unsigned char>('\t')] = true;
         _lookup[static_cast<unsigned char>('\r')] = true;
-        _lookup[static_cast<unsigned char>('"')]  = true;
+        _lookup[static_cast<unsigned char>('"')] = true;
         _lookup[static_cast<unsigned char>('\'')] = true;
-        _lookup[static_cast<unsigned char>('`')]  = true;
-        _lookup[static_cast<unsigned char>('_')]  = true;
-
+        _lookup[static_cast<unsigned char>('`')] = true;
+        _lookup[static_cast<unsigned char>('_')] = true;
     }
 }
 
-class LatinTokenizerTest : public Test
-{
+class LatinTokenizerTest : public Test {
 private:
     void TestSimple();
     void TestSimpleLength();
@@ -116,11 +100,8 @@ private:
     void TestMapelURL();
 
     template <typename IsSeparator, typename IsPunctuation>
-    void TestWord(Fast_LatinTokenizer<IsSeparator,IsPunctuation>* lt,
-                  const char* correct,
-                  bool punct = false)
-    {
-        typename Fast_LatinTokenizer<IsSeparator,IsPunctuation>::Fast_Token token;
+    void TestWord(Fast_LatinTokenizer<IsSeparator, IsPunctuation>* lt, const char* correct, bool punct = false) {
+        typename Fast_LatinTokenizer<IsSeparator, IsPunctuation>::Fast_Token token;
         _test(lt->MoreTokens());
 
         token = lt->GetNextToken();
@@ -146,25 +127,15 @@ public:
     void Run() override;
 };
 
+LatinTokenizerTest::LatinTokenizerTest() {}
 
-LatinTokenizerTest::LatinTokenizerTest()
-{
+LatinTokenizerTest::~LatinTokenizerTest() {}
 
-}
-
-
-LatinTokenizerTest::~LatinTokenizerTest()
-{
-
-}
-
-
-void LatinTokenizerTest::TestSimple()
-{
+void LatinTokenizerTest::TestSimple() {
     PushDesc("Simple");
 
     Fast_SimpleLatinTokenizer lt;
-    std::string s("This is. my . test String.");
+    std::string               s("This is. my . test String.");
     lt.SetNewText(const_cast<char*>(s.c_str()));
 
     PushDesc("This");
@@ -197,16 +168,12 @@ void LatinTokenizerTest::TestSimple()
     PopDesc();
 }
 
-
-
-void LatinTokenizerTest::TestSimpleLength()
-{
+void LatinTokenizerTest::TestSimpleLength() {
     PushDesc("Simple");
 
     Fast_SimpleLatinTokenizer lt;
-    std::string s("This is. my . test String.");
-    lt.SetNewText(const_cast<char*>(s.c_str()),
-                  s.length());
+    std::string               s("This is. my . test String.");
+    lt.SetNewText(const_cast<char*>(s.c_str()), s.length());
 
     PushDesc("This");
     TestWord(&lt, "This");
@@ -238,13 +205,10 @@ void LatinTokenizerTest::TestSimpleLength()
     PopDesc();
 }
 
-
-
-void LatinTokenizerTest::TestEnding()
-{
+void LatinTokenizerTest::TestEnding() {
     PushDesc("Ending\n");
 
-    std::string text("This is   my test String ");
+    std::string                text("This is   my test String ");
     Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(const_cast<char*>(text.c_str()));
 
     TestWord(lt, "This");
@@ -262,13 +226,11 @@ void LatinTokenizerTest::TestEnding()
     PopDesc();
 }
 
-void LatinTokenizerTest::TestEndingLength()
-{
+void LatinTokenizerTest::TestEndingLength() {
     PushDesc("Ending\n");
 
-    std::string text("This is   my test String ");
-    Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(const_cast<char*>(text.c_str()),
-                                                                  text.length());
+    std::string                text("This is   my test String ");
+    Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(const_cast<char*>(text.c_str()), text.length());
 
     TestWord(lt, "This");
     TestWord(lt, "is");
@@ -285,8 +247,7 @@ void LatinTokenizerTest::TestEndingLength()
     PopDesc();
 }
 
-void LatinTokenizerTest::TestNull()
-{
+void LatinTokenizerTest::TestNull() {
     PushDesc("Null\n");
 
     Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(NULL);
@@ -300,8 +261,7 @@ void LatinTokenizerTest::TestNull()
     PopDesc();
 }
 
-void LatinTokenizerTest::TestNullLength()
-{
+void LatinTokenizerTest::TestNullLength() {
     PushDesc("Null\n");
 
     Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(NULL, 0);
@@ -315,11 +275,10 @@ void LatinTokenizerTest::TestNullLength()
     PopDesc();
 }
 
-void LatinTokenizerTest::TestEmpty()
-{
+void LatinTokenizerTest::TestEmpty() {
     PushDesc("Empty\n");
 
-    std::string text(" ");
+    std::string                text(" ");
     Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(const_cast<char*>(text.c_str()));
 
     _test(!lt->MoreTokens());
@@ -329,13 +288,11 @@ void LatinTokenizerTest::TestEmpty()
     PopDesc();
 }
 
-void LatinTokenizerTest::TestEmptyLength()
-{
+void LatinTokenizerTest::TestEmptyLength() {
     PushDesc("Empty\n");
 
-    std::string text(" ");
-    Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(const_cast<char*>(text.c_str()),
-                                                                  text.length());
+    std::string                text(" ");
+    Fast_SimpleLatinTokenizer* lt = new Fast_SimpleLatinTokenizer(const_cast<char*>(text.c_str()), text.length());
 
     _test(!lt->MoreTokens());
 
@@ -344,23 +301,17 @@ void LatinTokenizerTest::TestEmptyLength()
     PopDesc();
 }
 
-
-class TPS
-{
+class TPS {
 private:
-    TPS(const TPS &);
-    TPS& operator=(const TPS &);
+    TPS(const TPS&);
+    TPS& operator=(const TPS&);
 
 public:
     TPS() : _myfunc(NULL) {}
-    void Init(int (*myfunc)(int c))
-    {
-        _myfunc = myfunc;
-    }
+    void Init(int (*myfunc)(int c)) { _myfunc = myfunc; }
 
-    bool operator()(char c)
-    {
-//      LatinTokenizerTest::_test(_myfunc);
+    bool operator()(char c) {
+        //      LatinTokenizerTest::_test(_myfunc);
         return (_myfunc(static_cast<unsigned char>(c)) != 0);
     }
 
@@ -368,75 +319,70 @@ private:
     int (*_myfunc)(int c);
 };
 
-void LatinTokenizerTest::TestTypeparamObservers()
-{
+void LatinTokenizerTest::TestTypeparamObservers() {
 
-    using MyTokenizer = Fast_LatinTokenizer<TPS,TPS>;
+    using MyTokenizer = Fast_LatinTokenizer<TPS, TPS>;
 
     PushDesc("TypeparamObservers\n");
-    std::string text("4Some6text");
+    std::string  text("4Some6text");
     MyTokenizer* tok = new MyTokenizer(const_cast<char*>(text.c_str()));
     tok->GetIsPunctuation().Init(std::ispunct);
     tok->GetIsSeparator().Init(std::isdigit);
 
-    TestWord(tok,"Some");
-    TestWord(tok,"text");
+    TestWord(tok, "Some");
+    TestWord(tok, "text");
     _test(!tok->MoreTokens());
     PopDesc();
 
     delete tok;
 }
 
-void LatinTokenizerTest::TestMapelURL()
-{
+void LatinTokenizerTest::TestMapelURL() {
 
     using MyTokenizer = Fast_LatinTokenizer<Maple_Space, Mapel_Pucntuation>;
 
     PushDesc("MapelURL\n");
-    std::string text("http://search.msn.co.uk/results.asp?q= cfg=SMCBROWSE rn=1825822 dp=1873075 v=166:");
+    std::string  text("http://search.msn.co.uk/results.asp?q= cfg=SMCBROWSE rn=1825822 dp=1873075 v=166:");
     MyTokenizer* tok = new MyTokenizer(const_cast<char*>(text.c_str()));
 
-    TestWord(tok,"http", false);
-    TestWord(tok,":", true);
-    TestWord(tok,"/", true);
-    TestWord(tok,"/", true);
-    TestWord(tok,"search", false);
-    TestWord(tok,".", true);
-    TestWord(tok,"msn", false);
-    TestWord(tok,".", true);
-    TestWord(tok,"co", false);
-    TestWord(tok,".", true);
-    TestWord(tok,"uk", false);
-    TestWord(tok,"/", true);
-    TestWord(tok,"results", false);
-    TestWord(tok,".", true);
-    TestWord(tok,"asp", false);
-    TestWord(tok,"?", true);
-    TestWord(tok,"q", false);
-    TestWord(tok,"=", true);
-    TestWord(tok,"cfg", false);
-    TestWord(tok,"=", true);
-    TestWord(tok,"SMCBROWSE", false);
-    TestWord(tok,"rn", false);
-    TestWord(tok,"=", true);
-    TestWord(tok,"1825822", false);
-    TestWord(tok,"dp", false);
-    TestWord(tok,"=", true);
-    TestWord(tok,"1873075", false);
-    TestWord(tok,"v", false);
-    TestWord(tok,"=", true);
-    TestWord(tok,"166", false);
-    TestWord(tok,":", true);
+    TestWord(tok, "http", false);
+    TestWord(tok, ":", true);
+    TestWord(tok, "/", true);
+    TestWord(tok, "/", true);
+    TestWord(tok, "search", false);
+    TestWord(tok, ".", true);
+    TestWord(tok, "msn", false);
+    TestWord(tok, ".", true);
+    TestWord(tok, "co", false);
+    TestWord(tok, ".", true);
+    TestWord(tok, "uk", false);
+    TestWord(tok, "/", true);
+    TestWord(tok, "results", false);
+    TestWord(tok, ".", true);
+    TestWord(tok, "asp", false);
+    TestWord(tok, "?", true);
+    TestWord(tok, "q", false);
+    TestWord(tok, "=", true);
+    TestWord(tok, "cfg", false);
+    TestWord(tok, "=", true);
+    TestWord(tok, "SMCBROWSE", false);
+    TestWord(tok, "rn", false);
+    TestWord(tok, "=", true);
+    TestWord(tok, "1825822", false);
+    TestWord(tok, "dp", false);
+    TestWord(tok, "=", true);
+    TestWord(tok, "1873075", false);
+    TestWord(tok, "v", false);
+    TestWord(tok, "=", true);
+    TestWord(tok, "166", false);
+    TestWord(tok, ":", true);
     _test(!tok->MoreTokens());
     PopDesc();
 
     delete tok;
 }
 
-
-
-void LatinTokenizerTest::Run()
-{
+void LatinTokenizerTest::Run() {
     TestSimple();
     TestSimpleLength();
     TestEnding();

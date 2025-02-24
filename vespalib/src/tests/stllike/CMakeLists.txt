@@ -6,13 +6,6 @@ vespa_add_executable(vespalib_hash_test_app TEST
     vespalib
 )
 vespa_add_test(NAME vespalib_hash_test_app COMMAND vespalib_hash_test_app)
-vespa_add_executable(vespalib_string_test_app TEST
-    SOURCES
-    string_test.cpp
-    DEPENDS
-    vespalib
-)
-vespa_add_test(NAME vespalib_string_test_app COMMAND vespalib_string_test_app)
 vespa_add_executable(vespalib_vector_map_test_app TEST
     SOURCES
     vector_map_test.cpp

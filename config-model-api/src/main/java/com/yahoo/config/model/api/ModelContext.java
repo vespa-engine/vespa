@@ -74,8 +74,6 @@ public interface ModelContext {
      *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.473") default double defaultTermwiseLimit() { return 1.0; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.473") default String feedSequencerType() { return "THROUGHPUT"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.483") default String queryDispatchPolicy() { return "adaptive"; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double queryDispatchWarmup() { return 5.0; }
@@ -92,7 +90,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int maxUnCommittedMemory() { return 130000; }
         @ModelFeatureFlag(owners = {"vekterli"}) default String searchMmapAdvise() { return "NORMAL"; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.477") default boolean sharedStringRepoNoReclaim() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.479") default boolean loadCodeAsHugePages() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.478") default double containerShutdownTimeout() { return 50.0; }
@@ -102,7 +99,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.75; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitLowWatermarkDifference() { return 0.0; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.475") default double resourceLimitMemorySmallNodes() { return 0.75; }
         @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default double minNodeRatioPerGroup() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
@@ -113,7 +109,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 2; }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.483") default boolean alwaysMarkPhraseExpensive() { return false; }
+        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "8.485") default boolean alwaysMarkPhraseExpensive() { return false; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int persistenceThreadMaxFeedOpBatchSize() { return 1; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
@@ -123,7 +119,6 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean symmetricPutAndActivateReplicaSelection() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean enforceStrictlyIncreasingClusterStateVersions() { return true; }
-        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.472") default boolean distributionConfigFromClusterController() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
