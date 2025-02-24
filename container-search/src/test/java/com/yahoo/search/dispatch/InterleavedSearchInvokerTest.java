@@ -190,8 +190,8 @@ public class InterleavedSearchInvokerTest {
             assertEquals(1, cov.getResultSets());
             assertEquals(0, cov.getFullResultSets());
             assertTrue(cov.isDegraded());
-            assertFalse(cov.isDegradedByNonIdealState());
-            assertTrue(cov.isDegradedByTimeout());
+            assertTrue(cov.isDegradedByNonIdealState());
+            assertFalse(cov.isDegradedByTimeout());
         }
     }
 
