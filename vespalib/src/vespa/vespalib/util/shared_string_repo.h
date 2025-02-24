@@ -72,7 +72,11 @@ private:
             Entry & operator =(Entry &&) noexcept = delete;
             ~Entry();
             [[nodiscard]] constexpr uint32_t hash() const noexcept { return _hash; }
-            [[nodiscard]] constexpr const std::string_view view() const noexcept { return _str; }
+            [[nodiscard]]
+#if __cpp_lib_constexpr_string >= 201907L
+            constexpr
+#endif
+            std::string_view view() const noexcept { return _str; }
             [[nodiscard]] constexpr bool is_free() const noexcept { return (_ref_cnt == npos); }
             uint32_t init(const AltKey &key) {
                 uint32_t next = _hash;
