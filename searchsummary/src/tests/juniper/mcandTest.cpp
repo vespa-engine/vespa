@@ -40,7 +40,7 @@ void MatchCandidateTest::testLog() {
     TestQuery   q("");
     std::string content("Here we go hepp and then some words away hoi some silly text here");
 
-    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0);
     _test(static_cast<bool>(res)); // We get a result handle
     _test(!res->_mo);              // but it is empty
 
@@ -64,7 +64,7 @@ void MatchCandidateTest::testDump() {
 
     {
         TestQuery q("NEAR/1(hepp,hoi)");
-        auto      res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0, 0);
+        auto      res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0);
         _test(static_cast<bool>(res));
         long relevance = juniper::GetRelevancy(*res);
         // zero value since there are no hits and constraints are enabled..
@@ -73,7 +73,7 @@ void MatchCandidateTest::testDump() {
 
     {
         TestQuery q("OR(NEAR/1(hepp,hoi),bananas)");
-        auto      res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0, 0);
+        auto      res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0);
         _test(static_cast<bool>(res));
         long relevance = juniper::GetRelevancy(*res);
         // Check that X_CONSTR propagates as intended
@@ -82,7 +82,7 @@ void MatchCandidateTest::testDump() {
 
     {
         TestQuery q("PHRASE(hepp,hoi)");
-        auto      res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0, 0);
+        auto      res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0);
         _test(static_cast<bool>(res));
         long relevance = juniper::GetRelevancy(*res);
         // constant value since there are no hits but this is
@@ -92,7 +92,7 @@ void MatchCandidateTest::testDump() {
 
     {
         TestQuery q("AND(hepp,hoi)");
-        auto      res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0, 0);
+        auto      res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content.c_str(), content.size(), 0);
         _test(static_cast<bool>(res));
         long relevance = juniper::GetRelevancy(*res);
         // Relevance may change, but nice to discover such changes..
@@ -112,7 +112,7 @@ void MatchCandidateTest::testorder() {
     size_t      content_len = strlen(content);
 
     // Fetch a result descriptor:
-    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. Scan calls accept several times
@@ -137,7 +137,7 @@ void MatchCandidateTest::testMatches_limit() {
     size_t      content_len = strlen(content);
 
     // Fetch a result descriptor:
-    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
@@ -166,7 +166,7 @@ void MatchCandidateTest::testAccept() {
     size_t      content_len = strlen(content);
 
     // Fetch a result descriptor:
-    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
@@ -218,7 +218,7 @@ void MatchCandidateTest::testMake_keylist() {
     size_t      content_len = strlen(content);
 
     // Fetch a result descriptor:
-    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
@@ -243,7 +243,7 @@ void MatchCandidateTest::testAdd_to_keylist() {
     size_t      content_len = strlen(content);
 
     // Fetch a result descriptor:
-    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     // Do the scanning manually. This calls accept several times
@@ -276,7 +276,7 @@ void MatchCandidateTest::testLength() {
         TestQuery q("NEAR/4(pattern,NEAR/1(simple,with),NEAR/2(simple,adjacent))");
 
         // Fetch a result descriptor:
-        auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+        auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
 
         juniper::Summary*    sum = juniper::GetTeaser(*res);
         Matcher&             m = *res->_matcher;
@@ -294,7 +294,7 @@ void MatchCandidateTest::testLength() {
         TestQuery q("ONEAR/4(pattern,NEAR/1(simple,with),NEAR/2(simple,adjacent))");
 
         // Fetch a result descriptor:
-        auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+        auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
 
         res->Scan();
         Matcher&             m = *res->_matcher;
@@ -308,7 +308,7 @@ void MatchCandidateTest::testLength() {
         TestQuery q("NEAR/4(pattern,NEAR/1(simple,with),NEAR/1(simple,adjacent))");
 
         // Fetch a result descriptor:
-        auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+        auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
 
         res->Scan();
         Matcher&             m = *res->_matcher;
@@ -343,7 +343,7 @@ void MatchCandidateTest::requireThatMaxNumberOfMatchCandidatesCanBeControlled() 
     const char* content = "re re re re foo re re re re bar re re re re foo re re re re bar";
     size_t      content_len = strlen(content);
 
-    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0, 0);
+    auto res = juniper::Analyse(*juniper::TestConfig, q._qhandle, content, content_len, 0);
     _test(static_cast<bool>(res));
 
     // Deflect tokens to my processor

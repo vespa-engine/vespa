@@ -6,7 +6,6 @@
 #include "query.h"
 #include "query_item.h"
 #include "queryhandle.h"
-#include "querymodifier.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.queryvisitor");
@@ -35,9 +34,8 @@ void QueryVisitor::insert(QueryExpr* expr) {
     }
 }
 
-QueryVisitor::QueryVisitor(const IQuery& fquery, QueryHandle* qhandle, juniper::QueryModifier& queryModifier)
-  : _queryModifier(queryModifier),
-    _fquery(&fquery),
+QueryVisitor::QueryVisitor(const IQuery& fquery, QueryHandle* qhandle)
+  : _fquery(&fquery),
     _query(nullptr),
     _current(nullptr),
     _qhandle(qhandle),
@@ -217,25 +215,6 @@ void QueryVisitor::visitKeyword(const QueryItem* item, std::string_view keyword,
         term->_options |= (is_wild ? X_WILD : X_PREFIX);
     }
     if (specialToken) { term->_options |= X_SPECIALTOKEN; }
-    if (_queryModifier.HasRewriters()) {
-        auto ind = item->get_index();
-        if (!ind.empty()) {
-            // record any rewriter for easier lookup later on..
-            juniper::Rewriter* rh = _queryModifier.FindRewriter(ind);
-            if (rh) {
-                term->rewriter = rh;
-                if (rh->ForQuery()) {
-                    // Notify query handler that an expansion query cache must be
-                    // maintained for this query:
-                    _qhandle->SetExpansions();
-                }
-                if (rh->ForDocument()) {
-                    // Notify query handler that on-the-fly document rewriting might be needed
-                    _qhandle->SetReductions();
-                }
-            }
-        }
-    }
     insert(term);
 }
 

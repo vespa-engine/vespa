@@ -3,7 +3,6 @@
 
 #pragma once
 
-#include "querymodifier.h"
 #include <string>
 #include <vector>
 #include <vespa/fastlib/text/unicodeutil.h>
@@ -149,8 +148,6 @@ public:
     int                      total_match_cnt;
     int                      exact_match_cnt;
     int                      idx;
-    juniper::Rewriter*       rewriter;
-    juniper::string_matcher* reduce_matcher;
 
 private:
     std::string _term;

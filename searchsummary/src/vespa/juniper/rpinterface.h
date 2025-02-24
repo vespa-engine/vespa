@@ -4,7 +4,7 @@
 #pragma once
 
 #include "IJuniperProperties.h"
-#include "rewriter.h"
+#include "query.h"
 #include <memory>
 
 /** @file rpinterface.h This file is the main include file for the advanced
@@ -56,8 +56,6 @@ class QueryHandle;
  */
 class Result;
 
-class QueryModifier;
-
 class Summary {
 public:
     virtual ~Summary() {}
@@ -96,7 +94,6 @@ public:
 
     const Fast_WordFolder&    getWordFolder() const noexcept { return *_wordfolder; }
     const IJuniperProperties& getProp() const noexcept { return *_props; }
-    QueryModifier&            getModifier() { return *_modifier; }
 
     /** Create a result processing configuration of Juniper for subsequent use
      * @param config_name a symbolic prefix to be used in the fsearch configuration file
@@ -122,21 +119,9 @@ public:
      */
     std::unique_ptr<QueryHandle> CreateQueryHandle(const IQuery& query, const char* juniperoptions) const;
 
-    /** Add an rewriter for all terms that are prefixed with the given index.
-     *  When Juniper encounter a term in the query tagged with this index,
-     *  Juniper assumes that that term has been subject to expansion, and will
-     *  apply the rewriter to all terms in all analysed documents before
-     *  matching with the query.
-     */
-    void AddRewriter(const char* index_name, IRewriter* rewriter, bool for_query, bool for_document);
-
-    // Mostly for testing - being able to start with clean sheets for each test:
-    void FlushRewriters();
-
 private:
     IJuniperProperties*            _props;
     const Fast_WordFolder*         _wordfolder;
-    std::unique_ptr<QueryModifier> _modifier;
 };
 
 /** This function defines an equality relation over Juniper configs,
@@ -159,12 +144,10 @@ bool AnalyseCompatible(Config* conf1, Config* conf2);
  * @param docsum_len The length in bytes of the document summary, including
  any meta information.
  * @param docid A 32 bit number uniquely identifying the document to be analysed
- * @param langid A unique 32 bit id representing the language which
- this document summary is to be analysed in context of.
  * @return A unique pointer to a Result
  */
 std::unique_ptr<Result> Analyse(const Config& config, QueryHandle& query, const char* docsum, size_t docsum_len,
-                                uint32_t docid, uint32_t langid);
+                                uint32_t docid);
 
 /** Get the computed relevancy of the processed content from the result.
  *  @param result_handle The result to retrieve from

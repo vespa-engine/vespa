@@ -54,10 +54,8 @@ DynamicTeaserDFW::insert_juniper_field(uint32_t docid, std::string_view input, G
                 docid, std::string(input.data(), input.length()).c_str(), hexDump.str().c_str());
         }
 
-        auto langid = static_cast<uint32_t>(-1);
-
         result = juniper::Analyse(*_juniperConfig, *query,
-                                  input.data(), input.length(), docid, langid);
+                                  input.data(), input.length(), docid);
     }
 
     juniper::Summary *teaser = result

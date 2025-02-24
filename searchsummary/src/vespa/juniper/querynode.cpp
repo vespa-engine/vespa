@@ -34,8 +34,6 @@ QueryTerm::QueryTerm(std::string_view term, int ix, int wgt)
     total_match_cnt(0),
     exact_match_cnt(0),
     idx(ix),
-    rewriter(nullptr),
-    reduce_matcher(nullptr),
     _term(term),
     _ucs4_term(new ucs4_t[_term.size() + 1]) {
     Fast_UnicodeUtil::ucs4copy(_ucs4_term, _term.c_str());
@@ -48,8 +46,6 @@ QueryTerm::QueryTerm(QueryTerm* t)
     total_match_cnt(0),
     exact_match_cnt(0),
     idx(-1),
-    rewriter(nullptr),
-    reduce_matcher(nullptr),
     _term(t->_term),
     _ucs4_term(new ucs4_t[_term.size() + 1]) {
     Fast_UnicodeUtil::ucs4copy(_ucs4_term, _term.c_str());

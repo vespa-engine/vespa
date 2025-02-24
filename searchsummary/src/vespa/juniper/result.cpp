@@ -26,12 +26,11 @@ public:
     std::string _text;
 };
 
-Result::Result(const Config& config, QueryHandle& qhandle, const char* docsum, size_t docsum_len, uint32_t langid)
+Result::Result(const Config& config, QueryHandle& qhandle, const char* docsum, size_t docsum_len)
   : _qhandle(&qhandle),
-    _mo(qhandle.MatchObj(langid)),
+    _mo(qhandle.MatchObj()),
     _docsum(docsum),
     _docsum_len(docsum_len),
-    _langid(langid),
     _config(&config),
     _matcher(),
     _tokenizer(),

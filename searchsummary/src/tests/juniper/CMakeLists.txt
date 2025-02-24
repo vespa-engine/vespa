@@ -21,7 +21,6 @@ vespa_add_executable(juniper_queryparserTest_app TEST
     queryparser.cpp
     queryparserTest.cpp
     queryparserTestApp.cpp
-    fakerewriter.cpp
     testenv.cpp
     DEPENDS
     vespa_searchsummary
@@ -34,7 +33,6 @@ vespa_add_executable(juniper_matchobjectTest_app TEST
     matchobjectTestApp.cpp
     queryparser.cpp
     testenv.cpp
-    fakerewriter.cpp
     DEPENDS
     vespa_searchsummary
     juniper_testsuite
@@ -71,7 +69,6 @@ vespa_add_executable(juniper_SrcTestSuite_app TEST
     mcandTest.cpp
     queryparser.cpp
     queryparserTest.cpp
-    fakerewriter.cpp
     SrcTestSuite.cpp
     matchobjectTest.cpp
     auxTest.cpp

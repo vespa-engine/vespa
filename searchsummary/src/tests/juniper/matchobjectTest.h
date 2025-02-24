@@ -44,12 +44,6 @@ class MatchObjectTest : public Test {
      */
     void testMatchAnnotated();
 
-    /**
-     * Test of the the expansion based (langid) constructor
-     */
-    void testLangid();
-    void testCombined();
-
     /** Test parameter input via query handle options
      */
     void testParams();
