@@ -236,6 +236,17 @@ Onnx::DimSize::as_string() const
     }
 }
 
+Onnx::TensorInfo::TensorInfo(std::string name_in, std::vector<DimSize> dimensions_in, ElementType elements_in)
+    : name(std::move(name_in)),
+      dimensions(std::move(dimensions_in)),
+      elements(elements_in)
+{
+}
+
+Onnx::TensorInfo::TensorInfo(const TensorInfo&) = default;
+
+Onnx::TensorInfo::~TensorInfo() = default;
+
 std::string
 Onnx::TensorInfo::type_as_string() const
 {
@@ -245,8 +256,6 @@ Onnx::TensorInfo::type_as_string() const
     }
     return res;
 }
-
-Onnx::TensorInfo::~TensorInfo() = default;
 
 std::string
 Onnx::TensorType::type_as_string() const
