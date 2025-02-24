@@ -69,7 +69,10 @@ struct Response {
           changed(changed_in),
           generation(generation_in)
     {}
+    ~Response();
 };
+
+Response::~Response() = default;
 
     struct RPCFixture
     {
