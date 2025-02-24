@@ -22,7 +22,6 @@ QueryHandle::QueryHandle(const IQuery& fquery, const char* options, QueryModifie
     _winsize(-1),
     _winsize_fallback_multiplier(-1),
     _max_match_candidates(-1),
-    _querytext(""),
     _expansion_cache(NULL),
     _log_mask(0),
     _options(0),
@@ -37,14 +36,7 @@ QueryHandle::QueryHandle(const IQuery& fquery, const char* options, QueryModifie
     parse_parameters(options);
 
     /* Then parse the original query */
-    if (_querytext.size() > 0) {
-        // override the fastserver query stack with the query.xxx stack value:
-        QueryParser q(_querytext.c_str());
-        LOG(debug, "Using juniper specific query '%s'", _querytext.c_str());
-        vis = new QueryVisitor(q, this, modifier);
-    } else {
-        vis = new QueryVisitor(fquery, this, modifier);
-    }
+    vis = new QueryVisitor(fquery, this, modifier);
 
     QueryExpr* query = vis->GetQuery();
     if (query) {
@@ -120,9 +112,6 @@ void QueryHandle::parse_parameters(const char* options) {
         } else if (strncmp(p, "dynsurmax.", 10) == 0) {
             p += 10;
             _surround_max = strtol(p, &p, 0);
-        } else if (strncmp(p, "query.", 6) == 0) {
-            p += 6;
-            _querytext = fetchtext(p, &p);
         } else if (strncmp(p, "near.", 5) == 0) {
             p += 5;
             _limit = strtoul(p, &p, 0);

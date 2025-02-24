@@ -265,8 +265,8 @@ void MatchObjectTest::testParams() {
     }
 
     {
-        // Check that query option replaces orig.query
-        TestQuery    q("OR(a,b)", "query.ONEAR/1(a,b)");
+        // Check ONEAR.
+        TestQuery    q("ONEAR/1(a,b)");
         QueryHandle& qh = q._qhandle;
         std::string  stk;
         qh.MatchObj(0)->Query()->Dump(stk);
@@ -276,8 +276,8 @@ void MatchObjectTest::testParams() {
     }
 
     {
-        // Check that query option replaces orig.query, and check that ANY works..
-        TestQuery    q("OR(a,b,c)", "query.ANY(a,b)");
+        // Check that ANY works.
+        TestQuery    q("ANY(a,b)");
         QueryHandle& qh = q._qhandle;
         std::string  stk;
         qh.MatchObj(0)->Query()->Dump(stk);

@@ -64,7 +64,6 @@ public:
     int64_t         _winsize;
     double          _winsize_fallback_multiplier;
     int64_t         _max_match_candidates;
-    std::string     _querytext; // an optional query string to use to override the input query
     ExpansionCache* _expansion_cache;
 
     // parameter settings that are taken directly from
