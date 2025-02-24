@@ -7,13 +7,12 @@
  * a la perl assoc.arrays
  */
 
-class Fast_StringMap
-{
+class Fast_StringMap {
 private:
     using Map = vespalib::hash_map<std::string, std::string>;
-    Map  _backing;
-public:
-    void Insert(const char* key, const char* value);
-    const char *Lookup(const char* key, const char* defval) const;
-};
+    Map _backing;
 
+public:
+    void        Insert(const char* key, const char* value);
+    const char* Lookup(const char* key, const char* defval) const;
+};

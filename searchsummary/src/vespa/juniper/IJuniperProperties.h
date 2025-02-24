@@ -5,8 +5,7 @@
 /** An abstract interface to configuration file settings used by Juniper to process
  *  it's preconfigured parameter sets.
  */
-class IJuniperProperties
-{
+class IJuniperProperties {
 public:
     /** Get the value of a property
      *  @param name The textual representation of the property

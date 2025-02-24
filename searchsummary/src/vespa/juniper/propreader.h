@@ -7,16 +7,16 @@
 /** Simple property reader using same format as fsearchrc.
  *  Implemented for standalone testing of Juniper.
  */
-class PropReader : public IJuniperProperties
-{
+class PropReader : public IJuniperProperties {
 public:
     PropReader(const char* filename);
     const char* GetProperty(const char* name, const char* def = nullptr) const override;
-    void UpdateProperty(const char* name, const char* value);
+    void        UpdateProperty(const char* name, const char* value);
     ~PropReader() {}
+
 protected:
     void Process(const char* filename);
+
 private:
     Fast_StringMap _keymap;
 };
-

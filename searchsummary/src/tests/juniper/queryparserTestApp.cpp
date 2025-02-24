@@ -4,10 +4,9 @@
 #include "testenv.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 
-
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
     juniper::TestEnv te(argc, argv, TEST_PATH("./testclient.rc").c_str());
-    QueryParserTest test;
+    QueryParserTest  test;
     test.SetStream(&std::cout);
     test.Run(argc, argv);
     return (int)test.Report();

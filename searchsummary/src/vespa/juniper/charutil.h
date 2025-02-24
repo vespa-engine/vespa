@@ -1,12 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-namespace juniper
-{
+namespace juniper {
 
-template <typename T>
-int strncmp(const T* s1, const T* s2, size_t n)
-{
+template <typename T> int strncmp(const T* s1, const T* s2, size_t n) {
     size_t i = 0;
     for (; i < n; i++)
         if (s1[i] != s2[i]) break;
@@ -15,4 +12,3 @@ int strncmp(const T* s1, const T* s2, size_t n)
 }
 
 } // end namespace juniper
-

@@ -1,61 +1,50 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "propreader.h"
-#include <vespa/fastlib/io/bufferedfile.h>
 #include "juniperdebug.h"
 #include <cctype>
+#include <vespa/fastlib/io/bufferedfile.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.propreader");
 
-PropReader::PropReader(const char* filename)
-    : _keymap()
-{
+PropReader::PropReader(const char* filename) : _keymap() {
     Process(filename);
 }
 
 #define BUFLEN 1024
 
-
-void PropReader::Process(const char* filename)
-{
+void PropReader::Process(const char* filename) {
     Fast_BufferedFile propfile;
     propfile.ReadOpen(filename);
-    if (!propfile.IsOpened())
-    {
-        LOG(warning, "Warning: Could not find property file '%s', using Juniper default values",
-            filename);
+    if (!propfile.IsOpened()) {
+        LOG(warning, "Warning: Could not find property file '%s', using Juniper default values", filename);
         return;
     }
-    char line[BUFLEN];
+    char  line[BUFLEN];
     char* linep;
-    while ((linep = propfile.ReadLine(line, BUFLEN-1)) != NULL)
-    {
-        int i;
+    while ((linep = propfile.ReadLine(line, BUFLEN - 1)) != NULL) {
+        int   i;
         char* key;
         if (line[0] == '#') continue; // skip comments
 
         // find key
-        for (i = 0; !std::isspace(static_cast<unsigned char>(line[i])); i++) { }
+        for (i = 0; !std::isspace(static_cast<unsigned char>(line[i])); i++) {}
         if (i == 0) continue; // Skip lines starting with blank
         line[i++] = 0;
         key = line;
 
-        for (; std::isspace(static_cast<unsigned char>(line[i])); i++) { }  // Skip blanks
+        for (; std::isspace(static_cast<unsigned char>(line[i])); i++) {} // Skip blanks
 
         // find value
-        int offset = 0;
+        int   offset = 0;
         char* value = &line[i];
-        for (; !std::isspace(static_cast<unsigned char>(line[i])); i++)
-        {
-            if (line[i] == '\\')
-            {
+        for (; !std::isspace(static_cast<unsigned char>(line[i])); i++) {
+            if (line[i] == '\\') {
                 offset++;
-                if (line[++i] == 'x')
-                {
+                if (line[++i] == 'x') {
                     unsigned char v = 0;
-                    for (int s = 1; s <= 2; s++, v<<=4)
-                    {
+                    for (int s = 1; s <= 2; s++, v <<= 4) {
                         unsigned char c = static_cast<unsigned char>(line[i + s]);
                         if (std::isdigit(c))
                             v += (c - '0');
@@ -68,12 +57,10 @@ void PropReader::Process(const char* filename)
                     line[i - offset] = static_cast<char>(v);
                     i += 2;
                     offset += 2;
-                }
-                else
-                    if (offset != 0) line[i - offset] = line[i];
-            }
-            else
-                if (offset != 0) line[i - offset] = line[i];
+                } else if (offset != 0)
+                    line[i - offset] = line[i];
+            } else if (offset != 0)
+                line[i - offset] = line[i];
         }
         line[i - offset] = 0;
         LOG(debug, "Parameter :%s: value :%s:", key, value);
@@ -81,16 +68,12 @@ void PropReader::Process(const char* filename)
     }
 }
 
-
-const char* PropReader::GetProperty(const char* name, const char* def) const
-{
-    const char*  v = _keymap.Lookup(name, def);
+const char* PropReader::GetProperty(const char* name, const char* def) const {
+    const char* v = _keymap.Lookup(name, def);
     LOG(debug, "Parameter lookup :%s: value :%s:", name, v);
     return v;
 }
 
-
-void PropReader::UpdateProperty(const char* name, const char* value)
-{
+void PropReader::UpdateProperty(const char* name, const char* value) {
     _keymap.Insert(name, value);
 }

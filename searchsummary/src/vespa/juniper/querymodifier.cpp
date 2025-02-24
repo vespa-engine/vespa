@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "juniperdebug.h"
 #include "querymodifier.h"
+#include "juniperdebug.h"
 
 #include <vespa/log/log.h>
 LOG_SETUP(".juniper.querymodifier");
@@ -9,45 +9,33 @@ LOG_SETUP(".juniper.querymodifier");
 namespace juniper {
 
 Rewriter::Rewriter(IRewriter* rewriter, bool for_query, bool for_document)
-    : _rewriter(rewriter), _for_query(for_query), _for_document(for_document)
-{
-    LOG(debug, "Creating Rewriter (%s %s)",
-        (for_query ? "query" : ""), (for_document ? "document" : ""));
+  : _rewriter(rewriter),
+    _for_query(for_query),
+    _for_document(for_document) {
+    LOG(debug, "Creating Rewriter (%s %s)", (for_query ? "query" : ""), (for_document ? "document" : ""));
 }
 
+QueryModifier::QueryModifier() : _rewriters(), _has_expanders(false), _has_reducers(false) {}
 
-QueryModifier::QueryModifier()
-    : _rewriters(), _has_expanders(false), _has_reducers(false)
-{ }
-
-QueryModifier::~QueryModifier()
-{
+QueryModifier::~QueryModifier() {
     FlushRewriters();
 }
 
-
-void QueryModifier::FlushRewriters()
-{
+void QueryModifier::FlushRewriters() {
     // Delete all Rewriter objects
     _rewriters.delete_second();
     _rewriters.clear();
 }
 
-
 /* See rewriter.h for doc */
-void QueryModifier::AddRewriter(const char* index_name, IRewriter* rewriter,
-                                bool for_query, bool for_document)
-{
-    if (for_query || for_document)
-        _rewriters.insert(index_name, new Rewriter(rewriter, for_query, for_document));
-    if (for_query)    _has_expanders = true;
+void QueryModifier::AddRewriter(const char* index_name, IRewriter* rewriter, bool for_query, bool for_document) {
+    if (for_query || for_document) _rewriters.insert(index_name, new Rewriter(rewriter, for_query, for_document));
+    if (for_query) _has_expanders = true;
     if (for_document) _has_reducers = true;
 }
 
-
 /* Return any configured reducer/expander for the index, if any */
-Rewriter* QueryModifier::FindRewriter(std::string_view index_name)
-{
+Rewriter* QueryModifier::FindRewriter(std::string_view index_name) {
     return _rewriters.find(std::string(index_name));
 }
 

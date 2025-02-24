@@ -33,8 +33,7 @@ class Fast_WordFolder;
  *  While the old interface (simpledynsum.h) is kept for backward compatibility, it is
  *  depreciated as it allows less flexibility and thus provides lower quality teasers.
  */
-namespace juniper
-{
+namespace juniper {
 
 /** Version tag generated from Makefile/configure system */
 extern const char* version_tag;
@@ -59,13 +58,12 @@ class Result;
 
 class QueryModifier;
 
-class Summary
-{
+class Summary {
 public:
     virtual ~Summary() {}
     // The textual representation of the generated summary
     virtual const char* Text() const = 0;
-    virtual size_t Length() const = 0;
+    virtual size_t      Length() const = 0;
 };
 
 class Juniper {
@@ -88,17 +86,17 @@ public:
      *   - should always be left with the default value to ensure binary backward
      *     compatibility between versions.
      */
-    Juniper(IJuniperProperties* props,
-          const Fast_WordFolder* wordfolder, int api_version = JUNIPER_RP_ABI_VERSION);
+    Juniper(IJuniperProperties* props, const Fast_WordFolder* wordfolder,
+            int api_version = JUNIPER_RP_ABI_VERSION);
     /** Deinitialize the Juniper subsystem. Release all remaining resources
      *  associated with Juniper - reverse the effect of the Init function.
      *  Assumes that all Result objects have been released.
      */
     ~Juniper();
 
-    const Fast_WordFolder & getWordFolder() const noexcept { return *_wordfolder; }
-    const IJuniperProperties & getProp() const noexcept { return *_props; }
-    QueryModifier & getModifier() { return *_modifier; }
+    const Fast_WordFolder&    getWordFolder() const noexcept { return *_wordfolder; }
+    const IJuniperProperties& getProp() const noexcept { return *_props; }
+    QueryModifier&            getModifier() { return *_modifier; }
 
     /** Create a result processing configuration of Juniper for subsequent use
      * @param config_name a symbolic prefix to be used in the fsearch configuration file
@@ -136,9 +134,9 @@ public:
     void FlushRewriters();
 
 private:
-    IJuniperProperties * _props;
-    const Fast_WordFolder  * _wordfolder;
-    std::unique_ptr<QueryModifier>      _modifier;
+    IJuniperProperties*            _props;
+    const Fast_WordFolder*         _wordfolder;
+    std::unique_ptr<QueryModifier> _modifier;
 };
 
 /** This function defines an equality relation over Juniper configs,
@@ -165,10 +163,8 @@ bool AnalyseCompatible(Config* conf1, Config* conf2);
  this document summary is to be analysed in context of.
  * @return A unique pointer to a Result
  */
-std::unique_ptr<Result> Analyse(const Config& config, QueryHandle& query,
-                const char* docsum, size_t docsum_len,
-                uint32_t docid,
-                uint32_t langid);
+std::unique_ptr<Result> Analyse(const Config& config, QueryHandle& query, const char* docsum, size_t docsum_len,
+                                uint32_t docid, uint32_t langid);
 
 /** Get the computed relevancy of the processed content from the result.
  *  @param result_handle The result to retrieve from
@@ -196,4 +192,3 @@ Summary* GetTeaser(Result& result_handle, const Config* alt_config = NULL);
 Summary* GetLog(Result& result_handle);
 
 } // end namespace juniper
-
