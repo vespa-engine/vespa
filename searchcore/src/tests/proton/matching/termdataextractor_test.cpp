@@ -15,7 +15,7 @@ LOG_SETUP("termdataextractor_test");
 #include <vespa/searchlib/query/tree/point.h>
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/weight.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <string>
 #include <vector>
 
@@ -69,19 +69,19 @@ Node::UP getQuery(const ViewResolver &resolver)
     return node;
 }
 
-TEST("requireThatTermsAreAdded") {
+TEST(TermDataExtractorTest, requireThatTermsAreAdded) {
     Node::UP node = getQuery(ViewResolver());
 
     vector<const ITermData *> term_data;
     TermDataExtractor::extractTerms(*node, term_data);
-    EXPECT_EQUAL(8u, term_data.size());
+    EXPECT_EQ(8u, term_data.size());
     for (int i = 0; i < 8; ++i) {
-        EXPECT_EQUAL(id[i], term_data[i]->getUniqueId());
-        EXPECT_EQUAL(1u, term_data[i]->numFields());
+        EXPECT_EQ(id[i], term_data[i]->getUniqueId());
+        EXPECT_EQ(1u, term_data[i]->numFields());
     }
 }
 
-TEST("requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm") {
+TEST(TermDataExtractorTest, requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm) {
     ViewResolver resolver;
     resolver.add(field, "foo");
     resolver.add(field, "bar");
@@ -89,14 +89,14 @@ TEST("requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm") {
 
     vector<const ITermData *> term_data;
     TermDataExtractor::extractTerms(*node, term_data);
-    EXPECT_EQUAL(8u, term_data.size());
+    EXPECT_EQ(8u, term_data.size());
     for (int i = 0; i < 8; ++i) {
-        EXPECT_EQUAL(id[i], term_data[i]->getUniqueId());
-        EXPECT_EQUAL(2u, term_data[i]->numFields());
+        EXPECT_EQ(id[i], term_data[i]->getUniqueId());
+        EXPECT_EQ(2u, term_data[i]->numFields());
     }
 }
 
-TEST("requireThatUnrankedTermsAreSkipped") {
+TEST(TermDataExtractorTest, requireThatUnrankedTermsAreSkipped) {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
     query_builder.addStringTerm("term1", field, id[0], Weight(0));
@@ -106,12 +106,12 @@ TEST("requireThatUnrankedTermsAreSkipped") {
 
     vector<const ITermData *> term_data;
     TermDataExtractor::extractTerms(*node, term_data);
-    EXPECT_EQUAL(1u, term_data.size());
+    EXPECT_EQ(1u, term_data.size());
     ASSERT_TRUE(term_data.size() >= 1);
-    EXPECT_EQUAL(id[0], term_data[0]->getUniqueId());
+    EXPECT_EQ(id[0], term_data[0]->getUniqueId());
 }
 
-TEST("requireThatNegativeTermsAreSkipped") {
+TEST(TermDataExtractorTest, requireThatNegativeTermsAreSkipped) {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
     query_builder.addStringTerm("term1", field, id[0], Weight(0));
@@ -124,13 +124,13 @@ TEST("requireThatNegativeTermsAreSkipped") {
 
     vector<const ITermData *> term_data;
     TermDataExtractor::extractTerms(*node, term_data);
-    EXPECT_EQUAL(2u, term_data.size());
+    EXPECT_EQ(2u, term_data.size());
     ASSERT_TRUE(term_data.size() >= 2);
-    EXPECT_EQUAL(id[0], term_data[0]->getUniqueId());
-    EXPECT_EQUAL(id[1], term_data[1]->getUniqueId());
+    EXPECT_EQ(id[0], term_data[0]->getUniqueId());
+    EXPECT_EQ(id[1], term_data[1]->getUniqueId());
 }
 
-TEST("requireThatSameElementIsExtractedAsOneTerm")
+TEST(TermDataExtractorTest, requireThatSameElementIsExtractedAsOneTerm)
 {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
@@ -142,11 +142,11 @@ TEST("requireThatSameElementIsExtractedAsOneTerm")
 
     vector<const ITermData *> term_data;
     TermDataExtractor::extractTerms(*node, term_data);
-    ASSERT_EQUAL(2u, term_data.size());
-    EXPECT_EQUAL(id[3], term_data[0]->getUniqueId());
-    EXPECT_EQUAL(id[2], term_data[1]->getUniqueId());
+    ASSERT_EQ(2u, term_data.size());
+    EXPECT_EQ(id[3], term_data[0]->getUniqueId());
+    EXPECT_EQ(id[2], term_data[1]->getUniqueId());
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

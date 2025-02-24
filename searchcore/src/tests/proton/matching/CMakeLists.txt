@@ -45,6 +45,7 @@ vespa_add_executable(searchcore_termdataextractor_test_app TEST
     termdataextractor_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_termdataextractor_test_app COMMAND searchcore_termdataextractor_test_app)
 vespa_add_executable(searchcore_resolveviewvisitor_test_app TEST

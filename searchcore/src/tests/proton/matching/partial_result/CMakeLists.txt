@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_partial_result_test_app TEST
     partial_result_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_partial_result_test_app COMMAND searchcore_partial_result_test_app)
