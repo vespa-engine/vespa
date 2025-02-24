@@ -20,7 +20,10 @@ private:
     uint64_t    _required_timestamp;
 
 public:
-    constexpr TestAndSetCondition() noexcept
+#if __cpp_lib_constexpr_string >= 201907L
+    constexpr
+#endif
+    TestAndSetCondition() noexcept
         : _selection(),
           _required_timestamp(0)
     {}
