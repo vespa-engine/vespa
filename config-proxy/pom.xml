@@ -14,11 +14,6 @@
   <version>8-SNAPSHOT</version>
   <dependencies>
     <dependency>
-      <groupId>com.amazonaws</groupId>
-      <artifactId>aws-java-sdk-s3</artifactId>
-      <version>${aws-sdk.vespa.version}</version>
-    </dependency>
-    <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-lib</artifactId>
       <version>${project.version}</version>

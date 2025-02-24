@@ -6,8 +6,6 @@ aopalliance:aopalliance:${aopalliance.vespa.version}
 backport-util-concurrent:backport-util-concurrent:3.1
 classworlds:classworlds:1.1-alpha-2
 com.amazonaws:aws-java-sdk-core:${aws-sdk.vespa.version}
-com.amazonaws:aws-java-sdk-kms:${aws-sdk.vespa.version}
-com.amazonaws:aws-java-sdk-s3:${aws-sdk.vespa.version}
 com.amazonaws:aws-java-sdk-ssm:${aws-sdk.vespa.version}
 com.amazonaws:aws-java-sdk-sts:${aws-sdk.vespa.version}
 com.amazonaws:jmespath-java:${aws-sdk.vespa.version}

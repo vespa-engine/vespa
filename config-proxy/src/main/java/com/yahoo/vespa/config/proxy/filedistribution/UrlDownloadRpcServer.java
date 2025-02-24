@@ -99,7 +99,6 @@ class UrlDownloadRpcServer {
         URI uri = new URI(url);
         return switch (uri.getScheme()) {
             case "http", "https" -> new UrlDownloader();
-            case "s3" -> new S3Downloader();
             default -> throw new IllegalArgumentException("Unsupported scheme '" + uri.getScheme() + "'");
         };
     }
