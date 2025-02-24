@@ -164,7 +164,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
             } else {
                 query.trace("Backend communication timeout on nodes with distribution-keys: " + keys, 2);
             }
-            coverageAggregator.setTimedOut();
         }
         if (alreadyFailedNodes != null) {
             var message = "Connection failure on nodes with distribution-keys: "

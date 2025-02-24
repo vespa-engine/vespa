@@ -51,8 +51,6 @@ public class CoverageAggregator {
     }
     public boolean hasNoAnswers() { return answeredNodes == 0; }
 
-    public void setTimedOut() { degradedReason |= DEGRADED_BY_TIMEOUT; }
-
     public void setFailedNodes(int failedNodes) {
         this.failedNodes = failedNodes;
     }
