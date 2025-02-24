@@ -67,6 +67,19 @@ class NodeResourcesTest {
                                                                  NodeResources.Architecture.x86_64,
                                                                  new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 32))));
         assertFalse(hostResources.satisfies(gpuHostResources));
+        assertFalse(gpuHostResources.satisfies(hostResources));
+        var newerGpuResources = new NodeResources(1, 2, 3, 1,
+                                                  NodeResources.DiskSpeed.fast,
+                                                  NodeResources.StorageType.local,
+                                                  NodeResources.Architecture.x86_64,
+                                                  new NodeResources.GpuResources(NodeResources.GpuType.L40S, 1, 48));
+        assertFalse(newerGpuResources.satisfies(gpuHostResources));
+        assertFalse(gpuHostResources.satisfies(newerGpuResources));
+        assertTrue(newerGpuResources.satisfies(new NodeResources(1, 2, 3, 1,
+                                                                 NodeResources.DiskSpeed.fast,
+                                                                 NodeResources.StorageType.local,
+                                                                 NodeResources.Architecture.any,
+                                                                 new NodeResources.GpuResources(NodeResources.GpuType.L40S, 1, 48))));
     }
 
     @Test
