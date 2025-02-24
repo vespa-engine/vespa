@@ -26,15 +26,19 @@ public class StreamingValidator implements Validator {
     @Override
     public void validate(Context context) {
         List<SearchCluster> searchClusters = context.model().getSearchClusters();
+        var deployLogger = context.deployState().getDeployLogger();
         for (SearchCluster cluster : searchClusters) {
             for (SchemaInfo schemaInfo : cluster.schemas().values()) {
                 if (schemaInfo.getIndexMode() == SchemaInfo.IndexMode.STREAMING) {
-                    var deployLogger = context.deployState().getDeployLogger();
                     warnStreamingAttributes(cluster.getClusterName(), schemaInfo.fullSchema(), deployLogger);
                     warnStreamingIndexFields(cluster.getClusterName(), schemaInfo.fullSchema(), deployLogger);
                     warnStreamingGramMatching(cluster.getClusterName(), schemaInfo.fullSchema(), deployLogger);
                     failStreamingDocumentReferences(cluster.getClusterName(), cluster.getDocumentDB(schemaInfo.name()).getDerivedConfiguration(), context);
                 }
+            }
+            if (cluster.hasStreaming() && cluster.hasIndexed()) {
+                deployLogger.logApplicationPackage(Level.WARNING, "For search cluster '" + cluster +
+                        "': Using document types with both streaming and indexed mode is discouraged, see https://docs.vespa.ai/en/streaming-search.html.");
             }
         }
     }
