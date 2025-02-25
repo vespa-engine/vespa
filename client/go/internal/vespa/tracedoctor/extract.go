@@ -260,11 +260,11 @@ func (t threadTrace) firstPhasePerf() *topNPerf {
 	perf := newTopNPerf()
 	slime.Select(t.root, hasTag("first_phase_profiling"), func(p *slime.Path, v slime.Value) {
 		eachSample(v, func(sample slime.Value) {
-			t := v.Field("total_time_ms").AsDouble()
+			myTime := sample.Field("total_time_ms").AsDouble()
 			if selfTime := sample.Field("self_time_ms"); selfTime.Valid() {
-				t = selfTime.AsDouble()
+				myTime = selfTime.AsDouble()
 			}
-			perf.addSample(sample.Field("name").AsString(), sample.Field("count").AsLong(), t)
+			perf.addSample(sample.Field("name").AsString(), sample.Field("count").AsLong(), myTime)
 		})
 	})
 	return perf
@@ -274,11 +274,11 @@ func (t threadTrace) secondPhasePerf() *topNPerf {
 	perf := newTopNPerf()
 	slime.Select(t.root, hasTag("second_phase_profiling"), func(p *slime.Path, v slime.Value) {
 		eachSample(v, func(sample slime.Value) {
-			t := v.Field("total_time_ms").AsDouble()
+			myTime := sample.Field("total_time_ms").AsDouble()
 			if selfTime := sample.Field("self_time_ms"); selfTime.Valid() {
-				t = selfTime.AsDouble()
+				myTime = selfTime.AsDouble()
 			}
-			perf.addSample(sample.Field("name").AsString(), sample.Field("count").AsLong(), t)
+			perf.addSample(sample.Field("name").AsString(), sample.Field("count").AsLong(), myTime)
 		})
 	})
 	return perf
