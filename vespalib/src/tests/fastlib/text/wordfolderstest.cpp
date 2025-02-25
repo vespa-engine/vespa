@@ -16,14 +16,14 @@ TEST("NormalizeWordFolderConstruction") {
 TEST("TokenizeAnnotatedUCS4Buffer") {
     auto nwf = std::make_unique<Fast_NormalizeWordFolder>();
     const char *testinput = "This is a "
-                            "\xEF\xBF\xB9" "café" "\xEF\xBF\xBA" "cafe" "\xEF\xBF\xBB"
+                            "\xEF\xBF\xB9" "café" "\xEF\xBF\xBA" "café blåbær" "\xEF\xBF\xBB"
                             " superduperextrafeaturecoolandlongplainword fun "
                             "\xEF\xBF\xB9" "www" "\xEF\xBF\xBA"
                             "world wide web extra long annotation block" "\xEF\xBF\xBB"
                             " test\nIt is cool.\n";
     const char *correct[] = {
             "this", "is", "a",
-            "\xEF\xBF\xB9" "café" "\xEF\xBF\xBA" "cafe" "\xEF\xBF\xBB",
+            "\xEF\xBF\xB9" "café" "\xEF\xBF\xBA" "café blåbær" "\xEF\xBF\xBB",
             "superduperextrafeaturecooland", "fun",
             "\xEF\xBF\xB9" "www" "\xEF\xBF\xBA" "world wide web extra lon",
             "test", "it", "is", "cool" };
