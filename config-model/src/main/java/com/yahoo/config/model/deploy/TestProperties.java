@@ -79,7 +79,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int persistenceThreadMaxFeedOpBatchSize = 1;
     private boolean logserverOtelCol = false;
     private boolean symmetricPutAndActivateReplicaSelection = false;
-    private boolean enforceStrictlyIncreasingClusterStateVersions = false;
+    private boolean enforceStrictlyIncreasingClusterStateVersions = true;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }

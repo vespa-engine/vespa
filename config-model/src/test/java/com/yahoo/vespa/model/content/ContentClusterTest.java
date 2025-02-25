@@ -1599,7 +1599,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     void strictly_increasing_cluster_state_versions_config_controlled_by_feature_flag() throws Exception {
-        checkStrictlyIncreasingClusterStateVersionConfig(null, false); // TODO change default
+        checkStrictlyIncreasingClusterStateVersionConfig(null, true);
         checkStrictlyIncreasingClusterStateVersionConfig(false, false);
         checkStrictlyIncreasingClusterStateVersionConfig(true, true);
     }
