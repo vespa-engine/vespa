@@ -204,7 +204,6 @@ public class ModelContextImpl implements ModelContext {
         private final double logserverNodeMemory;
         private final double clusterControllerNodeMemory;
         private final boolean symmetricPutAndActivateReplicaSelection;
-        private final boolean enforceStrictlyIncreasingClusterStateVersions;
         private final boolean useLegacyWandQueryParsing;
         private final boolean forwardAllLogLevels;
         private final long zookeeperPreAllocSize;
@@ -250,7 +249,6 @@ public class ModelContextImpl implements ModelContext {
             this.logserverNodeMemory = PermanentFlags.LOGSERVER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.clusterControllerNodeMemory = PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
-            this.enforceStrictlyIncreasingClusterStateVersions = Flags.ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS.bindTo(source).with(appId).with(version).value();
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
             this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
             this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
@@ -302,7 +300,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double logserverNodeMemory() { return logserverNodeMemory; }
         @Override public double clusterControllerNodeMemory() { return clusterControllerNodeMemory; }
         @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
-        @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
         @Override public boolean useLegacyWandQueryParsing() { return useLegacyWandQueryParsing; }
         @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
         @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }

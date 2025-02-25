@@ -51,7 +51,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -1578,12 +1577,8 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(warnings, "");
     }
 
-    private void checkStrictlyIncreasingClusterStateVersionConfig(Boolean flagValue, boolean expected) throws Exception {
-        var props = new TestProperties();
-        if (flagValue != null) {
-            props.setEnforceStrictlyIncreasingClusterStateVersions(flagValue);
-        }
-        var cc = createOneNodeCluster(props);
+    private void checkStrictlyIncreasingClusterStateVersionConfig(boolean expected) throws Exception {
+        var cc = createOneNodeCluster(false);
 
         // stor-server config should be the same for both distributors and storage nodes
         var builder = new StorServerConfig.Builder();
@@ -1598,10 +1593,8 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_controlled_by_feature_flag() throws Exception {
-        checkStrictlyIncreasingClusterStateVersionConfig(null, true);
-        checkStrictlyIncreasingClusterStateVersionConfig(false, false);
-        checkStrictlyIncreasingClusterStateVersionConfig(true, true);
+    void strictly_increasing_cluster_state_versions_config() throws Exception {
+        checkStrictlyIncreasingClusterStateVersionConfig(true);
     }
 
     @Test
