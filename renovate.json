@@ -1,22 +1,27 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:base"
+    "config:recommended"
   ],
   "dependencyDashboardApproval": true,
-  "transitiveRemediation": true,
   "prHourlyLimit": 20,
   "prConcurrentLimit": 20,
   "ignorePaths": [],
   "ignoreDeps": [],
-  "schedule": ["before 6am on thursday"],
+  "schedule": [
+    "before 6am on thursday"
+  ],
   "minimumReleaseAge": "14 days",
   "packageRules": [
     {
       "description": "Disable version updates for Vespa artifacts",
-      "matchPackagePatterns": ["^com\\.yahoo\\.vespa"],
-      "matchManagers": ["maven"],
-      "enabled": false
+      "matchManagers": [
+        "maven"
+      ],
+      "enabled": false,
+      "matchPackageNames": [
+        "/^com\\.yahoo\\.vespa/"
+      ]
     },
     {
       "description": "Disable automatic PRs for artifacts, e.g. fixed version required like ZK dependencies or released to frequently. PRs can still be created manually from dependency dashboard.",
@@ -29,7 +34,9 @@
     },
     {
       "description": "Disable automatic PRs for new major versions. PRs can still be created manually from dependency dashboard.",
-      "matchUpdateTypes": ["major"],
+      "matchUpdateTypes": [
+        "major"
+      ],
       "dependencyDashboardApproval": true
     }
   ]
