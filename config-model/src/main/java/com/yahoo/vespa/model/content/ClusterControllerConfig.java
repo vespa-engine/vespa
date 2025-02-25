@@ -166,15 +166,15 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
 
     }
 
-    private record ClusterControllerTuning(Optional<Duration> initProgressTime,
-                                           Optional<Duration> transitionTime,
-                                           Optional<Long> maxPrematureCrashes,
-                                           Optional<Duration> stableStateTimePeriod,
-                                           Optional<Double> minDistributorUpRatio,
-                                           Optional<Double> minStorageUpRatio,
-                                           Optional<Integer> maxGroupsAllowedDown,
-                                           Optional<Double> minNodeRatioPerGroup,
-                                           Optional<Integer> minSplitBits) {
+    public record ClusterControllerTuning(Optional<Duration> initProgressTime,
+                                          Optional<Duration> transitionTime,
+                                          Optional<Long> maxPrematureCrashes,
+                                          Optional<Duration> stableStateTimePeriod,
+                                          Optional<Double> minDistributorUpRatio,
+                                          Optional<Double> minStorageUpRatio,
+                                          Optional<Integer> maxGroupsAllowedDown,
+                                          Optional<Double> minNodeRatioPerGroup,
+                                          Optional<Integer> minSplitBits) {
     }
 
 }

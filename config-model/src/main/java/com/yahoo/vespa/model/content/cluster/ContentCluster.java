@@ -139,6 +139,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             c.clusterControllerConfig = createClusterControllerConfig(contentElement, deployState, c, resourceLimits);
             validateThatGroupSiblingsAreUnique(c.clusterId, c.rootGroup);
             warnIfDistributionKeyRangeIsSuboptimal(c.clusterId, c.rootGroup, deployState);
+            warnWhenMinNodeRatioLowAndManySmallGroups(c, deployState);
             c.search.handleRedundancy(c.redundancy);
             setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
 
@@ -337,6 +338,24 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
                          "as it may negatively affect performance. " +
                          "See https://docs.vespa.ai/en/reference/services-content.html#node")
                         .formatted(clusterId, aggr.nodeCount, aggr.highestNodeDistributionKey));
+            }
+        }
+
+        private static void warnWhenMinNodeRatioLowAndManySmallGroups(ContentCluster cluster, DeployState deployState) {
+            var minNodeRatioPerGroup = cluster.getClusterControllerConfig().tuning().minNodeRatioPerGroup();
+            StorageGroup rootGroup = cluster.getRootGroup();
+            List<StorageGroup> subgroups = rootGroup.getSubgroups();
+            if (subgroups.isEmpty()) return;
+
+            int numberOfNodes = subgroups.get(0).getNodes().size();
+            var numberOfLeafGroups = rootGroup.getNumberOfLeafGroups();
+            if (numberOfLeafGroups >= 3
+                    && numberOfNodes <= 3
+                    && (minNodeRatioPerGroup.isEmpty() || minNodeRatioPerGroup.get() < 1.0)) {
+                deployState.getDeployLogger().logApplicationPackage(INFO, "In cluster '" + cluster.getName() +
+                        "': min-node-ratio-per-group should be set to 1 when there are 3 or more groups (" +
+                        numberOfLeafGroups + ") and there are 3 or fewer nodes in the group (" + numberOfNodes + ")" +
+                        ". See https://docs.vespa.ai/en/reference/services-content.html?mode=cloud#min-node-ratio-per-group");
             }
         }
 
