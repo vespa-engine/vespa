@@ -57,7 +57,7 @@ public class FileServer {
 
     private static final Logger log = Logger.getLogger(FileServer.class.getName());
 
-    private static final Duration timeout = Duration.ofSeconds(30);
+    private static final Duration timeout = Duration.ofSeconds(60);
     /* In preferred order, the one used will be the first one matching one of the accepted compression
      * types sent in client request.
      */
