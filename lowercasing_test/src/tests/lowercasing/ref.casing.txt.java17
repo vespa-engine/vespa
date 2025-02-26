@@ -1,0 +1,11 @@
+--- casing-diff.exp
++++ casing-diff.act
+@@ -163,7 +163,7 @@
+ ĭ
+ į
+ į
+-i̇
++i
+ ı
+ ĳ
+ ĳ

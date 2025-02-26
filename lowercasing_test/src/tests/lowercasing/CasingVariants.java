@@ -21,7 +21,7 @@ public class CasingVariants {
         if (srcDir == null) {
             srcDir = ".";
         }
-        File f = new File(srcDir + "/letters");
+        File f = new File(srcDir + "/" + args[0]);
         StringBuilder s = new StringBuilder();
         InputStream in = new FileInputStream(f);
 
