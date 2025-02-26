@@ -145,23 +145,14 @@ public final class ForEachExpression extends CompositeExpression {
             }
         }
         else if (valueType instanceof StructDataType) {
-            for (Field field : ((StructDataType)valueType).getFields()) {
-                DataType fieldType = field.getDataType();
-                DataType structValueType = context.setCurrentType(fieldType).verify(expression).getCurrentType();
-                //if (!fieldType.isAssignableFrom(structValueType))
-                //    throw new VerificationException(this, "Expected " + fieldType.getName() + " output, got " +
-                //                                          structValueType.getName());
-            }
+            for (Field field : ((StructDataType)valueType).getFields())
+                context.setCurrentType(field.getDataType()).verify(expression).getCurrentType();
             context.setCurrentType(valueType);
         }
         else if (valueType instanceof MapDataType) {
             // Inner value will be MapEntryFieldValue which has the same type as the map
             DataType outputType = context.verify(expression).getCurrentType();
             context.setCurrentType(new ArrayDataType(outputType));
-        }
-        else {
-            //throw new VerificationException(this, "Expected Array, Struct, WeightedSet or Map input, got " +
-            //                                      (valueType == null ? "no value" : valueType.getName()));
         }
     }
 

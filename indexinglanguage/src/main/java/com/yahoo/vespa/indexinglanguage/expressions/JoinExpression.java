@@ -40,9 +40,6 @@ public final class JoinExpression extends Expression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        //if (!(input instanceof ArrayDataType))
-        //    throw new VerificationException(this, "Expected Array input, got " + (input == null ? "no value" : input.getName()));
         context.setCurrentType(createdOutputType());
     }
 

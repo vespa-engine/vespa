@@ -70,6 +70,7 @@ public abstract class Expression extends Selectable {
      * @param inputType the type to set as the input type of this, or null if it cannot be determined
      * @param requiredType the type the input type must be assignable to
      * @param context the context of this
+     * @return input the input type of this expression resolved from this call and current state
      * @throws IllegalArgumentException if inputType isn't assignable to requiredType
      */
     protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
