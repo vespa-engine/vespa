@@ -279,14 +279,6 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
-    public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
-            "enforce-strictly-increasing-cluster-state-versions", true,
-            List.of("vekterli"), "2024-06-03", "2025-04-01",
-            "Iff true, received cluster state versions that are lower than the current active " +
-            "state version on the node will be explicitly rejected.",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2025-12-31",
