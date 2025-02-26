@@ -21,7 +21,9 @@ class FlushTargetCandidate
     search::SerialNum             _current_serial;
     double                        _replay_cost;
     uint64_t                      _approx_bytes_to_write_to_disk;
+    uint64_t                      _approx_bytes_to_read_from_disk;
     double                        _write_cost;
+    double                        _read_cost;
     bool                          _always_flush;
 
     using Config = PrepareRestartFlushStrategy::Config;
@@ -31,6 +33,7 @@ public:
     const std::shared_ptr<FlushContext> &get_flush_context() const { return _flush_context; }
     search::SerialNum  get_flushed_serial() const { return _flushed_serial; }
     double get_write_cost() const { return _write_cost; }
+    double get_read_cost() const noexcept { return _read_cost; }
     bool get_always_flush() const { return _always_flush; }
 };
 

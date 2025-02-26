@@ -32,6 +32,7 @@ public:
      * @param prefix   The prefix to prepend to the target
      */
     FlushTargetProxy(const IFlushTarget::SP &target, const std::string & prefix);
+    ~FlushTargetProxy() override;
     /**
      * Returns the decorated flush target. This should not be used for anything
      * but testing, as invoking a method on the returned target beats the
@@ -48,6 +49,7 @@ public:
     bool needUrgentFlush() const override { return _target->needUrgentFlush(); }
     Priority getPriority() const override { return _target->getPriority(); }
     uint64_t getApproxBytesToWriteToDisk() const override { return _target->getApproxBytesToWriteToDisk(); }
+    uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
     searchcorespi::FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
     double get_replay_operation_cost() const override { return _target->get_replay_operation_cost(); }
     Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;

@@ -33,6 +33,7 @@ private:
     size_t  _num_candidates;
     TlsReplayCost _tlsReplayCost;
     double _flushTargetsWriteCost;
+    double _flush_targets_read_cost;
 
     using Config = PrepareRestartFlushStrategy::Config;
 
@@ -46,7 +47,9 @@ public:
 
     TlsReplayCost getTlsReplayCost() const { return _tlsReplayCost; }
     double getFlushTargetsWriteCost() const { return _flushTargetsWriteCost; }
-    double getTotalCost() const { return getTlsReplayCost().totalCost() + getFlushTargetsWriteCost(); }
+    double get_flush_targets_read_cost() const noexcept { return _flush_targets_read_cost; }
+    double getTotalCost() const { return getTlsReplayCost().totalCost() + getFlushTargetsWriteCost() +
+        get_flush_targets_read_cost(); }
     FlushContext::List getCandidates() const;
 };
 

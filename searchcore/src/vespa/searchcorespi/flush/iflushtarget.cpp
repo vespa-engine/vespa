@@ -20,4 +20,12 @@ LeafFlushTarget::LeafFlushTarget(const std::string &name, const Type &type, cons
     : IFlushTarget(name, type, component)
 {}
 
+LeafFlushTarget::~LeafFlushTarget() = default;
+
+uint64_t
+LeafFlushTarget::get_approx_bytes_to_read_from_disk() const noexcept
+{
+    return 0;
+}
+
 }

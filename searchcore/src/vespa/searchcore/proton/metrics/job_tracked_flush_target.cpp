@@ -30,4 +30,10 @@ JobTrackedFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search
     return FlushTask::UP();
 }
 
+uint64_t
+JobTrackedFlushTarget::get_approx_bytes_to_read_from_disk() const noexcept
+{
+    return _target->get_approx_bytes_to_read_from_disk();
+}
+
 } // namespace proton

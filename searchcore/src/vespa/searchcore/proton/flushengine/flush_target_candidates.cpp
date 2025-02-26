@@ -55,6 +55,17 @@ calculateFlushTargetsWriteCost(std::span<const FlushTargetCandidate> candidates,
     return result;
 }
 
+double
+calculate_flush_targets_read_cost(std::span<const FlushTargetCandidate> candidates,
+                                  size_t num_candidates)
+{
+    double result = 0;
+    for (size_t i = 0; i < num_candidates; ++i) {
+        result += candidates[i].get_read_cost();
+    }
+    return result;
+}
+
 }
 
 FlushTargetCandidates::FlushTargetCandidates(std::span<const FlushTargetCandidate> candidates,
@@ -69,7 +80,8 @@ FlushTargetCandidates::FlushTargetCandidates(std::span<const FlushTargetCandidat
                                                                        _num_candidates,
                                                                        tlsStats))),
       _flushTargetsWriteCost(calculateFlushTargetsWriteCost(_candidates,
-                                                            _num_candidates))
+                                                            _num_candidates)),
+      _flush_targets_read_cost(calculate_flush_targets_read_cost(_candidates, num_candidates))
 {
 }
 

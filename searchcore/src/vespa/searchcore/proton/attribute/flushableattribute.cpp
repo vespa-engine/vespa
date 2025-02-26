@@ -169,7 +169,8 @@ FlushableAttribute::FlushableAttribute(AttributeVectorSP attr,
       _attributeFieldWriter(attributeFieldWriter),
       _hwInfo(hwInfo),
       _attrDir(attrDir),
-      _replay_operation_cost(0.0)
+      _replay_operation_cost(0.0),
+      _paged(_attr->getConfig().paged())
 {
     _lastStats.setPathElementsToLog(8);
     auto &config = attr->getConfig();
@@ -249,6 +250,20 @@ uint64_t
 FlushableAttribute::getApproxBytesToWriteToDisk() const
 {
     return _attr->getEstimatedSaveByteSize();
+}
+
+uint64_t
+FlushableAttribute::get_approx_bytes_to_read_from_disk() const noexcept
+{
+    if (_paged) {
+        /*
+         * The amount of data read from disk for paged attributse scales
+         * linearly with the amount of data to write to disk.
+         */
+        return getApproxBytesToWriteToDisk();
+    } else {
+        return 0;
+    }
 }
 
 double
