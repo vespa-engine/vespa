@@ -70,7 +70,7 @@ public final class JsonRender {
         static final char[] hex = "0123456789ABCDEF".toCharArray();
 
         protected void encodeSTRING(String value) {
-
+            // Batching up some chars before calling out.append() is about up 20-60% faster
             char[] buf = new char[128];
             char pos = 0;
 
