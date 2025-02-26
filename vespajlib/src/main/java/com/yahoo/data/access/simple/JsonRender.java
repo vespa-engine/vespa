@@ -70,29 +70,40 @@ public final class JsonRender {
         static final char[] hex = "0123456789ABCDEF".toCharArray();
 
         protected void encodeSTRING(String value) {
-            out.append('"');
+
+            char[] buf = new char[256];
+            char pos = 0;
+
+            buf[pos++] = '"';
+
             for (char c : value.toCharArray()) {
+                if(pos > buf.length - 8) {
+                    out.append(buf, 0, pos);
+                    pos = 0;
+                }
                 switch (c) {
-                case '"':  out.append('\\').append('"'); break;
-                case '\\': out.append('\\').append('\\'); break;
-                case '\b': out.append('\\').append('b'); break;
-                case '\f': out.append('\\').append('f'); break;
-                case '\n': out.append('\\').append('n'); break;
-                case '\r': out.append('\\').append('r'); break;
-                case '\t': out.append('\\').append('t'); break;
+                case '"':  buf[pos++] ='\\';buf[pos++] ='"'; break;
+                case '\\': buf[pos++] ='\\';buf[pos++] ='\\'; break;
+                case '\b': buf[pos++] ='\\';buf[pos++] ='b'; break;
+                case '\f': buf[pos++] ='\\';buf[pos++] ='f'; break;
+                case '\n': buf[pos++] ='\\';buf[pos++] ='n'; break;
+                case '\r': buf[pos++] ='\\';buf[pos++] ='r'; break;
+                case '\t': buf[pos++] ='\\';buf[pos++] ='t'; break;
                 default:
                     if (c > 0x1f) {
-                        out.append(c);
+                        buf[pos++] =c;
                     } else { // requires escaping according to RFC 4627
-                        out.append('\\').append('u');
-                        out.append(hex[(c >> 12) & 0xf]);
-                        out.append(hex[(c >> 8) & 0xf]);
-                        out.append(hex[(c >> 4) & 0xf]);
-                        out.append(hex[c & 0xf]);
+                        buf[pos++] ='\\'; buf[pos++] ='u';
+                        buf[pos++] =hex[(c >> 12) & 0xf];
+                        buf[pos++] =hex[(c >> 8) & 0xf];
+                        buf[pos++] =hex[(c >> 4) & 0xf];
+                        buf[pos++] =hex[c & 0xf];
                     }
                 }
             }
-            out.append('"');
+            buf[pos++] ='"';
+
+            out.append(buf, 0, pos);
         }
 
         protected void encodeDATA(byte[] value) {
