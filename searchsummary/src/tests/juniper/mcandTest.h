@@ -4,10 +4,10 @@
  */
 #pragma once
 
-#include "testenv.h"
 #include "test.h"
-#include <vespa/juniper/mcand.h>
+#include "testenv.h"
 #include <map>
+#include <vespa/juniper/mcand.h>
 
 /**
  * The MatchCandidateTest class holds
@@ -30,54 +30,45 @@ class MatchCandidateTest : public Test {
      */
     void testSetDocid();
 
-
     /**
      * Test of the log method.
      */
     void testLog();
-
 
     /**
      * Test of the dump method.
      */
     void testDump();
 
-
     /**
      * Test of the (order method.
      */
     void testorder();
-
 
     /**
      * Test of the matches_limit method.
      */
     void testMatches_limit();
 
-
     /**
      * Test of the accept method.
      */
     void testAccept();
-
 
     /**
      * Test of the rank method.
      */
     void testRank();
 
-
     /**
      * Test of the make_keylist method.
      */
     void testMake_keylist();
 
-
     /**
      * Test of the add_to_keylist method.
      */
     void testAdd_to_keylist();
-
 
     /**
      * Test of the length method.
@@ -94,66 +85,55 @@ class MatchCandidateTest : public Test {
      */
     void testOrder();
 
-
     /**
      * Test of the size method.
      */
     void testSize();
-
 
     /**
      * Test of the endpos method.
      */
     void testEndpos();
 
-
     /**
      * Test of the ctxt_startpos method.
      */
     void testCtxt_startpos();
-
 
     /**
      * Test of the starttoken method.
      */
     void testStarttoken();
 
-
     /**
      * Test of the word_distance method.
      */
     void testWord_distance();
-
 
     /**
      * Test of the distance method.
      */
     void testDistance();
 
-
     /**
      * Test of the elem_store_sz method.
      */
     void testElem_store_sz();
-
 
     /**
      * Test of the elems method.
      */
     void testElems();
 
-
     /**
      * Test of the distance method.
      */
     void testDistance1();
 
-
     /**
      * Test of the set_valid method.
      */
     void testSet_valid();
-
 
     /*************************************************************************
      *                      Test administration methods
@@ -171,12 +151,12 @@ class MatchCandidateTest : public Test {
      */
     void tearDown();
 
-    typedef void(MatchCandidateTest::* tst_method_ptr) ();
+    typedef void (MatchCandidateTest::*tst_method_ptr)();
     using MethodContainer = std::map<std::string, tst_method_ptr>;
     MethodContainer test_methods_;
-    void init();
-protected:
+    void            init();
 
+protected:
     /**
      * Since we are running within Emacs, the default behavior of
      * print_progress which includes backspace does not work.
@@ -185,19 +165,17 @@ protected:
     void print_progress() override { *m_osptr << '.' << std::flush; }
 
 public:
-
     MatchCandidateTest();
     ~MatchCandidateTest() {}
 
     /*************************************************************************
      *                         main entry points
      *************************************************************************/
-    void Run(MethodContainer::iterator &itr);
+    void Run(MethodContainer::iterator& itr);
     void Run() override;
-    void Run(const char *method);
+    void Run(const char* method);
     void Run(int argc, char* argv[]);
 };
-
 
 // Local Variables:
 // mode:c++

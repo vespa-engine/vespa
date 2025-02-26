@@ -23,22 +23,8 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	if !root.Valid() {
 		return fmt.Errorf("profile file '%s' does not contain valid JSON", opts.profileFile)
 	}
-	var cnt int
-	var maxTime float64
-	var maxTrace *tracedoctor.ProtonTrace = nil
-	for _, trace := range tracedoctor.FindProtonTraces(root.Field("trace")) {
-		cnt++
-		if trace.DurationMs > maxTime {
-			maxTime = trace.DurationMs
-			maxTrace = trace
-		}
-	}
-	if maxTrace != nil {
-		fmt.Fprintf(cli.Stdout, "found %d searches, slowest search was: %s[%d]: %10.3f ms\n",
-			cnt, maxTrace.DocumentType, maxTrace.DistributionKey, maxTrace.DurationMs)
-		return maxTrace.MatchProfiling().Render(cli.Stdout)
-	}
-	return nil
+	context := tracedoctor.NewContext(root)
+	return context.Analyze(cli.Stdout)
 }
 
 func newInspectProfileCmd(cli *CLI) *cobra.Command {

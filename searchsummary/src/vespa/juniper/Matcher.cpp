@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "query.h"
-#include "juniperdebug.h"
-#include "sumdesc.h"
 #include "Matcher.h"
-#include "result.h"
-#include "juniperparams.h"
 #include "config.h"
+#include "juniperdebug.h"
+#include "juniperparams.h"
+#include "query.h"
+#include "result.h"
+#include "sumdesc.h"
 #include <algorithm>
 #include <cinttypes>
 #include <sstream>
@@ -19,13 +19,13 @@ unsigned debug_level = 0;
 
 #define KEY_OCC_RESERVED 10
 
-Matcher::Matcher(Result* result) :
-    _result(result),
+Matcher::Matcher(Result* result)
+  : _result(result),
     _qhandle(result->_qhandle),
-    _mo(_qhandle->MatchObj(result->_langid)),
+    _mo(_qhandle->MatchObj()),
     _match_iter(_mo, result),
     _winsize(600),
-    _winsizeFallback(_winsize*10),
+    _winsizeFallback(_winsize * 10),
     _max_match_candidates(1000),
     _proximity_noconstraint_offset(PROXIMITYBOOST_NOCONSTRAINT_OFFSET),
     _proximity_factor(1.0),
@@ -37,8 +37,7 @@ Matcher::Matcher(Result* result) :
     _matches(),
     _ctxt_start(0),
     _log_mask(0),
-    _log_text("")
-{
+    _log_text("") {
     _occ.reserve(KEY_OCC_RESERVED);
     const DocsumParams& dsp = _result->_config->_docsumparams;
     _winsize = _result->WinSize();
@@ -48,66 +47,53 @@ Matcher::Matcher(Result* result) :
     _wrk_set = new match_sequence[_nontermcnt];
     LOG(debug, "Matcher(): winsize(%zu), winsize_fallback(%zu), max_match_candidates(%zu), need_complete_cnt(%d)",
         _winsize, _winsizeFallback, _max_match_candidates, _need_complete_cnt);
-
 }
 
-Matcher::~Matcher()
-{
+Matcher::~Matcher() {
     reset_document();
     delete[] _wrk_set;
 }
 
-
 // Efficient object creation/deletion
 
-MatchCandidate* Matcher::NewCandidate(QueryExpr* query)
-{
-    using MatchElementP = MatchElement *;
+MatchCandidate* Matcher::NewCandidate(QueryExpr* query) {
+    using MatchElementP = MatchElement*;
     return new MatchCandidate(query, new MatchElementP[query->_arity], _ctxt_start);
 }
 
-
-MatchCandidate* Matcher::RefCandidate(MatchCandidate* m)
-{
+MatchCandidate* Matcher::RefCandidate(MatchCandidate* m) {
     if (!m) return NULL;
     m->ref();
     if (LOG_WOULD_LOG(spam)) {
-        std::string s; m->dump(s);
+        std::string s;
+        m->dump(s);
         LOG(spam, "RefCandidate: %s", s.c_str());
     }
     return m;
 }
 
-
-void Matcher::DerefCandidate(MatchCandidate* m)
-{
+void Matcher::DerefCandidate(MatchCandidate* m) {
     if (!m) return;
     if (LOG_WOULD_LOG(spam)) {
-        std::string s; m->dump(s);
+        std::string s;
+        m->dump(s);
         LOG(spam, "DerefCandidate: %s", s.c_str());
     }
     if (m->deref()) return;
     // Dereference all the complex (MatchCandidate) children of m:
     for (int i = 0; i < m->elem_store_sz(); i++) {
-        if (m->element[i])
-            DerefCandidate(m->element[i]->Complex());
+        if (m->element[i]) DerefCandidate(m->element[i]->Complex());
     }
     delete m;
 }
 
-
-Matcher& Matcher::SetProximityFactor(float proximity_factor)
-{
-    if (proximity_factor != 1) {
-        LOG(debug, "Proximity factor %.1f", proximity_factor);
-    }
+Matcher& Matcher::SetProximityFactor(float proximity_factor) {
+    if (proximity_factor != 1) { LOG(debug, "Proximity factor %.1f", proximity_factor); }
     _proximity_factor = proximity_factor;
     return *this;
 }
 
-
-void Matcher::reset_document()
-{
+void Matcher::reset_document() {
     // Delete all our document specific data structures to reset to initial state:
     LOG(debug, "Matcher: resetting document");
     flush_candidates();
@@ -116,23 +102,18 @@ void Matcher::reset_document()
     _endpos = 0;
 }
 
-void Matcher::reset_matches()
-{
+void Matcher::reset_matches() {
     LOG(debug, "reset_matches");
-    for (match_candidate_set::iterator it = _matches.begin(); it != _matches.end(); ++it)
-        DerefCandidate(*it);
+    for (match_candidate_set::iterator it = _matches.begin(); it != _matches.end(); ++it) DerefCandidate(*it);
     _matches.clear();
     _ctxt_start = 0;
 }
 
-void Matcher::reset_occurrences()
-{
+void Matcher::reset_occurrences() {
     _occ.clear();
 }
 
-
-void Matcher::update_match(MatchCandidate* m)
-{
+void Matcher::update_match(MatchCandidate* m) {
     QueryNode* nexp = m->match()->_parent;
     if (!nexp) { // root node of query
         _matches.insert(m);
@@ -154,10 +135,7 @@ void Matcher::update_match(MatchCandidate* m)
     }
 }
 
-
-
-bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len)
-{
+bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len) {
     QueryTerm* mexp = _match_iter.current();
 
     LOG(spam, "Match: %s(%" PRId64 ")", mexp->term(), static_cast<int64_t>(tpos));
@@ -190,8 +168,7 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len)
 
     // Then add a new candidate starting at the currently found keyword
     // for each subexpression that matches this keyword
-    for (; mexp != NULL; mexp = _match_iter.next())
-    {
+    for (; mexp != NULL; mexp = _match_iter.next()) {
         QueryNode* pexp = mexp->_parent;
         assert(pexp);
         MatchCandidate* nm = NewCandidate(pexp);
@@ -203,8 +180,11 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len)
         match_sequence& cs = _wrk_set[pexp->_node_idx];
         if (cs.size() >= _max_match_candidates) {
             DerefCandidate(nm);
-            LOG(debug, "The max number of match candidates (%zu) in the work set for query node idx '%u' has been reached. "
-                "No more candidates are added", _max_match_candidates, pexp->_node_idx);
+            LOG(debug,
+                "The max number of match candidates (%zu) in the work set for query node idx '%u' has been "
+                "reached. "
+                "No more candidates are added",
+                _max_match_candidates, pexp->_node_idx);
         } else {
             cs.push_back(nm);
         }
@@ -213,12 +193,10 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len)
     return true;
 }
 
-
-
-void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mexp)
-{
+void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mexp) {
     if (LOG_WOULD_LOG(spam)) {
-        std::string s; k->dump(s);
+        std::string s;
+        k->dump(s);
         LOG(spam, "update_wrk_set(): match_sequence.size(%zu), element(%s)", ws.size(), s.c_str());
     }
 
@@ -232,7 +210,6 @@ void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mex
         // candidates also has the keyword
         if (as == MatchCandidate::M_EXISTS) break;
 
-
         // Just accepted this candidate into another higher level
         if (as != MatchCandidate::M_OVERLAP) {
             MatchCandidate* mu = k->Complex();
@@ -240,7 +217,8 @@ void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mex
         }
 
         // we should allow a slighly larger winsize here because we have not found all matches yet.
-        if ((as == MatchCandidate::M_EXPIRED) || ((k->startpos() - m->startpos()) >= static_cast<int>(_winsizeFallback))) {
+        if ((as == MatchCandidate::M_EXPIRED) ||
+            ((k->startpos() - m->startpos()) >= static_cast<int>(_winsizeFallback))) {
             // remove from current pos and delete - can never be satisfied
             match_sequence::reverse_iterator new_rit(ws.erase((++rit).base()));
             rit = new_rit;
@@ -254,9 +232,7 @@ void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mex
                 rit = new_rit;
 
                 if (m->matches_limit()) {
-                    if (_need_complete_cnt > 0) {
-                        _need_complete_cnt--;
-                    }
+                    if (_need_complete_cnt > 0) { _need_complete_cnt--; }
                     update_match(m);
                 } else {
                     DerefCandidate(m);
@@ -267,15 +243,14 @@ void Matcher::update_wrk_set(match_sequence& ws, MatchElement* k, QueryExpr* mex
         }
     }
     if (LOG_WOULD_LOG(spam)) {
-        std::string s; k->dump(s);
+        std::string s;
+        k->dump(s);
         LOG(spam, "END update_wrk_set, '%s'", s.c_str());
     }
 }
 
-
 // Flush all remaining candidates upon context change or document end:
-void Matcher::flush_candidates()
-{
+void Matcher::flush_candidates() {
     int cands = 0;
     for (size_t i = 0; i < _nontermcnt; i++) {
         match_sequence& ws = _wrk_set[i];
@@ -292,19 +267,14 @@ void Matcher::flush_candidates()
     LOG(debug, "Flushing done (%d candidates)", cands);
 }
 
-
-void Matcher::set_log(unsigned long log_mask)
-{
+void Matcher::set_log(unsigned long log_mask) {
     _log_mask = log_mask;
 }
 
-
-void Matcher::handle_token(Token& token)
-{
+void Matcher::handle_token(Token& token) {
     if (LOG_WOULD_LOG(debug)) {
         char utf8token[1024];
-        Fast_UnicodeUtil::utf8ncopy(utf8token, token.token, 1024,
-                                    (token.token != NULL ? token.curlen : 0));
+        Fast_UnicodeUtil::utf8ncopy(utf8token, token.token, 1024, (token.token != NULL ? token.curlen : 0));
         LOG(debug, "handle_token(%s)", utf8token);
     }
 
@@ -317,13 +287,10 @@ void Matcher::handle_token(Token& token)
     _endpos = token.bytepos + token.bytelen;
 }
 
-
-void Matcher::handle_end(Token& token)
-{
+void Matcher::handle_end(Token& token) {
     if (LOG_WOULD_LOG(debug)) {
         char utf8token[1024];
-        Fast_UnicodeUtil::utf8ncopy(utf8token, token.token, 1024,
-                                    (token.token != NULL ? token.curlen : 0));
+        Fast_UnicodeUtil::utf8ncopy(utf8token, token.token, 1024, (token.token != NULL ? token.curlen : 0));
         LOG(debug, "handle_end(%s)", utf8token);
     }
     if (LOG_WOULD_LOG(spam)) {
@@ -338,9 +305,7 @@ void Matcher::handle_end(Token& token)
     flush_candidates();
 }
 
-
-void Matcher::dump_matches(int printcount, bool best)
-{
+void Matcher::dump_matches(int printcount, bool best) {
     assert(!best); // This functionality removed
     match_candidate_set& m = _matches;
 
@@ -348,13 +313,13 @@ void Matcher::dump_matches(int printcount, bool best)
         // flush the remaining match candidates to the list of matches, if any:
         flush_candidates();
     }
-    int i = 0;
+    int                i = 0;
     std::ostringstream oss;
     oss << "dump_matches(" << m.size() << "):\n";
     i = 0;
     for (match_candidate_set::iterator it = m.begin(); it != m.end(); ++it) {
         if (i >= printcount) break;
-//    if ((*it)->distance() == 0) break;
+        //    if ((*it)->distance() == 0) break;
         std::string s;
         (*it)->dump(s);
         oss << s << "\n";
@@ -363,10 +328,8 @@ void Matcher::dump_matches(int printcount, bool best)
     LOG(spam, "%s", oss.str().c_str());
 }
 
-
-void Matcher::log_matches(int printcount)
-{
-    int nterms = QueryTerms();
+void Matcher::log_matches(int printcount) {
+    int                  nterms = QueryTerms();
     match_candidate_set& m = _matches;
 
     // flush the remaining match candidates to the list of matches, if any:
@@ -377,9 +340,8 @@ void Matcher::log_matches(int printcount)
     _log_text.append("<table>");
     if (m.size() > 0) {
         _log_text.append("<tr class=shade>");
-        snprintf(buf, sizeof(buf),
-                 "<td colspan=%d align=center><b>Topmost %zu matches out of %zu",
-                 nterms+2, std::min(static_cast<size_t>(printcount), m.size()),m.size());
+        snprintf(buf, sizeof(buf), "<td colspan=%d align=center><b>Topmost %zu matches out of %zu", nterms + 2,
+                 std::min(static_cast<size_t>(printcount), m.size()), m.size());
         _log_text.append(buf);
         _log_text.append("</b></td></tr>");
     }
@@ -392,8 +354,7 @@ void Matcher::log_matches(int printcount)
     if (m.size() > 0) {
         _log_text.append("<td align=right>distance</td><td align=right>rank</td></tr>\n");
         i = 0;
-        for (match_candidate_set::iterator it = m.begin(); it != m.end(); ++it)
-        {
+        for (match_candidate_set::iterator it = m.begin(); it != m.end(); ++it) {
             if (i >= printcount) break;
             _log_text.append("<tr class=shade>");
             (*it)->log(_log_text);
@@ -402,23 +363,17 @@ void Matcher::log_matches(int printcount)
         }
     }
     _log_text.append("<tr class=shadehead>");
-    snprintf(buf, sizeof(buf),
-             "<td colspan=%d align=center><b>Total(exact) keyword hits</b></td>",
-             nterms);
+    snprintf(buf, sizeof(buf), "<td colspan=%d align=center><b>Total(exact) keyword hits</b></td>", nterms);
     _log_text.append(buf);
     _log_text.append("</tr><tr class=shade>");
     for (i = 0; i < nterms; i++) {
-        snprintf(buf, sizeof(buf),
-                 "<td>%d(%d)</td>", TotalMatchCnt(i), ExactMatchCnt(i));
+        snprintf(buf, sizeof(buf), "<td>%d(%d)</td>", TotalMatchCnt(i), ExactMatchCnt(i));
         _log_text.append(buf);
     }
     _log_text.append("</tr></table>");
 }
 
-
-
-void Matcher::dump_occurrences(int printcount)
-{
+void Matcher::dump_occurrences(int printcount) {
     std::ostringstream oss;
     oss << "dump_occurrences:\n";
     int i = 0;
@@ -435,71 +390,54 @@ void Matcher::dump_occurrences(int printcount)
     LOG(spam, "%s", oss.str().c_str());
 }
 
-
-void Matcher::dump_statistics()
-{
+void Matcher::dump_statistics() {
     int i;
     int nterms = QueryTerms();
 
     fprintf(stderr, "%20s %12s %12s\n", "Term", "Matches", "Exact");
     for (i = 0; i < nterms; i++) {
         QueryTerm* q = _mo->Term(i);
-        fprintf(stderr, "%20s %12d %12d\n", q->term(), q->total_match_cnt,
-                q->exact_match_cnt);
+        fprintf(stderr, "%20s %12d %12d\n", q->term(), q->total_match_cnt, q->exact_match_cnt);
     }
 }
 
-
-
 // Debugging/testing:
 
-int Matcher::TotalMatchCnt(int number)
-{
+int Matcher::TotalMatchCnt(int number) {
     if (number < QueryTerms() && number >= 0)
         return _mo->Term(number)->total_match_cnt;
     else
         return 0;
 }
 
-
-int Matcher::ExactMatchCnt(int number)
-{
+int Matcher::ExactMatchCnt(int number) {
     if (number < QueryTerms() && number >= 0)
         return _mo->Term(number)->exact_match_cnt;
     else
         return 0;
 }
 
-
-const char* Matcher::QueryTermText(int term_no)
-{
+const char* Matcher::QueryTermText(int term_no) {
     return _mo->Term(term_no)->term();
 }
 
-
-std::string Matcher::GetLog()
-{
+std::string Matcher::GetLog() {
     return _log_text;
 }
 
-
-SummaryDesc* Matcher::CreateSummaryDesc(size_t length, size_t min_length, int max_matches, int surround_len)
-{
+SummaryDesc* Matcher::CreateSummaryDesc(size_t length, size_t min_length, int max_matches, int surround_len) {
     // No point in processing this document if no keywords found at all:
     if (TotalHits() <= 0) return NULL;
 
-    LOG(debug, "Matcher: sum.desc (length %lu, min_length %lu, max matches %d, "
+    LOG(debug,
+        "Matcher: sum.desc (length %lu, min_length %lu, max matches %d, "
         "surround max %d)",
-        static_cast<unsigned long>(length),
-        static_cast<unsigned long>(min_length),
-        max_matches, surround_len);
+        static_cast<unsigned long>(length), static_cast<unsigned long>(min_length), max_matches, surround_len);
     return new SummaryDesc(this, length, min_length, max_matches, surround_len);
 }
 
-
 // This should rather be called ProximityRank() now:
-long Matcher::GlobalRank()
-{
+long Matcher::GlobalRank() {
     // Proximity ranking only applies to multi term queries, return a constant
     // in all other cases:
     if (QueryTerms() <= 1) return _proximity_noconstraint_offset;
@@ -511,20 +449,20 @@ long Matcher::GlobalRank()
     // Rank is computed as the rank of the best match within the document
     // boosted with the total number of found occurrences of any of the words in the query
     // normalized by the number of words in the query:
-    return ((*it)->rank() >> 3) + ((TotalHits()/nterms) << 2);
+    return ((*it)->rank() >> 3) + ((TotalHits() / nterms) << 2);
 #else
     // Rank is computed as the rank of the 3 best matches within the document
     // with each subsequent match counting 80% of the previous match.
     //
-    long rank_val = 0;
+    long      rank_val = 0;
     const int quotient = 5;
     const int prod = 4;
-    int r_quotient = 1;
-    int r_prod = 1;
+    int       r_quotient = 1;
+    int       r_prod = 1;
     const int best_matches = 3; // candidate(s) for parametrisation!
 
     for (int i = 0; i < best_matches && it != _matches.end(); i++) {
-        rank_val += (((*it)->rank()*r_prod/r_quotient) >> 4);
+        rank_val += (((*it)->rank() * r_prod / r_quotient) >> 4);
         r_quotient *= quotient;
         r_prod *= prod;
         ++it;
@@ -532,9 +470,8 @@ long Matcher::GlobalRank()
 
     // Return negative weight of no hits and any of the explicit limits in effect
     // Eg. NEAR/WITHIN but make exception for PHRASE since that is better
-    //handled by the index in the cases where there are more information at that stage:
-    if (!rank_val && _mo->HasConstraints())
-        return 0;
+    // handled by the index in the cases where there are more information at that stage:
+    if (!rank_val && _mo->HasConstraints()) return 0;
 
     // shift down to a more suitable range for fsearch. Multiply by configured boost
     // Add configured offset
@@ -542,19 +479,15 @@ long Matcher::GlobalRank()
 #endif
 }
 
-
 /* These operations can be performed after the matcher is no longer existing..
  *
  */
-std::string BuildSummary(const char* buffer, size_t buflen, SummaryDesc* summary,
-			 const SummaryConfig* config, size_t& char_size)
-{
+std::string BuildSummary(const char* buffer, size_t buflen, SummaryDesc* summary, const SummaryConfig* config,
+                         size_t& char_size) {
     return summary->get_summary(buffer, buflen, config, char_size);
 }
 
-
-void DeleteSummaryDesc(SummaryDesc* s)
-{
+void DeleteSummaryDesc(SummaryDesc* s) {
     LOG(debug, "Matcher: deleting SummaryDesc");
     delete s;
 }

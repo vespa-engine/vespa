@@ -24,9 +24,11 @@ public:
         double tlsReplayByteCost;
         double tlsReplayOperationCost;
         double flushTargetWriteCost;
+        double flush_target_read_cost;
         Config(double tlsReplayByteCost_,
                double tlsReplayOperationCost_,
-               double flushTargetWriteCost_);
+               double flushTargetWriteCost_,
+               double flush_target_read_cost_);
     };
 
 private:

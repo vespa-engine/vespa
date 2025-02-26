@@ -18,7 +18,6 @@ import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.HostResources;
 import com.yahoo.vespa.flags.custom.SharedHost;
@@ -218,40 +217,6 @@ public class DynamicProvisioningTest {
     }
 
     @Test
-    public void retires_on_exclusivity_violation() {
-        var tester = tester(false);
-        tester.flagSource().withJacksonFlag(PermanentFlags.SHARED_HOST.id(), new SharedHost(List.of(new HostResources(1., 1., 1., 1., "fast", "local", null, 10, "x86_64"))), SharedHost.class);
-        ApplicationId application1 = applicationId();
-        NodeResources resources = new NodeResources(4, 80, 100, 1);
-        prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources, tester);
-        NodeList initialNodes = tester.nodeRepository().nodes().list().owner(application1);
-        assertEquals(4, initialNodes.size());
-
-        // Redeploy same application with exclusive=true
-        NodeResources smallerExclusiveResources = new NodeResources(2, 20, 50, 1);
-        prepareAndActivate(application1, clusterSpec("mycluster", true), 4, 1, smallerExclusiveResources, tester);
-        assertEquals(8, tester.nodeRepository().nodes().list().owner(application1).size());
-        assertEquals(initialNodes, tester.nodeRepository().nodes().list().owner(application1).retired());
-
-        // Redeploy without exclusive again is no-op
-        prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallerExclusiveResources, tester);
-        NodeList nodes = tester.nodeRepository().nodes().list();
-        assertEquals(8, nodes.owner(application1).size());
-        assertEquals(initialNodes, nodes.owner(application1).retired());
-
-        // Remove the old retired nodes and make 2 random parents of current nodes violate exclusivity
-        tester.patchNodes(initialNodes.asList(), node -> node.removable(true));
-        NodeList exclusiveViolators = nodes.owner(application1).not().retired().first(2);
-        List<Node> parents = exclusiveViolators.mapToList(node -> nodes.parentOf(node).get());
-        tester.patchNode(parents.get(0), node -> node.withProvisionedForApplicationId(ApplicationId.defaultId()));
-        tester.patchNode(parents.get(1), node -> node.withExclusiveToClusterType(container));
-
-        prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallerExclusiveResources, tester);
-        assertEquals(10, tester.nodeRepository().nodes().list().owner(application1).size());
-        assertEquals(exclusiveViolators, tester.nodeRepository().nodes().list().owner(application1).retired());
-    }
-
-    @Test
     public void node_indices_are_unique_even_when_a_node_is_left_in_reserved_state() {
         var tester = tester(true);
         NodeResources resources = new NodeResources(10, 10, 10, 10);
@@ -322,50 +287,6 @@ public class DynamicProvisioningTest {
                            2, 1, 2, 20, 40,
                            app1, cluster1);
     }
-
-    @Test
-    public void migrates_nodes_on_host_flavor_flag_change() {
-        InMemoryFlagSource flagSource = new InMemoryFlagSource();
-        List<Flavor> flavors = List.of(new Flavor("x86", new NodeResources(2, 8, 50, 0.1, fast, local, Architecture.x86_64)),
-                                       new Flavor("arm", new NodeResources(2, 8, 50, 0.1, fast, local, Architecture.arm64)));
-        MockHostProvisioner hostProvisioner = new MockHostProvisioner(flavors);
-        ProvisioningTester tester = new ProvisioningTester.Builder()
-                .dynamicProvisioning(true, false)
-                .flavors(flavors)
-                .hostProvisioner(hostProvisioner)
-                .resourcesCalculator(0, 0)
-                .nameResolver(nameResolver)
-                .flagSource(flagSource)
-                .build();
-
-        ApplicationId app = applicationId("a1");
-        ClusterSpec cluster = ClusterSpec.request(content, new ClusterSpec.Id("cluster1")).vespaVersion("8").build();
-        Capacity capacity = Capacity.from(new ClusterResources(4, 2, new NodeResources(2, 8, 50, 0.1, DiskSpeed.any, StorageType.any, Architecture.any)));
-
-        hostProvisioner.setHostFlavor("x86", content);
-        tester.activate(app, cluster, capacity);
-        NodeList nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(active).size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(nodes.owner(app).state(active)).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-
-        hostProvisioner.setHostFlavor("arm", content);
-        flagSource.withStringFlag(PermanentFlags.HOST_FLAVOR.id(), "arm");
-        tester.activate(app, cluster, capacity);
-        nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(active).retired().size());
-        assertEquals(4, nodes.owner(app).state(active).not().retired().size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-
-        flagSource.removeFlag(PermanentFlags.HOST_FLAVOR.id()); // Resetting flag does not move the nodes back
-        tester.activate(app, cluster, capacity);
-        nodes = tester.nodeRepository().nodes().list();
-        assertEquals(4, nodes.owner(app).state(active).retired().size());
-        assertEquals(4, nodes.owner(app).state(active).not().retired().size());
-        assertEquals(Set.of("x86"), nodes.parentsOf(tester.getNodes(app, active).retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-        assertEquals(Set.of("arm"), nodes.parentsOf(tester.getNodes(app, active).not().retired()).stream().map(n -> n.flavor().name()).collect(Collectors.toSet()));
-    }
-
 
     @Test
     public void reduces_container_node_count() {

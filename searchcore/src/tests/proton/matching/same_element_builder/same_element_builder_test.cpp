@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/searchcore/proton/matching/fakesearchcontext.h>
 #include <vespa/searchcore/proton/matching/querynodes.h>
@@ -13,6 +12,7 @@
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using proton::matching::FakeSearchContext;
 using proton::matching::ProtonLocationTerm;
@@ -85,7 +85,10 @@ struct FakeTerms {
         attr_suffix_term.resolve(resolver, idx_env);
         attr_regexp_term.resolve(resolver, idx_env);
     }
+    ~FakeTerms();
 };
+
+FakeTerms::~FakeTerms() = default;
 
 struct BuilderFixture {
     FakeRequestContext req_ctx;
@@ -96,7 +99,10 @@ struct BuilderFixture {
         ctx.attr().tag("attr");
         ctx.addIdx(0).idx(0).getFake().tag("idx");
     }
+    ~BuilderFixture();
 };
+
+BuilderFixture::~BuilderFixture() = default;
 
 const FakeBlueprint *as_fake(const Blueprint *bp) {
     const IntermediateBlueprint *parent = dynamic_cast<const IntermediateBlueprint*>(bp);
@@ -109,36 +115,42 @@ const FakeBlueprint *as_fake(const Blueprint *bp) {
 void verify_blueprint(Blueprint *bp, std::initializer_list<const char *> tags) {
     SameElementBlueprint *se = dynamic_cast<SameElementBlueprint*>(bp);
     ASSERT_TRUE(se != nullptr);
-    ASSERT_EQUAL(1u, se->getState().numFields());
+    ASSERT_EQ(1u, se->getState().numFields());
     const auto &field = se->getState().field(0);
-    EXPECT_EQUAL(3u, field.getFieldId());
-    EXPECT_EQUAL(5u, field.getHandle());
+    EXPECT_EQ(3u, field.getFieldId());
+    EXPECT_EQ(5u, field.getHandle());
     EXPECT_FALSE(field.isFilter());
-    ASSERT_EQUAL(se->terms().size(), tags.size());
+    ASSERT_EQ(se->terms().size(), tags.size());
     size_t idx = 0;
     for (const char *tag: tags) {
         const FakeBlueprint *fake = as_fake(se->terms()[idx++].get());
         ASSERT_TRUE(fake != nullptr);
-        EXPECT_EQUAL(fake->tag(), tag);
+        EXPECT_EQ(fake->tag(), tag);
     }
 }
 
-TEST_FF("require that same element blueprint can be built", BuilderFixture(), FakeTerms()) {
+TEST(SameElementBuilderTest, require_that_same_element_blueprint_can_be_built) {
+    BuilderFixture f1;
+    FakeTerms f2;
     f1.builder.add_child(f2.idx_string_term);
     f1.builder.add_child(f2.attr_string_term);
     Blueprint::UP result = f1.builder.build();
-    TEST_DO(verify_blueprint(result.get(), {"idx", "attr"}));
+    verify_blueprint(result.get(), {"idx", "attr"});
 }
 
-TEST_FF("require that terms searching multiple fields are ignored", BuilderFixture(), FakeTerms()) {
+TEST(SameElementBuilderTest, require_that_terms_searching_multiple_fields_are_ignored) {
+    BuilderFixture f1;
+    FakeTerms f2;
     f1.builder.add_child(f2.idx_string_term);
     f1.builder.add_child(f2.attr_string_term);
     f1.builder.add_child(f2.both_string_term); // ignored
     Blueprint::UP result = f1.builder.build();
-    TEST_DO(verify_blueprint(result.get(), {"idx", "attr"}));
+    verify_blueprint(result.get(), {"idx", "attr"});
 }
 
-TEST_FF("require that all relevant term types can be used", BuilderFixture(), FakeTerms()) {
+TEST(SameElementBuilderTest, require_that_all_relevant_term_types_can_be_used) {
+    BuilderFixture f1;
+    FakeTerms f2;;
     f1.builder.add_child(f2.idx_string_term);
     f1.builder.add_child(f2.idx_number_term);
     f1.builder.add_child(f2.idx_location_term);
@@ -148,12 +160,13 @@ TEST_FF("require that all relevant term types can be used", BuilderFixture(), Fa
     f1.builder.add_child(f2.attr_suffix_term);
     f1.builder.add_child(f2.attr_regexp_term);
     Blueprint::UP result = f1.builder.build();
-    TEST_DO(verify_blueprint(result.get(), {"idx", "idx", "idx", "idx", "attr", "attr", "attr", "attr"}));
+    verify_blueprint(result.get(), {"idx", "idx", "idx", "idx", "attr", "attr", "attr", "attr"});
 }
 
-TEST_F("require that building same element with no children gives EmptyBlueprint", BuilderFixture()) {
+TEST(SameElementBuilderTest, require_that_building_same_element_with_no_children_gives_EmptyBlueprint) {
+    BuilderFixture f1;
     Blueprint::UP result = f1.builder.build();
     EXPECT_TRUE(dynamic_cast<EmptyBlueprint*>(result.get()) != nullptr);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -6,6 +6,7 @@ vespa_add_library(searchlib_features OBJECT
     attributefeature.cpp
     attributematchfeature.cpp
     bm25_feature.cpp
+    bm25_utils.cpp
     closenessfeature.cpp
     closest_feature.cpp
     constant_feature.cpp
@@ -19,6 +20,11 @@ vespa_add_library(searchlib_features OBJECT
     dotproductfeature.cpp
     element_completeness_feature.cpp
     element_similarity_feature.cpp
+    elementwise_blueprint.cpp
+    elementwise_bm25_blueprint.cpp
+    elementwise_bm25_executor.cpp
+    elementwise_output.cpp
+    elementwise_utils.cpp
     euclidean_distance_feature.cpp
     fieldinfofeature.cpp
     fieldlengthfeature.cpp

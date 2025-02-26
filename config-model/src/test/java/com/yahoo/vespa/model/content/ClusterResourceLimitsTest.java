@@ -23,6 +23,7 @@ public class ClusterResourceLimitsTest {
         private final boolean hostedVespa;
         private final ResourceLimits.Builder ctrlBuilder = new ResourceLimits.Builder();
         private final ResourceLimits.Builder nodeBuilder = new ResourceLimits.Builder();
+        private double lowWatermarkDifference = 0.0;
 
         public Fixture() {
             this(false);
@@ -48,11 +49,16 @@ public class ClusterResourceLimitsTest {
             nodeBuilder.setMemoryLimit(limit);
             return this;
         }
+        public Fixture lowWatermarkDifference(double lowWatermarkDifference) {
+            this.lowWatermarkDifference = lowWatermarkDifference;
+            return this;
+        }
         public ClusterResourceLimits build() {
             ModelContext.FeatureFlags featureFlags = new TestProperties();
             var builder = new ClusterResourceLimits.Builder(hostedVespa,
                                                             featureFlags.resourceLimitDisk(),
                                                             featureFlags.resourceLimitMemory(),
+                                                            lowWatermarkDifference,
                                                             new TestLogger());
             builder.setClusterControllerBuilder(ctrlBuilder);
             builder.setContentNodeBuilder(nodeBuilder);
@@ -62,47 +68,49 @@ public class ClusterResourceLimitsTest {
 
     @Test
     void content_node_limits_are_derived_from_cluster_controller_limits_if_not_set() {
-        assertLimits(0.4, 0.7, 0.76, 0.85,
+        assertLimits(0.4, 0.7, 0.76, 0.85, 0.0,
                 new Fixture().ctrlDisk(0.4).ctrlMemory(0.7));
-        assertLimits(0.4, 0.8, 0.76, 0.9,
+        assertLimits(0.4, 0.8, 0.76, 0.9, 0.0,
                 new Fixture().ctrlDisk(0.4));
-        assertLimits(0.75, 0.7, 0.9, 0.85,
+        assertLimits(0.75, 0.7, 0.9, 0.85, 0.0,
                 new Fixture().ctrlMemory(0.7));
+        assertLimits(0.75, 0.7, 0.9, 0.85, 0.05,
+                     new Fixture().ctrlMemory(0.7).lowWatermarkDifference(0.05));
     }
 
     @Test
     void content_node_limits_can_be_set_explicit() {
-        assertLimits(0.4, 0.7, 0.9, 0.95,
+        assertLimits(0.4, 0.7, 0.9, 0.95, 0.0,
                 new Fixture().ctrlDisk(0.4).ctrlMemory(0.7).nodeDisk(0.9).nodeMemory(0.95));
-        assertLimits(0.4, 0.8, 0.95, 0.9,
+        assertLimits(0.4, 0.8, 0.95, 0.9, 0.0,
                 new Fixture().ctrlDisk(0.4).nodeDisk(0.95));
-        assertLimits(0.75, 0.7, 0.9, 0.95,
+        assertLimits(0.75, 0.7, 0.9, 0.95, 0.0,
                 new Fixture().ctrlMemory(0.7).nodeMemory(0.95));
     }
 
     @Test
     void cluster_controller_limits_are_equal_to_content_node_limits_minus_one_percent_if_not_set() {
-        assertLimits(0.89, 0.94, 0.9, 0.95,
+        assertLimits(0.89, 0.94, 0.9, 0.95, 0.0,
                 new Fixture().nodeDisk(0.9).nodeMemory(0.95));
-        assertLimits(0.89, 0.8, 0.9, 0.9,
+        assertLimits(0.89, 0.8, 0.9, 0.9, 0.0,
                 new Fixture().nodeDisk(0.9));
-        assertLimits(0.75, 0.94, 0.9, 0.95,
+        assertLimits(0.75, 0.94, 0.9, 0.95, 0.0,
                 new Fixture().nodeMemory(0.95));
-        assertLimits(0.75, 0.0, 0.9, 0.005,
+        assertLimits(0.75, 0.0, 0.9, 0.005, 0.0,
                 new Fixture().nodeMemory(0.005));
     }
 
     @Test
     void limits_are_derived_from_the_other_if_not_set() {
-        assertLimits(0.6, 0.94, 0.84, 0.95,
+        assertLimits(0.6, 0.94, 0.84, 0.95, 0.0,
                 new Fixture().ctrlDisk(0.6).nodeMemory(0.95));
-        assertLimits(0.89, 0.7, 0.9, 0.85,
+        assertLimits(0.89, 0.7, 0.9, 0.85, 0.0,
                 new Fixture().ctrlMemory(0.7).nodeDisk(0.9));
     }
 
     @Test
     void default_resource_limits_when_feed_block_is_enabled_in_distributor() {
-        assertLimits(0.75, 0.8, 0.9, 0.9,
+        assertLimits(0.75, 0.8, 0.9, 0.9, 0.0,
                 new Fixture(true));
     }
 
@@ -124,8 +132,8 @@ public class ClusterResourceLimitsTest {
         var limits = hostedBuild(featureFlags, false);
 
         // Verify that limits from feature flags are used
-        assertLimits(0.85, 0.90, limits.getClusterControllerLimits());
-        assertLimits(0.94, 0.95, limits.getContentNodeLimits());
+        assertLimits(0.85, 0.90, 0.0, limits.getClusterControllerLimits());
+        assertLimits(0.94, 0.95, 0.0, limits.getContentNodeLimits());
     }
 
     @Test
@@ -170,19 +178,22 @@ public class ClusterResourceLimitsTest {
         ClusterResourceLimits.Builder builder = new ClusterResourceLimits.Builder(true,
                                                                                   featureFlags.resourceLimitDisk(),
                                                                                   featureFlags.resourceLimitMemory(),
+                                                                                  0.0,
                                                                                   new TestLogger());
         return builder.build(new ModelElement((limitsInXml ? clusterXml : noLimitsXml).getDocumentElement()));
     }
 
-    private void assertLimits(Double expCtrlDisk, Double expCtrlMemory, Double expNodeDisk, Double expNodeMemory, Fixture f) {
+    private void assertLimits(Double expCtrlDisk, Double expCtrlMemory, Double expNodeDisk,
+                              Double expNodeMemory, Double expLowWatermarkDifference, Fixture f) {
         var limits = f.build();
-        assertLimits(expCtrlDisk, expCtrlMemory, limits.getClusterControllerLimits());
-        assertLimits(expNodeDisk, expNodeMemory, limits.getContentNodeLimits());
+        assertLimits(expCtrlDisk, expCtrlMemory, expLowWatermarkDifference, limits.getClusterControllerLimits());
+        assertLimits(expNodeDisk, expNodeMemory, expLowWatermarkDifference, limits.getContentNodeLimits());
     }
 
-    private void assertLimits(Double expDisk, Double expMemory, ResourceLimits limits) {
+    private void assertLimits(Double expDisk, Double expMemory, Double expLowWatermarkDifference, ResourceLimits limits) {
         assertLimit(expDisk, limits.getDiskLimit(), "disk");
         assertLimit(expMemory, limits.getMemoryLimit(), "memory");
+        assertLimit(expLowWatermarkDifference, limits.getLowWatermarkDifference(), "lowWaterMarkDifference");
     }
 
     private void assertLimit(Double expLimit, Optional<Double> actLimit, String limitType) {

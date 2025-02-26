@@ -2,8 +2,4 @@
 
 #include "matchelem.h"
 
-MatchElement::MatchElement(off_t spos, off_t stoken) :
-    _starttoken(stoken),
-    _startpos(spos),
-    _valid(false)
-{ }
+MatchElement::MatchElement(off_t spos, off_t stoken) : _starttoken(stoken), _startpos(spos), _valid(false) {}

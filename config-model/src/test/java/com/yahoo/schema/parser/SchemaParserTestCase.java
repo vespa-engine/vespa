@@ -98,6 +98,7 @@ public class SchemaParserTestCase {
                     global-phase {
                         expression: onnx(mymodel)
                         rerank-count: 79
+                        rank-score-drop-limit: 1.0
                     }
                 }
             }
@@ -116,8 +117,10 @@ public class SchemaParserTestCase {
         assertEquals("bar", rp1.name());
         assertTrue(rp1.getGlobalPhaseRerankCount().isPresent());
         assertTrue(rp1.getGlobalPhaseExpression().isPresent());
+        assertTrue(rp1.getGlobalPhaseRankScoreDropLimit().isPresent());
         assertEquals(79, rp1.getGlobalPhaseRerankCount().get());
         assertEquals("onnx(mymodel)", rp1.getGlobalPhaseExpression().get());
+        assertEquals(1.0d, rp1.getGlobalPhaseRankScoreDropLimit().get());
     }
 
     @Test

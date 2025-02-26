@@ -384,17 +384,6 @@ namespace matching {
         static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
         static bool check(const Properties &props, bool fallback);
     };
-
-    /**
-     * When enabled, the unpacking part of the phrase iterator will be tagged as expensive
-     * under all intermediate iterators, not only AND.
-     **/
-    struct AlwaysMarkPhraseExpensive {
-        static const std::string NAME;
-        static const bool DEFAULT_VALUE;
-        static bool check(const Properties &props) { return check(props, DEFAULT_VALUE); }
-        static bool check(const Properties &props, bool fallback);
-    };
 }
 
 namespace softtimeout {

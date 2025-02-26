@@ -85,8 +85,8 @@ public class FileDirectory extends AbstractComponent {
         ensureRootExist();
         File dir = new File(getPath(reference));
         if (!dir.exists()) {
-            // This is common when config server has not yet received the file from one the server the app was deployed on
-            log.log(FINE, "File reference '" + reference.value() + "' ('" + dir.getAbsolutePath() + "') does not exist.");
+            // This is common when config server has not yet received the file from the server the app was deployed on
+            log.log(FINEST, "File reference '" + reference.value() + "' ('" + dir.getAbsolutePath() + "') does not exist.");
             return Optional.empty();
         }
         if (!dir.isDirectory()) {

@@ -65,7 +65,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
     private final double defaultFeedConcurrency;
     private final double defaultFeedNiceness;
     private final boolean forwardIssuesToQrs;
-    private final int defaultMaxCompactBuffers;
+    private final ProtonConfig.Search.Mmap.Advise.Enum searchMmapAdvise;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final double fractionOfMemoryReserved;
@@ -128,6 +128,14 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         }
     }
 
+    private static ProtonConfig.Search.Mmap.Advise.Enum convertSearchMmapAdvise(String searchMmapAdvise) {
+        try {
+            return ProtonConfig.Search.Mmap.Advise.Enum.valueOf(searchMmapAdvise);
+        } catch (Throwable t) {
+            return ProtonConfig.Search.Mmap.Advise.Enum.NORMAL;
+        }
+    }
+
     private ContentSearchCluster(TreeConfigProducer<?> parent,
                                  String clusterName,
                                  ModelContext.FeatureFlags featureFlags,
@@ -149,7 +157,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         this.defaultFeedConcurrency = featureFlags.feedConcurrency();
         this.defaultFeedNiceness = featureFlags.feedNiceness();
         this.forwardIssuesToQrs = featureFlags.forwardIssuesAsErrors();
-        this.defaultMaxCompactBuffers = featureFlags.maxCompactBuffers();
+        this.searchMmapAdvise = convertSearchMmapAdvise(featureFlags.searchMmapAdvise());
     }
 
     public void setVisibilityDelay(double delay) {
@@ -225,7 +233,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         if (element == null) {
             searchNode = SearchNode.create(parent, "" + node.getDistributionKey(), node.getDistributionKey(), spec,
                                            clusterName, node, flushOnShutdown, tuning, deployState.isHosted(),
-                                           fractionOfMemoryReserved, deployState.featureFlags(), syncTransactionLog);
+                                           fractionOfMemoryReserved, syncTransactionLog);
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState);
         } else {
@@ -304,8 +312,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
             ddbB.inputdoctypename(docTypeName)
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
-                .global(globalDocType)
-                .allocation.max_compact_buffers(defaultMaxCompactBuffers);
+                .global(globalDocType);
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedSchema = true;
@@ -335,6 +342,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         builder.summary.log.chunk.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.summary.log.compact.compression.level(DEFAULT_DOC_STORE_COMPRESSION_LEVEL);
         builder.forward_issues(forwardIssuesToQrs);
+        builder.search.mmap.advise(searchMmapAdvise);
 
         int numDocumentDbs = builder.documentdb.size();
         builder.initialize(new ProtonConfig.Initialize.Builder().threads(numDocumentDbs + 1));

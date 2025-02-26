@@ -113,6 +113,9 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.GLOBAL_PHASE, Ranking.RERANKCOUNT),
                 GetterSetter.of(query -> query.getRanking().getGlobalPhase().getRerankCount(),
                                 (query, value) -> query.getRanking().getGlobalPhase().setRerankCount(asInteger(value, null))));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.GLOBAL_PHASE, Ranking.RANKSCOREDROPLIMIT),
+                GetterSetter.of(query -> query.getRanking().getGlobalPhase().getRankScoreDropLimit(),
+                        (query, value) -> query.getRanking().getGlobalPhase().setRankScoreDropLimit(asDouble(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.ENABLE), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getEnable(), (query, value) -> query.getRanking().getSoftTimeout().setEnable(asBoolean(value, true))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.FACTOR), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getFactor(), (query, value) -> query.getRanking().getSoftTimeout().setFactor(asDouble(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.SOFTTIMEOUT, SoftTimeout.TAILCOST), GetterSetter.of(query -> query.getRanking().getSoftTimeout().getTailcost(), (query, value) -> query.getRanking().getSoftTimeout().setTailcost(asDouble(value, null))));

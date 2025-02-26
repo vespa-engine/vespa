@@ -1,13 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_printer.
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_printer_test");
-
 #include <vespa/document/predicate/predicate.h>
 #include <vespa/document/predicate/predicate_printer.h>
 #include <vespa/document/predicate/predicate_slime_builder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("predicate_printer_test");
 
 using vespalib::Slime;
 using vespalib::slime::Cursor;
@@ -18,104 +18,118 @@ namespace {
 using SlimeUP = std::unique_ptr<Slime>;
 using namespace document::predicate_slime_builder;
 
-TEST("require that PredicatePrinter prints FeatureSets") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_prints_FeatureSets)
+{
     PredicateSlimeBuilder builder;
     builder.feature("foo").value("bar").value("baz");
-    ASSERT_EQUAL("'foo' in ['bar','baz']",
+    ASSERT_EQ("'foo' in ['bar','baz']",
                  PredicatePrinter::print(*builder.build()));
 
     builder.feature("foo").value("bar");
-    ASSERT_EQUAL("'foo' in ['bar']",
+    ASSERT_EQ("'foo' in ['bar']",
                  PredicatePrinter::print(*builder.build()));
 }
 
-TEST("require that PredicatePrinter escapes non-ascii characters") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_escapes_non_ascii_characters)
+{
     PredicateSlimeBuilder builder;
     builder.feature("\n\t\001'").value("\xc3\xb8");
-    ASSERT_EQUAL("'\\n\\t\\x01\\x27' in ['\\xc3\\xb8']",
+    ASSERT_EQ("'\\n\\t\\x01\\x27' in ['\\xc3\\xb8']",
                  PredicatePrinter::print(*builder.build()));
 }
 
-TEST("require that PredicatePrinter prints FeatureRanges") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_prints_FeatureRanges)
+{
     PredicateSlimeBuilder builder;
     builder.feature("foo").range(-10, 42);
-    ASSERT_EQUAL("'foo' in [-10..42]",
+    ASSERT_EQ("'foo' in [-10..42]",
                  PredicatePrinter::print(*builder.build()));
 }
 
-TEST("require that PredicatePrinter prints open ended FeatureRanges") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_prints_open_ended_FeatureRanges)
+{
     PredicateSlimeBuilder builder;
     builder.feature("foo").greaterEqual(-10);
-    ASSERT_EQUAL("'foo' in [-10..]",
+    ASSERT_EQ("'foo' in [-10..]",
                  PredicatePrinter::print(*builder.build()));
 
     builder.feature("foo").lessEqual(42);
-    ASSERT_EQUAL("'foo' in [..42]", PredicatePrinter::print(*builder.build()));
+    ASSERT_EQ("'foo' in [..42]", PredicatePrinter::print(*builder.build()));
 }
 
-TEST("require that PredicatePrinter prints NOT_IN FeatureSets") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_prints_NOT_IN_FeatureSets)
+{
     PredicateSlimeBuilder builder;
     builder.neg().feature("foo").value("bar").value("baz");
-    ASSERT_EQUAL("'foo' not in ['bar','baz']",
+    ASSERT_EQ("'foo' not in ['bar','baz']",
                  PredicatePrinter::print(*builder.build()));
 }
 
-TEST("require that PredicatePrinter can negate FeatureRanges") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_can_negate_FeatureRanges)
+{
     auto slime = neg(featureRange("foo", -10, 42));
-    ASSERT_EQUAL("'foo' not in [-10..42]", PredicatePrinter::print(*slime));
+    ASSERT_EQ("'foo' not in [-10..42]", PredicatePrinter::print(*slime));
 }
 
-TEST("require that PredicatePrinter can negate open ended FeatureRanges") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_can_negate_open_ended_FeatureRanges)
+{
     auto slime = neg(greaterEqual("foo", 42));
-    ASSERT_EQUAL("'foo' not in [42..]", PredicatePrinter::print(*slime));
+    ASSERT_EQ("'foo' not in [42..]", PredicatePrinter::print(*slime));
 
     slime = neg(lessEqual("foo", 42));
-    ASSERT_EQUAL("'foo' not in [..42]", PredicatePrinter::print(*slime));
+    ASSERT_EQ("'foo' not in [..42]", PredicatePrinter::print(*slime));
 }
 
-TEST("require that PredicatePrinter can negate double open ended ranges") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_can_negate_double_open_ended_ranges)
+{
     auto slime = neg(emptyRange("foo"));
-    ASSERT_EQUAL("'foo' not in [..]", PredicatePrinter::print(*slime));
+    ASSERT_EQ("'foo' not in [..]", PredicatePrinter::print(*slime));
 }
 
-TEST("require that PredicatePrinter prints AND expressions") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_prints_AND_expressions)
+{
     auto slime = andNode({featureSet("foo", {"bar", "baz"}),
                           featureSet("foo", {"bar", "baz"})});
-    ASSERT_EQUAL("('foo' in ['bar','baz'] and 'foo' in ['bar','baz'])",
+    ASSERT_EQ("('foo' in ['bar','baz'] and 'foo' in ['bar','baz'])",
                  PredicatePrinter::print(*slime));
 }
 
-TEST("require that PredicatePrinter prints OR expressions") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_prints_OR_expressions)
+{
     auto slime = orNode({featureSet("foo", {"bar", "baz"}),
                          featureSet("foo", {"bar", "baz"})});
-    ASSERT_EQUAL("('foo' in ['bar','baz'] or 'foo' in ['bar','baz'])",
+    ASSERT_EQ("('foo' in ['bar','baz'] or 'foo' in ['bar','baz'])",
                  PredicatePrinter::print(*slime));
 }
 
-TEST("require that PredicatePrinter can negate OR expressions") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_can_negate_OR_expressions)
+{
     auto slime = neg(orNode({featureSet("foo", {"bar", "baz"}),
                              featureSet("foo", {"bar", "baz"})}));
-    ASSERT_EQUAL("not ('foo' in ['bar','baz'] or 'foo' in ['bar','baz'])",
+    ASSERT_EQ("not ('foo' in ['bar','baz'] or 'foo' in ['bar','baz'])",
                  PredicatePrinter::print(*slime));
 }
 
-TEST("require that PredicatePrinter can negate AND expressions") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_can_negate_AND_expressions)
+{
     auto slime = neg(andNode({featureSet("foo", {"bar", "baz"}),
                               featureSet("foo", {"bar", "baz"})}));
-    ASSERT_EQUAL("not ('foo' in ['bar','baz'] and 'foo' in ['bar','baz'])",
+    ASSERT_EQ("not ('foo' in ['bar','baz'] and 'foo' in ['bar','baz'])",
                  PredicatePrinter::print(*slime));
 }
 
-TEST("require that PredicatePrinter prints True") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_prints_True)
+{
     auto slime = truePredicate();
-    ASSERT_EQUAL("true", PredicatePrinter::print(*slime));
+    ASSERT_EQ("true", PredicatePrinter::print(*slime));
 }
 
-TEST("require that PredicatePrinter prints False") {
+TEST(PredicatePrinterTest, require_that_PredicatePrinter_prints_False)
+{
     auto slime = falsePredicate();
-    ASSERT_EQUAL("false", PredicatePrinter::print(*slime));
+    ASSERT_EQ("false", PredicatePrinter::print(*slime));
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

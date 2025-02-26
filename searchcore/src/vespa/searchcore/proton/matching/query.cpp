@@ -170,8 +170,7 @@ Query::~Query() = default;
 
 bool
 Query::buildTree(std::string_view stack, const string &location,
-                 const ViewResolver &resolver, const IIndexEnvironment &indexEnv,
-                 bool always_mark_phrase_expensive)
+                 const ViewResolver &resolver, const IIndexEnvironment &indexEnv)
 {
     SimpleQueryStackDumpIterator stack_dump_iterator(stack);
     _query_tree = QueryTreeCreator<ProtonNodeTypes>::create(stack_dump_iterator);
@@ -179,7 +178,7 @@ Query::buildTree(std::string_view stack, const string &location,
         SameElementModifier prefixSameElementSubIndexes;
         _query_tree->accept(prefixSameElementSubIndexes);
         exchange_location_nodes(location, _query_tree, _locations);
-        _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree), bool(_whiteListBlueprint), always_mark_phrase_expensive);
+        _query_tree = UnpackingIteratorsOptimizer::optimize(std::move(_query_tree), bool(_whiteListBlueprint));
         ResolveViewVisitor resolve_visitor(resolver, indexEnv);
         _query_tree->accept(resolve_visitor);
         NeedsRankingVisitor need_ranking_visitor;
@@ -289,8 +288,11 @@ Query::handle_global_filter(Blueprint& blueprint, uint32_t docid_limit,
                                                      estimated_hit_ratio, global_filter_upper_limit));
         }
         global_filter = GlobalFilter::create(blueprint, docid_limit, thread_bundle, trace);
-        if (!global_filter->is_active() && trace && trace->shouldTrace(5)) {
-            trace->addEvent(5, "Global filter matches everything");
+        if (!global_filter->is_active()) {
+            estimated_hit_ratio = 1.0;
+            if (trace && trace->shouldTrace(5)) {
+                trace->addEvent(5, "Global filter matches everything");
+            }
         }
     } else {
         if (trace && trace->shouldTrace(5)) {

@@ -44,6 +44,7 @@ std::unique_ptr<DocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name,
                                  std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
+    matching_elems_fields->add_field(input_field_name);
     return std::make_unique<MatchedElementsFilterDFW>(input_field_name, std::move(matching_elems_fields));
 }
 
@@ -52,6 +53,7 @@ MatchedElementsFilterDFW::create(const std::string& input_field_name,
                                  search::attribute::IAttributeContext& attr_ctx,
                                  std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
+    matching_elems_fields->add_field(input_field_name);
     StructFieldsResolver resolver(input_field_name, attr_ctx, false);
     if (resolver.has_error()) {
         return {};

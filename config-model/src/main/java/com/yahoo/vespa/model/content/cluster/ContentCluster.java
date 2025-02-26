@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.content.cluster;
 import com.google.common.base.Preconditions;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.ConfigModelContext;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
@@ -101,7 +100,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
     private Integer maxNodesPerMerge;
     private final Zone zone;
     private final Optional<Integer> distributionBitsInPreviousModel;
-    private final ModelContext.FeatureFlags featureFlags;
 
     public enum DistributionMode { LEGACY, STRICT, LOOSE }
     private DistributionMode distributionMode;
@@ -141,6 +139,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             c.clusterControllerConfig = createClusterControllerConfig(contentElement, deployState, c, resourceLimits);
             validateThatGroupSiblingsAreUnique(c.clusterId, c.rootGroup);
             warnIfDistributionKeyRangeIsSuboptimal(c.clusterId, c.rootGroup, deployState);
+            warnWhenMinNodeRatioLowAndManySmallGroups(c, deployState);
             c.search.handleRedundancy(c.redundancy);
             setupSearchCluster(c.search, contentElement, deployState.getDeployLogger());
 
@@ -185,6 +184,7 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             var resourceLimits = new ClusterResourceLimits.Builder(isHosted,
                                                                    deployState.featureFlags().resourceLimitDisk(),
                                                                    resourceLimitMemory,
+                                                                   deployState.featureFlags().resourceLimitLowWatermarkDifference(),
                                                                    deployState.getDeployLogger())
                     .build(contentElement);
 
@@ -341,6 +341,24 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
             }
         }
 
+        private static void warnWhenMinNodeRatioLowAndManySmallGroups(ContentCluster cluster, DeployState deployState) {
+            var minNodeRatioPerGroup = cluster.getClusterControllerConfig().tuning().minNodeRatioPerGroup();
+            StorageGroup rootGroup = cluster.getRootGroup();
+            List<StorageGroup> subgroups = rootGroup.getSubgroups();
+            if (subgroups.isEmpty()) return;
+
+            int numberOfNodes = subgroups.get(0).getNodes().size();
+            var numberOfLeafGroups = rootGroup.getNumberOfLeafGroups();
+            if (numberOfLeafGroups >= 3
+                    && numberOfNodes <= 3
+                    && (minNodeRatioPerGroup.isEmpty() || minNodeRatioPerGroup.get() < 1.0)) {
+                deployState.getDeployLogger().logApplicationPackage(INFO, "In cluster '" + cluster.getName() +
+                        "': min-node-ratio-per-group should be set to 1 when there are 3 or more groups (" +
+                        numberOfLeafGroups + ") and there are 3 or fewer nodes in the group (" + numberOfNodes + ")" +
+                        ". See https://docs.vespa.ai/en/reference/services-content.html?mode=cloud#min-node-ratio-per-group");
+            }
+        }
+
         private void addClusterControllers(ConfigModelContext context,
                                            ModelElement contentElement,
                                            ContentCluster contentCluster,
@@ -468,7 +486,6 @@ public class ContentCluster extends TreeConfigProducer<AnyConfigProducer> implem
         this.documentSelection = routingSelection;
         this.zone = deployState.zone();
         this.distributionBitsInPreviousModel = distributionBitsInPreviousModel(deployState, clusterId);
-        this.featureFlags = deployState.featureFlags();
     }
 
     public ClusterSpec.Id id() { return ClusterSpec.Id.from(clusterId); }

@@ -136,6 +136,11 @@ public:
     virtual uint64_t getApproxBytesToWriteToDisk() const = 0;
 
     /**
+     * Returns the approximate amount of bytes this target reads from disk if flushed.
+     */
+    virtual uint64_t get_approx_bytes_to_read_from_disk() const noexcept = 0;
+
+    /**
      * Return cost of replaying a feed operation relative to cost of reading a feed operation from tls.
      */
     virtual double get_replay_operation_cost() const = 0;
@@ -188,8 +193,10 @@ public:
 class LeafFlushTarget : public IFlushTarget {
 public:
     LeafFlushTarget(const std::string &name, const Type &type, const Component &component) noexcept;
+    ~LeafFlushTarget() override;
     bool needUrgentFlush() const override { return false; }
     Priority getPriority() const override { return Priority::NORMAL; }
+    uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
     double get_replay_operation_cost() const override { return 0.0; }
 };
 

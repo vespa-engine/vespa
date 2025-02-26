@@ -28,6 +28,6 @@ constexpr char8_t group_separator = u8'\x1d';
 constexpr char8_t record_separator = u8'\x1e';
 
 // The US character used to separate words in CJK texts
-constexpr char8_t unit_separator  = u8'\x1f';
+constexpr char8_t unit_separator = u8'\x1f';
 
-}
+} // namespace juniper::separators

@@ -9,15 +9,13 @@
 
 // #define USE_OLD_SCANNER 1
 
-
 #ifdef USE_OLD_SCANNER
 #define TokenDispatcher DocScanner
 #endif
 
 #include "ITokenProcessor.h"
-#include "querynode.h"
 #include "matchobject.h"
-#include "querymodifier.h"
+#include "querynode.h"
 #include <list>
 #include <map>
 #include <string>
@@ -42,15 +40,13 @@ class MatchCandidate;
 /* Max number of terms to do matching for */
 #define MAXTERMS 20
 
-
 class SummaryDesc;
 class SummaryConfig;
 class QueryTerm;
 
 using match_sequence = std::list<MatchCandidate*>;
 
-class Matcher : public ITokenProcessor
-{
+class Matcher : public ITokenProcessor {
 public:
     Matcher(juniper::Result* result);
     virtual ~Matcher();
@@ -85,7 +81,7 @@ public:
     int TotalMatchCnt(int number);
     int ExactMatchCnt(int number);
 
-    inline int QueryTerms() { return _mo->TermCount(); }
+    inline int  QueryTerms() { return _mo->TermCount(); }
     const char* QueryTermText(int term_no);
 
     inline const key_occ_vector& OccurrenceList() { return _occ; }
@@ -110,15 +106,13 @@ public:
     // Current size of the document in progress..
     inline size_t DocumentSize() { return _endpos; }
 
-    SummaryDesc* CreateSummaryDesc(size_t length, size_t min_length,
-                                   int max_matches,
-                                   int surround_len);
+    SummaryDesc* CreateSummaryDesc(size_t length, size_t min_length, int max_matches, int surround_len);
 
     /** Get the log string for this matcher or the empty string if no log enabled */
     std::string GetLog();
 
     /** Returns the query used by the underlying match object */
-    QueryExpr * getQuery() { return _mo->Query(); }
+    QueryExpr* getQuery() { return _mo->Query(); }
 
 protected:
     /* Internal utilities
@@ -134,11 +128,12 @@ protected:
     // factory methods for creating/referencing/dereferencing MatchCandidates:
     MatchCandidate* NewCandidate(QueryExpr*) __attribute__((noinline));
     MatchCandidate* RefCandidate(MatchCandidate* m);
-    void DerefCandidate(MatchCandidate* m);
+    void            DerefCandidate(MatchCandidate* m);
+
 private:
-    Result* _result;
-    QueryHandle* _qhandle;
-    MatchObject* _mo;
+    Result*        _result;
+    QueryHandle*   _qhandle;
+    MatchObject*   _mo;
     match_iterator _match_iter;
 
     //  char* _s;
@@ -162,7 +157,7 @@ private:
     // Internal state
     size_t _endpos; // The last valid position from the token pipeline
 
-    size_t _nontermcnt;  // The number of nonterminals in the query
+    size_t _nontermcnt; // The number of nonterminals in the query
     // The sequence of occurrences of the search terms in the document
     key_occ_vector _occ;
 
@@ -175,12 +170,12 @@ private:
     // The set of completed match candidates in descending order
     match_candidate_set _matches;
 
-    off_t _ctxt_start;
-    unsigned long _log_mask;  // _log_text: a built-up text object with log selectively
-    std::string _log_text;    // enabled by _log_mask bits
+    off_t         _ctxt_start;
+    unsigned long _log_mask; // _log_text: a built-up text object with log selectively
+    std::string   _log_text; // enabled by _log_mask bits
 
-    Matcher(Matcher &);
-    Matcher &operator=(Matcher &);
+    Matcher(Matcher&);
+    Matcher& operator=(Matcher&);
 
     void flush_candidates();
     bool markup(const char* t, int len, off_t pos);
@@ -192,7 +187,6 @@ private:
 /** Actually build / release the textual summary from a description.
  *  These functions is not dependent of any Matcher info.
  */
-std::string BuildSummary(const char* buffer, size_t buflen, SummaryDesc* summary,
-			 const SummaryConfig* config, size_t& char_size);
-void DeleteSummaryDesc(SummaryDesc*);
-
+std::string BuildSummary(const char* buffer, size_t buflen, SummaryDesc* summary, const SummaryConfig* config,
+                         size_t& char_size);
+void        DeleteSummaryDesc(SummaryDesc*);

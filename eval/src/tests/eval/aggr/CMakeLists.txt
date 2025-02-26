@@ -4,5 +4,6 @@ vespa_add_executable(eval_aggr_test_app TEST
     aggr_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_aggr_test_app COMMAND eval_aggr_test_app)

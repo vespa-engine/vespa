@@ -216,6 +216,7 @@ public:
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;
     SourceBlenderBlueprint * asSourceBlender() noexcept final { return this; }
     uint8_t calculate_cost_tier() const override;
+    const ISourceSelector &getSelector() const { return _selector; }
 };
 
 }

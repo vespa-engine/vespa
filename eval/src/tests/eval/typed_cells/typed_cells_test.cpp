@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/typed_cells.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/unconstify_span.h>
 #include <memory>
 
@@ -10,11 +10,12 @@ using namespace eval;
 
 
 
-TEST("require that structures are of expected size") {
-    EXPECT_EQUAL(sizeof(void*), 8u);
-    EXPECT_EQUAL(sizeof(size_t), 8u);
-    EXPECT_EQUAL(sizeof(CellType), 1u);
-    EXPECT_EQUAL(sizeof(TypedCells), 16u);
+TEST(TypedCellsTest, require_that_structures_are_of_expected_size)
+{
+    EXPECT_EQ(sizeof(void*), 8u);
+    EXPECT_EQ(sizeof(size_t), 8u);
+    EXPECT_EQ(sizeof(CellType), 1u);
+    EXPECT_EQ(sizeof(TypedCells), 16u);
 }
 
 //-----------------------------------------------------------------------------
@@ -174,7 +175,8 @@ struct Dispatch1 {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that direct dispatch 'a op b -> c' works") {
+TEST(TypedCellsTest, require_that_direct_dispatch_of_a_op_b_builds_c_works)
+{
     std::vector<Int8Float>   a({1,2,3});
     std::vector<float>       b({1.5,2.5,3.5});
     std::vector<double>      c(3, 0.0);
@@ -194,12 +196,13 @@ TEST("require that direct dispatch 'a op b -> c' works") {
     Dispatch3<CellwiseAdd>::call(a_ref, b_ref, c_cells, 3);
     Dispatch3<CellwiseAdd>::call(a_ref, b_ref, c_ref, 3);
 
-    EXPECT_EQUAL(c[0], 2.5);
-    EXPECT_EQUAL(c[1], 4.5);
-    EXPECT_EQUAL(c[2], 6.5);
+    EXPECT_EQ(c[0], 2.5);
+    EXPECT_EQ(c[1], 4.5);
+    EXPECT_EQ(c[2], 6.5);
 }
 
-TEST("require that direct dispatch 'dot product' with return value works") {
+TEST(TypedCellsTest, require_that_direct_dispatch_of_dot_product_with_return_value_works)
+{
     std::vector<Int8Float>    a({1,2,3});
     std::vector<float>        b({1.5,2.5,3.5});
     std::span<const Int8Float>  a_ref(a);
@@ -208,20 +211,21 @@ TEST("require that direct dispatch 'dot product' with return value works") {
     TypedCells                b_cells(b);
     double                    expect = 1.5 + (2 * 2.5) + (3 * 3.5);
 
-    EXPECT_EQUAL(expect, Dispatch2<DotProduct>::call(a_cells, b_cells, 3));
-    EXPECT_EQUAL(expect, Dispatch2<DotProduct>::call(a_cells, b_ref, 3));
-    EXPECT_EQUAL(expect, Dispatch2<DotProduct>::call(a_ref, b_cells, 3));
-    EXPECT_EQUAL(expect, Dispatch2<DotProduct>::call(a_ref, b_ref, 3));
+    EXPECT_EQ(expect, Dispatch2<DotProduct>::call(a_cells, b_cells, 3));
+    EXPECT_EQ(expect, Dispatch2<DotProduct>::call(a_cells, b_ref, 3));
+    EXPECT_EQ(expect, Dispatch2<DotProduct>::call(a_ref, b_cells, 3));
+    EXPECT_EQ(expect, Dispatch2<DotProduct>::call(a_ref, b_ref, 3));
 }
 
-TEST("require that direct dispatch 'sum' with return value works") {
+TEST(TypedCellsTest, require_that_direct_dispatch_of_sum_with_return_value_works)
+{
     std::vector<Int8Float>    a({1,2,3});
     std::span<const Int8Float>  a_ref(a);
     TypedCells                a_cells(a);
     double                    expect = (1 + 2 + 3);
 
-    EXPECT_EQUAL(expect, Dispatch1<Sum>::call(a_cells));
-    EXPECT_EQUAL(expect, Dispatch1<Sum>::call(a_ref));
+    EXPECT_EQ(expect, Dispatch1<Sum>::call(a_cells));
+    EXPECT_EQ(expect, Dispatch1<Sum>::call(a_ref));
 }
 
 //-----------------------------------------------------------------------------
@@ -345,7 +349,8 @@ std::unique_ptr<T> create(CellType a_type, CellType b_type, CellType c_type) {
 
 //-----------------------------------------------------------------------------
 
-TEST("require that pre-resolved subclass 'a op b -> c' works") {
+TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_a_op_b_builds_c_works)
+{
     std::vector<Int8Float> a({1,2,3});
     std::vector<float>     b({1.5,2.5,3.5});
     std::vector<double>    c(3, 0.0);
@@ -356,12 +361,13 @@ TEST("require that pre-resolved subclass 'a op b -> c' works") {
     auto op = create<CellwiseAdd2>(a_cells.type, b_cells.type, c_cells.type);
     op->call(a_cells, b_cells, c_cells, 3);
 
-    EXPECT_EQUAL(c[0], 2.5);
-    EXPECT_EQUAL(c[1], 4.5);
-    EXPECT_EQUAL(c[2], 6.5);
+    EXPECT_EQ(c[0], 2.5);
+    EXPECT_EQ(c[1], 4.5);
+    EXPECT_EQ(c[2], 6.5);
 }
 
-TEST("require that pre-resolved subclass 'dot product' with return value works") {
+TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_dot_product_with_return_value_works)
+{
     std::vector<Int8Float> a({1,2,3});
     std::vector<float>     b({1.5,2.5,3.5});
     TypedCells             a_cells(a);
@@ -370,17 +376,18 @@ TEST("require that pre-resolved subclass 'dot product' with return value works")
 
     auto op = create<DotProduct2>(a_cells.type, b_cells.type);
     
-    EXPECT_EQUAL(expect, op->call(a_cells, b_cells, 3));
+    EXPECT_EQ(expect, op->call(a_cells, b_cells, 3));
 }
 
-TEST("require that pre-resolved subclass 'sum' with return value works") {
+TEST(TypedCellsTest, require_that_pre_resolved_subclass_of_sum_with_return_value_works)
+{
     std::vector<Int8Float> a({1,2,3});
     TypedCells             a_cells(a);
     double                 expect = (1 + 2 + 3);
 
     auto op = create<Sum2>(a_cells.type);
 
-    EXPECT_EQUAL(expect, op->call(a_cells));
+    EXPECT_EQ(expect, op->call(a_cells));
 }
 
 //-----------------------------------------------------------------------------
@@ -549,7 +556,8 @@ Sum3::Self::Self()
 
 //-----------------------------------------------------------------------------
 
-TEST("require that self-updating cached function pointer 'a op b -> c' works") {
+TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_a_op_b_builds_c_works)
+{
     std::vector<Int8Float>  a({1,2,3});
     std::vector<float>      b({1.5,2.5,3.5});
     std::vector<double>     c(3, 0.0);
@@ -558,17 +566,18 @@ TEST("require that self-updating cached function pointer 'a op b -> c' works") {
     TypedCells              c_cells(c);
 
     CellwiseAdd3 op;
-    EXPECT_EQUAL(op.self.my_fun, (&cellwise_add<double,double,double>));
+    EXPECT_EQ(op.self.my_fun, (&cellwise_add<double,double,double>));
     op.call(a_cells, b_cells, c_cells, 3);
-    EXPECT_EQUAL(op.self.my_fun, (&cellwise_add<Int8Float,float,double>));
-    EXPECT_NOT_EQUAL(op.self.my_fun, (&cellwise_add<double,double,double>));
+    EXPECT_EQ(op.self.my_fun, (&cellwise_add<Int8Float,float,double>));
+    EXPECT_NE(op.self.my_fun, (&cellwise_add<double,double,double>));
 
-    EXPECT_EQUAL(c[0], 2.5);
-    EXPECT_EQUAL(c[1], 4.5);
-    EXPECT_EQUAL(c[2], 6.5);
+    EXPECT_EQ(c[0], 2.5);
+    EXPECT_EQ(c[1], 4.5);
+    EXPECT_EQ(c[2], 6.5);
 }
 
-TEST("require that self-updating cached function pointer 'dot product' with return value works") {
+TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_dot_product_with_return_value_works)
+{
     std::vector<Int8Float>  a({1,2,3});
     std::vector<float>      b({1.5,2.5,3.5});
     TypedCells              a_cells(a);
@@ -576,25 +585,27 @@ TEST("require that self-updating cached function pointer 'dot product' with retu
     double                  expect = 1.5 + (2 * 2.5) + (3 * 3.5);
 
     DotProduct3 op;
-    EXPECT_EQUAL(op.self.my_fun, (&dot_product<double,double>));
-    EXPECT_EQUAL(expect, op.call(a_cells, b_cells, 3));
-    EXPECT_EQUAL(op.self.my_fun, (&dot_product<Int8Float,float>));
-    EXPECT_NOT_EQUAL(op.self.my_fun, (&dot_product<double,double>));
+    EXPECT_EQ(op.self.my_fun, (&dot_product<double,double>));
+    EXPECT_EQ(expect, op.call(a_cells, b_cells, 3));
+    EXPECT_EQ(op.self.my_fun, (&dot_product<Int8Float,float>));
+    EXPECT_NE(op.self.my_fun, (&dot_product<double,double>));
 }
 
-TEST("require that self-updating cached function pointer 'sum' with return value works") {
+TEST(TypedCellsTest, require_that_self_updating_cached_function_pointer_for_sum_with_return_value_works)
+{
     std::vector<Int8Float> a({1,2,3});
     TypedCells             a_cells(a);
     double                 expect = (1 + 2 + 3);
 
     Sum3 op;
-    EXPECT_EQUAL(op.self.my_fun, (&sum<double>));
-    EXPECT_EQUAL(expect, op.call(a_cells));
-    EXPECT_EQUAL(op.self.my_fun, (&sum<Int8Float>));
-    EXPECT_NOT_EQUAL(op.self.my_fun, (&sum<double>));
+    EXPECT_EQ(op.self.my_fun, (&sum<double>));
+    EXPECT_EQ(expect, op.call(a_cells));
+    EXPECT_EQ(op.self.my_fun, (&sum<Int8Float>));
+    EXPECT_NE(op.self.my_fun, (&sum<double>));
 }
 
-TEST("require that non_existing_attribute_value can be controlled") {
+TEST(TypedCellsTest, require_that_non_existing_attribute_value_can_be_controlled)
+{
     float values[3] = {0,1,2};
     EXPECT_FALSE(TypedCells().non_existing_attribute_value());
     EXPECT_FALSE(TypedCells(values, CellType::FLOAT, 3).non_existing_attribute_value());
@@ -605,4 +616,4 @@ TEST("require that non_existing_attribute_value can be controlled") {
     EXPECT_TRUE(TypedCells::create_non_existing_attribute_value(values, CellType::FLOAT, 3).non_existing_attribute_value());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

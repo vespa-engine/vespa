@@ -961,7 +961,7 @@ public class QueryTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Cannot add OR (AND ) to (AND ) as it would create a cycle", e.getMessage());
+            assertEquals("Cannot add 'OR (AND )' to '(AND )' as it would create a cycle", e.getMessage());
         }
 
         try {
@@ -971,7 +971,7 @@ public class QueryTestCase {
             fail("Expected exception");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("Cannot add (AND (OR )) to (OR ) as it would create a cycle", e.getMessage());
+            assertEquals("Cannot add '(AND (OR ))' to '(OR )' as it would create a cycle", e.getMessage());
         }
     }
 

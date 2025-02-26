@@ -111,9 +111,8 @@ func (p *Path) Clone() *Path {
 	return &Path{slices.Clone(p.list)}
 }
 
-func Find(value Value, pred func(path *Path, value Value) bool) []*Path {
+func Select(value Value, pred func(p *Path, v Value) bool, handle func(p *Path, v Value)) {
 	path := NewPath()
-	var result []*Path
 	var process func(value Value)
 	perEntry := func(idx int, value Value) {
 		path.Entry(idx)
@@ -127,12 +126,19 @@ func Find(value Value, pred func(path *Path, value Value) bool) []*Path {
 	}
 	process = func(value Value) {
 		if pred(path, value) {
-			result = append(result, path.Clone())
+			handle(path, value)
 			return
 		}
 		value.EachEntry(perEntry)
 		value.EachField(perField)
 	}
 	process(value)
+}
+
+func Find(value Value, pred func(path *Path, value Value) bool) []*Path {
+	var result []*Path
+	Select(value, pred, func(p *Path, v Value) {
+		result = append(result, p.Clone())
+	})
 	return result
 }

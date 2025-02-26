@@ -73,7 +73,6 @@ private:
     bool                     _compiled;
     bool                     _compileError;
     bool                     _degradationAscendingOrder;
-    bool                     _always_mark_phrase_expensive;
     std::string         _diversityAttribute;
     uint32_t                 _diversityMinGroups;
     double                   _diversityCutoffFactor;
@@ -227,7 +226,6 @@ public:
     bool isDegradationOrderAscending() const {
         return _degradationAscendingOrder;
     }
-    bool always_mark_phrase_expensive() const noexcept { return _always_mark_phrase_expensive; }
     /** get number of hits to collect during graceful degradation in match phase */
     uint32_t getDegradationMaxHits() const {
         return _degradationMaxHits;

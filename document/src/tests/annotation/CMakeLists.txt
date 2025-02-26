@@ -4,5 +4,6 @@ vespa_add_executable(document_annotation_test_app TEST
     annotation_test.cpp
     DEPENDS
     vespa_document
+    GTest::gtest
 )
 vespa_add_test(NAME document_annotation_test_app COMMAND document_annotation_test_app)

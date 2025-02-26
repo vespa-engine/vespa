@@ -32,7 +32,7 @@ public class ComponentRegistry<COMPONENT> {
     /** All versions of all components indexed by id */
     private final Map<ComponentId, COMPONENT> componentsById =new LinkedHashMap<>();
 
-    /** True when this cannot be changed any more */
+    /** True when this cannot be changed */
     private boolean frozen = false;
 
     /**
@@ -40,7 +40,7 @@ public class ComponentRegistry<COMPONENT> {
      * structures and dependent objects. Overrides must call super.
      * Calling freeze on an already frozen registry must have no effect.
      */
-    public synchronized void freeze() { frozen=true; }
+    public synchronized void freeze() { frozen = true; }
 
     /** returns whether this is currently frozen */
     public final boolean isFrozen() { return frozen; }
@@ -123,9 +123,9 @@ public class ComponentRegistry<COMPONENT> {
         if (componentVersionsByName == null) return null;  // No matching namespace
 
         Map<Version, COMPONENT> versions = componentVersionsByName.get(id.getName());
-        if (versions==null) return null; // No versions of this component
+        if (versions == null) return null; // No versions of this component
 
-        Version version=findBestMatch(id.getVersionSpecification(), versions.keySet());
+        Version version = findBestMatch(id.getVersionSpecification(), versions.keySet());
         //if (version==null) return null; // No matching version
 
         return versions.get(version);
@@ -137,14 +137,13 @@ public class ComponentRegistry<COMPONENT> {
      * @return the matching version, or null if there are no matches
      */
     protected static Version findBestMatch(VersionSpecification versionSpec, Set<Version> versions) {
-        Version bestMatch=null;
+        Version bestMatch = null;
         for (Version version : versions) {
-            //No version is set if getSpecifiedMajor() == null
-            //In that case we allow all versions
+            // No version is set if getSpecifiedMajor() == null. In that case we allow all versions
             if (version == null || !versionSpec.matches(version)) continue;
 
-            if (bestMatch==null || bestMatch.compareTo(version)<0)
-                bestMatch=version;
+            if (bestMatch == null || bestMatch.compareTo(version)<0)
+                bestMatch = version;
         }
         return bestMatch;
     }

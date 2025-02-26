@@ -1,19 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bm25_feature.h"
-#include "utils.h"
+#include "bm25_utils.h"
 #include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/itermdata.h>
 #include <vespa/searchlib/fef/itermfielddata.h>
 #include <vespa/searchlib/fef/objectstore.h>
-#include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
-#include <algorithm>
-#include <cmath>
-#include <stdexcept>
-
-#include <vespa/log/log.h>
-LOG_SETUP(".features.bm25_feature");
 
 namespace search::features {
 
@@ -29,24 +22,6 @@ using fef::ITermFieldData;
 using fef::MatchDataDetails;
 using fef::objectstore::as_value;
 using vespalib::Trinary;
-
-namespace {
-
-double
-get_inverse_document_frequency(const ITermFieldData& term_field,
-                               const fef::IQueryEnvironment& env,
-                               const ITermData& term)
-
-{
-    auto doc_freq = util::lookup_document_frequency(env, term);
-    if (doc_freq.has_value()) {
-        return Bm25Executor::calculate_inverse_document_frequency(doc_freq.value());
-    }
-    double fallback = Bm25Executor::calculate_inverse_document_frequency(term_field.get_doc_freq());
-    return util::lookupSignificance(env, term, fallback);
-}
-
-}
 
 Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
                            const fef::IQueryEnvironment& env,
@@ -65,21 +40,11 @@ Bm25Executor::Bm25Executor(const fef::FieldInfo& field,
             const ITermFieldData& term_field = term->field(j);
             if (field.id() == term_field.getFieldId()) {
                 _terms.emplace_back(term_field.getHandle(MatchDataDetails::Interleaved),
-                                    get_inverse_document_frequency(term_field, env, *term),
+                                    Bm25Utils::get_inverse_document_frequency(term_field, env, *term),
                                     k1_param);
             }
         }
     }
-}
-
-double
-Bm25Executor::calculate_inverse_document_frequency(DocumentFrequency doc_freq) noexcept
-{
-    double frequency = doc_freq.frequency;
-    double count = doc_freq.count;
-    count = std::max(1.0, count);
-    frequency = std::min(std::max(1.0, frequency), count);
-    return std::log(1 + ((count - frequency + 0.5) / (frequency + 0.5)));
 }
 
 void
@@ -113,35 +78,6 @@ Bm25Executor::execute(uint32_t doc_id)
     outputs().set_number(0, score);
 }
 
-Trinary
-Bm25Blueprint::lookup_param(const fef::Properties& props, const std::string& param, double& result) const
-{
-    std::string key = getBaseName() + "(" + _field->name() + ")." + param;
-    auto value = props.lookup(key);
-    if (value.found()) {
-        try {
-            result = std::stod(value.get());
-            return Trinary::True;
-        } catch (const std::invalid_argument& ex) {
-            LOG(warning, "Not able to convert rank property '%s': '%s' to a double value",
-                key.c_str(), value.get().c_str());
-            return Trinary::Undefined;
-        }
-    }
-    return Trinary::False;
-}
-
-Trinary
-Bm25Blueprint::lookup_param(const fef::Properties& props, const std::string& param, std::optional<double>& result) const
-{
-    double tmp_result;
-    auto lres = lookup_param(props, param, tmp_result);
-    if (lres == Trinary::True) {
-        result = tmp_result;
-    }
-    return lres;
-}
-
 double constexpr default_k1_param = 1.2;
 double constexpr default_b_param = 0.75;
 
@@ -173,24 +109,34 @@ Bm25Blueprint::createInstance() const
     return std::make_unique<Bm25Blueprint>();
 }
 
+fef::ParameterDescriptions
+Bm25Blueprint::getDescriptions() const
+{
+    return fef::ParameterDescriptions().desc().indexField(fef::ParameterCollection::ANY);
+}
+
 bool
 Bm25Blueprint::setup(const fef::IIndexEnvironment& env, const fef::ParameterList& params)
 {
     const auto& field_name = params[0].getValue();
     _field = env.getFieldByName(field_name);
+    if (_field == nullptr) {
+        return false;
+    }
+    Bm25Utils bm25_utils(getBaseName() + "(" + _field->name() + ").", env.getProperties());
 
-    if (lookup_param(env.getProperties(), "k1", _k1_param) == Trinary::Undefined) {
+    if (bm25_utils.lookup_param(Bm25Utils::k1(), _k1_param) == Trinary::Undefined) {
         return false;
     }
-    if (lookup_param(env.getProperties(), "b", _b_param) == Trinary::Undefined) {
+    if (bm25_utils.lookup_param(Bm25Utils::b(), _b_param) == Trinary::Undefined) {
         return false;
     }
-    if (lookup_param(env.getProperties(), "averageFieldLength", _avg_field_length) == Trinary::Undefined) {
+    if (bm25_utils.lookup_param(Bm25Utils::average_field_length(), _avg_field_length) == Trinary::Undefined) {
         return false;
     }
 
     describeOutput("score", "The bm25 score for all terms searching in the given index field");
-    return (_field != nullptr);
+    return true;
 }
 
 namespace {

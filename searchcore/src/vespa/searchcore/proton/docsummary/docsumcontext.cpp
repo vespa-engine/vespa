@@ -47,6 +47,7 @@ Memory TIMEOUT("timeout");
 void
 DocsumContext::initState()
 {
+    _docsumState.query_normalization(this);
     const DocsumRequest & req = _request;
     _docsumState._args.initFromDocsumRequest(req);
     auto [session, expectSession] = Matcher::lookupSearchSession(_sessionMgr, req);
@@ -144,6 +145,16 @@ DocsumContext::fill_matching_elements(const MatchingElementsFields &fields)
         return _matcher->get_matching_elements(_request, _searchCtx, _attrCtx, _sessionMgr, fields);
     }
     return std::make_unique<MatchingElements>();
+}
+
+bool DocsumContext::is_text_matching(std::string_view) const noexcept {
+    // this is for dynamic teaser only; all those fields should be text matching
+    return true;
+}
+
+Normalizing DocsumContext::normalizing_mode(std::string_view) const noexcept {
+    // this is for dynamic teaser only; it always does lowercase/accent removal.
+    return Normalizing::LOWERCASE_AND_FOLD;
 }
 
 } // namespace proton

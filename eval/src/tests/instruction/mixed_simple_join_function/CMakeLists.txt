@@ -4,5 +4,6 @@ vespa_add_executable(eval_mixed_simple_join_function_test_app TEST
     mixed_simple_join_function_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_mixed_simple_join_function_test_app COMMAND eval_mixed_simple_join_function_test_app)

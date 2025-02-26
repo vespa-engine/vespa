@@ -120,6 +120,7 @@ public class FileReferenceCompressor {
             case compressed -> switch (compressionType) {
                 case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
                 case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
+                case none -> new FileOutputStream(outputFile);
                 case zstd -> new ZstdOutputStream(new FileOutputStream(outputFile));
             };
             case file -> new FileOutputStream(outputFile);
@@ -131,6 +132,7 @@ public class FileReferenceCompressor {
             case compressed -> switch (compressionType) {
                 case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
                 case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
+                case none -> new FileInputStream(inputFile);
                 case zstd -> new ZstdInputStream(new FileInputStream(inputFile));
             };
             case file -> new FileInputStream(inputFile);

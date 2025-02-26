@@ -4,12 +4,15 @@
 #include "match_tools.h"
 #include "search_session.h"
 #include "extract_features.h"
+#include "field_id_to_name_mapper.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/elementiterator.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
+#include <vespa/searchlib/queryeval/isourceselector.h>
+#include <vespa/searchlib/queryeval/matching_elements_search.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_search.h>
-#include <vespa/searchlib/queryeval/matching_elements_search.h>
 #include <vespa/searchlib/fef/feature_resolver.h>
 #include <vespa/searchlib/fef/rank_program.h>
 
@@ -27,6 +30,7 @@ using search::queryeval::MatchingElementsSearch;
 using search::queryeval::MatchingPhase;
 using search::queryeval::SameElementBlueprint;
 using search::queryeval::SearchIterator;
+using search::queryeval::SourceBlenderBlueprint;
 using vespalib::FeatureSet;
 
 using AttrSearchCtx = search::attribute::ISearchContext;
@@ -59,7 +63,10 @@ get_feature_set(const MatchToolsFactory &mtf,
 template<typename T>
 const T *as(const Blueprint &bp) { return dynamic_cast<const T *>(&bp); }
 
-void find_matching_elements(const std::vector<uint32_t> &docs, const SameElementBlueprint &same_element, MatchingElements &result) {
+void find_matching_elements(const std::vector<uint32_t> &docs,
+                            const SameElementBlueprint &same_element,
+                            MatchingElements &result)
+{
     search::fef::TermFieldMatchData dummy_tfmd;
     auto search = same_element.create_same_element_search(dummy_tfmd);
     search->initRange(docs.front(), docs.back()+1);
@@ -73,14 +80,36 @@ void find_matching_elements(const std::vector<uint32_t> &docs, const SameElement
     }
 }
 
-void find_matching_elements(const std::vector<uint32_t> &docs, MatchingElementsSearch &search, MatchingElements &result) {
+void find_matching_elements(const std::vector<uint32_t> &docs,
+                            MatchingElementsSearch &search,
+                            MatchingElements &result)
+{
     search.initRange(docs.front(), docs.back() + 1);
     for (uint32_t doc : docs) {
         search.find_matching_elements(doc, result);
     }
 }
 
-void find_matching_elements(const std::vector<uint32_t> &docs, const std::string &field_name, const AttrSearchCtx &attr_ctx, MatchingElements &result) {
+void find_matching_elements(const std::vector<uint32_t> &docs,
+                            search::queryeval::ElementIterator &search,
+                            const std::string &fieldName,
+                            MatchingElements &result)
+{
+    search.initRange(docs.front(), docs.back() + 1);
+    std::vector<uint32_t> matches;
+    for (uint32_t doc : docs) {
+        if (search.seek(doc)) {
+            search.getElementIds(doc, matches);
+            result.add_matching_elements(doc, fieldName, matches);
+            matches.clear();
+        }
+    }
+}
+
+void find_matching_elements(const std::vector<uint32_t> &docs,
+                            const std::string &field_name,
+                            const AttrSearchCtx &attr_ctx,
+                            MatchingElements &result) {
     int32_t weight = 0;
     std::vector<uint32_t> matches;
     for (uint32_t doc : docs) {
@@ -94,7 +123,19 @@ void find_matching_elements(const std::vector<uint32_t> &docs, const std::string
     }
 }
 
-void find_matching_elements(const MatchingElementsFields &fields, const std::vector<uint32_t> &docs, const Blueprint &bp, MatchingElements &result) {
+struct FindMatchingElements {
+    const MatchingElementsFields &fields;
+    MatchingElements &result;
+    const FieldIdToNameMapper idToName;
+    search::fef::MatchData &matchData;
+
+    void process(const std::vector<uint32_t> &docs, const Blueprint &bp);
+};
+
+void FindMatchingElements::process(
+        const std::vector<uint32_t> &docs,
+        const Blueprint &bp)
+{
     if (auto same_element = as<SameElementBlueprint>(bp)) {
         if (fields.has_field(same_element->field_name())) {
             find_matching_elements(docs, *same_element, result);
@@ -102,16 +143,40 @@ void find_matching_elements(const MatchingElementsFields &fields, const std::vec
     } else if (auto matching_elements_search = bp.create_matching_elements_search(fields)) {
         find_matching_elements(docs, *matching_elements_search, result);
     } else if (const AttrSearchCtx *attr_ctx = bp.get_attribute_search_context()) {
-        if (fields.has_struct_field(attr_ctx->attributeName())) {
-            find_matching_elements(docs, fields.get_enclosing_field(attr_ctx->attributeName()), *attr_ctx, result);
-        } else if (fields.has_field(attr_ctx->attributeName())) {
-            find_matching_elements(docs, attr_ctx->attributeName(), *attr_ctx, result);
+        if (fields.has_field(attr_ctx->attributeName())) {
+            find_matching_elements(docs, fields.enclosing_field(attr_ctx->attributeName()), *attr_ctx, result);
         }
     } else if (auto and_not = as<AndNotBlueprint>(bp)) {
-        find_matching_elements(fields, docs, and_not->getChild(0), result);
+        process(docs, and_not->getChild(0));
+    } else if (auto source_blender = as<SourceBlenderBlueprint>(bp)) {
+        const auto & selector = source_blender->getSelector();
+        auto iterator = selector.createIterator();
+        for (size_t i = 0; i < source_blender->childCnt(); ++i) {
+            auto &child_bp = source_blender->getChild(i);
+            std::vector<uint32_t> child_docs;
+            for (uint32_t docid : docs) {
+                uint8_t doc_source = iterator->getSource(docid);
+                if (child_bp.getSourceId() == doc_source) {
+                    child_docs.push_back(docid);
+                }
+            }
+            if (! child_docs.empty()) {
+                process(child_docs, child_bp);
+            }
+        }
     } else if (auto intermediate = as<IntermediateBlueprint>(bp)) {
         for (size_t i = 0; i < intermediate->childCnt(); ++i) {
-            find_matching_elements(fields, docs, intermediate->getChild(i), result);
+            process(docs, intermediate->getChild(i));
+        }
+    } else if (bp.getState().numFields() == 1) {
+        uint32_t currentField = bp.getState().field(0).getFieldId();
+        const std::string& fieldName = idToName.lookup(currentField);
+        if (fields.has_field(fieldName)) {
+            auto handle = bp.getState().field(0).getHandle();
+            auto * tfmd(matchData.resolveTermField(handle));
+            SearchIterator::UP child = bp.createSearch(matchData);
+            auto ei = std::make_unique<search::queryeval::ElementIteratorWrapper>(std::move(child), *tfmd);
+            find_matching_elements(docs, *ei, fieldName, result);
         }
     }
 }
@@ -172,7 +237,9 @@ DocsumMatcher::get_matching_elements(const MatchingElementsFields &fields) const
     auto result = std::make_unique<MatchingElements>();
     if (_mtf && !fields.empty()) {
         if (const Blueprint *root = _mtf->query().peekRoot()) {
-            find_matching_elements(fields, _docs, *root, *result);
+            auto match_data = _mtf->createMatchData();
+            FindMatchingElements finder(fields, *result, _mtf->getFieldIdToNameMapper(), *match_data);
+            finder.process(_docs, *root);
         }
     }
     return result;

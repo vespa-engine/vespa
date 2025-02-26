@@ -3,6 +3,7 @@ package com.yahoo.container.jdisc;
 
 import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
@@ -46,9 +47,14 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         this(executor, null);
     }
 
-    @Inject
+    // TODO: deprecate this and other overloads taking executor as argument
     public ThreadedHttpRequestHandler(Executor executor, Metric metric) {
         this(executor, metric, false);
+    }
+
+    @Inject
+    public ThreadedHttpRequestHandler(ContainerThreadPool pool, Metric metric) {
+        this(pool.executor(), metric, false);
     }
 
     // TODO: deprecate this and the Context class. The context component set up in the model does not get a dedicated thread pool.

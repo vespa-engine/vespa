@@ -5,6 +5,7 @@ import com.yahoo.concurrent.Timer;
 import com.yahoo.search.Query;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import static com.yahoo.container.handler.Coverage.DEGRADED_BY_TIMEOUT;
 import static com.yahoo.container.handler.Coverage.DEGRADED_BY_ADAPTIVE_TIMEOUT;
 
 /**
@@ -65,6 +66,12 @@ class AdaptiveTimeoutHandler implements TimeoutHandler {
 
     @Override
     public int reason() {
+        if (query.getTimeLeft() <= 0) {
+            return DEGRADED_BY_TIMEOUT;
+        }
+        if (timer.milliTime() < deadline) {
+            return 0;
+        }
         return DEGRADED_BY_ADAPTIVE_TIMEOUT;
     }
 }

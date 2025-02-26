@@ -41,12 +41,6 @@ public class PermanentFlags {
     static final Instant CREATED_AT = Instant.EPOCH;
     static final Instant EXPIRES_AT = ZonedDateTime.of(2100, 1, 1, 0, 0, 0, 0, ZoneOffset.UTC).toInstant();
 
-    // TODO(mpolden): Remove this flag
-    public static final UnboundBooleanFlag USE_ALTERNATIVE_ENDPOINT_CERTIFICATE_PROVIDER = defineFeatureFlag(
-            "use-alternative-endpoint-certificate-provider", false,
-            "Whether to use an alternative CA when provisioning new certificates",
-            "Takes effect only on initial application deployment - not on later certificate refreshes!");
-
     public static final UnboundStringFlag ENDPOINT_CERTIFICATE_PROVIDER = defineStringFlag(
             "endpoint-certificate-provider", "digicert", "The CA to use for endpoint certificates. Must be 'digicert', 'globalsign' or 'zerossl'",
             "Takes effect on initial deployment", TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -87,6 +81,11 @@ public class PermanentFlags {
             "No reboots are scheduled 0x-1x reboot intervals after the previous reboot, while reboot is " +
                     "scheduled evenly distributed in the 1x-2x range (and naturally guaranteed at the 2x boundary).",
             "Takes effect on next run of NodeRebooter");
+
+    public static final UnboundIntFlag KEEP_PROVISIONED_EXPIRED_HOSTS_MAX = defineIntFlag(
+            "keep-provisioned-expired-hosts-max", 0,
+            "The maximum number of provisioned expired hosts to keep for investigation of provisioning issues.",
+            "Takes effect on next run of ProvisionedExpirer");
 
     public static final UnboundJacksonFlag<SharedHost> SHARED_HOST = defineJacksonFlag(
             "shared-host", SharedHost.createDisabled(), SharedHost.class,
@@ -250,6 +249,15 @@ public class PermanentFlags {
     public static final UnboundDoubleFlag RESOURCE_LIMIT_DISK = defineDoubleFlag(
             "resource-limit-disk", 0.75,
             "Resource limit (between 0.0 and 1.0) for disk usage on content nodes, used by cluster controller for when to block feed",
+            "Takes effect on next deployment",
+            INSTANCE_ID
+    );
+
+    public static final UnboundDoubleFlag RESOURCE_LIMIT_LOW_WATERMARK_DIFFERENCE = defineDoubleFlag(
+            "resource-limit-low-watermark-difference", 0.0,
+            "Number between 0.0 and 1.0 for how much lower low watermark limit should be than content node resource limits . " +
+                    "This is an absolute number, so e.g. 0.01 implies that a resource limit of 0.8 effectively " +
+                    "becomes 0.79 for a node that is already in feed blocked state",
             "Takes effect on next deployment",
             INSTANCE_ID
     );
@@ -561,6 +569,43 @@ public class PermanentFlags {
             INSTANCE_ID,HOSTNAME,NODE_TYPE,TENANT_ID,VESPA_VERSION
     );
 
+    public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
+            "feed-concurrency", 0.5,
+            "How much concurrency should be allowed for feed",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundDoubleFlag FEED_NICENESS = defineDoubleFlag(
+            "feed-niceness", 0.0,
+            "How nice feeding shall be",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundBooleanFlag CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT = defineFeatureFlag(
+            "container-dump-heap-on-shutdown-timeout", false,
+            "Will trigger a heap dump during if container shutdown times out",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundStringFlag SYSTEM_MEMORY_MAX = defineStringFlag(
+            "system-memory-max", "",
+            "The value to write to /sys/fs/cgroup/system.slice/memory.max, if non-empty. " +
+                    "You may want lower memory.high before lowering memory.max, " +
+                    "and raise memory.high after raising memory.max.",
+            "Takes effect on next tick.",
+            NODE_TYPE);
+
+    public static final UnboundIntFlag MAX_UNCOMMITTED_MEMORY = defineIntFlag(
+            "max-uncommitted-memory", 130000,
+            "Max amount of memory holding updates to an attribute before we do a commit.",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
+
+    public static final UnboundBooleanFlag SORT_BLUEPRINTS_BY_COST = defineFeatureFlag(
+            "sort-blueprints-by-cost", false,
+            "If true blueprints are sorted based on cost estimate, rather than absolute estimated hits",
+            "Takes effect at redeployment",
+            INSTANCE_ID);
 
     private PermanentFlags() {}
 

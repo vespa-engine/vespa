@@ -146,7 +146,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         const std::string& source_field = source.empty() ? field_name : source;
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
-            fieldWriter = MatchedElementsFilterDFW::create(source_field,*attr_ctx, matching_elems_fields);
+            fieldWriter = MatchedElementsFilterDFW::create(source_field, *attr_ctx, matching_elems_fields);
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::documentid) {

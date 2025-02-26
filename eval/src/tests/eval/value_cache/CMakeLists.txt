@@ -4,6 +4,7 @@ vespa_add_executable(eval_value_cache_test_app TEST
     value_cache_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_value_cache_test_app COMMAND eval_value_cache_test_app)
 vespa_add_executable(eval_tensor_loader_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(eval_tensor_loader_test_app TEST
     tensor_loader_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_tensor_loader_test_app COMMAND eval_tensor_loader_test_app)

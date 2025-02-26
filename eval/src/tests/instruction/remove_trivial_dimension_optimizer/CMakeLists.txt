@@ -4,5 +4,6 @@ vespa_add_executable(eval_remove_trivial_dimension_optimizer_test_app TEST
     remove_trivial_dimension_optimizer_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
 vespa_add_test(NAME eval_remove_trivial_dimension_optimizer_test_app COMMAND eval_remove_trivial_dimension_optimizer_test_app)

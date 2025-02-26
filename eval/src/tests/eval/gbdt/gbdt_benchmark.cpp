@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/eval/eval/gbdt.h>
-#include <vespa/eval/eval/vm_forest.h>
+#include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/llvm/deinline_forest.h>
 #include <vespa/eval/eval/llvm/compiled_function.h>
-#include <vespa/eval/eval/function.h>
+#include <vespa/eval/eval/vm_forest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include "model.cpp"
@@ -260,7 +261,8 @@ void dump_plan(const ForestParams &params, const Plan &plan) {
 
 //-----------------------------------------------------------------------------
 
-TEST("find optimization plans") {
+TEST(GbdtBenchmark, find_optimization_plans)
+{
     std::vector<size_t> less_percent_values({90, 100});
     std::vector<size_t> tree_size_values(
             {2, 3, 4, 5, 6, 7, 8,
@@ -290,4 +292,4 @@ TEST("find optimization plans") {
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_shared_operation_throttler_test_app TEST
     shared_operation_throttler_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_shared_operation_throttler_test_app COMMAND vespalib_shared_operation_throttler_test_app)

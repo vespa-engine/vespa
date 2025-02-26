@@ -27,6 +27,7 @@ import java.util.logging.Logger;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.none;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 
 /**
@@ -37,7 +38,7 @@ import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType
 public class FileReferenceDownloader {
 
     private static final Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
-    private static final Set<CompressionType> defaultAcceptedCompressionTypes = Set.of(gzip, lz4, zstd);
+    private static final Set<CompressionType> defaultAcceptedCompressionTypes = Set.of(gzip, lz4, none, zstd);
 
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
@@ -80,7 +81,7 @@ public class FileReferenceDownloader {
                 return;
             var timeout = rpcTimeout.orElse(Duration.between(Instant.now(), end));
             log.log(Level.FINE, "Wait until download of " + fileReference + " has started, retryCount " + retryCount +
-                    " timeout" + timeout + " (request from client " + fileReferenceDownload.client() + ")");
+                    ", timeout " + timeout + " (request from " + fileReferenceDownload.client() + ")");
             if ( ! timeout.isNegative() && startDownloadRpc(fileReferenceDownload, retryCount, connection, timeout))
                 return;
 
@@ -129,7 +130,7 @@ public class FileReferenceDownloader {
                 downloadExecutor.submit(() -> {
                     if (downloads.get(fileReference).isPresent()) return;
 
-                    log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec);
+                    log.log(Level.FINE, () -> "Will download " + fileReference + " with timeout " + downloadTimeout + " from " + spec.host());
                     downloads.add(fileReferenceDownload);
                     var downloading = startDownloadRpc(fileReferenceDownload, 1, connection, downloadTimeout);
                     // Need to explicitly remove from downloads if downloading has not started.
@@ -164,7 +165,8 @@ public class FileReferenceDownloader {
                 return false;
             }
         } else {
-            log.log(logLevel, "Downloading " + fileReference + " from " + address + " failed:" +
+            log.log(logLevel, "Downloading " + fileReference + " from " + address +
+                    " (client " + fileReferenceDownload.client() + ") failed:" +
                     " error code " + request.errorCode() + " (" + request.errorMessage() + ")." +
                     " (retry " + retryCount + ", rpc timeout " + timeout + ")");
             return false;

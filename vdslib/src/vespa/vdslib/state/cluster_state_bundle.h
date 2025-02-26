@@ -67,7 +67,7 @@ public:
                        BucketSpaceStateMapping derived_bucket_space_states,
                        std::optional<FeedBlock> feed_block_in,
                        std::shared_ptr<const DistributionConfigBundle> distribution_bundle,
-                       bool deferred_activation);
+                       bool deferred_activation) noexcept;
 
     ClusterStateBundle(const ClusterStateBundle&);
     ClusterStateBundle& operator=(const ClusterStateBundle&);

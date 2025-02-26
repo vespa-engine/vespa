@@ -65,6 +65,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.yahoo.vespa.config.util.ConfigUtils.getCanonicalHostName;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.FINEST;
@@ -597,12 +598,12 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
                              return;
                          }
                          // Download directly from the source that has the file reference, which
-                         // is the client that sent the request
+                         // is supplied as a parameter in request
                          List<String> fileReferenceStrings = List.of(req.parameters().get(0).asStringArray());
                          var peerSpec = new Spec(req.parameters().get(1).asString());
                          fileReferenceStrings.stream()
                                              .map(FileReference::new)
-                                             .forEach(fileReference -> downloadFromSource(fileReference, peerSpec.host(), peerSpec));
+                                             .forEach(fileReference -> downloadFromSource(fileReference, getCanonicalHostName(), peerSpec));
                      });
         req.returnValues().add(new Int32Value(0));
         req.returnRequest();
@@ -613,8 +614,8 @@ public class RpcServer implements Runnable, ConfigActivationListener, TenantList
         try {
             var downloading = downloader.downloadFromSource(fileReferenceDownload, peerSpec);
             log.log(FINE, () -> downloading
-                    ? "Downloading file reference " + fileReference.value() + " from " + peerSpec.host()
-                    : "File reference " + fileReference.value() + " already exists");
+                    ? "Downloading " + fileReference + " from " + peerSpec.host()
+                    : fileReference + " already exists");
         } catch (Exception e) {
             log.log(WARNING, "download from source failed: ", Exceptions.toMessageString(e));
         }

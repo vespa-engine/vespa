@@ -52,6 +52,7 @@ public:
     uint64_t getApproxBytesToWriteToDisk() const override {
         return _target->getApproxBytesToWriteToDisk();
     }
+    uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
 };
 
 } // namespace proton

@@ -175,16 +175,14 @@ public class ModelContextImpl implements ModelContext {
         private final int maxActivationInhibitedOutOfSyncGroups;
         private final double resourceLimitDisk;
         private final double resourceLimitMemory;
+        private final double resourceLimitLowWatermarkDifference;
         private final double minNodeRatioPerGroup;
         private final boolean containerDumpHeapOnShutdownTimeout;
-        private final boolean loadCodeAsHugePages;
-        private final double containerShutdownTimeout;
         private final int maxUnCommittedMemory;
+        private final String searchMmapAdvise;
         private final boolean forwardIssuesAsErrors;
         private final boolean useV8GeoPositions;
-        private final int maxCompactBuffers;
         private final List<String> ignoredHttpUserAgents;
-        private final boolean sharedStringRepoNoReclaim;
         private final String logFileCompressionAlgorithm;
         private final int mbus_network_threads;
         private final int mbus_java_num_targets;
@@ -196,7 +194,6 @@ public class ModelContextImpl implements ModelContext {
         private final int heapPercentage;
         private final String summaryDecodePolicy;
         private final boolean sortBlueprintsByCost;
-        private final boolean alwaysMarkPhraseExpensive;
         private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
         private final int searchHandlerThreadpool;
@@ -207,7 +204,6 @@ public class ModelContextImpl implements ModelContext {
         private final double logserverNodeMemory;
         private final double clusterControllerNodeMemory;
         private final boolean symmetricPutAndActivateReplicaSelection;
-        private final boolean enforceStrictlyIncreasingClusterStateVersions;
         private final boolean useLegacyWandQueryParsing;
         private final boolean forwardAllLogLevels;
         private final long zookeeperPreAllocSize;
@@ -217,23 +213,21 @@ public class ModelContextImpl implements ModelContext {
             this.responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
             this.numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(source).with(appId).with(version).value();
             this.useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(source).with(appId).with(version).value();
-            this.feedConcurrency = Flags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
-            this.feedNiceness = Flags.FEED_NICENESS.bindTo(source).with(appId).with(version).value();
+            this.feedConcurrency = PermanentFlags.FEED_CONCURRENCY.bindTo(source).with(appId).with(version).value();
+            this.feedNiceness = PermanentFlags.FEED_NICENESS.bindTo(source).with(appId).with(version).value();
             this.mbus_network_threads = Flags.MBUS_NUM_NETWORK_THREADS.bindTo(source).with(appId).with(version).value();
             this.allowedAthenzProxyIdentities = PermanentFlags.ALLOWED_ATHENZ_PROXY_IDENTITIES.bindTo(source).with(appId).with(version).value();
             this.maxActivationInhibitedOutOfSyncGroups = Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS.bindTo(source).with(appId).with(version).value();
             this.resourceLimitDisk = PermanentFlags.RESOURCE_LIMIT_DISK.bindTo(source).with(appId).with(version).value();
             this.resourceLimitMemory = PermanentFlags.RESOURCE_LIMIT_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.resourceLimitLowWatermarkDifference = PermanentFlags.RESOURCE_LIMIT_LOW_WATERMARK_DIFFERENCE.bindTo(source).with(appId).with(version).value();
             this.minNodeRatioPerGroup = Flags.MIN_NODE_RATIO_PER_GROUP.bindTo(source).with(appId).with(version).value();
-            this.containerDumpHeapOnShutdownTimeout = Flags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
-            this.loadCodeAsHugePages = Flags.LOAD_CODE_AS_HUGEPAGES.bindTo(source).with(appId).with(version).value();
-            this.containerShutdownTimeout = Flags.CONTAINER_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
-            this.maxUnCommittedMemory = Flags.MAX_UNCOMMITTED_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.containerDumpHeapOnShutdownTimeout = PermanentFlags.CONTAINER_DUMP_HEAP_ON_SHUTDOWN_TIMEOUT.bindTo(source).with(appId).with(version).value();
+            this.maxUnCommittedMemory = PermanentFlags.MAX_UNCOMMITTED_MEMORY.bindTo(source).with(appId).with(version).value();
+            this.searchMmapAdvise = Flags.SEARCH_MMAP_ADVISE.bindTo(source).with(appId).with(version).value();
             this.forwardIssuesAsErrors = PermanentFlags.FORWARD_ISSUES_AS_ERRORS.bindTo(source).with(appId).with(version).value();
             this.useV8GeoPositions = Flags.USE_V8_GEO_POSITIONS.bindTo(source).with(appId).with(version).value();
-            this.maxCompactBuffers = Flags.MAX_COMPACT_BUFFERS.bindTo(source).with(appId).with(version).value();
             this.ignoredHttpUserAgents = PermanentFlags.IGNORED_HTTP_USER_AGENTS.bindTo(source).with(appId).with(version).value();
-            this.sharedStringRepoNoReclaim = Flags.SHARED_STRING_REPO_NO_RECLAIM.bindTo(source).with(appId).with(version).value();
             this.logFileCompressionAlgorithm = Flags.LOG_FILE_COMPRESSION_ALGORITHM.bindTo(source).with(appId).with(version).value();
             this.mbus_java_num_targets = Flags.MBUS_JAVA_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
             this.mbus_java_events_before_wakeup = Flags.MBUS_JAVA_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
@@ -247,8 +241,7 @@ public class ModelContextImpl implements ModelContext {
             this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
             this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
             this.searchHandlerThreadpool = Flags.SEARCH_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
-            this.alwaysMarkPhraseExpensive = Flags.ALWAYS_MARK_PHRASE_EXPENSIVE.bindTo(source).with(appId).with(version).value();
-            this.sortBlueprintsByCost = Flags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
+            this.sortBlueprintsByCost = PermanentFlags.SORT_BLUEPRINTS_BY_COST.bindTo(source).with(appId).with(version).value();
             this.persistenceThreadMaxFeedOpBatchSize = Flags.PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE.bindTo(source).with(appId).with(version).value();
             this.logserverOtelCol = Flags.LOGSERVER_OTELCOL_AGENT.bindTo(source).with(appId).with(version).value();
             this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(source).with(appId).with(version).value();
@@ -256,7 +249,6 @@ public class ModelContextImpl implements ModelContext {
             this.logserverNodeMemory = PermanentFlags.LOGSERVER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.clusterControllerNodeMemory = PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
-            this.enforceStrictlyIncreasingClusterStateVersions = Flags.ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS.bindTo(source).with(appId).with(version).value();
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
             this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
             this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
@@ -276,16 +268,14 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
         @Override public double resourceLimitDisk() { return resourceLimitDisk; }
         @Override public double resourceLimitMemory() { return resourceLimitMemory; }
+        @Override public double resourceLimitLowWatermarkDifference() { return resourceLimitLowWatermarkDifference; }
         @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
-        @Override public double containerShutdownTimeout() { return containerShutdownTimeout; }
         @Override public boolean containerDumpHeapOnShutdownTimeout() { return containerDumpHeapOnShutdownTimeout; }
-        @Override public boolean loadCodeAsHugePages() { return loadCodeAsHugePages; }
         @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
+        @Override public String searchMmapAdvise() { return searchMmapAdvise; }
         @Override public boolean forwardIssuesAsErrors() { return forwardIssuesAsErrors; }
         @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
-        @Override public int maxCompactBuffers() { return maxCompactBuffers; }
         @Override public List<String> ignoredHttpUserAgents() { return ignoredHttpUserAgents; }
-        @Override public boolean sharedStringRepoNoReclaim() { return sharedStringRepoNoReclaim; }
         @Override public int mbusJavaRpcNumTargets() { return mbus_java_num_targets; }
         @Override public int mbusJavaEventsBeforeWakeup() { return mbus_java_events_before_wakeup; }
         @Override public int mbusCppRpcNumTargets() { return mbus_cpp_num_targets; }
@@ -299,7 +289,6 @@ public class ModelContextImpl implements ModelContext {
             }
             return defVal;
         }
-        @Override public boolean alwaysMarkPhraseExpensive() { return alwaysMarkPhraseExpensive; }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
         @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
@@ -311,7 +300,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double logserverNodeMemory() { return logserverNodeMemory; }
         @Override public double clusterControllerNodeMemory() { return clusterControllerNodeMemory; }
         @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
-        @Override public boolean enforceStrictlyIncreasingClusterStateVersions() { return enforceStrictlyIncreasingClusterStateVersions; }
         @Override public boolean useLegacyWandQueryParsing() { return useLegacyWandQueryParsing; }
         @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
         @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }

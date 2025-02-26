@@ -1570,6 +1570,7 @@
     "methods" : [
       "public void <init>()",
       "public java.lang.String getIndexName()",
+      "public java.lang.String getFieldName()",
       "protected void encodeThis(java.nio.ByteBuffer)",
       "public void setIndexName(java.lang.String)",
       "protected void appendIndexString(java.lang.StringBuilder)",
@@ -5361,6 +5362,7 @@
       "public void setQueryString(java.lang.String)",
       "public java.lang.String getQueryString()",
       "public com.yahoo.search.query.QueryTree getQueryTree()",
+      "public com.yahoo.search.query.QueryTree getQueryTree(boolean)",
       "public void clearQueryTree()",
       "public java.lang.String getFilter()",
       "public void setFilter(java.lang.String)",
@@ -5491,6 +5493,7 @@
       "public"
     ],
     "methods" : [
+      "public void <init>()",
       "public void <init>(com.yahoo.prelude.query.Item)",
       "public void setIndexName(java.lang.String)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
@@ -7089,6 +7092,8 @@
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public void setRerankCount(int)",
       "public java.lang.Integer getRerankCount()",
+      "public void setRankScoreDropLimit(double)",
+      "public java.lang.Double getRankScoreDropLimit()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
       "public com.yahoo.search.query.ranking.GlobalPhase clone()",
@@ -7872,6 +7877,7 @@
       "public com.yahoo.search.result.Coverage setTargetActive(long)",
       "public com.yahoo.search.result.Coverage setDegradedReason(int)",
       "public com.yahoo.search.result.Coverage setNodesTried(int)",
+      "public int getDegradedReason()",
       "public bridge synthetic com.yahoo.container.handler.Coverage setNodesTried(int)"
     ],
     "fields" : [ ]

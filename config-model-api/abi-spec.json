@@ -1293,8 +1293,6 @@
       "abstract"
     ],
     "methods" : [
-      "public double defaultTermwiseLimit()",
-      "public java.lang.String feedSequencerType()",
       "public java.lang.String responseSequencerType()",
       "public java.lang.String queryDispatchPolicy()",
       "public double queryDispatchWarmup()",
@@ -1310,7 +1308,7 @@
       "public double feedConcurrency()",
       "public double feedNiceness()",
       "public int maxUnCommittedMemory()",
-      "public boolean sharedStringRepoNoReclaim()",
+      "public java.lang.String searchMmapAdvise()",
       "public boolean loadCodeAsHugePages()",
       "public boolean containerDumpHeapOnShutdownTimeout()",
       "public double containerShutdownTimeout()",
@@ -1319,7 +1317,7 @@
       "public int maxActivationInhibitedOutOfSyncGroups()",
       "public double resourceLimitDisk()",
       "public double resourceLimitMemory()",
-      "public double resourceLimitMemorySmallNodes()",
+      "public double resourceLimitLowWatermarkDifference()",
       "public double minNodeRatioPerGroup()",
       "public boolean forwardIssuesAsErrors()",
       "public boolean useV8GeoPositions()",
@@ -1340,11 +1338,9 @@
       "public double clusterControllerNodeMemory()",
       "public boolean symmetricPutAndActivateReplicaSelection()",
       "public boolean enforceStrictlyIncreasingClusterStateVersions()",
-      "public boolean distributionConfigFromClusterController()",
       "public boolean useLegacyWandQueryParsing()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
-      "public int distributionBitsInDev()",
       "public int documentV1QueueSize()"
     ],
     "fields" : [ ]

@@ -47,11 +47,11 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -134,6 +134,47 @@ public class ContentClusterTest extends ContentBaseTest {
         ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
         assertEquals(1, protonConfig.distribution().searchablecopies());
         assertEquals(5, protonConfig.distribution().redundancy());
+    }
+
+    @Test
+    void testWarningWhenManyGroupsWithFewNodes() {
+        var services =
+                "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <documents/>" +
+                        "  <redundancy>3</redundancy>\n" +
+                        "  <group name='root'>" +
+                        "    <distribution partitions='1|1|*'/>" +
+                        "    <group name='g-1' distribution-key='0'>" +
+                        "      <node hostalias='mockhost' distribution-key='0'/>" +
+                        "      <node hostalias='mockhost' distribution-key='1'/>" +
+                        "    </group>" +
+                        "    <group name='g-2' distribution-key='1'>" +
+                        "      <node hostalias='mockhost' distribution-key='2'/>" +
+                        "      <node hostalias='mockhost' distribution-key='3'/>" +
+                        "    </group>" +
+                        "    <group name='g-3' distribution-key='1'>" +
+                        "      <node hostalias='mockhost' distribution-key='4'/>" +
+                        "      <node hostalias='mockhost' distribution-key='5'/>" +
+                        "    </group>" +
+                        "  </group>" +
+                        "</content>";
+
+        var messages = new ArrayList<>();
+        DeployLogger logger = (level, message) -> {
+            if (level == Level.INFO) {
+                messages.add(message);
+            }
+        };
+        var deployState = new DeployState.Builder()
+                .applicationPackage(new MockApplicationPackage.Builder().withServices(services).build())
+                .deployLogger(logger)
+                .build();
+        new TestDriver().buildModel(deployState);
+        assertEquals(1, messages.size());
+        assertEquals("In cluster 'storage': min-node-ratio-per-group should be set to 1 when there are 3 or more groups (3)" +
+                             " and there are 3 or fewer nodes in the group (2)." +
+                             " See https://docs.vespa.ai/en/reference/services-content.html?mode=cloud#min-node-ratio-per-group",
+                     messages.get(0));
     }
 
     @Test
@@ -1266,27 +1307,6 @@ public class ContentClusterTest extends ContentBaseTest {
         verifySummaryDecodeType("on-demand", DispatchConfig.SummaryDecodePolicy.ONDEMAND);
     }
 
-    private int resolveMaxCompactBuffers(OptionalInt maxCompactBuffers) {
-        TestProperties testProperties = new TestProperties();
-        if (maxCompactBuffers.isPresent()) {
-            testProperties.maxCompactBuffers(maxCompactBuffers.getAsInt());
-        }
-        VespaModel model = createEnd2EndOneNode(testProperties);
-        ContentCluster cc = model.getContentClusters().get("storage");
-        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
-        cc.getSearch().getConfig(protonBuilder);
-        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
-        assertEquals(1, protonConfig.documentdb().size());
-        return protonConfig.documentdb(0).allocation().max_compact_buffers();
-    }
-
-    @Test
-    void default_max_compact_buffers_config_controlled_by_properties() {
-        assertEquals(1, resolveMaxCompactBuffers(OptionalInt.empty()));
-        assertEquals(2, resolveMaxCompactBuffers(OptionalInt.of(2)));
-        assertEquals(7, resolveMaxCompactBuffers(OptionalInt.of(7)));
-    }
-
     private long resolveMaxTLSSize(Optional<Flavor> flavor) throws Exception {
         TestProperties testProperties = new TestProperties();
 
@@ -1599,12 +1619,8 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(warnings, "");
     }
 
-    private void checkStrictlyIncreasingClusterStateVersionConfig(Boolean flagValue, boolean expected) throws Exception {
-        var props = new TestProperties();
-        if (flagValue != null) {
-            props.setEnforceStrictlyIncreasingClusterStateVersions(flagValue);
-        }
-        var cc = createOneNodeCluster(props);
+    private void checkStrictlyIncreasingClusterStateVersionConfig(boolean expected) throws Exception {
+        var cc = createOneNodeCluster(false);
 
         // stor-server config should be the same for both distributors and storage nodes
         var builder = new StorServerConfig.Builder();
@@ -1619,10 +1635,8 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void strictly_increasing_cluster_state_versions_config_controlled_by_feature_flag() throws Exception {
-        checkStrictlyIncreasingClusterStateVersionConfig(null, false); // TODO change default
-        checkStrictlyIncreasingClusterStateVersionConfig(false, false);
-        checkStrictlyIncreasingClusterStateVersionConfig(true, true);
+    void strictly_increasing_cluster_state_versions_config() throws Exception {
+        checkStrictlyIncreasingClusterStateVersionConfig(true);
     }
 
     @Test

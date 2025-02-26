@@ -4,6 +4,7 @@ vespa_add_executable(eval_eval_expr_test_app TEST
     eval_expr_test.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
     AFTER
     eval_eval_expr_app
 )

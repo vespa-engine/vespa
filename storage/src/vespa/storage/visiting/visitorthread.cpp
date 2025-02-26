@@ -47,7 +47,7 @@ VisitorThread::Event::operator= (Event&& other) noexcept
     return *this;
 }
 
-VisitorThread::Event::Event(api::VisitorId visitor, std::shared_ptr<api::StorageMessage> msg)
+VisitorThread::Event::Event(api::VisitorId visitor, std::shared_ptr<api::StorageMessage> msg) noexcept
     : _visitorId(visitor),
       _message(std::move(msg)),
       _timer(),
@@ -55,7 +55,7 @@ VisitorThread::Event::Event(api::VisitorId visitor, std::shared_ptr<api::Storage
 {
 }
 
-VisitorThread::Event::Event(api::VisitorId visitor, mbus::Reply::UP reply)
+VisitorThread::Event::Event(api::VisitorId visitor, mbus::Reply::UP reply) noexcept
     : _visitorId(visitor),
       _mbusReply(std::move(reply)),
       _timer(),

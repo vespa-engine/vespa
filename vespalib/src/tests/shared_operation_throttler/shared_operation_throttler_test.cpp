@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/util/shared_operation_throttler.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/barrier.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
 #include <cassert>
 
 using vespalib::steady_clock;
+
+using namespace ::testing;
 
 namespace vespalib {
 
@@ -22,7 +24,11 @@ struct DynamicThrottleFixture {
     }
 };
 
-TEST("unlimited throttler does not throttle") {
+struct SharedOperationHandlerTest : Test {
+    DynamicThrottleFixture f;
+};
+
+TEST_F(SharedOperationHandlerTest, unlimited_throttler_does_not_throttle) {
     // We technically can't test that the unlimited throttler _never_ throttles, but at
     // least check that it doesn't throttle _twice_, and then induce from this ;)
     auto throttler = SharedOperationThrottler::make_unlimited_throttler();
@@ -31,79 +37,79 @@ TEST("unlimited throttler does not throttle") {
     auto token2 = throttler->blocking_acquire_one();
     EXPECT_TRUE(token2.valid());
     // Window size should be zero (i.e. unlimited) for unlimited throttler
-    EXPECT_EQUAL(throttler->current_window_size(), 0u);
+    EXPECT_EQ(throttler->current_window_size(), 0u);
     // But we still track the active token count
-    EXPECT_EQUAL(throttler->current_active_token_count(), 2u);
+    EXPECT_EQ(throttler->current_active_token_count(), 2u);
 }
 
-TEST_F("dynamic throttler respects initial window size", DynamicThrottleFixture()) {
-    auto token1 = f1._throttler->try_acquire_one();
+TEST_F(SharedOperationHandlerTest, dynamic_throttler_respects_initial_window_size) {
+    auto token1 = f._throttler->try_acquire_one();
     EXPECT_TRUE(token1.valid());
-    auto token2 = f1._throttler->try_acquire_one();
+    auto token2 = f._throttler->try_acquire_one();
     EXPECT_FALSE(token2.valid());
 
-    EXPECT_EQUAL(f1._throttler->current_window_size(), 1u);
-    EXPECT_EQUAL(f1._throttler->current_active_token_count(), 1u);
+    EXPECT_EQ(f._throttler->current_window_size(), 1u);
+    EXPECT_EQ(f._throttler->current_active_token_count(), 1u);
 }
 
-TEST_F("blocking acquire returns immediately if slot available", DynamicThrottleFixture()) {
-    auto token = f1._throttler->blocking_acquire_one();
+TEST_F(SharedOperationHandlerTest, blocking_acquire_returns_immediately_if_slot_available) {
+    auto token = f._throttler->blocking_acquire_one();
     EXPECT_TRUE(token.valid());
     token.reset();
-    token = f1._throttler->blocking_acquire_one(steady_clock::now() + 600s); // Should never block.
+    token = f._throttler->blocking_acquire_one(steady_clock::now() + 600s); // Should never block.
     EXPECT_TRUE(token.valid());
 }
 
-TEST_F("blocking call woken up if throttle slot available", DynamicThrottleFixture()) {
+TEST_F(SharedOperationHandlerTest, blocking_call_woken_up_if_throttle_slot_available) {
     vespalib::Barrier barrier(2);
     std::thread t([&] {
-        auto token = f1._throttler->try_acquire_one();
+        auto token = f._throttler->try_acquire_one();
         assert(token.valid());
         barrier.await();
-        while (f1._throttler->waiting_threads() != 1) {
+        while (f._throttler->waiting_threads() != 1) {
             std::this_thread::sleep_for(100us);
         }
         // Implicit token release at thread scope exit
     });
     barrier.await();
-    auto token = f1._throttler->blocking_acquire_one();
+    auto token = f._throttler->blocking_acquire_one();
     EXPECT_TRUE(token.valid());
     t.join();
 }
 
-TEST_F("time-bounded blocking acquire waits for timeout", DynamicThrottleFixture()) {
-    auto window_filling_token = f1._throttler->try_acquire_one();
+TEST_F(SharedOperationHandlerTest, time_bounded_blocking_acquire_waits_for_timeout) {
+    auto window_filling_token = f._throttler->try_acquire_one();
     auto before = steady_clock::now();
     // Will block for at least 1ms. Since no window slot will be available by that time,
     // an invalid token should be returned.
-    auto token = f1._throttler->blocking_acquire_one(before + 1ms);
+    auto token = f._throttler->blocking_acquire_one(before + 1ms);
     auto after = steady_clock::now();
     EXPECT_TRUE((after - before) >= 1ms);
     EXPECT_FALSE(token.valid());
 }
 
-TEST("default constructed token is invalid") {
+TEST_F(SharedOperationHandlerTest, default_constructed_token_is_invalid) {
     ThrottleToken token;
     EXPECT_FALSE(token.valid());
     token.reset(); // no-op
     EXPECT_FALSE(token.valid());
 }
 
-TEST_F("token destruction frees up throttle window slot", DynamicThrottleFixture()) {
+TEST_F(SharedOperationHandlerTest, token_destruction_frees_up_throttle_window_slot) {
     {
-        auto token = f1._throttler->try_acquire_one();
+        auto token = f._throttler->try_acquire_one();
         EXPECT_TRUE(token.valid());
-        EXPECT_EQUAL(f1._throttler->current_active_token_count(), 1u);
+        EXPECT_EQ(f._throttler->current_active_token_count(), 1u);
     }
-    EXPECT_EQUAL(f1._throttler->current_active_token_count(), 0u);
+    EXPECT_EQ(f._throttler->current_active_token_count(), 0u);
 
-    auto token = f1._throttler->try_acquire_one();
+    auto token = f._throttler->try_acquire_one();
     EXPECT_TRUE(token.valid());
-    EXPECT_EQUAL(f1._throttler->current_active_token_count(), 1u);
+    EXPECT_EQ(f._throttler->current_active_token_count(), 1u);
 }
 
-TEST_F("token can be moved and reset", DynamicThrottleFixture()) {
-    auto token1 = f1._throttler->try_acquire_one();
+TEST_F(SharedOperationHandlerTest, token_can_be_moved_and_reset) {
+    auto token1 = f._throttler->try_acquire_one();
     auto token2 = std::move(token1); // move ctor
     EXPECT_TRUE(token2.valid());
     EXPECT_FALSE(token1.valid());
@@ -113,11 +119,11 @@ TEST_F("token can be moved and reset", DynamicThrottleFixture()) {
     EXPECT_FALSE(token2.valid());
 
     // Trying to fetch new token should not succeed due to active token and win size of 1
-    token1 = f1._throttler->try_acquire_one();
+    token1 = f._throttler->try_acquire_one();
     EXPECT_FALSE(token1.valid());
     // Resetting the token should free up the slot in the window
     token3.reset();
-    token1 = f1._throttler->try_acquire_one();
+    token1 = f._throttler->try_acquire_one();
     EXPECT_TRUE(token1.valid());
 }
 
@@ -174,49 +180,61 @@ struct WindowFixture {
     }
 };
 
-TEST_F("window size changes dynamically based on throughput", WindowFixture()) {
-    uint32_t window_size = f1.attempt_converge_on_stable_window_size(100);
+TEST(WindowedSharedOperationThrottlerTest, window_size_changes_dynamically_based_on_throughput) {
+    WindowFixture f;
+    uint32_t window_size = f.attempt_converge_on_stable_window_size(100);
     ASSERT_TRUE(window_size >= 90 && window_size <= 105);
 
-    window_size = f1.attempt_converge_on_stable_window_size(200);
+    window_size = f.attempt_converge_on_stable_window_size(200);
     ASSERT_TRUE(window_size >= 180 && window_size <= 205);
 
-    window_size = f1.attempt_converge_on_stable_window_size(50);
+    window_size = f.attempt_converge_on_stable_window_size(50);
     ASSERT_TRUE(window_size >= 45 && window_size <= 55);
 
-    window_size = f1.attempt_converge_on_stable_window_size(500);
+    window_size = f.attempt_converge_on_stable_window_size(500);
     ASSERT_TRUE(window_size >= 450 && window_size <= 505);
 
-    window_size = f1.attempt_converge_on_stable_window_size(100);
+    window_size = f.attempt_converge_on_stable_window_size(100);
     ASSERT_TRUE(window_size >= 90 && window_size <= 115);
 }
 
-TEST_F("window size is reset after idle time period", WindowFixture(5, 1)) {
-    double window_size = f1.attempt_converge_on_stable_window_size(100);
+TEST(WindowedSharedOperationThrottlerTest, window_size_is_reset_after_idle_time_period) {
+    WindowFixture f(5, 1);
+    double window_size = f.attempt_converge_on_stable_window_size(100);
     ASSERT_TRUE(window_size >= 90 && window_size <= 110);
 
-    f1._milli_time += 30001; // Not yet past 60s idle time
-    auto tokens = f1.fill_entire_throttle_window();
+    f._milli_time += 30001; // Not yet past 60s idle time
+    auto tokens = f.fill_entire_throttle_window();
     ASSERT_TRUE(tokens.size() >= 90 && tokens.size() <= 110);
     tokens.clear();
 
-    f1._milli_time += 60001; // Idle time passed
-    tokens = f1.fill_entire_throttle_window();
-    EXPECT_EQUAL(tokens.size(), 1u); // Reduced to minimum window size
+    f._milli_time += 60001; // Idle time passed
+    tokens = f.fill_entire_throttle_window();
+    EXPECT_EQ(tokens.size(), 1u); // Reduced to minimum window size
 }
 
-TEST_F("minimum window size is respected", WindowFixture(5, 150, INT_MAX)) {
-    double window_size = f1.attempt_converge_on_stable_window_size(200);
+TEST(WindowedSharedOperationThrottlerTest, minimum_window_size_is_respected) {
+    WindowFixture f(5, 150, INT_MAX);
+    double window_size = f.attempt_converge_on_stable_window_size(200);
     ASSERT_TRUE(window_size >= 150 && window_size <= 210);
 }
 
-TEST_F("maximum window size is respected", WindowFixture(5, 1, 50)) {
-    double window_size = f1.attempt_converge_on_stable_window_size(100);
+TEST(WindowedSharedOperationThrottlerTest, maximum_window_size_is_respected) {
+    WindowFixture f(5, 1, 50);
+    double window_size = f.attempt_converge_on_stable_window_size(100);
     ASSERT_TRUE(window_size >= 40 && window_size <= 50);
 }
 
+TEST(WindowedSharedOperationThrottlerTest, zero_sized_acquire_time_delta_does_not_modify_window_size) {
+    WindowFixture f(1, 1, 2);
+    for (int i = 0; i < 3; ++i) {
+        auto token = f._throttler->try_acquire_one();
+        ASSERT_TRUE(token.valid());
+        EXPECT_EQ(f._throttler->current_window_size(), 1);
+        // No mock timer bump between iterations.
+    }
 }
 
-TEST_MAIN() {
-    TEST_RUN_ALL();
 }
+
+GTEST_MAIN_RUN_ALL_TESTS()

@@ -15,6 +15,7 @@ import com.yahoo.config.provision.Tags;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
+import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.test.ManualClock;
 import org.junit.Test;
 
@@ -1202,6 +1203,56 @@ public class DeploymentSpecTest {
         assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
                                                                      defaultId(),
                                                                      ClusterSpec.Id.from("cluster")));
+    }
+
+    @Test
+    public void zoneEndpointTokenAuthentication() {
+        var spec = DeploymentSpec.fromXml("""
+                                          <deployment>
+                                             <instance id='default'>
+                                                <endpoints>
+                                                    <endpoint type='private' container-id='c0' auth-method='token'>
+                                                        <region>us-east</region>
+                                                    </endpoint>
+                                                </endpoints>
+                                             </instance>
+                                          </deployment>""");
+        var zone = from(prod, RegionName.from("us-east"));
+        var zoneEndpoint = spec.requireInstance("default").zoneEndpoints().get(ClusterSpec.Id.from("c0")).get(zone);
+        assertEquals(new ZoneEndpoint(true, true, List.of(AuthMethod.token), List.of()), zoneEndpoint);
+    }
+
+    @Test
+    public void defaultMtlsAuthenticationOnPrivateZoneEndpoint() {
+        var spec = DeploymentSpec.fromXml("""
+                                          <deployment>
+                                             <instance id='default'>
+                                                <endpoints>
+                                                    <endpoint type='private' container-id='c0'>
+                                                        <region>us-east</region>
+                                                    </endpoint>
+                                                </endpoints>
+                                             </instance>
+                                          </deployment>""");
+        var zone = from(prod, RegionName.from("us-east"));
+        var zoneEndpoint = spec.requireInstance("default").zoneEndpoints().get(ClusterSpec.Id.from("c0")).get(zone);
+        assertEquals(new ZoneEndpoint(true, true, List.of(AuthMethod.mtls), List.of()), zoneEndpoint);
+    }
+
+    @Test
+    public void illegalTokenAuthenticationSettingOnNonPrivateZoneEndpoint() {
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> DeploymentSpec.fromXml("""
+                                          <deployment>
+                                             <instance id='default'>
+                                                <endpoints>
+                                                    <endpoint type='zone' container-id='c0' auth-method='token'>
+                                                        <region>us-east</region>
+                                                    </endpoint>
+                                                </endpoints>
+                                             </instance>
+                                          </deployment>"""));
     }
 
     @Test

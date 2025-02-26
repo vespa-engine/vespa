@@ -88,10 +88,12 @@ public class ContentSchemaClusterTest {
     }
 
     private static void assertClusterControllerResourceLimits(double expDiskLimit, double expMemoryLimit, ContentCluster cluster) {
-        var limits = getFleetcontrollerConfig(cluster).cluster_feed_block_limit();
+        var config = getFleetcontrollerConfig(cluster);
+        var limits = config.cluster_feed_block_limit();
         assertEquals(3, limits.size());
         assertEquals(expDiskLimit, limits.get("disk"), EPSILON);
         assertEquals(expMemoryLimit, limits.get("memory"), EPSILON);
+        assertEquals(0.0, config.cluster_feed_block_noise_level(), EPSILON);
     }
 
     @Test

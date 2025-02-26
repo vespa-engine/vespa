@@ -9,8 +9,7 @@ namespace search::fef { class MatchData; }
 
 namespace search::queryeval {
 
-template <typename RefType>
-class SearchIteratorPackT
+class SearchIteratorPack
 {
 private:
     using MatchDataUP = std::unique_ptr<fef::MatchData>;
@@ -19,41 +18,38 @@ private:
     MatchDataUP                            _md;
 
 public:
-    using ref_t = RefType;
-    SearchIteratorPackT();
-    ~SearchIteratorPackT();
-    SearchIteratorPackT(SearchIteratorPackT<RefType> &&rhs) noexcept;
-    SearchIteratorPackT<RefType> &operator=(SearchIteratorPackT<RefType> &&rhs) noexcept;
+    SearchIteratorPack();
+    ~SearchIteratorPack();
+    SearchIteratorPack(SearchIteratorPack &&rhs) noexcept;
+    SearchIteratorPack &operator=(SearchIteratorPack &&rhs) noexcept;
 
     // TODO: use MultiSearch::Children to pass ownership
-    SearchIteratorPackT(const std::vector<SearchIterator*> &children,
+    SearchIteratorPack(const std::vector<SearchIterator*> &children,
                         const std::vector<fef::TermFieldMatchData*> &childMatch,
                         MatchDataUP md);
 
     // TODO: use MultiSearch::Children to pass ownership
-    SearchIteratorPackT(const std::vector<SearchIterator*> &children, MatchDataUP md);
+    SearchIteratorPack(const std::vector<SearchIterator*> &children, MatchDataUP md);
 
-    static bool can_handle_iterators(size_t num_iterators);
-
-    uint32_t get_docid(ref_t ref) const {
+    uint32_t get_docid(uint32_t ref) const {
         return _children[ref]->getDocId();
     }
 
-    uint32_t seek(ref_t ref, uint32_t docid) {
+    uint32_t seek(uint32_t ref, uint32_t docid) {
         _children[ref]->seek(docid);
         return _children[ref]->getDocId();
     }
 
-    int32_t get_weight(ref_t ref, uint32_t docid) {
+    int32_t get_weight(uint32_t ref, uint32_t docid) {
         _children[ref]->doUnpack(docid);
         return _childMatch[ref]->getWeight();
     }
 
-    void unpack(ref_t ref, uint32_t docid) {
+    void unpack(uint32_t ref, uint32_t docid) {
         _children[ref]->doUnpack(docid);
     }
 
-    ref_t size() const { return _children.size(); }
+    uint32_t size() const { return _children.size(); }
     void initRange(uint32_t begin, uint32_t end) {
         for (auto & child: _children) {
             child->initRange(begin, end);
@@ -66,10 +62,7 @@ public:
             _children[i] = f(std::move(_children[i]), i);
         }
     }
+    const fef::MatchData& match_data() const { return *_md; }
 };
 
-using SearchIteratorPack = SearchIteratorPackT<uint16_t>;
-using SearchIteratorPackUint32 = SearchIteratorPackT<uint32_t>;
-
 }
-

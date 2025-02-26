@@ -54,8 +54,11 @@ public:
         std::string name;
         std::vector<DimSize> dimensions;
         ElementType elements;
-        std::string type_as_string() const;
+        TensorInfo(std::string name_in, std::vector<DimSize> dimensions_in, ElementType elements_in);
+        TensorInfo(const TensorInfo&);
+        TensorInfo(TensorInfo&&) noexcept = default;
         ~TensorInfo();
+        std::string type_as_string() const;
     };
 
     // concrete tensor type with known dimension sizes

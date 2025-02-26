@@ -19,6 +19,7 @@ import java.nio.file.Files;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.none;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.compressed;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.Type.file;
@@ -65,6 +66,7 @@ public class FileReceiverTest {
         testWithCompression(dirWithFiles, gzip);
         testWithCompression(dirWithFiles, lz4);
         testWithCompression(dirWithFiles, zstd);
+        testWithCompression(dirWithFiles, none);
     }
 
     private void testWithCompression(File dirWithFiles, CompressionType compressionType) throws IOException {
@@ -79,7 +81,7 @@ public class FileReceiverTest {
     private void transferPartsAndAssert(FileReference ref, String fileName, String all, int numParts) throws IOException {
         byte [] allContent = Utf8.toBytes(all);
 
-        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref, file, gzip, fileName, allContent.length);
+        FileReceiver.Session session = new FileReceiver.Session(root, 1, ref, file, lz4, fileName, allContent.length);
         int partSize = (allContent.length+(numParts-1))/numParts;
         ByteBuffer bb = ByteBuffer.wrap(allContent);
         for (int i = 0, pos = 0; i < numParts; i++) {

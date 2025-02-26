@@ -162,12 +162,14 @@ TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_fi
     set_field("array", true);
     EXPECT_TRUE(_matching_elems_fields);
     EXPECT_TRUE(_matching_elems_fields->has_field("array"));
+    EXPECT_TRUE(_matching_elems_fields->has_field("array.name"));
+    EXPECT_TRUE(_matching_elems_fields->has_field("array.val"));
     EXPECT_FALSE(_matching_elems_fields->has_field("map"));
     EXPECT_FALSE(_matching_elems_fields->has_field("smap"));
-    EXPECT_EQ("", _matching_elems_fields->get_enclosing_field("array.foo"));
-    EXPECT_EQ("array", _matching_elems_fields->get_enclosing_field("array.name"));
-    EXPECT_EQ("array", _matching_elems_fields->get_enclosing_field("array.val"));
-    EXPECT_EQ("array", _matching_elems_fields->get_enclosing_field("array.fval"));
+    EXPECT_EQ("array.foo", _matching_elems_fields->enclosing_field("array.foo"));
+    EXPECT_EQ("array", _matching_elems_fields->enclosing_field("array.name"));
+    EXPECT_EQ("array", _matching_elems_fields->enclosing_field("array.val"));
+    EXPECT_EQ("array", _matching_elems_fields->enclosing_field("array.fval"));
 }
 
 TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_filtered_map_of_struct)
@@ -177,11 +179,12 @@ TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_fi
     EXPECT_FALSE(_matching_elems_fields->has_field("array"));
     EXPECT_FALSE(_matching_elems_fields->has_field("map"));
     EXPECT_TRUE(_matching_elems_fields->has_field("smap"));
-    EXPECT_EQ("", _matching_elems_fields->get_enclosing_field("smap.foo"));
-    EXPECT_EQ("smap", _matching_elems_fields->get_enclosing_field("smap.key"));
-    EXPECT_EQ("smap", _matching_elems_fields->get_enclosing_field("smap.value.name"));
-    EXPECT_EQ("smap", _matching_elems_fields->get_enclosing_field("smap.value.val"));
-    EXPECT_EQ("smap", _matching_elems_fields->get_enclosing_field("smap.value.fval"));
+    EXPECT_TRUE(_matching_elems_fields->has_field("smap.key"));
+    EXPECT_EQ("smap.foo", _matching_elems_fields->enclosing_field("smap.foo"));
+    EXPECT_EQ("smap", _matching_elems_fields->enclosing_field("smap.key"));
+    EXPECT_EQ("smap", _matching_elems_fields->enclosing_field("smap.value.name"));
+    EXPECT_EQ("smap", _matching_elems_fields->enclosing_field("smap.value.val"));
+    EXPECT_EQ("smap", _matching_elems_fields->enclosing_field("smap.value.fval"));
 }
 
 TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_filtered_map_of_string)
@@ -190,10 +193,12 @@ TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_fi
     EXPECT_TRUE(_matching_elems_fields);
     EXPECT_FALSE(_matching_elems_fields->has_field("array"));
     EXPECT_TRUE(_matching_elems_fields->has_field("map"));
+    EXPECT_TRUE(_matching_elems_fields->has_field("map.key"));
+    EXPECT_TRUE(_matching_elems_fields->has_field("map.value"));
     EXPECT_FALSE(_matching_elems_fields->has_field("smap"));
-    EXPECT_EQ("", _matching_elems_fields->get_enclosing_field("map.foo"));
-    EXPECT_EQ("map", _matching_elems_fields->get_enclosing_field("map.key"));
-    EXPECT_EQ("map", _matching_elems_fields->get_enclosing_field("map.value"));
+    EXPECT_EQ("map.foo", _matching_elems_fields->enclosing_field("map.foo"));
+    EXPECT_EQ("map", _matching_elems_fields->enclosing_field("map.key"));
+    EXPECT_EQ("map", _matching_elems_fields->enclosing_field("map.value"));
 }
 
 }

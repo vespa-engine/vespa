@@ -44,10 +44,10 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/document/base/exceptions.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/vespalib/util/compressionconfig.h>
 #include <filesystem>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using vespalib::File;
 using vespalib::Slime;
@@ -153,14 +153,14 @@ void testDeserializeAndClone(const T& value, const nbostream &stream, bool check
     VespaDocumentDeserializer deserializer(repo, is, serialization_version);
     deserializer.read(read_value);
 
-    EXPECT_EQUAL(0u, is.size());
+    EXPECT_EQ(0u, is.size());
     if (checkEqual) {
-        EXPECT_EQUAL(value, read_value);
+        EXPECT_EQ(value, read_value);
     }
     T clone(read_value);
     buf.reset();
     if (checkEqual) {
-        EXPECT_EQUAL(value, clone);
+        EXPECT_EQ(value, clone);
     }
 }
 
@@ -179,16 +179,16 @@ void serializeAndDeserialize(const T& value, nbostream &stream,
     VespaDocumentDeserializer deserializer(fixed_repo, stream, serialization_version);
     deserializer.read(read_value);
 
-    EXPECT_EQUAL(0u, stream.size());
+    EXPECT_EQ(0u, stream.size());
     if (checkEqual) {
-        EXPECT_EQUAL(value, read_value);
+        EXPECT_EQ(value, read_value);
     }
     stream.adjustReadPos(-serialized_size);
     nbostream stream2;
     VespaDocumentSerializer serializer2(stream2);
     serializer2.write(read_value);
-    EXPECT_EQUAL(serialized_size, stream2.size());
-    EXPECT_EQUAL(0, memcmp(stream.peek() + start_size, stream2.peek(), serialized_size));
+    EXPECT_EQ(serialized_size, stream2.size());
+    EXPECT_EQ(0, memcmp(stream.peek() + start_size, stream2.peek(), serialized_size));
 }
 
 template<typename T>
@@ -201,23 +201,25 @@ template <> struct ValueType<IntFieldValue> { typedef uint32_t Type; };
 template <> struct ValueType<LongFieldValue> { typedef uint64_t Type; };
 
 template<typename T>
-void serializeAndDeserializeNumber(const T& value) {
+void serializeAndDeserializeNumber(const T& value, const std::string& label) {
+    SCOPED_TRACE(label);
     const typename ValueType<T>::Type val = value.getValue();
     nbostream stream;
     serializeAndDeserialize(value, stream);
 
     typename ValueType<T>::Type read_val;
     stream >> read_val;
-    EXPECT_EQUAL(val, read_val);
+    EXPECT_EQ(val, read_val);
 }
 
-TEST("requireThatPrimitiveTypeFieldValueCanBeSerialized") {
-    TEST_DO(serializeAndDeserializeNumber(ByteFieldValue(42)));
-    TEST_DO(serializeAndDeserializeNumber(ShortFieldValue(0x1234)));
-    TEST_DO(serializeAndDeserializeNumber(IntFieldValue(0x12345678)));
-    TEST_DO(serializeAndDeserializeNumber(DoubleFieldValue(34567890.123456)));
-    TEST_DO(serializeAndDeserializeNumber(FloatFieldValue(3456.1234f)));
-    TEST_DO(serializeAndDeserializeNumber(LongFieldValue(0x12345678123456LL)));
+TEST(VespaDocumentSerializerTest, requireThatPrimitiveTypeFieldValueCanBeSerialized)
+{
+    serializeAndDeserializeNumber(ByteFieldValue(42), "byte");
+    serializeAndDeserializeNumber(ShortFieldValue(0x1234), "short");
+    serializeAndDeserializeNumber(IntFieldValue(0x12345678), "int");
+    serializeAndDeserializeNumber(DoubleFieldValue(34567890.123456), "double");
+    serializeAndDeserializeNumber(FloatFieldValue(3456.1234f), "float");
+    serializeAndDeserializeNumber(LongFieldValue(0x12345678123456LL), "long");
 }
 
 template <typename SizeType>
@@ -225,17 +227,18 @@ void checkLiteralFieldValue(nbostream &stream, const string &val) {
     uint8_t read_coding;
     SizeType size;
     stream >> read_coding >> size;
-    EXPECT_EQUAL(0, read_coding);
+    EXPECT_EQ(0, read_coding);
     size &= (SizeType(-1) >> 1);  // Clear MSB.
     std::string read_val;
     read_val.assign(stream.peek(), size);
     stream.adjustReadPos(size);
-    EXPECT_EQUAL(val.size(), read_val.size());
-    EXPECT_EQUAL(val, read_val);
+    EXPECT_EQ(val.size(), read_val.size());
+    EXPECT_EQ(val, read_val);
 }
 
 template <typename SizeType>
-void checkStringFieldValue(const string &val) {
+void checkStringFieldValue(const string &val, const string& label) {
+    SCOPED_TRACE(label);
     StringFieldValue value(val);
     nbostream stream;
     serializeAndDeserialize(value, stream);
@@ -267,13 +270,15 @@ void checkStringFieldValueWithAnnotation() {
     serializeAndDeserialize(value, stream);
 }
 
-TEST("requireThatStringFieldValueCanBeSerialized") {
-    TEST_DO(checkStringFieldValue<uint8_t>("foo bar baz"));
-    TEST_DO(checkStringFieldValue<uint32_t>(string(200, 'a')));
-    TEST_DO(checkStringFieldValueWithAnnotation());
+TEST(VespaDocumentSerializerTest, requireThatStringFieldValueCanBeSerialized)
+{
+    checkStringFieldValue<uint8_t>("foo bar baz", "foobar");
+    checkStringFieldValue<uint32_t>(string(200, 'a'), "long");
+    checkStringFieldValueWithAnnotation();
 }
 
-TEST("require that strings can be re-deserialized") {
+TEST(VespaDocumentSerializerTest, require_that_strings_can_be_re_deserialized)
+{
     StringFieldValue value("foo");
     nbostream streamNotAnnotated;
     VespaDocumentSerializer serializer(streamNotAnnotated);
@@ -296,19 +301,20 @@ TEST("require that strings can be re-deserialized") {
                 repo, streamAnnotated, serialization_version);
         deserializer.read(deserialized);
     }
-    EXPECT_EQUAL("foo", deserialized.getValueRef());
+    EXPECT_EQ("foo", deserialized.getValueRef());
     EXPECT_TRUE(deserialized.hasSpanTrees());
     {
         VespaDocumentDeserializer deserializer(
                 repo, streamNotAnnotated, serialization_version);
         deserializer.read(deserialized);
     }
-    EXPECT_EQUAL("foo", deserialized.getValueRef());
+    EXPECT_EQ("foo", deserialized.getValueRef());
     EXPECT_FALSE(deserialized.hasSpanTrees());
 }
 
 template <typename SizeType>
-void checkRawFieldValue(const string &val) {
+void checkRawFieldValue(const string &val, const string& label) {
+    SCOPED_TRACE(label);
     RawFieldValue value(val);
     nbostream stream;
     serializeAndDeserialize(value, stream);
@@ -317,15 +323,17 @@ void checkRawFieldValue(const string &val) {
     stream >> size;
     string read_val(stream.peek(), size);
     stream.adjustReadPos(size);
-    EXPECT_EQUAL(val, read_val);
+    EXPECT_EQ(val, read_val);
 }
 
-TEST("requireThatRawFieldValueCanBeSerialized") {
-    TEST_DO(checkRawFieldValue<uint8_t>("foo bar"));
-    TEST_DO(checkRawFieldValue<uint32_t>(string(200, 'b')));
+TEST(VespaDocumentSerializerTest, requireThatRawFieldValueCanBeSerialized)
+{
+    checkRawFieldValue<uint8_t>("foo bar", "foobar");
+    checkRawFieldValue<uint32_t>(string(200, 'b'), "long");
 }
 
-TEST("requireThatPredicateFieldValueCanBeSerialized") {
+TEST(VespaDocumentSerializerTest, requireThatPredicateFieldValueCanBeSerialized)
+{
     PredicateSlimeBuilder builder;
     builder.neg().feature("foo").value("bar").value("baz");
     PredicateFieldValue value(builder.build());
@@ -344,7 +352,8 @@ SizeType readSize1_2_4(nbostream &stream) {
 }
 
 template <typename SizeType>
-void checkArrayFieldValue(SizeType value_count) {
+void checkArrayFieldValue(SizeType value_count, const string &label) {
+    SCOPED_TRACE(label);
     ArrayDataType array_type(*DataType::INT);
     ArrayFieldValue value(array_type);
     for (uint32_t i = 0; i < value_count; ++i) {
@@ -355,24 +364,26 @@ void checkArrayFieldValue(SizeType value_count) {
     serializeAndDeserialize(value, stream);
 
     SizeType size = readSize1_2_4<SizeType>(stream);
-    EXPECT_EQUAL(value_count, size);
+    EXPECT_EQ(value_count, size);
     uint32_t child;
     for (uint32_t i = 0; i < value_count; ++i) {
         stream >> child;
-        EXPECT_EQUAL(i, child);
+        EXPECT_EQ(i, child);
     }
 }
 
-TEST("requireThatArrayFieldValueCanBeSerialized") {
-    TEST_DO(checkArrayFieldValue<uint8_t>(2));
-    TEST_DO(checkArrayFieldValue<uint8_t>(0x7f));
-    TEST_DO(checkArrayFieldValue<uint16_t>(0x80));
-    TEST_DO(checkArrayFieldValue<uint16_t>(0x3fff));
-    TEST_DO(checkArrayFieldValue<uint32_t>(0x4000));
+TEST(VespaDocumentSerializerTest, requireThatArrayFieldValueCanBeSerialized)
+{
+    checkArrayFieldValue<uint8_t>(2, "2");
+    checkArrayFieldValue<uint8_t>(0x7f, "0x7f");
+    checkArrayFieldValue<uint16_t>(0x80, "0x80");
+    checkArrayFieldValue<uint16_t>(0x3fff, "0x3fff");
+    checkArrayFieldValue<uint32_t>(0x4000, "0x4000");
 }
 
 template <typename SizeType>
-void checkMapFieldValue(SizeType value_count, bool check_equal) {
+void checkMapFieldValue(SizeType value_count, bool check_equal, const string &label) {
+    SCOPED_TRACE(label);
     MapDataType map_type(*DataType::LONG, *DataType::BYTE);
     MapFieldValue value(map_type);
     for (SizeType i = 0; i < value_count; ++i) {
@@ -383,25 +394,26 @@ void checkMapFieldValue(SizeType value_count, bool check_equal) {
     serializeAndDeserialize(value, stream, check_equal);
 
     SizeType size = readSize1_2_4<SizeType>(stream);
-    EXPECT_EQUAL(value_count, size);
+    EXPECT_EQ(value_count, size);
     uint64_t key;
     uint8_t val;
     for (SizeType i = 0; i < value_count; ++i) {
         stream >> key >> val;
-        EXPECT_EQUAL(i, key);
-        EXPECT_EQUAL(i % 256, val);
+        EXPECT_EQ(i, key);
+        EXPECT_EQ(i % 256, val);
     }
 }
 
-TEST("requireThatMapFieldValueCanBeSerialized") {
-    TEST_DO(checkMapFieldValue<uint8_t>(2, true));
-    TEST_DO(checkMapFieldValue<uint8_t>(0x7f, true));
-    TEST_DO(checkMapFieldValue<uint16_t>(0x80, true));
-    TEST_DO(checkMapFieldValue<uint16_t>(0x3fff, false));
-    TEST_DO(checkMapFieldValue<uint32_t>(0x4000, false));
+TEST(VespaDocumentSerializerTest, requireThatMapFieldValueCanBeSerialized) {
+    checkMapFieldValue<uint8_t>(2, true, "2");
+    checkMapFieldValue<uint8_t>(0x7f, true, "0x7f");
+    checkMapFieldValue<uint16_t>(0x80, true, "0x80");
+    checkMapFieldValue<uint16_t>(0x3fff, false, "0x3fff");
+    checkMapFieldValue<uint32_t>(0x4000, false, "0x4000");
 }
 
-TEST("requireThatWeightedSetFieldValueCanBeSerialized") {
+TEST(VespaDocumentSerializerTest, requireThatWeightedSetFieldValueCanBeSerialized)
+{
     WeightedSetDataType ws_type(*DataType::DOUBLE, false, false);
     WeightedSetFieldValue value(ws_type);
     value.add(DoubleFieldValue(3.14), 2);
@@ -413,17 +425,17 @@ TEST("requireThatWeightedSetFieldValueCanBeSerialized") {
     uint32_t type_id;
     uint32_t size;
     stream >> type_id >> size;
-    EXPECT_EQUAL(2u, size);
+    EXPECT_EQ(2u, size);
     double val;
     uint32_t weight;
     stream >> size >> val >> weight;
-    EXPECT_EQUAL(12u, size);
-    EXPECT_EQUAL(3.14, val);
-    EXPECT_EQUAL(2u, weight);
+    EXPECT_EQ(12u, size);
+    EXPECT_EQ(3.14, val);
+    EXPECT_EQ(2u, weight);
     stream >> size >> val >> weight;
-    EXPECT_EQUAL(12u, size);
-    EXPECT_EQUAL(2.71, val);
-    EXPECT_EQUAL(3u, weight);
+    EXPECT_EQ(12u, size);
+    EXPECT_EQ(2.71, val);
+    EXPECT_EQ(3u, weight);
 }
 
 const Field field1("field1", *DataType::INT);
@@ -444,7 +456,9 @@ StructFieldValue getStructFieldValue(const StructDataType& structType) {
 }
 
 void checkStructSerialization(const StructFieldValue &value,
-                              CompressionConfig::Type comp_type) {
+                              CompressionConfig::Type comp_type,
+                              const string &label) {
+    SCOPED_TRACE(label);
     nbostream stream;
     serializeAndDeserialize(value, stream);
     uint32_t data_size;
@@ -456,23 +470,24 @@ void checkStructSerialization(const StructFieldValue &value,
     stream >> data_size >> compression_type;
     if (CompressionConfig::isCompressed(comp_type)) {
         stream >> uncompressed_size;
-        EXPECT_EQUAL(24u, data_size);
-        EXPECT_EQUAL(64u, uncompressed_size);
+        EXPECT_EQ(24u, data_size);
+        EXPECT_EQ(64u, uncompressed_size);
     } else {
-        EXPECT_EQUAL(64u, data_size);
+        EXPECT_EQ(64u, data_size);
     }
     stream >> field_count
            >> element1_id >> element1_size
            >> element2_id >> element2_size;
-    EXPECT_EQUAL(comp_type, compression_type);
-    EXPECT_EQUAL(2u, field_count);
-    EXPECT_EQUAL(field1.getId(), element1_id & 0x7fffffff);
-    EXPECT_EQUAL(4u, element1_size);
-    EXPECT_EQUAL(field2.getId(), element2_id & 0x7fffffff);
-    EXPECT_EQUAL(60u, element2_size);
+    EXPECT_EQ(comp_type, compression_type);
+    EXPECT_EQ(2u, field_count);
+    EXPECT_EQ(field1.getId(), element1_id & 0x7fffffff);
+    EXPECT_EQ(4u, element1_size);
+    EXPECT_EQ(field2.getId(), element2_id & 0x7fffffff);
+    EXPECT_EQ(60u, element2_size);
 }
 
-TEST("requireThatEmptyStructCanBeSerialized") {
+TEST(VespaDocumentSerializerTest, requireThatEmptyStructCanBeSerialized)
+{
     StructDataType structType(getStructDataType());
     StructFieldValue value(structType);
     nbostream stream;
@@ -481,21 +496,23 @@ TEST("requireThatEmptyStructCanBeSerialized") {
     uint8_t compression_type;
     uint8_t field_count;
     stream >> data_size >> compression_type >> field_count;
-    EXPECT_EQUAL(0u, data_size);
-    EXPECT_EQUAL(0u, field_count);
+    EXPECT_EQ(0u, data_size);
+    EXPECT_EQ(0u, field_count);
 }
 
-TEST("requireThatUncompressedStructFieldValueCanBeSerialized") {
+TEST(VespaDocumentSerializerTest, requireThatUncompressedStructFieldValueCanBeSerialized)
+{
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
-    checkStructSerialization(value, CompressionConfig::NONE);
+    checkStructSerialization(value, CompressionConfig::NONE, "uncompressed");
 }
 
-TEST("requireThatReserializationIsUnompressedIfUnmodified") {
+TEST(VespaDocumentSerializerTest, requireThatReserializationIsUnompressedIfUnmodified)
+{
     StructDataType structType(getStructDataType());
     StructFieldValue value = getStructFieldValue(structType);
 
-    TEST_DO(checkStructSerialization(value, CompressionConfig::NONE));
+    checkStructSerialization(value, CompressionConfig::NONE, "uncompressed");
 
     nbostream os;
     VespaDocumentSerializer serializer(os);
@@ -505,15 +522,16 @@ TEST("requireThatReserializationIsUnompressedIfUnmodified") {
     StructFieldValue value2(struct_type);
     VespaDocumentDeserializer deserializer(repo, os, serialization_version);
     deserializer.read(value2);
-    TEST_DO(checkStructSerialization(value, CompressionConfig::NONE));
+    checkStructSerialization(value, CompressionConfig::NONE, "value");
     // Lazy serialization of structs....
-    TEST_DO(checkStructSerialization(value2, CompressionConfig::NONE));
-    EXPECT_EQUAL(value, value2);
+    checkStructSerialization(value2, CompressionConfig::NONE, "value2");
+    EXPECT_EQ(value, value2);
 }
 
 template <typename T, int N> int arraysize(const T (&)[N]) { return N; }
 
-TEST("requireThatDocumentCanBeSerialized") {
+TEST(VespaDocumentSerializerTest, requireThatDocumentCanBeSerialized)
+{
     const DocumentType &type = repo.getDocumentType();
 
     DocumentId doc_id("id:ns:" + type.getName() + "::");
@@ -528,20 +546,21 @@ TEST("requireThatDocumentCanBeSerialized") {
     uint16_t read_version;
     uint32_t size;
     stream >> read_version >> size;
-    EXPECT_EQUAL(serialization_version, read_version);
-    EXPECT_EQUAL(64u, size);
-    EXPECT_EQUAL(doc_id.getScheme().toString(), stream.peek());
+    EXPECT_EQ(serialization_version, read_version);
+    EXPECT_EQ(64u, size);
+    EXPECT_EQ(doc_id.getScheme().toString(), stream.peek());
     stream.adjustReadPos(doc_id.getScheme().toString().size() + 1);
     uint8_t content_code;
     stream >> content_code;
-    EXPECT_EQUAL(0x03, content_code);
-    EXPECT_EQUAL(type.getName(), stream.peek());
+    EXPECT_EQ(0x03, content_code);
+    EXPECT_EQ(type.getName(), stream.peek());
     stream.adjustReadPos(type.getName().size() + 1);
     stream >> read_version;
-    EXPECT_EQUAL(0, read_version);
+    EXPECT_EQ(0, read_version);
 }
 
-TEST("requireThatOldVersionDocumentCanNotBeDeserialized") {
+TEST(VespaDocumentSerializerTest, requireThatOldVersionDocumentCanNotBeDeserialized)
+{
     uint16_t old_version = 6;
     uint16_t data_size = 432;
     string doc_id = "id:ns:my_doctype::";
@@ -561,11 +580,12 @@ TEST("requireThatOldVersionDocumentCanNotBeDeserialized") {
         deserializer.read(value);
         ASSERT_FALSE(true);
     } catch (vespalib::Exception & e) {
-        EXPECT_EQUAL("CORRUPT DATA: Unrecognized serialization version 6", e.getMessage());
+        EXPECT_EQ("CORRUPT DATA: Unrecognized serialization version 6", e.getMessage());
     }
 }
 
-TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
+TEST(VespaDocumentSerializerTest, requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization)
+{
 
     DocumenttypesConfigBuilderHelper builder1, builder2;
     builder1.document(doc_type_id, doc_name,
@@ -595,9 +615,9 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
     // Deserialize+serialize with type where field1 is not known.
     VespaDocumentDeserializer deserializer1(repo1Field, stream, serialization_version);
     deserializer1.read(read_value);
-    EXPECT_EQUAL(0u, stream.size());
+    EXPECT_EQ(0u, stream.size());
 
-    EXPECT_EQUAL(1u, read_value.getSetFieldCount());
+    EXPECT_EQ(1u, read_value.getSetFieldCount());
 
     stream.clear();
     serializer.write(read_value);
@@ -606,10 +626,11 @@ TEST("requireThatUnmodifiedDocumentRetainsUnknownFieldOnSerialization") {
     // Field should not have vanished.
     VespaDocumentDeserializer deserializer2(repo2Fields, stream, serialization_version);
     deserializer2.read(read_value_2);
-    EXPECT_EQUAL(value, read_value_2);
+    EXPECT_EQ(value, read_value_2);
 }
 
-TEST("requireThatAnnotationReferenceFieldValueCanBeSerialized") {
+TEST(VespaDocumentSerializerTest, requireThatAnnotationReferenceFieldValueCanBeSerialized)
+{
     AnnotationType annotation_type(0, "atype");
     AnnotationReferenceDataType type(annotation_type, 0);
     int annotation_id = 420;
@@ -618,10 +639,11 @@ TEST("requireThatAnnotationReferenceFieldValueCanBeSerialized") {
     serializeAndDeserialize(value, stream);
 
     int read_id = readSize1_2_4<uint16_t>(stream);
-    EXPECT_EQUAL(annotation_id, read_id);
+    EXPECT_EQ(annotation_id, read_id);
 }
 
-TEST("requireThatDocumentWithDocumentCanBeSerialized") {
+TEST(VespaDocumentSerializerTest, requireThatDocumentWithDocumentCanBeSerialized)
+{
     const DocumentTypeRepo &my_repo = repo.getDocumentTypeRepo();
     const DocumentType *inner_type = my_repo.getDocumentType(inner_type_id);
     ASSERT_TRUE(inner_type);
@@ -647,7 +669,8 @@ TEST("requireThatDocumentWithDocumentCanBeSerialized") {
     serializeAndDeserialize(value, stream);
 }
 
-TEST("requireThatReadDocumentTypeThrowsIfUnknownType") {
+TEST(VespaDocumentSerializerTest, requireThatReadDocumentTypeThrowsIfUnknownType)
+{
     string my_type("my_unknown_type");
     nbostream stream;
     stream.write(my_type.c_str(), my_type.size() + 1);
@@ -655,8 +678,8 @@ TEST("requireThatReadDocumentTypeThrowsIfUnknownType") {
 
     DocumentType value("invalid");
     VespaDocumentDeserializer deserializer(repo, stream, serialization_version);
-    EXPECT_EXCEPTION(deserializer.read(value), DocumentTypeNotFoundException,
-                "Document type " + my_type + " not found");
+    VESPA_EXPECT_EXCEPTION(deserializer.read(value), DocumentTypeNotFoundException,
+                           "Document type " + my_type + " not found");
 }
 
 template <typename FieldValueT>
@@ -689,14 +712,14 @@ void deserializeAndCheck(const string &file_name, FieldValueT &value,
     file.open(File::READONLY);
     vector<char> content(file.getFileSize());
     size_t r = file.read(&content[0], content.size(), 0);
-    ASSERT_EQUAL(content.size(), r);
+    ASSERT_EQ(content.size(), r);
 
     nbostream_longlivedbuf stream(&content[0], content.size());
     Document doc;
     VespaDocumentDeserializer deserializer(myrepo, stream, serialization_version);
     deserializer.read(doc);
 
-    ASSERT_EQUAL(0, value.compare(*doc.getValue(field_name)));
+    ASSERT_EQ(0, value.compare(*doc.getValue(field_name)));
 }
 
 void deserializeAndCheck(const string &file_name, PredicateFieldValue &value) {
@@ -715,7 +738,8 @@ void checkDeserialization(const string &name, std::unique_ptr<Slime> slime) {
     deserializeAndCheck(data_dir + name + "__java", value);
 }
 
-TEST("Require that predicate deserialization matches Java") {
+TEST(VespaDocumentSerializerTest, Require_that_predicate_deserialization_matches_Java)
+{
     PredicateSlimeBuilder builder;
 
     builder.feature("foo").range(6, 9);
@@ -774,7 +798,7 @@ vespalib::eval::Value::UP createTensor(const TensorSpec &spec) {
 
 }
 
-TEST("Require that tensors can be serialized")
+TEST(VespaDocumentSerializerTest, Require_that_tensors_can_be_serialized)
 {
     TensorDataType xySparseTensorDataType(vespalib::eval::ValueType::from_spec("tensor(x{},y{})"));
     TensorFieldValue noTensorValue(xySparseTensorDataType);
@@ -790,9 +814,9 @@ TEST("Require that tensors can be serialized")
                                         .add({{"x", ""}, {"y", "3"}}, 3)
                                         .add({{"x", "4"}, {"y", "5"}}, 7));
     serializeAndDeserialize(twoCellsTwoDimsValue, stream);
-    EXPECT_NOT_EQUAL(noTensorValue, emptyTensorValue);
-    EXPECT_NOT_EQUAL(noTensorValue, twoCellsTwoDimsValue);
-    EXPECT_NOT_EQUAL(emptyTensorValue, twoCellsTwoDimsValue);
+    EXPECT_NE(noTensorValue, emptyTensorValue);
+    EXPECT_NE(noTensorValue, twoCellsTwoDimsValue);
+    EXPECT_NE(emptyTensorValue, twoCellsTwoDimsValue);
 }
 
 
@@ -846,7 +870,8 @@ void checkDeserialization(const string &name, std::unique_ptr<vespalib::eval::Va
 }
 
 
-TEST("Require that tensor deserialization matches Java") {
+TEST(VespaDocumentSerializerTest, Require_that_tensor_deserialization_matches_Java)
+{
     checkDeserialization("non_existing_tensor", std::unique_ptr<vespalib::eval::Value>());
     checkDeserialization("empty_tensor", createTensor(TensorSpec("tensor(dimX{},dimY{})")));
     checkDeserialization("multi_cell_tensor",
@@ -918,7 +943,7 @@ DeserializedTensorDoc::getTensor() const
     return dynamic_cast<const TensorFieldValue &>(*_fieldValue).getAsTensorPtr();
 }
 
-TEST("Require that wrong tensor type hides tensor")
+TEST(VespaDocumentSerializerTest, Require_that_wrong_tensor_type_hides_tensor)
 {
     TensorDocFixture f(tensor_doc_repo,
                        createTensor(TensorSpec("tensor(dimX{},dimY{})")
@@ -977,24 +1002,32 @@ struct RefFixture {
     }
 };
 
-TEST_F("Empty ReferenceFieldValue can be roundtrip serialized", RefFixture) {
+TEST(VespaDocumentSerializerTest, Empty_ReferenceFieldValue_can_be_roundtrip_serialized)
+{
+    RefFixture f;
     ReferenceFieldValue empty_ref(f.ref_type());
     nbostream stream;
     serializeAndDeserialize(empty_ref, stream, f.fixed_repo);
 }
 
-TEST_F("ReferenceFieldValue with ID can be roundtrip serialized", RefFixture) {
+TEST(VespaDocumentSerializerTest, ReferenceFieldValue_with_ID_can_be_roundtrip_serialized)
+{
+    RefFixture f;
     ReferenceFieldValue ref_with_id(f.ref_type(), DocumentId("id:ns:" + doc_name + "::foo"));
     nbostream stream;
     serializeAndDeserialize(ref_with_id, stream, f.fixed_repo);
 }
 
-TEST_F("Empty ReferenceFieldValue serialization matches Java", RefFixture) {
+TEST(VespaDocumentSerializerTest, Empty_ReferenceFieldValue_serialization_matches_Java)
+{
+    RefFixture f;
     ReferenceFieldValue value(f.ref_type());
     f.verify_cross_language_serialization("empty_reference", value);
 }
 
-TEST_F("ReferenceFieldValue with ID serialization matches Java", RefFixture) {
+TEST(VespaDocumentSerializerTest, ReferenceFieldValue_with_ID_serialization_matches_Java)
+{
+    RefFixture f;
     ReferenceFieldValue value(f.ref_type(), DocumentId("id:ns:" + doc_name + "::bar"));
     f.verify_cross_language_serialization("reference_with_id", value);
 }
@@ -1016,17 +1049,21 @@ struct AssociatedDocumentRepoFixture {
     }
 };
 
-TEST_F("Deserializing non-empty document associates correct repo with document instance", AssociatedDocumentRepoFixture) {
+TEST(VespaDocumentSerializerTest, Deserializing_non_empty_document_associates_correct_repo_with_document_instance)
+{
+    AssociatedDocumentRepoFixture f;
     f.source_doc.setValue(f.doc_type.getField("header field"), IntFieldValue(42));
     auto deserialized_doc = f.roundtrip_serialize_source_document();
-    EXPECT_EQUAL(&doc_repo, deserialized_doc->getRepo());
+    EXPECT_EQ(&doc_repo, deserialized_doc->getRepo());
 }
 
-TEST_F("Deserializing empty document associates correct repo with document instance", AssociatedDocumentRepoFixture) {
+TEST(VespaDocumentSerializerTest, Deserializing_empty_document_associates_correct_repo_with_document_instance)
+{
+    AssociatedDocumentRepoFixture f;
     auto deserialized_doc = f.roundtrip_serialize_source_document();
-    EXPECT_EQUAL(&doc_repo, deserialized_doc->getRepo());
+    EXPECT_EQ(&doc_repo, deserialized_doc->getRepo());
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

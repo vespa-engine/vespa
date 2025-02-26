@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/eval/eval/value_cache/constant_value_cache.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace vespalib::eval;
 
@@ -26,45 +27,66 @@ struct MyFactory : ConstantValueFactory {
 
 MyFactory::~MyFactory() = default;
 
-TEST_FF("require that values can be created", MyFactory(), ConstantValueCache(f1)) {
-    ConstantValue::UP res = f2.create("1", "type");
-    EXPECT_TRUE(res->type().is_double());
-    EXPECT_EQUAL(1.0, res->value().as_double());
-    EXPECT_EQUAL(2.0, f2.create("2", "type")->value().as_double());
-    EXPECT_EQUAL(3.0, f2.create("3", "type")->value().as_double());
-    EXPECT_EQUAL(3u, f1.create_cnt);
+class ValueCacheTest : public ::testing::Test {
+protected:
+    MyFactory f1;
+    ConstantValueCache f2;
+    ValueCacheTest();
+    ~ValueCacheTest() override;
+};
+
+ValueCacheTest::ValueCacheTest()
+    : ::testing::Test(),
+      f1(),
+      f2(f1)
+{
 }
 
-TEST_FF("require that underlying values can be shared", MyFactory(), ConstantValueCache(f1)) {
+ValueCacheTest::~ValueCacheTest() = default;
+
+TEST_F(ValueCacheTest, require_that_values_can_be_created)
+{
+    ConstantValue::UP res = f2.create("1", "type");
+    EXPECT_TRUE(res->type().is_double());
+    EXPECT_EQ(1.0, res->value().as_double());
+    EXPECT_EQ(2.0, f2.create("2", "type")->value().as_double());
+    EXPECT_EQ(3.0, f2.create("3", "type")->value().as_double());
+    EXPECT_EQ(3u, f1.create_cnt);
+}
+
+TEST_F(ValueCacheTest, require_that_underlying_values_can_be_shared)
+{
     auto res1 = f2.create("1", "type");
     auto res2 = f2.create("2", "type");
     auto res3 = f2.create("2", "type");
     auto res4 = f2.create("2", "type");
-    EXPECT_EQUAL(1.0, res1->value().as_double());
-    EXPECT_EQUAL(2.0, res2->value().as_double());
-    EXPECT_EQUAL(2.0, res2->value().as_double());
-    EXPECT_EQUAL(2.0, res2->value().as_double());
-    EXPECT_EQUAL(2u, f1.create_cnt);
+    EXPECT_EQ(1.0, res1->value().as_double());
+    EXPECT_EQ(2.0, res2->value().as_double());
+    EXPECT_EQ(2.0, res2->value().as_double());
+    EXPECT_EQ(2.0, res2->value().as_double());
+    EXPECT_EQ(2u, f1.create_cnt);
 }
 
-TEST_FF("require that unused values are evicted", MyFactory(), ConstantValueCache(f1)) {
-    EXPECT_EQUAL(1.0, f2.create("1", "type")->value().as_double());
-    EXPECT_EQUAL(2.0, f2.create("2", "type")->value().as_double());
-    EXPECT_EQUAL(2.0, f2.create("2", "type")->value().as_double());
-    EXPECT_EQUAL(2.0, f2.create("2", "type")->value().as_double());
-    EXPECT_EQUAL(4u, f1.create_cnt);
+TEST_F(ValueCacheTest, require_that_unused_values_are_evicted)
+{
+    EXPECT_EQ(1.0, f2.create("1", "type")->value().as_double());
+    EXPECT_EQ(2.0, f2.create("2", "type")->value().as_double());
+    EXPECT_EQ(2.0, f2.create("2", "type")->value().as_double());
+    EXPECT_EQ(2.0, f2.create("2", "type")->value().as_double());
+    EXPECT_EQ(4u, f1.create_cnt);
 }
 
-TEST_FF("require that type spec is part of cache key", MyFactory(), ConstantValueCache(f1)) {
+TEST_F(ValueCacheTest, require_that_type_spec_is_part_of_cache_key)
+{
     auto res1 = f2.create("1", "type");
     auto res2 = f2.create("2", "type_a");
     auto res3 = f2.create("2", "type_b");
     auto res4 = f2.create("2", "type_b");
-    EXPECT_EQUAL(1.0, res1->value().as_double());
-    EXPECT_EQUAL(2.0, res2->value().as_double());
-    EXPECT_EQUAL(2.0, res2->value().as_double());
-    EXPECT_EQUAL(2.0, res2->value().as_double());
-    EXPECT_EQUAL(3u, f1.create_cnt);
+    EXPECT_EQ(1.0, res1->value().as_double());
+    EXPECT_EQ(2.0, res2->value().as_double());
+    EXPECT_EQ(2.0, res2->value().as_double());
+    EXPECT_EQ(2.0, res2->value().as_double());
+    EXPECT_EQ(3u, f1.create_cnt);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

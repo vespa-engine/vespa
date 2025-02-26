@@ -30,19 +30,16 @@ public:
     void add_mapping(const std::string &field_name,
                      const std::string &struct_field_name) {
         _fields.insert(field_name);
+        _fields.insert(struct_field_name);
         _struct_fields[struct_field_name] = field_name;
     }
     bool has_field(const std::string &field_name) const {
         return (_fields.count(field_name) > 0);
     }
-    bool has_struct_field(const std::string &struct_field_name) const {
-        return (_struct_fields.find(struct_field_name) != _struct_fields.end());
-    }
-    const std::string &get_enclosing_field(const std::string &struct_field_name) const {
-        static const std::string empty;
-        auto res = _struct_fields.find(struct_field_name);
+    const std::string &enclosing_field(const std::string &field_name) const {
+        auto res = _struct_fields.find(field_name);
         if (res == _struct_fields.end()) {
-            return empty;
+            return field_name;
         }
         return res->second;
     }

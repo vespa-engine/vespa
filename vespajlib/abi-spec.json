@@ -4175,6 +4175,7 @@
     ],
     "methods" : [
       "public void <init>(int, java.lang.String)",
+      "public void <init>(int, java.lang.String, java.lang.Throwable)",
       "public int code()"
     ],
     "fields" : [ ]
@@ -4214,7 +4215,9 @@
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason length",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason stop",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason none",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason error"
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason other",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason error",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason discard"
     ]
   },
   "ai.vespa.llm.completion.Completion" : {

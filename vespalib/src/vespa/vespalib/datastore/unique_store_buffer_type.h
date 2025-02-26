@@ -24,4 +24,23 @@ public:
     const vespalib::alloc::MemoryAllocator* get_memory_allocator() const override;
 };
 
+template <typename EntryT>
+class UniqueStoreEntry;
+
+extern template class BufferType<UniqueStoreEntry<int8_t>>;
+extern template class BufferType<UniqueStoreEntry<int16_t>>;
+extern template class BufferType<UniqueStoreEntry<int32_t>>;
+extern template class BufferType<UniqueStoreEntry<int64_t>>;
+extern template class BufferType<UniqueStoreEntry<uint32_t>>;
+extern template class BufferType<UniqueStoreEntry<float>>;
+extern template class BufferType<UniqueStoreEntry<double>>;
+
+extern template class UniqueStoreBufferType<UniqueStoreEntry<int8_t>>;
+extern template class UniqueStoreBufferType<UniqueStoreEntry<int16_t>>;
+extern template class UniqueStoreBufferType<UniqueStoreEntry<int32_t>>;
+extern template class UniqueStoreBufferType<UniqueStoreEntry<int64_t>>;
+extern template class UniqueStoreBufferType<UniqueStoreEntry<uint32_t>>;
+extern template class UniqueStoreBufferType<UniqueStoreEntry<float>>;
+extern template class UniqueStoreBufferType<UniqueStoreEntry<double>>;
+
 }

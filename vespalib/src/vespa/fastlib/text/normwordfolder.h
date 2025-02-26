@@ -158,4 +158,38 @@ private:
     static bool   _doSharpSSubstitution;
     static bool   _doLigatureSubstitution;
     static bool   _doMulticharExpansion;
+
+    struct Ucs4Dest {
+        ucs4_t *dstbuf;
+        ucs4_t *endbuf;
+        ucs4_t *cur;
+
+        // Make room for UCS4 char replacement string and NUL
+        // Doesn't check for space for the first char, assumes that
+        // word buffer is at least 13 characters
+        Ucs4Dest(ucs4_t *dst, ucs4_t *dstend)
+          : dstbuf(dst), endbuf(dstend - 3), cur(dst)
+        {}
+
+        inline void fold(ucs4_t c) {
+            if (cur < endbuf) [[likely]] {
+                if (c < 128) {
+                    // Common case, ASCII
+                    *cur++ = _foldCase[c];
+                } else if (const char *repl = ReplacementString(c)) {
+                    cur = Fast_UnicodeUtil::ucs4copy(cur, repl);
+                } else {
+                    *cur++ = lowercase_and_fold(c);
+                }
+            }
+        }
+        inline void copy(ucs4_t c) {
+            if (cur < endbuf) [[likely]] {
+                *cur++ = c;
+            }
+        }
+        size_t length() { return cur - dstbuf; }
+        void terminate() { *cur = 0; }
+    };
+
 };

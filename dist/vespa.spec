@@ -45,7 +45,7 @@
 %global _use_vespa_protobuf 1
 %global _use_vespa_openblas 1
 %if 0%{?fedora}
-%if %{fedora} > 41
+%if %{fedora} > 39
 %global _vespa_java_version 21
 %endif
 %endif

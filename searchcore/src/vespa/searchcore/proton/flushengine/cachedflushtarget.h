@@ -20,6 +20,7 @@ private:
     MemoryGain        _memoryGain;
     DiskGain          _diskGain;
     uint64_t          _approxBytesToWriteToDisk;
+    uint64_t          _approx_bytes_to_read_from_disk;
     double            _replay_operation_cost;
     bool              _needUrgentFlush;
     Priority          _priority;
@@ -33,6 +34,7 @@ public:
      * @param target The target to decorate.
      */
     CachedFlushTarget(const IFlushTarget::SP &target);
+    ~CachedFlushTarget() override;
 
     /**
      * Returns the decorated flush target. This should not be used for anything
@@ -58,6 +60,7 @@ public:
     FlushStats getLastFlushStats() const override { return _target->getLastFlushStats(); }
 
     uint64_t getApproxBytesToWriteToDisk() const override { return _approxBytesToWriteToDisk; }
+    uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
 };
 
 } // namespace proton
