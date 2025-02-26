@@ -47,6 +47,7 @@ import com.yahoo.vespa.model.test.utils.VespaModelCreatorWithMockPkg;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -133,6 +134,47 @@ public class ContentClusterTest extends ContentBaseTest {
         ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
         assertEquals(1, protonConfig.distribution().searchablecopies());
         assertEquals(5, protonConfig.distribution().redundancy());
+    }
+
+    @Test
+    void testWarningWhenManyGroupsWithFewNodes() {
+        var services =
+                "<content version=\"1.0\" id=\"storage\">\n" +
+                        "  <documents/>" +
+                        "  <redundancy>3</redundancy>\n" +
+                        "  <group name='root'>" +
+                        "    <distribution partitions='1|1|*'/>" +
+                        "    <group name='g-1' distribution-key='0'>" +
+                        "      <node hostalias='mockhost' distribution-key='0'/>" +
+                        "      <node hostalias='mockhost' distribution-key='1'/>" +
+                        "    </group>" +
+                        "    <group name='g-2' distribution-key='1'>" +
+                        "      <node hostalias='mockhost' distribution-key='2'/>" +
+                        "      <node hostalias='mockhost' distribution-key='3'/>" +
+                        "    </group>" +
+                        "    <group name='g-3' distribution-key='1'>" +
+                        "      <node hostalias='mockhost' distribution-key='4'/>" +
+                        "      <node hostalias='mockhost' distribution-key='5'/>" +
+                        "    </group>" +
+                        "  </group>" +
+                        "</content>";
+
+        var messages = new ArrayList<>();
+        DeployLogger logger = (level, message) -> {
+            if (level == Level.INFO) {
+                messages.add(message);
+            }
+        };
+        var deployState = new DeployState.Builder()
+                .applicationPackage(new MockApplicationPackage.Builder().withServices(services).build())
+                .deployLogger(logger)
+                .build();
+        new TestDriver().buildModel(deployState);
+        assertEquals(1, messages.size());
+        assertEquals("In cluster 'storage': min-node-ratio-per-group should be set to 1 when there are 3 or more groups (3)" +
+                             " and there are 3 or fewer nodes in the group (2)." +
+                             " See https://docs.vespa.ai/en/reference/services-content.html?mode=cloud#min-node-ratio-per-group",
+                     messages.get(0));
     }
 
     @Test
