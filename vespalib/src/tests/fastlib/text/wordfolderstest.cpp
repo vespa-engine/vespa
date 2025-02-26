@@ -23,7 +23,7 @@ TEST("TokenizeAnnotatedUCS4Buffer") {
                             " test\nIt is cool.\n";
     const char *correct[] = {
             "this", "is", "a",
-            "\xEF\xBF\xB9" "café" "\xEF\xBF\xBA" "café blåbær" "\xEF\xBF\xBB",
+            "\xEF\xBF\xB9" "café" "\xEF\xBF\xBA" "cafe blaabaer" "\xEF\xBF\xBB",
             "superduperextrafeaturecooland", "fun",
             "\xEF\xBF\xB9" "www" "\xEF\xBF\xBA" "world wide web extra lon",
             "test", "it", "is", "cool" };

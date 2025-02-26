@@ -445,14 +445,28 @@ Fast_NormalizeWordFolder::UCS4Tokenize(const char *buf, const char *bufend, ucs4
             } else {
                 c = Fast_UnicodeUtil::GetUTF8Char(p);
                 target.copy(c);
-                if (c == 0xFFFB) { // TERMINATOR => Exit condition
+                if (c == 0xFFFA || c == 0xFFFB) {
                     break;
+                }
+            }
+        }
+        if (c == 0xFFFA) {                   // SEPARATOR => start folding again
+            while (p < ep) {
+                if (*p < 128 ) {             // Common case, ASCII
+                    c = *p++;
+                    target.fold(c);
+                } else {
+                    c = Fast_UnicodeUtil::GetUTF8Char(p);
+                    target.fold(c);
+                    if (c == 0xFFFB) {       // TERMINATOR => Exit condition
+                        break;
+                    }
                 }
             }
         }
     } else {
         while (p < ep) {
-            if (*p < 128 ) {		// Common case, ASCII
+            if (*p < 128 ) {                 // Common case, ASCII
                 c = *p;
                 if (!_isWord[c]) break;
                 p++;
