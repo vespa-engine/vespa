@@ -19,12 +19,16 @@
 #include <vespa/document/fieldvalue/intfieldvalue.h>
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/vespalib/data/databuffer.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/compress.h>
 #include <vespa/vespalib/util/memory.h>
+#include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <limits>
 #include <cmath>
+#include <filesystem>
+#include <sstream>
+#include <tuple>
 
 using search::AttributeFactory;
 using search::AttributeVector;
@@ -42,10 +46,17 @@ using search::attribute::Config;
 using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
 using search::fef::TermFieldMatchData;
+using vespalib::TypifyResultType;
+using vespalib::typify_invoke;
 
 using SearchContextPtr = std::unique_ptr<SearchContext>;
 using SearchBasePtr = std::unique_ptr<search::queryeval::SearchIterator>;
 
+std::string test_dir = "test_data";
+
+std::string make_attr_name(const std::string name) {
+    return test_dir + "/" + name;
+}
 
 class MemAttrFileWriter : public IAttributeFileWriter
 {
@@ -128,10 +139,76 @@ public:
 MemAttr::MemAttr() = default;
 MemAttr::~MemAttr() = default;
 
-class EnumeratedSaveTest
+struct TypifyVectorType {
+    template <typename T> using Result = TypifyResultType<T>;
+    template <typename F> static decltype(auto) resolve(BasicType value, F &&f) {
+        switch (value.type()) {
+            case BasicType::INT8:
+            case BasicType::INT16:
+            case BasicType::INT32:
+            case BasicType::INT64:
+                return f(Result<IntegerAttribute>());
+            case BasicType::FLOAT:
+            case BasicType::DOUBLE:
+                return f(Result<FloatingPointAttribute>());
+            case BasicType::STRING:
+                return f(Result<StringAttribute>());
+            default: break;
+        }
+        abort();
+    }
+};
+
+template <typename VectorType>
+struct BufferTypes;
+
+template <>
+struct BufferTypes<IntegerAttribute> {
+    using Normal = IntegerAttribute::largeint_t;
+    using Weighted = IntegerAttribute::WeightedInt;
+};
+
+template <>
+struct BufferTypes<FloatingPointAttribute> {
+    using Normal = double;
+    using Weighted = FloatingPointAttribute::WeightedFloat;
+};
+
+template <>
+struct BufferTypes<StringAttribute> {
+    using Normal = std::string;
+    using Weighted = StringAttribute::WeightedString;
+};
+
+namespace search::attribute {
+
+void PrintTo(const BasicType& bt, std::ostream* os) {
+    *os << bt.asString();
+}
+
+void PrintTo(const CollectionType& ct, std::ostream* os) {
+    *os << ct.asString();
+}
+
+}
+
+std::string
+param_as_string(const testing::TestParamInfo<std::tuple<BasicType, CollectionType>>& info)
+{
+    std::ostringstream os;
+    auto& param = info.param;
+    os << std::get<0>(param).asString() << "_";
+    os << std::get<1>(param).asString();
+    return os.str();
+}
+
+class EnumeratedSaveTest : public ::testing::TestWithParam<std::tuple<BasicType, CollectionType>>
 {
 private:
     using AttributePtr = AttributeVector::SP;
+    struct CallPopulate;
+    struct CallCompare;
+    struct CallGetSearch;
 
     template <typename VectorType>
     VectorType & as(AttributePtr &v);
@@ -143,8 +220,12 @@ private:
     template <typename VectorType>
     void populate(VectorType &v, unsigned seed, BasicType bt);
 
+    void populate(AttributePtr &v, unsigned seed, BasicType bt);
+
     template <typename VectorType, typename BufferType>
     void compare(VectorType &a, VectorType &b);
+
+    void compare(AttributePtr& a, AttributePtr& b);
 
     void buildTermQuery(std::vector<char> & buffer, const std::string & index,
                         const std::string & term, bool prefix);
@@ -155,56 +236,113 @@ private:
     template <typename V>
     SearchContextPtr getSearch(const V & vec);
 
+    SearchContextPtr getSearch(AttributePtr& v);
+
     MemAttr::SP saveMem(AttributeVector &v);
     void saveMemDuringCompaction(AttributeVector &v);
-    void checkMem(AttributeVector &v, const MemAttr &e);
+    void checkMem(AttributeVector &v, const MemAttr &e, const std::string& label);
     MemAttr::SP saveBoth(AttributePtr v);
     AttributePtr make(Config cfg, const std::string &pref, bool fastSearch = false);
     void load(AttributePtr v, const std::string &name);
 
-    template <typename VectorType, typename BufferType>
-    AttributePtr checkLoad(Config cfg, const std::string &name, AttributePtr ev);
+    AttributePtr checkLoad(Config cfg, const std::string &name, AttributePtr ev, const std::string& label);
 
-    template <typename VectorType, typename BufferType>
     void testReload(AttributePtr v0, AttributePtr v1, AttributePtr v2,
                     MemAttr::SP mv0, MemAttr::SP mv1, MemAttr::SP mv2,
                     MemAttr::SP emv0, MemAttr::SP emv1, MemAttr::SP emv2,
                     Config cfg, const std::string &pref, bool fastSearch, search::DictionaryConfig dictionary_config);
 
-public:
-    template <typename VectorType, typename BufferType>
+protected:
+    EnumeratedSaveTest();
+    ~EnumeratedSaveTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
     void test(BasicType bt, CollectionType ct, const std::string &pref);
 
 };
 
+struct EnumeratedSaveTest::CallPopulate {
+    template <typename VectorType>
+    static void invoke(EnumeratedSaveTest& test, AttributePtr& v, unsigned seed, BasicType bt) {
+        test.populate(test.as<VectorType>(v), seed, bt);
+    }
+};
+
+struct EnumeratedSaveTest::CallCompare {
+    template <typename VectorType>
+    static void invoke(EnumeratedSaveTest& test, AttributePtr& a, AttributePtr& b) {
+        if (a->getConfig().collectionType() == CollectionType::WSET) {
+            test.compare<VectorType,typename BufferTypes<VectorType>::Weighted>(test.as<VectorType>(a),
+                test.as<VectorType>(b));
+        } else {
+            test.compare<VectorType,typename BufferTypes<VectorType>::Normal>(test.as<VectorType>(a),
+                test.as<VectorType>(b));
+        }
+    }
+};
+
+struct EnumeratedSaveTest::CallGetSearch {
+    template <typename VectorType>
+    static SearchContextPtr invoke(EnumeratedSaveTest& test, AttributePtr& v) {
+        return test.getSearch<VectorType>(test.as<VectorType>(v));
+    }
+};
+
+EnumeratedSaveTest::EnumeratedSaveTest()
+    : ::testing::TestWithParam<std::tuple<BasicType, CollectionType>>() {
+}
+
+EnumeratedSaveTest::~EnumeratedSaveTest() = default;
+
+void
+EnumeratedSaveTest::SetUpTestSuite()
+{
+    std::filesystem::remove_all(test_dir);
+    std::filesystem::create_directory(test_dir);
+}
+
+void
+EnumeratedSaveTest::TearDownTestSuite()
+{
+    std::filesystem::remove_all(test_dir);
+}
 
 bool
 MemAttr::bufEqual(const Buffer &lhs, const Buffer &rhs) const
 {
-    if (!EXPECT_TRUE((lhs.get() != NULL) == (rhs.get() != NULL)))
+    bool success = true;
+    EXPECT_TRUE((lhs.get() != NULL) == (rhs.get() != NULL)) << (success = false, "");
+    if (!success) {
         return false;
+    }
     if (lhs.get() == NULL)
         return true;
-    if (!EXPECT_EQUAL(lhs->getDataLen(), rhs->getDataLen()))
+    EXPECT_EQ(lhs->getDataLen(), rhs->getDataLen()) << (success = false, "");
+    if (!success) {
         return false;
-    if (!EXPECT_TRUE(vespalib::memcmp_safe(lhs->getData(), rhs->getData(),
-                                           lhs->getDataLen()) == 0))
-        return false;
-    return true;
+    }
+    EXPECT_TRUE(vespalib::memcmp_safe(lhs->getData(), rhs->getData(), lhs->getDataLen()) == 0) << (success = false, "");
+    return success;
 }
  
 bool
 MemAttr::operator==(const MemAttr &rhs) const
 {
-    if (!EXPECT_TRUE(bufEqual(_datWriter.buf(), rhs._datWriter.buf())))
+    bool success = true;
+    EXPECT_TRUE(bufEqual(_datWriter.buf(), rhs._datWriter.buf())) << (success = false, "");
+    if (!success) {
         return false;
-    if (!EXPECT_TRUE(bufEqual(_idxWriter.buf(), rhs._idxWriter.buf())))
+    }
+    EXPECT_TRUE(bufEqual(_idxWriter.buf(), rhs._idxWriter.buf())) << (success = false, "");
+    if (!success) {
         return false;
-    if (!EXPECT_TRUE(bufEqual(_weightWriter.buf(), rhs._weightWriter.buf())))
+    }
+    EXPECT_TRUE(bufEqual(_weightWriter.buf(), rhs._weightWriter.buf())) << (success = false, "");
+    if (!success) {
         return false;
-    if (!EXPECT_TRUE(bufEqual(_udatWriter.buf(), rhs._udatWriter.buf())))
-        return false;
-    return true;
+    }
+    EXPECT_TRUE(bufEqual(_udatWriter.buf(), rhs._udatWriter.buf())) << (success = false, "");
+    return success;
 }
 
 
@@ -268,9 +406,8 @@ EnumeratedSaveTest::populate(IntegerAttribute &v, unsigned seed,
             }
             v.commit();
             if (!v.hasWeightedSetType()) {
-                EXPECT_EQUAL(static_cast<uint32_t>(v.getValueCount(i)), i + 1);
-                ASSERT_TRUE(static_cast<uint32_t>(v.getValueCount(i)) ==
-                            i + 1);
+                EXPECT_EQ(static_cast<uint32_t>(v.getValueCount(i)), i + 1);
+                ASSERT_TRUE(static_cast<uint32_t>(v.getValueCount(i)) == i + 1);
             }
         } else {
             EXPECT_TRUE( v.update(i, rnd.lrand48() & mask) );
@@ -314,9 +451,8 @@ EnumeratedSaveTest::populate(FloatingPointAttribute &v, unsigned seed,
             }
             v.commit();
             if (!v.hasWeightedSetType()) {
-                EXPECT_EQUAL(static_cast<uint32_t>(v.getValueCount(i)), i + 1);
-                ASSERT_TRUE(static_cast<uint32_t>(v.getValueCount(i)) ==
-                            i + 1);
+                EXPECT_EQ(static_cast<uint32_t>(v.getValueCount(i)), i + 1);
+                ASSERT_TRUE(static_cast<uint32_t>(v.getValueCount(i)) == i + 1);
             }
         } else {
             EXPECT_TRUE( v.update(i, rnd.lrand48()) );
@@ -359,13 +495,17 @@ EnumeratedSaveTest::populate(StringAttribute &v, unsigned seed,
             }
             v.commit();
             if (!v.hasWeightedSetType()) {
-                EXPECT_EQUAL(static_cast<uint32_t>(v.getValueCount(i)), i + 1);
+                EXPECT_EQ(static_cast<uint32_t>(v.getValueCount(i)), i + 1);
             }
         } else {
             EXPECT_TRUE( v.update(i, rnd.getRandomString(2, 50)) );
         }
     }
     v.commit();
+}
+
+void EnumeratedSaveTest::populate(AttributePtr &v, unsigned seed, BasicType bt) {
+    typify_invoke<1, TypifyVectorType, CallPopulate>(bt, *this, v, seed, bt);
 }
 
 namespace
@@ -395,10 +535,10 @@ template <typename VectorType, typename BufferType>
 void
 EnumeratedSaveTest::compare(VectorType &a, VectorType &b)
 {
-    EXPECT_EQUAL(a.getNumDocs(), b.getNumDocs());
+    EXPECT_EQ(a.getNumDocs(), b.getNumDocs());
     ASSERT_TRUE(a.getNumDocs() == b.getNumDocs());
-    // EXPECT_EQUAL(a.getMaxValueCount(), b.getMaxValueCount());
-    EXPECT_EQUAL(a.getCommittedDocIdLimit(), b.getCommittedDocIdLimit());
+    // EXPECT_EQ(a.getMaxValueCount(), b.getMaxValueCount());
+    EXPECT_EQ(a.getCommittedDocIdLimit(), b.getCommittedDocIdLimit());
     uint32_t asz(a.getMaxValueCount());
     uint32_t bsz(b.getMaxValueCount());
     BufferType *av = new BufferType[asz];
@@ -407,12 +547,10 @@ EnumeratedSaveTest::compare(VectorType &a, VectorType &b)
     for (size_t i(0), m(a.getNumDocs()); i < m; i++) {
         ASSERT_TRUE(asz >= static_cast<uint32_t>(a.getValueCount(i)));
         ASSERT_TRUE(bsz >= static_cast<uint32_t>(b.getValueCount(i)));
-        EXPECT_EQUAL(a.getValueCount(i), b.getValueCount(i));
+        EXPECT_EQ(a.getValueCount(i), b.getValueCount(i));
         ASSERT_TRUE(a.getValueCount(i) == b.getValueCount(i));
-        EXPECT_EQUAL(static_cast<const AttributeVector &>(a).get(i, av, asz),
-                     static_cast<uint32_t>(a.getValueCount(i)));
-        EXPECT_EQUAL(static_cast<const AttributeVector &>(b).get(i, bv, bsz),
-                     static_cast<uint32_t>(b.getValueCount(i)));
+        EXPECT_EQ(static_cast<const AttributeVector &>(a).get(i, av, asz), static_cast<uint32_t>(a.getValueCount(i)));
+        EXPECT_EQ(static_cast<const AttributeVector &>(b).get(i, bv, bsz), static_cast<uint32_t>(b.getValueCount(i)));
         for(size_t j(0), k(std::min(a.getValueCount(i), b.getValueCount(i)));
             j < k; j++) {
             EXPECT_TRUE(equalsHelper(av[j], bv[j]));
@@ -422,6 +560,10 @@ EnumeratedSaveTest::compare(VectorType &a, VectorType &b)
     delete [] av;
 }
 
+void
+EnumeratedSaveTest::compare(AttributePtr& a, AttributePtr& b) {
+    typify_invoke<1, TypifyVectorType, CallCompare>(a->getConfig().basicType(), *this, a, b);
+}
 
 template <typename VectorType>
 VectorType &
@@ -513,6 +655,11 @@ EnumeratedSaveTest::getSearch<StringAttribute>(const StringAttribute &v)
         (v, "foo", false);
 }
 
+SearchContextPtr
+EnumeratedSaveTest::getSearch(AttributePtr& v) {
+   return typify_invoke<1, TypifyVectorType, CallGetSearch>(v->getConfig().basicType(), *this, v);
+}
+
 MemAttr::SP
 EnumeratedSaveTest::saveMem(AttributeVector &v)
 {
@@ -531,13 +678,14 @@ EnumeratedSaveTest::saveMemDuringCompaction(AttributeVector &v)
         // Simulate compaction
         enum_store_base->inc_compaction_count();
         auto save_result = saver->save(*res);
-        EXPECT_EQUAL(!v.hasMultiValue(), save_result);
+        EXPECT_EQ(!v.hasMultiValue(), save_result);
     }
 }
 
 void
-EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e)
+EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e, const std::string& label)
 {
+    SCOPED_TRACE(label);
     auto *esb = v.getEnumStoreBase();
     if (esb == nullptr || esb->get_dictionary().get_has_btree_dictionary()) {
         MemAttr m;
@@ -550,20 +698,20 @@ EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e)
         search::AttributeMemorySaveTarget ms;
         search::TuneFileAttributes tune;
         search::index::DummyFileHeaderContext fileHeaderContext;
-        EXPECT_TRUE(v.save(ms, "convert"));
+        EXPECT_TRUE(v.save(ms, make_attr_name("convert")));
         EXPECT_TRUE(ms.writeToFile(tune, fileHeaderContext));
-        EXPECT_NOT_EQUAL(0u, ms.size_on_disk());
+        EXPECT_NE(0u, ms.size_on_disk());
         auto cfg = v.getConfig();
         cfg.set_dictionary_config(search::DictionaryConfig(search::DictionaryConfig::Type::BTREE));
-        auto v2 = AttributeFactory::createAttribute("convert", cfg);
+        auto v2 = AttributeFactory::createAttribute(make_attr_name("convert"), cfg);
         EXPECT_TRUE(v2->load());
-        EXPECT_NOT_EQUAL(0u, v2->size_on_disk());
+        EXPECT_NE(0u, v2->size_on_disk());
         MemAttr m2;
         EXPECT_TRUE(v2->save(m2, v.getBaseFileName()));
         ASSERT_TRUE(m2 == e);
-        auto v3 = AttributeFactory::createAttribute("convert", v.getConfig());
+        auto v3 = AttributeFactory::createAttribute(make_attr_name("convert"), v.getConfig());
         EXPECT_TRUE(v3->load());
-        EXPECT_NOT_EQUAL(0u, v3->size_on_disk());
+        EXPECT_NE(0u, v3->size_on_disk());
     }
 }
 
@@ -572,11 +720,11 @@ MemAttr::SP
 EnumeratedSaveTest::saveBoth(AttributePtr v)
 {
     EXPECT_TRUE(v->save());
-    EXPECT_NOT_EQUAL(0u, v->size_on_disk());
+    EXPECT_NE(0u, v->size_on_disk());
     std::string basename = v->getBaseFileName();
     AttributePtr v2 = make(v->getConfig(), basename, true);
     EXPECT_TRUE(v2->load());
-    EXPECT_EQUAL(v->size_on_disk(), v2->size_on_disk());
+    EXPECT_EQ(v->size_on_disk(), v2->size_on_disk());
     EXPECT_TRUE(v2->save(basename + "_e"));
 
     search::AttributeMemorySaveTarget ms;
@@ -603,23 +751,22 @@ EnumeratedSaveTest::load(AttributePtr v, const std::string &name)
 {
     v->setBaseFileName(name);
     EXPECT_TRUE(v->load());
-    EXPECT_NOT_EQUAL(0u, v->size_on_disk());
+    EXPECT_NE(0u, v->size_on_disk());
 }
 
-template <typename VectorType, typename BufferType>
 EnumeratedSaveTest::AttributePtr
 EnumeratedSaveTest::checkLoad(Config cfg, const std::string &name,
-                              AttributePtr ev)
+                              AttributePtr ev, const std::string& label)
 {
-    AttributePtr v = AttributeFactory::createAttribute(name, cfg);
+    SCOPED_TRACE(label);
+    AttributePtr v = AttributeFactory::createAttribute(make_attr_name(name), cfg);
     EXPECT_TRUE(v->load());
-    EXPECT_NOT_EQUAL(0u, v->size_on_disk());
-    compare<VectorType, BufferType>(as<VectorType>(v), as<VectorType>(ev));
+    EXPECT_NE(0u, v->size_on_disk());
+    compare(v, ev);;
     return v;
 }
 
 
-template <typename VectorType, typename BufferType>
 void
 EnumeratedSaveTest::testReload(AttributePtr v0,
                                AttributePtr v1,
@@ -635,6 +782,9 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
                                bool fastSearch,
                                search::DictionaryConfig dictionary_config)
 {
+    std::ostringstream os;
+    os << "testReload fs=" << std::boolalpha << fastSearch << ", dictionary_config=" << dictionary_config;
+    SCOPED_TRACE(os.str());
     bool flagAttr =
         cfg.collectionType() == CollectionType::ARRAY &&
         cfg.basicType() == BasicType::INT8 &&
@@ -647,72 +797,70 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
     Config check_cfg(cfg);
     check_cfg.setFastSearch(fastSearch);
     check_cfg.set_dictionary_config(dictionary_config);
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "0", v0)));
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "1", v1)));
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "2", v2)));
+    checkLoad(check_cfg, pref + "0", v0, "0");
+    checkLoad(check_cfg, pref + "1", v1, "1");
+    checkLoad(check_cfg, pref + "2", v2, "2");
 
     AttributePtr v;
-    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "0", v0)));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv0 : *mv0));
-    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "1", v1)));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1));
-    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "2", v2)));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2));
+    v = checkLoad(check_cfg, pref + "0", v0, "2nd 0");
+    checkMem(*v, supportsEnumerated ? *emv0 : *mv0, "0");
+    v = checkLoad(check_cfg, pref + "1", v1, "2nd 1");
+    checkMem(*v, supportsEnumerated ? *emv1 : *mv1, "1");
+    v = checkLoad(check_cfg, pref + "2", v2, "2nd 2");
+    checkMem(*v, supportsEnumerated ? *emv2 : *mv2, "2");
 
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "0_e", v0)));
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "1_e", v1)));
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "2_e", v2)));
+    checkLoad(check_cfg, pref + "0_e", v0, "0_e");
+    checkLoad(check_cfg, pref + "1_e", v1, "1_e");
+    checkLoad(check_cfg, pref + "2_e", v2, "2_e");
 
-    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "0_e", v0)));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv0 : *mv0));
-    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "1_e", v1)));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv1 : *mv1));
-    TEST_DO((v = checkLoad<VectorType, BufferType>(check_cfg, pref + "2_e", v2)));
-    TEST_DO(checkMem(*v, supportsEnumerated ? *emv2 : *mv2));
+    v = checkLoad(check_cfg, pref + "0_e", v0, "2nd 0_e");
+    checkMem(*v, supportsEnumerated ? *emv0 : *mv0, "2nd 0");
+    v = checkLoad(check_cfg, pref + "1_e", v1, "2nd 1_e");
+    checkMem(*v, supportsEnumerated ? *emv1 : *mv1, "2nd 1");
+    v = checkLoad(check_cfg, pref + "2_e", v2, "2nd 2_e");
+    checkMem(*v, supportsEnumerated ? *emv2 : *mv2, "2nd 2");
 
     saveMemDuringCompaction(*v);
 
     TermFieldMatchData md;
-    SearchContextPtr sc = getSearch<VectorType>(as<VectorType>(v));
+    SearchContextPtr sc = getSearch(v);
     sc->fetchPostings(search::queryeval::ExecuteInfo::FULL, true);
     SearchBasePtr sb = sc->createIterator(&md, true);
     sb->initFullRange();
     sb->seek(1u);
-    EXPECT_EQUAL(7u, sb->getDocId());
+    EXPECT_EQ(7u, sb->getDocId());
     sb->unpack(7u);
-    EXPECT_EQUAL(md.getDocId(), 7u);
-    if (v->getCollectionType() == CollectionType::SINGLE ||
-        flagAttr) {
-        EXPECT_EQUAL(md.getWeight(), 1);
+    EXPECT_EQ(md.getDocId(), 7u);
+    if (v->getCollectionType() == CollectionType::SINGLE || flagAttr) {
+        EXPECT_EQ(md.getWeight(), 1);
     } else if (v->getCollectionType() == CollectionType::ARRAY) {
-        EXPECT_EQUAL(md.getWeight(), 2);
+        EXPECT_EQ(md.getWeight(), 2);
     } else {
         if (cfg.basicType() == BasicType::STRING) {
-            EXPECT_EQUAL(md.getWeight(), 24);
+            EXPECT_EQ(md.getWeight(), 24);
         } else {
-            EXPECT_EQUAL(md.getWeight(), -3);
+            EXPECT_EQ(md.getWeight(), -3);
         }
     }
 }
 
 
-template <typename VectorType, typename BufferType>
 void
 EnumeratedSaveTest::test(BasicType bt, CollectionType ct,
                          const std::string &pref)
 {
     Config cfg(bt, ct);
-    AttributePtr v0 = AttributeFactory::createAttribute(pref + "0", cfg);
-    AttributePtr v1 = AttributeFactory::createAttribute(pref + "1", cfg);
-    AttributePtr v2 = AttributeFactory::createAttribute(pref + "2", cfg);
+    AttributePtr v0 = AttributeFactory::createAttribute(make_attr_name(pref) + "0", cfg);
+    AttributePtr v1 = AttributeFactory::createAttribute(make_attr_name(pref) + "1", cfg);
+    AttributePtr v2 = AttributeFactory::createAttribute(make_attr_name(pref) + "2", cfg);
 
     addDocs(v0, 0);
     addDocs(v1, 10);
     addDocs(v2, 30);
 
-    populate(as<VectorType>(v0), 0, bt);
-    populate(as<VectorType>(v1), 10, bt);
-    populate(as<VectorType>(v2), 30, bt);
+    populate(v0, 0, bt);
+    populate(v1, 10, bt);
+    populate(v2, 30, bt);
 
     MemAttr::SP mv0 = saveMem(*v0);
     MemAttr::SP mv1 = saveMem(*v1);
@@ -724,217 +872,37 @@ EnumeratedSaveTest::test(BasicType bt, CollectionType ct,
 
     Config check_cfg(cfg);
     check_cfg.setFastSearch(true);
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "0_ee", v0)));
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "1_ee", v1)));
-    TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "2_ee", v2)));
+    checkLoad(check_cfg, pref + "0_ee", v0, "0_ee");
+    checkLoad(check_cfg, pref + "1_ee", v1, "1_ee");
+    checkLoad(check_cfg, pref + "2_ee", v2, "2_ee");
 
-    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
-                                                mv0, mv1, mv2,
-                                                emv0, emv1, emv2,
-                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE))));
-    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
-                                                mv0, mv1, mv2,
-                                                emv0, emv1, emv2,
-                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE))));
-    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
-                                                mv0, mv1, mv2,
-                                                emv0, emv1, emv2,
-                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE_AND_HASH))));
-    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
-                                                mv0, mv1, mv2,
-                                                emv0, emv1, emv2,
-                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE_AND_HASH))));
-    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
-                                                mv0, mv1, mv2,
-                                                emv0, emv1, emv2,
-                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::HASH))));
-    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
-                                                mv0, mv1, mv2,
-                                                emv0, emv1, emv2,
-                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::HASH))));
+    testReload(v0, v1, v2, mv0, mv1, mv2, emv0, emv1, emv2, cfg, pref, false,
+               search::DictionaryConfig(search::DictionaryConfig::Type::BTREE));
+    testReload(v0, v1, v2, mv0, mv1, mv2, emv0, emv1, emv2, cfg, pref, true,
+               search::DictionaryConfig(search::DictionaryConfig::Type::BTREE));
+    testReload(v0, v1, v2, mv0, mv1, mv2, emv0, emv1, emv2, cfg, pref, false,
+               search::DictionaryConfig(search::DictionaryConfig::Type::BTREE_AND_HASH));
+    testReload(v0, v1, v2, mv0, mv1, mv2, emv0, emv1, emv2, cfg, pref, true,
+               search::DictionaryConfig(search::DictionaryConfig::Type::BTREE_AND_HASH));
+    testReload(v0, v1, v2, mv0, mv1, mv2, emv0, emv1, emv2, cfg, pref, false,
+               search::DictionaryConfig(search::DictionaryConfig::Type::HASH));
+    testReload(v0, v1, v2, mv0, mv1, mv2, emv0, emv1, emv2, cfg, pref, true,
+               search::DictionaryConfig(search::DictionaryConfig::Type::HASH));
 }
 
-TEST_F("Test enumerated save with single value int8", EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::largeint_t>(BasicType::INT8,
-                                      CollectionType::SINGLE,
-                                      "int8_sv");
+TEST_P(EnumeratedSaveTest, enumerated_save) {
+    const auto& param = GetParam();
+    auto bt = std::get<0>(param);
+    auto ct = std::get<1>(param);
+    this->test(bt, ct, std::string(bt.asString()) + "_" + ct.asString());
 }
 
-TEST_F("Test enumerated save with array value int8", EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::largeint_t>(BasicType::INT8,
-                                      CollectionType::ARRAY,
-                                      "int8_a");
-}
+auto test_values = testing::Combine(testing::Values(BasicType::INT8, BasicType::INT16, BasicType::INT32,
+                                                    BasicType::INT64, BasicType::FLOAT, BasicType::DOUBLE,
+                                                    BasicType::STRING),
+                                    testing::Values(CollectionType::SINGLE, CollectionType::ARRAY,
+                                                    CollectionType::WSET));
 
-TEST_F("Test enumerated save with weighted set value int8",
-       EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::WeightedInt>(BasicType::INT8,
-                                       CollectionType::WSET,
-                                       "int8_ws");
-}
+INSTANTIATE_TEST_SUITE_P(EnumeratedSaveMultiTest, EnumeratedSaveTest, test_values, param_as_string);
 
-TEST_F("Test enumerated save with single value int16", EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::largeint_t>(BasicType::INT16,
-                                      CollectionType::SINGLE,
-                                      "int16_sv");
-}
-
-TEST_F("Test enumerated save with array value int16", EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::largeint_t>(BasicType::INT16,
-                                      CollectionType::ARRAY,
-                                      "int16_a");
-}
-
-TEST_F("Test enumerated save with weighted set value int16",
-       EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::WeightedInt>(BasicType::INT16,
-                                       CollectionType::WSET,
-                                       "int16_ws");
-}
-
-TEST_F("Test enumerated save with single value int32", EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::largeint_t>(BasicType::INT32,
-                                      CollectionType::SINGLE,
-                                      "int32_sv");
-}
-
-TEST_F("Test enumerated save with array value int32", EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::largeint_t>(BasicType::INT32,
-                                      CollectionType::ARRAY,
-                                      "int32_a");
-}
-
-TEST_F("Test enumerated save with weighted set value int32",
-       EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::WeightedInt>(BasicType::INT32,
-                                       CollectionType::WSET,
-                                       "int32_ws");
-}
-
-TEST_F("Test enumerated save with single value int64", EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::largeint_t>(BasicType::INT64,
-                                      CollectionType::SINGLE,
-                                      "int64_sv");
-}
-
-TEST_F("Test enumerated save with array value int64", EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::largeint_t>(BasicType::INT64,
-                                      CollectionType::ARRAY,
-                                      "int64_a");
-}
-
-TEST_F("Test enumerated save with weighted set value int64",
-       EnumeratedSaveTest)
-{
-    f.template test<IntegerAttribute,
-        IntegerAttribute::WeightedInt>(BasicType::INT64,
-                                       CollectionType::WSET,
-                                       "int64_ws");
-}
-
-TEST_F("Test enumerated save with single value float", EnumeratedSaveTest)
-{
-    f.template test<FloatingPointAttribute,
-        double>(BasicType::FLOAT,
-                CollectionType::SINGLE,
-                "float_sv");
-}
-
-TEST_F("Test enumerated save with array value float", EnumeratedSaveTest)
-{
-    f.template test<FloatingPointAttribute,
-        double>(BasicType::FLOAT,
-                CollectionType::ARRAY,
-                "float_a");
-}
-
-TEST_F("Test enumerated save with weighted set value float",
-       EnumeratedSaveTest)
-{
-    f.template test<FloatingPointAttribute,
-        FloatingPointAttribute::WeightedFloat>(
-                BasicType::FLOAT,
-                CollectionType::WSET,
-                "float_ws");
-}
-
-
-TEST_F("Test enumerated save with single value double", EnumeratedSaveTest)
-{
-    f.template test<FloatingPointAttribute,
-        double>(BasicType::DOUBLE,
-                CollectionType::SINGLE,
-                "double_sv");
-}
-
-TEST_F("Test enumerated save with array value double", EnumeratedSaveTest)
-{
-    f.template test<FloatingPointAttribute,
-        double>(BasicType::DOUBLE,
-                CollectionType::ARRAY,
-                "double_a");
-}
-
-TEST_F("Test enumerated save with weighted set value double",
-       EnumeratedSaveTest)
-{
-    f.template test<FloatingPointAttribute,
-        FloatingPointAttribute::WeightedFloat>(
-                BasicType::DOUBLE,
-                CollectionType::WSET,
-                "double_ws");
-}
-
-
-TEST_F("Test enumerated save with single value string", EnumeratedSaveTest)
-{
-    f.template test<StringAttribute,
-        std::string>(BasicType::STRING,
-                          CollectionType::SINGLE,
-                          "str_sv");
-}
-
-TEST_F("Test enumerated save with array value string", EnumeratedSaveTest)
-{
-    f.template test<StringAttribute,
-        std::string>(BasicType::STRING,
-                          CollectionType::ARRAY,
-                          "str_a");
-}
-
-TEST_F("Test enumerated save with weighted set value string",
-       EnumeratedSaveTest)
-{
-    f.template test<StringAttribute,
-        StringAttribute::WeightedString>(
-                BasicType::STRING,
-                CollectionType::WSET,
-                "str_ws");
-}
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

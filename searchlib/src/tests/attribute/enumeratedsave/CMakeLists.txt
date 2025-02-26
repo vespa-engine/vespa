@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_enumeratedsave_test_app TEST
     enumeratedsave_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_enumeratedsave_test_app COMMAND searchlib_enumeratedsave_test_app COST 100)
