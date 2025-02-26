@@ -3,8 +3,7 @@
 #include <vespa/searchlib/attribute/bitvector_search_cache.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/util/memoryusage.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search;
 using namespace search::attribute;
@@ -19,59 +18,66 @@ makeEntry()
     return std::make_shared<Entry>(IDocumentMetaStoreContext::IReadGuard::SP(), BitVector::create(5), 10);
 }
 
-struct Fixture {
+class BitVectorSearchCacheTest : public ::testing::Test {
+protected:
     BitVectorSearchCache cache;
     EntrySP entry1;
     EntrySP entry2;
-    Fixture()
-        : cache(),
-          entry1(makeEntry()),
-          entry2(makeEntry())
-    {}
+    BitVectorSearchCacheTest();
+    ~BitVectorSearchCacheTest() override;
 };
 
-TEST_F("require that bit vectors can be inserted and retrieved", Fixture)
-{
-    EXPECT_EQUAL(0u, f.cache.size());
-    auto old_mem_usage = f.cache.get_memory_usage();
-    f.cache.insert("foo", f.entry1);
-    f.cache.insert("bar", f.entry2);
-    EXPECT_EQUAL(2u, f.cache.size());
-    auto new_mem_usage = f.cache.get_memory_usage();
-    EXPECT_LESS(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
-    EXPECT_LESS(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
-
-    EXPECT_EQUAL(f.entry1, f.cache.find("foo"));
-    EXPECT_EQUAL(f.entry2, f.cache.find("bar"));
-    EXPECT_TRUE(f.cache.find("baz").get() == nullptr);
+BitVectorSearchCacheTest::BitVectorSearchCacheTest()
+    : ::testing::Test(),
+      cache(),
+      entry1(makeEntry()),
+      entry2(makeEntry()) {
 }
 
-TEST_F("require that insert() doesn't replace existing bit vector", Fixture)
+BitVectorSearchCacheTest::~BitVectorSearchCacheTest() = default;
+
+TEST_F(BitVectorSearchCacheTest, require_that_bit_vectors_can_be_inserted_and_retrieved)
 {
-    f.cache.insert("foo", f.entry1);
-    auto old_mem_usage = f.cache.get_memory_usage();
-    f.cache.insert("foo", f.entry2);
-    auto new_mem_usage = f.cache.get_memory_usage();
-    EXPECT_EQUAL(1u, f.cache.size());
-    EXPECT_EQUAL(f.entry1, f.cache.find("foo"));
-    EXPECT_EQUAL(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
-    EXPECT_EQUAL(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
+    EXPECT_EQ(0u, cache.size());
+    auto old_mem_usage = cache.get_memory_usage();
+    cache.insert("foo", entry1);
+    cache.insert("bar", entry2);
+    EXPECT_EQ(2u, cache.size());
+    auto new_mem_usage = cache.get_memory_usage();
+    EXPECT_LT(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
+    EXPECT_LT(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
+
+    EXPECT_EQ(entry1, cache.find("foo"));
+    EXPECT_EQ(entry2, cache.find("bar"));
+    EXPECT_TRUE(cache.find("baz").get() == nullptr);
 }
 
-TEST_F("require that cache can be cleared", Fixture)
+TEST_F(BitVectorSearchCacheTest, require_that_insert_doesnt_replace_existing_bit_vector)
 {
-    f.cache.insert("foo", f.entry1);
-    f.cache.insert("bar", f.entry2);
-    EXPECT_EQUAL(2u, f.cache.size());
-    auto old_mem_usage = f.cache.get_memory_usage();
-    f.cache.clear();
-    auto new_mem_usage = f.cache.get_memory_usage();
-
-    EXPECT_EQUAL(0u, f.cache.size());
-    EXPECT_TRUE(f.cache.find("foo").get() == nullptr);
-    EXPECT_TRUE(f.cache.find("bar").get() == nullptr);
-    EXPECT_GREATER(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
-    EXPECT_GREATER(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
+    cache.insert("foo", entry1);
+    auto old_mem_usage = cache.get_memory_usage();
+    cache.insert("foo", entry2);
+    auto new_mem_usage = cache.get_memory_usage();
+    EXPECT_EQ(1u, cache.size());
+    EXPECT_EQ(entry1, cache.find("foo"));
+    EXPECT_EQ(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
+    EXPECT_EQ(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST_F(BitVectorSearchCacheTest, require_that_cache_can_be_cleared)
+{
+    cache.insert("foo", entry1);
+    cache.insert("bar", entry2);
+    EXPECT_EQ(2u, cache.size());
+    auto old_mem_usage = cache.get_memory_usage();
+    cache.clear();
+    auto new_mem_usage = cache.get_memory_usage();
+
+    EXPECT_EQ(0u, cache.size());
+    EXPECT_TRUE(cache.find("foo").get() == nullptr);
+    EXPECT_TRUE(cache.find("bar").get() == nullptr);
+    EXPECT_GT(old_mem_usage.usedBytes(), new_mem_usage.usedBytes());
+    EXPECT_GT(old_mem_usage.allocatedBytes(), new_mem_usage.allocatedBytes());
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()
