@@ -118,6 +118,10 @@ class SchemaSemanticTokenConfig {
         add(TokenType.ARITY);
         add(TokenType.ENABLE_BM25);
         add(TokenType.DENSE_POSTING_LIST_THRESHOLD);
+        add(TokenType.FILTER_THRESHOLD);
+        add(TokenType.WEAKAND);
+        add(TokenType.STOPWORD_LIMIT);
+        add(TokenType.ADJUST_TARGET);
 
         // maybe some of these should be something other than keyword
         add(TokenType.DISTANCE_METRIC);
