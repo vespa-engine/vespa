@@ -34,6 +34,7 @@ import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.ast.summaryInFieldLong;
 import ai.vespa.schemals.parser.ast.weightedsetElm;
+import ai.vespa.schemals.parser.ast.weakandElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -132,6 +133,7 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("summary-features", "summary-features {\n\t$0\n}", "summary-features {}"),
             CompletionUtils.constructSnippet("rank-features", "rank-features: $0", "rank-features:"),
             CompletionUtils.constructSnippet("rank-features", "rank-features {\n\t$0\n}", "rank-features {}"),
+            CompletionUtils.constructSnippet("weakand", "weakand {\n\t$0\n}", "weakand {}"),
             CompletionUtils.constructBasic("ignore-default-rank-features"),
             CompletionUtils.constructBasic("num-threads-per-search"),
             CompletionUtils.constructBasic("num-search-partitions"),
@@ -140,8 +142,14 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructBasic("post-filter-threshold"),
             CompletionUtils.constructBasic("approximate-threshold"),
             CompletionUtils.constructBasic("target-hits-max-adjustment-factor"),
+            CompletionUtils.constructBasic("filter-threshold"),
             FixedKeywordBodies.RANK.getColonSnippet(true),
             FixedKeywordBodies.RANK_TYPE.getColonSnippet(true)
+        ));
+
+        put(weakandElm.class, List.of(
+            CompletionUtils.constructBasic("stopword-limit"),
+            CompletionUtils.constructBasic("adjust-target")
         ));
 
         put(RootRankProfile.class, get(rankProfile.class));
