@@ -40,7 +40,8 @@ createPrepareRestartConfig(const PrepareRestartHandler::ProtonConfig &protonCfg)
 {
     return PrepareRestartFlushStrategy::Config(protonCfg.flush.preparerestart.replaycost,
                                                protonCfg.flush.preparerestart.replayoperationcost,
-                                               protonCfg.flush.preparerestart.writecost);
+                                               protonCfg.flush.preparerestart.writecost,
+                                               protonCfg.flush.preparerestart.readcost);
 }
 
 }

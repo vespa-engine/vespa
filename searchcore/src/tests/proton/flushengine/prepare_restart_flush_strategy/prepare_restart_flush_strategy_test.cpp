@@ -8,6 +8,7 @@
 #include <vespa/searchcore/proton/test/dummy_flush_handler.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <cassert>
 
 using namespace proton;
 using search::SerialNum;
@@ -16,12 +17,13 @@ using searchcorespi::IFlushTarget;
 using SimpleFlushHandler = test::DummyFlushHandler;
 using Config = PrepareRestartFlushStrategy::Config;
 
-const Config DEFAULT_CFG(2.0, 0.0, 4.0);
+const Config DEFAULT_CFG(2.0, 0.0, 4.0, 4.0);
 
 struct SimpleFlushTarget : public test::DummyFlushTarget
 {
     SerialNum flushedSerial;
     uint64_t approxDiskBytes;
+    uint64_t approx_disk_read_bytes;
     double replay_operation_cost;
     SimpleFlushTarget(const std::string &name,
                       const Type &type,
@@ -31,6 +33,7 @@ struct SimpleFlushTarget : public test::DummyFlushTarget
         : test::DummyFlushTarget(name, type, Component::OTHER),
           flushedSerial(flushedSerial_),
           approxDiskBytes(approxDiskBytes_),
+          approx_disk_read_bytes(0),
           replay_operation_cost(replay_operation_cost_)
     {}
     [[nodiscard]] SerialNum getFlushedSerialNum() const override {
@@ -39,9 +42,13 @@ struct SimpleFlushTarget : public test::DummyFlushTarget
     [[nodiscard]] uint64_t getApproxBytesToWriteToDisk() const override {
         return approxDiskBytes;
     }
+    [[nodiscard]] uint64_t get_approx_bytes_to_read_from_disk() const noexcept override {
+        return approx_disk_read_bytes;
+    }
     [[nodiscard]] double get_replay_operation_cost() const override {
         return replay_operation_cost;
     }
+    void set_approx_disk_read_bytes(uint64_t approx_disk_read_bytes_) noexcept { approx_disk_read_bytes = approx_disk_read_bytes_; }
 };
 
 class ContextsBuilder
@@ -97,6 +104,12 @@ public:
                            double replay_operation_cost = 0.0) {
         return add("handler1", targetName, IFlushTarget::Type::GC, flushedSerial, approxDiskBytes, replay_operation_cost);
     }
+    ContextsBuilder& set_approx_read_disk_bytes(uint32_t idx, uint64_t approx_read_disk_bytes_) {
+        assert(idx < _result.size());;
+        auto& target = dynamic_cast<SimpleFlushTarget&>(*_result[idx]->getTarget());
+        target.set_approx_disk_read_bytes(approx_read_disk_bytes_);
+        return *this;
+    }
     [[nodiscard]] FlushContext::List build() const { return _result; }
 };
 
@@ -118,7 +131,7 @@ public:
           _numCandidates(sortedFlushContexts.size()),
           _candidates(),
           _tlsStats(1000, 11, 110),
-          _cfg(2.0, 3.0, 4.0)
+          _cfg(2.0, 3.0, 4.0, 4.0)
     {}
     CandidatesBuilder &flushContexts(const FlushContext::List &sortedFlushContexts) {
         _sortedFlushContexts = &sortedFlushContexts;
@@ -326,10 +339,23 @@ TEST(PrepareRestartFlushStrategyTest, require_that_flush_targets_for_different_f
 
 TEST(PrepareRestartFlushStrategyTest, require_that_expensive_to_replay_target_is_flushed)
 {
-    FlushStrategyFixture f(Config(2.0, 1.0, 4.0));
+    FlushStrategyFixture f(Config(2.0, 1.0, 4.0, 4.0));
     FlushContext::List targets = f.getFlushTargets(ContextsBuilder().
             add("foo", 10, 249).add("bar", 60, 150).add("baz", 60, 150, 12.0).build(), f._tlsStatsMap);
     EXPECT_EQ("[foo,baz]", toString(targets));
+}
+
+TEST(PrepareRestartFlushStrategyTest, require_that_flush_target_with_read_bytes_can_be_dropped)
+{
+    FlushStrategyFixture f(Config(2.0, 0.0, 4.0, 4.0));
+    ContextsBuilder ctx_builder;
+    ctx_builder.add("foo", 10, 125).add("bar", 60, 150);
+    auto targets = f.getFlushTargets(ctx_builder.build(), f._tlsStatsMap);
+    EXPECT_EQ("[foo,bar]", toString(targets));
+    targets = f.getFlushTargets(ctx_builder.set_approx_read_disk_bytes(0, 224).build(), f._tlsStatsMap);
+    EXPECT_EQ("[foo,bar]", toString(targets));
+    targets = f.getFlushTargets(ctx_builder.set_approx_read_disk_bytes(0, 225).build(), f._tlsStatsMap);
+    EXPECT_EQ("[]", toString(targets));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

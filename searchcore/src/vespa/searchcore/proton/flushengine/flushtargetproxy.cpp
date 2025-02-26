@@ -22,10 +22,18 @@ FlushTargetProxy::FlushTargetProxy(const IFlushTarget::SP &target,
 {
 }
 
+FlushTargetProxy::~FlushTargetProxy() = default;
+
 IFlushTarget::Task::UP
 FlushTargetProxy::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token)
 {
     return _target->initFlush(currentSerial, std::move(flush_token));
+}
+
+uint64_t
+FlushTargetProxy::get_approx_bytes_to_read_from_disk() const noexcept
+{
+    return _target->get_approx_bytes_to_read_from_disk();
 }
 
 } // namespace proton

@@ -116,12 +116,22 @@ flush.preparerestart.replayoperationcost double default=3000.0
 ## The cost of writing a byte when flushing components to disk.
 ##
 ## The number of bytes to write (for a set of flushed components) * writecost
-## gives an estimate of the total cost of flushing this set of components.
+## gives an estimate of the write cost of flushing this set of components.
 ##
 ## The prepare for restart flush strategy will choose a set of components to flush
 ## such that the cost of flushing these + the cost of replaying the transaction log
 ## is as low as possible.
 flush.preparerestart.writecost double default=1.0
+
+## The cost of reading a byte when flushing components to disk.
+##
+## The number of bytes to read (for a set of flushed components) * readcost
+## gives an estimate of the read cost of flushing this set of components.
+##
+## Components that only read from memory will return 0 for the number of
+## bytes to read, currently only paged attributes will have a nonzero
+## read cost.
+flush.preparerestart.readcost double default=1.0
 
 ## Control io options during write both under dump and fusion.
 indexing.write.io enum {NORMAL, OSYNC, DIRECTIO} default=DIRECTIO restart

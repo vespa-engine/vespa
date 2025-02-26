@@ -38,6 +38,7 @@ private:
     vespalib::HwInfo                         _hwInfo;
     std::shared_ptr<AttributeDirectory>      _attrDir;
     double                                   _replay_operation_cost;
+    bool                                     _paged;
 
     Task::UP internalInitFlush(SerialNum currentSerial);
 
@@ -58,21 +59,22 @@ public:
                        vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                        const vespalib::HwInfo &hwInfo);
 
-    virtual ~FlushableAttribute();
+    ~FlushableAttribute() override;
 
     void setCleanUpAfterFlush(bool cleanUp) { _cleanUpAfterFlush = cleanUp; }
 
     TransientResourceUsage get_transient_resource_usage() const;
 
     // Implements IFlushTarget
-    virtual MemoryGain getApproxMemoryGain() const override;
-    virtual DiskGain getApproxDiskGain() const override;
-    virtual Time getLastFlushTime() const override;
-    virtual SerialNum getFlushedSerialNum() const override;
-    virtual Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
-    virtual FlushStats getLastFlushStats() const override { return _lastStats; }
-    virtual uint64_t getApproxBytesToWriteToDisk() const override;
-    virtual double get_replay_operation_cost() const override;
+    MemoryGain getApproxMemoryGain() const override;
+    DiskGain getApproxDiskGain() const override;
+    Time getLastFlushTime() const override;
+    SerialNum getFlushedSerialNum() const override;
+    Task::UP initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token) override;
+    FlushStats getLastFlushStats() const override { return _lastStats; }
+    uint64_t getApproxBytesToWriteToDisk() const override;
+    uint64_t get_approx_bytes_to_read_from_disk() const noexcept override;
+    double get_replay_operation_cost() const override;
 };
 
 } // namespace proton
