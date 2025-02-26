@@ -71,7 +71,7 @@ public final class JsonRender {
 
         protected void encodeSTRING(String value) {
 
-            char[] buf = new char[256];
+            char[] buf = new char[128];
             char pos = 0;
 
             buf[pos++] = '"';
