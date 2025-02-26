@@ -43,7 +43,7 @@ import static com.yahoo.vespa.config.server.session.Session.Status.PREPARE;
 public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
 
     private static final Logger log = Logger.getLogger(ApplicationPackageMaintainer.class.getName());
-    private static final Duration fileDownloaderTimeout = Duration.ofSeconds(30);
+    private static final Duration fileDownloaderTimeout = Duration.ofSeconds(60);
 
     private final File downloadDirectory;
     private final Supervisor supervisor = new Supervisor(new Transport("filedistribution-pool")).setDropEmptyBuffers(true);
