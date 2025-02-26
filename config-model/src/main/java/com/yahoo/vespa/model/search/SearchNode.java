@@ -169,21 +169,11 @@ public class SearchNode extends AbstractService implements
         from.allocatePort("tls");
     }
 
-    /**
-     * Returns the number of ports needed by this service.
-     *
-     * @return The number of ports.
-     */
     @Override
     public int getPortCount() {
         return 6;
     }
 
-    /**
-     * Returns the RPC port used by this searchnode.
-     *
-     * @return The port.
-     */
     public int getRpcPort() {
         return getRelativePort(RPC_PORT);
     }
