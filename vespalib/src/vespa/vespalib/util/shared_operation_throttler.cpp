@@ -214,6 +214,9 @@ DynamicThrottlePolicy::process_request() noexcept
     }
 
     const uint64_t time = current_time_as_millis();
+    if (time == _resize_time) {
+        return; // Happened within the same millisecond; ignore. Avoids div by zero below.
+    }
     const double elapsed = time - _resize_time;
     _resize_time = time;
 
