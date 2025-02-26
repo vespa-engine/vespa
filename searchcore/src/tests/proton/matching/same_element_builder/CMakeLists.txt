@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_same_element_builder_test_app TEST
     same_element_builder_test.cpp
     DEPENDS
     searchcore_matching
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_same_element_builder_test_app COMMAND searchcore_same_element_builder_test_app)
