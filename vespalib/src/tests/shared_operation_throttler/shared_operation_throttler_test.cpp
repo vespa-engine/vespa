@@ -225,6 +225,16 @@ TEST(WindowedSharedOperationThrottlerTest, maximum_window_size_is_respected) {
     ASSERT_TRUE(window_size >= 40 && window_size <= 50);
 }
 
+TEST(WindowedSharedOperationThrottlerTest, zero_sized_acquire_time_delta_does_not_modify_window_size) {
+    WindowFixture f(1, 1, 2);
+    for (int i = 0; i < 3; ++i) {
+        auto token = f._throttler->try_acquire_one();
+        ASSERT_TRUE(token.valid());
+        EXPECT_EQ(f._throttler->current_window_size(), 1);
+        // No mock timer bump between iterations.
+    }
+}
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
