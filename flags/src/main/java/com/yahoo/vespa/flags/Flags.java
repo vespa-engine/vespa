@@ -58,7 +58,7 @@ public class Flags {
 
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
-            List.of("baldersheim"), "2023-03-30", "2025-03-01",
+            List.of("hmusum"), "2023-03-30", "2025-04-01",
             "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
@@ -73,65 +73,65 @@ public class Flags {
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
-            List.of("baldersheim"), "2020-12-02", "2025-03-01",
+            List.of("hmusum"), "2020-12-02", "2025-04-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
-            List.of("baldersheim"), "2020-12-02", "2025-03-01",
+            List.of("hmusum"), "2020-12-02", "2025-04-01",
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
-            List.of("baldersheim"), "2020-12-02", "2025-03-01",
+            List.of("hmusum"), "2020-12-02", "2025-04-01",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
             "mbus-java-num-targets", 2,
-            List.of("baldersheim"), "2022-07-05", "2025-03-01",
+            List.of("hmusum"), "2022-07-05", "2025-04-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
             "mbus-cpp-num-targets", 2,
-            List.of("baldersheim"), "2022-07-05", "2025-03-01",
+            List.of("hmusum"), "2022-07-05", "2025-04-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
             "rpc-num-targets", 2,
-            List.of("baldersheim"), "2022-07-05", "2025-03-01",
+            List.of("hmusum"), "2022-07-05", "2025-04-01",
             "Number of rpc targets per content node",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-java-events-before-wakeup", 1,
-            List.of("baldersheim"), "2022-07-05", "2025-03-01",
+            List.of("hmusum"), "2022-07-05", "2025-04-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-cpp-events-before-wakeup", 1,
-            List.of("baldersheim"), "2022-07-05", "2025-03-01",
+            List.of("hmusum"), "2022-07-05", "2025-04-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "rpc-events-before-wakeup", 1,
-            List.of("baldersheim"), "2022-07-05", "2025-03-01",
+            List.of("hmusum"), "2022-07-05", "2025-04-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_NUM_NETWORK_THREADS = defineIntFlag(
             "mbus-num-network-threads", 1,
-            List.of("baldersheim"), "2022-07-01", "2025-03-01",
+            List.of("hmusum"), "2022-07-01", "2025-04-01",
             "Number of threads used for mbus network",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -189,13 +189,13 @@ public class Flags {
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2025-03-01",
+            List.of("hmusum"), "2023-12-15", "2025-04-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2025-03-01",
+            List.of("hmusum"), "2023-05-16", "2025-04-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
@@ -281,7 +281,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_STRICTLY_INCREASING_CLUSTER_STATE_VERSIONS = defineFeatureFlag(
             "enforce-strictly-increasing-cluster-state-versions", true,
-            List.of("vekterli"), "2024-06-03", "2025-03-01",
+            List.of("vekterli"), "2024-06-03", "2025-04-01",
             "Iff true, received cluster state versions that are lower than the current active " +
             "state version on the node will be explicitly rejected.",
             "Takes effect immediately",
@@ -309,7 +309,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2025-03-01",
+            List.of("hmusum"), "2024-11-11", "2025-04-01",
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
@@ -336,7 +336,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CONFIG_SERVER_TRIGGER_DOWNLOAD_WITH_SOURCE = defineFeatureFlag(
             "config-server-trigger-download-with-source", false,
-            List.of("hmusum"), "2024-12-25", "2025-03-01",
+            List.of("hmusum"), "2024-12-25", "2025-04-01",
             "Use new RPC method for triggering download of file reference",
             "Takes effect immediately");
 
