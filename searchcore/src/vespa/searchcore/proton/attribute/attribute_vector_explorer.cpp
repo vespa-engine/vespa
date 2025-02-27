@@ -130,21 +130,17 @@ convert_config_to_slime(const Config& cfg, bool full, Cursor& object)
 
 }
 
-AttributeVectorExplorer::AttributeVectorExplorer(std::unique_ptr<AttributeExecutor> executor)
-    : _executor(std::move(executor))
+AttributeVectorExplorer::AttributeVectorExplorer(std::shared_ptr<AttributeVector> attr)
+    : _attr(std::move(attr))
 {
 }
+
+AttributeVectorExplorer::~AttributeVectorExplorer() = default;
 
 void
 AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bool full) const
 {
-    auto& attr = _executor->get_attr();
-    _executor->run_sync([this, &attr, &inserter, full] { get_state_helper(attr, inserter, full); });
-}
-
-void
-AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const vespalib::slime::Inserter &inserter, bool full) const
-{
+    auto& attr = *_attr;
     const Status &status = attr.getStatus();
     Cursor &object = inserter.insertObject();
     if (full) {

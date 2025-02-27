@@ -15,12 +15,11 @@ class AttributeExecutor;
  */
 class AttributeVectorExplorer : public vespalib::StateExplorer
 {
-private:
-    std::unique_ptr<const AttributeExecutor> _executor;
+    std::shared_ptr<search::AttributeVector> _attr;
 
-    void get_state_helper(const search::AttributeVector& attr, const vespalib::slime::Inserter &inserter, bool full) const;
 public:
-    AttributeVectorExplorer(std::unique_ptr<AttributeExecutor> executor);
+    AttributeVectorExplorer(std::shared_ptr<search::AttributeVector> attr);
+    ~AttributeVectorExplorer() override;
 
     // Implements vespalib::StateExplorer
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
