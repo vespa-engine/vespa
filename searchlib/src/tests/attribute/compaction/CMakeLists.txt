@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_attribute_compaction_test_app TEST
     attribute_compaction_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_attribute_compaction_test_app COMMAND searchlib_attribute_compaction_test_app)

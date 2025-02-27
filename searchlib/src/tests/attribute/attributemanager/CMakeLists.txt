@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_attributemanager_test_app TEST
     attributemanager_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_attributemanager_test_app COMMAND searchlib_attributemanager_test_app)

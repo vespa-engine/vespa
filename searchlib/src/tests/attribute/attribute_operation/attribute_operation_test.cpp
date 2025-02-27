@@ -5,7 +5,7 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_operation_test");
@@ -17,28 +17,28 @@ using search::AttributeFactory;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 
-TEST("test legal operations on integer attribute") {
+TEST(AttributeOperationTest, test_legal_operations_on_integer_attribute) {
     const std::vector<uint32_t> docs;
     for (auto operation : {"++", "--", "+=7", "+= 7", "-=7", "*=8", "/=6", "%=7", "=3", "=-3"}) {
         EXPECT_TRUE(AttributeOperation::create(BasicType::INT64, operation, docs));
     }
 }
 
-TEST("test illegal operations on integer attribute") {
+TEST(AttributeOperationTest, test_illegal_operations_on_integer_attribute) {
     const std::vector<uint32_t> docs;
     for (auto operation : {"", "-", "+", "+=7.1", "=a", "*=8.z", "=", "=.7", "/=0", "%=0"}) {
         EXPECT_FALSE(AttributeOperation::create(BasicType::INT64, operation, docs));
     }
 }
 
-TEST("test legal operations on float attribute") {
+TEST(AttributeOperationTest, test_legal_operations_on_float_attribute) {
     const std::vector<uint32_t> docs;
     for (auto operation : {"++", "--", "+=7", "+= 7", "-=7", "*=8", "*=8.7", "*=.7", "/=6", "%=7", "=3", "=-3"}) {
         EXPECT_TRUE(AttributeOperation::create(BasicType::DOUBLE, operation, docs));
     }
 }
 
-TEST("test illegal operations on float attribute") {
+TEST(AttributeOperationTest, test_illegal_operations_on_float_attribute) {
     const std::vector<uint32_t> docs;
     for (auto operation : {"", "-", "+", "=a", "*=8.z", "=", "/=0", "%=0"}) {
         EXPECT_FALSE(AttributeOperation::create(BasicType::DOUBLE, operation, docs));
@@ -55,11 +55,11 @@ createAttribute(BasicType basicType, const std::string &fieldName, bool fastSear
     auto av = search::AttributeFactory::createAttribute(fieldName, cfg);
     while (NUM_DOCS >= av->getNumDocs()) {
         AttributeVector::DocId checkDocId(0u);
-        ASSERT_TRUE(av->addDoc(checkDocId));
-        ASSERT_EQUAL(immutable, av->isUndefined(checkDocId));
+        EXPECT_TRUE(av->addDoc(checkDocId));
+        EXPECT_EQ(immutable, av->isUndefined(checkDocId));
     }
     av->commit();
-    ASSERT_EQUAL(immutable, av->isUndefined(NUM_DOCS/2));
+    EXPECT_EQ(immutable, av->isUndefined(NUM_DOCS/2));
     return av;
 }
 
@@ -76,9 +76,9 @@ void verify(BasicType type, std::string_view operation, AttributeVector & attr, 
     op->operator()(attr);
     for (uint32_t docid(0); docid < attr.getNumDocs(); docid++) {
         if (docs.empty() || (docid < docs.front())) {
-            EXPECT_EQUAL(initial, attrT.get(docid));
+            EXPECT_EQ(initial, attrT.get(docid));
         } else {
-            EXPECT_EQUAL(expected, attrT.get(docid));
+            EXPECT_EQ(expected, attrT.get(docid));
             docs.erase(docs.begin());
         }
     }
@@ -102,6 +102,7 @@ void verify2(BasicType typeClaimed, std::string_view operation, AttributeVector 
 
 template <typename T>
 void verify(BasicType typeClaimed, std::string_view operation, AttributeVector & attr, T initial, T expected) {
+    SCOPED_TRACE(operation);
     std::vector<uint32_t> docs = {1,4,7,9,10,17,19};
     {
         verify2<T, std::vector<uint32_t>>(typeClaimed, operation, attr, initial, expected, docs, docs);
@@ -147,45 +148,45 @@ void verify(std::string_view operation, AttributeVector & attr, T initial, T exp
     verify<T>(attr.getBasicType(), operation, attr, initial, expected);
 }
 
-TEST("test all integer operations") {
+TEST(AttributeOperationTest, test_all_integer_operations) {
     auto attr = createAttribute(BasicType::INT64, "ai");
     const std::vector<std::pair<const char *, int64_t>> expectedOperation = {
         {"++", 8}, {"--", 6}, {"+=7", 14}, {"-=9", -2}, {"*=3", 21}, {"/=3", 2}, {"%=3", 1}
     };
     for (auto operation : expectedOperation) {
-        TEST_DO(verify<int64_t>(operation.first, *attr, 7, operation.second));
+        verify<int64_t>(operation.first, *attr, 7, operation.second);
     }
 }
 
-TEST("test all float operations") {
+TEST(AttributeOperationTest, test_all_float_operations) {
     auto attr = createAttribute(BasicType::DOUBLE, "af");
     const std::vector<std::pair<const char *, double>> expectedOperation = {
             {"++", 8}, {"--", 6}, {"+=7.3", 14.3}, {"-=0.9", 6.1}, {"*=3.1", 21.7}, {"/=2", 3.5}, {"%=3", 7}
     };
     for (auto operation : expectedOperation) {
-        TEST_DO(verify<double>(operation.first, *attr, 7, operation.second));
+       verify<double>(operation.first, *attr, 7, operation.second);
     }
 }
 
-TEST("test that even slightly mismatching type will fail to update") {
+TEST(AttributeOperationTest, test_that_even_slightly_mismatching_type_will_fail_to_update) {
     auto attr = createAttribute(BasicType::INT32, "ai");
     for (auto operation : {"++", "--", "+=7", "-=9", "*=3", "/=3", "%=3"}) {
-        TEST_DO(verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7));
+        verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7);
     }
 }
 
-TEST("test that fastsearch attributes will fail to update") {
+TEST(AttributeOperationTest, test_that_fastsearch_attributes_will_fail_to_update) {
     auto attr = createAttribute(BasicType::INT64, "ai", true);
     for (auto operation : {"++", "--", "+=7", "-=9", "*=3", "/=3", "%=3"}) {
-        TEST_DO(verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7));
+        verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7);
     }
 }
 
-TEST("test that immutable attributes will fail to update") {
+TEST(AttributeOperationTest, test_that_immutable_attributes_will_fail_to_update) {
     auto attr = createAttribute(BasicType::INT64, "ai", true, false);
     for (auto operation : {"++", "--", "+=7", "-=9", "*=3", "/=3", "%=3"}) {
-        TEST_DO(verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7));
+        verify<int64_t>(BasicType::INT64, operation, *attr, 7, 7);
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
