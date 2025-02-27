@@ -2,6 +2,8 @@
 
 import java.nio.charset.StandardCharsets;
 
+// program to generate code tables used by LowerCase::convert()
+
 public class GenTables {
 
     static int fillTable(int table, int[] curr) {

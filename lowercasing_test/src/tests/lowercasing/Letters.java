@@ -7,7 +7,15 @@ import java.nio.charset.StandardCharsets;
 
 import static java.lang.Character.*;
 
-// generate output with all characters Java consider letters
+// Output each character Java consider to be a letter on its own line.
+// This is used as input to the other implementations of lowercasing we
+// use in Java and C++.
+
+// With option "lower", the entire list is lowercased using Java
+// standard implementation.  This is used as the reference result so
+// we can compare where our own implementations behave differently.
+
+// Other options are available for exploration and future work.
 
 public class Letters {
 
