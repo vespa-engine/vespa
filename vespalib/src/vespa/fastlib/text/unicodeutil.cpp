@@ -4,7 +4,6 @@
 #include <cstdlib>
 
 #include "unicodeutil-charprops.cpp"
-#include "unicodeutil-lowercase.cpp"
 
 namespace {
 
