@@ -109,7 +109,7 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
         fp = fopen(tmpPath.c_str(), "w");
         appendFile(fp, clientCert);
         appendFile(fp, clientKey);
-        appendFile(fp, "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
+        appendFile(fp, "/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem");
         fclose(fp);
         rename(tmpPath.c_str(), certPath.c_str());
 
@@ -129,7 +129,7 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
             fprintf(fp, "[sslConfig]\n");
             fprintf(fp, "enableSplunkdSSL = true\n");
             fprintf(fp, "requireClientCert = true\n");
-            fprintf(fp, "sslRootCAPath = /opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem\n");
+            fprintf(fp, "sslRootCAPath = /opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem\n");
             fprintf(fp, "serverCert = %s\n", certPath.c_str());
             fprintf(fp, "\n");
             fprintf(fp, "[httpServer]\n");

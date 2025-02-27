@@ -20,9 +20,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
@@ -60,7 +60,7 @@ public class OpenTelemetryConfigGenerator {
                 this.cert_file = "/var/lib/sia/certs/vespa.external.cd.tenant.cert.pem";
                 this.key_file = "/var/lib/sia/keys/vespa.external.cd.tenant.key.pem";
             } else {
-                this.ca_file = "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem";
+                this.ca_file = "/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem";
                 this.cert_file = "/var/lib/sia/certs/vespa.vespa.cd.tenant.cert.pem";
                 this.key_file = "/var/lib/sia/keys/vespa.vespa.cd.tenant.key.pem";
             }
@@ -70,7 +70,7 @@ public class OpenTelemetryConfigGenerator {
                 this.cert_file = "/var/lib/sia/certs/vespa.external.tenant.cert.pem";
                 this.key_file = "/var/lib/sia/keys/vespa.external.tenant.key.pem";
             } else {
-                this.ca_file = "/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem";
+                this.ca_file = "/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem";
                 this.cert_file = "/var/lib/sia/certs/vespa.vespa.tenant.cert.pem";
                 this.key_file = "/var/lib/sia/keys/vespa.vespa.tenant.key.pem";
             }
