@@ -347,6 +347,12 @@ public class Flags {
             "Takes effect at restart of config server",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag INCREMENTAL_USAGE_CALCULATION = defineFeatureFlag(
+            "incremental-usage-calculation", false,
+            List.of("evgiz"), "2025-02-27", "2025-05-01",
+            "Use new incremental usage calculation for node snapshots",
+            "Takes effect at controller startup");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
