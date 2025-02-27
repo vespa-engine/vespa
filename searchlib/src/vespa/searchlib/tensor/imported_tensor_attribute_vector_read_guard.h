@@ -49,7 +49,7 @@ public:
     VectorBundle get_vectors(uint32_t docid) const noexcept override;
 
     const vespalib::eval::ValueType &getTensorType() const override;
-    void get_state(const vespalib::slime::Inserter& inserter) const override;
+    std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const override;
 };
 
 }

@@ -55,7 +55,7 @@ public:
     }
     search::attribute::DistanceMetric distance_metric() const override;
     uint32_t get_num_docs() const override;
-    void get_state(const vespalib::slime::Inserter& inserter) const override;
+    std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const override;
 };
 
 }

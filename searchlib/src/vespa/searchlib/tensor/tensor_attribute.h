@@ -41,7 +41,6 @@ protected:
     void internal_set_tensor(DocId docid, const vespalib::eval::Value& tensor);
     void consider_remove_from_index(DocId docid);
     virtual vespalib::MemoryUsage update_stat();
-    void populate_state(vespalib::slime::Cursor& object) const;
     void populate_address_space_usage(AddressSpaceUsage& usage) const override;
     EntryRef acquire_entry_ref(DocId doc_id) const noexcept { return _refVector.acquire_elem_ref(doc_id).load_acquire(); }
     bool onLoad(vespalib::Executor *executor) override;
@@ -70,7 +69,7 @@ public:
     const vespalib::eval::ValueType & getTensorType() const override;
     DistanceFunctionFactory& distance_function_factory() const override;
     const NearestNeighborIndex* nearest_neighbor_index() const override;
-    void get_state(const vespalib::slime::Inserter& inserter) const override;
+    std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const override;
     void clearDocs(DocId lidLow, DocId lidLimit, bool in_shrink_lid_space) override;
     void onShrinkLidSpace() override;
     uint32_t getVersion() const override;
