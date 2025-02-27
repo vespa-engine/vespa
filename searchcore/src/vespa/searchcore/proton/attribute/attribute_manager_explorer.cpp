@@ -117,7 +117,7 @@ AttributeManagerExplorer::get_child(std::string_view name) const
     }
     auto attr = guard ? guard->getSP() : std::shared_ptr<AttributeVector>();
     if (attr && _mgr->getWritableAttribute(name) != nullptr) {
-        auto executor = std::make_unique<AttributeExecutor>(_mgr, attr);
+        auto executor = std::make_shared<AttributeExecutor>(_mgr, attr);
         auto explorer = std::make_unique<AttributeVectorExplorer>(std::move(attr));
         return std::make_unique<ThreadedStateExplorerProxy>(std::move(executor), std::move(explorer));
     }
