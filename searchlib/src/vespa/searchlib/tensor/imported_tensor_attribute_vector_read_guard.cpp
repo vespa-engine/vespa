@@ -5,6 +5,7 @@
 #include "vector_bundle.h"
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/eval/eval/value.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 namespace search::tensor {
 
@@ -90,10 +91,10 @@ ImportedTensorAttributeVectorReadGuard::supports_get_serialized_tensor_ref() con
     return _target_tensor_attribute.supports_get_serialized_tensor_ref();
 }
 
-void
-ImportedTensorAttributeVectorReadGuard::get_state(const vespalib::slime::Inserter& inserter) const
+std::unique_ptr<vespalib::StateExplorer>
+ImportedTensorAttributeVectorReadGuard::make_state_explorer() const
 {
-    _target_tensor_attribute.get_state(inserter);
+    return _target_tensor_attribute.make_state_explorer();
 }
 
 }

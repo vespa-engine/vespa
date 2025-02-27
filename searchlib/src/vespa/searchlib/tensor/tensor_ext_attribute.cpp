@@ -8,6 +8,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.tensor.tensor_ext_attribute");
@@ -173,10 +174,10 @@ TensorExtAttribute::get_num_docs() const
     return _data.size();
 }
 
-void
-TensorExtAttribute::get_state(const vespalib::slime::Inserter& inserter) const
+std::unique_ptr<vespalib::StateExplorer>
+TensorExtAttribute::make_state_explorer() const
 {
-    (void) inserter;
+    return {};
 }
 
 }

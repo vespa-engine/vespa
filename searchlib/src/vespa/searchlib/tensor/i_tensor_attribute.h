@@ -7,6 +7,7 @@
 #include <vespa/searchcommon/attribute/distance_metric.h>
 #include <memory>
 
+namespace vespalib { struct StateExplorer; }
 namespace vespalib::eval { class ValueType; struct Value; }
 namespace vespalib::slime { struct Inserter; }
 
@@ -40,10 +41,9 @@ public:
     virtual uint32_t get_num_docs() const = 0;
 
     /**
-     * Gets custom state for this tensor attribute by inserting it into the given Slime inserter.
-     * This function is only called by the writer thread or when the writer thread is blocked.
+     * Creates a state explorer for this tensor attribute.
      */
-    virtual void get_state(const vespalib::slime::Inserter& inserter) const = 0;
+    virtual std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const = 0;
 };
 
 }  // namespace search::tensor

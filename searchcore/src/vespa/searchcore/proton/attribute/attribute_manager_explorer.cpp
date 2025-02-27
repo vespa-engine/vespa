@@ -21,6 +21,8 @@ namespace {
 /*
  * State explorer proxy class that runs get_state() and get_child() in the attribute writer thread.
  * Returned child explorers are wrapped using this proxy.
+ * It also ensures that the attribute vector is valid during navigation to child explorers due to the
+ * shared _executor instance having a shared pointer to the attribute vector.
  */
 class ThreadedStateExplorerProxy : public StateExplorer {
     std::shared_ptr<const AttributeExecutor> _executor;
