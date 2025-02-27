@@ -354,6 +354,7 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
     auto fuzzy_matching_algorithm = FuzzyAlgorithm::lookup(rank_properties, rank_setup.get_fuzzy_matching_algorithm());
     double weakand_stop_word_adjust_limit = WeakAndStopWordAdjustLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_adjust_limit());
     double weakand_stop_word_drop_limit = WeakAndStopWordDropLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_drop_limit());
+    auto filter_threshold = FilterThreshold::lookup(rank_properties);
 
     // Note that we count the reserved docid 0 as active.
     // This ensures that when searchable-copies=1, the ratio is 1.0.
@@ -364,7 +365,8 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
             target_hits_max_adjustment_factor,
             fuzzy_matching_algorithm,
             StopWordStrategy(weakand_stop_word_adjust_limit,
-                             weakand_stop_word_drop_limit, docid_limit)};
+                             weakand_stop_word_drop_limit, docid_limit),
+            filter_threshold};
 }
 
 AttributeOperationTask::AttributeOperationTask(const RequestContext & requestContext,

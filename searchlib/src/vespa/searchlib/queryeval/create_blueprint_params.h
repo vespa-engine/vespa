@@ -18,17 +18,20 @@ struct CreateBlueprintParams
     double target_hits_max_adjustment_factor;
     vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm;
     queryeval::wand::StopWordStrategy weakand_stop_word_strategy;
+    std::optional<double> filter_threshold;
 
     CreateBlueprintParams(double global_filter_lower_limit_in,
                           double global_filter_upper_limit_in,
                           double target_hits_max_adjustment_factor_in,
                           vespalib::FuzzyMatchingAlgorithm fuzzy_matching_algorithm_in,
-                          queryeval::wand::StopWordStrategy weakand_stop_word_strategy_in)
+                          queryeval::wand::StopWordStrategy weakand_stop_word_strategy_in,
+                          std::optional<double> filter_threshold_in)
         : global_filter_lower_limit(global_filter_lower_limit_in),
           global_filter_upper_limit(global_filter_upper_limit_in),
           target_hits_max_adjustment_factor(target_hits_max_adjustment_factor_in),
           fuzzy_matching_algorithm(fuzzy_matching_algorithm_in),
-          weakand_stop_word_strategy(weakand_stop_word_strategy_in)
+          weakand_stop_word_strategy(weakand_stop_word_strategy_in),
+          filter_threshold(filter_threshold_in)
     {
     }
 
@@ -37,7 +40,8 @@ struct CreateBlueprintParams
                                 fef::indexproperties::matching::GlobalFilterUpperLimit::DEFAULT_VALUE,
                                 fef::indexproperties::matching::TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE,
                                 fef::indexproperties::matching::FuzzyAlgorithm::DEFAULT_VALUE,
-                                queryeval::wand::StopWordStrategy::none())
+                                queryeval::wand::StopWordStrategy::none(),
+                                std::nullopt)
     {
     }
 };
