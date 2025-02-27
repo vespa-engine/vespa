@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/documentapi/messagebus/iroutingpolicyfactory.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/documentapi/messagebus/documentprotocol.h>
@@ -6,7 +7,7 @@
 #include <vespa/messagebus/testlib/receptor.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using document::DocumentTypeRepo;
 using namespace documentapi;
@@ -72,7 +73,7 @@ createMessage()
 
 const vespalib::duration TIMEOUT = 600s;
 
-TEST("policyfactory_test") {
+TEST(PolicyFactoryTest, policyfactory_test) {
 
     std::shared_ptr<const DocumentTypeRepo> repo(new DocumentTypeRepo);
     mbus::Slobrok slobrok;
@@ -87,8 +88,8 @@ TEST("policyfactory_test") {
     mbus::Reply::UP reply = static_cast<mbus::Receptor&>(src->getReplyHandler()).getReply(TIMEOUT);
     ASSERT_TRUE(reply);
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)mbus::ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)mbus::ErrorCode::UNKNOWN_POLICY, reply->getError(0).getCode());
 
     mbus::IProtocol * obj = srv.mb.getProtocol(DocumentProtocol::NAME);
     DocumentProtocol * protocol = dynamic_cast<DocumentProtocol*>(obj);
@@ -99,8 +100,8 @@ TEST("policyfactory_test") {
     reply = static_cast<mbus::Receptor&>(src->getReplyHandler()).getReply(TIMEOUT);
     ASSERT_TRUE(reply);
     fprintf(stderr, "%s", reply->getTrace().toString().c_str());
-    EXPECT_EQUAL(1u, reply->getNumErrors());
-    EXPECT_EQUAL((uint32_t)DocumentProtocol::ERROR_POLICY_FAILURE, reply->getError(0).getCode());
+    EXPECT_EQ(1u, reply->getNumErrors());
+    EXPECT_EQ((uint32_t)DocumentProtocol::ERROR_POLICY_FAILURE, reply->getError(0).getCode());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
