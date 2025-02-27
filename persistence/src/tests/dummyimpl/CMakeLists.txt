@@ -17,5 +17,6 @@ vespa_add_executable(persistence_dummypersistence_test_app TEST
     dummypersistence_test.cpp
     DEPENDS
     vespa_persistence
+    GTest::gtest
 )
 vespa_add_test(NAME persistence_dummypersistence_test_app COMMAND persistence_dummypersistence_test_app)
