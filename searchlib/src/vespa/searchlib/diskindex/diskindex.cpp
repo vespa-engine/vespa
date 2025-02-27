@@ -23,6 +23,7 @@ LOG_SETUP(".diskindex.diskindex");
 using namespace search::index;
 using namespace search::query;
 using namespace search::queryeval;
+using search::fef::FilterThreshold;
 
 namespace search::diskindex {
 
@@ -168,12 +169,20 @@ public:
     {
     }
 
+    FieldSpec resolve_field_spec() const {
+        auto filter_threshold = getRequestContext().get_create_blueprint_params().filter_threshold;
+        if (filter_threshold.has_value()) {
+            return {_field.getName(), _field.getFieldId(), _field.getHandle(), FilterThreshold(filter_threshold.value())};
+        }
+        return _field;
+    }
+
     template <class TermNode>
     void visitTerm(TermNode &n) {
         const std::string termStr = termAsString(n);
         auto lookup_result = _field_index.lookup(termStr);
         if (lookup_result.valid()) {
-            setResult(std::make_unique<DiskTermBlueprint>(_field, _field_index, termStr, lookup_result));
+            setResult(std::make_unique<DiskTermBlueprint>(resolve_field_spec(), _field_index, termStr, lookup_result));
         } else {
             setResult(std::make_unique<EmptyBlueprint>(_field));
         }

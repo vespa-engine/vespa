@@ -94,6 +94,7 @@ public class QueryProperties extends Properties {
         addDualCasedRM(map, Matching.POST_FILTER_THRESHOLD, GetterSetter.of(query -> query.getRanking().getMatching().getPostFilterThreshold(), (query, value) -> query.getRanking().getMatching().setPostFilterThreshold(asDouble(value, 1.0))));
         addDualCasedRM(map, Matching.APPROXIMATE_THRESHOLD, GetterSetter.of(query -> query.getRanking().getMatching().getApproximateThreshold(), (query, value) -> query.getRanking().getMatching().setApproximateThreshold(asDouble(value, 0.05))));
         addDualCasedRM(map, Matching.TARGET_HITS_MAX_ADJUSTMENT_FACTOR, GetterSetter.of(query -> query.getRanking().getMatching().getTargetHitsMaxAdjustmentFactor(), (query, value) -> query.getRanking().getMatching().setTargetHitsMaxAdjustmentFactor(asDouble(value, 20.0))));
+        addDualCasedRM(map, Matching.FILTER_THRESHOLD, GetterSetter.of(query -> query.getRanking().getMatching().getFilterThreshold(), (query, value) -> query.getRanking().getMatching().setFilterThreshold(asDouble(value, 1.0))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCHING, Matching.WEAKAND, WeakAnd.STOPWORD_LIMIT),
                 GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getStopwordLimit(),
                                (query, value) -> query.getRanking().getMatching().getWeakAnd().setStopwordLimit(asDouble(value, 1.0))));

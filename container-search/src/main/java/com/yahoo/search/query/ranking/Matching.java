@@ -26,6 +26,7 @@ public class Matching implements Cloneable {
     public static final String POST_FILTER_THRESHOLD = "postFilterThreshold";
     public static final String APPROXIMATE_THRESHOLD = "approximateThreshold";
     public static final String TARGET_HITS_MAX_ADJUSTMENT_FACTOR = "targetHitsMaxAdjustmentFactor";
+    public static final String FILTER_THRESHOLD = "filterThreshold";
     public static final String WEAKAND = "weakand";
 
     static {
@@ -39,6 +40,7 @@ public class Matching implements Cloneable {
         argumentType.addField(new FieldDescription(POST_FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(APPROXIMATE_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(TARGET_HITS_MAX_ADJUSTMENT_FACTOR, "double"));
+        argumentType.addField(new FieldDescription(FILTER_THRESHOLD, "double"));
         argumentType.addField(new FieldDescription(WEAKAND, new QueryProfileFieldType(WeakAnd.getArgumentType())));
         argumentType.freeze();
     }
@@ -52,6 +54,7 @@ public class Matching implements Cloneable {
     private Double postFilterThreshold = null;
     private Double approximateThreshold = null;
     private Double targetHitsMaxAdjustmentFactor = null;
+    private Double filterThreshold = null;
 
     private WeakAnd weakAnd = new WeakAnd();
 
@@ -62,12 +65,17 @@ public class Matching implements Cloneable {
     public Double getPostFilterThreshold() { return postFilterThreshold; }
     public Double getApproximateThreshold() { return approximateThreshold; }
     public Double getTargetHitsMaxAdjustmentFactor() { return targetHitsMaxAdjustmentFactor; }
+    public Double getFilterThreshold() { return filterThreshold; }
     public WeakAnd getWeakAnd() { return weakAnd; }
 
-    public void setTermwiselimit(double value) {
-        if ((value < 0.0) || (value > 1.0)) {
-            throw new IllegalInputException("termwiselimit must be in the range [0.0, 1.0]. It is " + value);
+    private static void validateRange(String field, double v, double lboundIncl, double uboundIncl) {
+        if (v < lboundIncl || v > uboundIncl) {
+            throw new IllegalArgumentException("%s must be in the range [%.1f, %.1f]. It is %.1f".formatted(field, lboundIncl, uboundIncl, v));
         }
+    }
+
+    public void setTermwiselimit(double value) {
+        validateRange(TERMWISELIMIT, value, 0.0, 1.0);
         termwiseLimit = value;
     }
     public void setNumThreadsPerSearch(int value) {
@@ -87,6 +95,10 @@ public class Matching implements Cloneable {
     }
     public void setTargetHitsMaxAdjustmentFactor(double factor) {
         targetHitsMaxAdjustmentFactor = factor;
+    }
+    public void setFilterThreshold(double threshold) {
+        validateRange(FILTER_THRESHOLD, threshold, 0.0, 1.0);
+        filterThreshold = threshold;
     }
 
     /** Internal operation - DO NOT USE */
@@ -111,6 +123,9 @@ public class Matching implements Cloneable {
         }
         if (targetHitsMaxAdjustmentFactor != null) {
             rankProperties.put("vespa.matching.nns.target_hits_max_adjustment_factor", String.valueOf(targetHitsMaxAdjustmentFactor));
+        }
+        if (filterThreshold != null) {
+            rankProperties.put("vespa.matching.filter_threshold", String.valueOf(filterThreshold));
         }
         weakAnd.prepare(rankProperties);
     }
@@ -139,13 +154,14 @@ public class Matching implements Cloneable {
                 Objects.equals(postFilterThreshold, matching.postFilterThreshold) &&
                 Objects.equals(approximateThreshold, matching.approximateThreshold) &&
                 Objects.equals(targetHitsMaxAdjustmentFactor, matching.targetHitsMaxAdjustmentFactor) &&
+                Objects.equals(filterThreshold, matching.filterThreshold) &&
                 Objects.equals(weakAnd, matching.weakAnd);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(termwiseLimit, numThreadsPerSearch, numSearchPartitions, minHitsPerThread,
-                postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, weakAnd);
+                postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, filterThreshold, weakAnd);
     }
 }
 

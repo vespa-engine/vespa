@@ -38,12 +38,12 @@ getName(uint32_t indexId)
 
 }
 
-DiskTermBlueprint::DiskTermBlueprint(const FieldSpec & field,
+DiskTermBlueprint::DiskTermBlueprint(FieldSpec field,
                                      const FieldIndex& field_index,
                                      const std::string& query_term,
                                      DictionaryLookupResult lookupRes)
     : SimpleLeafBlueprint(field),
-      _field(field),
+      _field(std::move(field)),
       _field_index(field_index),
       _query_term(query_term),
       _lookupRes(std::move(lookupRes)),
