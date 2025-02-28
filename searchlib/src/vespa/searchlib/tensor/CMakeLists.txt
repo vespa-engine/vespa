@@ -20,6 +20,7 @@ vespa_add_library(searchlib_tensor OBJECT
     hash_set_visited_tracker.cpp
     hnsw_graph.cpp
     hnsw_index.cpp
+    hnsw_index_explorer.cpp
     hnsw_index_saver.cpp
     hnsw_multi_best_neighbors.cpp
     hnsw_nodeid_mapping.cpp

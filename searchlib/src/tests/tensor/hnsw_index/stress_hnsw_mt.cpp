@@ -12,6 +12,7 @@
 #include <vespa/vespalib/data/input.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
@@ -340,7 +341,10 @@ public:
     std::string json_state() {
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
-        index->get_state(inserter);
+        auto explorer = index->make_state_explorer();
+        if (explorer) {
+            explorer->get_state(inserter, true);
+        };
         vespalib::SimpleBuffer buf;
         vespalib::slime::JsonFormat::encode(actualSlime, buf, false);
         return buf.get().make_string();

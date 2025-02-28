@@ -152,3 +152,10 @@ template class RcuVectorBase<search::tensor::HnswNode>;
 template class RcuVector<search::tensor::HnswNode>;
 
 }
+
+namespace vespalib::datastore {
+
+template class ArrayStore<AtomicEntryRef, EntryRefT<22>>;
+template class ArrayStore<uint32_t, EntryRefT<20>>;
+
+}
