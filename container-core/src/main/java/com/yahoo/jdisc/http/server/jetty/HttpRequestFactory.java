@@ -3,15 +3,14 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
-import jakarta.servlet.http.HttpServletRequest;
+import org.bouncycastle.cert.ocsp.Req;
+import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.Request;
-import org.eclipse.jetty.util.Utf8Appendable;
 
-import javax.net.ssl.SSLSession;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.cert.X509Certificate;
-import java.util.Enumeration;
+import java.util.Optional;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
@@ -24,30 +23,30 @@ import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPo
  */
 class HttpRequestFactory {
 
-    public static HttpRequest newJDiscRequest(CurrentContainer container, HttpServletRequest servletRequest) {
+    public static HttpRequest newJDiscRequest(CurrentContainer container, Request jettyRequest) {
         try {
-            var jettyRequest = (Request) servletRequest;
             var jdiscHttpReq = HttpRequest.newServerRequest(
                     container,
-                    getUri(servletRequest),
-                    getMethod(servletRequest),
-                    HttpRequest.Version.fromString(servletRequest.getProtocol()),
-                    new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
+                    getUri(jettyRequest),
+                    getMethod(jettyRequest),
+                    HttpRequest.Version.fromString(jettyRequest.getConnectionMetaData().getProtocol()),
+                    new InetSocketAddress(Request.getRemoteAddr(jettyRequest), Request.getRemotePort(jettyRequest)),
                     getConnection(jettyRequest).getCreatedTimeStamp(),
-                    jettyRequest.getTimeStamp());
-            jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
-            jdiscHttpReq.context().put(RequestUtils.JDICS_REQUEST_PORT, servletRequest.getLocalPort());
-            SSLSession sslSession = (SSLSession) servletRequest.getAttribute(RequestUtils.JETTY_REQUEST_SSLSESSION);
-            jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_SSLSESSION, sslSession);
-            servletRequest.setAttribute(HttpRequest.class.getName(), jdiscHttpReq);
+                    Request.getTimeStamp(jettyRequest));
+            jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_X509CERT, getCertChain(jettyRequest));
+            jdiscHttpReq.context().put(RequestUtils.JDICS_REQUEST_PORT, Request.getLocalPort(jettyRequest));
+            var sslSessionData = (EndPoint.SslSessionData) jettyRequest.getAttribute(EndPoint.SslSessionData.ATTRIBUTE);
+            if (sslSessionData != null) jdiscHttpReq.context().put(RequestUtils.JDISC_REQUEST_SSLSESSION, sslSessionData.sslSession());
+            jettyRequest.setAttribute(HttpRequest.class.getName(), jdiscHttpReq);
+            copyHeaders(jettyRequest, jdiscHttpReq);
             return jdiscHttpReq;
-        } catch (Utf8Appendable.NotUtf8Exception e) {
+        } catch (IllegalArgumentException e) {
             throw createBadQueryException(e);
         }
     }
 
-    private static HttpRequest.Method getMethod(HttpServletRequest servletRequest) {
-        String method = servletRequest.getMethod();
+    private static HttpRequest.Method getMethod(Request jettyRequest) {
+        String method = jettyRequest.getMethod();
         try {
             return HttpRequest.Method.valueOf(method);
         } catch (IllegalArgumentException e) {
@@ -56,13 +55,13 @@ class HttpRequestFactory {
     }
 
     // Implementation based on org.eclipse.jetty.server.Request.getRequestURL(), but with the connector's local port instead
-    public static URI getUri(HttpServletRequest servletRequest) {
+    public static URI getUri(Request jettyRequest) {
         try {
-            String scheme = servletRequest.getScheme();
-            String host = servletRequest.getServerName();
-            int port = getConnectorLocalPort((Request) servletRequest);
-            String path = servletRequest.getRequestURI();
-            String query = servletRequest.getQueryString();
+            String scheme = jettyRequest.getHttpURI().getScheme();
+            String host = Request.getServerName(jettyRequest);
+            int port = getConnectorLocalPort(jettyRequest);
+            String path = jettyRequest.getHttpURI().getPath();
+            String query = jettyRequest.getHttpURI().getQuery();
 
             URI uri = URI.create(scheme + "://" +
                                  host + ":" + port +
@@ -86,19 +85,19 @@ class HttpRequestFactory {
     }
 
     private static RequestException createBadQueryException(IllegalArgumentException e) {
-        return new RequestException(BAD_REQUEST, "URL violates RFC 2396: " + e.getMessage(), e);
+        var cause = e.getCause() != null ? e.getCause() : e;
+        return new RequestException(BAD_REQUEST, "URL violates RFC 2396: " + cause.getMessage(), cause);
     }
 
-    public static void copyHeaders(HttpServletRequest from, HttpRequest to) {
-        for (Enumeration<String> it = from.getHeaderNames(); it.hasMoreElements(); ) {
-            String key = it.nextElement();
-            for (Enumeration<String> value = from.getHeaders(key); value.hasMoreElements(); ) {
-                to.headers().add(key, value.nextElement());
-            }
-        }
+    public static void copyHeaders(Request jettyRequest, HttpRequest jdiscRequest) {
+        jettyRequest.getHeaders()
+                .forEach(header -> jdiscRequest.headers().add(header.getName(), header.getValueList()));
     }
 
-    private static X509Certificate[] getCertChain(HttpServletRequest servletRequest) {
-        return (X509Certificate[]) servletRequest.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT);
+    private static X509Certificate[] getCertChain(Request jettyRequest) {
+        return Optional.ofNullable(jettyRequest.getAttribute(EndPoint.SslSessionData.ATTRIBUTE))
+                .map(EndPoint.SslSessionData.class::cast)
+                .map(EndPoint.SslSessionData::peerCertificates)
+                .orElse(null);
     }
 }
