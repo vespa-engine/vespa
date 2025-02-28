@@ -7,6 +7,7 @@ import com.yahoo.config.subscription.ConfigSource;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.container.di.config.Subscriber;
 import com.yahoo.vespa.config.ConfigKey;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -40,7 +41,9 @@ public class CloudSubscriber  implements Subscriber {
         futureHandles.forEach((k, f) -> {
             try {
                 handles.put(k, f.get());
-            } catch (InterruptedException | ExecutionException e) {}
+            } catch (InterruptedException | ExecutionException e) {
+                throw new ConfigFutureException(k, e);
+            }
         });
     }
 
