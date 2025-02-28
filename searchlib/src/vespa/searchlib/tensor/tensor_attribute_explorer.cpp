@@ -15,6 +15,7 @@ namespace search::tensor {
 namespace {
 
 const std::string NEAREST_NEIGHBOR_INDEX_NAME("nearest_neighbor_index");
+const std::string TENSOR_STORE_NAME("tensor_store");
 
 }
 
@@ -40,14 +41,12 @@ TensorAttributeExplorer::get_state(const vespalib::slime::Inserter& inserter, bo
     object.setLong("compact_generation", _compact_generation);
     StateExplorerUtils::memory_usage_to_slime(_ref_vector.getMemoryUsage(),
                                               object.setObject("ref_vector").setObject("memory_usage"));
-    StateExplorerUtils::memory_usage_to_slime(_tensor_store.getMemoryUsage(),
-                                              object.setObject("tensor_store").setObject("memory_usage"));
 }
 
 std::vector<std::string>
 TensorAttributeExplorer::get_children_names() const
 {
-    return { NEAREST_NEIGHBOR_INDEX_NAME };
+    return { NEAREST_NEIGHBOR_INDEX_NAME, TENSOR_STORE_NAME };
 }
 
 std::unique_ptr<vespalib::StateExplorer>
@@ -57,6 +56,9 @@ TensorAttributeExplorer::get_child(std::string_view name) const
         if (_index != nullptr) {
             return _index->make_state_explorer();
         }
+    }
+    if (name == TENSOR_STORE_NAME) {
+        return _tensor_store.make_state_explorer();
     }
     return {};
 }
