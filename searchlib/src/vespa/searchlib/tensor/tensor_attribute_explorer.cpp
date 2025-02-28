@@ -12,6 +12,12 @@ using vespalib::slime::ObjectInserter;
 
 namespace search::tensor {
 
+namespace {
+
+const std::string NEAREST_NEIGHBOR_INDEX_NAME("nearest_neighbor_index");
+
+}
+
 TensorAttributeExplorer::TensorAttributeExplorer(uint64_t compact_generation,
                                                  const vespalib::RcuVectorBase<vespalib::datastore::AtomicEntryRef>&
                                                  ref_vector,
@@ -36,10 +42,23 @@ TensorAttributeExplorer::get_state(const vespalib::slime::Inserter& inserter, bo
                                               object.setObject("ref_vector").setObject("memory_usage"));
     StateExplorerUtils::memory_usage_to_slime(_tensor_store.getMemoryUsage(),
                                               object.setObject("tensor_store").setObject("memory_usage"));
-    if (_index) {
-        ObjectInserter index_inserter(object, "nearest_neighbor_index");
-        _index->get_state(index_inserter);
+}
+
+std::vector<std::string>
+TensorAttributeExplorer::get_children_names() const
+{
+    return { NEAREST_NEIGHBOR_INDEX_NAME };
+}
+
+std::unique_ptr<vespalib::StateExplorer>
+TensorAttributeExplorer::get_child(std::string_view name) const
+{
+    if (name == NEAREST_NEIGHBOR_INDEX_NAME) {
+        if (_index != nullptr) {
+            return _index->make_state_explorer();
+        }
     }
+    return {};
 }
 
 }

@@ -15,7 +15,10 @@
 class FastOS_FileInterface;
 
 namespace vespalib { class Doom; }
-namespace vespalib { class GenericHeader; }
+namespace vespalib {
+class GenericHeader;
+struct StateExplorer;
+}
 namespace vespalib::datastore {
 class CompactionSpec;
 class CompactionStrategy;
@@ -81,7 +84,7 @@ public:
     virtual vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) = 0;
     virtual vespalib::MemoryUsage memory_usage() const = 0;
     virtual void populate_address_space_usage(search::AddressSpaceUsage& usage) const = 0;
-    virtual void get_state(const vespalib::slime::Inserter& inserter) const = 0;
+    virtual std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const = 0;
     virtual void shrink_lid_space(uint32_t doc_id_limit) = 0;
 
     /**

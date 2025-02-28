@@ -18,6 +18,7 @@
 #include <vespa/vespalib/datastore/compaction_spec.h>
 #include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 #include <vespa/vespalib/util/fake_doom.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -586,7 +587,9 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     {
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
-        this->index->get_state(inserter);
+        auto explorer = this->index->make_state_explorer();
+        ASSERT_TRUE(explorer);
+        explorer->get_state(inserter, true);
         const auto &root = actualSlime.get();
         EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
         EXPECT_EQ(8, root["nodeid_limit"].asLong());
@@ -617,7 +620,9 @@ TYPED_TEST(HnswIndexTest, 2d_vectors_inserted_in_hierarchic_graph_with_heuristic
     {
         Slime actualSlime;
         SlimeInserter inserter(actualSlime);
-        this->index->get_state(inserter);
+        auto explorer = this->index->make_state_explorer();
+        ASSERT_TRUE(explorer);
+        explorer->get_state(inserter, true);
         const auto &root = actualSlime.get();
         EXPECT_EQ(0, root["memory_usage"]["onHold"].asLong());
         EXPECT_EQ(8, root["nodeid_limit"].asLong());

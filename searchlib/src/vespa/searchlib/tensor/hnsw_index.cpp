@@ -3,6 +3,7 @@
 #include "hnsw_index.h"
 #include "bitvector_visited_tracker.h"
 #include "hash_set_visited_tracker.h"
+#include "hnsw_index_explorer.h"
 #include "hnsw_index_loader.hpp"
 #include "hnsw_index_saver.h"
 #include "mips_distance_transform.h"
@@ -12,11 +13,7 @@
 #include <vespa/searchlib/attribute/address_space_usage.h>
 #include <vespa/searchlib/queryeval/global_filter.h>
 #include <vespa/searchlib/util/fileutil.h>
-#include <vespa/searchlib/util/state_explorer_utils.h>
-#include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
-#include <vespa/vespalib/datastore/compaction_strategy.h>
 #include <vespa/vespalib/util/doom.h>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -28,7 +25,6 @@ LOG_SETUP(".searchlib.tensor.hnsw_index");
 namespace search::tensor {
 
 using search::AddressSpaceComponents;
-using search::StateExplorerUtils;
 using search::queryeval::GlobalFilter;
 using vespalib::datastore::ArrayStoreConfig;
 using vespalib::datastore::CompactionStrategy;
@@ -837,44 +833,10 @@ HnswIndex<type>::populate_address_space_usage(search::AddressSpaceUsage& usage) 
 }
 
 template <HnswIndexType type>
-void
-HnswIndex<type>::get_state(const vespalib::slime::Inserter& inserter) const
+std::unique_ptr<vespalib::StateExplorer>
+HnswIndex<type>::make_state_explorer() const
 {
-    auto& object = inserter.insertObject();
-    auto& memUsageObj = object.setObject("memory_usage");
-    StateExplorerUtils::memory_usage_to_slime(memory_usage(), memUsageObj.setObject("all"));
-    StateExplorerUtils::memory_usage_to_slime(_graph.nodes.getMemoryUsage(), memUsageObj.setObject("nodes"));
-    StateExplorerUtils::memory_usage_to_slime(_graph.levels_store.getMemoryUsage(), memUsageObj.setObject("levels"));
-    StateExplorerUtils::memory_usage_to_slime(_graph.links_store.getMemoryUsage(), memUsageObj.setObject("links"));
-    object.setLong("nodeid_limit", _graph.size());
-    object.setLong("nodes", _graph.get_active_nodes());
-    auto& histogram_array = object.setArray("level_histogram");
-    auto& links_hst_array = object.setArray("level_0_links_histogram");
-    auto histograms = _graph.histograms();
-    uint32_t valid_nodes = 0;
-    for (uint32_t hist_val : histograms.level_histogram) {
-        histogram_array.addLong(hist_val);
-        valid_nodes += hist_val;
-    }
-    object.setLong("valid_nodes", valid_nodes);
-    for (uint32_t hist_val : histograms.links_histogram) {
-        links_hst_array.addLong(hist_val);
-    }
-    auto count_result = count_reachable_nodes();
-    uint32_t unreachable = valid_nodes - count_result.first;
-    if (count_result.second) {
-        object.setLong("unreachable_nodes", unreachable);
-    } else {
-        object.setLong("unreachable_nodes_incomplete_count", unreachable);
-    }
-    auto entry_node = _graph.get_entry_node();
-    object.setLong("entry_nodeid", entry_node.nodeid);
-    object.setLong("entry_level", entry_node.level);
-    auto& cfgObj = object.setObject("cfg");
-    cfgObj.setLong("max_links_at_level_0", _cfg.max_links_at_level_0());
-    cfgObj.setLong("max_links_on_inserts", _cfg.max_links_on_inserts());
-    cfgObj.setLong("neighbors_to_explore_at_construction",
-                   _cfg.neighbors_to_explore_at_construction());
+    return std::make_unique<HnswIndexExplorer<type>>(*this);
 }
 
 template <HnswIndexType type>
