@@ -2,7 +2,7 @@
 
 #include <vespa/config-proton.h>
 #include <vespa/searchcore/proton/server/threading_service_config.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/hw_info.h>
 
 using namespace proton;
@@ -28,33 +28,37 @@ struct Fixture {
     }
 };
 
-TEST_F("require that task limits are set", Fixture)
+TEST(ThreadingServiceConfigTest, require_that_task_limits_are_set)
 {
+    Fixture f;
     auto tcfg = f.make();
-    EXPECT_EQUAL(2000u, tcfg.master_task_limit());
-    EXPECT_EQUAL(500u, tcfg.defaultTaskLimit());
+    EXPECT_EQ(2000u, tcfg.master_task_limit());
+    EXPECT_EQ(500u, tcfg.defaultTaskLimit());
     EXPECT_TRUE(tcfg.is_task_limit_hard());
 }
 
-TEST_F("require that negative task limit makes it soft", Fixture(3000, -700))
+TEST(ThreadingServiceConfigTest, require_that_negative_task_limit_makes_it_soft)
 {
+    Fixture f(3000, -700);
     auto tcfg = f.make();
-    EXPECT_EQUAL(3000u, tcfg.master_task_limit());
-    EXPECT_EQUAL(700u, tcfg.defaultTaskLimit());
+    EXPECT_EQ(3000u, tcfg.master_task_limit());
+    EXPECT_EQ(700u, tcfg.defaultTaskLimit());
     EXPECT_FALSE(tcfg.is_task_limit_hard());
 }
 
 namespace {
 
 void assertConfig(uint32_t exp_master_task_limit, uint32_t exp_default_task_limit, const ThreadingServiceConfig& config) {
-    EXPECT_EQUAL(exp_master_task_limit, config.master_task_limit());
-    EXPECT_EQUAL(exp_default_task_limit, config.defaultTaskLimit());
+    EXPECT_EQ(exp_master_task_limit, config.master_task_limit());
+    EXPECT_EQ(exp_default_task_limit, config.defaultTaskLimit());
 }
 
 }
 
-TEST_FF("require that config can be somewhat updated", Fixture(), Fixture(3000, 1000))
+TEST(ThreadingServiceConfigTest, require_that_config_can_be_somewhat_updated)
 {
+    Fixture f1;
+    Fixture f2(3000, 1000);
     auto cfg1 = f1.make();
     assertConfig(2000, 500u, cfg1);
     const auto cfg2 = f2.make();
