@@ -215,6 +215,7 @@ private:
     FileChunk::UP createReadOnlyFile(FileId fileId, NameId nameId);
     FileChunk::UP createWritableFile(FileId fileId, SerialNum serialNum);
     FileChunk::UP createWritableFile(FileId fileId, SerialNum serialNum, NameId nameId);
+    NameId alloc_time_based_name_id();
     std::string createFileName(NameId id) const;
     std::string createDatFileName(NameId id) const;
     std::string createIdxFileName(NameId id) const;
@@ -263,6 +264,7 @@ private:
     IBucketizer::SP                          _bucketizer;
     NameIdSet                                _currentlyCompacting;
     uint64_t                                 _compactLidSpaceGeneration;
+    NameId                                   _last_name_id;
 };
 
 } // namespace search
