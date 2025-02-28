@@ -90,7 +90,8 @@ LogDataStore::LogDataStore(vespalib::Executor &executor, const std::string &dirN
       _tlSyncer(tlSyncer),
       _bucketizer(std::move(bucketizer)),
       _currentlyCompacting(),
-      _compactLidSpaceGeneration()
+      _compactLidSpaceGeneration(),
+      _last_name_id(0)
 {
     // Reserve space for 1TB summary in order to avoid locking.
     // Even if we have reserved 16 bits for file id there is no chance that we will even get close to that.
@@ -673,7 +674,51 @@ LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum, NameId name
 FileChunk::UP
 LogDataStore::createWritableFile(FileId fileId, SerialNum serialNum)
 {
-    return createWritableFile(fileId, serialNum, NameId(vespalib::system_clock::now().time_since_epoch().count()));
+    return createWritableFile(fileId, serialNum, alloc_time_based_name_id());
+}
+
+namespace {
+
+FileChunk::NameId name_id_from_time_point(vespalib::system_time time_point) {
+    return FileChunk::NameId(time_point.time_since_epoch().count());
+}
+
+vespalib::system_time time_point_from_name_id(FileChunk::NameId name_id) {
+    return vespalib::system_time(vespalib::system_clock::duration(name_id.getId()));
+
+}
+
+}
+
+LogDataStore::NameId
+LogDataStore::alloc_time_based_name_id()
+{
+    /*
+     * name ids must be allocated with increasing values. They are normally based on the system clock,
+     * thus system clock stepping backwards triggers special handling.
+     */
+    auto now_time = vespalib::system_clock::now();
+    auto now_name_id = name_id_from_time_point(now_time);
+    auto allocated_name_id = now_name_id;
+    auto last_time = time_point_from_name_id(_last_name_id);
+    auto min_time = last_time + 1ms;
+    constexpr uint64_t name_ids_for_compaction = 1000;
+    auto min_name_id = std::min(name_id_from_time_point(min_time), NameId(_last_name_id.getId() + name_ids_for_compaction));
+    if (allocated_name_id < min_name_id && now_time + 1ms >= min_time) {
+        // this should only happen during unit tests.
+        std::this_thread::sleep_for(1ms);
+        now_time = vespalib::system_clock::now();
+        now_name_id = name_id_from_time_point(now_time);
+        allocated_name_id = now_name_id;
+    }
+    if (allocated_name_id < min_name_id) {
+        LOG(warning, "LogDataStore::alloc_time_based_name_id(): Cannot use name id %" PRIu64 ", last name id was %" PRIu64 ", using min name id %" PRIu64
+            ". System clock appears to have stepped backwards",
+            now_name_id.getId(), _last_name_id.getId(), min_name_id.getId());
+        allocated_name_id = min_name_id;
+    }
+    _last_name_id = allocated_name_id;
+    return allocated_name_id;
 }
 
 namespace {
@@ -782,6 +827,7 @@ LogDataStore::preload()
         _fileChunks.push_back(isReadOnly()
             ? createReadOnlyFile(FileId(_fileChunks.size()), *partList.rbegin())
             : createWritableFile(FileId(_fileChunks.size()), getMinLastPersistedSerialNum(), *partList.rbegin()));
+        _last_name_id = *partList.rbegin();
     } else {
         if ( ! isReadOnly() ) {
             _fileChunks.push_back(createWritableFile(FileId::first(), 0));

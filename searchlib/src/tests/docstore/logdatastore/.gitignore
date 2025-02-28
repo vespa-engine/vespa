@@ -5,4 +5,5 @@ Makefile
 vlog1.txt
 vlog2.txt
 vlog3.txt
+build-test-data
 searchlib_logdatastore_test_app
