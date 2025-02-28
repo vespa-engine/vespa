@@ -64,6 +64,8 @@ class JettyRequestContentReader {
                     }
 
                     // Dispatch to separate thread to avoid invoking content channel using user thread
+                    // Acking back in the same user thread may lead to a deadlock in the application code
+                    // This is also a scenario covered by the http compliance test
                     janitor.scheduleTask(() -> {
                         if (originalError != null) {
                             try {
