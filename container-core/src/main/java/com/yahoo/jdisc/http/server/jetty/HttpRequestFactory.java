@@ -3,7 +3,6 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
-import org.bouncycastle.cert.ocsp.Req;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.server.Request;
 
