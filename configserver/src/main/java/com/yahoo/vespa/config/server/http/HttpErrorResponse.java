@@ -51,6 +51,7 @@ public class HttpErrorResponse extends HttpResponse {
         PARENT_HOST_NOT_READY,
         CERTIFICATE_NOT_READY,
         LOAD_BALANCER_NOT_READY,
+        REQUESTED_NODES_MISSING,
         CONFIG_NOT_CONVERGED,
         REINDEXING_STATUS_UNAVAILABLE,
         PRECONDITION_FAILED,
@@ -112,6 +113,10 @@ public class HttpErrorResponse extends HttpResponse {
 
     public static HttpErrorResponse loadBalancerNotReady(String msg) {
         return new HttpErrorResponse(CONFLICT, ErrorCode.LOAD_BALANCER_NOT_READY.name(), msg);
+    }
+
+    public static HttpErrorResponse requestedNodesMissing(String msg) {
+        return new HttpErrorResponse(CONFLICT, ErrorCode.REQUESTED_NODES_MISSING.name(), msg);
     }
 
     public static HttpResponse reindexingStatusUnavailable(String msg) {
