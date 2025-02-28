@@ -4,7 +4,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using search::SerialNum;
 using search::index::Schema;
@@ -28,57 +28,57 @@ getConfig(int64_t generation)
 }
 
 
-TEST("require that configs can be stored and loaded") {
+TEST(MemoryConfigStoreTest, require_that_configs_can_be_stored_and_loaded) {
     MemoryConfigStore config_store;
     SerialNum serial(12);
     config_store.saveConfig(*getConfig(10), serial);
     DocumentDBConfig::SP config;
     config_store.loadConfig(*getConfig(14), serial, config);
     ASSERT_TRUE(config.get());
-    EXPECT_EQUAL(10, config->getGeneration());
+    EXPECT_EQ(10, config->getGeneration());
 }
 
-TEST("require that best serial number is the most recent one") {
+TEST(MemoryConfigStoreTest, require_that_best_serial_number_is_the_most_recent_one) {
     MemoryConfigStore config_store;
-    EXPECT_EQUAL(0u, config_store.getBestSerialNum());
+    EXPECT_EQ(0u, config_store.getBestSerialNum());
     config_store.saveConfig(*getConfig(10), 5);
-    EXPECT_EQUAL(5u, config_store.getBestSerialNum());
+    EXPECT_EQ(5u, config_store.getBestSerialNum());
     config_store.saveConfig(*getConfig(10), 2);
-    EXPECT_EQUAL(5u, config_store.getBestSerialNum());
+    EXPECT_EQ(5u, config_store.getBestSerialNum());
 }
 
-TEST("require that oldest serial number is the first one or 0") {
+TEST(MemoryConfigStoreTest, require_that_oldest_serial_number_is_the_first_one_or_0) {
     MemoryConfigStore config_store;
-    EXPECT_EQUAL(0u, config_store.getOldestSerialNum());
+    EXPECT_EQ(0u, config_store.getOldestSerialNum());
     config_store.saveConfig(*getConfig(10), 5);
-    EXPECT_EQUAL(5u, config_store.getOldestSerialNum());
+    EXPECT_EQ(5u, config_store.getOldestSerialNum());
     config_store.saveConfig(*getConfig(10), 2);
-    EXPECT_EQUAL(2u, config_store.getOldestSerialNum());
+    EXPECT_EQ(2u, config_store.getOldestSerialNum());
 }
 
-TEST("require that existing serial numbers are valid") {
+TEST(MemoryConfigStoreTest, require_that_existing_serial_numbers_are_valid) {
     MemoryConfigStore config_store;
     EXPECT_FALSE(config_store.hasValidSerial(5));
     config_store.saveConfig(*getConfig(10), 5);
     EXPECT_TRUE(config_store.hasValidSerial(5));
 }
 
-TEST("require that prev valid serial number is the last one before the arg") {
+TEST(MemoryConfigStoreTest, require_that_prev_valid_serial_number_is_the_last_one_before_the_arg) {
     MemoryConfigStore config_store;
-    EXPECT_EQUAL(0u, config_store.getPrevValidSerial(10));
+    EXPECT_EQ(0u, config_store.getPrevValidSerial(10));
     config_store.saveConfig(*getConfig(10), 5);
-    EXPECT_EQUAL(5u, config_store.getPrevValidSerial(10));
-    EXPECT_EQUAL(0u, config_store.getPrevValidSerial(5));
-    EXPECT_EQUAL(0u, config_store.getPrevValidSerial(4));
+    EXPECT_EQ(5u, config_store.getPrevValidSerial(10));
+    EXPECT_EQ(0u, config_store.getPrevValidSerial(5));
+    EXPECT_EQ(0u, config_store.getPrevValidSerial(4));
     config_store.saveConfig(*getConfig(10), 2);
-    EXPECT_EQUAL(0u, config_store.getPrevValidSerial(1));
-    EXPECT_EQUAL(0u, config_store.getPrevValidSerial(2));
-    EXPECT_EQUAL(2u, config_store.getPrevValidSerial(4));
-    EXPECT_EQUAL(2u, config_store.getPrevValidSerial(5));
-    EXPECT_EQUAL(5u, config_store.getPrevValidSerial(10));
+    EXPECT_EQ(0u, config_store.getPrevValidSerial(1));
+    EXPECT_EQ(0u, config_store.getPrevValidSerial(2));
+    EXPECT_EQ(2u, config_store.getPrevValidSerial(4));
+    EXPECT_EQ(2u, config_store.getPrevValidSerial(5));
+    EXPECT_EQ(5u, config_store.getPrevValidSerial(10));
 }
 
-TEST("require that prune removes old configs") {
+TEST(MemoryConfigStoreTest, require_that_prune_removes_old_configs) {
     MemoryConfigStore config_store;
     config_store.saveConfig(*getConfig(10), 5);
     config_store.saveConfig(*getConfig(10), 6);
@@ -90,8 +90,7 @@ TEST("require that prune removes old configs") {
     EXPECT_FALSE(config_store.hasValidSerial(6));
 }
 
-TEST("require that MemoryConfigStores preserves state of "
-     "MemoryConfigStore between instantiations") {
+TEST(MemoryConfigStoreTest, require_that_MemoryConfigStores_preserves_state_of_MemoryConfigStore_between_instantiations) {
     MemoryConfigStores config_stores;
     const std::string name("foo");
     ConfigStore::UP config_store = config_stores.getConfigStore(name);
