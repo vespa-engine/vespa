@@ -15,6 +15,7 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     compaction_context.cpp
     compaction_strategy.cpp
     compaction_strategy.cpp
+    data_store_explorer.cpp
     datastore.cpp
     datastorebase.cpp
     dynamic_array_buffer_type.cpp

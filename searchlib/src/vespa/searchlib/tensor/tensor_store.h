@@ -8,7 +8,10 @@
 #include <vespa/vespalib/datastore/i_compactable.h>
 #include <vespa/vespalib/util/generationhandler.h>
 
-namespace vespalib { class nbostream; }
+namespace vespalib {
+struct StateExplorer;
+class nbostream;
+}
 namespace vespalib::datastore { struct ICompactionContext; }
 namespace vespalib::eval { struct Value; }
 
@@ -76,6 +79,8 @@ public:
     bool consider_compact() const noexcept {
         return _compaction_spec.compact() && !_store.has_held_buffers();
     }
+
+    std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const;
 };
 
 }
