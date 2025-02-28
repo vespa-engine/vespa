@@ -33,7 +33,6 @@ import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.zone.AuthMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.jdisc.DataplaneProxyService;
@@ -666,7 +665,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
                         .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
             } else {
-                builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem");
+                builder.tlsCaCertificatesPath("/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem");
                 var needAuth = cluster.getHttp().getAccessControl()
                         .map(accessControl -> accessControl.clientAuthentication)
                         .map(clientAuth -> clientAuth == AccessControl.ClientAuthentication.need)
