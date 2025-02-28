@@ -7,7 +7,10 @@ import java.util.List;
 
 
 /**
+ * Various utilities for {@link CompletionHandler}.
+ *
  * @author Simon Thoresen Hult
+ * @author bjorncs
  */
 class CompletionHandlers {
 

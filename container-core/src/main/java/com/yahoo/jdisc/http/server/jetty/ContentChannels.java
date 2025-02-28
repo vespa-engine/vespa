@@ -7,6 +7,8 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import java.nio.ByteBuffer;
 
 /**
+ * Various utilities for {@link ContentChannel}.
+ *
  * @author bjorncs
  */
 class ContentChannels {
