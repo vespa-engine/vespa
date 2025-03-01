@@ -11,6 +11,7 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.jdisc.service.CurrentContainer;
 import com.yahoo.jdisc.service.ServerProvider;
+import org.eclipse.jetty.io.ArrayByteBufferPool;
 import org.eclipse.jetty.jmx.ConnectorServer;
 import org.eclipse.jetty.jmx.MBeanContainer;
 import org.eclipse.jetty.server.Connector;
@@ -61,7 +62,18 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
             throw new IllegalArgumentException("No connectors configured.");
 
         this.config = serverConfig;
-        server = new Server();
+        var bufferPool = new ArrayByteBufferPool.Tracking();
+        server = new Server(null, null, bufferPool);
+        new Thread(() -> {
+            while (true) {
+                try {
+                    Thread.sleep(10000);
+                    log.warning(bufferPool.dumpLeaks());
+                } catch (InterruptedException e) {
+                    return;
+                }
+            }
+        }).start();
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
         if (!(requestLog instanceof VoidRequestLog)) server.setRequestLog(new AccessLogRequestLog(requestLog));
         setupJmx(server, serverConfig);
