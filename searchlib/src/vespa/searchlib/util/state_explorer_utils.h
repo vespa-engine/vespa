@@ -2,18 +2,17 @@
 
 #pragma once
 
+#include <vespa/vespalib/util/state_explorer_utils.h>
+
 namespace search::attribute { class Status; }
-namespace vespalib { class MemoryUsage; }
-namespace vespalib::slime { struct Cursor; }
 
 namespace search {
 
 /**
  * Utility functions for state explorers to convert objects to slime.
  */
-class StateExplorerUtils {
+class StateExplorerUtils : public vespalib::StateExplorerUtils {
 public:
-    static void memory_usage_to_slime(const vespalib::MemoryUsage& usage, vespalib::slime::Cursor& object);
     static void status_to_slime(const search::attribute::Status &status, vespalib::slime::Cursor &object);
 };
 
