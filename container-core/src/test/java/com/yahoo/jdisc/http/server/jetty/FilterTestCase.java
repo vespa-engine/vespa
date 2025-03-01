@@ -491,6 +491,29 @@ public class FilterTestCase {
     }
 
     @Test
+    void requireThatMetricAreReported() throws IOException, InterruptedException {
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", mock(RequestFilter.class))
+                .addRequestFilterBinding("my-request-filter", "http://*/*")
+                .build();
+        MetricConsumerMock metricConsumerMock = new MetricConsumerMock();
+        MyRequestHandler requestHandler = new MyRequestHandler();
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, metricConsumerMock);
+
+        testDriver.client().get("/status.html");
+        assertThat(requestHandler.awaitInvocation(), is(true));
+        verify(metricConsumerMock.mockitoMock())
+                .add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        verify(metricConsumerMock.mockitoMock(), never())
+                .add(MetricDefinitions.FILTERING_REQUEST_UNHANDLED, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        verify(metricConsumerMock.mockitoMock(), never())
+                .add(MetricDefinitions.FILTERING_RESPONSE_HANDLED, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        verify(metricConsumerMock.mockitoMock())
+                .add(MetricDefinitions.FILTERING_RESPONSE_UNHANDLED, 1L, MetricConsumerMock.STATIC_CONTEXT);
+        assertThat(testDriver.close(), is(true));
+    }
+
+    @Test
     void requireThatStrictFilteringRejectsRequestsNotMatchingFilterChains() throws IOException {
         RequestFilter filter = mock(RequestFilter.class);
         FilterBindings filterBindings = new FilterBindings.Builder()

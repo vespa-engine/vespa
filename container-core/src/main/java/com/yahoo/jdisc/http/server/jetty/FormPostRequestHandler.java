@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
+import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMPLETION_HANDLER;
 
 /**
  * Request handler that wraps POST requests of application/x-www-form-urlencoded data.
@@ -38,7 +39,6 @@ import static com.yahoo.jdisc.Response.Status.UNSUPPORTED_MEDIA_TYPE;
  * parsed the form parameters and merged them into the request's parameters.
  *
  * @author bakksjo
- * @author bjorncs
  */
 class FormPostRequestHandler extends AbstractRequestHandler implements ContentChannel, DelegatedRequestHandler {
 
@@ -51,6 +51,7 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
 
     private Charset contentCharset;
     private HttpRequest request;
+    private ResourceReference requestReference;
     private ResponseHandler responseHandler;
 
     /**
@@ -71,51 +72,42 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
         this.contentCharset = getCharsetByName(contentCharsetName);
         this.responseHandler = responseHandler;
         this.request = (HttpRequest) request;
+        this.requestReference = request.refer(this);
 
         return this;
     }
 
     @Override
     public void write(ByteBuffer buf, CompletionHandler completionHandler) {
-        if (buf.hasArray()) {
-            accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
-        } else {
-            var bytes = new byte[buf.remaining()];
-            buf.get(bytes);
-            accumulatedRequestContent.write(bytes, 0, bytes.length);
-        }
+        assert buf.hasArray();
+        accumulatedRequestContent.write(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
         completionHandler.completed();
     }
 
     @Override
     public void close(CompletionHandler completionHandler) {
-        byte[] requestContentBytes = accumulatedRequestContent.toByteArray();
-        String content = new String(requestContentBytes, contentCharset);
-        Map<String, List<String>> parameterMap;
-        try {
-            parameterMap = parseFormParameters(content);
-        } catch (IllegalArgumentException e) {
-            // Log for now until this is solved properly
-            log.log(Level.INFO, "Failed to parse form parameters: %s".formatted(e.getMessage()));
-            completionHandler.failed(new RequestException(BAD_REQUEST, "Failed to parse form parameters", e));
-            return;
-        }
-        mergeParameters(parameterMap, request.parameters());
-        ContentChannel contentChannel = null;
-        try {
-            contentChannel = delegateHandler.handleRequest(request, responseHandler);
-        } catch (Throwable t) {
-            completionHandler.failed(t);
-            return;
-        }
-        if (contentChannel != null) {
-            if (!removeBody) {
-                ByteBuffer byteBuffer = ByteBuffer.wrap(requestContentBytes);
-                contentChannel.write(byteBuffer, CompletionHandlers.noop());
+        try (ResourceReference ref = requestReference) {
+            byte[] requestContentBytes = accumulatedRequestContent.toByteArray();
+            String content = new String(requestContentBytes, contentCharset);
+            completionHandler.completed();
+            Map<String, List<String>> parameterMap;
+            try {
+                parameterMap = parseFormParameters(content);
+            } catch (IllegalArgumentException e) {
+                // Log for now until this is solved properly
+                log.log(Level.INFO, "Failed to parse form parameters: %s".formatted(e.getMessage()));
+                throw new RequestException(BAD_REQUEST, "Failed to parse form parameters", e);
             }
-            contentChannel.close(CompletionHandlers.noop());
+            mergeParameters(parameterMap, request.parameters());
+            ContentChannel contentChannel = delegateHandler.handleRequest(request, responseHandler);
+            if (contentChannel != null) {
+                if (!removeBody) {
+                    ByteBuffer byteBuffer = ByteBuffer.wrap(requestContentBytes);
+                    contentChannel.write(byteBuffer, NOOP_COMPLETION_HANDLER);
+                }
+                contentChannel.close(NOOP_COMPLETION_HANDLER);
+            }
         }
-        completionHandler.completed();
     }
 
     /**
