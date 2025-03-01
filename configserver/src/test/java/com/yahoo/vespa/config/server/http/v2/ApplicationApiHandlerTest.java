@@ -9,7 +9,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler.Context;
-import com.yahoo.container.jdisc.utils.MultiPartFormParser;
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.test.ManualClock;
@@ -84,7 +83,7 @@ class ApplicationApiHandlerTest {
     private ApplicationApiHandler handler;
 
     @TempDir
-    public Path dbDir, defsDir, refsDir, partsDir;
+    public Path dbDir, defsDir, refsDir;
 
     @BeforeEach
     public void setupRepo() {
@@ -108,12 +107,10 @@ class ApplicationApiHandlerTest {
                 .withClock(clock)
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        handler = new ApplicationApiHandler(
-                new Context(Runnable::run, null),
-                applicationRepository,
-                configserverConfig,
-                Zone.defaultZone(),
-                new MultiPartFormParser(partsDir, 10L));
+        handler = new ApplicationApiHandler(new Context(Runnable::run, null),
+                                            applicationRepository,
+                                            configserverConfig,
+                                            Zone.defaultZone());
     }
 
     private HttpResponse put(long sessionId, Map<String, String> parameters) {

@@ -41,7 +41,6 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
     private static final Duration TIMEOUT = Duration.ofSeconds(Integer.parseInt(System.getProperty("ThreadedRequestHandler.timeout", "300")));
     private final Executor executor;
     protected final Metric metric;
-    protected final HandlerMetricContextUtil metricUtil;
     private final boolean allowAsyncResponse;
 
     private static final Object rejectedExecutionsLock = new Object();
@@ -75,8 +74,10 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
         this.executor = Objects.requireNonNull(executor);
         this.metric = (metric == null) ? new NullRequestMetric() : metric;
         this.allowAsyncResponse = allowAsyncResponse;
-        this.metricUtil = new HandlerMetricContextUtil(this.metric, this.getClass().getName());
+    }
 
+    Metric.Context contextFor(Request request, Map<String, String> extraDimensions) {
+        return HandlerMetricContextUtil.contextFor(request, extraDimensions, metric, getClass());
     }
 
     /**
@@ -86,7 +87,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
      */
     @Override
     public final ContentChannel handleRequest(Request request, ResponseHandler responseHandler) {
-        metricUtil.onHandle(request);
+        HandlerMetricContextUtil.onHandle(request, metric, getClass());
         if (request.getTimeout(TimeUnit.SECONDS) == null) {
             Duration timeout = getTimeout();
             if (timeout != null) {
@@ -206,7 +207,7 @@ public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
             if (getRequestType().isPresent() && response.getRequestType() == null)
                 response.setRequestType(getRequestType().get());
             ContentChannel cc = responseHandler.handleResponse(response);
-            metricUtil.onHandled(request);
+            HandlerMetricContextUtil.onHandled(request, metric, getClass());
             return cc;
         }
 

@@ -4,17 +4,17 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.ServerConfig;
-import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.server.Handler;
+import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.EventsHandler;
+import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  * @author ollivir
  * @author bjorncs
  */
-class ResponseMetricAggregator extends EventsHandler {
+class ResponseMetricAggregator extends AbstractLifeCycle implements HttpChannel.Listener {
 
     static final String requestTypeAttribute = "requestType";
 
@@ -41,14 +41,12 @@ class ResponseMetricAggregator extends EventsHandler {
 
     private final ConcurrentMap<StatusCodeMetric, LongAdder> statistics = new ConcurrentHashMap<>();
 
-    ResponseMetricAggregator(ServerConfig.Metric cfg, Handler handler) {
-        this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents(), cfg.reporterEnabled(),
-                handler);
+    ResponseMetricAggregator(ServerConfig.Metric cfg) {
+        this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents(), cfg.reporterEnabled());
     }
 
     ResponseMetricAggregator(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths,
-                             List<String> ignoredUserAgents, boolean reporterEnabled, Handler handler) {
-        super(handler);
+                             Collection<String> ignoredUserAgents, boolean reporterEnabled) {
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
         this.ignoredUserAgents = Set.copyOf(ignoredUserAgents);
@@ -56,12 +54,15 @@ class ResponseMetricAggregator extends EventsHandler {
     }
 
     static ResponseMetricAggregator getBean(JettyHttpServer server) { return getBean(server.server()); }
-    static ResponseMetricAggregator getBean(Server server) { return server.getBean(ResponseMetricAggregator.class); }
+    static ResponseMetricAggregator getBean(Server server) {
+        return Arrays.stream(server.getConnectors())
+                .map(c -> c.getBean(ResponseMetricAggregator.class)).filter(Objects::nonNull).findAny().orElseThrow();
+    }
 
     @Override
-    protected void onResponseBegin(Request request, int status, HttpFields headers) {
+    public void onResponseCommit(Request request) {
         if (shouldLogMetricsFor(request)) {
-            var metrics = StatusCodeMetric.of(request, status, monitoringHandlerPaths, searchHandlerPaths);
+            var metrics = StatusCodeMetric.of(request, monitoringHandlerPaths, searchHandlerPaths);
             metrics.forEach(metric -> statistics.computeIfAbsent(metric, __ -> new LongAdder()).increment());
         }
     }
@@ -83,7 +84,7 @@ class ResponseMetricAggregator extends EventsHandler {
     }
 
     private boolean shouldLogMetricsFor(Request request) {
-        String agent = request.getHeaders().get(HttpHeader.USER_AGENT);
+        String agent = request.getHeader(HttpHeader.USER_AGENT.toString());
         if (agent == null) return true;
         return ! ignoredUserAgents.contains(agent);
     }
@@ -94,6 +95,9 @@ class ResponseMetricAggregator extends EventsHandler {
             if (value > 0) consumer.accept(metric, value);
         });
     }
+
+    // Note: Request.getResponse().getStatus() may return invalid response code
+    private static int statusCode(Request r) { return r.getResponse().getCommittedMetaData().getStatus(); }
 
     static class Dimensions {
         final String protocol;
@@ -110,16 +114,17 @@ class ResponseMetricAggregator extends EventsHandler {
             this.statusCode = statusCode;
         }
 
-        static Dimensions of(Request req, int statusCode, List<String> monitoringHandlerPaths,
-                             List<String> searchHandlerPaths) {
+        static Dimensions of(Request req, Collection<String> monitoringHandlerPaths,
+                             Collection<String> searchHandlerPaths) {
             String requestType = requestType(req, monitoringHandlerPaths, searchHandlerPaths);
             // note: some request members may not be populated for invalid requests, e.g. invalid request-line.
-            return new Dimensions(protocol(req), scheme(req), method(req), requestType, statusCode);
+            return new Dimensions(protocol(req), scheme(req), method(req), requestType, statusCode(req));
         }
 
         Map<String, Object> asMap() {
             Map<String, Object> builder = new HashMap<>();
             builder.put(MetricDefinitions.PROTOCOL_DIMENSION, protocol);
+            builder.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
             builder.put(MetricDefinitions.METHOD_DIMENSION, method);
             builder.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, requestType);
             builder.put(MetricDefinitions.STATUS_CODE_DIMENSION, (long) statusCode);
@@ -127,7 +132,7 @@ class ResponseMetricAggregator extends EventsHandler {
         }
 
         private static String protocol(Request req) {
-            var protocol = req.getConnectionMetaData().getProtocol();
+            var protocol = req.getProtocol();
             if (protocol == null) return "none";
             return switch (protocol) {
                 case "HTTP/1", "HTTP/1.0", "HTTP/1.1" -> "http1";
@@ -137,7 +142,7 @@ class ResponseMetricAggregator extends EventsHandler {
         }
 
         private static String scheme(Request req) {
-            var scheme = req.getHttpURI().getScheme();
+            var scheme = req.getScheme();
             if (scheme == null) return "none";
             return switch (scheme) {
                 case "http", "https" -> scheme;
@@ -154,12 +159,12 @@ class ResponseMetricAggregator extends EventsHandler {
             };
         }
 
-        private static String requestType(Request req, List<String> monitoringHandlerPaths,
-                                          List<String> searchHandlerPaths) {
+        private static String requestType(Request req, Collection<String> monitoringHandlerPaths,
+                                          Collection<String> searchHandlerPaths) {
             HttpRequest.RequestType requestType = (HttpRequest.RequestType)req.getAttribute(requestTypeAttribute);
             if (requestType != null) return requestType.name().toLowerCase();
             // Deduce from path and method:
-            String path = req.getHttpURI().getPath();
+            String path = req.getRequestURI();
             if (path == null) return "none";
             for (String monitoringHandlerPath : monitoringHandlerPaths) {
                 if (path.startsWith(monitoringHandlerPath)) return "monitoring";
@@ -200,19 +205,20 @@ class ResponseMetricAggregator extends EventsHandler {
             this.name = name;
         }
 
-        static Set<StatusCodeMetric> of(Request req, int statusCode, List<String> monitoringHandlerPaths,
-                                   List<String> searchHandlerPaths) {
-            Dimensions dimensions = Dimensions.of(req, statusCode, monitoringHandlerPaths, searchHandlerPaths);
-            return metricNames(statusCode).stream()
+        static Collection<StatusCodeMetric> of(Request req, Collection<String> monitoringHandlerPaths,
+                                   Collection<String> searchHandlerPaths) {
+            Dimensions dimensions = Dimensions.of(req, monitoringHandlerPaths, searchHandlerPaths);
+            return metricNames(req).stream()
                     .map(name -> new StatusCodeMetric(dimensions, name))
                     .collect(Collectors.toSet());
         }
 
-        private static Set<String> metricNames(int statusCode) {
-            if (statusCode < 200) return Set.of(MetricDefinitions.RESPONSES_1XX);
-            else if (statusCode < 300) return Set.of(MetricDefinitions.RESPONSES_2XX);
-            else if (statusCode < 400) return Set.of(MetricDefinitions.RESPONSES_3XX);
-            else if (statusCode < 500) return Set.of(MetricDefinitions.RESPONSES_4XX);
+        private static Collection<String> metricNames(Request req) {
+            int code = statusCode(req);
+            if (code < 200) return Set.of(MetricDefinitions.RESPONSES_1XX);
+            else if (code < 300) return Set.of(MetricDefinitions.RESPONSES_2XX);
+            else if (code < 400) return Set.of(MetricDefinitions.RESPONSES_3XX);
+            else if (code < 500) return Set.of(MetricDefinitions.RESPONSES_4XX);
             else return Set.of(MetricDefinitions.RESPONSES_5XX);
         }
 

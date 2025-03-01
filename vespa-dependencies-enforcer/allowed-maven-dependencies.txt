@@ -174,11 +174,12 @@ org.codehaus.woodstox:stax2-api:${stax2-api.vespa.version}
 org.eclipse.angus:angus-activation:${eclipse-angus.vespa.version}
 org.eclipse.collections:eclipse-collections-api:${eclipse-collections.vespa.version}
 org.eclipse.collections:eclipse-collections:${eclipse-collections.vespa.version}
-org.eclipse.jetty.http2:jetty-http2-client-transport:${jetty.vespa.version}
-org.eclipse.jetty.http2:jetty-http2-client:${jetty.vespa.version}
-org.eclipse.jetty.http2:jetty-http2-common:${jetty.vespa.version}
-org.eclipse.jetty.http2:jetty-http2-hpack:${jetty.vespa.version}
-org.eclipse.jetty.http2:jetty-http2-server:${jetty.vespa.version}
+org.eclipse.jetty.http2:http2-client:${jetty.vespa.version}
+org.eclipse.jetty.http2:http2-common:${jetty.vespa.version}
+org.eclipse.jetty.http2:http2-hpack:${jetty.vespa.version}
+org.eclipse.jetty.http2:http2-http-client-transport:${jetty.vespa.version}
+org.eclipse.jetty.http2:http2-server:${jetty.vespa.version}
+org.eclipse.jetty.toolchain:jetty-jakarta-servlet-api:${jetty-servlet-api.vespa.version}
 org.eclipse.jetty:jetty-alpn-client:${jetty.vespa.version}
 org.eclipse.jetty:jetty-alpn-java-client:${jetty.vespa.version}
 org.eclipse.jetty:jetty-alpn-java-server:${jetty.vespa.version}
@@ -187,7 +188,9 @@ org.eclipse.jetty:jetty-client:${jetty.vespa.version}
 org.eclipse.jetty:jetty-http:${jetty.vespa.version}
 org.eclipse.jetty:jetty-io:${jetty.vespa.version}
 org.eclipse.jetty:jetty-jmx:${jetty.vespa.version}
+org.eclipse.jetty:jetty-security:${jetty.vespa.version}
 org.eclipse.jetty:jetty-server:${jetty.vespa.version}
+org.eclipse.jetty:jetty-servlet:${jetty.vespa.version}
 org.eclipse.jetty:jetty-util:${jetty.vespa.version}
 org.eclipse.lemminx:org.eclipse.lemminx:0.28.0
 org.eclipse.lsp4j:org.eclipse.lsp4j.generator:0.20.1
