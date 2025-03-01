@@ -1,10 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/vespalib/process/process.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/fef/indexproperties.h>
 #include <vespa/searchlib/fef/onnx_model.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
+#include <filesystem>
 #include <initializer_list>
 #include <map>
 #include <set>
@@ -32,7 +35,7 @@ struct Writer {
     FILE *file;
     explicit Writer(const std::string &file_name) {
         file = fopen(file_name.c_str(), "w");
-        ASSERT_TRUE(file != nullptr);
+        EXPECT_TRUE(file != nullptr);
     }
     void fmt(const char *format, ...) const __attribute__((format(printf,2,3)))
     {
@@ -46,7 +49,7 @@ struct Writer {
 
 void verify_dir() {
     std::string pwd(getenv("PWD"));
-    ASSERT_NOT_EQUAL(pwd.find("searchcore/src/tests/proton/verify_ranksetup"), pwd.npos);
+    ASSERT_NE(pwd.find("searchcore/src/tests/proton/verify_ranksetup"), pwd.npos);
 }
 
 //-----------------------------------------------------------------------------
@@ -65,7 +68,7 @@ struct Attribute {
 
 Attribute::~Attribute() = default;
 
-struct Setup {
+struct CommonSetup {
     std::map<std::string,std::pair<std::string,std::string> > indexes;
     std::map<std::string,Attribute>                           attributes;
     std::map<std::string,std::string>                         properties;
@@ -73,8 +76,8 @@ struct Setup {
     std::vector<bool>                                         extra_profiles;
     std::map<std::string,std::string>                         ranking_expressions;
     std::map<std::string,OnnxModel>                           onnx_models;
-    Setup();
-    ~Setup();
+    CommonSetup();
+    ~CommonSetup();
     void add_onnx_model(OnnxModel model) {
         onnx_models.insert_or_assign(model.name(), std::move(model));
     }
@@ -262,7 +265,7 @@ struct Setup {
         if (mode == SearchMode::BOTH) {
             bool res_indexed = verify_mode(SearchMode::INDEXED);
             bool res_streaming = verify_mode(SearchMode::STREAMING);
-            EXPECT_EQUAL(res_indexed, res_streaming);
+            EXPECT_EQ(res_indexed, res_streaming);
             return res_indexed;
         } else {
             return verify_mode(mode);
@@ -279,39 +282,35 @@ struct Setup {
         return (process.join() == 0);
     }
     void verify_valid(std::initializer_list<std::string> features, SearchMode mode = SearchMode::BOTH) {
-        for (const std::string &f: features) {
+        for (const std::string &f : features) {
             first_phase(f);
-            if (!EXPECT_TRUE(verify(mode))) {
-                fprintf(stderr, "--> feature '%s' was invalid (should be valid)\n", f.c_str());
-            }
+            EXPECT_TRUE(verify(mode)) << "--> feature '" << f << "' was invalid (should be valid)";
         }
     }
     void verify_invalid(std::initializer_list<std::string> features, SearchMode mode = SearchMode::BOTH) {
         for (const std::string &f: features) {
             first_phase(f);
-            if (!EXPECT_TRUE(!verify(mode))) {
-                fprintf(stderr, "--> feature '%s' was valid (should be invalid)\n", f.c_str());
-            }
+            EXPECT_TRUE(!verify(mode)) << "--> feature '" << f << "' was valid (should be invalid)";
         }
     }
 };
 
-Setup::Setup()
+CommonSetup::CommonSetup()
     : indexes(),
       attributes(),
       properties(),
       extra_profiles()
 {
-    verify_dir();
 }
-Setup::~Setup() = default;
+
+CommonSetup::~CommonSetup() = default;
 
 //-----------------------------------------------------------------------------
 
-struct EmptySetup : Setup {};
+struct EmptySetup : CommonSetup {};
 
-struct SimpleSetup : Setup {
-    SimpleSetup() : Setup() {
+struct SimpleSetup : CommonSetup {
+    SimpleSetup() : CommonSetup() {
         index("title", DataType::STRING, CollectionType::SINGLE);
         index("list", DataType::STRING, CollectionType::ARRAY);
         index("keywords", DataType::STRING, CollectionType::WEIGHTEDSET);
@@ -322,8 +321,8 @@ struct SimpleSetup : Setup {
     }
 };
 
-struct OnnxSetup : Setup {
-    OnnxSetup() : Setup() {
+struct OnnxSetup : CommonSetup {
+    OnnxSetup() : CommonSetup() {
         add_onnx_model(OnnxModel("simple", TEST_PATH("../../../../../eval/src/tests/tensor/onnx_wrapper/simple.onnx")));
         add_onnx_model(std::move(OnnxModel("mapped", TEST_PATH("../../../../../eval/src/tests/tensor/onnx_wrapper/simple.onnx"))
                        .input_feature("query_tensor", "rankingExpression(qt)")
@@ -337,29 +336,54 @@ struct OnnxSetup : Setup {
     }
 };
 
-struct ShadowSetup : Setup {
-    ShadowSetup() : Setup() {
+struct ShadowSetup : CommonSetup {
+    ShadowSetup() : CommonSetup() {
         index("both", DataType::STRING, CollectionType::SINGLE);
         attribute("both", DataType::STRING, CollectionType::SINGLE);
     }
 };
 
-TEST_F("print usage", Setup()) {
-    EXPECT_TRUE(!vespalib::Process::run(fmt("%s", prog)));
+struct VerifyRankSetupTest : public ::testing::Test {
+    VerifyRankSetupTest();
+    ~VerifyRankSetupTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+VerifyRankSetupTest::VerifyRankSetupTest()
+    : ::testing::Test()
+{
 }
 
-TEST_F("setup output directory", Setup()) {
-    ASSERT_TRUE(vespalib::Process::run(fmt("rm -rf %s", gen_dir.c_str())));
-    ASSERT_TRUE(vespalib::Process::run(fmt("mkdir %s", gen_dir.c_str())));
+VerifyRankSetupTest::~VerifyRankSetupTest() = default;
+
+void
+VerifyRankSetupTest::SetUpTestSuite()
+{
+    verify_dir();
+    std::filesystem::remove_all(gen_dir);
+    std::filesystem::create_directory(gen_dir);
+}
+
+void
+VerifyRankSetupTest::TearDownTestSuite()
+{
+    std::filesystem::remove_all(gen_dir);
+}
+
+TEST_F(VerifyRankSetupTest, print_usage) {
+    EXPECT_TRUE(!vespalib::Process::run(fmt("%s", prog)));
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that empty setup passes validation", EmptySetup()) {
+TEST_F(VerifyRankSetupTest, require_that_empty_setup_passes_validation) {
+    EmptySetup f;
     EXPECT_TRUE(f.verify());
 }
 
-TEST_F("require that we can verify multiple rank profiles", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_we_can_verify_multiple_rank_profiles) {
+    SimpleSetup f;
     f.first_phase(valid_feature);
     f.good_profile();
     EXPECT_TRUE(f.verify());
@@ -367,146 +391,172 @@ TEST_F("require that we can verify multiple rank profiles", SimpleSetup()) {
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that first phase can break validation", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_first_phase_can_break_validation) {
+    SimpleSetup f;
     f.first_phase(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that second phase can break validation", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_second_phase_can_break_validation) {
+    SimpleSetup f;
     f.second_phase(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that match features can break validation", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_match_features_can_break_validation) {
+    SimpleSetup f;
     f.match_feature(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that summary features can break validation", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_summary_features_can_break_validation) {
+    SimpleSetup f;
     f.summary_feature(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
-TEST_F("require that dump features can break validation", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_dump_features_can_break_validation) {
+    SimpleSetup f;
     f.dump_feature(invalid_feature);
     EXPECT_TRUE(!f.verify());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that fieldMatch feature requires single value field", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_fieldMatch_feature_requires_single_value_field) {
+    SimpleSetup f;
     f.verify_invalid({"fieldMatch(keywords)", "fieldMatch(list)"}, SearchMode::INDEXED);
     f.verify_valid({"fieldMatch(title)"});
 }
 
-TEST_F("require that age feature requires attribute parameter", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_age_feature_requires_attribute_parameter) {
+    SimpleSetup f;
     f.verify_invalid({"age(unknown)", "age(title)"}, SearchMode::INDEXED);
     f.verify_valid({"age(date)"});
 }
 
-TEST_F("require that nativeRank can be used on any valid field", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_nativeRank_can_be_used_on_any_valid_field) {
+    SimpleSetup f;
     f.verify_invalid({"nativeRank(unknown)"});
     f.verify_valid({"nativeRank", "nativeRank(title)", "nativeRank(date)", "nativeRank(title,date)"});
 }
 
-TEST_F("require that nativeAttributeMatch requires attribute parameter", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_nativeAttributeMatch_requires_attribute_parameter) {
+    SimpleSetup f;
     f.verify_invalid({"nativeAttributeMatch(unknown)", "nativeAttributeMatch(title)", "nativeAttributeMatch(title,date)"}, SearchMode::INDEXED);
     f.verify_valid({"nativeAttributeMatch", "nativeAttributeMatch(date)"});
 }
 
-TEST_F("require that shadowed attributes can be used", ShadowSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_shadowed_attributes_can_be_used) {
+    ShadowSetup f;
     f.verify_valid({"attribute(both)"});
 }
 
-TEST_F("require that ranking constants can be used", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_ranking_constants_can_be_used) {
+    SimpleSetup f;
     f.verify_valid({"constant(my_tensor)"});
 }
 
-TEST_F("require that undefined ranking constants cannot be used", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_undefined_ranking_constants_cannot_be_used) {
+    SimpleSetup f;
     f.verify_invalid({"constant(bogus_tensor)"});
 }
 
-TEST_F("require that ranking expressions can be verified", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_ranking_expressions_can_be_verified) {
+    SimpleSetup f;
     f.rank_expr("my_expr", "constant(my_tensor)+attribute(date)");
     f.verify_valid({"rankingExpression(my_expr)"});
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that tensor join is supported", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_tensor_join_is_supported) {
+    SimpleSetup f;
     f.rank_expr("my_expr", "join(constant(my_tensor),attribute(date),f(t,d)(t+d))");
     f.verify_valid({"rankingExpression(my_expr)"});
 }
 
-TEST_F("require that nested tensor join is not supported", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_nested_tensor_join_is_not_supported) {
+    SimpleSetup f;
     f.rank_expr("my_expr", "join(constant(my_tensor),attribute(date),f(t,d)(join(t,d,f(x,y)(x+y))))");
     f.verify_invalid({"rankingExpression(my_expr)"});
 }
 
-TEST_F("require that imported attribute field can be used by rank feature", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_imported_attribute_field_can_be_used_by_rank_feature) {
+    SimpleSetup f;
     f.verify_valid({"attribute(imported_attr)"});
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that external ranking expression can be verified", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_external_ranking_expression_can_be_verified) {
+    SimpleSetup f;
     f.ext_rank_expr("my_expr", "good_ranking_expression");
     f.verify_valid({"rankingExpression(my_expr)"});
 }
 
-TEST_F("require that external ranking expression can fail verification", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_external_ranking_expression_can_fail_verification) {
+    SimpleSetup f;
     f.ext_rank_expr("my_expr", "bad_ranking_expression");
     f.verify_invalid({"rankingExpression(my_expr)"});
 }
 
-TEST_F("require that missing expression file fails verification", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_missing_expression_file_fails_verification) {
+    SimpleSetup f;
     f.ext_rank_expr("my_expr", "missing_ranking_expression_file");
     f.verify_invalid({"rankingExpression(my_expr)"});
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that onnx model can be verified", OnnxSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_onnx_model_can_be_verified) {
+    OnnxSetup f;
     f.rank_expr("query_tensor", "tensor<float>(a[1],b[4]):[[1,2,3,4]]");
     f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
     f.verify_valid({"onnx(simple)"});
 }
 
-TEST_F("require that onnx model can be verified with old name", OnnxSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_onnx_model_can_be_verified_with_old_name) {
+    OnnxSetup f;
     f.rank_expr("query_tensor", "tensor<float>(a[1],b[4]):[[1,2,3,4]]");
     f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
     f.verify_valid({"onnxModel(simple)"});
 }
 
-TEST_F("require that input type mismatch makes onnx model fail verification", OnnxSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_input_type_mismatch_makes_onnx_model_fail_verification) {
+    OnnxSetup f;
     f.rank_expr("query_tensor", "tensor<float>(a[1],b[3]):[[1,2,3]]"); // <- 3 vs 4
     f.rank_expr("attribute_tensor", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bias_tensor", "tensor<float>(a[1],b[1]):[[9]]");
     f.verify_invalid({"onnx(simple)"});
 }
 
-TEST_F("require that onnx model can have inputs and outputs mapped", OnnxSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_onnx_model_can_have_inputs_and_outputs_mapped) {
+    OnnxSetup f;
     f.rank_expr("qt", "tensor<float>(a[1],b[4]):[[1,2,3,4]]");
     f.rank_expr("at", "tensor<float>(a[4],b[1]):[[5],[6],[7],[8]]");
     f.rank_expr("bt", "tensor<float>(a[1],b[1]):[[9]]");
     f.verify_valid({"onnx(mapped).result"});
 }
 
-TEST_F("require that fragile model can pass verification", OnnxSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_fragile_model_can_pass_verification) {
+    OnnxSetup f;
     f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
     f.rank_expr("in2", "tensor<float>(a[2]):[3,4]");
     f.verify_valid({"onnx(fragile)"});
 }
 
-TEST_F("require that broken fragile model fails verification", OnnxSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_broken_fragile_model_fails_verification) {
+    OnnxSetup f;
     f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
     f.rank_expr("in2", "tensor<float>(a[3]):[3,4,31515]");
     f.verify_invalid({"onnx(fragile)"});
 }
 
-TEST_F("require that broken fragile model without dry-run passes verification", OnnxSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_broken_fragile_model_without_dry_run_passes_verification) {
+    OnnxSetup f;
     f.rank_expr("in1", "tensor<float>(a[2]):[1,2]");
     f.rank_expr("in2", "tensor<float>(a[3]):[3,4,31515]");
     f.verify_valid({"onnx(unfragile)"});
@@ -514,25 +564,29 @@ TEST_F("require that broken fragile model without dry-run passes verification", 
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that query tensor can have default value", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_query_tensor_can_have_default_value) {
+    SimpleSetup f;
     f.query_feature_type("foo", "tensor(x[3])");
     f.query_feature_default_value("foo", "tensor(x[3])(x+1)");
     f.verify_valid({"query(foo)"});
 }
 
-TEST_F("require that query tensor default value must have appropriate type", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_query_tensor_default_value_must_have_appropriate_type) {
+    SimpleSetup f;
     f.query_feature_type("foo", "tensor(y[3])");
     f.query_feature_default_value("foo", "tensor(x[3])(x+1)");
     f.verify_invalid({"query(foo)"});
 }
 
-TEST_F("require that query tensor default value must be a valid expression", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_query_tensor_default_value_must_be_a_valid_expression) {
+    SimpleSetup f;
     f.query_feature_type("foo", "tensor(x[3])");
     f.query_feature_default_value("foo", "this expression is not parseable");
     f.verify_invalid({"query(foo)"});
 }
 
-TEST_F("require that query tensor default value expression does not need parameters", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_query_tensor_default_value_expression_does_not_need_parameters) {
+    SimpleSetup f;
     f.query_feature_type("foo", "tensor(x[3])");
     f.query_feature_default_value("foo", "externalSymbol");
     f.verify_invalid({"query(foo)"});
@@ -540,18 +594,16 @@ TEST_F("require that query tensor default value expression does not need paramet
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that zcurve distance can be set up", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_zcurve_distance_can_be_set_up) {
+    SimpleSetup f;
     f.verify_valid({"distance(pos)"});
 }
 
-TEST_F("require that zcurve distance must be backed by an attribute", SimpleSetup()) {
+TEST_F(VerifyRankSetupTest, require_that_zcurve_distance_must_be_backed_by_an_attribute) {
+    SimpleSetup f;
     f.verify_invalid({"distance(unknown)"});
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("cleanup files", Setup()) {
-    ASSERT_TRUE(vespalib::Process::run(fmt("rm -rf %s", gen_dir.c_str())));
-}
-
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
