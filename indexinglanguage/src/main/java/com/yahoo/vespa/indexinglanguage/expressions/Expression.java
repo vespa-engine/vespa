@@ -147,10 +147,8 @@ public abstract class Expression extends Selectable {
     }
 
     DataType assignOutputType(DataType outputType) {
-        // Since we assign in both directions, in both orders, we may already know
-        if (this.outputType == null)
-            this.outputType = outputType;
-        return this.outputType;
+        // Since we assign in both directions, we may already have more precise info
+        return this.outputType = leastGeneralNonNullOf(this.outputType, outputType);
     }
 
     public abstract DataType createdOutputType();

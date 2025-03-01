@@ -463,4 +463,34 @@ public class ScriptTestCase {
         assertEquals(37, ((Array<IntegerFieldValue>)adapter.values.get("myInts")).get(0).getInteger());
     }
 
+    @Test
+    public void testMultipleVariableStatements() {
+        String script = """
+            {
+            # Initialize variables used for superduper ranking
+            1 | set_var superdupermod;
+            2 | set_var tmppubdate;
+            input attributes_src | lowercase | summary attributes | index attributes | split ";" | for_each {
+              # Loop through each token in attributes string
+              switch {
+
+                # De-rank PR articles using the following rules:
+                #   1. Set editedstaticrank to '1'
+                #   2. Subtract 2.5 hours (9000 seconds) from timestamp used in ranking
+                #   3. No superduper rank
+                case "typepr": 1 | set_var tmpsourcerank | get_var tmppubdate - 9000 | set_var tmppubdate | 0 | set_var superdupermod;
+              }
+            };
+            }
+            """;
+
+        var tester = new ScriptTester();
+        var expression = tester.scriptFrom(script);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("attributes_src", DataType.STRING));
+        adapter.createField(new Field("attributes", DataType.STRING));
+        expression.verify(adapter);
+    }
+
 }
