@@ -147,12 +147,12 @@ class NodeResourcesTest {
                 .withMemoryGiB(4)
                 .withDiskGb(6)
                 .withBandwidthGbps(2)
-                .with(new NodeResources.GpuResources(NodeResources.GpuType.T4, 8, 32));
+                .with(new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 192));
         var actual = resources.add(other);
         assertEquals(expected, actual);
 
-        // Subtracted back, but we have merged memory resources to max(16, 32)
-        expected = resources.with(new NodeResources.GpuResources(NodeResources.GpuType.T4, 4, 32));
+        // Subtracted back to original resources - but GPU is flattened to count=1
+        expected = resources.with(new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 64));
         actual = actual.subtract(other);
         assertEquals(expected, actual);
     }

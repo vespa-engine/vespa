@@ -167,18 +167,21 @@ public class NodeResources {
             if (other.isZero()) return this;
             if (this.isZero()) return other;
             if (this.type != other.type) throw new IllegalArgumentException("Bad add: " + this + " + " + other);
-            double mem = Math.max(this.memoryGiB, other.memoryGiB);
-            return new NodeResources.GpuResources(this.type, this.count() + other.count(), mem);
+            var thisMem = this.count() * this.memoryGiB();
+            var otherMem = other.count() * other.memoryGiB();
+            return new NodeResources.GpuResources(this.type, 1, thisMem + otherMem);
         }
 
         public GpuResources minus(GpuResources other) {
-            if (other.isZero() || this.isZero()) return this;
+            if (other.isZero()) return this;
             if (this.type != other.type) throw new IllegalArgumentException("Bad minus: " + this + " + " + other);
-            return new NodeResources.GpuResources(this.type, this.count() - other.count(), this.memoryGiB);
+            var thisMem = this.count() * this.memoryGiB();
+            var otherMem = other.count() * other.memoryGiB();
+            return new NodeResources.GpuResources(this.type, 1, thisMem - otherMem);
         }
 
         public GpuResources multipliedBy(double factor) {
-            return new GpuResources(this.type, this.count * (int)factor, this.memoryGiB);
+            return new GpuResources(this.type, this.count, this.memoryGiB * factor);
         }
     }
 
