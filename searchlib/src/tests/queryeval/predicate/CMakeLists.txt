@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_predicate_blueprint_test_app TEST
     predicate_blueprint_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_predicate_blueprint_test_app COMMAND searchlib_predicate_blueprint_test_app)
 vespa_add_executable(searchlib_predicate_search_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(searchlib_predicate_search_test_app TEST
     predicate_search_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_predicate_search_test_app COMMAND searchlib_predicate_search_test_app)

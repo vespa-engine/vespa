@@ -4,8 +4,9 @@ vespa_add_executable(searchlib_blueprint_test_app TEST
     blueprint_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
-vespa_add_test(NAME searchlib_blueprint_test_app COMMAND searchlib_blueprint_test_app || diff -u lhs.out rhs.out)
+vespa_add_test(NAME searchlib_blueprint_test_app COMMAND searchlib_blueprint_test_app)
 vespa_add_executable(searchlib_leaf_blueprints_test_app TEST
     SOURCES
     leaf_blueprints_test.cpp
@@ -13,7 +14,7 @@ vespa_add_executable(searchlib_leaf_blueprints_test_app TEST
     vespa_searchlib
     GTest::gtest
 )
-vespa_add_test(NAME searchlib_leaf_blueprints_test_app COMMAND searchlib_leaf_blueprints_test_app || diff -u lhs.out rhs.out)
+vespa_add_test(NAME searchlib_leaf_blueprints_test_app COMMAND searchlib_leaf_blueprints_test_app)
 vespa_add_executable(searchlib_intermediate_blueprints_test_app TEST
     SOURCES
     intermediate_blueprints_test.cpp
@@ -21,4 +22,4 @@ vespa_add_executable(searchlib_intermediate_blueprints_test_app TEST
     vespa_searchlib
     searchlib_test
 )
-vespa_add_test(NAME searchlib_intermediate_blueprints_test_app COMMAND searchlib_intermediate_blueprints_test_app || diff -u lhs.out rhs.out)
+vespa_add_test(NAME searchlib_intermediate_blueprints_test_app COMMAND searchlib_intermediate_blueprints_test_app)

@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_simple_phrase_test_app TEST
     simple_phrase_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_simple_phrase_test_app COMMAND searchlib_simple_phrase_test_app)

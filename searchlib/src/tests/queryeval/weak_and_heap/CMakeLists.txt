@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_weak_and_heap_test_app TEST
     weak_and_heap_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_weak_and_heap_test_app COMMAND searchlib_weak_and_heap_test_app)
