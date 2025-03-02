@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/docstore/documentstore.h>
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
@@ -11,6 +10,7 @@
 #include <vespa/document/fieldvalue/stringfieldvalue.h>
 #include <vespa/document/repo/configbuilder.h>
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -60,8 +60,8 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
     idstr << "id:test:test:: " << i;
     DocumentId id(idstr.view());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
-    Document::UP doc(new Document(repo, *docType, id));
-    ASSERT_TRUE(doc.get());
+    auto doc = std::make_unique<Document>(repo, *docType, id);
+    EXPECT_NE(nullptr, doc.get());
     asciistream mainstr;
     mainstr << "static text" << i << " body something";
     for (uint32_t j = 0; j < 10; ++j) {
@@ -205,7 +205,7 @@ MyVisitorProgress::getProgress() const
 }
 
 
-struct Fixture
+struct DocumentStoreVisitorTest : public ::testing::Test
 {
     string _baseDir;
     DocumentTypeRepo _repo;
@@ -218,8 +218,8 @@ struct Fixture
     uint32_t _docIdLimit;
     std::unique_ptr<AllocatedBitVector> _valid;
 
-    Fixture();
-    ~Fixture();
+    DocumentStoreVisitorTest();
+    ~DocumentStoreVisitorTest() override;
 
     Document::UP makeDoc(uint32_t i);
     void resetDocStore();
@@ -234,8 +234,9 @@ struct Fixture
     void checkRemovePostCond(uint32_t numDocs, uint32_t docIdLimit, uint32_t rmDocs, bool before);
 };
 
-Fixture::Fixture()
-    : _baseDir("visitor"),
+DocumentStoreVisitorTest::DocumentStoreVisitorTest()
+    : ::testing::Test(),
+      _baseDir("visitor"),
       _repo(makeDocTypeRepoConfig()),
       _storeConfig(DocumentStore::Config(CompressionConfig::NONE, 0),
                    LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
@@ -254,20 +255,20 @@ Fixture::Fixture()
 }
 
 
-Fixture::~Fixture()
+DocumentStoreVisitorTest::~DocumentStoreVisitorTest()
 {
     _store.reset();
     rmdir();
 }
 
 Document::UP
-Fixture::makeDoc(uint32_t i)
+DocumentStoreVisitorTest::makeDoc(uint32_t i)
 {
     return ::makeDoc(_repo, i, true);
 }
 
 void
-Fixture::resetDocStore()
+DocumentStoreVisitorTest::resetDocStore()
 {
     _store.reset(new LogDocumentStore(_executor, _baseDir, _storeConfig, GrowStrategy(),
                                       TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr));
@@ -275,27 +276,27 @@ Fixture::resetDocStore()
 
 
 void
-Fixture::rmdir()
+DocumentStoreVisitorTest::rmdir()
 {
     std::filesystem::remove_all(std::filesystem::path(_baseDir));
 }
 
 void
-Fixture::mkdir()
+DocumentStoreVisitorTest::mkdir()
 {
     std::filesystem::create_directory(std::filesystem::path(_baseDir));
 }
 
 
 void
-Fixture::setDocIdLimit(uint32_t docIdLimit)
+DocumentStoreVisitorTest::setDocIdLimit(uint32_t docIdLimit)
 {
     _docIdLimit = docIdLimit;
     _valid->resize(_docIdLimit);
 }
 
 void
-Fixture::put(const Document &doc, uint32_t lid)
+DocumentStoreVisitorTest::put(const Document &doc, uint32_t lid)
 {
     ++_syncToken;
     assert(lid < _docIdLimit);
@@ -305,7 +306,7 @@ Fixture::put(const Document &doc, uint32_t lid)
 
 
 void
-Fixture::remove(uint32_t lid)
+DocumentStoreVisitorTest::remove(uint32_t lid)
 {
     ++_syncToken;
     assert(lid < _docIdLimit);
@@ -315,7 +316,7 @@ Fixture::remove(uint32_t lid)
 
 
 void
-Fixture::flush()
+DocumentStoreVisitorTest::flush()
 {
     _store->initFlush(_syncToken);
     _store->flush(_syncToken);
@@ -323,7 +324,7 @@ Fixture::flush()
 
 
 void
-Fixture::populate(uint32_t low, uint32_t high, uint32_t docIdLimit)
+DocumentStoreVisitorTest::populate(uint32_t low, uint32_t high, uint32_t docIdLimit)
 {
     setDocIdLimit(docIdLimit);
     for (uint32_t lid = low; lid < high; ++lid) {
@@ -334,7 +335,7 @@ Fixture::populate(uint32_t low, uint32_t high, uint32_t docIdLimit)
 
 
 void
-Fixture::applyRemoves(uint32_t rmDocs)
+DocumentStoreVisitorTest::applyRemoves(uint32_t rmDocs)
 {
     for (uint32_t lid = 20; lid < 20 + rmDocs; ++lid) {
         remove(lid);
@@ -346,76 +347,76 @@ Fixture::applyRemoves(uint32_t rmDocs)
 
 
 void
-Fixture::checkRemovePostCond(uint32_t numDocs,
+DocumentStoreVisitorTest::checkRemovePostCond(uint32_t numDocs,
                              uint32_t docIdLimit,
                              uint32_t rmDocs,
                              bool before)
 {                             
     MyVisitor visitor(_repo, docIdLimit, before);
     MyVisitorProgress visitorProgress;
-    EXPECT_EQUAL(0.0, visitorProgress.getProgress());
-    EXPECT_EQUAL(0u, visitorProgress._updates);
+    EXPECT_EQ(0.0, visitorProgress.getProgress());
+    EXPECT_EQ(0u, visitorProgress._updates);
     _store->accept(visitor, visitorProgress, _repo);
-    EXPECT_EQUAL(numDocs - rmDocs + 1, visitor._visitCount);
-    EXPECT_EQUAL(rmDocs - 1, visitor._visitRmCount);
-    EXPECT_EQUAL(1.0, visitorProgress.getProgress());
-    EXPECT_NOT_EQUAL(0u, visitorProgress._updates);
+    EXPECT_EQ(numDocs - rmDocs + 1, visitor._visitCount);
+    EXPECT_EQ(rmDocs - 1, visitor._visitRmCount);
+    EXPECT_EQ(1.0, visitorProgress.getProgress());
+    EXPECT_NE(0u, visitorProgress._updates);
     EXPECT_TRUE(*_valid == *visitor._valid);
 }
 
 
-TEST_F("require that basic visit works", Fixture())
+TEST_F(DocumentStoreVisitorTest, require_that_basic_visit_works)
 {
     uint32_t numDocs = 3000;
     uint32_t docIdLimit = numDocs + 1;
-    f.populate(1, docIdLimit, docIdLimit);
-    f.flush();
-    MyVisitor visitor(f._repo, docIdLimit, true);
+    populate(1, docIdLimit, docIdLimit);
+    flush();
+    MyVisitor visitor(_repo, docIdLimit, true);
     MyVisitorProgress visitorProgress;
-    EXPECT_EQUAL(0.0, visitorProgress.getProgress());
-    EXPECT_EQUAL(0u, visitorProgress._updates);
-    f._store->accept(visitor, visitorProgress, f._repo);
-    EXPECT_EQUAL(numDocs, visitor._visitCount);
-    EXPECT_EQUAL(0u, visitor._visitRmCount);
-    EXPECT_EQUAL(1.0, visitorProgress.getProgress());
-    EXPECT_NOT_EQUAL(0u, visitorProgress._updates);
-    EXPECT_TRUE(*f._valid == *visitor._valid);
+    EXPECT_EQ(0.0, visitorProgress.getProgress());
+    EXPECT_EQ(0u, visitorProgress._updates);
+    _store->accept(visitor, visitorProgress, _repo);
+    EXPECT_EQ(numDocs, visitor._visitCount);
+    EXPECT_EQ(0u, visitor._visitRmCount);
+    EXPECT_EQ(1.0, visitorProgress.getProgress());
+    EXPECT_NE(0u, visitorProgress._updates);
+    EXPECT_TRUE(*_valid == *visitor._valid);
 }
 
 
-TEST_F("require that visit with remove works", Fixture())
+TEST_F(DocumentStoreVisitorTest, require_that_visit_with_remove_works)
 {
     uint32_t numDocs = 1000;
     uint32_t docIdLimit = numDocs + 1;
-    f.populate(1, docIdLimit, docIdLimit);
+    populate(1, docIdLimit, docIdLimit);
     uint32_t rmDocs = 20;
-    f.applyRemoves(rmDocs);
-    f.flush();
-    f.checkRemovePostCond(numDocs, docIdLimit, rmDocs, true);
+    applyRemoves(rmDocs);
+    flush();
+    checkRemovePostCond(numDocs, docIdLimit, rmDocs, true);
 }
 
-TEST_F("require that visit with rewrite and remove works", Fixture())
+TEST_F(DocumentStoreVisitorTest, require_that_visit_with_rewrite_and_remove_works)
 {
     uint32_t numDocs = 1000;
     uint32_t docIdLimit = numDocs + 1;
-    f.populate(1, docIdLimit, docIdLimit);
+    populate(1, docIdLimit, docIdLimit);
     uint32_t rmDocs = 20;
-    f.applyRemoves(rmDocs);
-    f.flush();
-    f.checkRemovePostCond(numDocs, docIdLimit, rmDocs, true);
+    applyRemoves(rmDocs);
+    flush();
+    checkRemovePostCond(numDocs, docIdLimit, rmDocs, true);
     {
-        MyRewriteVisitor visitor(f._repo, docIdLimit, true);
+        MyRewriteVisitor visitor(_repo, docIdLimit, true);
         MyVisitorProgress visitorProgress;
-        EXPECT_EQUAL(0.0, visitorProgress.getProgress());
-        EXPECT_EQUAL(0u, visitorProgress._updates);
-        f._store->accept(visitor, visitorProgress, f._repo);
-        EXPECT_EQUAL(numDocs - rmDocs + 1, visitor._visitCount);
-        EXPECT_EQUAL(1.0, visitorProgress.getProgress());
-        EXPECT_NOT_EQUAL(0u, visitorProgress._updates);
-        EXPECT_TRUE(*f._valid == *visitor._valid);
-        f.flush();
+        EXPECT_EQ(0.0, visitorProgress.getProgress());
+        EXPECT_EQ(0u, visitorProgress._updates);
+        _store->accept(visitor, visitorProgress, _repo);
+        EXPECT_EQ(numDocs - rmDocs + 1, visitor._visitCount);
+        EXPECT_EQ(1.0, visitorProgress.getProgress());
+        EXPECT_NE(0u, visitorProgress._updates);
+        EXPECT_TRUE(*_valid == *visitor._valid);
+        flush();
     }
-    f.checkRemovePostCond(numDocs, docIdLimit, rmDocs, false);
+    checkRemovePostCond(numDocs, docIdLimit, rmDocs, false);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
