@@ -273,4 +273,10 @@ HnswNodeidMapping::compact_worst(const vespalib::datastore::CompactionStrategy& 
    compacting_buffers->finish();
 }
 
+std::unique_ptr<vespalib::StateExplorer>
+HnswNodeidMapping::make_state_explorer() const
+{
+    return _nodeids.make_state_explorer();
+}
+
 }

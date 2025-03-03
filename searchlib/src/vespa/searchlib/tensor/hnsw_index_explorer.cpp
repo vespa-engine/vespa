@@ -10,6 +10,14 @@ using vespalib::slime::ObjectInserter;
 
 namespace search::tensor {
 
+namespace {
+
+const std::string LEVELS_STORE_NAME("levels_store");
+const std::string LINKS_STORE_NAME("links_store");
+const std::string NODEID_STORE_NAME("nodeid_store");
+
+}
+
 template <HnswIndexType type>
 HnswIndexExplorer<type>::HnswIndexExplorer(const HnswIndex<type>& index)
     : _index(index)
@@ -61,6 +69,30 @@ HnswIndexExplorer<type>::get_state(const vespalib::slime::Inserter& inserter, bo
     cfgObj.setLong("max_links_on_inserts", cfg.max_links_on_inserts());
     cfgObj.setLong("neighbors_to_explore_at_construction",
                    cfg.neighbors_to_explore_at_construction());
+}
+
+template <HnswIndexType type>
+std::vector<std::string>
+HnswIndexExplorer<type>::get_children_names() const
+{
+    return { LEVELS_STORE_NAME, LINKS_STORE_NAME, NODEID_STORE_NAME };
+}
+
+template <HnswIndexType type>
+std::unique_ptr<vespalib::StateExplorer>
+HnswIndexExplorer<type>::get_child(std::string_view name) const
+{
+    auto& graph = _index.get_graph();
+    if (name == LEVELS_STORE_NAME) {
+        return graph.levels_store.make_state_explorer();;
+    } else if (name == LINKS_STORE_NAME) {
+        return graph.links_store.make_state_explorer();
+    } else if (name == NODEID_STORE_NAME) {
+        if constexpr (type == HnswIndexType::MULTI) {
+            return _index.get_id_mapping().make_state_explorer();
+        }
+    }
+    return {};
 }
 
 template class HnswIndexExplorer<HnswIndexType::SINGLE>;
