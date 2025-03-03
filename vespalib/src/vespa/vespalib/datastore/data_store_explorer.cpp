@@ -129,6 +129,7 @@ BufferTypeStats::aggregate(const BufferState& state) noexcept
         break;
         case BufferState::State::HOLD:
             _hold.aggregate(state);
+        break;
         case BufferState::State::FREE:
             ;
     }
@@ -264,11 +265,11 @@ Stats::buffer_type_stats_to_slime(Cursor& array)
     uint32_t skipped = 0;
     ArrayInserter ai(array);
     for (auto& stats : _buffer_type_stats) {
-           if (stats.allocated_entries() > 0) {
-               stats.stats_to_slime(ai);
-           } else {
-               ++skipped;
-           }
+        if (stats.allocated_entries() > 0) {
+            stats.stats_to_slime(ai);
+        } else {
+            ++skipped;
+        }
     }
     return skipped;
 }
