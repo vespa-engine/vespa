@@ -22,7 +22,10 @@ public final class GetVarExpression extends Expression {
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
         super.setInputType(inputType, context);
-        return context.getVariable(variableName);
+        DataType output = context.getVariable(variableName);
+        if (output == null)
+            throw new VerificationException(this, "Variable '" + variableName + "' not found");
+        return output;
     }
 
     @Override

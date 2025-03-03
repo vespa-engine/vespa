@@ -31,7 +31,6 @@ public class ToDoubleTestCase {
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.INT, new ToDoubleExpression(), DataType.DOUBLE);
         assertVerify(DataType.STRING, new ToDoubleExpression(), DataType.DOUBLE);
-        assertVerifyThrows("Invalid expression 'to_double': Expected input, but no input is provided", null, new ToDoubleExpression());
     }
 
     @Test

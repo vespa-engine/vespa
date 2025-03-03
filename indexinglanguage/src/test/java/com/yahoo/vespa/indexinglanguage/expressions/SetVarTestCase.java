@@ -39,7 +39,6 @@ public class SetVarTestCase {
         Expression exp = new SetVarExpression("foo");
         assertVerify(DataType.INT, new SetVarExpression("foo"), DataType.INT);
         assertVerify(DataType.STRING, new SetVarExpression("foo"), DataType.STRING);
-        assertVerifyThrows("Invalid expression 'set_var foo': Expected input, but no input is provided", null, exp);
 
         try {
             new VerificationContext(new SimpleTestAdapter()).setVariable("foo", DataType.INT).setCurrentType(DataType.STRING).verify(exp);

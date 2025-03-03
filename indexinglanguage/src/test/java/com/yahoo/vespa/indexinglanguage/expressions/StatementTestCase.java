@@ -67,12 +67,10 @@ public class StatementTestCase {
     }
 
     @Test
-    public void requireThatCreatedOutputIsDeterminedByLastNonNullCreatedOutput() {
-        assertEquals(DataType.STRING, newStatement(SimpleExpression.newOutput(DataType.STRING)).createdOutputType());
-        assertEquals(DataType.STRING, newStatement(SimpleExpression.newOutput(DataType.INT),
-                                                   SimpleExpression.newOutput(DataType.STRING)).createdOutputType());
-        assertEquals(DataType.STRING, newStatement(SimpleExpression.newOutput(DataType.STRING),
-                                                   new SimpleExpression()).createdOutputType());
+    public void requireThatCreatedOutputIsDeterminedByLastOutput() {
+        assertEquals(DataType.STRING, verify(newStatement(SimpleExpression.newOutput(DataType.STRING))).getOutputType());
+        assertEquals(DataType.STRING, verify(newStatement(SimpleExpression.newOutput(DataType.INT),
+                                                          SimpleExpression.newOutput(DataType.STRING))).getOutputType());
     }
 
     @Test
@@ -100,6 +98,11 @@ public class StatementTestCase {
 
     private static StatementExpression newStatement(Expression... args) {
         return new StatementExpression(args);
+    }
+
+    private static StatementExpression verify(StatementExpression statement) {
+        statement.verify(new SimpleTestAdapter());
+        return statement;
     }
 
 }

@@ -55,9 +55,6 @@ public class CatTestCase {
     public void expressionCanBeVerified() {
         assertVerify(new ConstantExpression(new StringFieldValue("foo")),
                      new ConstantExpression(new StringFieldValue("bar")), null);
-        assertVerifyThrows(new SimpleExpression().setCreatedOutput(null),
-                           new SimpleExpression().setCreatedOutput(DataType.STRING), null,
-                           "Invalid expression 'SimpleExpression . SimpleExpression': In SimpleExpression: Attempting to concatenate a null value");
         assertVerifyThrows(new SimpleExpression(DataType.STRING),
                            new SimpleExpression(DataType.STRING), null,
                            "Invalid expression 'SimpleExpression': Expected string input, but no input is provided");

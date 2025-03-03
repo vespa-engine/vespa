@@ -49,9 +49,6 @@ public class PackBitsExpression extends Expression  {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {}
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
         if (tensor.isEmpty()) return;

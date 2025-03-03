@@ -18,9 +18,6 @@ public class BinarizeExpression extends Expression  {
 
     private final double threshold;
 
-    /** The type this consumes and produces. */
-    private DataType type;
-
     /**
      * Creates a binarize expression.
      *
@@ -41,13 +38,6 @@ public class BinarizeExpression extends Expression  {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        type = context.getCurrentType();
-        if (! (type instanceof TensorDataType))
-            throw new VerificationException(this, "Require a tensor, but got " + type);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         Optional<Tensor> tensor = ((TensorFieldValue)context.getCurrentValue()).getTensor();
         if (tensor.isEmpty()) return;
@@ -55,7 +45,7 @@ public class BinarizeExpression extends Expression  {
     }
 
     @Override
-    public DataType createdOutputType() { return type; }
+    public DataType createdOutputType() { return getOutputType(); }
 
     @Override
     public String toString() {

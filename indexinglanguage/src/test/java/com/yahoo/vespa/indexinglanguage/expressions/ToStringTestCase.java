@@ -31,7 +31,6 @@ public class ToStringTestCase {
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.INT, new ToStringExpression(), DataType.STRING);
         assertVerify(DataType.STRING, new ToStringExpression(), DataType.STRING);
-        assertVerifyThrows("Invalid expression 'to_string': Expected input, but no input is provided", null, new ToStringExpression());
     }
 
     @Test

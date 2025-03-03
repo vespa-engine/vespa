@@ -40,11 +40,6 @@ public final class TokenizeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue)context.getCurrentValue();
         StringFieldValue output = input.clone();
