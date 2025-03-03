@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/searchcore/proton/reference/document_db_reference_registry.h>
 #include <vespa/searchcore/proton/test/mock_document_db_reference.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <thread>
 #include <unistd.h>
 #include <string>
@@ -32,14 +33,12 @@ std::shared_ptr<IDocumentDBReference> checkFooResult()
 
 }
 
-struct Fixture
+struct DocumentDBReferenceRegistryTest : public ::testing::Test
 {
     DocumentDBReferenceRegistry _registry;
 
-    Fixture()
-        : _registry()
-    {
-    }
+    DocumentDBReferenceRegistryTest();
+    ~DocumentDBReferenceRegistryTest() override;
 
     test::MockDocumentDBReference::SP
     add(std::string name) {
@@ -49,46 +48,51 @@ struct Fixture
     }
 };
 
-TEST_F("Test that we can instantiate registry with two references", Fixture)
+DocumentDBReferenceRegistryTest::DocumentDBReferenceRegistryTest()
+    : ::testing::Test(),
+      _registry()
 {
-    auto referenceFoo = f.add("foo");
-    auto referenceBar = f.add("bar");
-    EXPECT_NOT_EQUAL(referenceFoo.get(), referenceBar.get());
-    auto reference = f._registry.get("foo");
-    EXPECT_EQUAL(referenceFoo.get(), reference.get());
-    reference = f._registry.get("bar");
-    EXPECT_EQUAL(referenceBar.get(), reference.get());
 }
 
-TEST_F("Test that we block get until related add is completed", Fixture)
+DocumentDBReferenceRegistryTest::~DocumentDBReferenceRegistryTest() = default;
+
+TEST_F(DocumentDBReferenceRegistryTest, Test_that_we_can_instantiate_registry_with_two_references)
 {
-    const IDocumentDBReferenceRegistry &registry = f._registry;
+    auto referenceFoo = add("foo");
+    auto referenceBar = add("bar");
+    EXPECT_NE(referenceFoo.get(), referenceBar.get());
+    auto reference = _registry.get("foo");
+    EXPECT_EQ(referenceFoo.get(), reference.get());
+    reference = _registry.get("bar");
+    EXPECT_EQ(referenceBar.get(), reference.get());
+}
+
+TEST_F(DocumentDBReferenceRegistryTest, Test_that_we_block_get_until_related_add_is_completed)
+{
+    const IDocumentDBReferenceRegistry &registry = _registry;
     std::thread getFooThread(getFooTask, &registry);
     sleep(1);
     std::shared_ptr<IDocumentDBReference> nullResult;
-    EXPECT_EQUAL(nullResult.get(), checkFooResult().get());
-    auto referenceFoo = f.add("foo");
+    EXPECT_EQ(nullResult.get(), checkFooResult().get());
+    auto referenceFoo = add("foo");
     std::shared_ptr<IDocumentDBReference> checkResult;
     for (int retry = 0; retry < 60 && !checkResult; ++retry) {
         sleep(1);
         checkResult = checkFooResult();
     }
-    EXPECT_EQUAL(referenceFoo.get(), checkResult.get());
+    EXPECT_EQ(referenceFoo.get(), checkResult.get());
     getFooThread.join();
 }
 
-TEST_F("Test that tryGet method can fail", Fixture)
+TEST_F(DocumentDBReferenceRegistryTest, Test_that_tryGet_method_can_fail)
 {
-    auto referenceFoo = f.add("foo");
-    auto reference = f._registry.tryGet("foo");
-    EXPECT_EQUAL(referenceFoo.get(), reference.get());
-    reference = f._registry.tryGet("bar");
+    auto referenceFoo = add("foo");
+    auto reference = _registry.tryGet("foo");
+    EXPECT_EQ(referenceFoo.get(), reference.get());
+    reference = _registry.tryGet("bar");
     EXPECT_TRUE(reference.get() == nullptr);
 }
 
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

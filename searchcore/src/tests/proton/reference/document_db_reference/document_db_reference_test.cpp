@@ -6,7 +6,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <cassert>
 #include <vespa/log/log.h>
 LOG_SETUP("document_db_reference_test");
@@ -34,41 +34,43 @@ makeImportedAttributesRepo()
     return result;
 }
 
-struct Fixture {
+struct DocumentDBReferenceTest : public ::testing::Test {
     std::shared_ptr<test::MockAttributeManager> attrMgr;
     DocumentDBReference ref;
-    Fixture()
-        : attrMgr(std::make_shared<test::MockAttributeManager>()),
-          ref(attrMgr, std::shared_ptr<const IDocumentMetaStoreContext>(), std::shared_ptr<IGidToLidChangeHandler>())
-    {
-        attrMgr->addAttribute("regular", AttributeFactory::createAttribute("regular", {BasicType::INT32}));
-        attrMgr->setImportedAttributes(makeImportedAttributesRepo());
-    }
+    DocumentDBReferenceTest();
+    ~DocumentDBReferenceTest() override;
 };
 
-TEST_F("regular attribute vector can be retrieved", Fixture)
+DocumentDBReferenceTest::DocumentDBReferenceTest()
+    : attrMgr(std::make_shared<test::MockAttributeManager>()),
+      ref(attrMgr, std::shared_ptr<const IDocumentMetaStoreContext>(), std::shared_ptr<IGidToLidChangeHandler>())
 {
-    auto attr = f.ref.getAttribute("regular");
+    attrMgr->addAttribute("regular", AttributeFactory::createAttribute("regular", {BasicType::INT32}));
+    attrMgr->setImportedAttributes(makeImportedAttributesRepo());
+}
+
+DocumentDBReferenceTest::~DocumentDBReferenceTest() = default;
+
+TEST_F(DocumentDBReferenceTest, regular_attribute_vector_can_be_retrieved)
+{
+    auto attr = ref.getAttribute("regular");
     EXPECT_TRUE(attr.get());
     const AttributeVector *attrPtr = dynamic_cast<const AttributeVector *>(attr.get());
     EXPECT_TRUE(attrPtr != nullptr);
 }
 
-TEST_F("imported attribute vector can be retrieved", Fixture)
+TEST_F(DocumentDBReferenceTest, imported_attribute_vector_can_be_retrieved)
 {
-    auto attr = f.ref.getAttribute("imported");
+    auto attr = ref.getAttribute("imported");
     EXPECT_TRUE(attr.get());
     const ImportedAttributeVector *importedPtr = dynamic_cast<const ImportedAttributeVector *>(attr.get());
     EXPECT_TRUE(importedPtr != nullptr);
 }
 
-TEST_F("nullptr is returned for non-existing attribute vector", Fixture)
+TEST_F(DocumentDBReferenceTest, nullptr_is_returned_for_non_existing_attribute_vector)
 {
-    auto attr = f.ref.getAttribute("non-existing");
+    auto attr = ref.getAttribute("non-existing");
     EXPECT_FALSE(attr.get());
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

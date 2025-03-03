@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_summaryengine_test_app TEST
     DEPENDS
     searchcore_summaryengine
     searchcore_pcommon
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_summaryengine_test_app COMMAND searchcore_summaryengine_test_app)
