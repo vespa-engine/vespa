@@ -295,6 +295,7 @@ DataStoreExplorer::get_state(const Inserter& inserter, bool full) const
 {
     auto& object = inserter.insertObject();
     StateExplorerUtils::memory_usage_to_slime(_store.getMemoryUsage(), object.setObject("memory_usage"));
+    StateExplorerUtils::memory_usage_to_slime(_store.getDynamicMemoryUsage(), object.setObject("dynamic_memory_usage"));
     StateExplorerUtils::address_space_to_slime(_store.getAddressSpaceUsage(), object.setObject("address_space"));
     Stats stats;
     stats.buffer_stats_scan(_store);
