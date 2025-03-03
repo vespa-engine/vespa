@@ -46,6 +46,11 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.openai</groupId>
+      <artifactId>openai-java</artifactId>
+      <version>0.30.0</version>
+    </dependency>
 
     <!-- provided scope -->
     <dependency>
