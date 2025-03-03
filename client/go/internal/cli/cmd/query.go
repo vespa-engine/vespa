@@ -18,6 +18,7 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/curl"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
@@ -101,6 +102,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	token := cli.Environment["VESPA_CLI_DATA_PLANE_TOKEN"]
 	authMethod := "mtls"
 	if token != "" {
+		trace.Trace("The VESPA_CLI_DATA_PLANE_TOKEN environment variable is set, using token authentication")
 		authMethod = "token"
 	}
 	service, err := waiter.ServiceWithAuthMethod(target, cli.config.cluster(), authMethod)

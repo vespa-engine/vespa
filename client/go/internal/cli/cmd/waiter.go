@@ -52,10 +52,11 @@ func (w *Waiter) ServiceWithAuthMethod(target vespa.Target, cluster string, auth
 	if err != nil {
 		hint := "The --cluster option specifies the service to use"
 		if authMethod == "token" {
-			tokenHint := "Token authentication requires a token endpoint"
+			tokenHint := "Token authentication requires a token endpoint to be set up in services.xml"
 			return nil, errHint(err, tokenHint, hint)
 		}
-		return nil, errHint(err, hint)
+		authHint := fmt.Sprintf("No endpoint found for authentication method %s", authMethod)
+		return nil, errHint(err, authHint, hint)
 	}
 	if err := w.maybeWaitFor(service); err != nil {
 		return nil, err
