@@ -278,14 +278,18 @@ AsyncHandler::handle_delete_bucket_throttling(api::DeleteBucketCommand& cmd, Mes
         _spi.deleteBucketAsync(spi_bucket, std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, bucket.getBucketId(), std::move(task)));
     });
 
-    auto& throttler = _env._fileStorHandler.operation_throttler();
+    auto& op_throttler = _env._fileStorHandler.operation_throttler();
+    auto& maintenance_throttler = _env._fileStorHandler.maintenance_throttler();
     auto* remove_by_gid_metric = &_env._metrics.remove_by_gid;
 
     for (auto& meta : meta_entries) {
-        auto token = throttler.blocking_acquire_one();
+        // Important: token acquisitions MUST be in same order across all multi-throttled callsites.
+        auto op_token = op_throttler.blocking_acquire_one();
+        auto maintenance_token = maintenance_throttler.blocking_acquire_one();
         remove_by_gid_metric->count.inc();
         std::vector<spi::DocTypeGidAndTimestamp> to_remove = {{std::string(meta->getDocumentType()), meta->getGid(), meta->getTimestamp()}};
-        auto task = makeResultTask([bucket = cmd.getBucket(), token = std::move(token),
+        auto task = makeResultTask([bucket = cmd.getBucket(),
+                                    tokens = std::make_pair(std::move(op_token), std::move(maintenance_token)),
                                     invoke_delete_on_zero_refs, remove_by_gid_metric,
                                     op_timer = framework::MilliSecTimer(_env._component.getClock())]
             (spi::Result::UP result) {
@@ -537,13 +541,16 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
         tracker->sendReply();
     });
 
-    auto& throttler = _env._fileStorHandler.operation_throttler();
+    auto& op_throttler = _env._fileStorHandler.operation_throttler();
+    auto& maintenance_throttler = _env._fileStorHandler.maintenance_throttler();
     for (auto& rm_entry : to_remove) {
-        auto token = throttler.blocking_acquire_one();
+        auto op_token = op_throttler.blocking_acquire_one();
+        auto maintenance_token = maintenance_throttler.blocking_acquire_one();
         std::vector single_id = {std::move(rm_entry)};
         // `shared_error_state` by raw ptr is safe, since `send_reply_on_zero_refs` holds a transitive strong ref.
         auto on_complete = makeResultTask([send_reply_on_zero_refs, error_state = shared_error_state.get(),
-                                           token = std::move(token)](spi::Result::UP response) mutable {
+                                           tokens = std::make_pair(std::move(op_token), std::move(maintenance_token))]
+                                           (spi::Result::UP response) mutable {
             if (response->hasError() && error_state->first_error_set.test_and_set()) {
                 // Visibility depends on shared_ptr release semantics on decref
                 error_state->maybe_error_result = std::move(response);

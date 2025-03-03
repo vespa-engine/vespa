@@ -9,14 +9,16 @@ namespace storage {
 
 ApplyBucketDiffEntryComplete::ApplyBucketDiffEntryComplete(std::shared_ptr<ApplyBucketDiffState> state,
                                                            document::DocumentId doc_id,
-                                                           ThrottleToken throttle_token,
+                                                           ThrottleToken op_throttle_token,
+                                                           ThrottleToken maintenance_throttle_token,
                                                            const char *op,
                                                            const framework::Clock& clock,
                                                            metrics::DoubleAverageMetric& latency_metric)
     : _result_handler(nullptr),
       _state(std::move(state)),
       _doc_id(std::move(doc_id)),
-      _throttle_token(std::move(throttle_token)),
+      _op_throttle_token(std::move(op_throttle_token)),
+      _maintenance_throttle_token(std::move(maintenance_throttle_token)),
       _op(op),
       _start_time(clock),
       _latency_metric(latency_metric)
@@ -33,7 +35,8 @@ ApplyBucketDiffEntryComplete::onComplete(std::unique_ptr<spi::Result> result) no
     }
     double elapsed = _start_time.getElapsedTimeAsDouble();
     _latency_metric.addValue(elapsed);
-    _throttle_token.reset();
+    _maintenance_throttle_token.reset();
+    _op_throttle_token.reset();
     _state->on_entry_complete(std::move(result), _doc_id, _op);
 }
 
