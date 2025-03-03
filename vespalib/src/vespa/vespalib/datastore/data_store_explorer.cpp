@@ -63,14 +63,16 @@ BufferTypeStateStats::aggregate(const BufferState& state) noexcept
 void
 BufferTypeStateStats::stats_to_slime(Inserter& inserter)
 {
-    auto& object = inserter.insertObject();
-    object.setLong("count", _buffers);
-    object.setLong("allocated_entries", _allocated_entries);
-    object.setLong("used_entries", _used_entries);
-    object.setLong("dead_entries", _dead_entries);
-    object.setLong("hold_entries", _hold_entries);
-    object.setLong("extra_used_bytes", _extra_used_bytes);
-    object.setLong("extra_hold_bytes", _extra_hold_bytes);
+    if (_buffers != 0) {
+        auto& object = inserter.insertObject();
+        object.setLong("count", _buffers);
+        object.setLong("allocated_entries", _allocated_entries);
+        object.setLong("used_entries", _used_entries);
+        object.setLong("dead_entries", _dead_entries);
+        object.setLong("hold_entries", _hold_entries);
+        object.setLong("extra_used_bytes", _extra_used_bytes);
+        object.setLong("extra_hold_bytes", _extra_hold_bytes);
+    }
 }
 
 class BufferTypeStats {
@@ -178,6 +180,7 @@ class Stats {
     uint32_t _type_id_limit;
     uint32_t _bufferid_limit;
     uint32_t _max_num_buffers;
+    uint32_t _max_entries;
     uint32_t _active_buffers;
     uint32_t _free_buffers;
     uint32_t _hold_buffers;
@@ -192,12 +195,14 @@ public:
     uint32_t type_id_limit() const noexcept { return _type_id_limit; }
     uint32_t bufferid_limit() const noexcept { return _bufferid_limit; }
     uint32_t max_num_buffers() const noexcept { return _max_num_buffers; }
+    uint32_t max_entries() const noexcept { return _max_entries; }
 };
 
 Stats::Stats()
     : _type_id_limit(0),
       _bufferid_limit(0),
       _max_num_buffers(0),
+      _max_entries(0),
       _active_buffers(0),
       _free_buffers(0),
       _hold_buffers(0),
@@ -212,6 +217,7 @@ Stats::buffer_stats_scan(const DataStoreBase& store)
 {
     _bufferid_limit = store.get_bufferid_limit_acquire();
     _max_num_buffers = store.getMaxNumBuffers();
+    _max_entries = store.get_max_entries();
     _type_id_limit = 0;
     _active_buffers = 0;
     _free_buffers = _max_num_buffers - _bufferid_limit;
@@ -289,11 +295,13 @@ DataStoreExplorer::get_state(const Inserter& inserter, bool full) const
 {
     auto& object = inserter.insertObject();
     StateExplorerUtils::memory_usage_to_slime(_store.getMemoryUsage(), object.setObject("memory_usage"));
+    StateExplorerUtils::address_space_to_slime(_store.getAddressSpaceUsage(), object.setObject("address_space"));
     Stats stats;
     stats.buffer_stats_scan(_store);
     object.setLong("bufferid_limit", stats.bufferid_limit());
     object.setLong("max_num_buffers", stats.max_num_buffers());
     object.setLong("typeid_limit", stats.type_id_limit());
+    object.setLong("max_entries", stats.max_entries());
     stats.buffer_stats_to_slime(object.setObject("buffer_stats"));
     if (full) {
         stats.buffer_type_scan(_store);

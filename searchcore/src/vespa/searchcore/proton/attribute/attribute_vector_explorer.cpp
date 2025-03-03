@@ -40,19 +40,10 @@ convertGenerationToSlime(const AttributeVector &attr, Cursor &object)
 }
 
 void
-convertAddressSpaceToSlime(const AddressSpace &addressSpace, Cursor &object)
-{
-    object.setDouble("usage", addressSpace.usage());
-    object.setLong("used", addressSpace.used());
-    object.setLong("dead", addressSpace.dead());
-    object.setLong("limit", addressSpace.limit());
-}
-
-void
 convertAddressSpaceUsageToSlime(const AddressSpaceUsage &usage, Cursor &object)
 {
     for (const auto& entry : usage.get_all()) {
-        convertAddressSpaceToSlime(entry.second, object.setObject(entry.first));
+        StateExplorerUtils::address_space_to_slime(entry.second, object.setObject(entry.first));
     }
 }
 

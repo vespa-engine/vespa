@@ -76,6 +76,7 @@ public:
     BufferState &getBufferState(uint32_t buffer_id) noexcept;
     const BufferAndMeta & getBufferMeta(uint32_t buffer_id) const noexcept { return _buffers[buffer_id]; }
     uint32_t getMaxNumBuffers() const noexcept { return _buffers.size(); }
+    uint32_t get_max_entries() const noexcept { return _max_entries; }
     uint32_t get_bufferid_limit_acquire() const noexcept { return _bufferIdLimit.load(std::memory_order_acquire); }
     uint32_t get_bufferid_limit_relaxed() noexcept { return _bufferIdLimit.load(std::memory_order_relaxed); }
 
