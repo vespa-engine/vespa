@@ -61,7 +61,6 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, bool before)
     DocumentId id(idstr.view());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
     auto doc = std::make_unique<Document>(repo, *docType, id);
-    EXPECT_NE(nullptr, doc.get());
     asciistream mainstr;
     mainstr << "static text" << i << " body something";
     for (uint32_t j = 0; j < 10; ++j) {
