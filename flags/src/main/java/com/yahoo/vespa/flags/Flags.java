@@ -243,7 +243,7 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
             "search-handler-threadpool", 10,
-            List.of("bjorncs"), "2023-10-01", "2025-03-01",
+            List.of("bjorncs"), "2023-10-01", "2025-12-01",
             "Adjust search handler threadpool size",
             "Takes effect at redeployment",
             APPLICATION);
