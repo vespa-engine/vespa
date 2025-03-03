@@ -214,6 +214,9 @@ func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CL
 			sb.WriteString(": ")
 			sb.WriteString(err.Error())
 		}
+		if s.AuthMethod != "" {
+			sb.WriteString(color.CyanString(fmt.Sprintf(" (%s)", s.AuthMethod)))
+		}
 	case "plain":
 		sb.WriteString(s.BaseURL)
 	default:

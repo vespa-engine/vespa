@@ -136,10 +136,18 @@ func createServices(n int, timeout time.Duration, cli *CLI, waiter *Waiter) ([]h
 	if err != nil {
 		return nil, "", err
 	}
+
+	token := cli.Environment["VESPA_CLI_DATA_PLANE_TOKEN"]
+	authMethod := "mtls"
+	if token != "" {
+		authMethod = "token"
+	}
+
 	services := make([]httputil.Client, 0, n)
 	baseURL := ""
+
 	for range n {
-		service, err := waiter.Service(target, cli.config.cluster())
+		service, err := waiter.ServiceWithAuthMethod(target, cli.config.cluster(), authMethod)
 		if err != nil {
 			return nil, "", err
 		}
@@ -245,6 +253,9 @@ func feed(files []string, options feedOptions, cli *CLI, cmd *cobra.Command) err
 	header, err := httputil.ParseHeader(options.headers)
 	if err != nil {
 		return err
+	}
+	if token := cli.Environment["VESPA_CLI_DATA_PLANE_TOKEN"]; token != "" {
+		header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
