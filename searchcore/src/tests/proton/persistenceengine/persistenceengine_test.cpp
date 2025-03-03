@@ -17,9 +17,8 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <set>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using document::BucketId;
 using document::BucketSpace;
@@ -417,41 +416,47 @@ struct SimpleFixture {
         : SimpleFixture(makeBucketSpace())
     {
     }
+    ~SimpleFixture();
 };
 
+SimpleFixture::~SimpleFixture() =  default;
 
 void
 assertHandler(const Bucket &expBucket, Timestamp expTimestamp,
-              const DocumentId &expDocId, const MyHandler &handler)
+              const DocumentId &expDocId, const MyHandler &handler, const std::string& label)
 {
-    EXPECT_EQUAL(expBucket, handler.lastBucket);
-    EXPECT_EQUAL(expTimestamp, handler.lastTimestamp);
-    EXPECT_EQUAL(expDocId, handler.lastDocId);
+    SCOPED_TRACE(label);
+    EXPECT_EQ(expBucket, handler.lastBucket);
+    EXPECT_EQ(expTimestamp, handler.lastTimestamp);
+    EXPECT_EQ(expDocId, handler.lastDocId);
 }
 
 void assertBucketList(const BucketIdListResult &result, const std::vector<BucketId> &expBuckets)
 {
     const BucketIdListResult::List &bucketList = result.getList();
-    EXPECT_EQUAL(expBuckets.size(), bucketList.size());
+    EXPECT_EQ(expBuckets.size(), bucketList.size());
     for (const auto &expBucket : expBuckets) {
         EXPECT_TRUE(std::find(bucketList.begin(), bucketList.end(), expBucket) != bucketList.end());
     }
 }
 
-void assertBucketList(PersistenceProvider &spi, BucketSpace bucketSpace, const std::vector<BucketId> &expBuckets)
+void assertBucketList(PersistenceProvider &spi, BucketSpace bucketSpace, const std::vector<BucketId> &expBuckets, const std::string& label)
 {
+    SCOPED_TRACE("assertBucketList " + label);
     BucketIdListResult result = spi.listBuckets(bucketSpace);
-    TEST_DO(assertBucketList(result, expBuckets));
+    assertBucketList(result, expBuckets);
 }
 
-void assertModifiedBuckets(PersistenceProvider &spi, BucketSpace bucketSpace, const std::vector<BucketId> &expBuckets)
+void assertModifiedBuckets(PersistenceProvider &spi, BucketSpace bucketSpace, const std::vector<BucketId> &expBuckets, const std::string& label)
 {
+    SCOPED_TRACE("assertModifiedBuckets " + label);
     BucketIdListResult result = spi.getModifiedBuckets(bucketSpace);
-    TEST_DO(assertBucketList(result, expBuckets));
+    assertBucketList(result, expBuckets);
 }
 
-TEST_F("require that getPartitionStates() prepares all handlers", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_getPartitionStates_prepares_all_handlers)
 {
+    SimpleFixture f;
     EXPECT_FALSE(f.hset.handler1.initialized);
     EXPECT_FALSE(f.hset.handler2.initialized);
     f.engine.initialize();
@@ -460,68 +465,74 @@ TEST_F("require that getPartitionStates() prepares all handlers", SimpleFixture)
 }
 
 
-TEST_F("require that puts are routed to handler", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_puts_are_routed_to_handler)
 {
+    SimpleFixture f;
     f.engine.put(bucket1, tstamp1, doc1);
-    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
-    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler2));
+    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1, "handler1 before put");
+    assertHandler(bucket0, tstamp0, docId0, f.hset.handler2, "handler2 before put");
 
     f.engine.put(bucket1, tstamp1, doc2);
-    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
-    TEST_DO(assertHandler(bucket1, tstamp1, docId2, f.hset.handler2));
+    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1, "handler1 after put");
+    assertHandler(bucket1, tstamp1, docId2, f.hset.handler2, "handler2 after put");
 
-    EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
-                 f.engine.put(bucket1, tstamp1, doc3));
+    EXPECT_EQ(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
+              f.engine.put(bucket1, tstamp1, doc3));
 }
 
 
-TEST_F("require that put is rejected if resource limit is reached", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_put_is_rejected_if_resource_limit_is_reached)
 {
+    SimpleFixture f;
     f._writeFilter._acceptWriteOperation = false;
     f._writeFilter._message = "Disk is full";
 
-    EXPECT_EQUAL(
+    EXPECT_EQ(
             Result(Result::ErrorType::RESOURCE_EXHAUSTED,
                    "Put operation rejected for document 'id:type3:type3::1': 'Disk is full'"),
             f.engine.put(bucket1, tstamp1, doc3));
 }
 
 
-TEST_F("require that updates are routed to handler", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_updates_are_routed_to_handler)
 {
+    SimpleFixture f;
     f.hset.handler1.setExistingTimestamp(tstamp2);
     UpdateResult ur = f.engine.update(bucket1, tstamp1, upd1);
-    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
-    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler2));
-    EXPECT_EQUAL(tstamp2, ur.getExistingTimestamp());
+    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1, "handler1 before update");
+    assertHandler(bucket0, tstamp0, docId0, f.hset.handler2, "handler2 before update");
+    EXPECT_EQ(tstamp2, ur.getExistingTimestamp());
 
     f.hset.handler2.setExistingTimestamp(tstamp3);
     ur = f.engine.update(bucket1, tstamp1, upd2);
-    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
-    TEST_DO(assertHandler(bucket1, tstamp1, docId2, f.hset.handler2));
-    EXPECT_EQUAL(tstamp3, ur.getExistingTimestamp());
+    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1, "handler1 after update");
+    assertHandler(bucket1, tstamp1, docId2, f.hset.handler2, "handler2 after update");
+    EXPECT_EQ(tstamp3, ur.getExistingTimestamp());
 
-    EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
-                 f.engine.update(bucket1, tstamp1, upd3));
+    EXPECT_EQ(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"),
+              f.engine.update(bucket1, tstamp1, upd3));
 }
 
-TEST_F("require that updates with bad ids are rejected", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_updates_with_bad_ids_are_rejected)
 {
-    EXPECT_EQUAL(UpdateResult(Result::ErrorType::PERMANENT_ERROR, "Update operation rejected due to bad id (id:type2:type2::1, type1)"),
-                 f.engine.update(bucket1, tstamp1, bad_id_upd));
+    SimpleFixture f;
+    EXPECT_EQ(UpdateResult(Result::ErrorType::PERMANENT_ERROR, "Update operation rejected due to bad id (id:type2:type2::1, type1)"),
+              f.engine.update(bucket1, tstamp1, bad_id_upd));
 }
 
-TEST_F("require that simple, cheap update is not rejected if resource limit is reached", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_simple_cheap_update_is_not_rejected_if_resource_limit_is_reached)
 {
+    SimpleFixture f;
     f._writeFilter._acceptWriteOperation = false;
     f._writeFilter._message = "Disk is full";
 
-    EXPECT_EQUAL(Result(Result::ErrorType::NONE, ""),
-                 f.engine.update(bucket1, tstamp1, upd1));
+    EXPECT_EQ(Result(Result::ErrorType::NONE, ""),
+              f.engine.update(bucket1, tstamp1, upd1));
 }
 
-TEST_F("require that update is rejected if resource limit is reached", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_update_is_rejected_if_resource_limit_is_reached)
 {
+    SimpleFixture f;
     f._writeFilter._acceptWriteOperation = false;
     f._writeFilter._message = "Disk is full";
 
@@ -531,150 +542,162 @@ TEST_F("require that update is rejected if resource limit is reached", SimpleFix
     DocumentUpdate::SP upd = createUpd(type, docId1);
     upd->addUpdate(std::move(document::FieldUpdate(field).addUpdate(std::make_unique<document::AssignValueUpdate>(std::make_unique<document::StringFieldValue>("new value")))));
 
-    EXPECT_EQUAL(
+    EXPECT_EQ(
             Result(Result::ErrorType::RESOURCE_EXHAUSTED,
                    "Update operation rejected for document 'id:type1:type1::1': 'Disk is full'"),
             f.engine.update(bucket1, tstamp1, upd));
 }
 
-TEST_F("require that removes are routed to handlers", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_removes_are_routed_to_handlers)
 {
+    SimpleFixture f;
     RemoveResult rr = f.engine.remove(bucket1, tstamp1, docId3);
-    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler1));
-    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler2));
+    assertHandler(bucket0, tstamp0, docId0, f.hset.handler1, "handler1 before remove");
+    assertHandler(bucket0, tstamp0, docId0, f.hset.handler2, "handler2 before remove");
     EXPECT_FALSE(rr.wasFound());
     EXPECT_TRUE(rr.hasError());
-    EXPECT_EQUAL(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"), rr);
+    EXPECT_EQ(Result(Result::ErrorType::PERMANENT_ERROR, "No handler for document type 'type3'"), rr);
 
     f.hset.handler1.setExistingTimestamp(tstamp2);
     rr = f.engine.remove(bucket1, tstamp1, docId1);
-    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
-    TEST_DO(assertHandler(bucket0, tstamp0, docId0, f.hset.handler2));
+    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1, "handler1 after remove");
+    assertHandler(bucket0, tstamp0, docId0, f.hset.handler2, "handler2 after remove");
     EXPECT_TRUE(rr.wasFound());
     EXPECT_FALSE(rr.hasError());
 
     f.hset.handler1.setExistingTimestamp(tstamp0);
     f.hset.handler2.setExistingTimestamp(tstamp3);
     rr = f.engine.remove(bucket1, tstamp1, docId2);
-    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
-    TEST_DO(assertHandler(bucket1, tstamp1, docId2, f.hset.handler2));
+    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1, "handler1 after 2nd remove");
+    assertHandler(bucket1, tstamp1, docId2, f.hset.handler2, "handler2 after 2nd remove");
     EXPECT_TRUE(rr.wasFound());
     EXPECT_FALSE(rr.hasError());
 
     f.hset.handler2.setExistingTimestamp(tstamp0);
     rr = f.engine.remove(bucket1, tstamp1, docId2);
-    TEST_DO(assertHandler(bucket1, tstamp1, docId1, f.hset.handler1));
-    TEST_DO(assertHandler(bucket1, tstamp1, docId2, f.hset.handler2));
+    assertHandler(bucket1, tstamp1, docId1, f.hset.handler1, "handler1 after 3rd remove");
+    assertHandler(bucket1, tstamp1, docId2, f.hset.handler2, "handler2 after 3rd remove");
     EXPECT_FALSE(rr.wasFound());
     EXPECT_FALSE(rr.hasError());
 }
 
-TEST_F("require that remove is NOT rejected if resource limit is reached", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_remove_is_NOT_rejected_if_resource_limit_is_reached)
 {
+    SimpleFixture f;
     f._writeFilter._acceptWriteOperation = false;
     f._writeFilter._message = "Disk is full";
 
-    EXPECT_EQUAL(RemoveResult(false), f.engine.remove(bucket1, tstamp1, docId1));
+    EXPECT_EQ(RemoveResult(false), f.engine.remove(bucket1, tstamp1, docId1));
 }
 
 
-TEST_F("require that listBuckets() is routed to handlers and merged", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_listBuckets_is_routed_to_handlers_and_merged)
 {
+    SimpleFixture f;
     f.hset.prepareListBuckets();
-    TEST_DO(assertBucketList(f.engine, makeBucketSpace(), { bckId1, bckId2, bckId3 }));
+    assertBucketList(f.engine, makeBucketSpace(), { bckId1, bckId2, bckId3 }, "default");
 }
 
 
-TEST_F("require that setClusterState() is routed to handlers", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_setClusterState_is_routed_to_handlers)
 {
+    SimpleFixture f;
     ClusterState state(createClusterState());
 
     f.engine.setClusterState(makeBucketSpace(), state);
-    EXPECT_EQUAL(&state, f.hset.handler1.lastCalc);
-    EXPECT_EQUAL(&state, f.hset.handler2.lastCalc);
+    EXPECT_EQ(&state, f.hset.handler1.lastCalc);
+    EXPECT_EQ(&state, f.hset.handler2.lastCalc);
 }
 
 
-TEST_F("require that setActiveState() is routed to handlers and merged", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_setActiveState_is_routed_to_handlers_and_merged)
 {
+    SimpleFixture f;
     f.hset.handler1.bucketStateResult = Result(Result::ErrorType::TRANSIENT_ERROR, "err1");
     f.hset.handler2.bucketStateResult = Result(Result::ErrorType::PERMANENT_ERROR, "err2");
 
     Result result = f.engine.setActiveState(bucket1, storage::spi::BucketInfo::NOT_ACTIVE);
-    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
-    EXPECT_EQUAL("err1, err2", result.getErrorMessage());
-    EXPECT_EQUAL(storage::spi::BucketInfo::NOT_ACTIVE, f.hset.handler1.lastBucketState);
-    EXPECT_EQUAL(storage::spi::BucketInfo::NOT_ACTIVE, f.hset.handler2.lastBucketState);
+    EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
+    EXPECT_EQ("err1, err2", result.getErrorMessage());
+    EXPECT_EQ(storage::spi::BucketInfo::NOT_ACTIVE, f.hset.handler1.lastBucketState);
+    EXPECT_EQ(storage::spi::BucketInfo::NOT_ACTIVE, f.hset.handler2.lastBucketState);
 
     f.engine.setActiveState(bucket1, storage::spi::BucketInfo::ACTIVE);
-    EXPECT_EQUAL(storage::spi::BucketInfo::ACTIVE, f.hset.handler1.lastBucketState);
-    EXPECT_EQUAL(storage::spi::BucketInfo::ACTIVE, f.hset.handler2.lastBucketState);
+    EXPECT_EQ(storage::spi::BucketInfo::ACTIVE, f.hset.handler1.lastBucketState);
+    EXPECT_EQ(storage::spi::BucketInfo::ACTIVE, f.hset.handler2.lastBucketState);
 }
 
 
-TEST_F("require that getBucketInfo() is routed to handlers and merged", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_getBucketInfo_is_routed_to_handlers_and_merged)
 {
+    SimpleFixture f;
     f.hset.handler1.bucketInfo = bucketInfo1;
     f.hset.handler2.bucketInfo = bucketInfo2;
 
     BucketInfoResult result = f.engine.getBucketInfo(bucket1);
-    EXPECT_EQUAL(bucketInfo3, result.getBucketInfo());
+    EXPECT_EQ(bucketInfo3, result.getBucketInfo());
 }
 
 
-TEST_F("require that createBucket() is routed to handlers and merged", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_createBucket_is_routed_to_handlers_and_merged)
 {
+    SimpleFixture f;
     f.hset.handler1._createBucketResult = Result(Result::ErrorType::TRANSIENT_ERROR, "err1a");
     f.hset.handler2._createBucketResult = Result(Result::ErrorType::PERMANENT_ERROR, "err2a");
 
     Result result = f.engine.createBucket(bucket1);
-    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
-    EXPECT_EQUAL("err1a, err2a", result.getErrorMessage());
+    EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
+    EXPECT_EQ("err1a, err2a", result.getErrorMessage());
 }
 
 
-TEST_F("require that deleteBucket() is routed to handlers and merged", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_deleteBucket_is_routed_to_handlers_and_merged)
 {
+    SimpleFixture f;
     f.hset.handler1.deleteBucketResult = Result(Result::ErrorType::TRANSIENT_ERROR, "err1");
     f.hset.handler2.deleteBucketResult = Result(Result::ErrorType::PERMANENT_ERROR, "err2");
 
     Result result = f.engine.deleteBucket(bucket1);
-    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
-    EXPECT_EQUAL("err1, err2", result.getErrorMessage());
+    EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, result.getErrorCode());
+    EXPECT_EQ("err1, err2", result.getErrorMessage());
 }
 
 
-TEST_F("require that getModifiedBuckets() is routed to handlers and merged", SimpleFixture)
+TEST(PersistenceEngineTest, require_that_getModifiedBuckets_is_routed_to_handlers_and_merged)
 {
+    SimpleFixture f;
     f.hset.prepareGetModifiedBuckets();
-    TEST_DO(assertModifiedBuckets(f.engine, makeBucketSpace(), { bckId1, bckId2, bckId3 }));
+    assertModifiedBuckets(f.engine, makeBucketSpace(), { bckId1, bckId2, bckId3 }, "default");
 }
 
 
-TEST_F("require that get is sent to all handlers", SimpleFixture) {
+TEST(PersistenceEngineTest, require_that_get_is_sent_to_all_handlers) {
+    SimpleFixture f;
     Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     GetResult result = f.engine.get(bucket1, document::AllFields(), docId1, context);
 
-    EXPECT_EQUAL(docId1, f.hset.handler1.lastDocId);
-    EXPECT_EQUAL(docId1, f.hset.handler2.lastDocId);
+    EXPECT_EQ(docId1, f.hset.handler1.lastDocId);
+    EXPECT_EQ(docId1, f.hset.handler2.lastDocId);
 }
 
-TEST_F("require that get returns the first document found", SimpleFixture) {
+TEST(PersistenceEngineTest, require_that_get_returns_the_first_document_found) {
+    SimpleFixture f;
     f.hset.handler1.setDocument(*doc1, tstamp1);
     f.hset.handler2.setDocument(*doc2, tstamp2);
     Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     GetResult result = f.engine.get(bucket1, document::AllFields(), docId1, context);
 
-    EXPECT_EQUAL(docId1, f.hset.handler1.lastDocId);
-    EXPECT_EQUAL(DocumentId(), f.hset.handler2.lastDocId);
+    EXPECT_EQ(docId1, f.hset.handler1.lastDocId);
+    EXPECT_EQ(DocumentId(), f.hset.handler2.lastDocId);
 
-    EXPECT_EQUAL(tstamp1, result.getTimestamp());
+    EXPECT_EQ(tstamp1, result.getTimestamp());
     ASSERT_TRUE(result.hasDocument());
-    EXPECT_EQUAL(*doc1, result.getDocument());
+    EXPECT_EQ(*doc1, result.getDocument());
     EXPECT_FALSE(result.is_tombstone());
 }
 
-TEST_F("require that createIterator does", SimpleFixture) {
+TEST(PersistenceEngineTest, require_that_createIterator_does) {
+    SimpleFixture f;
     Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult result =
         f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
@@ -687,7 +710,8 @@ TEST_F("require that createIterator does", SimpleFixture) {
     EXPECT_FALSE(it_result.hasError());
 }
 
-TEST_F("require that iterator ids are unique", SimpleFixture) {
+TEST(PersistenceEngineTest, require_that_iterator_ids_are_unique) {
+    SimpleFixture f;
     Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     CreateIteratorResult result =
         f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
@@ -697,16 +721,17 @@ TEST_F("require that iterator ids are unique", SimpleFixture) {
                                 storage::spi::NEWEST_DOCUMENT_ONLY, context);
     EXPECT_FALSE(result.hasError());
     EXPECT_FALSE(result2.hasError());
-    EXPECT_NOT_EQUAL(result.getIteratorId(), result2.getIteratorId());
+    EXPECT_NE(result.getIteratorId(), result2.getIteratorId());
 }
 
-TEST_F("require that iterate requires valid iterator", SimpleFixture) {
+TEST(PersistenceEngineTest, require_that_iterate_requires_valid_iterator) {
+    SimpleFixture f;
     uint64_t max_size = 1024;
     Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
     IterateResult it_result = f.engine.iterate(IteratorId(1), max_size);
     EXPECT_TRUE(it_result.hasError());
-    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, it_result.getErrorCode());
-    EXPECT_EQUAL("Unknown iterator with id 1", it_result.getErrorMessage());
+    EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, it_result.getErrorCode());
+    EXPECT_EQ("Unknown iterator with id 1", it_result.getErrorMessage());
 
     CreateIteratorResult result =
         f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
@@ -717,7 +742,8 @@ TEST_F("require that iterate requires valid iterator", SimpleFixture) {
     EXPECT_FALSE(it_result.hasError());
 }
 
-TEST_F("require that iterate returns documents", SimpleFixture) {
+TEST(PersistenceEngineTest, require_that_iterate_returns_documents) {
+    SimpleFixture f;
     f.hset.handler1.setDocument(*doc1, tstamp1);
     f.hset.handler2.setDocument(*doc2, tstamp2);
 
@@ -730,10 +756,11 @@ TEST_F("require that iterate returns documents", SimpleFixture) {
 
     IterateResult it_result = f.engine.iterate(result.getIteratorId(), max_size);
     EXPECT_FALSE(it_result.hasError());
-    EXPECT_EQUAL(2u, it_result.getEntries().size());
+    EXPECT_EQ(2u, it_result.getEntries().size());
 }
 
-TEST_F("require that destroyIterator prevents iteration", SimpleFixture) {
+TEST(PersistenceEngineTest, require_that_destroyIterator_prevents_iteration) {
+    SimpleFixture f;
     f.hset.handler1.setDocument(*doc1, tstamp1);
 
     Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
@@ -748,22 +775,19 @@ TEST_F("require that destroyIterator prevents iteration", SimpleFixture) {
     uint64_t max_size = 1024;
     IterateResult it_result = f.engine.iterate(create_result.getIteratorId(), max_size);
     EXPECT_TRUE(it_result.hasError());
-    EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, it_result.getErrorCode());
+    EXPECT_EQ(Result::ErrorType::PERMANENT_ERROR, it_result.getErrorCode());
     std::string msg_prefix = "Unknown iterator with id";
-    EXPECT_EQUAL(msg_prefix, it_result.getErrorMessage().substr(0, msg_prefix.size()));
+    EXPECT_EQ(msg_prefix, it_result.getErrorMessage().substr(0, msg_prefix.size()));
 }
 
-TEST_F("require that multiple bucket spaces works", SimpleFixture(altBucketSpace)) {
+TEST(PersistenceEngineTest, require_that_multiple_bucket_spaces_works) {
+    SimpleFixture f(altBucketSpace);
     f.hset.prepareListBuckets();
-    TEST_DO(assertBucketList(f.engine, makeBucketSpace(), { bckId1, bckId2 }));
-    TEST_DO(assertBucketList(f.engine, altBucketSpace, { bckId2, bckId3 }));
+    assertBucketList(f.engine, makeBucketSpace(), { bckId1, bckId2 }, "default");
+    assertBucketList(f.engine, altBucketSpace, { bckId2, bckId3 }, "alt");
     f.hset.prepareGetModifiedBuckets();
-    TEST_DO(assertModifiedBuckets(f.engine, makeBucketSpace(), { bckId1, bckId2 }));
-    TEST_DO(assertModifiedBuckets(f.engine, altBucketSpace, { bckId2, bckId3 }));
+    assertModifiedBuckets(f.engine, makeBucketSpace(), { bckId1, bckId2 }, "default");
+    assertModifiedBuckets(f.engine, altBucketSpace, { bckId2, bckId3 }, "alt");
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
-
+GTEST_MAIN_RUN_ALL_TESTS()

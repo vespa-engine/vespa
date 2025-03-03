@@ -1,8 +1,6 @@
 *_test
 .depend
 Makefile
-lhs.out
-rhs.out
 searchlib_blueprint_test_app
 searchlib_intermediate_blueprints_test_app
 searchlib_leaf_blueprints_test_app

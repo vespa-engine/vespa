@@ -6,15 +6,13 @@
 #include "nearest_neighbor_index_saver.h"
 #include "serialized_tensor_ref.h"
 #include "tensor_attribute_constants.h"
+#include "tensor_attribute_explorer.h"
 #include "tensor_attribute_loader.h"
 #include "tensor_attribute_saver.h"
 #include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
-#include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/i_compaction_context.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/eval/eval/fast_value.h>
@@ -26,12 +24,10 @@ using document::TensorDataType;
 using document::TensorUpdate;
 using document::WrongTensorTypeException;
 using search::AddressSpaceComponents;
-using search::StateExplorerUtils;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using vespalib::slime::ObjectInserter;
 
 namespace search::tensor {
 
@@ -218,20 +214,6 @@ TensorAttribute::update_stat()
 }
 
 void
-TensorAttribute::populate_state(vespalib::slime::Cursor& object) const
-{
-    object.setLong("compact_generation", _compactGeneration);
-    StateExplorerUtils::memory_usage_to_slime(_refVector.getMemoryUsage(),
-                                              object.setObject("ref_vector").setObject("memory_usage"));
-    StateExplorerUtils::memory_usage_to_slime(_tensorStore.getMemoryUsage(),
-                                              object.setObject("tensor_store").setObject("memory_usage"));
-    if (_index) {
-        ObjectInserter index_inserter(object, "nearest_neighbor_index");
-        _index->get_state(index_inserter);
-    }
-}
-
-void
 TensorAttribute::populate_address_space_usage(AddressSpaceUsage& usage) const
 {
     usage.set(AddressSpaceComponents::tensor_store, _tensorStore.get_address_space_usage());
@@ -304,11 +286,10 @@ TensorAttribute::getTensor(DocId docId) const
     return _tensorStore.get_tensor(ref);
 }
 
-void
-TensorAttribute::get_state(const vespalib::slime::Inserter& inserter) const
+std::unique_ptr<vespalib::StateExplorer>
+TensorAttribute::make_state_explorer() const
 {
-    auto& object = inserter.insertObject();
-    populate_state(object);
+    return std::make_unique<TensorAttributeExplorer>(_compactGeneration, _refVector, _tensorStore, _index.get());
 }
 
 void

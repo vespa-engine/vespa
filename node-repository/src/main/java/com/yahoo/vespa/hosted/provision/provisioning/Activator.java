@@ -10,6 +10,7 @@ import com.yahoo.config.provision.ClusterSpec.Type;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.ParentHostUnavailableException;
+import com.yahoo.config.provision.RequestedNodesMissingException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
@@ -83,11 +84,12 @@ class Activator {
         NodeList oldActive = applicationNodes.state(Node.State.active); // All nodes active now
         NodeList continuedActive = oldActive.matching(node -> hostnames.contains(node.hostname()));
         NodeList newActive = withHostInfo(continuedActive, hosts, activationTime).and(reserved); // All nodes that will be active when this is committed
-        if ( ! newActive.hostnames().containsAll(hostnames))
-            throw new RuntimeException("Activation of " + application + " failed, could not find all requested hosts." +
-                                       "\nRequested: " + hosts +
-                                       "\nReserved: " + reserved.hostnames() +
-                                       "\nActive: " + oldActive.hostnames());
+        if ( ! newActive.hostnames().containsAll(hostnames)) {
+            Set<String> newHostnames = newActive.hostnames();
+            List<String> missingHostnames = hostnames.stream().filter(hostname -> ! newHostnames.contains(hostname)).sorted().toList();
+            throw new RequestedNodesMissingException("Activation of %s failed, following nodes are missing and must be replaced: %s"
+                    .formatted(application, String.join(", ", missingHostnames)));
+        }
 
         validateParentHosts(application, allNodes, reserved);
 

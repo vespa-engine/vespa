@@ -5,5 +5,6 @@ vespa_add_executable(searchcore_persistence_handler_map_test_app TEST
     DEPENDS
     searchcore_persistenceengine
     searchcore_pcommon
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_persistence_handler_map_test_app COMMAND searchcore_persistence_handler_map_test_app)

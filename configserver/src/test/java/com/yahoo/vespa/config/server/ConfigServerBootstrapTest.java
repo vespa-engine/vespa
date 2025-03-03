@@ -21,11 +21,13 @@ import com.yahoo.path.Path;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.filedistribution.FileDirectory;
+import com.yahoo.vespa.config.server.filedistribution.FileServer;
 import com.yahoo.vespa.config.server.rpc.RpcServer;
 import com.yahoo.vespa.config.server.version.VersionState;
 import com.yahoo.vespa.config.server.version.VespaVersion;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -257,6 +259,9 @@ public class ConfigServerBootstrapTest {
                                             VipStatusMode vipStatusMode,
                                             VersionState versionState) {
         StateMonitor stateMonitor = StateMonitor.createForTesting();
+        ConfigserverConfig configserverConfig = tester.applicationRepository().configserverConfig();
+        FileDirectory fileDirectory = new FileDirectory(configserverConfig);
+        FileServer fileServer = new FileServer(configserverConfig, new InMemoryFlagSource(), fileDirectory);
         VipStatus vipStatus = createVipStatus(stateMonitor);
         return new Bootstrapper(tester.applicationRepository(),
                                 rpcServer,
@@ -264,7 +269,8 @@ public class ConfigServerBootstrapTest {
                                 stateMonitor,
                                 vipStatus,
                                 vipStatusMode,
-                                new FileDirectory(tester.applicationRepository().configserverConfig()));
+                                fileDirectory,
+                                fileServer);
     }
 
     private void waitUntil(BooleanSupplier booleanSupplier, String messageIfWaitingFails) throws InterruptedException {
@@ -363,8 +369,10 @@ public class ConfigServerBootstrapTest {
                             StateMonitor stateMonitor,
                             VipStatus vipStatus,
                             VipStatusMode vipStatusMode,
-                            FileDirectory fileDirectory) {
-            super(applicationRepository, server, versionState, stateMonitor, vipStatus, CONTINUE, vipStatusMode, fileDirectory);
+                            FileDirectory fileDirectory,
+                            FileServer fileServer) {
+            super(applicationRepository, server, versionState, stateMonitor, vipStatus, CONTINUE,
+                  vipStatusMode, fileDirectory, fileServer);
         }
 
         @Override

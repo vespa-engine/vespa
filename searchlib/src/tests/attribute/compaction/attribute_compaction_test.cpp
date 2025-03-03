@@ -5,7 +5,7 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -65,7 +65,7 @@ DocIdRange addAttributeDocs(AttributePtr &v, uint32_t numDocs)
     uint32_t startDoc = 0;
     uint32_t lastDoc = 0;
     EXPECT_TRUE(v->addDocs(startDoc, lastDoc, numDocs));
-    EXPECT_EQUAL(startDoc + numDocs - 1, lastDoc);
+    EXPECT_EQ(startDoc + numDocs - 1, lastDoc);
     DocIdRange range(startDoc, startDoc + numDocs);
     cleanAttribute(*v, range);
     return range;
@@ -165,8 +165,9 @@ public:
     }
 };
 
-TEST_F("Test that compaction of integer array attribute reduces memory usage", Fixture({ BasicType::INT64, CollectionType::ARRAY }))
+TEST(AttributeCompactionTest, Test_that_compaction_of_integer_array_attribute_reduces_memory_usage)
 {
+    Fixture f({ BasicType::INT64, CollectionType::ARRAY });
     DocIdRange range1 = f.addDocs(2000);
     DocIdRange range2 = f.addDocs(1000);
     f.populate(range1, 40);
@@ -174,12 +175,12 @@ TEST_F("Test that compaction of integer array attribute reduces memory usage", F
     AttributeStatus beforeStatus = f.getStatus("before");
     f.clean(range1);
     AttributeStatus afterStatus = f.getStatus("after");
-    EXPECT_LESS(afterStatus.getUsed(), beforeStatus.getUsed());
+    EXPECT_LT(afterStatus.getUsed(), beforeStatus.getUsed());
 }
 
-TEST_F("Allocated memory is not accumulated in an array attribute when moving between value classes when compaction is active",
-       Fixture({BasicType::INT64, CollectionType::ARRAY}))
+TEST(AttributeCompactionTest, Allocated_memory_is_not_accumulated_in_an_array_attribute_when_moving_between_value_classes_when_compaction_is_active)
 {
+    Fixture f({BasicType::INT64, CollectionType::ARRAY});
     DocIdRange range = f.addDocs(1000);
     for (uint32_t i = 0; i < 50; ++i) {
         uint32_t values = 10 + i;
@@ -190,7 +191,7 @@ TEST_F("Allocated memory is not accumulated in an array attribute when moving be
         // we don't accumulate allocated memory as part of that process.
         f.populate(range, values);
         auto status = f.getStatus(vespalib::make_string("values=%u", values));
-        EXPECT_LESS(calc_alloc_waste(status), 0.68);
+        EXPECT_LT(calc_alloc_waste(status), 0.68);
     }
 }
 
@@ -214,52 +215,52 @@ populate_and_hammer(Fixture& f, bool take_attribute_guard)
     }
 }
 
-TEST_F("Address space usage (dead) increases significantly when free lists are NOT used (compaction configured off)",
-       Fixture(compactAddressSpaceAttributeConfig(false)))
+TEST(AttributeCompactionTest, Address_space_usage_dead_increases_significantly_when_free_lists_are_NOT_used_and_compaction_configured_off)
 {
+    Fixture f(compactAddressSpaceAttributeConfig(false));
     populate_and_hammer(f, true);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // 100 * 1000 dead arrays due to new values for docids
     // 1 reserved array accounted as dead
-    EXPECT_EQUAL(100001u, afterSpace.dead());
+    EXPECT_EQ(100001u, afterSpace.dead());
 }
 
-TEST_F("Address space usage (dead) increases only slightly when free lists are used (compaction configured off)",
-       Fixture(compactAddressSpaceAttributeConfig(false)))
+TEST(AttributeCompactionTest, Address_space_usage_dead_increases_only_slightly_when_free_lists_are_used_and_compaction_configured_off)
 {
+    Fixture f(compactAddressSpaceAttributeConfig(false));
     populate_and_hammer(f, false);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // Only 1000 dead arrays (due to new values for docids) as free lists are used.
     // 1 reserved array accounted as dead
-    EXPECT_EQUAL(1001u, afterSpace.dead());
+    EXPECT_EQ(1001u, afterSpace.dead());
 }
 
-TEST_F("Compaction limits address space usage (dead) when free lists are NOT used",
-       Fixture(compactAddressSpaceAttributeConfig(true)))
+TEST(AttributeCompactionTest, Compaction_limits_address_space_usage_dead_when_free_lists_are_NOT_used)
 {
+    Fixture f(compactAddressSpaceAttributeConfig(true));
     populate_and_hammer(f, true);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
-    EXPECT_GREATER(CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, afterSpace.dead());
+    EXPECT_GT(CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, afterSpace.dead());
 }
 
-TEST_F("Compaction is not executed when free lists are used",
-       Fixture(compactAddressSpaceAttributeConfig(true)))
+TEST(AttributeCompactionTest, Compaction_is_not_executed_when_free_lists_are_used)
 {
+    Fixture f(compactAddressSpaceAttributeConfig(true));
     populate_and_hammer(f, false);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // Only 1000 dead arrays (due to new values for docids) as free lists are used.
     // 1 reserved array accounted as dead
-    EXPECT_EQUAL(1001u, afterSpace.dead());
+    EXPECT_EQ(1001u, afterSpace.dead());
 }
 
-TEST_F("Compaction is peformed when compaction strategy is changed to enable compaction",
-       Fixture(compactAddressSpaceAttributeConfig(false)))
+TEST(AttributeCompactionTest, Compaction_is_peformed_when_compaction_strategy_is_changed_to_enable_compaction)
 {
+    Fixture f(compactAddressSpaceAttributeConfig(false));
     populate_and_hammer(f, true);
     AddressSpace after1 = f.getMultiValueAddressSpaceUsage("after1");
     // 100 * 1000 dead arrays due to new values for docids
     // 1 reserved array accounted as dead
-    EXPECT_EQUAL(100001u, after1.dead());
+    EXPECT_EQ(100001u, after1.dead());
     f._v->update_config(compactAddressSpaceAttributeConfig(true));
     auto old_dead = after1.dead();
     AddressSpace after2 = f.getMultiValueAddressSpaceUsage("after2");
@@ -268,7 +269,7 @@ TEST_F("Compaction is peformed when compaction strategy is changed to enable com
         f._v->commit(); // new commit might trigger further compaction
         after2 = f.getMultiValueAddressSpaceUsage("after2");
     }
-    EXPECT_GREATER(CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, after2.dead());
+    EXPECT_GT(CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, after2.dead());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

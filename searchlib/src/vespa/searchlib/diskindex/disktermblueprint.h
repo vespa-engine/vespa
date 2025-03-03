@@ -44,7 +44,7 @@ public:
      * @param query_term      The query term to search for.
      * @param lookupRes       The result after disk dictionary lookup.
      **/
-    DiskTermBlueprint(const queryeval::FieldSpec & field,
+    DiskTermBlueprint(queryeval::FieldSpec field,
                       const FieldIndex& field_index,
                       const std::string& query_term,
                       index::DictionaryLookupResult lookupRes);

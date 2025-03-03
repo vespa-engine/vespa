@@ -44,14 +44,13 @@ public class Group extends HitGroup {
      */
     public HitList getHitList(String label) {
         for (Hit hit : this) {
-            if (!(hit instanceof HitList)) {
+            if (!(hit instanceof HitList list)) {
                 continue;
             }
-            HitList lst = (HitList)hit;
-            if (!label.equals(lst.getLabel())) {
+            if (!label.equals(list.getLabel())) {
                 continue;
             }
-            return lst;
+            return list;
         }
         return null;
     }
@@ -66,14 +65,13 @@ public class Group extends HitGroup {
      */
     public GroupList getGroupList(String label) {
         for (Hit hit : this) {
-            if (!(hit instanceof GroupList)) {
+            if (!(hit instanceof GroupList list)) {
                 continue;
             }
-            GroupList lst = (GroupList)hit;
-            if (!label.equals(lst.getLabel())) {
+            if (!label.equals(list.getLabel())) {
                 continue;
             }
-            return lst;
+            return list;
         }
         return null;
     }

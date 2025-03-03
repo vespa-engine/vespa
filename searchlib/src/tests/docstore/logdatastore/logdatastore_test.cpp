@@ -21,6 +21,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/memory.h>
 #include <cassert>
+#include <charconv>
 #include <filesystem>
 #include <iomanip>
 #include <random>
@@ -160,6 +161,7 @@ LogDataStoreTest::~LogDataStoreTest() = default;
 void
 LogDataStoreTest::SetUpTestSuite()
 {
+    DummyFileHeaderContext::setCreator("logdatastore_test");
     setup_test_data(TEST_PATH("bug-7257706"), "build-test-data");
 }
 
@@ -939,7 +941,7 @@ struct Fixture {
     LogDataStore store;
 
     uint64_t nextSerialNum() {
-        return serialNum++;
+        return ++serialNum;
     }
 
     Fixture(const std::string& dirName,
@@ -954,6 +956,7 @@ struct Fixture {
                 TuneFileSummary(), fileHeaderCtx, tlSyncer, nullptr)
     {
         dir.cleanup(dirCleanup);
+        serialNum = store.lastSyncToken();
     }
     ~Fixture() {}
     void flush() {
@@ -1048,6 +1051,7 @@ TEST_F(LogDataStoreTest, require_that_docIdLimit_at_idx_file_creation_time_is_wr
         f.writeUntilNewChunk(100);
         f.writeUntilNewChunk(200);
         f.assertDocIdLimitInFileChunks(expLimits, "writes");
+        f.nextSerialNum();
         f.flush();
     }
     {
@@ -1131,7 +1135,7 @@ TEST_F(LogDataStoreTest, require_that_there_is_control_of_static_memory_usage)
     auto tmp7= build_testdata() + "/tmp7";
     Fixture f(tmp7);
     vespalib::MemoryUsage usage = f.store.getMemoryUsage();
-    EXPECT_EQ(456u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::string), sizeof(LogDataStore));
+    EXPECT_EQ(464u + sizeof(LogDataStore::NameIdSet) + sizeof(std::mutex) + sizeof(std::string), sizeof(LogDataStore));
     EXPECT_EQ(73916u + 3 * sizeof(std::string), usage.allocatedBytes());
     EXPECT_EQ(192u + 3 * sizeof(std::string), usage.usedBytes());
 }
@@ -1190,10 +1194,69 @@ TEST_F(LogDataStoreTest, require_that_config_equality_operator_detects_inequalit
     EXPECT_FALSE(C() == C().compactCompression({CompressionConfig::ZSTD}));
 }
 
-int
-main(int argc, char* argv[])
+namespace {
+
+void rename_files_to_future_name_ids(const std::string& dir, vespalib::system_clock::duration time_step)
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    DummyFileHeaderContext::setCreator("logdatastore_test");
-    return RUN_ALL_TESTS();
+    // Rename files to make them appear to have been written time_step into the future.
+    std::vector<std::string> files;
+    {
+        std::filesystem::directory_iterator dir_scan{std::filesystem::path(dir)};
+        for (auto &entry: dir_scan) {
+            auto file = entry.path().filename().string();
+            if (file.ends_with(".idx") || file.ends_with(".dat")) {
+                files.emplace_back(file);
+            }
+        }
+    }
+    for (auto &file: files) {
+        auto dot_pos = file.find('.');
+        assert(dot_pos != std::string::npos);
+        uint64_t val = 0;
+        auto result = std::from_chars(file.data(), file.data() + dot_pos, val, 10);
+        if (result.ec == std::errc{} && result.ptr == file.data() + dot_pos) {
+            FileChunk::NameId id((vespalib::system_clock::duration(val) + time_step).count());
+            std::string new_name = id.createName(dir) + file.substr(dot_pos);
+            std::cout << "Renaming " << dir << "/" << file << " to " << new_name << std::endl;
+            std::filesystem::rename(dir + "/" + file, new_name);
+        }
+    }
 }
+
+}
+
+TEST_F(LogDataStoreTest, require_that_clock_stepping_backwards_is_handled)
+{
+    auto dir = build_testdata() + "/tmp9";
+    std::vector<uint32_t> exp_limits = {std::numeric_limits<uint32_t>::max(), 14};
+    {
+        Fixture f(dir, false);
+        f.writeUntilNewChunk(10);
+        f.flush();
+        f.assertDocIdLimitInFileChunks(exp_limits, "writes");
+    }
+    exp_limits.pop_back(); // Empty file chunks are removed during load
+    rename_files_to_future_name_ids(dir, 10min);
+    {
+        Fixture f(dir, false);
+        EXPECT_EQ(f.store.lastSyncToken(), f.store.tentativeLastSyncToken());
+        f.assertDocIdLimitInFileChunks(exp_limits, "reload 2");
+        f.write(100); // written to existing file, triggers switch to new file
+        f.write(101);
+        f.write(102);
+        f.flush();
+        exp_limits.push_back(101);
+        f.assertDocIdLimitInFileChunks(exp_limits, "writes 2");
+    }
+    {
+        Fixture f(dir, true);
+        EXPECT_EQ(f.store.lastSyncToken(), f.store.tentativeLastSyncToken());
+        f.assertDocIdLimitInFileChunks(exp_limits, "reload 3");
+        f.write(200);
+        f.flush();
+        exp_limits.push_back(201);
+        f.assertDocIdLimitInFileChunks(exp_limits, "write 3");
+    }
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()

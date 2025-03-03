@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/documentapi/messagebus/priority.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <fstream>
 #include <algorithm>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace documentapi;
 
-TEST("priority_test") {
+TEST(PriorityTest, priority_test) {
 
     std::vector<int32_t> expected;
     expected.push_back(Priority::PRI_HIGHEST);
@@ -40,7 +40,7 @@ TEST("priority_test") {
         size_t pos = str.find(":");
         ASSERT_TRUE(pos != std::string::npos);
         int32_t pri = atoi(str.substr(pos + 1).c_str());
-        ASSERT_EQUAL(Priority::getPriority(str.substr(0, pos)), pri);
+        ASSERT_EQ(Priority::getPriority(str.substr(0, pos)), pri);
 
         std::vector<int32_t>::iterator it =
             std::find(expected.begin(), expected.end(), pri);
@@ -50,4 +50,4 @@ TEST("priority_test") {
     ASSERT_TRUE(expected.empty());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

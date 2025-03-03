@@ -419,6 +419,18 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
         EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }
+    { // bitvector used due to filter threshold overridden in the query.
+        // The term 'w2' hits 17 docs in field 'f2' (bitvector for term exists).
+        double threshold = 16.0 / 100.0;
+        _requestContext.get_create_blueprint_params().filter_threshold = threshold;
+        b = create_blueprint(FieldSpec("f2", 0, 0), makeTerm("w2"), 100);
+        auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
+        s = leaf_b.createLeafSearch(mda);
+        EXPECT_TRUE(dynamic_cast<BitVectorIterator *>(s.get()) != nullptr);
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*s));
+        EXPECT_EQ(result_f2_w2, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
+        _requestContext.get_create_blueprint_params().filter_threshold = std::nullopt;
+    }
     { // fake bitvector (wrapping posocc iterator) used due to filter threshold set.
         // The term 'w1' hits 2 docs in field 'f1' (bitvector for term doesn't exist).
         double threshold = 1.0 / 100.0;

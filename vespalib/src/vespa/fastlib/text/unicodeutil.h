@@ -20,11 +20,6 @@ using ucs4_t = uint32_t;
  */
 class Fast_UnicodeUtil final {
 private:
-    /**
-     * Is true when the tables have been initialized. Is set by
-     * InitTables, and should be protected by the _initMutex before
-     * inspection.
-     */
 
     /** Two-level character property table. 256 pages with 256 elements each.
      * This table is defined in unicode-charprops.cpp, which is
@@ -34,17 +29,10 @@ private:
 
     /** The property bit identificators */
     enum {
-        _spaceProp = 1,
         _wordcharProp = 2,
-        _ideographicProp = 4,
-        _decimalDigitCharProp = 8,
-        _ignorableControlCharProp = 16
     };
 
 public:
-    /** Initialize the ISO 8859-1 static tables. */
-    static void InitTables() noexcept;
-
     /** Indicates an invalid UTF-8 character sequence. */
     enum { _BadUTF8Char = 0xfffffffeu };
 

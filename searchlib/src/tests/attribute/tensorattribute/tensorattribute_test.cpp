@@ -29,6 +29,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/vespalib/net/http/state_explorer.h>
 #include <vespa/fastos/file.h>
 #include <filesystem>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -293,7 +294,7 @@ public:
         return {};
     }
     void populate_address_space_usage(AddressSpaceUsage&) const override {}
-    void get_state(const vespalib::slime::Inserter&) const override {}
+    std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const override { return {}; }
     void shrink_lid_space(uint32_t) override { }
     std::unique_ptr<NearestNeighborIndexSaver> make_saver(vespalib::GenericHeader& header) const override {
         (void) header;

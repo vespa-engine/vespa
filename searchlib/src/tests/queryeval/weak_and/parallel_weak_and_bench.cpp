@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "wand_bench_setup.hpp"
+#include <vespa/vespalib/testkit/test_kit.h>
 
 TEST_FF("benchmark", VespaParallelWandFactory(1000),  WandSetup(f1,    10, 10000000)) { f2.benchmark(); }
 TEST_FF("benchmark", DotProductRiseWandFactory(1000), WandSetup(f1,    10, 10000000)) { f2.benchmark(); }

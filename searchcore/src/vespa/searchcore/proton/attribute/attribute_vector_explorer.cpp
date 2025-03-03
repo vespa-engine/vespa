@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "attribute_vector_explorer.h"
-#include "attribute_executor.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/distance_metric_utils.h>
@@ -128,23 +127,21 @@ convert_config_to_slime(const Config& cfg, bool full, Cursor& object)
     }
 }
 
+const std::string TENSOR_NAME("tensor");
+
 }
 
-AttributeVectorExplorer::AttributeVectorExplorer(std::unique_ptr<AttributeExecutor> executor)
-    : _executor(std::move(executor))
+AttributeVectorExplorer::AttributeVectorExplorer(std::shared_ptr<AttributeVector> attr)
+    : _attr(std::move(attr))
 {
 }
+
+AttributeVectorExplorer::~AttributeVectorExplorer() = default;
 
 void
 AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bool full) const
 {
-    auto& attr = _executor->get_attr();
-    _executor->run_sync([this, &attr, &inserter, full] { get_state_helper(attr, inserter, full); });
-}
-
-void
-AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const vespalib::slime::Inserter &inserter, bool full) const
-{
+    auto& attr = *_attr;
     const Status &status = attr.getStatus();
     Cursor &object = inserter.insertObject();
     if (full) {
@@ -169,11 +166,6 @@ AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const ves
         if (postingBase) {
             convertPostingBaseToSlime(*postingBase, object.setObject("posting_store"));
         }
-        const auto* tensor_attr = attr.asTensorAttribute();
-        if (tensor_attr) {
-            ObjectInserter tensor_inserter(object, "tensor");
-            tensor_attr->get_state(tensor_inserter);
-        }
         convertChangeVectorToSlime(attr, object.setObject("changeVector"));
         object.setLong("committedDocIdLimit", attr.getCommittedDocIdLimit());
         object.setLong("createSerialNum", attr.getCreateSerialNum());
@@ -182,6 +174,24 @@ AttributeVectorExplorer::get_state_helper(const AttributeVector& attr, const ves
         object.setLong("allocated_bytes", status.getAllocated());
         object.setLong("disk_usage", attr.size_on_disk());
     }
+}
+
+std::vector<std::string>
+AttributeVectorExplorer::get_children_names() const
+{
+    return { TENSOR_NAME };
+}
+
+std::unique_ptr<vespalib::StateExplorer>
+AttributeVectorExplorer::get_child(std::string_view name) const
+{
+    if (name == TENSOR_NAME) {
+        auto *tensor_attr = _attr->asTensorAttribute();
+        if (tensor_attr != nullptr) {
+            return tensor_attr->make_state_explorer();
+        }
+    }
+    return {};
 }
 
 }

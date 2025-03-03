@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/enumstore.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
@@ -9,6 +9,8 @@
 
 #include <vespa/searchlib/attribute/enumstore.hpp>
 #include <vespa/searchlib/attribute/single_string_enum_search_context.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <filesystem>
 
 #include <vespa/log/log.h>
 LOG_SETUP("stringattribute_test");
@@ -115,11 +117,11 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
             EXPECT_TRUE(attr.get(doc) == nullptr);
             EXPECT_TRUE(attr.getEnum(doc) == std::numeric_limits<uint32_t>::max());
         } else if (!attr.hasWeightedSetType()) {
-            EXPECT_EQUAL(std::string(attr.get(doc)), uniqueStrings[0]);
+            EXPECT_EQ(std::string(attr.get(doc)), uniqueStrings[0]);
             uint32_t e;
             EXPECT_TRUE(attr.findEnum(uniqueStrings[0].c_str(), e));
-            EXPECT_EQUAL(1u, attr.findFoldedEnums(uniqueStrings[0].c_str()).size());
-            EXPECT_EQUAL(e, attr.findFoldedEnums(uniqueStrings[0].c_str())[0]);
+            EXPECT_EQ(1u, attr.findFoldedEnums(uniqueStrings[0].c_str()).size());
+            EXPECT_EQ(e, attr.findFoldedEnums(uniqueStrings[0].c_str())[0]);
             EXPECT_TRUE(attr.getEnum(doc) == e);
         }
 
@@ -144,7 +146,7 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
         enumstore::Index idx;
         EXPECT_TRUE(attr.getEnumStore().find_index(uniqueStrings[i].c_str(), idx));
         uint32_t expectedUsers = numDocs - 1 - i;
-        EXPECT_EQUAL(expectedUsers, attr.getEnumStore().get_ref_count(idx));
+        EXPECT_EQ(expectedUsers, attr.getEnumStore().get_ref_count(idx));
     }
 
     // clear and insert new unique strings
@@ -192,11 +194,40 @@ testMultiValue(Attribute & attr, uint32_t numDocs)
         enumstore::Index idx;
         EXPECT_TRUE(attr.getEnumStore().find_index(newUniques[i].c_str(), idx));
         uint32_t expectedUsers = numDocs - 1 - i;
-        EXPECT_EQUAL(expectedUsers, attr.getEnumStore().get_ref_count(idx));
+        EXPECT_EQ(expectedUsers, attr.getEnumStore().get_ref_count(idx));
     }
 }
 
-TEST("testMultiValue")
+std::string test_dir = "test_data";
+
+std::string make_attribute_name(const std::string name) {
+    return test_dir + "/" + name;
+}
+
+class StringAttributeTest : public ::testing::Test {
+protected:
+    StringAttributeTest();
+    ~StringAttributeTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+StringAttributeTest::StringAttributeTest()
+    : ::testing::Test() {
+}
+
+StringAttributeTest::~StringAttributeTest() = default;
+
+void StringAttributeTest::SetUpTestSuite() {
+    std::filesystem::remove_all(test_dir);
+    std::filesystem::create_directory(test_dir);
+}
+
+void StringAttributeTest::TearDownTestSuite() {
+    std::filesystem::remove_all(test_dir);
+}
+
+TEST_F(StringAttributeTest, testMultiValue)
 {
     uint32_t numDocs = 16;
 
@@ -223,7 +254,7 @@ TEST("testMultiValue")
     }
 }
 
-TEST("testMultiValueMultipleClearDocBetweenCommit")
+TEST_F(StringAttributeTest, testMultiValueMultipleClearDocBetweenCommit)
 {
     // This is also tested for all array attributes in attribute unit test
     ArrayStr mvsa("a-string");
@@ -249,7 +280,7 @@ TEST("testMultiValueMultipleClearDocBetweenCommit")
 }
 
 
-TEST("testMultiValueRemove")
+TEST_F(StringAttributeTest, testMultiValueRemove)
 {
     // This is also tested for all array attributes in attribute unit test
     ArrayStr mvsa("a-string");
@@ -294,16 +325,16 @@ TEST("testMultiValueRemove")
 void
 testDefaultValueOnAddDoc(AttributeVector & v)
 {
-    EXPECT_EQUAL(0u, v.getNumDocs());
+    EXPECT_EQ(0u, v.getNumDocs());
     v.addReservedDoc();
-    EXPECT_EQUAL(1u, v.getNumDocs());
+    EXPECT_EQ(1u, v.getNumDocs());
     EXPECT_TRUE( IEnumStore::Index(EntryRef(v.getEnum(0))).valid() );
     uint32_t doc(7);
     EXPECT_TRUE( v.addDoc(doc) );
-    EXPECT_EQUAL(1u, doc);
-    EXPECT_EQUAL(2u, v.getNumDocs());
+    EXPECT_EQ(1u, doc);
+    EXPECT_EQ(2u, v.getNumDocs());
     EXPECT_TRUE( IEnumStore::Index(EntryRef(v.getEnum(doc))).valid() );
-    EXPECT_EQUAL(0u, v.get_raw(doc).size());
+    EXPECT_EQ(0u, v.get_raw(doc).size());
 }
 
 template <typename Attribute>
@@ -340,8 +371,8 @@ testSingleValue(Attribute & svsa, Config &cfg)
                 snprintf(tmp, sizeof(tmp), "enum%u", j % 10);
                 EXPECT_TRUE( strcmp(t = v.get(j), tmp) == 0 );
                 auto raw = v.get_raw(j);
-                EXPECT_EQUAL(strlen(tmp), raw.size());
-                EXPECT_EQUAL(0, memcmp(raw.data(), tmp, raw.size()));
+                EXPECT_EQ(strlen(tmp), raw.size());
+                EXPECT_EQ(0, memcmp(raw.data(), tmp, raw.size()));
                 e1 = v.getEnum(j);
                 EXPECT_TRUE( v.findEnum(t, e2) );
                 EXPECT_TRUE( e1 == e2 );
@@ -381,17 +412,17 @@ testSingleValue(Attribute & svsa, Config &cfg)
     }
 
 
-    Attribute load("load", cfg);
+    Attribute load(make_attribute_name("load"), cfg);
     svsa.save(load.getBaseFileName());
     load.load();
-    EXPECT_EQUAL(svsa.size_on_disk(), load.size_on_disk());
+    EXPECT_EQ(svsa.size_on_disk(), load.size_on_disk());
 }
 
-TEST("testSingleValue")
+TEST_F(StringAttributeTest, testSingleValue)
 {
-    EXPECT_EQUAL(24u, sizeof(SearchContext));
-    EXPECT_EQUAL(48u, sizeof(StringSearchHelper));
-    EXPECT_EQUAL(104u, sizeof(attribute::SingleStringEnumSearchContext));
+    EXPECT_EQ(24u, sizeof(SearchContext));
+    EXPECT_EQ(48u, sizeof(StringSearchHelper));
+    EXPECT_EQ(104u, sizeof(attribute::SingleStringEnumSearchContext));
     {
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
         SingleValueStringAttribute svsa("svsa", cfg);
@@ -411,7 +442,7 @@ TEST("testSingleValue")
     }
 }
 
-TEST("test uncased match") {
+TEST_F(StringAttributeTest, test_uncased_match) {
     QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::WORD);
     StringSearchHelper helper(xyz, false);
     EXPECT_FALSE(helper.isCased());
@@ -432,7 +463,7 @@ const char* char_from_u8(const char8_t* p) {
 
 }
 
-TEST("test uncased prefix match") {
+TEST_F(StringAttributeTest, test_uncased_prefix_match) {
     QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper helper(xyz, false);
     EXPECT_FALSE(helper.isCased());
@@ -452,7 +483,7 @@ TEST("test uncased prefix match") {
     EXPECT_FALSE(aa_helper.isMatch(char_from_u8(u8"Ørn")));
 }
 
-TEST("test cased match") {
+TEST_F(StringAttributeTest, test_cased_match) {
     QueryTermUCS4 xyz("XyZ", QueryTermSimple::Type::WORD);
     StringSearchHelper helper(xyz, true);
     EXPECT_TRUE(helper.isCased());
@@ -466,7 +497,7 @@ TEST("test cased match") {
     EXPECT_FALSE(helper.isMatch("Xy"));
 }
 
-TEST("test cased prefix match") {
+TEST_F(StringAttributeTest, test_cased_prefix_match) {
     QueryTermUCS4 xyz("XyZ", QueryTermSimple::Type::PREFIXTERM);
     StringSearchHelper helper(xyz, true);
     EXPECT_TRUE(helper.isCased());
@@ -487,7 +518,7 @@ TEST("test cased prefix match") {
     EXPECT_FALSE(aa_helper.isMatch(char_from_u8(u8"Ørn")));
 }
 
-TEST("test uncased regex match") {
+TEST_F(StringAttributeTest, test_uncased_regex_match) {
     QueryTermUCS4 xyz("x[yY]+Z", QueryTermSimple::Type::REGEXP);
     StringSearchHelper helper(xyz, false);
     EXPECT_FALSE(helper.isCased());
@@ -501,7 +532,7 @@ TEST("test uncased regex match") {
     EXPECT_FALSE(helper.isMatch("xy"));
 }
 
-TEST("test cased regex match") {
+TEST_F(StringAttributeTest, test_cased_regex_match) {
     QueryTermUCS4 xyz("x[Y]+Z", QueryTermSimple::Type::REGEXP);
     StringSearchHelper helper(xyz, true);
     EXPECT_TRUE(helper.isCased());
@@ -516,7 +547,7 @@ TEST("test cased regex match") {
     EXPECT_FALSE(helper.isMatch("xY"));
 }
 
-TEST("test fuzzy match") {
+TEST_F(StringAttributeTest, test_fuzzy_match) {
     QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::FUZZYTERM);
     StringSearchHelper helper(xyz, false);
     EXPECT_FALSE(helper.isCased());
@@ -532,4 +563,4 @@ TEST("test fuzzy match") {
     EXPECT_FALSE(helper.isMatch("vvv"));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

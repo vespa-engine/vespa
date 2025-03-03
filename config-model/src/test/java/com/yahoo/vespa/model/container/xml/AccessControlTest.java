@@ -380,7 +380,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         assertEquals("KEY", connectorConfig.ssl().privateKey());
         assertEquals(4443, connectorConfig.listenPort());
 
-        assertEquals("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem",
+        assertEquals("/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem",
                 connectorConfig.ssl().caCertificateFile(),
                 "Connector must use Athenz truststore in a non-public system.");
         assertTrue(connectorConfig.ssl().caCertificate().isEmpty());
@@ -514,7 +514,7 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
         assertEquals("KEY", connectorConfig.ssl().privateKey());
         assertEquals(4443, connectorConfig.listenPort());
 
-        assertEquals("/opt/yahoo/share/ssl/certs/athenz_certificate_bundle.pem",
+        assertEquals("/opt/yahoo/share/ssl/certs/athenz_tw_certificate_bundle.pem",
                 connectorConfig.ssl().caCertificateFile(),
                 "Connector must use Athenz truststore in a non-public system.");
         assertTrue(connectorConfig.ssl().caCertificate().isEmpty());

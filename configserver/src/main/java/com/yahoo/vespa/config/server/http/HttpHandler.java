@@ -6,6 +6,7 @@ import com.yahoo.config.provision.CertificateNotReadyException;
 import com.yahoo.config.provision.NodeAllocationException;
 import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.QuotaExceededException;
+import com.yahoo.config.provision.RequestedNodesMissingException;
 import com.yahoo.config.provision.exception.ActivationConflictException;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.container.jdisc.HttpRequest;
@@ -64,6 +65,8 @@ public class HttpHandler extends ThreadedHttpRequestHandler {
             return HttpErrorResponse.applicationLockFailure(getMessage(e, request));
         } catch (ParentHostUnavailableException e) {
             return HttpErrorResponse.parentHostNotReady(getMessage(e, request));
+        } catch (RequestedNodesMissingException e) {
+            return HttpErrorResponse.requestedNodesMissing(getMessage(e, request));
         } catch (CertificateNotReadyException e) {
             return HttpErrorResponse.certificateNotReady(getMessage(e, request));
         } catch (ConfigNotConvergedException e) {

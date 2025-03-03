@@ -235,7 +235,7 @@ public class Flags {
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 1,
-            List.of("vekterli"), "2022-09-12", "2025-03-01",
+            List.of("vekterli"), "2022-09-12", "2025-06-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
             "Takes effect at redeployment",
@@ -243,7 +243,7 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
             "search-handler-threadpool", 10,
-            List.of("bjorncs"), "2023-10-01", "2025-03-01",
+            List.of("bjorncs"), "2023-10-01", "2025-12-01",
             "Adjust search handler threadpool size",
             "Takes effect at redeployment",
             APPLICATION);
@@ -257,7 +257,7 @@ public class Flags {
 
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 64,
-            List.of("vekterli"), "2024-04-12", "2025-03-01",
+            List.of("vekterli"), "2024-04-12", "2025-06-01",
             "Maximum number of enqueued feed operations (put/update/remove) bound "+
             "towards the same bucket that can be async dispatched as part of the " +
             "same write-locked batch by a persistence thread.",
@@ -272,7 +272,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", true,
-            List.of("vekterli"), "2024-05-23", "2025-03-01",
+            List.of("vekterli"), "2024-05-23", "2025-06-01",
             "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
             "for Put operations and the replica selection logic for bucket activation. If false, " +
             "legacy feed behavior is used.",
@@ -322,7 +322,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
             "use-legacy-trust-store", true,
-            List.of("marlon"), "2024-12-05", "2025-03-01",
+            List.of("marlon"), "2024-12-05", "2025-04-01",
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
 
@@ -346,6 +346,12 @@ public class Flags {
                     "on what the client accepts (sent in request from client)",
             "Takes effect at restart of config server",
             INSTANCE_ID);
+
+    public static final UnboundBooleanFlag INCREMENTAL_USAGE_CALCULATION = defineFeatureFlag(
+            "incremental-usage-calculation", false,
+            List.of("evgiz"), "2025-02-27", "2025-05-01",
+            "Use new incremental usage calculation for node snapshots",
+            "Takes effect at controller startup");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

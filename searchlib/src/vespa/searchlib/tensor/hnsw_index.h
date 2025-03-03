@@ -213,7 +213,7 @@ public:
     vespalib::MemoryUsage update_stat(const CompactionStrategy& compaction_strategy) override;
     vespalib::MemoryUsage memory_usage() const override;
     void populate_address_space_usage(search::AddressSpaceUsage& usage) const override;
-    void get_state(const vespalib::slime::Inserter& inserter) const override;
+    std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const override;
     void shrink_lid_space(uint32_t doc_id_limit) override;
 
     std::unique_ptr<NearestNeighborIndexSaver> make_saver(vespalib::GenericHeader& header) const override;
@@ -243,7 +243,8 @@ public:
     void set_node(uint32_t nodeid, const HnswTestNode &node);
     bool check_link_symmetry() const;
     std::pair<uint32_t, bool> count_reachable_nodes() const;
-    GraphType& get_graph() { return _graph; }
+    GraphType& get_graph() noexcept { return _graph; }
+    const GraphType& get_graph() const noexcept { return _graph; }
     IdMapping& get_id_mapping() { return _id_mapping; }
 
     static vespalib::datastore::ArrayStoreConfig make_default_level_array_store_config();

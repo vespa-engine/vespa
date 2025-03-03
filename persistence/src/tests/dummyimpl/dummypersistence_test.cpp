@@ -6,9 +6,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
-#include <vespa/config-stor-distribution.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace storage::spi;
 using namespace storage;
@@ -31,28 +29,31 @@ struct Fixture {
     }
 };
 
-TEST("require that empty BucketContent behaves") {
+TEST(DummyPersistenceTest, require_that_empty_BucketContent_behaves) {
     BucketContent content;
     EXPECT_FALSE(content.hasTimestamp(Timestamp(1)));
     EXPECT_FALSE(content.getEntry(Timestamp(1)).get());
     EXPECT_FALSE(content.getEntry(DocumentId("id:ns:type::test:1")).get());
 }
 
-TEST_F("require that BucketContent can retrieve by timestamp", Fixture) {
+TEST(DummyPersistenceTest, require_that_BucketContent_can_retrieve_by_timestamp) {
+    Fixture f;
     DocEntry::SP entry = f.content.getEntry(Timestamp(1));
     ASSERT_TRUE(entry.get());
     ASSERT_TRUE(entry->getDocumentId());
-    ASSERT_EQUAL("id:ns:type::test:1", entry->getDocumentId()->toString());
+    ASSERT_EQ("id:ns:type::test:1", entry->getDocumentId()->toString());
 }
 
-TEST_F("require that BucketContent can retrieve by doc id", Fixture) {
+TEST(DummyPersistenceTest, require_that_BucketContent_can_retrieve_by_doc_id) {
+    Fixture f;
     DocEntry::SP entry = f.content.getEntry(DocumentId("id:ns:type::test:2"));
     ASSERT_TRUE(entry.get());
     ASSERT_TRUE(entry->getDocumentId());
-    ASSERT_EQUAL("id:ns:type::test:2", entry->getDocumentId()->toString());
+    ASSERT_EQ("id:ns:type::test:2", entry->getDocumentId()->toString());
 }
 
-TEST_F("require that BucketContent can check a timestamp", Fixture) {
+TEST(DummyPersistenceTest, require_that_BucketContent_can_check_a_timestamp) {
+    Fixture f;
     EXPECT_FALSE(f.content.hasTimestamp(Timestamp(0)));
     EXPECT_TRUE(f.content.hasTimestamp(Timestamp(1)));
     EXPECT_TRUE(f.content.hasTimestamp(Timestamp(2)));
@@ -60,21 +61,23 @@ TEST_F("require that BucketContent can check a timestamp", Fixture) {
     EXPECT_FALSE(f.content.hasTimestamp(Timestamp(4)));
 }
 
-TEST_F("require that BucketContent can provide bucket info", Fixture) {
+TEST(DummyPersistenceTest, require_that_BucketContent_can_provide_bucket_info) {
+    Fixture f;
     uint32_t lastChecksum = 0;
-    EXPECT_NOT_EQUAL(lastChecksum, f.content.getBucketInfo().getChecksum());
+    EXPECT_NE(lastChecksum, f.content.getBucketInfo().getChecksum());
     lastChecksum = f.content.getBucketInfo().getChecksum();
     f.insert(DocumentId("id:ns:type::test:3"), Timestamp(4), DocumentMetaEnum::NONE);
-    EXPECT_NOT_EQUAL(lastChecksum, f.content.getBucketInfo().getChecksum());
+    EXPECT_NE(lastChecksum, f.content.getBucketInfo().getChecksum());
     lastChecksum = f.content.getBucketInfo().getChecksum();
     f.insert(DocumentId("id:ns:type::test:2"), Timestamp(5), DocumentMetaEnum::REMOVE_ENTRY);
-    EXPECT_NOT_EQUAL(lastChecksum, f.content.getBucketInfo().getChecksum());
+    EXPECT_NE(lastChecksum, f.content.getBucketInfo().getChecksum());
     f.insert(DocumentId("id:ns:type::test:1"), Timestamp(6), DocumentMetaEnum::REMOVE_ENTRY);
     f.insert(DocumentId("id:ns:type::test:3"), Timestamp(7), DocumentMetaEnum::REMOVE_ENTRY);
-    EXPECT_EQUAL(0u, f.content.getBucketInfo().getChecksum());
+    EXPECT_EQ(0u, f.content.getBucketInfo().getChecksum());
 }
 
-TEST_F("require that setClusterState sets the cluster state", Fixture) {
+TEST(DummyPersistenceTest, require_that_setClusterState_sets_the_cluster_state) {
+    Fixture f;
     lib::ClusterState s("version:1 storage:3 .1.s:d distributor:3");
     lib::Distribution d(lib::Distribution::getDefaultDistributionConfig(3, 3));
     ClusterState state(s, 1, d);
@@ -83,9 +86,9 @@ TEST_F("require that setClusterState sets the cluster state", Fixture) {
     dummy::DummyPersistence provider(repo);
     provider.setClusterState(makeBucketSpace(), state);
 
-    EXPECT_EQUAL(false, provider.getClusterState().nodeUp());
+    EXPECT_EQ(false, provider.getClusterState().nodeUp());
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

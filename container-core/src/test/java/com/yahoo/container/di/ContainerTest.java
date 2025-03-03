@@ -223,7 +223,7 @@ public class ContainerTest extends ContainerTestBase {
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionForMissingConfig.class);
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
         container.reloadConfig(2);
-        assertNewComponentGraphFails(container, currentGraph, IllegalArgumentException.class);
+        assertNewComponentGraphFails(container, currentGraph, ConfigFutureException.class);
         assertEquals(1, currentGraph.generation());
 
         container.shutdownConfigRetriever();
@@ -247,7 +247,7 @@ public class ContainerTest extends ContainerTestBase {
         dirConfigSource.writeConfig("test", "stringVal \"myString\"");
         container.reloadConfig(2);
 
-        assertNewComponentGraphFails(container, currentGraph, IllegalArgumentException.class);
+        assertNewComponentGraphFails(container, currentGraph, ConfigFutureException.class);
         assertEquals(1, currentGraph.generation());
 
         // bundle-1 is kept, bundle-2 has been uninstalled
@@ -278,7 +278,7 @@ public class ContainerTest extends ContainerTestBase {
         writeBootstrapConfigs("thrower", ComponentThrowingExceptionForMissingConfig.class);
         container.reloadConfig(2);
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ConfigFutureException.class,
                      () -> getNewComponentGraph(container, currentGraph));
 
         ExecutorService exec = Executors.newFixedThreadPool(1);

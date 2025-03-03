@@ -9,8 +9,8 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/weight.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/testclock.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("simple_phrase_test");
@@ -158,7 +158,7 @@ PhraseSearchTest::PhraseSearchTest(bool expiredDoom)
 {}
 PhraseSearchTest::~PhraseSearchTest() = default;
 
-TEST("requireThatIteratorFindsSimplePhrase") {
+TEST(SimplePhraseTest, requireThatIteratorFindsSimplePhrase) {
     for (bool useBlueprint: {false, true}) {
         PhraseSearchTest test;
         test.addTerm("foo", 0).addTerm("bar", 1);
@@ -171,7 +171,7 @@ TEST("requireThatIteratorFindsSimplePhrase") {
     }
 }
 
-TEST("requireThatIteratorFindsLongPhrase") {
+TEST(SimplePhraseTest, requireThatIteratorFindsLongPhrase) {
     for (bool useBlueprint: {false, true}) {
         PhraseSearchTest test;
         test.addTerm("foo", 0).addTerm("bar", 0).addTerm("baz", 0)
@@ -185,7 +185,7 @@ TEST("requireThatIteratorFindsLongPhrase") {
     }
 }
 
-TEST("requireThatStrictIteratorFindsNextMatch") {
+TEST(SimplePhraseTest, requireThatStrictIteratorFindsNextMatch) {
     for (bool useBlueprint: {false, true}) {
         PhraseSearchTest test;
         test.setStrict(true);
@@ -194,13 +194,13 @@ TEST("requireThatStrictIteratorFindsNextMatch") {
         test.fetchPostings(useBlueprint);
         unique_ptr<SearchIterator> search(test.createSearch(useBlueprint));
         EXPECT_TRUE(!search->seek(1u));
-        EXPECT_EQUAL(doc_match, search->getDocId());
+        EXPECT_EQ(doc_match, search->getDocId());
         EXPECT_TRUE(!search->seek(doc_no_match));
         EXPECT_TRUE(search->isAtEnd());
     }
 }
 
-TEST("requireThatPhrasesAreUnpacked") {
+TEST(SimplePhraseTest, requireThatPhrasesAreUnpacked) {
     for (bool useBlueprint: {false, true}) {
         for (bool unpack_normal_features: {false, true}) {
             for (bool unpack_interleaved_features: {false, true}) {
@@ -216,27 +216,27 @@ TEST("requireThatPhrasesAreUnpacked") {
                 EXPECT_TRUE(search->seek(doc_match));
                 search->unpack(doc_match);
 
-                EXPECT_EQUAL(doc_match, test.tmd().getDocId());
+                EXPECT_EQ(doc_match, test.tmd().getDocId());
                 if (unpack_normal_features) {
-                    EXPECT_EQUAL(2, std::distance(test.tmd().begin(), test.tmd().end()));
-                    EXPECT_EQUAL(1u, test.tmd().begin()->getPosition());
-                    EXPECT_EQUAL(21u, (test.tmd().begin() + 1)->getPosition());
+                    EXPECT_EQ(2, std::distance(test.tmd().begin(), test.tmd().end()));
+                    EXPECT_EQ(1u, test.tmd().begin()->getPosition());
+                    EXPECT_EQ(21u, (test.tmd().begin() + 1)->getPosition());
                 } else {
-                    EXPECT_EQUAL(0, std::distance(test.tmd().begin(), test.tmd().end()));
+                    EXPECT_EQ(0, std::distance(test.tmd().begin(), test.tmd().end()));
                 }
                 if (unpack_interleaved_features) {
-                    EXPECT_EQUAL(2u, test.tmd().getNumOccs());
-                    EXPECT_EQUAL(30u, test.tmd().getFieldLength());
+                    EXPECT_EQ(2u, test.tmd().getNumOccs());
+                    EXPECT_EQ(30u, test.tmd().getFieldLength());
                 } else {
-                    EXPECT_EQUAL(0u, test.tmd().getNumOccs());
-                    EXPECT_EQUAL(0u, test.tmd().getFieldLength());
+                    EXPECT_EQ(0u, test.tmd().getNumOccs());
+                    EXPECT_EQ(0u, test.tmd().getFieldLength());
                 }
             }
         }
     }
 }
 
-TEST("requireThatTermsCanBeEvaluatedInPriorityOrder") {
+TEST(SimplePhraseTest, requireThatTermsCanBeEvaluatedInPriorityOrder) {
     vector<uint32_t> order;
     order.push_back(2);
     order.push_back(0);
@@ -252,30 +252,30 @@ TEST("requireThatTermsCanBeEvaluatedInPriorityOrder") {
     EXPECT_TRUE(!search->seek(doc_no_match));
 }
 
-TEST("requireThatBlueprintExposesFieldWithEstimate") {
+TEST(SimplePhraseTest, requireThatBlueprintExposesFieldWithEstimate) {
     FieldSpec f("foo", 1, 1);
     SimplePhraseBlueprint phrase(f, false);
     ASSERT_TRUE(phrase.getState().numFields() == 1);
-    EXPECT_EQUAL(f.getFieldId(), phrase.getState().field(0).getFieldId());
-    EXPECT_EQUAL(f.getHandle(), phrase.getState().field(0).getHandle());
+    EXPECT_EQ(f.getFieldId(), phrase.getState().field(0).getFieldId());
+    EXPECT_EQ(f.getHandle(), phrase.getState().field(0).getHandle());
 
-    EXPECT_EQUAL(true, phrase.getState().estimate().empty);
-    EXPECT_EQUAL(0u, phrase.getState().estimate().estHits);
+    EXPECT_EQ(true, phrase.getState().estimate().empty);
+    EXPECT_EQ(0u, phrase.getState().estimate().estHits);
 
     phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f), 10)));
-    EXPECT_EQUAL(false, phrase.getState().estimate().empty);
-    EXPECT_EQUAL(10u, phrase.getState().estimate().estHits);
+    EXPECT_EQ(false, phrase.getState().estimate().empty);
+    EXPECT_EQ(10u, phrase.getState().estimate().estHits);
 
     phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f), 5)));
-    EXPECT_EQUAL(false, phrase.getState().estimate().empty);
-    EXPECT_EQUAL(5u, phrase.getState().estimate().estHits);
+    EXPECT_EQ(false, phrase.getState().estimate().empty);
+    EXPECT_EQ(5u, phrase.getState().estimate().estHits);
 
     phrase.addTerm(Blueprint::UP(new MyTerm(phrase.getNextChildField(f), 20)));
-    EXPECT_EQUAL(false, phrase.getState().estimate().empty);
-    EXPECT_EQUAL(5u, phrase.getState().estimate().estHits);
+    EXPECT_EQ(false, phrase.getState().estimate().empty);
+    EXPECT_EQ(5u, phrase.getState().estimate().estHits);
 }
 
-TEST("requireThatBlueprintForcesPositionDataOnChildren") {
+TEST(SimplePhraseTest, requireThatBlueprintForcesPositionDataOnChildren) {
     FieldSpec f("foo", 1, 1, true);
     SimplePhraseBlueprint phrase(f, false);
     EXPECT_TRUE(f.isFilter());
@@ -284,4 +284,4 @@ TEST("requireThatBlueprintForcesPositionDataOnChildren") {
 
 } // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

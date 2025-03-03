@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "wand_bench_setup.hpp"
+#include <vespa/vespalib/testkit/test_kit.h>
 
 constexpr uint32_t docid_limit = 10000000;
 
