@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_document_store_test_app TEST
     document_store_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_document_store_test_app COMMAND searchlib_document_store_test_app)
 vespa_add_executable(searchlib_visitcache_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(searchlib_visitcache_test_app TEST
     visitcache_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_visitcache_test_app COMMAND searchlib_visitcache_test_app)
