@@ -113,8 +113,8 @@ public class OpenAiClient  implements LanguageModel{
             case "stop" -> Completion.FinishReason.stop;
             case "length" -> Completion.FinishReason.length;
             case "content_filter" -> Completion.FinishReason.content_filter;
-            case "tool_calls" -> Completion.FinishReason.tool_calls; // Map tool_calls to stop or create new reason if needed
-            case "function_call" -> Completion.FinishReason.function_call; // Map function_call to stop or create new reason
+            case "tool_calls" -> Completion.FinishReason.tool_calls; 
+            case "function_call" -> Completion.FinishReason.function_call; 
             case "error" -> throw new IllegalStateException("OpenAI-client returned finish_reason=error");
             default -> Completion.FinishReason.other;
         };
