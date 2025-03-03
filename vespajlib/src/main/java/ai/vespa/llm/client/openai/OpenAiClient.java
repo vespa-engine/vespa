@@ -17,7 +17,7 @@ import java.util.function.Consumer;
 import ai.vespa.llm.LanguageModel;
 
 /**
- * An implementation of the LanguageModel interface using the official OpenAI Java client.
+ * An OpenAiClient that implements the LanguageModel interface using the official OpenAI Java client.
  * See https://github.com/openai/openai-java
  * Currently only basic completion is implemented, but it is extensible to support Structured Output, Tool Calling and Moderations.
  * 
