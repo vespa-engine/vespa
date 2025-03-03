@@ -75,7 +75,7 @@ setupAttributeManager(MockAttributeManager &manager, bool isFilter)
 }
 
 struct WS {
-    static const uint32_t fieldId = 42;
+    static const uint32_t fieldId;
     IAttributeManager & attribute_manager;
     MatchDataLayout layout;
     TermFieldHandle handle;
@@ -150,6 +150,8 @@ struct WS {
         return result;
     }
 };
+
+const uint32_t WS::fieldId = 42;
 
 } // namespace <unnamed>
 
