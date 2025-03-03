@@ -288,7 +288,7 @@ func getService(t *testing.T, target Target, name string) (*Service, error) {
 	}
 	services, err := target.ContainerServices(0)
 	require.Nil(t, err)
-	return FindService(name, services)
+	return FindService(name, "mtls", services)
 }
 
 func assertServiceURL(t *testing.T, url string, target Target, serviceName string) {
