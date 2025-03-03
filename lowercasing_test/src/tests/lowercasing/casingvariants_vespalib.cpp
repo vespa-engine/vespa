@@ -53,7 +53,7 @@ main(int argc, char ** argv)
         uint32_t refChar = getUCS4Char(refBuf);
         uint32_t lowerChar = LowerCase::convert(inputChar);
         if (refChar != lowerChar) {
-            printf("input(%s,%u,0x%X), lower(%s,%u,0x%X), ref(%s,%u,0x%X) \n",
+            printf("input(%s,%u,0x%X), lower(%s,%u,0x%X), ref(%s,%u,0x%X)\n",
                    inputBuf, inputChar, inputChar,
                    getUTF8String(lowerChar).c_str(), lowerChar, lowerChar,
                    refBuf, refChar, refChar);
