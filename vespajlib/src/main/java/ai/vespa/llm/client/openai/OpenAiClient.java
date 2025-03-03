@@ -1,229 +1,122 @@
-// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.client.openai;
-
-import ai.vespa.llm.LanguageModelException;
-import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.completion.Completion;
-import ai.vespa.llm.LanguageModel;
 import ai.vespa.llm.completion.Prompt;
+import ai.vespa.llm.InferenceParameters;
 import com.yahoo.api.annotations.Beta;
-import com.yahoo.slime.ArrayTraverser;
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeUtils;
 
-import java.io.EOFException;
-import java.io.IOException;
-import java.net.SocketException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.http.HttpClient;
-import java.net.http.HttpConnectTimeoutException;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.net.http.HttpTimeoutException;
-import java.time.Duration;
-import java.util.ArrayList;
+import com.openai.client.okhttp.OpenAIOkHttpClient;
+import com.openai.client.okhttp.OpenAIOkHttpClientAsync;
+import com.openai.models.ChatCompletionCreateParams;
+import com.openai.models.ChatModel;
+import com.openai.client.OpenAIClient;
+import com.openai.client.OpenAIClientAsync;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import ai.vespa.llm.LanguageModel;
 
 /**
- * A client to the OpenAI language model API. Refer to https://platform.openai.com/docs/api-reference/.
- * Currently, only completions are implemented.
- *
- * @author bratseth
- * @author lesters
+ * An implementation of the LanguageModel interface using the official OpenAI Java client.
+ * See https://github.com/openai/openai-java
+ * Currently only basic completion is implemented, but it is extensible to support Structured Output, Tool Calling and Moderations.
+ * 
+ * @author thomasht86
  */
 @Beta
-public class OpenAiClient implements LanguageModel {
-
+public class OpenAiClient  implements LanguageModel{
     private static final String DEFAULT_MODEL = "gpt-4o-mini";
-    private static final String DATA_FIELD = "data: ";
-
-    private static final int MAX_RETRIES = 3;
-    private static final long RETRY_DELAY_MS = 250;
-
-    // These are public so that they can be used to set corresponding InferenceParameters outside of this class.
+    private static final String DEFAULT_ENDPOINT = "https://api.openai.com/v1/";
+     // These are public so that they can be used to set corresponding InferenceParameters outside of this class.
     public static final String OPTION_MODEL = "model";
     public static final String OPTION_TEMPERATURE = "temperature";
     public static final String OPTION_MAX_TOKENS = "maxTokens";
 
-    private final HttpClient httpClient;
-
-    public OpenAiClient() {
-        this.httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofMillis(500))
-                .build();
-    }
-
+    
     @Override
     public List<Completion> complete(Prompt prompt, InferenceParameters options) {
-        try {
-            HttpResponse<byte[]> httpResponse = httpClient.send(toRequest(prompt, options, false), HttpResponse.BodyHandlers.ofByteArray());
-            var response = SlimeUtils.jsonToSlime(httpResponse.body()).get();
-            if ( httpResponse.statusCode() != 200)
-                throw new IllegalArgumentException(SlimeUtils.toJson(response));
-            return toCompletions(response);
-        }
-        catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+        var apiKey = options.getApiKey().orElseThrow();
+        var endpoint = options.getEndpoint().orElse(DEFAULT_ENDPOINT);
+        OpenAIClient client = OpenAIOkHttpClient.builder().apiKey(apiKey).baseUrl(endpoint).build();
+        ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
+            .model(ChatModel.of(DEFAULT_MODEL))
+            .addUserMessage(prompt.toString());
 
-    @Override
-    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
-                                                                    InferenceParameters options,
-                                                                    Consumer<Completion> consumer) {
-        var completionContext = new CompletionContext(prompt, options, consumer);
-        completeAsyncAttempt(completionContext, 0);
-        return completionContext.completionFuture();
-    }
-
-    private record CompletionContext(Prompt prompt,
-                                     InferenceParameters options,
-                                     Consumer<Completion> consumer,
-                                     CompletableFuture<Completion.FinishReason> completionFuture) {
-        CompletionContext(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
-            this(prompt, options, consumer, new CompletableFuture<>());
-        }
-    }
-
-    private void completeAsyncAttempt(CompletionContext context, int attempt) {
-        try {
-            var request = toRequest(context.prompt(), context.options(), true);
-            var futureResponse = httpClient.sendAsync(request, HttpResponse.BodyHandlers.ofLines())
-                                           .orTimeout(10, TimeUnit.SECONDS);  // timeout for start of response
-
-            futureResponse.thenAccept(response -> {
-                handleHttpResponse(response, context);
-            }).exceptionally(exception -> {
-                handleHttpException(exception, context, attempt);
-                return null;
-            });
-
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void handleHttpResponse(HttpResponse<Stream<String>> response, CompletionContext context) {
-        try {
-            int responseCode = response.statusCode();
-            if (responseCode != 200) {
-                throw new LanguageModelException(responseCode, response.body().collect(Collectors.joining()));
-            }
-            try (Stream<String> lines = response.body()) {
-                lines.forEach(line -> processLine(context, line));
-            }
-        } catch (Exception e) {
-            context.completionFuture().completeExceptionally(e);
-        }
-    }
-
-    private void processLine(CompletionContext context, String line) {
-        if (line.startsWith(DATA_FIELD)) {
-            var root = SlimeUtils.jsonToSlime(line.substring(DATA_FIELD.length())).get();
-            var completion = toCompletions(root, "delta").get(0);
-            context.consumer().accept(completion);
-            if (!completion.finishReason().equals(Completion.FinishReason.none)) {
-                context.completionFuture().complete(completion.finishReason());
-            }
-        }
-    }
-
-    private void waitBeforeRetry() {
-        try {
-            TimeUnit.MILLISECONDS.sleep(RETRY_DELAY_MS);
-        } catch (InterruptedException ie) {
-            Thread.currentThread().interrupt();
-        }
-    }
-
-    private boolean shouldRetry(Throwable exception) {
-        Throwable cause = exception.getCause();
-        if (cause instanceof IOException && cause.getMessage().contains("Connection reset")) {
-            return true;
-        }
-        if (cause instanceof HttpConnectTimeoutException) {
-            return true;
-        }
-        if (cause instanceof HttpTimeoutException) {
-            return true;
-        }
-        if (cause instanceof EOFException) {
-            return true;
-        }
-        return false;
-    }
-
-    private void handleHttpException(Throwable exception, CompletionContext context, int attempt) {
-        if (shouldRetry(exception)) {
-            if (attempt < MAX_RETRIES) {
-                waitBeforeRetry();
-                completeAsyncAttempt(context, attempt + 1);
-            } else {
-                context.completionFuture().completeExceptionally(new RuntimeException("OpenAI: max retries reached", exception));
-            }
-        } else {
-            context.completionFuture().completeExceptionally(exception);
-        }
-    }
-
-    private HttpRequest toRequest(Prompt prompt, InferenceParameters options, boolean stream) throws IOException, URISyntaxException {
-        var slime = new Slime();
-        var root = slime.setObject();
-        root.setString("model", options.get(OPTION_MODEL).orElse(DEFAULT_MODEL));
-        root.setBool("stream", stream);
-        root.setLong("n", 1);
-
-        if (options.getDouble(OPTION_TEMPERATURE).isPresent())
-            root.setDouble("temperature", options.getDouble(OPTION_TEMPERATURE).get());
-        if (options.getInt(OPTION_MAX_TOKENS).isPresent())
-            root.setLong("max_tokens", options.getInt(OPTION_MAX_TOKENS).get());
-        // Others?
-
-        var messagesArray = root.setArray("messages");
-        var messagesObject = messagesArray.addObject();
-        messagesObject.setString("role", "user");
-        messagesObject.setString("content", prompt.asString());
-
-        var endpoint = options.getEndpoint().orElse("https://api.openai.com/v1/chat/completions");
-        return HttpRequest.newBuilder(new URI(endpoint))
-                          .header("Content-Type", "application/json")
-                          .header("Authorization", "Bearer " + options.getApiKey().orElse(""))
-                          .POST(HttpRequest.BodyPublishers.ofByteArray(SlimeUtils.toJsonBytes(slime)))
-                          .build();
-    }
-
-    private List<Completion> toCompletions(Inspector response) {
-        return toCompletions(response, "message");
-    }
-
-    private List<Completion> toCompletions(Inspector response, String field) {
-        List<Completion> completions = new ArrayList<>();
-        response.field("choices")
-                .traverse((ArrayTraverser) (__, choice) -> completions.add(toCompletion(choice, field)));
+        options.getInt(OPTION_MAX_TOKENS).ifPresent(builder::maxCompletionTokens);
+        options.getDouble(OPTION_TEMPERATURE).ifPresent(builder::temperature);
+        
+        ChatCompletionCreateParams createParams = builder.build();
+        
+        List<Completion> completions = client.chat().completions().create(createParams).choices().stream()
+                .flatMap(choice -> choice.message().content().stream()
+                    .map(content -> new Completion(content, mapFinishReason(choice.finishReason().toString())))
+                )
+                .toList();
+        
         return completions;
     }
 
-    private Completion toCompletion(Inspector choice, String field) {
-        var content = choice.field(field).field("content").asString();
-        var finishReason = toFinishReason(choice.field("finish_reason").asString());
-        return new Completion(content, finishReason);
+    @Override
+    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
+        var apiKey = options.getApiKey().orElseThrow();
+        var endpoint = options.getEndpoint().orElse(DEFAULT_ENDPOINT);
+        OpenAIClientAsync client = OpenAIOkHttpClientAsync.builder().apiKey(apiKey).baseUrl(endpoint).build();
+        ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
+            .model(ChatModel.of(options.get(OPTION_MODEL).map(Object::toString).orElse(DEFAULT_MODEL)))
+            .addUserMessage(prompt.toString());
+
+        options.getInt(OPTION_MAX_TOKENS).ifPresent(builder::maxCompletionTokens);
+        options.getDouble(OPTION_TEMPERATURE).ifPresent(builder::temperature);
+        
+        ChatCompletionCreateParams createParams = builder.build();
+        
+        CompletableFuture<Completion.FinishReason> future = new CompletableFuture<>();
+        
+        // Use streaming API
+        client.chat()
+              .completions()
+              .createStreaming(createParams)
+              .subscribe(completion -> completion.choices().stream()
+                      .flatMap(choice -> {
+                          // Process delta content
+                          return choice.delta().content().stream()
+                                  .map(content -> new Completion(content, 
+                                          // Only set actual finish reason on last chunk
+                                          choice.finishReason() != null ? 
+                                                  mapFinishReason(choice.finishReason().toString()) : 
+                                                  Completion.FinishReason.other));  // Use 'other' for streaming chunks
+                      })
+                      .forEach(consumer))
+              .onCompleteFuture()
+              .thenAccept(lastCompletion -> {
+                  // When the stream completes, resolve the future with the final finish reason
+                  Completion.FinishReason finalReason = lastCompletion != null ? 
+                          mapFinishReason(lastCompletion.toString()) : 
+                          Completion.FinishReason.stop;
+                  future.complete(finalReason);
+              })
+              .exceptionally(e -> {
+                  future.completeExceptionally(e);
+                  return null;
+              }).join();
+        
+        return future;
     }
 
-    private Completion.FinishReason toFinishReason(String finishReasonString) {
-        return switch(finishReasonString) {
-            case "length" -> Completion.FinishReason.length;
+    /**
+     * Method to map from OpenAI library FinishReason (as string) to ai.vespa.llm.completion.Completion.FinishReason
+     */
+    private Completion.FinishReason mapFinishReason(String openAiFinishReason) {
+        if (openAiFinishReason == null) return Completion.FinishReason.stop;
+        
+        return switch (openAiFinishReason) {
             case "stop" -> Completion.FinishReason.stop;
-            case "", "null" -> Completion.FinishReason.none;
+            case "length" -> Completion.FinishReason.length;
+            case "content_filter" -> Completion.FinishReason.content_filter;
+            case "tool_calls" -> Completion.FinishReason.tool_calls; // Map tool_calls to stop or create new reason if needed
+            case "function_call" -> Completion.FinishReason.function_call; // Map function_call to stop or create new reason
             case "error" -> throw new IllegalStateException("OpenAI-client returned finish_reason=error");
             default -> Completion.FinishReason.other;
         };
     }
-
 }
