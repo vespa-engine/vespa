@@ -3,22 +3,11 @@
 #include "state_explorer_utils.h"
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/vespalib/data/slime/cursor.h>
-#include <vespa/vespalib/util/memoryusage.h>
 
 using search::attribute::Status;
-using vespalib::MemoryUsage;
 using vespalib::slime::Cursor;
 
 namespace search {
-
-void
-StateExplorerUtils::memory_usage_to_slime(const MemoryUsage& usage, Cursor& object)
-{
-    object.setLong("allocated", usage.allocatedBytes());
-    object.setLong("used", usage.usedBytes());
-    object.setLong("dead", usage.deadBytes());
-    object.setLong("onHold", usage.allocatedBytesOnHold());
-}
 
 void
 StateExplorerUtils::status_to_slime(const Status &status, Cursor &object)

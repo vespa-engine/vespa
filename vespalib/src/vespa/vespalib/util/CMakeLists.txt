@@ -88,6 +88,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     singleexecutor.cpp
     small_vector.cpp
     stash.cpp
+    state_explorer_utils.cpp
     string_escape.cpp
     string_hash.cpp
     stringfmt.cpp
