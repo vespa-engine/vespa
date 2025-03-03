@@ -11,8 +11,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/test/value_compare.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using search::feature_t;
 using namespace search::fef;
@@ -36,20 +35,17 @@ Value::UP make_tensor(const TensorSpec &spec) {
 
 }
 
-struct ExecFixture
+class ConstantTest : public ::testing::Test
 {
+protected:
     BlueprintFactory factory;
     FtFeatureTest test;
-    ExecFixture(const std::string &feature)
-        : factory(),
-          test(factory, feature)
-    {
-        setup_search_features(factory);
-    }
+    ConstantTest();
+    ~ConstantTest() override;
     bool setup() { return test.setup(); }
     const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().type().has_dimensions());
+        EXPECT_TRUE(value.get().type().has_dimensions());
         return value.get();
     }
     const Value &executeTensor(uint32_t docId = 1) {
@@ -57,7 +53,7 @@ struct ExecFixture
     }
     double extractDouble(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().type().is_double());
+        EXPECT_TRUE(value.get().type().is_double());
         return value.get().as_double();
     }
     double executeDouble(uint32_t docId = 1) {
@@ -86,70 +82,77 @@ struct ExecFixture
     }
 };
 
-TEST_F("require that missing constant is detected",
-       ExecFixture("constant(foo)"))
+ConstantTest::ConstantTest()
+    : ::testing::Test(),
+      factory(),
+      test(factory, "constant(foo)")
 {
-    EXPECT_TRUE(!f.setup());
+    setup_search_features(factory);
+}
+
+ConstantTest::~ConstantTest() = default;
+
+TEST_F(ConstantTest, require_that_missing_constant_is_detected)
+{
+    EXPECT_TRUE(!setup());
 }
 
 
-TEST_F("require that existing tensor constant is detected",
-       ExecFixture("constant(foo)"))
+TEST_F(ConstantTest, require_that_existing_tensor_constant_is_detected)
 {
-    f.addTensor("foo",
-                TensorSpec("tensor(x{})")
-                .add({{"x","a"}}, 3)
-                .add({{"x","b"}}, 5)
-                .add({{"x","c"}}, 7));
-    EXPECT_TRUE(f.setup());
+    addTensor("foo",
+              TensorSpec("tensor(x{})")
+              .add({{"x","a"}}, 3)
+              .add({{"x","b"}}, 5)
+              .add({{"x","c"}}, 7));
+    EXPECT_TRUE(setup());
     auto expect = make_tensor(TensorSpec("tensor(x{})")
                               .add({{"x","b"}}, 5)
                               .add({{"x","c"}}, 7)
                               .add({{"x","a"}}, 3));
-    EXPECT_EQUAL(*expect, f.executeTensor());
+    EXPECT_EQ(*expect, executeTensor());
 }
 
 
-TEST_F("require that existing double constant is detected",
-       ExecFixture("constant(foo)"))
+TEST_F(ConstantTest, require_that_existing_double_constant_is_detected)
 {
-    f.addDouble("foo", 42.0);
-    EXPECT_TRUE(f.setup());
-    EXPECT_EQUAL(42.0, f.executeDouble());
+    addDouble("foo", 42.0);
+    EXPECT_TRUE(setup());
+    EXPECT_EQ(42.0, executeDouble());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_F("require that constants can be functional", ExecFixture("constant(foo)")) {
-    f.addTypeValue("foo", "tensor(x{})", "tensor(x{}):{a:3,b:5,c:7}");
-    EXPECT_TRUE(f.setup());
+TEST_F(ConstantTest, require_that_constants_can_be_functional) {
+    addTypeValue("foo", "tensor(x{})", "tensor(x{}):{a:3,b:5,c:7}");
+    EXPECT_TRUE(setup());
     auto expect = make_tensor(TensorSpec("tensor(x{})")
                               .add({{"x","b"}}, 5)
                               .add({{"x","c"}}, 7)
                               .add({{"x","a"}}, 3));
-    EXPECT_EQUAL(*expect, f.executeTensor());
+    EXPECT_EQ(*expect, executeTensor());
 }
 
-TEST_F("require that functional constant type must match the expression result", ExecFixture("constant(foo)")) {
-    f.addTypeValue("foo", "tensor<float>(x{})", "tensor(x{}):{a:3,b:5,c:7}");
-    EXPECT_TRUE(!f.setup());
+TEST_F(ConstantTest, require_that_functional_constant_type_must_match_the_expression_result) {
+    addTypeValue("foo", "tensor<float>(x{})", "tensor(x{}):{a:3,b:5,c:7}");
+    EXPECT_TRUE(!setup());
 }
 
-TEST_F("require that functional constant must parse without errors", ExecFixture("constant(foo)")) {
-    f.addTypeValue("foo", "double", "this is parse error");
-    EXPECT_TRUE(!f.setup());
+TEST_F(ConstantTest, require_that_functional_constant_must_parse_without_errors) {
+    addTypeValue("foo", "double", "this is parse error");
+    EXPECT_TRUE(!setup());
 }
 
-TEST_F("require that non-const functional constant is not allowed", ExecFixture("constant(foo)")) {
-    f.addTypeValue("foo", "tensor(x{})", "tensor(x{}):{a:a,b:5,c:7}");
-    EXPECT_TRUE(!f.setup());
+TEST_F(ConstantTest, require_that_non_const_functional_constant_is_not_allowed) {
+    addTypeValue("foo", "tensor(x{})", "tensor(x{}):{a:a,b:5,c:7}");
+    EXPECT_TRUE(!setup());
 }
 
-TEST_F("require that functional constant must have non-error type", ExecFixture("constant(foo)")) {
-    f.addTypeValue("foo", "error", "impossible to create value with error type");
-    EXPECT_TRUE(!f.setup());
+TEST_F(ConstantTest, require_that_functional_constant_must_have_non_error_type) {
+    addTypeValue("foo", "error", "impossible to create value with error type");
+    EXPECT_TRUE(!setup());
 }
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
