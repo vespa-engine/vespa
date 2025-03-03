@@ -1,14 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 // Unit tests for predicate_search.
 
-#include <vespa/log/log.h>
-LOG_SETUP("predicate_search_test");
-
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/queryeval/predicate_search.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/arraysize.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("predicate_search_test");
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
@@ -89,59 +89,59 @@ using CV = std::vector<uint8_t>;
 using MF = std::vector<uint8_t>;
 using IR = std::vector<uint16_t>;
 
-TEST("Require that the skipping is efficient") {
+TEST(PredicateSearchTest, Require_that_the_skipping_is_efficient) {
     const uint8_t min_feature[] = { 7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,
                                     7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7,7};
     const uint8_t kv[] = { 6,7,6,7,6,7,6,8,6,5,6,7,6,0,6,7,
                            7,6,7,6,6,6,6,7,7,7,8,7,8,7,7,7,6,7};
     SkipMinFeature::UP skip = SkipMinFeature::create(min_feature, kv, 34);
-    EXPECT_EQUAL(1u, skip->next());
-    EXPECT_EQUAL(3u, skip->next());
-    EXPECT_EQUAL(5u, skip->next());
-    EXPECT_EQUAL(7u, skip->next());
-    EXPECT_EQUAL(11u, skip->next());
-    EXPECT_EQUAL(15u, skip->next());
-    EXPECT_EQUAL(16u, skip->next());
-    EXPECT_EQUAL(18u, skip->next());
-    EXPECT_EQUAL(23u, skip->next());
-    EXPECT_EQUAL(24u, skip->next());
-    EXPECT_EQUAL(25u, skip->next());
-    EXPECT_EQUAL(26u, skip->next());
-    EXPECT_EQUAL(27u, skip->next());
-    EXPECT_EQUAL(28u, skip->next());
-    EXPECT_EQUAL(29u, skip->next());
-    EXPECT_EQUAL(30u, skip->next());
-    EXPECT_EQUAL(31u, skip->next());
-    EXPECT_EQUAL(33u, skip->next());
+    EXPECT_EQ(1u, skip->next());
+    EXPECT_EQ(3u, skip->next());
+    EXPECT_EQ(5u, skip->next());
+    EXPECT_EQ(7u, skip->next());
+    EXPECT_EQ(11u, skip->next());
+    EXPECT_EQ(15u, skip->next());
+    EXPECT_EQ(16u, skip->next());
+    EXPECT_EQ(18u, skip->next());
+    EXPECT_EQ(23u, skip->next());
+    EXPECT_EQ(24u, skip->next());
+    EXPECT_EQ(25u, skip->next());
+    EXPECT_EQ(26u, skip->next());
+    EXPECT_EQ(27u, skip->next());
+    EXPECT_EQ(28u, skip->next());
+    EXPECT_EQ(29u, skip->next());
+    EXPECT_EQ(30u, skip->next());
+    EXPECT_EQ(31u, skip->next());
+    EXPECT_EQ(33u, skip->next());
 }
 
-TEST("require that empty search yields no results") {
+TEST(PredicateSearchTest, require_that_empty_search_yields_no_results) {
     vector<PredicatePostingList::UP> posting_lists;
     MF mf(3); CV cv(3); IR ir(3, 0xffff);
     PredicateSearch search(&mf[0], &ir[0], 0xffff, cv, std::move(posting_lists), tfmda);
     search.initFullRange();
-    EXPECT_EQUAL(SearchIterator::beginId(), search.getDocId());
+    EXPECT_EQ(SearchIterator::beginId(), search.getDocId());
     EXPECT_FALSE(search.seek(2));
     EXPECT_TRUE(search.isAtEnd());
 }
 
-TEST("require that simple search yields result") {
+TEST(PredicateSearchTest, require_that_simple_search_yields_result) {
     MyPostingList plists[] = {{{2, 0x0001ffff}}};
     MF mf{0, 0, 0};
     CV cv{0, 0, 1};
     IR ir(3, 0xffff);
     PredicateSearch search(&mf[0], &ir[0], 0xffff, cv, make_posting_lists_vector(plists), tfmda);
     search.initFullRange();
-    EXPECT_EQUAL(SearchIterator::beginId(), search.getDocId());
+    EXPECT_EQ(SearchIterator::beginId(), search.getDocId());
     EXPECT_FALSE(search.seek(1));
-    EXPECT_EQUAL(2u, search.getDocId());
+    EXPECT_EQ(2u, search.getDocId());
     EXPECT_TRUE(search.seek(2));
-    EXPECT_EQUAL(2u, search.getDocId());
+    EXPECT_EQ(2u, search.getDocId());
     EXPECT_FALSE(search.seek(3));
     EXPECT_TRUE(search.isAtEnd());
 }
 
-TEST("require that minFeature (K) is used to prune results") {
+TEST(PredicateSearchTest, require_that_minFeature_K_is_used_to_prune_results) {
     MyPostingList plists[] = {{{2, 0x0001ffff}},
                               {{5, 0x0001ffff}}};
     MF mf{0, 0, 3, 0, 0, 0};
@@ -150,10 +150,10 @@ TEST("require that minFeature (K) is used to prune results") {
     PredicateSearch search(&mf[0], &ir[0], 0xffff, cv, make_posting_lists_vector(plists), tfmda);
     search.initFullRange();
     EXPECT_FALSE(search.seek(2));
-    EXPECT_EQUAL(5u, search.getDocId());
+    EXPECT_EQ(5u, search.getDocId());
 }
 
-TEST("require that a high K (min_feature - 1) can yield results") {
+TEST(PredicateSearchTest, require_that_a_high_K_min_feature_minus_1_can_yield_results) {
     MyPostingList plists[] = {{{2, 0x00010001}},
                               {{2, 0x0002ffff}}};
     MF mf{0, 0, 2};
@@ -164,7 +164,7 @@ TEST("require that a high K (min_feature - 1) can yield results") {
     EXPECT_TRUE(search.seek(2));
 }
 
-TEST("require that we can skip past entries") {
+TEST(PredicateSearchTest, require_that_we_can_skip_past_entries) {
     MyPostingList plists[] = {{{2, 0x0001ffff},
                                {5, 0x0001ffff}}};
     MF mf{0, 0, 0, 0, 0, 0};
@@ -175,7 +175,7 @@ TEST("require that we can skip past entries") {
     EXPECT_TRUE(search.seek(5));
 }
 
-TEST("require that posting lists are sorted after advancing") {
+TEST(PredicateSearchTest, require_that_posting_lists_are_sorted_after_advancing) {
     MyPostingList plists[] = {{{1, 0x0001ffff},
                                {5, 0x0001ffff}},
                               {{2, 0x0001ffff},
@@ -190,7 +190,7 @@ TEST("require that posting lists are sorted after advancing") {
     EXPECT_TRUE(search.seek(4));
 }
 
-TEST("require that short interval ranges works") {
+TEST(PredicateSearchTest, require_that_short_interval_ranges_works) {
     MyPostingList plists[] = {{{1, 0x00010001},
                                {5, 0x00010001}},
                               {{2, 0x00010001},
@@ -205,17 +205,17 @@ TEST("require that short interval ranges works") {
     EXPECT_TRUE(search.seek(4));
 }
 
-TEST("require that empty posting lists work") {
+TEST(PredicateSearchTest, require_that_empty_posting_lists_work) {
     MyPostingList plists[] = {{}};
     MF mf(3); CV cv(3); IR ir(3, 0xffff);
     PredicateSearch search(&mf[0], &ir[0], 0xffff, cv, make_posting_lists_vector(plists), tfmda);
     search.initFullRange();
-    EXPECT_EQUAL(SearchIterator::beginId(), search.getDocId());
+    EXPECT_EQ(SearchIterator::beginId(), search.getDocId());
     EXPECT_FALSE(search.seek(2));
     EXPECT_TRUE(search.isAtEnd());
 }
 
-TEST("require that shorter posting list ending is ok") {
+TEST(PredicateSearchTest, require_that_shorter_posting_list_ending_is_ok) {
     MyPostingList plists[] = {{{1, 0x0001ffff},
                                {2, 0x0001ffff}},
                               {{4, 0x0001ffff}}};
@@ -228,7 +228,7 @@ TEST("require that shorter posting list ending is ok") {
     EXPECT_TRUE(search.seek(4));
 }
 
-TEST("require that sorting works for many posting lists") {
+TEST(PredicateSearchTest, require_that_sorting_works_for_many_posting_lists) {
     MyPostingList plists[] = {{{1, 0x0001ffff},
                                {2, 0x0001ffff}},
                               {{2, 0x0001ffff},
@@ -250,7 +250,7 @@ TEST("require that sorting works for many posting lists") {
     EXPECT_TRUE(search.seek(5));
 }
 
-TEST("require that insufficient interval coverage prevents match") {
+TEST(PredicateSearchTest, require_that_insufficient_interval_coverage_prevents_match) {
     MyPostingList plists[] = {{{2, 0x00010001},
                                {3, 0x0002ffff}}};
     MF mf{0, 0, 0, 0};
@@ -262,7 +262,7 @@ TEST("require that insufficient interval coverage prevents match") {
     EXPECT_FALSE(search.seek(3));
 }
 
-TEST("require that intervals are sorted") {
+TEST(PredicateSearchTest, require_that_intervals_are_sorted) {
     MyPostingList plists[] = {{{2, 0x00010001}},
                               {{2, 0x0003ffff}},
                               {{2, 0x00020002}}};
@@ -274,7 +274,7 @@ TEST("require that intervals are sorted") {
     EXPECT_TRUE(search.seek(2));
 }
 
-TEST("require that NOT is supported - no match") {
+TEST(PredicateSearchTest, require_that_NOT_is_supported_no_match) {
     MyPostingList plists[] = {{{2, 0x00010001}},  // [l, r]
                               {{2, 0x00010000},   // [l, r]*
                                {2, 0xffff0001}}};  // [r+1, r+1]*
@@ -286,7 +286,7 @@ TEST("require that NOT is supported - no match") {
     EXPECT_FALSE(search.seek(2));
 }
 
-TEST("require that NOT is supported - match") {
+TEST(PredicateSearchTest, require_that_NOT_is_supported_match) {
     MyPostingList plists[] = {{{2, 0x00010000},   // [l, r]*
                                {2, 0xffff0001}}};  // [r+1, r+1]*
     MF mf{0, 0, 0};
@@ -297,7 +297,7 @@ TEST("require that NOT is supported - match") {
     EXPECT_TRUE(search.seek(2));
 }
 
-TEST("require that NOT is supported - no match because of previous term") {
+TEST(PredicateSearchTest, require_that_NOT_is_supported_no_match_because_of_previous_term) {
     MyPostingList plists[] = {{{2, 0x00020001},   // [l, r]*
                                {2, 0xffff0002}}};  // [r+1, r+1]*
     MF mf{0, 0, 0};
@@ -308,7 +308,7 @@ TEST("require that NOT is supported - no match because of previous term") {
     EXPECT_FALSE(search.seek(2));
 }
 
-TEST("require that NOT is supported - subqueries") {
+TEST(PredicateSearchTest, require_that_NOT_is_supported_subqueries) {
     MyPostingList plists[] = {{{2, 0x00010001}},  // [l, r]
                               {{2, 0x00010000},   // [l, r]*
                                {2, 0xffff0001}}};  // [r+1, r+1]*
@@ -321,7 +321,7 @@ TEST("require that NOT is supported - subqueries") {
     EXPECT_TRUE(search.seek(2));
 }
 
-TEST("require that there can be many intervals") {
+TEST(PredicateSearchTest, require_that_there_can_be_many_intervals) {
     MyPostingList plists[] = {{{2, 0x00010001},
                                {2, 0x00020002},
                                {2, 0x00030003},
@@ -337,7 +337,7 @@ TEST("require that there can be many intervals") {
     EXPECT_TRUE(search.seek(2));
 }
 
-TEST("require that match can require multiple postinglists.") {
+TEST(PredicateSearchTest, require_that_match_can_require_multiple_postinglists) {
     MyPostingList plists[] = {{{2, 0x00010001}},
                               {{2, 0x0002000b},
                                {2, 0x00030003}},
@@ -355,7 +355,7 @@ TEST("require that match can require multiple postinglists.") {
     EXPECT_TRUE(search.seek(2));
 }
 
-TEST("require that subquery bitmap is unpacked to subqueries.") {
+TEST(PredicateSearchTest, require_that_subquery_bitmap_is_unpacked_to_subqueries) {
     MyPostingList plists[] = {{{2, 0x0001ffff}}};
     TermFieldMatchDataArray array;
     TermFieldMatchData data;
@@ -367,10 +367,10 @@ TEST("require that subquery bitmap is unpacked to subqueries.") {
     search.initFullRange();
     EXPECT_TRUE(search.seek(2));
     search.unpack(2);
-    EXPECT_EQUAL(0xffffffffffffffffUL, data.getSubqueries());
+    EXPECT_EQ(0xffffffffffffffffUL, data.getSubqueries());
 }
 
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
