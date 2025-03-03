@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/util/state_explorer_utils.h>
+#include <algorithm>
 
 using vespalib::slime::ArrayInserter;
 using vespalib::slime::Cursor;
