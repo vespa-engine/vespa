@@ -18,8 +18,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/curl"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
@@ -89,8 +87,10 @@ func printCurl(stderr io.Writer, req *http.Request, postFile string, service *ve
 			cmd.Header(k, v)
 		}
 	}
-	cmd.Certificate = service.TLSOptions.CertificateFile
-	cmd.PrivateKey = service.TLSOptions.PrivateKeyFile
+	if service.AuthMethod == "mtls" {
+		cmd.Certificate = service.TLSOptions.CertificateFile
+		cmd.PrivateKey = service.TLSOptions.PrivateKeyFile
+	}
 	_, err = io.WriteString(stderr, cmd.String()+"\n")
 	return err
 }
@@ -100,12 +100,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	if err != nil {
 		return err
 	}
-	token := cli.Environment[envvars.VESPA_CLI_DATA_PLANE_TOKEN]
-	authMethod := "mtls"
-	if token != "" {
-		trace.Trace("The VESPA_CLI_DATA_PLANE_TOKEN environment variable is set, using token authentication")
-		authMethod = "token"
-	}
+	authMethod := cli.selectAuthMethod()
 	service, err := waiter.ServiceWithAuthMethod(target, cli.config.cluster(), authMethod)
 	if err != nil {
 		return err
@@ -145,11 +140,12 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 		return err
 	}
 	if authMethod == "token" {
-		if header.Get("Authorization") != "" {
-			err := fmt.Errorf("header 'Authorization' cannot be set in combination with VESPA_CLI_DATA_PLANE_TOKEN")
-			return errHint(err, "Unset the VESPA_CLI_DATA_PLANE_TOKEN environment variable or remove the Authorization header")
+		err = cli.addBearerToken(&header)
+		if err != nil {
+			return err
 		}
-		header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+		service.TLSOptions.CertificateFile = ""
+		service.TLSOptions.PrivateKeyFile = ""
 	}
 	hReq := &http.Request{Header: header, URL: url}
 	if opts.postFile != "" {
