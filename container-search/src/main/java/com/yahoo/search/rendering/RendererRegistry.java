@@ -50,8 +50,8 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
 
         // add json renderer
         Renderer cborRenderer = new CborRenderer(executor);
-        jsonRenderer.initId(RendererRegistry.jsonRendererId);
-        register(jsonRenderer.getId(), jsonRenderer);
+        cborRenderer.initId(RendererRegistry.cborRendererId);
+        register(cborRenderer.getId(), cborRenderer);
 
         // Add xml renderer
         Renderer xmlRenderer = new XmlRenderer(executor);
