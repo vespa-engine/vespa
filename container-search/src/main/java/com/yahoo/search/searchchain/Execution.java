@@ -597,7 +597,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
     }
 
     @Override
-    protected void onReturning(Request request, Processor processor,Response response) {
+    protected void onReturning(Request request, Processor processor, Response response) {
         super.onReturning(request, processor, response);
         timer.sampleSearchReturn(nextIndex(), context.getDetailedDiagnostics(), (Result)response);
     }
