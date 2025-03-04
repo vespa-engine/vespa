@@ -185,6 +185,7 @@
 
                     <!-- 3rd party artifacts embedded -->
                     <i>aopalliance:aopalliance:*:*</i>
+		    <i>com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:*:*</i>
                     <i>com.google.errorprone:error_prone_annotations:*:*</i>
                     <i>com.google.guava:failureaccess:*:*</i>
                     <i>com.google.guava:guava:*:*</i>
@@ -213,7 +214,7 @@
                     <i>org.slf4j:log4j-over-slf4j:*:*</i>
                     <i>org.slf4j:slf4j-api:*:*</i>
                     <i>org.slf4j:slf4j-jdk14:*:*</i>
-                    <i>xerces:xercesImpl:*:*</i>
+		    <i>xerces:xercesImpl:*:*</i>
                   </allowed>
                 </enforceDependencies>
               </rules>
