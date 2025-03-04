@@ -745,10 +745,9 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspector(Inspector data) throws IOException {
-            if(data instanceof Value.ArrayValue) {
-                Value.ArrayValue arrayValue = (Value.ArrayValue) data;
+            if(data.type().equals(Type.ARRAY)) {
                 generator.writeStartArray();
-                arrayValue.entries().forEach(e -> {
+                data.entries().forEach(e -> {
                     byte[] utf8 = e.asUtf8();
                     try {
                         generator.writeRawUTF8String(utf8, 0, utf8.length);
