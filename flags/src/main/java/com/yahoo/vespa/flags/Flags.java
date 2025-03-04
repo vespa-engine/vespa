@@ -160,7 +160,7 @@ public class Flags {
 
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
             "log-file-compression-algorithm", "",
-            List.of("arnej"), "2022-06-14", "2025-03-01",
+            List.of("arnej"), "2022-06-14", "2025-12-01",
             "Which algorithm to use for compressing log files. Valid values: empty string (default), gzip, zstd",
             "Takes effect immediately",
             INSTANCE_ID);
