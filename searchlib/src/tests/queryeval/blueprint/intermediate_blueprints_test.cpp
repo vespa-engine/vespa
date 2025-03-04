@@ -795,6 +795,9 @@ struct make {
         }
         return std::move(*this);
     }
+    make &&true_leaf() && {
+        return std::move(*this).add(std::make_unique<AlwaysTrueBlueprint>());
+    }
     static make OR() { return make(std::make_unique<OrBlueprint>()); }
     static make AND() { return make(std::make_unique<AndBlueprint>()); }
     static make RANK() { return make(std::make_unique<RankBlueprint>()); }
@@ -811,6 +814,18 @@ struct make {
     }
 };
 
+TEST(IntermediateBlueprintsTest, TRUE_inside_AND_is_dropped) {
+    Blueprint::UP top = make::AND().true_leaf().leaf(3).true_leaf().leaf(2).true_leaf().leaf(1).true_leaf();
+    Blueprint::UP expect = make::AND().leafs({1, 2, 3});
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST(IntermediateBlueprintsTest, all_TRUE_inside_AND_becomes_TRUE) {
+    Blueprint::UP top = make::AND().true_leaf().true_leaf().true_leaf().true_leaf();
+    Blueprint::UP expect = std::make_unique<AlwaysTrueBlueprint>();
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
 TEST(IntermediateBlueprintsTest, AND_AND_collapsing) {
     Blueprint::UP top = make::AND().leafs({1,3,5}).add(make::AND().leafs({2,4}));
     Blueprint::UP expect = make::AND().leafs({1,2,3,4,5});
@@ -821,6 +836,17 @@ TEST(IntermediateBlueprintsTest, OR_OR_collapsing) {
     Blueprint::UP top = make::OR().leafs({1,3,5}).add(make::OR().leafs({2,4}));
     Blueprint::UP expect = make::OR().leafs({5,4,3,2,1});
     // NOTE: use non-strict cost based sorting for expected order
+    optimize_and_compare(std::move(top), std::move(expect), false);
+}
+
+TEST(IntermediateBlueprintsTest, ANDNOT_OR_collapsing) {
+    Blueprint::UP top = make::ANDNOT()
+            .add(make::OR().leafs({1, 4}))
+            .add(make::OR().leafs({2, 5}))
+            .add(make::OR().leafs({3, 6}));
+    Blueprint::UP expect = make::ANDNOT()
+            .add(make::OR().leafs({4, 1}))
+            .leafs({6, 5, 3, 2});
     optimize_and_compare(std::move(top), std::move(expect), false);
 }
 

@@ -18,6 +18,8 @@
 #include <vespa/vespalib/util/unconstify_span.h>
 #include <type_traits>
 
+namespace vespalib { struct StateExplorer; }
+
 namespace vespalib::datastore {
 
 /**
@@ -185,6 +187,8 @@ public:
     }
     // need object location before construction
     static DataStoreBase& get_data_store_base(ArrayStore &self) { return self._store; }
+
+    std::unique_ptr<StateExplorer> make_state_explorer() const;
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref);

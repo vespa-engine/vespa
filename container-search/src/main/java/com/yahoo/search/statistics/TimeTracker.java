@@ -141,7 +141,7 @@ public final class TimeTracker {
     }
 
     private State state = null;
-    private List<Tag> tags = new ArrayList<>();
+    private final List<Tag> tags = new ArrayList<>();
 
     private SearcherTimer[] searcherTracking = null;
     private final Chain<? extends Processor> searchChain;
@@ -384,4 +384,3 @@ public final class TimeTracker {
         return sum;
     }
 }
-

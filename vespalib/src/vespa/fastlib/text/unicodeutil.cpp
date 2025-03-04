@@ -4,7 +4,6 @@
 #include <cstdlib>
 
 #include "unicodeutil-charprops.cpp"
-#include "unicodeutil-lowercase.cpp"
 
 char *
 Fast_UnicodeUtil::utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc) noexcept

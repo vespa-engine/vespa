@@ -1,21 +1,28 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("reprocessing_runner_test");
 
 #include <vespa/searchcore/proton/reprocessing/i_reprocessing_task.h>
 #include <vespa/searchcore/proton/reprocessing/reprocessingrunner.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("reprocessing_runner_test");
 
 using namespace proton;
 
-struct Fixture
+struct ReprocessingRunnerTest : public  ::testing::Test
 {
     ReprocessingRunner _runner;
-    Fixture()
-        : _runner()
-    {
-    }
+    ReprocessingRunnerTest();
+    ~ReprocessingRunnerTest() override;
 };
+
+ReprocessingRunnerTest::ReprocessingRunnerTest()
+    : ::testing::Test(),
+      _runner()
+{
+}
+
+ReprocessingRunnerTest::~ReprocessingRunnerTest() = default;
 
 using TaskList = ReprocessingRunner::ReprocessingTasks;
 
@@ -43,11 +50,11 @@ struct MyTask : public IReprocessingTask
     }
 
     void run() override {
-        ASSERT_EQUAL(_initProgress, _runner.getProgress());
+        ASSERT_EQ(_initProgress, _runner.getProgress());
         _myProgress = 0.5;
-        ASSERT_EQUAL(_middleProgress, _runner.getProgress());
+        ASSERT_EQ(_middleProgress, _runner.getProgress());
         _myProgress = 1.0;
-        ASSERT_EQUAL(_finalProgress, _runner.getProgress());
+        ASSERT_EQ(_finalProgress, _runner.getProgress());
     }
 
     Progress getProgress() const override {
@@ -65,48 +72,44 @@ struct MyTask : public IReprocessingTask
     }
 };
 
-TEST_F("require that progress is calculated when tasks are executed", Fixture)
+TEST_F(ReprocessingRunnerTest, require_that_progress_is_calculated_when_tasks_are_executed)
 {
     TaskList tasks;
-    EXPECT_EQUAL(0.0, f._runner.getProgress());
-    tasks.push_back(MyTask::create(f._runner, 0.0, 0.1, 0.2, 1.0));
-    tasks.push_back(MyTask::create(f._runner, 0.2, 0.6, 1.0, 4.0));
-    f._runner.addTasks(tasks);
+    EXPECT_EQ(0.0, _runner.getProgress());
+    tasks.push_back(MyTask::create(_runner, 0.0, 0.1, 0.2, 1.0));
+    tasks.push_back(MyTask::create(_runner, 0.2, 0.6, 1.0, 4.0));
+    _runner.addTasks(tasks);
     tasks.clear();
-    EXPECT_EQUAL(0.0, f._runner.getProgress());
-    f._runner.run();
-    EXPECT_EQUAL(1.0, f._runner.getProgress());
+    EXPECT_EQ(0.0, _runner.getProgress());
+    _runner.run();
+    EXPECT_EQ(1.0, _runner.getProgress());
 }
 
 
-TEST_F("require that runner can be reset", Fixture)
+TEST_F(ReprocessingRunnerTest, require_that_runner_can_be_reset)
 {
     TaskList tasks;
-    EXPECT_EQUAL(0.0, f._runner.getProgress());
-    tasks.push_back(MyTask::create(f._runner, 0.0, 0.5, 1.0, 1.0));
-    f._runner.addTasks(tasks);
+    EXPECT_EQ(0.0, _runner.getProgress());
+    tasks.push_back(MyTask::create(_runner, 0.0, 0.5, 1.0, 1.0));
+    _runner.addTasks(tasks);
     tasks.clear();
-    EXPECT_EQUAL(0.0, f._runner.getProgress());
-    f._runner.run();
-    EXPECT_EQUAL(1.0, f._runner.getProgress());
-    f._runner.reset();
-    EXPECT_EQUAL(0.0, f._runner.getProgress());
-    tasks.push_back(MyTask::create(f._runner, 0.0, 0.5, 1.0, 1.0));
-    f._runner.addTasks(tasks);
+    EXPECT_EQ(0.0, _runner.getProgress());
+    _runner.run();
+    EXPECT_EQ(1.0, _runner.getProgress());
+    _runner.reset();
+    EXPECT_EQ(0.0, _runner.getProgress());
+    tasks.push_back(MyTask::create(_runner, 0.0, 0.5, 1.0, 1.0));
+    _runner.addTasks(tasks);
     tasks.clear();
-    EXPECT_EQUAL(0.0, f._runner.getProgress());
-    f._runner.reset();
-    EXPECT_EQUAL(0.0, f._runner.getProgress());
-    tasks.push_back(MyTask::create(f._runner, 0.0, 0.5, 1.0, 4.0));
-    f._runner.addTasks(tasks);
+    EXPECT_EQ(0.0, _runner.getProgress());
+    _runner.reset();
+    EXPECT_EQ(0.0, _runner.getProgress());
+    tasks.push_back(MyTask::create(_runner, 0.0, 0.5, 1.0, 4.0));
+    _runner.addTasks(tasks);
     tasks.clear();
-    EXPECT_EQUAL(0.0, f._runner.getProgress());
-    f._runner.run();
-    EXPECT_EQUAL(1.0, f._runner.getProgress());
+    EXPECT_EQ(0.0, _runner.getProgress());
+    _runner.run();
+    EXPECT_EQ(1.0, _runner.getProgress());
 }
 
-
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

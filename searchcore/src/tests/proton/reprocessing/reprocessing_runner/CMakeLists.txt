@@ -4,5 +4,6 @@ vespa_add_executable(searchcore_reprocessing_runner_test_app TEST
     reprocessing_runner_test.cpp
     DEPENDS
     searchcore_reprocessing
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_reprocessing_runner_test_app COMMAND searchcore_reprocessing_runner_test_app)

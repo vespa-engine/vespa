@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/fatih/color"
 	"github.com/vespa-engine/vespa/client/go/internal/curl"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/version"
@@ -88,6 +89,7 @@ func (c *CurlWriter) print(request *http.Request, tlsOptions TLSOptions, timeout
 type Service struct {
 	BaseURL    string
 	Name       string
+	AuthMethod string
 	TLSOptions TLSOptions
 	CurlWriter CurlWriter
 
@@ -221,16 +223,26 @@ func (s *Service) Description() string {
 }
 
 // FindService returns the service of given name, found among services, if any.
-func FindService(name string, services []*Service) (*Service, error) {
-	if name == "" && len(services) == 1 {
-		return services[0], nil
+func FindService(name string, authMethod string, services []*Service) (*Service, error) {
+	applicableServices := make([]*Service, 0, len(services))
+	for _, s := range services {
+		if s.AuthMethod == authMethod || s.AuthMethod == "" {
+			applicableServices = append(applicableServices, s)
+		}
 	}
-	names := make([]string, len(services))
-	for i, s := range services {
+	if name == "" && len(applicableServices) == 1 {
+		return applicableServices[0], nil
+	}
+	names := make([]string, 0, len(services))
+	for _, s := range services {
 		if name == s.Name {
 			return s, nil
 		}
-		names[i] = s.Name
+		var prettyName = color.CyanString("%s", s.Name)
+		if s.AuthMethod != "" {
+			prettyName = fmt.Sprintf("%s (%s)", prettyName, s.AuthMethod)
+		}
+		names = append(names, prettyName)
 	}
 	found := "no services found"
 	if len(names) > 0 {

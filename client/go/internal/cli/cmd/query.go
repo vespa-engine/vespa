@@ -18,6 +18,8 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
+	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/curl"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/ioutil"
@@ -98,10 +100,17 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	if err != nil {
 		return err
 	}
-	service, err := waiter.Service(target, cli.config.cluster())
+	token := cli.Environment[envvars.VESPA_CLI_DATA_PLANE_TOKEN]
+	authMethod := "mtls"
+	if token != "" {
+		trace.Trace("The VESPA_CLI_DATA_PLANE_TOKEN environment variable is set, using token authentication")
+		authMethod = "token"
+	}
+	service, err := waiter.ServiceWithAuthMethod(target, cli.config.cluster(), authMethod)
 	if err != nil {
 		return err
 	}
+
 	switch opts.format {
 	case "plain", "human":
 	default:
@@ -134,6 +143,13 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	header, err := httputil.ParseHeader(opts.headers)
 	if err != nil {
 		return err
+	}
+	if authMethod == "token" {
+		if header.Get("Authorization") != "" {
+			err := fmt.Errorf("header 'Authorization' cannot be set in combination with VESPA_CLI_DATA_PLANE_TOKEN")
+			return errHint(err, "Unset the VESPA_CLI_DATA_PLANE_TOKEN environment variable or remove the Authorization header")
+		}
+		header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
 	}
 	hReq := &http.Request{Header: header, URL: url}
 	if opts.postFile != "" {
@@ -180,7 +196,11 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 			return err
 		}
 	} else if response.StatusCode/100 == 4 {
-		return fmt.Errorf("invalid query: %s\n%s", response.Status, ioutil.ReaderToJSON(response.Body))
+		err := fmt.Errorf("invalid query: %s\n%s", response.Status, ioutil.ReaderToJSON(response.Body))
+		if response.StatusCode == 403 && authMethod == "token" {
+			return errHint(err, "Make sure the VESPA_CLI_DATA_PLANE_TOKEN environment variable is set to a valid token")
+		}
+		return err
 	} else {
 		return fmt.Errorf("%s from container at %s\n%s", response.Status, color.CyanString(url.Host), ioutil.ReaderToJSON(response.Body))
 	}

@@ -23,11 +23,20 @@ private:
     static uint32_t lowercase_4_block[256];
     static uint32_t lowercase_5_block[256];
     static uint32_t lowercase_16_block[256];
+    static uint32_t lowercase_19_block[256];
+    static uint32_t lowercase_28_block[256];
     static uint32_t lowercase_30_block[256];
     static uint32_t lowercase_31_block[256];
     static uint32_t lowercase_33_block[256];
     static uint32_t lowercase_44_block[256];
+    static uint32_t lowercase_166_block[256];
+    static uint32_t lowercase_167_block[256];
+    static uint32_t lowercase_255_block[256];
     static uint32_t lowercase_260_block[256];
+    static uint32_t lowercase_268_block[256];
+    static uint32_t lowercase_280_block[256];
+    static uint32_t lowercase_366_block[256];
+    static uint32_t lowercase_489_block[256];
     static uint32_t lowercase_0_5_blocks[0x600];
 
 public:
@@ -54,19 +63,23 @@ public:
             int lowblock = codepoint >> 8;
             unsigned char lb = codepoint & 0xFF;
 
-            if (lowblock == 16) {
-                return lowercase_16_block[lb];
-            } else if (lowblock == 30) {
-                return lowercase_30_block[lb];
-            } else if (lowblock == 31) {
-                return lowercase_31_block[lb];
-            } else if (lowblock == 33) {
-                return lowercase_33_block[lb];
-            } else if (lowblock == 44) {
-                return lowercase_44_block[lb];
-            } else if (lowblock == 260) {
-                return lowercase_260_block[lb];
-            } else {
+            switch (lowblock) {
+            case 16: return lowercase_16_block[lb];
+            case 19: return lowercase_19_block[lb];
+            case 28: return lowercase_28_block[lb];
+            case 30: return lowercase_30_block[lb];
+            case 31: return lowercase_31_block[lb];
+            case 33: return lowercase_33_block[lb];
+            case 44: return lowercase_44_block[lb];
+            case 166: return lowercase_166_block[lb];
+            case 167: return lowercase_167_block[lb];
+            case 255: return lowercase_255_block[lb];
+            case 260: return lowercase_260_block[lb];
+            case 268: return lowercase_268_block[lb];
+            case 280: return lowercase_280_block[lb];
+            case 366: return lowercase_366_block[lb];
+            case 489: return lowercase_489_block[lb];
+            default:
                 return codepoint;
             }
         }

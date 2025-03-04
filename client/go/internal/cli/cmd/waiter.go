@@ -33,6 +33,10 @@ func (w *Waiter) DeployService(target vespa.Target) (*vespa.Service, error) {
 
 // Service returns the service identified by cluster ID, available on target.
 func (w *Waiter) Service(target vespa.Target, cluster string) (*vespa.Service, error) {
+	return w.ServiceWithAuthMethod(target, cluster, "mtls")
+}
+
+func (w *Waiter) ServiceWithAuthMethod(target vespa.Target, cluster string, authMethod string) (*vespa.Service, error) {
 	targetType, err := w.cli.targetType(anyTarget)
 	if err != nil {
 		return nil, err
@@ -44,9 +48,15 @@ func (w *Waiter) Service(target vespa.Target, cluster string) (*vespa.Service, e
 	if err != nil {
 		return nil, err
 	}
-	service, err := vespa.FindService(cluster, services)
+	service, err := vespa.FindService(cluster, authMethod, services)
 	if err != nil {
-		return nil, errHint(err, "The --cluster option specifies the service to use")
+		hint := "The --cluster option specifies the service to use"
+		if authMethod == "token" {
+			tokenHint := "Token authentication requires a token endpoint to be set up in services.xml"
+			return nil, errHint(err, tokenHint, hint)
+		}
+		authHint := fmt.Sprintf("No endpoint found for authentication method %s", authMethod)
+		return nil, errHint(err, authHint, hint)
 	}
 	if err := w.maybeWaitFor(service); err != nil {
 		return nil, err

@@ -146,14 +146,14 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("geirst", "vekterli"), "2021-07-16", "2025-06-01",
+            List.of("vekterli"), "2021-07-16", "2025-06-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
-            List.of("arnej"), "2021-11-15", "2025-03-01",
+            List.of("arnej"), "2021-11-15", "2025-04-01",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -214,21 +214,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2025-03-01",
+            List.of("andreer"), "2023-08-21", "2025-09-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2025-03-01",
+            List.of("andreer"), "2023-08-28", "2025-09-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2025-03-01",
+            List.of("andreer"), "2023-08-28", "2025-09-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);

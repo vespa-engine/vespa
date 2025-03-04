@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_constant_test_app TEST
     constant_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_constant_test_app COMMAND searchlib_constant_test_app)
