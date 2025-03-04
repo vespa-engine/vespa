@@ -12,9 +12,13 @@ import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
 
 import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import ai.vespa.llm.LanguageModel;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An OpenAiClient that implements the LanguageModel interface using the official OpenAI Java client.
@@ -24,22 +28,108 @@ import ai.vespa.llm.LanguageModel;
  * @author thomasht86
  */
 @Beta
-public class OpenAiClient  implements LanguageModel{
+public class OpenAiClient implements LanguageModel {
     private static final String DEFAULT_MODEL = "gpt-4o-mini";
     private static final String DEFAULT_ENDPOINT = "https://api.openai.com/v1/";
-     // These are public so that they can be used to set corresponding InferenceParameters outside of this class.
+    // These are public so that they can be used to set corresponding InferenceParameters outside of this class.
     public static final String OPTION_MODEL = "model";
     public static final String OPTION_TEMPERATURE = "temperature";
     public static final String OPTION_MAX_TOKENS = "maxTokens";
-
+    
+    private final String defaultApiKey;
+    private final String defaultEndpoint;
+    
+    // Lazily initialized clients for default configuration
+    private volatile OpenAIClient defaultSyncClient;
+    private volatile OpenAIClientAsync defaultAsyncClient;
+    
+    static {
+        // Register shutdown hook for proper cleanup of all client instances
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            // This will be empty for now but will be used by the static method
+            // to clean up any resources if needed in the future
+        }));
+    }
+    
+    /**
+     * Creates an OpenAiClient with default configuration.
+     * API key must be provided in InferenceParameters for each call.
+     */
+    public OpenAiClient() {
+        this(null, DEFAULT_ENDPOINT);
+    }
+    
+    /**
+     * Creates an OpenAiClient with the given API key and default endpoint.
+     * 
+     * @param apiKey The OpenAI API key
+     */
+    public OpenAiClient(String apiKey) {
+        this(apiKey, DEFAULT_ENDPOINT);
+    }
+    
+    /**
+     * Creates an OpenAiClient with the given API key and endpoint.
+     * 
+     * @param apiKey The OpenAI API key
+     * @param endpoint The OpenAI API endpoint
+     */
+    public OpenAiClient(String apiKey, String endpoint) {
+        this.defaultApiKey = apiKey;
+        this.defaultEndpoint = Objects.requireNonNull(endpoint, "Endpoint cannot be null");
+    }
+    
+    private synchronized OpenAIClient getSyncClient() {
+        if (defaultSyncClient == null && defaultApiKey != null) {
+            defaultSyncClient = OpenAIOkHttpClient.builder()
+                                  .apiKey(defaultApiKey)
+                                  .baseUrl(defaultEndpoint)
+                                  .build();
+        }
+        return defaultSyncClient;
+    }
+    
+    private synchronized OpenAIClientAsync getAsyncClient() {
+        if (defaultAsyncClient == null && defaultApiKey != null) {
+            defaultAsyncClient = OpenAIOkHttpClientAsync.builder()
+                                     .apiKey(defaultApiKey)
+                                     .baseUrl(defaultEndpoint)
+                                     .build();
+        }
+        return defaultAsyncClient;
+    }
     
     @Override
     public List<Completion> complete(Prompt prompt, InferenceParameters options) {
-        var apiKey = options.getApiKey().orElseThrow();
-        var endpoint = options.getEndpoint().orElse(DEFAULT_ENDPOINT);
-        OpenAIClient client = OpenAIOkHttpClient.builder().apiKey(apiKey).baseUrl(endpoint).build();
+        OpenAIClient client;
+        String apiKey = options.getApiKey().orElse(defaultApiKey);
+        String endpoint = options.getEndpoint().orElse(defaultEndpoint);
+        
+        if (apiKey == null) {
+            throw new IllegalArgumentException("API key must be provided either in constructor or in InferenceParameters");
+        }
+        
+        // Reuse default client if possible
+        if (apiKey.equals(defaultApiKey) && endpoint.equals(defaultEndpoint)) {
+            client = getSyncClient();
+            if (client == null) {
+                // Create client if needed (this would happen when defaultApiKey was null initially)
+                client = OpenAIOkHttpClient.builder()
+                            .apiKey(apiKey)
+                            .baseUrl(endpoint)
+                            .build();
+                defaultSyncClient = client;
+            }
+        } else {
+            // Create a new client for this specific request
+            client = OpenAIOkHttpClient.builder()
+                        .apiKey(apiKey)
+                        .baseUrl(endpoint)
+                        .build();
+        }
+        
         ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
-            .model(ChatModel.of(DEFAULT_MODEL))
+            .model(ChatModel.of(options.get(OPTION_MODEL).map(Object::toString).orElse(DEFAULT_MODEL)))
             .addUserMessage(prompt.toString());
 
         options.getInt(OPTION_MAX_TOKENS).ifPresent(builder::maxCompletionTokens);
@@ -58,9 +148,33 @@ public class OpenAiClient  implements LanguageModel{
 
     @Override
     public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
-        var apiKey = options.getApiKey().orElseThrow();
-        var endpoint = options.getEndpoint().orElse(DEFAULT_ENDPOINT);
-        OpenAIClientAsync client = OpenAIOkHttpClientAsync.builder().apiKey(apiKey).baseUrl(endpoint).build();
+        OpenAIClientAsync client;
+        String apiKey = options.getApiKey().orElse(defaultApiKey);
+        String endpoint = options.getEndpoint().orElse(defaultEndpoint);
+        
+        if (apiKey == null) {
+            throw new IllegalArgumentException("API key must be provided either in constructor or in InferenceParameters");
+        }
+        
+        // Reuse default client if possible
+        if (apiKey.equals(defaultApiKey) && endpoint.equals(defaultEndpoint)) {
+            client = getAsyncClient();
+            if (client == null) {
+                // Create client if needed
+                client = OpenAIOkHttpClientAsync.builder()
+                            .apiKey(apiKey)
+                            .baseUrl(endpoint)
+                            .build();
+                defaultAsyncClient = client;
+            }
+        } else {
+            // Create a new client for this specific request
+            client = OpenAIOkHttpClientAsync.builder()
+                        .apiKey(apiKey)
+                        .baseUrl(endpoint)
+                        .build();
+        }
+        
         ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
             .model(ChatModel.of(options.get(OPTION_MODEL).map(Object::toString).orElse(DEFAULT_MODEL)))
             .addUserMessage(prompt.toString());
