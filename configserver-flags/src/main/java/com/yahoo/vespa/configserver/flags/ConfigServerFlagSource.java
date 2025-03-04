@@ -3,7 +3,9 @@ package com.yahoo.vespa.configserver.flags;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.configserver.flags.db.BootstrapFlagSource;
+import com.yahoo.vespa.configserver.flags.db.FlagsDbImpl;
 import com.yahoo.vespa.configserver.flags.db.ZooKeeperFlagSource;
+import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.OrderedFlagSource;
 
 import java.nio.file.FileSystem;
@@ -15,8 +17,8 @@ import java.nio.file.FileSystems;
 public class ConfigServerFlagSource extends OrderedFlagSource {
 
     @Inject
-    public ConfigServerFlagSource(FlagsDb flagsDb) {
-        this(FileSystems.getDefault(), flagsDb);
+    public ConfigServerFlagSource(Curator curator) {
+        this(FileSystems.getDefault(), new FlagsDbImpl(curator));
     }
 
     ConfigServerFlagSource(FileSystem fileSystem, FlagsDb flagsDb) {
