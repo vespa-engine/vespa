@@ -142,7 +142,12 @@ AndNotBlueprint::optimize_self(OptimizePass pass)
             }
         }
         for (size_t i = 1; i < childCnt(); ++i) {
-            if (getChild(i).getState().estimate().empty) {
+            if (auto *child = getChild(i).asOr()) {
+                while (child->childCnt() > 0) {
+                    addChild(child->removeLastChild());
+                }
+                removeChild(i--);
+            } else if (getChild(i).getState().estimate().empty) {
                 removeChild(i--);
             }
         }
@@ -233,11 +238,13 @@ void
 AndBlueprint::optimize_self(OptimizePass pass)
 {
     if (pass == OptimizePass::FIRST) {
-        for (size_t i = 0; i < childCnt(); ++i) {
+        for (size_t i = 0; childCnt() > 1 && i < childCnt(); ++i) {
             if (auto *child = getChild(i).asAnd()) {
                 while (child->childCnt() > 0) {
                     addChild(child->removeLastChild());
                 }
+                removeChild(i--);
+            } else if (getChild(i).asAlwaysTrue() != nullptr) {
                 removeChild(i--);
             }
         }

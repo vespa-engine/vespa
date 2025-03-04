@@ -32,6 +32,7 @@ public:
     AlwaysTrueBlueprint();
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
+    const AlwaysTrueBlueprint *asAlwaysTrue() const noexcept override { return this; }
 };
 
 //-----------------------------------------------------------------------------
