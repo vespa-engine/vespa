@@ -1,9 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/document/base/testdocman.h>
+#include <vespa/messagebus/errorcode.h>
 #include <vespa/storage/persistence/processallhandler.h>
 #include <vespa/storage/persistence/asynchandler.h>
 #include <vespa/storage/persistence/messages.h>
+#include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/repo/documenttyperepo.h>
@@ -15,7 +17,7 @@ using namespace ::testing;
 
 namespace storage {
 
-struct ProcessAllHandlerTest : public PersistenceTestUtils {
+struct ProcessAllHandlerTest : PersistenceTestUtils {
     document::BucketIdFactory _bucketIdFactory;
 };
 
@@ -177,6 +179,35 @@ TEST_F(ProcessAllHandlerTest, remove_location_with_remove_set_only_removes_liste
     auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(msg);
     ASSERT_TRUE(reply);
     EXPECT_EQ(3u, reply->documents_removed());
+}
+
+TEST_F(ProcessAllHandlerTest, remove_location_with_remove_set_observes_provider_error) {
+    document::BucketId bucketId(16, 4);
+    PersistenceProviderWrapper failing_provider(getPersistenceProvider());
+    AsyncHandler handler(getEnv(), failing_provider, _bucketOwnershipNotifier,
+                         *_sequenceTaskExecutor, _bucketIdFactory);
+    failing_provider.setResult(spi::Result(spi::Result::ErrorType::PERMANENT_ERROR, "oh no, oh dear"));
+    failing_provider.setFailureMask(PersistenceProviderWrapper::FAIL_REMOVE);
+
+    document::Bucket bucket = makeDocumentBucket(bucketId);
+    auto cmd = std::make_shared<api::RemoveLocationCommand>("true", bucket);
+    std::vector<spi::IdAndTimestamp> to_remove = {
+        {DocumentId("id:mail:testdoctype1:n=4:62608.html"), spi::Timestamp(102)},
+        {DocumentId("id:mail:testdoctype1:n=4:49514.html"), spi::Timestamp(106)},
+        {DocumentId("id:mail:testdoctype1:n=4:42967.html"), spi::Timestamp(108)},
+    };
+    cmd->set_explicit_remove_set(std::move(to_remove));
+    auto tracker = handler.handleRemoveLocation(*cmd, createTracker(cmd, bucket));
+    // Actually removing the documents is asynchronous, so the response will be on the queue.
+    ASSERT_FALSE(tracker);
+    std::shared_ptr<api::StorageMessage> msg;
+    ASSERT_TRUE(_replySender.queue.getNext(msg, 60s));
+
+    auto reply = std::dynamic_pointer_cast<api::RemoveLocationReply>(msg);
+    ASSERT_TRUE(reply);
+    // Error code enum wrangling is a bit awkward due to historical use of mbus "stacked" protocol errors.
+    // This is technically wrong (enum-wise), but is how it's done already. Reconsider When Possible(tm).
+    EXPECT_EQ(reply->getResult(), api::ReturnCode(static_cast<api::ReturnCode::Result>(mbus::ErrorCode::APP_FATAL_ERROR), "oh no, oh dear"));
 }
 
 TEST_F(ProcessAllHandlerTest, remove_location_throws_exception_on_unknown_doc_type) {
