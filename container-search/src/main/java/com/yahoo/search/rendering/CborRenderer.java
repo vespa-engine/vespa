@@ -3,14 +3,9 @@ package com.yahoo.search.rendering;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.ObjectCodec;
-import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.TreeNode;
-import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
-import com.fasterxml.jackson.dataformat.cbor.CBORFactoryBuilder;
 import com.google.common.base.Preconditions;
 import com.yahoo.container.logging.TraceRenderer;
 import com.yahoo.data.JsonProducer;
@@ -23,7 +18,6 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.JsonWriter;
-import com.yahoo.json.Jackson;
 import com.yahoo.lang.MutableBoolean;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution.Trace;
@@ -68,8 +62,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
-
-import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WRITE_VALUE;
 
 /**
  * JSON renderer for search results.
@@ -753,6 +745,20 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspector(Inspector data) throws IOException {
+            if(data instanceof Value.ArrayValue) {
+                Value.ArrayValue arrayValue = (Value.ArrayValue) data;
+                generator.writeStartArray();
+                arrayValue.entries().forEach(e -> {
+                    byte[] utf8 = e.asUtf8();
+                    try {
+                        generator.writeRawUTF8String(utf8, 0, utf8.length);
+                    } catch (IOException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                });
+                generator.writeEndArray();
+                return;
+            }
             renderInspectorDirect(maybeConvertData(data));
         }
 
