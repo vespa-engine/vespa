@@ -24,6 +24,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public static final ComponentId xmlRendererId = ComponentId.fromString("XmlRenderer");
     public static final ComponentId pageRendererId = ComponentId.fromString("PageTemplatesXmlRenderer");
     public static final ComponentId jsonRendererId = ComponentId.fromString("JsonRenderer");
+    public static final ComponentId cborRendererId = ComponentId.fromString("CborRenderer");
     public static final ComponentId eventRendererId = ComponentId.fromString("EventRenderer");
     public static final ComponentId defaultRendererId = jsonRendererId;
     
@@ -44,6 +45,11 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public RendererRegistry(Collection<Renderer> renderers, Executor executor) {
         // add json renderer
         Renderer jsonRenderer = new JsonRenderer(executor);
+        jsonRenderer.initId(RendererRegistry.jsonRendererId);
+        register(jsonRenderer.getId(), jsonRenderer);
+
+        // add json renderer
+        Renderer cborRenderer = new CborRenderer(executor);
         jsonRenderer.initId(RendererRegistry.jsonRendererId);
         register(jsonRenderer.getId(), jsonRenderer);
 
@@ -73,6 +79,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public void deconstruct() {
         // deconstruct the renderers which was created by this
         getRenderer(jsonRendererId.toSpecification()).deconstruct();
+        getRenderer(cborRendererId.toSpecification()).deconstruct();
         getRenderer(xmlRendererId.toSpecification()).deconstruct();
         getRenderer(pageRendererId.toSpecification()).deconstruct();
         getRenderer(eventRendererId.toSpecification()).deconstruct();
@@ -97,6 +104,7 @@ public final class RendererRegistry extends ComponentRegistry<com.yahoo.processi
     public com.yahoo.processing.rendering.Renderer<Result> getRenderer(ComponentSpecification format) {
         if (format == null || format.stringValue().equals("default")) return getDefaultRenderer();
         if (format.stringValue().equals("json")) return getComponent(jsonRendererId);
+        if (format.stringValue().equals("cbor")) return getComponent(cborRendererId);
         if (format.stringValue().equals("xml")) return getComponent(xmlRendererId);
         if (format.stringValue().equals("page")) return getComponent(pageRendererId);
         if (format.stringValue().equals("sse")) return getComponent(eventRendererId);
