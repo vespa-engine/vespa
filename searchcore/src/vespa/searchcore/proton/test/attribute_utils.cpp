@@ -72,5 +72,11 @@ AttributeUtils::getTensorConfig() {
     return cfg;
 }
 
+const Config&
+AttributeUtils::get_bool_config() {
+    static Config cfg(BasicType::BOOL);
+    return cfg;
+}
+
 }
 
