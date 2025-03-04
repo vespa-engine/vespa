@@ -44,7 +44,7 @@ public class NodesSpecification {
     /** The Vespa version we want the nodes to run */
     private final Version version;
 
-    /** 
+    /**
      * Whether the capacity amount specified is required or can be relaxed
      * at the discretion of the component fulfilling it
      */
@@ -336,9 +336,10 @@ public class NodesSpecification {
 
     private static NodeResources.GpuResources parseOptionalGpuResources(ModelElement element) {
         if (element == null) return NodeResources.GpuResources.getDefault();
+        String type = element.stringAttribute("type");
         int count = element.requiredIntegerAttribute("count");
         double memory = parseGbAmount(element.requiredStringAttribute("memory"), "B");
-        return new NodeResources.GpuResources(count, memory);
+        return new NodeResources.GpuResources(type, count, memory);
     }
 
     private static double parseGbAmount(String byteAmount, String unit) {
