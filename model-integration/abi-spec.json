@@ -283,18 +283,16 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.generation.JsonSchemaToGrammar" : {
+  "ai.vespa.llm.generation.FieldGeneratorUtils" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
     "attributes" : [
       "public"
     ],
     "methods" : [
-      "public static java.lang.String convert(java.lang.String)",
       "public void <init>()",
-      "public static java.lang.String generateDigitRange(char, char)",
-      "public static java.lang.String generateMoreDigits(int, int)",
-      "public static java.lang.String generateUniformRange(java.lang.String, java.lang.String)"
+      "public static java.lang.String generateJsonSchemaForField(java.lang.String, com.yahoo.document.DataType)",
+      "public static com.yahoo.document.datatypes.FieldValue convertJsonToFieldValue(java.lang.String, java.lang.String, com.yahoo.document.DataType)"
     ],
     "fields" : [ ]
   },

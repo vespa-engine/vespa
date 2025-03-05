@@ -10,7 +10,7 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * Generates field value given a prompt.
+ * Generates field values given an input text.
  * 
  * @author glebashnik
  */

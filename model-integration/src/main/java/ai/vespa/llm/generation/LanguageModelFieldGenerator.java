@@ -27,14 +27,12 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
 
     private final LanguageModelFieldGeneratorConfig config;
     private final String promptTemplate;
-    private final String configuredJsonSchema;
-
+    
     @Inject
     public LanguageModelFieldGenerator(LanguageModelFieldGeneratorConfig config, ComponentRegistry<LanguageModel> languageModels) {
         this.languageModel = LanguageModelUtils.findLanguageModel(config.providerId(), languageModels, logger);
         this.config = config;
         this.promptTemplate = loadPromptTemplate(config);
-        this.configuredJsonSchema = loadJsonSchema(config);
     }
 
     private String loadPromptTemplate(LanguageModelFieldGeneratorConfig config) {
@@ -61,58 +59,26 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         return null;
     }
     
-    private String loadJsonSchema(LanguageModelFieldGeneratorConfig config) {
-        if (config.responseFormatType() != LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            return null;
-        }
-        
-        if (config.responseJsonSchema() != null && !config.responseJsonSchema().isEmpty()) {
-            return config.responseJsonSchema(); //todo Add validation of JSON schema against metaschema.
-        }
-        
-        if (config.responseJsonSchemaFile().isPresent()) {
-            Path path = config.responseJsonSchemaFile().get();
-
-            try {
-                String jsonSchema = new String(Files.readAllBytes(path));
-
-                if (jsonSchema.isEmpty()) {
-                    throw new IllegalArgumentException("JSON schema file is empty: " + path);
-                }
-
-                return jsonSchema;
-            } catch (IOException e) {
-                throw new IllegalArgumentException("Could not read JSON schema file: " + path, e);
-            }
-        }
-        
-        return null;
-    }
-    
     @Override
     public FieldValue generate(String input, Context context) {
         var options = new HashMap<String, String>();
         String jsonSchema = null;
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            if (configuredJsonSchema != null) {
-                jsonSchema = configuredJsonSchema;
-            } else {
-                jsonSchema = LanguageModelUtils.generateJsonSchemaForField(
-                        context.getDestination(), context.getTargetType());
-            }
-            
+            jsonSchema = FieldGeneratorUtils.generateJsonSchemaForField(
+                    context.getDestination(), context.getTargetType());
+        
            options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
         }
         
-        var promptStr = LanguageModelUtils.generatePrompt(input, promptTemplate, jsonSchema);
-        var completions = languageModel.complete(StringPrompt.from(promptStr), new InferenceParameters(options::get));
+        var promptString = LanguageModelUtils.generatePrompt(input, promptTemplate, jsonSchema);
+        var completions = languageModel.complete(StringPrompt.from(promptString), new InferenceParameters(options::get));
         var firstCompletion = completions.get(0);
         var generatedText = firstCompletion.text();
         FieldValue generatedFieldValue; 
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            generatedFieldValue = LanguageModelUtils.jsonToFieldType(
+            generatedFieldValue = FieldGeneratorUtils.parseJsonToFieldValue(
                     generatedText, context.getDestination(), context.getTargetType());
         } else {
             generatedFieldValue = new StringFieldValue(generatedText);

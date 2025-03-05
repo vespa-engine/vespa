@@ -190,11 +190,11 @@ public class GenerateExpressionTestCase {
             this.repetitions = repetitions;
         }
 
-        public FieldValue generate(String input, Context context) {
+        public FieldValue generate(String prompt, Context context) {
             var stringBuilder = new StringBuilder();
 
             for (int i = 0; i < repetitions; i++) {
-                stringBuilder.append(input);
+                stringBuilder.append(prompt);
                 stringBuilder.append(" ");
             }
 
@@ -254,8 +254,8 @@ public class GenerateExpressionTestCase {
             this.newDelimiter = newDelimiter;
         }
 
-        public FieldValue generate(String input, Context context) {
-            var parts = input.split(oldDelimiter);
+        public FieldValue generate(String prompt, Context context) {
+            var parts = prompt.split(oldDelimiter);
             return new StringFieldValue(String.join(newDelimiter, parts));
         }
     }

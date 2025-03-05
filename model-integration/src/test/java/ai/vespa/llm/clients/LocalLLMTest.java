@@ -607,4 +607,58 @@ public class LocalLLMTest {
             llm.deconstruct();
         }
     }
+    
+    @Test
+    public void testStructuredOutput() {
+        var llmConfig = new LlmLocalClientConfig.Builder()
+                .parallelRequests(1)
+                .contextSize( 500)
+                .maxTokens(500)
+                .seed(42)
+                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+
+        var llm = new LocalLLM(llmConfig.build());
+        var jsonSchema = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "article.people": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "article.people"
+                  ],
+                  "additionalProperties": false
+                }
+                """;
+
+        var inferenceOptions = new InferenceParameters(Map.of(
+                InferenceParameters.OPTION_TEMPERATURE, "0", 
+                InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema
+        )::get);
+        
+        var promptStr = """
+            Extract all names of people from this text:
+            Lynda Carter was born on July 24, 1951 in Phoenix, Arizona, USA. She is an actress, known for
+            Wonder Woman (1975), The Elder Scrolls IV: Oblivion (2006) and The Dukes of Hazzard (2005).
+            She has been married to Robert Altman since January 29, 1984. They have two children.
+            The output must strictly adhere to the following JSON format:
+            %s
+        """.formatted(jsonSchema);
+        
+        var completions = llm.complete(StringPrompt.from(promptStr), inferenceOptions);
+        var completionString = completions.get(0).text().trim();
+        
+        var expectedCompletionString = """
+            {
+              "article.people": ["Lynda Carter", "Robert Altman"]
+            }
+            """.trim();
+        
+        assertEquals(expectedCompletionString, completionString);
+    }
 }

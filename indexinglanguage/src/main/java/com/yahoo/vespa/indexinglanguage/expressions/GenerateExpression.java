@@ -144,7 +144,7 @@ public class GenerateExpression extends Expression {
         var generatorContext =  new FieldGenerator.Context(destination, targetType, context.getCache())
                 .setLanguage(context.resolveLanguage(linguistics))
                 .setGeneratorId(generatorId);
-        
+
         return generator.generate(input, generatorContext);
     }
 
