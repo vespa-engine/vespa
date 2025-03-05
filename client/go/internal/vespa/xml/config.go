@@ -75,9 +75,10 @@ type Services struct {
 }
 
 type Container struct {
-	Root  xml.Name `xml:"container"`
-	ID    string   `xml:"id,attr"`
-	Nodes Nodes    `xml:"nodes"`
+	Root    xml.Name `xml:"container"`
+	ID      string   `xml:"id,attr"`
+	Nodes   Nodes    `xml:"nodes"`
+	Clients []Client `xml:"clients>client"`
 }
 
 type Content struct {
@@ -96,6 +97,12 @@ type Resources struct {
 	Disk   string `xml:"disk,attr"`
 }
 
+type Client struct {
+	Id          string    `xml:"id,attr"`
+	Certificate *struct{} `xml:"certificate"`
+	Token       *struct{} `xml:"token"`
+}
+
 func (s Services) String() string { return s.rawXML.String() }
 
 // Replace replaces any elements of name found under parentName with data.
@@ -110,6 +117,17 @@ func (s *Services) Replace(parentName, name string, data interface{}) error {
 	}
 	*s = newXML
 	return nil
+}
+
+func (s *Services) ContainsAnyTokenEndpoint() bool {
+	for _, container := range s.Container {
+		for _, clients := range container.Clients {
+			if clients.Token != nil {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func (r Resources) String() string {
