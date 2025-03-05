@@ -34,7 +34,7 @@ const (
 	targetFlag      = "target"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
-	debugModeFlag   = "debug-mode"
+	debugModeFlag   = "debug"
 
 	anyTarget = iota
 	localTargetOnly
