@@ -91,6 +91,7 @@ convert(InternalProtonType::Packetcompresstype type)
 {
     switch (type) {
       case InternalProtonType::Packetcompresstype::LZ4: return CompressionConfig::LZ4;
+      case InternalProtonType::Packetcompresstype::NONE: return CompressionConfig::NONE;
       default: return CompressionConfig::LZ4;
     }
 }
