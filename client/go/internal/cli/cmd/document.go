@@ -41,6 +41,15 @@ func documentClient(cli *CLI, timeoutSecs int, waiter *Waiter, printCurl bool, h
 	if err != nil {
 		return nil, nil, err
 	}
+	authMethod := cli.selectAuthMethod()
+	if authMethod == "token" {
+		err = cli.addBearerToken(&header)
+		if err != nil {
+			return nil, nil, err
+		}
+		docService.TLSOptions.CertificateFile = ""
+		docService.TLSOptions.PrivateKeyFile = ""
+	}
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: document.CompressionAuto,
 		Timeout:     time.Duration(timeoutSecs) * time.Second,
@@ -312,7 +321,8 @@ func documentService(cli *CLI, waiter *Waiter) (*vespa.Service, error) {
 	if err != nil {
 		return nil, err
 	}
-	return waiter.Service(target, cli.config.cluster())
+	authMethod := cli.selectAuthMethod()
+	return waiter.ServiceWithAuthMethod(target, cli.config.cluster(), authMethod)
 }
 
 func printResult(cli *CLI, result OperationResult, payloadOnlyOnSuccess bool) error {

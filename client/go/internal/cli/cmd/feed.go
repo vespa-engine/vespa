@@ -12,8 +12,6 @@ import (
 	"time"
 
 	"github.com/spf13/cobra"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/envvars"
-	"github.com/vespa-engine/vespa/client/go/internal/admin/trace"
 	"github.com/vespa-engine/vespa/client/go/internal/httputil"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/document"
 )
@@ -139,12 +137,7 @@ func createServices(n int, timeout time.Duration, cli *CLI, waiter *Waiter) ([]h
 		return nil, "", err
 	}
 
-	token := cli.Environment[envvars.VESPA_CLI_DATA_PLANE_TOKEN]
-	authMethod := "mtls"
-	if token != "" {
-		trace.Trace("The VESPA_CLI_DATA_PLANE_TOKEN environment variable is set, using token authentication")
-		authMethod = "token"
-	}
+	authMethod := cli.selectAuthMethod()
 
 	services := make([]httputil.Client, 0, n)
 	baseURL := ""
@@ -257,8 +250,9 @@ func feed(files []string, options feedOptions, cli *CLI, cmd *cobra.Command) err
 	if err != nil {
 		return err
 	}
-	if token := cli.Environment[envvars.VESPA_CLI_DATA_PLANE_TOKEN]; token != "" {
-		header.Set("Authorization", fmt.Sprintf("Bearer %s", token))
+	err = cli.addBearerToken(&header)
+	if err != nil {
+		return err
 	}
 	client, err := document.NewClient(document.ClientOptions{
 		Compression: compression,
