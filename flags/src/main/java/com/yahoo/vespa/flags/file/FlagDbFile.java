@@ -1,9 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.flags.file;
 
-import java.util.logging.Level;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
+import com.yahoo.vespa.flags.FlagRepository;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.RawFlag;
 import com.yahoo.vespa.flags.json.FlagData;
 
 import java.io.IOException;
@@ -21,6 +24,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -31,25 +35,27 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  *
  * @author hakonhall
  */
-public class FlagDbFile {
+public class FlagDbFile implements FlagRepository, FlagSource {
     private static final Logger logger = Logger.getLogger(FlagDbFile.class.getName());
 
     private final Path path;
 
-    public FlagDbFile() {
-        this(FileSystems.getDefault());
-    }
+    public FlagDbFile() { this(FileSystems.getDefault()); }
 
     public FlagDbFile(FileSystem fileSystem) {
         this(fileSystem.getPath(Defaults.getDefaults().underVespaHome("var/vespa/flag.db")));
     }
 
-    public FlagDbFile(Path path) {
-        this.path = path;
-    }
+    public FlagDbFile(Path path) { this.path = path; }
 
-    public Path getPath() {
-        return path;
+    public Path getPath() { return path; }
+
+    @Override
+    public Map<FlagId, FlagData> getAllFlagData() { return read(); }
+
+    @Override
+    public Optional<RawFlag> fetch(FlagId id, FetchVector vector) {
+        return Optional.ofNullable(getAllFlagData().get(id)).flatMap(flagData -> flagData.resolve(vector));
     }
 
     public Map<FlagId, FlagData> read() {
@@ -104,7 +110,8 @@ public class FlagDbFile {
     }
 
     private void writeFile(byte[] bytes) {
-        uncheck(() -> Files.createDirectories(path.getParent()));
+        Path parent = path.getParent();
+        if (parent != null) uncheck(() -> Files.createDirectories(parent));
         uncheck(() -> Files.write(path, bytes));
     }
 }
