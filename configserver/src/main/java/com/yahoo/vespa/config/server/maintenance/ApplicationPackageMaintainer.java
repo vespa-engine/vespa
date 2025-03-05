@@ -132,7 +132,7 @@ public class ApplicationPackageMaintainer extends ConfigServerMaintainer {
     }
 
     private void logFailure(Session session, FileReference fileReference, ApplicationId applicationId) {
-        var deployed = Instant.ofEpochSecond(session.getMetaData().getDeployTimestamp());
+        var deployed = Instant.ofEpochMilli(session.getMetaData().getDeployTimestamp());
         var level = Duration.between(deployed, applicationRepository.clock().instant()).toMinutes() > 1
                 ? INFO
                 : FINE;
