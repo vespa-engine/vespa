@@ -331,6 +331,28 @@ public class ScriptTestCase {
     }
 
     @Test
+    public void testTmp() {
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom(
+                "input myString | (get_var A | to_array) . (get_var B | to_array) | attribute myStringArray");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myString", DataType.STRING));
+        adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
+
+        var verificationContext = new VerificationContext(adapter);
+        verificationContext.setVariable("A", DataType.STRING);
+        verificationContext.setVariable("B", DataType.STRING);
+        expression.verify(verificationContext);
+
+        var context = new ExecutionContext(adapter);
+        context.setVariable("A", new StringFieldValue("value 4"));
+        context.setVariable("B", new StringFieldValue("value 5"));
+        expression.execute(context);
+        assertEquals("[value 4, value 5]", adapter.values.get("myStringArray").toString());
+    }
+
+    @Test
     public void testForEachOverStruct() {
         var tester = new ScriptTester();
         var expression = tester.expressionFrom("input myInStruct | for_each { substring 0 2 } | attribute myOutStruct");

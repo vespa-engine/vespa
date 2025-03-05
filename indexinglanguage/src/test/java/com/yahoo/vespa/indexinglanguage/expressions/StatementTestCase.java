@@ -78,7 +78,7 @@ public class StatementTestCase {
         Expression exp = newStatement(SimpleExpression.newOutput(DataType.STRING),
                                       SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.INT, exp);
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.STRING, exp);
+        assertVerifyThrows("Invalid expression 'SimpleExpression | SimpleExpression': int is incompatible with string", DataType.STRING, exp);
 
         exp = newStatement(SimpleExpression.newOutput(DataType.INT),
                            SimpleExpression.newConversion(DataType.INT, DataType.STRING));

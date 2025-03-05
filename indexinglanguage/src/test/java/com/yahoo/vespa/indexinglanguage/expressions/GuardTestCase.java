@@ -56,7 +56,7 @@ public class GuardTestCase {
         Expression exp = new GuardExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
         assertVerify(DataType.INT, exp, DataType.STRING);
         assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, but no input is provided", null, exp);
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.STRING, exp);
+        assertVerifyThrows("Invalid expression 'guard { SimpleExpression; }': int is incompatible with string", DataType.STRING, exp);
     }
 
     @Test
