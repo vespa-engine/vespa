@@ -71,6 +71,9 @@ struct AttributesStateExplorerTest : public ::testing::Test
     void addAttribute(const std::string &name) {
         _mgr->addAttribute({name, AttributeUtils::getInt32Config()}, 1);
     }
+    void add_bool_attribute(const std::string& name) {
+        _mgr->addAttribute( { name, AttributeUtils::get_bool_config()}, 1);
+    }
     void add_fast_search_attribute(const std::string &name,
                                    DictionaryConfig::Type dictionary_type) {
         search::attribute::Config cfg = AttributeUtils::getInt32Config();
@@ -189,6 +192,15 @@ TEST_F(AttributesStateExplorerTest, require_that_imported_attribute_shows_memory
     auto slime = explore_attribute(imported_name);
     EXPECT_LT(0, slime[cache_memory_usage]["allocated"].asLong());
     EXPECT_LT(0, slime[cache_memory_usage]["used"].asLong());
+}
+
+TEST_F(AttributesStateExplorerTest, require_that_bool_attibute_shows_bitvector)
+{
+    std::string bitvector("bitvector");
+    add_bool_attribute("bool");
+    auto slime = explore_attribute("bool");
+    EXPECT_EQ(0, slime[bitvector]["true_bits"].asLong());
+    EXPECT_EQ(1, slime[bitvector]["size"].asLong());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
