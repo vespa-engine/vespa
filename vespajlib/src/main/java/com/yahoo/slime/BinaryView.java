@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
+import com.yahoo.data.access.ByteArrayRef;
+
 import java.util.Arrays;
 import java.util.function.Consumer;
 import static com.yahoo.slime.BinaryFormat.decode_double;
@@ -96,6 +98,18 @@ public final class BinaryView implements Inspector {
         }
         return Arrays.copyOfRange(data, idx, idx + bytes);
     }
+
+    private ByteArrayRef extract_bytes_ref(int idx) {
+        int bytes = decode_meta(data[idx++]);
+        if (bytes == 0) {
+            bytes = peek_cmpr_int(idx);
+            idx = skip_cmpr_int(idx);
+        } else {
+            --bytes;
+        }
+        return new ByteArrayRef(data, idx, bytes);
+    }
+
     private Inspector find_field(int pos, int len, int sym) {
         for (int i = 0; i < len; ++i) {
             int idx = byte_offset(pos + i);
@@ -156,6 +170,12 @@ public final class BinaryView implements Inspector {
     @Override public byte[] asUtf8() {
         return switch (type()) {
             case STRING -> extract_bytes(byte_offset(self));
+            default -> Value.emptyData;
+        };
+    }
+    @Override public ByteArrayRef asUtf8Ref() {
+        return switch (type()) {
+            case STRING -> extract_bytes_ref(byte_offset(self));
             default -> Value.emptyData;
         };
     }

@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
+import com.yahoo.data.access.ByteArrayRef;
+
 import java.util.function.Consumer;
 
 /**
@@ -60,6 +62,16 @@ public interface Inspector {
 
     /** the current value encoded into UTF-8 (for string values); default: empty array */
     byte[] asUtf8();
+
+    /**
+     * TODO: describe
+     *
+     * @return something
+     */
+    default ByteArrayRef asUtf8Ref() {
+        byte[] utf8 = asUtf8();
+        return new ByteArrayRef(utf8, 0, utf8.length);
+    }
 
     /** the current value (for data values); default: empty array */
     byte[] asData();

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.data.access.slime;
 
+import com.yahoo.data.access.ByteArrayRef;
 import com.yahoo.slime.Type;
 
 import java.util.Map;
@@ -97,6 +98,13 @@ public final class SlimeAdapter implements com.yahoo.data.access.Inspector {
             throw new IllegalStateException("invalid data extraction!");
         }
         return inspector.asUtf8();
+    }
+
+    public ByteArrayRef asUtf8Ref() {
+        if (!verify(Type.NIX, Type.STRING)) {
+            throw new IllegalStateException("invalid data extraction!");
+        }
+        return inspector.asUtf8Ref();
     }
 
     public byte[] asData() {

@@ -51,6 +51,16 @@ public interface Inspector extends Inspectable {
      */
     byte[] asUtf8();
 
+    /**
+     * TODO: describe
+     *
+     * @return something
+     */
+    default ByteArrayRef asUtf8Ref() {
+        byte[] utf8 = asUtf8();
+        return new ByteArrayRef(utf8, 0, utf8.length);
+    }
+
     /** Access the inspector's value if it's DATA; otherwise throws exception */
     byte[] asData();
 
