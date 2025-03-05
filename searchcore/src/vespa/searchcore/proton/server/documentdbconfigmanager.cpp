@@ -243,8 +243,14 @@ build_alloc_config(const vespalib::HwInfo & hwInfo, const ProtonConfig& proton_c
 
     auto& document_db_config_entry = find_document_db_config_entry(proton_config.documentdb, doc_type_name);
     auto& alloc_config = document_db_config_entry.allocation;
+    /*
+     * Assume that all document types use the same amount of memory, regardless of streaming or indexed mode. If we have
+     * two document dbs then each should have about half of the resources compared to the scenario where only one document
+     * db is present. This might still cause live reconfig to fail if we add more document dbs and existing document dbs have
+     * used more than their share of memory using the new calculations.
+     */
     uint32_t target_numdocs = use_hw_memory_presized_target_num_docs(document_db_config_entry.mode)
-            ? (hwInfo.memory().sizeBytes() / (MIN_MEMORY_COST_PER_DOCUMENT * proton_config.distribution.searchablecopies))
+            ? (hwInfo.memory().sizeBytes() / (MIN_MEMORY_COST_PER_DOCUMENT * proton_config.distribution.searchablecopies * proton_config.documentdb.size()))
             : alloc_config.initialnumdocs;
     auto& distribution_config = proton_config.distribution;
     search::GrowStrategy grow_strategy(target_numdocs, alloc_config.growfactor, alloc_config.growbias, target_numdocs, alloc_config.multivaluegrowfactor);
