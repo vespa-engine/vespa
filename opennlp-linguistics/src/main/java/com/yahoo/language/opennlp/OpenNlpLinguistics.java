@@ -60,6 +60,11 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
     @Override
     public boolean equals(Linguistics other) { return (other instanceof OpenNlpLinguistics); }
 
+    @Override
+    public String toString() {
+        return "OpenNlpLinguistics";
+    }
+
     private Tokenizer forQuerying(Tokenizer tokenizer) {
         if ( ! (tokenizer.getClass() == OpenNlpTokenizer.class)) // this has been subclassed and partially overridden
             return tokenizer;
