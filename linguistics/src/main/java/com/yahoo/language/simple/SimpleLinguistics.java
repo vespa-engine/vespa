@@ -73,7 +73,7 @@ public class SimpleLinguistics implements Linguistics {
 
     @Override
     public String toString() {
-        return "OpenNlpLinguistics";
+        return "SimpleLinguistics";
     }
 
 }
