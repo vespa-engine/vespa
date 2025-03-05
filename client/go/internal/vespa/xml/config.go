@@ -98,7 +98,7 @@ type Resources struct {
 }
 
 type Client struct {
-	Id          string    `xml:"id,attr"`
+	ID          string    `xml:"id,attr"`
 	Certificate *struct{} `xml:"certificate"`
 	Token       *struct{} `xml:"token"`
 }
@@ -121,8 +121,8 @@ func (s *Services) Replace(parentName, name string, data interface{}) error {
 
 func (s *Services) ContainsAnyTokenClient() bool {
 	for _, container := range s.Container {
-		for _, clients := range container.Clients {
-			if clients.Token != nil {
+		for _, client := range container.Clients {
+			if client.Token != nil {
 				return true
 			}
 		}

@@ -265,7 +265,7 @@ func TestParseNodeCount(t *testing.T) {
 	assertNodeCount(t, "[2, 1]", 0, 0, true)
 }
 
-func TestParseNoTokenEndpoint(t *testing.T) {
+func TestParseWithoutTokenClient(t *testing.T) {
 	s := `
 <services xmlns:deploy="vespa" xmlns:preprocess="properties">
   <container id="qrs">
@@ -286,7 +286,7 @@ func TestParseNoTokenEndpoint(t *testing.T) {
 	}
 }
 
-func TestParseWithTokenEndpoint(t *testing.T) {
+func TestParseWithTokenClient(t *testing.T) {
 	s := `
 <services xmlns:deploy="vespa" xmlns:preprocess="properties">
   <container id="qrs">
