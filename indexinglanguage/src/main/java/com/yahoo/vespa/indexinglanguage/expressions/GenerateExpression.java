@@ -21,6 +21,7 @@ import java.util.Map;
  * @author glebashnik
  */
 public class GenerateExpression extends Expression {
+
     private final Linguistics linguistics;
     private final TextGenerator textGenerator;
     private final String generatorId;
@@ -29,15 +30,8 @@ public class GenerateExpression extends Expression {
     /** The destination the generated value will be written to in the form [schema name].[field name] */
     private String destination;
 
-    /** The target type we are generating into. */
-    private DataType targetType;
-    
-    public GenerateExpression(
-            Linguistics linguistics, 
-            Map<String, TextGenerator> generators, 
-            String generatorId, 
-            List<String> generatorArguments
-    ) {
+    public GenerateExpression(Linguistics linguistics, Map<String, TextGenerator> generators,
+                              String generatorId, List<String> generatorArguments) {
         this.linguistics = linguistics;
         this.generatorId = generatorId;
         this.generatorArguments = List.copyOf(generatorArguments);
@@ -70,8 +64,7 @@ public class GenerateExpression extends Expression {
             throw new VerificationException(this, "Generate expression requires either a string or array<string> input type, but got "
                     + inputType.getName());
         
-        super.setInputType(inputType, context);
-        return inputType; // return output type the same as input type: string or array<string>
+        return super.setInputType(inputType, context);
     }
 
     @Override
@@ -81,20 +74,17 @@ public class GenerateExpression extends Expression {
             throw new VerificationException(this, "Generate expression requires either a string or array<string> output type, but got "
                     + outputType.getName());
         
-        super.setOutputType(null, outputType, null, context);
-        return outputType; // return input type the same as output type: string or array<string>
+        return super.setOutputType(null, outputType, null, context);
     }
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        targetType = field.getDataType();
         destination = documentType.getName() + "." + field.getName();
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        targetType = getOutputType(context);
-        context.setCurrentType(createdOutputType());
+        context.setCurrentType(getOutputType(context));
     }
 
     @Override
@@ -114,7 +104,7 @@ public class GenerateExpression extends Expression {
         }
         else {
             throw new IllegalArgumentException("Generate expression requires either a string or array<string> input type, but got " +
-                    context.getCurrentValue().getDataType());
+                                               context.getCurrentValue().getDataType());
         }
 
     }
@@ -149,7 +139,7 @@ public class GenerateExpression extends Expression {
 
     @Override
     public DataType createdOutputType() {
-        return targetType;
+        return getOutputType();
     }
 
     @Override
@@ -178,4 +168,5 @@ public class GenerateExpression extends Expression {
         generatorIds.sort(null);
         return String.join(", ", generatorIds);
     }
+
 }

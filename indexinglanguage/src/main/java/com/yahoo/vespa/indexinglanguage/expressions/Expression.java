@@ -70,6 +70,7 @@ public abstract class Expression extends Selectable {
      * @param inputType the type to set as the input type of this, or null if it cannot be determined
      * @param requiredType the type the input type must be assignable to
      * @param context the context of this
+     * @return input the input type of this expression resolved from this call and current state
      * @throws IllegalArgumentException if inputType isn't assignable to requiredType
      */
     protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
@@ -89,11 +90,16 @@ public abstract class Expression extends Selectable {
         return assignInputType(inputType);
     }
 
-    private DataType assignInputType(DataType inputType) {
+    DataType oldassignInputType(DataType inputType) {
         // Since we assign in both directions, in both orders, we may already know
         if (this.inputType == null)
             this.inputType = inputType;
         return this.inputType;
+    }
+
+    DataType assignInputType(DataType inputType) {
+        // Since we assign in both directions, we may already have more precise info
+        return this.inputType = leastGeneralNonNullOf(this.inputType, inputType);
     }
 
     /**
@@ -145,11 +151,9 @@ public abstract class Expression extends Selectable {
         return assignOutputType(outputType);
     }
 
-    private DataType assignOutputType(DataType outputType) {
-        // Since we assign in both directions, in both orders, we may already know
-        if (this.outputType == null)
-            this.outputType = outputType;
-        return this.outputType;
+    DataType assignOutputType(DataType outputType) {
+        // Since we assign in both directions, we may already have more precise info
+        return this.outputType = leastGeneralNonNullOf(this.outputType, outputType);
     }
 
     public abstract DataType createdOutputType();
@@ -280,16 +284,14 @@ public abstract class Expression extends Selectable {
         if (left == null || right == null) return null;
         if (left.isAssignableTo(right)) return right;
         if (right.isAssignableTo(left)) return left;
-        throw new VerificationException(this, "Argument types are incompatible. " +
-                                              "First " + left.getName() + ", second: " + right.getName());
+        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
     }
 
     protected DataType leastGeneralOf(DataType left, DataType right) {
         if (left == null || right == null) return null;
         if (left.isAssignableTo(right)) return left;
         if (right.isAssignableTo(left)) return right;
-        throw new VerificationException(this, "Argument types are incompatible. " +
-                                              "First " + left.getName() + ", second: " + right.getName());
+        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
     }
 
     protected DataType mostGeneralNonNullOf(DataType left, DataType right) {
@@ -297,8 +299,7 @@ public abstract class Expression extends Selectable {
         if (right == null) return left;
         if (left.isAssignableTo(right)) return right;
         if (right.isAssignableTo(left)) return left;
-        throw new VerificationException(this, "Argument types are incompatible. " +
-                                              "First " + left.getName() + ", second: " + right.getName());
+        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
     }
 
     protected DataType leastGeneralNonNullOf(DataType left, DataType right) {
@@ -306,8 +307,7 @@ public abstract class Expression extends Selectable {
         if (right == null) return left;
         if (left.isAssignableTo(right)) return left;
         if (right.isAssignableTo(left)) return right;
-        throw new VerificationException(this, "Argument types are incompatible. " +
-                                              "First " + left.getName() + ", second: " + right.getName());
+        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
     }
 
 }

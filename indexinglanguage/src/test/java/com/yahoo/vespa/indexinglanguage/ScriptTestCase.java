@@ -6,6 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.BoolFieldValue;
@@ -13,14 +14,17 @@ import com.yahoo.document.datatypes.FloatFieldValue;
 import com.yahoo.document.datatypes.IntegerFieldValue;
 import com.yahoo.document.datatypes.LongFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.UriFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.ToArrayExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
@@ -290,7 +294,29 @@ public class ScriptTestCase {
     }
 
     @Test
-    public void testChoiceAndVariableExpression() {
+    public void testCatAndVariableExpression_simple() {
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom(
+                "input myString | (get_var A | to_array) . (get_var B | to_array) | attribute myStringArray");
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myString", DataType.STRING));
+        adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
+
+        var verificationContext = new VerificationContext(adapter);
+        verificationContext.setVariable("A", DataType.STRING);
+        verificationContext.setVariable("B", DataType.STRING);
+        expression.verify(verificationContext);
+
+        var context = new ExecutionContext(adapter);
+        context.setVariable("A", new StringFieldValue("value 4"));
+        context.setVariable("B", new StringFieldValue("value 5"));
+        expression.execute(context);
+        assertEquals("[value 4, value 5]", adapter.values.get("myStringArray").toString());
+    }
+
+    @Test
+    public void testCatAndVariableExpression_complex() {
         var tester = new ScriptTester();
         var expression = tester.expressionFrom(
                 "input myString | if ((get_var DX | to_bool) == true) { " +
@@ -324,6 +350,49 @@ public class ScriptTestCase {
         context.setVariable("D", new StringFieldValue("value 7"));
         expression.execute(context);
         assertEquals("[value 4, value 5, value 6, value 7]", adapter.values.get("myStringArray").toString());
+    }
+
+    @Test
+    public void testForEachOverStruct() {
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom("input myInStruct | for_each { substring 0 2 } | attribute myOutStruct");
+        StructDataType type = new StructDataType("myStruct");
+        type.addField(new Field("myString1", DataType.STRING));
+        type.addField(new Field("myString2", DataType.STRING));
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myInStruct", type));
+        adapter.createField(new Field("myOutStruct", type));
+        expression.verify(adapter);
+
+        var inStruct = new Struct(type);
+        inStruct.setFieldValue("myString1", "foo");
+        inStruct.setFieldValue("myString2", "the bar");
+        adapter.setValue("myInStruct", inStruct);
+        var context = new ExecutionContext(adapter);
+        expression.execute(context);
+        var outStruct = (Struct)adapter.values.get("myOutStruct");
+        assertEquals("fo", outStruct.getFieldValue("myString1").getWrappedValue());
+        assertEquals("th", outStruct.getFieldValue("myString2").getWrappedValue());
+    }
+
+    @Test
+    public void testForEachOverStructCannotConvertType() {
+        var tester = new ScriptTester();
+        var expression = tester.expressionFrom("input myStructField | for_each { to_array } | attribute myIntArray");
+        StructDataType type = new StructDataType("myStruct");
+        type.addField(new Field("myInt", DataType.INT));
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myStructField", type));
+        adapter.createField(new Field("myIntArray", DataType.getArray(DataType.INT)));
+        try {
+            expression.verify(adapter);
+            fail();
+        } catch (VerificationException e) {
+            assertEquals("Invalid expression 'for_each { to_array }': Struct field 'myInt' has type int but expression produces Array<int>",
+                         e.getMessage());
+        }
     }
 
     @Test
@@ -414,6 +483,36 @@ public class ScriptTestCase {
         expression.verify(adapter);
         expression.execute(context);
         assertEquals(37, ((Array<IntegerFieldValue>)adapter.values.get("myInts")).get(0).getInteger());
+    }
+
+    @Test
+    public void testMultipleVariableStatements() {
+        String script = """
+            {
+            # Initialize variables used for superduper ranking
+            1 | set_var superdupermod;
+            2 | set_var tmppubdate;
+            input attributes_src | lowercase | summary attributes | index attributes | split ";" | for_each {
+              # Loop through each token in attributes string
+              switch {
+
+                # De-rank PR articles using the following rules:
+                #   1. Set editedstaticrank to '1'
+                #   2. Subtract 2.5 hours (9000 seconds) from timestamp used in ranking
+                #   3. No superduper rank
+                case "typepr": 1 | set_var tmpsourcerank | get_var tmppubdate - 9000 | set_var tmppubdate | 0 | set_var superdupermod;
+              }
+            };
+            }
+            """;
+
+        var tester = new ScriptTester();
+        var expression = tester.scriptFrom(script);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("attributes_src", DataType.STRING));
+        adapter.createField(new Field("attributes", DataType.STRING));
+        expression.verify(adapter);
     }
 
 }

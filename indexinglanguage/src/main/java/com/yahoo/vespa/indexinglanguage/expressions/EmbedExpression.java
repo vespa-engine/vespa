@@ -35,9 +35,6 @@ public class EmbedExpression extends Expression  {
     /** The destination the embedding will be written to on the form [schema name].[field name] */
     private String destination;
 
-    /** The target type we are embedding into. */
-    private TensorType targetType;
-
     public EmbedExpression(Linguistics linguistics, Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
         this.linguistics = linguistics;
         this.embedderId = embedderId;
@@ -130,37 +127,12 @@ public class EmbedExpression extends Expression  {
 
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
-        targetType = toTargetTensor(field.getDataType());
         destination = documentType.getName() + "." + field.getName();
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
-        targetType = toTargetTensor(getOutputType(context));
-        if ( ! validTarget(targetType))
-            throw new VerificationException(this, "The embedding target field must either be a dense 1d tensor, a mapped 1d tensor, a mapped 2d tensor, " +
-                                                  "an array of dense 1d tensors, or a mixed 2d or 3d tensor");
-        if (targetType.rank() == 2 && targetType.mappedSubtype().rank() == 2) {
-            if (embedderArguments.size() != 1)
-                throw new VerificationException(this, "When the embedding target field is a 2d mapped tensor " +
-                                                      "the name of the tensor dimension that corresponds to the input array elements must " +
-                                                      "be given as a second argument to embed, e.g: ... | embed splade paragraph | ...");
-            if ( ! targetType.mappedSubtype().dimensionNames().contains(embedderArguments.get(0))) {
-                throw new VerificationException(this, "The dimension '" + embedderArguments.get(0) + "' given to embed " +
-                                                      "is not a sparse dimension of the target type " + targetType);
-
-            }
-        }
-        if (targetType.rank() == 3) {
-            if (embedderArguments.size() != 1)
-                throw new VerificationException(this, "When the embedding target field is a 3d tensor " +
-                                                      "the name of the tensor dimension that corresponds to the input array elements must " +
-                                                      "be given as a second argument to embed, e.g: ... | embed colbert paragraph | ...");
-            if ( ! targetType.mappedSubtype().dimensionNames().contains(embedderArguments.get(0)))
-                throw new VerificationException(this, "The dimension '" + embedderArguments.get(0) + "' given to embed " +
-                                                      "is not a sparse dimension of the target type " + targetType);
-        }
-        context.setCurrentType(createdOutputType());
+        context.setCurrentType(new TensorDataType(toTargetTensor(getOutputType(context))));
     }
 
     @Override
@@ -172,7 +144,7 @@ public class EmbedExpression extends Expression  {
         }
         else if (context.getCurrentValue().getDataType() instanceof ArrayDataType arrayType
                  && arrayType.getNestedType() == DataType.STRING) {
-            output = embedArrayValue(context);
+            output = embedArrayValue(getOutputTensorType(), context);
         }
         else {
             throw new IllegalArgumentException("Embedding can only be done on string or string array fields, not " +
@@ -183,11 +155,11 @@ public class EmbedExpression extends Expression  {
 
     private Tensor embedSingleValue(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue)context.getCurrentValue();
-        return embed(input.getString(), targetType, context);
+        return embed(input.getString(), getOutputTensorType(), context);
     }
 
     @SuppressWarnings("unchecked")
-    private Tensor embedArrayValue(ExecutionContext context) {
+    private Tensor embedArrayValue(TensorType targetType, ExecutionContext context) {
         var input = (Array<StringFieldValue>)context.getCurrentValue();
         var builder = Tensor.Builder.of(targetType);
         if (targetType.rank() == 2)
@@ -205,10 +177,10 @@ public class EmbedExpression extends Expression  {
     private void embedArrayValueToRank2Tensor(Array<StringFieldValue> input,
                                               Tensor.Builder builder,
                                               ExecutionContext context) {
-        String mappedDimension = targetType.mappedSubtype().dimensions().get(0).name();
-        String indexedDimension = targetType.indexedSubtype().dimensions().get(0).name();
+        String mappedDimension = builder.type().mappedSubtype().dimensions().get(0).name();
+        String indexedDimension = builder.type().indexedSubtype().dimensions().get(0).name();
         for (int i = 0; i < input.size(); i++) {
-            Tensor tensor = embed(input.get(i).getString(), targetType.indexedSubtype(), context);
+            Tensor tensor = embed(input.get(i).getString(), builder.type().indexedSubtype(), context);
             for (Iterator<Tensor.Cell> cells = tensor.cellIterator(); cells.hasNext(); ) {
                 Tensor.Cell cell = cells.next();
                 builder.cell()
@@ -223,10 +195,10 @@ public class EmbedExpression extends Expression  {
                                               Tensor.Builder builder,
                                               ExecutionContext context) {
         String outerMappedDimension = embedderArguments.get(0);
-        String innerMappedDimension = targetType.mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
-        String indexedDimension = targetType.indexedSubtype().dimensions().get(0).name();
-        long indexedDimensionSize = targetType.indexedSubtype().dimensions().get(0).size().get();
-        var innerType = new TensorType.Builder(targetType.valueType()).mapped(innerMappedDimension).indexed(indexedDimension,indexedDimensionSize).build();
+        String innerMappedDimension = builder.type().mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
+        String indexedDimension = builder.type().indexedSubtype().dimensions().get(0).name();
+        long indexedDimensionSize = builder.type().indexedSubtype().dimensions().get(0).size().get();
+        var innerType = new TensorType.Builder(builder.type().valueType()).mapped(innerMappedDimension).indexed(indexedDimension,indexedDimensionSize).build();
         int innerMappedDimensionIndex = innerType.indexOfDimensionAsInt(innerMappedDimension);
         int indexedDimensionIndex = innerType.indexOfDimensionAsInt(indexedDimension);
         for (int i = 0; i < input.size(); i++) {
@@ -246,9 +218,9 @@ public class EmbedExpression extends Expression  {
                                               Tensor.Builder builder,
                                               ExecutionContext context) {
         String outerMappedDimension = embedderArguments.get(0);
-        String innerMappedDimension = targetType.mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
+        String innerMappedDimension = getOutputTensorType().mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
 
-        var innerType = new TensorType.Builder(targetType.valueType()).mapped(innerMappedDimension).build();
+        var innerType = new TensorType.Builder(getOutputTensorType().valueType()).mapped(innerMappedDimension).build();
         int innerMappedDimensionIndex = innerType.indexOfDimensionAsInt(innerMappedDimension);
 
         for (int i = 0; i < input.size(); i++) {
@@ -270,9 +242,13 @@ public class EmbedExpression extends Expression  {
                               targetType);
     }
 
+    private TensorType getOutputTensorType() {
+        return ((TensorDataType)getOutputType()).getTensorType();
+    }
+
     @Override
     public DataType createdOutputType() {
-        return new TensorDataType(targetType);
+        return getOutputType();
     }
 
     private static TensorType toTargetTensor(DataType dataType) {

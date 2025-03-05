@@ -50,15 +50,6 @@ public class ForEachTestCase {
     }
 
     @Test
-    public void requireThatExpressionCanBeVerified() {
-        Expression exp = new ForEachExpression(SimpleExpression.newConversion(DataType.INT, DataType.STRING));
-        assertVerify(DataType.getArray(DataType.INT), exp, DataType.getArray(DataType.STRING));
-        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected Array, Struct, WeightedSet or Map input, got no value", null, exp);
-        assertVerifyThrows("Invalid expression 'for_each { SimpleExpression }': Expected Array, Struct, WeightedSet or Map input, got int", DataType.INT, exp);
-        assertVerifyThrows("Invalid expression 'SimpleExpression': Expected int input, got string", DataType.getArray(DataType.STRING), exp);
-    }
-
-    @Test
     public void requireThatStructFieldCompatibilityIsVerified() {
         StructDataType type = new StructDataType("my_struct");
         type.addField(new Field("foo", DataType.INT));
@@ -87,12 +78,6 @@ public class ForEachTestCase {
         val = exp.lst.get(1);
         assertTrue(val instanceof StringFieldValue);
         assertEquals("9", ((StringFieldValue)val).getString());
-    }
-
-    @Test
-    public void requireThatCreatedOutputTypeDependsOnInnerExpression() {
-        assertNull(new ForEachExpression(new SimpleExpression()).createdOutputType());
-        assertNotNull(new ForEachExpression(new ConstantExpression(new IntegerFieldValue(69))).createdOutputType());
     }
 
     @Test
@@ -141,59 +126,6 @@ public class ForEachTestCase {
         assertEquals(Integer.valueOf(6), after.get(new IntegerFieldValue(9)));
     }
 
-    @Test
-    public void requireThatStructContentCanBeConverted() {
-        StructDataType type = new StructDataType("my_type");
-        type.addField(new Field("my_str", DataType.STRING));
-        Struct struct = new Struct(type);
-        struct.setFieldValue("my_str", new StringFieldValue("  foo  "));
-
-        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(struct);
-
-        new ForEachExpression(new TrimExpression()).execute(ctx);
-
-        FieldValue val = ctx.getCurrentValue();
-        assertTrue(val instanceof Struct);
-        assertEquals(type, val.getDataType());
-        assertEquals(new StringFieldValue("foo"), ((Struct)val).getFieldValue("my_str"));
-    }
-
-    @Test
-    public void requireThatIncompatibleStructFieldsFailToValidate() {
-        StructDataType type = new StructDataType("my_type");
-        type.addField(new Field("my_int", DataType.INT));
-
-        VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
-        ctx.setCurrentType(type);
-
-        try {
-            new ForEachExpression(new ToArrayExpression()).verify(ctx);
-            fail();
-        } catch (VerificationException e) {
-            assertEquals("Invalid expression 'for_each { to_array }': Expected int output, got Array<int>", e.getMessage());
-        }
-    }
-
-    @Test
-    public void requireThatIncompatibleStructFieldsFailToExecute() {
-        StructDataType type = new StructDataType("my_type");
-        type.addField(new Field("my_int", DataType.INT));
-        Struct struct = new Struct(type);
-        struct.setFieldValue("my_int", new IntegerFieldValue(69));
-
-        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter());
-        ctx.setCurrentValue(struct);
-
-        try {
-            new ForEachExpression(new ToArrayExpression()).execute(ctx);
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertEquals("Class class com.yahoo.document.datatypes.Array not applicable to an class " +
-                         "com.yahoo.document.datatypes.IntegerFieldValue instance.", e.getMessage());
-        }
-    }
-
     private static class MyCollector extends Expression {
 
         List<FieldValue> lst = new LinkedList<>();
@@ -213,4 +145,5 @@ public class ForEachTestCase {
             return null;
         }
     }
+
 }

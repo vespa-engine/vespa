@@ -45,7 +45,7 @@ public class GetFieldTestCase {
         Expression exp = new GetFieldExpression("foo");
         assertVerify(type, exp, DataType.STRING);
         assertVerifyThrows("Invalid expression 'get_field foo': Expected a struct or map, but got no value", null, exp);
-        assertVerifyThrows("Invalid expression 'get_field foo': Expected a struct or map, but got int", DataType.INT, exp);
+        assertVerifyThrows("Invalid expression 'get_field foo': my_struct is incompatible with int", DataType.INT, exp);
         assertVerifyThrows("Invalid expression 'get_field bar': Field 'bar' not found in struct type 'my_struct'", type, new GetFieldExpression("bar"));
     }
 
