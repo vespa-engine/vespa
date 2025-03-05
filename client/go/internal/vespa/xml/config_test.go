@@ -281,7 +281,7 @@ func TestParseNoTokenEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if services.ContainsAnyTokenEndpoint() {
+	if services.ContainsAnyTokenClient() {
 		t.Fatal("parser indicates token endpoint, but none present")
 	}
 }
@@ -305,7 +305,7 @@ func TestParseWithTokenEndpoint(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !services.ContainsAnyTokenEndpoint() {
+	if !services.ContainsAnyTokenClient() {
 		t.Fatal("parser indicates no token endpoint, but should be present")
 	}
 }

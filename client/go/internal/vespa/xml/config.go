@@ -119,7 +119,7 @@ func (s *Services) Replace(parentName, name string, data interface{}) error {
 	return nil
 }
 
-func (s *Services) ContainsAnyTokenEndpoint() bool {
+func (s *Services) ContainsAnyTokenClient() bool {
 	for _, container := range s.Container {
 		for _, clients := range container.Clients {
 			if clients.Token != nil {
