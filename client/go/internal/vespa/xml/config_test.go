@@ -265,6 +265,51 @@ func TestParseNodeCount(t *testing.T) {
 	assertNodeCount(t, "[2, 1]", 0, 0, true)
 }
 
+func TestParseWithoutTokenClient(t *testing.T) {
+	s := `
+<services xmlns:deploy="vespa" xmlns:preprocess="properties">
+  <container id="qrs">
+    <clients>
+    	<client id="client0">
+     		<certificate file="security/clients.pem"/>
+     	</client>
+    </clients>
+  </container>
+</services>
+`
+	services, err := ReadServices(strings.NewReader(s))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if services.ContainsAnyTokenClient() {
+		t.Fatal("parser indicates token endpoint, but none present")
+	}
+}
+
+func TestParseWithTokenClient(t *testing.T) {
+	s := `
+<services xmlns:deploy="vespa" xmlns:preprocess="properties">
+  <container id="qrs">
+    <clients>
+    	<client id="client0">
+     		<certificate file="security/clients.pem"/>
+     	</client>
+      	<client id="client1">
+      		<token id="my-cool-token"/>
+      	</client>
+    </clients>
+  </container>
+</services>
+`
+	services, err := ReadServices(strings.NewReader(s))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !services.ContainsAnyTokenClient() {
+		t.Fatal("parser indicates no token endpoint, but should be present")
+	}
+}
+
 func assertReplace(t *testing.T, input, want, parentElement, element string, data interface{}) {
 	got, err := Replace(strings.NewReader(input), parentElement, element, data)
 	if err != nil {

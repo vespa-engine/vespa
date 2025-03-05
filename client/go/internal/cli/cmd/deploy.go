@@ -72,8 +72,12 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 				opts.Version = version
 			}
 			if target.Type() == vespa.TargetCloud {
-				if err := requireCertificate(copyCert, true, cli, target, pkg); err != nil {
-					return err
+				services, err := readServicesXML(pkg)
+				skipCertCheck := err != nil && services.ContainsAnyTokenClient()
+				if !skipCertCheck {
+					if err := requireCertificate(copyCert, true, cli, target, pkg); err != nil {
+						return err
+					}
 				}
 			}
 			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
