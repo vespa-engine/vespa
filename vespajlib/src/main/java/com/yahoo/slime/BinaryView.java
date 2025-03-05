@@ -176,7 +176,7 @@ public final class BinaryView implements Inspector {
     @Override public ByteArrayRef asUtf8Ref() {
         return switch (type()) {
             case STRING -> extract_bytes_ref(byte_offset(self));
-            default -> Value.emptyData;
+            default -> ByteArrayRef.empty;
         };
     }
     @Override public byte[] asData() {
