@@ -71,4 +71,9 @@ public class SimpleLinguistics implements Linguistics {
     @Override
     public boolean equals(Linguistics other) { return (other instanceof SimpleLinguistics); }
 
+    @Override
+    public String toString() {
+        return "OpenNlpLinguistics";
+    }
+
 }

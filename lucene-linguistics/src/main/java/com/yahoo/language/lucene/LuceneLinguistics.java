@@ -41,4 +41,9 @@ public class LuceneLinguistics extends SimpleLinguistics {
         return (other instanceof LuceneLinguistics) && config.equals(((LuceneLinguistics) other).config);
     }
 
+    @Override
+    public String toString() {
+        return "LuceneLinguistics";
+    }
+
 }

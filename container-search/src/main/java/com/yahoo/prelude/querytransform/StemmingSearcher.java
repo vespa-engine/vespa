@@ -122,7 +122,8 @@ public class StemmingSearcher extends Searcher {
         context.language = language;
         context.indexFacts = indexFacts;
         context.reverseConnectivity = createReverseConnectivities(q.getModel().getQueryTree().getRoot());
-        q.trace("Stemming with language " + language, 3);
+        if (q.getTrace().getLevel() >= 3)
+            q.trace("Stemming with language " + language + " using " + linguistics, 3);
         return scan(q.getModel().getQueryTree().getRoot(), context);
     }
 
