@@ -110,7 +110,7 @@ func TestLocalConfig(t *testing.T) {
 	assertConfigCommand(t, configHome, `application = t1.a1.default
 cluster = <unset>
 color = auto
-debug-mode = false
+debug = false
 instance = foo
 quiet = false
 target = cloud
