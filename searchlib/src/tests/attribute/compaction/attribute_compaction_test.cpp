@@ -138,10 +138,16 @@ calc_alloc_waste(const AttributeStatus& status)
 class Fixture {
 public:
     AttributePtr _v;
+    size_t _reserved_multi_value_address_space;
 
     Fixture(Config cfg)
-        : _v()
-    { _v = search::AttributeFactory::createAttribute("test", cfg); }
+        : _v(),
+          _reserved_multi_value_address_space(0)
+    {
+        _v = search::AttributeFactory::createAttribute("test", cfg);
+        // 1 reserved array accounted as dead. Scaling applied when reporting usage (due to capped buffer sizes)
+        _reserved_multi_value_address_space = getMultiValueAddressSpaceUsage().dead();
+    }
     ~Fixture() { }
     DocIdRange addDocs(uint32_t numDocs) { return addAttributeDocs(_v, numDocs); }
     void populate(DocIdRange range, uint32_t values) { populateAttribute(_v, range, values); }
@@ -163,6 +169,7 @@ public:
             prefix.c_str(), usage.used(), usage.dead(), usage.limit(), usage.usage());
         return usage;
     }
+    size_t reserved_multi_value_address_space() const noexcept { return _reserved_multi_value_address_space; }
 };
 
 TEST(AttributeCompactionTest, Test_that_compaction_of_integer_array_attribute_reduces_memory_usage)
@@ -221,8 +228,7 @@ TEST(AttributeCompactionTest, Address_space_usage_dead_increases_significantly_w
     populate_and_hammer(f, true);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // 100 * 1000 dead arrays due to new values for docids
-    // 1 reserved array accounted as dead
-    EXPECT_EQ(100001u, afterSpace.dead());
+    EXPECT_EQ(100000 + f.reserved_multi_value_address_space(), afterSpace.dead());
 }
 
 TEST(AttributeCompactionTest, Address_space_usage_dead_increases_only_slightly_when_free_lists_are_used_and_compaction_configured_off)
@@ -231,8 +237,7 @@ TEST(AttributeCompactionTest, Address_space_usage_dead_increases_only_slightly_w
     populate_and_hammer(f, false);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // Only 1000 dead arrays (due to new values for docids) as free lists are used.
-    // 1 reserved array accounted as dead
-    EXPECT_EQ(1001u, afterSpace.dead());
+    EXPECT_EQ(1000 + f.reserved_multi_value_address_space(), afterSpace.dead());
 }
 
 TEST(AttributeCompactionTest, Compaction_limits_address_space_usage_dead_when_free_lists_are_NOT_used)
@@ -249,8 +254,7 @@ TEST(AttributeCompactionTest, Compaction_is_not_executed_when_free_lists_are_use
     populate_and_hammer(f, false);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
     // Only 1000 dead arrays (due to new values for docids) as free lists are used.
-    // 1 reserved array accounted as dead
-    EXPECT_EQ(1001u, afterSpace.dead());
+    EXPECT_EQ(1000 + f.reserved_multi_value_address_space(), afterSpace.dead());
 }
 
 TEST(AttributeCompactionTest, Compaction_is_peformed_when_compaction_strategy_is_changed_to_enable_compaction)
@@ -259,8 +263,7 @@ TEST(AttributeCompactionTest, Compaction_is_peformed_when_compaction_strategy_is
     populate_and_hammer(f, true);
     AddressSpace after1 = f.getMultiValueAddressSpaceUsage("after1");
     // 100 * 1000 dead arrays due to new values for docids
-    // 1 reserved array accounted as dead
-    EXPECT_EQ(100001u, after1.dead());
+    EXPECT_EQ(100000 + f.reserved_multi_value_address_space(), after1.dead());
     f._v->update_config(compactAddressSpaceAttributeConfig(true));
     auto old_dead = after1.dead();
     AddressSpace after2 = f.getMultiValueAddressSpaceUsage("after2");

@@ -2193,8 +2193,9 @@ AttributeTest::requireThatAddressSpaceUsageIsReported(const Config &config, bool
     }
     if (attrPtr->hasMultiValue()) {
         LOG(info, "requireThatAddressSpaceUsageIsReported(%s): Has multi-value", attrName.c_str());
-        EXPECT_EQ(before.multi_value_usage().used(), 1u);
-        EXPECT_EQ(before.multi_value_usage().dead(), 1u);
+        // 1 reserved array accounted as dead. Scaling applied when reporting usage (due to capped buffer sizes)
+        EXPECT_LE(1, before.multi_value_usage().dead());
+        EXPECT_EQ(before.multi_value_usage().dead(), before.multi_value_usage().used());
         EXPECT_GE(after.multi_value_usage().used(), before.multi_value_usage().used());
         EXPECT_GT(after.multi_value_usage().limit(), before.multi_value_usage().limit());
         EXPECT_GT((1ull << 32), after.multi_value_usage().limit());
