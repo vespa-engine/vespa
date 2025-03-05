@@ -166,9 +166,12 @@ TEST_F(RawAttributeTest, address_space_usage_is_reported)
     const auto& all = usage.get_all();
     EXPECT_EQ(1u, all.size());
     EXPECT_EQ(1u, all.count(raw_store));
-    EXPECT_EQ(1, all.at(raw_store).used());
+    // 1 reserved array accounted as dead. Scaling applied when reporting usage (due to capped buffer sizes)
+    auto reserved_address_space = all.at(raw_store).dead();
+    EXPECT_LE(1, reserved_address_space);
+    EXPECT_EQ(reserved_address_space, all.at(raw_store).used());
     _raw->set_raw(1, as_vector("foo"sv));
-    EXPECT_EQ(2, _attr->getAddressSpaceUsage().get_all().at(raw_store).used());
+    EXPECT_EQ(1 + reserved_address_space, _attr->getAddressSpaceUsage().get_all().at(raw_store).used());
 }
 
 TEST_F(RawAttributeTest, search_is_not_implemented)

@@ -380,12 +380,18 @@ DataStoreBase::getAddressSpaceUsage() const noexcept
         if (bState->isFree()) {
             limit_entries += _max_entries;
         } else if (bState->isActive()) {
-            used_entries += bState->size();
-            dead_entries += bState->stats().dead_entries();
-            limit_entries += bState->capacity();
+            /*
+             * Scale entry counts such that max sized buffers are considered to use the same
+             * amount of address space regardless of buffer type even when buffer size is capped.
+             */
+            auto scale_entries = double(_max_entries) / bState->getTypeHandler()->get_max_entries();
+            used_entries += bState->size() * scale_entries;
+            dead_entries += bState->stats().dead_entries() * scale_entries;
+            limit_entries += bState->capacity() * scale_entries;
         } else if (bState->isOnHold()) {
-            used_entries += bState->size();
-            limit_entries += bState->capacity();
+            auto scale_entries = double(_max_entries) / bState->getTypeHandler()->get_max_entries();
+            used_entries += bState->size() * scale_entries;
+            limit_entries += bState->capacity() * scale_entries;
         } else {
             LOG_ABORT("should not be reached");
         }
