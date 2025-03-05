@@ -31,6 +31,7 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
 
     static final BundleInstantiationSpecification HANDLER_SPEC = fromSearchAndDocproc(HANDLER_CLASSNAME);
     static final BindingPattern DEFAULT_BINDING = SystemBindingPattern.fromHttpPath("/search/*");
+    static final BindingPattern DEFAULT_BINDING_NO_SLASH = SystemBindingPattern.fromHttpPath("/search");
 
     SearchHandler(DeployState ds,
                   ApplicationContainerCluster cluster,
@@ -41,10 +42,16 @@ class SearchHandler extends ProcessingHandler<SearchChains> {
     }
 
     static List<BindingPattern> bindingPattern(Collection<Integer> ports) {
-        if (ports.isEmpty()) return List.of(DEFAULT_BINDING);
+        if (ports.isEmpty()) return defaultBindings();
         return ports.stream()
-                .map(s -> (BindingPattern)SystemBindingPattern.fromHttpPortAndPath(s, DEFAULT_BINDING.path()))
-                .toList();
+                    .map(s -> List.of((BindingPattern) SystemBindingPattern.fromHttpPortAndPath(s, DEFAULT_BINDING.path()),
+                                      (BindingPattern) SystemBindingPattern.fromHttpPortAndPath(s, DEFAULT_BINDING_NO_SLASH.path())))
+                    .flatMap(List::stream)
+                    .toList();
+    }
+
+    static List<BindingPattern> defaultBindings() {
+        return List.of(SearchHandler.DEFAULT_BINDING, SearchHandler.DEFAULT_BINDING_NO_SLASH);
     }
 
     private static class Threadpool extends ContainerThreadpool {

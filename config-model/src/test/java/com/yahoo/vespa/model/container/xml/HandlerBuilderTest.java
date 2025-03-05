@@ -192,7 +192,7 @@ public class HandlerBuilderTest extends ContainerModelBuilderTestBase {
         // Verify /search /feed /document and custom handler are bound correctly
         Map<String, JdiscBindingsConfig.Handlers> handlers = bindingsConfig.handlers();
         Map<String, List<String>> expectedHandlerMappings = Map.of(
-                "com.yahoo.search.handler.SearchHandler", List.of("/search/*"),
+                "com.yahoo.search.handler.SearchHandler", List.of("/search", "/search/*"),
                 "com.yahoo.document.restapi.resource.DocumentV1ApiHandler", List.of("/document/v1/*", "/document/v1/*/"),
                 "com.yahoo.vespa.http.server.FeedHandler", List.of("/reserved-for-internal-use/feedapi", "/reserved-for-internal-use/feedapi/"),
                 "FooHandler", List.of("/foo"));

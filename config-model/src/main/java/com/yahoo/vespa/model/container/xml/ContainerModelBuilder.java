@@ -1219,7 +1219,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addSearchHandler(DeployState deployState, ApplicationContainerCluster cluster, Element searchElement, ConfigModelContext context) {
-        var bindingPatterns = List.<BindingPattern>of(SearchHandler.DEFAULT_BINDING);
+        var bindingPatterns = SearchHandler.defaultBindings();
         if (isHostedTenantApplication(context)) {
             bindingPatterns = SearchHandler.bindingPattern(getDataplanePorts(deployState));
         }
