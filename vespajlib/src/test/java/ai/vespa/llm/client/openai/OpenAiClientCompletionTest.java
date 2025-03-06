@@ -22,10 +22,11 @@ public class OpenAiClientCompletionTest {
         var options = Map.of("maxTokens", "10");
         var prompt = StringPrompt.from("You are an unhelpful assistant who never answers questions straightforwardly. " +
                 "Be as long-winded as possible. Are humans smarter than cats?");
-
+        System.out.print("Running sync completion for: ");
         System.out.print(prompt);
         var completion = client.complete(prompt, new InferenceParameters(apiKey, options::get)).get(0);
         System.out.print(completion.text());
+        System.out.println("\nFinished sync completion because of " + completion.finishReason());
     }
 
     @Test
@@ -35,12 +36,12 @@ public class OpenAiClientCompletionTest {
         var options = Map.of("maxTokens", "10");
         var prompt = StringPrompt.from("You are an unhelpful assistant who never answers questions straightforwardly. " +
                 "Be as long-winded as possible. Are humans smarter than cats?");
+        System.out.print("Running async completion for: ");
         System.out.print(prompt);
         var future = client.completeAsync(prompt, new InferenceParameters(apiKey, options::get), completion -> {
-            System.out.print(completion.text());
+            System.out.print(completion.text() + "\n");
         });
-        System.out.println("\nWaiting for completion...\n\n");
-        System.out.println("\nFinished streaming because of " + future.join());
+        System.out.println("\nFinished async streaming because of " + future.join());
     }
 
 }
