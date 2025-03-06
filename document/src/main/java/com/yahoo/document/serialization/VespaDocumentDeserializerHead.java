@@ -17,6 +17,7 @@ import com.yahoo.tensor.TensorType;
  *
  * @author baldersheim
  */
+@SuppressWarnings("removal")
 public class VespaDocumentDeserializerHead extends VespaDocumentDeserializer6 {
 
     public VespaDocumentDeserializerHead(DocumentTypeManager manager, GrowableByteBuffer buffer) {

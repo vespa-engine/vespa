@@ -8,7 +8,7 @@ import com.yahoo.document.datatypes.CollectionFieldValue;
 import com.yahoo.document.datatypes.FieldPathIteratorHandler;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.serialization.DocumentUpdateReader;
-import com.yahoo.document.serialization.VespaDocumentSerializer6;
+import com.yahoo.document.serialization.DocumentSerializer;
 
 /**
  * @author Thomas Gundersen
@@ -97,7 +97,7 @@ public class AddFieldPathUpdate extends FieldPathUpdate {
     }
 
     @Override
-    public void serialize(VespaDocumentSerializer6 data) {
+    public void serialize(DocumentSerializer data) {
         data.write(this);
     }
 

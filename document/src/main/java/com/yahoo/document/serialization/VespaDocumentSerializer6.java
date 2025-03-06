@@ -71,6 +71,7 @@ import static com.yahoo.text.Utf8.calculateBytePositions;
  *
  * @author baldersheim
  **/
+@Deprecated(forRemoval = true)
 public class VespaDocumentSerializer6 extends BufferSerializer implements DocumentSerializer {
 
     private int spanNodeCounter = -1;
@@ -80,10 +81,12 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         super(buf);
     }
 
+    @Override
     public void write(Document doc) {
         write(new Field(doc.getDataType().getName(), 0, doc.getDataType()), doc);
     }
 
+    @Override
     public void write(FieldBase field, Document doc) {
         buf.putShort(Document.SERIALIZED_VERSION);
 
@@ -120,6 +123,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, FieldValue value) {
         throw new IllegalArgumentException("Not Implemented");
     }
@@ -130,6 +134,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param array - field value
      */
+    @Override
     public <T extends FieldValue> void write(FieldBase field, Array<T> array) {
         buf.putInt1_2_4Bytes(array.size());
 
@@ -140,6 +145,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     }
 
+    @Override
     public <K extends FieldValue, V extends FieldValue> void write(FieldBase field, MapFieldValue<K, V> map) {
         buf.putInt1_2_4Bytes(map.size());
         for (Map.Entry<K, V> e : map.entrySet()) {
@@ -154,6 +160,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, ByteFieldValue value) {
         buf.put(value.getByte());
     }
@@ -170,6 +177,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public <T extends FieldValue> void write(FieldBase field, CollectionFieldValue<T> value) {
         throw new IllegalArgumentException("Not Implemented");
     }
@@ -180,6 +188,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, DoubleFieldValue value) {
         buf.putDouble(value.getDouble());
     }
@@ -190,6 +199,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, FloatFieldValue value) {
         buf.putFloat(value.getFloat());
     }
@@ -200,6 +210,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, IntegerFieldValue value) {
         buf.putInt(value.getInteger());
     }
@@ -210,6 +221,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, LongFieldValue value) {
         buf.putLong(value.getLong());
     }
@@ -220,6 +232,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, Raw value) {
         ByteBuffer rawBuf = value.getByteBuffer();
         int origPos = rawBuf.position();
@@ -242,6 +255,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, StringFieldValue value) {
         byte[] stringBytes = createUTF8CharArray(value.getString());
 
@@ -315,6 +329,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param s     - field value
      */
+    @Override
     public void write(FieldBase field, StructuredFieldValue s) {
         // Serialize all parts first.. As we need to know length before starting
         // Serialize all the fields.
@@ -373,6 +388,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param value - field value
      */
+    @Override
     public void write(FieldBase field, Struct value) {
         write(field, (StructuredFieldValue) value);
     }
@@ -383,6 +399,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param field - field description (name and data type)
      * @param ws    - field value
      */
+    @Override
     public <T extends FieldValue> void write(FieldBase field, WeightedSet<T> ws) {
         WeightedSetDataType type = ws.getDataType();
         putInt(null, type.getNestedType().getId());
@@ -406,6 +423,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     }
 
+    @Override
     public void write(FieldBase field, AnnotationReference value) {
         int annotationId = value.getReference().getScratchId();
         if (annotationId >= 0) {
@@ -415,11 +433,13 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         }
     }
 
+    @Override
     public void write(DocumentId id) {
         put(null, id.getScheme().toUtf8().getBytes());
         putByte(null, (byte) 0);
     }
 
+    @Override
     public void write(DocumentType type) {
         byte[] docType = createUTF8CharArray(type.getName());
         put(null, docType);
@@ -427,10 +447,12 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         putShort(null, (short) 0); // Used to hold the version. Is now always 0.
     }
 
+    @Override
     public void write(DocumentRemove documentRemove) {
         throw new UnsupportedOperationException("serializing remove not implemented");
     }
 
+    @Override
     public void write(Annotation annotation) {
         buf.putInt(annotation.getType().getId());  //name hash
 
@@ -468,6 +490,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         buf.position(end);
     }
 
+    @Override
     public void write(SpanTree tree) {
         //we don't support serialization of nested span trees:
         if (spanNodeCounter >= 0) {
@@ -509,6 +532,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         }
     }
 
+    @Override
     public void write(SpanNode spanNode) {
         if (spanNodeCounter >= 0) {
             spanNode.setScratchId(spanNodeCounter++);
@@ -524,6 +548,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         }
     }
 
+    @Override
     public void write(Span span) {
         buf.put(Span.ID);
 
@@ -538,6 +563,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         }
     }
 
+    @Override
     public void write(SpanList spanList) {
         buf.put(SpanList.ID);
         buf.putInt1_2_4Bytes(spanList.numChildren());
@@ -547,6 +573,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         }
     }
 
+    @Override
     public void write(AlternateSpanList altSpanList) {
         buf.put(AlternateSpanList.ID);
         buf.putInt1_2_4Bytes(altSpanList.getNumSubTrees());
@@ -581,12 +608,14 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         }
     }
 
+    @Override
     public void write(FieldPathUpdate update) {
         putByte(null, (byte)update.getUpdateType().getCode());
         put(null, update.getOriginalFieldPath());
         put(null, update.getOriginalWhereClause());
     }
 
+    @Override
     public void write(AssignFieldPathUpdate update) {
         write((FieldPathUpdate)update);
         byte flags = 0;
@@ -606,6 +635,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
         }
     }
 
+    @Override
     public void write(AddFieldPathUpdate update) {
         write((FieldPathUpdate)update);
         update.getNewValues().serialize(this);
@@ -694,7 +724,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
      * @param doc The Document whose size to calculate.
      * @return The size in bytes.
      */
-    public static long getSerializedSize(Document doc) {
+    static long getSerializedSize(Document doc) {
         DocumentSerializer serializer = new VespaDocumentSerializer6(new GrowableByteBuffer(8 * 1024, 2.0f));
         serializer.write(doc);
         return serializer.getBuf().position();
