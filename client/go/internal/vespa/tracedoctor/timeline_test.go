@@ -7,6 +7,36 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestTimelineImpact(t *testing.T) {
+	tl := &timeline{}
+	tl.add(10.0, "First event")
+	tl.add(20.0, "Middle event")
+	tl.add(30.0, "Last event")
+
+	impact := tl.impact()
+
+	assert.Equal(t, 20.0, impact, "Unexpected impact duration")
+}
+
+func TestTimelineDurationOf(t *testing.T) {
+	tl := &timeline{}
+	tl.add(10.0, "Start event")
+	tl.add(30.0, "Middle event")
+	tl.add(50.0, "End event")
+
+	duration := tl.durationOf("Start event")
+	assert.Equal(t, 20.0, duration, "Unexpected duration for 'Start event'")
+
+	duration = tl.durationOf("Middle event")
+	assert.Equal(t, 20.0, duration, "Unexpected duration for 'Middle event'")
+
+	duration = tl.durationOf("End event")
+	assert.Equal(t, 0.0, duration, "Expected duration for 'End event' to be 0 as there is no next entry")
+
+	duration = tl.durationOf("Non-existent event")
+	assert.Equal(t, 0.0, duration, "Expected duration for non-existent event to be 0")
+}
+
 func TestTimelineAdd(t *testing.T) {
 	tl := &timeline{}
 	tl.add(12.34, "Test Event")
