@@ -8,6 +8,7 @@
 #include <vespa/searchlib/attribute/i_enum_store_dictionary.h>
 #include <vespa/searchlib/attribute/ipostinglistattributebase.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
+#include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
 #include <vespa/searchlib/util/state_explorer_utils.h>
 #include <vespa/vespalib/data/slime/cursor.h>
@@ -15,6 +16,7 @@
 using search::AddressSpaceUsage;
 using search::AttributeVector;
 using search::IEnumStore;
+using search::SingleBoolAttribute;
 using search::StateExplorerUtils;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
@@ -158,6 +160,13 @@ AttributeVectorExplorer::get_state(const vespalib::slime::Inserter &inserter, bo
             convertPostingBaseToSlime(*postingBase, object.setObject("posting_store"));
         }
         convertChangeVectorToSlime(attr, object.setObject("changeVector"));
+        auto* single_bool_attr = dynamic_cast<const SingleBoolAttribute*>(_attr.get());
+        if (single_bool_attr != nullptr) {
+            auto& bvobj = object.setObject("bitvector");
+            auto& bitvector = single_bool_attr->getBitVector();
+            bvobj.setLong("true_bits", bitvector.countTrueBits());
+            bvobj.setLong("size", bitvector.size());
+        }
         object.setLong("committedDocIdLimit", attr.getCommittedDocIdLimit());
         object.setLong("createSerialNum", attr.getCreateSerialNum());
     } else {

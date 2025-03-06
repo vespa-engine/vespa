@@ -16,9 +16,6 @@ public final class SleepExpression extends Expression {
     public boolean isMutating() { return false; }
 
     @Override
-    protected void doVerify(VerificationContext context) { }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue value = context.getCurrentValue();
         if (value instanceof NumericFieldValue num) {

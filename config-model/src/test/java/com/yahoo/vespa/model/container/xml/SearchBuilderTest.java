@@ -76,6 +76,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
                 "  <search />",
                 "  <handler id='" + myHandler + "'>",
                 "    <binding>" + SearchHandler.DEFAULT_BINDING.patternString() + "</binding>",
+                "    <binding>" + SearchHandler.DEFAULT_BINDING_NO_SLASH.patternString() + "</binding>",
                 "  </handler>",
                 nodesXml,
                 "</container>");
@@ -84,7 +85,7 @@ public class SearchBuilderTest extends ContainerModelBuilderTestBase {
 
         var discBindingsConfig = root.getConfig(JdiscBindingsConfig.class, "default");
         assertEquals(SearchHandler.DEFAULT_BINDING.patternString(), discBindingsConfig.handlers(myHandler).serverBindings(0));
-        assertNull(discBindingsConfig.handlers(SearchHandler.HANDLER_CLASSNAME));
+        assertEquals(SearchHandler.DEFAULT_BINDING_NO_SLASH.patternString(), discBindingsConfig.handlers(myHandler).serverBindings(1));
     }
 
     @Test

@@ -520,17 +520,40 @@ AsyncHandler::handleRemoveLocation(api::RemoveLocationCommand& cmd, MessageTrack
         to_remove = cmd.steal_explicit_remove_set();
     }
 
-    auto task = makeResultTask([&cmd, tracker = std::move(tracker), removed = to_remove.size()](spi::Result::UP response) {
-        (void)tracker->checkForError(*response);
-        tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, removed));
+    struct SharedErrorState {
+        spi::Result::UP  maybe_error_result;
+        std::atomic_flag first_error_set;
+    };
+
+    auto shared_error_state = std::make_shared<SharedErrorState>();
+    // Note that the &cmd capture is OK since its lifetime is guaranteed by the tracker.
+    // Always invoked indirectly in the context of a `_sequencedExecutor` callback, or
+    // immediately on function return iff `to_remove` is empty.
+    auto send_reply_on_zero_refs = vespalib::makeSharedLambdaCallback([&cmd, tracker = std::move(tracker), shared_error_state,
+                                                                       n_removed = to_remove.size()]() mutable {
+        if (!shared_error_state->maybe_error_result || tracker->checkForError(*shared_error_state->maybe_error_result)) {
+            tracker->setReply(std::make_shared<api::RemoveLocationReply>(cmd, n_removed));
+        }
         tracker->sendReply();
     });
 
-    // In the case where a _newer_ mutation exists for a given entry in to_remove, it will be ignored
-    // (with no tombstone added) since we only preserve the newest operation for a document.
-    _spi.removeAsync(bucket, std::move(to_remove),
-                     std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(task)));
-
+    auto& throttler = _env._fileStorHandler.operation_throttler();
+    for (auto& rm_entry : to_remove) {
+        auto token = throttler.blocking_acquire_one();
+        std::vector single_id = {std::move(rm_entry)};
+        // `shared_error_state` by raw ptr is safe, since `send_reply_on_zero_refs` holds a transitive strong ref.
+        auto on_complete = makeResultTask([send_reply_on_zero_refs, error_state = shared_error_state.get(),
+                                           token = std::move(token)](spi::Result::UP response) mutable {
+            if (response->hasError() && error_state->first_error_set.test_and_set()) {
+                // Visibility depends on shared_ptr release semantics on decref
+                error_state->maybe_error_result = std::move(response);
+            }
+        });
+        // In the case where a _newer_ mutation exists for a given entry in to_remove, it will be ignored
+        // (with no tombstone added) since we only preserve the newest operation for a document.
+        _spi.removeAsync(bucket, std::move(single_id),
+                         std::make_unique<ResultTaskOperationDone>(_sequencedExecutor, cmd.getBucketId(), std::move(on_complete)));
+    }
     return tracker;
 }
 

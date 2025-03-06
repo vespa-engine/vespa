@@ -20,7 +20,7 @@ import java.util.List;
 /**
  * @author Simon Thoresen Hult
  */
-// TODO: Support Map in addition to Array and Weghted Set (doc just says "collection type")
+// TODO: Support Map in addition to Array and Weighted Set (doc just says "collection type")
 public final class CatExpression extends ExpressionList<Expression> {
 
     public CatExpression(Expression... expressions) {
@@ -62,22 +62,15 @@ public final class CatExpression extends ExpressionList<Expression> {
         for (var expression : expressions())
             expression.setOutputType(AnyDataType.instance, context); // Any output is handled by converting to string
 
-        if (outputType instanceof CollectionDataType)
-            return outputType;
-        else
-            return getInputType(context); // Cannot infer input type since we take the string value
+        return AnyDataType.instance; // Cannot infer input type since we take the string value
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
         DataType input = context.getCurrentType();
         List<DataType> types = new LinkedList<>();
-        for (Expression expression : this) {
-            DataType type = context.setCurrentType(input).verify(expression).getCurrentType();
-            if (type == null)
-                throw new VerificationException(this, "In " + expression + ": Attempting to concatenate a null value");
-            types.add(type);
-        }
+        for (Expression expression : this)
+            types.add(context.setCurrentType(input).verify(expression).getCurrentType());
         context.setCurrentType(resolveOutputType(types));
     }
 

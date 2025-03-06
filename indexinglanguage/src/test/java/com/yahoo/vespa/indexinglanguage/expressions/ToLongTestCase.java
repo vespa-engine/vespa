@@ -31,7 +31,6 @@ public class ToLongTestCase {
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.INT, new ToLongExpression(), DataType.LONG);
         assertVerify(DataType.STRING, new ToLongExpression(), DataType.LONG);
-        assertVerifyThrows("Invalid expression 'to_long': Expected input, but no input is provided", null, new ToLongExpression());
     }
 
     @Test

@@ -56,11 +56,6 @@ public final class NGramExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        // empty
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         if (input.getSpanTree(SpanTrees.LINGUISTICS) != null) {

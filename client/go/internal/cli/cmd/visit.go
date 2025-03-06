@@ -28,7 +28,6 @@ type visitArgs struct {
 	makeFeed       bool
 	jsonLines      bool
 	pretty         bool
-	debugMode      bool
 	chunkCount     int
 	from           string
 	to             string
@@ -53,9 +52,7 @@ func (v *visitArgs) writeString(s string) {
 }
 
 func (v *visitArgs) debugPrint(s string) {
-	if v.debugMode {
-		v.cli.printDebug(s)
-	}
+	v.cli.printDebug(s)
 }
 
 func (v *visitArgs) dumpDocuments(documents []DocumentBlob) {
@@ -123,6 +120,14 @@ $ vespa visit --field-set "[id]" # list document IDs
 			if err != nil {
 				return err
 			}
+			if service.AuthMethod == "token" {
+				err = cli.addBearerToken(&header)
+				if err != nil {
+					return err
+				}
+				service.TLSOptions.CertificateFile = ""
+				service.TLSOptions.PrivateKeyFile = ""
+			}
 			if vArgs.verbose {
 				service.CurlWriter = vespa.CurlWriter{Writer: cli.Stderr}
 			}
@@ -140,7 +145,6 @@ $ vespa visit --field-set "[id]" # list document IDs
 	cmd.Flags().StringVar(&vArgs.contentCluster, "content-cluster", "*", `Which content cluster to visit documents from`)
 	cmd.Flags().StringVar(&vArgs.fieldSet, "field-set", "", `Which fieldset to ask for`)
 	cmd.Flags().StringVar(&vArgs.selection, "selection", "", `Select subset of cluster`)
-	cmd.Flags().BoolVar(&vArgs.debugMode, "debug-mode", false, `Print debugging output`)
 	cmd.Flags().BoolVar(&vArgs.jsonLines, "json-lines", true, `Output documents as JSON lines`)
 	cmd.Flags().BoolVar(&vArgs.makeFeed, "make-feed", false, `Output JSON array suitable for vespa-feeder`)
 	cmd.Flags().BoolVar(&vArgs.pretty, "pretty-json", false, `Format pretty JSON`)

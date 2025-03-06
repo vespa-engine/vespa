@@ -31,7 +31,6 @@ public class ToFloatTestCase {
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.INT, new ToFloatExpression(), DataType.FLOAT);
         assertVerify(DataType.STRING, new ToFloatExpression(), DataType.FLOAT);
-        assertVerifyThrows("Invalid expression 'to_float': Expected input, but no input is provided", null, new ToFloatExpression());
     }
 
     @Test

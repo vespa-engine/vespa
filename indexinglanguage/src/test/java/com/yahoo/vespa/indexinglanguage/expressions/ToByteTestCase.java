@@ -31,7 +31,6 @@ public class ToByteTestCase {
     public void requireThatExpressionCanBeVerified() {
         assertVerify(DataType.INT, new ToByteExpression(), DataType.BYTE);
         assertVerify(DataType.STRING, new ToByteExpression(), DataType.BYTE);
-        assertVerifyThrows("Invalid expression 'to_byte': Expected input, but no input is provided", null, new ToByteExpression());
     }
 
     @Test

@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.slime;
 
+import java.util.Arrays;
 import java.util.function.Consumer;
 import static com.yahoo.slime.BinaryFormat.decode_double;
 import static com.yahoo.slime.BinaryFormat.decode_meta;
@@ -93,11 +94,7 @@ public final class BinaryView implements Inspector {
         } else {
             --bytes;
         }
-        byte[] ret = new byte[bytes];
-        for (int i = 0; i < bytes; ++i) {
-            ret[i] = data[idx++];
-        }
-        return ret;
+        return Arrays.copyOfRange(data, idx, idx + bytes);
     }
     private Inspector find_field(int pos, int len, int sym) {
         for (int i = 0; i < len; ++i) {

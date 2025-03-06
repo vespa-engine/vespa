@@ -16,6 +16,7 @@ import java.io.IOException;
  */
 public class ApplicationMetaData {
 
+    /** Timestamp when a deployment was made (in milliseconds since epoch)  */
     private final long deployTimestamp;
     private final boolean internalRedeploy;
     private final ApplicationId applicationId;
@@ -36,7 +37,7 @@ public class ApplicationMetaData {
     public ApplicationId getApplicationId() { return applicationId; }
 
     /**
-     * Gets the time the application was deployed.
+     * Gets the time the application was deployed (in milliseconds since epoch).
      * Will return null if a problem occurred while getting metadata.
      *
      * @return when this application version was deployed in epoch ms
