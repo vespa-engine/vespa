@@ -751,6 +751,23 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspector(Inspector data) throws IOException {
+            if (data.type().equals(Type.ARRAY)) {
+                int entries = data.entryCount();
+                for (int i = 0; i < entries; i++) {
+                    if (!data.entry(i).type().equals(Type.STRING)) {
+                        renderInspectorDirect(maybeConvertData(data));
+                        return;
+                    }
+                }
+
+                generator.writeStartArray();
+                for (int i = 0; i < entries; i++) {
+                    byte[] utf8 = data.entry(i).asUtf8();
+                    generator.writeUTF8String(utf8, 0, utf8.length);
+                }
+                generator.writeEndArray();
+                return;
+            }
             renderInspectorDirect(maybeConvertData(data));
         }
 
