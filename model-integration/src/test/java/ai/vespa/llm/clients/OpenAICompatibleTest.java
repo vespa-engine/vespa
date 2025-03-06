@@ -12,7 +12,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
 
 public class OpenAICompatibleTest {
     // API key for the Together API
@@ -27,7 +26,7 @@ public class OpenAICompatibleTest {
     );
 
     @Test
-    //@Disabled
+    @Disabled
     public void testComplete() {
         for (String model : TEST_MODELS) {
             System.out.println("Testing model: " + model);
@@ -51,7 +50,7 @@ public class OpenAICompatibleTest {
     }
 
     @Test
-    //@Disabled
+    @Disabled
     public void testCompleteAsync() {
         for (String model : TEST_MODELS) {
             System.out.println("Testing async model: " + model);
