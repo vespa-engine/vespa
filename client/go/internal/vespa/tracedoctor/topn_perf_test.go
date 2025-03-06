@@ -20,6 +20,7 @@ func TestTopNPerfAddSample(t *testing.T) {
 	assert.Equal(t, 36.0, tp.entries["B"].selfTimeMs)
 	assert.Equal(t, int64(1), tp.entries["C"].count)
 	assert.Equal(t, 30.0, tp.entries["C"].selfTimeMs)
+	assert.Equal(t, 81.5, tp.impact())
 }
 
 func TestTopNPerfTopN(t *testing.T) {
