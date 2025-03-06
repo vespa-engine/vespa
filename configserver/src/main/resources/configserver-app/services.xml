@@ -48,6 +48,7 @@
     <preprocess:include file='model-integration.xml' required='true' />
 
     <component id="com.yahoo.vespa.configserver.flags.ConfigServerFlagSource" bundle="configserver-flags"/>
+    <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>
 
     <component id="com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.health.HealthMonitorManager" bundle="service-monitor" />
