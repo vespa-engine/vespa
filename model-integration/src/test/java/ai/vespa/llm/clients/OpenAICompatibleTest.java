@@ -42,7 +42,8 @@ public class OpenAICompatibleTest {
             var prompt = StringPrompt.from("Write a haiku about the most beautiful place on Earth.");
             var completions = openai.complete(prompt, new InferenceParameters(options::get));
             var text = completions.get(0).text();
-            assertNumTokens(text, 3, 1000);
+            // Reasoning models do not count thinking tokens to the maxTokens, so may return a longer completion.
+            assertNumTokens(text, 3, 3000);
             
             System.out.println("Result: " + text);
             System.out.println("----------------------------------------");
@@ -70,7 +71,7 @@ public class OpenAICompatibleTest {
             });
 
             future.join();
-            assertNumTokens(text.toString(), 3, 1000);
+            assertNumTokens(text.toString(), 3, 3000);
             
             System.out.println("Async result: " + text.toString());
             System.out.println("----------------------------------------");
