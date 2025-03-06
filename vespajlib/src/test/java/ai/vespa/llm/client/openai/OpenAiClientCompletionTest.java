@@ -8,8 +8,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Map;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 /**
  * @author bratseth
+ * @author thomasht86
  */
 public class OpenAiClientCompletionTest {
 
@@ -27,6 +31,8 @@ public class OpenAiClientCompletionTest {
         var completion = client.complete(prompt, new InferenceParameters(apiKey, options::get)).get(0);
         System.out.print(completion.text());
         System.out.println("\nFinished sync completion because of " + completion.finishReason());
+        assertEquals("length", completion.finishReason().toString());
+        assertTrue(completion.text().length() > 10, "Response should have more than 10 characters");
     }
 
     @Test
@@ -38,10 +44,16 @@ public class OpenAiClientCompletionTest {
                 "Be as long-winded as possible. Are humans smarter than cats?");
         System.out.print("Running async completion for: ");
         System.out.print(prompt);
+        StringBuilder responseText = new StringBuilder();
         var future = client.completeAsync(prompt, new InferenceParameters(apiKey, options::get), completion -> {
-            System.out.print(completion.text() + "\n");
+            String text = completion.text();
+            responseText.append(text);
+            System.out.print(text + "\n");
         });
-        System.out.println("\nFinished async streaming because of " + future.join());
+        var finishReason = future.join().toString();
+        System.out.println("\nFinished async streaming because of " + finishReason);
+        assertEquals("length", finishReason);
+        assertTrue(responseText.length() > 10, "Response should have more than 10 characters");
     }
 
 }
