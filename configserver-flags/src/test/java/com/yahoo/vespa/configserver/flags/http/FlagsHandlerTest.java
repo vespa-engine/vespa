@@ -78,7 +78,7 @@ public class FlagsHandlerTest {
                             }
                           ]
                         }""",
-                "");
+                "{}");
 
         // GET on ID id1 should return the same as the put.
         verifySuccessfulRequest(Method.GET, "/data/" + FLAG1.id(),
@@ -123,7 +123,7 @@ public class FlagsHandlerTest {
                           }
                         }
                         """,
-                "");
+                "{}");
 
         // GET on id2 should now return what was put
         verifySuccessfulRequest(Method.GET, "/data/" + FLAG2.id(), "",
@@ -146,7 +146,7 @@ public class FlagsHandlerTest {
                           ]
                         }
                         """,
-                "");
+                "{}");
 
         // Verify PUT
         verifySuccessfulRequest(Method.GET, "/data/" + FLAG1.id(), "", "{\"id\":\"id1\",\"rules\":[{\"value\":false}]}");
@@ -156,8 +156,8 @@ public class FlagsHandlerTest {
                 "{\"flags\":[{\"id\":\"id1\",\"rules\":[{\"value\":false}]},{\"id\":\"id2\",\"rules\":[{\"conditions\":[{\"type\":\"whitelist\",\"dimension\":\"hostname\",\"values\":[\"host1\",\"host2\"]},{\"type\":\"blacklist\",\"dimension\":\"instance\",\"values\":[\"app1\",\"app2\"]}],\"value\":true}],\"attributes\":{\"zone\":\"zone1\"}}]}");
 
         // Deleting both flags
-        verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG1.id(), "", "");
-        verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG2.id(), "", "");
+        verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG1.id(), "", "{}");
+        verifySuccessfulRequest(Method.DELETE, "/data/" + FLAG2.id(), "", "{}");
 
         // And the list of data flags should now be empty
         verifySuccessfulRequest(Method.GET, "/data", "", "{\"flags\":[]}");
@@ -177,7 +177,7 @@ public class FlagsHandlerTest {
                 contains("Wrong type of JsonNode: STRING"));
 
         assertEquals(handle(Method.PUT, "/data/" + FLAG1.id() + "?force=true", "{\"id\": \"id1\",\"rules\": [{\"value\":\"string\"}]}", 200),
-                "");
+                "{}");
     }
 
     private void verifySuccessfulRequest(Method method, String pathSuffix, String requestBody, String expectedResponseBody) {
