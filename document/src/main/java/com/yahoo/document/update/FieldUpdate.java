@@ -285,7 +285,7 @@ public class FieldUpdate {
     }
 
     public final void serialize(GrowableByteBuffer buf) {
-        serialize(DocumentSerializerFactory.create6(buf));
+        serialize(DocumentSerializerFactory.createHead(buf));
     }
 
     public void serialize(DocumentUpdateWriter data) {

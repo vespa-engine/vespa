@@ -79,7 +79,7 @@ public class SerializeAnnotationsTestCase {
         assertEquals(serialized.limit(), serializedFromFile.limit());
 
         StringFieldValue valueFromFile = new StringFieldValue();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(docMan, new GrowableByteBuffer(serializedFromFile));
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(docMan, new GrowableByteBuffer(serializedFromFile));
         deserializer.read(null, valueFromFile);
         assertEquals(value, valueFromFile);
     }
@@ -188,7 +188,7 @@ public class SerializeAnnotationsTestCase {
         fileName = PATH + fileName;
 
         //serialize our tree to buffer
-        DocumentSerializer serializer = DocumentSerializerFactory.create6();
+        DocumentSerializer serializer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
         serializer.write(null, value);
         ByteBuffer serializedBuf = serializer.getBuf().getByteBuffer();
         serializedBuf.flip();

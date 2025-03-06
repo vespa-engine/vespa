@@ -21,7 +21,9 @@ public class DocumentSerializerFactory {
     /**
      * Creates a serializer for the 6.x document format.
      * This format is an extension of the 4.2 format.
+     * Deprecated, use createHead instead.
      */
+    @Deprecated(forRemoval = true)
     public static DocumentSerializer create6(GrowableByteBuffer buf) {
         return new VespaDocumentSerializer6(buf);
     }
@@ -29,7 +31,9 @@ public class DocumentSerializerFactory {
     /**
      * Creates a serializer for the 6.x document format.
      * This format is an extension of the 4.2 format.
+     * Deprecated, use createHead instead.
      */
+    @Deprecated(forRemoval = true)
     public static DocumentSerializer create6() {
         return new VespaDocumentSerializer6(new GrowableByteBuffer(8 * 1024, 2.0f));
     }

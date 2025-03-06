@@ -144,10 +144,10 @@ public class MapTestCase {
         DocumentTypeManager man = new DocumentTypeManager();
         man.register(mapType);
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
-        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.createHead(buffer);
         serializer.write(f, map);
         buffer.flip();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(man, buffer);
         MapFieldValue<FieldValue, FieldValue> map2 = new MapFieldValue<FieldValue, FieldValue>(mapType);
         deserializer.read(f, map2);
         assertNotSame(map, map2);

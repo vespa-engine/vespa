@@ -25,7 +25,7 @@ public class SerializationTestUtils {
 
     public static byte[] serializeDocument(Document doc) {
         GrowableByteBuffer out = new GrowableByteBuffer();
-        DocumentSerializerFactory.create6(out).write(doc);
+        DocumentSerializerFactory.createHead(out).write(doc);
         out.flip();
         byte[] buf = new byte[out.remaining()];
         out.get(buf);
@@ -34,7 +34,7 @@ public class SerializationTestUtils {
 
     public static Document deserializeDocument(byte[] buf, TestDocumentFactory factory) {
         Document document = factory.createDocument();
-        DocumentDeserializerFactory.create6(factory.typeManager(), new GrowableByteBuffer(ByteBuffer.wrap(buf))).read(document);
+        DocumentDeserializerFactory.createHead(factory.typeManager(), new GrowableByteBuffer(ByteBuffer.wrap(buf))).read(document);
         return document;
     }
 
