@@ -162,7 +162,9 @@ NearestNeighborBlueprint::visitMembers(vespalib::ObjectVisitor& visitor) const
     visitor.visitBool("wanted_approximate", _approximate);
     visitor.visitBool("has_index", _attr_tensor.nearest_neighbor_index());
     visitor.visitString("algorithm", to_string(_algorithm));
-    visitor.visitInt("top_k_hits", _found_hits.size());
+    if (_algorithm == Algorithm::INDEX_TOP_K || _algorithm == Algorithm::INDEX_TOP_K_WITH_FILTER) {
+        visitor.visitInt("top_k_hits", _found_hits.size());
+    }
 
     visitor.openStruct("global_filter", "GlobalFilter");
     visitor.visitBool("wanted", getState().want_global_filter());
@@ -195,7 +197,7 @@ NearestNeighborBlueprint::set_matching_phase(MatchingPhase matching_phase) noexc
          * by the iterators. The distance threshold is lowered when
          * the distance heap is full while handling a matching
          * document with a lower distance than the worst existing one.
-         * 
+         *
          * During later matching phases, only the original distance
          * threshold is used, and the heap is not updated by the
          * iterators. This ensures that all documents considered a hit
