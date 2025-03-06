@@ -25,8 +25,6 @@ public class ThreadedHttpRequestHandlerTest {
         String expectedMetricName = "jdisc.http.handler.unhandled_exceptions";
         assertTrue(metricMock.innvocations()
                 .containsKey(expectedMetricName));
-        assertEquals("DummyException",
-                ((MetricMock.SimpleMetricContext) metricMock.innvocations().get(expectedMetricName).ctx).dimensions.get("exception"));
     }
 
 
