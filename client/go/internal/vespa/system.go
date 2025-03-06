@@ -10,6 +10,7 @@ var PublicSystem = System{
 	ConsoleURL:     "https://console.vespa-cloud.com",
 	DefaultZone:    ZoneID{Environment: "dev", Region: "aws-us-east-1c"},
 	EndpointDomain: "vespa-app.cloud",
+	TargetType:     TargetCloud,
 }
 
 // PublicCDSystem represents the CD variant of the Vespa Cloud system.
@@ -19,6 +20,7 @@ var PublicCDSystem = System{
 	ConsoleURL:     "https://console.cd.vespa-cloud.com",
 	DefaultZone:    ZoneID{Environment: "dev", Region: "aws-us-east-1c"},
 	EndpointDomain: "cd.vespa-app.cloud",
+	TargetType:     TargetCloud,
 }
 
 // MainSystem represents the main hosted Vespa system.
@@ -29,6 +31,7 @@ var MainSystem = System{
 	DefaultZone:    ZoneID{Environment: "dev", Region: "us-east-1"},
 	AthenzDomain:   "vespa.vespa",
 	EndpointDomain: "vespa.oath.cloud",
+	TargetType:     TargetHosted,
 }
 
 // CDSystem represents the CD variant of the hosted Vespa system.
@@ -39,6 +42,7 @@ var CDSystem = System{
 	DefaultZone:    ZoneID{Environment: "dev", Region: "cd-us-west-1"},
 	AthenzDomain:   "vespa.vespa.cd",
 	EndpointDomain: "cd.vespa.oath.cloud",
+	TargetType:     TargetHosted,
 }
 
 // System represents a Vespa system.
@@ -54,6 +58,8 @@ type System struct {
 	AthenzDomain string
 	// EndpointDomain is the domain used for application endpoints in this system
 	EndpointDomain string
+	// The target type for this system
+	TargetType string
 }
 
 // IsPublic returns whether system s is a public (Vespa Cloud) system.

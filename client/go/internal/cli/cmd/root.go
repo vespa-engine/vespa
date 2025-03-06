@@ -456,7 +456,7 @@ func (c *CLI) targetFromURL(customURL string) (string, error) {
 			return "", err
 		}
 		if strings.HasSuffix(u.Hostname(), "."+system.EndpointDomain) {
-			return cloudTarget, nil
+			return system.TargetType, nil
 		}
 	}
 	return vespa.TargetCustom, nil
