@@ -525,6 +525,11 @@
                 <version>${error-prone-annotations.vespa.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.openai</groupId>
+                <artifactId>openai-java</artifactId>
+                <version>${openai-java.vespa.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.zookeeper</groupId>
                 <artifactId>zookeeper</artifactId>
                 <version>${zookeeper.client.vespa.version}</version>

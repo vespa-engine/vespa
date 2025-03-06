@@ -49,7 +49,17 @@
     <dependency>
       <groupId>com.openai</groupId>
       <artifactId>openai-java</artifactId>
-      <version>0.30.0</version>
+      <version>${openai-java.vespa.version}</version>
+    </dependency>
+        <dependency>
+        <groupId>com.fasterxml.jackson.module</groupId>
+        <artifactId>jackson-module-kotlin</artifactId>
+        <version>${jackson2.vespa.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson2.vespa.version}</version>
     </dependency>
 
     <!-- provided scope -->
@@ -64,6 +74,7 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    
 
     <!-- test scope -->
     <dependency>
@@ -80,11 +91,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>testutil</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
