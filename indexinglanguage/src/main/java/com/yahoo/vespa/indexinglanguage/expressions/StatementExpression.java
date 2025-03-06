@@ -76,38 +76,40 @@ public final class StatementExpression extends ExpressionList<Expression> {
     // Some expressions can only determine their input from their output, and others only their output from
     // their input. Therefore, we try resolving in both directions, which should always meet up to produce
     // uniquely determined inputs and outputs of all expressions.
-    // forward:
 
     /** Resolves types forward and returns the final output, or null if resolution could not progress to the end. */
     private DataType resolveForwards(VerificationContext context) {
-        var inputType = getInputType(context);
+        var type = getInputType(context);
         for (var expression : expressions()) {
-            inputType = expression.setInputType(inputType, context);
-            if (inputType == null) break;
+            type = expression.setInputType(type, context);
+            type = expression.assignOutputType(type);
+            if (type == null) break;
         }
-        return inputType;
+        return type;
     }
 
     /** Resolves types backwards and returns the required input, or null if resolution could not progress to the start. */
     private DataType resolveBackwards(VerificationContext context) {
         int i = expressions().size();
-        var outputType = getOutputType(context); // A nested statement; output imposed from above
-        if (outputType == null) // otherwise the last expression will be an output deciding the type
-            outputType = expressions().get(--i).getInputType(context);
-        while (--i >= 0)
-            outputType = expressions().get(i).setOutputType(outputType, context);
-        return outputType;
+        var type = getOutputType(context); // A nested statement; output imposed from above
+        if (type == null) // otherwise the last expression will be an output deciding the type
+            type = expressions().get(--i).getInputType(context);
+        while (--i >= 0) {
+            type = expressions().get(i).setOutputType(type, context);
+            type = expressions().get(i).assignInputType(type);
+        }
+        return type;
     }
 
     @Override
     protected void doVerify(VerificationContext context) {
         if (expressions().isEmpty()) return;
-
         String outputField = outputFieldName();
         if (outputField != null)
             context.setOutputField(outputField);
 
-        resolveForwards(context);
+        var outputType = resolveForwards(context);
+        assignOutputType(outputType);
         resolveBackwards(context);
 
         for (Expression expression : expressions())

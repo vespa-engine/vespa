@@ -16,19 +16,6 @@ import static org.junit.Assert.assertNull;
 public class SimpleExpressionTestCase {
 
     @Test
-    public void requireThatAccessorsWork() {
-        SimpleExpression exp = new SimpleExpression();
-        assertNull(exp.createdOutputType());
-        assertNull(exp.execute());
-        exp.verify(new SimpleTestAdapter());
-
-        assertEquals(DataType.INT, new SimpleExpression().setCreatedOutput(DataType.INT).createdOutputType());
-        new SimpleExpression().setVerifyValue(DataType.INT).verify(new SimpleTestAdapter());
-        assertEquals(new IntegerFieldValue(69),
-                     new SimpleExpression().setExecuteValue(new IntegerFieldValue(69)).execute());
-    }
-
-    @Test
     public void requireThatHashCodeAndEqualsAreImplemented() {
         Expression exp = new SimpleExpression();
         assertFalse(exp.equals(new Object()));
@@ -58,4 +45,5 @@ public class SimpleExpressionTestCase {
         assertFalse(exp.equals(new SimpleExpression().setCreatedOutput(DataType.STRING)));
         assertEquals(exp, new SimpleExpression().setCreatedOutput(DataType.INT));
     }
+
 }

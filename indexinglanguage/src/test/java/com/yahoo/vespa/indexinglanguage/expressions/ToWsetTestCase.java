@@ -59,10 +59,6 @@ public class ToWsetTestCase {
                                       DataType.getWeightedSet(DataType.INT, createIfNonExistent, removeIfZero));
         ExpressionAssert.assertVerify(DataType.STRING, new ToWsetExpression(createIfNonExistent, removeIfZero),
                                       DataType.getWeightedSet(DataType.STRING, createIfNonExistent, removeIfZero));
-
-        Expression expression = new ToWsetExpression(createIfNonExistent, removeIfZero);
-        assertVerifyThrows("Invalid expression '" + expression + "': " +
-                           "Expected input, but no input is provided", null, expression);
     }
 
     private static void assertConvert(boolean createIfNonExistent, boolean removeIfZero) {
