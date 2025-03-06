@@ -22,6 +22,7 @@ public:
      * Constructs a new executor.
      **/
     NowExecutor(int64_t timestamp);
+    bool isPure() override { return true; }
     void execute(uint32_t docId) override;
 };
 
