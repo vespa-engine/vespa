@@ -1,13 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.rendering;
 
-import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
 import com.google.common.base.Preconditions;
 import com.yahoo.container.logging.TraceRenderer;
 import com.yahoo.data.JsonProducer;
@@ -65,8 +63,6 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
 
-import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WRITE_VALUE;
-
 /**
  * JSON renderer for search results.
  *
@@ -74,7 +70,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WR
  * @author bratseth
  */
 // NOTE: The JSON format is a public API. If new elements are added be sure to update the reference doc.
-public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
+public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
 
     private static final CompoundName WRAP_DEEP_MAPS = CompoundName.from("renderer.json.jsonMaps");
     private static final CompoundName WRAP_WSETS = CompoundName.from("renderer.json.jsonWsets");
@@ -151,7 +147,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
             this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsets = props.getBoolean(WRAP_WSETS, true);
-            // we may need more finetuning, but for now use the same query parameters here:
+            // we may need more fine tuning, but for now use the same query parameters here:
             this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, true);
             this.tensorOptions = new JsonFormat.EncodeOptions(
@@ -165,7 +161,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
     private volatile LongSupplier timeSource;
     private volatile OutputStream stream;
 
-    public JsonRenderer() {
+    public CborRenderer() {
         this(null);
     }
 
@@ -173,14 +169,12 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
      * Creates a json renderer using a custom executor.
      * Using a custom executor is useful for tests to avoid creating new threads for each renderer registry.
      */
-    public JsonRenderer(Executor executor) {
+    public CborRenderer(Executor executor) {
         super(executor);
     }
 
     private static JsonFactory createGeneratorFactory() {
-        return Jackson.createMapper(new JsonFactoryBuilder()
-                .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build()))
-                .disable(FLUSH_AFTER_WRITE_VALUE).getFactory();
+        return new CBORFactory();
     }
 
     @Override
@@ -196,22 +190,22 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
-        long renderingStartTime = timeSource.getAsLong();
         beginJsonCallback(stream);
         fieldConsumerSettings.getSettings(getResult().getQuery());
         setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
         renderTrace(getExecution().trace());
-        renderTiming(renderingStartTime);
+        renderTiming();
         generator.writeFieldName(ROOT);
     }
 
-    private void renderTiming(long renderingStartTime) throws IOException {
+    private void renderTiming() throws IOException {
         if (!getResult().getQuery().getPresentation().getTiming()) return;
 
         double milli = .001d;
-        long searchTime = renderingStartTime - getResult().getElapsedTime().first();
+        long now = timeSource.getAsLong();
+        long searchTime = now - getResult().getElapsedTime().first();
         double searchSeconds = searchTime * milli;
 
         generator.writeObjectFieldStart(TIMING);
@@ -752,23 +746,15 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private void renderInspector(Inspector data) throws IOException {
             if(data.type().equals(Type.ARRAY)) {
-                int entries = data.entryCount();
-                for (int i = 0; i < entries; i++) {
-                    if(!data.entry(i).type().equals(Type.STRING)) {
-                        renderInspectorDirect(maybeConvertData(data));
-                        return;
-                    }
-                }
-
                 generator.writeStartArray();
-                for (int i = 0; i < entries; i++) {
-                    byte[] utf8 = data.entry(i).asUtf8();
+                data.entries().forEach(e -> {
+                    byte[] utf8 = e.asUtf8();
                     try {
-                        generator.writeUTF8String(utf8, 0, utf8.length);
+                        generator.writeRawUTF8String(utf8, 0, utf8.length);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
-                }
+                });
                 generator.writeEndArray();
                 return;
             }
