@@ -129,10 +129,10 @@ public class SystemTestCase {
         annotate(inDocument);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer();
-        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.createHead(buffer);
         serializer.write(inDocument);
         buffer.flip();
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(manager, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(manager, buffer);
 
         Document outDocument = new Document(deserializer);
         consume(outDocument);
