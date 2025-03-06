@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/wand/wand_parts.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search::queryeval;
 using search::fef::TermFieldMatchData;
@@ -40,40 +41,40 @@ struct TestIterator : public SearchIterator
     }
 };
 
-TEST("require that DotProductScorer calculates max score")
+TEST(WeakAndScorersTest, require_that_DotProductScorer_calculates_max_score)
 {
     TestIterator::UP itr = TestIterator::create(10, 0, true);
     Term term(itr.get(), 5, 0);
-    EXPECT_EQUAL(50, wand::DotProductScorer::calculateMaxScore(term));
+    EXPECT_EQ(50, wand::DotProductScorer::calculateMaxScore(term));
 }
 
-TEST("require that DotProductScorer uses default max weight when not available in search iterator")
+TEST(WeakAndScorersTest, require_that_DotProductScorer_uses_default_max_weight_when_not_available_in_search_iterator)
 {
     TestIterator::UP itr = TestIterator::create(10, 0, false);
     Term term(itr.get(), 5, 0);
     int64_t exp = (int64_t)5 * std::numeric_limits<int32_t>::max();
-    EXPECT_EQUAL(exp, wand::DotProductScorer::calculateMaxScore(term));
+    EXPECT_EQ(exp, wand::DotProductScorer::calculateMaxScore(term));
 }
 
-TEST("require that DotProductScorer calculates term score")
+TEST(WeakAndScorersTest, require_that_DotProductScorer_calculates_term_score)
 {
     TestIterator::UP itr = TestIterator::create(0, 7, false);
     Term term(itr.get(), 5, 0, &itr->_tfmd);
-    EXPECT_EQUAL(35, wand::DotProductScorer::calculateScore(term, 11));
-    EXPECT_EQUAL(11u, itr->_unpackDocId);
+    EXPECT_EQ(35, wand::DotProductScorer::calculateScore(term, 11));
+    EXPECT_EQ(11u, itr->_unpackDocId);
 }
 
-TEST("test bm25 idf scorer for wand")
+TEST(WeakAndScorersTest, test_bm25_idf_scorer_for_wand)
 {
     wand::Bm25TermFrequencyScorer scorer(1000000);
-    EXPECT_EQUAL(13410046, scorer.calculateMaxScore(1, 1));
-    EXPECT_EQUAL(11464136, scorer.calculateMaxScore(10, 1));
-    EXPECT_EQUAL(6907256,  scorer.calculateMaxScore(1000, 1));
-    EXPECT_EQUAL(4605121,  scorer.calculateMaxScore(10000, 1));
-    EXPECT_EQUAL(2302581,  scorer.calculateMaxScore(100000, 1));
-    EXPECT_EQUAL(693147,   scorer.calculateMaxScore(500000, 1));
-    EXPECT_EQUAL(105360,   scorer.calculateMaxScore(900000, 1));
-    EXPECT_EQUAL(10050,    scorer.calculateMaxScore(990000, 1));
+    EXPECT_EQ(13410046, scorer.calculateMaxScore(1, 1));
+    EXPECT_EQ(11464136, scorer.calculateMaxScore(10, 1));
+    EXPECT_EQ(6907256,  scorer.calculateMaxScore(1000, 1));
+    EXPECT_EQ(4605121,  scorer.calculateMaxScore(10000, 1));
+    EXPECT_EQ(2302581,  scorer.calculateMaxScore(100000, 1));
+    EXPECT_EQ(693147,   scorer.calculateMaxScore(500000, 1));
+    EXPECT_EQ(105360,   scorer.calculateMaxScore(900000, 1));
+    EXPECT_EQ(10050,    scorer.calculateMaxScore(990000, 1));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

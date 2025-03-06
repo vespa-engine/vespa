@@ -38,7 +38,6 @@ public class JoinTestCase {
         Expression exp = new JoinExpression(";");
         assertVerify(DataType.getArray(DataType.INT), new JoinExpression(";"), DataType.STRING);
         assertVerify(DataType.getArray(DataType.STRING), new JoinExpression(";"), DataType.STRING);
-        assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got no value", null, new JoinExpression(";"));
         assertVerifyThrows("Invalid expression 'join \";\"': Expected Array input, got type int", DataType.INT, new JoinExpression(";"));
     }
 

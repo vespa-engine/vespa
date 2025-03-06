@@ -6,6 +6,7 @@ import com.yahoo.document.datatypes.*;
 import com.yahoo.document.serialization.DocumentDeserializerFactory;
 import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
+import com.yahoo.io.GrowableByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -186,10 +187,10 @@ public class FieldUpdateTestCase {
 
     // Copy all field updates using serialization to verify that it is supported
     private FieldUpdate serializedCopy(FieldUpdate source, DocumentType docType) {
-        DocumentSerializer buffer = DocumentSerializerFactory.create6();
+        DocumentSerializer buffer = DocumentSerializerFactory.createHead(new GrowableByteBuffer());
         source.serialize(buffer);
         buffer.getBuf().flip();
-        FieldUpdate copy = new FieldUpdate(DocumentDeserializerFactory.create6(docman, buffer.getBuf()), docType);
+        FieldUpdate copy = new FieldUpdate(DocumentDeserializerFactory.createHead(docman, buffer.getBuf()), docType);
         assertEquals(source, copy);
         return copy;
     }

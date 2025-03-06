@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/get_weight_from_node.h>
+#include <vespa/vespalib/gtest/gtest.h>
+
 #include <vespa/log/log.h>
 LOG_SETUP("getweight_test");
 
@@ -17,26 +17,26 @@ namespace {
     }
 }
 
-TEST("test variations of getWeight")
+TEST(GetNodeWeightTest, test_variations_of_getWeight)
 {
-    EXPECT_EQUAL(0, getWeight(SimpleAnd()));
-    EXPECT_EQUAL(0, getWeight(SimpleAndNot()));
-    EXPECT_EQUAL(42, getWeight(SimpleEquiv(0, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleNumberTerm("foo", "bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleLocationTerm(Location(), "bar", 1, Weight(42))));
-    EXPECT_EQUAL(0, getWeight(SimpleNear(5)));
-    EXPECT_EQUAL(0, getWeight(SimpleONear(5)));
-    EXPECT_EQUAL(0, getWeight(SimpleOr()));
-    EXPECT_EQUAL(42, getWeight(SimplePhrase("bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimplePrefixTerm("foo", "bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleRangeTerm(Range(), "bar", 1, Weight(42))));
-    EXPECT_EQUAL(0, getWeight(SimpleRank()));
-    EXPECT_EQUAL(42, getWeight(SimpleStringTerm("foo", "bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleSubstringTerm("foo", "bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleSuffixTerm("foo", "bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleWeightedSetTerm(0, "bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleDotProduct(0, "bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleWandTerm(0, "bar", 1, Weight(42), 57, 67, 77.7)));
+    EXPECT_EQ(0, getWeight(SimpleAnd()));
+    EXPECT_EQ(0, getWeight(SimpleAndNot()));
+    EXPECT_EQ(42, getWeight(SimpleEquiv(0, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimpleNumberTerm("foo", "bar", 1, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimpleLocationTerm(Location(), "bar", 1, Weight(42))));
+    EXPECT_EQ(0, getWeight(SimpleNear(5)));
+    EXPECT_EQ(0, getWeight(SimpleONear(5)));
+    EXPECT_EQ(0, getWeight(SimpleOr()));
+    EXPECT_EQ(42, getWeight(SimplePhrase("bar", 1, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimplePrefixTerm("foo", "bar", 1, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimpleRangeTerm(Range(), "bar", 1, Weight(42))));
+    EXPECT_EQ(0, getWeight(SimpleRank()));
+    EXPECT_EQ(42, getWeight(SimpleStringTerm("foo", "bar", 1, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimpleSubstringTerm("foo", "bar", 1, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimpleSuffixTerm("foo", "bar", 1, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimpleWeightedSetTerm(0, "bar", 1, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimpleDotProduct(0, "bar", 1, Weight(42))));
+    EXPECT_EQ(42, getWeight(SimpleWandTerm(0, "bar", 1, Weight(42), 57, 67, 77.7)));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

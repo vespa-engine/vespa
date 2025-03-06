@@ -136,10 +136,14 @@ func createServices(n int, timeout time.Duration, cli *CLI, waiter *Waiter) ([]h
 	if err != nil {
 		return nil, "", err
 	}
+
+	authMethod := cli.selectAuthMethod()
+
 	services := make([]httputil.Client, 0, n)
 	baseURL := ""
+
 	for range n {
-		service, err := waiter.Service(target, cli.config.cluster())
+		service, err := waiter.ServiceWithAuthMethod(target, cli.config.cluster(), authMethod)
 		if err != nil {
 			return nil, "", err
 		}
@@ -243,6 +247,10 @@ func feed(files []string, options feedOptions, cli *CLI, cmd *cobra.Command) err
 		return err
 	}
 	header, err := httputil.ParseHeader(options.headers)
+	if err != nil {
+		return err
+	}
+	err = cli.addBearerToken(&header)
 	if err != nil {
 		return err
 	}

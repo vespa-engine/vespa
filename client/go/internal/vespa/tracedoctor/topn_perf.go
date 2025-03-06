@@ -11,7 +11,12 @@ type topNPerfEntry struct {
 }
 
 type topNPerf struct {
-	entries map[string]*topNPerfEntry
+	totalTimeMs float64
+	entries     map[string]*topNPerfEntry
+}
+
+func (tp *topNPerf) impact() float64 {
+	return tp.totalTimeMs
 }
 
 func newTopNPerf() *topNPerf {
@@ -21,6 +26,7 @@ func newTopNPerf() *topNPerf {
 }
 
 func (tp *topNPerf) addSample(name string, count int64, selfTimeMs float64) {
+	tp.totalTimeMs += selfTimeMs
 	if entry, exists := tp.entries[name]; exists {
 		entry.count += count
 		entry.selfTimeMs += selfTimeMs

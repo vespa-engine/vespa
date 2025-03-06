@@ -4,8 +4,7 @@
 #include <vespa/searchcore/proton/persistenceengine/persistence_handler_map.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/update/documentupdate.h>
-
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace document;
 using namespace proton;
@@ -47,79 +46,65 @@ DummyPersistenceHandler::SP handler_c(std::make_shared<DummyPersistenceHandler>(
 DummyPersistenceHandler::SP handler_a_new(std::make_shared<DummyPersistenceHandler>());
 
 void
-assertHandler(const IPersistenceHandler::SP & lhs, const IPersistenceHandler * rhs)
+assertSnapshot(const std::vector<IPersistenceHandler::SP> &exp, HandlerSnapshot snapshot, const std::string& label)
 {
-    EXPECT_EQUAL(lhs.get(), rhs);
-}
-
-void
-assertHandler(const IPersistenceHandler::SP &lhs, const IPersistenceHandler::SP &rhs)
-{
-    EXPECT_EQUAL(lhs.get(), rhs.get());
-}
-
-template <typename T>
-void
-assertNullHandler(const T & handler)
-{
-    EXPECT_TRUE(! handler);
-}
-
-void
-assertSnapshot(const std::vector<IPersistenceHandler::SP> &exp, HandlerSnapshot snapshot)
-{
-    EXPECT_EQUAL(exp.size(), snapshot.size());
+    SCOPED_TRACE(label);
+    EXPECT_EQ(exp.size(), snapshot.size());
     auto &sequence = snapshot.handlers();
     for (size_t i = 0; i < exp.size() && sequence.valid(); ++i, sequence.next()) {
-        EXPECT_EQUAL(exp[i].get(), sequence.get());
+        EXPECT_EQ(exp[i].get(), sequence.get());
     }
 }
 
-struct Fixture {
+struct PersistenceHandlerMapTest : public ::testing::Test {
     PersistenceHandlerMap map;
-    Fixture() {
-        TEST_DO(assertNullHandler(map.putHandler(space_1, type_a, handler_a)));
-        TEST_DO(assertNullHandler(map.putHandler(space_1, type_b, handler_b)));
-        TEST_DO(assertNullHandler(map.putHandler(space_2, type_c, handler_c)));
-    }
+    PersistenceHandlerMapTest();
+    ~PersistenceHandlerMapTest() override;
 };
 
-TEST_F("require that handlers can be retrieved", Fixture)
+PersistenceHandlerMapTest::PersistenceHandlerMapTest()
+    : ::testing::Test(),
+      map()
 {
-    TEST_DO(assertHandler(handler_a, f.map.getHandler(space_1, type_a)));
-    TEST_DO(assertHandler(handler_b, f.map.getHandler(space_1, type_b)));
-    TEST_DO(assertHandler(handler_c, f.map.getHandler(space_2, type_c)));
-    TEST_DO(assertNullHandler(f.map.getHandler(space_1, type_c)));
-    TEST_DO(assertNullHandler(f.map.getHandler(space_null, type_a)));
+    EXPECT_TRUE(!map.putHandler(space_1, type_a, handler_a));
+    EXPECT_TRUE(!map.putHandler(space_1, type_b, handler_b));
+    EXPECT_TRUE(!map.putHandler(space_2, type_c, handler_c));
 }
 
-TEST_F("require that old handler is returned if replaced by new handler", Fixture)
+PersistenceHandlerMapTest::~PersistenceHandlerMapTest() = default;
+
+TEST_F(PersistenceHandlerMapTest, require_that_handlers_can_be_retrieved)
 {
-    TEST_DO(assertHandler(handler_a, f.map.putHandler(space_1, type_a, handler_a_new)));
-    TEST_DO(assertHandler(handler_a_new, f.map.getHandler(space_1, type_a)));
+    EXPECT_EQ(handler_a.get(), map.getHandler(space_1, type_a));
+    EXPECT_EQ(handler_b.get(), map.getHandler(space_1, type_b));
+    EXPECT_EQ(handler_c.get(), map.getHandler(space_2, type_c));
+    EXPECT_EQ(nullptr, map.getHandler(space_1, type_c));
+    EXPECT_EQ(nullptr, map.getHandler(space_null, type_a));
 }
 
-TEST_F("require that handler can be removed (and old handler returned)", Fixture)
+TEST_F(PersistenceHandlerMapTest, require_that_old_handler_is_returned_if_replaced_by_new_handler)
 {
-    TEST_DO(assertHandler(handler_a, f.map.removeHandler(space_1, type_a)));
-    TEST_DO(assertNullHandler(f.map.getHandler(space_1, type_a)));
-    TEST_DO(assertNullHandler(f.map.removeHandler(space_1, type_c)));
+    EXPECT_EQ(handler_a.get(), map.putHandler(space_1, type_a, handler_a_new).get());
+    EXPECT_EQ(handler_a_new.get(), map.getHandler(space_1, type_a));
 }
 
-TEST_F("require that handler snapshot can be retrieved for all handlers", Fixture)
+TEST_F(PersistenceHandlerMapTest, require_that_handler_can_be_removed_and_old_handler_returned)
 {
-    TEST_DO(assertSnapshot({handler_c, handler_a, handler_b}, f.map.getHandlerSnapshot()));
+    EXPECT_EQ(handler_a.get(), map.removeHandler(space_1, type_a).get());
+    EXPECT_EQ(nullptr, map.getHandler(space_1, type_a));
+    EXPECT_TRUE(!map.removeHandler(space_1, type_c));
 }
 
-TEST_F("require that handler snapshot can be retrieved for given bucket space", Fixture)
+TEST_F(PersistenceHandlerMapTest, require_that_handler_snapshot_can_be_retrieved_for_all_handlers)
 {
-    TEST_DO(assertSnapshot({handler_a, handler_b}, f.map.getHandlerSnapshot(space_1)));
-    TEST_DO(assertSnapshot({handler_c}, f.map.getHandlerSnapshot(space_2)));
-    TEST_DO(assertSnapshot({}, f.map.getHandlerSnapshot(space_null)));
+    assertSnapshot({handler_c, handler_a, handler_b}, map.getHandlerSnapshot(), "all spaces");
 }
 
-TEST_MAIN()
+TEST_F(PersistenceHandlerMapTest, require_that_handler_snapshot_can_be_retrieved_for_given_bucket_space)
 {
-    TEST_RUN_ALL();
+    assertSnapshot({handler_a, handler_b}, map.getHandlerSnapshot(space_1), "space_1");
+    assertSnapshot({handler_c}, map.getHandlerSnapshot(space_2), "space_2");
+    assertSnapshot({}, map.getHandlerSnapshot(space_null),"space_3");
 }
 
+GTEST_MAIN_RUN_ALL_TESTS()

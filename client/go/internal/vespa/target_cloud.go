@@ -49,6 +49,11 @@ type deploymentResponse struct {
 	Endpoints []deploymentEndpoint `json:"endpoints"`
 }
 
+type clusterTarget struct {
+	URL        string
+	AuthMethod string
+}
+
 type runResponse struct {
 	Active bool                    `json:"active"`
 	Status string                  `json:"status"`
@@ -109,37 +114,51 @@ func (t *cloudTarget) DeployService() (*Service, error) {
 }
 
 func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, error) {
-	var clusterUrls map[string]string
+	var clusterTargets map[string][]clusterTarget
 	if t.deploymentOptions.CustomURL != "" {
 		// Custom URL is always preferred
-		clusterUrls = map[string]string{"": t.deploymentOptions.CustomURL}
+		clusterTargets = map[string][]clusterTarget{
+			"": {
+				clusterTarget{URL: t.deploymentOptions.CustomURL, AuthMethod: "mtls"},
+				clusterTarget{URL: t.deploymentOptions.CustomURL, AuthMethod: "token"},
+			},
+		}
 	} else if t.deploymentOptions.ClusterURLs != nil {
 		// ... then endpoints specified through environment
-		clusterUrls = t.deploymentOptions.ClusterURLs
+		clusterTargets = make(map[string][]clusterTarget)
+		for cluster, url := range t.deploymentOptions.ClusterURLs {
+			clusterTargets[cluster] = []clusterTarget{
+				clusterTarget{URL: url, AuthMethod: "mtls"},
+				clusterTarget{URL: url, AuthMethod: "token"},
+			}
+		}
 	} else {
 		// ... then discovered endpoints
 		endpoints, err := t.discoverEndpoints(timeout)
 		if err != nil {
 			return nil, err
 		}
-		clusterUrls = endpoints
+		clusterTargets = endpoints
 	}
-	services := make([]*Service, 0, len(clusterUrls))
-	for name, url := range clusterUrls {
-		service := &Service{
-			Name:          name,
-			BaseURL:       url,
-			TLSOptions:    t.deploymentOptions.TLSOptions,
-			httpClient:    t.httpClient,
-			auth:          t.deploymentAuth,
-			retryInterval: t.retryInterval,
-		}
-		if timeout > 0 {
-			if err := service.Wait(timeout); err != nil {
-				return nil, err
+	services := make([]*Service, 0, len(clusterTargets))
+	for name, targets := range clusterTargets {
+		for _, target := range targets {
+			service := &Service{
+				Name:          name,
+				BaseURL:       target.URL,
+				AuthMethod:    target.AuthMethod,
+				TLSOptions:    t.deploymentOptions.TLSOptions,
+				httpClient:    t.httpClient,
+				auth:          t.deploymentAuth,
+				retryInterval: t.retryInterval,
 			}
+			if timeout > 0 {
+				if err := service.Wait(timeout); err != nil {
+					return nil, err
+				}
+			}
+			services = append(services, service)
 		}
-		services = append(services, service)
 	}
 	sort.Slice(services, func(i, j int) bool { return services[i].Name < services[j].Name })
 	return services, nil
@@ -289,7 +308,7 @@ func (t *cloudTarget) printLog(response runResponse, last int64) int64 {
 	return response.LastID
 }
 
-func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]string, error) {
+func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string][]clusterTarget, error) {
 	deploymentURL := fmt.Sprintf("%s/application/v4/tenant/%s/application/%s/instance/%s/environment/%s/region/%s",
 		t.apiOptions.System.URL,
 		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
@@ -298,7 +317,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]strin
 	if err != nil {
 		return nil, err
 	}
-	urlsByCluster := make(map[string]string)
+	clusterTargets := make(map[string][]clusterTarget)
 	endpointFunc := func(status int, response []byte) (bool, error) {
 		if ok, err := isOK(status); !ok {
 			return ok, err
@@ -314,18 +333,19 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string]strin
 			if endpoint.Scope != "zone" {
 				continue
 			}
-			if endpoint.AuthMethod == "token" {
-				continue
+			if _, exists := clusterTargets[endpoint.Cluster]; !exists {
+				clusterTargets[endpoint.Cluster] = []clusterTarget{}
 			}
-			urlsByCluster[endpoint.Cluster] = endpoint.URL
+			target := clusterTarget{URL: endpoint.URL, AuthMethod: endpoint.AuthMethod}
+			clusterTargets[endpoint.Cluster] = append(clusterTargets[endpoint.Cluster], target)
 		}
 		return true, nil
 	}
 	if _, err := deployRequest(t, endpointFunc, func() *http.Request { return req }, timeout, t.retryInterval); err != nil {
 		return nil, fmt.Errorf("no endpoints found in zone %s%s: %w", t.deploymentOptions.Deployment.Zone, waitDescription(timeout), err)
 	}
-	if len(urlsByCluster) == 0 {
+	if len(clusterTargets) == 0 {
 		return nil, fmt.Errorf("no endpoints found in zone %s%s", t.deploymentOptions.Deployment.Zone, waitDescription(timeout))
 	}
-	return urlsByCluster, nil
+	return clusterTargets, nil
 }

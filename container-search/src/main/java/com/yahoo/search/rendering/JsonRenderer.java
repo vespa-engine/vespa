@@ -151,7 +151,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
             this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsets = props.getBoolean(WRAP_WSETS, true);
-            // we may need more fine tuning, but for now use the same query parameters here:
+            // we may need more finetuning, but for now use the same query parameters here:
             this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, true);
             this.tensorOptions = new JsonFormat.EncodeOptions(
@@ -196,22 +196,22 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
+        long renderingStartTime = timeSource.getAsLong();
         beginJsonCallback(stream);
         fieldConsumerSettings.getSettings(getResult().getQuery());
         setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
         renderTrace(getExecution().trace());
-        renderTiming();
+        renderTiming(renderingStartTime);
         generator.writeFieldName(ROOT);
     }
 
-    private void renderTiming() throws IOException {
+    private void renderTiming(long renderingStartTime) throws IOException {
         if (!getResult().getQuery().getPresentation().getTiming()) return;
 
         double milli = .001d;
-        long now = timeSource.getAsLong();
-        long searchTime = now - getResult().getElapsedTime().first();
+        long searchTime = renderingStartTime - getResult().getElapsedTime().first();
         double searchSeconds = searchTime * milli;
 
         generator.writeObjectFieldStart(TIMING);
@@ -751,6 +751,23 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspector(Inspector data) throws IOException {
+            if (data.type().equals(Type.ARRAY)) {
+                int entries = data.entryCount();
+                for (int i = 0; i < entries; i++) {
+                    if (!data.entry(i).type().equals(Type.STRING)) {
+                        renderInspectorDirect(maybeConvertData(data));
+                        return;
+                    }
+                }
+
+                generator.writeStartArray();
+                for (int i = 0; i < entries; i++) {
+                    byte[] utf8 = data.entry(i).asUtf8();
+                    generator.writeUTF8String(utf8, 0, utf8.length);
+                }
+                generator.writeEndArray();
+                return;
+            }
             renderInspectorDirect(maybeConvertData(data));
         }
 

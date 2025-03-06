@@ -1,12 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchcore/proton/summaryengine/summaryengine.h>
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/data/simple_buffer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 
@@ -131,10 +131,10 @@ void assertSlime(const std::string_view &exp, const DocsumReply &reply) {
     size_t used = JsonFormat::decode(exp, expSlime);
     EXPECT_TRUE(used > 0);
     ASSERT_TRUE(reply.hasResult());
-    EXPECT_EQUAL(expSlime, reply.slime());
+    EXPECT_EQ(expSlime, reply.slime());
 }
 
-TEST("requireThatGetDocsumsExecute") {
+TEST(SummaryEngineTest, requireThatGetDocsumsExecute) {
     int numSummaryThreads = 2;
     SummaryEngine engine(numSummaryThreads);
     auto handler = std::make_shared<MySearchHandler>();
@@ -159,7 +159,7 @@ TEST("requireThatGetDocsumsExecute") {
     }
 }
 
-TEST("requireThatHandlersAreStored") {
+TEST(SummaryEngineTest, requireThatHandlersAreStored) {
     DocTypeName dtnvfoo("foo");
     DocTypeName dtnvbar("bar");
     int numSummaryThreads = 2;
@@ -172,14 +172,14 @@ TEST("requireThatHandlersAreStored") {
     EXPECT_FALSE(engine.removeSearchHandler(dtnvfoo));
     // put & get
     EXPECT_FALSE(engine.putSearchHandler(dtnvfoo, h1));
-    EXPECT_EQUAL(engine.getSearchHandler(dtnvfoo).get(), h1.get());
+    EXPECT_EQ(engine.getSearchHandler(dtnvfoo).get(), h1.get());
     EXPECT_FALSE(engine.putSearchHandler(dtnvbar, h2));
-    EXPECT_EQUAL(engine.getSearchHandler(dtnvbar).get(), h2.get());
+    EXPECT_EQ(engine.getSearchHandler(dtnvbar).get(), h2.get());
     // replace
     EXPECT_TRUE(engine.putSearchHandler(dtnvfoo, h3).get() == h1.get());
-    EXPECT_EQUAL(engine.getSearchHandler(dtnvfoo).get(), h3.get());
+    EXPECT_EQ(engine.getSearchHandler(dtnvfoo).get(), h3.get());
     // remove
-    EXPECT_EQUAL(engine.removeSearchHandler(dtnvfoo).get(), h3.get());
+    EXPECT_EQ(engine.removeSearchHandler(dtnvfoo).get(), h3.get());
     EXPECT_FALSE(engine.getSearchHandler(dtnvfoo));
 }
 
@@ -194,7 +194,7 @@ assertDocsumReply(SummaryEngine &engine, const std::string &searchDocType, std::
     return true;
 }
 
-TEST("requireThatCorrectHandlerIsUsed") {
+TEST(SummaryEngineTest, requireThatCorrectHandlerIsUsed) {
     DocTypeName dtnvfoo("foo");
     DocTypeName dtnvbar("bar");
     DocTypeName dtnvbaz("baz");
@@ -210,11 +210,11 @@ TEST("requireThatCorrectHandlerIsUsed") {
     EXPECT_TRUE(assertDocsumReply(engine, "bar", getAnswer(1, "bar reply")));
     EXPECT_TRUE(assertDocsumReply(engine, "baz", getAnswer(1, "baz reply")));
     EXPECT_TRUE(assertDocsumReply(engine, "not", getAnswer(1, "bar reply"))); // uses the first (sorted on name)
-    EXPECT_EQUAL(4ul, static_cast<metrics::LongCountMetric *>(engine.getMetrics().getMetric("count"))->getValue());
-    EXPECT_EQUAL(4ul, static_cast<metrics::LongCountMetric *>(engine.getMetrics().getMetric("docs"))->getValue());
-    EXPECT_LESS(0.0, static_cast<metrics::DoubleAverageMetric *>(engine.getMetrics().getMetric("latency"))->getAverage());
+    EXPECT_EQ(4ul, static_cast<metrics::LongCountMetric *>(engine.getMetrics().getMetric("count"))->getValue());
+    EXPECT_EQ(4ul, static_cast<metrics::LongCountMetric *>(engine.getMetrics().getMetric("docs"))->getValue());
+    EXPECT_LT(0.0, static_cast<metrics::DoubleAverageMetric *>(engine.getMetrics().getMetric("latency"))->getAverage());
 }
 
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

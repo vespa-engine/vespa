@@ -7,21 +7,9 @@ import java.util.List;
 
 
 /**
- * Various utilities for {@link CompletionHandler}.
- *
  * @author Simon Thoresen Hult
- * @author bjorncs
  */
-class CompletionHandlers {
-
-    private CompletionHandlers() {}
-
-    private static final CompletionHandler NOOP_COMPLETION_HANDLER = new CompletionHandler() {
-        @Override public void completed() {}
-        @Override public void failed(final Throwable t) {}
-    };
-
-    static CompletionHandler noop() { return NOOP_COMPLETION_HANDLER; }
+public class CompletionHandlers {
 
     public static void tryComplete(CompletionHandler handler) {
         if (handler == null) {

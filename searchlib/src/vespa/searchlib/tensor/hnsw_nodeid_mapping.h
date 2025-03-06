@@ -60,6 +60,7 @@ public:
     vespalib::MemoryUsage update_stat(const vespalib::datastore::CompactionStrategy& compaction_strategy);
     bool consider_compact() const noexcept { return _nodeids.consider_compact(); }
     void compact_worst(const vespalib::datastore::CompactionStrategy& compaction_strategy);
+    std::unique_ptr<vespalib::StateExplorer> make_state_explorer() const;
 };
 
 }

@@ -27,12 +27,12 @@ namespace storage {
 
 namespace {
 
-uint32_t per_stripe_merge_limit(uint32_t num_threads, uint32_t num_stripes) noexcept {
+uint32_t per_stripe_maintenance_limit(uint32_t num_threads, uint32_t num_stripes) noexcept {
     // Rationale: to avoid starving client ops we want to ensure that not all persistence
-    // threads in any given stripe can be blocked by processing merges all at the same time.
-    // We therefore allocate half of the per-stripe threads to non-merge operations.
+    // threads in any given stripe can be blocked by processing maintenance ops all at the same time.
+    // We therefore allocate half of the per-stripe threads to non-maintenance operations.
     // Note that if the _total_ number of threads is small and odd (e.g. 3 or 5), it's still
-    // possible to have a stripe where all threads are busy processing merges because there
+    // possible to have a stripe where all threads are busy processing maintenance ops because there
     // is only 1 thread in the stripe in total.
     return std::max(1u, (num_threads / num_stripes) / 2);
 }
@@ -58,7 +58,7 @@ FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripe
       _stripes(),
       _messageSender(sender),
       _bucketIdFactory(_component.getBucketIdFactory()),
-      _max_active_merges_per_stripe(per_stripe_merge_limit(numThreads, numStripes)),
+      _max_active_maintenance_ops_per_stripe(per_stripe_maintenance_limit(numThreads, numStripes)),
       _paused(false),
       _throttle_apply_bucket_diff_ops(false),
       _last_active_operations_stats(),
@@ -924,7 +924,7 @@ FileStorHandlerImpl::Stripe::Stripe(const FileStorHandlerImpl & owner, MessageSe
       _queue(std::make_unique<PriorityQueue>()),
       _cached_queue_size(_queue->size()),
       _lockedBuckets(),
-      _active_merges(0),
+      _active_maintenance_ops(0),
       _active_operations_stats()
 {}
 
@@ -943,7 +943,6 @@ FileStorHandlerImpl::Stripe::operation_type_should_be_throttled(api::MessageType
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
     case api::MessageType::UPDATE_ID:
-    case api::MessageType::REMOVELOCATION_ID:
     case api::MessageType::CREATEBUCKET_ID:
     case api::MessageType::DELETEBUCKET_ID:
         return true;
@@ -1241,8 +1240,8 @@ FileStorHandlerImpl::Stripe::flush()
 
 namespace {
 
-bool
-message_type_is_merge_related(api::MessageType::Id msg_type_id) noexcept {
+[[nodiscard]] bool
+message_type_is_maintenance_related(api::MessageType::Id msg_type_id) noexcept {
     switch (msg_type_id) {
     case api::MessageType::MERGEBUCKET_ID:
     case api::MessageType::MERGEBUCKET_REPLY_ID:
@@ -1255,6 +1254,8 @@ message_type_is_merge_related(api::MessageType::Id msg_type_id) noexcept {
     // in a stripe can dispatch a bucket delete at the same time. This also provides a strict
     // upper bound on the number of in-flight bucket deletes in the persistence core.
     case api::MessageType::DELETEBUCKET_ID:
+    // RemoveLocation is currently only ever executed in the context of document GC.
+    case api::MessageType::REMOVELOCATION_ID:
         return true;
     default: return false;
     }
@@ -1266,7 +1267,7 @@ void
 FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
                                      api::LockingRequirements reqOfReleasedLock,
                                      api::StorageMessage::Id lockMsgId,
-                                     bool was_active_merge)
+                                     bool was_active_maintenance)
 {
     std::unique_lock guard(*_lock);
     auto iter = _lockedBuckets.find(bucket);
@@ -1278,14 +1279,14 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
     if (wasExclusive) {
         assert(entry._exclusiveLock);
         assert(entry._exclusiveLock->msgId == lockMsgId);
-        if (was_active_merge) {
-            assert(_active_merges > 0);
-            --_active_merges;
+        if (was_active_maintenance) {
+            assert(_active_maintenance_ops > 0);
+            --_active_maintenance_ops;
         }
         start_time = entry._exclusiveLock.value().timestamp;
         entry._exclusiveLock.reset();
     } else {
-        assert(!entry._exclusiveLock);
+        assert(!entry._exclusiveLock && !was_active_maintenance);
         auto shared_iter = entry._sharedLocks.find(lockMsgId);
         assert(shared_iter != entry._sharedLocks.end());
         start_time = shared_iter->second.timestamp;
@@ -1306,27 +1307,27 @@ FileStorHandlerImpl::Stripe::release(const document::Bucket & bucket,
 }
 
 void
-FileStorHandlerImpl::Stripe::decrease_active_sync_merges_counter() noexcept
+FileStorHandlerImpl::Stripe::decrease_active_sync_maintenance_counter() noexcept
 {
     std::unique_lock guard(*_lock);
-    assert(_active_merges > 0);
-    const bool may_have_blocked_merge = (_active_merges == _owner._max_active_merges_per_stripe);
-    --_active_merges;
-    if (may_have_blocked_merge) {
+    assert(_active_maintenance_ops > 0);
+    const bool may_have_blocked_maintenance = (_active_maintenance_ops == _owner._max_active_maintenance_ops_per_stripe);
+    --_active_maintenance_ops;
+    if (may_have_blocked_maintenance) {
         _cond->notify_all();
     }
 }
 
 void
 FileStorHandlerImpl::Stripe::lock(const monitor_guard &, const document::Bucket & bucket,
-                                  api::LockingRequirements lockReq, bool count_as_active_merge,
+                                  api::LockingRequirements lockReq, bool count_as_active_maintenance,
                                   const LockEntry & lockEntry) {
     auto& entry = _lockedBuckets[bucket];
     assert(!entry._exclusiveLock);
     if (lockReq == api::LockingRequirements::Exclusive) {
         assert(entry._sharedLocks.empty());
-        if (count_as_active_merge) {
-            ++_active_merges;
+        if (count_as_active_maintenance) {
+            ++_active_maintenance_ops;
         }
         entry._exclusiveLock = lockEntry;
     } else {
@@ -1362,8 +1363,8 @@ bool
 FileStorHandlerImpl::Stripe::operationIsInhibited(const monitor_guard & guard, const document::Bucket& bucket,
                                                   const api::StorageMessage& msg) const noexcept
 {
-    if (message_type_is_merge_related(msg.getType().getId())
-        && (_active_merges >= _owner._max_active_merges_per_stripe))
+    if (message_type_is_maintenance_related(msg.getType().getId())
+        && (_active_maintenance_ops >= _owner._max_active_maintenance_ops_per_stripe))
     {
         return true;
     }
@@ -1389,11 +1390,11 @@ FileStorHandlerImpl::BucketLock::BucketLock(const monitor_guard& guard, Stripe& 
       _bucket(bucket),
       _uniqueMsgId(msgId),
       _lockReq(lockReq),
-      _counts_towards_merge_limit(false)
+      _counts_towards_maintenance_limit(false)
 {
     if (_bucket.getBucketId().getRawId() != 0) {
-        _counts_towards_merge_limit = message_type_is_merge_related(msgType);
-        _stripe.lock(guard, _bucket, lockReq, _counts_towards_merge_limit, Stripe::LockEntry(priority, msgType, msgId));
+        _counts_towards_maintenance_limit = message_type_is_maintenance_related(msgType);
+        _stripe.lock(guard, _bucket, lockReq, _counts_towards_maintenance_limit, Stripe::LockEntry(priority, msgType, msgId));
         LOG(spam, "Locked bucket %s for message %" PRIu64 " with priority %u in mode %s",
             bucket.toString().c_str(), msgId, priority, api::to_string(lockReq));
     }
@@ -1402,7 +1403,7 @@ FileStorHandlerImpl::BucketLock::BucketLock(const monitor_guard& guard, Stripe& 
 
 FileStorHandlerImpl::BucketLock::~BucketLock() {
     if (_bucket.getBucketId().getRawId() != 0) {
-        _stripe.release(_bucket, _lockReq, _uniqueMsgId, _counts_towards_merge_limit);
+        _stripe.release(_bucket, _lockReq, _uniqueMsgId, _counts_towards_maintenance_limit);
         LOG(spam, "Unlocked bucket %s for message %" PRIu64 " in mode %s",
             _bucket.toString().c_str(), _uniqueMsgId, api::to_string(_lockReq));
     }
@@ -1413,11 +1414,11 @@ FileStorHandlerImpl::BucketLock::signal_operation_sync_phase_done() noexcept
 {
     // Not atomic, only destructor can read/write this other than this function, and since
     // a strong ref must already be held to this object by the caller, we cannot race with it.
-    if (_counts_towards_merge_limit){
+    if (_counts_towards_maintenance_limit){
         LOG(spam, "Synchronous phase for bucket %s is done; reducing active count proactively",
             _bucket.toString().c_str());
-        _stripe.decrease_active_sync_merges_counter();
-        _counts_towards_merge_limit = false;
+        _stripe.decrease_active_sync_maintenance_counter();
+        _counts_towards_maintenance_limit = false;
     }
 }
 

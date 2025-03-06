@@ -245,7 +245,8 @@ public:
     std::pair<uint32_t, bool> count_reachable_nodes() const;
     GraphType& get_graph() noexcept { return _graph; }
     const GraphType& get_graph() const noexcept { return _graph; }
-    IdMapping& get_id_mapping() { return _id_mapping; }
+    IdMapping& get_id_mapping() noexcept { return _id_mapping; }
+    const IdMapping& get_id_mapping() const noexcept { return _id_mapping; }
 
     static vespalib::datastore::ArrayStoreConfig make_default_level_array_store_config();
     static vespalib::datastore::ArrayStoreConfig make_default_link_array_store_config();

@@ -22,6 +22,8 @@ public:
 
     // Implements vespalib::StateExplorer
     void get_state(const vespalib::slime::Inserter& inserter, bool full) const override;
+    std::vector<std::string> get_children_names() const override;
+    std::unique_ptr<StateExplorer> get_child(std::string_view name) const override;
 };
 
 } // namespace proton

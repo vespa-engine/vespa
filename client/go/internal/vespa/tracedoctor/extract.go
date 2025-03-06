@@ -210,6 +210,12 @@ func hasTag(tag string) func(p *slime.Path, v slime.Value) bool {
 	}
 }
 
+func hasType(class string) func(p *slime.Path, v slime.Value) bool {
+	return func(p *slime.Path, v slime.Value) bool {
+		return v.Field("[type]").AsString() == class
+	}
+}
+
 func eachSampleList(list slime.Value, f func(sample slime.Value)) {
 	list.EachEntry(func(_ int, sample slime.Value) {
 		f(sample)
@@ -335,6 +341,40 @@ func (p protonTrace) extractQuery() *queryNode {
 		query = plan[0].Apply(p.root).Field("optimized")
 	}
 	return extractQueryNode(query)
+}
+
+type annNode struct {
+	root slime.Value
+}
+
+func (n annNode) render(out *output) {
+	out.fmt("ANN query node:\n")
+	out.fmt("    attribute_tensor: %s\n", n.root.Field("attribute_tensor").AsString())
+	out.fmt("    query_tensor: %s\n", n.root.Field("query_tensor").AsString())
+	out.fmt("    target_hits: %d\n", n.root.Field("target_hits").AsLong())
+	if n.root.Field("adjusted_target_hits").AsLong() > n.root.Field("target_hits").AsLong() {
+		out.fmt("    adjusted_target_hits: %d\n", n.root.Field("adjusted_target_hits").AsLong())
+	}
+	out.fmt("    explore_additional_hits: %d\n", n.root.Field("explore_additional_hits").AsLong())
+	out.fmt("    algorithm: %s\n", n.root.Field("algorithm").AsString())
+	if calculated := n.root.Field("global_filter").Field("calculated"); calculated.Valid() && !calculated.AsBool() {
+		out.fmt("    global_filter: not calculated\n")
+	} else if hit_ratio := n.root.Field("global_filter").Field("hit_ratio"); hit_ratio.Valid() {
+		out.fmt("    global_filter: %.3f hit ratio\n", hit_ratio.AsDouble())
+	}
+	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
+		out.fmt("    found hits: %d\n", top_k_hits.AsLong())
+	}
+}
+
+func (p protonTrace) findAnnNodes() []annNode {
+	var res []annNode
+	slime.Select(p.root, hasTag("query_execution_plan"), func(p *slime.Path, v slime.Value) {
+		slime.Select(v.Field("optimized"), hasType("search::queryeval::NearestNeighborBlueprint"), func(p *slime.Path, v slime.Value) {
+			res = append(res, annNode{v})
+		})
+	})
+	return res
 }
 
 func (p protonTrace) makeTimeline(trace slime.Value, t *timeline) {

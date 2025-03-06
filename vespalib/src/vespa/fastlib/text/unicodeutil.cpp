@@ -4,29 +4,6 @@
 #include <cstdlib>
 
 #include "unicodeutil-charprops.cpp"
-#include "unicodeutil-lowercase.cpp"
-
-namespace {
-
-class Initialize
-{
-public:
-    Initialize() noexcept { Fast_UnicodeUtil::InitTables(); }
-};
-
-Initialize _g_initializer;
-
-}
-
-void
-Fast_UnicodeUtil::InitTables() noexcept
-{
-    /**
-     * Hack for Katakana accent marks (torgeir)
-     */
-    _compCharProps[(0xFF9E >> 8)][(0xFF9E & 255)] |= 32;
-    _compCharProps[(0xFF9F >> 8)][(0xFF9F & 255)] |= 32;
-}
 
 char *
 Fast_UnicodeUtil::utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc) noexcept

@@ -153,7 +153,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
             }
             System.err.println("Checking doc from file " + test.testFile);
 
-            Document doc = new Document(DocumentDeserializerFactory.create6(docMan, GrowableByteBuffer.wrap(buffer)));
+            Document doc = new Document(DocumentDeserializerFactory.createHead(docMan, GrowableByteBuffer.wrap(buffer)));
 
             System.err.println("Id: " + doc.getId());
 
@@ -197,7 +197,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
         doc.setFieldValue("friend", 2384L);
 
         GrowableByteBuffer buffer = new GrowableByteBuffer(1024);
-        DocumentSerializer serializer = DocumentSerializerFactory.create6(buffer);
+        DocumentSerializer serializer = DocumentSerializerFactory.createHead(buffer);
         serializer.write(doc);
         buffer.flip();
 
@@ -205,7 +205,7 @@ public class DocumentSerializationTestCase extends AbstractTypesTest {
         fos.write(buffer.array(), 0, buffer.limit());
         fos.close();
 
-        DocumentDeserializer deserializer = DocumentDeserializerFactory.create6(man, buffer);
+        DocumentDeserializer deserializer = DocumentDeserializerFactory.createHead(man, buffer);
         Document doc2 = new Document(deserializer);
 
         assertEquals(doc, doc2);

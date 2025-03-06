@@ -139,8 +139,8 @@ public:
         }
 
         void release(const document::Bucket & bucket, api::LockingRequirements reqOfReleasedLock,
-                     api::StorageMessage::Id lockMsgId, bool was_active_merge);
-        void decrease_active_sync_merges_counter() noexcept;
+                     api::StorageMessage::Id lockMsgId, bool was_active_maintenance);
+        void decrease_active_sync_maintenance_counter() noexcept;
 
         // Subsumes isLocked
         bool operationIsInhibited(const monitor_guard &, const document::Bucket&,
@@ -149,7 +149,7 @@ public:
                       api::LockingRequirements lockReq) const noexcept;
 
         void lock(const monitor_guard &, const document::Bucket & bucket,
-                  api::LockingRequirements lockReq, bool count_as_active_merge,
+                  api::LockingRequirements lockReq, bool count_as_active_maintenance,
                   const LockEntry & lockEntry);
 
         [[nodiscard]] std::shared_ptr<FileStorHandler::BucketLockInterface> lock(const document::Bucket & bucket, api::LockingRequirements lockReq);
@@ -195,16 +195,16 @@ public:
         std::unique_ptr<PriorityQueue>  _queue;
         atomic_size_t                   _cached_queue_size;
         LockedBuckets                   _lockedBuckets;
-        uint32_t                        _active_merges;
+        uint32_t                        _active_maintenance_ops;
         mutable SafeActiveOperationsStats _active_operations_stats;
     };
 
-    class BucketLock : public FileStorHandler::BucketLockInterface {
+    class BucketLock final : public BucketLockInterface {
     public:
         // TODO refactor, too many params
-        BucketLock(const monitor_guard & guard,
+        BucketLock(const monitor_guard& guard,
                    Stripe& disk,
-                   const document::Bucket &bucket,
+                   const document::Bucket& bucket,
                    uint8_t priority, api::MessageType::Id msgType, api::StorageMessage::Id,
                    api::LockingRequirements lockReq);
         ~BucketLock() override;
@@ -213,7 +213,7 @@ public:
         api::LockingRequirements lockingRequirements() const noexcept override { return _lockReq; }
         void signal_operation_sync_phase_done() noexcept override;
         bool wants_sync_phase_done_notification() const noexcept override {
-            return _counts_towards_merge_limit;
+            return _counts_towards_maintenance_limit;
         }
 
     private:
@@ -221,7 +221,7 @@ public:
         const document::Bucket   _bucket;
         api::StorageMessage::Id  _uniqueMsgId;
         api::LockingRequirements _lockReq;
-        bool                     _counts_towards_merge_limit;
+        bool                     _counts_towards_maintenance_limit;
     };
 
 
@@ -325,7 +325,7 @@ private:
     const document::BucketIdFactory& _bucketIdFactory;
     mutable std::mutex    _mergeStatesLock;
     std::map<document::Bucket, std::shared_ptr<MergeStatus>> _mergeStates;
-    const uint32_t        _max_active_merges_per_stripe; // Read concurrently by stripes.
+    const uint32_t        _max_active_maintenance_ops_per_stripe; // Read concurrently by stripes.
     mutable std::mutex              _pauseMonitor;
     mutable std::condition_variable _pauseCond;
     std::atomic<bool>               _paused;

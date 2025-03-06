@@ -34,6 +34,7 @@ const (
 	targetFlag      = "target"
 	colorFlag       = "color"
 	quietFlag       = "quiet"
+	debugModeFlag   = "debug"
 
 	anyTarget = iota
 	localTargetOnly
@@ -248,6 +249,7 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 		zone        string
 		color       string
 		quiet       bool
+		debugMode   bool
 	)
 	c.cmd.PersistentFlags().StringVarP(&target, targetFlag, "t", "local", `The target platform to use. Must be "local", "cloud", "hosted" or an URL`)
 	c.cmd.PersistentFlags().StringVarP(&application, applicationFlag, "a", "", `The application to use (cloud only). Format "tenant.application.instance" - instance is optional`)
@@ -256,6 +258,9 @@ func (c *CLI) configureFlags() map[string]*pflag.Flag {
 	c.cmd.PersistentFlags().StringVarP(&zone, zoneFlag, "z", "", "The zone to use. This defaults to a dev zone (cloud only)")
 	c.cmd.PersistentFlags().StringVarP(&color, colorFlag, "c", "auto", `Whether to use colors in output. Must be "auto", "never", or "always"`)
 	c.cmd.PersistentFlags().BoolVarP(&quiet, quietFlag, "q", false, "Print only errors")
+	c.cmd.PersistentFlags().BoolVar(&debugMode, debugModeFlag, false, `Print debugging output`)
+	c.cmd.PersistentFlags().MarkHidden(debugModeFlag)
+
 	flags := make(map[string]*pflag.Flag)
 	c.cmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
 		flags[flag.Name] = flag
@@ -348,7 +353,9 @@ func (c *CLI) printInfo(msg ...interface{}) {
 }
 
 func (c *CLI) printDebug(msg ...interface{}) {
-	fmt.Fprintln(c.Stderr, color.CyanString("Debug:"), fmt.Sprint(msg...))
+	if debugMode, _ := c.config.get(debugModeFlag); debugMode == "true" {
+		fmt.Fprintln(c.Stderr, color.CyanString("Debug:"), fmt.Sprint(msg...))
+	}
 }
 
 func (c *CLI) printWarning(msg interface{}, hints ...string) {
@@ -449,7 +456,7 @@ func (c *CLI) targetFromURL(customURL string) (string, error) {
 			return "", err
 		}
 		if strings.HasSuffix(u.Hostname(), "."+system.EndpointDomain) {
-			return cloudTarget, nil
+			return system.TargetType, nil
 		}
 	}
 	return vespa.TargetCustom, nil

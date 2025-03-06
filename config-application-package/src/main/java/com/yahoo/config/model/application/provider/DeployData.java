@@ -12,7 +12,7 @@ public class DeployData {
 
     private final ApplicationId applicationId;
 
-    /** Timestamp when a deployment was made */
+    /** Timestamp when a deployment was made (in milliseconds since epoch)  */
     private final long deployTimestamp;
 
     /** Whether this is an internal redeploy, not caused by an application package change */

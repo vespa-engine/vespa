@@ -1,11 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/searchlib/docstore/logdocumentstore.h>
 #include <vespa/searchlib/docstore/value.h>
 #include <vespa/vespalib/stllike/cache_stats.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldvalue/document.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search;
 using CompressionConfig = vespalib::compression::CompressionConfig;
@@ -50,25 +50,27 @@ struct NullDataStore : IDataStore {
 
 NullDataStore::~NullDataStore() = default;
 
-TEST_FFF("require that uncache docstore lookups are counted",
-         DocumentStore::Config(CompressionConfig::NONE, 0),
-         NullDataStore(), DocumentStore(f1, f2))
+TEST(DocumentStoreTest, require_that_uncache_docstore_lookups_are_counted)
 {
-    EXPECT_EQUAL(0u, f3.getCacheStats().misses);
+    DocumentStore::Config f1(CompressionConfig::NONE, 0);
+    NullDataStore f2;
+    DocumentStore f3(f1, f2);
+    EXPECT_EQ(0u, f3.getCacheStats().misses);
     f3.read(1, repo);
-    EXPECT_EQUAL(1u, f3.getCacheStats().misses);
+    EXPECT_EQ(1u, f3.getCacheStats().misses);
 }
 
-TEST_FFF("require that cached docstore lookups are counted",
-         DocumentStore::Config(CompressionConfig::NONE, 100000),
-         NullDataStore(), DocumentStore(f1, f2))
+TEST(DocumentStoreTest, require_that_cached_docstore_lookups_are_counted)
 {
-    EXPECT_EQUAL(0u, f3.getCacheStats().misses);
+    DocumentStore::Config f1(CompressionConfig::NONE, 100000);
+    NullDataStore f2;
+    DocumentStore f3(f1, f2);
+    EXPECT_EQ(0u, f3.getCacheStats().misses);
     f3.read(1, repo);
-    EXPECT_EQUAL(1u, f3.getCacheStats().misses);
+    EXPECT_EQ(1u, f3.getCacheStats().misses);
 }
 
-TEST("require that DocumentStore::Config equality operator detects inequality") {
+TEST(DocumentStoreTest, require_that_DocumentStore_Config_equality_operator_detects_inequality) {
     using C = DocumentStore::Config;
     EXPECT_TRUE(C() == C());
     EXPECT_TRUE(C(CompressionConfig::NONE, 100000) == C(CompressionConfig::NONE, 100000));
@@ -76,7 +78,7 @@ TEST("require that DocumentStore::Config equality operator detects inequality") 
     EXPECT_FALSE(C(CompressionConfig::NONE, 100000) == C(CompressionConfig::LZ4, 100000));
 }
 
-TEST("require that LogDocumentStore::Config equality operator detects inequality") {
+TEST(DocumentStoreTest, require_that_LogDocumentStore_Config_equality_operator_detects_inequality) {
     using C = LogDocumentStore::Config;
     using LC = LogDataStore::Config;
     using DC = DocumentStore::Config;
@@ -101,64 +103,64 @@ Value createValue(std::string_view s, CompressionConfig cfg) {
 void verifyValue(std::string_view s, const Value & v) {
     Value::Result result = v.decompressed();
     ASSERT_TRUE(result.second);
-    EXPECT_EQUAL(s.size(), v.getUncompressedSize());
-    EXPECT_EQUAL(7u, v.getSyncToken());
-    EXPECT_EQUAL(0, memcmp(s.data(), result.first.getData(), result.first.getDataLen()));
+    EXPECT_EQ(s.size(), v.getUncompressedSize());
+    EXPECT_EQ(7u, v.getSyncToken());
+    EXPECT_EQ(0, memcmp(s.data(), result.first.getData(), result.first.getDataLen()));
 }
 
-TEST("require that Value and cache entries have expected size") {
+TEST(DocumentStoreTest, require_that_Value_and_cache_entries_have_expected_size) {
     using pair = std::pair<DocumentIdT, Value>;
     using Node = vespalib::hash_node<pair>;
-    EXPECT_EQUAL(48ul, sizeof(Value));
-    EXPECT_EQUAL(56ul, sizeof(pair));
-    EXPECT_EQUAL(64ul, sizeof(Node));
+    EXPECT_EQ(48ul, sizeof(Value));
+    EXPECT_EQ(56ul, sizeof(pair));
+    EXPECT_EQ(64ul, sizeof(Node));
 }
 
-TEST("require that Value can store uncompressed data") {
+TEST(DocumentStoreTest, require_that_Value_can_store_uncompressed_data) {
     Value v = createValue(S1, CompressionConfig::NONE);
     verifyValue(S1, v);
 }
 
-TEST("require that Value can be moved") {
+TEST(DocumentStoreTest, require_that_Value_can_be_moved) {
     Value v = createValue(S1, CompressionConfig::NONE);
     Value m = std::move(v);
     verifyValue(S1, m);
 }
 
-TEST("require that Value can be copied") {
+TEST(DocumentStoreTest, require_that_Value_can_be_copied) {
     Value v = createValue(S1, CompressionConfig::NONE);
     Value copy(v);
     verifyValue(S1, v);
     verifyValue(S1, copy);
 }
 
-TEST("require that Value can store lz4 compressed data") {
+TEST(DocumentStoreTest, require_that_Value_can_store_lz4_compressed_data) {
     Value v = createValue(S1, CompressionConfig::LZ4);
-    EXPECT_EQUAL(CompressionConfig::LZ4, v.getCompression());
-    EXPECT_EQUAL(164u, v.size());
+    EXPECT_EQ(CompressionConfig::LZ4, v.getCompression());
+    EXPECT_EQ(164u, v.size());
     verifyValue(S1, v);
 }
 
-TEST("require that Value can store zstd compressed data") {
+TEST(DocumentStoreTest, require_that_Value_can_store_zstd_compressed_data) {
     Value v = createValue(S1, CompressionConfig::ZSTD);
-    EXPECT_EQUAL(CompressionConfig::ZSTD, v.getCompression());
-    EXPECT_EQUAL(128u, v.size());
+    EXPECT_EQ(CompressionConfig::ZSTD, v.getCompression());
+    EXPECT_EQ(128u, v.size());
     verifyValue(S1, v);
 }
 
-TEST("require that Value is shrunk to fit compressed data") {
+TEST(DocumentStoreTest, require_that_Value_is_shrunk_to_fit_compressed_data) {
     Value v = createValue(S1, CompressionConfig::ZSTD);
-    EXPECT_EQUAL(CompressionConfig::ZSTD, v.getCompression());
-    EXPECT_EQUAL(128u, v.size());
-    EXPECT_EQUAL(128u, v.capacity());
-    EXPECT_EQUAL(297u, v.getUncompressedSize());
+    EXPECT_EQ(CompressionConfig::ZSTD, v.getCompression());
+    EXPECT_EQ(128u, v.size());
+    EXPECT_EQ(128u, v.capacity());
+    EXPECT_EQ(297u, v.getUncompressedSize());
     verifyValue(S1, v);
 }
 
-TEST("require that Value can detect if output not equal to input") {
+TEST(DocumentStoreTest, require_that_Value_can_detect_if_output_not_equal_to_input) {
     Value v = createValue(S1, CompressionConfig::NONE);
     const_cast<uint8_t *>(static_cast<const uint8_t *>(v.get()))[8] ^= 0xff;
     EXPECT_FALSE(v.decompressed().second);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

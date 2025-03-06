@@ -36,6 +36,7 @@ class AndBlueprint;
 class AndNotBlueprint;
 class OrBlueprint;
 class EmptyBlueprint;
+class AlwaysTrueBlueprint;
 
 /**
  * A Blueprint is an intermediate representation of a search. More
@@ -410,6 +411,7 @@ public:
     virtual IntermediateBlueprint * asIntermediate() noexcept { return nullptr; }
     const IntermediateBlueprint * asIntermediate() const noexcept { return const_cast<Blueprint *>(this)->asIntermediate(); }
     virtual const LeafBlueprint * asLeaf() const noexcept { return nullptr; }
+    virtual const AlwaysTrueBlueprint *asAlwaysTrue() const noexcept { return nullptr; }
     virtual AndBlueprint * asAnd() noexcept { return nullptr; }
     bool isAnd() const noexcept { return const_cast<Blueprint *>(this)->asAnd() != nullptr; }
     virtual AndNotBlueprint * asAndNot() noexcept { return nullptr; }

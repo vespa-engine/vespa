@@ -148,6 +148,9 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, out *output) {
 			out.fmt("(average of other threads was %.3f ms)\n", peers)
 		}
 		ctx.analyzeThread(trace, *worst, out)
+		if ann := newAnnProbe(trace); ann.impact() != 0.0 {
+			ann.render(out)
+		}
 	}
 }
 

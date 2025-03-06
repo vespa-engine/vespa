@@ -10,6 +10,7 @@
 #include "entry_ref_filter.h"
 #include "large_array_buffer_type.hpp"
 #include "small_array_buffer_type.hpp"
+#include <vespa/vespalib/datastore/data_store_explorer.h>
 #include <algorithm>
 #include <atomic>
 
@@ -245,6 +246,13 @@ ArrayStore<ElemT, RefT, TypeMapperT>::bufferState(EntryRef ref)
 {
     RefT internalRef(ref);
     return _store.getBufferState(internalRef.bufferId());
+}
+
+template <typename ElemT, typename RefT, typename TypeMapperT>
+std::unique_ptr<StateExplorer>
+ArrayStore<ElemT, RefT, TypeMapperT>::make_state_explorer() const
+{
+    return std::make_unique<DataStoreExplorer>(_store);
 }
 
 template <typename ElemT, typename RefT, typename TypeMapperT>

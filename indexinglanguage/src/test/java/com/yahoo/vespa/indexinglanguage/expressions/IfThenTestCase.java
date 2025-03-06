@@ -227,23 +227,22 @@ public class IfThenTestCase {
     }
 
     @Test
-    public void testRequiredInputType() {
+    public void testInputOutputTypes() {
         var ifExpression = new IfThenExpression(new InputExpression("int1"),
                                                 Comparator.EQ,
                                                 new ConstantExpression(new IntegerFieldValue(0)),
                                                 wrapLikeTheParser(new ConstantExpression(new StringFieldValue("true"))),
                                                 wrapLikeTheParser(new ConstantExpression(new StringFieldValue("false"))));
-
+        var expression = new ScriptExpression(new StatementExpression(ifExpression,
+                                                                      new AttributeExpression("string1")));
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("int1", DataType.INT));
         adapter.createField(new Field("string1", DataType.STRING));
 
-        ifExpression.verify(adapter);
-        assertNull(ifExpression.getInputType(new VerificationContext(adapter)));
-        assertEquals(DataType.STRING, ifExpression.createdOutputType());
+        expression.verify(adapter);
+        assertNull(expression.getInputType(new VerificationContext(adapter)));
+        assertEquals(DataType.STRING, ifExpression.getOutputType());
 
-        var expression = new ScriptExpression(new StatementExpression(ifExpression,
-                                                                      new AttributeExpression("string1")));
         expression.verify(adapter);
         assertNull(expression.getInputType(new VerificationContext(adapter)));
     }

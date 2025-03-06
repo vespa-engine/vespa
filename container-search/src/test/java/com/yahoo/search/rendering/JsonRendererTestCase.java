@@ -1509,6 +1509,44 @@ public class JsonRendererTestCase {
         assertEqualJsonContent(expected, summary);
     }
 
+    @Test
+    @Timeout(300)
+    void testTopLevelArray() throws IOException, InterruptedException, ExecutionException {
+        // added to exercise string array specific optimization
+        String expected = "{"
+                          + "    \"root\": {"
+                          + "        \"children\": ["
+                          + "            {"
+                          + "                \"fields\": {"
+                          + "                    \"topLevelArray\": ["
+                          + "                        \"foo\","
+                          + "                        \"bar\""
+                          + "                    ]"
+                          + "                },"
+                          + "                \"id\": \"MapInField\","
+                          + "                \"relevance\": 1.0"
+                          + "            }"
+                          + "        ],"
+                          + "        \"fields\": {"
+                          + "            \"totalCount\": 1"
+                          + "        },"
+                          + "        \"id\": \"toplevel\","
+                          + "        \"relevance\": 1.0"
+                          + "    }"
+                          + "}";
+        Result r = newEmptyResult();
+        Hit h = new Hit("MapInField");
+        Value.ArrayValue atop = new Value.ArrayValue();
+        atop.add(new Value.StringValue("foo"));
+        atop.add(new Value.StringValue("bar"));
+        h.setField("topLevelArray", atop);
+        r.hits().add(h);
+        r.setTotalHitCount(1L);
+        String summary = render(r);
+        assertEqualJsonContent(expected, summary);
+    }
+
+
     private static SlimeAdapter dataFromSimplified(String simplified) {
         var decoder = new com.yahoo.slime.JsonDecoder();
         var slime = decoder.decode(new Slime(), Utf8.toBytes(simplified));

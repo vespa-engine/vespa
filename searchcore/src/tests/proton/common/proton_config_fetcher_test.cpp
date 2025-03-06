@@ -77,6 +77,10 @@ struct ConfigTestFixture {
     int idcounter;
 
     explicit ConfigTestFixture(const std::string & id)
+        : ConfigTestFixture(id, true)
+    {
+    }
+    ConfigTestFixture(const std::string & id, bool add_alwaysthere)
         : configId(id),
           protonBuilder(),
           documenttypesBuilder(),
@@ -91,7 +95,9 @@ struct ConfigTestFixture {
         set.addBuilder(configId, &documenttypesBuilder);
         set.addBuilder(configId, &filedistBuilder);
         set.addBuilder(configId, &bucketspacesBuilder);
-        addDocType("_alwaysthere_");
+        if (add_alwaysthere) {
+            addDocType("_alwaysthere_");
+        }
     }
 
     ~ConfigTestFixture();
@@ -404,6 +410,15 @@ createHwInfoWithMemory(uint64_t mem) {
     return {HwInfo::Disk(1, false, false), HwInfo::Memory(mem), HwInfo::Cpu(1)};
 }
 
+size_t get_minimum_capacity(ConfigTestFixture& f1, DocumentDBConfigManager &f2, uint64_t mem)
+{
+    auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(mem));
+    AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
+    return strategy.get_grow_strategy().getMinimumCapacity();
+}
+
+constexpr size_t default_minimum_capacity = 1024;
+
 }
 
 TEST(ProtonConfigFetcherTest, require_that_target_numdocs_is_fixed_1k_for_indexed_mode)
@@ -411,11 +426,8 @@ TEST(ProtonConfigFetcherTest, require_that_target_numdocs_is_fixed_1k_for_indexe
     ConfigTestFixture f1("search");
     DocumentDBConfigManager f2(f1.configId + "/test", "test");
     f1.addDocType("test", ProtonConfig::Documentdb::Mode::INDEX, true);
-    for (uint64_t memory : {1_Gi, 10_Gi}) {
-        auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(memory));
-        AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
-        EXPECT_EQ(1024u, strategy.get_grow_strategy().getMinimumCapacity());
-    }
+    EXPECT_EQ(default_minimum_capacity, get_minimum_capacity(f1, f2, 1_Gi));
+    EXPECT_EQ(default_minimum_capacity, get_minimum_capacity(f1, f2, 10_Gi));
 }
 
 namespace {
@@ -429,25 +441,26 @@ constexpr bool target_numdocs_hw_adjustment_is_enabled() noexcept {
 #endif
 }
 
+size_t adjust_expected_minimum_capacity(size_t expected_minimum_capacity) {
+    return target_numdocs_hw_adjustment_is_enabled() ? expected_minimum_capacity : default_minimum_capacity;
+}
+
 }
 
 TEST(ProtonConfigFetcherTest, require_that_target_numdocs_follows_memory_for_streaming_mode)
 {
-    ConfigTestFixture f1("search");
+    ConfigTestFixture f1("search", false);
     DocumentDBConfigManager f2(f1.configId + "/test", "test");
     f1.addDocType("test", ProtonConfig::Documentdb::Mode::STREAMING, true);
-    {
-        auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(1_Gi));
-        AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
-        const auto expected = target_numdocs_hw_adjustment_is_enabled() ? 23342213u : 1024u;
-        EXPECT_EQ(expected, strategy.get_grow_strategy().getMinimumCapacity());
-    }
-    {
-        auto config = getDocumentDBConfig(f1, f2, createHwInfoWithMemory(10_Gi));
-        AllocStrategy strategy = config->get_alloc_config().make_alloc_strategy(SubDbType::READY);
-        const auto expected = target_numdocs_hw_adjustment_is_enabled() ? 233422135u : 1024u;
-        EXPECT_EQ(expected, strategy.get_grow_strategy().getMinimumCapacity());
-    }
+    EXPECT_EQ(adjust_expected_minimum_capacity(23342213u), get_minimum_capacity(f1, f2, 1_Gi));
+    EXPECT_EQ(adjust_expected_minimum_capacity(233422135u), get_minimum_capacity(f1, f2, 10_Gi));
+    f1.protonBuilder.distribution.searchablecopies = 2;
+    EXPECT_EQ(adjust_expected_minimum_capacity(11671106u), get_minimum_capacity(f1, f2, 1_Gi));
+    EXPECT_EQ(adjust_expected_minimum_capacity(116711067u), get_minimum_capacity(f1, f2, 10_Gi));
+    f1.addDocType("typea");
+    f1.addDocType("typeb");
+    EXPECT_EQ(adjust_expected_minimum_capacity(3890368u), get_minimum_capacity(f1, f2, 1_Gi));
+    EXPECT_EQ(adjust_expected_minimum_capacity(38903689u), get_minimum_capacity(f1, f2, 10_Gi));
 }
 
 TEST(ProtonConfigFetcherTest, require_that_prune_removed_documents_interval_can_be_set_based_on_age)

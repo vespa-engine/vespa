@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_ranking_expression_test_app TEST
     ranking_expression_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_ranking_expression_test_app COMMAND searchlib_ranking_expression_test_app)

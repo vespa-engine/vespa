@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/document/base/documentid.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/reference/i_gid_to_lid_change_listener.h>
 #include <vespa/searchcore/proton/reference/i_pending_gid_to_lid_changes.h>
 #include <vespa/searchcore/proton/reference/gid_to_lid_change_handler.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <map>
 #include <string>
@@ -31,8 +32,8 @@ std::string doc1("id:test:music::1");
 
 }
 
-TEST("control sizeof(PendingGidToLidChange)") {
-    EXPECT_EQUAL(48u, sizeof(PendingGidToLidChange));
+TEST(GidToLidChangeHandlerTest, control_sizeof_PendingGidToLidChange) {
+    EXPECT_EQ(48u, sizeof(PendingGidToLidChange));
 }
 
 class ListenerStats {
@@ -59,7 +60,7 @@ public:
 
     ~ListenerStats()
     {
-        EXPECT_EQUAL(_createdListeners, _destroyedListeners);
+        EXPECT_EQ(_createdListeners, _destroyedListeners);
     }
 
     void notifyPutDone() {
@@ -78,18 +79,19 @@ public:
     uint32_t getRegisteredListeners() const { return _registeredListeners; }
     uint32_t getDestroyedListeners() const { return _destroyedListeners; }
 
-    void assertListeners(uint32_t expCreatedListeners,
-                         uint32_t expRegisteredListeners,
-                         uint32_t expDestroyedListeners)
+    void assertListeners(uint32_t expCreatedListeners, uint32_t expRegisteredListeners, uint32_t expDestroyedListeners,
+                         const std::string &label)
     {
-        EXPECT_EQUAL(expCreatedListeners, getCreatedListeners());
-        EXPECT_EQUAL(expRegisteredListeners, getRegisteredListeners());
-        EXPECT_EQUAL(expDestroyedListeners, getDestroyedListeners());
+        SCOPED_TRACE(label);
+        EXPECT_EQ(expCreatedListeners, getCreatedListeners());
+        EXPECT_EQ(expRegisteredListeners, getRegisteredListeners());
+        EXPECT_EQ(expDestroyedListeners, getDestroyedListeners());
     }
-    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges)
+    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges, const std::string& label)
     {
-        EXPECT_EQUAL(expPutChanges, _putChanges);
-        EXPECT_EQUAL(expRemoveChanges, _removeChanges);
+        SCOPED_TRACE(label);
+        EXPECT_EQ(expPutChanges, _putChanges);
+        EXPECT_EQ(expRemoveChanges, _removeChanges);
     }
     const std::vector<GlobalId>& get_initial_removes() const noexcept { return _initial_removes; }
 };
@@ -174,75 +176,79 @@ struct Fixture
 
 };
 
-TEST_F("Test that we can register a listener", Fixture)
+TEST(GidToLidChangeHandlerTest, Test_that_we_can_register_a_listener)
 {
+    Fixture f;
     auto &stats = f.addStats();
     auto listener = std::make_unique<MyListener>(stats, "test", "testdoc");
-    TEST_DO(stats.assertListeners(1, 0, 0));
+    stats.assertListeners(1, 0, 0, "created");
     f.addListener(std::move(listener));
-    TEST_DO(stats.assertListeners(1, 1, 0));
+    stats.assertListeners(1, 1, 0, "registered");
     f.notifyPut(toGid(doc1), 10, 10);
     f.commit();
-    TEST_DO(stats.assertChanges(1, 0));
+    stats.assertChanges(1, 0, "put");
     f.removeListeners("testdoc", {});
-    TEST_DO(stats.assertListeners(1, 1, 1));
+    stats.assertListeners(1, 1, 1, "destroyed");
 }
 
-TEST_F("Test that we can register multiple listeners", Fixture)
+TEST(GidToLidChangeHandlerTest, Test_that_we_can_register_multiple_listeners)
 {
+    Fixture f;
     auto &stats1 = f.addStats();
     auto &stats2 = f.addStats();
     auto &stats3 = f.addStats();
     auto listener1 = std::make_unique<MyListener>(stats1, "test1", "testdoc");
     auto listener2 = std::make_unique<MyListener>(stats2, "test2", "testdoc");
     auto listener3 = std::make_unique<MyListener>(stats3, "test3", "testdoc2");
-    TEST_DO(stats1.assertListeners(1, 0, 0));
-    TEST_DO(stats2.assertListeners(1, 0, 0));
-    TEST_DO(stats3.assertListeners(1, 0, 0));
+    stats1.assertListeners(1, 0, 0, "created 1");
+    stats2.assertListeners(1, 0, 0, "created 2");
+    stats3.assertListeners(1, 0, 0, "created 3");
     f.addListener(std::move(listener1));
     f.addListener(std::move(listener2));
     f.addListener(std::move(listener3));
-    TEST_DO(stats1.assertListeners(1, 1, 0));
-    TEST_DO(stats2.assertListeners(1, 1, 0));
-    TEST_DO(stats3.assertListeners(1, 1, 0));
+    stats1.assertListeners(1, 1, 0, "registered 1");
+    stats2.assertListeners(1, 1, 0, "registered 2");
+    stats3.assertListeners(1, 1, 0, "registered 3");
     f.notifyPut(toGid(doc1), 10, 10);
     f.commit();
-    TEST_DO(stats1.assertChanges(1, 0));
-    TEST_DO(stats2.assertChanges(1, 0));
-    TEST_DO(stats3.assertChanges(1, 0));
+    stats1.assertChanges(1, 0, "put 1");
+    stats2.assertChanges(1, 0, "put 2");
+    stats3.assertChanges(1, 0, "put 3");
     f.removeListeners("testdoc", {"test1"});
-    TEST_DO(stats1.assertListeners(1, 1, 0));
-    TEST_DO(stats2.assertListeners(1, 1, 1));
-    TEST_DO(stats3.assertListeners(1, 1, 0));
+    stats1.assertListeners(1, 1, 0, "destroyed 1");
+    stats2.assertListeners(1, 1, 1, "destroyed 2");
+    stats3.assertListeners(1, 1, 0, "destroyed 3");
     f.removeListeners("testdoc", {});
-    TEST_DO(stats1.assertListeners(1, 1, 1));
-    TEST_DO(stats2.assertListeners(1, 1, 1));
-    TEST_DO(stats3.assertListeners(1, 1, 0));
+    stats1.assertListeners(1, 1, 1, "destroyed 4");
+    stats2.assertListeners(1, 1, 1, "destroyed 5");
+    stats3.assertListeners(1, 1, 0, "destroyed 6");
     f.removeListeners("testdoc2", {"test3"});
-    TEST_DO(stats1.assertListeners(1, 1, 1));
-    TEST_DO(stats2.assertListeners(1, 1, 1));
-    TEST_DO(stats3.assertListeners(1, 1, 0));
+    stats1.assertListeners(1, 1, 1, "destroyed 7");
+    stats2.assertListeners(1, 1, 1, "destroyed 8");
+    stats3.assertListeners(1, 1, 0, "destroyed 9");
     f.removeListeners("testdoc2", {"foo"});
-    TEST_DO(stats1.assertListeners(1, 1, 1));
-    TEST_DO(stats2.assertListeners(1, 1, 1));
-    TEST_DO(stats3.assertListeners(1, 1, 1));
+    stats1.assertListeners(1, 1, 1, "destroyed 10");
+    stats2.assertListeners(1, 1, 1, "destroyed 11");
+    stats3.assertListeners(1, 1, 1, "destroyed 12");
 }
 
-TEST_F("Test that we keep old listener when registering duplicate", Fixture)
+TEST(GidToLidChangeHandlerTest, Test_that_we_keep_old_listener_when_registering_duplicate)
 {
+    Fixture f;
     auto &stats = f.addStats();
     auto listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
-    TEST_DO(stats.assertListeners(1, 0, 0));
+    stats.assertListeners(1, 0, 0, "created");
     f.addListener(std::move(listener));
-    TEST_DO(stats.assertListeners(1, 1, 0));
+    stats.assertListeners(1, 1, 0, "registered");
     listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
-    TEST_DO(stats.assertListeners(2, 1, 0));
+    stats.assertListeners(2, 1, 0, "created dup");
     f.addListener(std::move(listener));
-    TEST_DO(stats.assertListeners(2, 1, 1));
+    stats.assertListeners(2, 1, 1, "destroyed dup");
 }
 
-TEST_F("Test that pending removes are passed on to new listener", Fixture)
+TEST(GidToLidChangeHandlerTest, Test_that_pending_removes_are_passed_on_to_new_listener)
 {
+    Fixture f;
     auto& stats = f.addStats();
     auto listener = std::make_unique<MyListener>(stats, "test1", "testdoc");
     f.notifyRemove(toGid(doc1), 20);
@@ -268,50 +274,50 @@ public:
         removeListeners("testdoc", {});
     }
 
-    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges)
+    void assertChanges(uint32_t expPutChanges, uint32_t expRemoveChanges, const std::string& label)
     {
-        TEST_DO(_stats.assertChanges(expPutChanges, expRemoveChanges));
+        _stats.assertChanges(expPutChanges, expRemoveChanges, label);
     }
 };
 
-TEST_F("Test that multiple puts are processed", StatsFixture)
+TEST(GidToLidChangeHandlerTest, Test_that_multiple_puts_are_processed)
 {
+    StatsFixture f;
     f.notifyPut(toGid(doc1), 10, 10);
-    TEST_DO(f.assertChanges(0, 0));
+    f.assertChanges(0, 0, "put 1");
     f.notifyPut(toGid(doc1), 11, 20);
-    TEST_DO(f.assertChanges(0, 0));
+    f.assertChanges(0, 0, "put 2");
     f.commit();
-    TEST_DO(f.assertChanges(2, 0));
+    f.assertChanges(2, 0, "commit");
 }
 
-TEST_F("Test that put is ignored if we have a pending remove", StatsFixture)
+TEST(GidToLidChangeHandlerTest, Test_that_put_is_ignored_if_we_have_a_pending_remove)
 {
+    StatsFixture f;
     f.notifyPut(toGid(doc1), 10, 10);
-    TEST_DO(f.assertChanges(0, 0));
+    f.assertChanges(0, 0, "put 1");
     f.notifyRemove(toGid(doc1), 20);
-    TEST_DO(f.assertChanges(0, 1));
+    f.assertChanges(0, 1, "remove");
     f.commit();
-    TEST_DO(f.assertChanges(0, 1));
+    f.assertChanges(0, 1, "commit 1");
     f.notifyPut(toGid(doc1), 11, 30);
     f.commit();
-    TEST_DO(f.assertChanges(1, 1));
+    f.assertChanges(1, 1, "new put and commit");
 }
 
-TEST_F("Test that pending removes are merged", StatsFixture)
+TEST(GidToLidChangeHandlerTest, Test_that_pending_removes_are_merged)
 {
+    StatsFixture f;
     f.notifyPut(toGid(doc1), 10, 10);
-    TEST_DO(f.assertChanges(0, 0));
+    f.assertChanges(0, 0, "put 1");
     f.notifyRemove(toGid(doc1), 20);
-    TEST_DO(f.assertChanges(0, 1));
+    f.assertChanges(0, 1, "remove");
     f.notifyRemove(toGid(doc1), 40);
-    TEST_DO(f.assertChanges(0, 1));
+    f.assertChanges(0, 1, "remove again");
     f.commit();
-    TEST_DO(f.assertChanges(0, 1));
+    f.assertChanges(0, 1, "commit");
 }
 
 }
 
-TEST_MAIN()
-{
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

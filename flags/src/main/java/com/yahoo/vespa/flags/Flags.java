@@ -146,21 +146,21 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("geirst", "vekterli"), "2021-07-16", "2025-06-01",
+            List.of("vekterli"), "2021-07-16", "2025-06-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
-            List.of("arnej"), "2021-11-15", "2025-03-01",
+            List.of("arnej"), "2021-11-15", "2025-04-01",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
             "log-file-compression-algorithm", "",
-            List.of("arnej"), "2022-06-14", "2025-03-01",
+            List.of("arnej"), "2022-06-14", "2025-12-01",
             "Which algorithm to use for compressing log files. Valid values: empty string (default), gzip, zstd",
             "Takes effect immediately",
             INSTANCE_ID);
@@ -214,28 +214,28 @@ public class Flags {
 
     public static final UnboundBooleanFlag MORE_WIREGUARD = defineFeatureFlag(
             "more-wireguard", false,
-            List.of("andreer"), "2023-08-21", "2025-03-01",
+            List.of("andreer"), "2023-08-21", "2025-09-01",
             "Use wireguard in INternal enCLAVES",
             "Takes effect on next host-admin run",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag IPV6_AWS_TARGET_GROUPS = defineFeatureFlag(
             "ipv6-aws-target-groups", false,
-            List.of("andreer"), "2023-08-28", "2025-03-01",
+            List.of("andreer"), "2023-08-28", "2025-09-01",
             "Always use IPv6 target groups for load balancers in aws",
             "Takes effect on next load-balancer provisioning",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundBooleanFlag PROVISION_IPV6_ONLY_AWS = defineFeatureFlag(
             "provision-ipv6-only", false,
-            List.of("andreer"), "2023-08-28", "2025-03-01",
+            List.of("andreer"), "2023-08-28", "2025-09-01",
             "Provision without private IPv4 addresses in INternal enCLAVES in AWS",
             "Takes effect on next host provisioning / run of host-admin",
             HOSTNAME, CLOUD_ACCOUNT);
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 1,
-            List.of("vekterli"), "2022-09-12", "2025-03-01",
+            List.of("vekterli"), "2022-09-12", "2025-06-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
             "Takes effect at redeployment",
@@ -243,7 +243,7 @@ public class Flags {
 
     public static final UnboundIntFlag SEARCH_HANDLER_THREADPOOL = defineIntFlag(
             "search-handler-threadpool", 10,
-            List.of("bjorncs"), "2023-10-01", "2025-03-01",
+            List.of("bjorncs"), "2023-10-01", "2025-12-01",
             "Adjust search handler threadpool size",
             "Takes effect at redeployment",
             APPLICATION);
@@ -257,7 +257,7 @@ public class Flags {
 
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 64,
-            List.of("vekterli"), "2024-04-12", "2025-03-01",
+            List.of("vekterli"), "2024-04-12", "2025-06-01",
             "Maximum number of enqueued feed operations (put/update/remove) bound "+
             "towards the same bucket that can be async dispatched as part of the " +
             "same write-locked batch by a persistence thread.",
@@ -272,7 +272,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
             "symmetric-put-and-activate-replica-selection", true,
-            List.of("vekterli"), "2024-05-23", "2025-03-01",
+            List.of("vekterli"), "2024-05-23", "2025-06-01",
             "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
             "for Put operations and the replica selection logic for bucket activation. If false, " +
             "legacy feed behavior is used.",
@@ -322,7 +322,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
             "use-legacy-trust-store", true,
-            List.of("marlon"), "2024-12-05", "2025-03-01",
+            List.of("marlon"), "2024-12-05", "2025-04-01",
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
 

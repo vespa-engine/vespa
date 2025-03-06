@@ -1,10 +1,11 @@
 /.depend
-/CasingVariants.class
+/*.class
 /Makefile
 /casingvariants_fastlib
 /casingvariants_vespalib
-/out.txt
-/out.fastlib.txt
-/out.vespalib.txt
+/out.*
+/diff.*
+/letters.java*
+/curr-*
 lowercasing_test_casingvariants_fastlib_app
 lowercasing_test_casingvariants_vespalib_app

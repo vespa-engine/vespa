@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.provider;
 
+import ai.vespa.opennlp.OpenNlpConfig;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.yahoo.component.annotation.Inject;
@@ -21,8 +22,8 @@ public class DefaultLinguisticsProvider implements Provider<Linguistics> {
     private final Supplier<Linguistics> linguisticsSupplier;
 
     @Inject
-    public DefaultLinguisticsProvider() {
-        linguisticsSupplier = Suppliers.memoize(OpenNlpLinguistics::new);
+    public DefaultLinguisticsProvider(OpenNlpConfig config) {
+        linguisticsSupplier = Suppliers.memoize(() -> createOpenNlpLinguistics(config));
     }
 
     @Override
@@ -30,5 +31,9 @@ public class DefaultLinguisticsProvider implements Provider<Linguistics> {
 
     @Override
     public void deconstruct() {}
+
+    private static OpenNlpLinguistics createOpenNlpLinguistics(OpenNlpConfig config) {
+        return new OpenNlpLinguistics(config);
+    }
 
 }

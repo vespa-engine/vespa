@@ -1,21 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
-
-#include <vespa/log/log.h>
 #include <vespa/searchlib/docstore/chunk.h>
 #include <vespa/searchlib/docstore/chunkformat.h>
 #include <vespa/searchlib/docstore/chunkformats.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/hexdump.h>
 #include <string>
 #include <zstd.h>
 
+#include <vespa/log/log.h>
 LOG_SETUP("chunk_test");
 
 using namespace search;
 using vespalib::compression::CompressionConfig;
 
-TEST("require that Chunk obey limits")
+TEST(ChunkTest, require_that_Chunk_obey_limits)
 {
     Chunk c(0, Chunk::Config(256));
     EXPECT_TRUE(c.hasRoom(1000)); // At least 1 is allowed no matter what the size is.
@@ -26,7 +25,7 @@ TEST("require that Chunk obey limits")
     EXPECT_TRUE(c.hasRoom(20));
 }
 
-TEST("require that Chunk can produce unique list")
+TEST(ChunkTest, require_that_Chunk_can_produce_unique_list)
 {
     const char *d = "ABCDEF";
     Chunk c(0, Chunk::Config(100));
@@ -35,17 +34,17 @@ TEST("require that Chunk can produce unique list")
     c.append(3, {d, 3});
     c.append(2, {d, 4});
     c.append(1, {d, 5});
-    EXPECT_EQUAL(5u, c.count());
+    EXPECT_EQ(5u, c.count());
     const Chunk::LidList & all = c.getLids();
-    EXPECT_EQUAL(5u, all.size());
+    EXPECT_EQ(5u, all.size());
     Chunk::LidList unique = c.getUniqueLids();
-    EXPECT_EQUAL(3u, unique.size());
-    EXPECT_EQUAL(1u, unique[0].getLid());
-    EXPECT_EQUAL(5u, unique[0].netSize());
-    EXPECT_EQUAL(2u, unique[1].getLid());
-    EXPECT_EQUAL(4u, unique[1].netSize());
-    EXPECT_EQUAL(3u, unique[2].getLid());
-    EXPECT_EQUAL(3u, unique[2].netSize());
+    EXPECT_EQ(3u, unique.size());
+    EXPECT_EQ(1u, unique[0].getLid());
+    EXPECT_EQ(5u, unique[0].netSize());
+    EXPECT_EQ(2u, unique[1].getLid());
+    EXPECT_EQ(4u, unique[1].netSize());
+    EXPECT_EQ(3u, unique[2].getLid());
+    EXPECT_EQ(3u, unique[2].netSize());
 }
 
 void testChunkFormat(ChunkFormat &cf, size_t expectedLen, const std::string &expectedContent)
@@ -55,13 +54,13 @@ void testChunkFormat(ChunkFormat &cf, size_t expectedLen, const std::string &exp
     cf.getBuffer() << MAGIC_CONTENT;
     vespalib::DataBuffer buffer;
     cf.pack(7, buffer, cfg);
-    EXPECT_EQUAL(expectedLen, buffer.getDataLen());
+    EXPECT_EQ(expectedLen, buffer.getDataLen());
     std::ostringstream os;
     os << vespalib::HexDump(buffer.getData(), buffer.getDataLen());
-    EXPECT_EQUAL(expectedContent, os.str());
+    EXPECT_EQ(expectedContent, os.str());
 }
 
-TEST("require that Chunk formats does not change between releases")
+TEST(ChunkTest, require_that_Chunk_formats_does_not_change_between_releases)
 {
     ChunkFormatV1 v1(10);
     testChunkFormat(v1, 26, "26 000000000010ABCDEF987654321000000000000000079CF5E79B");
@@ -82,22 +81,22 @@ void verifyChunkCompression(CompressionConfig::Type cfgType, const void * buf, s
     vespalib::DataBuffer buffer;
     CompressionConfig cfg(cfgType);
     chunk.pack(7, buffer, cfg);
-    EXPECT_EQUAL(expectedLen, buffer.getDataLen());
+    EXPECT_EQ(expectedLen, buffer.getDataLen());
     vespalib::nbostream is(buffer.getData(), buffer.getDataLen());
     ChunkFormat::UP deserialized = ChunkFormat::deserialize(buffer.getData(), buffer.getDataLen());
     uint64_t magic(0);
     deserialized->getBuffer() >> magic;
-    EXPECT_EQUAL(MAGIC_CONTENT, magic);
+    EXPECT_EQ(MAGIC_CONTENT, magic);
     std::vector<char> v(sz);
     deserialized->getBuffer().read(&v[0], sz);
-    EXPECT_EQUAL(0, memcmp(buf, &v[0], sz));
+    EXPECT_EQ(0, memcmp(buf, &v[0], sz));
 }
 
-TEST("require that V2 can create and handle lz4, zstd, and none") {
+TEST(ChunkTest, require_that_V2_can_create_and_handle_lz4_zstd_and_none) {
     verifyChunkCompression(CompressionConfig::NONE, MY_LONG_STRING, strlen(MY_LONG_STRING), 421);
     verifyChunkCompression(CompressionConfig::LZ4, MY_LONG_STRING, strlen(MY_LONG_STRING), 360);
     constexpr size_t zstd_compressed_length = (ZSTD_VERSION_NUMBER >= 10407) ? 284 : 282;
     verifyChunkCompression(CompressionConfig::ZSTD, MY_LONG_STRING, strlen(MY_LONG_STRING), zstd_compressed_length);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

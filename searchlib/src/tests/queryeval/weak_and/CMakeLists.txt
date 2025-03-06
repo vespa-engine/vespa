@@ -12,6 +12,7 @@ vespa_add_executable(searchlib_weak_and_test_expensive_app TEST
     weak_and_test_expensive.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_weak_and_test_expensive_app NO_VALGRIND COMMAND searchlib_weak_and_test_expensive_app)
 vespa_add_executable(searchlib_weak_and_bench_app

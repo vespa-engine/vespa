@@ -253,7 +253,7 @@ public class DocumentTypeManager {
     }
 
     final public Document createDocument(GrowableByteBuffer buf) {
-        DocumentDeserializer data = DocumentDeserializerFactory.create6(this, buf);
+        DocumentDeserializer data = DocumentDeserializerFactory.createHead(this, buf);
         return new Document(data);
     }
 

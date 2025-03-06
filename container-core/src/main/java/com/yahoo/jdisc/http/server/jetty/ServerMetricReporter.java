@@ -6,6 +6,7 @@ import com.yahoo.jdisc.Metric;
 import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
@@ -25,15 +26,10 @@ class ServerMetricReporter {
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("jdisc-jetty-metric-reporter-"));
     private final Metric metric;
     private final Server jetty;
-    private final StatisticsHandler statisticsHandler;
-    private final ResponseMetricAggregator responseMetricAggregator;
 
-    ServerMetricReporter(Metric metric, Server jetty, StatisticsHandler statisticsHandler,
-                         ResponseMetricAggregator responseMetricAggregator) {
+    ServerMetricReporter(Metric metric, Server jetty) {
         this.metric = metric;
         this.jetty = jetty;
-        this.statisticsHandler = statisticsHandler;
-        this.responseMetricAggregator = responseMetricAggregator;
     }
 
     void start() {
@@ -55,10 +51,15 @@ class ServerMetricReporter {
 
         @Override
         public void run() {
-            setServerMetrics(responseMetricAggregator);
+            var collector = ResponseMetricAggregator.getBean(jetty);
+            if (collector != null) setServerMetrics(collector);
 
             // reset statisticsHandler to preserve earlier behavior
-            statisticsHandler.reset();
+            StatisticsHandler statisticsHandler = ((AbstractHandlerContainer) jetty.getHandler())
+                    .getChildHandlerByClass(StatisticsHandler.class);
+            if (statisticsHandler != null) {
+                statisticsHandler.statsReset();
+            }
 
             for (Connector connector : jetty.getConnectors()) {
                 setConnectorMetrics((JDiscServerConnector)connector);
