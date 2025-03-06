@@ -764,7 +764,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 for (int i = 0; i < entries; i++) {
                     byte[] utf8 = data.entry(i).asUtf8();
                     try {
-                        generator.writeRawUTF8String(utf8, 0, utf8.length);
+                        generator.writeUTF8String(utf8, 0, utf8.length);
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
