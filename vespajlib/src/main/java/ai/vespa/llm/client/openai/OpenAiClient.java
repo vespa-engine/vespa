@@ -10,17 +10,12 @@ import com.openai.models.ChatCompletionCreateParams;
 import com.openai.models.ChatModel;
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
-import static com.openai.core.ObjectMappers.jsonMapper;
-import com.fasterxml.jackson.databind.json.JsonMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
+
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 import ai.vespa.llm.LanguageModel;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * An OpenAiClient that implements the LanguageModel interface using the official OpenAI Java client.
@@ -86,6 +81,7 @@ public class OpenAiClient implements LanguageModel {
             defaultSyncClient = OpenAIOkHttpClient.builder()
                                   .apiKey(defaultApiKey)
                                   .baseUrl(defaultEndpoint)
+                                  .responseValidation(false)
                                   .build();
         }
         return defaultSyncClient;
@@ -96,6 +92,7 @@ public class OpenAiClient implements LanguageModel {
             defaultAsyncClient = OpenAIOkHttpClientAsync.builder()
                                      .apiKey(defaultApiKey)
                                      .baseUrl(defaultEndpoint)
+                                     .responseValidation(false)
                                      .build();
         }
         return defaultAsyncClient;
@@ -119,6 +116,7 @@ public class OpenAiClient implements LanguageModel {
                 client = OpenAIOkHttpClient.builder()
                             .apiKey(apiKey)
                             .baseUrl(endpoint)
+                            .responseValidation(false)
                             .build();
                 defaultSyncClient = client;
             }
@@ -127,7 +125,7 @@ public class OpenAiClient implements LanguageModel {
             client = OpenAIOkHttpClient.builder()
                         .apiKey(apiKey)
                         .baseUrl(endpoint)
-                        .jsonMapper(configureObjectMapper())
+                        .responseValidation(false)
                         .build();
         }
         
@@ -167,7 +165,7 @@ public class OpenAiClient implements LanguageModel {
                 client = OpenAIOkHttpClientAsync.builder()
                             .apiKey(apiKey)
                             .baseUrl(endpoint)
-                            .jsonMapper(configureObjectMapper())
+                            .responseValidation(false)
                             .build();
                 defaultAsyncClient = client;
             }
@@ -176,7 +174,7 @@ public class OpenAiClient implements LanguageModel {
             client = OpenAIOkHttpClientAsync.builder()
                         .apiKey(apiKey)
                         .baseUrl(endpoint)
-                        .jsonMapper(configureObjectMapper())
+                        .responseValidation(false)
                         .build();
         }
         
@@ -189,30 +187,34 @@ public class OpenAiClient implements LanguageModel {
         
         ChatCompletionCreateParams createParams = builder.build();
         
+        // Create holder for the last observed finish reason
+        final var lastFinishReasonHolder = new Object() {
+            volatile Completion.FinishReason lastFinishReason = Completion.FinishReason.stop;
+        };
+        
         CompletableFuture<Completion.FinishReason> future = new CompletableFuture<>();
         
         // Use streaming API
         client.chat()
-              .completions()
-              .createStreaming(createParams)
-              .subscribe(completion -> completion.choices().stream()
-                      .flatMap(choice -> {
-                          // Process delta content
-                          return choice.delta().content().stream()
-                                  .map(content -> new Completion(content, 
-                                          // Only set actual finish reason on last chunk
-                                          choice.finishReason() != null ? 
-                                                  mapFinishReason(choice.finishReason().toString()) : 
-                                                  Completion.FinishReason.other));  // Use 'other' for streaming chunks
-                      })
-                      .forEach(consumer))
-              .onCompleteFuture()
-              .thenAccept(lastCompletion -> {
-                  // When the stream completes, resolve the future with the final finish reason
-                  Completion.FinishReason finalReason = lastCompletion != null ? 
-                          mapFinishReason(lastCompletion.toString()) : 
-                          Completion.FinishReason.stop;
-                  future.complete(finalReason);
+                .completions()
+                .createStreaming(createParams)
+                .subscribe(completion -> completion.choices().stream()
+                    .flatMap(choice -> {
+                        // Capture the finish reason if present
+                        choice.finishReason().ifPresent(fr -> {
+                            lastFinishReasonHolder.lastFinishReason = mapFinishReason(fr.toString());
+                        });
+                        // Process delta content
+                        return choice.delta().content().stream()
+                            .map(content -> new Completion(content, 
+                                choice.finishReason().map(fr -> mapFinishReason(fr.toString())).orElse(Completion.FinishReason.other)
+                            ));
+                    })
+                    .forEach(consumer))
+                .onCompleteFuture()
+              .thenAccept(unused -> {
+                  // When the stream completes, resolve the future with the last known finish reason
+                  future.complete(lastFinishReasonHolder.lastFinishReason);
               })
               .exceptionally(e -> {
                   future.completeExceptionally(e);
@@ -220,12 +222,6 @@ public class OpenAiClient implements LanguageModel {
               }).join();
         
         return future;
-    }
-
-    private JsonMapper configureObjectMapper() {
-        // Use custome JsonMapper and configure to ignore unknown properties
-        // Non-official OpenAI-compatible endpoints may return additional fields (e.g. together API returns "prompt" in completion, which would cause a deserialization error unless ignored)
-        return (JsonMapper) jsonMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     /**
