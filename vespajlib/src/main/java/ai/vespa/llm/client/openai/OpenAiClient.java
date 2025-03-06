@@ -10,7 +10,9 @@ import com.openai.models.ChatCompletionCreateParams;
 import com.openai.models.ChatModel;
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
-
+import static com.openai.core.ObjectMappers.jsonMapper;
+import com.fasterxml.jackson.databind.json.JsonMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -125,6 +127,7 @@ public class OpenAiClient implements LanguageModel {
             client = OpenAIOkHttpClient.builder()
                         .apiKey(apiKey)
                         .baseUrl(endpoint)
+                        .jsonMapper(configureObjectMapper())
                         .build();
         }
         
@@ -164,6 +167,7 @@ public class OpenAiClient implements LanguageModel {
                 client = OpenAIOkHttpClientAsync.builder()
                             .apiKey(apiKey)
                             .baseUrl(endpoint)
+                            .jsonMapper(configureObjectMapper())
                             .build();
                 defaultAsyncClient = client;
             }
@@ -172,6 +176,7 @@ public class OpenAiClient implements LanguageModel {
             client = OpenAIOkHttpClientAsync.builder()
                         .apiKey(apiKey)
                         .baseUrl(endpoint)
+                        .jsonMapper(configureObjectMapper())
                         .build();
         }
         
@@ -215,6 +220,12 @@ public class OpenAiClient implements LanguageModel {
               }).join();
         
         return future;
+    }
+
+    private JsonMapper configureObjectMapper() {
+        // Use custome JsonMapper and configure to ignore unknown properties
+        // Non-official OpenAI-compatible endpoints may return additional fields (e.g. together API returns "prompt" in completion, which would cause a deserialization error unless ignored)
+        return (JsonMapper) jsonMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
 
     /**
