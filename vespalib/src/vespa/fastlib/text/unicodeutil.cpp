@@ -3,7 +3,7 @@
 #include "unicodeutil.h"
 #include <cstdlib>
 
-#include "unicodeutil-charprops.cpp"
+#include "unicodeutil-wordcharbits.cpp"
 
 char *
 Fast_UnicodeUtil::utf8ncopy(char *dst, const ucs4_t *src, int maxdst, int maxsrc) noexcept
