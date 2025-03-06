@@ -109,6 +109,20 @@
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>abi-check-plugin</artifactId>
       </plugin>
+      <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <executions>
+          <execution>
+            <!-- run with: mvn -q exec:java@gen-table -->
+            <id>gen-table</id>
+            <configuration>
+          <mainClass>com.yahoo.language.process.GenWordCharsBitVector</mainClass>
+          <classpathScope>test</classpathScope>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
     </plugins>
   </build>
 </project>
