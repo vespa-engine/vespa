@@ -12,6 +12,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.attributeElm;
 import ai.vespa.schemals.parser.ast.attributeSetting;
 import ai.vespa.schemals.parser.ast.dictionarySetting;
+import ai.vespa.schemals.parser.ast.fieldRankFilter;
 import ai.vespa.schemals.parser.ast.fieldStemming;
 import ai.vespa.schemals.parser.ast.hnswIndex;
 import ai.vespa.schemals.parser.ast.indexInsideField;
@@ -49,6 +50,7 @@ public class FixedKeywordBodies {
         }
 
         /**
+         * Turns this keyword body into a snippet of itself, with the keyword: item syntax.
          * @param hasAdditionalSpec specifies if there should be an identifier after the keyword, i.e. match field_name: ...
          */
         public CompletionItem getColonSnippet(final boolean hasAdditionalSpec) {
@@ -61,6 +63,10 @@ public class FixedKeywordBodies {
 
         public CompletionItem getColonSnippet() { return getColonSnippet(false); }
 
+        /**
+         * Turns this keyword body into a snippet of itself, with the keyword { ...items } syntax.
+         * @param hasAdditionalSpec specifies if there should be an identifier after the keyword, i.e. match field_name: ...
+         */
         public CompletionItem getBodySnippet(final boolean hasAdditionalSpec) {
             String snippetContent = name + (hasAdditionalSpec ? " $1 {\n\t" : " {\n\t");
             if (!hasSnippets()) {
@@ -92,6 +98,11 @@ public class FixedKeywordBodies {
         CompletionUtils.constructBasic("filter"),
         CompletionUtils.constructBasic("literal"),
         CompletionUtils.constructBasic("normal")
+    ));
+
+    // rank with identifier and openlbrace inside a rank-profile has a separate production rule called fieldRankFilter
+    public static FixedKeywordBody RANK_IN_PROFILE = new FixedKeywordBody("rank", TokenType.RANK, fieldRankFilter.class, List.of(
+        CompletionUtils.constructSnippet("filter-threshold", "filter-threshold: ")
     ));
 
     public static FixedKeywordBody STRICT = new FixedKeywordBody("strict", TokenType.STRICT, strictElm.class, List.of(

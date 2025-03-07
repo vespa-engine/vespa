@@ -146,7 +146,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructBasic("target-hits-max-adjustment-factor"),
             CompletionUtils.constructBasic("filter-threshold"),
             FixedKeywordBodies.RANK.getColonSnippet(true),
-            FixedKeywordBodies.RANK_TYPE.getColonSnippet(true)
+            FixedKeywordBodies.RANK_TYPE.getColonSnippet(true),
+            FixedKeywordBodies.RANK_IN_PROFILE.getBodySnippet(true)
         ));
 
         put(weakandElm.class, List.of(
@@ -184,7 +185,10 @@ public class BodyKeywordCompletion implements CompletionProvider {
         ));
 
         put(FixedKeywordBodies.MATCH.parentASTClass(), FixedKeywordBodies.MATCH.completionItems());
+
         put(FixedKeywordBodies.RANK.parentASTClass(), FixedKeywordBodies.RANK.completionItems());
+
+        put(FixedKeywordBodies.RANK_IN_PROFILE.parentASTClass(), FixedKeywordBodies.RANK_IN_PROFILE.completionItems());
 
         put(summaryInDocument.class, FixedKeywordBodies.SUMMARY.completionItems());
         put(summaryInFieldLong.class, FixedKeywordBodies.SUMMARY.completionItems());
