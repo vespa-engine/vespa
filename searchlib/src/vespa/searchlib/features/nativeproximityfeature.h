@@ -15,8 +15,8 @@ namespace search::features {
 struct NativeProximityParam : public NativeParamBase
 {
     NativeProximityParam() noexcept
-    : NativeParamBase(), proximityTable(NULL), revProximityTable(NULL), proximityImportance(0.5),
-      _element_gap()
+        : NativeParamBase(), proximityTable(nullptr), revProximityTable(nullptr), proximityImportance(0.5),
+          _element_gap()
     { }
     const fef::Table * proximityTable;
     const fef::Table * revProximityTable;
