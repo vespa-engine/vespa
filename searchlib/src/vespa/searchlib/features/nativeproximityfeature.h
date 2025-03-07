@@ -5,6 +5,7 @@
 #include "nativerankfeature.h"
 #include "termdistancecalculator.h"
 #include <map>
+#include <optional>
 
 namespace search::features {
 
@@ -13,10 +14,14 @@ namespace search::features {
  **/
 struct NativeProximityParam : public NativeParamBase
 {
-    NativeProximityParam() noexcept : NativeParamBase(), proximityTable(NULL), revProximityTable(NULL), proximityImportance(0.5) { }
+    NativeProximityParam() noexcept
+        : NativeParamBase(), proximityTable(nullptr), revProximityTable(nullptr), proximityImportance(0.5),
+          _element_gap()
+    { }
     const fef::Table * proximityTable;
     const fef::Table * revProximityTable;
     feature_t proximityImportance;
+    std::optional<uint32_t> _element_gap;
 };
 
 class NativeProximityParams : public NativeRankParamsBase<NativeProximityParam>
@@ -50,7 +55,8 @@ public:
         uint32_t fieldId;
         TermPairVector pairs;
         feature_t divisor;
-        FieldSetup(uint32_t fid) : fieldId(fid), pairs(), divisor(0) {}
+        std::optional<uint32_t> _element_gap;
+        FieldSetup(uint32_t fid) : fieldId(fid), pairs(), divisor(0), _element_gap() {}
     };
 private:
     const NativeProximityParams&  _params;
