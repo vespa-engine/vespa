@@ -22,12 +22,14 @@ import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.fieldElm;
 import ai.vespa.schemals.parser.ast.fieldSetElm;
 import ai.vespa.schemals.parser.ast.firstPhase;
+import ai.vespa.schemals.parser.ast.globalPhase;
 import ai.vespa.schemals.parser.ast.hnswIndex;
 import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.indexOutsideDoc;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
+import ai.vespa.schemals.parser.ast.secondPhase;
 import ai.vespa.schemals.parser.ast.sortingElm;
 import ai.vespa.schemals.parser.ast.structDefinitionElm;
 import ai.vespa.schemals.parser.ast.structFieldElm;
@@ -133,7 +135,6 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("summary-features", "summary-features {\n\t$0\n}", "summary-features {}"),
             CompletionUtils.constructSnippet("rank-features", "rank-features: $0", "rank-features:"),
             CompletionUtils.constructSnippet("rank-features", "rank-features {\n\t$0\n}", "rank-features {}"),
-            CompletionUtils.constructSnippet("weakand", "weakand {\n\t$0\n}", "weakand {}"),
             CompletionUtils.constructBasic("ignore-default-rank-features"),
             CompletionUtils.constructBasic("num-threads-per-search"),
             CompletionUtils.constructBasic("num-search-partitions"),
@@ -144,17 +145,28 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructBasic("target-hits-max-adjustment-factor"),
             CompletionUtils.constructBasic("filter-threshold"),
             FixedKeywordBodies.RANK.getColonSnippet(true),
-            FixedKeywordBodies.RANK_TYPE.getColonSnippet(true)
-        ));
-
-        put(weakandElm.class, List.of(
-            CompletionUtils.constructBasic("stopword-limit"),
-            CompletionUtils.constructBasic("adjust-target")
+            FixedKeywordBodies.RANK_IN_PROFILE.getBodySnippet(true),
+            FixedKeywordBodies.RANK_TYPE.getColonSnippet(true),
+            FixedKeywordBodies.WEAKAND.getBodySnippet(false)
         ));
 
         put(RootRankProfile.class, get(rankProfile.class));
 
         put(firstPhase.class, List.of(
+            CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
+            CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
+            CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
+            CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0")
+        ));
+
+        put(secondPhase.class, List.of(
+            CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
+            CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
+            CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
+            CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0")
+        ));
+
+        put(globalPhase.class, List.of(
             CompletionUtils.constructSnippet("expression", "expression: $0", "expression:"),
             CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
             CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
@@ -168,7 +180,12 @@ public class BodyKeywordCompletion implements CompletionProvider {
         ));
 
         put(FixedKeywordBodies.MATCH.parentASTClass(), FixedKeywordBodies.MATCH.completionItems());
+
         put(FixedKeywordBodies.RANK.parentASTClass(), FixedKeywordBodies.RANK.completionItems());
+
+        put(FixedKeywordBodies.RANK_IN_PROFILE.parentASTClass(), FixedKeywordBodies.RANK_IN_PROFILE.completionItems());
+
+        put(FixedKeywordBodies.WEAKAND.parentASTClass(), FixedKeywordBodies.WEAKAND.completionItems());
 
         put(summaryInDocument.class, FixedKeywordBodies.SUMMARY.completionItems());
         put(summaryInFieldLong.class, FixedKeywordBodies.SUMMARY.completionItems());
