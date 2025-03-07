@@ -60,11 +60,6 @@ public class ParenthesisExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return innerExpression.createdOutputType();
-    }
-
-    @Override
     public String toString() {
         return "(" + innerExpression + ")";
     }

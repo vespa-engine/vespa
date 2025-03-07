@@ -36,13 +36,6 @@ public class ClearStateTestCase {
         assertVerify(DataType.STRING, new ClearStateExpression(), DataType.STRING);
     }
 
-    @Test
-    public void requireThatVerificationContextIsCleared() {
-        MyVerification ctx = new MyVerification();
-        ctx.verify(new ClearStateExpression());
-        assertTrue(ctx.cleared);
-    }
-
     private static class MyExecution extends ExecutionContext {
 
         boolean cleared = false;

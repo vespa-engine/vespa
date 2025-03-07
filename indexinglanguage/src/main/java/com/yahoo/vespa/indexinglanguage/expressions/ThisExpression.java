@@ -17,9 +17,6 @@ public final class ThisExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
-
-    @Override
     public String toString() { return "this"; }
 
     @Override
