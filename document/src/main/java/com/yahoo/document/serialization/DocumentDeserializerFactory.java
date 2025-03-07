@@ -25,6 +25,7 @@ public class DocumentDeserializerFactory {
      * Deprecated, use createHead instead.
      */
     @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     public static DocumentDeserializer create6(DocumentTypeManager manager, GrowableByteBuffer buf) {
         return new VespaDocumentDeserializer6(manager, buf);
     }

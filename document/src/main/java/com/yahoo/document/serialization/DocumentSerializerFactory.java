@@ -24,6 +24,7 @@ public class DocumentSerializerFactory {
      * Deprecated, use createHead instead.
      */
     @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     public static DocumentSerializer create6(GrowableByteBuffer buf) {
         return new VespaDocumentSerializer6(buf);
     }
@@ -34,6 +35,7 @@ public class DocumentSerializerFactory {
      * Deprecated, use createHead instead.
      */
     @Deprecated(forRemoval = true)
+    @SuppressWarnings("removal")
     public static DocumentSerializer create6() {
         return new VespaDocumentSerializer6(new GrowableByteBuffer(8 * 1024, 2.0f));
     }
