@@ -38,11 +38,6 @@ public final class JoinExpression extends Expression {
         return getInputType(context); // Cannot deduce since any array type is accepted
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
     @SuppressWarnings({ "unchecked" })
     @Override
     protected void doExecute(ExecutionContext context) {

@@ -83,11 +83,6 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(getOutputType(context));
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         if (context.getCurrentValue() == null) {
             return;

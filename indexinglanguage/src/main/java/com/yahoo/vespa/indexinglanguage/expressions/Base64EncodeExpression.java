@@ -25,11 +25,6 @@ public final class Base64EncodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         long input = ((LongFieldValue) context.getCurrentValue()).getLong();
         byte[] output = new byte[8];

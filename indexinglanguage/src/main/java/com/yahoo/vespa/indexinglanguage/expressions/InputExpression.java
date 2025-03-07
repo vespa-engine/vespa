@@ -50,11 +50,6 @@ public final class InputExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(requireFieldType(context));
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         if (fieldPath != null)
             context.setCurrentValue(context.getFieldValue(fieldPath));

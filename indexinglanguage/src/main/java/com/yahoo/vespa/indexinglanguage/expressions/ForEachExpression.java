@@ -127,36 +127,6 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType valueType = context.getCurrentType();
-        if (valueType instanceof ArrayDataType || valueType instanceof WeightedSetDataType) {
-            // Set type for block evaluation
-            context.setCurrentType(valueType.getNestedType());
-
-            // Evaluate block, which sets valueType to the output of the block
-            context.verify(expression);
-
-            // Value type outside block becomes the collection type having the block output type as argument
-            if (valueType instanceof ArrayDataType) {
-                context.setCurrentType(DataType.getArray(context.getCurrentType()));
-            } else {
-                WeightedSetDataType wset = (WeightedSetDataType)valueType;
-                context.setCurrentType(DataType.getWeightedSet(context.getCurrentType(), wset.createIfNonExistent(), wset.removeIfZero()));
-            }
-        }
-        else if (valueType instanceof StructDataType) {
-            for (Field field : ((StructDataType)valueType).getFields())
-                context.setCurrentType(field.getDataType()).verify(expression).getCurrentType();
-            context.setCurrentType(valueType);
-        }
-        else if (valueType instanceof MapDataType) {
-            // Inner value will be MapEntryFieldValue which has the same type as the map
-            DataType outputType = context.verify(expression).getCurrentType();
-            context.setCurrentType(new ArrayDataType(outputType));
-        }
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         if (input instanceof Array || input instanceof WeightedSet) {

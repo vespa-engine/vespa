@@ -90,13 +90,6 @@ public abstract class Expression extends Selectable {
         return assignInputType(inputType);
     }
 
-    DataType oldassignInputType(DataType inputType) {
-        // Since we assign in both directions, in both orders, we may already know
-        if (this.inputType == null)
-            this.inputType = inputType;
-        return this.inputType;
-    }
-
     DataType assignInputType(DataType inputType) {
         // Since we assign in both directions, we may already have more precise info
         return this.inputType = leastGeneralNonNullOf(this.inputType, inputType);

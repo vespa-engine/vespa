@@ -24,11 +24,6 @@ public final class Base64DecodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         String input = String.valueOf(context.getCurrentValue());
         if (input.isEmpty()) { // TODO: Or if context.getCurrentValue() is null or if context.getCurrentValue().getDataType() != DataType.STRING

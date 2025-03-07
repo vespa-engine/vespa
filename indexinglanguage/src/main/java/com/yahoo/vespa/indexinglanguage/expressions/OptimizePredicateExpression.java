@@ -47,11 +47,6 @@ public final class OptimizePredicateExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(DataType.PREDICATE);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         PredicateFieldValue predicate = ((PredicateFieldValue) context.getCurrentValue()).clone();
         IntegerFieldValue arity = (IntegerFieldValue) context.getVariable("arity");

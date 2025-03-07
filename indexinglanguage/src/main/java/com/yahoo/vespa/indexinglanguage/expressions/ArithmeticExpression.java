@@ -100,13 +100,6 @@ public final class ArithmeticExpression extends CompositeExpression {
                                                   ": These are incompatible");
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(resultingType(context.setCurrentType(input).verify(left).getCurrentType(),
-                                             context.setCurrentType(input).verify(right).getCurrentType()));
-    }
-
     private DataType resultingType(DataType left, DataType right) {
         if (left == null || right == null)
             return null;

@@ -65,14 +65,6 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(input);
-        for (Expression exp : this)
-            context.setCurrentType(input).verify(exp);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         for (Expression expression : this) {

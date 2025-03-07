@@ -40,11 +40,6 @@ public final class RandomExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         int max;
         max = Objects.requireNonNullElseGet(this.max, () -> Integer.parseInt(String.valueOf(context.getCurrentValue())));

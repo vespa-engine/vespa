@@ -38,12 +38,6 @@ public final class ToWsetExpression extends Expression {
         return getInputType(context);
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
-        if (context.getCurrentType() != null)
-            context.setCurrentType(outputType(context.getCurrentType()));
-    }
-
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
     protected void doExecute(ExecutionContext context) {

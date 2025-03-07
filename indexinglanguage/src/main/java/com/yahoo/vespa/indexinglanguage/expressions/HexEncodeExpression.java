@@ -23,11 +23,6 @@ public final class HexEncodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         long input = ((LongFieldValue) context.getCurrentValue()).getLong();
         context.setCurrentValue(new StringFieldValue(Long.toHexString(input)));

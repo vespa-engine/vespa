@@ -26,11 +26,6 @@ public final class HexDecodeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         String input = String.valueOf(context.getCurrentValue());
         if (input.isEmpty()) {

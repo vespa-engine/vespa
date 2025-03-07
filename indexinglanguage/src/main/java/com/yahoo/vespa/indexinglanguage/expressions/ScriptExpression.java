@@ -76,9 +76,8 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
         for (Expression exp : this)
-            context.setCurrentType(input).verify(exp);
+            context.verify(exp);
     }
 
     @Override

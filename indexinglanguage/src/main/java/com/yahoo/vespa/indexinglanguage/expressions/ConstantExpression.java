@@ -41,11 +41,6 @@ public final class ConstantExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(value.getDataType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(value);
     }

@@ -40,11 +40,6 @@ public final class ZCurveExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         Struct input = ((Struct) context.getCurrentValue());
         Integer x = getFieldValue(input, PositionDataType.FIELD_X);

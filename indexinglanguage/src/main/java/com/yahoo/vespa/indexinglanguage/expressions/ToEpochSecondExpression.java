@@ -26,11 +26,6 @@ public class ToEpochSecondExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         String inputString = String.valueOf(context.getCurrentValue());
         long epochTime =  Instant.parse(inputString).getEpochSecond();

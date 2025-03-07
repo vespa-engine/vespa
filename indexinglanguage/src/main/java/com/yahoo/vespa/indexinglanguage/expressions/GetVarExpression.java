@@ -35,14 +35,6 @@ public final class GetVarExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getVariable(variableName);
-        if (input == null)
-            throw new VerificationException(this, "Variable '" + variableName + "' not found");
-        context.setCurrentType(input);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(context.getVariable(variableName));
     }

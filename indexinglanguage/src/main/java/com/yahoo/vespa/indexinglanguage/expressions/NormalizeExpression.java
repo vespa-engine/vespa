@@ -34,11 +34,6 @@ public final class NormalizeExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         Transformer transformer = linguistics.getTransformer();
         var orig = String.valueOf(context.getCurrentValue());

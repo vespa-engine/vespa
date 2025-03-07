@@ -80,12 +80,8 @@ public final class SelectInputExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        for (Pair<String, Expression> entry : cases) {
-            DataType val = context.getFieldType(entry.getFirst(), this);
-            context.setCurrentType(val).verify(entry.getSecond());
-        }
-        context.setCurrentType(input);
+        for (Pair<String, Expression> entry : cases)
+            context.verify(entry.getSecond());
     }
 
     @Override

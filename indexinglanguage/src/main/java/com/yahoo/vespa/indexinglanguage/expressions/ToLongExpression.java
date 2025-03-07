@@ -22,11 +22,6 @@ public final class ToLongExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new LongFieldValue(Long.valueOf(String.valueOf(context.getCurrentValue()))));
     }

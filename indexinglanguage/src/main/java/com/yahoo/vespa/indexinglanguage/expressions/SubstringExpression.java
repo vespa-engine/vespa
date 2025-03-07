@@ -36,11 +36,6 @@ public final class SubstringExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         String input = String.valueOf(context.getCurrentValue());
         String substring = Text.substringByCodepoints(input, from, to);
