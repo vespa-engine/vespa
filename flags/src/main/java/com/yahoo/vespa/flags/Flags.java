@@ -86,7 +86,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
-            "async-message-handling-on-schedule", false,
+            "async-message-handling-on-schedule", true,
             List.of("hmusum"), "2020-12-02", "2025-04-01",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",

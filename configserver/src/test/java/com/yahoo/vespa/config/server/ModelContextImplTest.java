@@ -98,7 +98,7 @@ public class ModelContextImplTest {
         assertEquals(Optional.empty(), context.wantedDockerImageRepo());
         assertEquals(new Version(7), context.modelVespaVersion());
         assertEquals(new Version(8), context.wantedNodeVespaVersion());
-        assertFalse(context.properties().featureFlags().useAsyncMessageHandlingOnSchedule());
+        assertTrue(context.properties().featureFlags().useAsyncMessageHandlingOnSchedule());
         assertEquals(0.5, context.properties().featureFlags().feedConcurrency(), 0.0);
     }
 

@@ -85,7 +85,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default int mbusCppEventsBeforeWakeup() { return 1; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int rpcNumTargets() { return 2; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int rpcEventsBeforeWakeup() { return 1; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useAsyncMessageHandlingOnSchedule() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedConcurrency() { return 0.5; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int maxUnCommittedMemory() { return 130000; }
