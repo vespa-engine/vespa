@@ -62,7 +62,6 @@ public class RedundancyBuilder {
         if (isHosted) {
             if (globalMinRedundancy != null && ( finalRedundancy == null || finalRedundancy * leafGroups < globalMinRedundancy ))
                 initialRedundancy = finalRedundancy = (int)Math.ceil((double)globalMinRedundancy / leafGroups);
-            System.out.println("ready copies here is " + readyCopies);
             if (readyCopies == null) {
                 if (isStreaming == Boolean.TRUE) {
                     readyCopies = finalRedundancy;
