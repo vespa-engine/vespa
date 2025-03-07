@@ -15,7 +15,8 @@ struct TermDistanceParams {
     uint32_t fieldId;
     uint32_t termX;
     uint32_t termY;
-    TermDistanceParams() : fieldId(0), termX(0), termY(0) {}
+    std::optional<uint32_t> element_gap;
+    TermDistanceParams() : fieldId(0), termX(0), termY(0), element_gap() {}
 };
 
 /**
@@ -26,6 +27,7 @@ class TermDistanceExecutor : public fef::FeatureExecutor
 private:
     QueryTerm        _termA;
     QueryTerm        _termB;
+    std::optional<uint32_t> _element_gap;
     const fef::MatchData *_md;
 
     virtual void handle_bind_match_data(const fef::MatchData &md) override;

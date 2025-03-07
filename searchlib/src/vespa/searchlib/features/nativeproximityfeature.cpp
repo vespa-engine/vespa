@@ -14,6 +14,22 @@ using namespace search::fef;
 
 namespace search::features {
 
+namespace {
+
+std::optional<uint32_t> get_element_gap(const IIndexEnvironment& env, const std::string& base_name,
+    const std::string& field_name) {
+    auto property = env.getProperties().lookup(base_name, "elementGap", field_name);
+    if (!property.found()) {
+        return std::nullopt;
+    }
+    auto& value = property.get();
+    if (value == "infinity") {
+        return std::nullopt;
+    }
+    return util::strToNum<uint32_t>(value);
+}
+
+}
 NativeProximityExecutorSharedState::NativeProximityExecutorSharedState(const IQueryEnvironment& env,
                                                                        const NativeProximityParams& params)
     : fef::Anything(),
@@ -96,7 +112,7 @@ NativeProximityExecutor::calculateScoreForPair(const TermPair & pair, uint32_t f
     TermDistanceCalculator::Result result;
     const QueryTerm & a = pair.first;
     const QueryTerm & b = pair.second;
-    TermDistanceCalculator::run(a, b, *_md, docId, result);
+    TermDistanceCalculator::run(a, b, param._element_gap, *_md, docId, result);
     uint32_t forwardIdx = result.forwardDist > 0 ? result.forwardDist - 1 : 0;
     uint32_t reverseIdx = result.reverseDist > 0 ? result.reverseDist - 1 : 0;
     feature_t forwardScore = param.proximityTable->get(forwardIdx) * param.proximityImportance;
@@ -213,6 +229,7 @@ NativeProximityBlueprint::setup(const IIndexEnvironment & env,
                 _params.setMaxTableSums(fieldId, value);
             }
         }
+        param._element_gap = get_element_gap(env, getBaseName(), info->name());
         if (param.field) {
             if (first_field) {
                 first_field = false;

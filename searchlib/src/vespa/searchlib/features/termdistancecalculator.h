@@ -67,6 +67,7 @@ public:
 private:
     static void findBest(const fef::TermFieldMatchData *tmdX,
                          const fef::TermFieldMatchData *tmdY,
+                         std::optional<uint32_t> element_gap,
                          uint32_t numTermsX,
                          uint32_t & bestDist,
                          uint32_t & bestPos);
@@ -77,7 +78,7 @@ public:
      * match data and field id. The calculated values are stored in the given result object.
      * NB: Both query terms must have attached term fields with valid term field handles.
      **/
-    static void run(const QueryTerm &termX, const QueryTerm &termY,
+    static void run(const QueryTerm &termX, const QueryTerm &termY, std::optional<uint32_t>  element_gap,
                     const fef::MatchData & match, uint32_t docId, Result & r);
 };
 
