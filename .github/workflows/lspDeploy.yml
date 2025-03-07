@@ -84,4 +84,5 @@ jobs:
             --notes-file ./clients/github-release/README.md \
             --latest=false \
             -t "Vespa Language Server ${{ steps.retrieve_version.outputs.VERSION }}" \
-            './clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar' 
+            './clients/github-release/target/vespa-language-server_${{ steps.retrieve_version.outputs.VERSION }}.jar' \
+            './clients/vscode/vespa-language-support-${{ steps.retrieve_version.outputs.VERSION }}.vsix'
