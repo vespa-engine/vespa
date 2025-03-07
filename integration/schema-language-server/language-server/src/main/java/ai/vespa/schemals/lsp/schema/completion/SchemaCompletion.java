@@ -8,7 +8,7 @@ import org.eclipse.lsp4j.CompletionItem;
 import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.schema.completion.provider.BodyKeywordCompletion;
-import ai.vespa.schemals.lsp.schema.completion.provider.CompletionProvider;
+import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.schema.completion.provider.EmptyFileCompletion;
 import ai.vespa.schemals.lsp.schema.completion.provider.FieldsCompletion;
 import ai.vespa.schemals.lsp.schema.completion.provider.IndexingLangaugeCompletion;

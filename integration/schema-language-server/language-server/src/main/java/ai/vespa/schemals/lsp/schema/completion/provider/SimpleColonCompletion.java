@@ -6,6 +6,7 @@ import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.CompletionItemKind;
 
 import ai.vespa.schemals.context.EventCompletionContext;
+import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.schema.completion.provider.FixedKeywordBodies.FixedKeywordBody;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
