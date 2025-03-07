@@ -104,9 +104,6 @@ public final class SelectInputExpression extends CompositeExpression {
         }
     }
 
-    @Override
-    public DataType createdOutputType() { return null; }
-
     public List<Pair<String, Expression>> getCases() {
         return Collections.unmodifiableList(cases);
     }

@@ -40,11 +40,6 @@ public final class GetVarExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
-
-    @Override
     public String toString() {
         return "get_var " + variableName;
     }

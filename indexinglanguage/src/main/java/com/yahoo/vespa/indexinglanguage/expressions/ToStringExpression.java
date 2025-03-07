@@ -27,9 +27,6 @@ public final class ToStringExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.STRING; }
-
-    @Override
     public String toString() { return "to_string"; }
 
     @Override

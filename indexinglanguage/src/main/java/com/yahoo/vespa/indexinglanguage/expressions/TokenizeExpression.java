@@ -55,9 +55,6 @@ public final class TokenizeExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return null; }
-
-    @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         ret.append("tokenize");

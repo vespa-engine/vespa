@@ -154,17 +154,6 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        DataType ifTrueType = ifTrue.createdOutputType();
-        DataType ifFalseType = ifFalse == null ? null : ifFalse.createdOutputType();
-        if (ifTrueType == null || ifFalseType == null) return null;
-        if (ifTrueType.isAssignableFrom(ifFalseType))
-            return ifTrueType;
-        else
-            return ifFalseType;
-    }
-
-    @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         ret.append("if (").append(left).append(" ").append(comparator).append(" ").append(right).append(") ");

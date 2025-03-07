@@ -101,13 +101,6 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     }
 
     @Override
-    public DataType createdOutputType() {
-        var expressions = asList();
-        if (expressions.isEmpty()) return null;
-        return (expressions.get(expressions.size() - 1)).createdOutputType();
-    }
-
-    @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         ret.append("{ ");

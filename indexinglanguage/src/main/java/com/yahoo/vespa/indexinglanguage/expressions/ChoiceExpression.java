@@ -75,11 +75,6 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
-
-    @Override
     public String toString() {
         return asList().stream().map(Object::toString).collect(Collectors.joining(" || "));
     }

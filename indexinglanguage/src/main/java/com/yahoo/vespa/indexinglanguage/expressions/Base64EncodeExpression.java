@@ -37,9 +37,6 @@ public final class Base64EncodeExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.STRING; }
-
-    @Override
     public String toString() { return "base64encode"; }
 
     @Override

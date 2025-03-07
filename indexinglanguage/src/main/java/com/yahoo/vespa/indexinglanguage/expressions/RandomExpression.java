@@ -47,9 +47,6 @@ public final class RandomExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.INT; }
-
-    @Override
     public String toString() {
         return "random" + (max != null ? " " + max : "");
     }

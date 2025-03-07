@@ -55,9 +55,6 @@ public final class JoinExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.STRING; }
-
-    @Override
     public String toString() {
         return "join \"" + StringUtilities.escape(delimiter, '"') + "\"";
     }

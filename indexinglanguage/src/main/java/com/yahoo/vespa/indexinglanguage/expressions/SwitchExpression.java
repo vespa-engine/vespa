@@ -133,9 +133,6 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType createdOutputType() { return null; }
-
-    @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         ret.append("switch { ");

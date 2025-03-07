@@ -27,9 +27,6 @@ public final class ToPositionExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return PositionDataType.INSTANCE; }
-
-    @Override
     public String toString() { return "to_pos"; }
 
     @Override

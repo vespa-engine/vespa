@@ -43,11 +43,6 @@ public final class SubstringExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.STRING;
-    }
-
-    @Override
     public String toString() {
         return "substring " + from + " " + to;
     }

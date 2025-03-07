@@ -25,15 +25,11 @@ public final class TrimExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.STRING; }
-
-    @Override
     public String toString() { return "trim"; }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof TrimExpression)) return false;
-
         return true;
     }
 

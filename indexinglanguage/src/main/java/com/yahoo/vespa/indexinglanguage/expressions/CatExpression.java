@@ -78,11 +78,6 @@ public final class CatExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
-
-    @Override
     public String toString() {
         StringBuilder ret = new StringBuilder();
         for (Iterator<Expression> it = iterator(); it.hasNext();) {

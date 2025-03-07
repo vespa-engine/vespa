@@ -17,9 +17,6 @@ public final class ClearStateExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return null; }
-
-    @Override
     public String toString() { return "clear_state"; }
 
     @Override

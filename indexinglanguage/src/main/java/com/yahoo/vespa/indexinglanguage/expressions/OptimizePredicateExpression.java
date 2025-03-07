@@ -70,9 +70,6 @@ public final class OptimizePredicateExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return null; }
-
-    @Override
     public String toString() { return "optimize_predicate"; }
 
     @Override

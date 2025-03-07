@@ -48,9 +48,6 @@ public final class HexDecodeExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.LONG; }
-
-    @Override
     public String toString() { return "hexdecode"; }
 
     @Override

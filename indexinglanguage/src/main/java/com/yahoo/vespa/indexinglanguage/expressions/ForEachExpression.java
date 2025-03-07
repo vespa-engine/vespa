@@ -143,14 +143,6 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        if (expression.createdOutputType() == null) {
-            return null;
-        }
-        return UnresolvedDataType.INSTANCE;
-    }
-
-    @Override
     public String toString() {
         return "for_each { " + expression + " }";
     }

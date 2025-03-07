@@ -52,9 +52,6 @@ public final class ToWsetExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
-
-    @Override
     public String toString() {
         return "to_wset" +
                (createIfNonExistent ? " create_if_non_existent" : "") +

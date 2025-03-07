@@ -57,9 +57,6 @@ public final class ZCurveExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.LONG; }
-
-    @Override
     public String toString() { return "zcurve"; }
 
     @Override

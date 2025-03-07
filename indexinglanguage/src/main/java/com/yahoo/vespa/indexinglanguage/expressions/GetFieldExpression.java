@@ -95,11 +95,6 @@ public final class GetFieldExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
-
-    @Override
     public String toString() {
         return "get_field " + structFieldName;
     }

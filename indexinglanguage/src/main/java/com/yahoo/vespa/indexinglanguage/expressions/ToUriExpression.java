@@ -28,9 +28,6 @@ public final class ToUriExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.URI; }
-
-    @Override
     public String toString() { return "to_uri"; }
 
     @Override

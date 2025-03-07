@@ -44,11 +44,6 @@ public final class ToArrayExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
-
-    @Override
     public String toString() { return "to_array"; }
 
     @Override

@@ -42,9 +42,6 @@ public final class ToBoolExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.BOOL; }
-
-    @Override
     public String toString() { return "to_bool"; }
 
     @Override

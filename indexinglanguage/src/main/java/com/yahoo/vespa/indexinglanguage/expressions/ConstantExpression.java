@@ -46,11 +46,6 @@ public final class ConstantExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return value.getDataType();
-    }
-
-    @Override
     public String toString() {
         if (value instanceof StringFieldValue) {
             return "\"" + StringUtilities.escape(value.toString(), '"') + "\"";

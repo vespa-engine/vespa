@@ -51,11 +51,6 @@ public final class SplitExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.getArray(DataType.STRING);
-    }
-
-    @Override
     public String toString() {
         return "split \"" + StringUtilities.escape(splitPattern.toString(), '"') + "\"";
     }

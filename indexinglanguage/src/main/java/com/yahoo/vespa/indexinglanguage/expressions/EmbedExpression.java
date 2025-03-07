@@ -241,11 +241,6 @@ public class EmbedExpression extends Expression  {
         return ((TensorDataType)getOutputType()).getTensorType();
     }
 
-    @Override
-    public DataType createdOutputType() {
-        return getOutputType();
-    }
-
     private static TensorType toTargetTensor(DataType dataType) {
         if (dataType instanceof ArrayDataType) return toTargetTensor(dataType.getNestedType());
         if  ( ! ( dataType instanceof TensorDataType))

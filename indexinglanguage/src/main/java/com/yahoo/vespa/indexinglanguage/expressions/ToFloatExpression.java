@@ -27,9 +27,6 @@ public final class ToFloatExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.FLOAT; }
-
-    @Override
     public String toString() { return "to_float"; }
 
     @Override

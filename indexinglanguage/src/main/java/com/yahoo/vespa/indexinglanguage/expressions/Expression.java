@@ -149,8 +149,6 @@ public abstract class Expression extends Selectable {
         return this.outputType = leastGeneralNonNullOf(this.outputType, outputType);
     }
 
-    public abstract DataType createdOutputType();
-
     public final void verify(DocumentType type) {
         verify(new DocumentTypeAdapter(type));
     }

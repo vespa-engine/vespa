@@ -133,11 +133,6 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return getOutputType();
-    }
-
-    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("generate");

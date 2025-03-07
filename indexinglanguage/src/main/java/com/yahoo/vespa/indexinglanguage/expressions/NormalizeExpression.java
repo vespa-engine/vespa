@@ -69,11 +69,6 @@ public final class NormalizeExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return DataType.STRING;
-    }
-
-    @Override
     public String toString() {
         return "normalize";
     }

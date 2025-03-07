@@ -27,9 +27,6 @@ public final class ToDoubleExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.DOUBLE; }
-
-    @Override
     public String toString() { return "to_double"; }
 
     @Override

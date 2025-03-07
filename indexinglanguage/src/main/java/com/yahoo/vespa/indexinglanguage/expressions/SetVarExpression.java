@@ -53,9 +53,6 @@ public final class SetVarExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return null; }
-
-    @Override
     public String toString() {
         return "set_var " + varName;
     }

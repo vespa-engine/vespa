@@ -32,9 +32,6 @@ public final class HostNameExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.STRING; }
-
-    @Override
     public String toString() { return "hostname"; }
 
     @Override

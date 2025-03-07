@@ -38,9 +38,6 @@ public class LiteralBoolExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.BOOL; }
-
-    @Override
     public String toString() {
         return String.valueOf(value);
     }

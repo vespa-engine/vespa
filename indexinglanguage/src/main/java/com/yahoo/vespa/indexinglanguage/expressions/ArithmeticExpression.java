@@ -126,11 +126,6 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
-    }
-
-    @Override
     public String toString() {
         return left + " " + op + " " + right;
     }

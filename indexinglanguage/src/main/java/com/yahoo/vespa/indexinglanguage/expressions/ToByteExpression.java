@@ -27,9 +27,6 @@ public final class ToByteExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.BYTE; }
-
-    @Override
     public String toString() { return "to_byte"; }
 
     @Override
