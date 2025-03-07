@@ -135,7 +135,6 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("summary-features", "summary-features {\n\t$0\n}", "summary-features {}"),
             CompletionUtils.constructSnippet("rank-features", "rank-features: $0", "rank-features:"),
             CompletionUtils.constructSnippet("rank-features", "rank-features {\n\t$0\n}", "rank-features {}"),
-            CompletionUtils.constructSnippet("weakand", "weakand {\n\t$0\n}", "weakand {}"),
             CompletionUtils.constructBasic("ignore-default-rank-features"),
             CompletionUtils.constructBasic("num-threads-per-search"),
             CompletionUtils.constructBasic("num-search-partitions"),
@@ -146,13 +145,9 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructBasic("target-hits-max-adjustment-factor"),
             CompletionUtils.constructBasic("filter-threshold"),
             FixedKeywordBodies.RANK.getColonSnippet(true),
+            FixedKeywordBodies.RANK_IN_PROFILE.getBodySnippet(true),
             FixedKeywordBodies.RANK_TYPE.getColonSnippet(true),
-            FixedKeywordBodies.RANK_IN_PROFILE.getBodySnippet(true)
-        ));
-
-        put(weakandElm.class, List.of(
-            CompletionUtils.constructBasic("stopword-limit"),
-            CompletionUtils.constructBasic("adjust-target")
+            FixedKeywordBodies.WEAKAND.getBodySnippet(false)
         ));
 
         put(RootRankProfile.class, get(rankProfile.class));
@@ -189,6 +184,8 @@ public class BodyKeywordCompletion implements CompletionProvider {
         put(FixedKeywordBodies.RANK.parentASTClass(), FixedKeywordBodies.RANK.completionItems());
 
         put(FixedKeywordBodies.RANK_IN_PROFILE.parentASTClass(), FixedKeywordBodies.RANK_IN_PROFILE.completionItems());
+
+        put(FixedKeywordBodies.WEAKAND.parentASTClass(), FixedKeywordBodies.WEAKAND.completionItems());
 
         put(summaryInDocument.class, FixedKeywordBodies.SUMMARY.completionItems());
         put(summaryInFieldLong.class, FixedKeywordBodies.SUMMARY.completionItems());
