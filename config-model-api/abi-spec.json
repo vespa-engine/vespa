@@ -1341,7 +1341,8 @@
       "public boolean useLegacyWandQueryParsing()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
-      "public int documentV1QueueSize()"
+      "public int documentV1QueueSize()",
+      "public int maxContentNodeMaintenanceOpConcurrency()"
     ],
     "fields" : [ ]
   },

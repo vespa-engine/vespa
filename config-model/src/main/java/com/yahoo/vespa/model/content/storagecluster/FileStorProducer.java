@@ -48,6 +48,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
     private final StorFilestorConfig.Response_sequencer_type.Enum responseSequencerType;
     private final boolean useAsyncMessageHandlingOnSchedule;
     private final int persistenceThreadMaxFeedOpBatchSize;
+    private final int maxContentNodeMaintenanceOpConcurrency;
 
     private static StorFilestorConfig.Response_sequencer_type.Enum convertResponseSequencerType(String sequencerType) {
         try {
@@ -64,6 +65,7 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         this.responseSequencerType = convertResponseSequencerType(featureFlags.responseSequencerType());
         this.useAsyncMessageHandlingOnSchedule = featureFlags.useAsyncMessageHandlingOnSchedule();
         this.persistenceThreadMaxFeedOpBatchSize = featureFlags.persistenceThreadMaxFeedOpBatchSize();
+        this.maxContentNodeMaintenanceOpConcurrency = featureFlags.maxContentNodeMaintenanceOpConcurrency();
     }
 
 
@@ -77,6 +79,12 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
         builder.use_async_message_handling_on_schedule(useAsyncMessageHandlingOnSchedule);
         var throttleBuilder = new StorFilestorConfig.Async_operation_throttler.Builder();
         builder.async_operation_throttler(throttleBuilder);
+        if (maxContentNodeMaintenanceOpConcurrency > 0) {
+            var maintenanceThrottleBuilder = new StorFilestorConfig.Maintenance_operation_throttler.Builder();
+            maintenanceThrottleBuilder.type(StorFilestorConfig.Maintenance_operation_throttler.Type.DYNAMIC);
+            maintenanceThrottleBuilder.max_window_size(maxContentNodeMaintenanceOpConcurrency);
+            builder.maintenance_operation_throttler(maintenanceThrottleBuilder);
+        }
         builder.max_feed_op_batch_size(persistenceThreadMaxFeedOpBatchSize);
     }
 

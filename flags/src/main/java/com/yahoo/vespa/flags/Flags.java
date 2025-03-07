@@ -353,6 +353,15 @@ public class Flags {
             "Use new incremental usage calculation for node snapshots",
             "Takes effect at controller startup");
 
+    public static final UnboundIntFlag MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY = defineIntFlag(
+            "max-content-node-maintenance-op-concurrency", -1,
+            List.of("vekterli"), "2025-03-07", "2025-09-01",
+            "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
+            "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
+            "regular maintenance pressure.",
+            "Takes effect immediately",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

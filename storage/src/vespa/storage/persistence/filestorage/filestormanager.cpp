@@ -148,10 +148,9 @@ selectSequencer(StorFilestorConfig::ResponseSequencerType sequencerType) {
 }
 
 vespalib::SharedOperationThrottler::DynamicThrottleParams
-dynamic_throttle_params_from_config(const StorFilestorConfig& config, uint32_t num_threads)
+dynamic_throttle_params_from_config(const auto& cfg_params, uint32_t win_size_lbound)
 {
-    const auto& cfg_params = config.asyncOperationThrottler;
-    auto win_size_incr = std::max(static_cast<uint32_t>(std::max(cfg_params.windowSizeIncrement, 1)), num_threads);
+    auto win_size_incr = std::max(static_cast<uint32_t>(std::max(cfg_params.windowSizeIncrement, 1)), win_size_lbound);
 
     vespalib::SharedOperationThrottler::DynamicThrottleParams params;
     params.window_size_increment        = win_size_incr;
@@ -207,17 +206,19 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
 
     _use_async_message_handling_on_schedule.store(config.useAsyncMessageHandlingOnSchedule, std::memory_order_relaxed);
     _host_info_reporter.set_noise_level(config.resourceUsageReporterNoiseLevel);
-    const bool use_dynamic_throttling = (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC);
+    const bool use_dynamic_operation_throttling = (config.asyncOperationThrottler.type == StorFilestorConfig::AsyncOperationThrottler::Type::DYNAMIC);
+    const bool use_dynamic_maintenance_throttling = (config.maintenanceOperationThrottler.type == StorFilestorConfig::MaintenanceOperationThrottler::Type::DYNAMIC);
 
     if (!liveUpdate) {
         _config = std::make_unique<StorFilestorConfig>(config);
         uint32_t numThreads = std::max(1, _config->numThreads);
         uint32_t numStripes = std::max(1u, numThreads / 2);
         _metrics->initDiskMetrics(numStripes, computeAllPossibleHandlerThreads(*_config));
-        auto dyn_params = dynamic_throttle_params_from_config(*_config, numThreads);
+        auto op_dyn_params = dynamic_throttle_params_from_config(_config->asyncOperationThrottler, numThreads);
+        auto maintenance_dyn_params = dynamic_throttle_params_from_config(_config->maintenanceOperationThrottler, numStripes);
 
         _filestorHandler = std::make_unique<FileStorHandlerImpl>(numThreads, numStripes, *this, *_metrics,
-                                                                 _compReg, dyn_params);
+                                                                 _compReg, op_dyn_params, maintenance_dyn_params);
         uint32_t numResponseThreads = computeNumResponseThreads(_config->numResponseThreads);
         _sequencedExecutor = vespalib::SequencedTaskExecutor::create(CpuUsage::wrap(response_executor, CpuUsage::Category::WRITE),
                                                                      numResponseThreads, 10000,
@@ -231,13 +232,17 @@ FileStorManager::on_configure(const StorFilestorConfig& config)
         _bucketExecutorRegistration = _provider->register_executor(std::make_shared<BucketExecutorWrapper>(*this));
     } else {
         assert(_filestorHandler);
-        auto updated_dyn_throttle_params = dynamic_throttle_params_from_config(config, _threads.size());
-        _filestorHandler->reconfigure_dynamic_throttler(updated_dyn_throttle_params);
+        auto updated_op_dyn_throttle_params = dynamic_throttle_params_from_config(config.asyncOperationThrottler, _threads.size());
+        const uint32_t num_stripes = std::max(1u, static_cast<uint32_t>(_threads.size()) / 2);
+        auto updated_maintenance_dyn_throttle_params = dynamic_throttle_params_from_config(_config->maintenanceOperationThrottler, num_stripes);
+        _filestorHandler->reconfigure_dynamic_operation_throttler(updated_op_dyn_throttle_params);
+        _filestorHandler->reconfigure_dynamic_maintenance_throttler(updated_maintenance_dyn_throttle_params);
     }
     _filestorHandler->set_max_feed_op_batch_size(std::max(1, config.maxFeedOpBatchSize));
     // TODO remove once desired throttling behavior is set in stone
     {
-        _filestorHandler->use_dynamic_operation_throttling(use_dynamic_throttling);
+        _filestorHandler->use_dynamic_operation_throttling(use_dynamic_operation_throttling);
+        _filestorHandler->use_dynamic_maintenance_throttling(use_dynamic_maintenance_throttling);
         _filestorHandler->set_throttle_apply_bucket_diff_ops(false);
     }
 }

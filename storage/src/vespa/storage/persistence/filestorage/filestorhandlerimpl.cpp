@@ -41,20 +41,24 @@ uint32_t per_stripe_maintenance_limit(uint32_t num_threads, uint32_t num_stripes
 
 FileStorHandlerImpl::FileStorHandlerImpl(MessageSender& sender, FileStorMetrics& metrics,
                                          ServiceLayerComponentRegister& compReg)
-    : FileStorHandlerImpl(1, 1, sender, metrics, compReg, vespalib::SharedOperationThrottler::DynamicThrottleParams())
+    : FileStorHandlerImpl(1, 1, sender, metrics, compReg, {}, {})
 {
 }
 
 FileStorHandlerImpl::FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender& sender,
                                          FileStorMetrics& metrics,
                                          ServiceLayerComponentRegister& compReg,
-                                         const vespalib::SharedOperationThrottler::DynamicThrottleParams& dyn_throttle_params)
+                                         const vespalib::SharedOperationThrottler::DynamicThrottleParams& op_dyn_throttle_params,
+                                         const vespalib::SharedOperationThrottler::DynamicThrottleParams& maintenance_dyn_throttle_params)
     : _component(compReg, "filestorhandlerimpl"),
       _state(FileStorHandler::AVAILABLE),
       _metrics(&metrics),
-      _dynamic_operation_throttler(vespalib::SharedOperationThrottler::make_dynamic_throttler(dyn_throttle_params)),
+      _dynamic_operation_throttler(vespalib::SharedOperationThrottler::make_dynamic_throttler(op_dyn_throttle_params)),
       _unlimited_operation_throttler(vespalib::SharedOperationThrottler::make_unlimited_throttler()),
       _active_throttler(_unlimited_operation_throttler.get()), // Will be set by FileStorManager
+      _dynamic_maintenance_throttler(vespalib::SharedOperationThrottler::make_dynamic_throttler(maintenance_dyn_throttle_params)),
+      _unlimited_maintenance_throttler(vespalib::SharedOperationThrottler::make_unlimited_throttler()),
+      _active_maintenance_throttler(_unlimited_maintenance_throttler.get()), // Will be set by FileStorManager
       _stripes(),
       _messageSender(sender),
       _bucketIdFactory(_component.getBucketIdFactory()),
@@ -259,9 +263,14 @@ FileStorHandlerImpl::schedule_and_get_next_async_message(const std::shared_ptr<a
 }
 
 void
-FileStorHandlerImpl::reconfigure_dynamic_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params)
+FileStorHandlerImpl::reconfigure_dynamic_operation_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params)
 {
     _dynamic_operation_throttler->reconfigure_dynamic_throttling(params);
+}
+
+void
+FileStorHandlerImpl::reconfigure_dynamic_maintenance_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) {
+    _dynamic_maintenance_throttler->reconfigure_dynamic_throttling(params);
 }
 
 void
@@ -272,6 +281,14 @@ FileStorHandlerImpl::use_dynamic_operation_throttling(bool use_dynamic) noexcept
     _active_throttler.store(use_dynamic ? _dynamic_operation_throttler.get()
                                         : _unlimited_operation_throttler.get(),
                             std::memory_order_release);
+}
+
+void
+FileStorHandlerImpl::use_dynamic_maintenance_throttling(bool use_dynamic) noexcept {
+    // See use_dynamic_operation_throttling for memory ordering rationale
+    _active_maintenance_throttler.store(use_dynamic ? _dynamic_maintenance_throttler.get()
+                                                    : _unlimited_maintenance_throttler.get(),
+                                        std::memory_order_release);
 }
 
 bool
@@ -943,12 +960,12 @@ FileStorHandlerImpl::Stripe::operation_type_should_be_throttled(api::MessageType
     case api::MessageType::PUT_ID:
     case api::MessageType::REMOVE_ID:
     case api::MessageType::UPDATE_ID:
-    case api::MessageType::CREATEBUCKET_ID:
-    case api::MessageType::DELETEBUCKET_ID:
+    case api::MessageType::CREATEBUCKET_ID:// TODO remove?
+    case api::MessageType::DELETEBUCKET_ID: // TODO remove; already throttles at lower level
         return true;
     case api::MessageType::APPLYBUCKETDIFF_ID:
     case api::MessageType::APPLYBUCKETDIFF_REPLY_ID:
-        return _owner.throttle_apply_bucket_diff_ops();
+        return _owner.throttle_apply_bucket_diff_ops(); // TODO remove, always false
     default:
         return false;
     }

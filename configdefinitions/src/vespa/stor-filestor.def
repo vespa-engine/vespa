@@ -68,3 +68,22 @@ async_operation_throttler.resize_rate double default=3.0
 ## same bucket, as each operation would otherwise have to wait for the completion
 ## of all prior writes to the bucket.
 max_feed_op_batch_size int default=1
+
+## Specify throttling used for async _maintenance_ operations dispatched to Proton.
+## If enabled (i.e. set to DYNAMIC) this serves as a secondary throttling mechanism
+## for the following operations:
+##  - Put/Remove as part of merge apply diffs
+##  - RemoveByGid as part of bucket deletions
+##  - Remove as part of remove location (i.e. GC)
+##
+## Note that for a maintenance operation to be scheduled it has to _both_ acquire a
+## regular async operation throttler token _and_ a maintenance throttler token, in that
+## exact order.
+maintenance_operation_throttler.type enum { UNLIMITED, DYNAMIC } default=UNLIMITED
+## Internal maintenance throttler tuning parameters that only apply when type == DYNAMIC:
+maintenance_operation_throttler.window_size_increment int default=10
+maintenance_operation_throttler.window_size_decrement_factor double default=1.2
+maintenance_operation_throttler.window_size_backoff double default=0.95
+maintenance_operation_throttler.min_window_size int default=10
+maintenance_operation_throttler.max_window_size int default=-1 # < 0 implies INT_MAX
+maintenance_operation_throttler.resize_rate double default=2.0

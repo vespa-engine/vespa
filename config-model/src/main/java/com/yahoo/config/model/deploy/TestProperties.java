@@ -79,6 +79,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int persistenceThreadMaxFeedOpBatchSize = 1;
     private boolean logserverOtelCol = false;
     private boolean symmetricPutAndActivateReplicaSelection = false;
+    private int maxContentNodeMaintenanceOpConcurrency = -1;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -132,6 +133,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int persistenceThreadMaxFeedOpBatchSize() { return persistenceThreadMaxFeedOpBatchSize; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
+    @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -349,6 +351,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setContainerEndpoints(Set<ContainerEndpoint> containerEndpoints) {
         this.endpoints = containerEndpoints;
+        return this;
+    }
+
+    public TestProperties setMaxContentNodeMaintenanceOpConcurrency(int maxConcurrency) {
+        this.maxContentNodeMaintenanceOpConcurrency = maxConcurrency;
         return this;
     }
 
