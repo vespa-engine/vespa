@@ -13,13 +13,14 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.tensor.Tensor;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-/// Removes all but the top-n best array entries for a string array field.
-/// Best is defined as highest scoring, according to a tensor produced by summary-features.
+/// Removes all but the top-n highest scoring entries for a string array field.
+/// The scores should be computed in a tensor returned in summary-features.
 ///
 /// @author andreer
 @Beta
@@ -44,22 +45,37 @@ public class ChunkLimitingSearcher extends Searcher {
         String chunkLimitedField = query.properties().getString(CHUNK_LIMIT_FIELD);
         String chunkLimitTensor = query.properties().getString(CHUNK_LIMIT_TENSOR);
 
+        if (chunkLimit == 0 || chunkLimitedField == null || chunkLimitTensor == null) return;
+
         query.trace("Pruning excessive chunks from result", 2);
-        result.hits().deepIterator().forEachRemaining(hit -> limitChunks(hit, query, chunkLimit, chunkLimitedField, chunkLimitTensor));
+        Iterator<Hit> hitIterator = result.hits().unorderedDeepIterator();
+        while(hitIterator.hasNext()) {
+            Hit hit = hitIterator.next();
+            limitChunks(hit, query, chunkLimit, chunkLimitedField, chunkLimitTensor);
+        }
     }
 
     private void limitChunks(Hit hit, Query query, int chunkLimit, String chunkLimitedField, String chunkLimitTensor) {
 
+        var chunks = (Value.ArrayValue) hit.getField(chunkLimitedField);
+        if(chunks.entryCount() <= chunkLimit) return;
+
         FeatureData summaryFeatures = (FeatureData) hit.getField("summaryfeatures");
         if (summaryFeatures == null) {
-            query.trace("No summary-features found for hit " + hit.getDisplayId() + ", leaving as-is", 2);
+            query.trace("No summaryfeatures found for hit " + hit.getDisplayId() + ", not limiting", 2);
             return;
         }
 
         var chunkScores = getChunkScores(summaryFeatures, chunkLimitTensor);
-        var chunks = (Value.ArrayValue) hit.getField(chunkLimitedField);
+        if(chunkScores == null) {
+            query.trace("chunk.limit.tensor not present for hit " + hit.getDisplayId() + ", not limiting", 2);
+            return;
+        }
 
-        var limitedChunks = new Value.ArrayValue();
+        if(chunkScores.size() != chunks.entryCount()) {
+            query.trace("chunk.limit.tensor has wrong number of entries for hit " + hit.getDisplayId() + ", not limiting", 2);
+            return;
+        }
 
         Set<Integer> topChunkIndices = chunkScores.entrySet().stream()
                 .sorted((b, a) -> a.getValue().compareTo(b.getValue()))
@@ -67,21 +83,24 @@ public class ChunkLimitingSearcher extends Searcher {
                 .map(Map.Entry::getKey).map(Long::intValue)
                 .collect(Collectors.toSet());
 
+        var limitedChunks = new Value.ArrayValue();
         for (int i = 0; i < chunks.entryCount(); i++) {
-            if(topChunkIndices.contains(i)) {
-                limitedChunks.add(chunks.entry(i).asString());
-            } else {
-                limitedChunks.add("");
-            }
+            if(topChunkIndices.contains(i)) limitedChunks.add(chunks.entry(i).asString());
         }
-
         hit.setField(chunkLimitedField, limitedChunks);
+
+        query.trace("limited " + hit.getDisplayId() + " to " + limitedChunks.entryCount() + " chunks down from " + chunks.entryCount(), 3);
     }
 
     private TreeMap<Long, Double> getChunkScores(FeatureData summaryFeatures, String chunkLimitTensorName) {
         TreeMap<Long, Double> paragraphSimilarities = new TreeMap<>();
 
         Tensor chunkLimitTensor = summaryFeatures.getTensor(chunkLimitTensorName);
+
+        if(chunkLimitTensor == null) {
+            return null;
+        }
+
         chunkLimitTensor.cellIterator()
                 .forEachRemaining(cell -> paragraphSimilarities.put(cell.getKey().numericLabel(0), cell.getValue()));
 
