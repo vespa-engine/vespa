@@ -84,9 +84,9 @@ public class ChunkLimitingSearcher extends Searcher {
                 .map(Map.Entry::getKey).map(Long::intValue)
                 .collect(Collectors.toSet());
 
-        var limitedChunks = new Value.ArrayValue();
+        var limitedChunks = new Value.ArrayValue(chunkLimit);
         for (int i = 0; i < chunks.entryCount(); i++) {
-            if(topChunkIndices.contains(i)) limitedChunks.add(chunks.entry(i).asString());
+            if(topChunkIndices.contains(i)) limitedChunks.add(chunks.entry(i));
         }
         hit.setField(chunkLimitedField, limitedChunks);
 
