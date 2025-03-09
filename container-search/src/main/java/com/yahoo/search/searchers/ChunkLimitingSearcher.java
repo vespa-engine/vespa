@@ -3,6 +3,7 @@
 package com.yahoo.search.searchers;
 
 import com.yahoo.api.annotations.Beta;
+import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -57,7 +58,7 @@ public class ChunkLimitingSearcher extends Searcher {
 
     private void limitChunks(Hit hit, Query query, int chunkLimit, String chunkLimitedField, String chunkLimitTensor) {
 
-        var chunks = (Value.ArrayValue) hit.getField(chunkLimitedField);
+        var chunks = ((Inspectable) hit.getField(chunkLimitedField)).inspect();
         if(chunks.entryCount() <= chunkLimit) return;
 
         FeatureData summaryFeatures = (FeatureData) hit.getField("summaryfeatures");
