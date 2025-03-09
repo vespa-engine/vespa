@@ -73,8 +73,8 @@ public class ChunkLimitingSearcher extends Searcher {
             return;
         }
 
-        if(chunkScores.size() != chunks.entryCount()) {
-            query.trace("chunk.limit.tensor has wrong number of entries for hit " + hit.getDisplayId() + ", not limiting", 2);
+        if(chunkScores.isEmpty()) {
+            query.trace("chunk.limit.tensor has no entries for hit " + hit.getDisplayId() + ", not limiting", 2);
             return;
         }
 
