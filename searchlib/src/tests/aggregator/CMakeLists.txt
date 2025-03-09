@@ -4,6 +4,7 @@ vespa_add_executable(searchlib_perdocexpr_test_app TEST
     perdocexpr_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_perdocexpr_test_app COMMAND searchlib_perdocexpr_test_app)
 vespa_add_executable(searchlib_attr_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(searchlib_attr_test_app TEST
     attr_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_attr_test_app COMMAND searchlib_attr_test_app)
