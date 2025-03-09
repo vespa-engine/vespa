@@ -17,7 +17,7 @@ import com.yahoo.tensor.Tensor;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
+import java.util.HashMap;
 import java.util.stream.Collectors;
 
 /// Removes all but the top-n highest scoring entries for a string array field.
@@ -93,8 +93,8 @@ public class ChunkLimitingSearcher extends Searcher {
         query.trace("limited " + hit.getDisplayId() + " to " + limitedChunks.entryCount() + " chunks down from " + chunks.entryCount(), 3);
     }
 
-    private TreeMap<Long, Double> getChunkScores(FeatureData summaryFeatures, String chunkLimitTensorName) {
-        TreeMap<Long, Double> paragraphSimilarities = new TreeMap<>();
+    private HashMap<Long, Double> getChunkScores(FeatureData summaryFeatures, String chunkLimitTensorName) {
+        HashMap<Long, Double> paragraphSimilarities = new HashMap<>();
 
         Tensor chunkLimitTensor = summaryFeatures.getTensor(chunkLimitTensorName);
 
