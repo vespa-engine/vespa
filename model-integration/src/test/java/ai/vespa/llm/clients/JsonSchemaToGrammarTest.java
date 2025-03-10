@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test;
 
 
 /**
- * It is a partial port of C++ unit tests from llama.cpp repository.
+ * These tests are based on C++ unit tests from llama.cpp repository.
  */
 public class JsonSchemaToGrammarTest {
     @Test
@@ -1207,6 +1207,39 @@ public class JsonSchemaToGrammarTest {
                 number-number-root-kv ::= "\\"root\\"" space ":" space number
                 root ::= "{" space number-kv "}" space
                 space ::= | " " | "\\n" [ \\t]{0,20}
+                """;
+
+        var actualGrammar = JsonSchemaToGrammar.convert(schema);
+        assertEquals(expectedGrammar, actualGrammar);
+    }
+    
+    @Test
+    public void testAdditionalPropertiesWithType() {
+        var schema = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "doc.field": {
+                      "type": "object",
+                      "additionalProperties": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "doc.field"
+                  ],
+                  "additionalProperties": false
+                }
+                """;
+        var expectedGrammar = """
+                char ::= [^"\\\\\\x7F\\x00-\\x1F] | [\\\\] (["\\\\bfnrt] | "u" [0-9a-fA-F]{4})
+                doc-field ::= "{" space  (doc-field-additional-kv ( "," space doc-field-additional-kv )* )? "}" space
+                doc-field-additional-kv ::= string ":" space string
+                doc-field-kv ::= "\\"doc.field\\"" space ":" space doc-field
+                root ::= "{" space doc-field-kv "}" space
+                space ::= | " " | "\\n" [ \\t]{0,20}
+                string ::= "\\"" char* "\\"" space
                 """;
 
         var actualGrammar = JsonSchemaToGrammar.convert(schema);

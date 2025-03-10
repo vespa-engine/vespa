@@ -1,6 +1,5 @@
 package com.yahoo.vespa.indexinglanguage;
 
-import ai.vespa.llm.completion.Prompt;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
@@ -16,6 +15,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
@@ -203,17 +204,14 @@ public class GenerateExpressionTestCase {
     }
 
     /**
-     * Tests an arguably common use case where several strings are generated for one text input.
-     * Combines generate with split expression. 
+     * Tests a common use case where an array is generated from one text input.
      */
     @Test
     public void testGeneratorWithStringInputArrayOutput() {
-        Map<String, FieldGenerator> generators = Map.of(
-                "generator", new SplitterMockFieldGenerator("myDocument.myGeneratedArray", " ", "\n"));
+        Map<String, FieldGenerator> generators = Map.of("generator", new SplitterMockFieldGenerator());
         
-        var expressionString = "input myText | generate | split '\n' | attribute myGeneratedArray";
+        var expressionString = "input myText | generate | attribute myGeneratedArray";
         var input = "hello world";
-        var expected = new String[]{"hello", "world"};
 
         var expression = expressionFrom(generators, expressionString);
         
@@ -222,7 +220,7 @@ public class GenerateExpressionTestCase {
         var inputField = new Field("myText", DataType.STRING);
         adapter.createField(inputField);
 
-        var outputField = new Field("myGeneratedArray",  new ArrayDataType(DataType.STRING));
+        var outputField = new Field("myGeneratedArray",  DataType.getArray(DataType.STRING));
         adapter.createField(outputField);
         
         adapter.setValue("myText", new StringFieldValue(input));
@@ -235,28 +233,18 @@ public class GenerateExpressionTestCase {
         expression.execute(context);
 
         assertTrue(adapter.values.containsKey("myGeneratedArray"));
-        @SuppressWarnings("unchecked")
-        var outputArray = (Array<StringFieldValue>)adapter.values.get("myGeneratedArray");
+        var actual = adapter.values.get("myGeneratedArray");
 
-        for (int i = 0; i < expected.length; i++) {
-            assertEquals(expected[i], outputArray.get(i).getString());
-        }
+        var expected = new Array<>(DataType.getArray(DataType.STRING), 
+                List.of(new StringFieldValue("hello"), new StringFieldValue("world")));
+        
+        assertEquals(actual, expected);
     }
 
     public static class SplitterMockFieldGenerator implements FieldGenerator {
-        final String expectedDestination;
-        final String oldDelimiter;
-        final String newDelimiter;
-        
-        public SplitterMockFieldGenerator(String expectedDestination, String oldDelimiter, String newDelimiter) {
-            this.expectedDestination = expectedDestination;
-            this.oldDelimiter = oldDelimiter;
-            this.newDelimiter = newDelimiter;
-        }
-
         public FieldValue generate(String prompt, Context context) {
-            var parts = prompt.split(oldDelimiter);
-            return new StringFieldValue(String.join(newDelimiter, parts));
+            var parts = Arrays.stream(prompt.split(" ")).map(StringFieldValue::new).toList();
+            return new Array<>(DataType.getArray(DataType.STRING), parts);
         }
     }
 }

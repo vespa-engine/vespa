@@ -135,7 +135,7 @@
     "fields" : [
       "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum NONE",
       "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum DISCARD",
-      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum ABORT"
+      "public static final enum ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum FAIL"
     ]
   },
   "ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy" : {
@@ -152,7 +152,7 @@
     "fields" : [
       "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum NONE",
       "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum DISCARD",
-      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum ABORT"
+      "public static final ai.vespa.llm.clients.LlmLocalClientConfig$ContextOverflowPolicy$Enum FAIL"
     ]
   },
   "ai.vespa.llm.clients.LlmLocalClientConfig$Producer" : {
@@ -291,8 +291,8 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public static java.lang.String generateJsonSchemaForField(java.lang.String, com.yahoo.document.DataType)",
-      "public static com.yahoo.document.datatypes.FieldValue convertJsonToFieldValue(java.lang.String, java.lang.String, com.yahoo.document.DataType)"
+      "public static java.lang.String generateFieldJsonSchema(java.lang.String, com.yahoo.document.DataType)",
+      "public static com.yahoo.document.datatypes.FieldValue parseJsonField(java.lang.String, java.lang.String, com.yahoo.document.DataType)"
     ],
     "fields" : [ ]
   },
@@ -326,8 +326,7 @@
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder promptTemplate(java.lang.String)",
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder promptTemplateFile(java.util.Optional)",
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder responseFormatType(ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$ResponseFormatType$Enum)",
-      "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder responseJsonSchema(java.lang.String)",
-      "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder responseJsonSchemaFile(java.util.Optional)",
+      "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Builder invalidResponseFormatPolicy(ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -337,6 +336,41 @@
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig build()"
     ],
     "fields" : [ ]
+  },
+  "ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum[] values()",
+      "public static ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum DISCARD",
+      "public static final enum ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum WARN",
+      "public static final enum ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum FAIL"
+    ]
+  },
+  "ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy" : {
+    "superClass" : "com.yahoo.config.EnumNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum)"
+    ],
+    "fields" : [
+      "public static final ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum DISCARD",
+      "public static final ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum WARN",
+      "public static final ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum FAIL"
+    ]
   },
   "ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$Producer" : {
     "superClass" : "java.lang.Object",
@@ -402,8 +436,7 @@
       "public java.lang.String promptTemplate()",
       "public java.util.Optional promptTemplateFile()",
       "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$ResponseFormatType$Enum responseFormatType()",
-      "public java.lang.String responseJsonSchema()",
-      "public java.util.Optional responseJsonSchemaFile()"
+      "public ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig$InvalidResponseFormatPolicy$Enum invalidResponseFormatPolicy()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",

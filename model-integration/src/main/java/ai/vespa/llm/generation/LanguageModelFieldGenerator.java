@@ -65,7 +65,7 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         String jsonSchema = null;
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            jsonSchema = FieldGeneratorUtils.generateJsonSchemaForField(
+            jsonSchema = FieldGeneratorUtils.generateFieldJsonSchema(
                     context.getDestination(), context.getTargetType());
         
            options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
@@ -78,8 +78,19 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         FieldValue generatedFieldValue; 
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            generatedFieldValue = FieldGeneratorUtils.parseJsonToFieldValue(
-                    generatedText, context.getDestination(), context.getTargetType());
+            try {
+                generatedFieldValue = FieldGeneratorUtils.parseJsonField(
+                        generatedText, context.getDestination(), context.getTargetType());
+            } catch (IllegalArgumentException e) {
+                generatedFieldValue = switch (config.invalidResponseFormatPolicy()) {
+                    case DISCARD -> null;
+                    case WARN -> {
+                        logger.warning(e.getMessage());
+                        yield null;
+                    }
+                    case FAIL -> throw e;
+                };
+            }
         } else {
             generatedFieldValue = new StringFieldValue(generatedText);
         }

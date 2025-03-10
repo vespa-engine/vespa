@@ -189,7 +189,7 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         // Do something when context size is too small for this request
         if (numRequestTokens > contextSizePerRequest) {
             switch (contextOverflowPolicy) {
-                case ABORT:
+                case FAIL:
                     var errorMessage = String.format(
                             "Context size per request (%d tokens) is too small " +
                                     "to fit the prompt (%d) and completion (%d) tokens.",

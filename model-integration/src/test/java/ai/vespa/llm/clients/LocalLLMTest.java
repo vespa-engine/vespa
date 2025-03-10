@@ -187,23 +187,30 @@ public class LocalLLMTest {
 
     private List<String> testPrompts() {
         List<String> prompts = new ArrayList<>();
-        prompts.add("Write a short story about a time-traveling detective who must solve a mystery that spans multiple centuries.");
-        prompts.add("Explain the concept of blockchain technology and its implications for data security in layman's terms.");
+        prompts.add(
+                "Write a short story about a time-traveling detective who must solve a mystery that spans multiple centuries.");
+        prompts.add(
+                "Explain the concept of blockchain technology and its implications for data security in layman's terms.");
         prompts.add("Discuss the socio-economic impacts of the Industrial Revolution in 19th century Europe.");
-        prompts.add("Describe a future where humans have colonized Mars, focusing on daily life and societal structure.");
-        prompts.add("Analyze the statement 'If a tree falls in a forest and no one is around to hear it, does it make a sound?' from both a philosophical and a physics perspective.");
+        prompts.add(
+                "Describe a future where humans have colonized Mars, focusing on daily life and societal structure.");
+        prompts.add(
+                "Analyze the statement 'If a tree falls in a forest and no one is around to hear it, does it make a sound?' from both a philosophical and a physics perspective.");
         prompts.add("Translate the following sentence into French: 'The quick brown fox jumps over the lazy dog.'");
         prompts.add("Explain what the following Python code does: `print([x for x in range(10) if x % 2 == 0])`.");
-        prompts.add("Provide general guidelines for maintaining a healthy lifestyle to reduce the risk of developing heart disease.");
-        prompts.add("Create a detailed description of a fictional planet, including its ecosystem, dominant species, and technology level.");
+        prompts.add(
+                "Provide general guidelines for maintaining a healthy lifestyle to reduce the risk of developing heart disease.");
+        prompts.add(
+                "Create a detailed description of a fictional planet, including its ecosystem, dominant species, and technology level.");
         prompts.add("Discuss the impact of social media on interpersonal communication in the 21st century.");
         return prompts;
     }
+    
 
     // Small LLM tests use a quantized Mistral model ca. 4.3 GB.
     // It produces sensible completions which can be verified as part of the test.
     // Download model from here https://huggingface.co/lmstudio-community/Mistral-7B-Instruct-v0.3-GGUF/resolve/main/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf
-    private static final String SMALL_LLM_PATH = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
+    private static final String MEDIUM_LLM_PATH = "src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf";
 
     // Using translation task to test that LLM output makes sense with context overflow.
     // If context overflow is not handled correctly, part of the task description will be overwritten and 
@@ -343,7 +350,7 @@ public class LocalLLMTest {
                 .contextSize(60)
                 .maxPromptTokens(25)
                 .seed(42)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
         var llm = new LocalLLM(llmConfig.build());
         
         var task = TASKS.get(0); 
@@ -367,7 +374,7 @@ public class LocalLLMTest {
                 .maxEnqueueWait(100)
                 .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());
         var executor = Executors.newFixedThreadPool(7);
@@ -410,7 +417,7 @@ public class LocalLLMTest {
                 .contextSize(25)
                 .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.DISCARD)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
         
         var llm = new LocalLLM(llmConfig.build());
 
@@ -426,13 +433,13 @@ public class LocalLLMTest {
     }
 
     @Test
-    public void testContextOverflowPolicyAbort() {
+    public void testContextOverflowPolicyFail() {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(1)
                 .contextSize(25)
                 .seed(42)
-                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.ABORT)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.Enum.FAIL)
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
         
         var llm = new LocalLLM(llmConfig.build());
 
@@ -454,7 +461,7 @@ public class LocalLLMTest {
                 .maxQueueSize(2)
                 .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());
         var executor = Executors.newFixedThreadPool(5);
@@ -488,7 +495,7 @@ public class LocalLLMTest {
                 .contextSize( 5 * 100)
                 .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.NONE)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());
         var executor = Executors.newFixedThreadPool(5);
@@ -531,7 +538,7 @@ public class LocalLLMTest {
                 .maxTokens(50)
                 .seed(42)
                 .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.DISCARD)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());
         var executor = Executors.newFixedThreadPool(5);
@@ -567,14 +574,14 @@ public class LocalLLMTest {
     }
 
     @Test
-    public void testParallelGenerationWithSmallContextOverflowPolicyAbort() {
+    public void testParallelGenerationWithSmallContextOverflowPolicyFail() {
         var llmConfig = new LlmLocalClientConfig.Builder()
                 .parallelRequests(5)
                 .contextSize( 5 * 100)
                 .maxTokens(50)
                 .seed(42)
-                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.ABORT)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .contextOverflowPolicy(LlmLocalClientConfig.ContextOverflowPolicy.FAIL)
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());
         var executor = Executors.newFixedThreadPool(5);
@@ -615,7 +622,7 @@ public class LocalLLMTest {
                 .contextSize( 500)
                 .maxTokens(500)
                 .seed(42)
-                .model(ModelReference.valueOf(SMALL_LLM_PATH));
+                .model(ModelReference.valueOf(MEDIUM_LLM_PATH));
 
         var llm = new LocalLLM(llmConfig.build());
         var jsonSchema = """

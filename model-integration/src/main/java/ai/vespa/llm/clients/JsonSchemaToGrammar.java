@@ -15,7 +15,8 @@ import com.yahoo.api.annotations.Beta;
 /**
  * Converts a JSON Schema to a GBNF grammar to be used for structured output with llama.cpp.
  * It is a port of Python implementation from llama.cpp repository.
- * It doesn't support regex patterns, resolving $ref or fetching schemas from URLs.
+ * Current implementation doesn't support regex patterns, resolving $ref or fetching schemas from URLs.
+ * The plan is to replace this with C++ implementation from llama.cpp though JNI.
  */
 @Beta
 class JsonSchemaToGrammar {
