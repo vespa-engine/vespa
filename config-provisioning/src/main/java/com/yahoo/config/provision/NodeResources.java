@@ -129,6 +129,10 @@ public class NodeResources {
             validate(memoryGiB, "memory");
         }
 
+        public GpuResources(String s, int count, double memoryGiB) {
+            this(count, memoryGiB);
+        }
+
         private boolean lessThan(GpuResources other) {
             return this.count < other.count ||
                    this.memoryGiB < other.memoryGiB;
