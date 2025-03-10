@@ -78,7 +78,7 @@ public class NodeSerializerTest {
         Node node = createNode();
         NodeResources requestedResources = new NodeResources(1.2, 3.4, 5.6, 7.8,
                                                              DiskSpeed.any, StorageType.any, Architecture.arm64,
-                                                             new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
+                                                             new NodeResources.GpuResources(1, 16));
 
         assertEquals(0, node.history().events().size());
         node = node.allocate(ApplicationId.from(TenantName.from("myTenant"),
@@ -126,7 +126,7 @@ public class NodeSerializerTest {
 
     @Test
     public void reboot_and_restart_and_type_no_current_values_serialization() {
-        String nodeData =
+        String nodeData = 
                 "{\n" +
                 "   \"type\" : \"tenant\",\n" +
                 "   \"state\" : \"provisioned\",\n" +

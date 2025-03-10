@@ -154,8 +154,8 @@ public class AwsNodeTypes {
                 new VespaFlavor("i4i_8xlarge", 32.0, 32.0, 256.0, 246.0, 7500.0, 10.0, fast, local, x86_64),
                 new VespaFlavor("i4i_16xlarge", 64.0, 64.0, 512.0, 498.0, 15000.0, 10.0, fast, local, x86_64),
                 new VespaFlavor("i4i_32xlarge", 128.0, 128.0, 1024.0, 996.0, 30000.0, 10.0, fast, local, x86_64),
-                new VespaFlavor("g4dn_xlarge", 4.0, 4.0, 16.0, 15.1, 125.0, 10.0, fast, local, x86_64, new GpuResources(NodeResources.GpuType.T4, 1, 16.0)),
-                new VespaFlavor("g4dn_2xlarge", 8.0, 8.0, 32.0, 30.5, 225.0, 10.0, fast, local, x86_64, new GpuResources(NodeResources.GpuType.T4, 1, 16.0)));
+                new VespaFlavor("g4dn_xlarge", 4.0, 4.0, 16.0, 15.1, 125.0, 10.0, fast, local, x86_64, new GpuResources(1, 16.0)),
+                new VespaFlavor("g4dn_2xlarge", 8.0, 8.0, 32.0, 30.5, 225.0, 10.0, fast, local, x86_64, new GpuResources(1, 16.0)));
 
     public static List<VespaFlavor> asVespaFlavors() { return sorted(hostFlavors); }
 
