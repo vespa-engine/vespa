@@ -28,9 +28,9 @@ public:
         uint8_t activateNoExistingActive {100};
         uint8_t activateWithExistingActive {100};
         uint8_t deleteBucketCopy {120};
-        uint8_t joinBuckets {155};
+        uint8_t joinBuckets {120};
         uint8_t splitDistributionBits {200};
-        uint8_t splitLargeBucket {175};
+        uint8_t splitLargeBucket {120};
         uint8_t splitInconsistentBucket {110};
         uint8_t garbageCollection {200};
     };
