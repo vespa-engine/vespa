@@ -10,6 +10,9 @@ using AllocSpec = ArrayStoreConfig::AllocSpec;
 
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 
+std::function<size_t(uint32_t)> default_type_id_to_entry_size = [](size_t type_id) noexcept { return type_id * sizeof(int); };
+std::function<size_t(uint32_t)> large_entry_type_id_to_entry_size = [](size_t type_id) noexcept { return type_id * 16_Ki; };
+
 struct Fixture
 {
     using EntryRefType = EntryRefT<18>;
@@ -23,9 +26,10 @@ struct Fixture
             size_t hugePageSize,
             size_t smallPageSize,
             size_t max_buffer_size,
-            size_t min_num_entries_for_new_buffer)
+            size_t min_num_entries_for_new_buffer,
+            std::function<size_t(uint32_t)> type_id_to_entry_size = default_type_id_to_entry_size)
         : cfg(ArrayStoreConfig::optimizeForHugePage(max_type_id,
-                                                    [](size_t type_id) noexcept { return type_id * sizeof(int); },
+                                                    type_id_to_entry_size,
                                                     hugePageSize, smallPageSize,
                                                     EntryRefType::offsetSize(),
                                                     max_buffer_size,
@@ -112,6 +116,26 @@ TEST_F("require that we can generate config optimized for a given huge page with
     TEST_DO(f.assertSpec(43, 8_Ki));
     TEST_DO(f.assertSpec(1022, f.max_entries(1022), 8_Ki));
     TEST_DO(f.assertSpec(1023, f.max_entries(1023), 8_Ki));
+}
+
+struct CappedBuffersWithLargeEntriesFixture : public Fixture {
+    CappedBuffersWithLargeEntriesFixture() : Fixture(3, 2_Mi, 4_Ki, 256_Mi, 8_Ki,
+        large_entry_type_id_to_entry_size)
+    { }
+    size_t max_entries(uint32_t type_id) {
+        auto entry_size = large_entry_type_id_to_entry_size(type_id);
+        return (256_Mi + entry_size - 1) / entry_size;
+    }
+};
+
+TEST_F("require that min entries for new buffer is calculated correctly for large entries", CappedBuffersWithLargeEntriesFixture())
+{
+    EXPECT_EQUAL(3u, f.cfg.max_type_id());
+    EXPECT_GREATER(8_Ki, f.max_entries(3));
+    TEST_DO(f.assertSpec(0, f.max_entries(3), f.max_entries(3))); // large arrays
+    TEST_DO(f.assertSpec(1, f.max_entries(1), 8_Ki));
+    TEST_DO(f.assertSpec(2, f.max_entries(2), 8_Ki));
+    TEST_DO(f.assertSpec(3, f.max_entries(3), f.max_entries(3)));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
