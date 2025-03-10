@@ -32,11 +32,6 @@ public final class SetVarExpression extends Expression {
         return super.setOutputType(outputType, context);
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
-        setVariableType(context.getCurrentType(), context);
-    }
-
     private void setVariableType(DataType newType, VerificationContext context) {
         DataType existingType = context.getVariable(varName);
         DataType mostGeneralType = newType;
@@ -56,9 +51,6 @@ public final class SetVarExpression extends Expression {
     protected void doExecute(ExecutionContext context) {
         context.setVariable(varName, context.getCurrentValue());
     }
-
-    @Override
-    public DataType createdOutputType() { return null; }
 
     @Override
     public String toString() {

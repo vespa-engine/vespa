@@ -57,9 +57,6 @@ public class PackBitsExpression extends Expression  {
     }
 
     @Override
-    public DataType createdOutputType() { return new TensorDataType(outputTensorType); }
-
-    @Override
     public String toString() { return "pack_bits"; }
 
     @Override

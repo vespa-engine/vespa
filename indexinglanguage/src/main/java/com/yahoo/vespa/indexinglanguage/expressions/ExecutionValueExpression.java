@@ -18,9 +18,6 @@ public final class ExecutionValueExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
-
-    @Override
     public String toString() { return "_"; }
 
     @Override

@@ -118,12 +118,10 @@ public final class IfThenExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(input).verify(left);
-        context.setCurrentType(input).verify(right);
-        var trueValue = context.setCurrentType(input).verify(ifTrue);
-        var falseValue = context.setCurrentType(input).verify(ifFalse);
-        context.setCurrentType(mostGeneralOf(trueValue.getCurrentType(), falseValue.getCurrentType()));
+        context.verify(left);
+        context.verify(right);
+        context.verify(ifTrue);
+        context.verify(ifFalse);
     }
 
     @Override
@@ -153,17 +151,6 @@ public final class IfThenExpression extends CompositeExpression {
         select(right, predicate, operation);
         select(ifTrue, predicate, operation);
         select(ifFalse, predicate, operation);
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        DataType ifTrueType = ifTrue.createdOutputType();
-        DataType ifFalseType = ifFalse == null ? null : ifFalse.createdOutputType();
-        if (ifTrueType == null || ifFalseType == null) return null;
-        if (ifTrueType.isAssignableFrom(ifFalseType))
-            return ifTrueType;
-        else
-            return ifFalseType;
     }
 
     @Override

@@ -50,11 +50,6 @@ public final class InputExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(requireFieldType(context));
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         if (fieldPath != null)
             context.setCurrentValue(context.getFieldValue(fieldPath));
@@ -63,16 +58,13 @@ public final class InputExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
-
-    @Override
     public DataType getOutputType(VerificationContext context) {
         return context.getFieldType(fieldName, this);
     }
 
     @Override
     public String toString() {
-        return "input" + (fieldName != null ? " " + fieldName : "");
+        return "input " + fieldName;
     }
 
     @Override
@@ -84,7 +76,7 @@ public final class InputExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + (fieldName != null ? fieldName.hashCode() : 0);
+        return getClass().hashCode() + fieldName.hashCode();
     }
 
     public static class FieldPathOptimizer implements ObjectOperation, ObjectPredicate {
