@@ -159,7 +159,7 @@ public class ModelProvisioningTest {
         mydisc2.getConfig(qrStartBuilder);
         QrStartConfig qrsStartConfig = new QrStartConfig(qrStartBuilder);
         assertEquals(45, qrsStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
-
+        
         HostSystem hostSystem = model.hostSystem();
         assertTrue(hostNameExists(hostSystem, "myhost0"));
         assertTrue(hostNameExists(hostSystem, "myhost1"));
@@ -1551,7 +1551,7 @@ public class ModelProvisioningTest {
                                           NodeResources.DiskSpeed.fast, NodeResources.StorageType.local, NodeResources.Architecture.arm64), 4); // Container
         tester.addHosts(new NodeResources(4, 16, 125, 10,
                                           NodeResources.DiskSpeed.fast, NodeResources.StorageType.local, Architecture.x86_64,
-                                          new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16)), 4); // Container 2
+                                          new NodeResources.GpuResources(1, 16)), 4); // Container 2
         tester.addHosts(new NodeResources(8, 200, 1000000, 0.3), 5); // Content-foo
         tester.addHosts(new NodeResources(10, 64, 200, 0.3), 6); // Content-bar
         tester.addHosts(new NodeResources(0.5, 2, 10, 0.3), 6); // Cluster-controller

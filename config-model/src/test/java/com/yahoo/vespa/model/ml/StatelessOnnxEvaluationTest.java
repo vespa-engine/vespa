@@ -95,7 +95,7 @@ public class StatelessOnnxEvaluationTest {
         NodeResources resources = new NodeResources(4, 16, 125, 10,
                                                     NodeResources.DiskSpeed.fast, NodeResources.StorageType.local,
                                                     NodeResources.Architecture.x86_64,
-                                                    new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
+                                                    new NodeResources.GpuResources(1, 16));
         InMemoryProvisioner provisioner = new InMemoryProvisioner(6, resources, false);
         DeployState.Builder deployStateBuilder = new DeployState.Builder().modelHostProvisioner(provisioner)
                                                                           .properties(new TestProperties().setMultitenant(true).setHostedVespa(true));

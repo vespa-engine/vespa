@@ -62,7 +62,6 @@ public class AllocatedHostsSerializer {
     private static final String storageTypeKey = "storageType";
     private static final String architectureKey = "architecture";
     private static final String gpuKey = "gpu";
-    private static final String gpuTypeKey = "gpuType";
     private static final String gpuCountKey = "gpuCount";
     private static final String gpuMemoryKey = "gpuMemory";
 
@@ -115,7 +114,6 @@ public class AllocatedHostsSerializer {
         resourcesObject.setString(architectureKey, architectureToString(resources.architecture()));
         if (!resources.gpuResources().isDefault()) {
             Cursor gpuObject = resourcesObject.setObject(gpuKey);
-            gpuObject.setString(gpuTypeKey, resources.gpuResources().type().toString());
             gpuObject.setLong(gpuCountKey, resources.gpuResources().count());
             gpuObject.setDouble(gpuMemoryKey, resources.gpuResources().memoryGiB());
         }
@@ -164,8 +162,7 @@ public class AllocatedHostsSerializer {
 
     private static NodeResources.GpuResources gpuResourcesFromSlime(Inspector gpu) {
         if (!gpu.valid()) return NodeResources.GpuResources.getDefault();
-        return new NodeResources.GpuResources(gpu.field(gpuTypeKey).asString(),
-                                              (int) gpu.field(gpuCountKey).asLong(),
+        return new NodeResources.GpuResources((int) gpu.field(gpuCountKey).asLong(),
                                               gpu.field(gpuMemoryKey).asDouble());
     }
 

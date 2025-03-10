@@ -40,6 +40,5 @@ flavor[].bandwidth double default=0.0
 flavor[].architecture string default="x86_64"
 
 # The GPU count and GPU memory (per GPU) of this flavor
-flavor[].gpuType string default="T4"
 flavor[].gpuCount int default=0
 flavor[].gpuMemoryGb double default=0.0

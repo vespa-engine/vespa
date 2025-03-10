@@ -39,7 +39,7 @@ public class Flavor {
                                flavorConfig.fastDisk() ? NodeResources.DiskSpeed.fast : NodeResources.DiskSpeed.slow,
                                flavorConfig.remoteStorage() ? NodeResources.StorageType.remote : NodeResources.StorageType.local,
                                NodeResources.Architecture.valueOf(flavorConfig.architecture()),
-                               new NodeResources.GpuResources(flavorConfig.gpuType(), flavorConfig.gpuCount(), flavorConfig.gpuMemoryGb())),
+                               new NodeResources.GpuResources(flavorConfig.gpuCount(), flavorConfig.gpuMemoryGb())),
              Optional.empty(),
              Type.valueOf(flavorConfig.environment()),
              true,
@@ -94,11 +94,11 @@ public class Flavor {
     /**
      * Get the monthly cost (total cost of ownership) in USD for this flavor, typically total cost
      * divided by 36 months.
-     *
+     * 
      * @return monthly cost in USD
      */
     public int cost() { return cost; }
-
+    
     /**
      * True if this is a configured flavor used for hosts,
      * false if it is a virtual flavor created on the fly from node resources
@@ -110,7 +110,7 @@ public class Flavor {
     public Optional<FlavorOverrides> flavorOverrides() { return flavorOverrides; }
 
     public Type getType() { return type; }
-
+    
     @Override
     public int hashCode() { return Objects.hash(name, flavorOverrides); }
 

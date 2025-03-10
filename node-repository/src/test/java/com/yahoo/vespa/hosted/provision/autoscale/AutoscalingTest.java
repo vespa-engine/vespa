@@ -35,7 +35,7 @@ public class AutoscalingTest {
 
     @Test
     public void test_autoscaling_with_gpu() {
-        var resources = new NodeResources(8, 32, 225, 0.1, fast, StorageType.local, NodeResources.Architecture.x86_64, new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
+        var resources = new NodeResources(8, 32, 225, 0.1, fast, StorageType.local, NodeResources.Architecture.x86_64, new NodeResources.GpuResources(1, 16));
         var min = new ClusterResources( 8, 1, resources);
         var now = new ClusterResources(12, 1, resources);
         var max = new ClusterResources(12, 1, resources);

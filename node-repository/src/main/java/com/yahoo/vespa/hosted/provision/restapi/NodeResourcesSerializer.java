@@ -19,7 +19,6 @@ public class NodeResourcesSerializer {
         object.setString("storageType", toString(resources.storageType()));
         object.setString("architecture", toString(resources.architecture()));
         if (!resources.gpuResources().isDefault()) {
-            object.setString("gpuType", resources.gpuResources().type().toString());
             object.setLong("gpuCount", resources.gpuResources().count());
             object.setDouble("gpuMemoryGb", resources.gpuResources().memoryGiB());
         }
@@ -78,8 +77,7 @@ public class NodeResourcesSerializer {
 
     public static NodeResources.GpuResources gpuResourcesFromSlime(Inspector gpuObject) {
         if (!gpuObject.valid()) return NodeResources.GpuResources.getDefault();
-        return new NodeResources.GpuResources(gpuObject.field("gpuType").asString(),
-                                              (int) gpuObject.field("gpuCount").asLong(),
+        return new NodeResources.GpuResources((int) gpuObject.field("gpuCount").asLong(),
                                               gpuObject.field("gpuMemory").asDouble());
     }
 

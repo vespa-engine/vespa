@@ -32,7 +32,7 @@ public class AllocatedHostsSerializerTest {
     private static final NodeResources smallSlowDiskSpeedNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.slow);
     private static final NodeResources bigSlowDiskSpeedNode = new NodeResources(1.0, 6.2, 8, 2, NodeResources.DiskSpeed.slow);
     private static final NodeResources anyDiskSpeedNode = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.local,
-                                                                            NodeResources.Architecture.x86_64, new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
+                                                                            NodeResources.Architecture.x86_64, new NodeResources.GpuResources(1, 16));
     private static final NodeResources arm64Node = new NodeResources(0.5, 3.1, 4, 1, NodeResources.DiskSpeed.any, NodeResources.StorageType.any, NodeResources.Architecture.arm64);
 
     @Test

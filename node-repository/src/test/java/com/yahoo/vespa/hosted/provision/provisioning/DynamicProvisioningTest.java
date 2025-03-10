@@ -454,7 +454,7 @@ public class DynamicProvisioningTest {
     @Test
     public void gpu_host() {
         List<Flavor> flavors = List.of(new Flavor("gpu", new NodeResources(4, 16, 125, 10, fast, local,
-                                                                           Architecture.x86_64, new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16))));
+                                                                           Architecture.x86_64, new NodeResources.GpuResources(1, 16))));
         ProvisioningTester tester = new ProvisioningTester.Builder().flavors(flavors)
                                                                     .hostProvisioner(new MockHostProvisioner(flavors))
                                                                     .nameResolver(nameResolver)
@@ -468,7 +468,7 @@ public class DynamicProvisioningTest {
                                                                     .build();
         NodeResources resources = new NodeResources(4, 16, 125, 0.3,
                                                   NodeResources.DiskSpeed.any, NodeResources.StorageType.any,
-                                                  NodeResources.Architecture.x86_64, new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
+                                                  NodeResources.Architecture.x86_64, new NodeResources.GpuResources(1, 16));
         tester.prepare(applicationId(), ClusterSpec.request(container, ClusterSpec.Id.from("id1"))
                                                                       .vespaVersion("8.0").build(),
                        2, 1, resources);

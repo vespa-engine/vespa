@@ -69,7 +69,7 @@ public class ContainerImagesTest {
     private static Node node(NodeType type, DockerImage requested, boolean gpu) {
         NodeResources resources = new NodeResources(4, 8, 100, 0.3);
         if (gpu) {
-            resources = resources.with(new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
+            resources = resources.with(new NodeResources.GpuResources(1, 16));
         }
         Node.Builder b = Node.reserve(List.of("::1"), type + "1", "parent1", resources, type);
         b.allocation(new Allocation(ApplicationId.defaultId(),
