@@ -14,7 +14,7 @@ record JDiscContext(FilterResolver filterResolver,
 
     public static JDiscContext of(FilterBindings filterBindings, CurrentContainer container,
                                   Janitor janitor, Metric metric, ServerConfig config) {
-        return new JDiscContext(new FilterResolver(filterBindings), container, janitor,
+        return new JDiscContext(new FilterResolver(filterBindings, metric), container, janitor,
                                 metric, config.developerMode(), config.removeRawPostBodyForWwwUrlEncodedPost());
     }
 

@@ -1162,17 +1162,17 @@
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
-                <artifactId>jetty-http2-common</artifactId>
+                <artifactId>http2-common</artifactId>
                 <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
-                <artifactId>jetty-http2-client-transport</artifactId>
+                <artifactId>http2-http-client-transport</artifactId>
                 <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.eclipse.jetty.http2</groupId>
-                <artifactId>jetty-http2-server</artifactId>
+                <artifactId>http2-server</artifactId>
                 <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>
@@ -1208,6 +1208,11 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-server</artifactId>
+                <version>${jetty.vespa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
                 <version>${jetty.vespa.version}</version>
             </dependency>
             <dependency>

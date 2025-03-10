@@ -1,13 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http;
 
-import org.eclipse.jetty.http.ComplianceViolation;
-import org.eclipse.jetty.http.CookieCompliance;
-import org.eclipse.jetty.http.CookieParser;
 import org.eclipse.jetty.http.HttpCookie;
-import org.eclipse.jetty.server.HttpCookieUtils;
+import org.eclipse.jetty.server.Cookies;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
@@ -181,37 +178,40 @@ public class Cookie {
     }
 
     public static List<Cookie> fromCookieHeader(String headerVal) {
-        var cookies = new ArrayList<Cookie>();
-        var parser = CookieParser.newParser(
-                (name, value, version, domain, path, comment) -> {
-                    var cookie = new Cookie();
-                    cookie.setName(name);
-                    cookie.setValue(value);
-                    cookie.setDomain(domain);
-                    cookie.setPath(path);
-                    cookies.add(cookie);
-                },
-                CookieCompliance.RFC6265, ComplianceViolation.Listener.NOOP
-        );
-        parser.parseField(headerVal);
-        return List.copyOf(cookies);
+        Cookies cookieCutter = new Cookies();
+        cookieCutter.addCookieField(headerVal);
+        return Arrays.stream(cookieCutter.getCookies())
+                .map(servletCookie -> {
+                    Cookie cookie = new Cookie();
+                    cookie.setName(servletCookie.getName());
+                    cookie.setValue(servletCookie.getValue());
+                    cookie.setPath(servletCookie.getPath());
+                    cookie.setDomain(servletCookie.getDomain());
+                    cookie.setMaxAge(servletCookie.getMaxAge(), TimeUnit.SECONDS);
+                    cookie.setSecure(servletCookie.getSecure());
+                    cookie.setHttpOnly(servletCookie.isHttpOnly());
+                    return cookie;
+                })
+                .toList();
     }
 
     public static List<String> toSetCookieHeaders(Iterable<? extends Cookie> cookies) {
         return StreamSupport.stream(cookies.spliterator(), false)
-                .map(c -> {
-                            var builder = HttpCookie.build(c.getName(), c.getValue())
-                                    .domain(c.getDomain())
-                                    .path(c.getPath())
-                                    .maxAge(c.getMaxAge(TimeUnit.SECONDS))
-                                    .secure(c.isSecure())
-                                    .httpOnly(c.isHttpOnly());
-                            if (c.getSameSite() != null) builder.sameSite(c.getSameSite().jettySameSite());
-                            return HttpCookieUtils.getRFC6265SetCookie(builder.build());
-                        }
-                ).toList();
+                .map(cookie ->
+                             new org.eclipse.jetty.http.HttpCookie(
+                                     cookie.getName(),
+                                     cookie.getValue(),
+                                     cookie.getDomain(),
+                                     cookie.getPath(),
+                                     cookie.getMaxAge(TimeUnit.SECONDS),
+                                     cookie.isHttpOnly(),
+                                     cookie.isSecure(),
+                                     null, /* comment */
+                                     0, /* version */
+                                     Optional.ofNullable(cookie.getSameSite()).map(SameSite::jettySameSite).orElse(null)
+                             ).getRFC6265SetCookie())
+                .toList();
     }
-
 
     public static Cookie fromSetCookieHeader(String headerVal) {
         return java.net.HttpCookie.parse(headerVal).stream()
