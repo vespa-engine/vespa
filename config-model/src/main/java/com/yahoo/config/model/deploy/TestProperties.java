@@ -48,7 +48,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private Quota quota = Quota.unlimited();
-    private boolean useAsyncMessageHandlingOnSchedule = false;
+    private boolean useAsyncMessageHandlingOnSchedule = true;
     private double feedConcurrency = 0.5;
     private double feedNiceness = 0.0;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
