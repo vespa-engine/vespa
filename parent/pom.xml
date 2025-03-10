@@ -415,7 +415,7 @@
                             <failOnError>${javadoc.failOnError}</failOnError>
                             <quiet>true</quiet>
                             <show>protected</show>
-                            <header>&lt;a href="https://docs.vespa.ai"&gt;&lt;img src="https://docs.vespa.ai/assets/logos/vespa-logo-full-white.svg" width="100" height="28" style="padding-top:7px"/&gt;&lt;/a&gt;</header>
+                            <header>&lt;a href="https://docs.vespa.ai"&gt;&lt;img src="https://assets.vespa.ai/logos/Vespa-logo-dark-RGB.svg" width="100" height="28" style="padding-top:7px"/&gt;&lt;/a&gt;</header>
                         </configuration>
                     </plugin>
                 </plugins>
