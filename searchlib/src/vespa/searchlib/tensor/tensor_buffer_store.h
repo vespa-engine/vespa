@@ -18,7 +18,7 @@ namespace search::tensor {
  */
 class TensorBufferStore : public TensorStore
 {
-    using RefType = vespalib::datastore::EntryRefT<19>;
+    using RefType = vespalib::datastore::EntryRefT<18>;
     using ArrayStoreType = vespalib::datastore::ArrayStore<char, RefType, TensorBufferTypeMapper>;
     vespalib::eval::ValueType _tensor_type;
     TensorBufferOperations    _ops;
