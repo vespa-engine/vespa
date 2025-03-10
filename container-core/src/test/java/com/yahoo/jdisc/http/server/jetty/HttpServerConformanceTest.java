@@ -41,6 +41,7 @@ import java.util.logging.Logger;
 import java.util.regex.Pattern;
 
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
+import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static com.yahoo.jdisc.Response.Status.OK;
 import static org.apache.http.HttpStatus.SC_INTERNAL_SERVER_ERROR;
 import static org.apache.http.HttpStatus.SC_NOT_FOUND;
@@ -60,15 +61,11 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
 
     private static final String REQUEST_CONTENT = "myRequestContent";
     private static final String RESPONSE_CONTENT = "myResponseContent";
-    private static final Logger httpRequestDispatchLogger = Logger.getLogger(JdiscDispatchingHandler.class.getName());
+    private static final Logger httpRequestDispatchLogger = Logger.getLogger(HttpRequestDispatch.class.getName());
 
     private static Level httpRequestDispatchLoggerOriginalLevel;
     private static CloseableHttpClient httpClient;
     private static ExecutorService executorService;
-
-    protected HttpServerConformanceTest() {
-        super(false);
-    }
 
     /*
      * Reduce logging of every stack trace for {@link ServerProviderConformanceTest.ConformanceException} thrown.
@@ -100,30 +97,30 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testContainerNotReadyException() throws Throwable {
-        new TestRunner().expect(responseMatcher(is(SC_INTERNAL_SERVER_ERROR), any(String.class), containsString("Container not ready.")))
+        new TestRunner().expect(errorWithReason(is(SC_INTERNAL_SERVER_ERROR), containsString("Container not ready.")))
                         .execute();
     }
 
     @Override
     @Test
     public void testBindingSetNotFoundException() throws Throwable {
-        new TestRunner().expect(responseMatcher(is(SC_NOT_FOUND), any(String.class), containsString("No binding set named &apos;unknown&apos;.")))
+        new TestRunner().expect(errorWithReason(is(SC_NOT_FOUND), containsString("No binding set named 'unknown'.")))
                         .execute();
     }
 
     @Override
     @Test
     public void testNoBindingSetSelectedException() throws Throwable {
-        final Pattern reasonPattern = Pattern.compile(".*No binding set selected for URI .+http://.+/status.html.+", Pattern.DOTALL);
-        new TestRunner().expect(responseMatcher(is(SC_INTERNAL_SERVER_ERROR), any(String.class), matchesPattern(reasonPattern)))
+        final Pattern reasonPattern = Pattern.compile(".*No binding set selected for URI 'http://.+/status.html'\\.");
+        new TestRunner().expect(errorWithReason(is(SC_INTERNAL_SERVER_ERROR), matchesPattern(reasonPattern)))
                         .execute();
     }
 
     @Override
     @Test
     public void testBindingNotFoundException() throws Throwable {
-        final Pattern contentPattern = Pattern.compile(".*No binding for URI .+http://.+/status.html.+", Pattern.DOTALL);
-        new TestRunner().expect(responseMatcher(is(SC_NOT_FOUND), any(String.class), matchesPattern(contentPattern)))
+        final Pattern contentPattern = Pattern.compile(".*No binding for URI 'http://.+/status.html'\\.");
+        new TestRunner().expect(errorWithReason(is(NOT_FOUND), matchesPattern(contentPattern)))
                         .execute();
     }
 
@@ -537,7 +534,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestContentCloseExceptionBeforeResponseWriteWithSyncCompletion() throws Throwable {
-        new TestRunner().expect(success())
+        new TestRunner().expect(serverError())
                         .execute();
     }
 
@@ -565,7 +562,7 @@ public class HttpServerConformanceTest extends ServerProviderConformanceTest {
     @Override
     @Test
     public void testRequestContentCloseExceptionBeforeResponseWriteWithAsyncCompletion() throws Throwable {
-        new TestRunner().expect(anyOf(serverError(), success()))
+        new TestRunner().expect(serverError())
                         .execute();
     }
 

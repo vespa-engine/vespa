@@ -48,16 +48,6 @@ public abstract class ServerProviderConformanceTest {
 
     private static final int NUM_RUNS_EACH_TEST = 1;
 
-    private final boolean conformanceExceptionMarkAsProcessedOnGetMessage;
-
-    protected ServerProviderConformanceTest() {
-        this(true);
-    }
-
-    protected ServerProviderConformanceTest(boolean conformanceExceptionMarkAsProcessedOnGetMessage) {
-        this.conformanceExceptionMarkAsProcessedOnGetMessage = conformanceExceptionMarkAsProcessedOnGetMessage;
-    }
-
     /**
      * <p>This interface declares the adapter between the general conformance test and an actual <code>ServerProvider</code>
      * implementation. Every test runs as follows:</p>
@@ -98,10 +88,9 @@ public abstract class ServerProviderConformanceTest {
      */
     public static class ConformanceException extends RuntimeException {
         private final Event peekEvent;
-        private final boolean markAsProcessedOnGetMessage;
 
         public ConformanceException() {
-            this(null, false);
+            peekEvent = null;
         }
 
         /**
@@ -113,25 +102,15 @@ public abstract class ServerProviderConformanceTest {
          * synchronization in the framework, it is).
          */
         public ConformanceException(final Event peekEvent) {
-            this(peekEvent, true);
-        }
-
-        public ConformanceException(Event peekEvent, boolean markAsProcessedOnGetMessage) {
             this.peekEvent = peekEvent;
-            this.markAsProcessedOnGetMessage = markAsProcessedOnGetMessage;
         }
 
         @Override
         public String getMessage() {
-            if (markAsProcessedOnGetMessage) markAsProcessed();
-            return super.getMessage();
-        }
-
-        /** @see #ConformanceException(Event) */
-        public void markAsProcessed() {
             if (peekEvent != null) {
                 peekEvent.happened();
             }
+            return super.getMessage();
         }
     }
 
@@ -404,7 +383,7 @@ public abstract class ServerProviderConformanceTest {
                             closeResponse(out);
                             return null;
                         });
-                        throw new ConformanceException(exceptionHandledByFramework, conformanceExceptionMarkAsProcessedOnGetMessage);
+                        throw new ConformanceException(exceptionHandledByFramework);
                     }
                 });
     }
@@ -492,7 +471,7 @@ public abstract class ServerProviderConformanceTest {
                                 return null;
                             }
                         });
-                        throw new ConformanceException(exceptionHandledByFramework, conformanceExceptionMarkAsProcessedOnGetMessage);
+                        throw new ConformanceException(exceptionHandledByFramework);
                     }
                 });
     }
@@ -940,7 +919,7 @@ public abstract class ServerProviderConformanceTest {
 
                             @Override
                             public void write(final ByteBuffer buf, final CompletionHandler handler) {
-                                throw new ConformanceException(exceptionHandledByFramework, conformanceExceptionMarkAsProcessedOnGetMessage);
+                                throw new ConformanceException(exceptionHandledByFramework);
                             }
 
                             @Override
@@ -1085,7 +1064,7 @@ public abstract class ServerProviderConformanceTest {
                             @Override
                             public void write(final ByteBuffer buf, final CompletionHandler handler) {
                                 handler.completed();
-                                throw new ConformanceException(exceptionHandledByFramework, conformanceExceptionMarkAsProcessedOnGetMessage);
+                                throw new ConformanceException(exceptionHandledByFramework);
                             }
 
                             @Override
@@ -1232,7 +1211,7 @@ public abstract class ServerProviderConformanceTest {
                             @Override
                             public void write(final ByteBuffer buf, final CompletionHandler handler) {
                                 completeInOtherThread(handler, IllegalStateException.class);
-                                throw new ConformanceException(exceptionHandledByFramework, conformanceExceptionMarkAsProcessedOnGetMessage);
+                                throw new ConformanceException(exceptionHandledByFramework);
                             }
 
                             @Override
@@ -2042,7 +2021,7 @@ public abstract class ServerProviderConformanceTest {
 
                             @Override
                             public void close(final CompletionHandler handler) {
-                                throw new ConformanceException(exceptionHandledByFramework, conformanceExceptionMarkAsProcessedOnGetMessage);
+                                throw new ConformanceException(exceptionHandledByFramework);
                             }
                         };
                     }
@@ -2178,7 +2157,7 @@ public abstract class ServerProviderConformanceTest {
                             @Override
                             public void close(final CompletionHandler handler) {
                                 handler.completed();
-                                throw new ConformanceException(exceptionHandledByFramework, conformanceExceptionMarkAsProcessedOnGetMessage);
+                                throw new ConformanceException(exceptionHandledByFramework);
                             }
                         };
                     }
@@ -2311,7 +2290,7 @@ public abstract class ServerProviderConformanceTest {
                             @Override
                             public void close(final CompletionHandler handler) {
                                 completeInOtherThread(handler, IllegalStateException.class);
-                                throw new ConformanceException(exceptionHandledByFramework, conformanceExceptionMarkAsProcessedOnGetMessage);
+                                throw new ConformanceException(exceptionHandledByFramework);
                             }
                         };
                     }

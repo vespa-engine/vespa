@@ -2,16 +2,20 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.common.base.Objects;
+import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.http.HttpRequest;
-import org.eclipse.jetty.http.HttpVersion;
-import org.eclipse.jetty.io.EndPoint;
+import org.eclipse.jetty.http2.HTTP2Stream;
+import org.eclipse.jetty.http2.server.HttpTransportOverHTTP2;
+import org.eclipse.jetty.server.HttpChannel;
+import org.eclipse.jetty.server.HttpTransport;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -25,7 +29,8 @@ import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPort;
 
 /**
- * Implements the request accessing logging for Jetty.
+ * This class is a bridge between Jetty's {@link org.eclipse.jetty.server.handler.RequestLogHandler}
+ * and our own configurable access logging in different formats provided by {@link AccessLog}.
  *
  * @author Oyvind Bakksjo
  * @author bjorncs
@@ -48,29 +53,28 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
         try {
             RequestLogEntry.Builder builder = new RequestLogEntry.Builder();
 
-            String peerAddress = Request.getRemoteAddr(request);
-            int peerPort = Request.getRemotePort(request);
-            long startTime = Request.getTimeStamp(request);
+            String peerAddress = request.getRemoteAddr();
+            int peerPort = request.getRemotePort();
+            long startTime = request.getTimeStamp();
             long endTime = System.currentTimeMillis();
-            Integer statusCodeOverride = (Integer) request.getAttribute(JdiscDispatchingHandler.ACCESS_LOG_STATUS_CODE_OVERRIDE);
+            Integer statusCodeOverride = (Integer) request.getAttribute(HttpRequestDispatch.ACCESS_LOG_STATUS_CODE_OVERRIDE);
             builder.peerAddress(peerAddress)
                     .peerPort(peerPort)
                     .localPort(getLocalPort(request))
                     .timestamp(Instant.ofEpochMilli(startTime))
                     .duration(Duration.ofMillis(Math.max(0, endTime - startTime)))
-                    .responseSize(Response.getContentBytesWritten(response))
-                    .requestSize(Request.getContentBytesRead(request))
-                    .statusCode(statusCodeOverride != null ? statusCodeOverride : response.getStatus());
-
+                    .responseSize(response.getHttpChannel().getBytesWritten())
+                    .requestSize(request.getHttpInput().getContentReceived())
+                    .statusCode(statusCodeOverride != null ? statusCodeOverride : response.getCommittedMetaData().getStatus());
 
             addNonNullValue(builder, request.getMethod(), RequestLogEntry.Builder::httpMethod);
-            addNonNullValue(builder, request.getHttpURI().getPath(), RequestLogEntry.Builder::rawPath);
-            addNonNullValue(builder, request.getConnectionMetaData().getProtocol(), RequestLogEntry.Builder::httpVersion);
-            addNonNullValue(builder, request.getHttpURI().getScheme(), RequestLogEntry.Builder::scheme);
-            addNonNullValue(builder, request.getHeaders().get("User-Agent"), RequestLogEntry.Builder::userAgent);
+            addNonNullValue(builder, request.getRequestURI(), RequestLogEntry.Builder::rawPath);
+            addNonNullValue(builder, request.getProtocol(), RequestLogEntry.Builder::httpVersion);
+            addNonNullValue(builder, request.getScheme(), RequestLogEntry.Builder::scheme);
+            addNonNullValue(builder, request.getHeader("User-Agent"), RequestLogEntry.Builder::userAgent);
             addNonNullValue(builder, getServerName(request), RequestLogEntry.Builder::hostString);
-            addNonNullValue(builder, request.getHeaders().get("Referer"), RequestLogEntry.Builder::referer);
-            addNonNullValue(builder, request.getHttpURI().getQuery(), RequestLogEntry.Builder::rawQuery);
+            addNonNullValue(builder, request.getHeader("Referer"), RequestLogEntry.Builder::referer);
+            addNonNullValue(builder, request.getQueryString(), RequestLogEntry.Builder::rawQuery);
 
             HttpRequest jdiscRequest  = (HttpRequest) request.getAttribute(HttpRequest.class.getName());
             if (jdiscRequest != null) {
@@ -95,20 +99,17 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                 builder.remotePort(remotePort);
             }
             LOGGED_REQUEST_HEADERS.forEach(header -> {
-                String value = request.getHeaders().get(header);
+                String value = request.getHeader(header);
                 if (value != null) {
                     builder.addExtraAttribute(header, value);
                 }
             });
-            var sslSessionData = (EndPoint.SslSessionData) request.getAttribute(EndPoint.SslSessionData.ATTRIBUTE);
-            if (sslSessionData != null) {
-                var clientCert = sslSessionData.peerCertificates();
-                if (clientCert != null && clientCert.length > 0) {
-                    builder.sslPrincipal(clientCert[0].getSubjectX500Principal());
-                }
+            X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute(RequestUtils.SERVLET_REQUEST_X509CERT);
+            if (clientCert != null && clientCert.length > 0) {
+                builder.sslPrincipal(clientCert[0].getSubjectX500Principal());
             }
 
-            AccessLogEntry accessLogEntry = (AccessLogEntry) request.getAttribute(JdiscDispatchingHandler.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
+            AccessLogEntry accessLogEntry = (AccessLogEntry) request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
             if (accessLogEntry != null) {
                 var extraAttributes = accessLogEntry.getKeyValues();
                 if (extraAttributes != null) {
@@ -129,39 +130,39 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
 
     private static String getServerName(Request request) {
         try {
-            return Request.getServerName(request);
+            return request.getServerName();
         } catch (IllegalArgumentException e) {
             /*
              * getServerName() may throw IllegalArgumentException for invalid requests where request line contains a URI with relative path.
              * Jetty correctly responds with '400 Bad Request' prior to invoking our request log implementation.
              */
             logger.log(Level.FINE, e, () -> "Fallback to 'Host' header");
-            return request.getHeaders().get("Host");
+            return request.getHeader("Host");
         }
     }
 
     private String getRemoteAddress(Request request) {
         for (String header : getConnector(request).connectorConfig().accessLog().remoteAddressHeaders()) {
-            String value = request.getHeaders().get(header);
+            String value = request.getHeader(header);
             if (value != null) return value;
         }
-        return Request.getRemoteAddr(request);
+        return request.getRemoteAddr();
     }
 
     private int getRemotePort(Request request) {
         for (String header : getConnector(request).connectorConfig().accessLog().remotePortHeaders()) {
-            String value = request.getHeaders().get(header);
+            String value = request.getHeader(header);
             if (value != null) {
                 OptionalInt maybePort = parsePort(value);
                 if (maybePort.isPresent()) return maybePort.getAsInt();
             }
         }
-        return Request.getRemotePort(request);
+        return request.getRemotePort();
     }
 
     private static int getLocalPort(Request request) {
         int connectorLocalPort = getConnectorLocalPort(request);
-        if (connectorLocalPort <= 0) return Request.getLocalPort(request); // If connector is already closed
+        if (connectorLocalPort <= 0) return request.getLocalPort(); // If connector is already closed
         return connectorLocalPort;
     }
 
@@ -174,8 +175,12 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
     }
 
     private static OptionalInt http2StreamId(Request request) {
-        if (request.getConnectionMetaData().getHttpVersion() != HttpVersion.HTTP_2) return OptionalInt.empty();
-        return OptionalInt.of(Integer.parseInt(request.getId()));
+        HttpChannel httpChannel = request.getHttpChannel();
+        if (httpChannel == null) return OptionalInt.empty();
+        HttpTransport transport = httpChannel.getHttpTransport();
+        if (!(transport instanceof HttpTransportOverHTTP2)) return OptionalInt.empty();
+        HTTP2Stream stream = (HTTP2Stream) ((HttpTransportOverHTTP2) transport).getStream();
+        return OptionalInt.of(stream.getId());
     }
 
     private static <T> void addNonNullValue(

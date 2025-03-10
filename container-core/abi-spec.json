@@ -948,8 +948,7 @@
       "protected void writeErrorResponseOnOverload(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
     ],
     "fields" : [
-      "protected final com.yahoo.jdisc.Metric metric",
-      "protected final com.yahoo.container.core.HandlerMetricContextUtil metricUtil"
+      "protected final com.yahoo.jdisc.Metric metric"
     ]
   },
   "com.yahoo.container.jdisc.VespaHeaders" : {

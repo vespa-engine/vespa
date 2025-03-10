@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http.v2;
 
-import ai.vespa.utils.BytesQuantity;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.config.provision.ApplicationId;
@@ -22,7 +21,6 @@ import com.yahoo.vespa.config.server.http.Utils;
 import com.yahoo.vespa.config.server.http.v2.response.SessionPrepareAndActivateResponse;
 import com.yahoo.vespa.config.server.session.PrepareParams;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
 import org.apache.hc.core5.http.ContentType;
 
@@ -30,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -63,33 +60,17 @@ public class ApplicationApiHandler extends SessionHandler {
     private final Duration zookeeperBarrierTimeout;
     private final long maxApplicationPackageSize;
     private final Zone zone;
-    private final MultiPartFormParser multiPartFormParser;
 
     @Inject
     public ApplicationApiHandler(Context ctx,
                                  ApplicationRepository applicationRepository,
                                  ConfigserverConfig configserverConfig,
                                  Zone zone) {
-        this(ctx,
-                applicationRepository,
-                configserverConfig,
-                zone,
-                new MultiPartFormParser(
-                        Paths.get(Defaults.getDefaults().underVespaHome("var/tmp/jetty-multiform-part-data")),
-                        BytesQuantity.ofMB(10).toBytes()));
-    }
-
-    ApplicationApiHandler(Context ctx,
-                          ApplicationRepository applicationRepository,
-                          ConfigserverConfig configserverConfig,
-                          Zone zone,
-                          MultiPartFormParser multiPartFormParser) {
         super(ctx, applicationRepository);
         this.tenantRepository = applicationRepository.tenantRepository();
         this.zookeeperBarrierTimeout = Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout());
         this.maxApplicationPackageSize = configserverConfig.maxApplicationPackageSize();
         this.zone = zone;
-        this.multiPartFormParser = multiPartFormParser;
     }
 
     @Override
@@ -97,9 +78,9 @@ public class ApplicationApiHandler extends SessionHandler {
         TenantName tenantName = validateTenant(request);
         long sessionId = getSessionIdFromRequest(request);
         ApplicationId app = applicationRepository.activate(tenantRepository.getTenant(tenantName),
-                sessionId,
-                getTimeoutBudget(request, Duration.ofMinutes(2)),
-                shouldIgnoreSessionStaleFailure(request));
+                                                           sessionId,
+                                                           getTimeoutBudget(request, Duration.ofMinutes(2)),
+                                                           shouldIgnoreSessionStaleFailure(request));
         return new MessageResponse("Session " + sessionId + " for " + app.toFullString() + " activated");
     }
 
@@ -117,12 +98,12 @@ public class ApplicationApiHandler extends SessionHandler {
         if (multipartRequest) {
             Map<String, PartItem> parts = Map.of();
             try {
-                parts = multiPartFormParser.readParts(request);
+                parts = new MultiPartFormParser(request).readParts();
                 byte[] params;
                 try (InputStream part = parts.get(MULTIPART_PARAMS).data()) { params = part.readAllBytes(); }
                 log.log(FINE, "Deploy parameters: [{0}]", new String(params, StandardCharsets.UTF_8));
                 prepareParams = PrepareParams.fromJson(params, tenantName, zookeeperBarrierTimeout,
-                        VERBOSE_DEPLOY_PARAMETER.bindTo(applicationRepository.flagSource()).value());
+                                                       VERBOSE_DEPLOY_PARAMETER.bindTo(applicationRepository.flagSource()).value());
                 PartItem appPackagePart = parts.get(MULTIPART_APPLICATION_PACKAGE);
                 compressedStream = createFromCompressedStream(appPackagePart.data(), appPackagePart.contentType(), maxApplicationPackageSize);
             } catch (IOException e) {
