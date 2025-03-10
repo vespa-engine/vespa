@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_expgolomb_test_app TEST
     expgolomb_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_expgolomb_test_app NO_VALGRIND COMMAND searchlib_expgolomb_test_app)

@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/bitcompression/compression.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vector>
 #include <algorithm>
 #include <cinttypes>
 #include <cassert>
+#include <type_traits>
+#include <vector>
 
 #include <vespa/log/log.h>
 LOG_SETUP("expglomb_test");
@@ -338,18 +339,18 @@ TestFixtureBase::testBoundaries(int kValue, bool small, std::vector<uint64_t> &v
     for (auto num : v) {
         uint64_t prevPos = dc.getReadOffset();
         uint64_t val64 = small ? df.decodeSmall() : df.decode();
-        EXPECT_EQUAL(num, val64);
+        EXPECT_EQ(num, val64);
         uint64_t currPos = dc.getReadOffset();
         if (small) {
             dfSkip.skipSmall();
         } else {
             dfSkip.skip();
         }
-        EXPECT_EQUAL(currPos, dcSkip.getReadOffset());
+        EXPECT_EQ(currPos, dcSkip.getReadOffset());
         if (small) {
             uint64_t sval64 = dfApply.decodeSmallApply();
-            EXPECT_EQUAL(num, sval64);
-            EXPECT_EQUAL(currPos, dcApply.getReadOffset());
+            EXPECT_EQ(num, sval64);
+            EXPECT_EQ(currPos, dcApply.getReadOffset());
         }
         if (num == 0) {
             bits = currPos - prevPos;
@@ -357,9 +358,9 @@ TestFixtureBase::testBoundaries(int kValue, bool small, std::vector<uint64_t> &v
         } else {
             assert(bits <= currPos - prevPos);
             if (bits < currPos - prevPos) {
-                ASSERT_EQUAL(bits + 2, currPos - prevPos);
+                ASSERT_EQ(bits + 2, currPos - prevPos);
                 bits += 2;
-                ASSERT_EQUAL(maxSame + 1, num);
+                ASSERT_EQ(maxSame + 1, num);
                 maxSame = EC::maxExpGolombVal(kValue, bits);
             }
         }
@@ -372,10 +373,10 @@ TestFixtureBase::testRandNums(DecodeContext64Base &dc, DecodeContext64Base &dcSk
 {
     for (auto num : _randNums) {
         uint64_t val64 = df.decode();
-        EXPECT_EQUAL(num, val64);
+        EXPECT_EQ(num, val64);
         uint64_t currPos = dc.getReadOffset();
         dfSkip.skip();
-        EXPECT_EQUAL(currPos, dcSkip.getReadOffset());
+        EXPECT_EQ(currPos, dcSkip.getReadOffset());
     }
 }
 
@@ -510,16 +511,35 @@ TestFixture<bigEndian>::testRandNums()
     }
 }
 
-TEST_F("Test bigendian expgolomb encoding/decoding", TestFixture<true>)
+template <typename bigEndian>
+class ExpGolombTest : public ::testing::Test, public TestFixture<bigEndian::value>
 {
-    f.testRandNums();
-    f.testBoundaries();
+protected:
+    ExpGolombTest();
+    ~ExpGolombTest() override;
+};
+
+template <typename bigEndian>
+ExpGolombTest<bigEndian>::ExpGolombTest()
+    : ::testing::Test(),
+      TestFixture<bigEndian::value>()
+{
 }
 
-TEST_F("Test little expgolomb encoding/decoding", TestFixture<false>)
+template <typename bigEndian>
+ExpGolombTest<bigEndian>::~ExpGolombTest() = default;
+
+using ExpGolombTestTypes = ::testing::Types<std::false_type, std::true_type>;
+TYPED_TEST_SUITE(ExpGolombTest, ExpGolombTestTypes);
+
+TYPED_TEST(ExpGolombTest, random_numbers)
 {
-    f.testRandNums();
-    f.testBoundaries();
+    this->testRandNums();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TYPED_TEST(ExpGolombTest, boundaries)
+{
+    this->testBoundaries();
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()
