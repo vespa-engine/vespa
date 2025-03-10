@@ -3,5 +3,6 @@ vespa_add_library(vespalib_fastlib_text OBJECT
     SOURCES
     unicodeutil.cpp
     normwordfolder.cpp
+    generate_hash_table.cpp
     DEPENDS
 )
