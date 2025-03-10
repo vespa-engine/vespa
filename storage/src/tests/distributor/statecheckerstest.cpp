@@ -311,7 +311,7 @@ TEST_F(StateCheckersTest, split) {
     EXPECT_EQ("[Splitting bucket because its maximum size (1000 b, "
               "200 docs, 200 meta, 1000 b total) "
               "is higher than the configured limit of (10000, 100)] "
-              "(pri 175)",
+              "(pri 120)",
               testSplit(100, 10000, 16, "0=100/200/1000", PendingMessage(), true));
 
     EXPECT_EQ("NO OPERATIONS GENERATED",
@@ -360,17 +360,17 @@ TEST_F(StateCheckersTest, split) {
 
     // But must block equal priority splits that are already pending, or
     // we'll end up spamming the nodes with splits!
-    // NOTE: assuming split priority of 175.
+    // NOTE: assuming split priority of 120.
     EXPECT_EQ("BLOCKED",
               testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000",
-                        PendingMessage(api::MessageType::SPLITBUCKET_ID, 175)));
+                        PendingMessage(api::MessageType::SPLITBUCKET_ID, 120)));
 
     // Don't split if we're already joining, since there's a window of time
     // where the bucket will appear to be inconsistently split when the join
     // is not finished on all the nodes.
     EXPECT_EQ("BLOCKED",
               testSplit(100, 10000, 16, "0=0/0/1,1=100/1000/1000",
-                        PendingMessage(api::MessageType::JOINBUCKETS_ID, 175)));
+                        PendingMessage(api::MessageType::JOINBUCKETS_ID, 120)));
 }
 
 std::string
@@ -473,7 +473,7 @@ TEST_F(StateCheckersTest, join) {
               "[Joining buckets BucketId(0x8400000000000001) and "
               "BucketId(0x8400000100000001) because their size "
               "(2 bytes, 2 docs) is less than the configured limit "
-              "of (0, 3) (pri 155)",
+              "of (0, 3) (pri 120)",
               testJoin(3, 0, 16, document::BucketId(33, 1), true));
 
     insertJoinableBuckets();
