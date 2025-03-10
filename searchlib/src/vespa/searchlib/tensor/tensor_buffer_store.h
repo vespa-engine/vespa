@@ -21,7 +21,7 @@ class TensorBufferStore : public TensorStore
     /*
      * Increasing the number of buffers reduces the wasted address space due to buffer sizes being capped to 256 MiB,
      * c.f. ArrayStoreConfig::default_max_buffer_size. This allows for more data to be stored, at the cost of a
-     * higher initial memory allocation (BufferAndMeta vector in DataStoreGase), and a higher memory allocation
+     * higher initial memory allocation (BufferAndMeta vector in DataStoreBase), and a higher memory allocation
      * later on as buffers are being used (BufferState).
      *
      * As of 2025-03-10: sizeof(BufferAndMeta) == 24, sizeof(BufferState) == 112.
