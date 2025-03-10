@@ -17,11 +17,7 @@ public class CasingVariants {
         int read = 0;
         char[] buffer = new char[5000];
         String raw;
-        String srcDir = System.getenv("SOURCE_DIRECTORY");
-        if (srcDir == null) {
-            srcDir = ".";
-        }
-        File f = new File(srcDir + "/" + args[0]);
+        File f = new File(args[0]);
         StringBuilder s = new StringBuilder();
         InputStream in = new FileInputStream(f);
 
