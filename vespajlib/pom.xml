@@ -46,6 +46,11 @@
         </exclusion>
       </exclusions>
     </dependency>
+    <dependency>
+      <groupId>com.openai</groupId>
+      <artifactId>openai-java</artifactId>
+      <version>${openai-java.vespa.version}</version>
+    </dependency>
 
     <!-- provided scope -->
     <dependency>
@@ -59,6 +64,7 @@
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>
+    
 
     <!-- test scope -->
     <dependency>
@@ -78,9 +84,10 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.fasterxml.jackson.core</groupId>
-      <artifactId>jackson-databind</artifactId>
-      <scope>test</scope>
+        <groupId>com.fasterxml.jackson.core</groupId>
+        <artifactId>jackson-databind</artifactId>
+        <version>${jackson2.vespa.version}</version>
+        <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.junit.vintage</groupId>
