@@ -70,6 +70,7 @@ vespa_add_library(searchcore_server STATIC
     maintenancecontroller.cpp
     maintenancedocumentsubdb.cpp
     maintenancejobrunner.cpp
+    malloc_info_explorer.cpp
     matchers.cpp
     matchview.cpp
     memory_flush_config_updater.cpp

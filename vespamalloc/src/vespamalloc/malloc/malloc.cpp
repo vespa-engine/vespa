@@ -36,6 +36,13 @@ extern "C" {
 int is_vespamalloc() __attribute__((visibility ("default")));
 int is_vespamalloc() { return 1; }
 
+// Exported symbol used by state explorer to detect vespamalloc presence and dump its info.
+void vespamalloc_dump_info(FILE* out_file) __attribute__((visibility("default")));
+void vespamalloc_dump_info(FILE* out_file) {
+    constexpr int log_level = 2;
+    vespamalloc::_GmemP->info(out_file, log_level);
+}
+
 }
 
 #include <vespamalloc/malloc/overload.h>
