@@ -21,8 +21,6 @@ public class RedundancyBuilder {
     private Integer globalMinRedundancy = null;
 
     public RedundancyBuilder(ModelElement clusterXml) {
-        readyCopies = clusterXml.childAsInteger("engine.proton.searchable-copies");
-
         ModelElement redundancyElement = clusterXml.child("redundancy");
         if (redundancyElement != null) {
             initialRedundancy = redundancyElement.integerAttribute("reply-after");
@@ -35,7 +33,7 @@ public class RedundancyBuilder {
                     throw new IllegalArgumentException("Final redundancy must be higher than or equal to initial redundancy");
                 }
             }
-
+            readyCopies = clusterXml.childAsInteger("engine.proton.searchable-copies");
             if (readyCopies != null && readyCopies > finalRedundancy)
                 throw new IllegalArgumentException("Number of searchable copies can not be higher than final redundancy");
         }
