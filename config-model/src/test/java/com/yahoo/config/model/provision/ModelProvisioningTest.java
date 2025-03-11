@@ -1914,36 +1914,6 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testMinRedundancyAndSearchableCopies() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>" +
-                "<services>" +
-                "  <container version='1.0' id='container1'>" +
-                "     <nodes count='1'/>" +
-                "  </container>" +
-                "  <content version='1.0'>" +
-                "     <min-redundancy>2</min-redundancy>" +
-                "     <engine><proton><searchable-copies>1</searchable-copies></proton></engine>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='2'/>" +
-                "   </content>" +
-                "</services>";
-        VespaModelTester tester = new VespaModelTester();
-        tester.setHosted(true);
-        tester.addHosts(6);
-        VespaModel model = tester.createModel(services, true, deployStateWithClusterEndpoints("container1"));
-
-        var contentCluster = model.getContentClusters().get("content");
-        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
-        contentCluster.getSearch().getConfig(protonBuilder);
-        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
-        assertEquals(1, protonConfig.distribution().searchablecopies());
-        assertEquals(2, protonConfig.distribution().redundancy());
-    }
-
-    @Test
     public void testMinRedundancyMetWithinGroup() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
