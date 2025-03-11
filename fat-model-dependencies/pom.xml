@@ -93,6 +93,10 @@
       <version>${project.version}</version>
       <exclusions>
         <exclusion>
+          <groupId>com.openai</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
           <groupId>com.theokanning.openai-gpt3-java</groupId>
           <artifactId>service</artifactId>
         </exclusion>
