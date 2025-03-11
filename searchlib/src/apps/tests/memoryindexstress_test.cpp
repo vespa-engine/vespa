@@ -25,9 +25,8 @@
 #include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <memory>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("memoryindexstress_test");
@@ -150,18 +149,13 @@ makeDoc(const DocumentTypeRepo &repo, uint32_t i, std::string_view titleString, 
     idstr << "id:test:test:: " << i;
     DocumentId id(idstr.view());
     const DocumentType *docType = repo.getDocumentType(doc_type_name);
-    auto doc(std::make_unique<Document>(repo, *docType, id));
+    auto doc = std::make_unique<Document>(repo, *docType, id);
     if (!titleString.empty()) {
         setFieldValue(*doc, title, titleString);
     }
     if (!bodyString.empty()) {
         setFieldValue(*doc, body, bodyString);
     }
-    ASSERT_TRUE(doc.get());
-#if 0
-    doc->print(std::cout, true, "");
-    std::cout << std::endl;
-#endif
     return doc;
 }
 
@@ -322,8 +316,9 @@ Fixture::readWork(uint32_t cnt)
         FieldSpecList fields;
         fields.add(field);
         auto result = index.createBlueprint(requestContext, fields, term);
-        if (!EXPECT_TRUE(result)) {
-            LOG(error, "Did not get blueprint");
+        bool failed = false;
+        EXPECT_TRUE(result) << (failed = true, "Did not get blueprint");
+        if (failed) {
             break;
         }
         result->basic_plan(true, docid_limit);
@@ -334,8 +329,8 @@ Fixture::readWork(uint32_t cnt)
         }
         result->fetchPostings(ExecuteInfo::FULL);
         SearchIterator::UP search = result->createSearch(*match_data);
-        if (!EXPECT_TRUE(search)) {
-            LOG(error, "Did not get search iterator");
+        EXPECT_TRUE(search) << (failed = true, "Did not get search iterator");
+        if (failed) {
             break;
         }
     }
@@ -418,16 +413,19 @@ verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName,
     fields.add(field);
 
     auto result = index.createBlueprint(requestContext, fields, term);
-    if (!EXPECT_TRUE(result)) {
+    bool failed = false;
+    EXPECT_TRUE(result) << (failed = true, "");
+    if (failed) {
         return false;
     }
     result->basic_plan(true, docid_limit);
-    EXPECT_EQUAL(expect.inspect().size(), result->getState().estimate().estHits);
-    EXPECT_EQUAL(expect.inspect().empty(), result->getState().estimate().empty);
+    EXPECT_EQ(expect.inspect().size(), result->getState().estimate().estHits);
+    EXPECT_EQ(expect.inspect().empty(), result->getState().estimate().empty);
 
     result->fetchPostings(ExecuteInfo::FULL);
     SearchIterator::UP search = result->createSearch(*match_data);
-    if (!EXPECT_TRUE(search)) {
+    EXPECT_TRUE(search) << (failed = true, "");
+    if (failed){
         return false;
     }
     TermFieldMatchData &tmd = *match_data->resolveTermField(handle);
@@ -437,20 +435,22 @@ verifyResult(const FakeResult &expect, Searchable &index, std::string fieldName,
     for (search->seek(1); !search->isAtEnd(); search->seek(search->getDocId() + 1)) {
         actual.doc(search->getDocId());
         search->unpack(search->getDocId());
-        EXPECT_EQUAL(search->getDocId(), tmd.getDocId());
+        EXPECT_EQ(search->getDocId(), tmd.getDocId());
         FieldPositionsIterator p = tmd.getIterator();
         actual.len(p.getFieldLength());
         for (; p.valid(); p.next()) {
             actual.pos(p.getPosition());
         }
     }
-    return EXPECT_EQUAL(expect, actual);
+    EXPECT_EQ(expect, actual) << (failed = true, "");
+    return !failed;
 }
 
 // tests basic usage; index some documents in docid order and perform
 // some searches.
-TEST_F("testIndexAndSearch", Fixture)
+TEST(MemoryIndexStressTest, testIndexAndSearch)
 {
+    Fixture f;
     f.put(1, makeDoc(f.repo, 1, "foo bar foo", "foo foo foo"));
     f.internalSyncCommit();
     f.put(2, makeDoc(f.repo, 2, "bar foo", "bar bar bar bar"));
@@ -496,8 +496,9 @@ TEST_F("testIndexAndSearch", Fixture)
 
 // tests index update behavior; remove/update and unordered docid
 // indexing.
-TEST_F("require that documents can be removed and updated", Fixture)
+TEST(MemoryIndexStressTest, require_that_documents_can_be_removed_and_updated)
 {
+    Fixture f;
     // add unordered
     f.put(3, makeDoc(f.repo, 3, "foo foo foo"));
     f.internalSyncCommit();
@@ -532,14 +533,16 @@ TEST_F("require that documents can be removed and updated", Fixture)
 }
 
 
-TEST_F("stress test, 4 readers", Fixture(4))
+TEST(MemoryIndexStressTest, stress_test_4_readers)
 {
+    Fixture f(4);
     f.stressTest(1000000);
 }
 
-TEST_F("stress test, 128 readers", Fixture(128))
+TEST(MemoryIndexStressTest, stress_test_128_readers)
 {
+    Fixture f(128);
     f.stressTest(1000000);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
