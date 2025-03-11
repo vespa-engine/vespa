@@ -122,6 +122,12 @@
     </dependency>
 
     <dependency>
+      <groupId>com.openai</groupId>
+      <artifactId>openai-java</artifactId>
+      <version>${openai-java.vespa.version}</version>
+    </dependency>
+
+    <dependency>
       <groupId>org.lz4</groupId>
       <artifactId>lz4-java</artifactId>
     </dependency>
