@@ -108,14 +108,21 @@ public class BlendingSearcherTestCase {
 
             FederationSearcher fedSearcher =
                     new FederationSearcher(new FederationConfig(builder), SchemaInfo.empty(), new ComponentRegistry<>());
-            BlendingSearcher blendingSearcher = new BlendingSearcher(blendingField);
+            BlendingSearcher blendingSearcher = new BlendingSearcher(new ComponentId("test"), asConfig(blendingField));
             blendingChain = new SearchChain(ComponentId.createAnonymousComponentId("blendingChain"), blendingSearcher, fedSearcher);
             return true;
+        }
+
+        private QrSearchersConfig asConfig(String blendingField) {
+            var b = new QrSearchersConfig.Builder();
+            b.com.yahoo.prelude.searcher.BlendingSearcher.docid(blendingField);
+            return b.build();
         }
 
         private SearchChain createSearchChain(ComponentId chainId, Searcher searcher) {
             return new SearchChain(chainId, searcher);
         }
+
     }
 
     @Test

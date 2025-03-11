@@ -45,12 +45,9 @@ public class BlendingSearcher extends Searcher {
     public BlendingSearcher(ComponentId id, QrSearchersConfig cfg) {
         super(id);
         QrSearchersConfig.Com.Yahoo.Prelude.Searcher.BlendingSearcher s = cfg.com().yahoo().prelude().searcher().BlendingSearcher();
-        blendingField = s.docid().length() > 0 ? s.docid() : null;
+        blendingField = !s.docid().isEmpty() ? s.docid() : null;
     }
 
-    /**
-     * Only for legacy tests.
-     */
     public BlendingSearcher(String blendingField) {
         this.blendingField = blendingField;
     }
@@ -97,7 +94,7 @@ public class BlendingSearcher extends Searcher {
                                                                        " that are not hitgroups"));
             return result;
         }
-        if (groups.size() == 0) {
+        if (groups.isEmpty()) {
             return result;
         } else if (groups.size() == 1) {
             result.hits().addAll(groups.get(0).asUnorderedHits());
