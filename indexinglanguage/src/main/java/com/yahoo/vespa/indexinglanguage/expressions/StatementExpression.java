@@ -132,6 +132,15 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
+    public DataType createdOutputType() {
+        for (int i = size(); --i >= 0; ) {
+            DataType type = get(i).createdOutputType();
+            if (type != null) return type;
+        }
+        return null;
+    }
+
+    @Override
     public String toString() {
         return asList().stream().map(Expression::toString).collect(Collectors.joining(" | "));
     }

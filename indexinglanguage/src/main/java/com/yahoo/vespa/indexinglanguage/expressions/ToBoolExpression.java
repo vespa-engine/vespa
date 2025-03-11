@@ -29,6 +29,11 @@ public final class ToBoolExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new BoolFieldValue(toBooleanValue(context.getCurrentValue())));
     }
@@ -40,6 +45,9 @@ public final class ToBoolExpression extends Expression {
             return ! ((StringFieldValue)value).getString().isEmpty();
         return false;
     }
+
+    @Override
+    public DataType createdOutputType() { return DataType.BOOL; }
 
     @Override
     public String toString() { return "to_bool"; }

@@ -135,6 +135,15 @@ public class ForEachTestCase {
             lst.add(context.getCurrentValue());
         }
 
+        @Override
+        protected void doVerify(VerificationContext context) {
+
+        }
+
+        @Override
+        public DataType createdOutputType() {
+            return null;
+        }
     }
 
 }

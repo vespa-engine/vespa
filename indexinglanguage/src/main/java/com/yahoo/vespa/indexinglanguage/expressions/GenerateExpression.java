@@ -83,6 +83,11 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(getOutputType(context));
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         if (context.getCurrentValue() == null) {
             return;
@@ -130,6 +135,11 @@ public class GenerateExpression extends Expression {
                 .setGeneratorId(generatorId);
         
         return textGenerator.generate(StringPrompt.from(input), textGeneratorContext);
+    }
+
+    @Override
+    public DataType createdOutputType() {
+        return getOutputType();
     }
 
     @Override

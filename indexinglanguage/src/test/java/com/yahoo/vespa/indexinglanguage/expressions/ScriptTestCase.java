@@ -252,6 +252,12 @@ public class ScriptTestCase {
             throw new RuntimeException();
         }
 
+        @Override
+        protected void doVerify(VerificationContext context) {}
+
+        @Override
+        public DataType createdOutputType() { return null; }
+
     }
 
     private static class PutCacheExpression extends Expression {
@@ -269,6 +275,12 @@ public class ScriptTestCase {
             context.putCachedValue(keyToSet, valueToSet);
         }
 
+        @Override
+        protected void doVerify(VerificationContext context) {}
+
+        @Override
+        public DataType createdOutputType() { return null; }
+
     }
 
     private static class AssertCacheExpression extends Expression {
@@ -285,6 +297,12 @@ public class ScriptTestCase {
         protected void doExecute(ExecutionContext context) {
             assertEquals(expectedValue, context.getCachedValue(expectedKey));
         }
+
+        @Override
+        protected void doVerify(VerificationContext context) {}
+
+        @Override
+        public DataType createdOutputType() { return null; }
 
     }
 

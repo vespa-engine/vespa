@@ -43,7 +43,7 @@ public class InputTestCase {
         adapter.setOutputValue(null, "foo", new StringFieldValue("69"));
         new InputExpression("foo").verify(adapter);
         try {
-            new StatementExpression(new InputExpression("bar")).verify(adapter);
+            new InputExpression("bar").verify(adapter);
             fail();
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'input bar': Field 'bar' not found.", e.getMessage());

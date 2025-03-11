@@ -30,6 +30,11 @@ public final class SetLanguageExpression extends Expression {
     }
 
     @Override
+    public DataType createdOutputType() {
+        return null;
+    }
+
+    @Override
     public String toString() { return "set_language"; }
 
     @Override

@@ -31,6 +31,9 @@ public final class EchoExpression extends Expression {
     }
 
     @Override
+    public DataType createdOutputType() { return null; }
+
+    @Override
     public String toString() { return "echo"; }
 
     @Override

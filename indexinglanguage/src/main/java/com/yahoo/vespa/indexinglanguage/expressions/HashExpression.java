@@ -44,6 +44,11 @@ public class HashExpression extends Expression  {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         StringFieldValue input = (StringFieldValue) context.getCurrentValue();
         if (DataType.INT.equals(targetType) || ( ! DataType.LONG.equals(targetType) && requireOutputType().equals(DataType.INT)))
@@ -66,6 +71,11 @@ public class HashExpression extends Expression  {
         if (type.equals(DataType.INT)) return true;
         if (type.equals(DataType.LONG)) return true;
         return false;
+    }
+
+    @Override
+    public DataType createdOutputType() {
+        return getOutputType();
     }
 
     @Override

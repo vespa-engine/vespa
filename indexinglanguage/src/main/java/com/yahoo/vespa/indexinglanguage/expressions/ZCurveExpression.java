@@ -40,6 +40,11 @@ public final class ZCurveExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         Struct input = ((Struct) context.getCurrentValue());
         Integer x = getFieldValue(input, PositionDataType.FIELD_X);
@@ -55,6 +60,9 @@ public final class ZCurveExpression extends Expression {
         IntegerFieldValue val = (IntegerFieldValue)struct.getFieldValue(fieldName);
         return val != null ? val.getInteger() : null;
     }
+
+    @Override
+    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
     public String toString() { return "zcurve"; }

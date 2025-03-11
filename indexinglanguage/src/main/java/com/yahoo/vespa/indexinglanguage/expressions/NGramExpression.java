@@ -95,6 +95,11 @@ public final class NGramExpression extends Expression {
     }
 
     @Override
+    public DataType createdOutputType() {
+        return null;
+    }
+
+    @Override
     public String toString() {
         return "ngram " + gramSize;
     }
