@@ -12,17 +12,9 @@ public final class ClearStateExpression extends Expression {
     public boolean requiresInput() { return false; }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.clear();
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         context.clear();
     }
-
-    @Override
-    public DataType createdOutputType() { return null; }
 
     @Override
     public String toString() { return "clear_state"; }
