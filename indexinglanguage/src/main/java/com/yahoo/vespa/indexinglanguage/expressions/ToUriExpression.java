@@ -23,9 +23,17 @@ public final class ToUriExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new UriFieldValue(String.valueOf(context.getCurrentValue())));
     }
+
+    @Override
+    public DataType createdOutputType() { return DataType.URI; }
 
     @Override
     public String toString() { return "to_uri"; }

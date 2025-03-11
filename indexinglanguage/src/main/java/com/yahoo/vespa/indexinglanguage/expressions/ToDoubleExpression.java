@@ -22,9 +22,17 @@ public final class ToDoubleExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new DoubleFieldValue(Double.valueOf(String.valueOf(context.getCurrentValue()))));
     }
+
+    @Override
+    public DataType createdOutputType() { return DataType.DOUBLE; }
 
     @Override
     public String toString() { return "to_double"; }

@@ -25,6 +25,11 @@ public final class Base64EncodeExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         long input = ((LongFieldValue) context.getCurrentValue()).getLong();
         byte[] output = new byte[8];
@@ -35,6 +40,9 @@ public final class Base64EncodeExpression extends Expression {
         String encoded = Base64.getEncoder().encodeToString(output);
         context.setCurrentValue(new StringFieldValue(encoded));
     }
+
+    @Override
+    public DataType createdOutputType() { return DataType.STRING; }
 
     @Override
     public String toString() { return "base64encode"; }

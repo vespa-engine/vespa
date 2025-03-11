@@ -76,8 +76,9 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     @Override
     protected void doVerify(VerificationContext context) {
+        DataType input = context.getCurrentType();
         for (Expression exp : this)
-            context.verify(exp);
+            context.setCurrentType(input).verify(exp);
     }
 
     @Override
@@ -98,6 +99,13 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
             if (context.getFieldValue(inputField) != null)
                 return true;
         return false;
+    }
+
+    @Override
+    public DataType createdOutputType() {
+        var expressions = asList();
+        if (expressions.isEmpty()) return null;
+        return (expressions.get(expressions.size() - 1)).createdOutputType();
     }
 
     @Override

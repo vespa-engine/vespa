@@ -80,8 +80,12 @@ public final class SelectInputExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        for (Pair<String, Expression> entry : cases)
-            context.verify(entry.getSecond());
+        DataType input = context.getCurrentType();
+        for (Pair<String, Expression> entry : cases) {
+            DataType val = context.getFieldType(entry.getFirst(), this);
+            context.setCurrentType(val).verify(entry.getSecond());
+        }
+        context.setCurrentType(input);
     }
 
     @Override
@@ -103,6 +107,9 @@ public final class SelectInputExpression extends CompositeExpression {
             select(entry.getSecond(), predicate, operation);
         }
     }
+
+    @Override
+    public DataType createdOutputType() { return null; }
 
     public List<Pair<String, Expression>> getCases() {
         return Collections.unmodifiableList(cases);

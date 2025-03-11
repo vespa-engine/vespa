@@ -36,6 +36,7 @@ public final class BusyWaitExpression extends Expression {
         return (24 * (a+2))/(double)(a*(a+1)*(a+2)*(a+3));
     }
 
+    @Override public DataType createdOutputType() { return null; }
     @Override public String toString() { return "busy_wait"; }
     @Override public boolean equals(Object obj) { return obj instanceof BusyWaitExpression; }
     @Override public int hashCode() { return getClass().hashCode(); }

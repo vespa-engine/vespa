@@ -38,6 +38,11 @@ public final class JoinExpression extends Expression {
         return getInputType(context); // Cannot deduce since any array type is accepted
     }
 
+    @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
     @SuppressWarnings({ "unchecked" })
     @Override
     protected void doExecute(ExecutionContext context) {
@@ -53,6 +58,9 @@ public final class JoinExpression extends Expression {
         }
         context.setCurrentValue(new StringFieldValue(output.toString()));
     }
+
+    @Override
+    public DataType createdOutputType() { return DataType.STRING; }
 
     @Override
     public String toString() {

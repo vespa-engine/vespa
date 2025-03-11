@@ -44,6 +44,9 @@ public abstract class OutputExpression extends Expression {
     }
 
     @Override
+    public DataType createdOutputType() { return null; }
+
+    @Override
     public DataType getInputType(VerificationContext context) {
         return context.getFieldType(fieldName, this);
     }

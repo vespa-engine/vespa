@@ -64,10 +64,22 @@ final class SimpleExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        if (hasVerifyValue) {
+            context.setCurrentType(verifyValue);
+        }
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         if (hasExecuteValue) {
             context.setCurrentValue(executeValue);
         }
+    }
+
+    @Override
+    public DataType createdOutputType() {
+        return createdOutput;
     }
 
     @Override
@@ -110,5 +122,4 @@ final class SimpleExpression extends Expression {
     private static int hashCode(Object obj) {
         return obj != null ? obj.hashCode() : 0;
     }
-
 }

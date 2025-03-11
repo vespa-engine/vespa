@@ -29,6 +29,7 @@ public final class SleepExpression extends Expression {
         }
     }
 
+    @Override public DataType createdOutputType() { return null; }
     @Override public String toString() { return "sleep"; }
     @Override public boolean equals(Object obj) { return obj instanceof SleepExpression; }
     @Override public int hashCode() { return getClass().hashCode(); }

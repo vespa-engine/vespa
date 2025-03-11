@@ -86,6 +86,9 @@ public final class ExactExpression extends Expression {
     }
 
     @Override
+    public DataType createdOutputType() { return null; }
+
+    @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
         s.append("exact");

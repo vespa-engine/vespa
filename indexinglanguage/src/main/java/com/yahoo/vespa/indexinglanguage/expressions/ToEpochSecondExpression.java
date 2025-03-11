@@ -26,11 +26,19 @@ public class ToEpochSecondExpression extends Expression {
     }
 
     @Override
+    protected void doVerify(VerificationContext context) {
+        context.setCurrentType(createdOutputType());
+    }
+
+    @Override
     protected void doExecute(ExecutionContext context) {
         String inputString = String.valueOf(context.getCurrentValue());
         long epochTime =  Instant.parse(inputString).getEpochSecond();
         context.setCurrentValue(new LongFieldValue(epochTime));
     }
+
+    @Override
+    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
     public String toString() { return "to_epoch_second"; }

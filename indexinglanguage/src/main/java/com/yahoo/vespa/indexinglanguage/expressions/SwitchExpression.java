@@ -99,9 +99,12 @@ public final class SwitchExpression extends CompositeExpression {
 
     @Override
     protected void doVerify(VerificationContext context) {
-        for (Expression exp : cases.values())
-            context.verify(exp);
-        context.verify(defaultExp);
+        DataType input = context.getCurrentType();
+        for (Expression exp : cases.values()) {
+            context.setCurrentType(input).verify(exp);
+        }
+        context.setCurrentType(input).verify(defaultExp);
+        context.setCurrentType(input);
     }
 
     @Override
@@ -131,6 +134,9 @@ public final class SwitchExpression extends CompositeExpression {
             select(exp, predicate, operation);
         }
     }
+
+    @Override
+    public DataType createdOutputType() { return null; }
 
     @Override
     public String toString() {
