@@ -131,11 +131,6 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(new TensorDataType(toTargetTensor(getOutputType(context))));
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         if (context.getCurrentValue() == null) return;
         Tensor output;
@@ -244,11 +239,6 @@ public class EmbedExpression extends Expression  {
 
     private TensorType getOutputTensorType() {
         return ((TensorDataType)getOutputType()).getTensorType();
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return getOutputType();
     }
 
     private static TensorType toTargetTensor(DataType dataType) {
