@@ -11,8 +11,8 @@
     "lint": "eslint '{**/*,*}.{js,jsx}'"
   },
   "dependencies": {
-    "react": "^18",
-    "react-dom": "^18"
+    "react": "^19",
+    "react-dom": "^19"
   },
   "devDependencies": {
     "@emotion/react": "^11",
@@ -28,16 +28,16 @@
     "eslint-plugin-import": "^2",
     "eslint-plugin-prettier": "^5",
     "eslint-plugin-react": "^7",
-    "eslint-plugin-react-hooks": "^4",
+    "eslint-plugin-react-hooks": "^5",
     "eslint-plugin-react-perf": "^3",
     "eslint-plugin-unused-imports": "^4",
     "husky": "^9",
     "lodash": "^4",
     "prettier": "^3",
     "pretty-quick": "^4",
-    "react-router-dom": "^6",
+    "react-router-dom": "^7",
     "use-context-selector": "^2",
-    "vite": "^5",
-    "vitest": "^2"
+    "vite": "^6",
+    "vitest": "^3"
   }
 }
