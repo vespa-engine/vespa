@@ -115,7 +115,8 @@ public class BlendingSearcherTestCase {
 
         private QrSearchersConfig asConfig(String blendingField) {
             var b = new QrSearchersConfig.Builder();
-            b.com.yahoo.prelude.searcher.BlendingSearcher.docid(blendingField);
+            if (blendingField != null)
+                b.com.yahoo.prelude.searcher.BlendingSearcher.docid(blendingField);
             return b.build();
         }
 
