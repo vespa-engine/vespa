@@ -62,13 +62,21 @@ public class GenerateExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
+        if (!inputType.isAssignableTo(DataType.STRING)) {
+            throw new VerificationException(
+                    this,
+                    "Generate expression for field %s requires string input type, but got %s."
+                            .formatted(destination, inputType.getName())
+            );
+        }
+
         super.setInputType(inputType, DataType.STRING, context);
         return targetType;
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(targetType, outputType, null, context);
+        super.setOutputType(outputType, context);
         return DataType.STRING;
     }
 
@@ -98,7 +106,7 @@ public class GenerateExpression extends Expression {
             generatedValue = generate(((StringFieldValue) inputValue).getString(), context);
         } else {
             throw new IllegalArgumentException(
-                    ("Generate expression for field %s requires a string as input type, but got %s.")
+                    ("Generate expression for field %s requires string input type, but got %s.")
                             .formatted(destination, inputType.getName()));
         }
         
