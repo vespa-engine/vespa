@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_buffer_type_test_app TEST
     buffer_type_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_buffer_type_test_app COMMAND vespalib_buffer_type_test_app)
