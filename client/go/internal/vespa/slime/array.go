@@ -27,3 +27,17 @@ func (arr *arrayValue) Add(value Value) Value {
 	arr.value = append(arr.value, value)
 	return value
 }
+
+func (arr *arrayValue) Emit(dst DataSink) {
+	dst.Array()
+	for _, value := range arr.value {
+		value.Emit(dst)
+	}
+	dst.End()
+}
+
+func MakeArray(fill func(arr Value)) Value {
+	arr := Array()
+	fill(arr)
+	return arr
+}

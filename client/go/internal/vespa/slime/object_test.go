@@ -7,15 +7,22 @@ import (
 	"testing"
 )
 
+func dummyFieldNames(n int) []string {
+	fields := make([]string, n)
+	for i := 0; i < n; i++ {
+		fields[i] = string(rune('a' + i))
+	}
+	return fields
+}
+
 func TestObject(t *testing.T) {
 	obj := Object()
-	actual := map[string]Value{
-		"a": obj.Set("a", Empty),
-		"b": obj.Set("b", Bool(true)),
-		"c": obj.Set("c", Long(5)),
-		"d": obj.Set("d", Double(5.5)),
-		"e": obj.Set("e", String("foo")),
-		"f": obj.Set("f", Data([]byte{1, 2, 3}))}
+	input := leafTestValues()
+	names := dummyFieldNames(len(input))
+	actual := make(map[string]Value)
+	for i, name := range names {
+		actual[name] = obj.Set(name, input[i])
+	}
 
 	expect := map[string]expectLeaf{
 		"a": expectLeaf{mytype: EMPTY},
@@ -37,4 +44,16 @@ func TestObject(t *testing.T) {
 		checkLeaf(t, collect[n], e)
 		checkLeaf(t, obj.Field(n), e)
 	}
+}
+
+func TestOverwriteField(t *testing.T) {
+	obj := Object()
+
+	obj.Set("a", Long(10))
+	initialExpect := expectLeaf{mytype: LONG, longVal: 10, doubleVal: 10}
+	checkLeaf(t, obj.Field("a"), initialExpect)
+
+	obj.Set("a", String("updated"))
+	newExpect := expectLeaf{mytype: STRING, stringVal: "updated"}
+	checkLeaf(t, obj.Field("a"), newExpect)
 }
