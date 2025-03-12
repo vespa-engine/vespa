@@ -200,7 +200,6 @@
                                         <include>org.hamcrest:hamcrest:${hamcrest.vespa.version}:test</include>
                                         <include>org.hamcrest:hamcrest-core:${hamcrest.vespa.version}:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}:test</include>
-                                        <include>org.jetbrains:annotations:13.0:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-reflect:1.8.10:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-stdlib:2.1.10:test</include>
                                         <include>org.jetbrains.kotlin:kotlin-stdlib-common:1.9.10:test</include>
