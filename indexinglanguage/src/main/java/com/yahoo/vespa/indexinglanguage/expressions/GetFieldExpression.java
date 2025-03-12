@@ -40,11 +40,6 @@ public final class GetFieldExpression extends Expression {
         return getInputType(context);
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(getFieldType(context.getCurrentType(), context));
-    }
-
     private DataType getFieldType(DataType input, VerificationContext context) {
         if (input instanceof MapDataType entryInput) {
             if (structFieldName.equals(keyName))
@@ -97,11 +92,6 @@ public final class GetFieldExpression extends Expression {
             throw new IllegalArgumentException("In " + this +": Field '" + structFieldName + "' not found in struct type '" +
                                                struct.getDataType().getName() + "'");
         context.setCurrentValue(struct.getFieldValue(field));
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

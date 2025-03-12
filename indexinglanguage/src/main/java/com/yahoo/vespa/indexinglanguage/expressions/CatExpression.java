@@ -66,15 +66,6 @@ public final class CatExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        List<DataType> types = new LinkedList<>();
-        for (Expression expression : this)
-            types.add(context.setCurrentType(input).verify(expression).getCurrentType());
-        context.setCurrentType(resolveOutputType(types));
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         List<FieldValue> values = new LinkedList<>();
@@ -84,11 +75,6 @@ public final class CatExpression extends ExpressionList<Expression> {
         if (type == null)
             throw new RuntimeException("Output type is not resolved in " + this);
         context.setCurrentValue(type == DataType.STRING ? asString(values) : asCollection(type, values));
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

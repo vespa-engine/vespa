@@ -22,17 +22,9 @@ public final class ToPositionExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(PositionDataType.fromString(String.valueOf(context.getCurrentValue())));
     }
-
-    @Override
-    public DataType createdOutputType() { return PositionDataType.INSTANCE; }
 
     @Override
     public String toString() { return "to_pos"; }
@@ -48,4 +40,3 @@ public final class ToPositionExpression extends Expression {
     }
 
 }
-

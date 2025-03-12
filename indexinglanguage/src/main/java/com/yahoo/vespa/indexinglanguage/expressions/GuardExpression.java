@@ -68,11 +68,6 @@ public final class GuardExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType createdOutputType() {
-        return innerExpression.createdOutputType();
-    }
-
-    @Override
     public String toString() {
         return "guard " + toScriptBlock(innerExpression);
     }
