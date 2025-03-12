@@ -220,7 +220,6 @@ org.jetbrains.kotlin:kotlin-stdlib-common:1.9.10
 org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.21
 org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21
 org.jetbrains.kotlin:kotlin-stdlib:2.1.10
-org.jetbrains:annotations:13.0
 org.jetbrains:annotations:24.0.1
 org.json:json:${org.json.vespa.version}
 org.jsoup:jsoup:1.14.2
