@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationMutex;
 import com.yahoo.config.provision.CloudAccount;
@@ -139,11 +140,13 @@ public class Preparer {
                                                                             deficit.resources(),
                                                                             application,
                                                                             osVersion,
+                                                                            Vtag.currentVersion,
                                                                             sharing,
                                                                             Optional.of(cluster.type()),
                                                                             Optional.of(cluster.id()),
                                                                             requested.cloudAccount(),
-                                                                            deficit.dueToFlavorUpgrade());
+                                                                            deficit.dueToFlavorUpgrade(),
+                                                                            false);
                     Predicate<NodeResources> realHostResourcesWithinLimits =
                             resources -> nodeRepository.nodeResourceLimits().isWithinRealLimits(resources, cluster);
                     waiter = hostProvisioner.get().provisionHosts(request, realHostResourcesWithinLimits, whenProvisioned);
