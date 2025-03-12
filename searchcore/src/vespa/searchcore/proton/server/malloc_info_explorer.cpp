@@ -140,6 +140,8 @@ void MallocInfoExplorer::get_state(const Inserter& inserter, bool full) const {
     if (malloc_impl == MallocImpl::VespaMalloc) {
         emit_malloc_internal_info_dump(object, get_vespamalloc_info_dump());
     }
+#else
+    (void) object;
 #endif // __linux__
 }
 
