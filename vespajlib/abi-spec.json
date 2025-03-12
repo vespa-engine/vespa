@@ -4198,7 +4198,10 @@
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason none",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason other",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason error",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason discard"
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason discard",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason tool_calls",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason content_filter",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason function_call"
     ]
   },
   "ai.vespa.llm.completion.Completion" : {

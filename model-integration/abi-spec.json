@@ -9,6 +9,8 @@
     ],
     "methods" : [
       "public void <init>()",
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String)",
       "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
       "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
     ],
