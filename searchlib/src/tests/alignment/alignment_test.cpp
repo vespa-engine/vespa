@@ -1,12 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("alignment_test");
 
 #include <sys/resource.h>
 #include <sys/time.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/memory.h>
+
+#include <vespa/log/log.h>
+LOG_SETUP("alignment_test");
 
 using vespalib::Unaligned;
 
@@ -41,7 +42,7 @@ timeAccess(void *bufp, uint32_t len, double &sum)
     return ret;
 }
 
-TEST("alignment_test") {
+TEST(AlignmentTest, alignment_test) {
 
     uint32_t buf[129];
     for (uint32_t i = 0; i < 129; ++i) {
@@ -55,12 +56,12 @@ TEST("alignment_test") {
     printf(aligned ? "ALIGNED\n" : "UNALIGNED\n");
     printf("warmup time = %.2f\n", timeAccess(reinterpret_cast<void*>(&buf[0]), 64, foo));
     printf("real   time = %.2f\n", timeAccess(reinterpret_cast<void*>(&buf[0]), 64, bar));
-    EXPECT_EQUAL(foo, bar);
+    EXPECT_EQ(foo, bar);
 
     printf(!aligned ? "ALIGNED\n" : "UNALIGNED\n");
     printf("warmup time = %.2f\n", timeAccess(reinterpret_cast<void*>(&buf[1]), 64, foo));
     printf("real   time = %.2f\n", timeAccess(reinterpret_cast<void*>(&buf[1]), 64, bar));
-    EXPECT_EQUAL(foo, bar);
+    EXPECT_EQ(foo, bar);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

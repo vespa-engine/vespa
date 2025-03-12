@@ -9,7 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.Objects;
 
 /**
- * Represent a query item matching the K nearest neighbors in a multi-dimensional vector space.
+ * Represent a query item matching the K nearest neighbors in a multidimensional vector space.
  * The query point vector is referenced by the name of a tensor passed as a query rank feature;
  * specifying "myvector" as the name means the query must set "ranking.features.query(myvector)".
  * This rank feature must be configured with the correct tensor type in the active query profile.

@@ -76,7 +76,7 @@ public class ApplicationApiHandler extends SessionHandler {
                 zone,
                 new MultiPartFormParser(
                         Paths.get(Defaults.getDefaults().underVespaHome("var/tmp/jetty-multiform-part-data")),
-                        BytesQuantity.ofMB(10).toBytes()));
+                        -1 /* Never cache to disk */));
     }
 
     ApplicationApiHandler(Context ctx,

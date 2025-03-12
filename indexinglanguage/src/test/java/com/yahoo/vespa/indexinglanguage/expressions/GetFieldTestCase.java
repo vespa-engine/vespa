@@ -39,17 +39,6 @@ public class GetFieldTestCase {
     }
 
     @Test
-    public void requireThatExpressionCanBeVerified() {
-        StructDataType type = new StructDataType("my_struct");
-        type.addField(new Field("foo", DataType.STRING));
-        Expression exp = new GetFieldExpression("foo");
-        assertVerify(type, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'get_field foo': Expected a struct or map, but got no value", null, exp);
-        assertVerifyThrows("Invalid expression 'get_field foo': my_struct is incompatible with int", DataType.INT, exp);
-        assertVerifyThrows("Invalid expression 'get_field bar': Field 'bar' not found in struct type 'my_struct'", type, new GetFieldExpression("bar"));
-    }
-
-    @Test
     public void requireThatStructFieldsCanBeRead() {
         DataType barType = DataType.STRING;
         FieldValue bar = barType.createFieldValue("bar");

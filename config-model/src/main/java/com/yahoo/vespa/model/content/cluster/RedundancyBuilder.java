@@ -73,6 +73,9 @@ public class RedundancyBuilder {
                         readyCopies = finalRedundancy > 1 ? 2 : 1;
                 }
             }
+            else {
+                readyCopies = Math.min(readyCopies, finalRedundancy);
+            }
             return new Redundancy(initialRedundancy, finalRedundancy, readyCopies, leafGroups, totalNodes);
         } else {
             if (globalMinRedundancy != null && ( finalRedundancy == null || finalRedundancy < globalMinRedundancy))
