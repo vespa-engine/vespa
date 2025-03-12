@@ -291,7 +291,7 @@
     ],
     "methods" : [
       "public void <init>()",
-      "public static java.lang.String generateFieldJsonSchema(java.lang.String, com.yahoo.document.DataType)",
+      "public static java.lang.String generateJsonSchemaForField(java.lang.String, com.yahoo.document.DataType)",
       "public static com.yahoo.document.datatypes.FieldValue parseJsonField(java.lang.String, java.lang.String, com.yahoo.document.DataType)"
     ],
     "fields" : [ ]

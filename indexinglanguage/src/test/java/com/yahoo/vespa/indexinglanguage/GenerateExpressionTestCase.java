@@ -4,9 +4,11 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
+import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.document.datatypes.StructuredFieldValue;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
@@ -241,10 +243,60 @@ public class GenerateExpressionTestCase {
         assertEquals(actual, expected);
     }
 
+
     public static class SplitterMockFieldGenerator implements FieldGenerator {
         public FieldValue generate(String prompt, Context context) {
             var parts = Arrays.stream(prompt.split(" ")).map(StringFieldValue::new).toList();
             return new Array<>(DataType.getArray(DataType.STRING), parts);
         }
     }
+    
+    @Test
+    public void testGeneratorWithStringInputStructOutput() {
+        Map<String, FieldGenerator> generators = Map.of("generator", new StructMockGenerator());
+        
+        var expressionString = "input myText | generate | attribute myStruct";
+        var input = "value1 value2";
+
+        var expression = expressionFrom(generators, expressionString);
+        
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+
+        var inputField = new Field("myText", DataType.STRING);
+        adapter.createField(inputField);
+
+        var structDataType = new StructDataType("myStructType");
+        structDataType.addField(new Field("myField1", DataType.STRING));
+        structDataType.addField(new Field("myField2", DataType.STRING));
+        var outputField = new Field("myStruct", structDataType);
+        adapter.createField(outputField);
+        
+        adapter.setValue("myText", new StringFieldValue(input));
+        expression.setStatementOutput(new DocumentType("myDocument"), outputField);
+        expression.verify(new VerificationContext(adapter));
+
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        
+        var generatedValue = (StructuredFieldValue) adapter.values.get("myStruct");
+        assertEquals("value1", generatedValue.getFieldValue("myField1").toString());
+        assertEquals("value2", generatedValue.getFieldValue("myField2").toString());
+    }
+    
+    private static class StructMockGenerator implements FieldGenerator {
+        public FieldValue generate(String prompt, Context context) {
+            var parts = Arrays.stream(prompt.split(" ")).toList();
+
+            var dataType = new StructDataType("myStructType");
+            dataType.addField(new Field("myField1", DataType.STRING));
+            dataType.addField(new Field("myField2", DataType.STRING));
+            
+            var value = dataType.createFieldValue();
+            value.setFieldValue("myField1", new StringFieldValue(parts.get(0)));
+            value.setFieldValue("myField2", new StringFieldValue(parts.get(1)));
+            
+            return value;
+        }
+    }
+
 }

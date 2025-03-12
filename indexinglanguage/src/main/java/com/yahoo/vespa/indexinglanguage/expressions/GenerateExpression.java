@@ -1,10 +1,8 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
-import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
-import com.yahoo.document.datatypes.Array;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
@@ -64,26 +62,14 @@ public class GenerateExpression extends Expression {
 
     @Override
     public DataType setInputType(DataType inputType, VerificationContext context) {
-        if (!inputType.isAssignableTo(DataType.STRING)
-                && !(inputType instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-            throw new VerificationException(this, 
-                    "Generate expression for field %s requires either a string or array<string> input type, but got %s."
-                            .formatted(destination, inputType.getName()));
-        
-        super.setInputType(inputType, context);
-        return getOutputType(context); // Can't determine output type from input type.
+        super.setInputType(inputType, DataType.STRING, context);
+        return targetType;
     }
 
     @Override
     public DataType setOutputType(DataType outputType, VerificationContext context) {
-        if (!DataType.STRING.isAssignableTo(outputType)
-                && !(outputType instanceof ArrayDataType array && array.getNestedType() == DataType.STRING))
-            throw new VerificationException(this, 
-                    "Generate expression for field %s requires either a string or array<string> output type, but got %s."
-                            .formatted(destination, outputType.getName()));
-        
-        super.setOutputType(null, outputType, null, context);
-        return getInputType(context); // Can't determine input type from output type.
+        super.setOutputType(targetType, outputType, null, context);
+        return DataType.STRING;
     }
 
     @Override
@@ -109,37 +95,16 @@ public class GenerateExpression extends Expression {
         FieldValue generatedValue;
         
         if (inputType == DataType.STRING) {
-            generatedValue = generateFromSingleValue(context);
-        } else if (inputType instanceof ArrayDataType arrayInputType && arrayInputType.getNestedType() == DataType.STRING) {
-           generatedValue = generateFromArrayValue(context);
-        }
-        else {
-            throw new IllegalArgumentException(("Generate expression for field %s requires either a string or " +
-                    "array<string> as input type, but got %s.").formatted(
-                            destination, inputType.getName()));
+            generatedValue = generate(((StringFieldValue) inputValue).getString(), context);
+        } else {
+            throw new IllegalArgumentException(
+                    ("Generate expression for field %s requires a string as input type, but got %s.")
+                            .formatted(destination, inputType.getName()));
         }
         
         context.setCurrentValue(generatedValue);
     }
-
-    private FieldValue generateFromSingleValue(ExecutionContext context) {
-        var inputValue = (StringFieldValue) context.getCurrentValue();
-        return generate(inputValue.getString(), context);
-    }
     
-    private Array<FieldValue> generateFromArrayValue(ExecutionContext context) {
-        @SuppressWarnings("unchecked")
-        var inputArrayValue = (Array<StringFieldValue>) context.getCurrentValue();
-        var outputArrayValue = new Array<>(DataType.getArray(DataType.STRING));
-
-        for (StringFieldValue inputValue : inputArrayValue) {
-            var outputValue = generate(inputValue.getString(), context);
-            outputArrayValue.add(outputValue);
-        }
-        
-        return outputArrayValue;
-    }
-
     private FieldValue generate(String input, ExecutionContext context) {
         var generatorContext =  new FieldGenerator.Context(destination, targetType, context.getCache())
                 .setLanguage(context.resolveLanguage(linguistics))

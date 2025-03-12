@@ -19,12 +19,12 @@ promptTemplateFile path optional
 
 # Format for LLM response.
 # JSON - structured output in JSON format according to JSON schema generated based on the target field type. 
-# JSON is recommended because it reduces hallucinations.
-# TEXT - text output, recommended when LLM have poor support for JSON output, e.g. tiny LLMs for testing.
+# JSON is the recommended default because it reduces hallucinations.
+# TEXT - text output, useful for LLMs that have poor support for structured output, e.g. when using tiny (and dumb) LLMs for testing.
 responseFormatType enum {JSON, TEXT} default=JSON
 
 # Defines what to do when the response is not in the expected format.
-# DISCARD - discard the response, return null.
+# DISCARD - discard the response and return null.
 # WARN - discard the response, return null and log a warning.
 # FAIL - discard the request and raise an error, recommend
 invalidResponseFormatPolicy enum {DISCARD, WARN, FAIL} default=DISCARD

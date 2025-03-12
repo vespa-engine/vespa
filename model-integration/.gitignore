@@ -1,2 +1,4 @@
 src/test/models/llm/Mistral-7B-Instruct-v0.3-Q4_K_M.gguf
-llama.log
+src/test/models/llm/llama-3.2-1b-instruct-q4_k_m.gguf
+src/test/models/llm/Llama-160M-Chat-v1.Q6_K.gguf
+*.log

@@ -39,7 +39,7 @@ public class FieldGeneratorUtilsTest {
     @ParameterizedTest
     @MethodSource("providePrimitiveTypes")
     void testGenerateJsonSchemaForPrimitiveField(PrimitiveDataType primitiveType, String jsonType, FieldValue value) {
-        var schema = FieldGeneratorUtils.generateFieldJsonSchema("doc.field", primitiveType);
+        var schema = FieldGeneratorUtils.generateJsonSchemaForField("doc.field", primitiveType);
         var expectedSchema = """
                 {
                   "type": "object",
@@ -60,7 +60,7 @@ public class FieldGeneratorUtilsTest {
     @ParameterizedTest
     @MethodSource("providePrimitiveTypes")
     void testGenerateJsonSchemaForArrayField(PrimitiveDataType primitiveType, String jsonType, FieldValue value) {
-        var schema = FieldGeneratorUtils.generateFieldJsonSchema("doc.field", DataType.getArray(primitiveType));
+        var schema = FieldGeneratorUtils.generateJsonSchemaForField("doc.field", DataType.getArray(primitiveType));
         var expectedSchema = """
                 {
                   "type": "object",
@@ -87,7 +87,7 @@ public class FieldGeneratorUtilsTest {
         structType.addField(new com.yahoo.document.Field("name", DataType.STRING));
         structType.addField(new com.yahoo.document.Field("age", DataType.INT));
         
-        var schema = FieldGeneratorUtils.generateFieldJsonSchema("doc.field", structType);
+        var schema = FieldGeneratorUtils.generateJsonSchemaForField("doc.field", structType);
         var expectedSchema = """
                 {
                   "type": "object",
@@ -123,7 +123,7 @@ public class FieldGeneratorUtilsTest {
         structType.addField(new com.yahoo.document.Field("name", DataType.STRING));
         structType.addField(new com.yahoo.document.Field("age", DataType.INT));
 
-        var schema = FieldGeneratorUtils.generateFieldJsonSchema("doc.field", structType);
+        var schema = FieldGeneratorUtils.generateJsonSchemaForField("doc.field", structType);
         var expectedSchema = """
                 {
                   "type": "object",
@@ -156,7 +156,7 @@ public class FieldGeneratorUtilsTest {
     
     @Test
     void testGenerateJsonSchemaForMapField() {
-        var schema = FieldGeneratorUtils.generateFieldJsonSchema("doc.field", DataType.getMap(DataType.STRING, DataType.INT));
+        var schema = FieldGeneratorUtils.generateJsonSchemaForField("doc.field", DataType.getMap(DataType.STRING, DataType.INT));
         
         var expectedSchema = """
                 {

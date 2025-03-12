@@ -65,10 +65,8 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         String jsonSchema = null;
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            jsonSchema = FieldGeneratorUtils.generateFieldJsonSchema(
-                    context.getDestination(), context.getTargetType());
-        
-           options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
+            jsonSchema = FieldGeneratorUtils.generateJsonSchemaForField(context.getDestination(), context.getTargetType());
+            options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
         }
         
         var promptString = LanguageModelUtils.generatePrompt(input, promptTemplate, jsonSchema);

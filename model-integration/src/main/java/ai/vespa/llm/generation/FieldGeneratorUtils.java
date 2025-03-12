@@ -19,12 +19,15 @@ import com.yahoo.text.Utf8;
 import java.io.ByteArrayInputStream;
 
 /**
- * Helper methods for generating document fields from LLM structured output.
+ * Helper methods for generating document field values as LLM structured output.
  * 
  * @author glebashnik
  */
 public class FieldGeneratorUtils {
-    public static String generateFieldJsonSchema(String fieldPath, DataType fieldType) {
+    /**
+     * @param fieldPath has format [document type name].[field name]
+     */
+    public static String generateJsonSchemaForField(String fieldPath, DataType fieldType) {
         var schema = Json.Builder.newObject()
                 .set("type", "object");
 
@@ -32,7 +35,7 @@ public class FieldGeneratorUtils {
         Json.Builder.Object fieldValue;
         
         try {
-            fieldValue = generateFieldValueJsonSchema(fieldType);
+            fieldValue = generateJsonSchemaForFieldValue(fieldType);
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Failed to generate schema for field %s of type %s"
                     .formatted(fieldPath, fieldType.getName()), e);
@@ -46,8 +49,12 @@ public class FieldGeneratorUtils {
 
         return schema.build().toJson(true);
     }
-
-    private static Json.Builder.Object generateFieldValueJsonSchema(DataType fieldType) {
+    
+    /**
+     * Schemas should be compatible with JSON format used fro feeding.
+     * Not all types are supported.
+     */
+    private static Json.Builder.Object generateJsonSchemaForFieldValue(DataType fieldType) {
         var field = Json.Builder.newObject();
 
         if (fieldType.equals(DataType.BOOL)) {
@@ -62,11 +69,11 @@ public class FieldGeneratorUtils {
             field.set("type", "number");
         } else if (fieldType instanceof ArrayDataType arrayType) {
             field.set("type", "array");
-            var itemsValue = generateFieldValueJsonSchema(arrayType.getNestedType());
+            var itemsValue = generateJsonSchemaForFieldValue(arrayType.getNestedType());
             field.set("items", itemsValue);
         } else if (fieldType instanceof MapDataType mapType) {
             field.set("type", "object");
-            var value = generateFieldValueJsonSchema(mapType.getValueType());
+            var value = generateJsonSchemaForFieldValue(mapType.getValueType());
             field.set("additionalProperties", value);
         } else if (fieldType instanceof WeightedSetDataType) {
             field.set("type", "object");
@@ -80,7 +87,7 @@ public class FieldGeneratorUtils {
 
             for (var structField : structType.getFields()) {
                 var fieldName = structField.getName();
-                var fieldValue = generateFieldValueJsonSchema(structField.getDataType());
+                var fieldValue = generateJsonSchemaForFieldValue(structField.getDataType());
                 properties.set(fieldName, fieldValue);
                 required.add(fieldName);
             }
