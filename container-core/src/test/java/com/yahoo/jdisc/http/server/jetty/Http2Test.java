@@ -5,13 +5,21 @@ import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.ConnectionLogEntry;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
+import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.async.methods.SimpleRequestBuilder;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.async.H2AsyncClientBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
+import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
+import org.apache.hc.core5.net.URIAuthority;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Path;
+import java.util.concurrent.ExecutionException;
 
 import static com.yahoo.jdisc.Response.Status.OK;
 import static com.yahoo.jdisc.http.server.jetty.Utils.createHttp2Client;
@@ -62,6 +70,32 @@ class Http2Test {
         assertTrue(driver.close());
         ConnectionLogEntry entry = connectionLog.logEntries().get(0);
         assertEquals("HTTP/2.0", entry.httpProtocol().get());
+    }
+
+    @Test
+    void requireThatServerAcceptsEmptyAuthority(@TempDir Path tmpFolder) throws IOException, ExecutionException, InterruptedException {
+        Path privateKeyFile = tmpFolder.resolve("private-key.pem");
+        Path certificateFile = tmpFolder.resolve("certificate.pem");
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+
+        var metricConsumer = new MetricConsumerMock();
+        var connectionLog = new InMemoryConnectionLog();
+        var driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
+        var tlsStrategy = ClientTlsStrategyBuilder.create()
+                .setSslContext(driver.sslContext())
+                .build();
+        try (var client = H2AsyncClientBuilder.create()
+                .setTlsStrategy(tlsStrategy)
+                .disableAutomaticRetries()
+                // Specify blank :authority pseudo-header
+                .addRequestInterceptorLast((request, entity, ctx) -> request.setAuthority(new URIAuthority("")))
+                .build()) {
+            client.start();
+            var req = new SimpleHttpRequest("GET", URI.create("https://localhost:" + driver.server().getListenPort() + "/"));
+            var response = client.execute(req, null).get();
+            assertEquals(200, response.getCode());
+        }
+        assertTrue(driver.close());
     }
 
 }
