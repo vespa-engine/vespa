@@ -18,12 +18,13 @@ import com.openai.client.OpenAIClientAsync;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
- * A configurable OpenAI client.
+ * A configurable OpenAI client that extends the {@link ConfigurableLanguageModel} class.
+ * Uses Official OpenAI java client (https://github.com/openai/openai-java)
+ * Currently only basic completion is implemented, but it is extensible to support Structured Output, Embedding, Tool Calling and Moderations.
  *
  * @author lesters
  * @author glebashnik
@@ -199,7 +200,7 @@ public class OpenAI extends ConfigurableLanguageModel {
      * Method to map from OpenAI library FinishReason (as string) to ai.vespa.llm.completion.Completion.FinishReason
      */
     private Completion.FinishReason mapFinishReason(String openAiFinishReason) {
-        if (openAiFinishReason == null) return Completion.FinishReason.stop;
+        if (openAiFinishReason == null) return Completion.FinishReason.none;
         
         return switch (openAiFinishReason) {
             case "stop" -> Completion.FinishReason.stop;
