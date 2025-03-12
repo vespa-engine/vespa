@@ -10,6 +10,8 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.METHOD_NOT_ALLOWED;
@@ -21,6 +23,8 @@ import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPo
  * @author bjorncs
  */
 class HttpRequestFactory {
+
+    private static final Logger log = Logger.getLogger(HttpRequestFactory.class.getName());
 
     public static HttpRequest newJDiscRequest(CurrentContainer container, Request jettyRequest) {
         try {
@@ -58,6 +62,14 @@ class HttpRequestFactory {
         try {
             String scheme = jettyRequest.getHttpURI().getScheme();
             String host = Request.getServerName(jettyRequest);
+            if (host == null || host.isBlank()) {
+                // Some clients may violate the HTTP/2 specification and use a blank :authority header.
+                // To keep compatibility with the previous Jetty 11 integration, fallback to a different value, the local address in this case.
+                // TODO Remove this fallback in Vespa 9
+                var localAddr = Request.getLocalAddr(jettyRequest);
+                log.log(Level.FINE, () -> "Warning: missing Host/:authority header in request. Falling back to " + localAddr);
+                host = localAddr;
+            }
             int port = getConnectorLocalPort(jettyRequest);
             String path = jettyRequest.getHttpURI().getPath();
             String query = jettyRequest.getHttpURI().getQuery();
