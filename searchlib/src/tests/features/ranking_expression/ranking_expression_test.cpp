@@ -8,6 +8,7 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <iomanip>
 #include <sstream>
 
 using namespace search::features;
