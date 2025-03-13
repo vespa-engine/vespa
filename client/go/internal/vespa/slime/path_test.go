@@ -119,3 +119,14 @@ func TestSelectProcessing(t *testing.T) {
 	}
 	Select(createComplexValue(t), pred, handle)
 }
+
+func TestPathStringConversion(t *testing.T) {
+	path := NewPath().Field("a").Entry(1).Field("y").Entry(0)
+	assert.Equal(t, "/a/1/y/0", path.String())
+
+	path2 := NewPath().Field("b").Field("x").Entry(2)
+	assert.Equal(t, "/b/x/2", path2.String())
+
+	emptyPath := NewPath()
+	assert.Equal(t, "", emptyPath.String())
+}
