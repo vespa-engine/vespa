@@ -25,7 +25,7 @@ import java.util.function.Consumer;
  * A configurable OpenAI client that extends the {@link ConfigurableLanguageModel} class.
  * Uses Official OpenAI java client (https://github.com/openai/openai-java)
  * Currently only basic completion is implemented, but it is extensible to support Structured Output, Embedding, Tool Calling and Moderations.
- *
+ * Will reuse clients for Completions using same endpoint and API key to reduce connection overhead for multiple requests to the same endpoint with the same API key.
  * @author lesters
  * @author glebashnik
  * @author thomasht86
@@ -42,11 +42,14 @@ public class OpenAI extends ConfigurableLanguageModel {
     
     private final Map<String, String> configOptions;
     
-    // Instance-level reused clients for default API key and endpoint
+    // Instance-level reused clients with separate caching for each client type
     private OpenAIClient defaultSyncClient;
+    private String cachedSyncApiKey;
+    private String cachedSyncEndpoint;
+    
     private OpenAIClientAsync defaultAsyncClient;
-    private String cachedApiKey;
-    private String cachedEndpoint;
+    private String cachedAsyncApiKey;
+    private String cachedAsyncEndpoint;
 
     @Inject
     public OpenAI(LlmClientConfig config, Secrets secretStore) {
@@ -74,45 +77,47 @@ public class OpenAI extends ConfigurableLanguageModel {
     }
     
     private OpenAIClient getSyncClient(String apiKey, String endpoint) {
-        if (cachedApiKey != null && cachedApiKey.equals(apiKey) && 
-            cachedEndpoint != null && cachedEndpoint.equals(endpoint)) {
-            if (defaultSyncClient == null) {
-                defaultSyncClient = OpenAIOkHttpClient.builder()
-                        .apiKey(apiKey)
-                        .baseUrl(endpoint)
-                        .responseValidation(false) // Have to disable response validation to support other OpenAI compatible endpoints
-                        .build();
-                cachedApiKey = apiKey;
-                cachedEndpoint = endpoint;
-            }
+        // If we have a cached client and the parameters match the cached parameters, reuse it
+        if (defaultSyncClient != null && 
+            apiKey != null && apiKey.equals(cachedSyncApiKey) &&
+            endpoint != null && endpoint.equals(cachedSyncEndpoint)) {
             return defaultSyncClient;
         }
-        return OpenAIOkHttpClient.builder()
+        
+        // Different API key or endpoint, create new client
+        defaultSyncClient = OpenAIOkHttpClient.builder()
                 .apiKey(apiKey)
                 .baseUrl(endpoint)
                 .responseValidation(false)
                 .build();
+        
+        // Update cached values after successful creation
+        cachedSyncApiKey = apiKey;
+        cachedSyncEndpoint = endpoint;
+        
+        return defaultSyncClient;
     }
     
     private OpenAIClientAsync getAsyncClient(String apiKey, String endpoint) {
-        if (cachedApiKey != null && cachedApiKey.equals(apiKey) && 
-            cachedEndpoint != null && cachedEndpoint.equals(endpoint)) {
-            if (defaultAsyncClient == null) {
-                defaultAsyncClient = OpenAIOkHttpClientAsync.builder()
-                        .apiKey(apiKey)
-                        .baseUrl(endpoint)
-                        .responseValidation(false)
-                        .build();
-                cachedApiKey = apiKey;
-                cachedEndpoint = endpoint;
-            }
+        // If we have a cached client and the parameters match the cached parameters, reuse it
+        if (defaultAsyncClient != null && 
+            apiKey != null && apiKey.equals(cachedAsyncApiKey) &&
+            endpoint != null && endpoint.equals(cachedAsyncEndpoint)) {
             return defaultAsyncClient;
         }
-        return OpenAIOkHttpClientAsync.builder()
+        
+        // Different API key or endpoint, create new client
+        defaultAsyncClient = OpenAIOkHttpClientAsync.builder()
                 .apiKey(apiKey)
                 .baseUrl(endpoint)
                 .responseValidation(false)
                 .build();
+        
+        // Update cached values after successful creation
+        cachedAsyncApiKey = apiKey;
+        cachedAsyncEndpoint = endpoint;
+        
+        return defaultAsyncClient;
     }
 
     @Override
