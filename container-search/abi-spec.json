@@ -9038,6 +9038,19 @@
       "public static final java.lang.String CACHE_CONTROL_HEADER"
     ]
   },
+  "com.yahoo.search.searchers.ChunkLimitingSearcher" : {
+    "superClass" : "com.yahoo.search.Searcher",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public com.yahoo.search.Result search(com.yahoo.search.Query, com.yahoo.search.searchchain.Execution)",
+      "public void fill(com.yahoo.search.Result, java.lang.String, com.yahoo.search.searchchain.Execution)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.searchers.ConnectionControlSearcher" : {
     "superClass" : "com.yahoo.search.Searcher",
     "interfaces" : [ ],
