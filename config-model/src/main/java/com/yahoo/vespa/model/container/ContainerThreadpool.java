@@ -50,6 +50,8 @@ public abstract class ContainerThreadpool extends SimpleComponent implements Con
             if (threadsElem != null) {
                 min = parseMultiplier(threadsElem.getTextContent());
                 max = threadsElem.hasAttribute("boost") ? parseMultiplier(threadsElem.getAttribute("boost")) : min;
+                if (Math.abs(min) > Math.abs(max))
+                    throw new IllegalArgumentException("For <threadpool>: 'boost' must be greater than <threads>");
             } else if (minElem != null) {
                 min = parseFixed(minElem.getTextContent());
             }
