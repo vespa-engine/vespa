@@ -52,10 +52,9 @@ public class AccessLogBuilder {
 
         @Override
         protected AccessLogComponent doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element spec) {
-            String fallback = deployState.featureFlags().logFileCompressionAlgorithm("zstd");
             return new AccessLogComponent(
                     accessLogType,
-                    compressionType(spec, fallback),
+                    compressionType(spec, "zstd"),
                     fileNamePattern(spec),
                     rotationInterval(spec),
                     compressOnRotation(spec),
