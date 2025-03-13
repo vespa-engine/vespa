@@ -327,7 +327,7 @@ public class Flags {
             "Takes effect on restart of OCI containers");
 
     public static final UnboundBooleanFlag CONFIG_SERVER_TRIGGER_DOWNLOAD_WITH_SOURCE = defineFeatureFlag(
-            "config-server-trigger-download-with-source", false,
+            "config-server-trigger-download-with-source", true,
             List.of("hmusum"), "2024-12-25", "2025-04-01",
             "Use new RPC method for triggering download of file reference",
             "Takes effect immediately");
