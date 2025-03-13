@@ -172,7 +172,7 @@ public class ArithmeticTestCase {
     }
 
     private static void assertVerify(Expression lhs, Operator op, Expression rhs, DataType val) {
-        new ArithmeticExpression(lhs, op, rhs).verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
+        new ArithmeticExpression(lhs, op, rhs).verify(new VerificationContext(new SimpleTestAdapter()));
     }
 
     private static void assertVerifyThrows(Expression lhs, Operator op, Expression rhs, DataType val,
@@ -181,7 +181,7 @@ public class ArithmeticTestCase {
         try {
             expression = new ArithmeticExpression(lhs, op, rhs);
             expression.setInputType(null, new VerificationContext(new SimpleTestAdapter()));
-            expression.verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
+            expression.verify(new VerificationContext(new SimpleTestAdapter()));
             fail("Expected exception");
         } catch (VerificationException e) {
             String expressionString = expression == null ? "of type '" + ArithmeticExpression.class.getSimpleName() + "'"
