@@ -97,5 +97,4 @@ class Http2Test {
         }
         assertTrue(driver.close());
     }
-
 }
