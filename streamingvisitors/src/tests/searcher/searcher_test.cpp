@@ -21,6 +21,7 @@
 #include <vespa/vsm/vsm/snippetmodifier.h>
 #include <concepts>
 #include <charconv>
+#include <ostream>
 #include <stdexcept>
 #include <utility>
 
@@ -40,7 +41,7 @@ template <typename T>
 class Vector : public std::vector<T>
 {
 public:
-    Vector() : std::vector<T>() {}
+    Vector() noexcept : std::vector<T>() {}
     Vector<T> & add(T v) { this->push_back(v); return *this; }
 };
 
@@ -407,37 +408,98 @@ performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & f
     return std::move(q.qtv);
 }
 
+HitsList as_hitlist(std::vector<std::unique_ptr<QueryTerm>> qtv) {
+    HitsList result;
+    result.reserve(qtv.size());
+    for (auto& qt : qtv) {
+        result.emplace_back();
+        auto& hits = result.back();
+        auto  hl = qt->getHitList();
+        hits.reserve(hl.size());
+        for (const auto& h : hl) {
+            hits.emplace_back(h.element_id(), h.position());
+        }
+    }
+    return result;
+}
+
+std::ostream& operator<<(std::ostream& os, const HitsList &hll) {
+    bool first = true;
+    os << "[";
+    for (auto &hl : hll) {
+        if (first) {
+            first = false;
+        } else {
+            os << ",";
+        }
+        bool ifirst = true;
+        os << "[";
+        for (auto& h : hl) {
+            if (ifirst) {
+                ifirst = false;
+            } else {
+                os << ",";
+            }
+            os << "{" << h.first << "," << h.second << "}";
+        }
+        os << "]";
+    }
+    os << "]";
+    return os;
+}
+
 void
 assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const HitsList & exp)
 {
-    auto qtv = performSearch(fs, query, fv);
-    EXPECT_EQUAL(qtv.size(), exp.size());
-    ASSERT_TRUE(qtv.size() == exp.size());
-    for (size_t i = 0; i < qtv.size(); ++i) {
-        const HitList & hl = qtv[i]->getHitList();
-        EXPECT_EQUAL(hl.size(), exp[i].size());
-        ASSERT_TRUE(hl.size() == exp[i].size());
-        for (size_t j = 0; j < hl.size(); ++j) {
-            EXPECT_EQUAL(0u, hl[j].field_id());
-            EXPECT_EQUAL((size_t)hl[j].element_id(), exp[i][j].first);
-            EXPECT_EQUAL((size_t)hl[j].position(), exp[i][j].second);
-        }
+    auto act = as_hitlist(performSearch(fs, query, fv));
+    ASSERT_EQUAL(exp, act);
+}
+
+FieldInfoList as_field_info_list(std::vector<std::unique_ptr<QueryTerm>> qtv) {
+    FieldInfoList result;
+    result.reserve(qtv.size());
+    for (auto& qt : qtv) {
+        result.emplace_back(qt->getFieldInfo(0));
     }
+    return result;
+}
+
+namespace search::streaming {
+
+bool operator==(const QTFieldInfo& lhs, const QTFieldInfo& rhs) {
+    return lhs.getHitOffset() == rhs.getHitOffset() &&
+           lhs.getHitCount() == rhs.getHitCount() &&
+           lhs.getFieldLength() == rhs.getFieldLength();
+}
+
+std::ostream& operator<<(std::ostream& os, const QTFieldInfo& fi) {
+    os << "{hitoffset=" << fi.getHitOffset() << ",hitcnt=" << fi.getHitCount() << ",flen=" << fi.getFieldLength() << "}";
+    return os;
+}
+
+}
+
+std::ostream& operator<<(std::ostream& os, const FieldInfoList& fil) {
+    bool first = true;
+    os << "[";
+    for (auto& fi : fil) {
+        if (first) {
+            first = false;
+        } else {
+            os << ",";
+        }
+        os << fi;
+    }
+    os << "]";
+    return os;
 }
 
 bool
 assertFieldInfo(FieldSearcher & fs, const StringList & query,
                 const FieldValue & fv, const FieldInfoList & exp)
 {
-    auto qtv = performSearch(fs, query, fv);
-    if (!EXPECT_EQUAL(qtv.size(), exp.size())) return false;
-    bool retval = true;
-    for (size_t i = 0; i < qtv.size(); ++i) {
-        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getHitOffset(), exp[i].getHitOffset())) retval = false;
-        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getHitCount(), exp[i].getHitCount())) retval = false;
-        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getFieldLength(), exp[i].getFieldLength())) retval = false;
-    }
-    return retval;
+    auto act = as_field_info_list(performSearch(fs, query, fv));
+    return EXPECT_EQUAL(exp, act);
 }
 
 void
