@@ -150,7 +150,11 @@ public class OpenAI extends ConfigurableLanguageModel {
         String endpoint = preparedParameters.getEndpoint().orElse(DEFAULT_ENDPOINT);
         
         if (apiKey == null) {
-            throw new IllegalArgumentException("API key must be provided either in configuration or in InferenceParameters");
+        // Complete the future exceptionally instead of throwing
+        CompletableFuture<Completion.FinishReason> future = new CompletableFuture<>();
+        future.completeExceptionally(new IllegalArgumentException(
+            "API key must be provided either in configuration or in InferenceParameters"));
+        return future;
         }
         
         OpenAIClientAsync client = getAsyncClient(apiKey, endpoint);
