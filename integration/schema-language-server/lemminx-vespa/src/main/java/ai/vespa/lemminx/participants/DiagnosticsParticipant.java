@@ -20,6 +20,7 @@ import org.eclipse.lemminx.dom.DOMAttr;
 import org.eclipse.lemminx.dom.DOMDocument;
 import org.eclipse.lemminx.dom.DOMElement;
 import org.eclipse.lemminx.dom.DOMNode;
+import org.eclipse.lemminx.dom.parser.TokenType;
 import org.eclipse.lemminx.extensions.contentmodel.settings.XMLValidationSettings;
 import org.eclipse.lemminx.services.extensions.diagnostics.IDiagnosticsParticipant;
 import org.eclipse.lemminx.utils.XMLPositionUtility;
@@ -31,6 +32,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 import com.thaiopensource.util.PropertyMap;
@@ -58,6 +60,10 @@ import ai.vespa.lemminx.command.SchemaLSCommands;
  * exist after the preprocessing step. To identify equal diagnostics, string hashing of the 
  * error messages is used, because that is the only information left from the {@link SAXParseException}
  * objects after Lemminx has validated.
+ *
+ * This strategy makes the validation "nicer" than it should. Some errors will be removed
+ * even though they are legit due to either string mismatch or because the choice of deployment 
+ * settings is arbitrary at the moment. This is at the benefit of not showing errors on valid services.xml.
  */
 public class DiagnosticsParticipant implements IDiagnosticsParticipant {
     private static final Logger logger = Logger.getLogger(DiagnosticsParticipant.class.getName());
@@ -88,7 +94,7 @@ public class DiagnosticsParticipant implements IDiagnosticsParticipant {
         // preprocessing.
         preprocessAndValidateDocument(xmlDocument);
 
-        diagnostics.removeIf(diagnostic -> !this.validationErrorSet.contains(diagnostic.getMessage()));
+        diagnostics.removeIf(diagnostic -> !this.validationErrorSet.contains(diagnostic.getMessage().trim()));
 
         DiagnosticsContext context = new DiagnosticsContext(xmlDocument, diagnostics, SchemaLSCommands.instance().hasSetupWorkspace());
         traverse(xmlDocument.getDocumentElement(), context);
@@ -157,9 +163,12 @@ public class DiagnosticsParticipant implements IDiagnosticsParticipant {
         try {
             Document preprocessed = preProcessor.run();
             schemaValidationDriver.validate(new InputSource(new StringReader(documentAsString(preprocessed, false))));
+        } catch (SAXException saxException) {
+            // Should we check if it is instance of SAXParseException?
+            validationErrorSet.add(saxException.getMessage().trim());
         } catch (Exception ex) {
             // Most exceptions are processed by CustomErrorHandler
-            logger.warning("Exception occured during Vespa XML validation: " + ex.getMessage());
+            logger.warning("Exception occured during Vespa XML validation: " + ex.getMessage() + ", TYPE: " + ex.getClass().toString());
             return;
         }
     }
@@ -216,15 +225,15 @@ public class DiagnosticsParticipant implements IDiagnosticsParticipant {
 
     private class CustomErrorHandler implements ErrorHandler {
         public void warning(SAXParseException e) {
-            validationErrorSet.add(e.getMessage());
+            validationErrorSet.add(e.getMessage().trim());
         }
 
         public void error(SAXParseException e) {
-            validationErrorSet.add(e.getMessage());
+            validationErrorSet.add(e.getMessage().trim());
         }
 
         public void fatalError(SAXParseException e) {
-            validationErrorSet.add(e.getMessage());
+            validationErrorSet.add(e.getMessage().trim());
         }
     }
 }
