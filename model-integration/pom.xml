@@ -125,6 +125,7 @@
       <groupId>com.openai</groupId>
       <artifactId>openai-java</artifactId>
       <version>${openai-java.vespa.version}</version>
+      <scope>provided</scope>
       <exclusions>
       <exclusion>
         <groupId>org.jetbrains</groupId>
