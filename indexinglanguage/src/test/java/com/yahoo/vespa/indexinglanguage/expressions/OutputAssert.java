@@ -47,12 +47,6 @@ class OutputAssert {
             throw new AssertionError();
         }
 
-        @Override
-        public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-            if (e != null) {
-                throw e;
-            }
-        }
     }
 
 }

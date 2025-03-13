@@ -12,6 +12,4 @@ public interface FieldTypeAdapter {
 
     DataType getInputType(Expression expression, String fieldName);
 
-    void tryOutputType(Expression expression, String fieldName, DataType valueType);
-
 }

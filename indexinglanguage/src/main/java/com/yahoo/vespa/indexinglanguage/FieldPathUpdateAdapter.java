@@ -57,11 +57,6 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
     }
 
     @Override
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        adapter.tryOutputType(exp, fieldName, valueType);
-    }
-
-    @Override
     public FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
         return adapter.setOutputValue(exp, fieldName, fieldValue);
     }
