@@ -17,7 +17,6 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
-import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.none;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
@@ -63,7 +62,6 @@ public class FileReceiverTest {
         writerB.write("2");
         writerB.close();
 
-        testWithCompression(dirWithFiles, gzip);
         testWithCompression(dirWithFiles, lz4);
         testWithCompression(dirWithFiles, zstd);
         testWithCompression(dirWithFiles, none);
