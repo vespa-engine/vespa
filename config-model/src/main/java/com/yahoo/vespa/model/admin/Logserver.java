@@ -16,7 +16,7 @@ import java.util.Optional;
 public class Logserver extends AbstractService {
 
     private static final String logArchiveDir = "$ROOT/logs/vespa/logarchive";
-    private String compressionType = "gzip";
+    private String compressionType = "zstd";
 
     public Logserver(TreeConfigProducer<? super Logserver> parent) {
         super(parent, "logserver");
@@ -31,10 +31,6 @@ public class Logserver extends AbstractService {
     @Override
     public void initService(DeployState deployState) {
         super.initService(deployState);
-        // TODO Vespa 9: Change default to zstd everywhere
-        this.compressionType = deployState.isHosted()
-                ? deployState.featureFlags().logFileCompressionAlgorithm("zstd")
-                : deployState.featureFlags().logFileCompressionAlgorithm("gzip");
     }
 
     /**
