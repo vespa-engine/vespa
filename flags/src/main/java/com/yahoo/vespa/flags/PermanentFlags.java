@@ -607,6 +607,12 @@ public class PermanentFlags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
+    public static final UnboundListFlag<String> JDISC_HTTP_COMPLIANCE_VIOLATIONS = defineListFlag(
+            "jdisc-http-compliance-violations", List.of(), String.class,
+            "List of HTTP compliance violation that are allowed (compared to Jetty's RFC7230)",
+            "Takes effect at redeployment",
+            VESPA_VERSION, INSTANCE_ID);
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

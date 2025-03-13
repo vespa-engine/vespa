@@ -180,6 +180,8 @@ public interface ModelContext {
         default List<DataplaneToken> dataplaneTokens() { return List.of(); }
 
         default List<String> requestPrefixForLoggingContent() { return List.of(); }
+
+        default List<String> jdiscHttpComplianceViolations() { return List.of(); }
     }
 
     @Retention(RetentionPolicy.RUNTIME)

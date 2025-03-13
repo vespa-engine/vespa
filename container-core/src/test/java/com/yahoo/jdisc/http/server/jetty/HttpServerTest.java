@@ -61,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
@@ -865,6 +866,22 @@ public class HttpServerTest {
                 new ConnectorConfig.Builder().maxContentSize(4));
         driver.client().newPost("/").setBinaryContent(new byte[4]).execute().expectStatusCode(is(OK));
         driver.client().newPost("/").setBinaryContent(new byte[5]).execute().expectStatusCode(is(REQUEST_TOO_LONG));
+        assertTrue(driver.close());
+    }
+
+    @Test
+    void httpComplianceChecksCanBeDisabled() throws Exception {
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
+                new EchoRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder().compliance(
+                        new ConnectorConfig.Compliance.Builder()
+                                .httpViolations(
+                                        Set.of("MISMATCHED_AUTHORITY", "DUPLICATE_HOST_HEADERS", "UNSAFE_HOST_HEADER"))));
+        // Verify multiple host headers are accepted after disabling compliance checks
+        driver.client()
+                .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
+                .expectStatusCode(is(OK));
         assertTrue(driver.close());
     }
 

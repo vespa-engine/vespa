@@ -30,6 +30,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import static com.yahoo.security.tls.MixedMode.DISABLED;
@@ -143,7 +144,8 @@ public class ConnectorFactory {
         httpConfig.setUseInputDirectByteBuffers(false);
         httpConfig.setUseOutputDirectByteBuffers(false);
 
-        httpConfig.setHttpCompliance(HttpCompliance.RFC7230);
+        httpConfig.setHttpCompliance(newHttpCompliance(connectorConfig));
+
         // TODO Vespa 9 Use default URI compliance (LEGACY == old Jetty 9.4 compliance)
         httpConfig.setUriCompliance(UriCompliance.LEGACY);
         if (isSslEffectivelyEnabled(connectorConfig)) {
@@ -155,6 +157,28 @@ public class ConnectorFactory {
             httpConfig.setServerAuthority(new HostPort(serverNameFallback));
         }
         return httpConfig;
+    }
+
+    private static HttpCompliance newHttpCompliance(ConnectorConfig cfg) {
+        var jettyViolationsAllowed = cfg.compliance().httpViolations().stream()
+                .map(name -> {
+                    try {
+                        return HttpCompliance.Violation.valueOf(name);
+                    } catch (IllegalArgumentException e) {
+                        log.warning("Ignoring unknown violation '%s'".formatted(name));
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
+        if (jettyViolationsAllowed.isEmpty()) return HttpCompliance.RFC7230;
+        log.info("Disabling HTTP compliance checks for port %d: %s"
+                .formatted(
+                        cfg.listenPort(),
+                        jettyViolationsAllowed.stream().map(HttpCompliance.Violation::getName).toList()));
+        return HttpCompliance.RFC7230.with(
+                "RFC7230_VESPA",
+                jettyViolationsAllowed.toArray(HttpCompliance.Violation[]::new));
     }
 
     private HttpConnectionFactory newHttp1ConnectionFactory() {
