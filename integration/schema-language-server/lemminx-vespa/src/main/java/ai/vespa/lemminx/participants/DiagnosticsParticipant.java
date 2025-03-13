@@ -48,6 +48,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
 
 import ai.vespa.lemminx.ServicesURIResolverExtension;
+import ai.vespa.lemminx.VespaExtension;
 import ai.vespa.lemminx.command.SchemaLSCommands;
 
 /**
@@ -87,6 +88,9 @@ public class DiagnosticsParticipant implements IDiagnosticsParticipant {
     @Override
     public void doDiagnostics(DOMDocument xmlDocument, List<Diagnostic> diagnostics,
             XMLValidationSettings validationSettings, CancelChecker cancelChecker) {
+
+        if (!VespaExtension.match(xmlDocument))
+            return;
 
         this.validationErrorSet.clear();
 

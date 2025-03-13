@@ -6,6 +6,7 @@ import java.nio.file.Paths;
 import java.util.logging.Logger;
 
 import org.eclipse.lemminx.XMLLanguageServer;
+import org.eclipse.lemminx.dom.DOMDocument;
 import org.eclipse.lemminx.services.IXMLValidationService;
 import org.eclipse.lemminx.services.extensions.IDefinitionParticipant;
 import org.eclipse.lemminx.services.extensions.IDocumentLifecycleParticipant;
@@ -102,4 +103,14 @@ public class VespaExtension implements IXMLExtension {
         if (completionParticipant != null)
             registry.unregisterCompletionParticipant(completionParticipant);
 	}
+
+    /*
+     * Returns true if we manage this document
+     */
+    public static boolean match(DOMDocument xmlDocument) {
+        if (xmlDocument == null) return false;
+        String uri = xmlDocument.getDocumentURI();
+        if (uri == null) return false;
+        return uri.endsWith("services.xml");
+    }
 }
