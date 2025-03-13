@@ -15,6 +15,7 @@ import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
 import com.google.gson.JsonPrimitive;
 
+import ai.vespa.lemminx.VespaExtension;
 import ai.vespa.lemminx.participants.DiagnosticsParticipant.DiagnosticCode;
 
 public class CodeActionParticipant implements ICodeActionParticipant {
@@ -22,6 +23,9 @@ public class CodeActionParticipant implements ICodeActionParticipant {
 
     @Override
     public void doCodeAction(ICodeActionRequest request, List<CodeAction> codeActions, CancelChecker cancelChecker) throws CancellationException {
+        if (!VespaExtension.match(request.getDocument()))
+            return;
+
         Diagnostic diagnostic = request.getDiagnostic();
         if (diagnostic.getCode() != null && diagnostic.getCode().isRight()) {
             Integer diagnosticNumber = diagnostic.getCode().getRight();

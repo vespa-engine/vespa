@@ -5,6 +5,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.logging.Logger;
 
+import org.eclipse.lemminx.XMLLanguageServer;
+import org.eclipse.lemminx.dom.DOMDocument;
 import org.eclipse.lemminx.services.IXMLValidationService;
 import org.eclipse.lemminx.services.extensions.IDefinitionParticipant;
 import org.eclipse.lemminx.services.extensions.IDocumentLifecycleParticipant;
@@ -31,7 +33,7 @@ public class VespaExtension implements IXMLExtension {
 
     HoverParticipant hoverParticipant;
     IXMLValidationService validationService;
-    URIResolverExtension uriResolverExtension;
+    ServicesURIResolverExtension uriResolverExtension;
     IDefinitionParticipant definitionParticipant;
     IDocumentLifecycleParticipant documentLifecycleParticipant;
     IDiagnosticsParticipant diagnosticsParticipant;
@@ -45,7 +47,12 @@ public class VespaExtension implements IXMLExtension {
 	@Override
 	public void start(InitializeParams params, XMLExtensionsRegistry registry) {
         try {
-            serverPath = Paths.get(new File(VespaExtension.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getCanonicalPath()).getParent();
+            serverPath = Paths.get(new File(
+                VespaExtension.class.getProtectionDomain()
+                                    .getCodeSource()
+                                    .getLocation()
+                                    .toURI()
+            ).getCanonicalPath()).getParent();
 
             UnpackRNGFiles.unpackRNGFiles(
                 serverPath
@@ -63,7 +70,7 @@ public class VespaExtension implements IXMLExtension {
         uriResolverExtension         = new ServicesURIResolverExtension(serverPath);
         definitionParticipant        = new DefinitionParticipant();
         documentLifecycleParticipant = new DocumentLifecycleParticipant(registry.getCommandService());
-        diagnosticsParticipant       = new DiagnosticsParticipant();
+        diagnosticsParticipant       = new DiagnosticsParticipant(uriResolverExtension);
         codeActionParticipant        = new CodeActionParticipant();
         completionParticipant        = new CompletionParticipant();
 
@@ -77,7 +84,6 @@ public class VespaExtension implements IXMLExtension {
         registry.registerCompletionParticipant(completionParticipant);
 
         logger.info("Vespa LemminX extension activated");
-
 	}
 
 	@Override
@@ -97,4 +103,14 @@ public class VespaExtension implements IXMLExtension {
         if (completionParticipant != null)
             registry.unregisterCompletionParticipant(completionParticipant);
 	}
+
+    /*
+     * Returns true if we manage this document
+     */
+    public static boolean match(DOMDocument xmlDocument) {
+        if (xmlDocument == null) return false;
+        String uri = xmlDocument.getDocumentURI();
+        if (uri == null) return false;
+        return uri.endsWith("services.xml");
+    }
 }
