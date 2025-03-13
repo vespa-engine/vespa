@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.utils.BytesQuantity;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -46,6 +47,7 @@ import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
@@ -97,6 +99,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -871,17 +874,26 @@ public class HttpServerTest {
 
     @Test
     void httpComplianceChecksCanBeDisabled() throws Exception {
+        var metricConsumer = new MetricConsumerMock();
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().compliance(
                         new ConnectorConfig.Compliance.Builder()
                                 .httpViolations(
-                                        Set.of("MISMATCHED_AUTHORITY", "DUPLICATE_HOST_HEADERS", "UNSAFE_HOST_HEADER"))));
+                                        Set.of("MISMATCHED_AUTHORITY", "DUPLICATE_HOST_HEADERS", "UNSAFE_HOST_HEADER"))),
+                binder -> binder.bind(MetricConsumer.class).toInstance(metricConsumer.mockitoMock()));
         // Verify multiple host headers are accepted after disabling compliance checks
         driver.client()
                 .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
                 .expectStatusCode(is(OK));
+
+        // Verify metric was aggregated
+        verify(metricConsumer.mockitoMock())
+                .add(eq(ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.baseName()), eq(1L), Mockito.any());
+        verify(metricConsumer.mockitoMock())
+                .createContext(eq(Map.of("mode", "RFC7230_VESPA", "violation", "DUPLICATE_HOST_HEADERS")));
+
         assertTrue(driver.close());
     }
 
