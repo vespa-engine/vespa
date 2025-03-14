@@ -189,19 +189,21 @@ public interface ZtsClient extends AutoCloseable {
     AwsTemporaryCredentials getAwsTemporaryCredentials(AthenzDomain athenzDomain, AwsRole awsRole, Duration duration, String externalId);
 
     /**
-     * @param athenzRole Athenz role to use when assuming credentials
+     * @param athenzRole      Athenz role to use when assuming credentials
      * @param azureIdentityId Client ID of the Azure identity to assume
+     * @param azureTokenScope
      * @return Azure temporary credentials
      */
-    AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId);
+    AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId, String azureTokenScope);
 
     /**
-     * @param athenzRole Athenz role to use when assuming credentials
+     * @param athenzRole         Athenz role to use when assuming credentials
      * @param azureResourceGroup Azure resource group that contains the target identity
-     * @param azureIdentityName Name of the Azure Identity to assume
+     * @param azureIdentityName  Name of the Azure Identity to assume
+     * @param azureTokenScope
      * @return Azure temporary credentials
      */
-    AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName);
+    AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName, String azureTokenScope);
 
     /**
      * Check access to resource for a given principal
