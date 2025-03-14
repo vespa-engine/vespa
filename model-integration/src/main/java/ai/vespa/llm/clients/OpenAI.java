@@ -43,13 +43,14 @@ public class OpenAI extends ConfigurableLanguageModel {
     private final Map<String, String> configOptions;
     
     // Instance-level reused clients with separate caching for each client type
-    private OpenAIClient defaultSyncClient;
-    private String cachedSyncApiKey;
-    private String cachedSyncEndpoint;
+    // Using package-private access for testing
+    OpenAIClient defaultSyncClient; 
+    String cachedSyncApiKey; 
+    String cachedSyncEndpoint; 
     
-    private OpenAIClientAsync defaultAsyncClient;
-    private String cachedAsyncApiKey;
-    private String cachedAsyncEndpoint;
+    OpenAIClientAsync defaultAsyncClient; 
+    String cachedAsyncApiKey; 
+    String cachedAsyncEndpoint; 
 
     @Inject
     public OpenAI(LlmClientConfig config, Secrets secretStore) {
@@ -76,7 +77,7 @@ public class OpenAI extends ConfigurableLanguageModel {
         return parameters.withDefaultOptions(configOptions::get);
     }
     
-    private OpenAIClient getSyncClient(String apiKey, String endpoint) {
+    OpenAIClient getSyncClient(String apiKey, String endpoint) {
         // If we have a cached client and the parameters match the cached parameters, reuse it
         if (defaultSyncClient != null && 
             apiKey != null && apiKey.equals(cachedSyncApiKey) &&
@@ -98,7 +99,7 @@ public class OpenAI extends ConfigurableLanguageModel {
         return defaultSyncClient;
     }
     
-    private OpenAIClientAsync getAsyncClient(String apiKey, String endpoint) {
+    OpenAIClientAsync getAsyncClient(String apiKey, String endpoint) {
         // If we have a cached client and the parameters match the cached parameters, reuse it
         if (defaultAsyncClient != null && 
             apiKey != null && apiKey.equals(cachedAsyncApiKey) &&
