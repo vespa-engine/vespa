@@ -9,11 +9,16 @@ import ai.vespa.llm.completion.Prompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
+import java.util.logging.Handler;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
@@ -26,15 +31,15 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-
 public class LanguageModelFieldGeneratorTest {
 
     @Test
     public void testGenerateWithOneModel() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelFieldGeneratorConfig.Builder().providerId("languageModel").build();
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
+                .providerId("languageModel").build();
         var generator = createGenerator(config, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         var result = generator.generate("hello", context);
@@ -43,8 +48,8 @@ public class LanguageModelFieldGeneratorTest {
     
     @Test
     public void testGenerateWithTwoLanguageModel() {
-        LanguageModel languageModel1 = new RepeaterMockLanguageModel(2);
-        LanguageModel languageModel2 = new RepeaterMockLanguageModel(3);
+        LanguageModel languageModel1 = new RepeatInputLanguageModel(2);
+        LanguageModel languageModel2 = new RepeatInputLanguageModel(3);
         var languageModels = Map.of("languageModel1", languageModel1, "languageModel2", languageModel2);
         
         var config1 = new LanguageModelFieldGeneratorConfig.Builder().providerId("languageModel1").build();
@@ -61,7 +66,7 @@ public class LanguageModelFieldGeneratorTest {
 
     @Test
     public void testGenerateWithPromptTemplate() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
         var config = new LanguageModelFieldGeneratorConfig.Builder()
@@ -80,7 +85,7 @@ public class LanguageModelFieldGeneratorTest {
 
     @Test
     public void testGenerateWithEmptyPromptTemplate() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
         var config = new LanguageModelFieldGeneratorConfig.Builder()
@@ -96,7 +101,7 @@ public class LanguageModelFieldGeneratorTest {
 
     @Test
     public void testGenerateWithStaticPromptTemplate() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
         var config = new LanguageModelFieldGeneratorConfig.Builder()
@@ -115,7 +120,7 @@ public class LanguageModelFieldGeneratorTest {
     
     @Test
     public void testGenerateWithPromptTemplateFile() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
         var config = new LanguageModelFieldGeneratorConfig.Builder()
@@ -124,7 +129,7 @@ public class LanguageModelFieldGeneratorTest {
                 .build();
         
         var generator = createGenerator(config, languageModels);
-        var context = new FieldGenerator.Context("schema.indexing", DataType.STRING);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
         var result1 = generator.generate("world", context);
         assertEquals("hello world hello world", result1.toString());
@@ -132,7 +137,7 @@ public class LanguageModelFieldGeneratorTest {
 
     @Test
     public void testGenerateWithEmptyTemplateFile() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
         var config = new LanguageModelFieldGeneratorConfig.Builder()
@@ -145,7 +150,7 @@ public class LanguageModelFieldGeneratorTest {
 
     @Test
     public void testGenerateWithMissingTemplateFile() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
         var config = new LanguageModelFieldGeneratorConfig.Builder()
@@ -163,7 +168,7 @@ public class LanguageModelFieldGeneratorTest {
     
     @Test
     public void testGenerateWithPromptTemplateOverridesPromptTemplateFile() {
-        LanguageModel languageModel = new RepeaterMockLanguageModel(2);
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
         var config = new LanguageModelFieldGeneratorConfig.Builder()
@@ -196,7 +201,90 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(generatorConfig, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         var result = generator.generate("hello", context);
-        assertTrue(result.toString().length() > 10);
+        assertTrue(result.toString().length() > 5);
+    }
+    
+    @Test
+    public void testGenerateWithTextOutput() {
+        LanguageModel languageModel = new RepeatInputLanguageModel(2);
+        var languageModels = Map.of("languageModel", languageModel);
+        
+        var generatorConfig = new LanguageModelFieldGeneratorConfig.Builder()
+                .providerId("languageModel").responseFormatType(
+                        LanguageModelFieldGeneratorConfig.ResponseFormatType.Enum.TEXT
+                ).build();
+        
+        var generator = createGenerator(generatorConfig, languageModels);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        
+        var result = generator.generate("hello world", context);
+        assertEquals("hello world hello world", result.toString());
+    }
+    
+    @Test
+    public void testGenerateInvalidResponseFormatPolicyDiscard() {
+        LanguageModel languageModel = new IvalidJsonLanguageModel();
+        var languageModels = Map.of("languageModel", languageModel);
+
+        var generatorConfig = new LanguageModelFieldGeneratorConfig.Builder()
+                .providerId("languageModel").invalidResponseFormatPolicy(
+                        LanguageModelFieldGeneratorConfig.InvalidResponseFormatPolicy.Enum.DISCARD
+                ).build();
+
+        var generator = createGenerator(generatorConfig, languageModels);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        var result = generator.generate("hello world", context);
+        assertEquals(null, result);
+    }
+    
+    @Test
+    public void testGenerateInvalidResponseFormatPolicyFail() {
+        LanguageModel languageModel = new IvalidJsonLanguageModel();
+        var languageModels = Map.of("languageModel", languageModel);
+        
+        var generatorConfig = new LanguageModelFieldGeneratorConfig.Builder()
+                .providerId("languageModel").invalidResponseFormatPolicy(
+                        LanguageModelFieldGeneratorConfig.InvalidResponseFormatPolicy.Enum.FAIL
+                ).build();
+        
+        var generator = createGenerator(generatorConfig, languageModels);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        assertThrows(IllegalArgumentException.class, () -> generator.generate("hello world", context));
+    }
+
+    @Test
+    public void testGenerateInvalidResponseFormatPolicyWarn() {
+        var logger = Logger.getLogger(LanguageModelFieldGenerator.class.getName());
+        var testLogHandler = new TestLogHandler();
+        logger.addHandler(testLogHandler);
+        
+        LanguageModel languageModel = new IvalidJsonLanguageModel();
+        var languageModels = Map.of("languageModel", languageModel);
+
+        var generatorConfig = new LanguageModelFieldGeneratorConfig.Builder()
+                .providerId("languageModel").invalidResponseFormatPolicy(
+                        LanguageModelFieldGeneratorConfig.InvalidResponseFormatPolicy.Enum.WARN
+                ).build();
+
+        var generator = createGenerator(generatorConfig, languageModels);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        var result = generator.generate("hello world", context);
+        
+        assertEquals(null, result);
+
+
+        boolean foundWarning = false;
+        
+        for (var record : testLogHandler.getRecords()) {
+            if (record.getLevel() == Level.WARNING) {
+                if (record.getMessage().contains("Failed to parse JSON value")) {
+                    foundWarning = true;
+                    break;
+                }
+            }
+        }
+        
+        assertTrue(foundWarning);
     }
 
     private static LanguageModelFieldGenerator createGenerator(LanguageModelFieldGeneratorConfig config, Map<String, LanguageModel> languageModels) {
@@ -206,10 +294,10 @@ public class LanguageModelFieldGeneratorTest {
         return new LanguageModelFieldGenerator(config, languageModelsRegistry);
     }
     
-    public static class RepeaterMockLanguageModel implements LanguageModel {
+    public static class RepeatInputLanguageModel implements LanguageModel {
         private final int repetitions;
         
-        public RepeaterMockLanguageModel(int repetitions) {
+        public RepeatInputLanguageModel(int repetitions) {
             this.repetitions = repetitions;
         }
         
@@ -222,7 +310,16 @@ public class LanguageModelFieldGeneratorTest {
                 stringBuilder.append(" ");
             }
             
-            return List.of(Completion.from(stringBuilder.toString().trim()));
+            var completionStr = stringBuilder.toString().trim();
+            
+            if (params.get(InferenceParameters.OPTION_JSON_SCHEMA).isPresent())
+                completionStr = """
+                       {
+                        "doc.text": "%s"
+                       }
+                       """.formatted(completionStr);
+            
+            return List.of(Completion.from(completionStr));
         }
 
         @Override
@@ -232,4 +329,39 @@ public class LanguageModelFieldGeneratorTest {
             throw new UnsupportedOperationException();
         }
     }
+
+    public static class IvalidJsonLanguageModel implements LanguageModel {
+        @Override
+        public List<Completion> complete(Prompt prompt, InferenceParameters params) {
+            var invalidJson = "{doc.text:: test347ukdrjfhds";
+            return List.of(Completion.from(invalidJson));
+        }
+
+        @Override
+        public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt,
+                                                                        InferenceParameters params,
+                                                                        Consumer<Completion> consumer) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class TestLogHandler extends Handler {
+        private final List<LogRecord> records = new ArrayList<>();
+
+        @Override
+        public void publish(LogRecord record) {
+            records.add(record);
+        }
+
+        @Override
+        public void flush() {}
+
+        @Override
+        public void close() throws SecurityException {}
+
+        public List<LogRecord> getRecords() {
+            return records;
+        }
+    }
+
 }

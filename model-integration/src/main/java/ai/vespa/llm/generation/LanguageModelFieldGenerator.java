@@ -77,7 +77,7 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
             try {
-                generatedFieldValue = FieldGeneratorUtils.parseJsonField(
+                generatedFieldValue = FieldGeneratorUtils.parseJsonFieldValue(
                         generatedText, context.getDestination(), context.getTargetType());
             } catch (IllegalArgumentException e) {
                 generatedFieldValue = switch (config.invalidResponseFormatPolicy()) {

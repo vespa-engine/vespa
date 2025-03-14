@@ -14,18 +14,20 @@ import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.json.DocumentOperationType;
 import com.yahoo.document.json.JsonReader;
+import com.yahoo.document.json.ParsedDocumentOperation;
 import com.yahoo.text.Utf8;
 
 import java.io.ByteArrayInputStream;
 
 /**
- * Helper methods for generating document field values as LLM structured output.
+ * Helper methods for using LLM structured output to generate document field values.
  * 
  * @author glebashnik
  */
 public class FieldGeneratorUtils {
     /**
-     * @param fieldPath has format [document type name].[field name]
+     * Generates JSON schema for a document field based on it's path and data type that corresponds 
+     * to a JSON format {"[fieldPath]": fieldValue} where [fieldPath] is [document type name].[field name].
      */
     public static String generateJsonSchemaForField(String fieldPath, DataType fieldType) {
         var schema = Json.Builder.newObject()
@@ -51,8 +53,10 @@ public class FieldGeneratorUtils {
     }
     
     /**
-     * Schemas should be compatible with JSON format used fro feeding.
-     * Not all types are supported.
+     * Generates JSON schema for a document field value.
+     * Schemas are compatible with JSON format used for feeding.
+     * Not all types are suppoerted. 
+     * See conditions in code for supported types.
      */
     private static Json.Builder.Object generateJsonSchemaForFieldValue(DataType fieldType) {
         var field = Json.Builder.newObject();
@@ -97,8 +101,12 @@ public class FieldGeneratorUtils {
 
         return field;
     }
-    
-    public static FieldValue parseJsonField(String jsonField, String fieldPath, DataType fieldType) {
+
+    /**
+     * Parses JSON containing document field value.
+     * Uses the same parser as the one used during feeding.
+     */
+    public static FieldValue parseJsonFieldValue(String jsonFieldValue, String fieldPath, DataType fieldType) {
         // Create a dummy document operation to use JSON document parser API.
         // API for parsing individual fields is not exposed.
         var documentTypeName = "dummy"; // Can't use built-in type name "document".
@@ -108,7 +116,7 @@ public class FieldGeneratorUtils {
                     "put": "%s",
                     "fields": %s
                 }
-                """.formatted(documentId, jsonField);
+                """.formatted(documentId, jsonFieldValue);
         
         // Create and register types
         var types = new DocumentTypeManager();
@@ -121,10 +129,18 @@ public class FieldGeneratorUtils {
         var parserFactory = new JsonFactory();
         var input = new ByteArrayInputStream(Utf8.toBytes(jsonDocumentOperation));
         var jsonReader = new JsonReader(types, input, parserFactory);
-        var parsedDocumentOperation = jsonReader.readSingleDocumentStreaming(DocumentOperationType.PUT, documentId);
+        ParsedDocumentOperation parsedDocumentOperation;
+        
+        try {
+            parsedDocumentOperation = jsonReader.readSingleDocumentStreaming(DocumentOperationType.PUT, documentId);
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException(
+                    "Failed to parse JSON value for field %s of type %s: %s"
+                            .formatted(fieldPath, fieldType.getName(), jsonFieldValue), e);
+        }
+        
         var documentOperation = (DocumentPut) parsedDocumentOperation.operation();
         var document = documentOperation.getDocument();
-        var fieldValue = document.getFieldValue(field);
-        return fieldValue;
+        return document.getFieldValue(field);
     }
 }

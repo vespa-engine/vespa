@@ -185,7 +185,7 @@ public class FieldGeneratorUtilsTest {
         var fieldPath = "document.field";
         var jsonFieldValue = primitiveType.equals(DataType.STRING) ? "\"" + value + "\"" : value.toString();
         var jsonField = "{ \"%s\": %s }".formatted(fieldPath, jsonFieldValue);
-        var fieldValue = FieldGeneratorUtils.parseJsonField(jsonField, fieldPath, primitiveType);
+        var fieldValue = FieldGeneratorUtils.parseJsonFieldValue(jsonField, fieldPath, primitiveType);
         assertEquals(fieldValue, value);
     }
 }
