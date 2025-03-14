@@ -209,6 +209,7 @@ void assertQueryTerms(const SnippetModifierManager &man, FieldIdT fId, const Str
 void assertNumeric(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const BoolList &exp);
 std::vector<QueryTerm::UP> performSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv);
 HitsList as_hitlist(std::vector<std::unique_ptr<QueryTerm>> qtv);
+HitsList hits_list(const BoolList& bl);
 void assertSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const HitsList &exp);
 bool assertCountWords(size_t numWords, const std::string &field);
 FieldInfoList as_field_info_list(std::vector<std::unique_ptr<QueryTerm>> qtv);
@@ -230,12 +231,20 @@ HitsList search_string(StrChrFieldSearcher& fs, const std::string& term, const S
     return search_string(fs, StringList{term}, field);
 }
 
-void assertInt(IntFieldSearcher & fs, const StringList &query, int64_t field, const BoolList &exp) {
-    assertNumeric(fs, query, LongFieldValue(field), exp);
+HitsList search_int(IntFieldSearcher& fs, const StringList& query, int64_t field) {
+    return as_hitlist(performSearch(fs, query, LongFieldValue(field)));
 }
 
-void assertInt(IntFieldSearcher & fs, const std::string &term, int64_t field, bool exp) {
-    assertInt(fs, StringList().add(term), field, BoolList().add(exp));
+HitsList search_int(IntFieldSearcher & fs, const std::string& term, int64_t field) {
+    return search_int(fs, StringList{term}, field);
+}
+
+HitsList search_int(IntFieldSearcher& fs, const StringList& query, const LongList& field) {
+    return as_hitlist(performSearch(fs, query, getFieldValue(field)));
+}
+
+HitsList search_int(IntFieldSearcher & fs, const std::string& term, const LongList& field) {
+    return search_int(fs, StringList{term}, field);
 }
 
 void assertBool(BoolFieldSearcher & fs, const StringList &query, bool field, const BoolList &exp) {
@@ -243,14 +252,6 @@ void assertBool(BoolFieldSearcher & fs, const StringList &query, bool field, con
 }
 void assertBool(BoolFieldSearcher & fs, const std::string &term, bool field, bool exp) {
     assertBool(fs, StringList().add(term), field, BoolList().add(exp));
-}
-
-void assertInt(IntFieldSearcher & fs, const StringList &query, const LongList &field, const HitsList &exp) {
-    assertSearch(fs, query, getFieldValue(field), exp);
-}
-
-void assertInt(IntFieldSearcher & fs, const std::string &term, const LongList &field, const Hits &exp) {
-    assertInt(fs, StringList().add(term), field, HitsList().add(exp));
 }
 
 void assertFloat(FloatFieldSearcher & fs, const StringList &query, float field, const BoolList &exp) {
@@ -376,14 +377,18 @@ assertMatchTermSuffix(const std::string & term, const std::string & word)
     return UTF8StringFieldSearcherBase::matchTermSuffix(a, alen, b, blen);
 }
 
+HitsList hits_list(const BoolList& bl) {
+    HitsList hl;
+    for (bool v : bl) {
+        hl.push_back(v ? Hits().add({0, 0}) : Hits());
+    }
+    return hl;
+}
+
 void
 assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const BoolList & exp)
 {
-    HitsList hl;
-    for (bool v : exp) {
-        hl.push_back(v ? Hits().add({0, 0}) : Hits());
-    }
-    assertSearch(fs, query, fv, hl);
+    assertSearch(fs, query, fv, hits_list(exp));
 }
 
 std::vector<QueryTerm::UP>
@@ -963,30 +968,29 @@ TEST("bool search") {
 TEST("integer search")
 {
     IntFieldSearcher fs(0);
-    TEST_DO(assertInt(fs,     "10",  10, true));
-    TEST_DO(assertInt(fs,      "9",  10, false));
-    TEST_DO(assertInt(fs,     ">9",  10, true));
-    TEST_DO(assertInt(fs,     ">9",   9, false));
-    TEST_DO(assertInt(fs,    "<11",  10, true));
-    TEST_DO(assertInt(fs,    "<11",  11, false));
-    TEST_DO(assertInt(fs,    "-10", -10, true));
-    TEST_DO(assertInt(fs,     "10", -10, false));
-    TEST_DO(assertInt(fs,    "-10",  10, false));
-    TEST_DO(assertInt(fs,     "-9", -10, false));
-    TEST_DO(assertInt(fs,      "a",  10, false));
-    TEST_DO(assertInt(fs, "[-5;5]",  -5, true));
-    TEST_DO(assertInt(fs, "[-5;5]",   0, true));
-    TEST_DO(assertInt(fs, "[-5;5]",   5, true));
-    TEST_DO(assertInt(fs, "[-5;5]",  -6, false));
-    TEST_DO(assertInt(fs, "[-5;5]",   6, false));
+    EXPECT_EQUAL(is_hit,  search_int(fs,     "10",  10));
+    EXPECT_EQUAL(no_hits, search_int(fs,      "9",  10));
+    EXPECT_EQUAL(is_hit,  search_int(fs,     ">9",  10));
+    EXPECT_EQUAL(no_hits, search_int(fs,     ">9",   9));
+    EXPECT_EQUAL(is_hit,  search_int(fs,    "<11",  10));
+    EXPECT_EQUAL(no_hits, search_int(fs,    "<11",  11));
+    EXPECT_EQUAL(is_hit,  search_int(fs,    "-10", -10));
+    EXPECT_EQUAL(no_hits, search_int(fs,     "10", -10));
+    EXPECT_EQUAL(no_hits, search_int(fs,    "-10",  10));
+    EXPECT_EQUAL(no_hits, search_int(fs,     "-9", -10));
+    EXPECT_EQUAL(no_hits, search_int(fs,      "a",  10));
+    EXPECT_EQUAL(is_hit,  search_int(fs, "[-5;5]",  -5));
+    EXPECT_EQUAL(is_hit,  search_int(fs, "[-5;5]",   0));
+    EXPECT_EQUAL(is_hit,  search_int(fs, "[-5;5]",   5));
+    EXPECT_EQUAL(no_hits, search_int(fs, "[-5;5]",  -6));
+    EXPECT_EQUAL(no_hits, search_int(fs, "[-5;5]",   6));
 
-    TEST_DO(assertInt(fs, StringList().add("9").add("11"),  10, BoolList().add(false).add(false)));
-    TEST_DO(assertInt(fs, StringList().add("9").add("10"),  10, BoolList().add(false).add(true)));
-    TEST_DO(assertInt(fs, StringList().add("10").add(">9"), 10, BoolList().add(true).add(true)));
+    EXPECT_EQUAL(hits_list({false, false}), search_int(fs, StringList{"9", "11"},  10));
+    EXPECT_EQUAL(hits_list({false,  true}), search_int(fs, StringList{"9", "10"},  10));
+    EXPECT_EQUAL(hits_list({ true,  true}), search_int(fs, StringList{"10", ">9"}, 10));
 
-    TEST_DO(assertInt(fs, "10", LongList().add(10).add(20).add(10).add(30), Hits().add({0, 0}).add({2, 0})));
-    TEST_DO(assertInt(fs, StringList().add("10").add("20"), LongList().add(10).add(20).add(10).add(30),
-                      HitsList().add(Hits().add({0, 0}).add({2, 0})).add(Hits().add({1, 0}))));
+    EXPECT_EQUAL(HitsList({{{0, 0}, {2, 0}}}), search_int(fs, "10", {10, 20, 10, 30}));
+    EXPECT_EQUAL(HitsList({{{0, 0}, {2, 0}},{{1, 0}}}), search_int(fs, StringList{"10", "20"}, {10, 20, 10, 30}));
 
     TEST_DO(assertFieldInfo(fs, "10", 10, QTFieldInfo(0, 1, 1)));
     TEST_DO(assertFieldInfo(fs, "10", LongList().add(10).add(20).add(10).add(30), QTFieldInfo(0, 2, 4)));
