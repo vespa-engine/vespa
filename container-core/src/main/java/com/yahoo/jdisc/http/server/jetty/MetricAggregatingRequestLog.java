@@ -4,15 +4,13 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.ServerConfig;
-import org.eclipse.jetty.http.HttpFields;
 import org.eclipse.jetty.http.HttpHeader;
-import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Request;
+import org.eclipse.jetty.server.RequestLog;
+import org.eclipse.jetty.server.Response;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.EventsHandler;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,12 +23,14 @@ import java.util.function.ObjLongConsumer;
 import java.util.stream.Collectors;
 
 /**
- * Collects statistics about HTTP response types aggregated by category.
+ * A {@link RequestLog} implementation that collects statistics like HTTP response types aggregated by category.
+ * Implemented as a {@link RequestLog} instead of {@link org.eclipse.jetty.server.handler.EventsHandler} to ensure
+ * that 400 responses from e.g. invalid request headers are also included.
  *
  * @author ollivir
  * @author bjorncs
  */
-class ResponseMetricAggregator extends EventsHandler {
+class MetricAggregatingRequestLog implements RequestLog {
 
     static final String requestTypeAttribute = "requestType";
 
@@ -41,25 +41,24 @@ class ResponseMetricAggregator extends EventsHandler {
 
     private final ConcurrentMap<StatusCodeMetric, LongAdder> statistics = new ConcurrentHashMap<>();
 
-    ResponseMetricAggregator(ServerConfig.Metric cfg, Handler handler) {
-        this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents(), cfg.reporterEnabled(),
-                handler);
+    MetricAggregatingRequestLog(ServerConfig.Metric cfg) {
+        this(cfg.monitoringHandlerPaths(), cfg.searchHandlerPaths(), cfg.ignoredUserAgents(), cfg.reporterEnabled());
     }
 
-    ResponseMetricAggregator(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths,
-                             List<String> ignoredUserAgents, boolean reporterEnabled, Handler handler) {
-        super(handler);
+    MetricAggregatingRequestLog(List<String> monitoringHandlerPaths, List<String> searchHandlerPaths,
+                                List<String> ignoredUserAgents, boolean reporterEnabled) {
         this.monitoringHandlerPaths = monitoringHandlerPaths;
         this.searchHandlerPaths = searchHandlerPaths;
         this.ignoredUserAgents = Set.copyOf(ignoredUserAgents);
         this.reporterEnabled = reporterEnabled;
     }
 
-    static ResponseMetricAggregator getBean(JettyHttpServer server) { return getBean(server.server()); }
-    static ResponseMetricAggregator getBean(Server server) { return server.getBean(ResponseMetricAggregator.class); }
+    static MetricAggregatingRequestLog getBean(JettyHttpServer server) { return getBean(server.server()); }
+    static MetricAggregatingRequestLog getBean(Server server) { return server.getBean(MetricAggregatingRequestLog.class); }
 
-    @Override
-    protected void onResponseBegin(Request request, int status, HttpFields headers) {
+    @Override public void log(Request req, Response resp) { onResponse(req, resp.getStatus()); }
+
+    void onResponse(Request request, int status) {
         if (shouldLogMetricsFor(request)) {
             var metrics = StatusCodeMetric.of(request, status, monitoringHandlerPaths, searchHandlerPaths);
             metrics.forEach(metric -> statistics.computeIfAbsent(metric, __ -> new LongAdder()).increment());

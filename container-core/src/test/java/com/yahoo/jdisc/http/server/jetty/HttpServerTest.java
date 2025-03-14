@@ -192,12 +192,11 @@ public class HttpServerTest {
         driver.client()
                 .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
                 .expectStatusCode(is(BAD_REQUEST)).expectContent(containsString("HTTP ERROR 400 Duplicate Host Header"));
-        // TODO figure out what to do with this metric - currently missing for built-in responses
-//        var aggregator = ResponseMetricAggregator.getBean(driver.server());
-//        var metric = waitForStatistics(aggregator);
-//        assertEquals(400, metric.dimensions.statusCode);
-//        assertEquals("GET", metric.dimensions.method);
-//        assertTrue(driver.close());
+        var aggregator = MetricAggregatingRequestLog.getBean(driver.server());
+        var metric = waitForStatistics(aggregator);
+        assertEquals(400, metric.dimensions.statusCode);
+        assertEquals("GET", metric.dimensions.method);
+        assertTrue(driver.close());
     }
 
     @Test
@@ -638,9 +637,9 @@ public class HttpServerTest {
         RequestTypeHandler handler = new RequestTypeHandler();
         var cfg = new ServerConfig.Builder().metric(new ServerConfig.Metric.Builder().reporterEnabled(false));
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(handler, cfg, new ConnectorConfig.Builder());
-        var statisticsCollector = ResponseMetricAggregator.getBean(driver.server());;
+        var statisticsCollector = MetricAggregatingRequestLog.getBean(driver.server());;
         {
-            List<ResponseMetricAggregator.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+            List<MetricAggregatingRequestLog.StatisticsEntry> stats = statisticsCollector.takeStatistics();
             assertEquals(0, stats.size());
         }
 
@@ -674,8 +673,8 @@ public class HttpServerTest {
         assertTrue(driver.close());
     }
 
-    private ResponseMetricAggregator.StatisticsEntry waitForStatistics(ResponseMetricAggregator statisticsCollector) {
-        List<ResponseMetricAggregator.StatisticsEntry> entries = List.of();
+    private MetricAggregatingRequestLog.StatisticsEntry waitForStatistics(MetricAggregatingRequestLog statisticsCollector) {
+        List<MetricAggregatingRequestLog.StatisticsEntry> entries = List.of();
         int tries = 0;
         // Wait up to 30 seconds before giving up
         while (entries.isEmpty() && tries < 300) {
