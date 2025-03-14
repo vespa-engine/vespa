@@ -14,6 +14,41 @@
   <artifactId>model-integration</artifactId>
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
+
+  <dependencyManagement>
+    <dependencies>
+      <!-- START: Transitive dependencies for openai-java -->
+
+      <!-- Override scope from 'runtime' to 'provided' -->
+      <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jsr310</artifactId>
+        <version>${jackson2.vespa.version}</version>
+        <scope>provided</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jdk8</artifactId>
+        <version>${jackson2.vespa.version}</version>
+        <scope>provided</scope>
+      </dependency>
+
+      <!-- Override scope from 'runtime' to 'compile' -->
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>okhttp</artifactId>
+        <scope>compile</scope>
+      </dependency>
+      <dependency>
+        <groupId>com.squareup.okhttp3</groupId>
+        <artifactId>logging-interceptor</artifactId>
+        <scope>compile</scope>
+      </dependency>
+      <!-- END: Transitive dependencies for openai-java -->
+
+    </dependencies>
+  </dependencyManagement>
+
   <dependencies>
     <!--
       Note: model-integration is included in config-model.
@@ -125,13 +160,36 @@
       <groupId>com.openai</groupId>
       <artifactId>openai-java</artifactId>
       <version>${openai-java.vespa.version}</version>
-      <scope>test</scope>
       <exclusions>
-      <exclusion>
-        <groupId>org.jetbrains</groupId>
-        <artifactId>annotations</artifactId>
-      </exclusion>
+        <exclusion>
+          <groupId>org.jetbrains</groupId>
+          <artifactId>annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.core5</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.httpcomponents.client5</groupId>
+          <artifactId>*</artifactId>
+        </exclusion>
       </exclusions>
+    </dependency>
+
+    <dependency>
+      <!-- Included for openai-java. Using dependencyManagement does not force correct version for tenant base poms -->
+      <groupId>com.fasterxml.jackson.module</groupId>
+      <artifactId>jackson-module-kotlin</artifactId>
+      <version>${jackson2.vespa.version}</version>
+      <scope>compile</scope>
+    </dependency>
+
+    <dependency>
+      <!-- For openai-java -->
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-apache-http-client-bundle</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
