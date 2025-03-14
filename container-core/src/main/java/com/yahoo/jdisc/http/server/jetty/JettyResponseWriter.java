@@ -158,7 +158,7 @@ class JettyResponseWriter implements ResponseHandler {
                         if (jettyHeaders.get(HttpHeader.CONTENT_TYPE) == null) {
                             jettyHeaders.add(HttpHeader.CONTENT_TYPE, "text/plain;charset=utf-8");
                         }
-                        jettyRequest.setAttribute(ResponseMetricAggregator.requestTypeAttribute,
+                        jettyRequest.setAttribute(MetricAggregatingRequestLog.requestTypeAttribute,
                                 jdiscResponse.getRequestType());
                     }
                 }
