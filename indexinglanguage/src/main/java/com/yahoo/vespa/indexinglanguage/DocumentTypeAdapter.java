@@ -21,16 +21,8 @@ public class DocumentTypeAdapter implements FieldTypeAdapter {
     }
 
     @Override
-    public DataType getInputType(Expression expression, String fieldName) {
+    public DataType getFieldType(Expression expression, String fieldName) {
         return requireFieldType(expression, fieldName);
-    }
-
-    @Override
-    public void tryOutputType(Expression expression, String fieldName, DataType valueType) {
-        DataType fieldType = requireFieldType(expression, fieldName);
-        if ( ! valueType.isAssignableTo(fieldType))
-            throw new VerificationException(expression, "Output field '" + fieldName + "' has type " + fieldType.getName() +
-                                                        " which is incompatible with " + valueType.getName());
     }
 
     public DataType requireFieldType(Expression expression, String fieldName) {

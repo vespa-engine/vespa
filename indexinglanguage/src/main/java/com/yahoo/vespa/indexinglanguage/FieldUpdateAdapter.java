@@ -73,8 +73,8 @@ public class FieldUpdateAdapter implements UpdateAdapter {
     }
 
     @Override
-    public DataType getInputType(Expression exp, String fieldName) {
-        return adapter.getInputType(exp, fieldName);
+    public DataType getFieldType(Expression exp, String fieldName) {
+        return adapter.getFieldType(exp, fieldName);
     }
 
     @Override
@@ -83,11 +83,6 @@ public class FieldUpdateAdapter implements UpdateAdapter {
     }
     @Override
     public FieldValue getInputValue(FieldPath fieldPath) { return adapter.getInputValue(fieldPath); }
-
-    @Override
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        adapter.tryOutputType(exp, fieldName, valueType);
-    }
 
     @Override
     public FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {

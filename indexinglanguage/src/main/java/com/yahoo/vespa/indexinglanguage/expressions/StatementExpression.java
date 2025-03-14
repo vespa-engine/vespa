@@ -104,9 +104,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
     @Override
     protected void doVerify(VerificationContext context) {
         if (expressions().isEmpty()) return;
-        String outputField = outputFieldName();
-        if (outputField != null)
-            context.setOutputField(outputField);
 
         var outputType = resolveForwards(context);
         assignOutputType(outputType);
@@ -121,14 +118,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
         for (Expression expression : this) {
             context.execute(expression);
         }
-    }
-
-    private String outputFieldName() {
-        for (Expression expression : this) {
-            if (expression instanceof OutputExpression output)
-                return output.getFieldName();
-        }
-        return null;
     }
 
     @Override

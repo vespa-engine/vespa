@@ -37,7 +37,7 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
     }
 
     @Override
-    public DataType getInputType(Expression exp, String fieldName) {
+    public DataType getFieldType(Expression exp, String fieldName) {
         try {
             return input.getDataType().buildFieldPath(fieldName).getResultingDataType();
         } catch (IllegalArgumentException e) {
@@ -60,19 +60,6 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
             return input.getRecursiveValue(fieldPath);
         } catch (IllegalArgumentException e) {
             return null;
-        }
-    }
-
-    @Override
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        Field field = output.getDataType().getField(fieldName);
-        if (field == null) {
-            throw new VerificationException(exp, "Field '" + fieldName + "' not found");
-        }
-        DataType fieldType = field.getDataType();
-        if (!fieldType.isAssignableFrom(valueType)) {
-            throw new VerificationException(exp, "Can not assign " + valueType.getName() + " to field '" +
-                                                 fieldName + "' which is " + fieldType.getName());
         }
     }
 

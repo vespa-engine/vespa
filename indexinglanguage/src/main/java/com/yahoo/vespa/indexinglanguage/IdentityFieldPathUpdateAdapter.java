@@ -57,13 +57,8 @@ public class IdentityFieldPathUpdateAdapter implements UpdateAdapter {
     }
 
     @Override
-    public DataType getInputType(Expression exp, String fieldName) {
-        return fwdAdapter.getInputType(exp, fieldName);
-    }
-
-    @Override
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        fwdAdapter.tryOutputType(exp, fieldName, valueType);
+    public DataType getFieldType(Expression exp, String fieldName) {
+        return fwdAdapter.getFieldType(exp, fieldName);
     }
 
 }

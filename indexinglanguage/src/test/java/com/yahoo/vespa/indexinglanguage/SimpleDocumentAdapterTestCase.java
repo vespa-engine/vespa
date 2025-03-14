@@ -32,9 +32,9 @@ public class SimpleDocumentAdapterTestCase {
         doc.setFieldValue("foo", foo);
 
         DocumentAdapter adapter = new SimpleDocumentAdapter(doc);
-        assertEquals(fooType, adapter.getInputType(null, "foo"));
+        assertEquals(fooType, adapter.getFieldType(null, "foo"));
         assertEquals(foo, adapter.getInputValue("foo"));
-        assertEquals(barType, adapter.getInputType(null, "foo.bar"));
+        assertEquals(barType, adapter.getFieldType(null, "foo.bar"));
         assertEquals(bar, adapter.getInputValue("foo.bar"));
     }
 
@@ -45,7 +45,7 @@ public class SimpleDocumentAdapterTestCase {
 
         DocumentAdapter adapter = new SimpleDocumentAdapter(doc);
         try {
-            adapter.getInputType(null, "foo");
+            adapter.getFieldType(null, "foo");
             fail();
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'null': Input field 'foo' not found", e.getMessage());
