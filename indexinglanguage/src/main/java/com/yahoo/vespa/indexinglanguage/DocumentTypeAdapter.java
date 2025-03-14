@@ -21,7 +21,7 @@ public class DocumentTypeAdapter implements FieldTypeAdapter {
     }
 
     @Override
-    public DataType getInputType(Expression expression, String fieldName) {
+    public DataType getFieldType(Expression expression, String fieldName) {
         return requireFieldType(expression, fieldName);
     }
 

@@ -27,7 +27,7 @@ public class VerificationContext {
 
     /** Returns the type of the given field. */
     public DataType getFieldType(String fieldName, Expression expression) {
-        return fieldTypes.getInputType(expression, fieldName);
+        return fieldTypes.getFieldType(expression, fieldName);
     }
 
     public DataType getVariable(String name) { return variables.get(name); }

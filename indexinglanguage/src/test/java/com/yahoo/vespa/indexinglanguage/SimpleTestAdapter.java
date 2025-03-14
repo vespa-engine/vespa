@@ -32,7 +32,7 @@ public class SimpleTestAdapter implements FieldValueAdapter {
     }
 
     @Override
-    public DataType getInputType(Expression exp, String fieldName) {
+    public DataType getFieldType(Expression exp, String fieldName) {
         // Same check as in config-model IndexingValidation:
         if ( ! types.containsKey(fieldName))
             throw new VerificationException(exp, "Field '" + fieldName + "' not found.");

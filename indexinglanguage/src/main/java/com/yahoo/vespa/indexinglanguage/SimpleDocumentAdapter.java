@@ -37,7 +37,7 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
     }
 
     @Override
-    public DataType getInputType(Expression exp, String fieldName) {
+    public DataType getFieldType(Expression exp, String fieldName) {
         try {
             return input.getDataType().buildFieldPath(fieldName).getResultingDataType();
         } catch (IllegalArgumentException e) {

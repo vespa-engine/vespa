@@ -4,12 +4,12 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 
 /**
- * Returns information about the input and output types of fields.
+ * Returns information about the types of fields.
  *
  * @author Simon Thoresen Hult
  */
 public interface FieldTypeAdapter {
 
-    DataType getInputType(Expression expression, String fieldName);
+    DataType getFieldType(Expression expression, String fieldName);
 
 }

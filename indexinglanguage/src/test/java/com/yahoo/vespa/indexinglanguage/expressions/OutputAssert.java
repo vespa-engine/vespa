@@ -43,7 +43,7 @@ class OutputAssert {
         }
 
         @Override
-        public DataType getInputType(Expression exp, String fieldName) {
+        public DataType getFieldType(Expression exp, String fieldName) {
             throw new AssertionError();
         }
 
