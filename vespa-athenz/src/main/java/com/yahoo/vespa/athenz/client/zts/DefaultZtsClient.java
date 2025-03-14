@@ -233,16 +233,16 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId) {
+    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId, String azureTokenScope) {
         return getExternalTemporaryCredentials("azure", athenzRole.domain(),
-                Map.of("athenzRoleName", athenzRole.roleName(), "azureClientId", azureIdentityId),
+                Map.of("athenzRoleName", athenzRole.roleName(), "azureClientId", azureIdentityId, "azureTokenScope", azureTokenScope),
                 AzureTemporaryCredentialsResponseEntity.class);
     }
 
     @Override
-    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName) {
+    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName, String azureTokenScope) {
         return getExternalTemporaryCredentials("azure", athenzRole.domain(),
-                Map.of("athenzRoleName", athenzRole.roleName(), "azureResourceGroup", azureResourceGroup, "azureClientName", azureIdentityName),
+                Map.of("athenzRoleName", athenzRole.roleName(), "azureResourceGroup", azureResourceGroup, "azureClientName", azureIdentityName, "azureTokenScope", azureTokenScope),
                 AzureTemporaryCredentialsResponseEntity.class);
     }
 
