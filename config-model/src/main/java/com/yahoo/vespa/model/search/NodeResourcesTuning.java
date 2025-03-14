@@ -100,8 +100,8 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     }
 
     private void tuneSearchReadIo(ProtonConfig.Search.Mmap.Builder builder) {
-        if (resources.diskSpeed() == NodeResources.DiskSpeed.fast) {
-            builder.advise(ProtonConfig.Search.Mmap.Advise.RANDOM);
+        if (resources.diskSpeed() == NodeResources.DiskSpeed.slow) {
+            builder.advise(ProtonConfig.Search.Mmap.Advise.SEQUENTIAL);
         }
     }
 
