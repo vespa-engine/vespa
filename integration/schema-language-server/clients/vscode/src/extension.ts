@@ -64,19 +64,19 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
         return null;
     }
 
-	const serverOptions: ServerOptions = {
-		command: javaExecutable,
-		args: ['-jar', serverPath],
-		options: {}
-	};
+    const serverOptions: ServerOptions = {
+        command: javaExecutable,
+        args: ['-jar', serverPath],
+        options: {}
+    };
 
-	let clientOptions: LanguageClientOptions = {
-		// Register the server for plain text documents
-		documentSelector: [
+    let clientOptions: LanguageClientOptions = {
+        // Register the server for plain text documents
+        documentSelector: [
             {
-			    scheme: 'file',
-			    language: 'vespaSchema',
-		    },
+                scheme: 'file',
+                language: 'vespaSchema',
+            },
             {
                 scheme: 'file',
                 language: 'vespaYQL'
@@ -85,7 +85,7 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher("**/*{.sd,.profile}")
         }
-	};
+    };
     const client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
 
     client.start().then(result => {
@@ -202,6 +202,28 @@ export function activate(context: vscode.ExtensionContext) {
             logger.error("Error when sending command: " + err);
         }
     }));
+
+    context.subscriptions.push(
+        vscode.workspace.onDidOpenTextDocument((document) => {
+            const filename = document.fileName
+            // Check if the opened file is a yql query response.
+            const yqlResponseRegex = /\.[0-9]{4}\-[0-9]{2}\-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}.[0-9]+\.json$/g
+            if (filename.match(yqlResponseRegex) == null) {
+                return
+            }
+
+            const fileNameParts = filename.split(".")
+            const creationDatetime = new Date(fileNameParts[fileNameParts.length - 3])
+
+            // Only open in split screen right after the response is received
+            if ((new Date().getTime() - creationDatetime.getTime()) < 1000) {
+                vscode.window.showTextDocument(document, {
+                    viewColumn: vscode.ViewColumn.Two,
+                    preview: false,
+                });
+            }
+        })
+    );
 
     logger.info("Vespa language client activated");
 }
