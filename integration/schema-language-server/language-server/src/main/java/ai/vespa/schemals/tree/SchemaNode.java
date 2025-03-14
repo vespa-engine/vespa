@@ -18,6 +18,7 @@ import ai.vespa.schemals.parser.ast.indexingElm;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
+import ai.vespa.schemals.parser.GeneralTokenSource;
 import ai.vespa.schemals.parser.ast.expression;
 import ai.vespa.schemals.parser.ast.featureListElm;
 
@@ -387,9 +388,13 @@ public class SchemaNode extends Node {
         return null;
     }
 
-    public TokenSource getTokenSource() {
+    public GeneralTokenSource getTokenSource() {
         if (language == LanguageType.SCHEMA) {
             return originalSchemaNode.getTokenSource();
+        } else if (language == LanguageType.RANK_EXPRESSION) {
+            return originalRankExpressionNode.getTokenSource();
+        } else if (language == LanguageType.INDEXING) {
+            return originalIndexingNode.getTokenSource();
         }
 
         return null;

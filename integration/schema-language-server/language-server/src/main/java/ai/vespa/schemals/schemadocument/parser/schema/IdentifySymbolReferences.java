@@ -20,6 +20,7 @@ import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.COLON;
 import ai.vespa.schemals.parser.ast.FIELD;
 import ai.vespa.schemals.parser.ast.annotationRefDataType;
@@ -300,7 +301,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
             newEnd += subfields[i].length() + 1;
 
             identifierStr newASTNode = new identifierStr();
-            newASTNode.setTokenSource(identifierNode.getTokenSource());
+            newASTNode.setTokenSource((TokenSource)identifierNode.getTokenSource());
             newASTNode.setBeginOffset(identifierNode.getOriginalSchemaNode().getBeginOffset());
             newASTNode.setEndOffset(identifierNode.getOriginalSchemaNode().getEndOffset());
 
@@ -377,7 +378,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         newEnd += subfields[1].length() + 1;
 
         identifierStr newASTNode = new identifierStr();
-        newASTNode.setTokenSource(identifierNode.getTokenSource());
+        newASTNode.setTokenSource((TokenSource)identifierNode.getTokenSource());
         newASTNode.setBeginOffset(identifierNode.getOriginalSchemaNode().getBeginOffset());
         newASTNode.setEndOffset(identifierNode.getOriginalSchemaNode().getEndOffset());
 

@@ -18,11 +18,13 @@ import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
+import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenUtils;
 import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.FILTER;
@@ -250,50 +252,9 @@ public class SchemaSemanticTokens {
         return ret;
     }
 
-    private static ArrayList<SemanticTokenMarker> convertCommentRanges(ArrayList<Range> comments) {
-        ArrayList<SemanticTokenMarker> ret = new ArrayList<>();
-
-        int tokenType = CommonSemanticTokens.getType("comment");
-
-        for (Range range : comments) {
-            ret.add(new SemanticTokenMarker(tokenType, range));
-        }
-
-        return ret;
-    }
-
-    private static ArrayList<SemanticTokenMarker> findComments(SchemaNode rootNode) {
-        TokenSource tokenSource = rootNode.getTokenSource();
-        String source = tokenSource.toString();
-        ArrayList<Range> ret = new ArrayList<>();
-
-        int index = source.indexOf("#");
-        while (index >= 0) {
-            Position start = CSTUtils.getPositionFromOffset(tokenSource, index);
-            if (CSTUtils.getLeafNodeAtPosition(rootNode, start) != null) {
-                index = source.indexOf("#", index + 1);
-                continue;
-            }
-
-            index = source.indexOf("\n", index + 1);
-
-            if (index < 0) {
-                index = source.length() - 1;
-            }
-
-            Position end = CSTUtils.getPositionFromOffset(tokenSource, index);
-
-            ret.add(new Range(start, end));
-
-            index = source.indexOf("#", index + 1);
-        }
-
-        return convertCommentRanges(ret);
-    }
-
     // This function assumes that both of the lists are sorted, and that no elements are overlapping
-    private static ArrayList<SemanticTokenMarker> mergeSemanticTokenMarkers(ArrayList<SemanticTokenMarker> lhs, ArrayList<SemanticTokenMarker> rhs) {
-        ArrayList<SemanticTokenMarker> ret = new ArrayList<>(lhs.size() + rhs.size());
+    private static List<SemanticTokenMarker> mergeSemanticTokenMarkers(List<SemanticTokenMarker> lhs, List<SemanticTokenMarker> rhs) {
+        List<SemanticTokenMarker> ret = new ArrayList<>(lhs.size() + rhs.size());
 
         int lhsIndex = 0;
         int rhsIndex = 0;
@@ -335,9 +296,11 @@ public class SchemaSemanticTokens {
             return new SemanticTokens(new ArrayList<>());
         }
 
-        ArrayList<SemanticTokenMarker> comments = findComments(context.document.getRootNode());
+        List<SemanticTokenMarker> comments = SemanticTokenUtils.convertCommentRanges(
+            StringUtils.findSingleLineComments(context.document.getRootNode(), "#")
+        );
 
-        ArrayList<SemanticTokenMarker> markers = traverseCST(node, context.logger);
+        List<SemanticTokenMarker> markers = traverseCST(node, context.logger);
         List<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(
             mergeSemanticTokenMarkers(markers, comments)
         );

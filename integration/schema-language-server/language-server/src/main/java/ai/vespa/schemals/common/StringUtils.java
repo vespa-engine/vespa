@@ -1,12 +1,15 @@
 package ai.vespa.schemals.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
+
+import ai.vespa.schemals.parser.GeneralTokenSource;
 
 /**
  * StringUtils
@@ -125,6 +128,42 @@ public class StringUtils {
 
         }
         return false;
+    }
+
+    /**
+     * @param rootNode Root AST node to search for single line comments
+     * @param commentMarker Substring marking the start of a single line comment
+     * @return A sorted list of {@link Range} where start position is location of commentMarker 
+     *         and end position is location of newline character at the end of the comment.
+     */
+    public static List<Range> findSingleLineComments(Node rootNode, String commentMarker) {
+        ArrayList<Range> ret = new ArrayList<>();
+        GeneralTokenSource tokenSource = rootNode.getTokenSource();
+
+        String content = tokenSource.toString();
+
+        int index = content.indexOf(commentMarker);
+        while (index >= 0) {
+            Position start = CSTUtils.getPositionFromOffset(tokenSource, index);
+            if (CSTUtils.getLeafNodeAtPosition(rootNode, start) != null) {
+                index = content.indexOf(commentMarker, index + 1);
+                continue;
+            }
+
+            index = content.indexOf("\n", index + 1);
+
+            if (index < 0) {
+                index = content.length() - 1;
+            }
+
+            Position end = CSTUtils.getPositionFromOffset(tokenSource, index);
+
+            ret.add(new Range(start, end));
+
+            index = content.indexOf(commentMarker, index + 1);
+        }
+
+        return ret;
     }
 
     public static Position getStringPosition(String str) {

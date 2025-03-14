@@ -9,6 +9,7 @@ import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.GeneralTokenSource;
 
 public abstract class Node implements Iterable<Node> {
 
@@ -121,6 +122,8 @@ public abstract class Node implements Iterable<Node> {
         if (parentIndex == 0)return parent;
         return parent.get(parentIndex - 1);
     }
+
+    public abstract GeneralTokenSource getTokenSource();
 
     /**
      * Returns the next SchemaNode of the sibilings of the node.

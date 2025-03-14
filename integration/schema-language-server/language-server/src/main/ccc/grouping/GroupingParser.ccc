@@ -47,6 +47,18 @@ INJECT GroupingParserLexer:
     }
 }
 
+INJECT TokenSource :
+{
+    import ai.vespa.schemals.parser.GeneralTokenSource;
+}
+
+INJECT :
+{
+    abstract public class TokenSource implements GeneralTokenSource {
+    }
+}
+
+
         
 TOKEN :
     <INTEGER: <DECIMAL> (["l","L"])? | <HEX> (["l","L"])? | <OCTAL> (["l","L"])?> |

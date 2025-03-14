@@ -13,6 +13,7 @@ import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.index.Symbol;
 import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
+import ai.vespa.schemals.parser.GeneralTokenSource;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.functionElm;
@@ -25,14 +26,14 @@ import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
 
 public class CSTUtils {
 
-    public static Position getPositionFromOffset(TokenSource tokenSource, int offset) {
+    public static Position getPositionFromOffset(GeneralTokenSource tokenSource, int offset) {
         int line = tokenSource.getLineFromOffset(offset) - 1;
         int startOfLineOffset = tokenSource.getLineStartOffset(line + 1);
         int column = offset - startOfLineOffset;
         return new Position(line, column);
     }
 
-    public static Range getRangeFromOffsets(TokenSource tokenSource, int beginOffset, int endOffset) {
+    public static Range getRangeFromOffsets(GeneralTokenSource tokenSource, int beginOffset, int endOffset) {
         Position begin = getPositionFromOffset(tokenSource, beginOffset);
         Position end = getPositionFromOffset(tokenSource, endOffset);
         return new Range(begin, end);
@@ -43,8 +44,7 @@ public class CSTUtils {
         try {
             return getRangeFromOffsets(tokenSource, node.getBeginOffset(), node.getEndOffset());
         } catch(Exception e) {
-            // TODO: something happens when offsets are bad
-        }        
+        }
         return new Range(new Position(0, 0), new Position(0, 0));
     }
 
