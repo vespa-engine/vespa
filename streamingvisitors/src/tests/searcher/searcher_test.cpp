@@ -56,6 +56,9 @@ using FloatList = Vector<float>;
 using QTFieldInfo = QueryTerm::FieldInfo;
 using FieldInfoList = Vector<QTFieldInfo>;
 
+HitsList is_hit{{{0, 0}}};
+HitsList no_hits{{}};
+
 namespace {
 
 template <std::integral T>
@@ -716,20 +719,12 @@ TEST("utf8 substring search with empty term")
     assertFieldInfo(fs, "", "abc", QTFieldInfo().setFieldLength(0));
 }
 
-HitsList is_hit() {
-    return {{{0, 0}}};
-}
-
-HitsList no_hits() {
-    return {{}};
-}
-
 TEST("utf8 suffix search") {
     UTF8SuffixStringFieldSearcher fs(0);
     std::string field = "operators and operator overloading";
-    EXPECT_EQUAL(no_hits(),            search_string(fs, "rsand", field));
+    EXPECT_EQUAL(no_hits,              search_string(fs, "rsand", field));
     EXPECT_EQUAL(HitsList({{{0, 2}}}), search_string(fs, "tor",   field));
-    EXPECT_EQUAL(is_hit(),             search_string(fs, "tors",  field));
+    EXPECT_EQUAL(is_hit,               search_string(fs, "tors",  field));
 
     EXPECT_EQUAL(HitsList({{}, {}}),            search_string(fs, StringList{"an", "din"}, field));
     EXPECT_EQUAL(HitsList({{{0,1}}, {{0, 3}}}), search_string(fs, StringList{"nd", "g"},   field));
@@ -739,44 +734,44 @@ TEST("utf8 suffix search") {
 TEST("utf8 exact match") {
     UTF8ExactStringFieldSearcher fs(0);
     // regular
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "vespa",  "vespa"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "vespar", "vespa"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "vespa",  "vespar"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "vespa",  "vespa vespa"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "vesp",   "vespa"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "vesp*",  "vespa"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "hutte",  "hutte"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "hütte",  "hütte"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "hutte",  "hütte"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "hütte",  "hutte"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "hütter", "hütte"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "hütte",  "hütter"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "vespa",  "vespa"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "vespar", "vespa"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "vespa",  "vespar"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "vespa",  "vespa vespa"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "vesp",   "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "vesp*",  "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "hutte",  "hutte"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "hütte",  "hütte"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "hutte",  "hütte"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "hütte",  "hutte"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "hütter", "hütte"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "hütte",  "hütter"));
 }
 
 TEST("utf8 flexible searcher (except regex)"){
     UTF8FlexibleStringFieldSearcher fs(0);
     // regular
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "vespa", "vespa"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "vesp",  "vespa"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "esp",   "vespa"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "espa",  "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "vespa", "vespa"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "vesp",  "vespa"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "esp",   "vespa"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "espa",  "vespa"));
 
     // prefix
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "vesp*", "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "vesp*", "vespa"));
     fs.match_type(FieldSearcher::PREFIX);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "vesp",  "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "vesp",  "vespa"));
 
     // substring
     fs.match_type(FieldSearcher::REGULAR);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "*esp*", "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "*esp*", "vespa"));
     fs.match_type(FieldSearcher::SUBSTRING);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "esp",   "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "esp",   "vespa"));
 
     // suffix
     fs.match_type(FieldSearcher::REGULAR);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "*espa", "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "*espa", "vespa"));
     fs.match_type(FieldSearcher::SUFFIX);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "espa",  "vespa"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "espa",  "vespa"));
 
     fs.match_type(FieldSearcher::REGULAR);
     EXPECT_TRUE(testStringFieldInfo(fs));
@@ -785,33 +780,33 @@ TEST("utf8 flexible searcher (except regex)"){
 TEST("utf8 flexible searcher handles regex and by default has case-insensitive partial match semantics") {
     UTF8FlexibleStringFieldSearcher fs(0);
     // Note: the # term prefix is a magic term-as-regex symbol used only for tests in this file
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#abc", "ABC"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#bc", "ABC"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#ab", "ABC"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#[a-z]", "ABC"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#(zoid)(berg)", "why not zoidberg?"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "#[a-z]", "123"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#abc", "ABC"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#bc", "ABC"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#ab", "ABC"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#[a-z]", "ABC"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#(zoid)(berg)", "why not zoidberg?"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "#[a-z]", "123"));
 }
 
 TEST("utf8 flexible searcher handles case-sensitive regex matching") {
     UTF8FlexibleStringFieldSearcher fs(0);
     fs.normalize_mode(Normalizing::NONE);
-    EXPECT_EQUAL(no_hits(), search_string(fs, "#abc",   "ABC"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#abc",   "abc"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#[A-Z]", "A"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#[A-Z]", "ABC"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "#[A-Z]", "abc"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "#abc",   "ABC"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#abc",   "abc"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#[A-Z]", "A"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#[A-Z]", "ABC"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "#[A-Z]", "abc"));
 }
 
 TEST("utf8 flexible searcher handles regexes with explicit anchoring") {
     UTF8FlexibleStringFieldSearcher fs(0);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#^foo",  "food"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "#^foo",  "afoo"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#foo$",  "afoo"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "#foo$",  "food"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "#^foo$", "foo"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "#^foo$", "food"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "#^foo$", "oo"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#^foo",  "food"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "#^foo",  "afoo"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#foo$",  "afoo"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "#foo$",  "food"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "#^foo$", "foo"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "#^foo$", "food"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "#^foo$", "oo"));
 }
 
 TEST("utf8 flexible searcher regex matching treats field as 1 word") {
@@ -829,87 +824,87 @@ TEST("utf8 flexible searcher handles fuzzy search in uncased mode") {
     //   %{k,p}term => fuzzy match "term" with max edits k, prefix lock length p
 
     // DFA is used for k in {1, 2}
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1}abc",  "abc"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1}ABC",  "abc"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1}abc",  "ABC"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1}Abc",  "abd"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1}abc",  "ABCD"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1}abc",  "abcde"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{2}abc",  "abcde"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{2}abc",  "xabcde"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1}abc",  "abc"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1}ABC",  "abc"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1}abc",  "ABC"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1}Abc",  "abd"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1}abc",  "ABCD"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1}abc",  "abcde"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{2}abc",  "abcde"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{2}abc",  "xabcde"));
     // Fallback to non-DFA matcher when k not in {1, 2}
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{3}abc",  "abc"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{3}abc",  "XYZ"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{3}abc",  "XYZ!"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{3}abc",  "abc"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{3}abc",  "XYZ"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{3}abc",  "XYZ!"));
 }
 
 TEST("utf8 flexible searcher handles fuzzy search in cased mode") {
     UTF8FlexibleStringFieldSearcher fs(0);
     fs.normalize_mode(Normalizing::NONE);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1}abc", "abc"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1}abc", "Abc"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1}ABC", "abc"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{2}Abc", "abc"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{2}abc", "AbC"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{3}abc", "ABC"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{3}abc", "ABCD"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1}abc", "abc"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1}abc", "Abc"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1}ABC", "abc"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{2}Abc", "abc"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{2}abc", "AbC"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{3}abc", "ABC"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{3}abc", "ABCD"));
 }
 
 TEST("utf8 flexible searcher handles fuzzy search with prefix locking") {
     UTF8FlexibleStringFieldSearcher fs(0);
     // DFA
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1,4}zoid",     "zoi"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1,4}zoid",     "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1,4}zoid",     "ZOID"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1,4}zoidberg", "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1,4}zoidberg", "ZoidBerg"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1,4}zoidberg", "ZoidBergg"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1,4}zoidberg", "zoidborg"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1,4}zoidberg", "zoidblergh"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{2,4}zoidberg", "zoidblergh"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1,4}zoid",     "zoi"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1,4}zoid",     "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1,4}zoid",     "ZOID"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1,4}zoidberg", "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1,4}zoidberg", "ZoidBerg"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1,4}zoidberg", "ZoidBergg"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1,4}zoidberg", "zoidborg"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1,4}zoidberg", "zoidblergh"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{2,4}zoidberg", "zoidblergh"));
     // Fallback
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{3,4}zoidberg", "zoidblergh"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{3,4}zoidberg", "zoidbooorg"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{3,4}zoidberg", "zoidzooorg"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{3,4}zoidberg", "zoidblergh"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{3,4}zoidberg", "zoidbooorg"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{3,4}zoidberg", "zoidzooorg"));
 
     fs.normalize_mode(Normalizing::NONE);
     // DFA
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1,4}zoid",     "ZOID"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1,4}ZOID",     "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1,4}zoidberg", "zoidBerg")); // 1 edit
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1,4}zoidberg", "zoidBblerg"));        // 2 edits, 1 max
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{2,4}zoidberg", "zoidBblerg")); // 2 edits, 2 max
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1,4}zoid",     "ZOID"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1,4}ZOID",     "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1,4}zoidberg", "zoidBerg")); // 1 edit
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1,4}zoidberg", "zoidBblerg"));        // 2 edits, 1 max
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{2,4}zoidberg", "zoidBblerg")); // 2 edits, 2 max
     // Fallback
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{3,4}zoidberg", "zoidBERG"));        // 4 edits, 3 max
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{4,4}zoidberg", "zoidBERG")); // 4 edits, 4 max
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{3,4}zoidberg", "zoidBERG"));        // 4 edits, 3 max
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{4,4}zoidberg", "zoidBERG")); // 4 edits, 4 max
 }
 
 TEST("utf8 flexible searcher fuzzy match with max_edits=0 implies exact match") {
     UTF8FlexibleStringFieldSearcher fs(0);
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{0}zoid",   "zoi"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{0,4}zoid", "zoi"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{0}zoid",   "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{0}zoid",   "ZOID"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{0,4}zoid", "ZOID"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{0}zoid",   "zoi"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{0,4}zoid", "zoi"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{0}zoid",   "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{0}zoid",   "ZOID"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{0,4}zoid", "ZOID"));
     fs.normalize_mode(Normalizing::NONE);
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{0}zoid",   "ZOID"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{0,4}zoid", "ZOID"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{0}zoid",   "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{0,4}zoid", "zoid"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{0}zoid",   "ZOID"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{0,4}zoid", "ZOID"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{0}zoid",   "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{0,4}zoid", "zoid"));
 }
 
 TEST("utf8 flexible searcher caps oversized fuzzy prefix length to term length") {
     UTF8FlexibleStringFieldSearcher fs(0);
     // DFA
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1,5}zoid",    "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{1,9001}zoid", "zoid"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{1,9001}zoid", "boid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1,5}zoid",    "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{1,9001}zoid", "zoid"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{1,9001}zoid", "boid"));
     // Fallback
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{0,5}zoid",    "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{5,5}zoid",    "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{0,9001}zoid", "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{5,9001}zoid", "zoid"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{5,9001}zoid", "boid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{0,5}zoid",    "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{5,5}zoid",    "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{0,9001}zoid", "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{5,9001}zoid", "zoid"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{5,9001}zoid", "boid"));
 }
 
 TEST("utf8 flexible searcher fuzzy matching treats field as 1 word") {
@@ -922,33 +917,33 @@ TEST("utf8 flexible searcher fuzzy matching treats field as 1 word") {
 
 TEST("utf8 flexible searcher supports fuzzy prefix matching") {
     UTF8FlexibleStringFieldSearcher fs(0);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p0}z",     "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p0}zo",    "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p0}zo",    "Zoid")); // uncased
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p0}Zo",    "zoid")); // uncased
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p0}zoid",  "zoid"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{p0}x",     "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p1}zo",    "boid"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{p1}zo",    "blid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p1}yam",   "hamburger"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{p1}yam",   "humbug"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p2}yam",   "humbug"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{p2}catfo", "dogfood"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p3}catfo", "dogfood"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p100}abcd", "anything you want")); // trivially matches
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p0}z",     "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p0}zo",    "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p0}zo",    "Zoid")); // uncased
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p0}Zo",    "zoid")); // uncased
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p0}zoid",  "zoid"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{p0}x",     "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p1}zo",    "boid"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{p1}zo",    "blid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p1}yam",   "hamburger"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{p1}yam",   "humbug"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p2}yam",   "humbug"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{p2}catfo", "dogfood"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p3}catfo", "dogfood"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p100}abcd", "anything you want")); // trivially matches
 }
 
 TEST("utf8 flexible searcher supports fuzzy prefix matching combined with prefix locking") {
     UTF8FlexibleStringFieldSearcher fs(0);
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p0,4}zoid",     "zoid"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p0,4}zoidber",  "zoidberg"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p1,4}zoidber",  "zoidburg"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{p1,4}zoidber",  "zoidblurgh"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p1,4}zoidbe",   "zoidblurgh"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{p1,4}zoidberg", "boidberg"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p1,4}zoidber",  "zoidburger"));
-    EXPECT_EQUAL(no_hits(), search_string(fs, "%{p1,4}zoidber",  "zoidbananas"));
-    EXPECT_EQUAL(is_hit(),  search_string(fs, "%{p2,4}zoidber",  "zoidbananas"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p0,4}zoid",     "zoid"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p0,4}zoidber",  "zoidberg"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p1,4}zoidber",  "zoidburg"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{p1,4}zoidber",  "zoidblurgh"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p1,4}zoidbe",   "zoidblurgh"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{p1,4}zoidberg", "boidberg"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p1,4}zoidber",  "zoidburger"));
+    EXPECT_EQUAL(no_hits, search_string(fs, "%{p1,4}zoidber",  "zoidbananas"));
+    EXPECT_EQUAL(is_hit,  search_string(fs, "%{p2,4}zoidber",  "zoidbananas"));
 }
 
 TEST("bool search") {
