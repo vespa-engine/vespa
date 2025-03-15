@@ -15,6 +15,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.Tensors;
 
 import java.nio.file.Paths;
 import java.util.BitSet;
@@ -218,35 +219,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                                          .build();
         Tensor result = poolingStrategy.toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
         result = normalize? normalize(result, poolingType) : result;
-        result = binarize((IndexedTensor) result, targetType);
-        return result;
-    }
-
-    /**
-     * Binary quantization of the embedding into a tensor of type int8 with the specified dimensions.
-     */
-    // TODO: Call Tensors.packBits instead. It is more general and faster.
-    static public Tensor binarize(IndexedTensor embedding, TensorType tensorType) {
-        Tensor.Builder builder = Tensor.Builder.of(tensorType);
-        BitSet bitSet = new BitSet(8);
-        int index = 0;
-        for (int d = 0; d < embedding.sizeAsInt(); d++) {
-            var value = embedding.get(d);
-            int bitIndex = 7 - (d % 8);
-            if (value > 0.0) {
-                bitSet.set(bitIndex);
-            } else {
-                bitSet.clear(bitIndex);
-            }
-            if ((d + 1) % 8 == 0) {
-                byte[] bytes = bitSet.toByteArray();
-                byte packed = (bytes.length == 0) ? 0 : bytes[0];
-                builder.cell(TensorAddress.of(index), packed);
-                index++;
-                bitSet = new BitSet(8);
-            }
-        }
-        return builder.build();
+        return Tensors.packBits(result);
     }
 
     private IndexedTensor createTensorRepresentation(List<Long> input, String dimension) {
