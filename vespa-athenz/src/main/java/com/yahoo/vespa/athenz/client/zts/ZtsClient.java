@@ -191,7 +191,7 @@ public interface ZtsClient extends AutoCloseable {
     /**
      * @param athenzRole      Athenz role to use when assuming credentials
      * @param azureIdentityId Client ID of the Azure identity to assume
-     * @param azureTokenScope
+     * @param azureTokenScope Scope of the Azure token. Null for default scope (https://management.azure.com/.default)
      * @return Azure temporary credentials
      */
     AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId, String azureTokenScope);
@@ -200,7 +200,7 @@ public interface ZtsClient extends AutoCloseable {
      * @param athenzRole         Athenz role to use when assuming credentials
      * @param azureResourceGroup Azure resource group that contains the target identity
      * @param azureIdentityName  Name of the Azure Identity to assume
-     * @param azureTokenScope
+     * @param azureTokenScope    Scope of the Azure token. Null for default scope (https://management.azure.com/.default)
      * @return Azure temporary credentials
      */
     AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName, String azureTokenScope);
