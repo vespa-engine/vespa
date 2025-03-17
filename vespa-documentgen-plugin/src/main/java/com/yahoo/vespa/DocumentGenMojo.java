@@ -1007,7 +1007,15 @@ public class DocumentGenMojo extends AbstractMojo {
         return searches;
     }
 
+    private static boolean reservedFieldName(String name) {
+        return (name.equals("id") || name.equals("version"));
+    }
+
     private static String upperCaseFirstChar(String s) {
+        if (reservedFieldName(s)) {
+            System.err.println("WARNING - field '"+s+"' has a reserved name; using 'my_"+s+"' instead");
+            s = "my_" + s;
+        }
         return s.substring(0, 1).toUpperCase()+s.substring(1);
     }
 
