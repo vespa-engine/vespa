@@ -83,15 +83,23 @@ AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
     auto ite = terms.end();
     int32_t endPos = 0;
     for (; it != ite; ) {
-        auto it_begin = it;
-        if (it_begin->span.from() >  endPos) {
-            Span tmpSpan(endPos, it_begin->span.from() - endPos);
+        int32_t curStart = it->span.from();
+        if (curStart > endPos) {
+            // text not indexed
+            Span tmpSpan(endPos, curStart - endPos);
             handleAnnotations(tmpSpan, it, it);
-            endPos = it_begin->span.from();
+            endPos = curStart;
         }
-        for (; it != ite && it->span == it_begin->span; ++it);
-        handleAnnotations(it_begin->span, it_begin, it);
-        endPos = it_begin->span.from() + it_begin->span.length();
+        int32_t curEnd = it->span.to();
+        auto it_begin = it++;
+        for (; it != ite && it->span.from() == curStart; ++it) {
+            curEnd = std::max(curEnd, it->span.to());
+        }
+        for (; it != ite && it->span.to() <= curEnd; ++it) {
+        }
+        document::Span curSpan(curStart, curEnd - curStart);
+        handleAnnotations(curSpan, it_begin, it);
+        endPos = curEnd;
     }
     int32_t wantEndPos = _text.size();
     if (endPos < wantEndPos) {
