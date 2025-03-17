@@ -6,7 +6,7 @@ import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.language.Linguistics;
 
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
@@ -32,7 +32,7 @@ public class ScriptManager {
     private final DocumentTypeManager documentTypeManager;
 
     public ScriptManager(DocumentTypeManager documentTypeManager, IlscriptsConfig config, Linguistics linguistics,
-                         Map<String, Embedder> embedders, Map<String, TextGenerator> generators) {
+                         Map<String, Embedder> embedders, Map<String, FieldGenerator> generators) {
         this.documentTypeManager = documentTypeManager;
         documentFieldScripts = createScriptsMap(documentTypeManager, config, linguistics, embedders, generators);
     }
@@ -72,7 +72,7 @@ public class ScriptManager {
                                                                               IlscriptsConfig config,
                                                                               Linguistics linguistics,
                                                                               Map<String, Embedder> embedders,
-                                                                              Map<String, TextGenerator> generators) {
+                                                                              Map<String, FieldGenerator> generators) {
         Map<String, Map<String, DocumentScript>> documentFieldScripts = new HashMap<>(config.ilscript().size());
         ScriptParserContext parserContext = new ScriptParserContext(linguistics, embedders, generators);
         parserContext.getAnnotatorConfig().setMaxTermOccurrences(config.maxtermoccurrences());

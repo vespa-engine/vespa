@@ -1,3 +1,4 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.generation;
 
 import ai.vespa.llm.LanguageModel;
@@ -9,11 +10,11 @@ import java.util.stream.Collectors;
 
 
 /**
- *  Provide utilities for working with language models.
+ *  Utilities for working with language models.
  *  
  *  @author glebashnik
  */
-public class LanguageModelUtils {
+class LanguageModelUtils {
     public static LanguageModel findLanguageModel(String providerId, ComponentRegistry<LanguageModel> languageModels, Logger log)
             throws IllegalArgumentException
     {
@@ -43,5 +44,48 @@ public class LanguageModelUtils {
         }
         
         return languageModel;
+    }
+
+    public static String expandPrompt(String input, String promptTemplate, String jsonSchema) {
+        if (promptTemplate != null) {
+            var prompt = promptTemplate;
+
+            if (prompt.contains("{input}")) {
+                if (input != null) {
+                    prompt = prompt.replace("{input}", input);
+                } else {
+                    throw new IllegalArgumentException("There no input to add to the prompt: %s"
+                            .formatted(prompt));
+                }
+            }
+
+            if (prompt.contains("{jsonSchema}")) {
+                if (jsonSchema != null) {
+                    prompt = prompt.replace("{jsonSchema}", jsonSchema);
+                } else {
+                    throw new IllegalArgumentException("There no JSON schema to add to the prompt: %s"
+                            .formatted(prompt));
+                }
+            }
+
+            return prompt;
+        }
+
+        if (input != null) {
+            var prompt = input;
+
+            if (prompt.contains("{jsonSchema}")) {
+                if (jsonSchema != null) {
+                    prompt = prompt.replace("{jsonSchema}", jsonSchema);
+                } else {
+                    throw new IllegalArgumentException("There no JSON schema to add to the prompt: %s"
+                            .formatted(prompt));
+                }
+            }
+
+            return prompt;
+        }
+
+        throw new IllegalArgumentException("Can't construct a prompt without a prompt template or an input text.");
     }
 }
