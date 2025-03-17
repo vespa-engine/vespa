@@ -254,20 +254,20 @@ void assertBool(BoolFieldSearcher & fs, const std::string &term, bool field, boo
     assertBool(fs, StringList().add(term), field, BoolList().add(exp));
 }
 
-void assertFloat(FloatFieldSearcher & fs, const StringList &query, float field, const BoolList &exp) {
-    assertNumeric(fs, query, FloatFieldValue(field), exp);
+HitsList search_float(FloatFieldSearcher& fs, const StringList& query, float field) {
+    return as_hitlist(performSearch(fs, query, FloatFieldValue(field)));
 }
 
-void assertFloat(FloatFieldSearcher & fs, const std::string &term, float field, bool exp) {
-    assertFloat(fs, StringList().add(term), field, BoolList().add(exp));
+HitsList search_float(FloatFieldSearcher& fs, const std::string& term, float field) {
+    return search_float(fs, StringList{term}, field);
 }
 
-void assertFloat(FloatFieldSearcher & fs, const StringList &query, const FloatList &field, const HitsList &exp) {
-    assertSearch(fs, query, getFieldValue(field), exp);
+HitsList search_float(FloatFieldSearcher& fs, const StringList& query, const FloatList& field) {
+    return as_hitlist(performSearch(fs, query, getFieldValue(field)));
 }
 
-void assertFloat(FloatFieldSearcher & fs, const std::string &term, const FloatList &field, const Hits &exp) {
-    assertFloat(fs, StringList().add(term), field, HitsList().add(exp));
+HitsList search_float(FloatFieldSearcher& fs, const std::string& term, const FloatList&field) {
+    return search_float(fs, StringList{term}, field);
 }
 
 bool
@@ -1003,29 +1003,29 @@ TEST("integer search")
 TEST("floating point search")
 {
     FloatFieldSearcher fs(0);
-    TEST_DO(assertFloat(fs,         "10",    10, true));
-    TEST_DO(assertFloat(fs,       "10.5",  10.5, true));
-    TEST_DO(assertFloat(fs,      "-10.5", -10.5, true));
-    TEST_DO(assertFloat(fs,      ">10.5",  10.6, true));
-    TEST_DO(assertFloat(fs,      ">10.5",  10.5, false));
-    TEST_DO(assertFloat(fs,      "<10.5",  10.4, true));
-    TEST_DO(assertFloat(fs,      "<10.5",  10.5, false));
-    TEST_DO(assertFloat(fs,       "10.4",  10.5, false));
-    TEST_DO(assertFloat(fs,      "-10.4", -10.5, false));
-    TEST_DO(assertFloat(fs,          "a",  10.5, false));
-    TEST_DO(assertFloat(fs, "[-5.5;5.5]",  -5.5, true));
-    TEST_DO(assertFloat(fs, "[-5.5;5.5]",     0, true));
-    TEST_DO(assertFloat(fs, "[-5.5;5.5]",   5.5, true));
-    TEST_DO(assertFloat(fs, "[-5.5;5.5]",  -5.6, false));
-    TEST_DO(assertFloat(fs, "[-5.5;5.5]",   5.6, false));
+    EXPECT_EQUAL(is_hit,  search_float(fs,         "10",    10));
+    EXPECT_EQUAL(is_hit,  search_float(fs,       "10.5",  10.5));
+    EXPECT_EQUAL(is_hit,  search_float(fs,      "-10.5", -10.5));
+    EXPECT_EQUAL(is_hit,  search_float(fs,      ">10.5",  10.6));
+    EXPECT_EQUAL(no_hits, search_float(fs,      ">10.5",  10.5));
+    EXPECT_EQUAL(is_hit,  search_float(fs,      "<10.5",  10.4));
+    EXPECT_EQUAL(no_hits, search_float(fs,      "<10.5",  10.5));
+    EXPECT_EQUAL(no_hits, search_float(fs,       "10.4",  10.5));
+    EXPECT_EQUAL(no_hits, search_float(fs,      "-10.4", -10.5));
+    EXPECT_EQUAL(no_hits, search_float(fs,          "a",  10.5));
+    EXPECT_EQUAL(is_hit,  search_float(fs, "[-5.5;5.5]",  -5.5));
+    EXPECT_EQUAL(is_hit,  search_float(fs, "[-5.5;5.5]",     0));
+    EXPECT_EQUAL(is_hit,  search_float(fs, "[-5.5;5.5]",   5.5));
+    EXPECT_EQUAL(no_hits, search_float(fs, "[-5.5;5.5]",  -5.6));
+    EXPECT_EQUAL(no_hits, search_float(fs, "[-5.5;5.5]",   5.6));
 
-    TEST_DO(assertFloat(fs, StringList().add("10").add("11"),      10.5, BoolList().add(false).add(false)));
-    TEST_DO(assertFloat(fs, StringList().add("10").add("10.5"),    10.5, BoolList().add(false).add(true)));
-    TEST_DO(assertFloat(fs, StringList().add(">10.4").add("10.5"), 10.5, BoolList().add(true).add(true)));
+    EXPECT_EQUAL(hits_list({false, false}), search_float(fs, StringList{"10", "11"},      10.5));
+    EXPECT_EQUAL(hits_list({false,  true}), search_float(fs, StringList{"10", "10.5"},    10.5));
+    EXPECT_EQUAL(hits_list({ true,  true}), search_float(fs, StringList{">10.4", "10.5"}, 10.5));
 
-    TEST_DO(assertFloat(fs, "10.5", FloatList().add(10.5).add(20.5).add(10.5).add(30.5), Hits().add({0, 0}).add({2, 0})));
-    TEST_DO(assertFloat(fs, StringList().add("10.5").add("20.5"), FloatList().add(10.5).add(20.5).add(10.5).add(30.5),
-                    HitsList().add(Hits().add({0, 0}).add({2, 0})).add(Hits().add({1, 0}))));
+    EXPECT_EQUAL(HitsList({{{0, 0}, {2, 0}}}), search_float(fs, "10.5", {10.5, 20.5, 10.5, 30.5}));
+    EXPECT_EQUAL(HitsList({{{0, 0}, {2, 0}}, {{1, 0}}}),
+                 search_float(fs, StringList{"10.5", "20.5"}, {10.5, 20.5, 10.5, 30.5}));
 
     TEST_DO(assertFieldInfo(fs, "10.5", 10.5, QTFieldInfo(0, 1, 1)));
     TEST_DO(assertFieldInfo(fs, "10.5", FloatList().add(10.5).add(20.5).add(10.5).add(30.5), QTFieldInfo(0, 2, 4)));
