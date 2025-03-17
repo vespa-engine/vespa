@@ -33,7 +33,7 @@ INJECT IndexingParser:
     import com.yahoo.vespa.indexinglanguage.expressions.*;
     import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
     import com.yahoo.language.process.Embedder;
-    import com.yahoo.language.process.TextGenerator;
+    import com.yahoo.language.process.FieldGenerator;
     import com.yahoo.language.Linguistics;
 {
 /**
@@ -44,7 +44,7 @@ INJECT IndexingParser:
     private String defaultFieldName;
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
-    private Map<String, TextGenerator> generators;    
+    private Map<String, FieldGenerator> generators;    
     private AnnotatorConfig annotatorCfg;
 
     private PrintStream logger = new PrintStream(
@@ -76,7 +76,7 @@ INJECT IndexingParser:
         return this;
     }
     
-    public IndexingParser setGenerators(Map<String, TextGenerator> generators) {
+    public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
         this.generators = generators;
         return this;
     }
@@ -501,8 +501,7 @@ Expression generateExp() :
       ( SCAN((identifierStr)+) => (generatorArgument = identifierStr()) { generatorArguments.add(generatorArgument); } )*
     )
     {
-        // return new GenerateExpression(linguistics, generators, generatorId, generatorArguments);
-        return null;
+        return new GenerateExpression(linguistics, generators, generatorId, generatorArguments);
     }
 ;
 

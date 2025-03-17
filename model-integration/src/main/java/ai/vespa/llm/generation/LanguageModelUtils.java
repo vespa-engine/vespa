@@ -5,6 +5,9 @@ import ai.vespa.llm.LanguageModel;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.document.DataType;
+import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
+import com.yahoo.document.datatypes.StringFieldValue;
 
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -15,7 +18,7 @@ import java.util.stream.Collectors;
  *  
  *  @author glebashnik
  */
-public class LanguageModelUtils {
+class LanguageModelUtils {
     public static LanguageModel findLanguageModel(String providerId, ComponentRegistry<LanguageModel> languageModels, Logger log)
             throws IllegalArgumentException
     {
@@ -47,37 +50,90 @@ public class LanguageModelUtils {
         return languageModel;
     }
 
-     public static String generateJsonSchemaForDocumentField(String fieldName, DataType fieldType) {
+    public static String generateJsonSchemaForField(String destination, DataType targetType) {
         var schema = Json.Builder.newObject()
                 .set("type", "object");
-        
-        var properties = schema.setObject("properties");
-        var field = properties.setObject(fieldName);
 
-        if (fieldType.equals(DataType.STRING)) {
+        var properties = schema.setObject("properties");
+        var field = properties.setObject(destination);
+
+        if (targetType.equals(DataType.STRING)) {
             field.set("type", "string");
-        } if (fieldType.equals(DataType.INT)) {
-            field.set("type", "integer");
-        } else if (fieldType.equals(DataType.DOUBLE)) {
-            field.set("type", "double");
-        } else if (fieldType.equals(DataType.FLOAT)) {
-            field.set("type", "float");
-        } else if (fieldType.equals(DataType.BOOL)) {
-            field.set("type", "boolean");
-        } else if (fieldType.equals(DataType.STRING)) {
-            field.set("type", "string");
+        } else if (targetType.equals(DataType.getArray(DataType.STRING))) {
+            field.set("type", "array");
+            field.setObject("items").set("type", "string");
         } else {
-            throw new IllegalArgumentException("Unsupported field type: " + fieldType);
+            throw new IllegalArgumentException("Unsupported field type: " + targetType);
         }
-        
+
         var required = schema.setArray("required");
-        required.add(fieldName);
+        required.add(destination);
         schema.set("additionalProperties", false);
-        
+
         return schema.build().toJson(true);
     }
+    
+    public static FieldValue jsonToFieldType(String jsonText, String destination, DataType targetType) {
+        var jsonData = Json.of(jsonText);
+        var jsonField = jsonData.field(destination);
+        
+        if (targetType.equals(DataType.STRING) && jsonField.isString()) {
+            return new StringFieldValue(jsonField.asString());
+        }
+        
+        if (targetType.equals(DataType.getArray(DataType.STRING)) && jsonField.isString()) {
+            var arrayFieldValue = new Array<>(DataType.getArray(DataType.STRING));
+            
+            for (var jsonItem : jsonField) {
+                arrayFieldValue.add(new StringFieldValue(jsonItem.asString()));
+            }
+            
+            return arrayFieldValue;
+        }
+        
+        throw new IllegalArgumentException("Can't parse the following generated text as %s: %s".formatted(targetType.getName(), jsonText));
+    }
 
-    public static String convertJsonSchemaToGrammar(String jsonSchema) {
-        return "";
+    public static String generatePrompt(String input, String promptTemplate, String jsonSchema) {
+        if (promptTemplate != null) {
+            var prompt = promptTemplate;
+
+            if (prompt.contains("{input}")) {
+                if (input != null) {
+                    prompt = prompt.replace("{input}", input);
+                } else {
+                    throw new IllegalArgumentException("There no input to add to the prompt: %s"
+                            .formatted(prompt));
+                }
+            }
+
+            if (prompt.contains("{jsonSchema}")) {
+                if (jsonSchema != null) {
+                    prompt = prompt.replace("{jsonSchema}", jsonSchema);
+                } else {
+                    throw new IllegalArgumentException("There no JSON schema to add to the prompt: %s"
+                            .formatted(prompt));
+                }
+            }
+
+            return prompt;
+        }
+
+        if (input != null) {
+            var prompt = input;
+
+            if (prompt.contains("{jsonSchema}")) {
+                if (jsonSchema != null) {
+                    prompt = prompt.replace("{jsonSchema}", jsonSchema);
+                } else {
+                    throw new IllegalArgumentException("There no JSON schema to add to the prompt: %s"
+                            .formatted(prompt));
+                }
+            }
+
+            return prompt;
+        }
+
+        throw new IllegalArgumentException("Can't construct a prompt without a prompt template or an input");
     }
 }

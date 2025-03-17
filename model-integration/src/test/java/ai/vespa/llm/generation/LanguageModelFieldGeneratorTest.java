@@ -6,7 +6,6 @@ import ai.vespa.llm.clients.LlmLocalClientConfig;
 import ai.vespa.llm.clients.LocalLLM;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
-import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 
@@ -18,26 +17,28 @@ import java.util.function.Consumer;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.document.DataType;
+import com.yahoo.language.process.FieldGenerator;
 import org.junit.jupiter.api.Test;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-public class LanguageModelTextGeneratorTest {
+public class LanguageModelFieldGeneratorTest {
 
     @Test
     public void testGenerateWithOneModel() {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelTextGeneratorConfig.Builder().providerId("languageModel").build();
+        var config = new LanguageModelFieldGeneratorConfig.Builder().providerId("languageModel").build();
         var generator = createGenerator(config, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
-        var result = generator.generate(StringPrompt.from("hello"), context);
-        assertEquals("hello hello", result);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        var result = generator.generate("hello", context);
+        assertEquals("hello hello", result.toString());
     }
     
     @Test
@@ -46,16 +47,16 @@ public class LanguageModelTextGeneratorTest {
         LanguageModel languageModel2 = new RepeaterMockLanguageModel(3);
         var languageModels = Map.of("languageModel1", languageModel1, "languageModel2", languageModel2);
         
-        var config1 = new LanguageModelTextGeneratorConfig.Builder().providerId("languageModel1").build();
+        var config1 = new LanguageModelFieldGeneratorConfig.Builder().providerId("languageModel1").build();
         var generator1 = createGenerator(config1, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
-        var result1 = generator1.generate(StringPrompt.from("hello"), context);
-        assertEquals("hello hello", result1);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        var result1 = generator1.generate("hello", context);
+        assertEquals("hello hello", result1.toString());
     
-        var config2 = new LanguageModelTextGeneratorConfig.Builder().providerId("languageModel2").build();
+        var config2 = new LanguageModelFieldGeneratorConfig.Builder().providerId("languageModel2").build();
         var generator2 = createGenerator(config2, languageModels);
-        var result2 = generator2.generate(StringPrompt.from("hello"), context);
-        assertEquals("hello hello hello", result2);
+        var result2 = generator2.generate("hello", context);
+        assertEquals("hello hello hello", result2.toString());
     }
 
     @Test
@@ -63,18 +64,18 @@ public class LanguageModelTextGeneratorTest {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelTextGeneratorConfig.Builder()
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
                 .providerId("languageModel")
                 .promptTemplate("hello {input}")
                 .build();
         var generator = createGenerator(config, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         
-        var result1 = generator.generate(StringPrompt.from("world"), context);
-        assertEquals("hello world hello world", result1);
+        var result1 = generator.generate("world", context);
+        assertEquals("hello world hello world", result1.toString());
 
-        var result2 = generator.generate(StringPrompt.from("there"), context);
-        assertEquals("hello there hello there", result2);
+        var result2 = generator.generate("there", context);
+        assertEquals("hello there hello there", result2.toString());
     }
 
     @Test
@@ -82,15 +83,15 @@ public class LanguageModelTextGeneratorTest {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelTextGeneratorConfig.Builder()
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
                 .providerId("languageModel")
                 .promptTemplate("")
                 .build();
         var generator = createGenerator(config, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
-        var result1 = generator.generate(StringPrompt.from("world"), context);
-        assertEquals("world world", result1);
+        var result1 = generator.generate("world", context);
+        assertEquals("world world", result1.toString());
     }
 
     @Test
@@ -98,18 +99,18 @@ public class LanguageModelTextGeneratorTest {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelTextGeneratorConfig.Builder()
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
                 .providerId("languageModel")
                 .promptTemplate("hello")
                 .build();
         var generator = createGenerator(config, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
-        var result1 = generator.generate(StringPrompt.from("world"), context);
-        assertEquals("hello hello", result1);
+        var result1 = generator.generate("world", context);
+        assertEquals("hello hello", result1.toString());
 
-        var result2 = generator.generate(StringPrompt.from("there"), context);
-        assertEquals("hello hello", result2);
+        var result2 = generator.generate("there", context);
+        assertEquals("hello hello", result2.toString());
     }
     
     @Test
@@ -117,16 +118,16 @@ public class LanguageModelTextGeneratorTest {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelTextGeneratorConfig.Builder()
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
                 .providerId("languageModel")
                 .promptTemplateFile(Optional.of(new FileReference("src/test/prompts/prompt_with_input.txt")))
                 .build();
         
         var generator = createGenerator(config, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
+        var context = new FieldGenerator.Context("schema.indexing", DataType.STRING);
 
-        var result1 = generator.generate(StringPrompt.from("world"), context);
-        assertEquals("hello world hello world", result1);
+        var result1 = generator.generate("world", context);
+        assertEquals("hello world hello world", result1.toString());
     }
 
     @Test
@@ -134,16 +135,12 @@ public class LanguageModelTextGeneratorTest {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelTextGeneratorConfig.Builder()
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
                 .providerId("languageModel")
                 .promptTemplateFile(Optional.of(new FileReference("src/test/prompts/empty_prompt.txt")))
                 .build();
-
-        var generator = createGenerator(config, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
-
-        var result1 = generator.generate(StringPrompt.from("world"), context);
-        assertEquals("world world", result1);
+        
+        assertThrows(IllegalArgumentException.class, () -> createGenerator(config, languageModels));
     }
 
     @Test
@@ -151,7 +148,7 @@ public class LanguageModelTextGeneratorTest {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelTextGeneratorConfig.Builder()
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
                 .providerId("languageModel")
                 .promptTemplateFile(Optional.of(new FileReference("src/test/prompts/missing_prompt.txt")))
                 .build();
@@ -169,17 +166,17 @@ public class LanguageModelTextGeneratorTest {
         LanguageModel languageModel = new RepeaterMockLanguageModel(2);
         var languageModels = Map.of("languageModel", languageModel);
 
-        var config = new LanguageModelTextGeneratorConfig.Builder()
+        var config = new LanguageModelFieldGeneratorConfig.Builder()
                 .providerId("languageModel")
                 .promptTemplate("bye {input}")
                 .promptTemplateFile(Optional.of(new FileReference("src/test/prompts/prompt_with_input.txt")))
                 .build();
 
         var generator = createGenerator(config, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
-        var result1 = generator.generate(StringPrompt.from("world"), context);
-        assertEquals("bye world bye world", result1);
+        var result1 = generator.generate("world", context);
+        assertEquals("bye world bye world", result1.toString());
     }
     
     @Test
@@ -192,21 +189,21 @@ public class LanguageModelTextGeneratorTest {
 
         var languageModels = Map.of("localLLM", localLLM);
 
-        var generatorConfig = new LanguageModelTextGeneratorConfig.Builder()
+        var generatorConfig = new LanguageModelFieldGeneratorConfig.Builder()
                 .providerId("localLLM")
                 .build();
 
         var generator = createGenerator(generatorConfig, languageModels);
-        var context = new TextGenerator.Context("schema.indexing");
-        var result = generator.generate(StringPrompt.from("hello"), context);
-        assertTrue(result.length() > 10);
+        var context = new FieldGenerator.Context("doc.text", DataType.STRING);
+        var result = generator.generate("hello", context);
+        assertTrue(result.toString().length() > 10);
     }
 
-    private static LanguageModelTextGenerator createGenerator(LanguageModelTextGeneratorConfig config, Map<String, LanguageModel> languageModels) {
+    private static LanguageModelFieldGenerator createGenerator(LanguageModelFieldGeneratorConfig config, Map<String, LanguageModel> languageModels) {
         ComponentRegistry<LanguageModel> languageModelsRegistry = new ComponentRegistry<>();
         languageModels.forEach((key, value) -> languageModelsRegistry.register(ComponentId.fromString(key), value));
         languageModelsRegistry.freeze();
-        return new LanguageModelTextGenerator(config, languageModelsRegistry);
+        return new LanguageModelFieldGenerator(config, languageModelsRegistry);
     }
     
     public static class RepeaterMockLanguageModel implements LanguageModel {

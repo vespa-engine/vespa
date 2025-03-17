@@ -7,7 +7,6 @@ import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
-import ai.vespa.llm.generation.LanguageModelUtils;
 
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
@@ -120,8 +119,8 @@ public class LocalLLM extends AbstractComponent implements LanguageModel {
         options.ifPresent(InferenceParameters.OPTION_REPEAT_PENALTY, (v) -> inferParams.setRepeatPenalty(Float.parseFloat(v)));
         options.ifPresent(InferenceParameters.OPTION_SEED, (v) -> inferParams.setSeed(Integer.parseInt(v)));
         options.ifPresent(InferenceParameters.OPTION_JSON_SCHEMA, (v) -> {
-            var gramma = LanguageModelUtils.convertJsonSchemaToGrammar(v);
-            inferParams.setGrammar(gramma);
+            var grammar = JsonSchemaToGrammar.convert(v);
+            inferParams.setGrammar(grammar);
         });
         
         inferParams.setUseChatTemplate(true);

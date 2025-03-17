@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
@@ -152,7 +152,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     public static StatementExpression fromString(
             String expression, Linguistics linguistics, Map<String, Embedder> embedders, 
-            Map<String, TextGenerator> generators) throws ParseException {
+            Map<String, FieldGenerator> generators) throws ParseException {
         return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 

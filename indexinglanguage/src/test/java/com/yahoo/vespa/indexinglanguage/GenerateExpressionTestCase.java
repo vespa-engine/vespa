@@ -6,8 +6,9 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.Array;
+import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -25,11 +26,11 @@ import static org.junit.Assert.fail;
 public class GenerateExpressionTestCase {
     @Test
     public void testParsing() {
-        Map<String, TextGenerator> generators = TextGenerator.throwsOnUse.asMap();
+        Map<String, FieldGenerator> generators = FieldGenerator.throwsOnUse.asMap();
         expressionFrom(generators,"input myText | generate | attribute 'myGeneratedText'");
     }
 
-    public Expression expressionFrom(Map<String, TextGenerator> generators, String string) {
+    public Expression expressionFrom(Map<String, FieldGenerator> generators, String string) {
         try {
             return Expression.fromString(string, new SimpleLinguistics(), Map.of(), generators);
         }
@@ -40,7 +41,7 @@ public class GenerateExpressionTestCase {
     
     @Test
     public void testWithoutGenerator() {
-        Map<String, TextGenerator> generators = Map.of();
+        Map<String, FieldGenerator> generators = Map.of();
         var expressionString = "input myText | generate | attribute 'myGeneratedText'";
 
         try {
@@ -53,8 +54,8 @@ public class GenerateExpressionTestCase {
     
     @Test
     public void testWithoutValue() {
-        Map<String, TextGenerator> generators = Map.of(
-                "myGenerator", new RepeaterMockTextGenerator("myDocument.myGeneratedText"));
+        Map<String, FieldGenerator> generators = Map.of(
+                "myGenerator", new RepeaterMockFieldGenerator("myDocument.myGeneratedText"));
         
         var expressionString = "input myText | generate | attribute 'myGeneratedText'";
         var expression = expressionFrom(generators, expressionString);
@@ -74,8 +75,8 @@ public class GenerateExpressionTestCase {
     
     @Test
     public void testOneGeneratorWithStringInputStringOutput() {
-        Map<String, TextGenerator> generators = Map.of(
-                "myGenerator", new RepeaterMockTextGenerator("myDocument.myGeneratedText"));
+        Map<String, FieldGenerator> generators = Map.of(
+                "myGenerator", new RepeaterMockFieldGenerator("myDocument.myGeneratedText"));
 
         testWithStringInputStringOutput(
                 generators, "input myText | generate | attribute myGeneratedText",
@@ -93,9 +94,9 @@ public class GenerateExpressionTestCase {
         
     @Test
     public void testTwoGeneratorsWithStringInputStringOutput() {
-        Map<String, TextGenerator> generators = Map.of(
-                "myGenerator1", new RepeaterMockTextGenerator("myDocument.myGeneratedText", 2),
-                "myGenerator2", new RepeaterMockTextGenerator("myDocument.myGeneratedText", 3));
+        Map<String, FieldGenerator> generators = Map.of(
+                "myGenerator1", new RepeaterMockFieldGenerator("myDocument.myGeneratedText", 2),
+                "myGenerator2", new RepeaterMockFieldGenerator("myDocument.myGeneratedText", 3));
         
         testWithStringInputStringOutput(generators, "input myText | generate myGenerator1 | attribute myGeneratedText", 
                 "hello", "hello hello");
@@ -107,7 +108,7 @@ public class GenerateExpressionTestCase {
                 "hello", "Can't find generator 'myGenerator3'. Valid generators are myGenerator1, myGenerator2");
     }
 
-    public void testWithStringInputStringOutput(Map<String, TextGenerator> generators, String expressionString, String input, String expected) {
+    public void testWithStringInputStringOutput(Map<String, FieldGenerator> generators, String expressionString, String input, String expected) {
         var expression = expressionFrom(generators, expressionString);
 
         SimpleTestAdapter adapter = new SimpleTestAdapter();
@@ -125,7 +126,7 @@ public class GenerateExpressionTestCase {
         assertEquals(expected, ((StringFieldValue)adapter.values.get("myGeneratedText")).getString());
     }
 
-    public void testStatementThrowsOnStringField(Map<String, TextGenerator> generators, String expressionString, String input, String expectedMessage) {
+    public void testStatementThrowsOnStringField(Map<String, FieldGenerator> generators, String expressionString, String input, String expectedMessage) {
         try {
             testWithStringInputStringOutput(generators, expressionString, input, null);
             fail();
@@ -136,8 +137,8 @@ public class GenerateExpressionTestCase {
 
     @Test
     public void testWithArrayInputArrayOutput() {
-        Map<String, TextGenerator> generators = Map.of(
-                "myGenerator", new RepeaterMockTextGenerator("myDocument.myGeneratedArray"));
+        Map<String, FieldGenerator> generators = Map.of(
+                "myGenerator", new RepeaterMockFieldGenerator("myDocument.myGeneratedArray"));
         
         var expressionString = "input myArray | generate | attribute myGeneratedArray";
         var input = new String[]{"hello", "world"};
@@ -176,28 +177,28 @@ public class GenerateExpressionTestCase {
         }
     }
 
-    public static class RepeaterMockTextGenerator implements TextGenerator {
+    public static class RepeaterMockFieldGenerator implements FieldGenerator {
         final String expectedDestination;
         final int repetitions;
 
-        public RepeaterMockTextGenerator(String expectedDestination) {
+        public RepeaterMockFieldGenerator(String expectedDestination) {
             this(expectedDestination, 2);
         }
 
-        public RepeaterMockTextGenerator(String expectedDestination, int repetitions) {
+        public RepeaterMockFieldGenerator(String expectedDestination, int repetitions) {
             this.expectedDestination = expectedDestination;
             this.repetitions = repetitions;
         }
 
-        public String generate(Prompt prompt, Context context) {
+        public FieldValue generate(String input, Context context) {
             var stringBuilder = new StringBuilder();
 
             for (int i = 0; i < repetitions; i++) {
-                stringBuilder.append(prompt);
+                stringBuilder.append(input);
                 stringBuilder.append(" ");
             }
 
-            return stringBuilder.toString().trim();
+            return new StringFieldValue(stringBuilder.toString().trim());
         }
     }
 
@@ -207,8 +208,8 @@ public class GenerateExpressionTestCase {
      */
     @Test
     public void testGeneratorWithStringInputArrayOutput() {
-        Map<String, TextGenerator> generators = Map.of(
-                "generator", new SplitterMockTextGenerator("myDocument.myGeneratedArray", " ", "\n"));
+        Map<String, FieldGenerator> generators = Map.of(
+                "generator", new SplitterMockFieldGenerator("myDocument.myGeneratedArray", " ", "\n"));
         
         var expressionString = "input myText | generate | split '\n' | attribute myGeneratedArray";
         var input = "hello world";
@@ -242,20 +243,20 @@ public class GenerateExpressionTestCase {
         }
     }
 
-    public static class SplitterMockTextGenerator implements TextGenerator {
+    public static class SplitterMockFieldGenerator implements FieldGenerator {
         final String expectedDestination;
         final String oldDelimiter;
         final String newDelimiter;
         
-        public SplitterMockTextGenerator(String expectedDestination, String oldDelimiter, String newDelimiter) {
+        public SplitterMockFieldGenerator(String expectedDestination, String oldDelimiter, String newDelimiter) {
             this.expectedDestination = expectedDestination;
             this.oldDelimiter = oldDelimiter;
             this.newDelimiter = newDelimiter;
         }
 
-        public String generate(Prompt prompt, Context context) {
-            var parts = prompt.asString().split(oldDelimiter);
-            return String.join(newDelimiter, parts);
+        public FieldValue generate(String input, Context context) {
+            var parts = input.split(oldDelimiter);
+            return new StringFieldValue(String.join(newDelimiter, parts));
         }
     }
 }

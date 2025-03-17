@@ -1,0 +1,33 @@
+# Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package=ai.vespa.llm.generation
+
+# Id of a LanguageModel component specified in services.xml, e.g. OpenAI, LocalLLM.
+providerId string
+
+# Prompt template.
+# It may contain {input} and optionally {jsonSchema} placeholders.
+# Placeholder {input} will be replaced with the input text from the indexing statement.
+# If responseFormatType is JSON, placeholder {jsonSchema} will be replaced with the JSON schema 
+# specified in responseJsonSchema, responseJsonSchemaFile or generated from the destination field type.
+promptTemplate string default=""
+
+# Path to a text file containing prompt template.
+# It is used when promptTemplate is not set or empty.
+# The content of the file should have the same format as promptTemplate.
+# The path is relative to the application package root where services.xml is located.
+promptTemplateFile path optional
+
+# Format for LLM response.
+# JSON - structured output in JSON format according to JSON schema generated based on the destination - document field type.
+# TEXT - text response, recommended when LLM have poor support for JSON output. 
+responseFormatType enum {JSON, TEXT} default=JSON
+
+# JSON schema for structured output.
+# Only used if responseFormatType is JSON.
+# If not set or empty, schema is generated from the destination field type.
+responseJsonSchema string default=""
+
+# Path to a text file containing a JSON schema.
+# It is used when responseFormatType is JSON and responseJsonSchema is not set or empty.
+# The path is relative to the application package root where services.xml is located.
+responseJsonSchemaFile path optional
