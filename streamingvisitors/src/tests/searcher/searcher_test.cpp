@@ -211,7 +211,6 @@ HitsList as_hitlist(std::vector<std::unique_ptr<QueryTerm>> qtv);
 HitsList hits_list(const BoolList& bl);
 bool assertCountWords(size_t numWords, const std::string &field);
 FieldInfoList as_field_info_list(std::vector<std::unique_ptr<QueryTerm>> qtv);
-bool assertFieldInfo(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const FieldInfoList &exp);
 
 HitsList search_string(StrChrFieldSearcher& fs, const StringList& query, const std::string& field) {
     return as_hitlist(performSearch(fs, query, StringFieldValue(field)));
@@ -269,59 +268,53 @@ HitsList search_float(FloatFieldSearcher& fs, const std::string& term, const Flo
     return search_float(fs, StringList{term}, field);
 }
 
-bool
-assertFieldInfo(StrChrFieldSearcher &fs, const StringList &query, const std::string &fv, const FieldInfoList &exp) {
-    return assertFieldInfo(fs, query, StringFieldValue(fv), exp);
+FieldInfoList search_string_field_info(StrChrFieldSearcher& fs, const StringList& query, const std::string& fv) {
+    return as_field_info_list(performSearch(fs, query, StringFieldValue(fv)));
 }
 
-bool
-assertFieldInfo(StrChrFieldSearcher &fs, const StringList &query, const StringList &fv, const FieldInfoList &exp) {
-    return assertFieldInfo(fs, query, getFieldValue(fv), exp);
-}
-bool
-assertFieldInfo(StrChrFieldSearcher &fs, const std::string &term, const StringList &fv, const QTFieldInfo &exp) {
-    return assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+FieldInfoList search_string_field_info(StrChrFieldSearcher& fs, const StringList& query, const StringList& fv) {
+    return as_field_info_list(performSearch(fs, query, getFieldValue(fv)));
 }
 
-bool
-assertFieldInfo(StrChrFieldSearcher &fs, const std::string &term, const std::string &fv, const QTFieldInfo &exp) {
-    return assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+FieldInfoList search_string_field_info(StrChrFieldSearcher& fs, const std::string& term, const StringList& fv) {
+    return search_string_field_info(fs, StringList{term}, fv);
 }
 
-void assertFieldInfo(IntFieldSearcher & fs, const StringList &query, int64_t fv, const FieldInfoList &exp) {
-    assertFieldInfo(fs, query, LongFieldValue(fv), exp);
+FieldInfoList search_string_field_info(StrChrFieldSearcher& fs, const std::string& term, const std::string &fv) {
+    return search_string_field_info(fs, StringList{term}, fv);
 }
 
-void assertFieldInfo(IntFieldSearcher & fs, const StringList &query, const LongList &fv, const FieldInfoList &exp) {
-    assertFieldInfo(fs, query, getFieldValue(fv), exp);
+FieldInfoList search_int_field_info(IntFieldSearcher& fs, const StringList& query, int64_t fv) {
+    return as_field_info_list(performSearch(fs, query, LongFieldValue(fv)));
 }
 
-void assertFieldInfo(IntFieldSearcher & fs, const std::string &term, int64_t fv, const QTFieldInfo &exp) {
-    assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+FieldInfoList search_int_field_info(IntFieldSearcher& fs, const StringList& query, const LongList& fv) {
+    return as_field_info_list(performSearch(fs, query, getFieldValue(fv)));
 }
 
-void assertFieldInfo(IntFieldSearcher & fs, const std::string &term, const LongList &fv, const QTFieldInfo &exp) {
-    assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+FieldInfoList search_int_field_info(IntFieldSearcher& fs, const std::string& term, int64_t fv) {
+    return search_int_field_info(fs, StringList{term}, fv);
 }
 
-void assertFieldInfo(FloatFieldSearcher & fs, const StringList &query, float fv, const FieldInfoList &exp) {
-    assertFieldInfo(fs, query, FloatFieldValue(fv), exp);
+FieldInfoList search_int_field_info(IntFieldSearcher& fs, const std::string& term, const LongList& fv) {
+    return search_int_field_info(fs, StringList{term}, fv);
 }
 
-void
-assertFieldInfo(FloatFieldSearcher & fs, const StringList &query, const FloatList &fv, const FieldInfoList &exp) {
-    assertFieldInfo(fs, query, getFieldValue(fv), exp);
+FieldInfoList search_float_field_info(FloatFieldSearcher& fs, const StringList& query, float fv) {
+    return as_field_info_list(performSearch(fs, query, FloatFieldValue(fv)));
 }
 
-/** float field searcher **/
-void assertFieldInfo(FloatFieldSearcher & fs, const std::string &term, float fv, const QTFieldInfo &exp) {
-    assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+FieldInfoList search_float_field_info(FloatFieldSearcher& fs, const StringList& query, const FloatList&fv) {
+    return as_field_info_list(performSearch(fs, query, getFieldValue(fv)));
 }
 
-void assertFieldInfo(FloatFieldSearcher & fs, const std::string &term, const FloatList &fv, const QTFieldInfo &exp) {
-    assertFieldInfo(fs, StringList().add(term), fv, FieldInfoList().add(exp));
+FieldInfoList search_float_field_info(FloatFieldSearcher& fs, const std::string& term, float fv) {
+    return search_float_field_info(fs, StringList{term}, fv);
 }
 
+FieldInfoList search_float_field_info(FloatFieldSearcher& fs, const std::string& term, const FloatList& fv) {
+    return search_float_field_info(fs, StringList{term}, fv);
+}
 
 /** snippet modifer searcher **/
 void assertSnippetModifier(const std::string &term, const std::string &fv, const std::string &exp) {
@@ -482,14 +475,6 @@ std::ostream& operator<<(std::ostream& os, const FieldInfoList& fil) {
     return os;
 }
 
-bool
-assertFieldInfo(FieldSearcher & fs, const StringList & query,
-                const FieldValue & fv, const FieldInfoList & exp)
-{
-    auto act = as_field_info_list(performSearch(fs, query, fv));
-    return EXPECT_EQUAL(exp, act);
-}
-
 void
 assertSnippetModifier(const StringList & query, const std::string & fv, const std::string & exp)
 {
@@ -532,35 +517,32 @@ bool assertCountWords(size_t numWords, const std::string & field)
     return EXPECT_EQUAL(numWords, FieldSearcher::countWords(ref));
 }
 
-bool
-testStringFieldInfo(StrChrFieldSearcher & fs)
-{
+void
+testStringFieldInfo(StrChrFieldSearcher & fs) {
     EXPECT_EQUAL(HitsList({{{0, 0}, {1, 0}, {2, 1}}}), search_string(fs, "foo", {"foo bar baz", "foo bar", "baz foo"}));
     EXPECT_EQUAL(HitsList({{{0, 0}, {1, 0}, {2, 1}}, {{0, 1}, {1, 1}}}),
                  search_string(fs, StringList{"foo", "bar"}, {"foo bar baz", "foo bar", "baz foo"}));
 
-    bool retval = true;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo", QTFieldInfo(0, 1, 1)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "bar", "foo", QTFieldInfo(0, 0, 1)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "bar", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "baz", "foo bar baz", QTFieldInfo(0, 1, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "qux", "foo bar baz", QTFieldInfo(0, 0, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", "foo foo foo", QTFieldInfo(0, 3, 3)))) retval = false;
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 1}}), search_string_field_info(fs, "foo", "foo"));
+    EXPECT_EQUAL(FieldInfoList({{0, 0, 1}}), search_string_field_info(fs, "bar", "foo"));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 3}}), search_string_field_info(fs, "foo", "foo bar baz"));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 3}}), search_string_field_info(fs, "bar", "foo bar baz"));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 3}}), search_string_field_info(fs, "baz", "foo bar baz"));
+    EXPECT_EQUAL(FieldInfoList({{0, 0, 3}}), search_string_field_info(fs, "qux", "foo bar baz"));
+    EXPECT_EQUAL(FieldInfoList({{0, 3, 3}}), search_string_field_info(fs, "foo", "foo foo foo"));
     // query term size > last term size
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "runner", "Road Runner Disco", QTFieldInfo(0, 1, 3)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("roadrun").add("runner"), "Road Runner Disco",
-                                     FieldInfoList().add(QTFieldInfo(0, 0, 3)).add(QTFieldInfo(0, 1, 3))))) retval = false;
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 3}}), search_string_field_info(fs, "runner", "Road Runner Disco"));
+    EXPECT_EQUAL(FieldInfoList({{0, 0, 3}, {0, 1, 3}}),
+                 search_string_field_info(fs, StringList{"roadrun", "runner"}, "Road Runner Disco"));
     // multiple terms
-    if (!EXPECT_TRUE(assertFieldInfo(fs, "foo", StringList().add("foo bar baz").add("foo bar"),
-                                     QTFieldInfo(0, 2, 5)))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("foo").add("baz"), "foo bar baz",
-                                     FieldInfoList().add(QTFieldInfo(0, 1, 3)).add(QTFieldInfo(0, 1, 3))))) retval = false;
-    if (!EXPECT_TRUE(assertFieldInfo(fs, StringList().add("foo").add("baz"), StringList().add("foo bar baz").add("foo bar"),
-                                     FieldInfoList().add(QTFieldInfo(0, 2, 5)).add(QTFieldInfo(0, 1, 5))))) retval = false;
-    return retval;
+    EXPECT_EQUAL(FieldInfoList({{0, 2, 5}}), search_string_field_info(fs, "foo", StringList{"foo bar baz", "foo bar"}));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 3}, {0, 1, 3}}),
+                 search_string_field_info(fs, StringList{"foo", "baz"}, "foo bar baz"));
+    EXPECT_EQUAL(FieldInfoList({{0, 2, 5}, {0, 1, 5}}),
+         search_string_field_info(fs, StringList{"foo", "baz"}, StringList{"foo bar baz", "foo bar"}));
 }
-bool
+
+void
 testStrChrFieldSearcher(StrChrFieldSearcher & fs)
 {
     std::string field = "operators and operator overloading with utf8 char oe = \xc3\x98";
@@ -577,7 +559,7 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
     EXPECT_EQUAL(HitsList({{{0, 0}, {0, 2}}, {}}), search_string(fs, StringList{"oper", "tor"}, field));
 
     fs.match_type(FieldSearcher::REGULAR);
-    if (!EXPECT_TRUE(testStringFieldInfo(fs))) return false;
+    testStringFieldInfo(fs);
 
     { // test handling of several underscores
         StringList query{"foo", "bar"};
@@ -595,7 +577,6 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
         EXPECT_EQUAL(HitsList({{{0, 1}}}), search_string(fs, "bar", "foo____________________bar"));
         EXPECT_EQUAL(HitsList({{{0, 2}}}), search_string(fs, "bar", "foo____________________thisisaveryveryverylongword____________________bar"));
     }
-    return true;
 }
 
 void check_fuzzy_param_parsing(std::string_view term, std::string_view exp_term,
@@ -654,15 +635,17 @@ TEST("suffix matching") {
 TEST("Test basic strchrfield searchers") {
     {
         UTF8StrChrFieldSearcher fs(0);
-        EXPECT_TRUE(testStrChrFieldSearcher(fs));
+        TEST_STATE("UTF8StrChrFieldSearcher");
+        testStrChrFieldSearcher(fs);
     }
     {
         FUTF8StrChrFieldSearcher fs(0);
-        EXPECT_TRUE(testStrChrFieldSearcher(fs));
+        TEST_STATE("FUTF8StrChrFieldSearcher");
+        testStrChrFieldSearcher(fs);
     }
 }
 
-bool
+void
 testUTF8SubStringFieldSearcher(StrChrFieldSearcher & fs)
 {
     std::string field = "operators and operator overloading";
@@ -677,26 +660,26 @@ testUTF8SubStringFieldSearcher(StrChrFieldSearcher & fs)
 
     EXPECT_EQUAL(HitsList({{{0, 0}, {0, 0}, {0, 0}},{{0, 0}}}), search_string(fs, StringList{"aa", "ab"}, "aaaab"));
 
-    if (!EXPECT_TRUE(testStringFieldInfo(fs))) return false;
-    return true;
+    testStringFieldInfo(fs);
 }
 
 TEST("utf8 substring search") {
     {
         UTF8SubStringFieldSearcher fs(0);
-        EXPECT_TRUE(testUTF8SubStringFieldSearcher(fs));
+        TEST_STATE("UTF8SubStringFieldSearcher");
+        testUTF8SubStringFieldSearcher(fs);
         EXPECT_EQUAL(HitsList({{{0, 0}, {0, 0}}}), search_string(fs, "aa", "aaaa"));
     }
     {
         UTF8SubStringFieldSearcher fs(0);
-        EXPECT_TRUE(testUTF8SubStringFieldSearcher(fs));
         EXPECT_EQUAL(HitsList({{{0, 0}, {0, 2}}}), search_string(fs, "abc", "abc bcd abc"));
         fs.maxFieldLength(4);
         EXPECT_EQUAL(HitsList({{{0, 0}}}), search_string(fs, "abc", "abc bcd abc"));
     }
     {
         UTF8SubstringSnippetModifier fs(0);
-        EXPECT_TRUE(testUTF8SubStringFieldSearcher(fs));
+        TEST_STATE("UTF8SubstringSnippetModifier");
+        testUTF8SubStringFieldSearcher(fs);
         // we don't have 1 term optimization
         EXPECT_EQUAL(HitsList({{{0, 0}, {0, 0}, {0, 0}}}), search_string(fs, "aa", "aaaa"));
     }
@@ -705,9 +688,9 @@ TEST("utf8 substring search") {
 TEST("utf8 substring search with empty term")
 {
     UTF8SubStringFieldSearcher fs(0);
-    EXPECT_TRUE(testUTF8SubStringFieldSearcher(fs));
+    testUTF8SubStringFieldSearcher(fs);
     EXPECT_EQUAL(HitsList({{}}), search_string(fs, "", "abc"));
-    assertFieldInfo(fs, "", "abc", QTFieldInfo().setFieldLength(0));
+    EXPECT_EQUAL(FieldInfoList({{0, 0, 0}}), search_string_field_info(fs, "", "abc"));
 }
 
 TEST("utf8 suffix search") {
@@ -719,7 +702,7 @@ TEST("utf8 suffix search") {
 
     EXPECT_EQUAL(HitsList({{}, {}}),            search_string(fs, StringList{"an", "din"}, field));
     EXPECT_EQUAL(HitsList({{{0,1}}, {{0, 3}}}), search_string(fs, StringList{"nd", "g"},   field));
-    EXPECT_TRUE(testStringFieldInfo(fs));
+    testStringFieldInfo(fs);
 }
 
 TEST("utf8 exact match") {
@@ -765,7 +748,7 @@ TEST("utf8 flexible searcher (except regex)"){
     EXPECT_EQUAL(is_hit,  search_string(fs, "espa",  "vespa"));
 
     fs.match_type(FieldSearcher::REGULAR);
-    EXPECT_TRUE(testStringFieldInfo(fs));
+    testStringFieldInfo(fs);
 }
 
 TEST("utf8 flexible searcher handles regex and by default has case-insensitive partial match semantics") {
@@ -803,9 +786,9 @@ TEST("utf8 flexible searcher handles regexes with explicit anchoring") {
 TEST("utf8 flexible searcher regex matching treats field as 1 word") {
     UTF8FlexibleStringFieldSearcher fs(0);
     // Match case
-    TEST_DO(assertFieldInfo(fs, "#.*", "foo bar baz", QTFieldInfo(0, 1, 1)));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 1}}), search_string_field_info(fs, "#.*", "foo bar baz"));
     // Mismatch case
-    TEST_DO(assertFieldInfo(fs, "#^zoid$", "foo bar baz", QTFieldInfo(0, 0, 1)));
+    EXPECT_EQUAL(FieldInfoList({{0, 0, 1}}), search_string_field_info(fs, "#^zoid$", "foo bar baz"));
 }
 
 TEST("utf8 flexible searcher handles fuzzy search in uncased mode") {
@@ -901,9 +884,9 @@ TEST("utf8 flexible searcher caps oversized fuzzy prefix length to term length")
 TEST("utf8 flexible searcher fuzzy matching treats field as 1 word") {
     UTF8FlexibleStringFieldSearcher fs(0);
     // Match case
-    TEST_DO(assertFieldInfo(fs, "%{1}foo bar baz", "foo jar baz", QTFieldInfo(0, 1, 1)));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 1}}), search_string_field_info(fs, "%{1}foo bar baz", "foo jar baz"));
     // Mismatch case
-    TEST_DO(assertFieldInfo(fs, "%{1}foo", "foo bar baz", QTFieldInfo(0, 0, 1)));
+    EXPECT_EQUAL(FieldInfoList({{0, 0, 1}}), search_string_field_info(fs, "%{1}foo", "foo bar baz"));
 }
 
 TEST("utf8 flexible searcher supports fuzzy prefix matching") {
@@ -978,12 +961,11 @@ TEST("integer search")
     EXPECT_EQUAL(HitsList({{{0, 0}, {2, 0}}}), search_int(fs, "10", {10, 20, 10, 30}));
     EXPECT_EQUAL(HitsList({{{0, 0}, {2, 0}},{{1, 0}}}), search_int(fs, StringList{"10", "20"}, {10, 20, 10, 30}));
 
-    TEST_DO(assertFieldInfo(fs, "10", 10, QTFieldInfo(0, 1, 1)));
-    TEST_DO(assertFieldInfo(fs, "10", LongList().add(10).add(20).add(10).add(30), QTFieldInfo(0, 2, 4)));
-    TEST_DO(assertFieldInfo(fs, StringList().add("10").add("20"), 10,
-                            FieldInfoList().add(QTFieldInfo(0, 1, 1)).add(QTFieldInfo(0, 0, 1))));
-    TEST_DO(assertFieldInfo(fs, StringList().add("10").add("20"), LongList().add(10).add(20).add(10).add(30),
-                            FieldInfoList().add(QTFieldInfo(0, 2, 4)).add(QTFieldInfo(0, 1, 4))));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 1}}), search_int_field_info(fs, "10", 10));
+    EXPECT_EQUAL(FieldInfoList({{0, 2, 4}}), search_int_field_info(fs, "10", {10, 20, 10, 30}));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 1}, {0, 0, 1}}), search_int_field_info(fs, StringList{"10", "20"}, 10));
+    EXPECT_EQUAL(FieldInfoList({{0, 2, 4}, {0, 1, 4}}),
+                 search_int_field_info(fs, StringList{"10", "20"}, {10, 20, 10, 30}));
 }
 
 TEST("floating point search")
@@ -1013,12 +995,11 @@ TEST("floating point search")
     EXPECT_EQUAL(HitsList({{{0, 0}, {2, 0}}, {{1, 0}}}),
                  search_float(fs, StringList{"10.5", "20.5"}, {10.5, 20.5, 10.5, 30.5}));
 
-    TEST_DO(assertFieldInfo(fs, "10.5", 10.5, QTFieldInfo(0, 1, 1)));
-    TEST_DO(assertFieldInfo(fs, "10.5", FloatList().add(10.5).add(20.5).add(10.5).add(30.5), QTFieldInfo(0, 2, 4)));
-    TEST_DO(assertFieldInfo(fs, StringList().add("10.5").add("20.5"), 10.5,
-                    FieldInfoList().add(QTFieldInfo(0, 1, 1)).add(QTFieldInfo(0, 0, 1))));
-    TEST_DO(assertFieldInfo(fs, StringList().add("10.5").add("20.5"), FloatList().add(10.5).add(20.5).add(10.5).add(30.5),
-                    FieldInfoList().add(QTFieldInfo(0, 2, 4)).add(QTFieldInfo(0, 1, 4))));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 1}}), search_float_field_info(fs, "10.5", 10.5));
+    EXPECT_EQUAL(FieldInfoList({{0, 2, 4}}), search_float_field_info(fs, "10.5", {10.5, 20.5, 10.5, 30.5}));
+    EXPECT_EQUAL(FieldInfoList({{0, 1, 1}, {0, 0, 1}}), search_float_field_info(fs, StringList{"10.5", "20.5"}, 10.5));
+    EXPECT_EQUAL(FieldInfoList({{0, 2, 4}, {0, 1, 4}}),
+                 search_float_field_info(fs, StringList{"10.5", "20.5"}, {10.5, 20.5, 10.5, 30.5}));
 }
 
 TEST("Snippet modifier search") {
