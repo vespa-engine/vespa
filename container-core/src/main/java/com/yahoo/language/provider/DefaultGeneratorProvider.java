@@ -3,7 +3,7 @@ package com.yahoo.language.provider;
 
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.di.componentgraph.Provider;
-import com.yahoo.language.process.FieldGenerator;
+import com.yahoo.language.process.TextGenerator;
 
 /**
  * Provides the default generator implementation if no generator component has been explicitly configured
@@ -12,13 +12,13 @@ import com.yahoo.language.process.FieldGenerator;
  * @author lesters
  */
 @SuppressWarnings("unused") // Injected
-public class DefaultGeneratorProvider implements Provider<FieldGenerator> {
+public class DefaultGeneratorProvider implements Provider<TextGenerator> {
 
     @Inject
     public DefaultGeneratorProvider() { }
 
     @Override
-    public FieldGenerator get() { return FieldGenerator.throwsOnUse; }
+    public TextGenerator get() { return TextGenerator.throwsOnUse; }
 
     @Override
     public void deconstruct() {}

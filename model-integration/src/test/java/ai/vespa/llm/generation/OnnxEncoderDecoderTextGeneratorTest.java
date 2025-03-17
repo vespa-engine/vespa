@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.llm.clients;
+package ai.vespa.llm.generation;
 
-import ai.vespa.llm.generation.OnnxEncoderDecoderConfig;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import org.junit.Test;
@@ -9,7 +8,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assume.assumeTrue;
 
-public class OnnxEncoderDecoderTest {
+public class OnnxEncoderDecoderTextGeneratorTest {
 
     @Test
     public void testGenerator() {
@@ -18,14 +17,14 @@ public class OnnxEncoderDecoderTest {
         String decoderModelPath = "src/test/models/onnx/llm/random_decoder.onnx";
         assumeTrue(OnnxRuntime.isRuntimeAvailable(encoderModelPath));
 
-        var builder = new OnnxEncoderDecoderConfig.Builder();
+        var builder = new OnnxEncoderDecoderTextGeneratorConfig.Builder();
         builder.tokenizerModel(ModelReference.valueOf(vocabPath));
         builder.encoderModel(ModelReference.valueOf(encoderModelPath));
         builder.decoderModel(ModelReference.valueOf(decoderModelPath));
-        OnnxEncoderDecoder generator = newGenerator(builder.build());
+        OnnxEncoderDecoderTextGenerator generator = newGenerator(builder.build());
 
-        var options = new OnnxEncoderDecoder.DecoderOptions();
-        options.setSearchMethod(OnnxEncoderDecoder.DecoderOptions.SearchMethod.GREEDY);
+        TextGeneratorDecoderOptions options = new TextGeneratorDecoderOptions();
+        options.setSearchMethod(TextGeneratorDecoderOptions.SearchMethod.GREEDY);
         options.setMaxLength(10);
 
         String prompt = "generate some random text";
@@ -34,8 +33,8 @@ public class OnnxEncoderDecoderTest {
         assertEquals("<unk> linear recruit latest sack annually institutions cert solid references", result);
     }
 
-    private static OnnxEncoderDecoder newGenerator(OnnxEncoderDecoderConfig cfg) {
-        return new OnnxEncoderDecoder(new OnnxRuntime(), cfg);
+    private static OnnxEncoderDecoderTextGenerator newGenerator(OnnxEncoderDecoderTextGeneratorConfig cfg) {
+        return new OnnxEncoderDecoderTextGenerator(new OnnxRuntime(), cfg);
     }
 
 }
