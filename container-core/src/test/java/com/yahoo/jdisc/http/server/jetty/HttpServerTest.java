@@ -896,6 +896,18 @@ public class HttpServerTest {
         assertTrue(driver.close());
     }
 
+    @Test
+    void requestHeaderValueContainingCommaIsInterpretedAsASingleValue() throws IOException {
+        JettyTestDriver driver = JettyTestDriver.newInstance(new RequestHeaderEchoingHandler("X-Foo"));
+        driver.client().newGet("/")
+                .addHeader("X-Foo", "bar,baz")
+                .addHeader("X-Foo", "foobar")
+                .execute()
+                .expectStatusCode(is(OK))
+                .expectContent(is("bar,baz\nfoobar\n"));
+        assertTrue(driver.close());
+    }
+
     private static JettyTestDriver createSslWithTlsClientAuthenticationEnforcer(Path certificateFile, Path privateKeyFile) {
         ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
                 .tlsClientAuthEnforcer(
@@ -1097,6 +1109,21 @@ public class HttpServerTest {
         public ContentChannel handleRequest(Request req, ResponseHandler handler) {
             final ContentChannel ch = handler.handleResponse(new Response(OK));
             ch.write(ByteBuffer.wrap(req.getUri().toString().getBytes(UTF_8)), null);
+            ch.close(null);
+            return null;
+        }
+    }
+
+    private static class RequestHeaderEchoingHandler extends AbstractRequestHandler {
+        final String headerName;
+        RequestHeaderEchoingHandler(String headerName) { this.headerName = headerName; }
+
+        @Override
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            var ch = handler.handleResponse(new Response(OK));
+            for (var value : request.headers().get(headerName)) {
+                ch.write(ByteBuffer.wrap((value + "\n").getBytes()), null);
+            }
             ch.close(null);
             return null;
         }
