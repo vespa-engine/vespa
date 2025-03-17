@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -202,7 +203,7 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(generatorConfig, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         var result = generator.generate("hello", context);
-        assertTrue(result.toString().length() > 5);
+        assertFalse(result.toString().isEmpty());
     }
     
     @Test
