@@ -25,7 +25,7 @@ import java.io.ByteArrayInputStream;
  * 
  * @author glebashnik
  */
-public class FieldGeneratorUtils {
+class FieldGeneratorUtils {
     /**
      * Generates JSON schema for a document field based on it's path and data type that corresponds 
      * to a JSON format {"[fieldPath]": fieldValue} where [fieldPath] is [document type name].[field name].
@@ -56,7 +56,7 @@ public class FieldGeneratorUtils {
     /**
      * Generates JSON schema for a document field value.
      * Schemas are compatible with JSON format used for feeding.
-     * Not all types are suppoerted. 
+     * Not all types are supported. 
      * See conditions in code for supported types.
      */
     private static Json.Builder.Object generateJsonSchemaForFieldValue(DataType fieldType) {

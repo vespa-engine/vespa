@@ -7,6 +7,7 @@ import ai.vespa.llm.clients.LlmLocalClientConfig;
 import ai.vespa.llm.clients.LocalLLM;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
+import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 
@@ -44,7 +45,7 @@ public class LanguageModelFieldGeneratorTest {
                 .providerId("languageModel").build();
         var generator = createGenerator(config, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
-        var result = generator.generate("hello", context);
+        var result = generator.generate(StringPrompt.from("hello"), context);
         assertEquals("hello hello", result.toString());
     }
     
@@ -57,12 +58,12 @@ public class LanguageModelFieldGeneratorTest {
         var config1 = new LanguageModelFieldGeneratorConfig.Builder().providerId("languageModel1").build();
         var generator1 = createGenerator(config1, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
-        var result1 = generator1.generate("hello", context);
+        var result1 = generator1.generate(StringPrompt.from("hello"), context);
         assertEquals("hello hello", result1.toString());
     
         var config2 = new LanguageModelFieldGeneratorConfig.Builder().providerId("languageModel2").build();
         var generator2 = createGenerator(config2, languageModels);
-        var result2 = generator2.generate("hello", context);
+        var result2 = generator2.generate(StringPrompt.from("hello"), context);
         assertEquals("hello hello hello", result2.toString());
     }
 
@@ -78,10 +79,10 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(config, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         
-        var result1 = generator.generate("world", context);
+        var result1 = generator.generate(StringPrompt.from("world"), context);
         assertEquals("hello world hello world", result1.toString());
 
-        var result2 = generator.generate("there", context);
+        var result2 = generator.generate(StringPrompt.from("there"), context);
         assertEquals("hello there hello there", result2.toString());
     }
 
@@ -97,7 +98,7 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(config, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
-        var result1 = generator.generate("world", context);
+        var result1 = generator.generate(StringPrompt.from("world"), context);
         assertEquals("world world", result1.toString());
     }
 
@@ -113,10 +114,10 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(config, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
-        var result1 = generator.generate("world", context);
+        var result1 = generator.generate(StringPrompt.from("world"), context);
         assertEquals("hello hello", result1.toString());
 
-        var result2 = generator.generate("there", context);
+        var result2 = generator.generate(StringPrompt.from("there"), context);
         assertEquals("hello hello", result2.toString());
     }
     
@@ -133,7 +134,7 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(config, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
-        var result1 = generator.generate("world", context);
+        var result1 = generator.generate(StringPrompt.from("world"), context);
         assertEquals("hello world hello world", result1.toString());
     }
 
@@ -182,7 +183,7 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(config, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
 
-        var result1 = generator.generate("world", context);
+        var result1 = generator.generate(StringPrompt.from("world"), context);
         assertEquals("bye world bye world", result1.toString());
     }
     
@@ -202,7 +203,7 @@ public class LanguageModelFieldGeneratorTest {
 
         var generator = createGenerator(generatorConfig, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
-        var result = generator.generate("hello", context);
+        var result = generator.generate(StringPrompt.from("hello"), context);
         assertFalse(result.toString().isEmpty());
     }
     
@@ -219,7 +220,7 @@ public class LanguageModelFieldGeneratorTest {
         var generator = createGenerator(generatorConfig, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
         
-        var result = generator.generate("hello world", context);
+        var result = generator.generate(StringPrompt.from("hello world"), context);
         assertEquals("hello world hello world", result.toString());
     }
     
@@ -235,7 +236,7 @@ public class LanguageModelFieldGeneratorTest {
 
         var generator = createGenerator(generatorConfig, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
-        var result = generator.generate("hello world", context);
+        var result = generator.generate(StringPrompt.from("hello world"), context);
         assertEquals(null, result);
     }
     
@@ -251,7 +252,7 @@ public class LanguageModelFieldGeneratorTest {
         
         var generator = createGenerator(generatorConfig, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
-        assertThrows(IllegalArgumentException.class, () -> generator.generate("hello world", context));
+        assertThrows(IllegalArgumentException.class, () -> generator.generate(StringPrompt.from("hello world"), context));
     }
 
     @Test
@@ -270,7 +271,7 @@ public class LanguageModelFieldGeneratorTest {
 
         var generator = createGenerator(generatorConfig, languageModels);
         var context = new FieldGenerator.Context("doc.text", DataType.STRING);
-        var result = generator.generate("hello world", context);
+        var result = generator.generate(StringPrompt.from("hello world"), context);
         
         assertEquals(null, result);
 

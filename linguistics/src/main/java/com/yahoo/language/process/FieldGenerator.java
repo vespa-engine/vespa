@@ -1,5 +1,6 @@
 package com.yahoo.language.process;
 
+import ai.vespa.llm.completion.Prompt;
 import com.yahoo.collections.LazyMap;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
@@ -32,7 +33,7 @@ public interface FieldGenerator {
         return Map.of(name, this);
     }
     
-    FieldValue generate(String input, Context context);
+    FieldValue generate(Prompt prompt, Context context);
     
     class Context {
         private Language language = Language.UNKNOWN;
@@ -121,7 +122,7 @@ public interface FieldGenerator {
             this.message = message;
         }
         
-        public FieldValue generate(String input, Context context) {
+        public FieldValue generate(Prompt prompt, Context context) {
             throw new IllegalStateException(message);
         }
     }

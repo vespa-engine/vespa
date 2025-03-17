@@ -1,6 +1,6 @@
 package com.yahoo.vespa.indexinglanguage;
 
-import com.yahoo.document.ArrayDataType;
+import ai.vespa.llm.completion.Prompt;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
@@ -151,11 +151,11 @@ public class GenerateExpressionTestCase {
             this.repetitions = repetitions;
         }
 
-        public FieldValue generate(String prompt, Context context) {
+        public FieldValue generate(Prompt prompt, Context context) {
             var stringBuilder = new StringBuilder();
 
             for (int i = 0; i < repetitions; i++) {
-                stringBuilder.append(prompt);
+                stringBuilder.append(prompt.asString());
                 stringBuilder.append(" ");
             }
 
@@ -203,8 +203,8 @@ public class GenerateExpressionTestCase {
 
 
     public static class SplitterMockFieldGenerator implements FieldGenerator {
-        public FieldValue generate(String prompt, Context context) {
-            var parts = Arrays.stream(prompt.split(" ")).map(StringFieldValue::new).toList();
+        public FieldValue generate(Prompt prompt, Context context) {
+            var parts = Arrays.stream(prompt.asString().split(" ")).map(StringFieldValue::new).toList();
             return new Array<>(DataType.getArray(DataType.STRING), parts);
         }
     }
@@ -242,8 +242,8 @@ public class GenerateExpressionTestCase {
     }
     
     private static class StructMockGenerator implements FieldGenerator {
-        public FieldValue generate(String prompt, Context context) {
-            var parts = Arrays.stream(prompt.split(" ")).toList();
+        public FieldValue generate(Prompt prompt, Context context) {
+            var parts = Arrays.stream(prompt.asString().split(" ")).toList();
 
             var dataType = new StructDataType("myStructType");
             dataType.addField(new Field("myField1", DataType.STRING));

@@ -3,6 +3,7 @@ package ai.vespa.llm.generation;
 
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
+import ai.vespa.llm.completion.Prompt;
 import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
@@ -61,7 +62,7 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
     }
     
     @Override
-    public FieldValue generate(String input, Context context) {
+    public FieldValue generate(Prompt prompt, Context context) {
         var options = new HashMap<String, String>();
         String jsonSchema = null;
         
@@ -70,8 +71,8 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
             options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
         }
         
-        var promptString = LanguageModelUtils.generatePrompt(input, promptTemplate, jsonSchema);
-        var completions = languageModel.complete(StringPrompt.from(promptString), new InferenceParameters(options::get));
+        var expandedPrompt = LanguageModelUtils.expandPrompt(prompt.asString(), promptTemplate, jsonSchema);
+        var completions = languageModel.complete(StringPrompt.from(expandedPrompt), new InferenceParameters(options::get));
         var firstCompletion = completions.get(0);
         var generatedText = firstCompletion.text();
         FieldValue generatedFieldValue; 

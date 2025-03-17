@@ -1,5 +1,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
+import ai.vespa.llm.completion.Prompt;
+import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
@@ -103,7 +105,8 @@ public class GenerateExpression extends Expression {
         FieldValue generatedValue;
         
         if (inputType == DataType.STRING) {
-            generatedValue = generate(((StringFieldValue) inputValue).getString(), context);
+            var promptString = ((StringFieldValue) inputValue).getString();
+            generatedValue = generate(StringPrompt.from(promptString), context);
         } else {
             throw new IllegalArgumentException(
                     ("Generate expression for field %s requires string input type, but got %s.")
@@ -113,12 +116,12 @@ public class GenerateExpression extends Expression {
         context.setCurrentValue(generatedValue);
     }
     
-    private FieldValue generate(String input, ExecutionContext context) {
+    private FieldValue generate(Prompt prompt, ExecutionContext context) {
         var generatorContext =  new FieldGenerator.Context(destination, targetType, context.getCache())
                 .setLanguage(context.resolveLanguage(linguistics))
                 .setGeneratorId(generatorId);
 
-        return generator.generate(input, generatorContext);
+        return generator.generate(prompt, generatorContext);
     }
 
     @Override

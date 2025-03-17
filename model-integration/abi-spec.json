@@ -283,19 +283,6 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.generation.FieldGeneratorUtils" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public static java.lang.String generateJsonSchemaForField(java.lang.String, com.yahoo.document.DataType)",
-      "public static com.yahoo.document.datatypes.FieldValue parseJsonFieldValue(java.lang.String, java.lang.String, com.yahoo.document.DataType)"
-    ],
-    "fields" : [ ]
-  },
   "ai.vespa.llm.generation.LanguageModelFieldGenerator" : {
     "superClass" : "com.yahoo.component.AbstractComponent",
     "interfaces" : [
@@ -306,7 +293,7 @@
     ],
     "methods" : [
       "public void <init>(ai.vespa.llm.generation.LanguageModelFieldGeneratorConfig, com.yahoo.component.provider.ComponentRegistry)",
-      "public com.yahoo.document.datatypes.FieldValue generate(java.lang.String, com.yahoo.language.process.FieldGenerator$Context)"
+      "public com.yahoo.document.datatypes.FieldValue generate(ai.vespa.llm.completion.Prompt, com.yahoo.language.process.FieldGenerator$Context)"
     ],
     "fields" : [ ]
   },

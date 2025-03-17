@@ -46,7 +46,7 @@ class LanguageModelUtils {
         return languageModel;
     }
 
-    public static String generatePrompt(String input, String promptTemplate, String jsonSchema) {
+    public static String expandPrompt(String input, String promptTemplate, String jsonSchema) {
         if (promptTemplate != null) {
             var prompt = promptTemplate;
 
