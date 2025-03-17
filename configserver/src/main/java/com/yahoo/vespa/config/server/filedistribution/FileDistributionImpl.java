@@ -10,8 +10,6 @@ import com.yahoo.jrt.StringArray;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 
 import java.time.Duration;
 import java.util.Set;
@@ -27,11 +25,9 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
     private final static Duration rpcTimeout = Duration.ofSeconds(11);
 
     private final Supervisor supervisor;
-    private final FlagSource flagSource;
 
-    public FileDistributionImpl(Supervisor supervisor, FlagSource flagSource) {
+    public FileDistributionImpl(Supervisor supervisor) {
         this.supervisor = supervisor;
-        this.flagSource = flagSource;
     }
 
     /**
@@ -44,22 +40,6 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
      */
     @Override
     public void triggerDownload(String hostName, int port, Set<FileReference> fileReferences) {
-        if (Flags.CONFIG_SERVER_TRIGGER_DOWNLOAD_WITH_SOURCE.bindTo(flagSource).value())
-            triggerDownloadIncludeHost(hostName, port, fileReferences);
-        else {
-            Target target = supervisor.connect(new Spec(hostName, port));
-            Request request = new Request("filedistribution.setFileReferencesToDownload");
-            request.setContext(target);
-            request.parameters()
-                   .add(new StringArray(fileReferences.stream()
-                                                      .map(FileReference::value)
-                                                      .toArray(String[]::new)));
-            log.log(Level.FINE, () -> "Executing " + request.methodName() + " against " + target + ": " + fileReferences);
-            target.invokeAsync(request, rpcTimeout, this);
-        }
-    }
-
-    private void triggerDownloadIncludeHost(String hostName, int port, Set<FileReference> fileReferences) {
         Target target = supervisor.connect(new Spec(hostName, port));
         Request request = new Request("filedistribution.triggerDownload");
         request.setContext(target);
