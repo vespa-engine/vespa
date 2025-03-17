@@ -103,9 +103,8 @@ class HttpRequestFactory {
     public static void copyHeaders(Request jettyRequest, HttpRequest jdiscRequest) {
         jettyRequest.getHeaders()
                 .forEach(header -> {
-                    var values = header.getValueList();
-                    if (!values.isEmpty())
-                        jdiscRequest.headers().add(header.getName(), header.getValueList());
+                    if (!header.getValue().isBlank())
+                        jdiscRequest.headers().add(header.getName(), header.getValue());
                 });
     }
 
