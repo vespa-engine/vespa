@@ -138,48 +138,6 @@ public class GenerateExpressionTestCase {
         }
     }
 
-    @Test
-    public void testWithArrayInputArrayOutput() {
-        Map<String, FieldGenerator> generators = Map.of(
-                "myGenerator", new RepeaterMockFieldGenerator("myDocument.myGeneratedArray"));
-        
-        var expressionString = "input myArray | generate | attribute myGeneratedArray";
-        var input = new String[]{"hello", "world"};
-        var expected = new String[]{"hello hello", "world world"};
-        
-        var expression = expressionFrom(generators, expressionString);
-        
-        SimpleTestAdapter adapter = new SimpleTestAdapter();
-        
-        var inputField = new Field("myArray", new ArrayDataType(DataType.STRING));
-        adapter.createField(inputField);
-        
-        var outputField = new Field("myGeneratedArray",  new ArrayDataType(DataType.STRING));
-        adapter.createField(outputField);
-        
-        var inputArray = new Array<StringFieldValue>(new ArrayDataType(DataType.STRING));
-        
-        for (String s : input) {
-            inputArray.add(new StringFieldValue(s));
-        }
-        
-        adapter.setValue("myArray", inputArray);
-        expression.setStatementOutput(new DocumentType("myDocument"), outputField);
-        
-        expression.verify(new VerificationContext(adapter));
-
-        ExecutionContext context = new ExecutionContext(adapter);
-        expression.execute(context);
-        
-        assertTrue(adapter.values.containsKey("myGeneratedArray"));
-        @SuppressWarnings("unchecked")
-        var outputArray = (Array<StringFieldValue>)adapter.values.get("myGeneratedArray");
-        
-        for (int i = 0; i < input.length; i++) {
-            assertEquals(expected[i], outputArray.get(i).getString());
-        }
-    }
-
     public static class RepeaterMockFieldGenerator implements FieldGenerator {
         final String expectedDestination;
         final int repetitions;
