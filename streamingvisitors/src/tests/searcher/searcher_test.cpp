@@ -206,11 +206,9 @@ bool assertMatchTermSuffix(const std::string &term, const std::string &word);
 void assertSnippetModifier(const StringList &query, const std::string &fv, const std::string &exp);
 void assertSnippetModifier(SnippetModifierSetup &setup, const FieldValue &fv, const std::string &exp);
 void assertQueryTerms(const SnippetModifierManager &man, FieldIdT fId, const StringList &terms);
-void assertNumeric(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const BoolList &exp);
 std::vector<QueryTerm::UP> performSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv);
 HitsList as_hitlist(std::vector<std::unique_ptr<QueryTerm>> qtv);
 HitsList hits_list(const BoolList& bl);
-void assertSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const HitsList &exp);
 bool assertCountWords(size_t numWords, const std::string &field);
 FieldInfoList as_field_info_list(std::vector<std::unique_ptr<QueryTerm>> qtv);
 bool assertFieldInfo(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const FieldInfoList &exp);
@@ -247,11 +245,12 @@ HitsList search_int(IntFieldSearcher & fs, const std::string& term, const LongLi
     return search_int(fs, StringList{term}, field);
 }
 
-void assertBool(BoolFieldSearcher & fs, const StringList &query, bool field, const BoolList &exp) {
-    assertNumeric(fs, query, BoolFieldValue(field), exp);
+HitsList search_bool(BoolFieldSearcher& fs, const StringList& query, bool field) {
+    return as_hitlist(performSearch(fs, query, BoolFieldValue(field)));
 }
-void assertBool(BoolFieldSearcher & fs, const std::string &term, bool field, bool exp) {
-    assertBool(fs, StringList().add(term), field, BoolList().add(exp));
+
+HitsList search_bool(BoolFieldSearcher& fs, const std::string& term, bool field) {
+    return search_bool(fs, StringList{term}, field);
 }
 
 HitsList search_float(FloatFieldSearcher& fs, const StringList& query, float field) {
@@ -385,12 +384,6 @@ HitsList hits_list(const BoolList& bl) {
     return hl;
 }
 
-void
-assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const BoolList & exp)
-{
-    assertSearch(fs, query, fv, hits_list(exp));
-}
-
 std::vector<QueryTerm::UP>
 performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv)
 {
@@ -448,13 +441,6 @@ std::ostream& operator<<(std::ostream& os, const HitsList &hll) {
     }
     os << "]";
     return os;
-}
-
-void
-assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const HitsList & exp)
-{
-    auto act = as_hitlist(performSearch(fs, query, fv));
-    ASSERT_EQUAL(exp, act);
 }
 
 FieldInfoList as_field_info_list(std::vector<std::unique_ptr<QueryTerm>> qtv) {
@@ -953,16 +939,16 @@ TEST("utf8 flexible searcher supports fuzzy prefix matching combined with prefix
 
 TEST("bool search") {
     BoolFieldSearcher fs(0);
-    TEST_DO(assertBool(fs,     "true",  true, true));
-    TEST_DO(assertBool(fs,     "true",  false, false));
-    TEST_DO(assertBool(fs,     "1",  true, true));
-    TEST_DO(assertBool(fs,     "1",  false, false));
-    TEST_DO(assertBool(fs,     "false",  true, false));
-    TEST_DO(assertBool(fs,     "false",  false, true));
-    TEST_DO(assertBool(fs,     "0",  true, false));
-    TEST_DO(assertBool(fs,     "0",  false, true));
-    TEST_DO(assertBool(fs, StringList().add("true").add("false").add("true"),  true, BoolList().add(true).add(false).add(true)));
-    TEST_DO(assertBool(fs, StringList().add("true").add("false").add("true"),  false, BoolList().add(false).add(true).add(false)));
+    EXPECT_EQUAL(is_hit,  search_bool(fs,     "true",  true));
+    EXPECT_EQUAL(no_hits, search_bool(fs,     "true",  false));
+    EXPECT_EQUAL(is_hit,  search_bool(fs,     "1",  true));
+    EXPECT_EQUAL(no_hits, search_bool(fs,     "1",  false));
+    EXPECT_EQUAL(no_hits, search_bool(fs,     "false",  true));
+    EXPECT_EQUAL(is_hit,  search_bool(fs,     "false",  false));
+    EXPECT_EQUAL(no_hits, search_bool(fs,     "0",  true));
+    EXPECT_EQUAL(is_hit,  search_bool(fs,     "0",  false));
+    EXPECT_EQUAL(hits_list({ true, false,  true}), search_bool(fs, StringList{"true", "false", "true"},  true));
+    EXPECT_EQUAL(hits_list({false,  true, false}), search_bool(fs, StringList{"true", "false", "true"},  false));
 }
 
 TEST("integer search")
