@@ -1342,7 +1342,8 @@
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
       "public int documentV1QueueSize()",
-      "public int maxContentNodeMaintenanceOpConcurrency()"
+      "public int maxContentNodeMaintenanceOpConcurrency()",
+      "public int maxDistributorDocumentOperationSizeMib()"
     ],
     "fields" : [ ]
   },
