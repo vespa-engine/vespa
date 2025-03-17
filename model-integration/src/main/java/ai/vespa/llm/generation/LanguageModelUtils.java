@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 
 
 /**
- *  Provide utilities for working with language models.
+ *  Utilities for working with language models.
  *  
  *  @author glebashnik
  */

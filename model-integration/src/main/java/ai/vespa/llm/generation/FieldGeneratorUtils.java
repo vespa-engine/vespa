@@ -20,7 +20,7 @@ import com.yahoo.text.Utf8;
 import java.io.ByteArrayInputStream;
 
 /**
- * Helper methods for using LLM structured output to generate document field values.
+ * Utilities for generating document values using LLM structured output.
  * 
  * @author glebashnik
  */
@@ -109,7 +109,7 @@ public class FieldGeneratorUtils {
     public static FieldValue parseJsonFieldValue(String jsonFieldValue, String fieldPath, DataType fieldType) {
         // Create a dummy document operation to use JSON document parser API.
         // API for parsing individual fields is not exposed.
-        var documentTypeName = "dummy"; // Can't use built-in type name "document".
+        var documentTypeName = "dummy"; // avoid built-in name "document".
         var documentId = "id:generate:%s::0".formatted(documentTypeName);
         var jsonDocumentOperation = """
                 {
