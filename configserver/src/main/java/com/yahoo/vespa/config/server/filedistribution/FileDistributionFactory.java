@@ -37,7 +37,7 @@ public class FileDistributionFactory implements AutoCloseable {
     }
 
     public FileDistribution createFileDistribution() {
-        return new FileDistributionImpl(supervisor, flagSource);
+        return new FileDistributionImpl(supervisor);
     }
 
     public AddFileInterface createFileManager(File applicationDir) {
