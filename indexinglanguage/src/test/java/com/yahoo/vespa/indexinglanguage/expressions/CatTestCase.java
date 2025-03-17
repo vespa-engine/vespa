@@ -190,13 +190,13 @@ public class CatTestCase {
     }
 
     private static void assertVerify(Expression expA, Expression expB, DataType val) {
-        new CatExpression(expA, expB).verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
+        new CatExpression(expA, expB).verify(new VerificationContext(new SimpleTestAdapter()));
     }
 
     private static void assertVerifyThrows(Expression expA, Expression expB, DataType val, String expectedException) {
         try {
             var expression = new CatExpression(expA, expB);
-            var context = new VerificationContext(new SimpleTestAdapter()).setCurrentType(val);
+            var context = new VerificationContext(new SimpleTestAdapter());
             expression.setInputType(val, context);
             expression.verify(context);
             fail("Expected exception");

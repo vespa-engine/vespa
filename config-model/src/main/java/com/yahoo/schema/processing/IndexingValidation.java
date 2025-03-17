@@ -96,50 +96,11 @@ public class IndexingValidation extends Processor {
         }
 
         @Override
-        public DataType getInputType(Expression exp, String fieldName) {
+        public DataType getFieldType(Expression exp, String fieldName) {
             SDField field = schema.getDocumentField(fieldName);
             if (field == null)
                 throw new VerificationException(exp, "Input field '" + fieldName + "' not found");
             return field.getDataType();
-        }
-
-        @Override
-        public void tryOutputType(Expression expression, String fieldName, DataType valueType) {
-            String fieldDesc;
-            DataType fieldType;
-            if (expression instanceof AttributeExpression) {
-                Attribute attribute = schema.getAttribute(fieldName);
-                if (attribute == null)
-                    throw new VerificationException(expression, "Attribute '" + fieldName + "' not found");
-                fieldDesc = "attribute";
-                fieldType = attribute.getDataType();
-            } else if (expression instanceof IndexExpression) {
-                SDField field = schema.getConcreteField(fieldName);
-                if (field == null)
-                    throw new VerificationException(expression, "Index field '" + fieldName + "' not found");
-                fieldDesc = "index field";
-                fieldType = field.getDataType();
-            } else if (expression instanceof SummaryExpression) {
-                SummaryField field = schema.getSummaryField(fieldName);
-                if (field == null) {
-                    // Use document field if summary field is not found
-                    SDField sdField = schema.getConcreteField(fieldName);
-                    if (sdField != null && sdField.doesSummarying()) {
-                        fieldDesc = "document field";
-                        fieldType = sdField.getDataType();
-                    } else {
-                        throw new VerificationException(expression, "Summary field '" + fieldName + "' not found");
-                    }
-                } else {
-                    fieldDesc = "summary field";
-                    fieldType = field.getDataType();
-                }
-            } else {
-                throw new UnsupportedOperationException();
-            }
-            if ( ! fieldType.isAssignableFrom(valueType))
-                throw new VerificationException(expression, "Can not assign " + valueType.getName() + " to " + fieldDesc +
-                                                            " '" + fieldName + "' which is " + fieldType.getName());
         }
 
     }

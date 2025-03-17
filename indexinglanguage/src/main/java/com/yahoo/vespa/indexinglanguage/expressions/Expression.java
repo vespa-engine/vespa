@@ -285,20 +285,10 @@ public abstract class Expression extends Selectable {
         throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
     }
 
-    protected DataType mostGeneralNonNullOf(DataType left, DataType right) {
-        if (left == null) return right;
-        if (right == null) return left;
-        if (left.isAssignableTo(right)) return right;
-        if (right.isAssignableTo(left)) return left;
-        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
-    }
-
     protected DataType leastGeneralNonNullOf(DataType left, DataType right) {
         if (left == null) return right;
         if (right == null) return left;
-        if (left.isAssignableTo(right)) return left;
-        if (right.isAssignableTo(left)) return right;
-        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
+        return leastGeneralOf(left, right);
     }
 
 }

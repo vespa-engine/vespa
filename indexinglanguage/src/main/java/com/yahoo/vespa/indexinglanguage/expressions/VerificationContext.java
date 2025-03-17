@@ -14,8 +14,6 @@ public class VerificationContext {
 
     private final Map<String, DataType> variables = new HashMap<>();
     private final FieldTypeAdapter fieldTypes;
-    private DataType currentType;
-    private String outputField;
 
     public VerificationContext(FieldTypeAdapter fieldTypes) {
         this.fieldTypes = Objects.requireNonNull(fieldTypes);
@@ -29,20 +27,7 @@ public class VerificationContext {
 
     /** Returns the type of the given field. */
     public DataType getFieldType(String fieldName, Expression expression) {
-        return fieldTypes.getInputType(expression, fieldName);
-    }
-
-    public void tryOutputType(String fieldName, DataType valueType, Expression expression) {
-        fieldTypes.tryOutputType(expression, fieldName, valueType);
-    }
-
-    /** Returns the current value type */
-    public DataType getCurrentType() { return currentType; }
-
-    /** Returns the current value type */
-    public VerificationContext setCurrentType(DataType value) {
-        this.currentType = value;
-        return this;
+        return fieldTypes.getFieldType(expression, fieldName);
     }
 
     public DataType getVariable(String name) { return variables.get(name); }
@@ -52,12 +37,8 @@ public class VerificationContext {
         return this;
     }
 
-    /** Sets the name of the (last) output field of the statement this is executed as a part of */
-    public void setOutputField(String outputField) { this.outputField = outputField; }
-
     public VerificationContext clear() {
         variables.clear();
-        currentType = null;
         return this;
     }
 
