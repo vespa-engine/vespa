@@ -93,9 +93,11 @@ AnnotationConverter::handleIndexingTerms(const StringFieldValue& value)
         int32_t curEnd = it->span.to();
         auto it_begin = it++;
         for (; it != ite && it->span.from() == curStart; ++it) {
+            // find longest span starting at same place
             curEnd = std::max(curEnd, it->span.to());
         }
         for (; it != ite && it->span.to() <= curEnd; ++it) {
+            // gather all spans contained within the block
         }
         document::Span curSpan(curStart, curEnd - curStart);
         handleAnnotations(curSpan, it_begin, it);
