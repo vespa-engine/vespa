@@ -101,10 +101,6 @@
           <artifactId>*</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.fasterxml.jackson.datatype</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.jetbrains</groupId>
           <artifactId>*</artifactId>
         </exclusion>
