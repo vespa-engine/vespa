@@ -499,19 +499,16 @@ public class DocumentGenMojo extends AbstractMojo {
 
     private Collection<Field> getAllUniqueFields(boolean multipleInheritance, Collection<Field> allFields) {
         Map<String, Field> seen = new HashMap<>();
-        List<Field> unique = new ArrayList<>(allFields.size());
         for (Field f : allFields) {
             if (seen.containsKey(f.getName())) {
                 if (multipleInheritance && ! f.equals(seen.get(f.getName()))) {
                     throw new IllegalArgumentException("Field '" + f.getName() + "' has conflicting definitions in multiple inheritance." +
                                                        "First defined as '" + seen.get(f.getName()) + "', then as '" + f + "'.");
                 }
-            } else {
-                unique.add(f);
-                seen.put(f.getName(), f);
             }
+            seen.put(f.getName(), f);
         }
-        return unique;
+        return seen.values();
     }
 
     /**
