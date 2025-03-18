@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
+import ai.vespa.llm.generation.LanguageModelFieldGenerator;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.prelude.fastsearch.IndexedBackend;
 import com.yahoo.vespa.defaults.Defaults;
@@ -160,7 +161,7 @@ public class PlatformBundles {
     private static final Set<String> modelIntegrationComponents = Set.of(
             ai.vespa.llm.clients.OpenAI.class.getName(),
             ai.vespa.llm.clients.LocalLLM.class.getName(),
-            ai.vespa.llm.generation.LanguageModelTextGenerator.class.getName()
+            LanguageModelFieldGenerator.class.getName()
     );
 
 }

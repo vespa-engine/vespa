@@ -14,7 +14,6 @@ import com.yahoo.slime.SlimeUtils;
 
 import java.io.EOFException;
 import java.io.IOException;
-import java.net.SocketException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.http.HttpClient;
@@ -46,11 +45,6 @@ public class OpenAiClient implements LanguageModel {
 
     private static final int MAX_RETRIES = 3;
     private static final long RETRY_DELAY_MS = 250;
-
-    // These are public so that they can be used to set corresponding InferenceParameters outside of this class.
-    public static final String OPTION_MODEL = "model";
-    public static final String OPTION_TEMPERATURE = "temperature";
-    public static final String OPTION_MAX_TOKENS = "maxTokens";
 
     private final HttpClient httpClient;
 
@@ -176,29 +170,25 @@ public class OpenAiClient implements LanguageModel {
     private HttpRequest toRequest(Prompt prompt, InferenceParameters options, boolean stream) throws IOException, URISyntaxException {
         var slime = new Slime();
         var root = slime.setObject();
-        root.setString("model", options.get(OPTION_MODEL).orElse(DEFAULT_MODEL));
-        root.setBool("stream", stream);
-        root.setLong("n", 1);
+        root.setString("model", options.get(InferenceParameters.OPTION_MODEL).orElse(DEFAULT_MODEL))
+            .setBool("stream", stream)
+            .setLong("n", 1);
 
-        if (options.getDouble(OPTION_TEMPERATURE).isPresent())
-            root.setDouble("temperature", options.getDouble(OPTION_TEMPERATURE).get());
-        if (options.getInt(OPTION_MAX_TOKENS).isPresent())
-            root.setLong("max_tokens", options.getInt(OPTION_MAX_TOKENS).get());
-        // Others?
+        options.getDouble(InferenceParameters.OPTION_TEMPERATURE)
+               .ifPresent(v -> root.setDouble("temperature", v));
+        options.getInt(InferenceParameters.OPTION_MAX_TOKENS)
+               .ifPresent(v -> root.setLong("max_tokens", v));
 
-        var messagesArray = root.setArray("messages");
-        var messagesObject = messagesArray.addObject();
-        messagesObject.setString("role", "user");
-        messagesObject.setString("content", prompt.asString());
+        var message = root.setArray("messages").addObject();
+        message.setString("role", "user")
+               .setString("content", prompt.asString());
 
-        var endpoint = options.getEndpoint().orElse("https://api.openai.com/v1/chat/completions");
-        return HttpRequest.newBuilder(new URI(endpoint))
-                          .header("Content-Type", "application/json")
-                          .header("Authorization", "Bearer " + options.getApiKey().orElse(""))
-                          .POST(HttpRequest.BodyPublishers.ofByteArray(SlimeUtils.toJsonBytes(slime)))
-                          .build();
+        return HttpRequest.newBuilder(new URI(options.getEndpoint().orElse("https://api.openai.com/v1/chat/completions")))
+                         .header("Content-Type", "application/json")
+                         .header("Authorization", "Bearer " + options.getApiKey().orElse(""))
+                         .POST(HttpRequest.BodyPublishers.ofByteArray(SlimeUtils.toJsonBytes(slime)))
+                         .build();
     }
-
     private List<Completion> toCompletions(Inspector response) {
         return toCompletions(response, "message");
     }
