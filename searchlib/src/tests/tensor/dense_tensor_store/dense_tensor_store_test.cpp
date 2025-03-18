@@ -6,10 +6,8 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
-
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("dense_tensor_store_test");
@@ -38,7 +36,7 @@ struct Fixture
         Value::UP expTensor = makeTensor(tensorSpec);
         EntryRef ref = store.store_tensor(*expTensor);
         Value::UP actTensor = store.get_tensor(ref);
-        EXPECT_EQUAL(*expTensor, *actTensor);
+        EXPECT_EQ(*expTensor, *actTensor);
         assertTensorView(ref, *expTensor);
     }
     void assertEmptyTensor(const TensorSpec &tensorSpec) const {
@@ -51,69 +49,66 @@ struct Fixture
     void assertTensorView(EntryRef ref, const Value &expTensor) const {
         auto cells = store.get_typed_cells(ref);
         vespalib::eval::DenseValueView actTensor(store.type(), cells);
-        EXPECT_EQUAL(expTensor, actTensor);
+        EXPECT_EQ(expTensor, actTensor);
     }
 };
 
-TEST_F("require that we can store 1d bound tensor", Fixture("tensor(x[3])"))
+TEST(DenseTensorStoreTest, require_that_we_can_store_1d_bound_tensor)
 {
+    Fixture f("tensor(x[3])");
     f.assertSetAndGetTensor(TensorSpec("tensor(x[3])").
                                        add({{"x", 0}}, 2).
                                        add({{"x", 1}}, 3).
                                        add({{"x", 2}}, 5));
 }
 
-TEST_F("require that correct empty tensor is returned for 1d bound tensor", Fixture("tensor(x[3])"))
+TEST(DenseTensorStoreTest, require_that_correct_empty_tensor_is_returned_for_1d_bound_tensor)
 {
+    Fixture f("tensor(x[3])");
     f.assertEmptyTensor(TensorSpec("tensor(x[3])").
                                    add({{"x", 0}}, 0).
                                    add({{"x", 1}}, 0).
                                    add({{"x", 2}}, 0));
 }
 
-void
-assertArraySize(const std::string &tensorType, uint32_t expArraySize) {
+size_t array_size(const std::string&tensorType) {
     Fixture f(tensorType);
-    EXPECT_EQUAL(expArraySize, f.store.getArraySize());
+    return f.store.getArraySize();
 }
 
-TEST("require that array size is calculated correctly")
+TEST(DenseTensorStoreTest, require_that_array_size_is_calculated_correctly)
 {
-    TEST_DO(assertArraySize("tensor(x[1])", 8));
-    TEST_DO(assertArraySize("tensor(x[10])", 96));
-    TEST_DO(assertArraySize("tensor(x[3])", 32));
-    TEST_DO(assertArraySize("tensor(x[10],y[10])", 800));
-    TEST_DO(assertArraySize("tensor<int8>(x[1])", 8));
-    TEST_DO(assertArraySize("tensor<int8>(x[8])", 8));
-    TEST_DO(assertArraySize("tensor<int8>(x[9])", 16));
-    TEST_DO(assertArraySize("tensor<int8>(x[16])", 16));
-    TEST_DO(assertArraySize("tensor<int8>(x[17])", 32));
-    TEST_DO(assertArraySize("tensor<int8>(x[32])", 32));
-    TEST_DO(assertArraySize("tensor<int8>(x[33])", 64));
-    TEST_DO(assertArraySize("tensor<int8>(x[64])", 64));
-    TEST_DO(assertArraySize("tensor<int8>(x[65])", 96));
+    EXPECT_EQ(8, array_size("tensor(x[1])"));
+    EXPECT_EQ(96, array_size("tensor(x[10])"));
+    EXPECT_EQ(32, array_size("tensor(x[3])"));
+    EXPECT_EQ(800, array_size("tensor(x[10],y[10])"));
+    EXPECT_EQ(8, array_size("tensor<int8>(x[1])"));
+    EXPECT_EQ(8, array_size("tensor<int8>(x[8])"));
+    EXPECT_EQ(16, array_size("tensor<int8>(x[9])"));
+    EXPECT_EQ(16, array_size("tensor<int8>(x[16])"));
+    EXPECT_EQ(32, array_size("tensor<int8>(x[17])"));
+    EXPECT_EQ(32, array_size("tensor<int8>(x[32])"));
+    EXPECT_EQ(64, array_size("tensor<int8>(x[33])"));
+    EXPECT_EQ(64, array_size("tensor<int8>(x[64])"));
+    EXPECT_EQ(96, array_size("tensor<int8>(x[65])"));
 }
 
-void
-assert_max_buffer_entries(const std::string& tensor_type, uint32_t exp_entries)
-{
+uint32_t max_buffer_entries(const std::string& tensor_type) {
     Fixture f(tensor_type);
-    EXPECT_EQUAL(exp_entries, f.store.get_max_buffer_entries());
+    return f.store.get_max_buffer_entries();
 }
 
-TEST("require that max entries is calculated correctly")
+TEST(DenseTensorStoreTest, require_that_max_entries_is_calculated_correctly)
 {
-    TEST_DO(assert_max_buffer_entries("tensor(x[1])", 1_Mi));
-
-    TEST_DO(assert_max_buffer_entries("tensor(x[32])", 1_Mi));
-    TEST_DO(assert_max_buffer_entries("tensor(x[64])", 512_Ki));
-    TEST_DO(assert_max_buffer_entries("tensor(x[1024])", 32_Ki));
-    TEST_DO(assert_max_buffer_entries("tensor(x[1024])", 32_Ki));
-    TEST_DO(assert_max_buffer_entries("tensor(x[16777216])", 2));
-    TEST_DO(assert_max_buffer_entries("tensor(x[33554428])", 2));
-    TEST_DO(assert_max_buffer_entries("tensor(x[33554429])", 1));
-    TEST_DO(assert_max_buffer_entries("tensor(x[33554432])", 1));
+    EXPECT_EQ(1_Mi, max_buffer_entries("tensor(x[1])"));
+    EXPECT_EQ(1_Mi, max_buffer_entries("tensor(x[32])"));
+    EXPECT_EQ(512_Ki, max_buffer_entries("tensor(x[64])"));
+    EXPECT_EQ(32_Ki, max_buffer_entries("tensor(x[1024])"));
+    EXPECT_EQ(32_Ki, max_buffer_entries("tensor(x[1024])"));
+    EXPECT_EQ(2, max_buffer_entries("tensor(x[16777216])"));
+    EXPECT_EQ(2, max_buffer_entries("tensor(x[33554428])"));
+    EXPECT_EQ(1, max_buffer_entries("tensor(x[33554429])"));
+    EXPECT_EQ(1, max_buffer_entries("tensor(x[33554432])"));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
-
+GTEST_MAIN_RUN_ALL_TESTS()
