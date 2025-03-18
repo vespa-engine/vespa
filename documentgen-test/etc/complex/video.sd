@@ -29,7 +29,7 @@ search video {
       field version type string {
          indexing: attribute|summary
       }
-      field some_tensor type tensor<float>(paragraph{}) {
+      field mid type int {
          indexing: attribute
       }
    }

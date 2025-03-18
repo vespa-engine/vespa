@@ -424,7 +424,7 @@ public class DocumentGenMojo extends AbstractMojo {
         String className = className(docType.getName());
         Pair<String, Boolean> extendInfo = javaSuperType(docType);
         String superType = extendInfo.getFirst();
-        Boolean multiExtends = extendInfo.getSecond();
+        boolean multiExtends = extendInfo.getSecond();
         out.write(
                 "package "+packageName+";\n\n" +
                 exportInnerImportsFromSuperTypes(docType, packageName) +
@@ -497,24 +497,21 @@ public class DocumentGenMojo extends AbstractMojo {
         return false;
     }
 
-    private Collection<Field> getAllUniqueFields(Boolean multipleInheritance, Collection<Field> allFields) {
-        if (multipleInheritance) {
-            Map<String, Field> seen = new HashMap<>();
-            List<Field> unique = new ArrayList<>(allFields.size());
-            for (Field f : allFields) {
-                if (seen.containsKey(f.getName())) {
-                    if ( ! f.equals(seen.get(f.getName()))) {
-                        throw new IllegalArgumentException("Field '" + f.getName() + "' has conflicting definitions in multiple inheritance." +
-                                "First defined as '" + seen.get(f.getName()) + "', then as '" + f + "'.");
-                    }
-                } else {
-                    unique.add(f);
-                    seen.put(f.getName(), f);
+    private Collection<Field> getAllUniqueFields(boolean multipleInheritance, Collection<Field> allFields) {
+        Map<String, Field> seen = new HashMap<>();
+        List<Field> unique = new ArrayList<>(allFields.size());
+        for (Field f : allFields) {
+            if (seen.containsKey(f.getName())) {
+                if (multipleInheritance && ! f.equals(seen.get(f.getName()))) {
+                    throw new IllegalArgumentException("Field '" + f.getName() + "' has conflicting definitions in multiple inheritance." +
+                                                       "First defined as '" + seen.get(f.getName()) + "', then as '" + f + "'.");
                 }
+            } else {
+                unique.add(f);
+                seen.put(f.getName(), f);
             }
-            return unique;
         }
-        return allFields;
+        return unique;
     }
 
     /**
@@ -1013,8 +1010,8 @@ public class DocumentGenMojo extends AbstractMojo {
 
     private static String upperCaseFirstChar(String s) {
         if (reservedFieldName(s)) {
-            System.err.println("WARNING - field '"+s+"' has a reserved name; using 'my_"+s+"' instead");
-            s = "my_" + s;
+            System.err.println("WARNING - field '"+s+"' has a reserved name; using 'My_"+s+"' instead");
+            return "My_" + s;
         }
         return s.substring(0, 1).toUpperCase()+s.substring(1);
     }
