@@ -16,7 +16,7 @@ com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
 com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
-com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1
+com.fasterxml.jackson.module:jackson-module-kotlin:${jackson2.vespa.version}
 com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}

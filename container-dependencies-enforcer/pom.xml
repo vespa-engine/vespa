@@ -147,7 +147,7 @@
                                         <include>com.yahoo.vespa:vsm:*:test</include>
 
                                         <!-- 3rd party test dependencies -->
-                                        <include>com.fasterxml.jackson.module:jackson-module-kotlin:2.18.1:test</include>
+                                        <include>com.fasterxml.jackson.module:jackson-module-kotlin:${jackson2.vespa.version}:test</include>
                                         <include>com.google.code.findbugs:jsr305:${findbugs.vespa.version}:test</include>
                                         <include>com.google.protobuf:protobuf-java:${protobuf.vespa.version}:test</include>
                                         <include>com.huaban:jieba-analysis:jar:${jieba.vespa.version}:test</include>
