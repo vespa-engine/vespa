@@ -21,6 +21,8 @@ import org.eclipse.lsp4j.MarkupContent;
 import org.eclipse.lsp4j.MarkupKind;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
+import ai.vespa.lemminx.VespaExtension;
+
 /**
  * TODO: refactor and handle tags with the same name based on context.
  */
@@ -34,6 +36,9 @@ public class HoverParticipant implements IHoverParticipant {
 
     @Override
     public Hover onTag(IHoverRequest request, CancelChecker cancelChecker) throws Exception {
+        if (!VespaExtension.match(request.getXMLDocument()))
+            return null;
+
         if (request.getCurrentTag() == null) return null;
 
         DOMNode iterator = request.getNode();

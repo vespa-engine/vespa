@@ -25,6 +25,7 @@ private:
     WeightedBufferType _attrBuffer;
     std::vector<std::string_view> _addr_ref;
     std::unique_ptr<vespalib::eval::Value> _tensor;
+    bool _is_single_value;
 
 public:
     TensorFromAttributeExecutor(const search::attribute::IAttributeVector *attribute,
@@ -33,7 +34,8 @@ public:
           _type(valueType),
           _attrBuffer(),
           _addr_ref(),
-          _tensor()
+          _tensor(),
+          _is_single_value(attribute->getCollectionType() == search::attribute::CollectionType::SINGLE)
     {
         _attrBuffer.allocate(_attribute->getMaxValueCount());
         _addr_ref.reserve(1);
@@ -48,7 +50,8 @@ TensorFromAttributeExecutor<WeightedBufferType>::execute(uint32_t docId)
     _attrBuffer.fill(*_attribute, docId);
     auto factory = FastValueBuilderFactory::get();
     auto builder = factory.create_value_builder<double>(_type, 1, 1, _attrBuffer.size());
-    for (size_t i = 0; i < _attrBuffer.size(); ++i) {
+    bool ignore = _is_single_value && _attribute->isUndefined(docId);
+    for (size_t i = 0; i < _attrBuffer.size() && !ignore; ++i) {
         std::string label(_attrBuffer[i].value());
         _addr_ref.clear();
         _addr_ref.push_back(label);

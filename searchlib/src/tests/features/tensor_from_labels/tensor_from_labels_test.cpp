@@ -100,26 +100,30 @@ struct ExecFixture
         attrs.push_back(AttributeFactory::createAttribute("aint", AVC(AVBT::INT32,  AVCT::ARRAY)));
         attrs.push_back(AttributeFactory::createAttribute("wsstr", AVC(AVBT::STRING,  AVCT::WSET)));
         attrs.push_back(AttributeFactory::createAttribute("sint", AVC(AVBT::INT32,  AVCT::SINGLE)));
+        attrs.push_back(AttributeFactory::createAttribute("sstr", AVC(AVBT::STRING,  AVCT::SINGLE)));
 
         for (const auto &attr : attrs) {
             attr->addReservedDoc();
-            attr->addDocs(1);
+            attr->addDocs(2);
             test.getIndexEnv().getAttributeMap().add(attr);
         }
 
-        StringAttribute *astr = static_cast<StringAttribute *>(attrs[0].get());
+        StringAttribute &astr = dynamic_cast<StringAttribute &>(*attrs[0]);
         // Note that the weight parameter is not used
-        astr->append(1, "a", 0);
-        astr->append(1, "b", 0);
-        astr->append(1, "c", 0);
+        astr.append(1, "a", 0);
+        astr.append(1, "b", 0);
+        astr.append(1, "c", 0);
 
-        IntegerAttribute *aint = static_cast<IntegerAttribute *>(attrs[1].get());
-        aint->append(1, 3, 0);
-        aint->append(1, 5, 0);
-        aint->append(1, 7, 0);
-        
-        IntegerAttribute *sint = static_cast<IntegerAttribute *>(attrs[3].get());
-        sint->update(1, 5);
+        IntegerAttribute &aint = dynamic_cast<IntegerAttribute &>(*attrs[1]);
+        aint.append(1, 3, 0);
+        aint.append(1, 5, 0);
+        aint.append(1, 7, 0);
+
+        IntegerAttribute &sint = dynamic_cast<IntegerAttribute &>(*attrs[3]);
+        sint.update(1, 5);
+
+        StringAttribute &sstr = dynamic_cast<StringAttribute &>(*attrs[4]);
+        sstr.update(1, "foo");
 
         for (const auto &attr : attrs) {
             attr->commit();
@@ -132,8 +136,8 @@ struct ExecFixture
     const Value &extractTensor(uint32_t docid) {
         return test.resolveObjectFeature(docid);
     }
-    const Value &execute() {
-        return extractTensor(1);
+    const Value &execute(uint32_t docid = 1) {
+        return extractTensor(docid);
     }
 };
 
@@ -187,6 +191,32 @@ TEST(TensorFromLabelsTest, require_that_single_value_integer_attribute_can_be_co
     ExecFixture f("tensorFromLabels(attribute(sint),foobar)");
     EXPECT_EQ(*make_tensor(TensorSpec("tensor(foobar{})")
                            .add({{"foobar", "5"}}, 1)), f.execute());
+}
+
+TEST(TensorFromLabelsTest, require_that_empty_tensor_is_created_if_single_value_integer_attribute_is_undefined)
+{
+    ExecFixture f("tensorFromLabels(attribute(sint))");
+    EXPECT_EQ(*make_empty("tensor(sint{})"), f.execute(2));
+}
+
+TEST(TensorFromLabelsTest, require_that_single_value_string_attribute_can_be_converted_to_tensor_using_default_dimension)
+{
+    ExecFixture f("tensorFromLabels(attribute(sstr))");
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor(sstr{})")
+                                   .add({{"sstr", "foo"}}, 1)), f.execute());
+}
+
+TEST(TensorFromLabelsTest, require_that_single_value_string_attribute_can_be_converted_to_tensor_using_explicit_dimension)
+{
+    ExecFixture f("tensorFromLabels(attribute(sstr),foobar)");
+    EXPECT_EQ(*make_tensor(TensorSpec("tensor(foobar{})")
+                                   .add({{"foobar", "foo"}}, 1)), f.execute());
+}
+
+TEST(TensorFromLabelsTest, require_that_empty_tensor_is_created_if_single_value_string_attribute_is_undefined)
+{
+    ExecFixture f("tensorFromLabels(attribute(sstr))");
+    EXPECT_EQ(*make_empty("tensor(sstr{})"), f.execute(2));
 }
 
 TEST(TensorFromLabelsTest, require_that_empty_tensor_is_created_if_attribute_does_not_exists)

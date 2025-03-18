@@ -23,6 +23,7 @@ type Value interface {
 	EachField(func(name string, value Value))
 	Add(value Value) Value
 	Set(name string, value Value) Value
+	Emit(dst DataSink)
 }
 
 func Valid(values ...Value) bool {
@@ -51,5 +52,6 @@ func (*emptyValue) Field(name string) Value                  { return Invalid }
 func (*emptyValue) EachField(func(name string, value Value)) {}
 func (*emptyValue) Add(value Value) Value                    { return Invalid }
 func (*emptyValue) Set(name string, value Value) Value       { return Invalid }
+func (*emptyValue) Emit(dst DataSink)                        { dst.Empty() }
 
 func ToString(value Value) string { return ToJson(value, false) }

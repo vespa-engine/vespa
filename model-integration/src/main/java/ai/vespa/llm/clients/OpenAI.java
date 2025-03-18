@@ -59,15 +59,15 @@ public class OpenAI extends ConfigurableLanguageModel {
         configOptions = new HashMap<>();
 
         if (!config.model().isBlank()) {
-            configOptions.put(OPTION_MODEL, config.model());
+            configOptions.put(InferenceParameters.OPTION_MODEL, config.model());
         }
 
         if (config.temperature() >= 0) {
-            configOptions.put(OPTION_TEMPERATURE, String.valueOf(config.temperature()));
+            configOptions.put(InferenceParameters.OPTION_TEMPERATURE, String.valueOf(config.temperature()));
         }
 
         if (config.maxTokens() >= 0) {
-            configOptions.put(OPTION_MAX_TOKENS, String.valueOf(config.maxTokens()));
+            configOptions.put(InferenceParameters.OPTION_MAX_TOKENS, String.valueOf(config.maxTokens()));
         }
     }
     

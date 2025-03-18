@@ -32,7 +32,7 @@ public class SimpleTestAdapter implements FieldValueAdapter {
     }
 
     @Override
-    public DataType getInputType(Expression exp, String fieldName) {
+    public DataType getFieldType(Expression exp, String fieldName) {
         // Same check as in config-model IndexingValidation:
         if ( ! types.containsKey(fieldName))
             throw new VerificationException(exp, "Field '" + fieldName + "' not found.");
@@ -47,18 +47,6 @@ public class SimpleTestAdapter implements FieldValueAdapter {
     @Override
     public FieldValue getInputValue(FieldPath fieldPath) {
         return values.get(fieldPath.toString());
-    }
-
-    @Override
-    public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-        DataType fieldType = types.get(fieldName);
-        if (fieldType == null) {
-            throw new VerificationException(exp, "Field '" + fieldName + "' not found.");
-        }
-        if (!fieldType.isAssignableFrom(valueType)) {
-            throw new VerificationException(exp, "Can not assign " + valueType.getName() + " to field '" +
-                                                 fieldName + "' which is " + fieldType.getName() + ".");
-        }
     }
 
     public SimpleTestAdapter setValue(String fieldName, FieldValue fieldValue) {

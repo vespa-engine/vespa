@@ -149,7 +149,7 @@ func (a *Client) AccessToken() (string, error) {
 		// use the refresh token to get a new access token:
 		tr := &auth.TokenRetriever{
 			Authenticator: a.Authenticator,
-			Secrets:       &auth.Keyring{},
+			Secrets:       auth.NewKeyring(),
 			Client:        http.DefaultClient,
 		}
 		resp, err := tr.Refresh(cancelOnInterrupt(), a.options.SystemName)
@@ -199,7 +199,7 @@ func (a *Client) WriteCredentials(credentials Credentials) error {
 
 // RemoveCredentials removes credentials for the system configured in this client.
 func (a *Client) RemoveCredentials() error {
-	tr := &auth.TokenRetriever{Secrets: &auth.Keyring{}}
+	tr := &auth.TokenRetriever{Secrets: auth.NewKeyring()}
 	if err := tr.Delete(a.options.SystemName); err != nil {
 		return fmt.Errorf("auth0: failed to remove system %s from secret storage: %w", a.options.SystemName, err)
 	}

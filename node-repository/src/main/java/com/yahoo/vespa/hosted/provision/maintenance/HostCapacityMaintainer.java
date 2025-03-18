@@ -225,9 +225,9 @@ public class HostCapacityMaintainer extends NodeRepositoryMaintainer {
             List<Integer> provisionIndices = nodeRepository().database().readProvisionIndices(count);
             HostSharing sharingMode = nodeRepository().exclusivity().allocation(asSpec(clusterType, 0)) ? HostSharing.exclusive : HostSharing.shared;
             HostProvisionRequest request = new HostProvisionRequest(provisionIndices, NodeType.host, nodeResources,
-                                                                    ApplicationId.defaultId(), osVersion,
+                                                                    ApplicationId.defaultId(), osVersion, Vtag.currentVersion,
                                                                     sharingMode, clusterType.map(ClusterSpec.Type::valueOf), Optional.empty(),
-                                                                    nodeRepository().zone().cloud().account(), false);
+                                                                    nodeRepository().zone().cloud().account(), false, false);
             List<Node> hosts = new ArrayList<>();
             Runnable waiter;
             try (var lock = nodeRepository().nodes().lockUnallocated()) {

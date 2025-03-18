@@ -5,6 +5,7 @@ package tracedoctor
 import (
 	"fmt"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
+	"sort"
 	"strings"
 )
 
@@ -320,6 +321,7 @@ func (t threadTrace) profTimeMs() float64 {
 
 type protonTrace struct {
 	root slime.Value
+	path *slime.Path
 }
 
 func (p protonTrace) findThreadTraces() []threadTrace {
@@ -341,40 +343,6 @@ func (p protonTrace) extractQuery() *queryNode {
 		query = plan[0].Apply(p.root).Field("optimized")
 	}
 	return extractQueryNode(query)
-}
-
-type annNode struct {
-	root slime.Value
-}
-
-func (n annNode) render(out *output) {
-	out.fmt("ANN query node:\n")
-	out.fmt("    attribute_tensor: %s\n", n.root.Field("attribute_tensor").AsString())
-	out.fmt("    query_tensor: %s\n", n.root.Field("query_tensor").AsString())
-	out.fmt("    target_hits: %d\n", n.root.Field("target_hits").AsLong())
-	if n.root.Field("adjusted_target_hits").AsLong() > n.root.Field("target_hits").AsLong() {
-		out.fmt("    adjusted_target_hits: %d\n", n.root.Field("adjusted_target_hits").AsLong())
-	}
-	out.fmt("    explore_additional_hits: %d\n", n.root.Field("explore_additional_hits").AsLong())
-	out.fmt("    algorithm: %s\n", n.root.Field("algorithm").AsString())
-	if calculated := n.root.Field("global_filter").Field("calculated"); calculated.Valid() && !calculated.AsBool() {
-		out.fmt("    global_filter: not calculated\n")
-	} else if hit_ratio := n.root.Field("global_filter").Field("hit_ratio"); hit_ratio.Valid() {
-		out.fmt("    global_filter: %.3f hit ratio\n", hit_ratio.AsDouble())
-	}
-	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
-		out.fmt("    found hits: %d\n", top_k_hits.AsLong())
-	}
-}
-
-func (p protonTrace) findAnnNodes() []annNode {
-	var res []annNode
-	slime.Select(p.root, hasTag("query_execution_plan"), func(p *slime.Path, v slime.Value) {
-		slime.Select(v.Field("optimized"), hasType("search::queryeval::NearestNeighborBlueprint"), func(p *slime.Path, v slime.Value) {
-			res = append(res, annNode{v})
-		})
-	})
-	return res
 }
 
 func (p protonTrace) makeTimeline(trace slime.Value, t *timeline) {
@@ -418,12 +386,54 @@ func (p protonTrace) durationMs() float64 {
 	return p.root.Field("duration_ms").AsDouble()
 }
 
+type protonTraceGroup struct {
+	traces []protonTrace
+	id     int
+}
+
+func (p protonTraceGroup) durationMs() float64 {
+	var res float64
+	for _, trace := range p.traces {
+		if trace.durationMs() > res {
+			res = trace.durationMs()
+		}
+	}
+	return res
+}
+
+func (p protonTraceGroup) documentType() string {
+	if len(p.traces) > 0 {
+		return p.traces[0].documentType()
+	}
+	return ""
+}
+
+func groupProtonTraces(traces []protonTrace) []protonTraceGroup {
+	groupMap := make(map[string]*protonTraceGroup)
+	for _, trace := range traces {
+		tag := trace.path.Clone().Trim(3).Field(trace.documentType()).String()
+		if group, exists := groupMap[tag]; exists {
+			group.traces = append(group.traces, trace)
+		} else {
+			groupMap[tag] = &protonTraceGroup{traces: []protonTrace{trace}, id: len(groupMap)}
+		}
+	}
+	res := make([]protonTraceGroup, 0, len(groupMap))
+	for _, group := range groupMap {
+		res = append(res, *group)
+	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].id < res[j].id
+	})
+	return res
+}
+
 func findProtonTraces(root slime.Value) []protonTrace {
 	var traces []protonTrace
 	slime.Select(root.Field("trace"), func(p *slime.Path, v slime.Value) bool {
 		return slime.Valid(v.Field("distribution-key"), v.Field("document-type"), v.Field("duration_ms"))
 	}, func(p *slime.Path, v slime.Value) {
-		traces = append(traces, protonTrace{v})
+		traces = append(traces, protonTrace{root: v, path: p.Clone()})
 	})
 	return traces
 }

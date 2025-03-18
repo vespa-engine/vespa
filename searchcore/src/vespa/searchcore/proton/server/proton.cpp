@@ -8,6 +8,7 @@
 #include "flushhandlerproxy.h"
 #include "hw_info_explorer.h"
 #include "initialize_threads_calculator.h"
+#include "malloc_info_explorer.h"
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
 #include "prepare_restart_handler.h"
@@ -977,7 +978,7 @@ const std::string THREAD_POOLS = "threadpools";
 const std::string HW_INFO = "hwinfo";
 const std::string SESSION = "session";
 const std::string CACHE_NAME = "cache";
-
+const std::string MALLOC_INFO = "mallocinfo";
 
 struct StateExplorerProxy : vespalib::StateExplorer {
     const StateExplorer &explorer;
@@ -1056,7 +1057,8 @@ Proton::get_state(const vespalib::slime::Inserter &, bool) const
 std::vector<std::string>
 Proton::get_children_names() const
 {
-    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME, HW_INFO, RESOURCE_USAGE, SESSION, CACHE_NAME};
+    return {DOCUMENT_DB, THREAD_POOLS, MATCH_ENGINE, FLUSH_ENGINE, TLS_NAME,
+            HW_INFO, RESOURCE_USAGE, SESSION, CACHE_NAME, MALLOC_INFO};
 }
 
 std::unique_ptr<vespalib::StateExplorer>
@@ -1088,6 +1090,8 @@ Proton::get_child(std::string_view name) const
     } else if (name == CACHE_NAME && _posting_list_cache &&
                (_posting_list_cache->enabled_for_posting_lists() || _posting_list_cache->enabled_for_bitvectors())) {
         return std::make_unique<CacheExplorer>(*_posting_list_cache);
+    } else if (name == MALLOC_INFO) {
+        return std::make_unique<MallocInfoExplorer>();
     }
     return {};
 }

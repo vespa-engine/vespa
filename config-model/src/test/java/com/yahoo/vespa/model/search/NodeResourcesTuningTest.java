@@ -124,8 +124,8 @@ public class NodeResourcesTuningTest {
 
     @Test
     void require_that_search_read_mmap_advise_is_set_based_on_disk() {
-        assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.RANDOM, true);
-        assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.NORMAL, false);
+        assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.NORMAL, true);
+        assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.SEQUENTIAL, false);
     }
 
     @Test

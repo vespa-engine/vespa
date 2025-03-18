@@ -17,7 +17,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.search.query.ranking.Diversity;
 import com.yahoo.schema.DistributableResource;
@@ -79,7 +79,7 @@ public class SchemaParser {
      */
     @SuppressWarnings("deprecation")
     private IndexingOperation newIndexingOperation(boolean multiline) throws ParseException {
-        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), TextGenerator.throwsOnUse.asMap());
+        return newIndexingOperation(multiline, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
     }
 
     /**
@@ -90,7 +90,7 @@ public class SchemaParser {
      */
     private IndexingOperation newIndexingOperation(
             boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders, 
-            Map<String, TextGenerator> generators) throws ParseException {
+            Map<String, FieldGenerator> generators) throws ParseException {
         SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
         if (token.next != null) {
             input.backup(token.next.image.length());

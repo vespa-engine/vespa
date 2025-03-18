@@ -31,6 +31,8 @@ import java.util.logging.Logger;
  */
 class JettyResponseWriter implements ResponseHandler {
 
+    private static final ByteBuffer EMPTY_BUFFER = ByteBuffer.allocate(0);
+
     private static final Logger log = Logger.getLogger(JettyResponseWriter.class.getName());
 
     private final Object monitor = new Object();
@@ -156,13 +158,13 @@ class JettyResponseWriter implements ResponseHandler {
                         if (jettyHeaders.get(HttpHeader.CONTENT_TYPE) == null) {
                             jettyHeaders.add(HttpHeader.CONTENT_TYPE, "text/plain;charset=utf-8");
                         }
-                        jettyRequest.setAttribute(ResponseMetricAggregator.requestTypeAttribute,
+                        jettyRequest.setAttribute(MetricAggregatingRequestLog.requestTypeAttribute,
                                 jdiscResponse.getRequestType());
                     }
                 }
 
                 canWrite = false;
-                jettyResponse.write(task.buf == null, task.buf, new Callback() {
+                jettyResponse.write(task.buf == null, Objects.requireNonNullElse(task.buf, EMPTY_BUFFER), new Callback() {
                     @Override
                     public void succeeded() {
                         if (task.buf == null) responseCompletion.complete(null);

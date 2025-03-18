@@ -10,6 +10,7 @@ import org.eclipse.lsp4j.Location;
 import org.eclipse.lsp4j.LocationLink;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
+import ai.vespa.lemminx.VespaExtension;
 import ai.vespa.lemminx.command.SchemaLSCommands;
 
 public class DefinitionParticipant implements IDefinitionParticipant {
@@ -17,6 +18,9 @@ public class DefinitionParticipant implements IDefinitionParticipant {
 
     @Override
     public void findDefinition(IDefinitionRequest request, List<LocationLink> locations, CancelChecker cancelChecker) {
+
+        if (!VespaExtension.match(request.getXMLDocument()))
+            return;
 
         DOMAttr attribute = request.getCurrentAttribute();
 

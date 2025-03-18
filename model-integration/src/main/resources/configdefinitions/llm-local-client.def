@@ -46,7 +46,7 @@ maxPromptTokens int default = 0
 # It might lead to nonsense completions and performance issues.
 # DISCARD - silently discard the request - don't run inference
 # ABORT - discard the request and raise an error
-contextOverflowPolicy enum {NONE, DISCARD, ABORT} default=NONE
+contextOverflowPolicy enum {NONE, DISCARD, FAIL} default=NONE
 
 # Random number generator seed used by LLM runtime during inference.
 # It can be used for better reproducibility of LLM completions.

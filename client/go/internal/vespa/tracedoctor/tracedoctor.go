@@ -26,14 +26,6 @@ type timing struct {
 	totalMs   float64
 }
 
-func (t *timing) percentageOfQuery(parameter float64) string {
-	if t == nil || parameter >= t.queryMs {
-		return ""
-	}
-	percentage := (parameter / t.queryMs) * 100
-	return fmt.Sprintf(" (%.2f%% of query time)", percentage)
-}
-
 func (t *timing) render(out *output) {
 	if t == nil {
 		return
@@ -142,8 +134,8 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, out *output) {
 	trace.timeline().render(out)
 	cnt, worst, peers := selectSlowestThread(trace.findThreadTraces())
 	if worst != nil {
-		out.fmt("found %d threads, slowest matching/ranking was thread #%d: %.3f ms\n",
-			cnt, worst.id, worst.profTimeMs())
+		out.fmt("found %d thread%s, slowest matching/ranking was thread #%d: %.3f ms\n",
+			cnt, suffix(cnt, "s"), worst.id, worst.profTimeMs())
 		if cnt > 1 {
 			out.fmt("(average of other threads was %.3f ms)\n", peers)
 		}
@@ -154,18 +146,54 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, out *output) {
 	}
 }
 
+func selectSlowestGroup(groups []protonTraceGroup) int {
+	var slowestIndex int
+	var maxDuration float64
+	for i, group := range groups {
+		duration := group.durationMs()
+		if duration > maxDuration {
+			maxDuration = duration
+			slowestIndex = i
+		}
+	}
+	return slowestIndex
+}
+
+type searchMeta struct {
+	groups []protonTraceGroup
+}
+
+func (s searchMeta) render(out *output) {
+	out.fmt("+--------+-------+---------------+\n")
+	out.fmt("| search | nodes | back-end time |\n")
+	out.fmt("+--------+-------+---------------+\n")
+	for _, group := range s.groups {
+		groupID := group.id
+		nodes := len(group.traces)
+		docType := group.documentType()
+		duration := group.durationMs()
+		out.fmt("| %6d | %5d | %10.3f ms | %s\n", groupID, nodes, duration, docType)
+	}
+	out.fmt("+--------+-------+---------------+\n")
+}
+
 func (ctx *Context) Analyze(stdout io.Writer) error {
 	out := &output{out: stdout}
 	ctx.timing.render(out)
-	cnt, worst, peers := selectSlowestSearch(findProtonTraces(ctx.root))
-	if worst != nil {
-		out.fmt("found %d searches, slowest search was: %s[%d]: %.3f ms%s\n",
-			cnt, worst.documentType(), worst.distributionKey(), worst.durationMs(),
-			ctx.timing.percentageOfQuery(worst.durationMs()))
-		if cnt > 1 {
-			out.fmt("(average of other searches was %.3f ms)\n", peers)
+	groups := groupProtonTraces(findProtonTraces(ctx.root))
+	if len(groups) > 0 {
+		out.fmt("found %d search%s:\n", len(groups), suffix(len(groups), "es"))
+		searchMeta{groups}.render(out)
+		idx := selectSlowestGroup(groups)
+		cnt, worst, peers := selectSlowestSearch(groups[idx].traces)
+		if worst != nil {
+			out.fmt("slowest content node was: %s[%d]: %.3f ms\n",
+				worst.documentType(), worst.distributionKey(), worst.durationMs())
+			if cnt > 1 {
+				out.fmt("(average of other content nodes for the same search was %.3f ms)\n", peers)
+			}
+			ctx.analyzeProtonTrace(*worst, out)
 		}
-		ctx.analyzeProtonTrace(*worst, out)
 	}
 	return out.err
 }

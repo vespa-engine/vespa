@@ -4151,7 +4151,17 @@
       "public void ifPresent(java.lang.String, java.util.function.Consumer)",
       "public ai.vespa.llm.InferenceParameters withDefaultOptions(java.util.function.Function)"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String OPTION_MODEL",
+      "public static final java.lang.String OPTION_TEMPERATURE",
+      "public static final java.lang.String OPTION_MAX_TOKENS",
+      "public static final java.lang.String OPTION_TOP_K",
+      "public static final java.lang.String OPTION_TOP_P",
+      "public static final java.lang.String OPTION_N_PREDICT",
+      "public static final java.lang.String OPTION_REPEAT_PENALTY",
+      "public static final java.lang.String OPTION_SEED",
+      "public static final java.lang.String OPTION_JSON_SCHEMA"
+    ]
   },
   "ai.vespa.llm.LanguageModel" : {
     "superClass" : "java.lang.Object",

@@ -15,22 +15,24 @@ import java.util.Optional;
 /**
  * A host provisioning request. This contains the details required to provision a host.
  *
- * @param indices                 List of unique provision indices which will be used to generate the node hostnames
- *                                on the form of <code>[prefix][index].[domain]</code>.
- * @param type                    The host type to provision.
- * @param resources               The resources needed per node - the provisioned host may be significantly larger.
- * @param owner                   ID of the application that will own the provisioned host.
- * @param osVersion               The OS version to use. If this version does not exist, implementations may choose a suitable
- *                                fallback version.
- * @param sharing                 Puts requirements on sharing or exclusivity of the host to be provisioned.
- * @param clusterType             The cluster we are provisioning for, or empty if we are provisioning hosts
- *                                to be shared by multiple cluster nodes.
- * @param clusterId               The ID of the cluster we are provisioning for, or empty if we are provisioning hosts
- *                                to be shared by multiple cluster nodes.
- * @param cloudAccount            The cloud account to use.
+ * @param indices                   List of unique provision indices which will be used to generate the node hostnames
+ *                                  on the form of <code>[prefix][index].[domain]</code>.
+ * @param type                      The host type to provision.
+ * @param resources                 The resources needed per node - the provisioned host may be significantly larger.
+ * @param owner                     ID of the application that will own the provisioned host.
+ * @param osVersion                 The OS version to use. If this version does not exist, implementations may choose a suitable
+ *                                  fallback version.
+ * @param hostAdminVersion          The version of host-sentinel/host-admin to install
+ * @param sharing                   Puts requirements on sharing or exclusivity of the host to be provisioned.
+ * @param clusterType               The cluster we are provisioning for, or empty if we are provisioning hosts
+ *                                  to be shared by multiple cluster nodes.
+ * @param clusterId                 The ID of the cluster we are provisioning for, or empty if we are provisioning hosts
+ *                                  to be shared by multiple cluster nodes.
+ * @param cloudAccount              The cloud account to use.
  * @param requireBestMatchingFlavor Whether to only try provisioning with the best matching flavor. If that flavor is
- *                                unavailable for whatever reason, the request will fail without trying other
- *                                flavors that could satisfy the request.
+ *                                  unavailable for whatever reason, the request will fail without trying other
+ *                                  flavors that could satisfy the request.
+ * @param bootstrapZone             If provisioning a cfghost in a new zone
  * @author mpolden
  */
 public record HostProvisionRequest(List<Integer> indices,
@@ -38,26 +40,30 @@ public record HostProvisionRequest(List<Integer> indices,
                                    NodeResources resources,
                                    ApplicationId owner,
                                    Version osVersion,
+                                   Version hostAdminVersion,
                                    HostProvisioner.HostSharing sharing,
                                    Optional<ClusterSpec.Type> clusterType,
                                    Optional<ClusterSpec.Id> clusterId,
                                    CloudAccount cloudAccount,
-                                   boolean requireBestMatchingFlavor) {
+                                   boolean requireBestMatchingFlavor,
+                                   boolean bootstrapZone) {
 
     public HostProvisionRequest(List<Integer> indices, NodeType type, NodeResources resources,
-                                ApplicationId owner, Version osVersion, HostProvisioner.HostSharing sharing,
+                                ApplicationId owner, Version osVersion, Version hostAdminVersion, HostProvisioner.HostSharing sharing,
                                 Optional<ClusterSpec.Type> clusterType, Optional<ClusterSpec.Id> clusterId,
-                                CloudAccount cloudAccount, boolean requireBestMatchingFlavor) {
+                                CloudAccount cloudAccount, boolean requireBestMatchingFlavor, boolean bootstrapZone) {
         this.indices = List.copyOf(Objects.requireNonNull(indices));
         this.type = Objects.requireNonNull(type);
         this.resources = Objects.requireNonNull(resources);
         this.owner = Objects.requireNonNull(owner);
         this.osVersion = Objects.requireNonNull(osVersion);
+        this.hostAdminVersion = Objects.requireNonNull(hostAdminVersion);
         this.sharing = Objects.requireNonNull(sharing);
         this.clusterType = Objects.requireNonNull(clusterType);
         this.clusterId = Objects.requireNonNull(clusterId);
         this.cloudAccount = Objects.requireNonNull(cloudAccount);
         this.requireBestMatchingFlavor = requireBestMatchingFlavor;
+        this.bootstrapZone = bootstrapZone;
     }
 
 }

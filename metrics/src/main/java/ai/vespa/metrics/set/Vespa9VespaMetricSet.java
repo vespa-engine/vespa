@@ -144,6 +144,7 @@ public class Vespa9VespaMetricSet {
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_BUSY_THREADS, EnumSet.of(sum, count, max));
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_TOTAL_THREADS.max());
         addMetric(metrics, ContainerMetrics.JETTY_THREADPOOL_QUEUE_SIZE.max());
+        addMetric(metrics, ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.rate());
 
         addMetric(metrics, ContainerMetrics.HTTPAPI_LATENCY, EnumSet.of(max, sum, count));
         addMetric(metrics, ContainerMetrics.HTTPAPI_PENDING, EnumSet.of(max, sum, count));

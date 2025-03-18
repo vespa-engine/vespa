@@ -63,7 +63,15 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
         this.config = serverConfig;
         server = new Server();
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
-        if (!(requestLog instanceof VoidRequestLog)) server.setRequestLog(new AccessLogRequestLog(requestLog));
+        var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric());
+        server.addBean(metricAggregatingRequestLog);
+        if (requestLog instanceof VoidRequestLog) {
+            server.setRequestLog(metricAggregatingRequestLog);
+        } else {
+            server.setRequestLog(new org.eclipse.jetty.server.RequestLog.Collection(
+                    new AccessLogRequestLog(requestLog),
+                    metricAggregatingRequestLog));
+        }
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
 
@@ -85,20 +93,19 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
 
         var statisticsHandler = new StatisticsHandler(newGzipHandler(perConnectorHandlers));
         var connectionMetricAggregator = new ConnectionMetricAggregator(serverConfig, metric, statisticsHandler);
-        var responseMetricAggregator = new ResponseMetricAggregator(serverConfig.metric(), connectionMetricAggregator);
+
 
         if (!(connectionLog instanceof VoidConnectionLog)) {
-            var connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog, responseMetricAggregator);
+            var connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog, connectionMetricAggregator);
             server.addBeanToAllConnectors(connectionLogger);
             server.setHandler(connectionLogger);
         } else {
-            server.setHandler(responseMetricAggregator);
+            server.setHandler(connectionMetricAggregator);
         }
 
         server.addBeanToAllConnectors(connectionMetricAggregator);
-        server.addBean(responseMetricAggregator);
 
-        this.metricsReporter = new ServerMetricReporter(metric, server, statisticsHandler, responseMetricAggregator);
+        this.metricsReporter = new ServerMetricReporter(metric, server, statisticsHandler, metricAggregatingRequestLog);
     }
 
     JDiscContext registerContext(FilterBindings filterBindings, CurrentContainer container, Janitor janitor, Metric metric) {
