@@ -166,10 +166,6 @@
           <artifactId>annotations</artifactId>
         </exclusion>
         <exclusion>
-          <groupId>com.fasterxml.jackson.core</groupId>
-          <artifactId>*</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>org.apache.httpcomponents.core5</groupId>
           <artifactId>*</artifactId>
         </exclusion>
@@ -186,6 +182,12 @@
       <artifactId>jackson-module-kotlin</artifactId>
       <version>${jackson2.vespa.version}</version>
       <scope>compile</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+      </exclusions>
     </dependency>
 
     <dependency>
