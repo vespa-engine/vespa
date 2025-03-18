@@ -188,6 +188,22 @@ public class GroupingRequest {
         return newRequest;
     }
 
+    /**
+     * Creates a new grouping request with grouping properties and adds it to the query.getSelect().getGrouping() list
+     *
+     * @param query the query to attach the request to.
+     * @return The created request.
+     */
+    public static GroupingRequest newInstanceWithGroupingProperties(Query query) {
+        GroupingRequest newRequest = new GroupingRequest(query.getSelect());
+        GroupingQueryParser.intProperty(query, GroupingQueryParser.PARAM_DEFAULT_MAX_GROUPS).ifPresent(newRequest::setDefaultMaxGroups);
+        GroupingQueryParser.intProperty(query, GroupingQueryParser.PARAM_DEFAULT_MAX_HITS).ifPresent(newRequest::setDefaultMaxHits);
+        GroupingQueryParser.longProperty(query, GroupingQueryParser.GROUPING_GLOBAL_MAX_GROUPS).ifPresent(newRequest::setGlobalMaxGroups);
+        GroupingQueryParser.doubleProperty(query, GroupingQueryParser.PARAM_DEFAULT_PRECISION_FACTOR).ifPresent(newRequest::setDefaultPrecisionFactor);
+        query.getSelect().getGrouping().add(newRequest);
+        return newRequest;
+    }
+
     @Override
     public String toString() {
         return root == null ? "(empty)" : root.toString();
