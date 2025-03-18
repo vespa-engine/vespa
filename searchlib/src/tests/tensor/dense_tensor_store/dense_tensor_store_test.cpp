@@ -71,7 +71,7 @@ TEST(DenseTensorStoreTest, require_that_correct_empty_tensor_is_returned_for_1d_
                                    add({{"x", 2}}, 0));
 }
 
-size_t array_size(const std::string&tensorType) {
+size_t array_size(const std::string& tensorType) {
     Fixture f(tensorType);
     return f.store.getArraySize();
 }
