@@ -184,8 +184,8 @@
       <!-- Included for openai-java. Using dependencyManagement does not force correct version for tenant base poms -->
       <groupId>com.fasterxml.jackson.module</groupId>
       <artifactId>jackson-module-kotlin</artifactId>
-      <version>${jackson2.vespa.version}</version>
-      <scope>compile</scope>
+      <version>2.18.1</version>
+      <scope>provided</scope>
         <exclusions>
           <exclusion>
             <groupId>com.fasterxml.jackson.core</groupId>

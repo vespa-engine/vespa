@@ -512,7 +512,7 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.module</groupId>
                 <artifactId>jackson-module-kotlin</artifactId>
-                <version>${jackson2.vespa.version}</version>
+                <version>2.18.1</version>
             </dependency>
             <dependency>
                 <groupId>com.github.cverges.expect4j</groupId>
