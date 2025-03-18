@@ -29,7 +29,7 @@ import java.util.LinkedHashMap;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.document.datatypes.*;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
@@ -44,7 +44,7 @@ public class IndexingParser {
     private String defaultFieldName;
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
-    private Map<String, TextGenerator> generators;
+    private Map<String, FieldGenerator> generators;
     private AnnotatorConfig annotatorCfg;
 
     public IndexingParser(String str) {
@@ -66,7 +66,7 @@ public class IndexingParser {
         return this;
     }
 
-    public IndexingParser setGenerators(Map<String, TextGenerator> generators) {
+    public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
         this.generators = generators;
         return this;
     }

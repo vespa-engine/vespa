@@ -1,14 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.llm.generation;
+package ai.vespa.llm.clients;
 
+import ai.vespa.llm.InferenceParameters;
+import ai.vespa.llm.LanguageModel;
+import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
+import ai.vespa.llm.generation.OnnxEncoderDecoderConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
 import com.yahoo.language.sentencepiece.SentencePieceEmbedder;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
@@ -20,16 +23,17 @@ import com.yahoo.api.annotations.Beta;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.Consumer;
 
 /**
  * Component for generating text using SentencePiece tokenizer and encoder and decoder language models in ONNX format.
  * See onnx-encoder-decoder-text-generator.def for configuration options.
- * TODO: Consider if this should be a LanguageModel implementation instead of a TextGenerator.
  * 
  * @author lesters
  */
 @Beta
-public class OnnxEncoderDecoderTextGenerator extends AbstractComponent implements TextGenerator {
+public class OnnxEncoderDecoder extends AbstractComponent implements LanguageModel {
 
     private final static int TOKEN_EOS = 1;  // end of sequence
 
@@ -50,7 +54,7 @@ public class OnnxEncoderDecoderTextGenerator extends AbstractComponent implement
     private final OnnxEvaluator decoder;
 
     @Inject
-    public OnnxEncoderDecoderTextGenerator(OnnxRuntime onnx, OnnxEncoderDecoderTextGeneratorConfig config) {
+    public OnnxEncoderDecoder(OnnxRuntime onnx, OnnxEncoderDecoderConfig config) {
         // Set up tokenizer
         tokenizer = new SentencePieceEmbedder.Builder(config.tokenizerModel().toString()).build();
         tokenizerMaxTokens = config.tokenizerMaxTokens();
@@ -90,19 +94,11 @@ public class OnnxEncoderDecoderTextGenerator extends AbstractComponent implement
      * @param options options for text generation
      * @return a text generated from the prompt
      */
-    public String generate(String prompt, TextGeneratorDecoderOptions options) {
+    public String generate(String prompt, DecoderOptions options) {
         return switch (options.getSearchMethod()) {
             case GREEDY -> generateGreedy(prompt, options);
             default -> generateNotImplemented(options);
         };
-    }
-
-    public String generate(String prompt) {
-        return generate(prompt, new TextGeneratorDecoderOptions());
-    }
-    
-    public String generate(Prompt prompt, Context context) {
-        return generate(prompt.asString());
     }
 
     @Override
@@ -111,12 +107,12 @@ public class OnnxEncoderDecoderTextGenerator extends AbstractComponent implement
         decoder.close();
     }
 
-    private String generateNotImplemented(TextGeneratorDecoderOptions options) {
+    private String generateNotImplemented(DecoderOptions options) {
         throw new UnsupportedOperationException(
                 "Search method '" + options.getSearchMethod() + "' is currently not implemented");
     }
 
-    private String generateGreedy(String prompt, TextGeneratorDecoderOptions options) {
+    private String generateGreedy(String prompt, DecoderOptions options) {
         var generatedTokens = new ArrayList<Integer>();
         generatedTokens.add(0);  // Or target tokens
 
@@ -238,4 +234,46 @@ public class OnnxEncoderDecoderTextGenerator extends AbstractComponent implement
         }
     }
 
+    @Override
+    public List<Completion> complete(Prompt prompt, InferenceParameters options) {
+        var completionText = generate(prompt.asString(), new DecoderOptions());
+        var completion = new Completion(completionText, Completion.FinishReason.stop);
+        return List.of(completion);
+    }
+
+    @Override
+    public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
+        throw new UnsupportedOperationException("Asynchronous completion is not supported");
+    }
+    
+    public static class DecoderOptions {
+
+        public enum SearchMethod {
+            GREEDY,
+            CONTRASTIVE,
+            BEAM,
+            SAMPLE,
+        }
+
+        private SearchMethod searchMethod = SearchMethod.GREEDY;
+        private int maxLength = 20;
+
+        public SearchMethod getSearchMethod() {
+            return searchMethod;
+        }
+
+        public DecoderOptions setSearchMethod(SearchMethod searchMethod) {
+            this.searchMethod = searchMethod;
+            return this;
+        }
+
+        public int getMaxLength() {
+            return maxLength;
+        }
+
+        public DecoderOptions setMaxLength(int maxLength) {
+            this.maxLength = maxLength;
+            return this;
+        }
+    }
 }
