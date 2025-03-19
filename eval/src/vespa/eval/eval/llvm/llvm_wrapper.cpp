@@ -30,6 +30,9 @@ using CodeGenOptLevel = llvm::CodeGenOpt::Level;
 #else
 using llvm::CodeGenOptLevel;
 #endif
+#if LLVM_VERSION_MAJOR < 20
+#define getOrInsertDeclaration getDeclaration
+#endif
 
 double vespalib_eval_ldexp(double a, double b) { return std::ldexp(a, b); }
 double vespalib_eval_min(double a, double b) { return std::min(a, b); }
@@ -113,14 +116,14 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     llvm::FunctionType *make_eval_forest_fun_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getInt8Ty()->getPointerTo());
-        param_types.push_back(builder.getDoubleTy()->getPointerTo());
+        param_types.push_back(llvm::PointerType::get(builder.getInt8Ty(), 0));
+        param_types.push_back(llvm::PointerType::get(builder.getDoubleTy(), 0));
         return llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
     }
 
     llvm::FunctionType *make_resolve_param_fun_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getInt8Ty()->getPointerTo());
+        param_types.push_back(llvm::PointerType::get(builder.getInt8Ty(), 0));
         param_types.push_back(builder.getInt64Ty());
         return llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
     }
@@ -128,16 +131,16 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     llvm::FunctionType *make_eval_forest_proxy_fun_t() {
         std::vector<llvm::Type*> param_types;
         param_types.push_back(llvm::PointerType::get(make_eval_forest_fun_t(), 0));
-        param_types.push_back(builder.getInt8Ty()->getPointerTo());
+        param_types.push_back(llvm::PointerType::get(builder.getInt8Ty(), 0));
         param_types.push_back(llvm::PointerType::get(make_resolve_param_fun_t(), 0));
-        param_types.push_back(builder.getInt8Ty()->getPointerTo());
+        param_types.push_back(llvm::PointerType::get(builder.getInt8Ty(), 0));
         param_types.push_back(builder.getInt64Ty());
         return llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
     }
 
     llvm::FunctionType *make_check_membership_fun_t() {
         std::vector<llvm::Type*> param_types;
-        param_types.push_back(builder.getInt8Ty()->getPointerTo());
+        param_types.push_back(llvm::PointerType::get(builder.getInt8Ty(), 0));
         param_types.push_back(builder.getDoubleTy());
         return llvm::FunctionType::get(builder.getInt1Ty(), param_types, false);
     }
@@ -168,11 +171,11 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         if (pass_params == PassParams::SEPARATE) {
             param_types.resize(num_params_in, builder.getDoubleTy());
         } else if (pass_params == PassParams::ARRAY) {
-            param_types.push_back(builder.getDoubleTy()->getPointerTo());
+            param_types.push_back(llvm::PointerType::get(builder.getDoubleTy(), 0));
         } else {
             assert(pass_params == PassParams::LAZY);
             param_types.push_back(llvm::PointerType::get(make_resolve_param_fun_t(), 0));
-            param_types.push_back(builder.getInt8Ty()->getPointerTo());
+            param_types.push_back(llvm::PointerType::get(builder.getInt8Ty(), 0));
         }
         llvm::FunctionType *function_type = llvm::FunctionType::get(builder.getDoubleTy(), param_types, false);
         function = llvm::Function::Create(function_type, llvm::Function::ExternalLinkage, name_in.c_str(), &module);
@@ -252,7 +255,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         llvm::FunctionType* eval_fun_t = make_eval_forest_fun_t();
         llvm::PointerType *eval_funptr_t = llvm::PointerType::get(eval_fun_t, 0);
         llvm::Value *eval_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)eval_ptr), eval_funptr_t, "inject_eval");
-        llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), builder.getInt8Ty()->getPointerTo(), "inject_ctx");
+        llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)forest), llvm::PointerType::get(builder.getInt8Ty(), 0), "inject_ctx");
         if (pass_params == PassParams::ARRAY) {
             push(builder.CreateCall(eval_fun_t,
                                     eval_fun, {ctx, params[0]}, "call_eval"));
@@ -352,7 +355,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         push(builder.CreateCall(fun, a));
     }
     void make_call_1(const llvm::Intrinsic::ID &id) {
-        make_call_1(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
+        make_call_1(llvm::Intrinsic::getOrInsertDeclaration(&module, id, builder.getDoubleTy()));
     }
     void make_call_1(const char *name) {
         make_call_1(module.getOrInsertFunction(name, make_call_1_fun_t()));
@@ -375,7 +378,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         push(builder.CreateCall(fun, {a, b}));
     }
     void make_call_2(const llvm::Intrinsic::ID &id) {
-        make_call_2(llvm::Intrinsic::getDeclaration(&module, id, builder.getDoubleTy()));
+        make_call_2(llvm::Intrinsic::getOrInsertDeclaration(&module, id, builder.getDoubleTy()));
     }
     void make_call_2(const char *name) {
         make_call_2(module.getOrInsertFunction(name, make_call_2_fun_t()));
@@ -404,7 +407,7 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
             llvm::FunctionType *fun_t = make_check_membership_fun_t();
             llvm::PointerType *funptr_t = llvm::PointerType::get(fun_t, 0);
             llvm::Value *call_fun = builder.CreateIntToPtr(builder.getInt64((uint64_t)call_ptr), funptr_t, "inject_call_addr");
-            llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)state), builder.getInt8Ty()->getPointerTo(), "inject_ctx");
+            llvm::Value *ctx = builder.CreateIntToPtr(builder.getInt64((uint64_t)state), llvm::PointerType::get(builder.getInt8Ty(), 0), "inject_ctx");
             push(builder.CreateCall(fun_t,
                                     call_fun, {ctx, lhs}, "call_check_membership"));
         } else {
