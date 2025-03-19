@@ -13,7 +13,7 @@ import java.nio.ByteBuffer;
 public abstract class FileReferenceData implements AutoCloseable {
 
     public enum Type { file, compressed }
-    public enum CompressionType { gzip, lz4, none, zstd }
+    public enum CompressionType { lz4, none, zstd }
 
     private final FileReference fileReference;
     private final String filename;
