@@ -241,7 +241,9 @@ public final class DeploymentSpec {
         if (   zone.environment().isTest()
             && instances().stream()
                           .anyMatch(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).values().stream()
-                                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint())))
+                                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))
+               // Remove once Azure Private Link has been implemented
+            && !zone.region().value().startsWith("azure-"))
             return ZoneEndpoint.privateEndpoint;
 
         if (zone.environment().isManuallyDeployed())
