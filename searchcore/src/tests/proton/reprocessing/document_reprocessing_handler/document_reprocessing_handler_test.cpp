@@ -19,7 +19,7 @@ struct MyProcessor : public ReprocessingType
     DocumentId _docId;
 
     MyProcessor() : _lid(0), _docId() {}
-    virtual void handleExisting(uint32_t lid, const std::shared_ptr<Document> &doc) override {
+    void handleExisting(uint32_t lid, const std::shared_ptr<Document> &doc) override {
         _lid = lid;
         _docId = doc->getId();
     }

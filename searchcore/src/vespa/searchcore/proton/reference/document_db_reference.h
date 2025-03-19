@@ -25,10 +25,10 @@ public:
                         std::shared_ptr<const search::IDocumentMetaStoreContext> dmsContext,
                         std::shared_ptr<IGidToLidChangeHandler> gidToLidChangeHandler);
     virtual ~DocumentDBReference();
-    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view name) override;
-    virtual std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const override;
-    virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override;
-    virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string &docTypeName) override;
+    std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view name) override;
+    std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const override;
+    std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override;
+    std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string &docTypeName) override;
 };
 
 } // namespace proton

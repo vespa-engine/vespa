@@ -69,11 +69,11 @@ public:
     {
     }
 
-    virtual Buffer allocBuf(size_t size) override {
+    Buffer allocBuf(size_t size) override {
         return std::make_unique<BufferBuf>(size, search::FileSettings::DIRECTIO_ALIGNMENT);
     }
 
-    virtual void writeBuf(Buffer buf_in) override {
+    void writeBuf(Buffer buf_in) override {
         if (!_buf) {
             _buf = std::move(buf_in);
         } else {

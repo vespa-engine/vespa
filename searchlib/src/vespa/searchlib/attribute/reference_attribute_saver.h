@@ -36,7 +36,7 @@ private:
     const Store &_store;
     Enumerator _enumerator;
 
-    virtual bool onSave(IAttributeSaveTarget &saveTarget) override;
+    bool onSave(IAttributeSaveTarget &saveTarget) override;
 public:
     ReferenceAttributeSaver(vespalib::GenerationHandler::Guard &&guard,
                             const AttributeHeader &header,

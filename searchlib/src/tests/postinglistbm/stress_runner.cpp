@@ -99,9 +99,9 @@ public:
     StressWorker& operator=(const StressWorker&) = delete;
 
     StressWorker(StressMaster& master, uint32_t id);
-    virtual ~StressWorker();
+    ~StressWorker() override;
 
-    virtual void run() override;
+    void run() override;
 };
 
 class DirectStressWorker : public StressWorker {

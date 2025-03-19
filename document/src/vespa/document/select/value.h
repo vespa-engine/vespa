@@ -111,10 +111,10 @@ public:
 
     virtual CommonValueType getCommonValue() const = 0;
 
-    virtual ResultList operator<(const Value& value) const override = 0;
+    ResultList operator<(const Value& value) const override = 0;
     virtual ResultList operator>(const IntegerValue& value) const = 0;
     virtual ResultList operator>(const FloatValue& value) const = 0;
-    virtual ResultList operator==(const Value& value) const override = 0;
+    ResultList operator==(const Value& value) const override = 0;
     virtual ResultList operator==(const IntegerValue& value) const = 0;
     virtual ResultList operator==(const FloatValue& value) const = 0;
 };

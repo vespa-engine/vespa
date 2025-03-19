@@ -201,10 +201,10 @@ class ShowPostingListSubApp : public SubApp
     static uint64_t noWordNum() { return 0u; }
 public:
     ShowPostingListSubApp();
-    virtual ~ShowPostingListSubApp();
-    virtual void usage(bool showHeader) override;
-    virtual bool getOptions(int argc, char **argv) override;
-    virtual int run() override;
+    ~ShowPostingListSubApp() override;
+    void usage(bool showHeader) override;
+    bool getOptions(int argc, char **argv) override;
+    int run() override;
     void showPostingList();
     bool readDocIdLimit(const Schema &schema);
     bool readWordList(const SchemaUtil::IndexIterator &index);
@@ -657,10 +657,10 @@ class DumpWordsSubApp : public SubApp
     void extract_posocc_file_header_bit_size(const std::string& field_dir);
 public:
     DumpWordsSubApp();
-    virtual ~DumpWordsSubApp();
-    virtual void usage(bool showHeader) override;
-    virtual bool getOptions(int argc, char **argv) override;
-    virtual int run() override;
+    ~DumpWordsSubApp() override;
+    void usage(bool showHeader) override;
+    bool getOptions(int argc, char **argv) override;
+    int run() override;
     void dumpWords();
 };
 

@@ -89,7 +89,7 @@ private:
         return table->get(index);
     }
 
-    virtual void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     NativeFieldMatchExecutor(const NativeFieldMatchExecutorSharedState& shared_state);

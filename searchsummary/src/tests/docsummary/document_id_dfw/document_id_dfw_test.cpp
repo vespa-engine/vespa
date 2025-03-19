@@ -54,8 +54,8 @@ make_doc_type_repo()
 }
 
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
-    virtual void fillSummaryFeatures(GetDocsumsState&) override {}
-    virtual void fillRankFeatures(GetDocsumsState&) override {}
+    void fillSummaryFeatures(GetDocsumsState&) override {}
+    void fillRankFeatures(GetDocsumsState&) override {}
     std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
 };
 

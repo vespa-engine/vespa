@@ -53,7 +53,7 @@ class DumpFeatureVisitor : public IDumpFeatureVisitor
 {
 public:
     DumpFeatureVisitor() {}
-    virtual void visitDumpFeature(const std::string & name) override {
+    void visitDumpFeature(const std::string & name) override {
         std::cout << "dump feature: " << name << std::endl;
     }
 };

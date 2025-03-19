@@ -46,8 +46,8 @@ struct MyDataDeserializer : PostingDeserializer<MyData> {
 struct SimpleDocIdLimitProvider : public DocIdLimitProvider {
     uint32_t _doc_id_limit = 1;
     uint32_t _committed_doc_id_limit = 1;
-    virtual uint32_t getDocIdLimit() const override { return _doc_id_limit; }
-    virtual uint32_t getCommittedDocIdLimit() const override { return _committed_doc_id_limit; }
+    uint32_t getDocIdLimit() const override { return _doc_id_limit; }
+    uint32_t getCommittedDocIdLimit() const override { return _committed_doc_id_limit; }
 };
 
 constexpr uint64_t key = 0x123456;

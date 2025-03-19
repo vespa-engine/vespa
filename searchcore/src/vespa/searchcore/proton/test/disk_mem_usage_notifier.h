@@ -30,11 +30,11 @@ public:
     {
     }
     virtual ~DiskMemUsageNotifier() = default;
-    virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override {
+    void addDiskMemUsageListener(IDiskMemUsageListener *listener) override {
         _listeners.push_back(listener);
         listener->notifyDiskMemUsage(_state);
     }
-    virtual void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override {
+    void removeDiskMemUsageListener(IDiskMemUsageListener *listener) override {
         for (auto itr = _listeners.begin(); itr != _listeners.end(); ++itr) {
             if (*itr == listener) {
                 _listeners.erase(itr);

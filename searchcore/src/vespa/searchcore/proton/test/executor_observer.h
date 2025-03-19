@@ -20,7 +20,7 @@ public:
     uint32_t getExecuteCnt() const { return _executeCnt; }
 
     // Implements vespalib::Executor
-    virtual Task::UP execute(Task::UP task) override {
+    Task::UP execute(Task::UP task) override {
         ++_executeCnt;
         return _executor.execute(std::move(task));
     }

@@ -56,9 +56,9 @@ public:
                                      search::SerialNum serialNum);
 
     // Implements IReprocessingInitializer
-    virtual bool hasReprocessors() const override;
+    bool hasReprocessors() const override;
 
-    virtual void initialize(IReprocessingHandler &handler) override;
+    void initialize(IReprocessingHandler &handler) override;
 };
 
 } // namespace proton

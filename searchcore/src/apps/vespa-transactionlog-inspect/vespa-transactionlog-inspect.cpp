@@ -443,13 +443,13 @@ struct DumpOperationsOptions : public BaseOptions
     DumpOperationsOptions(int argc, const char* const* argv);
     ~DumpOperationsOptions();
     static std::string command() { return "dumpoperations"; }
-    virtual std::string toString() const override {
+    std::string toString() const override {
         return vespalib::make_string("%s, domain=%s, first=%" PRIu64 ", last=%" PRIu64 ", configdir=%s",
                                      BaseOptions::toString().c_str(), domainName.c_str(),
                                      firstSerialNum, lastSerialNum,
                                      configDir.c_str());
     }
-    virtual Utility::UP createUtility() const override;
+    Utility::UP createUtility() const override;
 };
 
 DumpOperationsOptions::DumpOperationsOptions(int argc, const char* const* argv)

@@ -37,7 +37,7 @@ public:
     void pop() { _tasks.pop(); }
 
 private:
-    virtual ThreadWaitInfo doNonCriticalTick(ThreadIndex) override = 0;
+    ThreadWaitInfo doNonCriticalTick(ThreadIndex) override = 0;
 };
 
 template <typename Task>

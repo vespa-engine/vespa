@@ -13,7 +13,7 @@ private:
 public:
     MockWriter(bool generated) : _generated(generated) {}
     bool isGenerated() const override { return _generated; }
-    virtual void insertField(uint32_t, const IDocsumStoreDocument*, GetDocsumsState&, vespalib::slime::Inserter &) const override {}
+    void insertField(uint32_t, const IDocsumStoreDocument*, GetDocsumsState&, vespalib::slime::Inserter &) const override {}
 };
 
 TEST(ResultClassTest, subset_of_fields_in_class_are_generated)

@@ -19,7 +19,7 @@ class TlsStatsFactory : public ITlsStatsFactory
 public:
     TlsStatsFactory(std::shared_ptr<TransLogServer> tls);
     virtual ~TlsStatsFactory();
-    virtual TlsStatsMap create() override;
+    TlsStatsMap create() override;
 };
 
 }

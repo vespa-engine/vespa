@@ -39,7 +39,7 @@ struct IndexEnvironmentFixture {
 };
 
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
-    virtual void visitDumpFeature(const std::string &) override {
+    void visitDumpFeature(const std::string &) override {
         FAIL() << "no features should be dumped";
     }
     FeatureDumpFixture() : IDumpFeatureVisitor() {}

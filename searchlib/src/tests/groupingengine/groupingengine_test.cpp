@@ -137,12 +137,12 @@ public:
     CheckAttributeReferences() : _numrefs(0) { }
     int _numrefs;
 private:
-    virtual void execute(vespalib::Identifiable &obj) override {
+    void execute(vespalib::Identifiable &obj) override {
         if (static_cast<AttributeNode &>(obj).getAttribute() != NULL) {
             _numrefs++;
         }
     }
-    virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
+    bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
 };
 
 //-----------------------------------------------------------------------------

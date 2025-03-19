@@ -15,10 +15,10 @@ public:
     DeleteBucketOperation(const document::BucketId &bucketId);
     ~DeleteBucketOperation() override = default;
     const document::BucketId &getBucketId() const { return _bucketId; }
-    virtual void serialize(vespalib::nbostream &os) const override;
-    virtual void deserialize(vespalib::nbostream &is,
-                             const document::DocumentTypeRepo &repo) override;
-    virtual std::string toString() const override;
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is,
+                     const document::DocumentTypeRepo &repo) override;
+    std::string toString() const override;
 };
 
 } // namespace proton

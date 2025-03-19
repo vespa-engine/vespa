@@ -22,7 +22,7 @@ public:
         _subDbInitializers.push_back(subDbInitializer);
         addDependency(subDbInitializer);
     }
-    virtual void run() override;
+    void run() override;
 };
 
 } // namespace proton

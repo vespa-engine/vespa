@@ -12,8 +12,8 @@ using namespace search::predicate;
 namespace {
 
 struct DummyDocIdLimitProvider : public DocIdLimitProvider {
-    virtual uint32_t getDocIdLimit() const override { return 10000; }
-    virtual uint32_t getCommittedDocIdLimit() const override { return 10000; }
+    uint32_t getDocIdLimit() const override { return 10000; }
+    uint32_t getCommittedDocIdLimit() const override { return 10000; }
 };
 
 vespalib::GenerationHandler generation_handler;

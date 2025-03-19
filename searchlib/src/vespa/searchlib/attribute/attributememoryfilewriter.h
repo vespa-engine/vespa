@@ -17,10 +17,10 @@ class AttributeMemoryFileWriter : public IAttributeFileWriter
     std::vector<Buffer> _bufs;
 public:
     AttributeMemoryFileWriter();
-    ~AttributeMemoryFileWriter();
-    virtual Buffer allocBuf(size_t size) override;
-    virtual void writeBuf(Buffer buf) override;
-    virtual std::unique_ptr<BufferWriter> allocBufferWriter() override;
+    ~AttributeMemoryFileWriter() override;
+    Buffer allocBuf(size_t size) override;
+    void writeBuf(Buffer buf) override;
+    std::unique_ptr<BufferWriter> allocBufferWriter() override;
     void writeTo(IAttributeFileWriter &writer);
 };
 
