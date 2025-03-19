@@ -165,7 +165,7 @@ public:
           _explore_additional_hits(explore_additional_hits),
           _distance_threshold(distance_threshold)
     {}
-    ~NearestNeighborTerm() override = default;
+    ~NearestNeighborTerm() override;
     const std::string& get_query_tensor_name() const { return _query_tensor_name; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
     bool get_allow_approximate() const { return _allow_approximate; }

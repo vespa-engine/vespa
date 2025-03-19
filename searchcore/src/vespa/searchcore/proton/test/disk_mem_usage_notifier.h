@@ -4,12 +4,9 @@
 
 #include <vespa/searchcore/proton/server/i_disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/server/i_disk_mem_usage_listener.h>
+#include <vector>
 
-namespace proton
-{
-
-namespace test
-{
+namespace proton::test {
 
 /**
  * Test notifier for disk/mem usage.
@@ -29,7 +26,7 @@ public:
         : DiskMemUsageNotifier(DiskMemUsageState())
     {
     }
-    virtual ~DiskMemUsageNotifier() = default;
+    virtual ~DiskMemUsageNotifier();
     void addDiskMemUsageListener(IDiskMemUsageListener *listener) override {
         _listeners.push_back(listener);
         listener->notifyDiskMemUsage(_state);
@@ -52,5 +49,4 @@ public:
     }
 };
 
-} // namespace proton::test
-} // namespace proton
+}
