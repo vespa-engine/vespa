@@ -19,6 +19,7 @@ const bool WordCharTokenizer::_punctuation_table[] = {
   0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0,
 };
 
+WordCharTokenizer::~WordCharTokenizer() = default;
 
 bool WordCharTokenizer::init(const std::string &text)
 {

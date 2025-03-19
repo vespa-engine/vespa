@@ -67,7 +67,7 @@ public:
     _lowercase(true)
   {}
 
-  ~WordCharTokenizer() override = default;
+  ~WordCharTokenizer() override;
 
   Punctuation getPunctuation() const { return _punctuation; }
   void setPunctuation(Punctuation punct) { _punctuation=punct; }

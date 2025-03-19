@@ -2,6 +2,7 @@
 vespa_add_library(juniper_testsuite
     SOURCES
     test.cpp
+    suite.cpp
     DEPENDS
 )
 
