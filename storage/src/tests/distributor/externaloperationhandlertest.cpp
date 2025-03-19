@@ -88,6 +88,9 @@ struct ExternalOperationHandlerTest : Test, DistributorStripeTestUtil {
     void assert_second_command_not_rejected_due_to_concurrent_mutation(
             std::shared_ptr<api::StorageCommand> cmd1,
             std::shared_ptr<api::StorageCommand> cmd2);
+    void do_test_second_command_rejected_due_to_oversize(
+            std::shared_ptr<api::StorageCommand> cmd1,
+            std::shared_ptr<api::StorageCommand> cmd2);
 
     void TearDown() override {
         close();
@@ -468,6 +471,38 @@ TEST_F(ExternalOperationHandlerTest, do_not_reject_update_operations_to_differen
             makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::baz"),
             makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo")));
     EXPECT_EQ(0, concurrent_mutatations_metric_count(metrics().updates));
+}
+
+void ExternalOperationHandlerTest::do_test_second_command_rejected_due_to_oversize(
+        std::shared_ptr<api::StorageCommand> cmd1,
+        std::shared_ptr<api::StorageCommand> cmd2)
+{
+    createLinks();
+    setup_stripe(1, 3, "version:1 distributor:1 storage:3");
+    auto cfg = make_config();
+    cfg->set_max_document_operation_message_size_bytes(1000);
+    configure_stripe(cfg);
+
+    cmd1->setApproxByteSize(1000); // Just right(tm)
+    cmd2->setApproxByteSize(1001); // Too big
+
+    Operation::SP generated;
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(std::move(cmd1), generated));
+    ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(cmd2)));
+    EXPECT_EQ("ReturnCode(REJECTED, Message size (1001 bytes) exceeds maximum configured limit (1000 bytes))",
+              _sender.reply(0)->getResult().toString());
+}
+
+TEST_F(ExternalOperationHandlerTest, oversized_put_is_rejected) {
+    do_test_second_command_rejected_due_to_oversize(
+        makePutCommand("testdoctype1", "id:foo:testdoctype1::foo"),
+        makePutCommand("testdoctype1", "id:foo:testdoctype1::bar"));
+}
+
+TEST_F(ExternalOperationHandlerTest, oversized_update_is_rejected) {
+    do_test_second_command_rejected_due_to_oversize(
+        makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::foo"),
+        makeUpdateCommand("testdoctype1", "id:foo:testdoctype1::bar"));
 }
 
 TEST_F(ExternalOperationHandlerTest, operation_destruction_allows_new_mutations_for_id) {

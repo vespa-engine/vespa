@@ -26,6 +26,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _maxNodesPerMerge(16),
       _max_consecutively_inhibited_maintenance_ticks(20),
       _max_activation_inhibited_out_of_sync_groups(0),
+      _max_document_operation_message_size_bytes(INT32_MAX),
       _lastGarbageCollectionChange(vespalib::duration::zero()),
       _garbageCollectionInterval(0),
       _minPendingMaintenanceOps(100),
@@ -152,6 +153,11 @@ DistributorConfiguration::configure(const DistributorManagerConfig & config)
     _enable_operation_cancellation = config.enableOperationCancellation;
     _minimumReplicaCountingMode = deriveReplicaCountingMode(config.minimumReplicaCountingMode);
     _symmetric_put_and_activate_replica_selection = config.symmetricPutAndActivateReplicaSelection;
+    if (config.maxDocumentOperationMessageSizeBytes > 0) {
+        _max_document_operation_message_size_bytes = config.maxDocumentOperationMessageSizeBytes;
+    } else {
+        _max_document_operation_message_size_bytes = INT32_MAX;
+    }
 
     if (config.maxClusterClockSkewSec >= 0) {
         _maxClusterClockSkew = std::chrono::seconds(config.maxClusterClockSkewSec);

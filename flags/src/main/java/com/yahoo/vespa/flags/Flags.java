@@ -362,6 +362,15 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
+    public static final UnboundIntFlag MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB = defineIntFlag(
+            "max-distributor-document-operation-size-mib", -1,
+            List.of("vekterli"), "2025-03-17", "2025-10-01",
+            "Sets the maximum size in MiB of a document operation (Put or Update) that a distributor " +
+            "will accept when it arrives over the Document API. Any value outside (1, 2048) implies " +
+            "effectively unbounded behavior. Setting this value too low will have the obvious consequences.",
+            "Takes effect immediately",
+            INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

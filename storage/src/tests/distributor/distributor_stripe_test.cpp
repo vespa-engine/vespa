@@ -15,6 +15,7 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <gmock/gmock.h>
@@ -165,6 +166,12 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
     void configure_enable_operation_cancellation(bool enable_cancellation) {
         configure_stripe_with([&](auto& builder) {
             builder.enableOperationCancellation = enable_cancellation;
+        });
+    }
+
+    void configure_max_document_operation_message_size(int32_t max_size_bytes) {
+        configure_stripe_with([&](auto& builder) {
+            builder.maxDocumentOperationMessageSizeBytes = max_size_bytes;
         });
     }
 
@@ -1088,6 +1095,24 @@ TEST_F(DistributorStripeTest, maintenance_operation_cancellation_does_not_invoke
     EXPECT_EQ("BucketId(0x4000000000000001) : "
               "node(idx=0,crc=0x3,docs=4/4,bytes=5/5,trusted=true,active=false,ready=true)", // no node 1
               dumpBucket(BucketId(16, 1)));
+}
+
+TEST_F(DistributorStripeTest, max_document_operation_message_size_config_is_propagated_to_internal_config) {
+    setup_stripe(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+    EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), INT32_MAX); // TODO enforce a sensible(tm) default
+
+    // Values <= 0 implies max (i.e. unbounded)
+    configure_max_document_operation_message_size(-1);
+    EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), INT32_MAX);
+    configure_max_document_operation_message_size(0);
+    EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), INT32_MAX);
+
+    configure_max_document_operation_message_size(1_Mi);
+    EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), 1_Mi);
+    configure_max_document_operation_message_size(123_Mi);
+    EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), 123_Mi);
+    configure_max_document_operation_message_size(INT32_MAX);
+    EXPECT_EQ(getConfig().max_document_operation_message_size_bytes(), INT32_MAX);
 }
 
 }

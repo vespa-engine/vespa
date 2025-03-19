@@ -231,6 +231,14 @@ public:
         return _max_activation_inhibited_out_of_sync_groups;
     }
 
+    [[nodiscard]] uint32_t max_document_operation_message_size_bytes() const noexcept {
+        return _max_document_operation_message_size_bytes;
+    }
+    void set_max_document_operation_message_size_bytes(uint32_t max_size_bytes) noexcept {
+        // We use uint32_t internally but cap to INT32_MAX due to wire format restrictions
+        _max_document_operation_message_size_bytes = std::min(max_size_bytes, static_cast<uint32_t>(INT32_MAX));
+    }
+
     [[nodiscard]] bool enable_operation_cancellation() const noexcept {
         return _enable_operation_cancellation;
     }
@@ -239,7 +247,7 @@ public:
     }
 
     [[nodiscard]] bool containsTimeStatement(const std::string& documentSelection) const;
-    
+
 private:
     StorageComponent& _component;
     
@@ -251,6 +259,7 @@ private:
     uint32_t _maxNodesPerMerge;
     uint32_t _max_consecutively_inhibited_maintenance_ticks;
     uint32_t _max_activation_inhibited_out_of_sync_groups;
+    uint32_t _max_document_operation_message_size_bytes;
 
     std::string _garbageCollectionSelection;
 

@@ -80,6 +80,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean logserverOtelCol = false;
     private boolean symmetricPutAndActivateReplicaSelection = false;
     private int maxContentNodeMaintenanceOpConcurrency = -1;
+    private int maxDistributorDocumentOperationSizeMib = -1;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -134,6 +135,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
     @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
     @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
+    @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -356,6 +358,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setMaxContentNodeMaintenanceOpConcurrency(int maxConcurrency) {
         this.maxContentNodeMaintenanceOpConcurrency = maxConcurrency;
+        return this;
+    }
+
+    public TestProperties setMaxDistributorDocumentOperationSizeMib(int maxSizeMib) {
+        this.maxDistributorDocumentOperationSizeMib = maxSizeMib;
         return this;
     }
 

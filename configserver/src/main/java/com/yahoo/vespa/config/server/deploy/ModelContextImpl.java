@@ -209,6 +209,7 @@ public class ModelContextImpl implements ModelContext {
         private final long zookeeperPreAllocSize;
         private final int documentV1QueueSize;
         private final int maxContentNodeMaintenanceOpConcurrency;
+        private final int maxDistributorDocumentOperationSizeMib;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
@@ -255,6 +256,7 @@ public class ModelContextImpl implements ModelContext {
             this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
             this.documentV1QueueSize = Flags.DOCUMENT_V1_QUEUE_SIZE.bindTo(source).with(appId).with(version).value();
             this.maxContentNodeMaintenanceOpConcurrency = Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY.bindTo(source).with(appId).with(version).value();
+            this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -307,6 +309,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }
         @Override public int documentV1QueueSize() { return documentV1QueueSize; }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
+        @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     }
 
     public static class Properties implements ModelContext.Properties {

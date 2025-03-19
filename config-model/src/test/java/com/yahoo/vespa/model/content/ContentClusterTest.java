@@ -1565,6 +1565,25 @@ public class ContentClusterTest extends ContentBaseTest {
         assertTrue(resolveDistributorSymmetricReplicaSelectionConfig(true));
     }
 
+    private int resolveMaxDistributorDocOperationSizeConfig(Integer flagValue) throws Exception {
+        return resolveDistributorConfig((props) -> {
+            if (flagValue != null) {
+                props.setMaxDistributorDocumentOperationSizeMib(flagValue);
+            }
+        }).max_document_operation_message_size_bytes();
+    }
+
+    @Test
+    void distributor_max_document_operation_size_config_is_controlled_by_properties() throws Exception {
+        int mi = 1024 * 1024;
+        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(null)); // defaults to -1
+        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(-2));
+        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(0));
+        assertEquals(100*mi,  resolveMaxDistributorDocOperationSizeConfig(100));
+        assertEquals(2047*mi, resolveMaxDistributorDocOperationSizeConfig(2047));
+        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(2048));
+    }
+
     @Test
     void node_distribution_key_outside_legal_range_is_disallowed() {
         // Only [0, UINT16_MAX - 1] is a valid range. UINT16_MAX is a special content layer-internal
