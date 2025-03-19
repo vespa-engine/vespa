@@ -14,12 +14,16 @@ import java.util.List;
 import java.util.Map;
 
 public class OpenAICompatibleTest {
+    /*
+     * This test can be run with OpenAI-compatible endpoints. 
+     * Tested with https://api.together.xyz/v1/ and a local llama-cpp-server. If you have a GGUF file and uv installed, can run directly with `uv run python -m llama_cpp.server --model Llama-3.2-1B-Instruct.IQ1_S.gguf`.
+     */
     // API key for the Together API
     private static final String API_KEY = "<your-api-key>";
-    private static final String TOGETHER_ENDPOINT = "https://api.together.xyz/v1";
+    private static final String TOGETHER_ENDPOINT = "http://localhost:8000/v1";
     private static final String API_KEY_NAME = "together-apikey";
     
-    // List of models to test
+    // List of models to test (will be ignored if running with a local llama-cpp-server)
     private static final List<String> TEST_MODELS = List.of(
             "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
             "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
