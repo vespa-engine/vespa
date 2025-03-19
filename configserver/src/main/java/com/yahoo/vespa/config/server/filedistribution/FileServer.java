@@ -21,6 +21,7 @@ import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,6 +44,7 @@ import static com.yahoo.vespa.filedistribution.FileApiErrorCodes.NOT_FOUND;
 import static com.yahoo.vespa.filedistribution.FileApiErrorCodes.OK;
 import static com.yahoo.vespa.filedistribution.FileApiErrorCodes.TRANSFER_FAILED;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType;
+import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.gzip;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.lz4;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.none;
 import static com.yahoo.vespa.filedistribution.FileReferenceData.CompressionType.zstd;
@@ -59,7 +61,7 @@ public class FileServer {
     /* In preferred order, the one used will be the first one matching one of the accepted compression
      * types sent in client request.
      */
-    private static final List<CompressionType> compressionTypesToServe = List.of(zstd, lz4, none);
+    private static final List<CompressionType> compressionTypesToServe = List.of(zstd, lz4, gzip, none);
     private static final String tempFilereferencedataPrefix = "filereferencedata";
     private static final Path tempFilereferencedataDir = Paths.get(System.getProperty("java.io.tmpdir"));
 
@@ -88,7 +90,7 @@ public class FileServer {
     @Inject
     public FileServer(ConfigserverConfig configserverConfig, FlagSource flagSource, FileDirectory fileDirectory) {
         this(createFileDownloader(getOtherConfigServersInCluster(configserverConfig)),
-             compressionTypesToServe,
+             compressionTypesAsList(Flags.FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE.bindTo(flagSource).value()),
              fileDirectory);
         // Clean up temporary files from previous runs (e.g. if JVM was killed)
         try (var files = uncheck(() -> Files.list(tempFilereferencedataDir))) {
@@ -241,6 +243,12 @@ public class FileServer {
         if (configServers.isEmpty()) return FileDownloader.emptyConnectionPool();
 
         return new FileDistributionConnectionPool(new ConfigSourceSet(configServers), supervisor);
+    }
+
+    private static List<CompressionType> compressionTypesAsList(List<String> compressionTypes) {
+        return compressionTypes.stream()
+                               .map(CompressionType::valueOf)
+                               .toList();
     }
 
 }

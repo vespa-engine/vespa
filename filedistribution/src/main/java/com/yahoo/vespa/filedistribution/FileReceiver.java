@@ -234,7 +234,7 @@ public class FileReceiver {
         long fileSize = req.parameters().get(3).asInt64();
         CompressionType compressionType = (req.parameters().size() > 4)
                 ? CompressionType.valueOf(req.parameters().get(4).asString())
-                : CompressionType.lz4; // fallback/legacy compression type
+                : CompressionType.gzip; // fallback/legacy compression type
         int sessionId = nextSessionId.getAndIncrement();
         int retval = 0;
         synchronized (sessions) {
