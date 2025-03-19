@@ -34,8 +34,9 @@ import java.util.function.Consumer;
 public class OpenAI extends ConfigurableLanguageModel {
     private static final String DEFAULT_MODEL = "gpt-4o-mini";
     private static final String DEFAULT_ENDPOINT = "https://api.openai.com/v1/";
+    private static final String DEFAULT_API_KEY = "<YOUR_API_KEY>";
     
-    // Public option keys for configuration
+    // Public optional keys for configuration
     public static final String OPTION_MODEL = "model";
     public static final String OPTION_TEMPERATURE = "temperature";
     public static final String OPTION_MAX_TOKENS = "maxTokens";
@@ -124,12 +125,8 @@ public class OpenAI extends ConfigurableLanguageModel {
     @Override
     public List<Completion> complete(Prompt prompt, InferenceParameters parameters) {
         var preparedParameters = prepareParameters(parameters);
-        String apiKey = preparedParameters.getApiKey().orElse(null);
+        String apiKey = preparedParameters.getApiKey().orElse(DEFAULT_API_KEY);
         String endpoint = preparedParameters.getEndpoint().orElse(DEFAULT_ENDPOINT);
-        
-        if (apiKey == null) {
-            throw new IllegalArgumentException("API key must be provided either in configuration or in InferenceParameters");
-        }
         
         OpenAIClient client = getSyncClient(apiKey, endpoint);
         
@@ -152,16 +149,8 @@ public class OpenAI extends ConfigurableLanguageModel {
     public CompletableFuture<Completion.FinishReason> completeAsync(
             Prompt prompt, InferenceParameters parameters, Consumer<Completion> consumer) {
         var preparedParameters = prepareParameters(parameters);
-        String apiKey = preparedParameters.getApiKey().orElse(null);
+        String apiKey = preparedParameters.getApiKey().orElse(DEFAULT_API_KEY);
         String endpoint = preparedParameters.getEndpoint().orElse(DEFAULT_ENDPOINT);
-        
-        if (apiKey == null) {
-        // Complete the future exceptionally instead of throwing
-        CompletableFuture<Completion.FinishReason> future = new CompletableFuture<>();
-        future.completeExceptionally(new IllegalArgumentException(
-            "API key must be provided either in configuration or in InferenceParameters"));
-        return future;
-        }
         
         OpenAIClientAsync client = getAsyncClient(apiKey, endpoint);
         
