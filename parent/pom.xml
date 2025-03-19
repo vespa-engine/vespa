@@ -510,11 +510,6 @@
                 <version>${jackson2.vespa.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.fasterxml.jackson.module</groupId>
-                <artifactId>jackson-module-kotlin</artifactId>
-                <version>${jackson2.vespa.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>com.github.cverges.expect4j</groupId>
                 <artifactId>expect4j</artifactId>
                 <version>1.6</version>
@@ -528,11 +523,6 @@
                 <groupId>com.google.errorprone</groupId>
                 <artifactId>error_prone_annotations</artifactId>
                 <version>${error-prone-annotations.vespa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.openai</groupId>
-                <artifactId>openai-java</artifactId>
-                <version>${openai-java.vespa.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.zookeeper</groupId>

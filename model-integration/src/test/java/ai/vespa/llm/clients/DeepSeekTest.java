@@ -12,53 +12,50 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.Map;
 
-public class OpenAITest {
+public class DeepSeekTest {
 
-    private static final String API_KEY = "<YOUR_API_KEY>";
-    
+    private static final String API_KEY = "<TOGETHER_API_KEY>";
+    private static final String DEEPSEEK_ENDPOINT = "https://api.together.xyz/v1/chat/completions";
+
     @Test
     @Disabled
     public void testComplete() {
         var config = new LlmClientConfig.Builder()
-                .apiKeySecretName("openai")
-                .maxTokens(10)
+                .endpoint(DEEPSEEK_ENDPOINT)
+                .apiKeySecretName("deepseek-apikey")
+                .maxTokens(300)
                 .build();
         var openai = new OpenAI(config, new MockSecrets());
         var options = Map.of(
-                "model", "gpt-4o-mini"
+                "model", "deepseek-ai/DeepSeek-R1"
         );
         var prompt = StringPrompt.from("Explain why ducks better than cats in 20 words?");
         var completions = openai.complete(prompt, new InferenceParameters(options::get));
         var text = completions.get(0).text();
-        
-        System.out.print(text);
-        assertNumTokens(text, 3, 10);
+        assertNumTokens(text, 3, 200);
     }
 
     @Test
     @Disabled
     public void testCompleteAsync() {
         var config = new LlmClientConfig.Builder()
-                .apiKeySecretName("openai")
-                .maxTokens(10)
+                .endpoint(DEEPSEEK_ENDPOINT)
+                .apiKeySecretName("deepseek-apikey")
+                .maxTokens(300)
                 .build();
         var openai = new OpenAI(config, new MockSecrets());
         var options = Map.of(
-                "model", "gpt-4o-mini"
+                "model", "deepseek-ai/DeepSeek-R1"
         );
-        var prompt = StringPrompt.from("Explain why ducks better than cats in 20 words?");
+        var prompt = StringPrompt.from("Explain how ducks are better than cats. Do it in less than 20 words?");
         var text = new StringBuilder();
         
         var future = openai.completeAsync(prompt, new InferenceParameters(API_KEY, options::get), completion -> {
             text.append(completion.text());
-        }).exceptionally(exception -> {
-            System.out.println("Error: " + exception);
-            return null;
         });
+
         future.join();
-        
-        System.out.print(text);
-        assertNumTokens(text.toString(), 3, 10);
+        assertNumTokens(text.toString(), 3, 300);
     }
     
     private void assertNumTokens(String completion, int minTokens, int maxTokens) {
@@ -70,7 +67,7 @@ public class OpenAITest {
     static class MockSecrets implements Secrets {
         @Override
         public Secret get(String key) {
-            if (key.equals("openai")) {
+            if (key.equals("deepseek-apikey")) {
                 return new Secret() {
                     @Override
                     public String current() {
