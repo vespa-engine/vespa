@@ -31,7 +31,17 @@ public record Completion(String text, FinishReason finishReason) {
         error,
 
         /** The request for the completion was discarded without raising an error. */
-        discard 
+        discard,
+
+        /** Model generated a completion with a tool call. */
+        tool_calls,
+
+        /** Model finished due to blocking by content filter. */
+        content_filter,
+
+        /** Model finished with function call. */
+        function_call,
+
     }
 
     public Completion(String text, FinishReason finishReason) {

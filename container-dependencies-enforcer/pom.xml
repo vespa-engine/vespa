@@ -72,7 +72,6 @@
                                         <include>com.google.errorprone:error_prone_annotations:[2.21.1, 3):provided</include>
                                         <include>com.google.guava:failureaccess:[1.0.1, 2):provided</include>
                                         <include>com.google.j2objc:j2objc-annotations:[3.0.0, 4):provided</include>
-
                                         <include>com.google.inject:guice:jar:${guice.vespa.version}:provided</include>
                                         <include>com.sun.activation:javax.activation:[1.2.0, 2):provided</include>
                                         <include>com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}:provided</include>
@@ -148,11 +147,19 @@
                                         <include>com.yahoo.vespa:vsm:*:test</include>
 
                                         <!-- 3rd party test dependencies -->
+                                        <include>com.fasterxml.jackson.module:jackson-module-kotlin:${jackson2.vespa.version}:test</include>
                                         <include>com.google.code.findbugs:jsr305:${findbugs.vespa.version}:test</include>
                                         <include>com.google.protobuf:protobuf-java:${protobuf.vespa.version}:test</include>
                                         <include>com.huaban:jieba-analysis:jar:${jieba.vespa.version}:test</include>
                                         <include>com.ibm.icu:icu4j:${icu4j.vespa.version}:test</include>
                                         <include>com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}:test</include>
+                                        <include>com.openai:openai-java:${openai-java.vespa.version}:test</include>
+                                        <include>com.openai:openai-java-client-okhttp:${openai-java.vespa.version}:test</include>
+                                        <include>com.openai:openai-java-core:${openai-java.vespa.version}:test</include>
+                                        <include>com.squareup.okhttp3:logging-interceptor:4.12.0:test</include>
+                                        <include>com.squareup.okhttp3:okhttp:4.12.0:test</include>
+                                        <include>com.squareup.okio:okio:3.6.0:test</include>
+                                        <include>com.squareup.okio:okio-jvm:3.6.0:test</include>
                                         <include>com.thaiopensource:jing:20091111:test</include>
                                         <include>commons-codec:commons-codec:${commons-codec.vespa.version}:test</include>
                                         <include>de.kherud:llama:${kherud.llama.vespa.version}:test</include>
@@ -202,6 +209,11 @@
                                         <include>org.hamcrest:hamcrest:${hamcrest.vespa.version}:test</include>
                                         <include>org.hamcrest:hamcrest-core:${hamcrest.vespa.version}:test</include>
                                         <include>org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-reflect:1.8.10:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib:2.1.10:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib-common:1.9.10:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.21:test</include>
+                                        <include>org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21:test</include>
                                         <include>org.json:json:${org.json.vespa.version}:test</include> <!-- TODO: Remove on Vespa 9 -->
                                         <include>org.lz4:lz4-java:${org.lz4.vespa.version}:test</include>
                                         <include>xerces:xercesImpl:${xerces.vespa.version}:test</include>
