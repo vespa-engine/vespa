@@ -33,6 +33,7 @@ Resources = element resources {
 }
 
 GpuResources = element gpu {
+  attribute type { xsd:string }? &
   attribute count { xsd:positiveInteger } &
   attribute memory { xsd:string }
 }
