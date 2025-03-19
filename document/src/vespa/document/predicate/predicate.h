@@ -41,7 +41,7 @@ struct Predicate {
 struct PredicateNode {
     using UP = std::unique_ptr<PredicateNode>;
 
-    virtual ~PredicateNode() {}
+    virtual ~PredicateNode() = default;
 };
 
 class FeatureBase : public PredicateNode {

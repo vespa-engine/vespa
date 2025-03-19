@@ -18,10 +18,10 @@ struct ComponentConfigProducer {
     };
     struct Consumer {
         virtual void add(const Config &config) = 0;
-        virtual ~Consumer() {}
+        virtual ~Consumer() = default;
     };
     virtual void getComponentConfig(Consumer &consumer) = 0;
-    virtual ~ComponentConfigProducer() {}
+    virtual ~ComponentConfigProducer() = default;
 };
 
 } // namespace vespalib

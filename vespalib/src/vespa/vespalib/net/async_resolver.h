@@ -32,20 +32,20 @@ public:
 
     struct ResultHandler {
         virtual void handle_result(SocketAddress addr) = 0;
-        virtual ~ResultHandler() {}
+        virtual ~ResultHandler() = default;
         using SP = std::shared_ptr<ResultHandler>;
         using WP = std::weak_ptr<ResultHandler>;
     };
 
     struct Clock {
         virtual time_point now() = 0;
-        virtual ~Clock() {}
+        virtual ~Clock() = default;
         using SP = std::shared_ptr<Clock>;
     };
 
     struct HostResolver {
         virtual std::string ip_address(const std::string &host_name) = 0;
-        virtual ~HostResolver() {}
+        virtual ~HostResolver() = default;
         using SP = std::shared_ptr<HostResolver>;
     };
 

@@ -13,7 +13,7 @@ struct HealthProducer {
         Health(bool o, const std::string &m) : ok(o), msg(m) {}
     };
     virtual Health getHealth() const = 0;
-    virtual ~HealthProducer() {}
+    virtual ~HealthProducer() = default;
 };
 
 } // namespace vespalib

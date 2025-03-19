@@ -19,7 +19,7 @@ struct IMemoryIndex : public searchcorespi::IndexSearchable {
     using LidVector = std::vector<uint32_t>;
     using SP = std::shared_ptr<IMemoryIndex>;
     using OnWriteDoneType = std::shared_ptr<vespalib::IDestructorCallback>;
-    virtual ~IMemoryIndex() {}
+    ~IMemoryIndex() override = default;
 
     /**
      * Returns true if this memory index has received any document insert operations.

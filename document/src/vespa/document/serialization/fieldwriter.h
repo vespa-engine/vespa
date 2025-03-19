@@ -21,7 +21,7 @@ class WeightedSetFieldValue;
 
 class FieldWriter {
 public:
-    virtual ~FieldWriter() {}
+    virtual ~FieldWriter() = default;
     virtual void write(const vespalib::FieldBase &field,
                        const Document &value) = 0;
     virtual void write(const vespalib::FieldBase &field,

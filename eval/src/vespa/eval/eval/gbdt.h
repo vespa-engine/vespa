@@ -82,7 +82,7 @@ bool contains_gbdt(const nodes::Node &node, size_t limit);
 struct Forest {
     using UP = std::unique_ptr<Forest>;
     using eval_function = double (*)(const Forest *self, const double *args);
-    virtual ~Forest() {}
+    virtual ~Forest() = default;
 };
 
 /**

@@ -14,7 +14,7 @@ struct Taintable
 {
     static const Taintable &nil();
     virtual const Taint &tainted() const = 0;
-    virtual ~Taintable() {}
+    virtual ~Taintable() = default;
 };
 
 } // namespace vbench

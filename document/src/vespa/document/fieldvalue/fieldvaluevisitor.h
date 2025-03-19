@@ -23,7 +23,7 @@ class TensorFieldValue;
 class ReferenceFieldValue;
 
 struct FieldValueVisitor {
-    virtual ~FieldValueVisitor() {}
+    virtual ~FieldValueVisitor() = default;
 
     virtual void visit(AnnotationReferenceFieldValue &value) = 0;
     virtual void visit(ArrayFieldValue &value) = 0;
@@ -46,7 +46,7 @@ struct FieldValueVisitor {
 };
 
 struct ConstFieldValueVisitor {
-    virtual ~ConstFieldValueVisitor() {}
+    virtual ~ConstFieldValueVisitor() = default;
 
     virtual void visit(const AnnotationReferenceFieldValue &value) = 0;
     virtual void visit(const ArrayFieldValue &value) = 0;

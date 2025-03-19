@@ -83,7 +83,7 @@ public:
     void Run();                  // Calls Test::run() repeatedly
     long Report() const;
     void Free(); // deletes tests
-    virtual ~Suite(void) {}
+    virtual ~Suite() = default;
 
 private:
     std::string        m_name;

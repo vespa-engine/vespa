@@ -17,7 +17,7 @@ class NearestNeighborIndex;
  */
 class NearestNeighborIndexFactory {
 public:
-    virtual ~NearestNeighborIndexFactory() {}
+    virtual ~NearestNeighborIndexFactory() = default;
     virtual std::unique_ptr<NearestNeighborIndex> make(const DocVectorAccess& vectors,
                                                        size_t vector_size,
                                                        bool multi_vector_index,

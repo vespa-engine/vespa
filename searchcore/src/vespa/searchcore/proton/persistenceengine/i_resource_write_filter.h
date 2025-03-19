@@ -29,7 +29,7 @@ struct IResourceWriteFilter
         const std::string &message() const { return _message; }
     };
 
-    virtual ~IResourceWriteFilter() {}
+    virtual ~IResourceWriteFilter() = default;
 
     virtual bool acceptWriteOperation() const = 0;
     virtual State getAcceptState() const = 0;

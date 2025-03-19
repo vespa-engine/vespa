@@ -34,7 +34,7 @@ namespace vespalib::eval {
  **/
 struct PluginState {
     using UP = std::unique_ptr<PluginState>;
-    virtual ~PluginState() {}
+    virtual ~PluginState() = default;
 };
 
 /**

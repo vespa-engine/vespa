@@ -20,7 +20,7 @@ namespace search::tensor {
  */
 class NearestNeighborIndexSaver {
 public:
-    virtual ~NearestNeighborIndexSaver() {}
+    virtual ~NearestNeighborIndexSaver() = default;
 
     /**
      * Saves the index in binary form using the given writer.

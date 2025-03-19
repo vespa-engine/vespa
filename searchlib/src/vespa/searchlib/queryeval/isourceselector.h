@@ -91,7 +91,7 @@ public:
     /**
      * empty; defined for safe subclassing.
      **/
-    virtual ~ISourceSelector() {}
+    virtual ~ISourceSelector() = default;
 private:
     uint32_t _baseId;
     Source   _defaultSource;

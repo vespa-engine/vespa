@@ -14,7 +14,7 @@ struct IReprocessingRewriter
 {
     using SP = std::shared_ptr<IReprocessingRewriter>;
 
-    virtual ~IReprocessingRewriter() {}
+    virtual ~IReprocessingRewriter() = default;
 
     /**
      * Handle and rewrite the given existing document.

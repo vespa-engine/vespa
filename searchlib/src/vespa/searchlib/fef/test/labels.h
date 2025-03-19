@@ -9,7 +9,7 @@ namespace search::fef::test {
 
 struct Labels {
     virtual void inject(Properties &p) const = 0;
-    virtual ~Labels() {}
+    virtual ~Labels() = default;
 };
 struct NoLabel : public Labels {
     virtual void inject(Properties &) const override {}

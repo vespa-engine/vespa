@@ -18,7 +18,7 @@ struct HttpResultHandler
     virtual void handleHeader(const string &name, const string &value) = 0;
     virtual void handleContent(const Memory &data) = 0;
     virtual void handleFailure(const string &reason) = 0;
-    virtual ~HttpResultHandler() {}
+    virtual ~HttpResultHandler() = default;
 };
 
 } // namespace vbench

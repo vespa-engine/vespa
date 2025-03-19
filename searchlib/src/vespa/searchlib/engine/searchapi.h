@@ -25,7 +25,7 @@ public:
     /**
      * Empty, needed for subclassing
      **/
-    virtual ~SearchClient() {}
+    virtual ~SearchClient() = default;
 };
 
 /**
@@ -57,7 +57,7 @@ public:
     /**
      * Empty, needed for subclassing
      **/
-    virtual ~SearchServer() {}
+    virtual ~SearchServer() = default;
 };
 
 }

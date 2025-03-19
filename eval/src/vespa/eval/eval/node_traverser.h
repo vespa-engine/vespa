@@ -19,7 +19,7 @@ struct NodeTraverser {
     virtual bool open(const nodes::Node &) = 0;
     virtual void close(const nodes::Node &) = 0;
 
-    virtual ~NodeTraverser() {}
+    virtual ~NodeTraverser() = default;
 };
 
 }

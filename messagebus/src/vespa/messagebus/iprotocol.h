@@ -22,7 +22,7 @@ protected:
 public:
     IProtocol(const IProtocol &) = delete;
     IProtocol & operator = (const IProtocol &) = delete;
-    virtual ~IProtocol() {}
+    virtual ~IProtocol() = default;
 
     /**
      * Convenience typedef for an auto pointer to an IProtocol object.
