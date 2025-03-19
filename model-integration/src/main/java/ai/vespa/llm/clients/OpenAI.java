@@ -36,11 +36,6 @@ public class OpenAI extends ConfigurableLanguageModel {
     private static final String DEFAULT_ENDPOINT = "https://api.openai.com/v1/";
     private static final String DEFAULT_API_KEY = "<YOUR_API_KEY>";
     
-    // Public optional keys for configuration
-    public static final String OPTION_MODEL = "model";
-    public static final String OPTION_TEMPERATURE = "temperature";
-    public static final String OPTION_MAX_TOKENS = "maxTokens";
-    
     private final Map<String, String> configOptions;
     
     // Instance-level reused clients with separate caching for each client type
@@ -130,13 +125,7 @@ public class OpenAI extends ConfigurableLanguageModel {
         
         OpenAIClient client = getSyncClient(apiKey, endpoint);
         
-        ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
-            .model(ChatModel.of(preparedParameters.get(OPTION_MODEL).map(Object::toString).orElse(DEFAULT_MODEL)))
-            .addUserMessage(prompt.toString());
-        preparedParameters.getInt(OPTION_MAX_TOKENS).ifPresent(builder::maxCompletionTokens);
-        preparedParameters.getDouble(OPTION_TEMPERATURE).ifPresent(builder::temperature);
-        
-        ChatCompletionCreateParams createParams = builder.build();
+        ChatCompletionCreateParams createParams = getChatCompletionCreateParams(preparedParameters, prompt);
         
         return client.chat().completions().create(createParams).choices().stream()
                 .flatMap(choice -> choice.message().content().stream()
@@ -153,14 +142,8 @@ public class OpenAI extends ConfigurableLanguageModel {
         String endpoint = preparedParameters.getEndpoint().orElse(DEFAULT_ENDPOINT);
         
         OpenAIClientAsync client = getAsyncClient(apiKey, endpoint);
-        
-        ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
-            .model(ChatModel.of(preparedParameters.get(OPTION_MODEL).map(Object::toString).orElse(DEFAULT_MODEL)))
-            .addUserMessage(prompt.toString());
-        preparedParameters.getInt(OPTION_MAX_TOKENS).ifPresent(builder::maxCompletionTokens);
-        preparedParameters.getDouble(OPTION_TEMPERATURE).ifPresent(builder::temperature);
-        
-        ChatCompletionCreateParams createParams = builder.build();
+                
+        ChatCompletionCreateParams createParams = getChatCompletionCreateParams(preparedParameters, prompt);
         
         final Completion.FinishReason[] lastFinishReasonHolder = new Completion.FinishReason[]{Completion.FinishReason.stop};
         CompletableFuture<Completion.FinishReason> future = new CompletableFuture<>();
@@ -193,6 +176,17 @@ public class OpenAI extends ConfigurableLanguageModel {
               }).join();
         
         return future;
+    }
+
+    private ChatCompletionCreateParams getChatCompletionCreateParams(InferenceParameters parameters, Prompt prompt) {
+        ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
+            .model(ChatModel.of(parameters.get(InferenceParameters.OPTION_MODEL).map(Object::toString).orElse(DEFAULT_MODEL)))
+            .addUserMessage(prompt.toString());
+        
+        parameters.getInt(InferenceParameters.OPTION_MAX_TOKENS).ifPresent(builder::maxCompletionTokens);
+        parameters.getDouble(InferenceParameters.OPTION_TEMPERATURE).ifPresent(builder::temperature);
+        
+        return builder.build();
     }
 
     /**
