@@ -13,7 +13,6 @@ import com.openai.errors.OpenAIIoException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 
@@ -30,7 +29,7 @@ public class OpenAITest {
     private static final String API_KEY = "<YOUR_API_KEY>";
     
     @Test
-    //@Disabled
+    @Disabled
     public void testComplete() {
         var config = new LlmClientConfig.Builder()
                 .apiKeySecretName("openai")
@@ -46,7 +45,7 @@ public class OpenAITest {
     }
 
     @Test
-    //@Disabled
+    @Disabled
     public void testCompleteAsync() {
         var config = new LlmClientConfig.Builder()
                 .apiKeySecretName("openai")
