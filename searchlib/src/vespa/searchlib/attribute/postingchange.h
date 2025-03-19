@@ -48,7 +48,7 @@ public:
 class EnumIndexMapper
 {
 public:
-    virtual ~EnumIndexMapper() { }
+    virtual ~EnumIndexMapper() = default;
     virtual IEnumStore::Index map(IEnumStore::Index original) const;
     virtual bool hasFold() const { return false; }
 };

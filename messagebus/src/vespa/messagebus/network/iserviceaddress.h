@@ -22,7 +22,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IServiceAddress() { }
+    virtual ~IServiceAddress() = default;
 };
 
 } // namespace mbus

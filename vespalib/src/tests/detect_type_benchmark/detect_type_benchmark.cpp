@@ -29,7 +29,7 @@ public:
     BaseClass(int id) : _static_id(id) {}
     int static_id() const { return _static_id; }
     virtual int dynamic_id() const = 0;
-    virtual ~BaseClass() {}
+    virtual ~BaseClass() = default;
 };
 
 struct A : BaseClass {

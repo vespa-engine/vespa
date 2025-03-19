@@ -170,7 +170,7 @@ struct Fixture {
         : hc(20, 10), expBv(BitVector::create(20)), scorer(200)
     {
     }
-    virtual ~Fixture() {}
+    virtual ~Fixture() = default;
     virtual HitRank calculateScore(uint32_t) { return 0; }
     void addHits() {
         for (uint32_t i = 0; i < 20; ++i) {

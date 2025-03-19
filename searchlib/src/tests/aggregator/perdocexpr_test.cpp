@@ -31,7 +31,7 @@ using namespace search::aggregation;
 using namespace vespalib;
 
 struct AggrGetter {
-    virtual ~AggrGetter() { }
+    virtual ~AggrGetter() = default;
     virtual const ResultNode &operator()(const AggregationResult &r) const = 0;
 };
 

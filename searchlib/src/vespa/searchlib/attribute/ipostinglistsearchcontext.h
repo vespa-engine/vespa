@@ -26,7 +26,7 @@ class IPostingListSearchContext
 {
 protected:
     IPostingListSearchContext() { }
-    virtual ~IPostingListSearchContext() { }
+    virtual ~IPostingListSearchContext() = default;
 
 public:
     virtual void fetchPostings(const queryeval::ExecuteInfo & execInfo, bool strict) = 0;

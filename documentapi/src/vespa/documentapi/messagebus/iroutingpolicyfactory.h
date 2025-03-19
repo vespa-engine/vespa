@@ -22,7 +22,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IRoutingPolicyFactory() { }
+    virtual ~IRoutingPolicyFactory() = default;
 
     /**
      * This method creates and returns a routing policy that corresponds to the implementing class, using the

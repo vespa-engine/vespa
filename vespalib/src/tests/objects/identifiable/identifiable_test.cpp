@@ -30,7 +30,7 @@ class Abstract : public Identifiable
 {
 public:
     DECLARE_IDENTIFIABLE_ABSTRACT(Abstract);
-    virtual ~Abstract() { }
+    ~Abstract() override = default;
     virtual void someAbstractVirtualMethod() = 0;
 };
 

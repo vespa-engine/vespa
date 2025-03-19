@@ -56,7 +56,7 @@ struct Work {
     using UP = std::unique_ptr<Work>;
     virtual std::string desc() const = 0;
     virtual void perform(uint32_t docid) const = 0;
-    virtual ~Work() {}
+    virtual ~Work() = default;
 };
 
 struct UniformWork : public Work {
@@ -109,7 +109,7 @@ struct SchedulerFactory {
     using UP = std::unique_ptr<SchedulerFactory>;
     virtual std::string desc() const = 0;    
     virtual DocidRangeScheduler::UP create(uint32_t docid_limit) const = 0;
-    virtual ~SchedulerFactory() {}
+    virtual ~SchedulerFactory() = default;
 };
 
 struct PartitionSchedulerFactory : public SchedulerFactory {

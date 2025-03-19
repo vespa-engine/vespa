@@ -25,7 +25,7 @@ struct Aggregator {
     virtual void clear() = 0;
     virtual void add(double) = 0;
     virtual double get() const = 0;
-    virtual ~Aggregator() {}
+    virtual ~Aggregator() = default;
 };
 
 struct MaxAggregator : Aggregator {

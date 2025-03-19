@@ -19,7 +19,7 @@ private:
     class Handler {
     public:
         Handler(const RangeBucketPreDefFunctionNode & rangeNode) : _predef(rangeNode.getBucketList()), _nullResult(rangeNode._nullResult) { }
-        virtual ~Handler() { }
+        virtual ~Handler() = default;
         virtual const ResultNode * handle(const ResultNode & arg) = 0;
     protected:
         const ResultNodeVector & _predef;

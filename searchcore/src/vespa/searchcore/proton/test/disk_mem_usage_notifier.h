@@ -29,7 +29,7 @@ public:
         : DiskMemUsageNotifier(DiskMemUsageState())
     {
     }
-    virtual ~DiskMemUsageNotifier() { }
+    virtual ~DiskMemUsageNotifier() = default;
     virtual void addDiskMemUsageListener(IDiskMemUsageListener *listener) override {
         _listeners.push_back(listener);
         listener->notifyDiskMemUsage(_state);

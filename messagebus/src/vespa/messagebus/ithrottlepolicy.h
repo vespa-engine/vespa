@@ -23,7 +23,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~IThrottlePolicy() { /* empty */ }
+    virtual ~IThrottlePolicy() = default;
 
     /**
      * Returns whether or not the given message can be sent according to the current state of this policy.

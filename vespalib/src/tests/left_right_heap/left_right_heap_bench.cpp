@@ -202,7 +202,7 @@ void Loops<H>::fiddle(T *begin, T *end, C cmp, T *first, T *last) {
 
 struct Benchmark {
     using UP = std::unique_ptr<Benchmark>;
-    virtual ~Benchmark() {}
+    virtual ~Benchmark() = default;
     virtual std::string legend() const = 0;
     virtual double fiddle(size_t heapSize, size_t cnt, size_t loop, bool adjust) = 0;
     virtual std::pair<double, double> sort(size_t maxHeapSize, size_t loop) = 0;

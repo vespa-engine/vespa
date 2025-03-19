@@ -21,7 +21,7 @@ public:
     /**
      * empty
      **/
-    virtual ~ObjectOperation() { }
+    virtual ~ObjectOperation() = default;
 };
 
 } // namespace vespalib

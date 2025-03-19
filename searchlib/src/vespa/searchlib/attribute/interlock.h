@@ -36,7 +36,7 @@ public:
     {
     }
 
-    virtual ~Interlock() { }
+    virtual ~Interlock() = default;
 };
 
 /**

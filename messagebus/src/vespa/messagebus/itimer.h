@@ -20,7 +20,7 @@ public:
     /**
      * Virtual destructor required for inheritance.
      */
-    virtual ~ITimer() { /* empty */ }
+    virtual ~ITimer() = default;
 
     /**
      * Returns the current value of some arbitrary timer, in milliseconds. This

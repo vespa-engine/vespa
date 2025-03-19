@@ -19,7 +19,7 @@ public:
 
     IBucketDBHandler() { }
 
-    virtual ~IBucketDBHandler() { }
+    virtual ~IBucketDBHandler() = default;
 
     virtual void handleSplit(search::SerialNum serialNum, const BucketId &source,
                              const BucketId &target1, const BucketId &target2) = 0;
