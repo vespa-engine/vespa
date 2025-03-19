@@ -17,7 +17,7 @@ class A : public B
 {
 public:
     ~A() override = default;
-    virtual A * clone() const override { return new A(*this); }
+    A * clone() const override { return new A(*this); }
 };
 
 TEST("require that MallocAutoPtr works as expected") {

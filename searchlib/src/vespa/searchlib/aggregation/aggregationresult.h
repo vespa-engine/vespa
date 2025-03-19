@@ -64,7 +64,7 @@ public:
     const ResultNode & getRank() const { return onGetRank(); }
     const ResultNode * getResult() const override { return &onGetRank(); }
     virtual ResultNode & getResult() { return const_cast<ResultNode &>(onGetRank()); }
-    virtual AggregationResult * clone() const override = 0;
+    AggregationResult * clone() const override = 0;
     const ExpressionNode * getExpression() const { return _expressionTree->getRoot(); }
     ExpressionNode * getExpression() { return _expressionTree->getRoot(); }
 protected:

@@ -250,7 +250,7 @@ SetReplyPolicyFactory::create(const string &param)
 }
 
 class TestException : public std::exception {
-    virtual const char* what() const noexcept override {
+    const char* what() const noexcept override {
         return "{test exception}";
     }
 };

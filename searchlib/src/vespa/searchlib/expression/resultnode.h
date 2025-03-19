@@ -18,7 +18,7 @@ class BucketResultNode;
 
 #define DECLARE_RESULTNODE_NS1(ns, Class)               \
     DECLARE_IDENTIFIABLE_NS3(search, expression, ns, Class) \
-    virtual Class * clone() const override;
+    Class * clone() const override;
 
 #define DECLARE_RESULTNODE_SERIALIZE \
     ResultSerializer & onSerializeResult(ResultSerializer & os) const override; \

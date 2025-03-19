@@ -306,7 +306,7 @@ public:
           _bazValue()
     {}
     ~MyRankProgram();
-    virtual void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
+    void run(uint32_t docid, const std::vector<search::fef::TermFieldMatchData> &) override {
         _boxed_double = std::make_unique<DoubleValue>(docid + 30);
         _tensor = SimpleValue::from_spec(TensorSpec("tensor(x{})").add({{"x", "a"}}, docid + 20));
         _fooValue.as_number = docid + 10;

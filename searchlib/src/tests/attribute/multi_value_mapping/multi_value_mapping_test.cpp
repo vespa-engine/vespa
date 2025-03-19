@@ -34,17 +34,17 @@ class MyAttribute : public search::NotImplementedAttribute
     using MultiValueType = typename MvMapping::MultiValueType;
     using ConstArrayRef = std::span<const MultiValueType>;
     MvMapping &_mvMapping;
-    virtual void onCommit() override { }
-    virtual void onUpdateStat() override { }
-    virtual void onShrinkLidSpace() override {
+    void onCommit() override { }
+    void onUpdateStat() override { }
+    void onShrinkLidSpace() override {
         uint32_t committedDocIdLimit = getCommittedDocIdLimit();
         _mvMapping.shrink(committedDocIdLimit);
         setNumDocs(committedDocIdLimit);
     }
-    virtual void reclaim_memory(generation_t oldest_used_gen) override {
+    void reclaim_memory(generation_t oldest_used_gen) override {
         _mvMapping.reclaim_memory(oldest_used_gen);
     }
-    virtual void before_inc_generation(generation_t current_gen) override {
+    void before_inc_generation(generation_t current_gen) override {
         _mvMapping.assign_generation(current_gen);
     }
 
@@ -53,13 +53,13 @@ public:
         : NotImplementedAttribute("test"),
           _mvMapping(mvMapping)
     {}
-    virtual bool addDoc(DocId &doc) override {
+    bool addDoc(DocId &doc) override {
         _mvMapping.addDoc(doc);
         incNumDocs();
         updateUncommittedDocIdLimit(doc);
         return false;
     }
-    virtual uint32_t clearDoc(uint32_t docId) override {
+    uint32_t clearDoc(uint32_t docId) override {
         assert(docId < _mvMapping.size());
         _mvMapping.set(docId, ConstArrayRef());
         return 1u;

@@ -94,7 +94,7 @@ private:
     double _value;
 public:
     Number(double value_in) : _value(value_in) {}
-    virtual bool is_const_double() const override { return true; }
+    bool is_const_double() const override { return true; }
     double get_const_double_value() const override { return value(); }
     double value() const { return _value; }
     std::string dump(DumpContext &) const override;

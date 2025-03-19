@@ -16,9 +16,9 @@ class AttributeMemoryFileBufferWriter : public AttributeFileBufferWriter
 public:
     AttributeMemoryFileBufferWriter(IAttributeFileWriter &memoryFileWriter);
 
-    virtual ~AttributeMemoryFileBufferWriter();
+    ~AttributeMemoryFileBufferWriter() override;
 
-    virtual void onFlush(size_t nowSize) override;
+    void onFlush(size_t nowSize) override;
 };
 
 

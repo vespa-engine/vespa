@@ -46,7 +46,7 @@ public:
     {
     }
 
-    virtual void run() override { _log.append(_name); }
+    void run() override { _log.append(_name); }
     size_t get_transient_memory_usage() const override { return _transient_memory_usage; }
 };
 

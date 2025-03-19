@@ -29,7 +29,7 @@ struct MyFlushTask : public searchcorespi::FlushTask
     void run() override {
         _execGate.await(5s);
     }
-    virtual search::SerialNum getFlushSerial() const override { return 5; }
+    search::SerialNum getFlushSerial() const override { return 5; }
 };
 
 struct MyFlushTarget : public test::DummyFlushTarget

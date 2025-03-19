@@ -12,7 +12,7 @@ public:
     DECLARE_ABSTRACT_RESULTNODE(SingleResultNode);
     using CP = vespalib::IdentifiablePtr<SingleResultNode>;
     using UP = std::unique_ptr<SingleResultNode>;
-    virtual SingleResultNode *clone() const override = 0;
+    SingleResultNode *clone() const override = 0;
 
     virtual void min(const ResultNode & b) = 0;
     virtual void max(const ResultNode & b) = 0;
