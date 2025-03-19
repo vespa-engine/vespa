@@ -16,7 +16,7 @@ namespace search {
               _datReader(&_datFile.file())
         { }
 
-        virtual ~PrimitiveReader() { }
+        ~PrimitiveReader() override = default;
         T getNextData() { return _datReader.readHostOrder(); }
         size_t getDataCount() const { return getDataCountHelper(sizeof(T)); }
         FileReader<T> & getReader() { return _datReader; }

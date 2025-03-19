@@ -21,7 +21,7 @@ const std::string DOCS_SEARCHED   = "X-Yahoo-Vespa-DocsSearched";
 const std::string NODES_SEARCHED  = "X-Yahoo-Vespa-NodesSearched";
 const std::string FULL_COVERAGE   = "X-Yahoo-Vespa-FullCoverage";
 struct HeaderTraverser {
-    virtual ~HeaderTraverser() { }
+    virtual ~HeaderTraverser() = default;
     virtual void header(const string &name, double value) = 0;
 };
 struct HeaderMapper {

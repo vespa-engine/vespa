@@ -8,7 +8,7 @@ namespace search::expression {
 class SingleResultNode : public ResultNode
 {
 public:
-    virtual ~SingleResultNode() { }
+    ~SingleResultNode() override = default;
     DECLARE_ABSTRACT_RESULTNODE(SingleResultNode);
     using CP = vespalib::IdentifiablePtr<SingleResultNode>;
     using UP = std::unique_ptr<SingleResultNode>;

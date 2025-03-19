@@ -15,7 +15,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FNET_IPacketFactory() { }
+    virtual ~FNET_IPacketFactory() = default;
 
     /**
      * Create a packet.

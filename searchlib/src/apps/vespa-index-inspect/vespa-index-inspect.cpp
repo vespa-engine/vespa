@@ -174,7 +174,7 @@ const std::string posocc_file_name = "posocc.dat.compressed";
 class SubApp
 {
 public:
-    virtual ~SubApp() { }
+    virtual ~SubApp() = default;
     virtual void  usage(bool showHeader) = 0;
     virtual bool getOptions(int argc, char **argv) = 0;
     virtual int run() = 0;

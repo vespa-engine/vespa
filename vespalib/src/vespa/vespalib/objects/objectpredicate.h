@@ -23,7 +23,7 @@ public:
     /**
      * empty
      **/
-    virtual ~ObjectPredicate() { }
+    virtual ~ObjectPredicate() = default;
 };
 
 } // namespace vespalib

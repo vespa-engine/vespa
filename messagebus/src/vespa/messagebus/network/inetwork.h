@@ -26,7 +26,7 @@ public:
     /**
      * Destructor. Frees any allocated resources.
      */
-    virtual ~INetwork() { }
+    virtual ~INetwork() = default;
 
     /**
      * Attach the network layer to the given owner. This method should be

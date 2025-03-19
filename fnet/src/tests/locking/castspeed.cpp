@@ -11,7 +11,7 @@ class A
 {
 public:
     virtual B* asB() { return 0; }
-    virtual ~A() {}
+    virtual ~A() = default;
 };
 
 class C: public A

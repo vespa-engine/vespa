@@ -24,7 +24,7 @@ class IProtocol;
 class PayLoadFiller
 {
 public:
-    virtual ~PayLoadFiller() { }
+    virtual ~PayLoadFiller() = default;
     virtual void fill(FRT_Values & v) const = 0;
     virtual void fill(const vespalib::Memory & name, vespalib::slime::Cursor & v) const = 0;
 };

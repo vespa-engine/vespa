@@ -24,7 +24,7 @@ private:
     class Handler {
     public:
         Handler(Dimension dim) : _dim(dim) { }
-        virtual ~Handler() { }
+        virtual ~Handler() = default;
         virtual void handle(const ResultNode & arg) = 0;
     protected:
         void handleOne(const ResultNode & arg, Int64ResultNode & result) const {

@@ -27,7 +27,7 @@ public:
      * @param formatter The config formatter to use for formatting config.
      */
     virtual bool write(const ConfigInstance & config, const ConfigFormatter & formatter) = 0;
-    virtual ~ConfigWriter() { }
+    virtual ~ConfigWriter() = default;
 };
 
 } // namespace config
