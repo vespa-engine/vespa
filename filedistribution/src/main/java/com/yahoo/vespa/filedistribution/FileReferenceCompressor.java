@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * Utility class for compressing and decompressing files used in a file reference
@@ -118,7 +116,6 @@ public class FileReferenceCompressor {
     private OutputStream compressedOutputStream(File outputFile) throws IOException {
         return switch (type) {
             case compressed -> switch (compressionType) {
-                case gzip -> new GZIPOutputStream(new FileOutputStream(outputFile));
                 case lz4 -> new LZ4BlockOutputStream(new FileOutputStream(outputFile));
                 case none -> new FileOutputStream(outputFile);
                 case zstd -> new ZstdOutputStream(new FileOutputStream(outputFile));
@@ -130,7 +127,6 @@ public class FileReferenceCompressor {
     private InputStream decompressedInputStream(File inputFile) throws IOException {
         return switch (type) {
             case compressed -> switch (compressionType) {
-                case gzip -> new GZIPInputStream(new FileInputStream(inputFile));
                 case lz4 -> new LZ4BlockInputStream(new FileInputStream(inputFile));
                 case none -> new FileInputStream(inputFile);
                 case zstd -> new ZstdInputStream(new FileInputStream(inputFile));
