@@ -4190,6 +4190,21 @@
     ],
     "fields" : [ ]
   },
+  "ai.vespa.llm.client.openai.OpenAiClient" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "ai.vespa.llm.LanguageModel"
+    ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
+      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
+    ],
+    "fields" : [ ]
+  },
   "ai.vespa.llm.completion.Completion$FinishReason" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],
@@ -4208,10 +4223,7 @@
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason none",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason other",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason error",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason discard",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason tool_calls",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason content_filter",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason function_call"
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason discard"
     ]
   },
   "ai.vespa.llm.completion.Completion" : {

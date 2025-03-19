@@ -16,7 +16,6 @@ com.fasterxml.jackson.core:jackson-databind:${jackson-databind.vespa.version}
 com.fasterxml.jackson.dataformat:jackson-dataformat-cbor:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jdk8:${jackson2.vespa.version}
 com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
-com.fasterxml.jackson.module:jackson-module-kotlin:${jackson2.vespa.version}
 com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
@@ -32,13 +31,6 @@ com.huaban:jieba-analysis:${jieba.vespa.version}
 com.ibm.icu:icu4j:${icu4j.vespa.version}
 com.kotcrab.remark:remark:1.0.0
 com.microsoft.onnxruntime:onnxruntime:${onnxruntime.vespa.version}
-com.openai:openai-java-client-okhttp:${openai-java.vespa.version}
-com.openai:openai-java-core:${openai-java.vespa.version}
-com.openai:openai-java:${openai-java.vespa.version}
-com.squareup.okhttp3:logging-interceptor:4.12.0
-com.squareup.okhttp3:okhttp:4.12.0
-com.squareup.okio:okio-jvm:3.6.0
-com.squareup.okio:okio:3.6.0
 com.sun.activation:javax.activation:${sun.javax.activation.vespa.version}
 com.sun.istack:istack-commons-runtime:4.1.2
 com.sun.xml.bind:jaxb-core:${jaxb-core.vespa.version}
@@ -215,11 +207,6 @@ org.glassfish.jaxb:txw2:${jaxb.runtime.vespa.version}
 org.hamcrest:hamcrest-core:${hamcrest.vespa.version}
 org.hamcrest:hamcrest:${hamcrest.vespa.version}
 org.hdrhistogram:HdrHistogram:${hdrhistogram.vespa.version}
-org.jetbrains.kotlin:kotlin-reflect:1.8.10
-org.jetbrains.kotlin:kotlin-stdlib-common:1.9.10
-org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.8.21
-org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.21
-org.jetbrains.kotlin:kotlin-stdlib:2.1.10
 org.jetbrains:annotations:24.0.1
 org.json:json:${org.json.vespa.version}
 org.jsoup:jsoup:1.14.2
