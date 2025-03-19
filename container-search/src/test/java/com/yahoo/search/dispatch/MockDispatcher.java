@@ -6,6 +6,7 @@ import com.yahoo.search.cluster.ClusterMonitor;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
+import com.yahoo.search.dispatch.searchcluster.AvailabilityPolicy;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
 import com.yahoo.vespa.config.search.DispatchConfig;
@@ -25,7 +26,11 @@ public class MockDispatcher extends Dispatcher {
 
     public static MockDispatcher create(List<Node> nodes, RpcResourcePool rpcResourcePool, VipStatus vipStatus) {
         var dispatchConfig = toDispatchConfig();
-        var searchCluster = new SearchCluster("a", dispatchConfig.minActivedocsPercentage(), nodes, vipStatus, new RpcPingFactory(rpcResourcePool));
+        var searchCluster = new SearchCluster("a",
+                                              AvailabilityPolicy.from(dispatchConfig),
+                                              nodes,
+                                              vipStatus,
+                                              new RpcPingFactory(rpcResourcePool));
         return new MockDispatcher(new ClusterMonitor<>(searchCluster, true), searchCluster, dispatchConfig, rpcResourcePool);
     }
 

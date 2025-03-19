@@ -64,8 +64,11 @@ public class SearchClusterTest {
                 numDocsPerNode.add(new AtomicInteger(1));
                 pingCounts.add(new AtomicInteger(0));
             }
-            searchCluster = new SearchCluster(clusterId, 100.0, nodes,
-                                              vipStatus, new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
+            searchCluster = new SearchCluster(clusterId,
+                                              new AvailabilityPolicy(true, 100.0),
+                                              nodes,
+                                              vipStatus,
+                                              new Factory(nodesPerGroup, numDocsPerNode, pingCounts));
             clusterMonitor = new ClusterMonitor<>(searchCluster, false);
             searchCluster.addMonitoring(clusterMonitor);
         }
@@ -160,10 +163,15 @@ public class SearchClusterTest {
     void requireThatVipStatusWorksWhenReconfiguredFromZeroNodes() {
         try (State test = new State("test", 2, "a", "b")) {
             test.clusterMonitor.start();
-            test.searchCluster.updateNodes(List.of(), test.clusterMonitor, 100.0);
+            test.searchCluster.updateNodes(new AvailabilityPolicy(true, 100.0),
+                                           List.of(),
+                                           test.clusterMonitor);
             assertEquals(Set.of(), test.searchCluster.groupList().nodes());
 
-            test.searchCluster.updateNodes(List.of(new Node("test", 0, "a", 0), new Node("test", 1, "b", 0)), test.clusterMonitor, 100.0);
+            test.searchCluster.updateNodes(new AvailabilityPolicy(true, 100.0),
+                                           List.of(new Node("test", 0, "a", 0),
+                                                   new Node("test", 1, "b", 0)),
+                                           test.clusterMonitor);
             assertTrue(test.vipStatus.isInRotation());
         }
     }
@@ -411,7 +419,9 @@ public class SearchClusterTest {
                                               new Node("test", 1, "node-3", 1),
                                               new Node("test", 0, "node-2", 2),  // Swap node-4 and node-2
                                               new Node("test", 1, "node-6", 2)); // Replace node-6
-            state.searchCluster.updateNodes(updatedNodes, state.clusterMonitor, 100.0);
+            state.searchCluster.updateNodes(new AvailabilityPolicy(true, 100.0),
+                                            updatedNodes,
+                                            state.clusterMonitor);
             SearchGroups newGroups = state.searchCluster.groupList();
             assertEquals(Set.copyOf(updatedNodes), newGroups.nodes());
 

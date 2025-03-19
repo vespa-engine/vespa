@@ -8,16 +8,16 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * @author baldersheim
+ * @author bratseth
  */
 public class SearchGroupsImpl implements SearchGroups {
 
+    private final AvailabilityPolicy availabilityPolicy;
     private final Map<Integer, Group> groups;
-    private final double minActiveDocsPercentage;
 
-    public SearchGroupsImpl(Map<Integer, Group> groups, double minActiveDocsPercentage) {
+    public SearchGroupsImpl(AvailabilityPolicy availabilityPolicy, Map<Integer, Group> groups) {
+        this.availabilityPolicy = availabilityPolicy;
         this.groups = Map.copyOf(groups);
-        this.minActiveDocsPercentage = minActiveDocsPercentage;
     }
 
     @Override public Group get(int id) { return groups.get(id); }
@@ -37,16 +37,26 @@ public class SearchGroupsImpl implements SearchGroups {
                                              long groupDocumentCount, long medianDocumentCount, long maxDocumentCount) {
         if (medianDocumentCount <= 0) return true;
         if (currentIsGroupCoverageSufficient) {
-            // To take a group *out of* rotation, require that it has less active documents than the median.
-            // This avoids scenarios where incorrect accounting in a single group takes all other groups offline.
-            double documentCoverage = 100.0 * (double) groupDocumentCount / medianDocumentCount;
-            return documentCoverage >= minActiveDocsPercentage;
+            if (availabilityPolicy.prioritizeAvailability()) {
+                System.out.println("median: " + medianDocumentCount);
+                // To take a group *out of* rotation, require that it has less active documents than the median.
+                // This avoids scenarios where incorrect accounting in a single group takes all other groups offline.
+                double documentCoverage = 100.0 * (double) groupDocumentCount / medianDocumentCount;
+                return documentCoverage >= availabilityPolicy.minActiveDocsPercentage();
+            }
+            else {
+                // Only serve from groups that have the maximal coverage, prioritizing 100% coverage over availability
+                // when there is a conflict.
+                double documentCoverage = 100.0 * (double) groupDocumentCount / maxDocumentCount;
+                return documentCoverage >= availabilityPolicy.minActiveDocsPercentage();
+
+            }
         }
         else {
             // to put a group *in* rotation, require that it has as many documents as the largest group,
             // to avoid taking groups in too early when the majority of the groups have just been added.
             double documentCoverage = 100.0 * (double) groupDocumentCount / maxDocumentCount;
-            return documentCoverage >= minActiveDocsPercentage;
+            return documentCoverage >= availabilityPolicy.minActiveDocsPercentage();
         }
     }
 
