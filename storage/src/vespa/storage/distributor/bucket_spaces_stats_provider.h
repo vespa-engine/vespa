@@ -60,7 +60,7 @@ public:
     // Mapping from content node index to statistics for all bucket spaces on that node.
     using PerNodeBucketSpacesStats = std::unordered_map<uint16_t, BucketSpacesStats>;
 
-    virtual ~BucketSpacesStatsProvider() {}
+    virtual ~BucketSpacesStatsProvider() = default;
     virtual PerNodeBucketSpacesStats getBucketSpacesStats() const = 0;
 };
 

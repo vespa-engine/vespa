@@ -33,7 +33,7 @@ struct Runnable {
     /**
      * Empty virtual destructor to enable subclassing.
      **/
-    virtual ~Runnable() {}
+    virtual ~Runnable() = default;
 };
 
 } // namespace vespalib

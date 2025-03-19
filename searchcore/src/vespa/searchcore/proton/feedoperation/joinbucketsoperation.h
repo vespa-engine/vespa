@@ -17,7 +17,7 @@ public:
     JoinBucketsOperation(const document::BucketId &source1,
                          const document::BucketId &source2,
                          const document::BucketId &target);
-    virtual ~JoinBucketsOperation() {}
+    ~JoinBucketsOperation() override = default;
     const document::BucketId &getSource1() const { return _source1; }
     const document::BucketId &getSource2() const { return _source2; }
     const document::BucketId &getTarget() const { return _target; }

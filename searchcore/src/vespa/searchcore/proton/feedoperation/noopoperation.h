@@ -8,7 +8,7 @@ namespace proton {
 struct NoopOperation : FeedOperation {
     NoopOperation() : FeedOperation(FeedOperation::NOOP) {}
     NoopOperation(SerialNum serialNum);
-    virtual ~NoopOperation() {}
+    ~NoopOperation() override = default;
 
     virtual void serialize(vespalib::nbostream &) const override {}
     virtual void deserialize(vespalib::nbostream &,

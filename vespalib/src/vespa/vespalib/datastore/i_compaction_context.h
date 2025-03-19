@@ -16,7 +16,7 @@ namespace vespalib::datastore {
  */
 struct ICompactionContext {
     using UP = std::unique_ptr<ICompactionContext>;
-    virtual ~ICompactionContext() {}
+    virtual ~ICompactionContext() = default;
     virtual void compact(std::span<AtomicEntryRef> refs) = 0;
 };
 

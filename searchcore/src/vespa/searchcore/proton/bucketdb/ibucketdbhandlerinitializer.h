@@ -12,7 +12,7 @@ class IBucketDBHandlerInitializer
 {
 public:
     IBucketDBHandlerInitializer() { }
-    virtual ~IBucketDBHandlerInitializer() {}
+    virtual ~IBucketDBHandlerInitializer() = default;
 
     virtual void addDocumentMetaStore(IDocumentMetaStore *dms, search::SerialNum flushedSerialNum) = 0;
 };

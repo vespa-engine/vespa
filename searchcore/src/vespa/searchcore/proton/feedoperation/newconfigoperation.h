@@ -7,7 +7,7 @@ namespace proton {
 
     namespace feedoperation {
         struct IStreamHandler {
-            virtual ~IStreamHandler() {}
+            virtual ~IStreamHandler() = default;
             virtual void serializeConfig(search::SerialNum serialNum, vespalib::nbostream &os) = 0;
             virtual void deserializeConfig(search::SerialNum serialNum, vespalib::nbostream &is) = 0;
         };

@@ -7,7 +7,7 @@ class ResumeGuard {
 public:
     class Callback {
     public:
-        virtual ~Callback() {};
+        virtual ~Callback() = default;
 
         virtual void resume() = 0;
     };

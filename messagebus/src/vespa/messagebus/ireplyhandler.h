@@ -19,7 +19,7 @@ protected:
 public:
     IReplyHandler(const IReplyHandler &) = delete;
     IReplyHandler & operator = (const IReplyHandler &) = delete;
-    virtual ~IReplyHandler() {}
+    virtual ~IReplyHandler() = default;
 
     /**
      * This method is invoked by messagebus to deliver a Reply.

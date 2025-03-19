@@ -54,7 +54,7 @@ struct MultiFunction {
     virtual size_t num_outputs() const = 0;
     virtual size_t num_alternatives() const = 0;
     virtual Result execute(const Input &input) const = 0;
-    virtual ~MultiFunction() {}
+    virtual ~MultiFunction() = default;
 };
 
 // simulated individual representing a multifunction

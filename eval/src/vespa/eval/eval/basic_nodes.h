@@ -27,7 +27,7 @@ struct NodeVisitor;
  **/
 struct NodeHandler {
     virtual void handle(std::unique_ptr<nodes::Node> node) = 0;
-    virtual ~NodeHandler() {}
+    virtual ~NodeHandler() = default;
 };
 
 namespace nodes {
@@ -60,7 +60,7 @@ struct Node {
     virtual const Node &get_child(size_t idx) const = 0;
     virtual void detach_children(NodeHandler &handler) = 0;
     bool is_leaf() const { return (num_children() == 0); }
-    virtual ~Node() {}
+    virtual ~Node() = default;
 };
 
 using Node_UP = std::unique_ptr<Node>;

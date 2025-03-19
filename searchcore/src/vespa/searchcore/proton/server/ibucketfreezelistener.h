@@ -13,7 +13,7 @@ namespace proton {
 class IBucketFreezeListener
 {
 public:
-    virtual ~IBucketFreezeListener() {}
+    virtual ~IBucketFreezeListener() = default;
 
     /**
      * Signal that the given bucket has been thawed.

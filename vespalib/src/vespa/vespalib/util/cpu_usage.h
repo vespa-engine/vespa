@@ -29,7 +29,7 @@ duration total_cpu_usage() noexcept;
 struct ThreadSampler {
     using UP = std::unique_ptr<ThreadSampler>;
     virtual duration sample() const noexcept = 0;
-    virtual ~ThreadSampler() {}
+    virtual ~ThreadSampler() = default;
 };
 
 ThreadSampler::UP create_thread_sampler(bool force_mock_impl = false, double expected_util = 0.16);
@@ -135,7 +135,7 @@ private:
     struct ThreadTracker {
         using SP = std::shared_ptr<ThreadTracker>;
         virtual Sample sample() noexcept = 0;
-        virtual ~ThreadTracker() {}
+        virtual ~ThreadTracker() = default;
     };
 
     class ThreadTrackerImpl : public ThreadTracker {

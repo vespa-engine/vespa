@@ -17,7 +17,7 @@ public:
     SplitBucketOperation(const document::BucketId &source,
                          const document::BucketId &target1,
                          const document::BucketId &target2);
-    virtual ~SplitBucketOperation() {}
+    ~SplitBucketOperation() override = default;
     const document::BucketId &getSource() const { return _source; }
     const document::BucketId &getTarget1() const { return _target1; }
     const document::BucketId &getTarget2() const { return _target2; }

@@ -12,7 +12,7 @@ namespace search::index {
  */
 class IFieldLengthInspector {
 public:
-    virtual ~IFieldLengthInspector() {}
+    virtual ~IFieldLengthInspector() = default;
 
     /**
      * Returns the field length info for the given index field, or empty info if the field is not found.

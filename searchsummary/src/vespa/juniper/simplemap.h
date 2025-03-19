@@ -10,7 +10,7 @@ public:
 
     explicit simplemap(simplemap& m) { _map = m.map(); }
 
-    virtual ~simplemap() {}
+    virtual ~simplemap() = default;
 
     _val insert(_key key, _val val) {
         typename std::pair<typename std::map<_key, _val>::iterator, bool> p =

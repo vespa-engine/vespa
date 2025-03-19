@@ -116,7 +116,7 @@ public:
  **/
 struct StatusProducer {
     virtual StatusReport::List getStatusReports() const = 0;
-    virtual ~StatusProducer() {}
+    virtual ~StatusProducer() = default;
 };
 
 } // namespace proton

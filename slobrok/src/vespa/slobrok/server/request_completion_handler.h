@@ -13,7 +13,7 @@ namespace slobrok {
  **/
 struct CompletionHandler {
     virtual void doneHandler(OkState result) = 0;
-    virtual ~CompletionHandler() {}
+    virtual ~CompletionHandler() = default;
 };
 
 class RequestCompletionHandler : public CompletionHandler {

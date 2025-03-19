@@ -20,7 +20,7 @@ struct IAttributeFactory
 {
     using SP = std::shared_ptr<IAttributeFactory>;
     using AttributeVectorSP = std::shared_ptr<search::AttributeVector>;
-    virtual ~IAttributeFactory() {}
+    virtual ~IAttributeFactory() = default;
     virtual AttributeVectorSP create(const std::string &name,
                                      const search::attribute::Config &cfg) const = 0;
     virtual void setupEmpty(const AttributeVectorSP &vec,

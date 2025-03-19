@@ -9,7 +9,7 @@ namespace proton {
 class IBucketFreezer
 {
 public:
-    virtual ~IBucketFreezer() {}
+    virtual ~IBucketFreezer() = default;
     virtual void freezeBucket(document::BucketId bucket) = 0;
     virtual void thawBucket(document::BucketId bucket) = 0;
 };

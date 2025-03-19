@@ -38,7 +38,7 @@ class RPCSend : public FRT_Invokable,
 public:
     class Params {
     public:
-        virtual ~Params() {}
+        virtual ~Params() = default;
         virtual vespalib::Version getVersion() const = 0;
         virtual std::string_view getProtocol() const = 0;
         virtual uint32_t getTraceLevel() const = 0;

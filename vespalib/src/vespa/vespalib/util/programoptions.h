@@ -47,7 +47,7 @@ struct ProgramOptions {
      * units.
      */
     struct Configurable {
-        virtual ~Configurable() {}
+        virtual ~Configurable() = default;
         /**
          * Called on configurables to have it register its options.
          * Unit must hang onto lifetimetoken until command line parsing have

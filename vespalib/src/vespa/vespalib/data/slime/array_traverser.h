@@ -11,7 +11,7 @@ namespace vespalib::slime {
  **/
 struct ArrayTraverser {
     virtual void entry(size_t idx, const Inspector &inspector) = 0;
-    virtual ~ArrayTraverser() {}
+    virtual ~ArrayTraverser() = default;
 };
 
 } // namespace vespalib::slime

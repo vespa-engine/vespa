@@ -18,7 +18,7 @@ namespace search::memoryindex {
  */
 class IOrderedFieldIndexInserter {
 public:
-    virtual ~IOrderedFieldIndexInserter() {}
+    virtual ~IOrderedFieldIndexInserter() = default;
 
     /**
      * Set next word to operate on.

@@ -12,7 +12,7 @@ namespace searchcorespi::index {
  */
 struct IDiskIndex : public IndexSearchable {
     using SP = std::shared_ptr<IDiskIndex>;
-    virtual ~IDiskIndex() {}
+    ~IDiskIndex() override = default;
 
     /**
      * Returns the directory in which this disk index exists.
