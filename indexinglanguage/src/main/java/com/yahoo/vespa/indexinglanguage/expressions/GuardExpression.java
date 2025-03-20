@@ -6,7 +6,7 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ExpressionVisitor;
-import com.yahoo.vespa.indexinglanguage.UpdateAdapter;
+import com.yahoo.vespa.indexinglanguage.UpdateFieldValues;
 import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
@@ -37,25 +37,25 @@ public final class GuardExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         return innerExpression.setInputType(inputType, context);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         return innerExpression.setOutputType(outputType, context);
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        innerExpression.verify(context);
+    protected void doResolve(TypeContext context) {
+        innerExpression.resolve(context);
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
-        if (!shouldExecute && context.getFieldValue() instanceof UpdateAdapter) {
+        if (!shouldExecute && context.getFieldValues() instanceof UpdateFieldValues) {
             context.setCurrentValue(null);
         } else {
             innerExpression.execute(context);

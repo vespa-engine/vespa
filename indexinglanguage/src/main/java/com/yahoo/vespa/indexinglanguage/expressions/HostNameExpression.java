@@ -15,13 +15,13 @@ public final class HostNameExpression extends Expression {
     public boolean requiresInput() { return false; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         return DataType.STRING;
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(DataType.STRING, outputType, null, context);
         return AnyDataType.instance;
     }

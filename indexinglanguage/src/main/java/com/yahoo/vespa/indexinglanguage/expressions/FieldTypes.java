@@ -8,8 +8,8 @@ import com.yahoo.document.DataType;
  *
  * @author Simon Thoresen Hult
  */
-public interface FieldTypeAdapter {
+public interface FieldTypes {
 
-    DataType getFieldType(Expression expression, String fieldName);
+    DataType getFieldType(String fieldName, Expression expression);
 
 }

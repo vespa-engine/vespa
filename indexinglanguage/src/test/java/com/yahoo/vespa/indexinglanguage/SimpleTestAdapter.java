@@ -6,7 +6,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 
 import java.util.HashMap;
@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * @author Simon Thoresen Hult
  */
-public class SimpleTestAdapter implements FieldValueAdapter {
+public class SimpleTestAdapter implements FieldValues {
 
     public final Map<String, DataType> types = new HashMap<>();
     public final Map<String, FieldValue> values = new HashMap<>();
@@ -32,7 +32,7 @@ public class SimpleTestAdapter implements FieldValueAdapter {
     }
 
     @Override
-    public DataType getFieldType(Expression exp, String fieldName) {
+    public DataType getFieldType(String fieldName, Expression exp) {
         // Same check as in config-model IndexingValidation:
         if ( ! types.containsKey(fieldName))
             throw new VerificationException(exp, "Field '" + fieldName + "' not found.");
@@ -55,7 +55,7 @@ public class SimpleTestAdapter implements FieldValueAdapter {
     }
 
     @Override
-    public SimpleTestAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
+    public SimpleTestAdapter setOutputValue(String fieldName, FieldValue fieldValue, Expression exp) {
         values.put(fieldName, fieldValue);
         return this;
     }

@@ -10,13 +10,13 @@ import com.yahoo.document.datatypes.IntegerFieldValue;
 public final class ToIntegerExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, context);
         return DataType.INT;
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(DataType.INT, output, null, context);
         return getInputType(context);
     }

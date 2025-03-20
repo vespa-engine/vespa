@@ -63,7 +63,7 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         if (!inputType.isAssignableTo(DataType.STRING)) {
             throw new VerificationException(
                     this,
@@ -77,7 +77,7 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         return DataType.STRING;
     }
@@ -89,7 +89,7 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
+    protected void doResolve(TypeContext context) {
         targetType = getOutputType(context);
     }
 

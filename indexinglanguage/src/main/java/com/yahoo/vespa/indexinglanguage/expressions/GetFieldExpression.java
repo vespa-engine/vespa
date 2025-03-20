@@ -28,19 +28,19 @@ public final class GetFieldExpression extends Expression {
     public String getFieldName() { return structFieldName; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         if (inputType == null) return null;
         return getFieldType(inputType, context);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         return getInputType(context);
     }
 
-    private DataType getFieldType(DataType input, VerificationContext context) {
+    private DataType getFieldType(DataType input, TypeContext context) {
         if (input instanceof MapDataType entryInput) {
             if (structFieldName.equals(keyName))
                 return entryInput.getKeyType();

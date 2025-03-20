@@ -11,21 +11,21 @@ import static org.junit.Assert.assertSame;
 /**
  * @author Simon Thoresen Hult
  */
-public class VerificationContextTestCase {
+public class TypeContextTestCase {
 
     @Test
     public void requireThatVariablesCanBeSet() {
-        VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
+        TypeContext ctx = new TypeContext(new SimpleTestAdapter());
         DataType val = DataType.STRING;
-        ctx.setVariable("foo", val);
-        assertSame(val, ctx.getVariable("foo"));
+        ctx.setVariableType("foo", val);
+        assertSame(val, ctx.getVariableType("foo"));
     }
 
     @Test
     public void requireThatClearRemovesVariables() {
-        VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
-        ctx.setVariable("foo", DataType.STRING);
+        TypeContext ctx = new TypeContext(new SimpleTestAdapter());
+        ctx.setVariableType("foo", DataType.STRING);
         ctx.clear();
-        assertNull(ctx.getVariable("foo"));
+        assertNull(ctx.getVariableType("foo"));
     }
 }

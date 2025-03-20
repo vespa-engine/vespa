@@ -14,7 +14,7 @@ import static org.junit.Assert.fail;
 /**
  * @author Simon Thoresen Hult
  */
-public class SimpleDocumentAdapterTestCase {
+public class SimpleDocumentFieldValuesTestCase {
 
     @Test
     public void requireThatStructFieldsCanBeAccessed() {
@@ -31,10 +31,10 @@ public class SimpleDocumentAdapterTestCase {
         Document doc = new Document(docType, "id:scheme:my_doc::");
         doc.setFieldValue("foo", foo);
 
-        DocumentAdapter adapter = new SimpleDocumentAdapter(doc);
-        assertEquals(fooType, adapter.getFieldType(null, "foo"));
+        DocumentFieldValues adapter = new SimpleDocumentFieldValues(doc);
+        assertEquals(fooType, adapter.getFieldType("foo", null));
         assertEquals(foo, adapter.getInputValue("foo"));
-        assertEquals(barType, adapter.getFieldType(null, "foo.bar"));
+        assertEquals(barType, adapter.getFieldType("foo.bar", null));
         assertEquals(bar, adapter.getInputValue("foo.bar"));
     }
 
@@ -43,9 +43,9 @@ public class SimpleDocumentAdapterTestCase {
         DocumentType docType = new DocumentType("my_doc");
         Document doc = new Document(docType, "id:scheme:my_doc::");
 
-        DocumentAdapter adapter = new SimpleDocumentAdapter(doc);
+        DocumentFieldValues adapter = new SimpleDocumentFieldValues(doc);
         try {
-            adapter.getFieldType(null, "foo");
+            adapter.getFieldType("foo", null);
             fail();
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'null': Input field 'foo' not found", e.getMessage());

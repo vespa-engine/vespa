@@ -60,7 +60,7 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, DataType.STRING, context);
 
         DataType outputType = defaultExp == null ? null : defaultExp.setInputType(inputType, context);
@@ -74,7 +74,7 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
 
         if (defaultExp != null)
@@ -84,7 +84,7 @@ public final class SwitchExpression extends CompositeExpression {
         return DataType.STRING;
     }
 
-    private void setOutputType(DataType outputType, Expression expression, VerificationContext context) {
+    private void setOutputType(DataType outputType, Expression expression, TypeContext context) {
         DataType inputType = expression.setOutputType(outputType, context);
         if (inputType != null && ! DataType.STRING.isAssignableTo(inputType))
             throw new VerificationException(this, "This inputs a string, but '" + expression + "' requires type " + inputType);
@@ -98,10 +98,10 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
+    protected void doResolve(TypeContext context) {
         for (Expression exp : cases.values())
-            context.verify(exp);
-        context.verify(defaultExp);
+            context.resolve(exp);
+        context.resolve(defaultExp);
     }
 
     @Override

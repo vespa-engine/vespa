@@ -10,35 +10,35 @@ import java.util.Objects;
 /**
  * @author Simon Thoresen Hult
  */
-public class VerificationContext {
+public class TypeContext {
 
-    private final Map<String, DataType> variables = new HashMap<>();
-    private final FieldTypeAdapter fieldTypes;
+    private final Map<String, DataType> variableTypes = new HashMap<>();
+    private final FieldTypes fieldTypes;
 
-    public VerificationContext(FieldTypeAdapter fieldTypes) {
+    public TypeContext(FieldTypes fieldTypes) {
         this.fieldTypes = Objects.requireNonNull(fieldTypes);
     }
 
-    public VerificationContext verify(Expression expression) {
+    public TypeContext resolve(Expression expression) {
         if (expression != null)
-            expression.verify(this);
+            expression.resolve(this);
         return this;
     }
 
     /** Returns the type of the given field. */
     public DataType getFieldType(String fieldName, Expression expression) {
-        return fieldTypes.getFieldType(expression, fieldName);
+        return fieldTypes.getFieldType(fieldName, expression);
     }
 
-    public DataType getVariable(String name) { return variables.get(name); }
+    public DataType getVariableType(String name) { return variableTypes.get(name); }
 
-    public VerificationContext setVariable(String name, DataType value) {
-        variables.put(name, value);
+    public TypeContext setVariableType(String name, DataType value) {
+        variableTypes.put(name, value);
         return this;
     }
 
-    public VerificationContext clear() {
-        variables.clear();
+    public TypeContext clear() {
+        variableTypes.clear();
         return this;
     }
 

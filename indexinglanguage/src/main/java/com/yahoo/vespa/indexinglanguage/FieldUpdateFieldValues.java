@@ -25,7 +25,7 @@ import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.TensorRemoveUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -36,13 +36,13 @@ import java.util.Map;
  * @author Simon Thoresen Hult
  */
 @SuppressWarnings("rawtypes")
-public class FieldUpdateAdapter implements UpdateAdapter {
+public class FieldUpdateFieldValues implements UpdateFieldValues {
 
-    private final DocumentAdapter adapter;
+    private final DocumentFieldValues adapter;
     private final Builder builder;
     private final Expression optimizedExpression;
 
-    private FieldUpdateAdapter(Expression optimizedExpression, DocumentAdapter adapter, Builder builder) {
+    private FieldUpdateFieldValues(Expression optimizedExpression, DocumentFieldValues adapter, Builder builder) {
         this.adapter = adapter;
         this.builder = builder;
         this.optimizedExpression = optimizedExpression;
@@ -73,8 +73,8 @@ public class FieldUpdateAdapter implements UpdateAdapter {
     }
 
     @Override
-    public DataType getFieldType(Expression exp, String fieldName) {
-        return adapter.getFieldType(exp, fieldName);
+    public DataType getFieldType(String fieldName, Expression exp) {
+        return adapter.getFieldType(fieldName, exp);
     }
 
     @Override
@@ -85,19 +85,19 @@ public class FieldUpdateAdapter implements UpdateAdapter {
     public FieldValue getInputValue(FieldPath fieldPath) { return adapter.getInputValue(fieldPath); }
 
     @Override
-    public FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
-        return adapter.setOutputValue(exp, fieldName, fieldValue);
+    public FieldValues setOutputValue(String fieldName, FieldValue fieldValue, Expression exp) {
+        return adapter.setOutputValue(fieldName, fieldValue, exp);
     }
 
-    public static FieldUpdateAdapter fromPartialUpdate(DocumentAdapter documentAdapter, ValueUpdate valueUpdate) {
-        return new FieldUpdateAdapter(null, documentAdapter, new PartialBuilder(valueUpdate));
+    public static FieldUpdateFieldValues fromPartialUpdate(DocumentFieldValues documentFieldValues, ValueUpdate valueUpdate) {
+        return new FieldUpdateFieldValues(null, documentFieldValues, new PartialBuilder(valueUpdate));
     }
-    public static FieldUpdateAdapter fromPartialUpdate(Expression expression, DocumentAdapter documentAdapter, ValueUpdate valueUpdate) {
-        return new FieldUpdateAdapter(expression, documentAdapter, new PartialBuilder(valueUpdate));
+    public static FieldUpdateFieldValues fromPartialUpdate(Expression expression, DocumentFieldValues documentFieldValues, ValueUpdate valueUpdate) {
+        return new FieldUpdateFieldValues(expression, documentFieldValues, new PartialBuilder(valueUpdate));
     }
 
-    public static FieldUpdateAdapter fromCompleteUpdate(DocumentAdapter documentAdapter) {
-        return new FieldUpdateAdapter(null, documentAdapter, new CompleteBuilder());
+    public static FieldUpdateFieldValues fromCompleteUpdate(DocumentFieldValues documentFieldValues) {
+        return new FieldUpdateFieldValues(null, documentFieldValues, new CompleteBuilder());
     }
 
     private interface Builder {

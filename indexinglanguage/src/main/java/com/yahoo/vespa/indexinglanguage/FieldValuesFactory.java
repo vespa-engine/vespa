@@ -14,7 +14,7 @@ import java.util.List;
  * @author Simon Thoresen Hult
  */
 @SuppressWarnings("rawtypes")
-public class SimpleAdapterFactory implements AdapterFactory {
+public class FieldValuesFactory {
 
     public static class SelectExpression {
         public Expression selectExpression(DocumentType documentType, String fieldName) {
@@ -24,29 +24,27 @@ public class SimpleAdapterFactory implements AdapterFactory {
 
     private final SelectExpression expressionSelector;
 
-    public SimpleAdapterFactory() {
+    public FieldValuesFactory() {
         this(new SelectExpression());
     }
 
-    public SimpleAdapterFactory(SelectExpression expressionSelector) {
+    public FieldValuesFactory(SelectExpression expressionSelector) {
         this.expressionSelector = expressionSelector;
     }
 
-    @Override
-    public DocumentAdapter newDocumentAdapter(Document doc) {
+    public DocumentFieldValues asFieldValues(Document doc) {
         return newDocumentAdapter(doc, false);
     }
 
-    public static DocumentAdapter newDocumentAdapter(Document doc, boolean isUpdate) {
+    public static DocumentFieldValues newDocumentAdapter(Document doc, boolean isUpdate) {
         if (isUpdate) {
-            return new SimpleDocumentAdapter(doc);
+            return new SimpleDocumentFieldValues(doc);
         }
-        return new SimpleDocumentAdapter(doc, doc);
+        return new SimpleDocumentFieldValues(doc, doc);
     }
 
-    @Override
-    public List<UpdateAdapter> newUpdateAdapterList(DocumentUpdate update) {
-        List<UpdateAdapter> ret = new ArrayList<>();
+    public List<UpdateFieldValues> asFieldValues(DocumentUpdate update) {
+        List<UpdateFieldValues> ret = new ArrayList<>();
         DocumentType docType = update.getDocumentType();
         DocumentId docId = update.getId();
         Document complete = new Document(docType, update.getId());
@@ -58,7 +56,7 @@ public class SimpleAdapterFactory implements AdapterFactory {
                     // towards the search core backend.
                     FieldPathUpdateHelper.applyUpdate(fieldUpd, complete);
                 } else {
-                    ret.add(new IdentityFieldPathUpdateAdapter(fieldUpd, newDocumentAdapter(complete, true)));
+                    ret.add(new IdentityFieldPathUpdateFieldValues(fieldUpd, newDocumentAdapter(complete, true)));
                 }
             } catch (NullPointerException e) {
                 throw new IllegalArgumentException("Exception during handling of update '" + fieldUpd +
@@ -73,9 +71,9 @@ public class SimpleAdapterFactory implements AdapterFactory {
                         FieldUpdateHelper.applyUpdate(field, valueUpdate, complete);
                     } else {
                         Document partial = FieldUpdateHelper.newPartialDocument(docType, docId, field, valueUpdate);
-                        ret.add(FieldUpdateAdapter.fromPartialUpdate(expressionSelector.selectExpression(docType, field.getName()),
-                                                                     newDocumentAdapter(partial, true),
-                                                                     valueUpdate));
+                        ret.add(FieldUpdateFieldValues.fromPartialUpdate(expressionSelector.selectExpression(docType, field.getName()),
+                                                                         newDocumentAdapter(partial, true),
+                                                                         valueUpdate));
                     }
                 } catch (NullPointerException e) {
                     throw new IllegalArgumentException("Exception during handling of update '" + valueUpdate +
@@ -83,7 +81,7 @@ public class SimpleAdapterFactory implements AdapterFactory {
                 }
             }
         }
-        ret.add(FieldUpdateAdapter.fromCompleteUpdate(newDocumentAdapter(complete, true)));
+        ret.add(FieldUpdateFieldValues.fromCompleteUpdate(newDocumentAdapter(complete, true)));
         return ret;
     }
 
