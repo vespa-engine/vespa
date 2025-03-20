@@ -38,7 +38,6 @@ public class SearchGroupsImpl implements SearchGroups {
         if (medianDocumentCount <= 0) return true;
         if (currentIsGroupCoverageSufficient) {
             if (availabilityPolicy.prioritizeAvailability()) {
-                System.out.println("median: " + medianDocumentCount);
                 // To take a group *out of* rotation, require that it has less active documents than the median.
                 // This avoids scenarios where incorrect accounting in a single group takes all other groups offline.
                 double documentCoverage = 100.0 * (double) groupDocumentCount / medianDocumentCount;
