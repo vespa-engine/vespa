@@ -6,7 +6,6 @@ import com.yahoo.jrt.Method;
 import com.yahoo.jrt.Request;
 import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
-import com.yahoo.net.URI;
 import com.yahoo.security.tls.Capability;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
@@ -14,6 +13,8 @@ import com.yahoo.yolean.Exceptions;
 import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.Objects;
@@ -71,8 +72,13 @@ class UrlDownloadRpcServer {
     private void downloadFile(Request req) {
         String url = req.parameters().get(0).asString();
         File downloadDir = new File(rootDownloadDir, urlToDirName(url));
-        Downloader downloader = downloader(url);
-        if (downloader.alreadyDownloaded(downloader, downloadDir)) {
+        UrlDownloader downloader;
+        try {
+            downloader = downloader(url);
+        } catch (MalformedURLException e) {
+            throw new RuntimeException(e);
+        }
+        if (downloader.alreadyDownloaded(downloadDir)) {
             log.log(Level.INFO, "URL '" + url + "' already downloaded");
             req.returnValues().add(new StringValue(new File(downloadDir, downloader.fileName()).getAbsolutePath()));
             req.returnRequest();
@@ -81,7 +87,7 @@ class UrlDownloadRpcServer {
 
         try {
             Files.createDirectories(downloadDir.toPath());
-            Optional<File> file = downloader.downloadFile(url, downloadDir);
+            Optional<File> file = downloader.download(downloadDir);
             if (file.isPresent())
                 req.returnValues().add(new StringValue(file.get().getAbsolutePath()));
             else
@@ -94,12 +100,12 @@ class UrlDownloadRpcServer {
         req.returnRequest();
     }
 
-    private static Downloader downloader(String url) {
-        Objects.requireNonNull(url, "url cannot be null");
-        URI uri = new URI(url);
-        return switch (uri.getScheme()) {
-            case "http", "https" -> new UrlDownloader();
-            default -> throw new IllegalArgumentException("Unsupported scheme '" + uri.getScheme() + "'");
+    private static UrlDownloader downloader(String urlString) throws MalformedURLException {
+        Objects.requireNonNull(urlString, "url cannot be null");
+        URL url = new URL(urlString);
+        return switch (url.getProtocol()) {
+            case "http", "https" -> new UrlDownloader(url);
+            default -> throw new IllegalArgumentException("Unsupported scheme '" + url.getProtocol() + "'");
         };
     }
 
