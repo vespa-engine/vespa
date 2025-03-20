@@ -229,7 +229,7 @@ public final class DeploymentSpec {
 
     Optional<Duration> hostTTL() { return hostTTL; }
 
-    // TODO: Remove once 8.502 no longer exists anywhere
+    // TODO: Used by models up to 8.502
     public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
         return zoneEndpoint(instance, zone, cluster, false);
     }
@@ -242,6 +242,7 @@ public final class DeploymentSpec {
      * 4. The application has declared a universal zone endpoint for the cluster.
      * 5. None of the above apply, and the default of a publicly visible endpoint is used.
      */
+    // TODO: Available from 8.502. Used to roll out useNonPublicEndpointForTest.
     public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster, boolean useNonPublicEndpointForTest) {
         if (zone.environment().isTest() &&
             (useNonPublicEndpointForTest ||
