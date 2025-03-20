@@ -197,9 +197,8 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         long[] resultShape = tokenEmbeddings.shape();
         //shape batch, sequence, embedding dimensionality
         if (resultShape.length != 3) {
-            throw new IllegalArgumentException("" +
-                    "Expected 3 output dimensions for output name '" +
-                    outputName + "': [batch, sequence, embedding], got " + resultShape.length);
+            throw new IllegalArgumentException("Expected 3 output dimensions for output name '" +
+                                               outputName + "': [batch, sequence, embedding], got " + resultShape.length);
         }
         runtime.sampleEmbeddingLatency((System.nanoTime() - start)/1_000_000d, context);
         return new HFEmbeddingResult(tokenEmbeddings, attentionMask, context.getEmbedderId());
@@ -219,7 +218,10 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                                          .build();
         Tensor result = poolingStrategy.toSentenceEmbedding(poolingType, embeddingResult.output(), embeddingResult.attentionMask());
         result = normalize? normalize(result, poolingType) : result;
-        return Tensors.packBits(result);
+        Tensor packedResult = Tensors.packBits(result);
+        if ( ! packedResult.type().equals(targetType))
+            throw new IllegalStateException("Expected pack_bits to produce " + targetType + ", but got " + packedResult.type());
+        return packedResult;
     }
 
     private IndexedTensor createTensorRepresentation(List<Long> input, String dimension) {
