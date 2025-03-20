@@ -10,7 +10,7 @@ namespace vbench {
 struct Closeable
 {
     virtual void close() = 0;
-    virtual ~Closeable() {}
+    virtual ~Closeable() = default;
 };
 
 } // namespace vbench

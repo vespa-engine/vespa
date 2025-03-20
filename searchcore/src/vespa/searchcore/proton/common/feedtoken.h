@@ -18,7 +18,7 @@ namespace feedtoken {
  */
 class ITransport {
 public:
-    virtual ~ITransport() { }
+    virtual ~ITransport() = default;
     virtual void send(ResultUP result, bool documentWasFound) = 0;
 };
 

@@ -209,6 +209,7 @@ public class ModelContextImpl implements ModelContext {
         private final long zookeeperPreAllocSize;
         private final int documentV1QueueSize;
         private final int maxContentNodeMaintenanceOpConcurrency;
+        private final int maxDistributorDocumentOperationSizeMib;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
@@ -255,6 +256,7 @@ public class ModelContextImpl implements ModelContext {
             this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
             this.documentV1QueueSize = Flags.DOCUMENT_V1_QUEUE_SIZE.bindTo(source).with(appId).with(version).value();
             this.maxContentNodeMaintenanceOpConcurrency = Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY.bindTo(source).with(appId).with(version).value();
+            this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public int heapSizePercentage() { return heapPercentage; }
@@ -307,6 +309,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }
         @Override public int documentV1QueueSize() { return documentV1QueueSize; }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
+        @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     }
 
     public static class Properties implements ModelContext.Properties {
@@ -339,6 +342,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean allowUserFilters;
         private final Duration endpointConnectionTtl;
         private final List<String> requestPrefixForLoggingContent;
+        private final List<String> jdiscHttpComplianceViolations;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -386,6 +390,8 @@ public class ModelContextImpl implements ModelContext {
             this.endpointConnectionTtl = Duration.ofSeconds(PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource).with(applicationId).value());
             this.dataplaneTokens = dataplaneTokens;
             this.requestPrefixForLoggingContent = PermanentFlags.LOG_REQUEST_CONTENT.bindTo(flagSource).with(applicationId).value();
+            this.jdiscHttpComplianceViolations = PermanentFlags.JDISC_HTTP_COMPLIANCE_VIOLATIONS.bindTo(flagSource)
+                    .with(applicationId).with(modelVersion).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -492,6 +498,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
 
         @Override public List<String> requestPrefixForLoggingContent() { return requestPrefixForLoggingContent; }
+
+        @Override public List<String> jdiscHttpComplianceViolations() { return jdiscHttpComplianceViolations; }
     }
 
 }

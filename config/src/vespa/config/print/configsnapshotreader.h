@@ -17,7 +17,7 @@ public:
      * @return Snapshot containing the configs.
      */
     virtual ConfigSnapshot read() = 0;
-    virtual ~ConfigSnapshotReader() { }
+    virtual ~ConfigSnapshotReader() = default;
 };
 
 } // namespace config

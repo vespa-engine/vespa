@@ -161,7 +161,7 @@ public:
     class ILoader
     {
     public:
-        virtual ~ILoader() { }
+        virtual ~ILoader() = default;
         virtual bool hasClass(unsigned classId) const = 0;
         virtual bool hasClass(const char * className) const = 0;
         virtual void loadClass(unsigned classId) = 0;

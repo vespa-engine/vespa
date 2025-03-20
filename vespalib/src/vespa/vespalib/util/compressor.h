@@ -12,7 +12,7 @@ namespace vespalib::compression {
 class ICompressor
 {
 public:
-    virtual ~ICompressor() { }
+    virtual ~ICompressor() = default;
     virtual bool process(CompressionConfig config, const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual bool unprocess(const void * input, size_t inputLen, void * output, size_t & outputLen) = 0;
     virtual size_t adjustProcessLen(uint16_t options, size_t len)   const = 0;

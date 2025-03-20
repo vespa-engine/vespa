@@ -48,7 +48,7 @@ struct GidCollector : public search::IGidToLidMapperVisitor
           _map(map)
     {
     }
-    virtual void visit(const document::GlobalId &gid, uint32_t lid) const override { _map.insert(std::make_pair(gid, lid)); }
+    void visit(const document::GlobalId &gid, uint32_t lid) const override { _map.insert(std::make_pair(gid, lid)); }
 };
 
 GidMap collectGids(const std::unique_ptr<search::IGidToLidMapper> &mapper)

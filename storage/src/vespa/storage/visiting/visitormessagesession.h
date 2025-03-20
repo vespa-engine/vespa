@@ -15,7 +15,7 @@ namespace storage {
 struct VisitorMessageSession {
     using UP = std::unique_ptr<VisitorMessageSession>;
 
-    virtual ~VisitorMessageSession() {}
+    virtual ~VisitorMessageSession() = default;
 
     virtual mbus::Result send(std::unique_ptr<documentapi::DocumentMessage>) = 0;
 

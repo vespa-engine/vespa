@@ -67,7 +67,7 @@ struct FeatureDumpFixture : public IDumpFeatureVisitor {
     std::vector<std::string> actual;
     FeatureDumpFixture() : IDumpFeatureVisitor(), actual() {}
     ~FeatureDumpFixture() override;
-    virtual void visitDumpFeature(const std::string &name) override {
+    void visitDumpFeature(const std::string &name) override {
         actual.push_back(name);
     }
 };

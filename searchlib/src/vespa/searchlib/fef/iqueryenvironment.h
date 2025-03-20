@@ -93,7 +93,7 @@ public:
     /**
      * Virtual destructor to allow safe subclassing.
      **/
-    virtual ~IQueryEnvironment() { }
+    virtual ~IQueryEnvironment() = default;
 
     IObjectStore & getObjectStore() { return _objectStore; }
     const IObjectStore & getObjectStore() const { return _objectStore; }

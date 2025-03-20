@@ -61,6 +61,7 @@
 #include <vector>
 
 #include <cassert>
+#include <cstring>
 #include <iostream>
 #include <stdexcept>
 
@@ -83,7 +84,7 @@ public:
     void Run();                  // Calls Test::run() repeatedly
     long Report() const;
     void Free(); // deletes tests
-    virtual ~Suite(void) {}
+    virtual ~Suite();
 
 private:
     std::string        m_name;

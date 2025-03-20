@@ -18,21 +18,21 @@ class ExpressionAssert {
     }
 
     public static void assertVerify(DataType inputType, Expression expression, DataType outputType) {
-        var context = new VerificationContext(new SimpleTestAdapter()).setCurrentType(inputType);
+        var context = new VerificationContext(new SimpleTestAdapter());
         assertVerifyCtx(expression, context);
         assertEquals(outputType, expression.setInputType(inputType, context));
         assertEquals(inputType, expression.setOutputType(outputType, context));
     }
 
     public static void assertVerifyThrows(String expectedMessage, DataType valueBefore, Expression expression) {
-        assertVerifyThrows(expectedMessage, expression, valueBefore, new VerificationContext(new SimpleTestAdapter()).setCurrentType(valueBefore));
+        assertVerifyThrows(expectedMessage, expression, valueBefore, new VerificationContext(new SimpleTestAdapter()));
     }
 
     interface CreateExpression {
         Expression create();
     }
     public static void assertVerifyThrows(String expectedMessage, DataType valueBefore, CreateExpression createExpression) {
-        assertVerifyThrows(expectedMessage, createExpression, new VerificationContext(new SimpleTestAdapter()).setCurrentType(valueBefore));
+        assertVerifyThrows(expectedMessage, createExpression, new VerificationContext(new SimpleTestAdapter()));
     }
 
     public static void assertVerifyThrows(String expectedMessage, CreateExpression createExp, VerificationContext context) {

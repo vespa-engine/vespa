@@ -12,7 +12,7 @@ namespace proton {
  */
 struct IAttributeInitializerRegistry
 {
-    virtual ~IAttributeInitializerRegistry() {}
+    virtual ~IAttributeInitializerRegistry() = default;
     virtual void add(AttributeInitializer::UP initializer) = 0;
 };
 

@@ -22,7 +22,7 @@ struct CheckTypeVisitor<> : EmptyNodeVisitor {
 
 template <typename HEAD, typename... TAIL>
 struct CheckTypeVisitor<HEAD, TAIL...> : CheckTypeVisitor<TAIL...> {
-    virtual void visit(const HEAD &) override { this->result = true; }
+    void visit(const HEAD &) override { this->result = true; }
 };
 
 template <typename... TYPES>

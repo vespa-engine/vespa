@@ -22,7 +22,7 @@ protected:
     {
     public:
         Handler(const NumericFunctionNode & func) : _function(func) { }
-        virtual ~Handler() { }
+        virtual ~Handler() = default;
         virtual void handle(const ResultNode & arg) = 0;
         virtual void handleFirst(const ResultNode & arg) = 0;
     protected:

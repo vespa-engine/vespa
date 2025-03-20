@@ -74,6 +74,55 @@ public class SearchClusterCoverageTest {
     }
 
     @Test
+    void five_groups_prioritize_availability() {
+        var tester =  new SearchClusterTester(5, 3,
+                                              new AvailabilityPolicy(true, 97));
+
+        tester.setDocsPerNode(100, 0);
+        tester.setDocsPerNode(100, 1);
+        tester.setDocsPerNode(100, 2);
+        tester.setDocsPerNode(100, 1);
+        tester.setDocsPerNode(100, 1);
+        tester.pingIterationCompleted();
+        tester.setDocsPerNode( 96, 0);
+        tester.setDocsPerNode( 96, 1);
+        tester.setDocsPerNode(100, 2);
+        tester.setDocsPerNode( 94, 1);
+        tester.setDocsPerNode( 95, 1);
+        tester.pingIterationCompleted();
+        assertTrue(tester.group(0).hasSufficientCoverage());
+        assertTrue(tester.group(1).hasSufficientCoverage());
+        assertTrue(tester.group(2).hasSufficientCoverage());
+        assertFalse(tester.group(3).hasSufficientCoverage());
+        assertFalse(tester.group(4).hasSufficientCoverage());
+    }
+
+    /** As above, but prioritizeAvailability=false */
+    @Test
+    void five_groups_prioritize_coverage() {
+        var tester =  new SearchClusterTester(5, 3,
+                                              new AvailabilityPolicy(false, 97));
+
+        tester.setDocsPerNode(100, 0);
+        tester.setDocsPerNode(100, 1);
+        tester.setDocsPerNode(100, 2);
+        tester.setDocsPerNode(100, 1);
+        tester.setDocsPerNode(100, 1);
+        tester.pingIterationCompleted();
+        tester.setDocsPerNode( 96, 0);
+        tester.setDocsPerNode( 96, 1);
+        tester.setDocsPerNode(100, 2);
+        tester.setDocsPerNode( 94, 1);
+        tester.setDocsPerNode( 95, 1);
+        tester.pingIterationCompleted();
+        assertFalse(tester.group(0).hasSufficientCoverage()); // due to prioritizing coverage
+        assertFalse(tester.group(1).hasSufficientCoverage()); // due to prioritizing coverage
+        assertTrue(tester.group(2).hasSufficientCoverage());
+        assertFalse(tester.group(3).hasSufficientCoverage());
+        assertFalse(tester.group(4).hasSufficientCoverage());
+    }
+
+    @Test
     void three_groups_one_has_too_many_docs() {
         var tester =  new SearchClusterTester(3, 3);
 

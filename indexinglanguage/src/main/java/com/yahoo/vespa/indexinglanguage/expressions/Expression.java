@@ -9,7 +9,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.AdapterFactory;
 import com.yahoo.vespa.indexinglanguage.DocumentAdapter;
@@ -249,7 +249,7 @@ public abstract class Expression extends Selectable {
         return newInstance(new ScriptParserContext(linguistics, embedders, Map.of()).setInputStream(new IndexingInput(expression)));
     }
     
-    public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders, Map<String, TextGenerator> generators) throws ParseException {
+    public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders, Map<String, FieldGenerator> generators) throws ParseException {
         return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 
@@ -285,20 +285,10 @@ public abstract class Expression extends Selectable {
         throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
     }
 
-    protected DataType mostGeneralNonNullOf(DataType left, DataType right) {
-        if (left == null) return right;
-        if (right == null) return left;
-        if (left.isAssignableTo(right)) return right;
-        if (right.isAssignableTo(left)) return left;
-        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
-    }
-
     protected DataType leastGeneralNonNullOf(DataType left, DataType right) {
         if (left == null) return right;
         if (right == null) return left;
-        if (left.isAssignableTo(right)) return left;
-        if (right.isAssignableTo(left)) return right;
-        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
+        return leastGeneralOf(left, right);
     }
 
 }

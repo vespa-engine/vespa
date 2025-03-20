@@ -14,9 +14,9 @@ namespace {
     template <typename T>
     bool equals(const T * lhs, const T * rhs)
     {
-        if (lhs == NULL)
-            return rhs == NULL;
-        return rhs != NULL && *lhs == *rhs;
+        if (lhs == nullptr)
+            return rhs == nullptr;
+        return rhs != nullptr && *lhs == *rhs;
     }
 }
 

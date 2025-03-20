@@ -19,7 +19,7 @@ public:
      **/
     virtual Syncable &sync() = 0;
 
-    virtual ~Syncable() {}
+    virtual ~Syncable() = default;
 };
 
 } // namespace vespalib

@@ -178,7 +178,7 @@ public:
           _context(context)
     {
     }
-    virtual void run() override { _f.readWork(*_context); }
+    void run() override { _f.readWork(*_context); }
 };
 
 class WriteWorkTask : public vespalib::Executor::Task
@@ -194,7 +194,7 @@ public:
           _context(context)
     {
     }
-    virtual void run() override { _f.writeWork(_cnt, *_context); }
+    void run() override { _f.writeWork(_cnt, *_context); }
 };
 
 }

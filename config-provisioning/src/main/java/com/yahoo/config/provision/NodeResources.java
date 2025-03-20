@@ -121,21 +121,42 @@ public class NodeResources {
 
     }
 
-    public record GpuResources(int count, double memoryGiB) {
+    public enum GpuType { NONE, T4, A100, L4, L40S }
 
-        private static final GpuResources zero = new GpuResources(0, 0);
+    public record GpuResources(GpuType type, int count, double memoryGiB) {
+
+        private static final GpuResources zero = new GpuResources(GpuType.NONE, 0, 0);
+
+        private static GpuType typeFrom(String type, int count) {
+            if (count <= 0) return GpuType.NONE;
+            if (type == null || type.equals("")) return GpuType.T4;
+            return GpuType.valueOf(type);
+        }
+        private GpuType unify(GpuType other) {
+            if (this.type == GpuType.NONE) return other;
+            // XXX long-term we may need to track several GPU types, this is not good:
+            return this.type;
+        }
+
+        // backwards compatibility:
+        public GpuResources(int count, double memoryGiB) {
+            this(typeFrom(null, count), count, memoryGiB);
+        }
+
+        public GpuResources(String t, int count, double memoryGiB) {
+            this(typeFrom(t, count), count, memoryGiB);
+        }
 
         public GpuResources {
+            validate(count, "gpu-count");
             validate(memoryGiB, "memory");
         }
 
-        public GpuResources(String s, int count, double memoryGiB) {
-            this(count, memoryGiB);
-        }
-
         private boolean lessThan(GpuResources other) {
-            return this.count < other.count ||
-                   this.memoryGiB < other.memoryGiB;
+            int diff = this.type.compareTo(other.type);
+            if (diff == 0) diff = Integer.compare(this.count, other.count);
+            if (diff == 0) diff = Double.compare(this.memoryGiB, other.memoryGiB);
+            return diff < 0;
         }
 
         public boolean isZero() { return this.equals(zero); }
@@ -148,34 +169,22 @@ public class NodeResources {
         public static GpuResources getDefault() { return zero; }
 
         public GpuResources plus(GpuResources other) {
-            if (other.isZero()) return this;
+            if (other.count == 0) return this;
+            if (this.count == 0) return other;
             var thisMem = this.count() * this.memoryGiB();
             var otherMem = other.count() * other.memoryGiB();
-            return new NodeResources.GpuResources(1, thisMem + otherMem);
+            return new NodeResources.GpuResources(unify(other.type), 1, thisMem + otherMem);
         }
 
         public GpuResources minus(GpuResources other) {
-            if (other.isZero()) return this;
+            if (other.count == 0) return this;
             var thisMem = this.count() * this.memoryGiB();
             var otherMem = other.count() * other.memoryGiB();
-            return new NodeResources.GpuResources(1, thisMem - otherMem);
+            return new NodeResources.GpuResources(unify(other.type), 1, thisMem - otherMem);
         }
 
         public GpuResources multipliedBy(double factor) {
-            return new GpuResources(this.count, this.memoryGiB * factor);
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            GpuResources that = (GpuResources) o;
-            return count == that.count && equal(this.memoryGiB, that.memoryGiB);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(count, memoryGiB);
+            return new GpuResources(this.type, this.count, this.memoryGiB * factor);
         }
     }
 
@@ -415,6 +424,7 @@ public class NodeResources {
         }
         sb.append(", architecture: ").append(architecture);
         if ( !gpuResources.isDefault()) {
+            sb.append(", gpu type: ").append(gpuResources.type());
             sb.append(", gpu count: ").append(gpuResources.count());
             sb.append(", gpu memory: ");
             appendDouble(sb, gpuResources.memoryGiB());
@@ -433,6 +443,10 @@ public class NodeResources {
         if (this.diskGb < other.diskGb) return false;
         if (this.bandwidthGbps < other.bandwidthGbps) return false;
         if (this.gpuResources.lessThan(other.gpuResources)) return false;
+        // disallow substitution of GPU type
+        if (this.gpuResources.type() != other.gpuResources.type()) {
+            return false;
+        }
 
         // Why doesn't a fast disk satisfy a slow disk? Because if slow disk is explicitly specified
         // (i.e not "any"), you should not randomly, sometimes get a faster disk as that means you may

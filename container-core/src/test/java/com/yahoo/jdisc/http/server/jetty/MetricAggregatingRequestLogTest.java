@@ -1,8 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.yahoo.jdisc.http.server.jetty.ResponseMetricAggregator.StatisticsEntry;
-import org.eclipse.jetty.http.HttpFields;
+import com.yahoo.jdisc.http.server.jetty.MetricAggregatingRequestLog.StatisticsEntry;
 import org.eclipse.jetty.http.HttpVersion;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -16,11 +15,11 @@ import static org.hamcrest.Matchers.equalTo;
  * @author ollivir
  * @author bjorncs
  */
-public class ResponseMetricAggregatorTest {
+public class MetricAggregatingRequestLogTest {
 
     private final List<String> monitoringPaths = List.of("/status.html");
     private final List<String> searchPaths = List.of("/search");
-    private final ResponseMetricAggregator collector = new ResponseMetricAggregator(monitoringPaths, searchPaths, List.of(), false, null);
+    private final MetricAggregatingRequestLog collector = new MetricAggregatingRequestLog(monitoringPaths, searchPaths, List.of(), false);
 
     @BeforeEach
     public void initializeCollector() {
@@ -129,8 +128,8 @@ public class ResponseMetricAggregatorTest {
                 .uri(scheme, "localhost", 8080, path, null)
                 .protocol(HttpVersion.HTTP_1_1.asString());
         if (explicitRequestType != null)
-            builder.attribute(ResponseMetricAggregator.requestTypeAttribute, explicitRequestType);
-        collector.onResponseBegin(builder.build(), responseCode, HttpFields.EMPTY);
+            builder.attribute(MetricAggregatingRequestLog.requestTypeAttribute, explicitRequestType);
+        collector.onResponse(builder.build(), responseCode);
     }
 
     private static void assertStatisticsEntry(List<StatisticsEntry> result, String scheme, String method, String name,

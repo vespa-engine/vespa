@@ -125,7 +125,7 @@ class MyInspector : public IDocumentTypeInspector
 {
     std::set<std::string> _unchanged;
 public:
-    virtual bool hasUnchangedField(const std::string &name) const override {
+    bool hasUnchangedField(const std::string &name) const override {
         return _unchanged.count(name) > 0;
     }
     MyInspector()

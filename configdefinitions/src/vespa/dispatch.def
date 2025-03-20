@@ -3,6 +3,15 @@
 
 namespace=vespa.config.search
 
+## Whether to prioritize availability (default), or maximal coverage when choosing
+## which content groups requests should be dispatched to.
+## If true, all groups that are observed to have at least minActivedocsPercentage of the *median* number of documents
+## over the other groups will receive queries.
+## If set to false, only groups that have at least minActivedocsPercentage of the *maximal* observed number
+## of documents will receive requests, with the consequence that queries will fail due to overload rather
+## that return from a group with too few documents, when more than one group has too few documents available.
+prioritizeAvailability bool default=true
+
 ## The active docs a group must have as a % of the average active docs of all other groups,
 ## for that group to be included in queries
 minActivedocsPercentage double default=97.0

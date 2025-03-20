@@ -5,7 +5,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
@@ -119,7 +119,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
         return super.equals(obj) && obj instanceof ScriptExpression;
     }
 
-    /** Creates an expression with simple lingustics for testing */
+    /** Creates an expression with simple linguistics for testing */
     public static ScriptExpression fromString(String expression) throws ParseException {
         return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
     }
@@ -130,7 +130,7 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     public static Expression fromString(
             String expression, Linguistics linguistics, Map<String, Embedder> embedders, 
-            Map<String, TextGenerator> generators) throws ParseException {
+            Map<String, FieldGenerator> generators) throws ParseException {
         return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 

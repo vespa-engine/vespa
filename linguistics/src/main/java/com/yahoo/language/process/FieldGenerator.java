@@ -2,6 +2,8 @@ package com.yahoo.language.process;
 
 import ai.vespa.llm.completion.Prompt;
 import com.yahoo.collections.LazyMap;
+import com.yahoo.document.DataType;
+import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Language;
 
 import java.util.Map;
@@ -9,57 +11,60 @@ import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
- * Generates text given a prompt.
+ * Generates field values given an input text.
  * 
  * @author glebashnik
  */
-public interface TextGenerator {
+public interface FieldGenerator {
 
     // Name of generator when none is explicitly given
     String defaultGeneratorId = "default";
 
     // An instance of this which throws IllegalStateException if attempted used
-    TextGenerator throwsOnUse = new FailingTextGenerator();
+    FieldGenerator throwsOnUse = new FailingFieldGenerator();
 
     // Returns this generator instance as a map with the default generator name
-    default Map<String, TextGenerator> asMap() {
+    default Map<String, FieldGenerator> asMap() {
         return asMap(defaultGeneratorId);
     }
 
     // Returns this generator instance as a map with the given name
-    default Map<String, TextGenerator> asMap(String name) {
+    default Map<String, FieldGenerator> asMap(String name) {
         return Map.of(name, this);
     }
-
-    String generate(Prompt prompt, Context context);
+    
+    FieldValue generate(Prompt prompt, Context context);
     
     class Context {
         private Language language = Language.UNKNOWN;
-        private String destination;
+        private final String destination;
+        private final DataType targetType;
         private String generatorId = "unknown";
         private final Map<Object, Object> cache;
 
-        public Context(String destination) {
-            this(destination, LazyMap.newHashMap());
+        public Context(String destination, DataType targetType) {
+            this(destination, targetType, LazyMap.newHashMap());
         }
 
         /**
          * @param destination the name of the recipient of the generated output
          * @param cache a cache shared between all generate invocations for a single request
          */
-        public Context(String destination, Map<Object, Object> cache) {
+        public Context(String destination, DataType targetType, Map<Object, Object> cache) {
             this.destination = destination;
+            this.targetType = targetType;
             this.cache = Objects.requireNonNull(cache);
         }
 
         private Context(Context other) {
             language = other.language;
             destination = other.destination;
+            targetType = other.targetType;
             generatorId = other.generatorId;
             this.cache = other.cache;
         }
 
-        public TextGenerator.Context copy() { return new Context(this); }
+        public FieldGenerator.Context copy() { return new Context(this); }
 
         /** Returns the language of the text, or UNKNOWN (default) to use a language independent generation */
         public Language getLanguage() { return language; }
@@ -77,16 +82,9 @@ public interface TextGenerator {
          */
         public String getDestination() { return destination; }
 
-        /**
-         * Sets the name of the recipient of the generated text.
-         * This is a schema and a field name concatenated by a dot ("schema.field").
-         * This cannot be null.
-         */
-        public Context setDestination(String destination) {
-            this.destination = destination;
-            return this;
-        }
-
+        /** Returns the target type of the generated content. */
+        public DataType getTargetType() { return targetType; }
+        
         /** Return the generator id or 'unknown' if not set */
         public String getGeneratorId() { return generatorId; }
 
@@ -113,18 +111,18 @@ public interface TextGenerator {
 
     }
     
-    class FailingTextGenerator implements TextGenerator {
+    class FailingFieldGenerator implements FieldGenerator {
         private final String message;
 
-        public FailingTextGenerator() {
+        public FailingFieldGenerator() {
             this("No generator has been configured");
         }
 
-        public FailingTextGenerator(String message) {
+        public FailingFieldGenerator(String message) {
             this.message = message;
         }
         
-        public String generate(Prompt prompt, Context context) {
+        public FieldValue generate(Prompt prompt, Context context) {
             throw new IllegalStateException(message);
         }
     }

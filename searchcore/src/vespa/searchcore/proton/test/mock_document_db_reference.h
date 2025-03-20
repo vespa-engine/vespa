@@ -14,16 +14,16 @@ namespace proton::test {
  */
 struct MockDocumentDBReference : public IDocumentDBReference {
     using SP = std::shared_ptr<MockDocumentDBReference>;
-    virtual std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view) override {
+    std::shared_ptr<search::attribute::ReadableAttributeVector> getAttribute(std::string_view) override {
         return std::shared_ptr<search::attribute::ReadableAttributeVector>();
     }
-    virtual std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const override {
+    std::shared_ptr<const search::IDocumentMetaStoreContext> getDocumentMetaStore() const override {
         return std::shared_ptr<const search::IDocumentMetaStoreContext>();
     }
-    virtual std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override {
+    std::shared_ptr<search::IGidToLidMapperFactory> getGidToLidMapperFactory() override {
         return std::shared_ptr<search::IGidToLidMapperFactory>();
     }
-    virtual std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string &) override {
+    std::unique_ptr<GidToLidChangeRegistrator> makeGidToLidChangeRegistrator(const std::string &) override {
         return std::unique_ptr<GidToLidChangeRegistrator>();
     }
 };

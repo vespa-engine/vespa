@@ -37,7 +37,7 @@ struct Inspector {
     virtual Inspector &operator[](Symbol sym) const = 0;
     virtual Inspector &operator[](Memory name) const = 0;
 
-    virtual ~Inspector() {}
+    virtual ~Inspector() = default;
 };
 
 bool operator==(const Inspector &a, const Inspector &b);

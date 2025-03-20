@@ -23,9 +23,9 @@ private:
     feature_t           _number;
     Value::UP           _object;
 
-    virtual void handle_bind_match_data(const MatchData &md) override;
-    virtual void handle_bind_inputs(std::span<const LazyValue> inputs) override;
-    virtual void handle_bind_outputs(std::span<NumberOrObject> outputs) override;
+    void handle_bind_match_data(const MatchData &md) override;
+    void handle_bind_inputs(std::span<const LazyValue> inputs) override;
+    void handle_bind_outputs(std::span<NumberOrObject> outputs) override;
 
 public:
     FeatureOverrider(const FeatureOverrider &) = delete;

@@ -114,7 +114,7 @@ struct TensorFunction
     virtual void visit_self(vespalib::ObjectVisitor &visitor) const;
     virtual void visit_children(vespalib::ObjectVisitor &visitor) const;
 
-    virtual ~TensorFunction() {}
+    virtual ~TensorFunction() = default;
 };
 
 /**

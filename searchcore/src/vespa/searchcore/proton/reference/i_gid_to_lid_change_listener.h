@@ -18,7 +18,7 @@ class IGidToLidChangeListener
 {
 public:
     using IDestructorCallbackSP = std::shared_ptr<vespalib::IDestructorCallback>;
-    virtual ~IGidToLidChangeListener() { }
+    virtual ~IGidToLidChangeListener() = default;
     virtual void notifyPutDone(IDestructorCallbackSP context, document::GlobalId gid, uint32_t lid) = 0;
     virtual void notifyRemove(IDestructorCallbackSP context, document::GlobalId gid) = 0;
     virtual void notifyRegistered(const std::vector<document::GlobalId>& removes) = 0;

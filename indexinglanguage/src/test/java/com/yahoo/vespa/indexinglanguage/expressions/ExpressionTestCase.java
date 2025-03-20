@@ -51,7 +51,7 @@ public class ExpressionTestCase {
     }
 
     private static void assertVerify(Expression exp, DataType val) {
-        var context = new VerificationContext(new SimpleTestAdapter()).setCurrentType(val);
+        var context = new VerificationContext(new SimpleTestAdapter());
         exp.setInputType(val, context);
         exp.verify(context);
     }

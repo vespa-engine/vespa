@@ -215,7 +215,7 @@ struct Report {
     virtual void merge(const Report &report) = 0;
     virtual size_t count() const = 0;
     virtual void dump(FILE *dst) const = 0;
-    virtual ~Report() {}
+    virtual ~Report() = default;
 };
 
 size_t raw_reports = 0;

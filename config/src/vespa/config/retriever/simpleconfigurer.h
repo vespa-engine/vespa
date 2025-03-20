@@ -14,7 +14,7 @@ namespace config {
 class SimpleConfigurable
 {
 public:
-    virtual ~SimpleConfigurable() { }
+    virtual ~SimpleConfigurable() = default;
     virtual void configure(const ConfigSnapshot & snapshot) = 0;
 };
 

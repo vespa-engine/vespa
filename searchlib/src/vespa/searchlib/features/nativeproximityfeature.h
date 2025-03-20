@@ -92,7 +92,7 @@ private:
     feature_t calculateScoreForField(const FieldSetup & fs, uint32_t docId);
     feature_t calculateScoreForPair(const TermPair & pair, uint32_t fieldId, uint32_t docId);
 
-    virtual void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     NativeProximityExecutor(const NativeProximityExecutorSharedState& shared_state);

@@ -24,7 +24,7 @@ struct Tick {
     virtual TimeStamp first() = 0;
     virtual void kill() = 0;
     virtual bool alive() const = 0;
-    virtual ~Tick() {}
+    virtual ~Tick() = default;
 };
 
 } // namespace vespalib::metrics

@@ -30,7 +30,7 @@ protected:
   {
   public:
     ReaderInterface() {}
-    virtual ~ReaderInterface() {}
+    virtual ~ReaderInterface() = default;
 
     /**
      * This method is called by the @ref HTTPClient::Read(char *,

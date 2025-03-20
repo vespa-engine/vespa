@@ -4,7 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
@@ -104,9 +104,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
     @Override
     protected void doVerify(VerificationContext context) {
         if (expressions().isEmpty()) return;
-        String outputField = outputFieldName();
-        if (outputField != null)
-            context.setOutputField(outputField);
 
         var outputType = resolveForwards(context);
         assignOutputType(outputType);
@@ -121,14 +118,6 @@ public final class StatementExpression extends ExpressionList<Expression> {
         for (Expression expression : this) {
             context.execute(expression);
         }
-    }
-
-    private String outputFieldName() {
-        for (Expression expression : this) {
-            if (expression instanceof OutputExpression output)
-                return output.getFieldName();
-        }
-        return null;
     }
 
     @Override
@@ -152,7 +141,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
 
     public static StatementExpression fromString(
             String expression, Linguistics linguistics, Map<String, Embedder> embedders, 
-            Map<String, TextGenerator> generators) throws ParseException {
+            Map<String, FieldGenerator> generators) throws ParseException {
         return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 

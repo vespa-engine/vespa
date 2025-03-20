@@ -11,7 +11,7 @@ struct Analyzer : public Handler<Request>
 {
     using UP = std::unique_ptr<Analyzer>;
     virtual void report() = 0;
-    virtual ~Analyzer() {}
+    ~Analyzer() override = default;
 };
 
 } // namespace vbench

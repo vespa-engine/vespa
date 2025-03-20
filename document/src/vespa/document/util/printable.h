@@ -20,7 +20,7 @@ namespace document {
 
 class Printable {
 public:
-    virtual ~Printable() {}
+    virtual ~Printable() = default;
 
     /**
      * Print instance textual to the given stream.

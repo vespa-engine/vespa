@@ -8,6 +8,7 @@ import org.eclipse.lemminx.services.extensions.IDocumentLifecycleParticipant;
 import org.eclipse.lemminx.services.extensions.commands.IXMLCommandService;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 
+import ai.vespa.lemminx.VespaExtension;
 import ai.vespa.lemminx.command.SchemaLSCommands;
 
 public class DocumentLifecycleParticipant implements IDocumentLifecycleParticipant {
@@ -20,6 +21,9 @@ public class DocumentLifecycleParticipant implements IDocumentLifecycleParticipa
 
     @Override
     public void didOpen(DOMDocument document) {
+        if (!VespaExtension.match(document))
+            return;
+
         try {
             String fileURI = document.getTextDocument().getUri();
             SchemaLSCommands.instance().sendSetupWorkspaceRequest(fileURI);

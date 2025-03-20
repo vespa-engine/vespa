@@ -181,7 +181,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         this.isHostedVespa = stateIsHosted(deployState);
         this.zone = (deployState != null) ? deployState.zone() : Zone.defaultZone();
         this.zooKeeperLocalhostAffinity = zooKeeperLocalhostAffinity;
-        this.compressionType = deployState.featureFlags().logFileCompressionAlgorithm("zstd");
+        this.compressionType = "zstd";
 
         componentGroup = new ComponentGroup<>(this, "component");
 
@@ -446,7 +446,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         for (var child: current.getChildren().values()) {
             if (child instanceof Component)
                 allComponents.add((Component<?, ?>) child);
-            
+
             if (child instanceof TreeConfigProducer t && !(child instanceof Container))
                 recursivelyFindAllComponents(allComponents, t);
         }

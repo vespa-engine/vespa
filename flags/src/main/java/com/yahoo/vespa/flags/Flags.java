@@ -327,7 +327,7 @@ public class Flags {
             "Takes effect on restart of OCI containers");
 
     public static final UnboundBooleanFlag CONFIG_SERVER_TRIGGER_DOWNLOAD_WITH_SOURCE = defineFeatureFlag(
-            "config-server-trigger-download-with-source", false,
+            "config-server-trigger-download-with-source", true,
             List.of("hmusum"), "2024-12-25", "2025-04-01",
             "Use new RPC method for triggering download of file reference",
             "Takes effect immediately");
@@ -359,6 +359,15 @@ public class Flags {
             "Sets the maximum concurrency for maintenance-related operations on content nodes. " +
             "Only intended as a manual emergency brake feature if a system is suddenly incapable of handling " +
             "regular maintenance pressure.",
+            "Takes effect immediately",
+            INSTANCE_ID);
+
+    public static final UnboundIntFlag MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB = defineIntFlag(
+            "max-distributor-document-operation-size-mib", -1,
+            List.of("vekterli"), "2025-03-17", "2025-10-01",
+            "Sets the maximum size in MiB of a document operation (Put or Update) that a distributor " +
+            "will accept when it arrives over the Document API. Any value outside (1, 2048) implies " +
+            "effectively unbounded behavior. Setting this value too low will have the obvious consequences.",
             "Takes effect immediately",
             INSTANCE_ID);
 

@@ -26,7 +26,7 @@ public:
     using DocumentIdT = search::DocumentIdT;
     using DocumentTypeRepo = document::DocumentTypeRepo;
 
-    virtual ~ISummaryAdapter() {}
+    virtual ~ISummaryAdapter() = default;
 
     // feed interface
     virtual void put(SerialNum serialNum, const DocumentIdT lid, const Document &doc) = 0;

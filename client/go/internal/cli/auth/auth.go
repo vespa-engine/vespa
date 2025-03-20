@@ -30,7 +30,9 @@ type Authenticator struct {
 
 // SecretStore provides access to stored sensitive data.
 type SecretStore interface {
-	// Get gets the secret
+	// Set stores a secret
+	Set(namespace, key, value string) error
+	// Get retrieves the secret
 	Get(namespace, key string) (string, error)
 	// Delete removes the secret
 	Delete(namespace, key string) error

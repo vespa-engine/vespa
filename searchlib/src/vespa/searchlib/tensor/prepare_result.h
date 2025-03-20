@@ -9,7 +9,7 @@ namespace search::tensor {
  */
 class PrepareResult {
 public:
-    virtual ~PrepareResult() {}
+    virtual ~PrepareResult() = default;
 };
 
 }

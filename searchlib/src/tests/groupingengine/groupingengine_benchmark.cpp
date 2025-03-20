@@ -144,7 +144,7 @@ private:
             _numrefs++;
         }
     }
-    virtual bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
+    bool check(const vespalib::Identifiable &obj) const override { return obj.inherits(AttributeNode::classId); }
 };
 
 //-----------------------------------------------------------------------------

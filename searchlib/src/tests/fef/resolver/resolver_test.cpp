@@ -14,18 +14,18 @@ class BaseBlueprint : public Blueprint {
 public:
     BaseBlueprint() : Blueprint("base") { }
     ~BaseBlueprint() override;
-    virtual void visitDumpFeatures(const IIndexEnvironment &,
-                                   IDumpFeatureVisitor &) const override {}
-    virtual Blueprint::UP createInstance() const override { return Blueprint::UP(new BaseBlueprint()); }
-    virtual bool setup(const IIndexEnvironment & indexEnv,
-                       const ParameterList & params) override {
+    void visitDumpFeatures(const IIndexEnvironment &,
+                           IDumpFeatureVisitor &) const override {}
+    Blueprint::UP createInstance() const override { return Blueprint::UP(new BaseBlueprint()); }
+    bool setup(const IIndexEnvironment & indexEnv,
+               const ParameterList & params) override {
         (void) indexEnv; (void) params;
         describeOutput("foo", "foo");
         describeOutput("bar", "bar");
         describeOutput("baz", "baz");
         return true;
     }
-    virtual FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
+    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
         std::vector<feature_t> values;
         values.push_back(0.0);
         values.push_back(0.0);
@@ -40,11 +40,11 @@ class CombineBlueprint : public Blueprint {
 public:
     CombineBlueprint() : Blueprint("combine") { }
     ~CombineBlueprint() override;
-    virtual void visitDumpFeatures(const IIndexEnvironment &,
-                                   IDumpFeatureVisitor &) const override {}
-    virtual Blueprint::UP createInstance() const override { return Blueprint::UP(new CombineBlueprint()); }
-    virtual bool setup(const IIndexEnvironment & indexEnv,
-                       const ParameterList & params) override {
+    void visitDumpFeatures(const IIndexEnvironment &,
+                           IDumpFeatureVisitor &) const override {}
+    Blueprint::UP createInstance() const override { return Blueprint::UP(new CombineBlueprint()); }
+    bool setup(const IIndexEnvironment & indexEnv,
+               const ParameterList & params) override {
         (void) indexEnv; (void) params;
         ASSERT_TRUE(defineInput("base.foo"));
         ASSERT_TRUE(defineInput("base.bar"));
@@ -52,7 +52,7 @@ public:
         describeOutput("out", "out");
         return true;
     }
-    virtual FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
+    FeatureExecutor &createExecutor(const IQueryEnvironment &, vespalib::Stash &stash) const override {
         return stash.create<features::SingleZeroValueExecutor>();
     }
 };

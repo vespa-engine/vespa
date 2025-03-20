@@ -14,6 +14,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <string_view>
 
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".documentapi.messagebus.routable_factories_8");
@@ -157,14 +158,16 @@ std::shared_ptr<document::DocumentUpdate> get_update_or_throw(const protobuf::Do
     return upd;
 }
 
-void log_codec_error(const char* op, const char* type, const char* msg) noexcept __attribute__((noinline));
-void log_codec_error(const char* op, const char* type, const char* msg) noexcept {
-    LOGBM(error, "Error during Protobuf %s for message type %s: %s", op, type, msg);
+void log_codec_error(const char* op, std::string_view type, const char* msg) noexcept __attribute__((noinline));
+void log_codec_error(const char* op, std::string_view type, const char* msg) noexcept {
+    std::string type_copy(type);
+    LOGBM(error, "Error during Protobuf %s for message type %s: %s", op, type_copy.c_str(), msg);
 }
 
-[[noreturn]] void rethrow_as_decorated_exception(const char* type, const std::string& msg) __attribute((noinline));
-[[noreturn]] void rethrow_as_decorated_exception(const char* type, const std::string& msg) {
-    throw vespalib::IllegalArgumentException(vespalib::make_string("Failed decoding message of type %s: %s", type, msg.c_str()), VESPA_STRLOC);
+[[noreturn]] void rethrow_as_decorated_exception(std::string_view type, const std::string& msg) __attribute((noinline));
+[[noreturn]] void rethrow_as_decorated_exception(std::string_view type, const std::string& msg) {
+    std::string type_copy(type);
+    throw vespalib::IllegalArgumentException(vespalib::make_string("Failed decoding message of type %s: %s", type_copy.c_str(), msg.c_str()), VESPA_STRLOC);
 }
 
 template <typename DocApiType, typename ProtobufType, typename EncodeFn, typename DecodeFn>
@@ -188,7 +191,7 @@ public:
         try {
             _encode_fn(dynamic_cast<const DocApiType&>(obj), *proto_obj);
         } catch (std::exception& e) {
-            log_codec_error("encode", ProtobufType::descriptor()->name().c_str(), e.what());
+            log_codec_error("encode", ProtobufType::descriptor()->name(), e.what());
             return false;
         }
 
@@ -218,9 +221,9 @@ public:
             // in that we assume they are caused by transient problems such as missing document types etc.,
             // rather than indicating a more serious error. But to make debugging easier we add some
             // explicit context to the exception message and throw a new exception in its place.
-            rethrow_as_decorated_exception(ProtobufType::descriptor()->name().c_str(), e.getMessage());
+            rethrow_as_decorated_exception(ProtobufType::descriptor()->name(), e.getMessage());
         } catch (std::exception& e) {
-            log_codec_error("decode", ProtobufType::descriptor()->name().c_str(), e.what());
+            log_codec_error("decode", ProtobufType::descriptor()->name(), e.what());
             return {};
         }
     }

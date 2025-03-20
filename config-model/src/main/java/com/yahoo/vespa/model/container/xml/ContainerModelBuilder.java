@@ -647,7 +647,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .proxyProtocol(state.zone().cloud().useProxyProtocol())
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl())
-                .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent());
+                .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
+                .httpComplianceViolations(state.getProperties().jdiscHttpComplianceViolations());
         var endpointCert = state.endpointCertificateSecrets().orElse(null);
         if (endpointCert != null) {
             builder.endpointCertificate(endpointCert);
@@ -711,6 +712,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .clientAuth(SslClientAuth.NEED)
                 .knownServerNames(tokenEndpoints)
                 .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
+                .httpComplianceViolations(state.getProperties().jdiscHttpComplianceViolations())
                 .build();
         server.addConnector(connector);
 

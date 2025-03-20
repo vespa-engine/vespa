@@ -16,7 +16,7 @@ namespace config {
  */
 struct Clock {
     virtual vespalib::system_time currentTime() const = 0;
-    virtual ~Clock() {}
+    virtual ~Clock() = default;
 };
 
 /**

@@ -166,6 +166,19 @@ enable_operation_cancellation bool default=false
 ## likely to reflect these changes as part of visible search results.
 symmetric_put_and_activate_replica_selection bool default=false
 
+## Iff set to a value > 0, will enforce a size check on Put and Update operations arriving
+## at the distributor, where over-sized messages will be explicitly rejected with a
+## non-retryable error code. Intended as a safety measure to prevent overly large documents
+## from being accepted into the cluster.
+##
+## The message size is estimated based on the uncompressed on-wire serialized payload size,
+## so it's only a (possibly inaccurate) proxy for the actual impact the underlying document
+## operation will have on the backend. But it's a "free" heuristic since we already have
+## that information available from the RPC subsystem.
+##
+## Any number <= 0 implicitly defaults to 2GiB (INT32_MAX), i.e. effectively unbounded.
+max_document_operation_message_size_bytes int default=-1
+
 ## TODO GC very soon, it has no effect.
 priority_merge_out_of_sync_copies int default=120
 

@@ -15,11 +15,11 @@ const Method methods[] = {
     { "sources", "listSourceConnections", 0 },
     { "setmode", "setMode", 1 }, // { default | memorycache }
     { "updatesources", "updateSources", 1 },
-    { 0, 0, 0}
+    { nullptr, nullptr, 0}
 };
 
 const Method find(const std::string &name) {
-    for (size_t i = 0; methods[i].shortName != 0; ++i) {
+    for (size_t i = 0; methods[i].shortName != nullptr; ++i) {
         if (name == methods[i].shortName) {
             return methods[i];
         }
@@ -33,7 +33,7 @@ void dump() {
     size_t i = 0;
     for (;;) {
         std::cerr << methods[i++].shortName;
-        if (methods[i].shortName == 0) {
+        if (methods[i].shortName == nullptr) {
             break;
         }
         std::cerr << ",";

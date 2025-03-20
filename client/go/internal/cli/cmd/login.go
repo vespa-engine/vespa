@@ -82,7 +82,7 @@ This command runs a browser-based authentication flow for the Vespa Cloud contro
 			}
 
 			// store the refresh token
-			secretsStore := &auth.Keyring{}
+			secretsStore := auth.NewKeyring()
 			err = secretsStore.Set(auth.SecretsNamespace, system.Name, res.RefreshToken)
 			if err != nil {
 				// log the error but move on

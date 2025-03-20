@@ -34,7 +34,7 @@ public:
         {}
     };
 
-    virtual ~IReprocessingTask() {}
+    virtual ~IReprocessingTask() = default;
 
     /**
      * Run reprocessing task.

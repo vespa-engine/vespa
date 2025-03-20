@@ -77,6 +77,7 @@ public enum ContainerMetrics implements VespaMetrics {
     JETTY_THREADPOOL_IDLE_THREADS("jdisc.http.jetty.threadpool.thread.idle", Unit.THREAD, "Number of idle threads"),
     JETTY_THREADPOOL_TOTAL_THREADS("jdisc.http.jetty.threadpool.thread.total", Unit.THREAD, "Current number of threads"),
     JETTY_THREADPOOL_QUEUE_SIZE("jdisc.http.jetty.threadpool.queue.size", Unit.THREAD, "Current size of the job queue"),
+    JETTY_HTTP_COMPLIANCE_VIOLATION("jdisc.http.jetty.http_compliance.violation", Unit.FAILURE, "Number of HTTP compliance violations"),
 
     SERVER_NUM_OPEN_CONNECTIONS("serverNumOpenConnections", Unit.CONNECTION, "The number of currently open connections"),
     SERVER_NUM_CONNECTIONS("serverNumConnections", Unit.CONNECTION, "The total number of connections opened"),

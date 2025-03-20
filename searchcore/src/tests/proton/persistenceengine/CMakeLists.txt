@@ -7,6 +7,6 @@ vespa_add_executable(searchcore_persistenceengine_test_app TEST
     searchcore_attribute
     searchcore_pcommon
     searchcore_proton_metrics
-    GTest::gtest
+    searchcore_test
 )
 vespa_add_test(NAME searchcore_persistenceengine_test_app COMMAND searchcore_persistenceengine_test_app)

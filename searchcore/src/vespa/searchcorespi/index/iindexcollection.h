@@ -18,7 +18,7 @@ public:
     using UP = std::unique_ptr<IIndexCollection>;
     using SP = std::shared_ptr<IIndexCollection>;
 
-    virtual ~IIndexCollection() {}
+    virtual ~IIndexCollection() = default;
 
     /**
      * Returns the source selector used to determine which index to use for each document.

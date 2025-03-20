@@ -23,7 +23,7 @@ class MetricsManager
     : public std::enable_shared_from_this<MetricsManager>
 {
 public:
-    virtual ~MetricsManager() {}
+    virtual ~MetricsManager() = default;
 
     /**
      * Get or create a counter metric.

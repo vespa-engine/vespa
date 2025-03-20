@@ -7,7 +7,7 @@
 namespace search::queryeval {
 
 struct IDiversifier {
-    virtual ~IDiversifier() {}
+    virtual ~IDiversifier() = default;
     /**
      * Will tell if this document should be kept, and update state for further filtering.
      */

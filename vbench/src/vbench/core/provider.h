@@ -13,7 +13,7 @@ template <typename T>
 struct Provider
 {
     virtual std::unique_ptr<T> provide() = 0;
-    virtual ~Provider() {}
+    virtual ~Provider() = default;
 };
 
 } // namespace vbench

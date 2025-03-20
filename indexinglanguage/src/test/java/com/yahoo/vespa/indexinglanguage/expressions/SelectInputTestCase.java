@@ -14,7 +14,6 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -56,19 +55,6 @@ public class SelectInputTestCase {
         assertSelect(List.of("foo", "bar"), List.of("foo", "bar"), "foo");
         assertSelect(List.of("foo", "bar"), List.of("bar", "baz"), "bar");
         assertSelect(List.of("foo", "bar"), List.of("baz", "cox"), null);
-    }
-
-    private static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        exp.verify(new VerificationContext(adapter).setCurrentType(value));
-    }
-
-    private static void assertVerifyThrows(FieldTypeAdapter adapter, Expression exp, String expectedException) {
-        try {
-            exp.verify(new VerificationContext(adapter));
-            fail();
-        } catch (VerificationException e) {
-            assertEquals(expectedException, e.getMessage());
-        }
     }
 
     private static SelectInputExpression newSelectInput(Expression exp, String... fieldNames) {

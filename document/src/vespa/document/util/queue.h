@@ -75,7 +75,7 @@ class QueueBase
 {
 public:
     QueueBase() : _lock(), _count(0), _q()   { }
-    virtual ~QueueBase() { }
+    virtual ~QueueBase() = default;
     size_t size()  const { return internal_size(); }
     bool   empty() const { return size() == 0; }
 protected:

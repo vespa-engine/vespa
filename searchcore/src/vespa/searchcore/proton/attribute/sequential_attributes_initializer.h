@@ -17,7 +17,7 @@ private:
 public:
     SequentialAttributesInitializer(uint32_t docIdLimit);
     AttributesVector getInitializedAttributes() const { return _initializedAttributes; }
-    virtual void add(AttributeInitializer::UP initializer) override;
+    void add(AttributeInitializer::UP initializer) override;
 };
 
 } // namespace proton
