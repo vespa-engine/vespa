@@ -177,7 +177,7 @@ public class FederationSearcher extends ForkingSearcher {
         ComponentId searchChainId = ComponentId.fromString(id);
         builder.addSearchChain(searchChainId, federationOptions(searchChain), searchChain.documentTypes());
         // Here we make synthetic SearchChain proxies for all cluster.schema combinations possible
-        // Given a source on the form saerchcluster.schema will rewrite it to source=searchcluster and restrict to schema.
+        // Given a source on the form searchcluster.schema will rewrite it to source=searchcluster and restrict to schema.
         // TODO Consider solving this in the config model by making many synthetic search clusters
         for (String schema : searchChain.documentTypes()) {
             String virtualChainId = id + "." + schema;
