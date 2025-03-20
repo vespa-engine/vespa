@@ -173,7 +173,7 @@ int BitVectorBenchmark::main(int argc, char **argv)
     while ((opt = getopt(argc, argv, "n:t:")) != -1) {
         switch (opt) {
         case 'n':
-            numBits = strtoll(optarg, NULL, 10);
+            numBits = strtoll(optarg, nullptr, 10);
             break;
         case 't':
             operation = optarg;

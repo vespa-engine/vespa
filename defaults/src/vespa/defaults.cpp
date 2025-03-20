@@ -17,15 +17,15 @@ namespace {
 
 #define HOST_BUF_SZ 1024
 
-const char *defaultHome = 0;
-const char *defaultUser = 0;
-const char *defaultHost = 0;
+const char *defaultHome = nullptr;
+const char *defaultUser = nullptr;
+const char *defaultHost = nullptr;
 int defaultWebServicePort = 0;
 int defaultPortBase = 0;
 int defaultPortConfigServerRpc = 0;
 int defaultPortConfigServerHttp = 0;
 int defaultPortConfigProxyRpc = 0;
-const char *defaultConfigServers = 0;
+const char *defaultConfigServers = nullptr;
 std::string VESPA_HOME_ENV = "VESPA_HOME=";
 
 std::atomic<bool> initialized(false);
@@ -47,12 +47,12 @@ long getNumFromEnv(const char *envName)
 
 const char *findVespaHome(const char *defHome) {
     const char *env = getenv("VESPA_HOME");
-    if (env != NULL && *env != '\0') {
-        DIR *dp = NULL;
+    if (env != nullptr && *env != '\0') {
+        DIR *dp = nullptr;
         if (*env == '/' || *env == '.') {
             dp = opendir(env);
         }
-        if (dp != NULL) {
+        if (dp != nullptr) {
             // fprintf(stderr, "debug\tVESPA_HOME is '%s'\n", env);
             closedir(dp);
             return env;
@@ -65,7 +65,7 @@ const char *findVespaHome(const char *defHome) {
 
 const char *findVespaUser(const char *defUser) {
     const char *env = getenv("VESPA_USER");
-    if (env != NULL && *env != '\0') {
+    if (env != nullptr && *env != '\0') {
         if (getpwnam(env) == 0) {
             fprintf(stderr, "warning\tbad VESPA_USER '%s' (ignored)\n", env);
         } else {
@@ -77,7 +77,7 @@ const char *findVespaUser(const char *defUser) {
 
 const char *findHostname(const char *defHost) {
     const char *env = getenv("VESPA_HOSTNAME");
-    if (env != NULL && *env != '\0') {
+    if (env != nullptr && *env != '\0') {
         return env;
     }
     return defHost;
@@ -119,10 +119,10 @@ int findConfigProxyPort(int defPort) {
 
 const char *findConfigServers(const char *defServers) {
     const char *env = getenv("VESPA_CONFIGSERVERS");
-    if (env == NULL || *env == '\0') {
+    if (env == nullptr || *env == '\0') {
         env = getenv("addr_configserver");
     }
-    if (env != NULL && *env != '\0') {
+    if (env != nullptr && *env != '\0') {
         // fprintf(stderr, "debug\tdefault configserver(s) is '%s'\n", env);
         return env;
     }
@@ -150,7 +150,7 @@ std::string myPath(const char *argv0)
     if (argv0[0] == '/') return argv0;
 
     const char *pathEnv = getenv("PATH");
-    if (pathEnv != 0) {
+    if (pathEnv != nullptr) {
         std::string path = pathEnv;
         size_t pos = 0;
         size_t colon;
@@ -177,7 +177,7 @@ namespace vespa {
 void
 Defaults::bootstrap(const char *argv0)
 {
-    if (getenv("VESPA_HOME") == 0) {
+    if (getenv("VESPA_HOME") == nullptr) {
         std::string path = myPath(argv0);
         size_t slash = path.rfind('/');
         if (slash != std::string::npos) {
@@ -255,18 +255,18 @@ Defaults::vespaConfigServerHosts()
     findDefaults();
     std::vector<std::string> ret;
     char *toParse = strdup(defaultConfigServers);
-    char *savePtr = 0;
+    char *savePtr = nullptr;
     char *token = strtok_r(toParse, " ,", &savePtr);
-    if (token == 0) {
+    if (token == nullptr) {
         ret.push_back("localhost");
     } else {
-        while (token != 0) {
+        while (token != nullptr) {
             char *colon = strchr(token, ':');
-            if (colon != 0 && colon != token) {
+            if (colon != nullptr && colon != token) {
                 *colon = '\0';
             }
             ret.push_back(token);
-            token = strtok_r(0, " ,", &savePtr);
+            token = strtok_r(nullptr, " ,", &savePtr);
         }
     }
     free(toParse);
@@ -286,22 +286,22 @@ Defaults::vespaConfigServerRpcAddrs()
     findDefaults();
     std::vector<std::string> ret;
     char *toParse = strdup(defaultConfigServers);
-    char *savePtr = 0;
+    char *savePtr = nullptr;
     char *token = strtok_r(toParse, " ,", &savePtr);
-    if (token == 0) {
+    if (token == nullptr) {
         std::string one = "tcp/localhost:";
         one += std::to_string(defaultPortConfigServerRpc);
         ret.push_back(one);
     } else {
-        while (token != 0) {
+        while (token != nullptr) {
             std::string one = "tcp/";
             one += token;
-            if (strchr(token, ':') == 0) {
+            if (strchr(token, ':') == nullptr) {
                 one += ":";
                 one += std::to_string(defaultPortConfigServerRpc);
             }
             ret.push_back(one);
-            token = strtok_r(0, " ,", &savePtr);
+            token = strtok_r(nullptr, " ,", &savePtr);
         }
     }
     free(toParse);
@@ -314,17 +314,17 @@ Defaults::vespaConfigServerRestUrls()
     findDefaults();
     std::vector<std::string> ret;
     char *toParse = strdup(defaultConfigServers);
-    char *savePtr = 0;
+    char *savePtr = nullptr;
     char *token = strtok_r(toParse, " ,", &savePtr);
-    if (token == 0) {
+    if (token == nullptr) {
         std::string one = "http://localhost:";
         one += std::to_string(defaultPortConfigServerHttp);
         ret.push_back(one);
     } else {
-        while (token != 0) {
+        while (token != nullptr) {
             std::string one = "http://";
             char *colon = strchr(token, ':');
-            if (colon != 0 && colon != token) {
+            if (colon != nullptr && colon != token) {
                 *colon = '\0';
             }
             one += token;
@@ -332,7 +332,7 @@ Defaults::vespaConfigServerRestUrls()
             one += std::to_string(defaultPortConfigServerHttp);
             one += "/";
             ret.push_back(one);
-            token = strtok_r(0, " ,", &savePtr);
+            token = strtok_r(nullptr, " ,", &savePtr);
         }
     }
     free(toParse);

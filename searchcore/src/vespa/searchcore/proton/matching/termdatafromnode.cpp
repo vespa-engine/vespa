@@ -11,7 +11,7 @@ struct TermDataFromTermVisitor
     : public search::query::CustomTypeVisitor<ProtonNodeTypes>
 {
     const ProtonTermData *data;
-    TermDataFromTermVisitor() : data(0) {}
+    TermDataFromTermVisitor() : data(nullptr) {}
 
     template <class TermNode>
     void visitTerm(const TermNode &n) {

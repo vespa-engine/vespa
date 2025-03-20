@@ -116,9 +116,9 @@ MergeStatus::print(std::ostream& out, bool verbose,
             out << "\n" << indent << it->toString(true);
         }
         out << ")";
-    } else if (pendingGetDiff.get() != 0) {
+    } else if (pendingGetDiff.get() != nullptr) {
         out << "MergeStatus(Middle node awaiting GetBucketDiffReply)\n";
-    } else if (pendingApplyDiff.get() != 0) {
+    } else if (pendingApplyDiff.get() != nullptr) {
         out << "MergeStatus(Middle node awaiting ApplyBucketDiffReply)\n";
     }
 }

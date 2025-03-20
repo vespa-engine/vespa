@@ -59,7 +59,7 @@ void
 StorageComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
 {
     std::lock_guard lock(_componentLock);
-    if (_nodeStateUpdater != 0) {
+    if (_nodeStateUpdater != nullptr) {
         throw vespalib::IllegalStateException(
                 "Node state updater already set. Should never be altered live.",
                 VESPA_STRLOC);

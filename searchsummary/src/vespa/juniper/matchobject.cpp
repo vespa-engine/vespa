@@ -219,9 +219,9 @@ QueryTerm* match_iterator::first_match(Token& token) {
     _len = len;
     QueryTerm* rtrn = first();
 
-    if (rtrn == 0) {
+    if (rtrn == nullptr) {
         _el = _table.FindRef('*');
-        if ((rtrn = first()) == 0) {
+        if ((rtrn = first()) == nullptr) {
             _el = _table.FindRef('?');
             rtrn = first();
         }
