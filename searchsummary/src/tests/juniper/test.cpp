@@ -18,7 +18,7 @@ Test::Test(std::ostream* osptr, const char* name)
 Test::Test(const char* name) : Test(nullptr, name) {}
 
 const char* Test::get_name() const {
-    return (name_ == NULL) ? "Test " : name_;
+    return (name_ == nullptr) ? "Test " : name_;
 }
 
 const std::string& Test::GetSourceDirectory() {

@@ -10,7 +10,7 @@ LOG_SETUP(".juniper.queryhandle");
 namespace juniper {
 
 QueryHandle::QueryHandle(const IQuery& fquery, const char* options)
-  : _mo(NULL),
+  : _mo(nullptr),
     _privileged_port(false),
     _dynsum_len(-1),
     _max_matches(-1),

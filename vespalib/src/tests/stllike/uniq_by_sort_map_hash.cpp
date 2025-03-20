@@ -35,7 +35,7 @@ public:
     void destroy(pointer p) {
          p->~T();
     }
-    pointer allocate(size_type n, const_pointer hint = 0) {
+    pointer allocate(size_type n, const_pointer hint = nullptr) {
         (void) hint;
         if ((_w + n) < _sz) {
             pointer p(_memory + _w);
@@ -268,13 +268,13 @@ int main(int argc, char *argv[])
         type = argv[1][0];
     }
     if (argc >= 3) {
-        count = strtoul(argv[2], NULL, 0);
+        count = strtoul(argv[2], nullptr, 0);
     }
     if (argc >= 4) {
-        rep = strtoul(argv[3], NULL, 0);
+        rep = strtoul(argv[3], nullptr, 0);
     }
     if (argc >= 5) {
-        numThreads = strtoul(argv[4], NULL, 0);
+        numThreads = strtoul(argv[4], nullptr, 0);
     }
     std::vector<Slot> slotVector(count);
     for (size_t i(0), m(slotVector.size()); i < m; i++) {
@@ -312,10 +312,10 @@ int main(int argc, char *argv[])
                } else {
                    std::vector<pthread_t> threads(numThreads);
                    for (size_t j(0); j < numThreads; j++) {
-                       pthread_create(&threads[j], NULL, (VFUNC)runBenchMark, &indirectSlotVector);
+                       pthread_create(&threads[j], nullptr, (VFUNC)runBenchMark, &indirectSlotVector);
                    }
                    for (size_t j(0); j < numThreads; j++) {
-                       pthread_join(threads[j], NULL);
+                       pthread_join(threads[j], nullptr);
                    }
                }
             break;

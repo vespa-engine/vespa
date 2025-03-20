@@ -42,10 +42,10 @@ TEST(UtilsTest, require_that_label_can_be_mapped_to_term)
 {
     TermLabelFixture f1;
     EXPECT_EQ((ITermData*)&f1.queryEnv.getTerms()[0], getTermByLabel(f1.queryEnv, "foo"));
-    EXPECT_EQ((ITermData*)0, getTermByLabel(f1.queryEnv, "bar"));
+    EXPECT_EQ(nullptr, getTermByLabel(f1.queryEnv, "bar"));
     EXPECT_EQ((ITermData*)&f1.queryEnv.getTerms()[2], getTermByLabel(f1.queryEnv, "baz"));
-    EXPECT_EQ((ITermData*)0, getTermByLabel(f1.queryEnv, "fox"));
-    EXPECT_EQ((ITermData*)0, getTermByLabel(f1.queryEnv, "unknown"));
+    EXPECT_EQ(nullptr, getTermByLabel(f1.queryEnv, "fox"));
+    EXPECT_EQ(nullptr, getTermByLabel(f1.queryEnv, "unknown"));
 }
 
 template <typename T>

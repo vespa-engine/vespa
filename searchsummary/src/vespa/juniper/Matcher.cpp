@@ -33,7 +33,7 @@ Matcher::Matcher(Result* result)
     _endpos(0),
     _nontermcnt(_mo->NontermCount()),
     _occ(),
-    _wrk_set(NULL),
+    _wrk_set(nullptr),
     _matches(),
     _ctxt_start(0),
     _log_mask(0),
@@ -62,7 +62,7 @@ MatchCandidate* Matcher::NewCandidate(QueryExpr* query) {
 }
 
 MatchCandidate* Matcher::RefCandidate(MatchCandidate* m) {
-    if (!m) return NULL;
+    if (!m) return nullptr;
     m->ref();
     if (LOG_WOULD_LOG(spam)) {
         std::string s;
@@ -168,7 +168,7 @@ bool Matcher::add_occurrence(off_t pos, off_t tpos, size_t len) {
 
     // Then add a new candidate starting at the currently found keyword
     // for each subexpression that matches this keyword
-    for (; mexp != NULL; mexp = _match_iter.next()) {
+    for (; mexp != nullptr; mexp = _match_iter.next()) {
         QueryNode* pexp = mexp->_parent;
         assert(pexp);
         MatchCandidate* nm = NewCandidate(pexp);
@@ -274,7 +274,7 @@ void Matcher::set_log(unsigned long log_mask) {
 void Matcher::handle_token(Token& token) {
     if (LOG_WOULD_LOG(debug)) {
         char utf8token[1024];
-        Fast_UnicodeUtil::utf8ncopy(utf8token, token.token, 1024, (token.token != NULL ? token.curlen : 0));
+        Fast_UnicodeUtil::utf8ncopy(utf8token, token.token, 1024, (token.token != nullptr ? token.curlen : 0));
         LOG(debug, "handle_token(%s)", utf8token);
     }
 
@@ -290,7 +290,7 @@ void Matcher::handle_token(Token& token) {
 void Matcher::handle_end(Token& token) {
     if (LOG_WOULD_LOG(debug)) {
         char utf8token[1024];
-        Fast_UnicodeUtil::utf8ncopy(utf8token, token.token, 1024, (token.token != NULL ? token.curlen : 0));
+        Fast_UnicodeUtil::utf8ncopy(utf8token, token.token, 1024, (token.token != nullptr ? token.curlen : 0));
         LOG(debug, "handle_end(%s)", utf8token);
     }
     if (LOG_WOULD_LOG(spam)) {
@@ -427,7 +427,7 @@ std::string Matcher::GetLog() {
 
 SummaryDesc* Matcher::CreateSummaryDesc(size_t length, size_t min_length, int max_matches, int surround_len) {
     // No point in processing this document if no keywords found at all:
-    if (TotalHits() <= 0) return NULL;
+    if (TotalHits() <= 0) return nullptr;
 
     LOG(debug,
         "Matcher: sum.desc (length %lu, min_length %lu, max matches %d, "
