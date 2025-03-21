@@ -20,10 +20,12 @@ import java.util.Set;
 import java.util.HashMap;
 import java.util.stream.Collectors;
 
-/// Removes all but the top-n highest scoring entries for a string array field.
-/// The scores should be computed in a tensor returned in summary-features.
-///
-/// @author andreer
+/**
+ * Removes all but the top-n highest scoring entries for a string array field.
+ * The scores should be computed in a tensor returned in summary-features.
+ *
+ * @author andreer
+ */
 @Beta
 public class ChunkLimitingSearcher extends Searcher {
 
