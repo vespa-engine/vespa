@@ -161,6 +161,15 @@ FastS_DefaultResultSorter FastS_DefaultResultSorter::_instance;
 
 //-----------------------------------------------------------------------------
 
+FastS_SortSpec::VectorRef::VectorRef(uint32_t type, const search::attribute::IAttributeVector* vector,
+                                     const search::common::BlobConverter* converter) noexcept
+    : _type(type),
+      _vector(vector),
+      _converter(converter),
+      _writer((_vector != nullptr) ? _vector->make_sort_blob_writer(has_ascending_sort_order(), converter) : nullptr)
+{
+}
+
 bool
 FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort_spec)
 {
@@ -249,8 +258,8 @@ FastS_SortSpec::initSortData(const VectorRef & vec, const RankedHit & hit, size_
         uint32_t available = _binarySortData.size() - offset;
         switch (vec._type) {
             case ASC_DOCID:
-                if (vec._vector != nullptr) {
-                    written = vec._vector->serializeForAscendingSort(hit.getDocId(), mySortData, available, vec._converter);
+                if (vec._writer != nullptr) {
+                    written = vec._writer->write(hit.getDocId(), mySortData, available);
                 } else {
                     if (available >= (sizeof(hit._docId) + sizeof(_partitionId))) {
                         serializeForSort<convertForSort<uint32_t, true> >(hit.getDocId(), mySortData, available);
@@ -263,7 +272,7 @@ FastS_SortSpec::initSortData(const VectorRef & vec, const RankedHit & hit, size_
                 break;
             case DESC_DOCID:
                 if (vec._vector != nullptr) {
-                    written = vec._vector->serializeForDescendingSort(hit.getDocId(), mySortData, available, vec._converter);
+                    written = vec._writer->write(hit.getDocId(), mySortData, available);
                 } else {
                     if (available >= (sizeof(hit._docId) + sizeof(_partitionId))) {
                         serializeForSort<convertForSort<uint32_t, false> >(hit.getDocId(), mySortData, available);
@@ -281,10 +290,10 @@ FastS_SortSpec::initSortData(const VectorRef & vec, const RankedHit & hit, size_
                 written = serializeForSort<convertForSort<search::HitRank, false> >(hit.getRank(), mySortData, available);
                 break;
             case ASC_VECTOR:
-                written = vec._vector->serializeForAscendingSort(hit.getDocId(), mySortData, available, vec._converter);
+                written = vec._writer->write(hit.getDocId(), mySortData, available);
                 break;
             case DESC_VECTOR:
-                written = vec._vector->serializeForDescendingSort(hit.getDocId(), mySortData, available, vec._converter);
+                written = vec._writer->write(hit.getDocId(), mySortData, available);
                 break;
         }
         if (written < 0) {
