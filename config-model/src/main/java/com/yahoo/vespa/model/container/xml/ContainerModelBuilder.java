@@ -1036,7 +1036,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return context
                 .getApplicationPackage()
                 .getDeploymentSpec()
-                .zoneEndpoint(instance, zone, cluster);
+                .zoneEndpoint(instance, zone, cluster, context.featureFlags().useNonPublicEndpointForTest());
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {

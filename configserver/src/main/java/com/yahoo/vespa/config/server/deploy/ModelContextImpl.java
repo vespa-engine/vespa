@@ -165,6 +165,7 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
+        private final boolean useNonPublicEndpointForTest;
         private final double queryDispatchWarmup;
         private final String responseSequencer;
         private final int numResponseThreads;
@@ -212,6 +213,7 @@ public class ModelContextImpl implements ModelContext {
         private final int maxDistributorDocumentOperationSizeMib;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
+            this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
             this.numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(source).with(appId).with(version).value();
             this.useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(source).with(appId).with(version).value();
@@ -259,6 +261,7 @@ public class ModelContextImpl implements ModelContext {
             this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
         }
 
+        @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
         @Override public int heapSizePercentage() { return heapPercentage; }
         @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
         @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }

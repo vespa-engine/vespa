@@ -19,7 +19,6 @@ import static com.yahoo.vespa.flags.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.Dimension.INSTANCE_ID;
 import static com.yahoo.vespa.flags.Dimension.NODE_TYPE;
-import static com.yahoo.vespa.flags.Dimension.SYSTEM;
 import static com.yahoo.vespa.flags.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 
@@ -47,6 +46,13 @@ import static com.yahoo.vespa.flags.Dimension.VESPA_VERSION;
 public class Flags {
 
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
+
+    public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
+            "use-non-public-endpoint-for-test", false,
+            List.of("hakonhall"), "2025-03-19", "2025-04-19",
+            "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
+            "Takes effect on next deployment of the application",
+            INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundBooleanFlag UPGRADE_WIREGUARD = defineFeatureFlag(
             "upgrade-wireguard", false,
