@@ -56,8 +56,8 @@ func TestTimelineAddComment(t *testing.T) {
 }
 
 func TestTimelineRender(t *testing.T) {
-	var buf bytes.Buffer
-	out := &output{out: &buf}
+	var actual bytes.Buffer
+	out := &output{out: &actual}
 
 	tl := &timeline{}
 	tl.add(1.23, "Start event")
@@ -65,10 +65,12 @@ func TestTimelineRender(t *testing.T) {
 	tl.add(45.67, "End event")
 	tl.render(out)
 
-	expected := "" +
-		"     1.230 ms: Start event\n" +
-		"               This is a comment\n" +
-		"    45.670 ms: End event\n"
+	var expected bytes.Buffer
+	tab := newTable("timestamp", "event")
+	tab.addRow("1.230 ms", "Start event")
+	tab.addRow("", "This is a comment")
+	tab.addRow("45.670 ms", "End event")
+	tab.render(&output{out: &expected})
 
-	assert.Equal(t, expected, buf.String(), "Rendered output does not match expected")
+	assert.Equal(t, expected.String(), actual.String(), "Rendered output does not match expected")
 }
