@@ -288,26 +288,35 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return Optional.of(TokenTransformer.createTensorType(reference.name(), size));
     }
 
+    private static ExpressionNode getArgExp(Reference reference, int idx) {
+        if (reference.arguments().size() > idx) {
+            return reference.arguments().expressions().get(idx);
+        }
+        return null;
+    }
+
     /**
      * There are three features which may return some (non-empty) tensor type:
      * - tensorFromLabels
      * - tensorFromWeightedSet
      * - closest
+     * - elementwise
      * This returns the type of those features if this is a reference to either of them, or empty otherwise.
      */
     private Optional<TensorType> tensorFeatureType(Reference reference) {
         if ( ! reference.name().equals("tensorFromLabels") &&
              ! reference.name().equals("tensorFromWeightedSet") &&
+             ! reference.name().equals("elementwise") &&
              ! reference.name().equals("closest"))
         {
             return Optional.empty();
         }
+        ExpressionNode arg0 = getArgExp(reference, 0);
 
-        if (reference.arguments().size() != 1 && reference.arguments().size() != 2)
-            throw new IllegalArgumentException(reference.name() + " must have one or two arguments");
-
-        ExpressionNode arg0 = reference.arguments().expressions().get(0);
         if (reference.name().equals("closest")) {
+            if (arg0 == null || reference.arguments().size() > 2)
+                throw new IllegalArgumentException(reference.name() + " must have one or two arguments");
+            // note: the second argument is the label of a NN operator, so not used here.
             if (arg0 instanceof ReferenceNode argRefNode) {
                 var argRef = argRefNode.reference();
                 if (argRef.isIdentifier()) {
@@ -326,26 +335,53 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             throw new IllegalArgumentException("The first argument of " + reference.name() +
                                                " must be the name of a tensor attribute, not " + arg0);
         }
-        if ( ! ( arg0 instanceof ReferenceNode) || ! FeatureNames.isSimpleFeature(((ReferenceNode)arg0).reference()))
-            throw new IllegalArgumentException("The first argument of " + reference.name() +
-                                               " must be a simple feature, not " + arg0);
 
-        String dimension;
-        if (reference.arguments().size() > 1) {
-            ExpressionNode arg1 = reference.arguments().expressions().get(1);
-            if ( ( ! (arg1 instanceof ReferenceNode) || ! (((ReferenceNode)arg1).reference().isIdentifier()))
-                 &&
-                 ( ! (arg1 instanceof NameNode)))
+        String dimension = null;
+        var cellType = TensorType.Value.DOUBLE;
+
+        ExpressionNode arg1 = getArgExp(reference, 1);
+        ExpressionNode arg2 = getArgExp(reference, 2);
+
+        if (reference.name().equals("elementwise")) {
+            // arg1 is required to name the dimension
+            if (arg1 == null || reference.arguments().size() > 3)
+                throw new IllegalArgumentException(reference + " must have two or three arguments");
+            if (arg2 != null) {
+                cellType = TensorType.Value.fromId(arg2.toString());
+            }
+        }
+        if (reference.name().equals("tensorFromLabels") ||
+            reference.name().equals("tensorFromWeightedSet"))
+        {
+            if (arg0 instanceof ReferenceNode arg0ref && FeatureNames.isSimpleFeature(arg0ref.reference())) {
+                if (arg1 == null) {
+                    // default
+                    dimension = arg0ref.reference().arguments().expressions().get(0).toString();
+                }
+            } else {
+                throw new IllegalArgumentException("The first argument of " + reference.name() +
+                                                   " must be a simple feature, not " + arg0);
+            }
+        }
+
+        // fill dimension from second argument if present:
+        if (arg1 != null) {
+            if ((arg1 instanceof NameNode) ||
+                (arg1 instanceof ReferenceNode ref1 && ref1.reference().isIdentifier()))
+            {
+                dimension = arg1.toString();
+            } else  {
                 throw new IllegalArgumentException("The second argument of " + reference.name() +
                                                    " must be a dimension name, not " + arg1);
-            dimension = reference.arguments().expressions().get(1).toString();
-        }
-        else { // default
-            dimension = ((ReferenceNode)arg0).reference().arguments().expressions().get(0).toString();
+            }
         }
 
-        // TODO: Determine the type of the weighted set/vector and use that as value type
-        return Optional.of(new TensorType.Builder().mapped(dimension).build());
+        if (dimension == null) {
+            throw new IllegalArgumentException("Missing dimension name for " + reference.name());
+        }
+
+        // TODO: allow different cell types in more cases
+        return Optional.of(new TensorType.Builder(cellType).mapped(dimension).build());
     }
 
     /** Binds the given list of formal arguments to their actual values */

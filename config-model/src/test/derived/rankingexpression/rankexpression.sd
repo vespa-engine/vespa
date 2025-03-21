@@ -1,6 +1,6 @@
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 schema rankexpression {
-  
+
   document rankexpression {
 
     field nrtgmp type double {
@@ -66,6 +66,11 @@ schema rankexpression {
     field labels type array<string> {
       indexing: attribute
     }
+
+    field textchunks type array<string> {
+      indexing: index
+      index: enable-bm25
+    }
   }
 
   rank-profile default {
@@ -85,7 +90,7 @@ schema rankexpression {
       }
       rank-features {
         attribute(foo4).out
-        attribute(bar4).out 
+        attribute(bar4).out
       }
       ignore-default-rank-features
 
@@ -130,7 +135,7 @@ schema rankexpression {
       }
       second-phase {
         expression {
-            exp(0) + 
+            exp(0) +
             mysum(attribute(foo),
                   "attribute( bar )",
                   "attribute( \"baz\" )")
@@ -185,7 +190,7 @@ schema rankexpression {
          30 * pow(0 - fieldMatch(description).earliness, 2)
        }
     }
-    summary-features { 
+    summary-features {
       fieldMatch(title)
     }
   }
@@ -197,7 +202,7 @@ schema rankexpression {
     rank-properties {
       foo: "some, list"
     }
-    
+
     second-phase {
       expression: fourtimessum(match,match) + mysummaryfeature + myfeature
     }
@@ -219,8 +224,8 @@ schema rankexpression {
        expression {
          71 * fieldMatch(title).completeness
        }
-    }    
-    summary-features { 
+    }
+    summary-features {
       mysummaryfeature
       rankingExpression(mysummaryfeature2) # Required form earlier
     }
@@ -233,7 +238,7 @@ schema rankexpression {
     summary-features {
       rankingExpression(matches(title,rankingExpression(onlyusedinsummaryfeature)))
     }
-      
+
   }
 
   rank-profile macros3-inherited inherits macros3 {
@@ -254,7 +259,7 @@ schema rankexpression {
       }
     }
   }
-  
+
   rank-profile macros-inherited2 inherits macros-inherited {
     first-phase {
       expression {
@@ -279,7 +284,7 @@ schema rankexpression {
   rank-profile macros-refering-macros {
     function m2() {
       expression: m1 * 67
-    }    
+    }
 
     function m1() {
       expression {
@@ -290,13 +295,13 @@ schema rankexpression {
     function m4() {
       expression: file:macro.expression
     }
-    
+
     second-phase {
       expression {
         40000 * m2 * m4
       }
     }
-    
+
   }
 
   rank-profile macros-refering-macros-inherited inherits macros-refering-macros {
@@ -330,7 +335,7 @@ schema rankexpression {
           m1,
           (m4)
         )
-      }          
+      }
     }
   }
 
@@ -392,12 +397,19 @@ schema rankexpression {
   rank-profile layered {
       inputs {
          query(v) tensor(v[3])
+	query(pickelems) tensor<float>(elemidx{})
       }
       function mymul() {
         expression: tensorFromLabels(attribute(labels), m) * query(v)
       }
+      function chunkscores() {
+        expression: elementwise(bm25(textchunks), elemidx, float)
+      }
+      function weightedBm25() {
+        expression: sum(chunkscores * query(pickelems))
+      }
       first-phase {
-        expression: attribute(foo1)
+        expression: attribute(foo1) + weightedBm25
       }
       global-phase {
         expression: sum(mymul())
