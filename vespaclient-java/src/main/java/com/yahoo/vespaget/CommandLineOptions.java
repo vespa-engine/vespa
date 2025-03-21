@@ -39,6 +39,7 @@ public class CommandLineOptions {
     public static final String XMLOUTPUT_OPTION = "xmloutput";
     public static final String SHORTTENSORS_OPTION = "shorttensors";
     public static final String DIRECTTENSORS_OPTION = "directtensors";
+    public static final String REPLICA_OPTION = "replica";
 
     private final Options options = createOptions();
     private final InputStream stdIn;
@@ -138,6 +139,14 @@ public class CommandLineOptions {
                 .hasArg(false)
                 .build());
 
+        options.addOption(Option.builder("e")
+            .hasArg(true)
+            .desc("Specify from which replica to get the document")
+            .longOpt(REPLICA_OPTION)
+            .argName("nodeId")
+            .type(Number.class)
+            .build());
+
         return options;
     }
 
@@ -169,6 +178,7 @@ public class CommandLineOptions {
             boolean shortTensors = cl.hasOption(SHORTTENSORS_OPTION);
             boolean directTensors = cl.hasOption(DIRECTTENSORS_OPTION);
             int trace = getTrace(cl);
+            Number replica = getReplica(cl);
             DocumentProtocol.Priority priority = getPriority(cl);
             double timeout = getTimeout(cl);
             Iterator<String> documentIds = getDocumentIds(cl);
@@ -183,7 +193,7 @@ public class CommandLineOptions {
 
             if (printIdsOnly) {
                 fieldSet = DocIdOnly.NAME;
-            } else if (fieldSet.isEmpty()) { 
+            } else if (fieldSet.isEmpty()) {
                 fieldSet = DocumentOnly.NAME;
             }
 
@@ -220,6 +230,7 @@ public class CommandLineOptions {
                     .setJsonOutput(!xmlOutput)
                     .setTensorShortForm(shortTensors)
                     .setTensorDirectValues(directTensors)
+                    .setDebugReplicaNodeId(replica)
                     .build();
         } catch (ParseException pe) {
             throw new IllegalArgumentException(pe.getMessage());
@@ -246,6 +257,11 @@ public class CommandLineOptions {
     private static int getTrace(CommandLine cl) throws ParseException {
         Number traceObj = (Number) cl.getParsedOptionValue(TRACE_OPTION);
         return traceObj != null ? traceObj.intValue() : 0;
+    }
+
+    private static Number getReplica(CommandLine cl) throws ParseException {
+        Number traceObj = (Number) cl.getParsedOptionValue(REPLICA_OPTION);
+        return traceObj;
     }
 
     private static DocumentProtocol.Priority getPriority(CommandLine cl) throws ParseException {
