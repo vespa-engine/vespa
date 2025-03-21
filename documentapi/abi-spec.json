@@ -2313,6 +2313,8 @@
       "public com.yahoo.document.DocumentId getDocumentId()",
       "public void setDocumentId(com.yahoo.document.DocumentId)",
       "public java.lang.String getFieldSet()",
+      "public void setDebugReplicaNodeId(java.lang.Integer)",
+      "public java.lang.Integer getDebugReplicaNodeId()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getApproxSize()",
       "public int getType()"
