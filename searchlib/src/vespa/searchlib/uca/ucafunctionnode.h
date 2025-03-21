@@ -50,7 +50,7 @@ private:
     };
     std::string          _locale;
     std::string          _strength;
-    common::BlobConverter::SP _collator;
+    std::shared_ptr<common::BlobConverter> _collator;
     std::unique_ptr<Handler>    _handler;
 };
 

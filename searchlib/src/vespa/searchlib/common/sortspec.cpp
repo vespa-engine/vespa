@@ -1,5 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "sortspec.h"
+#include "converters.h"
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/vespalib/text/utf8.h>
@@ -10,6 +12,8 @@ namespace search::common {
 
 using vespalib::ConstBufferRef;
 using vespalib::make_string;
+using sortspec::MissingPolicy;
+using sortspec::SortOrder;
 
 ConstBufferRef
 PassThroughConverter::onConvert(const ConstBufferRef & src) const
@@ -37,9 +41,20 @@ LowercaseConverter::onConvert(const ConstBufferRef & src) const
     return {_buffer.data(), _buffer.size()};
 }
 
-FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending, BlobConverter::SP converter) noexcept
-    : _field(field), _ascending(ascending), _converter(std::move(converter))
-{ }
+FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending, std::shared_ptr<BlobConverter> converter) noexcept
+    : FieldSortSpec(field, ascending ? SortOrder::ASCENDING : SortOrder::DESCENDING, std::move(converter))
+{
+}
+
+FieldSortSpec::FieldSortSpec(std::string_view field, SortOrder sort_order, std::shared_ptr<BlobConverter> converter) noexcept
+    : _field(field),
+      _ascending(sort_order == SortOrder::ASCENDING),
+      _sort_order(sort_order),
+      _converter(std::move(converter)),
+      _missing_policy(MissingPolicy::DEFAULT),
+      _missing_value()
+{
+}
 
 FieldSortSpec::~FieldSortSpec() = default;
 
