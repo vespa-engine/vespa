@@ -42,14 +42,14 @@ public class ClientParameters {
     // Output JSON tensorvalues directly
     public final boolean tensorDirectValues;
     // Debug: Determines replica to get from.
-    public final Number debugReplicaNodeId;
+    public final Integer debugReplicaNodeId;
 
     private ClientParameters(
             boolean help, Iterator<String> documentIds, boolean printIdsOnly,
             String fieldSet, String route, String cluster, String configId,
             boolean showDocSize, double timeout, boolean noRetry, int traceLevel,
             DocumentProtocol.Priority priority, boolean jsonOutput, boolean tensorShortForm,
-            boolean tensorDirectValues, Number debugReplicaNodeId) {
+            boolean tensorDirectValues, Integer debugReplicaNodeId) {
 
         this.help = help;
         this.documentIds = documentIds;
@@ -85,7 +85,7 @@ public class ClientParameters {
         private boolean jsonOutput = true;
         private boolean tensorShortForm;
         private boolean tensorDirectValues;
-        private Number debugReplicaNodeId;
+        private Integer debugReplicaNodeId;
 
         public Builder setHelp(boolean help) {
             this.help = help;
@@ -162,7 +162,7 @@ public class ClientParameters {
             return this;
         }
 
-        public Builder setDebugReplicaNodeId(Number debugReplicaNodeId) {
+        public Builder setDebugReplicaNodeId(Integer debugReplicaNodeId) {
             this.debugReplicaNodeId = debugReplicaNodeId;
             return this;
         }

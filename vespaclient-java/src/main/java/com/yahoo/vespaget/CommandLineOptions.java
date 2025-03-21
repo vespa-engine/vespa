@@ -144,7 +144,7 @@ public class CommandLineOptions {
             .desc("Specify from which replica to get the document")
             .longOpt(REPLICA_OPTION)
             .argName("nodeId")
-            .type(Number.class)
+            .type(Integer.class)
             .build());
 
         return options;
@@ -178,7 +178,7 @@ public class CommandLineOptions {
             boolean shortTensors = cl.hasOption(SHORTTENSORS_OPTION);
             boolean directTensors = cl.hasOption(DIRECTTENSORS_OPTION);
             int trace = getTrace(cl);
-            Number replica = getReplica(cl);
+            Integer replica = getReplica(cl);
             DocumentProtocol.Priority priority = getPriority(cl);
             double timeout = getTimeout(cl);
             Iterator<String> documentIds = getDocumentIds(cl);
@@ -259,8 +259,8 @@ public class CommandLineOptions {
         return traceObj != null ? traceObj.intValue() : 0;
     }
 
-    private static Number getReplica(CommandLine cl) throws ParseException {
-        Number traceObj = (Number) cl.getParsedOptionValue(REPLICA_OPTION);
+    private static Integer getReplica(CommandLine cl) throws ParseException {
+        Integer traceObj = (Integer) cl.getParsedOptionValue(REPLICA_OPTION);
         return traceObj;
     }
 
