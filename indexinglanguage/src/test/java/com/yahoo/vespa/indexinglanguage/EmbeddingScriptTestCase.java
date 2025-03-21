@@ -15,9 +15,8 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
+import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Map;
@@ -88,7 +87,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -123,7 +122,7 @@ public class EmbeddingScriptTestCase {
 
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -156,7 +155,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -189,7 +188,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -244,7 +243,7 @@ public class EmbeddingScriptTestCase {
         adapter.createField(new Field("mySparseTensor", new TensorDataType(tensorType)));
 
         try {
-            expression.verify(new VerificationContext(adapter));
+            expression.resolve(new TypeContext(adapter));
             fail("Expected exception");
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'embed emb1': When the embedding target field is a 3d tensor the name of the tensor dimension that corresponds to the input array elements must be given as a second argument to embed, e.g: ... | embed colbert paragraph | ...",
@@ -267,7 +266,7 @@ public class EmbeddingScriptTestCase {
         adapter.createField(new Field("mySparseTensor", new TensorDataType(tensorType)));
 
         try {
-            expression.verify(new VerificationContext(adapter));
+            expression.resolve(new TypeContext(adapter));
             fail("Expected exception");
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'embed emb1 d': The dimension 'd' given to embed is not a sparse dimension of the target type tensor(d[3],passage{},token{})",
@@ -293,7 +292,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("text", text);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(text);
@@ -321,7 +320,7 @@ public class EmbeddingScriptTestCase {
         adapter.createField(new Field("my2DSparseTensor", new TensorDataType(tensorType)));
 
         try {
-            expression.verify(new VerificationContext(adapter));
+            expression.resolve(new TypeContext(adapter));
             fail("Expected exception");
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'embed emb1 doh': The dimension 'doh' given to embed is not a sparse dimension of the target type tensor(passage{},token{})",
@@ -352,7 +351,7 @@ public class EmbeddingScriptTestCase {
         adapter.setValue("myTextArray", array);
         expression.setStatementOutput(new DocumentType("myDocument"), tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         context.setCurrentValue(array);
@@ -382,7 +381,7 @@ public class EmbeddingScriptTestCase {
         var tensorField = new Field("sections_embeddings", new TensorDataType(tensorType));
         adapter.createField(tensorField);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
     }
 
     @Test
@@ -413,7 +412,7 @@ public class EmbeddingScriptTestCase {
         var text_embeddings_quant_binary_expression = (StatementExpression) tester.expressionFrom("input text_embeddings | binarize | pack_bits | attribute text_embeddings_quant_binary | index text_embeddings_quant_binary");
 
         var script = new ScriptExpression(text_embeddings_expression, text_embeddings_quant_binary_expression);
-        script.verify(adapter);
+        script.resolve(adapter);
     }
 
     @Test
@@ -426,7 +425,7 @@ public class EmbeddingScriptTestCase {
             adapter.createField(new Field("text_embeddings", new TensorDataType(TensorType.fromSpec("tensor<float>(x[768])"))));
 
             var expression = tester.expressionFrom("input text | embed emb1 | attribute text_embeddings");
-            expression.verify(adapter);
+            expression.resolve(adapter);
             fail();
         }
         catch (VerificationException expected) {
@@ -445,7 +444,7 @@ public class EmbeddingScriptTestCase {
             adapter.createField(new Field("text_embeddings", new TensorDataType(TensorType.fromSpec("tensor<float>(chunk{},token{},x[768])"))));
 
             var expression = tester.expressionFrom("input text | embed emb1 chunk | attribute text_embeddings");
-            expression.verify(adapter);
+            expression.resolve(adapter);
             fail();
         }
         catch (VerificationException expected) {

@@ -50,7 +50,7 @@ public class MapConversionTestCase {
         expression.setStatementOutput(new DocumentType("myDocument"),
                                       new Field("myArray", new ArrayDataType(DataType.STRING)));
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);

@@ -8,7 +8,7 @@ import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.fieldpathupdate.RemoveFieldPathUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -18,13 +18,13 @@ import java.util.Map;
 /**
  * @author Simon Thoresen Hult
  */
-public class FieldPathUpdateAdapter implements UpdateAdapter {
+public class FieldPathUpdateFieldValues implements UpdateFieldValues {
 
-    private final DocumentAdapter adapter;
+    private final DocumentFieldValues adapter;
     private final FieldPathUpdate update;
 
-    public FieldPathUpdateAdapter(DocumentAdapter documentAdapter, FieldPathUpdate fieldUpdate) {
-        adapter = documentAdapter;
+    public FieldPathUpdateFieldValues(DocumentFieldValues documentFieldValues, FieldPathUpdate fieldUpdate) {
+        adapter = documentFieldValues;
         update = fieldUpdate;
     }
 
@@ -42,8 +42,8 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
     }
 
     @Override
-    public DataType getFieldType(Expression exp, String fieldName) {
-        return adapter.getFieldType(exp, fieldName);
+    public DataType getFieldType(String fieldName, Expression exp) {
+        return adapter.getFieldType(fieldName, exp);
     }
 
     @Override
@@ -57,8 +57,8 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
     }
 
     @Override
-    public FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
-        return adapter.setOutputValue(exp, fieldName, fieldValue);
+    public FieldValues setOutputValue(String fieldName, FieldValue fieldValue, Expression exp) {
+        return adapter.setOutputValue(fieldName, fieldValue, exp);
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })

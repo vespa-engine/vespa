@@ -13,13 +13,13 @@ import java.util.Base64;
 public final class Base64EncodeExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, DataType.LONG, context);
         return DataType.STRING;
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(DataType.STRING, outputType, null, context);
         return DataType.LONG;
     }

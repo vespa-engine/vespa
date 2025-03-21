@@ -33,7 +33,7 @@ public final class OptimizePredicateExpression extends Expression {
     public boolean isMutating() { return false; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         var input = super.setInputType(inputType, DataType.PREDICATE, context);
         checkVariable(context, "arity", DataType.INT, true);
         checkVariable(context, "lower_bound", DataType.LONG, false);
@@ -42,7 +42,7 @@ public final class OptimizePredicateExpression extends Expression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         return super.setOutputType(DataType.PREDICATE, outputType, null, context);
     }
 
@@ -59,8 +59,8 @@ public final class OptimizePredicateExpression extends Expression {
         context.setCurrentValue(predicate);
     }
 
-    private void checkVariable(VerificationContext context, String var, DataType type, boolean required) {
-        DataType input = context.getVariable(var);
+    private void checkVariable(TypeContext context, String var, DataType type, boolean required) {
+        DataType input = context.getVariableType(var);
         if (input == null) {
             if (required)
                 throw new VerificationException(this, "Variable '" + var + "' must be set");

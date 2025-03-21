@@ -12,14 +12,14 @@ import com.yahoo.document.datatypes.FieldValue;
 public final class ToArrayExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, context);
         if (input == null) return null;
         return new ArrayDataType(input);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         if (outputType == null) return null;
         super.setOutputType(outputType, context);
         if (outputType instanceof ArrayDataType arrayType)

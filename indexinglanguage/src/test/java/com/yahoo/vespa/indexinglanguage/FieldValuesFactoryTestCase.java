@@ -19,7 +19,7 @@ import static org.junit.Assert.assertNotNull;
 /**
  * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
  */
-public class SimpleAdapterFactoryTestCase {
+public class FieldValuesFactoryTestCase {
 
     @Test
     public void requireThatCompleteUpdatesAreCombined() {
@@ -35,8 +35,8 @@ public class SimpleAdapterFactoryTestCase {
         update.addFieldUpdate(FieldUpdate.createAssign(field2, new IntegerFieldValue(20)));
         update.addFieldUpdate(FieldUpdate.createIncrement(field3, 30));
 
-        SimpleAdapterFactory factory = new SimpleAdapterFactory();
-        List<UpdateAdapter> adapters = factory.newUpdateAdapterList(update);
+        FieldValuesFactory factory = new FieldValuesFactory();
+        List<UpdateFieldValues> adapters = factory.asFieldValues(update);
         assertEquals(2, adapters.size());
     }
 
@@ -52,11 +52,11 @@ public class SimpleAdapterFactoryTestCase {
         fieldUpdate.addValueUpdate(ValueUpdate.createIncrement(4));
         docUpdate.addFieldUpdate(fieldUpdate);
 
-        SimpleAdapterFactory factory = new SimpleAdapterFactory();
-        List<UpdateAdapter> adapters = factory.newUpdateAdapterList(docUpdate);
+        FieldValuesFactory factory = new FieldValuesFactory();
+        List<UpdateFieldValues> adapters = factory.asFieldValues(docUpdate);
         assertEquals(4, adapters.size());
 
-        UpdateAdapter adapter = adapters.get(0);
+        UpdateFieldValues adapter = adapters.get(0);
         assertNotNull(adapter);
         assertEquals(new IntegerFieldValue(1), adapter.getInputValue("my_int"));
         assertNotNull(adapter = adapters.get(1));

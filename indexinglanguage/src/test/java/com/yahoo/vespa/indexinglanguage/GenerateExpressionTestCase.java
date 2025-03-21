@@ -13,7 +13,7 @@ import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
+import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
@@ -187,7 +187,7 @@ public class GenerateExpressionTestCase {
         
         expression.setStatementOutput(new DocumentType("myDocument"), outputField);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -231,7 +231,7 @@ public class GenerateExpressionTestCase {
         
         adapter.setValue("myText", new StringFieldValue(input));
         expression.setStatementOutput(new DocumentType("myDocument"), outputField);
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);

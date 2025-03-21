@@ -85,7 +85,7 @@ public class CatTestCase {
                                                  new CatExpression(new ThisExpression(),
                                                                    new ConstantExpression(new StringFieldValue("bar")),
                                                                    new ThisExpression()));
-        expression.verify(new SimpleTestAdapter());
+        expression.resolve(new SimpleTestAdapter());
         assertEquals(new StringFieldValue("foobarfoo"), expression.execute());
     }
 
@@ -190,15 +190,15 @@ public class CatTestCase {
     }
 
     private static void assertVerify(Expression expA, Expression expB, DataType val) {
-        new CatExpression(expA, expB).verify(new VerificationContext(new SimpleTestAdapter()));
+        new CatExpression(expA, expB).resolve(new TypeContext(new SimpleTestAdapter()));
     }
 
     private static void assertVerifyThrows(Expression expA, Expression expB, DataType val, String expectedException) {
         try {
             var expression = new CatExpression(expA, expB);
-            var context = new VerificationContext(new SimpleTestAdapter());
+            var context = new TypeContext(new SimpleTestAdapter());
             expression.setInputType(val, context);
-            expression.verify(context);
+            expression.resolve(context);
             fail("Expected exception");
         } catch (VerificationException e) {
             if (!e.getMessage().startsWith(expectedException)) {
@@ -215,7 +215,7 @@ public class CatTestCase {
         var adapter = new SimpleTestAdapter(new Field("a", typeA),
                                             new Field("b", typeB));
         var expression = new CatExpression(new InputExpression("a"), new InputExpression("b"));
-        expression.setInputType(null, new VerificationContext(adapter));
+        expression.setInputType(null, new TypeContext(adapter));
         ExecutionContext context = new ExecutionContext(adapter);
         context.setFieldValue("a", valA, null);
         context.setFieldValue("b", valB, null);

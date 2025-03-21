@@ -18,23 +18,23 @@ class OutputAssert {
         assertVerifyThrows(new MyAdapter(new VerificationException((Expression) null, "foo")), DataType.INT, exp, "Invalid expression 'null': foo");
     }
 
-    public static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        var context = new VerificationContext(adapter);
+    public static void assertVerify(FieldTypes adapter, DataType value, Expression exp) {
+        var context = new TypeContext(adapter);
         assertEquals(value, exp.setInputType(value, context));
     }
 
-    public static void assertVerifyThrows(FieldTypeAdapter adapter, DataType value, Expression exp,
+    public static void assertVerifyThrows(FieldTypes adapter, DataType value, Expression exp,
                                           String expectedException)
     {
         try {
-            new VerificationContext(adapter).verify(exp);
+            new TypeContext(adapter).resolve(exp);
             fail();
         } catch (VerificationException e) {
             assertEquals(expectedException, e.getMessage());
         }
     }
 
-    private static class MyAdapter implements FieldTypeAdapter {
+    private static class MyAdapter implements FieldTypes {
 
         final RuntimeException e;
 
@@ -43,7 +43,7 @@ class OutputAssert {
         }
 
         @Override
-        public DataType getFieldType(Expression exp, String fieldName) {
+        public DataType getFieldType(String fieldName, Expression exp) {
             throw new AssertionError();
         }
 

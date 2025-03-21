@@ -23,13 +23,13 @@ public final class SplitExpression extends Expression {
     public Pattern getSplitPattern() { return splitPattern; }
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, DataType.STRING, context);
         return new ArrayDataType(DataType.STRING);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         if (outputType != null && !(outputType == AnyDataType.instance ||
                                     (outputType instanceof ArrayDataType) && (DataType.STRING.isAssignableTo(outputType.getNestedType()))))

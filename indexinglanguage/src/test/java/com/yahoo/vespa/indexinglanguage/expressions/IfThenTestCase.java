@@ -104,7 +104,7 @@ public class IfThenTestCase {
 
     @Test
     public void requireThatAllChildrenSeeInputValue() {
-        FieldValueAdapter adapter = createTestAdapter();
+        FieldValues adapter = createTestAdapter();
         new StatementExpression(new ConstantExpression(new IntegerFieldValue(69)),
                                 new IfThenExpression(new AttributeExpression("lhs"),
                                                      Comparator.EQ,
@@ -239,12 +239,12 @@ public class IfThenTestCase {
         adapter.createField(new Field("int1", DataType.INT));
         adapter.createField(new Field("string1", DataType.STRING));
 
-        expression.verify(adapter);
-        assertNull(expression.getInputType(new VerificationContext(adapter)));
+        expression.resolve(adapter);
+        assertNull(expression.getInputType(new TypeContext(adapter)));
         assertEquals(DataType.STRING, ifExpression.getOutputType());
 
-        expression.verify(adapter);
-        assertNull(expression.getInputType(new VerificationContext(adapter)));
+        expression.resolve(adapter);
+        assertNull(expression.getInputType(new TypeContext(adapter)));
     }
 
     private Expression wrapLikeTheParser(Expression expression) {
@@ -269,7 +269,7 @@ public class IfThenTestCase {
         return ctx.getVariable("true") != null;
     }
 
-    private static FieldValueAdapter createTestAdapter() {
+    private static FieldValues createTestAdapter() {
         return new SimpleTestAdapter(new Field("lhs", DataType.INT),
                                      new Field("rhs", DataType.INT),
                                      new Field("ifTrue", DataType.INT),

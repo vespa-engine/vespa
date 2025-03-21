@@ -17,7 +17,7 @@ import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.MapValueUpdate;
 import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.vespa.indexinglanguage.AdapterFactory;
+import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 
@@ -40,21 +40,21 @@ public class DocumentScript {
         this.documentType = documentType;
         this.inputFields = new HashSet<>(inputFields);
         this.expression = expression;
-        expression.verify(documentType);
+        expression.resolve(documentType);
     }
 
     public Expression getExpression() { return expression; }
 
-    public Document execute(AdapterFactory adapterFactory, Document document) {
+    public Document execute(FieldValuesFactory fieldValuesFactory, Document document) {
         for (var i = document.iterator(); i.hasNext(); ) {
             Map.Entry<Field, FieldValue> entry = i.next();
             requireThatFieldIsDeclaredInDocument(entry.getKey());
             removeAnyLinguisticsSpanTree(entry.getValue());
         }
-        return expression.execute(adapterFactory, document);
+        return expression.execute(fieldValuesFactory, document);
     }
 
-    public DocumentUpdate execute(AdapterFactory adapterFactory, DocumentUpdate update) {
+    public DocumentUpdate execute(FieldValuesFactory fieldValuesFactory, DocumentUpdate update) {
         for (FieldUpdate fieldUpdate : update.fieldUpdates()) {
             requireThatFieldIsDeclaredInDocument(fieldUpdate.getField());
             for (ValueUpdate<?> valueUpdate : fieldUpdate.getValueUpdates()) {
@@ -67,7 +67,7 @@ public class DocumentScript {
                 removeAnyLinguisticsSpanTree(((AssignFieldPathUpdate)fieldUpdate).getFieldValue());
             }
         }
-        return Expression.execute(expression, adapterFactory, update);
+        return Expression.execute(expression, fieldValuesFactory, update);
     }
 
     private void requireThatFieldIsDeclaredInDocument(Field field) {

@@ -59,14 +59,14 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, context);
         resolveBackwards(context);
         return resolveForwards(context);
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(output, context);
         resolveForwards(context);
         return resolveBackwards(context);
@@ -78,7 +78,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
     // uniquely determined inputs and outputs of all expressions.
 
     /** Resolves types forward and returns the final output, or null if resolution could not progress to the end. */
-    private DataType resolveForwards(VerificationContext context) {
+    private DataType resolveForwards(TypeContext context) {
         var type = getInputType(context);
         for (var expression : expressions()) {
             type = expression.setInputType(type, context);
@@ -89,7 +89,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     /** Resolves types backwards and returns the required input, or null if resolution could not progress to the start. */
-    private DataType resolveBackwards(VerificationContext context) {
+    private DataType resolveBackwards(TypeContext context) {
         int i = expressions().size();
         var type = getOutputType(context); // A nested statement; output imposed from above
         if (type == null) // otherwise the last expression will be an output deciding the type
@@ -102,7 +102,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
+    protected void doResolve(TypeContext context) {
         if (expressions().isEmpty()) return;
 
         var outputType = resolveForwards(context);
@@ -110,7 +110,7 @@ public final class StatementExpression extends ExpressionList<Expression> {
         resolveBackwards(context);
 
         for (Expression expression : expressions())
-            context.verify(expression);
+            context.resolve(expression);
     }
 
     @Override

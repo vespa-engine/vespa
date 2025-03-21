@@ -10,13 +10,13 @@ import com.yahoo.document.PositionDataType;
 public final class ToPositionExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, DataType.STRING, context);
         return PositionDataType.INSTANCE;
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(PositionDataType.INSTANCE, output, null, context);
         return DataType.STRING;
     }

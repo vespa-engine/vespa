@@ -2,12 +2,12 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.Document;
-import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
 
 /**
  * @author Simon Thoresen Hult
  */
-public interface DocumentAdapter extends FieldValueAdapter {
+public interface DocumentFieldValues extends FieldValues {
 
     Document getFullOutput();
 

@@ -12,16 +12,16 @@ import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 /**
  * @author Simon Thoresen Hult
  */
-public class SimpleDocumentAdapter implements DocumentAdapter {
+public class SimpleDocumentFieldValues implements DocumentFieldValues {
 
     private final Document input;
     private final Document output;
 
-    public SimpleDocumentAdapter(Document input) {
+    public SimpleDocumentFieldValues(Document input) {
         this(input, new Document(input.getDataType(), input.getId()));
     }
 
-    public SimpleDocumentAdapter(Document input, Document output) {
+    public SimpleDocumentFieldValues(Document input, Document output) {
         this.input = input;
         this.output = output;
     }
@@ -37,7 +37,7 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
     }
 
     @Override
-    public DataType getFieldType(Expression exp, String fieldName) {
+    public DataType getFieldType(String fieldName, Expression exp) {
         try {
             return input.getDataType().buildFieldPath(fieldName).getResultingDataType();
         } catch (IllegalArgumentException e) {
@@ -64,7 +64,7 @@ public class SimpleDocumentAdapter implements DocumentAdapter {
     }
 
     @Override
-    public SimpleDocumentAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
+    public SimpleDocumentFieldValues setOutputValue(String fieldName, FieldValue fieldValue, Expression exp) {
         Field field = output.getField(fieldName);
         if (field == null) {
             throw new IllegalArgumentException("Field '" + fieldName + "' not found in document type '" +

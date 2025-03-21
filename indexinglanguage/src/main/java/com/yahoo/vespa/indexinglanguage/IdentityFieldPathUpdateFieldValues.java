@@ -8,7 +8,7 @@ import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
 
 /**
  * No-op update adapter which simply passes through the input update unchanged.
@@ -18,12 +18,12 @@ import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
  *
  * This removes the need for a potentially lossy round-trip of update -&gt; synthetic document -&gt; update.
  */
-public class IdentityFieldPathUpdateAdapter implements UpdateAdapter {
+public class IdentityFieldPathUpdateFieldValues implements UpdateFieldValues {
 
     private final FieldPathUpdate update;
-    private final DocumentAdapter fwdAdapter;
+    private final DocumentFieldValues fwdAdapter;
 
-    public IdentityFieldPathUpdateAdapter(FieldPathUpdate update, DocumentAdapter fwdAdapter) {
+    public IdentityFieldPathUpdateFieldValues(FieldPathUpdate update, DocumentFieldValues fwdAdapter) {
         this.update = update;
         this.fwdAdapter = fwdAdapter;
     }
@@ -52,13 +52,13 @@ public class IdentityFieldPathUpdateAdapter implements UpdateAdapter {
     }
 
     @Override
-    public FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
-        return fwdAdapter.setOutputValue(exp, fieldName, fieldValue);
+    public FieldValues setOutputValue(String fieldName, FieldValue fieldValue, Expression exp) {
+        return fwdAdapter.setOutputValue(fieldName, fieldValue, exp);
     }
 
     @Override
-    public DataType getFieldType(Expression exp, String fieldName) {
-        return fwdAdapter.getFieldType(exp, fieldName);
+    public DataType getFieldType(String fieldName, Expression exp) {
+        return fwdAdapter.getFieldType(fieldName, exp);
     }
 
 }

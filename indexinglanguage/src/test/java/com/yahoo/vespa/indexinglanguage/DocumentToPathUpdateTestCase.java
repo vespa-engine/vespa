@@ -27,7 +27,7 @@ public class DocumentToPathUpdateTestCase {
         assertNotNull(doc);
         doc.setFieldValue("my_int", new IntegerFieldValue(96));
 
-        DocumentUpdate docUpd = new FieldPathUpdateAdapter(new SimpleDocumentAdapter(null, doc), upd).getOutput();
+        DocumentUpdate docUpd = new FieldPathUpdateFieldValues(new SimpleDocumentFieldValues(null, doc), upd).getOutput();
         assertNotNull(docUpd);
         assertEquals(1, docUpd.fieldPathUpdates().size());
         assertNotNull(upd = docUpd.fieldPathUpdates().iterator().next());
@@ -47,7 +47,7 @@ public class DocumentToPathUpdateTestCase {
         assertNotNull(doc);
         doc.setFieldValue("my_str", new StringFieldValue("96"));
 
-        DocumentUpdate docUpd = new FieldPathUpdateAdapter(new SimpleDocumentAdapter(null, doc), upd).getOutput();
+        DocumentUpdate docUpd = new FieldPathUpdateFieldValues(new SimpleDocumentFieldValues(null, doc), upd).getOutput();
         assertNotNull(docUpd);
         assertEquals(1, docUpd.fieldPathUpdates().size());
         assertNotNull(upd = docUpd.fieldPathUpdates().iterator().next());
@@ -75,7 +75,7 @@ public class DocumentToPathUpdateTestCase {
         struct = (Struct)obj;
         struct.setFieldValue("b", new IntegerFieldValue(96));
 
-        DocumentUpdate docUpd = new FieldPathUpdateAdapter(new SimpleDocumentAdapter(null, doc), upd).getOutput();
+        DocumentUpdate docUpd = new FieldPathUpdateFieldValues(new SimpleDocumentFieldValues(null, doc), upd).getOutput();
         assertNotNull(docUpd);
         assertEquals(1, docUpd.fieldPathUpdates().size());
         assertNotNull(upd = docUpd.fieldPathUpdates().iterator().next());
@@ -101,7 +101,7 @@ public class DocumentToPathUpdateTestCase {
         Struct struct = (Struct)obj;
         struct.setFieldValue("b", new IntegerFieldValue(96));
 
-        DocumentUpdate docUpd = new FieldPathUpdateAdapter(new SimpleDocumentAdapter(null, doc), upd).getOutput();
+        DocumentUpdate docUpd = new FieldPathUpdateFieldValues(new SimpleDocumentFieldValues(null, doc), upd).getOutput();
         assertNotNull(docUpd);
         assertEquals(1, docUpd.fieldPathUpdates().size());
         assertNotNull(upd = docUpd.fieldPathUpdates().iterator().next());

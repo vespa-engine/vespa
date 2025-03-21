@@ -7,14 +7,14 @@ import com.yahoo.document.datatypes.FieldValue;
 /**
  * @author Simon Thoresen Hult
  */
-public interface FieldValueAdapter extends FieldTypeAdapter {
+public interface FieldValues extends FieldTypes {
 
     FieldValue getInputValue(String fieldName);
     FieldValue getInputValue(FieldPath fieldPath);
 
-    FieldValueAdapter setOutputValue(Expression expression, String fieldName, FieldValue fieldValue);
+    FieldValues setOutputValue(String fieldName, FieldValue fieldValue, Expression expression);
 
-    /** Returns true if this has values for all possibly existing inputs, or represents a partial set of values. */
+    /** Returns true if this has values for all possibly existing inputs, false if it represents a partial set of values. */
     boolean isComplete();
 
 }

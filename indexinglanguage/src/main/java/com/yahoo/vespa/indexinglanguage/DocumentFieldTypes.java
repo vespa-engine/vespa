@@ -4,7 +4,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.Field;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.FieldTypeAdapter;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldTypes;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 
 /**
@@ -12,16 +12,16 @@ import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
  *
  * @author bratseth
  */
-public class DocumentTypeAdapter implements FieldTypeAdapter {
+public class DocumentFieldTypes implements FieldTypes {
 
     private final DocumentType documentType;
 
-    public DocumentTypeAdapter(DocumentType documentType) {
+    public DocumentFieldTypes(DocumentType documentType) {
         this.documentType = documentType;
     }
 
     @Override
-    public DataType getFieldType(Expression expression, String fieldName) {
+    public DataType getFieldType(String fieldName, Expression expression) {
         return requireFieldType(expression, fieldName);
     }
 

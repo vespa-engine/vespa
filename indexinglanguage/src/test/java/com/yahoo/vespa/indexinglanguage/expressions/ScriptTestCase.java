@@ -168,7 +168,7 @@ public class ScriptTestCase {
                 newStatement(new InputExpression("myInput"),
                              new ForEachExpression(new StatementExpression(new GetFieldExpression("stringField"))),
                              new AttributeExpression("myOutput"));
-        statement.verify(adapter);
+        statement.resolve(adapter);
         statement.execute(adapter);
 
         var result = (Array<StringFieldValue>)adapter.values.get("myOutput");
@@ -190,7 +190,7 @@ public class ScriptTestCase {
                              new SplitExpression(";"),
                              new ForEachExpression(new StatementExpression(new SubstringExpression(0, 1))),
                              new AttributeExpression("myArray"));
-        statement.verify(adapter);
+        statement.resolve(adapter);
         statement.execute(adapter);
         assertEquals("[m, t, v]", adapter.values.get("myArray").toString());
     }
@@ -210,7 +210,7 @@ public class ScriptTestCase {
                              new ForEachExpression(new StatementExpression(new TrimExpression(), new NormalizeExpression(new SimpleLinguistics()))),
                              new ToStringExpression(),
                              new IndexExpression("myString"));
-        statement.verify(adapter);
+        statement.resolve(adapter);
         statement.execute(adapter);
         assertEquals("[my, test, values]", adapter.values.get("myString").toString());
     }
@@ -230,7 +230,7 @@ public class ScriptTestCase {
                              new GuardExpression(newStatement(new InputExpression("location"),
                                                               new ZCurveExpression(),
                                                               new AttributeExpression("location_zcurve"))));
-        statement.verify(adapter);
+        statement.resolve(adapter);
         statement.execute(adapter);
         assertEquals("Struct (struct type 'position'): field 'y' of type int=17, field 'x' of type int=13",
                      adapter.values.get("location").toString());

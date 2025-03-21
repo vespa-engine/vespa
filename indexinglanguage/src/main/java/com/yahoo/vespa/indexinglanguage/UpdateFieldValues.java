@@ -3,12 +3,12 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldValues;
 
 /**
  * @author Simon Thoresen Hult
  */
-public interface UpdateAdapter extends FieldValueAdapter {
+public interface UpdateFieldValues extends FieldValues {
 
     DocumentUpdate getOutput();
     Expression getExpression(Expression expression);
