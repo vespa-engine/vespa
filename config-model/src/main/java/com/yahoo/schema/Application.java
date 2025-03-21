@@ -72,7 +72,6 @@ public class Application {
 
         if (validate)
             new DocumentGraphValidator().validateDocumentGraph(sdocs);
-
         List<Schema> schemasSomewhatOrdered = new ArrayList<>(schemas);
         for (Schema schema : new SearchOrderer().order(schemasSomewhatOrdered)) {
             new Processing(properties).process(schema,

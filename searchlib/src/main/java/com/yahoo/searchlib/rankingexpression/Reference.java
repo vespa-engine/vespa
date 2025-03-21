@@ -12,6 +12,7 @@ import com.yahoo.tensor.evaluation.Name;
 import java.util.Deque;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -20,6 +21,8 @@ import java.util.regex.Pattern;
  * @author bratseth
  */
 public class Reference extends Name implements Comparable<Reference> {
+
+    private static final Set<String> featureNames = Set.of("attribute", "query", "constant");
 
     private final int hashCode;
 
@@ -46,6 +49,8 @@ public class Reference extends Name implements Comparable<Reference> {
         Objects.requireNonNull(name, "name cannot be null");
         Objects.requireNonNull(arguments, "arguments cannot be null");
         this.arguments = arguments;
+        if (featureNames.contains(name))
+            arguments.setAreFeatureArguments(true);
         this.output = output;
         this.hashCode = Objects.hash(name(), arguments, output, isIdentifier);
         this.isIdentifier = isIdentifier;
@@ -74,8 +79,7 @@ public class Reference extends Name implements Comparable<Reference> {
         if (arguments.expressions().size() != 1) return Optional.empty();
         ExpressionNode argument = arguments.expressions().get(0);
 
-        if (argument instanceof ReferenceNode) {
-            ReferenceNode refArgument = (ReferenceNode) argument;
+        if (argument instanceof ReferenceNode refArgument) {
 
             if ( ! refArgument.reference().isIdentifier()) return Optional.empty();
 
@@ -132,7 +136,7 @@ public class Reference extends Name implements Comparable<Reference> {
 
     public StringBuilder toString(StringBuilder b, SerializationContext context, Deque<String> path, CompositeNode parent) {
         b.append(name());
-        if (arguments.expressions().size() > 0) {
+        if (!arguments.expressions().isEmpty()) {
             b.append("(");
             if (isSimpleRankingExpressionWrapper()) {
                 b.append(simpleArgument().get());

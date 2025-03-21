@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression.rule;
 
+import com.yahoo.searchlib.ranking.features.Features;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.searchlib.rankingexpression.RankingExpression;
 import com.yahoo.searchlib.rankingexpression.Reference;
@@ -23,6 +24,7 @@ import java.util.Map;
 public final class ReferenceNode extends CompositeNode {
 
     private final Reference reference;
+    private boolean isFeatureArgument;
 
     /* Parses this string into a reference */
     public ReferenceNode(String name) {
@@ -41,6 +43,10 @@ public final class ReferenceNode extends CompositeNode {
 
     public String getName() {
         return reference.name();
+    }
+
+    public void setIsFeatureArgument(boolean isFeatureArgument) {
+        this.isFeatureArgument = isFeatureArgument;
     }
 
     /** Returns the arguments, never null */
@@ -73,7 +79,7 @@ public final class ReferenceNode extends CompositeNode {
 
         // A reference to a function?
         ExpressionFunction function = context.getFunction(getName());
-        if (function != null && function.arguments().size() == getArguments().size() && getOutput() == null) {
+        if (!isFeatureArgument && function != null && function.arguments().size() == getArguments().size() && getOutput() == null) {
             // a function reference: replace by the referenced function wrapped in rankingExpression
             if (path == null)
                 path = new ArrayDeque<>();
