@@ -12,6 +12,7 @@
 namespace search::attribute {
     class IAttributeContext;
     class IAttributeVector;
+    class ISortBlobWriter;
 }
 /**
  * Sort the given array of results.
@@ -72,14 +73,14 @@ public:
 
     struct VectorRef
     {
-        VectorRef(uint32_t type, const search::attribute::IAttributeVector * vector, const search::common::BlobConverter *converter) noexcept
-            : _type(type),
-              _vector(vector),
-              _converter(converter)
-        { }
+        VectorRef(uint32_t type, const search::attribute::IAttributeVector * vector, const search::common::BlobConverter *converter) noexcept;
         uint32_t                 _type;
         const search::attribute::IAttributeVector *_vector;
         const search::common::BlobConverter *_converter;
+        std::unique_ptr<search::attribute::ISortBlobWriter> _writer;
+        bool has_ascending_sort_order() const {
+            return _type == ASC_VECTOR || _type == ASC_RANK || _type == ASC_DOCID;
+        }
     };
 
     struct SortData : public search::RankedHit
