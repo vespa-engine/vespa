@@ -6,6 +6,7 @@ package com.yahoo.vespa.model.content;
  * <a href="https://docs.vespa.ai/en/reference/services-content.html#dispatch-tuning">dispatch tuning documentation</a>.
  *
  * @author Simon Thoresen Hult
+ * @author bratseth
  */
 public class DispatchTuning {
 
@@ -21,12 +22,14 @@ public class DispatchTuning {
 
     private final Integer maxHitsPerPartition;
     private final DispatchPolicy dispatchPolicy;
+    private final Boolean prioritizeAvailability;
     private final Double minActiveDocsCoverage;
     private final Double topkProbability;
 
     private DispatchTuning(Builder builder) {
         maxHitsPerPartition = builder.maxHitsPerPartition;
         dispatchPolicy = builder.dispatchPolicy;
+        prioritizeAvailability = builder.prioritizeAvailability;
         minActiveDocsCoverage = builder.minActiveDocsCoverage;
         topkProbability = builder.topKProbability;
     }
@@ -37,6 +40,13 @@ public class DispatchTuning {
     /** Returns the policy used to select which group to dispatch a query to */
     public DispatchPolicy getDispatchPolicy() { return dispatchPolicy; }
 
+    /**
+     * Returns true if we should dispatch to groups within MinActiveDocsCoverage of the *median* document count
+     * of other groups (default), or false to only dispatch to those within MinActiveDocsCoverage of the *max*
+     * document count.
+     */
+    public Boolean getPrioritizeAvailability() { return prioritizeAvailability; }
+
     /** Returns the percentage of documents which must be available in a group for that group to receive queries */
     public Double getMinActiveDocsCoverage() { return minActiveDocsCoverage; }
 
@@ -46,6 +56,7 @@ public class DispatchTuning {
 
         private Integer maxHitsPerPartition;
         private DispatchPolicy dispatchPolicy;
+        private Boolean prioritizeAvailability;
         private Double minActiveDocsCoverage;
         private Double topKProbability;
 
@@ -57,13 +68,25 @@ public class DispatchTuning {
             this.maxHitsPerPartition = maxHitsPerPartition;
             return this;
         }
-        public Builder setTopKProbability(Double topKProbability) {
-            this.topKProbability = topKProbability;
-            return this;
-        }
+
         public Builder setDispatchPolicy(String policy) {
             if (policy != null)
                 dispatchPolicy = toDispatchPolicy(policy);
+            return this;
+        }
+
+        public Builder setPrioritizeAvailability(Boolean prioritizeAvailability) {
+            this.prioritizeAvailability = prioritizeAvailability;
+            return this;
+        }
+
+        public Builder setMinActiveDocsCoverage(Double minCoverage) {
+            this.minActiveDocsCoverage = minCoverage;
+            return this;
+        }
+
+        public Builder setTopKProbability(Double topKProbability) {
+            this.topKProbability = topKProbability;
             return this;
         }
 
@@ -78,10 +101,6 @@ public class DispatchTuning {
             };
         }
 
-        public Builder setMinActiveDocsCoverage(Double minCoverage) {
-            this.minActiveDocsCoverage = minCoverage;
-            return this;
-        }
     }
 
 }
