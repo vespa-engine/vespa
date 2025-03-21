@@ -10,7 +10,6 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -192,6 +191,42 @@ class NodeResourcesTest {
         assertEquals(makeGpus("T4", 1, 64), one.plus(lovelace));
         assertEquals(makeGpus("A100", 1, 56), ampere.plus(one));
         assertEquals(makeGpus("L40S", 1, 64), lovelace.plus(one));
+    }
+
+
+    // Comparing AWS (not Vespa) approx pricing for different disk options
+    // @Test
+    void ebs_vs_local_disk_pricing() {
+        // https://aws.amazon.com/ebs/pricing/
+
+        double pricePerNode = new NodeResources(32.0, 256, 7500, 1.0).cost() / 3;
+        System.out.println("Price for 7500Gb with local disk:            " + pricePerNode + " $/hr");
+
+        double totalPriceWithComparableIo2 = io2Price(1_000_000); // 1 disk does maybe 500k, each disk has size=3750Gb, so there are 2
+        System.out.println("Price for 7500Gb io2 with comparable perf.: " + totalPriceWithComparableIo2 + " $/hr");
+        double totalPriceWith16kIo2 = io2Price(16_000);
+        System.out.println("Price for 7500Gb io2 16k iops:               " + totalPriceWith16kIo2 + " $/hr");
+        double totalPriceWith3kIo2 = io2Price(3000); // What we get with gp3 (by default, and not flag overridden for anyone)
+        System.out.println("Price for 7500Gb io2  3k iops:               " + totalPriceWith3kIo2 + " $/hr");
+
+        double totalPriceWith16kGp3 = gp3Price(16_000);
+        System.out.println("Price for 7500Gb gp3 16k iops:               " + totalPriceWith16kGp3 + " $/hr");
+        double totalPriceWith3kGp3 = gp3Price(3000);
+        System.out.println("Price for 7500Gb gp3  3k iops:               " + totalPriceWith3kGp3 + " $/hr");
+    }
+
+    private double io2Price(double iops) {
+        double pricePerNodeNoDisk = new NodeResources(32.0, 256, 0, 1.0).cost() / 3;
+        double priceForIo21Gbhr = 0.125/(30*24);
+        double priceForComparableIops = 0.046/(30*24) * iops; // approx: mid range price
+        return pricePerNodeNoDisk + 7500 * priceForIo21Gbhr + priceForComparableIops;
+    }
+
+    private double gp3Price(double iops) {
+        double pricePerNodeNoDisk = new NodeResources(32.0, 256, 0, 1.0).cost() / 3;
+        double priceForIo21Gbhr = 0.08 / (30 * 24);
+        double priceForComparableIops = 0.005 / (30 * 24) * (iops - 3000);
+        return pricePerNodeNoDisk + 7500 * priceForIo21Gbhr + priceForComparableIops;
     }
 
     private void assertInvalid(String valueName, Supplier<NodeResources> nodeResources) {
