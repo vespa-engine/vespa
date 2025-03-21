@@ -37,6 +37,19 @@ public class GetDocumentMessage extends DocumentMessage {
     }
 
     /**
+     * Constructs a new document get message.
+     *
+     * @param documentId The identifier of the document to get.
+     * @param fieldSet Which fields to retrieve from the document
+     * @param debugReplicaNodeId debug: which replica to get from.
+     */
+    public GetDocumentMessage(DocumentId documentId, String fieldSet, Integer debugReplicaNodeId) {
+        setDocumentId(documentId);
+        this.fieldSet = fieldSet;
+        this.debugReplicaNodeId = debugReplicaNodeId;
+    }
+
+    /**
      * Returns the identifier of the document to retrieve.
      *
      * @return The document id.

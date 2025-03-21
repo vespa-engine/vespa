@@ -2310,6 +2310,7 @@
     "methods" : [
       "public void <init>(com.yahoo.document.DocumentId)",
       "public void <init>(com.yahoo.document.DocumentId, java.lang.String)",
+      "public void <init>(com.yahoo.document.DocumentId, java.lang.String, java.lang.Integer)",
       "public com.yahoo.document.DocumentId getDocumentId()",
       "public void setDocumentId(com.yahoo.document.DocumentId)",
       "public java.lang.String getFieldSet()",
