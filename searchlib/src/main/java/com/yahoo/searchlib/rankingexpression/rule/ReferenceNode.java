@@ -83,7 +83,7 @@ public final class ReferenceNode extends CompositeNode {
             path.addLast(myPath);
 
             String functionName = getName();
-            boolean needSerialization = (getArguments().size() > 0) || context.needSerialization(functionName);
+            boolean needSerialization = (!getArguments().isEmpty()) || context.needSerialization(functionName);
 
             if ( needSerialization ) {
                 ExpressionFunction.Instance instance = function.expand(context, getArguments().expressions(), path);
@@ -107,7 +107,7 @@ public final class ReferenceNode extends CompositeNode {
 
     @Override
     public TensorType type(TypeContext<Reference> context) {
-        TensorType type = null;
+        TensorType type;
         try {
             type = context.getType(reference);
         }
