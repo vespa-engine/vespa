@@ -10,6 +10,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.TensorAddress;
+import com.yahoo.tensor.Tensors;
 import org.junit.Test;
 
 import static org.junit.Assert.assertNotEquals;
@@ -29,26 +30,24 @@ public class HuggingFaceEmbedderTest {
 
     @Test
     public void testBinarization() {
-        TensorType typeOne = TensorType.fromSpec("tensor<int8>(x[1])");
-        TensorType typeTwo = TensorType.fromSpec("tensor<int8>(x[2])");
-        assertPackRight("tensor(x[8]):[0,0,0,0,0,0,0,0]", "tensor<int8>(x[1]):[0]", typeOne);
-        assertPackRight("tensor(x[8]):[1,1,1,1,1,1,1,1]", "tensor<int8>(x[1]):[-1]", typeOne);
-        assertPackRight("tensor(x[16]):[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1]", "tensor<int8>(x[2]):[0, -1]", typeTwo);
+        assertPackRight("tensor(x[8]):[0,0,0,0,0,0,0,0]", "tensor<int8>(x[1]):[0]");
+        assertPackRight("tensor(x[8]):[1,1,1,1,1,1,1,1]", "tensor<int8>(x[1]):[-1]");
+        assertPackRight("tensor(x[16]):[0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1]", "tensor<int8>(x[2]):[0, -1]");
 
-        assertPackRight("tensor(x[8]):[0,1,0,1,0,1,0,1]", "tensor<int8>(x[1]):[85]", typeOne);
-        assertPackRight("tensor(x[8]):[1,0,1,0,1,0,1,0]", "tensor<int8>(x[1]):[-86]", typeOne);
-        assertPackRight("tensor(x[16]):[0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0]", "tensor<int8>(x[2]):[85, -86]", typeTwo);
+        assertPackRight("tensor(x[8]):[0,1,0,1,0,1,0,1]", "tensor<int8>(x[1]):[85]");
+        assertPackRight("tensor(x[8]):[1,0,1,0,1,0,1,0]", "tensor<int8>(x[1]):[-86]");
+        assertPackRight("tensor(x[16]):[0,1,0,1,0,1,0,1,1,0,1,0,1,0,1,0]", "tensor<int8>(x[2]):[85, -86]");
 
-        assertPackRight("tensor(x[8]):[1,1,1,1,0,0,0,0]", "tensor<int8>(x[1]):[-16]", typeOne);
-        assertPackRight("tensor(x[8]):[0,0,0,0,1,1,1,1]", "tensor<int8>(x[1]):[15]", typeOne);
-        assertPackRight("tensor(x[16]):[1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1]", "tensor<int8>(x[2]):[-16, 15]", typeTwo);
+        assertPackRight("tensor(x[8]):[1,1,1,1,0,0,0,0]", "tensor<int8>(x[1]):[-16]");
+        assertPackRight("tensor(x[8]):[0,0,0,0,1,1,1,1]", "tensor<int8>(x[1]):[15]");
+        assertPackRight("tensor(x[16]):[1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1]", "tensor<int8>(x[2]):[-16, 15]");
     }
 
-    private void assertPackRight(String input, String expected, TensorType type) {
+    private void assertPackRight(String input, String expected) {
         Tensor inputTensor = Tensor.from(input);
-        Tensor result = HuggingFaceEmbedder.binarize((IndexedTensor) inputTensor, type);
+        Tensor result = Tensors.packBits(inputTensor);
         assertEquals(expected, result.toString());
-        //Verify that the unpack_bits ranking feature produce compatible output
+        // Verify that the unpack_bits ranking feature produce compatible output
         Tensor unpacked = expandBitTensor(result);
         assertEquals(inputTensor.toString(), unpacked.toString());
     }
@@ -76,7 +75,7 @@ public class HuggingFaceEmbedderTest {
         var modelOuput3 = context.getCachedValue(key);
         assertNotEquals(modelOuput, modelOuput3);
 
-        //context cache is shared
+        // context cache is shared
         var copyContext = context.copy();
         var anotherEmbedderId = "another-hf-embedder";
         copyContext.setEmbedderId(anotherEmbedderId);
@@ -186,6 +185,7 @@ public class HuggingFaceEmbedderTest {
         builder.transformerGpuDevice(-1);
         return new HuggingFaceEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
+
     private static HuggingFaceEmbedder getNormalizedEmbedder() {
         String vocabPath = "src/test/models/onnx/transformer/real_tokenizer.json";
         String modelPath = "src/test/models/onnx/transformer/embedding_model.onnx";
@@ -218,4 +218,5 @@ public class HuggingFaceEmbedderTest {
         context.put("input", new TensorValue(packed));
         return unpacker.evaluate(context).asTensor();
     }
+
 }
