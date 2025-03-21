@@ -130,6 +130,7 @@ public class DocumentRetriever {
         GetDocumentMessage msg = new GetDocumentMessage(new DocumentId(docid), params.fieldSet);
         msg.setPriority(params.priority); // TODO: Remove on Vespa 9
         msg.setRetryEnabled(!params.noRetry);
+        msg.setDebugReplicaNodeId(params.debugReplicaNodeId);
         return msg;
     }
 
