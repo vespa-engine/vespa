@@ -2,6 +2,7 @@
 package com.yahoo.schema;
 
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;

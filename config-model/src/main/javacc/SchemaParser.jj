@@ -32,7 +32,7 @@ import com.yahoo.schema.document.MatchAlgorithm;
 import com.yahoo.schema.document.HnswIndexParams;
 import com.yahoo.schema.document.Sorting;
 import com.yahoo.schema.document.Stemming;
-import com.yahoo.schema.FeatureNames;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.fieldoperation.IndexingOperation;
 import com.yahoo.search.schema.RankProfile.InputType;
 import com.yahoo.searchlib.rankingexpression.FeatureList;
@@ -89,7 +89,7 @@ public class SchemaParser {
      * @param linguistics What to use for tokenizing.
      */
     private IndexingOperation newIndexingOperation(
-            boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders, 
+            boolean multiline, Linguistics linguistics, Map<String, Embedder> embedders,
             Map<String, FieldGenerator> generators) throws ParseException {
         SimpleCharStream input = (SimpleCharStream)token_source.input_stream;
         if (token.next != null) {

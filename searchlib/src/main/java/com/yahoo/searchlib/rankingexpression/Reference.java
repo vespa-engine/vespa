@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -21,8 +22,6 @@ import java.util.regex.Pattern;
  * @author bratseth
  */
 public class Reference extends Name implements Comparable<Reference> {
-
-    private static final Set<String> featureNames = Set.of("attribute", "query", "constant");
 
     private final int hashCode;
 
@@ -49,11 +48,11 @@ public class Reference extends Name implements Comparable<Reference> {
         Objects.requireNonNull(name, "name cannot be null");
         Objects.requireNonNull(arguments, "arguments cannot be null");
         this.arguments = arguments;
-        if (featureNames.contains(name))
-            arguments.setAreFeatureArguments(true);
         this.output = output;
         this.hashCode = Objects.hash(name(), arguments, output, isIdentifier);
         this.isIdentifier = isIdentifier;
+        if (FeatureNames.isSimpleFeature(this))
+            arguments.setAreFeatureArguments(true);
     }
 
     public Arguments arguments() { return arguments; }

@@ -2,6 +2,7 @@
 package com.yahoo.schema;
 
 import com.yahoo.config.model.api.OnnxModelOptions;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.searchlib.rankingexpression.Reference;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.model.ml.OnnxModelInfo;

@@ -6,7 +6,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.schema.FeatureNames;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.LargeRankingExpressions;
 import com.yahoo.schema.RankingExpressionBody;
