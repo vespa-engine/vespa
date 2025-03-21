@@ -37,13 +37,21 @@ LowercaseConverter::onConvert(const ConstBufferRef & src) const
     return {_buffer.data(), _buffer.size()};
 }
 
-SortInfo::SortInfo(std::string_view field, bool ascending, BlobConverter::SP converter) noexcept
+FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending, BlobConverter::SP converter) noexcept
     : _field(field), _ascending(ascending), _converter(std::move(converter))
 { }
-SortInfo::~SortInfo() = default;
 
-SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory) :
-    _spec(spec)
+FieldSortSpec::~FieldSortSpec() = default;
+
+SortSpec::SortSpec()
+    : _spec(),
+      _field_sort_specs()
+{
+}
+
+SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory)
+    : _spec(spec),
+      _field_sort_specs()
 {
     for (const char *pt(spec.c_str()), *mt(spec.c_str() + spec.size()); pt < mt;) {
         for (; pt < mt && *pt != '+' && *pt != '-'; pt++);
@@ -73,13 +81,13 @@ SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory
                             for(; (p < e) && (*p != ')'); p++);
                             if (*p == ')') {
                                 std::string strength(strengthName, p - strengthName);
-                                emplace_back(attr, ascending, ucaFactory.create(locale, strength));
+                                _field_sort_specs.emplace_back(attr, ascending, ucaFactory.create(locale, strength));
                             } else {
                                 throw std::runtime_error(make_string("Missing ')' at %s attr=%s locale=%s strength=%s", p, attr.c_str(), localeName, strengthName));
                             }
                         } else if (*p == ')') {
                             std::string locale(localeName, p-localeName);
-                            emplace_back(attr, ascending, ucaFactory.create(locale, ""));
+                            _field_sort_specs.emplace_back(attr, ascending, ucaFactory.create(locale, ""));
                         } else {
                             throw std::runtime_error(make_string("Missing ')' or ',' at %s attr=%s locale=%s", p, attr.c_str(), localeName));
                         }
@@ -92,7 +100,7 @@ SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory
                     for(; (p < e) && (*p != ')'); p++);
                     if (*p == ')') {
                         std::string attr(attrName, p-attrName);
-                        emplace_back(attr, ascending, std::make_shared<LowercaseConverter>());
+                        _field_sort_specs.emplace_back(attr, ascending, std::make_shared<LowercaseConverter>());
                     } else {
                         throw std::runtime_error("Missing ')'");
                     }
@@ -100,7 +108,7 @@ SortSpec::SortSpec(const std::string & spec, const ConverterFactory & ucaFactory
                     throw std::runtime_error("Unknown func " + std::string(func, p-func));
                 }
             } else {
-                emplace_back(funcSpec, ascending, std::shared_ptr<search::common::BlobConverter>());
+                _field_sort_specs.emplace_back(funcSpec, ascending, std::shared_ptr<search::common::BlobConverter>());
             }
         }
     }

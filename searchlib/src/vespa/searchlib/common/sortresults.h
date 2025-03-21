@@ -104,7 +104,7 @@ private:
     BinarySortData           _binarySortData;
     SortDataArray            _sortDataArray;
 
-    bool Add(search::attribute::IAttributeContext & vecMan, const search::common::SortInfo & sInfo);
+    bool Add(search::attribute::IAttributeContext & vecMan, const search::common::FieldSortSpec & field_sort_spec);
     void initSortData(const search::RankedHit *a, uint32_t n);
     int initSortData(const VectorRef & vec, const search::RankedHit & hit, size_t offset);
 

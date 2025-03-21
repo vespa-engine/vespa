@@ -13,7 +13,7 @@ LOG_SETUP(".search.attribute.sortresults");
 
 using search::RankedHit;
 using search::common::SortSpec;
-using search::common::SortInfo;
+using search::common::FieldSortSpec;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using vespalib::alloc::Alloc;
@@ -162,36 +162,36 @@ FastS_DefaultResultSorter FastS_DefaultResultSorter::_instance;
 //-----------------------------------------------------------------------------
 
 bool
-FastS_SortSpec::Add(IAttributeContext & vecMan, const SortInfo & sInfo)
+FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort_spec)
 {
-    if (sInfo._field.empty())
+    if (field_sort_spec._field.empty())
         return false;
 
     uint32_t          type   = ASC_VECTOR;
     const IAttributeVector * vector(nullptr);
 
-    if ((sInfo._field.size() == 6) && (sInfo._field == "[rank]")) {
-        type = (sInfo._ascending) ? ASC_RANK : DESC_RANK;
-    } else if ((sInfo._field.size() == 7) && (sInfo._field == "[docid]")) {
-        type = (sInfo._ascending) ? ASC_DOCID : DESC_DOCID;
+    if ((field_sort_spec._field.size() == 6) && (field_sort_spec._field == "[rank]")) {
+        type = (field_sort_spec._ascending) ? ASC_RANK : DESC_RANK;
+    } else if ((field_sort_spec._field.size() == 7) && (field_sort_spec._field == "[docid]")) {
+        type = (field_sort_spec._ascending) ? ASC_DOCID : DESC_DOCID;
         vector = vecMan.getAttribute(_documentmetastore);
     } else {
-        type = (sInfo._ascending) ? ASC_VECTOR : DESC_VECTOR;
-        vector = vecMan.getAttribute(sInfo._field);
+        type = (field_sort_spec._ascending) ? ASC_VECTOR : DESC_VECTOR;
+        vector = vecMan.getAttribute(field_sort_spec._field);
         if ( !vector) {
-            Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", sInfo._field.c_str());
+            Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", field_sort_spec._field.c_str());
             return false;
         }
         if (!vector->is_sortable()) {
-            Issue::report("sort spec: Attribute vector '%s' is not sortable. Skipped in sorting", sInfo._field.c_str());
+            Issue::report("sort spec: Attribute vector '%s' is not sortable. Skipped in sorting", field_sort_spec._field.c_str());
             return false;
         }
     }
 
     LOG(spam, "SortSpec: adding vector (%s)'%s'",
-        (sInfo._ascending) ? "+" : "-", sInfo._field.c_str());
+        (field_sort_spec._ascending) ? "+" : "-", field_sort_spec._field.c_str());
 
-    _vectors.push_back(VectorRef(type, vector, sInfo._converter.get()));
+    _vectors.push_back(VectorRef(type, vector, field_sort_spec._converter.get()));
 
     return true;
 }

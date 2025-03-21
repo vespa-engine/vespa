@@ -999,33 +999,33 @@ void
 SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & sortList)
 {
     if ( ! sortList.empty() ) {
-        for (const search::common::SortInfo & sInfo : sortList) {
-            vsm::FieldIdT fid = _fieldSearchSpecMap.nameIdMap().fieldNo(sInfo._field);
+        for (const search::common::FieldSortSpec & field_sort_spec : sortList) {
+            vsm::FieldIdT fid = _fieldSearchSpecMap.nameIdMap().fieldNo(field_sort_spec._field);
             if ( fid != StringFieldIdTMap::npos ) {
-                AttributeGuard::UP attr(_attrMan.getAttribute(sInfo._field));
+                AttributeGuard::UP attr(_attrMan.getAttribute(field_sort_spec._field));
                 if (attr->valid()) {
                     if (attr->get()->is_sortable()) {
                         size_t index(_attributeFields.size());
                         for (size_t j(0); j < index; j++) {
                             if ((_attributeFields[j]._field == fid) && notContained(_sortList, j)) {
                                 index = j;
-                                _attributeFields[index]._ascending = sInfo._ascending;
-                                _attributeFields[index]._converter = sInfo._converter.get();
+                                _attributeFields[index]._ascending = field_sort_spec._ascending;
+                                _attributeFields[index]._converter = field_sort_spec._converter.get();
                             }
                         }
                         if (index == _attributeFields.size()) {
-                            _attributeFields.emplace_back(fid, std::move(attr), sInfo._ascending,
-                                                          sInfo._converter.get());
+                            _attributeFields.emplace_back(fid, std::move(attr), field_sort_spec._ascending,
+                                                          field_sort_spec._converter.get());
                         }
                         _sortList.push_back(index);
                     } else {
-                        Issue::report("Attribute '%s' is not sortable", sInfo._field.c_str());
+                        Issue::report("Attribute '%s' is not sortable", field_sort_spec._field.c_str());
                     }
                 } else {
-                    Issue::report("Attribute '%s' is not valid", sInfo._field.c_str());
+                    Issue::report("Attribute '%s' is not valid", field_sort_spec._field.c_str());
                 }
             } else {
-                Issue::report("Cannot locate field '%s' in field name registry", sInfo._field.c_str());
+                Issue::report("Cannot locate field '%s' in field name registry", field_sort_spec._field.c_str());
             }
         }
     } else {
