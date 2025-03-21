@@ -14,6 +14,7 @@ public class GetDocumentMessage extends DocumentMessage {
     final static String DEFAULT_FIELD_SET = DocumentOnly.NAME;
     private DocumentId documentId = null;
     private String fieldSet = DEFAULT_FIELD_SET;
+    private Integer debugReplicaNodeId = null;
 
     /**
      * Constructs a new document get message.
@@ -58,6 +59,23 @@ public class GetDocumentMessage extends DocumentMessage {
 
     public String getFieldSet() {
         return fieldSet;
+    }
+
+    /**
+     * Sets the node ID of the replica to read from, for debugging purposes.
+     * If non-null, the document will be fetched from the specified replica.
+     *
+     * @param debugReplicaNodeId the node ID of the replica to get the document from
+     */
+    public void setDebugReplicaNodeId(Integer debugReplicaNodeId) {
+        this.debugReplicaNodeId = debugReplicaNodeId;
+    }
+
+    /**
+     * Returns non-null if the document should be get from a specific replica.
+     */
+    public Integer getDebugReplicaNodeId() {
+        return debugReplicaNodeId;
     }
 
     @Override
