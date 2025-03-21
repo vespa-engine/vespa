@@ -27,7 +27,7 @@ message FieldSet {
 }
 
 message DebugGetFromReplica {
-    uint64 node_id = 1;
+    uint32 node_id = 1;
 }
 
 message GlobalId {
