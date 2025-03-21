@@ -1,6 +1,7 @@
 package tracedoctor
 
 import (
+	"fmt"
 	"sort"
 )
 
@@ -53,11 +54,9 @@ func (tp *topNPerf) topN(n int) []topNPerfEntry {
 
 func (tp *topNPerf) render(out *output) {
 	sortedEntries := tp.topN(len(tp.entries))
-	out.fmt("+-----------+-----------+\n")
-	out.fmt("|     count |   self_ms |\n")
-	out.fmt("+-----------+-----------+\n")
+	tab := newTable("count", "self_ms", "component")
 	for _, entry := range sortedEntries {
-		out.fmt("|%10d |%10.3f | %s\n", entry.count, entry.selfTimeMs, entry.name)
+		tab.addRow(fmt.Sprintf("%d", entry.count), fmt.Sprintf("%.3f", entry.selfTimeMs), entry.name)
 	}
-	out.fmt("+-----------+-----------+\n")
+	tab.render(out)
 }
