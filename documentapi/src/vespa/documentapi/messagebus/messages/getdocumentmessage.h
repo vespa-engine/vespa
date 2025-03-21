@@ -8,8 +8,9 @@ namespace documentapi {
 
 class GetDocumentMessage : public DocumentMessage {
 private:
-    document::DocumentId _documentId; // The identifier of the document to retrieve.
-    string               _fieldSet; // Comma-separated list of fields to return
+    document::DocumentId    _documentId; // The identifier of the document to retrieve.
+    string                  _fieldSet; // Comma-separated list of fields to return
+    std::optional<uint32_t> _debugReplicaNodeId;
 
 protected:
     DocumentReply::UP doCreateReply() const override;
@@ -41,6 +42,8 @@ public:
      */
     GetDocumentMessage(const document::DocumentId &documentId, std::string_view fieldSet);
 
+    GetDocumentMessage(const document::DocumentId &documentId, std::string_view fieldSet, std::optional<uint32_t> debugReplicaNodeId);
+
     ~GetDocumentMessage();
 
     /**
@@ -61,6 +64,8 @@ public:
      * Returns the fields to be retrieved by the get.
      */
     const string& getFieldSet() const { return _fieldSet; }
+
+    std::optional<uint32_t> getDebugReplicaNodeId() const { return _debugReplicaNodeId; }
 
     uint32_t getType() const override;
     string toString() const override { return "getdocumentmessage"; }
