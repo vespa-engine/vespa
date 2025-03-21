@@ -2,6 +2,7 @@
 package com.yahoo.schema;
 
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;
@@ -562,6 +563,40 @@ public class SchemaTestCase {
         derived.getIndexingScript().getConfig(ilConfigBuilder);
         assertEquals("clear_state | guard { input myString | { \"en\" | set_language; tokenize normalize stem:\"BEST\" | index myString | summary myString; }; }",
                      ilConfigBuilder.build().ilscript().get(0).content(0));
+    }
+
+    /** Should not cause a cycle detection false positive by mistaking the attribute argument for a function call. */
+    @Test
+    void testFieldAndFunctionWithSameName() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field numerical_1 type double {
+                            indexing: attribute
+                        }
+                
+                    }
+                
+                    rank-profile my_profile inherits default {
+
+                        function numerical_1() {
+                            expression: attribute(numerical_1)
+                        }
+
+                        first-phase {
+                            expression: 1.0
+                        }
+                    }
+
+                }""";
+
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
     }
 
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {

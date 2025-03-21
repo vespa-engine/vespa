@@ -2,6 +2,7 @@
 package com.yahoo.schema;
 
 import com.google.common.collect.ImmutableMap;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.expressiontransforms.OnnxModelTransformer;
 import com.yahoo.schema.expressiontransforms.TokenTransformer;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;

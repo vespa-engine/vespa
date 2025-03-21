@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.schema;
+package com.yahoo.searchlib.ranking.features;
 
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.api.Test;
+import org.junit.Test;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests rank feature names.
@@ -17,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class FeatureNamesTestCase {
 
     @Test
-    void testArgument() {
+    public void testArgument() {
         assertFalse(FeatureNames.argumentOf("foo(bar)").isPresent());
         assertFalse(FeatureNames.argumentOf("foo(bar.baz)").isPresent());
         assertEquals("bar", FeatureNames.argumentOf("query(bar)").get());
@@ -29,30 +30,30 @@ public class FeatureNamesTestCase {
     }
 
     @Test
-    void testConstantFeature() {
+    public void testConstantFeature() {
         assertEquals("constant(foo)",
-                FeatureNames.asConstantFeature("foo").toString());
+                     FeatureNames.asConstantFeature("foo").toString());
     }
 
     @Test
-    void testAttributeFeature() {
+    public void testAttributeFeature() {
         assertEquals("attribute(foo)",
-                FeatureNames.asAttributeFeature("foo").toString());
+                     FeatureNames.asAttributeFeature("foo").toString());
     }
 
     @Test
-    void testQueryFeature() {
+    public void testQueryFeature() {
         assertEquals("query(\"foo.bar\")",
-                FeatureNames.asQueryFeature("foo.bar").toString());
+                     FeatureNames.asQueryFeature("foo.bar").toString());
     }
 
     @Test
-    void testLegalFeatureNames() {
-        assertTrue(FeatureNames.notNeedQuotes("_"));
-        assertFalse(FeatureNames.notNeedQuotes("-"));
-        assertTrue(FeatureNames.notNeedQuotes("_-"));
-        assertTrue(FeatureNames.notNeedQuotes("0_-azAZxy98-_"));
-        assertFalse(FeatureNames.notNeedQuotes("0_-azAZxy98-_+"));
+    public void testLegalFeatureNames() {
+        assertFalse(FeatureNames.needsQuoting("_"));
+        assertTrue(FeatureNames.needsQuoting("-"));
+        assertFalse(FeatureNames.needsQuoting("_-"));
+        assertFalse(FeatureNames.needsQuoting("0_-azAZxy98-_"));
+        assertTrue(FeatureNames.needsQuoting("0_-azAZxy98-_+"));
     }
 
     /*
@@ -61,19 +62,18 @@ public class FeatureNamesTestCase {
      * 'Identifier handcoded validity check took 4301ms
      *  Identifier regexp validity check took 22609ms'
      */
-    @Test
-    @Disabled
-    void benchMarkPatternMatching() {
+    // @Test
+    public void benchMarkPatternMatching() {
         Pattern identifierRegexp = Pattern.compile("[A-Za-z0-9_][A-Za-z0-9_-]*");
         String[] strings = new String[1000];
         for (int i = 0; i < strings.length; i++) {
             strings[i] = i + "-legal_string" + i;
         }
 
-        countValid(strings, 1000, "handcoded warmup", FeatureNames::notNeedQuotes);
+        countValid(strings, 1000, "handcoded warmup", FeatureNames::needsQuoting);
         countValid(strings, 1000, "regexp warmup", (s) -> identifierRegexp.matcher(s).matches());
 
-        countValid(strings, 100000, "handcoded", FeatureNames::notNeedQuotes);
+        countValid(strings, 100000, "handcoded", FeatureNames::needsQuoting);
         countValid(strings, 100000, "regexp", (s) -> identifierRegexp.matcher(s).matches());
     }
 
@@ -82,11 +82,12 @@ public class FeatureNamesTestCase {
         int validCount = 0;
         for (int i = 0; i < numReps; i++) {
             for (String s : strings) {
-                if (func.apply(s)) validCount++;
+                if ( ! func.apply(s)) validCount++;
             }
         }
         long end = System.nanoTime();
         assertEquals(strings.length * numReps, validCount);
         System.out.println("Identifier " + text + " validity check took " + (end - start)/1000000 + "ms");
     }
+
 }

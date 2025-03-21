@@ -55,6 +55,12 @@ public final class Arguments implements Serializable {
         return expressions.get(i).evaluate(context);
     }
 
+    public void setAreFeatureArguments(boolean featureArguments) {
+        for (var argument : expressions) {
+            if (argument instanceof ReferenceNode simple)
+                simple.setIsFeatureArgument(true);
+        }
+    }
     public boolean isEmpty() { return expressions.isEmpty(); }
 
     @Override

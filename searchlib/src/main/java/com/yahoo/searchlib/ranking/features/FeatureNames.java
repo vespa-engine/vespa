@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.schema;
+package com.yahoo.searchlib.ranking.features;
 
 import com.yahoo.searchlib.rankingexpression.Reference;
 
@@ -65,26 +65,27 @@ public class FeatureNames {
         return Optional.of(reference.get().arguments().expressions().get(0).toString());
     }
 
-    private static String quoteIfNecessary(String s) {
-        if (notNeedQuotes(s))
-            return s;
-        else
-            return "\"" + s + "\"";
+    static boolean needsQuoting(String s) {
+        // Faster version of the regexp [A-Za-z0-9_][A-Za-z0-9_-]*
+        if (s.isEmpty()) return true;
+        if ( ! isValidFirst(s.charAt(0))) return true;
+        for (int i = 1; i < s.length(); i++) {
+            if (!isValidAny(s.charAt(i))) return true;
+        }
+        return false;
     }
 
-    static boolean notNeedQuotes(String s) {
-        // Faster version of the regexp [A-Za-z0-9_][A-Za-z0-9_-]*
-        if (s.isEmpty()) return false;
-        if ( ! isValidFirst(s.charAt(0))) return false;
-        for (int i = 1; i < s.length(); i++) {
-            if (!isValidAny(s.charAt(i))) return false;
-        }
-        return true;
+    private static String quoteIfNecessary(String s) {
+        if (needsQuoting(s))
+            return "\"" + s + "\"";
+        return s;
     }
+
     private static boolean isValidFirst(char c) {
         // [A-Za-z0-9_]
         return (c == '_') || ((c >= 'a') && (c <= 'z')) || ((c >= 'A') && (c <= 'Z')) || ((c >= '0') && (c <= '9'));
     }
+
     private static boolean isValidAny(char c) {
         // [A-Za-z0-9_-]*
         return c == '-' || isValidFirst(c);
