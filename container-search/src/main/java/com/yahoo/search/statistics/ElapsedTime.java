@@ -136,9 +136,10 @@ public class ElapsedTime {
     }
 
     /**
-     * Time stamp of start of the first event registered.
+     * Time stamp of start of the first event registered, or 0 if none are regiustered.
      */
     public long first() {
+        if (tracks.isEmpty()) return 0L;
         long first = Long.MAX_VALUE;
         for (TimeTracker track : tracks) {
             first = Math.min(first, track.first());
