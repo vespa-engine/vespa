@@ -4,13 +4,13 @@ import java.io.IOException;
 
 public interface DataDisclosure {
 
-    void writeNull();
-    void writeBool(boolean b);
-    void writeLong(long value);
+    void writeNull() throws IOException;
+    void writeBool(boolean b) throws IOException;
+    void writeLong(long value) throws IOException;
 
-    void writeDouble(double value);
+    void writeDouble(double value) throws IOException;
 
-    void writeString(byte[] value);
+    void writeString(byte[] value) throws IOException;
 
     void startArray() throws IOException;
     void endArray() throws IOException;

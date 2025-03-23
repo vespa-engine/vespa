@@ -844,48 +844,28 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
             }
 
             @Override
-            public void writeNull() {
-                try {
-                    generator.writeNull();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            public void writeNull() throws IOException {
+                generator.writeNull();
             }
 
             @Override
-            public void writeBool(boolean b) {
-                try {
-                    generator.writeBoolean(b);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            public void writeBool(boolean b) throws IOException {
+                generator.writeBoolean(b);
             }
 
             @Override
-            public void writeLong(long value) {
-                try {
-                    generator.writeNumber(value);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            public void writeLong(long value) throws IOException {
+                generator.writeNumber(value);
             }
 
             @Override
-            public void writeDouble(double value) {
-                try {
-                    generator.writeNumber(value);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            public void writeDouble(double value) throws IOException {
+                generator.writeNumber(value);
             }
 
             @Override
-            public void writeString(byte[] value) {
-                try {
-                    generator.writeUTF8String(value, 0, value.length);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+            public void writeString(byte[] value) throws IOException {
+                generator.writeUTF8String(value, 0, value.length);
             }
 
             @Override
