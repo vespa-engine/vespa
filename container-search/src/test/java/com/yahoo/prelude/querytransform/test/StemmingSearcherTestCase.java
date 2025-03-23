@@ -22,6 +22,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -31,13 +32,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class StemmingSearcherTestCase {
 
     private static final Linguistics linguistics = new SimpleLinguistics();
-    private final IndexFacts indexFacts = IndexFactsFactory.newInstance("dir:src/test/java/com/yahoo/prelude/" +
-                                                                        "querytransform/test/");
+
+    private final IndexFacts indexFacts =
+            IndexFactsFactory.newInstance("dir:src/test/java/com/yahoo/prelude/querytransform/test/");
 
     @Test
     void testStemOnlySomeTerms() {
-        assertStemmed("WEAKAND(100) hole in cvs and subversion nostem:Found", "/search?query=Holes in CVS and Subversion nostem:Found"
-                     );
+        assertStemmed("WEAKAND(100) hole in cvs and subversion nostem:Found",
+                      "/search?query=Holes in CVS and Subversion nostem:Found");
+    }
+
+    @Test
+    void testStemmingCanPreserveCase() {
+        assertStemmed("WEAKAND(100) cased:Holes cased:hole cased:CVS",
+                      "/search?query=cased:Holes cased:holes cased:CVS");
     }
 
     @Test
@@ -93,10 +101,8 @@ public class StemmingSearcherTestCase {
 
     @Test
     void testNounStemming() {
-        assertStemmed("WEAKAND(100) noun:tower noun:tower noun:tow", "/search?query=noun:towers noun:tower noun:tow"
-                     );
-        assertStemmed("WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow", "/search?query=notnoun:towers notnoun:tower notnoun:tow"
-                     );
+        assertStemmed("WEAKAND(100) noun:tower noun:tower noun:tow", "/search?query=noun:towers noun:tower noun:tow");
+        assertStemmed("WEAKAND(100) notnoun:tower notnoun:tower notnoun:tow", "/search?query=notnoun:towers notnoun:tower notnoun:tow");
     }
 
     @SuppressWarnings("deprecation")
@@ -121,8 +127,8 @@ public class StemmingSearcherTestCase {
         scratch.setStemmed(false);
         q.getModel().getQueryTree().setRoot(scratch);
         executeStemming(q);
-        assertTrue(q.getModel().getQueryTree().getRoot() instanceof WordAlternativesItem,
-                "Expected a set of word alternatives as root.");
+        assertInstanceOf(WordAlternativesItem.class, q.getModel().getQueryTree().getRoot(),
+                         "Expected a set of word alternatives as root.");
         WordAlternativesItem w = (WordAlternativesItem) q.getModel().getQueryTree().getRoot();
         boolean foundExpectedBaseForm = false;
         for (WordAlternativesItem.Alternative a : w.getAlternatives()) {
@@ -152,7 +158,7 @@ public class StemmingSearcherTestCase {
     }
 
     @Test
-    void testDocumentFrequnecyIsPropagated() {
+    void testDocumentFrequencyIsPropagated() {
         var builder = new Query.Builder();
         builder.setRequest(QueryTestCase.httpEncode("/search?query=trees"));
         var query = builder.build();
@@ -187,8 +193,7 @@ public class StemmingSearcherTestCase {
     }
 
     private void executeStemming(Query query) {
-        new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)),
-                      newExecutionContext()).search(query);
+        new Execution(new Chain<Searcher>(new StemmingSearcher(linguistics)), newExecutionContext()).search(query);
     }
 
     private void assertStemmed(String expectedQueryTree, String queryString) {

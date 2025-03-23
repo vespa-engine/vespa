@@ -43,6 +43,13 @@ public class SimpleTokenizerTestCase extends AbstractTokenizerTestCase {
     }
 
     @Test
+    public void testTokenizingPreserveCase() {
+        TokenizerTester tester = new TokenizerTester().setStemMode(StemMode.ALL).setLowercase(false);
+        tester.assertTokens("Some MIXed case inPut",
+                            "Some", " ", "MIXed", " ", "case", " ", "inPut");
+    }
+
+    @Test
     public void testTokenizeEmojis() {
         TokenizerTester tester = new TokenizerTester().setStemMode(StemMode.ALL);
 
@@ -70,4 +77,3 @@ public class SimpleTokenizerTestCase extends AbstractTokenizerTestCase {
                 TokenScript.DEVANAGARI);
     }
 }
-

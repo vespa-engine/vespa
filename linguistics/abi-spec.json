@@ -506,6 +506,26 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.language.process.LinguisticsParameters" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean, boolean)",
+      "public final java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public com.yahoo.language.Language language()",
+      "public com.yahoo.language.process.StemMode stemMode()",
+      "public boolean removeAccents()",
+      "public boolean lowercase()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.language.process.Normalizer" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -661,7 +681,8 @@
     ],
     "methods" : [
       "public java.util.List stem(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)",
-      "public abstract java.util.List stem(java.lang.String, com.yahoo.language.process.StemMode, com.yahoo.language.Language)"
+      "public java.util.List stem(java.lang.String, com.yahoo.language.process.StemMode, com.yahoo.language.Language)",
+      "public java.util.List stem(java.lang.String, com.yahoo.language.process.LinguisticsParameters)"
     ],
     "fields" : [ ]
   },
@@ -675,8 +696,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.language.process.Tokenizer)",
-      "public java.util.List stem(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)",
-      "public java.util.List stem(java.lang.String, com.yahoo.language.process.StemMode, com.yahoo.language.Language)"
+      "public java.util.List stem(java.lang.String, com.yahoo.language.process.LinguisticsParameters)"
     ],
     "fields" : [ ]
   },
@@ -817,7 +837,8 @@
       "abstract"
     ],
     "methods" : [
-      "public abstract java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)"
+      "public java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.Language, com.yahoo.language.process.StemMode, boolean)",
+      "public java.lang.Iterable tokenize(java.lang.String, com.yahoo.language.process.LinguisticsParameters)"
     ],
     "fields" : [ ]
   },

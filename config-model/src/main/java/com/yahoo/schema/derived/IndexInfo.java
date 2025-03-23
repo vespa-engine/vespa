@@ -212,11 +212,11 @@ public class IndexInfo extends Derived {
     }
 
     private static boolean needLowerCase(ImmutableSDField field) {
-        return ( field.doesIndexing() && field.getMatching().getCase() != Case.CASED)
-               || field.doesLowerCasing()
-               || ((field.doesAttributing() || (field.getAttribute() != null))
-                    && isAnyChildString(field.getDataType())
-                    && field.getMatching().getCase().equals(Case.UNCASED));
+        return ( field.doesIndexing() && field.getMatching().getCase() != Case.CASED) ||
+               field.doesLowerCasing() ||
+               ((field.doesAttributing() || (field.getAttribute() != null)) &&
+                isAnyChildString(field.getDataType())
+                && field.getMatching().getCase().equals(Case.UNCASED));
     }
 
     static String stemCmd(ImmutableSDField field, Schema schema) {

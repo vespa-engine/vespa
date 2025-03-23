@@ -63,9 +63,36 @@ public class TokenizeTestCase {
         ctx.setCurrentValue(new StringFieldValue("foo"));
         new TokenizeExpression(new SimpleLinguistics(), new AnnotatorConfig()).execute(ctx);
 
-        FieldValue val = ctx.getCurrentValue();
-        assertTrue(val instanceof StringFieldValue);
-        assertNotNull(((StringFieldValue)val).getSpanTree(SpanTrees.LINGUISTICS));
+        FieldValue value = ctx.getCurrentValue();
+        assertTrue(value instanceof StringFieldValue);
+        assertNotNull(((StringFieldValue)value).getSpanTree(SpanTrees.LINGUISTICS));
+        assertEquals("foo", ((StringFieldValue)value).getSpanTree(SpanTrees.LINGUISTICS).getStringFieldValue().getString());
+        assertEquals(3, ((StringFieldValue)value).getSpanTree(SpanTrees.LINGUISTICS).spanList().childIterator().next().getLength());
+    }
+
+    @Test
+    public void requireThatCasingCanBePreserved() {
+        // Lowercasing (default)
+        {
+            ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
+            context.setCurrentValue(new StringFieldValue("mIXed"));
+            new TokenizeExpression(new SimpleLinguistics(), new AnnotatorConfig()).execute(context);
+            StringFieldValue value = (StringFieldValue)context.getCurrentValue();
+            assertNotNull(value.getSpanTree(SpanTrees.LINGUISTICS));
+            assertEquals("mIXed", value.getSpanTree(SpanTrees.LINGUISTICS).getStringFieldValue().getString());
+            assertEquals("mixed", value.getSpanTree(SpanTrees.LINGUISTICS).iterator().next().getFieldValue().getWrappedValue());
+        }
+
+        // Preserve casing
+        {
+            ExecutionContext context = new ExecutionContext(new SimpleTestAdapter());
+            context.setCurrentValue(new StringFieldValue("mIXed"));
+            new TokenizeExpression(new SimpleLinguistics(), new AnnotatorConfig().setLowercase(false)).execute(context);
+            StringFieldValue value = (StringFieldValue)context.getCurrentValue();
+            assertNotNull(value.getSpanTree(SpanTrees.LINGUISTICS));
+            assertEquals("mIXed", value.getSpanTree(SpanTrees.LINGUISTICS).getStringFieldValue().getString());
+            assertNull(value.getSpanTree(SpanTrees.LINGUISTICS).iterator().next().getFieldValue());
+        }
     }
 
     @Test

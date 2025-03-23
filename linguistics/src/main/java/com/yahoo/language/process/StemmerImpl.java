@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.process;
 
-import com.yahoo.language.Language;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,17 +16,11 @@ public class StemmerImpl implements Stemmer {
     }
 
     @Override
-    public List<StemList> stem(String input, Language language, StemMode stemMode, boolean removeAccents) {
+    public List<StemList> stem(String input, LinguisticsParameters parameters) {
         List<StemList> stems = new ArrayList<>();
-        for (Token token : tokenizer.tokenize(input, language, stemMode, removeAccents)) {
+        for (Token token : tokenizer.tokenize(input, parameters))
             findStems(token, stems);
-        }
         return stems;
-    }
-
-    @Override
-    public List<StemList> stem(String input, StemMode stemMode, Language language) {
-        return stem(input, language, stemMode, false);
     }
 
     private void findStems(Token token, List<StemList> out) {

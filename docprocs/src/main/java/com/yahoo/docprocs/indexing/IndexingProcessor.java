@@ -61,14 +61,12 @@ public class IndexingProcessor extends DocumentProcessor {
                              Linguistics linguistics,
                              ComponentRegistry<Embedder> embedders,
                              ComponentRegistry<FieldGenerator> generators) {
-        this(
-                documentTypeManager, 
-                new ScriptManager(
-                        documentTypeManager, 
-                        ilscriptsConfig, 
-                        linguistics, 
-                        toMap(embedders, DefaultEmbedderProvider.class), 
-                        toMap(generators, DefaultGeneratorProvider.class)
+        this(documentTypeManager,
+             new ScriptManager(documentTypeManager,
+                               ilscriptsConfig,
+                               linguistics,
+                               toMap(embedders, DefaultEmbedderProvider.class),
+                               toMap(generators, DefaultGeneratorProvider.class)
                 )
         );
     }
