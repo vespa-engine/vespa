@@ -383,13 +383,14 @@ public class CborRendererTestCase {
         Result result1 = new Result(new Query("/?presentation.format.tensors=" + format));
         result1.hits().add(h);
         result1.setTotalHitCount(1L);
-        assertEqualJson(expected, render(result1));
+
+        assertEqualJsonCborContent(expected, renderB(result1));
 
         // Alias
         Result result2 = new Result(new Query("/?format.tensors=" + format));
         result2.hits().add(h);
         result2.setTotalHitCount(1L);
-        assertEqualJson(expected, render(result2));
+        assertEqualJsonCborContent(expected, renderB(result2));
 
         summaryFeatures = new FeatureData(
                 Map.of("tensor_standard", mmTensor(),
@@ -400,7 +401,7 @@ public class CborRendererTestCase {
         Result result3 = new Result(new Query("/?presentation.format.tensors=" + format));
         result3.hits().add(h);
         result3.setTotalHitCount(1L);
-        assertEqualJson(expected, render(result3));
+        assertEqualJsonCborContent(expected, renderB(result3));
     }
 
     @Test

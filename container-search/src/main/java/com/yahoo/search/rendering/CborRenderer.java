@@ -45,7 +45,8 @@ import com.yahoo.search.result.HitGroup;
 import com.yahoo.search.result.NanNumber;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.serialization.JsonFormat;
+import com.yahoo.tensor.serialization.CborFormat;
+import com.yahoo.tensor.serialization.DataDisclosure;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -128,7 +129,7 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
         volatile boolean jsonWsets = true;
         volatile boolean jsonMapsAll = true;
         volatile boolean jsonWsetsAll = false;
-        volatile JsonFormat.EncodeOptions tensorOptions;
+        volatile CborFormat.EncodeOptions tensorOptions;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
             this.debugRendering = false;
@@ -136,7 +137,7 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
             this.jsonWsets = true;
             this.jsonMapsAll = true;
             this.jsonWsetsAll = true;
-            this.tensorOptions = new JsonFormat.EncodeOptions(true, false, false);
+            this.tensorOptions = new CborFormat.EncodeOptions(true, false, false);
         }
         void getSettings(Query q) {
             if (q == null) {
@@ -150,7 +151,7 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
             // we may need more fine tuning, but for now use the same query parameters here:
             this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, true);
-            this.tensorOptions = new JsonFormat.EncodeOptions(
+            this.tensorOptions = new CborFormat.EncodeOptions(
                     q.getPresentation().getTensorShortForm(),
                     q.getPresentation().getTensorDirectValues(),
                     q.getPresentation().getTensorHexDense());
@@ -554,11 +555,11 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
 
         /** Invoke this from your constructor when sub-classing {@link FieldConsumer} */
         protected FieldConsumer(boolean debugRendering, boolean tensorShortForm, boolean jsonMaps) {
-            this(null, debugRendering, new JsonFormat.EncodeOptions(tensorShortForm, false, false), jsonMaps);
+            this(null, debugRendering, new CborFormat.EncodeOptions(tensorShortForm, false, false), jsonMaps);
         }
 
         private FieldConsumer(JsonGenerator generator, boolean debugRendering,
-                              JsonFormat.EncodeOptions tensorOptions,
+                              CborFormat.EncodeOptions tensorOptions,
                               boolean jsonMaps) {
             this.generator = generator;
             this.settings = new FieldConsumerSettings();
@@ -786,7 +787,18 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
             } else if (field instanceof Tensor t) {
                 renderTensor(Optional.of(t));
             } else if (field instanceof FeatureData featureData) {
-                generator().writeRawValue(featureData.toJson(settings.tensorOptions));
+                generator().writeStartObject();
+                for (String featureName : featureData.featureNames()) {
+                    generator().writeFieldName(featureName);
+                    Tensor tensor = featureData.getTensor(featureName);
+                    if(tensor.type().rank() == 0) {
+                        generator().writeNumber(tensor.asDouble());
+                    } else {
+                        renderTensor(Optional.of(tensor));
+                    }
+                }
+                generator().writeEndObject();
+//                generator().writeRawValue(featureData.toJson(settings.tensorOptions));
             } else if (field instanceof Inspectable i) {
                 renderInspectorDirect(i.inspect());
             } else if (field instanceof JsonProducer jp) {
@@ -823,10 +835,90 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
             }
         }
 
+        private class MyGenerator implements DataDisclosure {
+
+            private final JsonGenerator generator;
+
+            public MyGenerator(JsonGenerator generator) {
+                this.generator = generator;
+            }
+
+            @Override
+            public void writeNull() {
+                try {
+                    generator.writeNull();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void writeBool(boolean b) {
+                try {
+                    generator.writeBoolean(b);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void writeLong(long value) {
+                try {
+                    generator.writeNumber(value);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void writeDouble(double value) {
+                try {
+                    generator.writeNumber(value);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void writeString(byte[] value) {
+                try {
+                    generator.writeUTF8String(value, 0, value.length);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void startArray() throws IOException {
+                generator.writeStartArray();
+            }
+
+            @Override
+            public void endArray() throws IOException {
+                generator.writeEndArray();
+            }
+
+            @Override
+            public void startObject() throws IOException {
+                generator.writeStartObject();
+            }
+
+            @Override
+            public void endObject() throws IOException {
+                generator.writeEndObject();
+            }
+
+            @Override
+            public void writeFieldName(String name) throws IOException {
+                generator.writeFieldName(name);
+            }
+
+
+        }
+
         private void renderTensor(Optional<Tensor> tensor) throws IOException {
             var t = tensor.orElse(Tensor.Builder.of(TensorType.empty).build());
-            byte[] json = JsonFormat.encode(t, settings.tensorOptions);
-            generator().writeRawValue(new String(json, StandardCharsets.UTF_8));
+            CborFormat.encode(t, settings.tensorOptions, new MyGenerator(generator));
         }
 
         private JsonGenerator generator() {
