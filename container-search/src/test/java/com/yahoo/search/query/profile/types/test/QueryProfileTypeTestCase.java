@@ -4,6 +4,7 @@ package com.yahoo.search.query.profile.types.test;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -824,13 +825,13 @@ public class QueryProfileTypeTestCase {
         }
 
         @Override
-        public List<Integer> embed(String text, Embedder.Context context) {
+        public List<Integer> embed(String text, Context context) {
             fail("Unexpected call");
             return null;
         }
 
         @Override
-        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+        public Tensor embed(String text, Context context, TensorType tensorType) {
             assertEquals(expectedText, text);
             assertEquals(expectedLanguage, context.getLanguage());
             assertEquals(tensorToReturn.type(), tensorType);

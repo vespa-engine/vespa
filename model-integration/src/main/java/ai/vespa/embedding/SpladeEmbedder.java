@@ -9,6 +9,7 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.DirectIndexedAddress;
 import com.yahoo.tensor.IndexedTensor;
@@ -125,8 +126,8 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         Tensor tokenTypeIds = createTensorRepresentation(encoding.typeIds(), "d1");
 
         Map<String, Tensor> inputs = Map.of(inputIdsName, inputSequence.expand("d0"),
-                attentionMaskName, attentionMask.expand("d0"),
-                tokenTypeIdsName, tokenTypeIds.expand("d0"));
+                                            attentionMaskName, attentionMask.expand("d0"),
+                                            tokenTypeIdsName, tokenTypeIds.expand("d0"));
         IndexedTensor output = (IndexedTensor) evaluator.evaluate(inputs).get(outputName);
         Tensor spladeTensor = useCustomReduce
                 ? sparsifyCustomReduce(output, tensorType)
@@ -163,8 +164,6 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
         }
         return builder.build();
     }
-
-
 
     /**
      * Sparsify the model output tensor.This uses an unrolled custom reduce and is 15-20% faster than the using

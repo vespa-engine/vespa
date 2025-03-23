@@ -12,6 +12,7 @@ import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.sentencepiece.SentencePieceEmbedder;
 import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;

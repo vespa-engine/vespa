@@ -3,6 +3,7 @@ package com.yahoo.search.query.profile.config.test;
 
 import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.tensor.Tensor;
@@ -527,13 +528,13 @@ public class XmlReadingTestCase {
         }
 
         @Override
-        public List<Integer> embed(String text, Embedder.Context context) {
+        public List<Integer> embed(String text, Context context) {
             fail("Unexpected call");
             return null;
         }
 
         @Override
-        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+        public Tensor embed(String text, Context context, TensorType tensorType) {
             assertEquals(expectedText, text);
             assertEquals(tensorToReturn.type(), tensorType);
             return tensorToReturn;

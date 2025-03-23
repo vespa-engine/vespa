@@ -4,6 +4,7 @@ package ai.vespa.embedding;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.ColBertEmbedderConfig;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.MixedTensor;
@@ -236,7 +237,7 @@ public class ColBertEmbedderTest {
         long now = System.currentTimeMillis();
         int n = 1000;
         for (int i = 0; i < n; i++) {
-            assertEmbed("tensor<float>(dt{},x[128])", text, new Embedder.Context("schema.indexing"),128);
+            assertEmbed("tensor<float>(dt{},x[128])", text, new Embedder.Context("schema.indexing"), 128);
         }
         long elapsed = (System.currentTimeMillis() - now);
         System.out.println("Elapsed time: " + elapsed + " ms");

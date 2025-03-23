@@ -3,6 +3,7 @@ package com.yahoo.search.searchers;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.language.Language;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
@@ -14,9 +15,6 @@ import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.search.query.profile.types.FieldDescription;
-import com.yahoo.search.query.profile.types.QueryProfileType;
-import com.yahoo.search.query.profile.types.QueryProfileTypeRegistry;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.schema.Cluster;
 import com.yahoo.search.schema.RankProfile;
@@ -333,13 +331,13 @@ public class ValidateNearestNeighborTestCase {
         }
 
         @Override
-        public List<Integer> embed(String text, Embedder.Context context) {
+        public List<Integer> embed(String text, Context context) {
             fail("Unexpected call");
             return null;
         }
 
         @Override
-        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+        public Tensor embed(String text, Context context, TensorType tensorType) {
             assertEquals(expectedText, text);
             assertEquals(expectedLanguage, context.getLanguage());
             assertEquals(tensorToReturn.type(), tensorType);

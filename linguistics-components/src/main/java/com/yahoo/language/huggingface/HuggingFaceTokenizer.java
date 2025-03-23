@@ -12,6 +12,7 @@ import com.yahoo.language.Language;
 import com.yahoo.language.huggingface.ModelInfo.PaddingStrategy;
 import com.yahoo.language.huggingface.ModelInfo.TruncationStrategy;
 import com.yahoo.language.huggingface.config.HuggingFaceTokenizerConfig;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.language.tools.Embed;
@@ -40,7 +41,8 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
     private final Path tmpDirectory = uncheck(() -> Files.createTempDirectory("hf-tokenizer-"));
     private final Map<Language, ai.djl.huggingface.tokenizers.HuggingFaceTokenizer> models;
 
-    @Inject public HuggingFaceTokenizer(HuggingFaceTokenizerConfig cfg) { this(new Builder(cfg)); }
+    @Inject
+    public HuggingFaceTokenizer(HuggingFaceTokenizerConfig cfg) { this(new Builder(cfg)); }
 
     static {
         // Stop HuggingFace Tokenizer from reporting usage statistics back to mothership

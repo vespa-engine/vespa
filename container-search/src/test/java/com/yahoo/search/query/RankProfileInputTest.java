@@ -3,6 +3,7 @@ package com.yahoo.search.query;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.search.Query;
 import com.yahoo.search.schema.Cluster;
@@ -21,7 +22,6 @@ import org.junit.jupiter.api.Test;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -342,13 +342,13 @@ public class RankProfileInputTest {
         }
 
         @Override
-        public List<Integer> embed(String text, Embedder.Context context) {
+        public List<Integer> embed(String text, Context context) {
             fail("Unexpected call");
             return null;
         }
 
         @Override
-        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+        public Tensor embed(String text, Context context, TensorType tensorType) {
             assertEquals(expectedText, text);
             assertEquals(expectedLanguage, context.getLanguage());
             assertEquals(tensorToReturn.type(), tensorType);

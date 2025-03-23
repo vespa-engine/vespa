@@ -2,6 +2,7 @@
 package com.yahoo.language.wordpiece;
 
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.tools.Embed;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
@@ -10,7 +11,6 @@ import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.language.wordpiece.WordPieceConfig;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -144,4 +144,3 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
     }
 
 }
-

@@ -4,6 +4,7 @@ package com.yahoo.language.sentencepiece;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.tools.EmbedderTester;
 import org.junit.Test;
 

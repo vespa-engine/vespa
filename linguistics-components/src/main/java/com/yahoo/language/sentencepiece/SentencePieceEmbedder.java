@@ -3,6 +3,7 @@ package com.yahoo.language.sentencepiece;
 
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.tools.Embed;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;
@@ -77,7 +78,7 @@ public class SentencePieceEmbedder implements Segmenter, Embedder {
      * @return the list of zero or more token ids resulting from segmenting the input text
      */
     @Override
-    public List<Integer> embed(String rawInput, Embedder.Context context) {
+    public List<Integer> embed(String rawInput, Context context) {
         var resultBuilder = new ResultBuilder<List<Integer>>(new ArrayList<>()) {
             public void add(int segmentStart, int segmentEnd, SentencePieceAlgorithm.SegmentEnd[] segmentEnds) {
                 result().add(segmentEnds[segmentEnd].id);
@@ -96,11 +97,11 @@ public class SentencePieceEmbedder implements Segmenter, Embedder {
      * @return the string formed by decoding the tokens back to their string representation
      */
     @Override
-    public String decode(List<Integer> tokens, Embedder.Context context) {
+    public String decode(List<Integer> tokens, Context context) {
         return decode(tokens, context, false);
     }
 
-    public String decode(List<Integer> tokens, Embedder.Context context, boolean skipControl) {
+    public String decode(List<Integer> tokens, Context context, boolean skipControl) {
         Model model = resolveModelFrom(context.getLanguage());
         StringBuilder sb = new StringBuilder();
         for (var tokenId : tokens) {
@@ -127,7 +128,7 @@ public class SentencePieceEmbedder implements Segmenter, Embedder {
      * @return the list of zero or more token ids resulting from segmenting the input text
      */
     @Override
-    public Tensor embed(String rawInput, Embedder.Context context, TensorType type) {
+    public Tensor embed(String rawInput, Context context, TensorType type) {
         return Embed.asTensor(rawInput, this, context, type);
     }
 

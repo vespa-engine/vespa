@@ -4,6 +4,7 @@ package ai.vespa.embedding;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.SpladeEmbedderConfig;
+import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;
@@ -63,7 +64,7 @@ public class SpladeEmbedderTest {
             assertEmbed("tensor<float>(d[128])", "", indexingContext);
         });
         assertEquals("Invalid splade embedder tensor destination. Wanted a mapped 1-d tensor, got tensor<float>(d[128])",
-                exception.getMessage());
+                     exception.getMessage());
     }
 
     static final Embedder spladeEmbedder;
@@ -87,4 +88,5 @@ public class SpladeEmbedderTest {
         builder.transformerGpuDevice(-1);
         return  new SpladeEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build(), useCustomReduce);
     }
+
 }
