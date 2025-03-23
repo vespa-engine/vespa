@@ -9,7 +9,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.ColBertEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.searchlib.rankingexpression.evaluation.MapContext;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;

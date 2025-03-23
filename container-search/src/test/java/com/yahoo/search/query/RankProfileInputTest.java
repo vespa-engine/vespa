@@ -3,7 +3,6 @@ package com.yahoo.search.query;
 
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.search.Query;
 import com.yahoo.search.schema.Cluster;

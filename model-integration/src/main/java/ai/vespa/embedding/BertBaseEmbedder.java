@@ -7,7 +7,6 @@ import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.BertBaseEmbedderConfig;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.wordpiece.WordPieceEmbedder;
 import com.yahoo.tensor.IndexedTensor;

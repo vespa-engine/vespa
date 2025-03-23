@@ -4,7 +4,6 @@ package ai.vespa.embedding;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.ModelReference;
 import com.yahoo.embedding.SpladeEmbedderConfig;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.MappedTensor;
 import com.yahoo.tensor.Tensor;

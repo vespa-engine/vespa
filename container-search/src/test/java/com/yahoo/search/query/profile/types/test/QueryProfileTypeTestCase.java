@@ -4,7 +4,6 @@ package com.yahoo.search.query.profile.types.test;
 import com.yahoo.component.ComponentId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;

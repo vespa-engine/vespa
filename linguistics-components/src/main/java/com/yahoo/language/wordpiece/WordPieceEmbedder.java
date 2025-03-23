@@ -2,7 +2,6 @@
 package com.yahoo.language.wordpiece;
 
 import com.yahoo.component.annotation.Inject;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.tools.Embed;
 import com.yahoo.language.Language;
 import com.yahoo.language.process.Embedder;

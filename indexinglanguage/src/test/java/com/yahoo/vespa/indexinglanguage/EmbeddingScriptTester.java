@@ -6,7 +6,6 @@ import com.yahoo.document.Field;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;

@@ -5,7 +5,6 @@ package ai.vespa.embedding;
 import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.metrics.simple.Gauge;
 import com.yahoo.metrics.simple.MetricReceiver;

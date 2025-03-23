@@ -9,7 +9,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.embedding.SpladeEmbedderConfig;
 import com.yahoo.language.huggingface.HuggingFaceTokenizer;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.DirectIndexedAddress;
 import com.yahoo.tensor.IndexedTensor;

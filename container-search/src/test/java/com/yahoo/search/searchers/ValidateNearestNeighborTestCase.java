@@ -3,7 +3,6 @@ package com.yahoo.search.searchers;
 
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.language.Language;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;

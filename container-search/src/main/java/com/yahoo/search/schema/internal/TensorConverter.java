@@ -2,7 +2,6 @@
 package com.yahoo.search.schema.internal;
 
 import com.yahoo.language.Language;
-import com.yahoo.language.process.InvocationContext;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.request.Properties;
 import com.yahoo.tensor.Tensor;
