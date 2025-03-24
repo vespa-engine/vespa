@@ -74,6 +74,7 @@ public interface ModelContext {
      *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
+        @ModelFeatureFlag(owners = {"hakonhall"}) default boolean useNonPublicEndpointForTest() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"hmusum"}) default double queryDispatchWarmup() { return 5.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int defaultNumResponseThreads() { return 2; }

@@ -205,6 +205,7 @@ TOKEN :
     <INDEX: "index"> |
     <INPUT: "input"> |
     <JOIN: "join"> |
+    <KEEP_CASE: "keep-case"> |
     <LOWER_CASE: "lowercase"> |
     <MAX_LENGTH: "max-length"> |
     <MAX_OCCURRENCES: "max-occurrences"> |
@@ -776,7 +777,8 @@ AnnotatorConfig tokenizeCfg() :
       <MAX_LENGTH> <COLON>  maxLength = integerValue() { val.setMaxTokenizeLength(maxLength); } |
       <MAX_OCCURRENCES> <COLON>  maxTermOccurrences = integerValue() { val.setMaxTermOccurrences(maxTermOccurrences); } |
       <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerValue() { val.setMaxTokenLength(maxTokenLength); } |
-      <NORMALIZE> { val.setRemoveAccents(true); } )+
+      <NORMALIZE> { val.setRemoveAccents(true); } |
+      <KEEP_CASE> { val.setLowercase(false); } )+
     { return val; }
 ;
 

@@ -6,6 +6,7 @@ import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.MatchType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
@@ -60,6 +61,7 @@ public class TextMatch extends Processor {
         }
         ret.setStemMode(activeStemming.toStemMode());
         ret.setRemoveAccents(field.getNormalizing().doRemoveAccents());
+        ret.setLowercase(field.getMatching().getCase() != Case.CASED);
         var fieldMatching = field.getMatching();
         if (fieldMatching != null) {
             var maxLength = fieldMatching.maxLength();

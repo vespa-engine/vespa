@@ -11,9 +11,10 @@ import java.util.NoSuchElementException;
  * in a Span tree. Its boundaries are defined as inclusive-from and exclusive-to.
  *
  * @author baldersheim
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class Span extends SpanNode {
+
     public static final byte ID = 1;
     private int from;
     private int length;

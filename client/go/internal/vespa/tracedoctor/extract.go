@@ -37,10 +37,6 @@ func (q *queryNode) desc() string {
 	return q.class
 }
 
-type perfDumpCtx struct {
-	dst *output
-}
-
 func perfPad(last, self bool) string {
 	if !last && !self {
 		return "│   "
@@ -54,46 +50,23 @@ func perfPad(last, self bool) string {
 	return "    "
 }
 
-func (ctx *perfDumpCtx) fmt(format string, args ...interface{}) {
-	ctx.dst.fmt(format, args...)
-}
-
-func (ctx *perfDumpCtx) printSeparator() {
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 5))
-	ctx.fmt("+\n")
-}
-
-func (ctx *perfDumpCtx) printHeader() {
-	ctx.fmt("|%10s ", "count")
-	ctx.fmt("|%10s ", "total_ms")
-	ctx.fmt("|%10s ", "self_ms")
-	ctx.fmt("|%5s ", "step")
-	ctx.fmt("|\n")
-}
-
-func (ctx *perfDumpCtx) printLine(qn *queryNode, prefix, padSelf, padChild string) {
-	ctx.fmt("|%10d ", qn.count)
-	ctx.fmt("|%10.3f ", qn.totalTimeMs)
-	ctx.fmt("|%10.3f ", qn.selfTimeMs)
-	ctx.fmt("|%5s ", qn.strict)
-	ctx.fmt("|  ")
-	ctx.fmt("%s%s%s\n", prefix, padSelf, qn.desc())
-	for i, child := range qn.children {
-		last := i+1 == len(qn.children)
-		ctx.printLine(child, prefix+padChild, perfPad(last, true), perfPad(last, false))
+func (q *queryNode) makeTable(tab *table, prefix, padSelf, padChild string) {
+	count := fmt.Sprintf("%d", q.count)
+	totalTimeMs := fmt.Sprintf("%.3f", q.totalTimeMs)
+	selfTimeMs := fmt.Sprintf("%.3f", q.selfTimeMs)
+	strict := q.strict
+	query := fmt.Sprintf(" %s%s%s ", prefix, padSelf, q.desc())
+	tab.addRow(count, totalTimeMs, selfTimeMs, strict, query)
+	for i, child := range q.children {
+		last := i+1 == len(q.children)
+		child.makeTable(tab, prefix+padChild, perfPad(last, true), perfPad(last, false))
 	}
 }
 
 func (q *queryNode) render(output *output) {
-	dst := perfDumpCtx{dst: output}
-	dst.printSeparator()
-	dst.printHeader()
-	dst.printSeparator()
-	dst.printLine(q, "", "", "")
-	dst.printSeparator()
+	tab := newTable("count", "total_ms", "self_ms", "step", "query tree")
+	q.makeTable(tab, "", "", "")
+	tab.render(output)
 }
 
 func extractQueryNode(obj slime.Value) *queryNode {
@@ -384,6 +357,10 @@ func (p protonTrace) documentType() string {
 
 func (p protonTrace) durationMs() float64 {
 	return p.root.Field("duration_ms").AsDouble()
+}
+
+func (p protonTrace) desc() string {
+	return fmt.Sprintf("%s[%d]", p.documentType(), p.distributionKey())
 }
 
 type protonTraceGroup struct {

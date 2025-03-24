@@ -397,7 +397,7 @@ public class ScriptTestCase {
     public void testMultiStatementInput() {
         var tester = new ScriptTester();
         // A multi-statement indexing block as rewritten by the config model:
-        var expression = tester.expressionFrom("clear_state | guard { input myString | { \"en\" | set_language; tokenize normalize stem:\"BEST\" | index myOutputString; }; }");
+        var expression = tester.expressionFrom("clear_state | guard { input myString | { \"en\" | set_language; tokenize normalize keep-case stem:\"BEST\" | index myOutputString; }; }");
 
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         var myString = new Field("myString", DataType.STRING);

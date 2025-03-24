@@ -19,13 +19,12 @@ public class SegmenterImpl implements Segmenter {
 
     @Override
     public List<String> segment(String input, Language language) {
+        var parameters = new LinguisticsParameters(language, StemMode.NONE, false, false);
         List<String> segments = new ArrayList<>();
-        for (Token token : tokenizer.tokenize(input, language, StemMode.NONE, false)) {
+        for (Token token : tokenizer.tokenize(input, parameters))
             findSegments(token, segments);
-        }
-        if (segments.isEmpty()) {
+        if (segments.isEmpty())
             segments.add(input); // no segments, return original string
-        }
         return segments;
     }
 

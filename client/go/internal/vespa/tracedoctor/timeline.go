@@ -1,6 +1,6 @@
 package tracedoctor
 
-import "strings"
+import "fmt"
 
 type timeline struct {
 	list []timelineEntry
@@ -36,11 +36,13 @@ func (t *timeline) addComment(what string) {
 }
 
 func (t *timeline) render(out *output) {
+	tab := newTable("timestamp", "event")
 	for _, entry := range t.list {
 		if entry.when < 0.0 {
-			out.fmt("%s%s\n", strings.Repeat(" ", 15), entry.what)
+			tab.addRow("", entry.what)
 		} else {
-			out.fmt("%10.3f ms: %s\n", entry.when, entry.what)
+			tab.addRow(fmt.Sprintf("%.3f ms", entry.when), entry.what)
 		}
 	}
+	tab.render(out)
 }
