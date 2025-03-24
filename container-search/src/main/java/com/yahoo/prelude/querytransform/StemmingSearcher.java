@@ -7,6 +7,7 @@ import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.chain.dependencies.Provides;
 import com.yahoo.language.Language;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.StemList;
 
@@ -197,9 +198,10 @@ public class StemmingSearcher extends Searcher {
 
     // The rewriting logic is here
     private Item stem(BlockItem current, StemContext context, Index index) {
+        var parameters = new LinguisticsParameters(context.language, index.getStemMode(), index.getNormalize(), index.isLowercase());
         Item blockAsItem = (Item)current;
         CompositeItem composite;
-        List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), context.language, index.getStemMode(), index.getNormalize());
+        List<StemList> segments = linguistics.getStemmer().stem(current.stringValue(), parameters);
         if (segments.isEmpty()) return blockAsItem;
 
         String indexName = current.getIndexName();

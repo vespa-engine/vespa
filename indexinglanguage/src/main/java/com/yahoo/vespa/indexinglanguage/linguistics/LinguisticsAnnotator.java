@@ -20,7 +20,11 @@ import java.util.Map;
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
 /**
- * This is a tool for adding {@link AnnotationTypes} type annotations to {@link StringFieldValue} objects.
+ * This annotates strings that are to be indexed with the tokens to index,
+ * as produced by the give linguistics implementation.
+ * Using annotations lets us provide the tokens to index without mutating
+ * the original string which we need to store.
+ * The annotations are placed in an annotation tree named "linguistics".
  *
  * @author Simon Thoresen Hult
  */
@@ -71,31 +75,23 @@ public class LinguisticsAnnotator {
 
         Tokenizer tokenizer = factory.getTokenizer();
         String input = (text.getString().length() <= config.getMaxTokenizeLength())
-                ? text.getString()
-                : Text.substringByCodepoints(text.getString(), 0, config.getMaxTokenizeLength());
-        Iterable<Token> tokens = tokenizer.tokenize(input, config.getLanguage(), config.getStemMode(),
-                                                    config.getRemoveAccents());
+                       ? text.getString()
+                       : Text.substringByCodepoints(text.getString(), 0, config.getMaxTokenizeLength());
+        Iterable<Token> tokens = tokenizer.tokenize(input, config.asLinguisticsParameters());
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
         SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS);
         for (Token token : tokens)
-            addAnnotationSpan(text.getString(), tree.spanList(), token, config.getStemMode(), termOccurrences,
-                    config.getMaxTokenLength());
+            addAnnotationSpan(text.getString(), tree.spanList(), token, config.getStemMode(), config.getLowercase(),
+                              termOccurrences, config.getMaxTokenLength());
 
         if (tree.numAnnotations() == 0) return false;
         text.setSpanTree(tree);
         return true;
     }
 
-    /**
-     * Creates a TERM annotation which has the term as annotation (only) if it is different from the
-     * original.
-     *
-     * @param term the term
-     * @param origTerm the original term
-     * @return the created TERM annotation
-     */
-    public static Annotation termAnnotation(String term, String origTerm) {
-        if (term.equals(origTerm))
+    /** Creates a TERM annotation which has the term as annotation (only) if it is different from the original. */
+    public static Annotation termAnnotation(String term, String originalTerm) {
+        if (term.equals(originalTerm))
             return new Annotation(AnnotationTypes.TERM);
         else
             return new Annotation(AnnotationTypes.TERM, new StringFieldValue(term));
@@ -103,20 +99,17 @@ public class LinguisticsAnnotator {
 
     private static void addAnnotation(Span here, String term, String orig, TermOccurrences termOccurrences,
                                       int maxTokenLength) {
-        if (term.length() > maxTokenLength) {
-            return;
-        }
-        if (termOccurrences.termCountBelowLimit(term)) {
+        if (term.length() > maxTokenLength) return;
+        if (termOccurrences.termCountBelowLimit(term))
             here.annotate(termAnnotation(term, orig));
-        }
     }
 
     private static void addAnnotationSpan(String input, SpanList parent, Token token, StemMode mode,
-                                          TermOccurrences termOccurrences, int maxTokenLength) {
+                                          boolean lowercase, TermOccurrences termOccurrences, int maxTokenLength) {
         if ( ! token.isSpecialToken()) {
             if (token.getNumComponents() > 0) {
                 for (int i = 0; i < token.getNumComponents(); ++i) {
-                    addAnnotationSpan(input, parent, token.getComponent(i), mode, termOccurrences, maxTokenLength);
+                    addAnnotationSpan(input, parent, token.getComponent(i), mode, lowercase, termOccurrences, maxTokenLength);
                 }
                 return;
             }
@@ -132,28 +125,24 @@ public class LinguisticsAnnotator {
         }
         if (mode == StemMode.ALL) {
             Span where = parent.span((int)token.getOffset(), token.getOrig().length());
-
-            String lowercasedOrig = toLowerCase(token.getOrig());
+            String indexableOriginal = lowercase ? toLowerCase(token.getOrig()) : token.getOrig();
             String term = token.getTokenString();
             if (term != null) {
                 addAnnotation(where, term, token.getOrig(), termOccurrences, maxTokenLength);
-                if ( ! term.equals(lowercasedOrig))
-                    addAnnotation(where, lowercasedOrig, token.getOrig(), termOccurrences, maxTokenLength);
+                if ( ! term.equals(indexableOriginal))
+                    addAnnotation(where, indexableOriginal, token.getOrig(), termOccurrences, maxTokenLength);
             }
             for (int i = 0; i < token.getNumStems(); i++) {
                 String stem = token.getStem(i);
-                if (! (stem.equals(lowercasedOrig) || stem.equals(term)))
+                if (! (stem.equals(indexableOriginal) || stem.equals(term)))
                     addAnnotation(where, stem, token.getOrig(), termOccurrences, maxTokenLength);
             }
         } else {
             String term = token.getTokenString();
             if (term == null || term.trim().isEmpty()) return;
-            if (term.length() > maxTokenLength) {
-                return;
-            }
-            if (termOccurrences.termCountBelowLimit(term))  {
+            if (term.length() > maxTokenLength) return;
+            if (termOccurrences.termCountBelowLimit(term))
                 parent.span((int)token.getOffset(), token.getOrig().length()).annotate(termAnnotation(term, token.getOrig()));
-            }
         }
     }
 

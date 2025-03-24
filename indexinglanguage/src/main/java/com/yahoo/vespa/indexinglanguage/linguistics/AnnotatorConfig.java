@@ -2,8 +2,11 @@
 package com.yahoo.vespa.indexinglanguage.linguistics;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+
+import java.util.Objects;
 
 /**
  * @author Simon Thoresen Hult
@@ -13,6 +16,7 @@ public class AnnotatorConfig implements Cloneable {
     private Language language;
     private StemMode stemMode;
     private boolean removeAccents;
+    private boolean lowercase;
     private int maxTermOccurrences;
     private int maxTokenLength;
     private int maxTokenizeLength;
@@ -32,18 +36,20 @@ public class AnnotatorConfig implements Cloneable {
         language = Language.ENGLISH;
         stemMode = StemMode.NONE;
         removeAccents = false;
+        lowercase = true;
         maxTermOccurrences = DEFAULT_MAX_TERM_OCCURRENCES;
         maxTokenLength = DEFAULT_MAX_TOKEN_LENGTH;
         maxTokenizeLength = DEFAULT_MAX_TOKENIZE_LENGTH;
     }
 
-    public AnnotatorConfig(AnnotatorConfig rhs) {
-        language = rhs.language;
-        stemMode = rhs.stemMode;
-        removeAccents = rhs.removeAccents;
-        maxTermOccurrences = rhs.maxTermOccurrences;
-        maxTokenLength = rhs.maxTokenLength;
-        maxTokenizeLength = rhs.maxTokenizeLength;
+    public AnnotatorConfig(AnnotatorConfig other) {
+        language = other.language;
+        stemMode = other.stemMode;
+        removeAccents = other.removeAccents;
+        lowercase = other.lowercase;
+        maxTermOccurrences = other.maxTermOccurrences;
+        maxTokenLength = other.maxTokenLength;
+        maxTokenizeLength = other.maxTokenizeLength;
     }
 
     public Language getLanguage() {
@@ -75,6 +81,15 @@ public class AnnotatorConfig implements Cloneable {
 
     public AnnotatorConfig setRemoveAccents(boolean removeAccents) {
         this.removeAccents = removeAccents;
+        return this;
+    }
+
+    public boolean getLowercase() {
+        return lowercase;
+    }
+
+    public AnnotatorConfig setLowercase(boolean lowercase) {
+        this.lowercase = lowercase;
         return this;
     }
 
@@ -119,36 +134,27 @@ public class AnnotatorConfig implements Cloneable {
         return maxTermOccurrences != DEFAULT_MAX_TERM_OCCURRENCES;
     }
 
+    public LinguisticsParameters asLinguisticsParameters() {
+        return new LinguisticsParameters(language, stemMode, removeAccents, lowercase);
+    }
+
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof AnnotatorConfig rhs)) {
-            return false;
-        }
-        if (!language.equals(rhs.language)) {
-            return false;
-        }
-        if (!stemMode.equals(rhs.stemMode)) {
-            return false;
-        }
-        if (removeAccents != rhs.removeAccents) {
-            return false;
-        }
-        if (maxTermOccurrences != rhs.maxTermOccurrences) {
-            return false;
-        }
-        if (maxTokenLength != rhs.maxTokenLength) {
-            return false;
-        }
-        if (maxTokenizeLength != rhs.maxTokenizeLength) {
-            return false;
-        }
+    public boolean equals(Object o) {
+        if (!(o instanceof AnnotatorConfig other)) return false;
+        if (!language.equals(other.language)) return false;
+        if (!stemMode.equals(other.stemMode)) return false;
+        if (removeAccents != other.removeAccents) return false;
+        if (lowercase != other.lowercase) return false;
+        if (maxTermOccurrences != other.maxTermOccurrences) return false;
+        if (maxTokenLength != other.maxTokenLength) return false;
+        if (maxTokenizeLength != other.maxTokenizeLength) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + language.hashCode() + stemMode.hashCode() +
-               Boolean.valueOf(removeAccents).hashCode() + maxTermOccurrences + maxTokenLength + maxTokenizeLength;
+        return Objects.hash(getClass(), language.hashCode(), stemMode.hashCode(),
+                            removeAccents, lowercase, maxTermOccurrences, maxTokenLength, maxTokenizeLength);
     }
 
 }

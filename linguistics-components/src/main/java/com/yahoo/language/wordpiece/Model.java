@@ -3,6 +3,7 @@ package com.yahoo.language.wordpiece;
 
 import com.yahoo.collections.Tuple2;
 import com.yahoo.language.Language;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
@@ -67,11 +68,12 @@ class Model {
     List<Integer> embed(String text, Tokenizer tokenizer) {
         List<Integer> ids = new ArrayList<>();
         text = text.toLowerCase();
-        for (Token t : tokenizer.tokenize(text, language, StemMode.NONE, true)) {
+        var parameters = new LinguisticsParameters(language, StemMode.NONE, true, true);
+        for (Token t : tokenizer.tokenize(text, parameters)) {
             String originalToken = t.getTokenString();
             String candidate = originalToken;
             int count = 0;
-            while (candidate.length() > 0 && !candidate.equals(subwordPrefix)) {
+            while (!candidate.isEmpty() && !candidate.equals(subwordPrefix)) {
                 Tuple2<String, Integer> entry = findLongestSubstring(candidate);
                 if (entry == null) break;
                 ids.add(entry.second);

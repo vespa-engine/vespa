@@ -40,8 +40,7 @@ public class StemmerImplTestCase {
                                                   .addComponent(new SimpleToken("p").setType(TokenType.ALPHABETIC)
                                                                                     .setTokenString("p"));
         Tokenizer tokenizer = Mockito.mock(Tokenizer.class);
-        Mockito.when(tokenizer.tokenize(Mockito.anyString(), Mockito.<Language>any(), Mockito.<StemMode>any(),
-                                        Mockito.anyBoolean()))
+        Mockito.when(tokenizer.tokenize(Mockito.anyString(), Mockito.<LinguisticsParameters>any()))
                .thenReturn(List.of(token));
         Stemmer stemmer = new StemmerImpl(tokenizer);
 
@@ -49,17 +48,19 @@ public class StemmerImplTestCase {
         assertEquals(List.of(new StemList("c"),
                                    new StemList("p"),
                                    new StemList("p")),
-                     stemmer.stem("c++", Language.ENGLISH,StemMode.SHORTEST, true));
+                     stemmer.stem("c++",
+                                  new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, true, true)));
 
         token.setSpecialToken(true);
         assertEquals(List.of(new StemList("c++")),
-                     stemmer.stem("c++", Language.ENGLISH, StemMode.SHORTEST, true));
+                     stemmer.stem("c++", new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, true, true)));
     }
 
     private static void assertStem(String input, List<String> expectedStems, boolean removeAccents) {
         Stemmer stemmer = new StemmerImpl(new SimpleTokenizer(new SimpleNormalizer()));
+        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, removeAccents, true);
         List<String> got = new ArrayList<>();
-        for (StemList word : stemmer.stem(input, Language.ENGLISH, StemMode.ALL, removeAccents)) {
+        for (StemList word : stemmer.stem(input, parameters)) {
             got.add(word.get(0));
         }
         assertEquals(expectedStems, got);

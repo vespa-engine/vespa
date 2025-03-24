@@ -17,6 +17,7 @@ import com.yahoo.document.json.JsonReader;
 import com.yahoo.document.json.ParsedDocumentOperation;
 import com.yahoo.language.Language;
 import com.yahoo.language.opennlp.OpenNlpLinguistics;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenScript;
@@ -172,7 +173,8 @@ public class SignificanceModelGenerator {
     }
 
     private void handleTokenization(String field) {
-        var tokens = tokenizer.tokenize(field, languageTag, StemMode.NONE, false);
+        var parameters = new LinguisticsParameters(languageTag, StemMode.NONE, false, true);
+        var tokens = tokenizer.tokenize(field, parameters);
 
         Set<String> uniqueWords = StreamSupport.stream(tokens.spliterator(), false)
                 .filter(t -> t.getType() == TokenType.ALPHABETIC)
