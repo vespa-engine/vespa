@@ -4160,6 +4160,8 @@
       "public static final java.lang.String OPTION_TOP_P",
       "public static final java.lang.String OPTION_N_PREDICT",
       "public static final java.lang.String OPTION_REPEAT_PENALTY",
+      "public static final java.lang.String OPTION_FREQUENCY_PENALTY",
+      "public static final java.lang.String OPTION_PRESENCE_PENALTY",
       "public static final java.lang.String OPTION_SEED",
       "public static final java.lang.String OPTION_JSON_SCHEMA"
     ]
