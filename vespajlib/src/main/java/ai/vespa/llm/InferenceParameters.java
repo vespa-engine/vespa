@@ -84,6 +84,14 @@ public class InferenceParameters {
         }
     }
 
+    public Optional<Long> getLong(String option) {
+        try {
+            return Optional.of(Long.parseLong(options.apply(option)));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
     public void ifPresent(String option, Consumer<String> func) {
         get(option).ifPresent(func);
     }
@@ -98,4 +106,3 @@ public class InferenceParameters {
         return new InferenceParameters(apiKey, endpoint, optionsWithDefault);
     }
 }
-
