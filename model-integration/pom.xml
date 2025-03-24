@@ -19,7 +19,7 @@
     <dependencies>
       <!-- START: Transitive dependencies for openai-java -->
       <!-- Override scope from 'runtime' to 'provided' -->
-      <!-- <dependency>
+      <dependency>
         <groupId>com.fasterxml.jackson.datatype</groupId>
         <artifactId>jackson-datatype-jsr310</artifactId>
         <version>${jackson2.vespa.version}</version>
@@ -30,7 +30,7 @@
         <artifactId>jackson-datatype-jdk8</artifactId>
         <version>${jackson2.vespa.version}</version>
         <scope>provided</scope>
-      </dependency> -->
+      </dependency>
 
       <!-- Override scope from 'runtime' to 'compile' -->
       <dependency>
@@ -192,12 +192,14 @@
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>
       <version>${jackson2.vespa.version}</version>
+      <scope>provided</scope>
     </dependency>
     <!--  include jackson.datatype jdk8 -->
     <dependency>
       <groupId>com.fasterxml.jackson.datatype</groupId>
       <artifactId>jackson-datatype-jdk8</artifactId>
       <version>${jackson2.vespa.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <!-- For openai-java -->
