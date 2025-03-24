@@ -127,6 +127,7 @@ vespa_add_library(searchlib_attribute OBJECT
     single_enum_search_context.cpp
     single_numeric_enum_search_context.cpp
     single_numeric_search_context.cpp
+    single_numeric_sort_blob_writer.cpp
     single_raw_attribute.cpp
     single_raw_attribute_loader.cpp
     single_raw_attribute_saver.cpp
