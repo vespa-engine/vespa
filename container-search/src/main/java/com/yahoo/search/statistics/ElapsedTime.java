@@ -96,7 +96,8 @@ public class ElapsedTime {
     public long totalTime() {
         long total = 0L;
         for (TimeTracker track : tracks) {
-            total  += track.totalTime();
+            if (track.first() != 0L)
+                total  += track.totalTime();
         }
         return total;
     }
