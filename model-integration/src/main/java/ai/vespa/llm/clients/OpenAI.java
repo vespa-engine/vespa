@@ -228,7 +228,7 @@ public class OpenAI extends ConfigurableLanguageModel {
                 
                 builder.responseFormat(jsonFormat);
             } catch (Exception e) {
-                throw new LanguageModelException(400, "Failed to parse JSON schema: " + e.getMessage(), e);
+                throw new LanguageModelException(400, "Failed to parse JSON schema:\n" + jsonSchemaStr.toString() + "\n" + e.getMessage(), e);
             }
         });
     }
