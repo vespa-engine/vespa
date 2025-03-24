@@ -192,7 +192,8 @@ public class OpenAI extends ConfigurableLanguageModel {
         parameters.getDouble(InferenceParameters.OPTION_TOP_P).ifPresent(builder::topP);
         parameters.getLong(InferenceParameters.OPTION_SEED).ifPresent(builder::seed);
         parameters.getInt(InferenceParameters.OPTION_N_PREDICT).ifPresent(builder::n);
-        parameters.getDouble(InferenceParameters.OPTION_REPEAT_PENALTY).ifPresent(builder::frequencyPenalty);
+        parameters.getDouble(InferenceParameters.OPTION_FREQUENCY_PENALTY).ifPresent(builder::frequencyPenalty);
+        parameters.getDouble(InferenceParameters.OPTION_PRESENCE_PENALTY).ifPresent(builder::presencePenalty);
         // Add JSON schema if specified
         addResponseFormat(parameters, builder);
         
