@@ -2,6 +2,7 @@
 package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
+import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.StringPrompt;
 import ai.vespa.secret.Secret;
@@ -15,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -222,7 +224,170 @@ public class OpenAITest {
                 () -> openai.complete(prompt, parameters)
         );
     }
+
+    @Test
+    @Disabled
+    public void testStructuredOutput() {
+        var config = new LlmClientConfig.Builder()
+                .apiKeySecretName("openai")
+                .maxTokens(100)
+                .build();
+        var openai = new OpenAI(config, new MockSecrets());
+        
+        var jsonSchema = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "article.people": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "article.people"
+                  ],
+                  "additionalProperties": false
+                }
+                """;
+        
+        var prompt = StringPrompt.from("""
+                Extract all names of people from this text:
+                Lynda Carter was born on July 24, 1951 in Phoenix, Arizona, USA. She is an actress, known for
+                Wonder Woman (1975), The Elder Scrolls IV: Oblivion (2006) and The Dukes of Hazzard (2005).
+                She has been married to Robert Altman since January 29, 1984. They have two children.
+                """);
+        
+        // Add the JSON schema to parameters
+        var parametersWithSchema = new InferenceParameters(
+            API_KEY,
+            Map.of(
+                InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema,
+                InferenceParameters.OPTION_TEMPERATURE, "0"
+            )::get
+        );
+        
+        var completions = openai.complete(prompt, parametersWithSchema);
+        var completionText = completions.get(0).text().trim();
+        
+        System.out.println("Response: " + completionText);
+        
+        // Verify it contains the expected people in JSON format
+        assertTrue(completionText.contains("\"article.people\""));
+        assertTrue(completionText.contains("Lynda Carter"));
+        assertTrue(completionText.contains("Robert Altman"));
+    }
     
+    @Test
+    @Disabled
+    public void testStructuredOutputAsync() {
+        var config = new LlmClientConfig.Builder()
+                .apiKeySecretName("openai")
+                .maxTokens(100)
+                .build();
+        var openai = new OpenAI(config, new MockSecrets());
+        
+        var jsonSchema = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "article.people": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "article.people"
+                  ],
+                  "additionalProperties": false
+                }
+                """;
+        
+        var prompt = StringPrompt.from("""
+                Extract all names of people from this text:
+                Lynda Carter was born on July 24, 1951 in Phoenix, Arizona, USA. She is an actress, known for
+                Wonder Woman (1975), The Elder Scrolls IV: Oblivion (2006) and The Dukes of Hazzard (2005).
+                She has been married to Robert Altman since January 29, 1984. They have two children.
+                """);
+        
+        // Add the JSON schema to parameters
+        var parametersWithSchema = new InferenceParameters(
+            API_KEY,
+            Map.of(
+                InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema,
+                InferenceParameters.OPTION_TEMPERATURE, "0"
+            )::get
+        );
+        
+        StringBuilder result = new StringBuilder();
+        var future = openai.completeAsync(prompt, parametersWithSchema, completion -> {
+            result.append(completion.text());
+        }).exceptionally(exception -> {
+            System.out.println("Error: " + exception);
+            return null;
+        });
+        
+        var finishReason = future.join();
+        var completionText = result.toString().trim();
+        
+        System.out.println("Response: " + completionText);
+        System.out.println("Finish reason: " + finishReason);
+        
+        // Verify it contains the expected people in JSON format
+        assertTrue(completionText.contains("\"article.people\""));
+        assertTrue(completionText.contains("Lynda Carter"));
+        assertTrue(completionText.contains("Robert Altman"));
+        assertEquals(Completion.FinishReason.stop, finishReason);
+    }
+
+    @Test
+    @Disabled
+    public void testInvalidJsonSchema() {
+        // Create OpenAI instance
+        var config = new LlmClientConfig.Builder()
+                .apiKeySecretName("openai")
+                .build();
+        var openai = new OpenAI(config, new MockSecrets());
+        
+        // Create an invalid JSON schema (missing closing brace)
+        var invalidJsonSchema = """
+                {
+                  "type": "object",
+                  "properties": {
+                    "article.people": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "article.people"
+                  ],
+                  "additionalProperties": false
+                """;  // Missing closing brace
+        
+        var prompt = StringPrompt.from("Extract all names of people from this text");
+        
+        // Add the invalid JSON schema to parameters
+        var parametersWithInvalidSchema = new InferenceParameters(
+            API_KEY,
+            Map.of(InferenceParameters.OPTION_JSON_SCHEMA, invalidJsonSchema)::get
+        );
+        
+        // Assert that the correct exception is thrown with the expected status code
+        LanguageModelException exception = org.junit.jupiter.api.Assertions.assertThrows(
+                LanguageModelException.class,
+                () -> openai.complete(prompt, parametersWithInvalidSchema)
+        );
+        
+        // Verify the exception has status code 400
+        assertEquals(400, exception.code());
+    }
+
     private void assertNumTokens(String completion, int minTokens, int maxTokens) {
         // Splitting by space is a poor tokenizer but it is good enough for this test.
         var numTokens = completion.split(" ").length;
