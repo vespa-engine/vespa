@@ -27,6 +27,8 @@ public class InferenceParameters {
     public static final String OPTION_TOP_P = "topp";
     public static final String OPTION_N_PREDICT = "npredict";
     public static final String OPTION_REPEAT_PENALTY = "repeatpenalty";
+    public static final String OPTION_FREQUENCY_PENALTY = "frequencypenalty";
+    public static final String OPTION_PRESENCE_PENALTY = "precencepenalty";
     public static final String OPTION_SEED = "seed";
     public static final String OPTION_JSON_SCHEMA = "json_schema";
     
