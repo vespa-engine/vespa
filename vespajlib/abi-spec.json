@@ -4148,6 +4148,7 @@
       "public java.util.Optional get(java.lang.String)",
       "public java.util.Optional getDouble(java.lang.String)",
       "public java.util.Optional getInt(java.lang.String)",
+      "public java.util.Optional getLong(java.lang.String)",
       "public void ifPresent(java.lang.String, java.util.function.Consumer)",
       "public ai.vespa.llm.InferenceParameters withDefaultOptions(java.util.function.Function)"
     ],
