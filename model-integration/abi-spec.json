@@ -283,6 +283,18 @@
     ],
     "fields" : [ ]
   },
+  "ai.vespa.llm.clients.StructuredOutputsExample" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public static void main(java.lang.String[])"
+    ],
+    "fields" : [ ]
+  },
   "ai.vespa.llm.generation.LanguageModelFieldGenerator" : {
     "superClass" : "com.yahoo.component.AbstractComponent",
     "interfaces" : [
