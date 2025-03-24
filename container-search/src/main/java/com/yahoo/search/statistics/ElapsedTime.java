@@ -96,8 +96,7 @@ public class ElapsedTime {
     public long totalTime() {
         long total = 0L;
         for (TimeTracker track : tracks) {
-            if (track.first() != 0L)
-                total  += track.totalTime();
+            total  += track.totalTime();
         }
         return total;
     }
@@ -140,11 +139,12 @@ public class ElapsedTime {
      * Time stamp of start of the first event registered, or 0 if none are regiustered.
      */
     public long first() {
-        if (tracks.isEmpty()) return 0L;
         long first = Long.MAX_VALUE;
         for (TimeTracker track : tracks) {
-            first = Math.min(first, track.first());
+            if (track.first() != 0)
+                first = Math.min(first, track.first());
         }
+        if (first == Long.MAX_VALUE) return 0L;
         return first;
     }
 
