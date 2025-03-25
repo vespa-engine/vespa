@@ -793,7 +793,7 @@ public class ContentBuilderTest extends DomBuilderTest {
         verifySearchMmapAdvise("NORMAL", ProtonConfig.Search.Mmap.Advise.Enum.NORMAL);
         verifySearchMmapAdvise("RANDOM", ProtonConfig.Search.Mmap.Advise.Enum.RANDOM);
         verifySearchMmapAdvise("SEQUENTIAL", ProtonConfig.Search.Mmap.Advise.Enum.SEQUENTIAL);
-        verifySearchMmapAdvise("UNKNOWN", ProtonConfig.Search.Mmap.Advise.Enum.NORMAL);
+        verifySearchMmapAdvise("UNKNOWN", ProtonConfig.Search.Mmap.Advise.Enum.SEQUENTIAL);
     }
 
     @Test

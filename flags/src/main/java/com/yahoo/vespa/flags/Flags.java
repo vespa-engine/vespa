@@ -70,7 +70,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundStringFlag SEARCH_MMAP_ADVISE = defineStringFlag(
-            "search-mmap-advise", "NORMAL",
+            "search-mmap-advise", "SEQUENTIAL",
             List.of("vekterli"), "2025-02-14", "2025-06-01",
             "Sets the MMAP advise setting used for disk based posting lists on the content node. " +
             "Valid values are [NORMAL, RANDOM, SEQUENTIAL]",

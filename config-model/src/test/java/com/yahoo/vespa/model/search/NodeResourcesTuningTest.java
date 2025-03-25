@@ -123,12 +123,6 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    void require_that_search_read_mmap_advise_is_set_based_on_disk() {
-        assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.NORMAL, true);
-        assertSearchReadAdvise(ProtonConfig.Search.Mmap.Advise.SEQUENTIAL, false);
-    }
-
-    @Test
     void require_that_summary_cache_max_bytes_is_set_based_on_memory() {
         assertEquals(1 * GiB / 25, configFromMemorySetting(1 + memoryOverheadGb, 0).summary().cache().maxbytes());
         assertEquals(256 * GiB / 25, configFromMemorySetting(256 + memoryOverheadGb, 0).summary().cache().maxbytes());
