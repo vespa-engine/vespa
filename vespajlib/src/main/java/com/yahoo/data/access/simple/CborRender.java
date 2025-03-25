@@ -54,6 +54,7 @@ public final class CborRender {
 
         protected void encodeDATA(byte[] value) throws IOException {
             // TODO: consider using binary string for this instead - semantic difference but large efficiency gain
+            // TODO: actually we can use binary string but tag 23?
             StringBuilder out = new StringBuilder();
             out.append('"');
             out.append("0x");

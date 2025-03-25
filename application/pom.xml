@@ -209,6 +209,12 @@
       <artifactId>onnxruntime</artifactId>
       <scope>test</scope>
     </dependency>
+    <dependency>
+      <!-- TODO andreer: is this the "right thing"? -->
+      <groupId>com.fasterxml.jackson.dataformat</groupId>
+      <artifactId>jackson-dataformat-cbor</artifactId>
+      <scope>test</scope>
+    </dependency>
   </dependencies>
 
   <build>

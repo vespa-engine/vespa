@@ -73,6 +73,8 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
 
+import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WRITE_VALUE;
+
 /**
  * JSON renderer for search results.
  *
@@ -184,7 +186,7 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private static JsonFactory createGeneratorFactory() {
-        return new CBORFactory(Jackson.createMapper());
+        return new CBORFactory(Jackson.createMapper().disable(FLUSH_AFTER_WRITE_VALUE));
     }
 
     @Override
