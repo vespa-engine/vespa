@@ -178,7 +178,7 @@ public class OpenAI extends ConfigurableLanguageModel {
               .exceptionally(e -> {
                   future.completeExceptionally(e);
                   return null;
-              }).join();
+              });
         
         return future;
     }
