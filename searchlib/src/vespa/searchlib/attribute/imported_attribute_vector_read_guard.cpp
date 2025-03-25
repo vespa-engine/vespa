@@ -299,24 +299,4 @@ long ImportedAttributeVectorReadGuard::onSerializeForDescendingSort(DocId doc,
     return _target_attribute.serializeForDescendingSort(getTargetLid(doc), serTo, available, bc);
 }
 
-class ImportedAttributeVectorReadGuard::SortBlobWriter : public attribute::ISortBlobWriter {
-private:
-    const ImportedAttributeVectorReadGuard& _attr;
-    std::unique_ptr<attribute::ISortBlobWriter> _target_writer;
-
-public:
-    SortBlobWriter(const ImportedAttributeVectorReadGuard& attr,
-                   std::unique_ptr<attribute::ISortBlobWriter> target_writer)
-        : _attr(attr), _target_writer(std::move(target_writer))
-    {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        return _target_writer->write(_attr.getTargetLid(docid), buf, available);
-    }
-};
-
-std::unique_ptr<attribute::ISortBlobWriter>
-ImportedAttributeVectorReadGuard::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const {
-    return std::make_unique<SortBlobWriter>(*this, _target_attribute.make_sort_blob_writer(ascending, converter));
-}
-
 }

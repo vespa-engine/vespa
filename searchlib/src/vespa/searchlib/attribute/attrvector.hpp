@@ -111,24 +111,6 @@ NumericDirectAttrVector<F, B>::on_serialize_for_sort(DocId doc, void* serTo, lon
     return writer.write(serTo, available);
 }
 
-template <typename BaseType, bool ascending>
-class NumericDirectSortBlobWriter : public search::attribute::ISortBlobWriter {
-private:
-    const std::vector<BaseType>& _data;
-    const std::vector<uint32_t>& _idx;
-public:
-    NumericDirectSortBlobWriter(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx) noexcept
-        : _data(data), _idx(idx) {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        search::attribute::NumericSortBlobWriter<BaseType, ascending> writer;
-        std::span<const BaseType> values(_data.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
-        for (auto& v : values) {
-            writer.candidate(v);
-        }
-        return writer.write(buf, available);
-    }
-};
-
 template <typename F, typename B>
 long
 NumericDirectAttrVector<F, B>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const
@@ -147,20 +129,6 @@ NumericDirectAttrVector<F, B>::onSerializeForDescendingSort(DocId doc, void* ser
         return search::NumericDirectAttribute<B>::onSerializeForDescendingSort(doc, serTo, available, bc);
     }
     return on_serialize_for_sort<false>(doc, serTo, available);
-}
-
-template <typename F, typename B>
-std::unique_ptr<search::attribute::ISortBlobWriter>
-NumericDirectAttrVector<F, B>::make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const
-{
-    if (!F::IsMultiValue()) {
-        return search::NumericDirectAttribute<B>::make_sort_blob_writer(ascending, converter);
-    }
-    if (ascending) {
-        return std::make_unique<NumericDirectSortBlobWriter<BaseType, true>>(this->_data, this->_idx);
-    } else {
-        return std::make_unique<NumericDirectSortBlobWriter<BaseType, false>>(this->_data, this->_idx);
-    }
 }
 
 template <typename F>
@@ -199,30 +167,6 @@ StringDirectAttrVector<F>::on_serialize_for_sort(DocId doc, void* serTo, long av
     return writer.write();
 }
 
-class StringDirectSortBlobWriter : public search::attribute::ISortBlobWriter {
-private:
-    const std::vector<char>& _buffer;
-    const search::StringAttribute::OffsetVector& _offsets;
-    const std::vector<uint32_t>& _idx;
-    const search::common::BlobConverter* _converter;
-    bool _ascending;
-public:
-    StringDirectSortBlobWriter(const std::vector<char>& buffer, const search::StringAttribute::OffsetVector& offsets,
-                               const std::vector<uint32_t>& idx, const search::common::BlobConverter* converter,
-                               bool ascending)
-        : _buffer(buffer), _offsets(offsets), _idx(idx), _converter(converter), _ascending(ascending) {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        search::attribute::StringSortBlobWriter writer(buf, available, _converter, _ascending);
-        std::span<const uint32_t> offsets(_offsets.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
-        for (auto& offset : offsets) {
-            if (!writer.candidate(&_buffer[offset])) {
-                return -1;
-            }
-        }
-        return writer.write();
-    }
-};
-
 template <typename F>
 bool
 StringDirectAttrVector<F>::is_sortable() const noexcept
@@ -248,14 +192,4 @@ StringDirectAttrVector<F>::onSerializeForDescendingSort(DocId doc, void* serTo, 
         return search::StringDirectAttribute::onSerializeForDescendingSort(doc, serTo, available, bc);
     }
     return on_serialize_for_sort(doc, serTo, available, bc, false);
-}
-
-template <typename F>
-std::unique_ptr<search::attribute::ISortBlobWriter>
-StringDirectAttrVector<F>::make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const
-{
-    if (!F::IsMultiValue()) {
-        return search::StringDirectAttribute::make_sort_blob_writer(ascending, converter);
-    }
-    return std::make_unique<StringDirectSortBlobWriter>(this->_buffer, this->_offsets, this->_idx, converter, ascending);
 }

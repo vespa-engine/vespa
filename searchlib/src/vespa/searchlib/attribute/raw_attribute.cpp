@@ -60,18 +60,6 @@ long serialize_for_sort(std::span<const char> raw, void* serTo, long available)
     return raw.size() + extra;
 }
 
-template <bool desc>
-class RawAttributeSortBlobWriter : public ISortBlobWriter {
-private:
-    const RawAttribute& _attr;
-public:
-    RawAttributeSortBlobWriter(const RawAttribute& attr) noexcept : _attr(attr) {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        auto raw = _attr.get_raw(docid);
-        return serialize_for_sort<desc>(raw, buf, available);
-    }
-};
-
 }
 
 bool
@@ -92,17 +80,6 @@ RawAttribute::onSerializeForDescendingSort(DocId doc, void* serTo, long availabl
 {
     auto raw = get_raw(doc);
     return serialize_for_sort<true>(raw, serTo, available);
-}
-
-std::unique_ptr<attribute::ISortBlobWriter>
-RawAttribute::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
-{
-    if (ascending) {
-        // Note: Template argument for the writer is "descending".
-        return std::make_unique<RawAttributeSortBlobWriter<false>>(*this);
-    } else {
-        return std::make_unique<RawAttributeSortBlobWriter<true>>(*this);
-    }
 }
 
 }
