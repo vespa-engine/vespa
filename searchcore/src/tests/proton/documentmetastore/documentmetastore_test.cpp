@@ -1978,20 +1978,22 @@ TEST(DocumentMetaStoreTest, serialize_for_sort)
     EXPECT_EQ(12u, SZ);
     EXPECT_EQ(SZ, dms.getFixedWidth());
     uint8_t asc_dest[SZ];
-    EXPECT_EQ(0, dms.serializeForAscendingSort(3, asc_dest, sizeof(asc_dest), nullptr));
-    EXPECT_EQ(-1, dms.serializeForAscendingSort(1, asc_dest, sizeof(asc_dest) - 1, nullptr));
+    auto asc_writer = dms.make_sort_blob_writer(true, nullptr);
+    EXPECT_EQ(0, asc_writer->write(3, asc_dest, sizeof(asc_dest)));
+    EXPECT_EQ(-1, asc_writer->write(1, asc_dest, sizeof(asc_dest) - 1));
     document::GlobalId gid;
 
-    EXPECT_EQ(SZ, dms.serializeForAscendingSort(1, asc_dest, sizeof(asc_dest), nullptr));
+    EXPECT_EQ(SZ, asc_writer->write(1, asc_dest, sizeof(asc_dest)));
     EXPECT_TRUE(dms.getGid(1, gid));
     EXPECT_EQ(0, memcmp(asc_dest, gid.get(), SZ));
 
-    EXPECT_EQ(SZ, dms.serializeForAscendingSort(2, asc_dest, sizeof(asc_dest), nullptr));
+    EXPECT_EQ(SZ, asc_writer->write(2, asc_dest, sizeof(asc_dest)));
     EXPECT_TRUE(dms.getGid(2, gid));
     EXPECT_EQ(0, memcmp(asc_dest, gid.get(), SZ));
 
     uint8_t desc_dest[SZ];
-    EXPECT_EQ(SZ, dms.serializeForDescendingSort(2, desc_dest, sizeof(desc_dest), nullptr));
+    auto desc_writer = dms.make_sort_blob_writer(false, nullptr);
+    EXPECT_EQ(SZ, desc_writer->write(2, desc_dest, sizeof(desc_dest)));
     for (size_t i(0); i < SZ; i++) {
         EXPECT_EQ(0xff - asc_dest[i], desc_dest[i]);
     }
