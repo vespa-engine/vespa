@@ -13,10 +13,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.List;
 import java.util.Map;
 
+@Disabled("This test requires connecting to a OpenAI-compatible endpoint.")
 public class OpenAICompatibleTest {
     /*
      * This test can be run with OpenAI-compatible endpoints. 
-     * Tested with https://api.together.xyz/v1/ and a local llama-cpp-server. If you have a GGUF file and uv installed, can run directly with `uv run python -m llama_cpp.server --model Llama-3.2-1B-Instruct.IQ1_S.gguf`.
+     * Tested with https://api.together.xyz/v1/ and a local llama-cpp-server. If you have a GGUF file and uv installed, can run directly with `uv run --with "llama-cpp-python[server]" python -m llama_cpp.server --model Llama-3.2-1B-Instruct.IQ1_S.gguf`.
      */
     // API key for the Together API
     private static final String API_KEY = "<your-api-key>";
@@ -30,7 +31,6 @@ public class OpenAICompatibleTest {
     );
 
     @Test
-    @Disabled
     public void testComplete() {
         for (String model : TEST_MODELS) {
             System.out.println("Testing model: " + model);
@@ -53,8 +53,6 @@ public class OpenAICompatibleTest {
         }
     }
 
-    @Test
-    @Disabled
     public void testCompleteAsync() {
         for (String model : TEST_MODELS) {
             System.out.println("Testing async model: " + model);
