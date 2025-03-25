@@ -61,7 +61,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitLowWatermarkDifference = 0.0;
     private double minNodeRatioPerGroup = 0.0;
     private int maxUnCommittedMemory = 123456;
-    private String searchMmapAdvise = "NORMAL";
+    private String searchMmapAdvise = "SEQUENTIAL";
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private int mbus_java_num_targets = 2;
