@@ -20,7 +20,7 @@ if [[ -z "$GHCR_DEPLOY_TOKEN" ]]; then
     exit 1
 fi
 
-crane auth login -u aressem -p "$GHCR_DEPLOY_TOKEN" ghcr.io
+crane auth login -u esolitos -p "$GHCR_DEPLOY_TOKEN" ghcr.io
 SRC_IMAGE="ghcr.io/vespa-engine/vespa-preview:$VESPA_VERSION"
 SRC_IMAGE_DIGEST=$(crane digest "$SRC_IMAGE")
 cosign verify \
@@ -33,14 +33,14 @@ if curl -fsSL "https://hub.docker.com/v2/repositories/vespaengine/vespa/tags/$VE
     echo "Container image docker.io/vespaengine/vespa:$VESPA_VERSION already exists."
 else
   DST_IMAGE="docker.io/vespaengine/vespa:$VESPA_VERSION"
-  crane auth login -u aressem -p "$DOCKER_HUB_DEPLOY_TOKEN" docker.io
+  crane auth login -u msaglia -p "$DOCKER_HUB_DEPLOY_TOKEN" docker.io
   crane cp "$SRC_IMAGE@$SRC_IMAGE_DIGEST" "$DST_IMAGE"
   crane tag "$DST_IMAGE" "$VESPA_MAJOR"
   crane tag "$DST_IMAGE" latest
 fi
 
 # Copy to GitHub Container Registry
-JWT=$(curl -sSL -u "aressem:$GHCR_DEPLOY_TOKEN" "https://ghcr.io/token?service=ghcr.io&scope=repository:vespa-engine/vespa:pull" | jq -re '.token')
+JWT=$(curl -sSL -u "esolitos:$GHCR_DEPLOY_TOKEN" "https://ghcr.io/token?service=ghcr.io&scope=repository:vespa-engine/vespa:pull" | jq -re '.token')
 IMAGE_TAGS=$(curl -sSL -H "Authorization: Bearer $JWT" https://ghcr.io/v2/vespa-engine/vespa/tags/list | jq -re '.tags[]')
 if grep "$VESPA_VERSION" <<< "$IMAGE_TAGS" &> /dev/null; then
     echo "Container image ghcr.io/vespa-engine/vespa:$VESPA_VERSION already exists."
