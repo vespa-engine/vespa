@@ -505,6 +505,8 @@ TEST(ImportedAttributeVectorTest, weighted_set_getStringFromEnum_returns_string_
     verify_get_string_from_enum_is_mapped(f);
 }
 
+struct MockSortBlobWriter;
+
 // Poor man's function call mock matching
 struct MockAttributeVector : NotImplementedAttribute {
     // Mutable is dirty, but funcs are called in a const context and we know
@@ -515,6 +517,8 @@ struct MockAttributeVector : NotImplementedAttribute {
     mutable const common::BlobConverter* _bc{nullptr};
     mutable bool _ascending_called{false};
     mutable bool _descending_called{false};
+    mutable bool _make_sort_blob_writer_called{false};
+    mutable std::optional<bool> _ascending{};
 
     long _return_value{1234};
 
@@ -546,11 +550,31 @@ struct MockAttributeVector : NotImplementedAttribute {
         _descending_called = true;
         return _return_value;
     }
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
 
     // Not covered by NotImplementedAttribute
     void onCommit() override {}
     void onUpdateStat() override {}
 };
+
+struct MockSortBlobWriter : public ISortBlobWriter {
+    MockAttributeVector& attr;
+    MockSortBlobWriter(MockAttributeVector& attr_in) : attr(attr_in) {}
+    long write(uint32_t docid, void* buf, long available) const override {
+        attr._doc_id = docid;
+        attr._ser_to = buf;
+        attr._available = available;
+        return attr._return_value;
+    }
+};
+
+std::unique_ptr<attribute::ISortBlobWriter>
+MockAttributeVector::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const {
+    _make_sort_blob_writer_called = true;
+    _ascending = ascending;
+    _bc = converter;
+    return std::make_unique<MockSortBlobWriter>(*const_cast<MockAttributeVector*>(this));
+}
 
 struct MockBlobConverter : common::BlobConverter {
     ConstBufferRef onConvert(const ConstBufferRef&) const override {
@@ -611,6 +635,26 @@ void check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid() {
 TEST(ImportedAttributeVectorTest, onSerializeForDescendingSort_is_forwarded_with_remapped_lid_to_target_vector)
 {
     check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid<SerializeFixture<SingleStringAttrFixture>>();
+}
+
+template <typename FixtureT>
+void check_make_sort_blob_writer_is_forwarded_with_remapped_lid() {
+    FixtureT f;
+    int dummy_tag;
+    void* ser_to = &dummy_tag;
+    auto writer = f.get_imported_attr()->make_sort_blob_writer(true, &f.mock_converter);
+    EXPECT_TRUE(f.mock_target->_make_sort_blob_writer_called);
+    EXPECT_TRUE(f.mock_target->_ascending);
+    EXPECT_EQ(&f.mock_converter, f.mock_target->_bc);
+    EXPECT_EQ(f.mock_target->_return_value, writer->write(4, ser_to, 777)); // child lid 4 -> parent lid 7
+    EXPECT_EQ(DocId(7), f.mock_target->_doc_id);
+    EXPECT_EQ(ser_to, f.mock_target->_ser_to);
+    EXPECT_EQ(777, f.mock_target->_available);
+}
+
+TEST(ImportedAttributeVectorTest, make_sort_blob_writer_is_forwarded_with_remapped_lid)
+{
+    check_make_sort_blob_writer_is_forwarded_with_remapped_lid<SerializeFixture<SingleStringAttrFixture>>();
 }
 
 struct TensorAttrFixture : Fixture {
