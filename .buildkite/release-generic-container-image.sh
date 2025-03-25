@@ -57,8 +57,9 @@ vespa/.buildkite/test-quick-start-guide.sh
 
 OPT_STATE="$(set +o)"
 set +x
-docker login --username aressem --password "$DOCKER_HUB_DEPLOY_TOKEN"
+echo "$DOCKER_HUB_DEPLOY_TOKEN" | docker login docker.io --username msaglia --password-stdin
 eval "$OPT_STATE"
+
 docker push "docker.io/$IMAGE_NAME:$VESPA_VERSION"
 docker push "docker.io/$IMAGE_NAME:latest"
 
