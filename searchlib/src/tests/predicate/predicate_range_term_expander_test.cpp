@@ -3,7 +3,7 @@
 
 #include <vespa/searchlib/predicate/predicate_range_term_expander.h>
 #include <vespa/vespalib/btree/btreestore.hpp>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <string>
 
 using search::predicate::PredicateRangeTermExpander;
@@ -18,21 +18,21 @@ struct MyRangeHandler {
     uint64_t expected_edge_value;
     size_t i;
     ~MyRangeHandler() {
-        EXPECT_EQUAL(expected_labels.size(), i);
+        EXPECT_EQ(expected_labels.size(), i);
     }
     void handleRange(std::string_view label) {
-        TEST_STATE(("handleRange: " + std::string(label)).c_str());
+        SCOPED_TRACE("handleRange: " + std::string(label));
         ASSERT_TRUE(i < expected_labels.size());
-        EXPECT_EQUAL(expected_labels[i++], label);
+        EXPECT_EQ(expected_labels[i++], label);
     }
     void handleEdge(std::string_view label, uint64_t value) {
-        TEST_STATE(("handleEdge: " + std::string(label)).c_str());
-        EXPECT_EQUAL(expected_edge_label, label);
-        EXPECT_EQUAL(expected_edge_value, value);
+        SCOPED_TRACE("handleEdge: " + std::string(label));
+        EXPECT_EQ(expected_edge_label, label);
+        EXPECT_EQ(expected_edge_value, value);
     }
 };
 
-TEST("require that small range is expanded") {
+TEST(PredicateRangeTermExpanderTest, require_that_small_range_is_expanded) {
     PredicateRangeTermExpander expander(10);
     MyRangeHandler range_handler{{
                 "key=40-49",
@@ -56,7 +56,7 @@ TEST("require that small range is expanded") {
     expander.expand("key", 42, range_handler);
 }
 
-TEST("require that large range is expanded") {
+TEST(PredicateRangeTermExpanderTest, require_that_large_range_is_expanded) {
     PredicateRangeTermExpander expander(10);
     MyRangeHandler range_handler{{
                 "key=123456789012345670-123456789012345679",
@@ -81,13 +81,13 @@ TEST("require that large range is expanded") {
     expander.expand("key", 123456789012345678, range_handler);
 }
 
-TEST("require that max range is expanded") {
+TEST(PredicateRangeTermExpanderTest, require_that_max_range_is_expanded) {
     PredicateRangeTermExpander expander(10);
     MyRangeHandler range_handler{{}, "key=9223372036854775800", 7, 0};
     expander.expand("key", 9223372036854775807, range_handler);
 }
 
-TEST("require that small negative range is expanded") {
+TEST(PredicateRangeTermExpanderTest, require_that_small_negative_range_is_expanded) {
     PredicateRangeTermExpander expander(10);
     MyRangeHandler range_handler{{
                 "key=-49-40",
@@ -111,12 +111,12 @@ TEST("require that small negative range is expanded") {
     expander.expand("key", -42, range_handler);
 }
 
-TEST("require that min range is expanded") {
+TEST(PredicateRangeTermExpanderTest, require_that_min_range_is_expanded) {
     PredicateRangeTermExpander expander(10);
     MyRangeHandler range_handler{{}, "key=-9223372036854775800", 8, 0};
     expander.expand("key", -9223372036854775808ull, range_handler);
 }
-TEST("require that min range - 9 is expanded") {
+TEST(PredicateRangeTermExpanderTest, require_that_min_range_minus_9_is_expanded) {
     PredicateRangeTermExpander expander(10);
     MyRangeHandler range_handler{{
             "key=-9223372036854775799-9223372036854775790",
@@ -125,13 +125,13 @@ TEST("require that min range - 9 is expanded") {
     expander.expand("key", -9223372036854775799ll, range_handler);
 }
 
-TEST("require that min range is expanded with arity 8") {
+TEST(PredicateRangeTermExpanderTest, require_that_min_range_is_expanded_with_arity_8) {
     PredicateRangeTermExpander expander(8);
     MyRangeHandler range_handler{{}, "key=-9223372036854775808", 0, 0};
     expander.expand("key", -9223372036854775808ull, range_handler);
 }
 
-TEST("require that small range is expanded in arity 2") {
+TEST(PredicateRangeTermExpanderTest, require_that_small_range_is_expanded_in_arity_2) {
     PredicateRangeTermExpander expander(2);
     MyRangeHandler range_handler{{
                 "key=42-43",
@@ -200,7 +200,7 @@ TEST("require that small range is expanded in arity 2") {
     expander.expand("key", 42, range_handler);
 }
 
-TEST("require that small negative range is expanded in arity 2") {
+TEST(PredicateRangeTermExpanderTest, require_that_small_negative_range_is_expanded_in_arity_2) {
     PredicateRangeTermExpander expander(2);
     MyRangeHandler range_handler{{
                 "key=-43-42",
@@ -269,7 +269,7 @@ TEST("require that small negative range is expanded in arity 2") {
     expander.expand("key", -42, range_handler);
 }
 
-TEST("require that upper bound is used") {
+TEST(PredicateRangeTermExpanderTest, require_that_upper_bound_is_used) {
     PredicateRangeTermExpander expander(10, -99, 9999);
     MyRangeHandler range_handler{{
                 "key=40-49",
@@ -279,7 +279,7 @@ TEST("require that upper bound is used") {
     expander.expand("key", 42, range_handler);
 }
 
-TEST("require that lower bound is used") {
+TEST(PredicateRangeTermExpanderTest, require_that_lower_bound_is_used) {
     PredicateRangeTermExpander expander(10, -9999, 99);
     MyRangeHandler range_handler{{
                 "key=-49-40",
@@ -289,13 +289,13 @@ TEST("require that lower bound is used") {
     expander.expand("key", -42, range_handler);
 }
 
-TEST("require that value outside bounds is not used") {
+TEST(PredicateRangeTermExpanderTest, require_that_value_outside_bounds_is_not_used) {
     PredicateRangeTermExpander expander(10, -99, 99);
     MyRangeHandler range_handler{{}, "handleEdge is never called", 2, 0};
     expander.expand("key", 100, range_handler);
 }
 
-TEST("require that upper and lower bound > 0 works") {
+TEST(PredicateRangeTermExpanderTest, require_that_upper_and_lower_bound_gt_0_works) {
     PredicateRangeTermExpander expander(10, 100, 9999);
     MyRangeHandler range_handler{{
                 "key=140-149",
@@ -305,7 +305,7 @@ TEST("require that upper and lower bound > 0 works") {
     expander.expand("key", 142, range_handler);
 }
 
-TEST("require that search close to uneven upper bound is sensible") {
+TEST(PredicateRangeTermExpanderTest, require_that_search_close_to_uneven_upper_bound_is_sensible) {
     PredicateRangeTermExpander expander(10, -99, 1234);
     MyRangeHandler range_handler{{
                 "key=40-49",
@@ -315,7 +315,7 @@ TEST("require that search close to uneven upper bound is sensible") {
     expander.expand("key", 42, range_handler);
 }
 
-TEST("require that search close to max uneven upper bound is sensible") {
+TEST(PredicateRangeTermExpanderTest, require_that_search_close_to_max_uneven_upper_bound_is_sensible) {
     PredicateRangeTermExpander expander(10, 0, 9223372036854771234);
     MyRangeHandler range_handler{{
                 "key=9223372036854770000-9223372036854770009",
