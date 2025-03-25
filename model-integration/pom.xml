@@ -185,14 +185,49 @@
       <artifactId>jackson-module-kotlin</artifactId>
       <version>${jackson2.vespa.version}</version>
       <scope>compile</scope>
-        <exclusions>
-          <exclusion>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>*</artifactId>
-          </exclusion>
-      </exclusions>
+      <exclusions>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-databind</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-annotations</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.fasterxml.jackson.core</groupId>
+          <artifactId>jackson-core</artifactId>
+        </exclusion>
+    </exclusions>
     </dependency>
-
+    
+     <!-- include com.fasterxml.jackson.databind -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson2.vespa.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!--  include jackson.datatype jdk8 -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jdk8</artifactId>
+      <version>${jackson2.vespa.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <!-- Add these explicitly as provided -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <version>${jackson2.vespa.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson2.vespa.version}</version>
+      <scope>provided</scope>
+    </dependency>
     <dependency>
       <!-- For openai-java -->
       <groupId>com.yahoo.vespa</groupId>

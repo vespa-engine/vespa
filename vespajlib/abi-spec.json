@@ -4148,6 +4148,7 @@
       "public java.util.Optional get(java.lang.String)",
       "public java.util.Optional getDouble(java.lang.String)",
       "public java.util.Optional getInt(java.lang.String)",
+      "public java.util.Optional getLong(java.lang.String)",
       "public void ifPresent(java.lang.String, java.util.function.Consumer)",
       "public ai.vespa.llm.InferenceParameters withDefaultOptions(java.util.function.Function)"
     ],
@@ -4159,6 +4160,8 @@
       "public static final java.lang.String OPTION_TOP_P",
       "public static final java.lang.String OPTION_N_PREDICT",
       "public static final java.lang.String OPTION_REPEAT_PENALTY",
+      "public static final java.lang.String OPTION_FREQUENCY_PENALTY",
+      "public static final java.lang.String OPTION_PRESENCE_PENALTY",
       "public static final java.lang.String OPTION_SEED",
       "public static final java.lang.String OPTION_JSON_SCHEMA"
     ]

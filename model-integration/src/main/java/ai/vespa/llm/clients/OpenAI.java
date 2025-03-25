@@ -2,6 +2,7 @@
 package ai.vespa.llm.clients;
 
 import ai.vespa.llm.InferenceParameters;
+import ai.vespa.llm.LanguageModelException;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.secret.Secrets;
@@ -12,8 +13,12 @@ import com.openai.client.okhttp.OpenAIOkHttpClient;
 import com.openai.client.okhttp.OpenAIOkHttpClientAsync;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import com.openai.models.ChatModel;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.openai.client.OpenAIClient;
 import com.openai.client.OpenAIClientAsync;
+import com.openai.core.JsonValue;
+import com.openai.models.ResponseFormatJsonSchema;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +29,7 @@ import java.util.function.Consumer;
 /**
  * A configurable OpenAI client that extends the {@link ConfigurableLanguageModel} class.
  * Uses Official OpenAI java client (https://github.com/openai/openai-java)
- * Currently only basic completion is implemented, but it is extensible to support Structured Output, Embedding, Tool Calling and Moderations.
+ * Supports basic completion and structured JSON output. Extensible to support Embedding, Tool Calling and Moderations.
  * Will reuse clients for Completions using same endpoint and API key to reduce connection overhead for multiple requests to the same endpoint with the same API key.
  * @author lesters
  * @author glebashnik
@@ -182,11 +187,51 @@ public class OpenAI extends ConfigurableLanguageModel {
         ChatCompletionCreateParams.Builder builder = ChatCompletionCreateParams.builder()
             .model(ChatModel.of(parameters.get(InferenceParameters.OPTION_MODEL).map(Object::toString).orElse(DEFAULT_MODEL)))
             .addUserMessage(prompt.toString());
-        
         parameters.getInt(InferenceParameters.OPTION_MAX_TOKENS).ifPresent(builder::maxCompletionTokens);
         parameters.getDouble(InferenceParameters.OPTION_TEMPERATURE).ifPresent(builder::temperature);
+        parameters.getDouble(InferenceParameters.OPTION_TOP_P).ifPresent(builder::topP);
+        parameters.getLong(InferenceParameters.OPTION_SEED).ifPresent(builder::seed);
+        parameters.getInt(InferenceParameters.OPTION_N_PREDICT).ifPresent(builder::n);
+        parameters.getDouble(InferenceParameters.OPTION_FREQUENCY_PENALTY).ifPresent(builder::frequencyPenalty);
+        parameters.getDouble(InferenceParameters.OPTION_PRESENCE_PENALTY).ifPresent(builder::presencePenalty);
+        // Add JSON schema if specified
+        addResponseFormat(parameters, builder);
         
         return builder.build();
+    }
+    
+    private void addResponseFormat(InferenceParameters parameters, ChatCompletionCreateParams.Builder builder) {
+        parameters.get(InferenceParameters.OPTION_JSON_SCHEMA).ifPresent(jsonSchemaStr -> {
+            try {
+                ObjectMapper mapper = new ObjectMapper();  
+                // Parse the JSON string to a Map using readValue
+                Map<String, Object> rawMap = mapper.readValue(
+                    jsonSchemaStr.toString(), 
+                    new TypeReference<Map<String, Object>>() {}
+                );
+                Map<String, JsonValue> additionalProps = new HashMap<>();
+                
+                // Convert each value to JsonValue
+                rawMap.forEach((key, value) -> 
+                    additionalProps.put(key, JsonValue.from(value)));
+                
+                ResponseFormatJsonSchema.JsonSchema.Schema schema = 
+                    ResponseFormatJsonSchema.JsonSchema.Schema.builder()
+                        .putAllAdditionalProperties(additionalProps)
+                        .build();
+                
+                var jsonFormat = ResponseFormatJsonSchema.builder()
+                    .jsonSchema(ResponseFormatJsonSchema.JsonSchema.builder()
+                        .name("structured-output")
+                        .schema(schema)
+                        .build())
+                    .build();
+                
+                builder.responseFormat(jsonFormat);
+            } catch (Exception e) {
+                throw new LanguageModelException(400, "Failed to parse JSON schema:\n" + jsonSchemaStr.toString() + "\n" + e.getMessage(), e);
+            }
+        });
     }
 
     /**
