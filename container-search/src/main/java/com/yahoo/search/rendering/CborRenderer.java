@@ -3,21 +3,30 @@ package com.yahoo.search.rendering;
 
 import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
+import com.fasterxml.jackson.core.JsonFactoryBuilder;
 import com.fasterxml.jackson.core.JsonGenerator;
+import com.fasterxml.jackson.core.ObjectCodec;
 import com.fasterxml.jackson.core.TreeNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.cbor.CBORFactory;
+import com.fasterxml.jackson.dataformat.cbor.CBORFactoryBuilder;
 import com.google.common.base.Preconditions;
 import com.yahoo.container.logging.TraceRenderer;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.Inspectable;
 import com.yahoo.data.access.Inspector;
 import com.yahoo.data.access.Type;
+import com.yahoo.data.access.simple.CborRender;
 import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.data.access.simple.Value;
+import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.TensorFieldValue;
 import com.yahoo.document.json.JsonWriter;
+import com.yahoo.io.AbstractByteWriter;
+import com.yahoo.io.ByteWriter;
+import com.yahoo.json.Jackson;
 import com.yahoo.lang.MutableBoolean;
 import com.yahoo.processing.Response;
 import com.yahoo.processing.execution.Execution.Trace;
@@ -175,7 +184,7 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
     }
 
     private static JsonFactory createGeneratorFactory() {
-        return new CBORFactory();
+        return new CBORFactory(Jackson.createMapper());
     }
 
     @Override
@@ -747,6 +756,15 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
 
         private void renderInspector(Inspector data) throws IOException {
             if(data.type().equals(Type.ARRAY)) {
+
+                int entries = data.entryCount();
+                for (int i = 0; i < entries; i++) {
+                    if (!data.entry(i).type().equals(Type.STRING)) {
+                        renderInspectorDirect(maybeConvertData(data));
+                        return;
+                    }
+                }
+
                 generator.writeStartArray();
                 data.entries().forEach(e -> {
                     byte[] utf8 = e.asUtf8();
@@ -763,7 +781,13 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspectorDirect(Inspector data) throws IOException {
-            generator().writeRawValue(JsonRender.render(data, new StringBuilder(), true).toString());
+            DataDisclosure dataDisclosure = new MyGenerator(generator());
+
+//            JsonRender.render(data, dataDisclosure);
+            CborRender.render(data, dataDisclosure);
+//            new com.yahoo.slime.CborFormat(false).encode(abstractByteWriter, data, dataDisclosure);
+
+//            generator().writeRawValue(JsonRender.render(data, new StringBuilder(), true).toString());
         }
 
         protected void renderFieldContents(Object field) throws IOException {
@@ -788,13 +812,23 @@ public class CborRenderer extends AsynchronousSectionedRenderer<Result> {
                 renderTensor(Optional.of(t));
             } else if (field instanceof FeatureData featureData) {
                 generator().writeStartObject();
-                for (String featureName : featureData.featureNames()) {
-                    generator().writeFieldName(featureName);
-                    Tensor tensor = featureData.getTensor(featureName);
-                    if(tensor.type().rank() == 0) {
-                        generator().writeNumber(tensor.asDouble());
-                    } else {
-                        renderTensor(Optional.of(tensor));
+
+                try {
+                    Inspector inspect = featureData.inspect();
+                    for (Map.Entry<String, Inspector> e : inspect.fields()) {
+                        generator().writeFieldName(e.getKey());
+                        if (e.getValue().type() == Type.DOUBLE) {
+                            generator().writeNumber(e.getValue().asDouble());
+                        } else {
+                            Tensor tensor = featureData.getTensor(e.getKey());
+                            renderTensor(Optional.ofNullable(tensor));
+                        }
+                    }
+                } catch (IllegalStateException e) {
+                    // FeatureData not created from an inspector cannot be inspected ...
+                    for (String s : featureData.featureNames()) {
+                        generator().writeFieldName(s);
+                        renderTensor(Optional.ofNullable(featureData.getTensor(s)));
                     }
                 }
                 generator().writeEndObject();

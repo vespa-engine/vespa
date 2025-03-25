@@ -24,6 +24,7 @@ import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.hitfield.JSONString;
+import com.yahoo.prelude.hitfield.RawData;
 import com.yahoo.prelude.searcher.JuniperSearcher;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -52,6 +53,7 @@ import com.yahoo.search.statistics.TimeTracker;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.text.JSON;
 import com.yahoo.text.Utf8;
@@ -67,6 +69,7 @@ import org.junit.jupiter.api.Timeout;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -419,6 +422,7 @@ public class CborRendererTestCase {
                 + "                    \"bool\": true,"
                 + "                    \"object\": \"thingie\","
                 + "                    \"string\": \"stuff\","
+                + "                    \"array\": [\"this\",\"is\",\"an\",\"array\"],"
                 + "                    \"predicate\": \"a in [b]\","
                 + "                    \"tensor1\": { \"type\": \"tensor(x{})\", \"cells\": { \"a\":2.0 } },"
                 + "                    \"tensor2\": { \"type\": \"tensor()\", \"values\":[0.0] },"
@@ -453,16 +457,16 @@ public class CborRendererTestCase {
         h.setField("string", "stuff");
         h.setField("predicate", Predicate.fromString("a in [b]"));
         h.setField("array", new Value.ArrayValue().add("this").add("is").add("an").add("array"));
-//        h.setField("tensor1", new TensorFieldValue(Tensor.from("{ {x:a}: 2.0}")));
-//        h.setField("tensor2", new TensorFieldValue(TensorType.empty));
-//        h.setField("tensor3", Tensor.from("{ {x:a, y:0}: 2.0, {x:a, y:1}: -1 }"));
-//        h.setField("object", new Thingie());
-//        h.setField("summaryfeatures", createSummaryFeatures());
-//        h.setField("data", new RawData("Data æ å".getBytes(StandardCharsets.UTF_8)));
+        h.setField("tensor1", new TensorFieldValue(Tensor.from("{ {x:a}: 2.0}")));
+        h.setField("tensor2", new TensorFieldValue(TensorType.empty));
+        h.setField("tensor3", Tensor.from("{ {x:a, y:0}: 2.0, {x:a, y:1}: -1 }"));
+        h.setField("object", new Thingie());
+        h.setField("summaryfeatures", createSummaryFeatures());
+        h.setField("data", new RawData("Data æ å".getBytes(StandardCharsets.UTF_8)));
         r.hits().add(h);
         r.setTotalHitCount(1L);
-        String summary = render(r);
-        assertEqualJsonContent(expected, summary);
+        byte[] summary = renderB(r);
+        assertEqualJsonCborContent(expected, summary);
     }
 
     private FeatureData createSummaryFeatures() {
@@ -595,8 +599,8 @@ public class CborRendererTestCase {
         access.add(new SlimeAdapter(slime.get()));
         subQuery.trace(access, 1);
         q.trace("marker", 1);
-        String summary = render(execution, r);
-        assertEqualJsonContent(expected, summary);
+        byte[] summary = renderBytes(execution, r);
+        assertEqualJsonCborContent(expected, summary);
     }
 
     @Test
@@ -1292,8 +1296,8 @@ public class CborRendererTestCase {
         h.setField("jackson", j);
         h.setField("json producer", struct);
         r.hits().add(h);
-        String summary = render(r);
-        assertEqualJsonContent(expected, summary);
+        byte[] summary = renderB(r);
+        assertEqualJsonCborContent(expected, summary);
     }
 
     @Test
@@ -1470,8 +1474,8 @@ public class CborRendererTestCase {
         h.setField("structured", atop);
         r.hits().add(h);
         r.setTotalHitCount(1L);
-        String summary = render(r);
-        assertEqualJsonContent(expected, summary);
+        byte[] summary = renderB(r);
+        assertEqualJsonCborContent(expected, summary);
     }
 
     private static SlimeAdapter dataFromSimplified(String simplified) {
@@ -1506,13 +1510,13 @@ public class CborRendererTestCase {
         h.setField("f6", dataFromSimplified("{ i4: 'v6', i5: [ {key: -17, value: 'myvalue8' }, { key: -42, value: 'myvalue9' } ] }"));
         r.hits().add(h);
         r.setTotalHitCount(1L);
-        String summary = render(r);
-        assertEqualJson(expected.toString(), summary);
+        byte[] summary = renderB(r);
+        assertEqualJsonCborContent(expected.toString(), summary);
         r = new Result(new Query("/?"));
         r.hits().add(h);
         r.setTotalHitCount(1L);
-        summary = render(r);
-        assertEqualJson(expected.toString(), summary);
+        summary = renderB(r);
+        assertEqualJsonCborContent(expected.toString(), summary);
 
         r = new Result(new Query("/?renderer.json.jsonMaps=false"));
         expected = dataFromSimplified(
@@ -1530,8 +1534,8 @@ public class CborRendererTestCase {
                         "}}");
         r.hits().add(h);
         r.setTotalHitCount(1L);
-        summary = render(r);
-        assertEqualJson(expected.toString(), summary);
+        summary = renderB(r);
+        assertEqualJsonCborContent(expected.toString(), summary);
     }
 
     @Test
@@ -1556,8 +1560,8 @@ public class CborRendererTestCase {
         h.setField("f4", dataFromSimplified("[ { item: 'mykey4', weight: 40 }, { item: 'mykey5', weight: 50 } ]"));
         r.hits().add(h);
         r.setTotalHitCount(1L);
-        String summary = render(r);
-        assertEqualJson(expected.toString(), summary);
+        byte[] summary = renderB(r);
+        assertEqualJsonCborContent(expected.toString(), summary);
 
         r = new Result(new Query("/?renderer.json.jsonWsets=false"));
         expected = dataFromSimplified(
@@ -1573,8 +1577,8 @@ public class CborRendererTestCase {
                         "}}");
         r.hits().add(h);
         r.setTotalHitCount(1L);
-        summary = render(r);
-        assertEqualJson(expected.toString(), summary);
+        summary = renderB(r);
+        assertEqualJsonCborContent(expected.toString(), summary);
     }
 
     @Test
@@ -1734,7 +1738,6 @@ public class CborRendererTestCase {
     @SuppressWarnings("unchecked")
     private void assertEqualJsonCborContent(String expected, byte[] generated) throws IOException {
         assertEquals("", validateJSON(expected));
-//        assertEquals("", validateJSON(generated));
 
         CBORMapper cb = CBORMapper.builder().build();
 
@@ -1743,8 +1746,6 @@ public class CborRendererTestCase {
         Map<String, Object> gen = cb.readValue(generated, Map.class);
 
         recursivelyAssertEquals(exp, gen);
-
-        assertEquals(exp, gen);
     }
 
     private void recursivelyAssertEquals(Object exp, Object gen) {
@@ -1761,6 +1762,7 @@ public class CborRendererTestCase {
                 assertEquals(expNext.getKey(), genNext.getKey());
                 recursivelyAssertEquals(expNext.getValue(), genNext.getValue());
             }
+            return;
         }
 
         if(exp instanceof ArrayList && gen instanceof ArrayList) {
@@ -1772,9 +1774,19 @@ public class CborRendererTestCase {
                 var genNext = genIt.next();
                 recursivelyAssertEquals(expNext, genNext);
             }
+            return;
         }
 
-        assertEquals(exp, gen);
+        if(exp == null && gen == null) {
+            // both null
+        }
+        else if(exp.equals("NaN") && gen instanceof Double && Double.isNaN((Double) gen)) {
+            // as equal as it can be ...
+        } else if (exp instanceof Double && gen instanceof Float) {
+            assertEquals(((Double) exp).floatValue(), gen);
+        } else {
+            assertEquals(exp, gen);
+        }
     }
 
     private String validateJSON(String presumablyValidJson) {
