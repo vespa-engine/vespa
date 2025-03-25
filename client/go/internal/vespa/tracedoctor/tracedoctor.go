@@ -7,20 +7,6 @@ import (
 	"sort"
 )
 
-type threadSummary struct {
-	matchMs       float64
-	firstPhaseMs  float64
-	secondPhaseMs float64
-}
-
-func (p *threadSummary) render(out *output) {
-	tab := newTable("", "")
-	tab.addRow("matching", fmt.Sprintf("%.3f ms", p.matchMs))
-	tab.addRow("first phase", fmt.Sprintf("%.3f ms", p.firstPhaseMs))
-	tab.addRow("second phase", fmt.Sprintf("%.3f ms", p.secondPhaseMs))
-	tab.render(out)
-}
-
 type timing struct {
 	queryMs   float64
 	summaryMs float64
@@ -68,8 +54,13 @@ func (out *output) fmt(format string, args ...interface{}) {
 }
 
 type Context struct {
-	root   slime.Value
-	timing *timing
+	root             slime.Value
+	timing           *timing
+	selectMedianNode bool
+}
+
+func (ctx *Context) SelectMedianNode() {
+	ctx.selectMedianNode = true
 }
 
 func NewContext(root slime.Value) *Context {
@@ -79,61 +70,51 @@ func NewContext(root slime.Value) *Context {
 	}
 }
 
-func selectSlowestSearch(traces []protonTrace) (*protonTrace, *protonTrace) {
-	sort.Slice(traces, func(i, j int) bool {
-		return traces[i].durationMs() > traces[j].durationMs()
-	})
-	return &traces[0], &traces[len(traces)/2]
-}
-
-func selectSlowestThread(threads []threadTrace) (*threadTrace, *threadTrace) {
-	if len(threads) == 0 {
-		return nil, nil
+func (ctx *Context) analyzeThread(trace protonTrace, thread threadTrace, peer *threadTrace, out *output) {
+	overview := []*threadSummary{thread.extractSummary()}
+	if peer != nil {
+		overview = append(overview, peer.extractSummary())
 	}
-	sort.Slice(threads, func(i, j int) bool {
-		return threads[i].profTimeMs() > threads[j].profTimeMs()
-	})
-	return &threads[0], &threads[len(threads)/2]
-}
-
-func (ctx *Context) analyzeThread(trace protonTrace, thread threadTrace, out *output) {
+	renderThreadSummaries(out, overview...)
+	out.fmt("looking into thread #%d\n", thread.id)
 	thread.timeline().render(out)
-	threadSummary := threadSummary{
-		matchMs:       thread.matchTimeMs(),
-		firstPhaseMs:  thread.firstPhaseTimeMs(),
-		secondPhaseMs: thread.secondPhaseTimeMs(),
-	}
-	threadSummary.render(out)
 	queryPerf := trace.extractQuery()
 	queryPerf.importMatchPerf(thread)
-	out.fmt("\nmatch profiling for thread #%d (total time was %f ms)\n", thread.id, thread.matchTimeMs())
+	out.fmt("match profiling for thread #%d (total time was %f ms)\n", thread.id, thread.matchTimeMs())
 	queryPerf.render(out)
 	if firstPhasePerf := thread.firstPhasePerf(); firstPhasePerf.impact() != 0.0 {
-		out.fmt("\nfirst phase rank profiling for thread #%d (total time was %f ms)\n", thread.id, thread.firstPhaseTimeMs())
+		out.fmt("first phase rank profiling for thread #%d (total time was %f ms)\n", thread.id, thread.firstPhaseTimeMs())
 		firstPhasePerf.render(out)
 	}
 	if secondPhasePerf := thread.secondPhasePerf(); secondPhasePerf.impact() != 0.0 {
-		out.fmt("\nsecond phase rank profiling for thread #%d (total time was %f ms)\n", thread.id, thread.secondPhaseTimeMs())
+		out.fmt("second phase rank profiling for thread #%d (total time was %f ms)\n", thread.id, thread.secondPhaseTimeMs())
 		secondPhasePerf.render(out)
 	}
 }
 
 func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out *output) {
+	overview := []*protonSummary{trace.extractSummary()}
+	if peer != nil {
+		overview = append(overview, peer.extractSummary())
+	}
+	renderProtonSummaries(out, overview...)
+	out.fmt("looking into node %s\n", trace.desc())
+	trace.timeline().render(out)
+	if ann := newAnnProbe(trace); ann.impact() != 0.0 {
+		ann.render(out)
+	}
 	threads := trace.findThreadTraces()
 	cnt := len(threads)
 	worst, median := selectSlowestThread(threads)
-	trace.timeline().render(out)
 	if worst != nil {
 		out.fmt("found %d thread%s\n", cnt, suffix(cnt, "s"))
 		out.fmt("slowest matching and ranking was thread #%d: %.3f ms\n", worst.id, worst.profTimeMs())
-		if median != nil {
+		if median != worst {
 			out.fmt("median matching and ranking was thread #%d: %.3f ms\n", median.id, median.profTimeMs())
+		} else {
+			median = nil
 		}
-		out.fmt("looking into thread #%d\n", worst.id)
-		ctx.analyzeThread(trace, *worst, out)
-		if ann := newAnnProbe(trace); ann.impact() != 0.0 {
-			ann.render(out)
-		}
+		ctx.analyzeThread(trace, *worst, median, out)
 	}
 }
 
@@ -148,6 +129,13 @@ func selectSlowestGroup(groups []protonTraceGroup) int {
 		}
 	}
 	return slowestIndex
+}
+
+func selectSlowestNode(traces []protonTrace) (*protonTrace, *protonTrace) {
+	sort.Slice(traces, func(i, j int) bool {
+		return traces[i].durationMs() > traces[j].durationMs()
+	})
+	return &traces[0], &traces[len(traces)/2]
 }
 
 type searchMeta struct {
@@ -175,17 +163,19 @@ func (ctx *Context) Analyze(stdout io.Writer) error {
 		searchMeta{groups}.render(out)
 		idx := selectSlowestGroup(groups)
 		out.fmt("looking into search #%d\n", idx)
-		worst, median := selectSlowestSearch(groups[idx].traces)
+		worst, median := selectSlowestNode(groups[idx].traces)
 		out.fmt("slowest node was: %s: %.3f ms\n", worst.desc(), worst.durationMs())
-		var peer *protonTrace
 		if median != worst {
 			out.fmt("median node was: %s: %.3f ms\n", median.desc(), median.durationMs())
-			if median.durationMs()*1.25 < worst.durationMs() && worst.durationMs()-median.durationMs() > 5.0 {
-				peer = median
-			}
+		} else {
+			median = nil
 		}
-		out.fmt("looking into node %s\n", worst.desc())
-		ctx.analyzeProtonTrace(*worst, peer, out)
+		if ctx.selectMedianNode && median != nil {
+			out.fmt("user directive: select median node\n")
+			ctx.analyzeProtonTrace(*median, worst, out)
+		} else {
+			ctx.analyzeProtonTrace(*worst, median, out)
+		}
 	}
 	return out.err
 }

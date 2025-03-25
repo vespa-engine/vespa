@@ -1,6 +1,9 @@
 package tracedoctor
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 type timeline struct {
 	list []timelineEntry
@@ -11,13 +14,13 @@ type timelineEntry struct {
 	what string
 }
 
-func (t *timeline) durationOf(name string) float64 {
+func (t *timeline) durationOf(prefix string) float64 {
 	for i, entry := range t.list {
-		if entry.what == name && i < len(t.list)-1 {
+		if strings.HasPrefix(entry.what, prefix) && i < len(t.list)-1 {
 			return t.list[i+1].when - entry.when
 		}
 	}
-	return 0 // Return 0 if the name is not found or no next entry exists
+	return 0 // Return 0 if the prefix is not found or no next entry exists
 }
 
 func (t *timeline) impact() float64 {

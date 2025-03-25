@@ -10,7 +10,8 @@ import (
 )
 
 type inspectProfileOptions struct {
-	profileFile string
+	profileFile      string
+	selectMedianNode bool
 }
 
 func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
@@ -24,6 +25,9 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 		return fmt.Errorf("profile file '%s' does not contain valid JSON", opts.profileFile)
 	}
 	context := tracedoctor.NewContext(root)
+	if opts.selectMedianNode {
+		context.SelectMedianNode()
+	}
 	return context.Analyze(cli.Stdout)
 }
 
@@ -41,6 +45,7 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect")
+	cmd.Flags().BoolVar(&opts.selectMedianNode, "median-node", false, "Select median node for analysis (default is worst)")
 	return cmd
 }
 
