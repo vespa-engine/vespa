@@ -30,7 +30,8 @@ enum class MissingPolicy : uint8_t {
 
 struct FieldSortSpec {
     FieldSortSpec(std::string_view field, bool ascending, std::shared_ptr<BlobConverter> converter) noexcept;
-    FieldSortSpec(std::string_view field, sortspec::SortOrder, std::shared_ptr<BlobConverter> converter) noexcept;
+    FieldSortSpec(std::string_view field, sortspec::SortOrder, std::shared_ptr<BlobConverter> converter,
+                  sortspec::MissingPolicy missing_policy, std::string missing_value) noexcept;
     ~FieldSortSpec();
     std::string                    _field;
     bool                           _ascending;  // Deprecated, _sort order will take over.

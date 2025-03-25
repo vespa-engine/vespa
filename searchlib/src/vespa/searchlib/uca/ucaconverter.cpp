@@ -25,16 +25,16 @@ UcaConverterFactory::create(string_view local, string_view strength) const {
     return std::make_unique<UcaConverter>(local, strength);
 }
 
-UcaConverter::UcaConverter(std::string_view locale, std::string_view strength) :
-    _buffer(),
-    _u16Buffer(128),
-    _collator()
+UcaConverter::UcaConverter(std::string_view locale, std::string_view strength)
+    : _buffer(),
+      _u16Buffer(128),
+      _collator()
 {
     UErrorCode status = U_ZERO_ERROR;
     Collator *coll(NULL);
     {
         std::lock_guard<std::mutex> guard(_GlobalDirtyICUThreadSafeLock);
-        coll = Collator::createInstance(icu::Locale(locale.data()), status);
+        coll = Collator::createInstance(icu::Locale(std::string(locale).c_str()), status);
     }
     if(U_SUCCESS(status)) {
         _collator.reset(coll);
@@ -55,7 +55,7 @@ UcaConverter::UcaConverter(std::string_view locale, std::string_view strength) :
         }
     } else {
         delete coll;
-        throw std::runtime_error("Failed Collator::createInstance(Locale(locale.c_str()), status) with locale : " + std::string(locale));
+        throw std::runtime_error("Failed Collator::createInstance(Locale(std::string(locale).c_str()), status) with locale : " + std::string(locale));
     }
 }
 
