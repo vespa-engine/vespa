@@ -68,6 +68,30 @@ MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute
     return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<const char*>, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }
 
+template <typename MultiValueMappingT, typename EnumStoreT>
+class MultiStringSortBlobWriter : public attribute::ISortBlobWriter {
+private:
+    const MultiValueMappingT& _mv_mapping;
+    const EnumStoreT& _enum_store;
+    const common::BlobConverter* _converter;
+    bool _ascending;
+public:
+    MultiStringSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store,
+                              const common::BlobConverter* converter, bool ascending)
+        : _mv_mapping(mv_mapping), _enum_store(enum_store), _converter(converter), _ascending(ascending)
+    {}
+    long write(uint32_t docid, void* buf, long available) const override {
+        attribute::StringSortBlobWriter writer(buf, available, _converter, _ascending);
+        auto indices = _mv_mapping.get(docid);
+        for (auto& v : indices) {
+            if (!writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()))) {
+                return -1;
+            }
+        }
+        return writer.write();
+    }
+};
+
 template <typename B, typename M>
 long
 MultiValueStringAttributeT<B, M>::on_serialize_for_sort(DocId doc, void * serTo, long available, const common::BlobConverter * bc, bool asc) const
@@ -94,6 +118,13 @@ long
 MultiValueStringAttributeT<B, M>::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {
     return on_serialize_for_sort(doc, serTo, available, bc, false);
+}
+
+template <typename B, typename M>
+std::unique_ptr<attribute::ISortBlobWriter>
+MultiValueStringAttributeT<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const
+{
+    return std::make_unique<MultiStringSortBlobWriter<MultiValueMapping, EnumStore>>(this->_mvMapping, this->_enumStore, converter, ascending);
 }
 
 } // namespace search
