@@ -1122,51 +1122,6 @@ DocumentMetaStore::onSerializeForDescendingSort(DocId lid, void * serTo, long av
     return document::GlobalId::LENGTH;
 }
 
-namespace {
-
-template <bool ascending>
-class DocumentMetaStoreSortBlobWriter : public search::attribute::ISortBlobWriter {
-private:
-    const DocumentMetaStore& _dms;
-public:
-    DocumentMetaStoreSortBlobWriter(const DocumentMetaStore& dms) noexcept : _dms(dms) {}
-    long write(uint32_t docid, void* buf, long available) const override;
-};
-
-template <bool ascending>
-long
-DocumentMetaStoreSortBlobWriter<ascending>::write(uint32_t docid, void* buf, long available) const
-{
-    if (!_dms.validLid(docid)) {
-        return 0;
-    }
-    if (available < document::GlobalId::LENGTH) {
-        return -1;
-    }
-    if constexpr (ascending) {
-        memcpy(buf, _dms.getRawMetaData(docid).getGid().get(), document::GlobalId::LENGTH);
-    } else {
-        const auto* src = static_cast<const uint8_t*>(_dms.getRawMetaData(docid).getGid().get());
-        auto* dst = static_cast<uint8_t*>(buf);
-        for (size_t i = 0; i < document::GlobalId::LENGTH; ++i) {
-            dst[i] = 0xff - src[i];
-        }
-    }
-    return document::GlobalId::LENGTH;
-}
-
-}
-
-std::unique_ptr<search::attribute::ISortBlobWriter>
-DocumentMetaStore::make_sort_blob_writer(bool ascending, const search::common::BlobConverter*) const
-{
-    if (ascending) {
-        return std::make_unique<DocumentMetaStoreSortBlobWriter<true>>(*this);
-    } else {
-        return std::make_unique<DocumentMetaStoreSortBlobWriter<false>>(*this);
-    }
-}
-
 }  // namespace proton
 
 namespace vespalib::btree {

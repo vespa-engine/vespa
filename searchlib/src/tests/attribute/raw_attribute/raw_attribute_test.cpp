@@ -110,29 +110,27 @@ TEST_F(RawAttributeTest, implements_serialize_for_sort) {
     memset(buf, 0, sizeof(buf));
     _attr->addDocs(10);
     _attr->commit();
-    auto asc_writer = _attr->make_sort_blob_writer(true, nullptr);
-    auto desc_writer = _attr->make_sort_blob_writer(false, nullptr);
-    EXPECT_EQ(1, asc_writer->write(1, buf, sizeof(buf)));
+    EXPECT_EQ(1, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
     EXPECT_EQ(0, buf[0]);
-    EXPECT_EQ(1, desc_writer->write(1, buf, sizeof(buf)));
+    EXPECT_EQ(1, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
     EXPECT_EQ(0xff, buf[0]);
     _raw->set_raw(1, raw_hello);
-    EXPECT_EQ(6, asc_writer->write(1, buf, sizeof(buf)));
+    EXPECT_EQ(6, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
     uint8_t hello_asc[] = {0x01+'h', 0x01+'e', 0x01+'l', 0x01+'l', 0x01+'o', 0x00};
     EXPECT_EQ(0, memcmp(hello_asc, buf, 6));
-    EXPECT_EQ(6, desc_writer->write(1, buf, sizeof(buf)));
+    EXPECT_EQ(6, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
     uint8_t hello_desc[] = {0xfe -'h', 0xfe -'e', 0xfe -'l', 0xfe -'l', 0xfe -'o', 0xff};
     EXPECT_EQ(0, memcmp(hello_desc, buf, 6));
     _raw->set_raw(1, escapes);
-    EXPECT_EQ(8, asc_writer->write(1, buf, sizeof(buf)));
+    EXPECT_EQ(8, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
     uint8_t escapes_asc[] = {0x02, 0x01, 0xff, 0xff, 0xff, 0xfe, 0x02, 0x00};
     EXPECT_EQ(0, memcmp(escapes_asc, buf, 8));
-    EXPECT_EQ(8, desc_writer->write(1, buf, sizeof(buf)));
+    EXPECT_EQ(8, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
     uint8_t escapes_desc[] = {0xfd, 0xfe, 0x00, 0x00, 0x00, 0x01, 0xfd, 0xff};
     EXPECT_EQ(0, memcmp(escapes_desc, buf, 8));
     _raw->set_raw(1, raw_long_hello);
-    EXPECT_EQ(-1, asc_writer->write(1, buf, sizeof(buf)));
-    EXPECT_EQ(-1, desc_writer->write(1, buf, sizeof(buf)));
+    EXPECT_EQ(-1, _attr->serializeForAscendingSort(1, buf, sizeof(buf)));
+    EXPECT_EQ(-1, _attr->serializeForDescendingSort(1, buf, sizeof(buf)));
 }
 
 TEST_F(RawAttributeTest, save_and_load)

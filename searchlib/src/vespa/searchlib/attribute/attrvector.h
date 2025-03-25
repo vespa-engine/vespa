@@ -130,7 +130,6 @@ private:
     long on_serialize_for_sort(DocId doc, void* serTo, long available) const;
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const override;
     long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const override;
-    std::unique_ptr<search::attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -230,6 +229,5 @@ private:
     long on_serialize_for_sort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc, bool asc) const;
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const override;
     long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const search::common::BlobConverter* bc) const override;
-    std::unique_ptr<search::attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const override;
 };
 
