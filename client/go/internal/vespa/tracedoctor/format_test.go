@@ -35,8 +35,24 @@ func TestRenderTable(t *testing.T) {
 	assert.Equal(t, expected, buf.String())
 }
 
+func TestRenderTableRowPadding(t *testing.T) {
+	tab := newTable("1", "empty")
+	tab.addRow()
+	tab.addRow("123456")
+	var buf bytes.Buffer
+	tab.render(&output{out: &buf})
+	expected := "" +
+		"┌────────┬───────┐\n" +
+		"│      1 │ empty │\n" +
+		"├────────┼───────┤\n" +
+		"│        │       │\n" +
+		"│ 123456 │       │\n" +
+		"└────────┴───────┘\n"
+	assert.Equal(t, expected, buf.String())
+}
+
 func TestRenderTableNoHeaders(t *testing.T) {
-	tab := newTable("", "")
+	tab := newTableNoHeaders(2)
 	tab.addRow("b", "2")
 	tab.addRow("123456", "abcdef")
 	var buf bytes.Buffer
@@ -44,6 +60,24 @@ func TestRenderTableNoHeaders(t *testing.T) {
 	expected := "" +
 		"┌────────┬────────┐\n" +
 		"│ b      │      2 │\n" +
+		"│ 123456 │ abcdef │\n" +
+		"└────────┴────────┘\n"
+	assert.Equal(t, expected, buf.String())
+}
+
+func TestRenderTableWithExtraLine(t *testing.T) {
+	tab := newTable("1", "a")
+	tab.addRow("b", "2")
+	tab.addLine()
+	tab.addRow("123456", "abcdef")
+	var buf bytes.Buffer
+	tab.render(&output{out: &buf})
+	expected := "" +
+		"┌────────┬────────┐\n" +
+		"│      1 │ a      │\n" +
+		"├────────┼────────┤\n" +
+		"│ b      │      2 │\n" +
+		"├────────┼────────┤\n" +
 		"│ 123456 │ abcdef │\n" +
 		"└────────┴────────┘\n"
 	assert.Equal(t, expected, buf.String())

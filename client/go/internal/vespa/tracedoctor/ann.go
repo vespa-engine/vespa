@@ -1,28 +1,30 @@
 package tracedoctor
 
-import "github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
+import (
+	"fmt"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
+)
 
 type annNode struct {
 	root slime.Value
 }
 
-func (n annNode) render(out *output) {
-	out.fmt("ANN query node:\n")
-	out.fmt("    attribute_tensor: %s\n", n.root.Field("attribute_tensor").AsString())
-	out.fmt("    query_tensor: %s\n", n.root.Field("query_tensor").AsString())
-	out.fmt("    target_hits: %d\n", n.root.Field("target_hits").AsLong())
+func (n annNode) makeRows(tab *table) {
+	tab.addRow("attribute tensor", n.root.Field("attribute_tensor").AsString())
+	tab.addRow("query tensor", n.root.Field("query_tensor").AsString())
+	tab.addRow("target hits", fmt.Sprintf("%d", n.root.Field("target_hits").AsLong()))
 	if n.root.Field("adjusted_target_hits").AsLong() > n.root.Field("target_hits").AsLong() {
-		out.fmt("    adjusted_target_hits: %d\n", n.root.Field("adjusted_target_hits").AsLong())
+		tab.addRow("adjusted target hits", fmt.Sprintf("%d", n.root.Field("adjusted_target_hits").AsLong()))
 	}
-	out.fmt("    explore_additional_hits: %d\n", n.root.Field("explore_additional_hits").AsLong())
-	out.fmt("    algorithm: %s\n", n.root.Field("algorithm").AsString())
+	tab.addRow("explore additional hits", fmt.Sprintf("%d", n.root.Field("explore_additional_hits").AsLong()))
+	tab.addRow("algorithm", n.root.Field("algorithm").AsString())
 	if calculated := n.root.Field("global_filter").Field("calculated"); calculated.Valid() && !calculated.AsBool() {
-		out.fmt("    global_filter: not calculated\n")
+		tab.addRow("global filter", "not calculated")
 	} else if hit_ratio := n.root.Field("global_filter").Field("hit_ratio"); hit_ratio.Valid() {
-		out.fmt("    global_filter: %.3f hit ratio\n", hit_ratio.AsDouble())
+		tab.addRow("global filter", fmt.Sprintf("%.3f hit ratio", hit_ratio.AsDouble()))
 	}
 	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
-		out.fmt("    found hits: %d\n", top_k_hits.AsLong())
+		tab.addRow("found hits", fmt.Sprintf("%d", top_k_hits.AsLong()))
 	}
 }
 
@@ -55,10 +57,15 @@ func (p *annProbe) impact() float64 {
 }
 
 func (p *annProbe) render(out *output) {
-	out.fmt("\nANN during query setup: %.3f ms\n", p.annTime)
-	for _, node := range p.nodes {
-		node.render(out)
+	out.fmt("ann query details (total setup time was %.3f ms)\n", p.annTime)
+	tab := newTable("property", "details")
+	for i, node := range p.nodes {
+		if i > 0 {
+			tab.addLine()
+		}
+		node.makeRows(tab)
 	}
+	tab.render(out)
 }
 
 func newAnnProbe(trace protonTrace) *annProbe {

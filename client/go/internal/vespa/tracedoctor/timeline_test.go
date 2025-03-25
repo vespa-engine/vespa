@@ -27,7 +27,7 @@ func TestTimelineDurationOf(t *testing.T) {
 	duration := tl.durationOf("Start event")
 	assert.Equal(t, 20.0, duration, "Unexpected duration for 'Start event'")
 
-	duration = tl.durationOf("Middle event")
+	duration = tl.durationOf("Middle")
 	assert.Equal(t, 20.0, duration, "Unexpected duration for 'Middle event'")
 
 	duration = tl.durationOf("End event")

@@ -25,6 +25,10 @@ func newTable(headers ...string) *table {
 	return &table{headers: headers}
 }
 
+func newTableNoHeaders(cnt int) *table {
+	return &table{headers: make([]string, cnt)}
+}
+
 func (t *table) hasHeaders() bool {
 	for _, h := range t.headers {
 		if h != "" {
@@ -35,7 +39,14 @@ func (t *table) hasHeaders() bool {
 }
 
 func (t *table) addRow(row ...string) {
+	for len(row) < len(t.headers) {
+		row = append(row, "")
+	}
 	t.rows = append(t.rows, row)
+}
+
+func (t *table) addLine(row ...string) {
+	t.rows = append(t.rows, []string{})
 }
 
 func (t *table) render(out *output) {
@@ -80,7 +91,11 @@ func (t *table) render(out *output) {
 		renderLine(out, "├", "┼", "┤", "─")
 	}
 	for _, row := range t.rows {
-		renderRow(out, row)
+		if len(row) > 0 {
+			renderRow(out, row)
+		} else {
+			renderLine(out, "├", "┼", "┤", "─")
+		}
 	}
 	renderLine(out, "└", "┴", "┘", "─")
 }
