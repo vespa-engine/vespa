@@ -10,7 +10,7 @@ fi
 
 OPT_STATE="$(set +o)"
 set +x
-echo "$VESPA_ENGINE_GHCR_IO_WRITE_TOKEN" |  docker login ghcr.io --username aressem --password-stdin
+echo "$VESPA_ENGINE_GHCR_IO_WRITE_TOKEN" |  docker login ghcr.io --username esolitos --password-stdin
 eval "$OPT_STATE"
 docker push "ghcr.io/vespa-engine/vespa-preview-$ARCH:$VESPA_VERSION"
 
