@@ -38,6 +38,7 @@ type visitArgs struct {
 	waitSecs       int
 	verbose        bool
 	headers        []string
+	stream         bool
 
 	cli    *CLI
 	header http.Header
@@ -156,6 +157,7 @@ $ vespa visit --field-set "[id]" # list document IDs
 	cmd.Flags().StringSliceVar(&vArgs.bucketSpaces, "bucket-space", []string{"global", "default"}, `The "default" or "global" bucket space`)
 	cmd.Flags().BoolVarP(&vArgs.verbose, "verbose", "v", false, `Print the equivalent curl command for the visit operation`)
 	cmd.Flags().StringSliceVarP(&vArgs.headers, "header", "", nil, "Add a header to the HTTP request, on the format 'Header: Value'. This can be specified multiple times")
+	cmd.Flags().BoolVar(&vArgs.stream, "stream", true, "Stream the HTTP responses")
 	cli.bindWaitFlag(cmd, 0, &vArgs.waitSecs)
 	return cmd
 }
@@ -384,6 +386,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	if vArgs.bucketSpace != "" {
 		urlPath = urlPath + "&bucketSpace=" + vArgs.bucketSpace
 	}
+	urlPath = urlPath + fmt.Sprintf("&stream=%t", vArgs.stream)
 	url, urlParseError := url.Parse(urlPath)
 	if urlParseError != nil {
 		return nil, Failure("Invalid request path: '" + urlPath + "': " + urlParseError.Error())
