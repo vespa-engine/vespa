@@ -56,7 +56,6 @@ public class RAGSearcherWithOpenAITest {
     }
     
     @Test
-    //@Disabled
     public void testStreaming() {
         var llmConfig = new LlmClientConfig.Builder()
                 .apiKeySecretName("openai")
