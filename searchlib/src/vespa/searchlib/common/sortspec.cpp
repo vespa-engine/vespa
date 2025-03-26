@@ -193,7 +193,7 @@ MissingPolicy decode_missing_policy(Tokenizer& tokenizer) {
         return MissingPolicy::AS;
     } else {
         std::string missing_policy_copy(policy);
-        throw std::runtime_error(make_string("Bad missing policy %s at %s",
+        throw std::runtime_error(make_string("Unknown missing policy %s at %s",
             missing_policy_copy.c_str(), tokenizer.spec().c_str()));
     }
 }

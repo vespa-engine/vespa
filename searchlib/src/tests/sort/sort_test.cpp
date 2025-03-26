@@ -21,6 +21,24 @@ using namespace search::uca;
 using vespalib::ConstBufferRef;
 using search::common::sortspec::MissingPolicy;
 using search::common::sortspec::SortOrder;
+using FieldSortSpecVector = std::vector<FieldSortSpec>;
+
+namespace {
+
+std::string_view converter_as_string_view(const std::shared_ptr<BlobConverter>& converter) {
+    if (!converter) {
+        return "null";
+    }
+    if (dynamic_cast<LowercaseConverter*>(converter.get()) != nullptr) {
+        return "lowercase";
+    }
+    if (dynamic_cast<UcaConverter*>(converter.get()) != nullptr) {
+        return "uca";
+    }
+    return "bad";
+}
+
+}
 
 namespace search::common::sortspec {
 
@@ -50,6 +68,27 @@ void PrintTo(MissingPolicy missing_policy, std::ostream *os) {
             *os << "AS";
             break;
     }
+}
+
+}
+
+namespace search::common {
+
+void PrintTo(const FieldSortSpec& spec, std::ostream* os) {
+    *os << "{" << spec._field << ", " << std::boolalpha << spec._ascending << ", ";
+    PrintTo(spec._sort_order, os);
+    *os << ", " << converter_as_string_view(spec._converter) << ", ";
+    PrintTo(spec._missing_policy, os);
+    *os << ", " << std::quoted(spec._missing_value) << "}";
+}
+
+bool operator==(const FieldSortSpec& lhs, const FieldSortSpec& rhs) {
+    return lhs._field == rhs._field &&
+           lhs._ascending == rhs._ascending &&
+           lhs._sort_order == rhs._sort_order &&
+           converter_as_string_view(lhs._converter) == converter_as_string_view(rhs._converter) &&
+           lhs._missing_policy == rhs._missing_policy &&
+           lhs._missing_value == rhs._missing_value;
 }
 
 }
@@ -181,117 +220,29 @@ TEST(SortTest, testStringCaseInsensitiveSort)
 TEST(SortTest, testSortSpec)
 {
     UcaConverterFactory ucaFactory;
-    {
-        SortSpec sortspec("-name", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE( sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_FALSE(sortspec[0]._converter);
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-
-    {
-        SortSpec sortspec("-lowercase(name)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<LowercaseConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-
-    {
-        SortSpec sortspec("-uca(name,nn_no)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("-uca(name,nn_no,PRIMARY)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("-uca(name,nn_no,SECONDARY)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("-uca(name,nn_no,TERTIARY)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("-uca(name,nn_no,QUATERNARY)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("-uca(name,nn_no,IDENTICAL)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("-uca(name,zh)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("-uca(name,finnes_ikke)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<UcaConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::DEFAULT, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
+    auto lowercase = std::make_shared<LowercaseConverter>();
+    constexpr auto desc = SortOrder::DESCENDING;
+    constexpr auto miss_def = MissingPolicy::DEFAULT;
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, {}, miss_def, ""}}),
+              SortSpec("-name", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, lowercase, miss_def, ""}}),
+              SortSpec("-lowercase(name)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, ucaFactory.create("nn_no", ""), miss_def, ""}}),
+              SortSpec("-uca(name,nn_no)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, ucaFactory.create("nn_no", "PRIMARY"), miss_def, ""}}),
+              SortSpec("-uca(name,nn_no,PRIMARY)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, ucaFactory.create("nn_no", "SECONDARY"), miss_def, ""}}),
+              SortSpec("-uca(name,nn_no,SECONDARY)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, ucaFactory.create("nn_no", "TERTIARY"), miss_def, ""}}),
+              SortSpec("-uca(name,nn_no,TERTIARY)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, ucaFactory.create("nn_no", "QUATERNARY"), miss_def, ""}}),
+              SortSpec("-uca(name,nn_no,QUATERNARY)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, ucaFactory.create("nn_no", "IDENTICAL"), miss_def, ""}}),
+              SortSpec("-uca(name,nn_no,IDENTICAL)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, ucaFactory.create("zh", ""), miss_def, ""}}),
+              SortSpec("-uca(name,zh)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, ucaFactory.create("finnes_ikke", ""), miss_def, ""}}),
+              SortSpec("-uca(name,finnes_ikke)", ucaFactory).get_field_sort_specs());
     {
         try {
             SortSpec sortspec("-uca(name,nn_no,NTERTIARY)", ucaFactory);
@@ -306,67 +257,28 @@ TEST(SortTest, testSortSpec)
 TEST(SortTest, sortspec_missing)
 {
     UcaConverterFactory ucaFactory;
-    {
-        SortSpec sortspec("+missing(name,first)", ucaFactory);
-        EXPECT_EQ(1u, sortspec.size());
-        EXPECT_EQ("name", sortspec[0]._field);
-        EXPECT_TRUE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::ASCENDING, sortspec[0]._sort_order);
-        EXPECT_FALSE(sortspec[0]._converter);
-        EXPECT_EQ(MissingPolicy::FIRST, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("+missing(name,last)", ucaFactory);
-        EXPECT_EQ(1u, sortspec.size());
-        EXPECT_EQ("name", sortspec[0]._field);
-        EXPECT_TRUE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::ASCENDING, sortspec[0]._sort_order);
-        EXPECT_FALSE(sortspec[0]._converter);
-        EXPECT_EQ(MissingPolicy::LAST, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("+missing(name,as,default)", ucaFactory);
-        EXPECT_EQ(1u, sortspec.size());
-        EXPECT_EQ("name", sortspec[0]._field);
-        EXPECT_TRUE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::ASCENDING, sortspec[0]._sort_order);
-        EXPECT_FALSE(sortspec[0]._converter);
-        EXPECT_EQ(MissingPolicy::AS, sortspec[0]._missing_policy);
-        EXPECT_EQ("default", sortspec[0]._missing_value);
-    }
-    {
-        SortSpec sortspec("+missing(name,as,\"quoted \\\\ \\\" default\")", ucaFactory);
-        EXPECT_EQ(1u, sortspec.size());
-        EXPECT_EQ("name", sortspec[0]._field);
-        EXPECT_TRUE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::ASCENDING, sortspec[0]._sort_order);
-        EXPECT_FALSE(sortspec[0]._converter);
-        EXPECT_EQ(MissingPolicy::AS, sortspec[0]._missing_policy);
-        EXPECT_EQ("quoted \\ \" default", sortspec[0]._missing_value);
-    }
-    {
-        VESPA_EXPECT_EXCEPTION(SortSpec sortSpec("-missing(name,as,\"default", ucaFactory),
-            std::runtime_error,
-            "Expected '\"', end of spec reached at [-missing(name,as,\"default][]");
-    }
-    {
-        VESPA_EXPECT_EXCEPTION(SortSpec sortSpec("-missing(name,as,\"bad quoting \\n here\"", ucaFactory),
-            std::runtime_error,
-            "Expected '\\' or '\"', got 'n' at [-missing(name,as,\"bad quoting \\][n here\"]");
-    }
-    {
-        SortSpec sortspec("-missing(lowercase(name),last)", ucaFactory);
-        EXPECT_EQ(sortspec.size(), 1u);
-        EXPECT_EQ(sortspec[0]._field, "name");
-        EXPECT_FALSE(sortspec[0]._ascending);
-        EXPECT_EQ(SortOrder::DESCENDING, sortspec[0]._sort_order);
-        EXPECT_TRUE(sortspec[0]._converter);
-        EXPECT_NE(nullptr, dynamic_cast<LowercaseConverter *>(sortspec[0]._converter.get()));
-        EXPECT_EQ(MissingPolicy::LAST, sortspec[0]._missing_policy);
-        EXPECT_EQ("", sortspec[0]._missing_value);
-    }
+    auto lowercase = std::make_shared<LowercaseConverter>();
+    constexpr auto desc = SortOrder::DESCENDING;
+    constexpr auto asc = SortOrder::ASCENDING;
+    constexpr auto miss_first = MissingPolicy::FIRST;
+    constexpr auto miss_last = MissingPolicy::LAST;
+    constexpr auto miss_as = MissingPolicy::AS;
+    EXPECT_EQ(FieldSortSpecVector({{"name", asc, {}, miss_first, ""}}),
+              SortSpec("+missing(name,first)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", asc, {}, miss_last, ""}}),
+              SortSpec("+missing(name,last)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", asc, {}, miss_as, "default"}}),
+              SortSpec("+missing(name,as,default)", ucaFactory).get_field_sort_specs());
+    EXPECT_EQ(FieldSortSpecVector({{"name", asc, {}, miss_as, "quoted \\ \" default"}}),
+              SortSpec("+missing(name,as,\"quoted \\\\ \\\" default\")", ucaFactory).get_field_sort_specs());
+    VESPA_EXPECT_EXCEPTION(SortSpec sortSpec("-missing(name,as,\"default", ucaFactory),
+                           std::runtime_error,
+                           "Expected '\"', end of spec reached at [-missing(name,as,\"default][]");
+    VESPA_EXPECT_EXCEPTION(SortSpec sortSpec("-missing(name,as,\"bad quoting \\n here\"", ucaFactory),
+                           std::runtime_error,
+                           "Expected '\\' or '\"', got 'n' at [-missing(name,as,\"bad quoting \\][n here\"]");
+    EXPECT_EQ(FieldSortSpecVector({{"name", desc, lowercase, miss_last, ""}}),
+              SortSpec("-missing(lowercase(name),last)", ucaFactory).get_field_sort_specs());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -55,6 +55,7 @@ public:
     const FieldSortSpec& operator[](size_t idx) const noexcept { return _field_sort_specs[idx]; }
     auto begin() const noexcept { return _field_sort_specs.begin(); }
     auto end() const noexcept { return _field_sort_specs.end(); }
+    const std::vector<FieldSortSpec>& get_field_sort_specs() const noexcept { return _field_sort_specs; }
 };
 
 }
