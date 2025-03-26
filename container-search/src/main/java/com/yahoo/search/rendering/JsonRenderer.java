@@ -196,35 +196,36 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void beginResponse(OutputStream stream) throws IOException {
-        long renderingStartTime = timeSource.getAsLong();
+        long renderingStartTimeMs = timeSource.getAsLong();
         beginJsonCallback(stream);
         fieldConsumerSettings.getSettings(getResult().getQuery());
         setGenerator(generatorFactory.createGenerator(stream, JsonEncoding.UTF8), fieldConsumerSettings);
         renderedChildren = new ArrayDeque<>();
         generator.writeStartObject();
         renderTrace(getExecution().trace());
-        renderTiming(renderingStartTime);
+        renderTiming(renderingStartTimeMs);
         generator.writeFieldName(ROOT);
     }
 
-    private void renderTiming(long renderingStartTime) throws IOException {
+    private void renderTiming(long renderingStartTimeMs) throws IOException {
         if (!getResult().getQuery().getPresentation().getTiming()) return;
 
         double milli = .001d;
-        long searchTime = renderingStartTime - getResult().getElapsedTime().first();
-        double searchSeconds = searchTime * milli;
-
         generator.writeObjectFieldStart(TIMING);
+
         if (getResult().getElapsedTime().firstFill() != 0L) {
-            long queryTime = getResult().getElapsedTime().weightedSearchTime();
-            long summaryFetchTime = getResult().getElapsedTime().weightedFillTime();
-            double querySeconds = queryTime * milli;
-            double summarySeconds = summaryFetchTime * milli;
-            generator.writeNumberField(QUERY_TIME, querySeconds);
-            generator.writeNumberField(SUMMARY_FETCH_TIME, summarySeconds);
+            long queryTimeMs = getResult().getElapsedTime().weightedSearchTime();
+            long summaryFetchTimeMs = getResult().getElapsedTime().weightedFillTime();
+            generator.writeNumberField(QUERY_TIME, queryTimeMs * milli);
+            generator.writeNumberField(SUMMARY_FETCH_TIME, summaryFetchTimeMs * milli);
         }
 
-        generator.writeNumberField(SEARCH_TIME, searchSeconds);
+        long startTimeMs = getResult().getElapsedTime().first();
+        if (startTimeMs != 0) {
+            long searchTime = renderingStartTimeMs - startTimeMs;
+            generator.writeNumberField(SEARCH_TIME, searchTime * milli);
+        }
+
         generator.writeEndObject();
     }
 
