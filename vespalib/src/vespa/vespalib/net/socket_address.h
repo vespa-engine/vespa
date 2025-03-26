@@ -30,10 +30,19 @@ private:
     const sockaddr_un *addr_un() const { return reinterpret_cast<const sockaddr_un *>(&_addr); }
     SocketAddress(const sockaddr *addr_in, socklen_t addrlen_in);
 public:
-    SocketAddress() noexcept { memset(this, 0, sizeof(SocketAddress)); }
-    SocketAddress(const SocketAddress &rhs) noexcept { memcpy(this, &rhs, sizeof(SocketAddress)); }
+    SocketAddress() noexcept
+        : _size(0)
+    {
+        memset(&_addr, 0, sizeof(sockaddr_storage));
+    }
+    SocketAddress(const SocketAddress &rhs) noexcept
+        : _size(rhs._size)
+    {
+        memcpy(&_addr, &rhs._addr, sizeof(sockaddr_storage));
+    }
     SocketAddress &operator=(const SocketAddress &rhs) noexcept {
-        memcpy(this, &rhs, sizeof(SocketAddress));
+        _size = rhs._size;
+        memcpy(&_addr, &rhs._addr, sizeof(sockaddr_storage));
         return *this;
     }
     const sockaddr *raw_addr() const { return addr(); }
