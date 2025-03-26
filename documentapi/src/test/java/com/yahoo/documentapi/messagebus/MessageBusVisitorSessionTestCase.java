@@ -2393,6 +2393,7 @@ public class MessageBusVisitorSessionTestCase {
         builder.params.setTimeoutMs(messageTimeoutMillis);
         builder.params.setSessionTimeoutMs(sessionTimeoutMillis);
         builder.params.setControlHandler(builder.controlHandler);
+        builder.params.setLocalDataHandler(builder.dataHandler);
         MockComponents mc = builder.createMockComponents();
         mc.sender.setMaxPending(maxPending);
         mc.clock.setMonotonicTime(currentTimeMillis, TimeUnit.MILLISECONDS); // Baseline time
@@ -2469,7 +2470,7 @@ public class MessageBusVisitorSessionTestCase {
     }
 
     @Test
-    public void timeout_with_pending_messages_does_not_close_session_until_all_replies_received() {
+    public void timeout_with_pending_outbound_messages_does_not_close_session_until_all_replies_received() {
         MockComponents mc = createTimeoutMocksAtInitialTime(1_000, 5_000, 20_000, 2);
 
         assertEquals(2, mc.sender.getMessageCount());
@@ -2491,6 +2492,62 @@ public class MessageBusVisitorSessionTestCase {
                         "onVisitorStatistics : 0 buckets visited, 0 docs returned\n" +
                         "onDone : TIMEOUT - 'Session timeout of 5000 ms expired'\n",
                 mc.controlHandler.toString());
+    }
+
+    /**
+     * Similar to the above test, but tests the case where we have received messages from a
+     * content node and are asynchronously processing it. The session should not be closed
+     * prior to completing all pending work.
+     */
+    @Test
+    public void timeout_with_pending_inbound_messages_does_not_close_session_until_all_operations_acked() {
+        MockComponents mc = createTimeoutMocksAtInitialTime(1_000, 5_000, 20_000, 2);
+        assertEquals(2, mc.sender.getMessageCount()); // 1 distribution bit => 2 buckets visited
+
+        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
+        mc.clock.setMonotonicTime(25_000, TimeUnit.MILLISECONDS); // Beyond timeout
+        replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET); // Super bucket 1 of 2
+        replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET); // Super bucket 2 of 2
+        mc.executor.expectAndProcessTasks(3); // 1) Document operation, 2+3) CreateVisitorReply
+        mc.executor.expectNoTasks();
+
+        assertFalse(mc.controlHandler.isDone()); // Still a pending op, session _not_ yet done.
+
+        var msgs = mc.dataHandler.getMessages();
+        assertEquals(1, msgs.size());
+        mc.dataHandler.ack(msgs.get(0).getAckToken());
+        mc.executor.expectNoTasks();
+
+        assertTrue(mc.controlHandler.isDone()); // Now it's done.
+    }
+
+    /**
+     * To avoid race conditions during session closure we must ensure that no further
+     * inbound message callbacks will be executed once a session has been aborted
+     * (be it explicitly or implicitly via a fatal failure or timeout).
+     */
+    @Test
+    public void session_abort_rejects_subsequent_inbound_messages() {
+        MockComponents mc = createDefaultMock("");
+        mc.visitorSession.start();
+        mc.executor.expectAndProcessTasks(1);
+        assertEquals(2, mc.sender.getMessageCount()); // 1 distribution bit => 2 buckets visited
+
+        mc.visitorSession.abort();
+        assertFalse(mc.controlHandler.isDone()); // Aborting does not close the session before work has completed
+        mc.receiver.send(new RemoveDocumentMessage(new DocumentId("id:ns:testdoc::bar")));
+        mc.executor.expectAndProcessTasks(1);
+
+        assertEquals("RemoveDocumentReply(APP_FATAL_ERROR: Visitor has been shut down)\n",
+                     mc.receiver.repliesToString());
+
+        assertFalse(mc.controlHandler.isDone()); // Still not done; has pending CreateVisitor requests
+        replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET); // Super bucket 1 of 2
+        replyToCreateVisitor(mc.sender, ProgressToken.FINISHED_BUCKET); // Super bucket 2 of 2
+        mc.executor.expectAndProcessTasks(2);
+        mc.executor.expectNoTasks();
+        assertTrue(mc.controlHandler.isDone()); // Now done
+
     }
 
     @Test
