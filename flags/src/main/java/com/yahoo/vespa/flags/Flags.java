@@ -332,12 +332,6 @@ public class Flags {
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
 
-    public static final UnboundBooleanFlag CONFIG_SERVER_TRIGGER_DOWNLOAD_WITH_SOURCE = defineFeatureFlag(
-            "config-server-trigger-download-with-source", true,
-            List.of("hmusum"), "2024-12-25", "2025-04-01",
-            "Use new RPC method for triggering download of file reference",
-            "Takes effect immediately");
-
     public static final UnboundIntFlag DOCUMENT_V1_QUEUE_SIZE = defineIntFlag(
             "document-v1-queue-size", -1,
             List.of("bjorncs"), "2025-01-14", "2025-12-01",
