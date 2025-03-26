@@ -70,20 +70,6 @@ IntegerAttributeTemplate<T>::is_sortable() const noexcept
 }
 
 template<typename T>
-long
-IntegerAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
-    T origValue(get(doc));
-    return vespalib::serializeForSort< vespalib::convertForSort<T, true> >(origValue, serTo, available);
-}
-
-template<typename T>
-long
-IntegerAttributeTemplate<T>::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
-    T origValue(get(doc));
-    return vespalib::serializeForSort< vespalib::convertForSort<T, false> >(origValue, serTo, available);
-}
-
-template<typename T>
 std::unique_ptr<attribute::ISortBlobWriter>
 IntegerAttributeTemplate<T>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const {
     if (ascending) {

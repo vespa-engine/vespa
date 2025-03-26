@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "raw_attribute.h"
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <cassert>
 
 namespace search::attribute {
@@ -78,20 +79,6 @@ bool
 RawAttribute::is_sortable() const noexcept
 {
     return true;
-}
-
-long
-RawAttribute::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    auto raw = get_raw(doc);
-    return serialize_for_sort<false>(raw, serTo, available);
-}
-
-long
-RawAttribute::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    auto raw = get_raw(doc);
-    return serialize_for_sort<true>(raw, serTo, available);
 }
 
 std::unique_ptr<attribute::ISortBlobWriter>
