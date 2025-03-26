@@ -185,6 +185,25 @@ createAttribute(const std::string & name, const document::FieldValue & fv, searc
     return {};
 }
 
+SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr) noexcept
+    : _field(fid),
+      _ascending(true),
+      _converter(nullptr),
+      _attr(std::move(attr)),
+      _sort_blob_writer(_attr ? _attr->get()->make_sort_blob_writer(_ascending, _converter) : nullptr)
+{
+}
+
+SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr,
+                                  bool ascending, const search::common::BlobConverter* converter) noexcept
+    : _field(fid),
+      _ascending(ascending),
+      _converter(converter),
+      _attr(std::move(attr)),
+      _sort_blob_writer(_attr ? _attr->get()->make_sort_blob_writer(_ascending, _converter) : nullptr)
+{
+}
+
 SearchVisitor::StreamingDocsumsState::StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback, ResolveClassInfo& resolve_class_info)
     : _state(callback),
       _resolve_class_info(resolve_class_info)
@@ -1234,13 +1253,8 @@ SearchVisitor::fillSortBuffer()
         const AttributeGuard &finfoGuard(*finfo._attr);
         LOG(debug, "Adding sortdata for document %d for attribute '%s'",
             finfoGuard->getNumDocs() - 1, finfoGuard->getName().c_str());
-//        assert((_docsumCache.cache().size() + 1) == finfo._attr->getNumDocs());
         do {
-            if (finfo._ascending) {
-                written = finfoGuard->serializeForAscendingSort(finfoGuard->getNumDocs()-1, &_tmpSortBuffer[0]+pos, _tmpSortBuffer.size() - pos, finfo._converter);
-            } else {
-                written = finfoGuard->serializeForDescendingSort(finfoGuard->getNumDocs()-1, &_tmpSortBuffer[0]+pos, _tmpSortBuffer.size() - pos, finfo._converter);
-            }
+            written = finfo._sort_blob_writer->write(finfoGuard->getNumDocs()-1, &_tmpSortBuffer[0]+pos, _tmpSortBuffer.size() - pos);
             if (written == -1) {
                 _tmpSortBuffer.resize(_tmpSortBuffer.size()*2);
             }
