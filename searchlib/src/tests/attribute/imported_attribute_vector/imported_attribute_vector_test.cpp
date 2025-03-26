@@ -642,7 +642,8 @@ void check_make_sort_blob_writer_is_forwarded_with_remapped_lid() {
     FixtureT f;
     int dummy_tag;
     void* ser_to = &dummy_tag;
-    auto writer = f.get_imported_attr()->make_sort_blob_writer(true, &f.mock_converter);
+    auto read_guard = f.get_imported_attr();
+    auto writer = read_guard->make_sort_blob_writer(true, &f.mock_converter);
     EXPECT_TRUE(f.mock_target->_make_sort_blob_writer_called);
     EXPECT_TRUE(f.mock_target->_ascending);
     EXPECT_EQ(&f.mock_converter, f.mock_target->_bc);
