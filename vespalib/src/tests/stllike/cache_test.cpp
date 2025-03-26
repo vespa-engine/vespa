@@ -43,7 +43,10 @@ static_assert(sizeof(std::string) <= padded_string_size);
  */
 class padded_string {
     std::string _str;
-    [[maybe_unused]] char _pad_hack[padded_string_size - sizeof(std::string)];
+#if __has_cpp_attribute(maybe_unused) && (defined(__clang__) || __GNUC__ >= 12)
+    [[maybe_unused]]
+#endif
+    char _pad_hack[padded_string_size - sizeof(std::string)];
 
 public:
     padded_string() : _str(), _pad_hack() { }
