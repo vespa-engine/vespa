@@ -33,7 +33,7 @@ if curl -fsSL "https://hub.docker.com/v2/repositories/vespaengine/vespa/tags/$VE
     echo "Container image docker.io/vespaengine/vespa:$VESPA_VERSION already exists."
 else
   DST_IMAGE="docker.io/vespaengine/vespa:$VESPA_VERSION"
-  crane auth login -u msaglia -p "$DOCKER_HUB_DEPLOY_TOKEN" docker.io
+  crane auth login -u vespaengine -p "$DOCKER_HUB_DEPLOY_TOKEN" docker.io
   crane cp "$SRC_IMAGE@$SRC_IMAGE_DIGEST" "$DST_IMAGE"
   crane tag "$DST_IMAGE" "$VESPA_MAJOR"
   crane tag "$DST_IMAGE" latest
