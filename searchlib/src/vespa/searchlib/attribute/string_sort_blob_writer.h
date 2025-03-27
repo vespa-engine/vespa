@@ -22,9 +22,10 @@ class StringSortBlobWriter : public SortBlobWriter {
     size_t                _available;
     const BlobConverter*  _bc;
 public:
-    StringSortBlobWriter(void* serialize_to, size_t available, const BlobConverter* bc) noexcept;
+    StringSortBlobWriter(const BlobConverter* bc) noexcept;
     ~StringSortBlobWriter() noexcept;
     bool candidate(const char* val);
+    void reset(void* serialize_to, size_t available);
     long write();
 };
 

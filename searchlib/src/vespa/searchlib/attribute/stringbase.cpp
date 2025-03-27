@@ -118,11 +118,11 @@ private:
     const common::BlobConverter* _bc;
 public:
     AscendingSortBlobWriter(const StringAttribute& attr, const common::BlobConverter* bc) noexcept : _attr(attr), _bc(bc) {}
-    long write(uint32_t docid, void* ser_to, long available) const override;
+    long write(uint32_t docid, void* ser_to, long available) override;
 };
 
 long
-AscendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available) const
+AscendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available)
 {
     const char* value = _attr.get(docid);
     int size = strlen(value) + 1;
@@ -149,11 +149,11 @@ private:
     const common::BlobConverter* _bc;
 public:
     DescendingSortBlobWriter(const StringAttribute& attr, const common::BlobConverter* bc) noexcept : _attr(attr), _bc(bc) {}
-    long write(uint32_t docid, void* ser_to, long available) const override;
+    long write(uint32_t docid, void* ser_to, long available) override;
 };
 
 long
-DescendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available) const
+DescendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available)
 {
     const char* value = _attr.get(docid);
     int size = strlen(value) + 1;

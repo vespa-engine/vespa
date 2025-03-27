@@ -198,15 +198,16 @@ template <typename MultiValueMappingT, typename T, bool ascending>
 class MultiNumericSortBlobWriter : public attribute::ISortBlobWriter {
 private:
     const MultiValueMappingT& _mv_mapping;
+    attribute::NumericSortBlobWriter<T, ascending> _writer;
 public:
     MultiNumericSortBlobWriter(const MultiValueMappingT& mv_mapping) : _mv_mapping(mv_mapping) {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        attribute::NumericSortBlobWriter<T, ascending> writer;
+    long write(uint32_t docid, void* buf, long available) override {
+        _writer.reset();
         auto indices = _mv_mapping.get(docid);
         for (auto& v : indices) {
-            writer.candidate(multivalue::get_value(v));
+            _writer.candidate(multivalue::get_value(v));
         }
-        return writer.write(buf, available);
+        return _writer.write(buf, available);
     }
 };
 

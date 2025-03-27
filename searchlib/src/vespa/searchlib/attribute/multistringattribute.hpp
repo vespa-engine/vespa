@@ -74,21 +74,21 @@ class MultiStringSortBlobWriter : public attribute::ISortBlobWriter {
 private:
     const MultiValueMappingT& _mv_mapping;
     const EnumStoreT& _enum_store;
-    const common::BlobConverter* _converter;
+    attribute::StringSortBlobWriter<asc> _writer;
 public:
     MultiStringSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store,
                               const common::BlobConverter* converter)
-        : _mv_mapping(mv_mapping), _enum_store(enum_store), _converter(converter)
+        : _mv_mapping(mv_mapping), _enum_store(enum_store), _writer(converter)
     {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        attribute::StringSortBlobWriter<asc> writer(buf, available, _converter);
+    long write(uint32_t docid, void* buf, long available) override {
+        _writer.reset(buf, available);
         auto indices = _mv_mapping.get(docid);
         for (auto& v : indices) {
-            if (!writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()))) {
+            if (!_writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()))) {
                 return -1;
             }
         }
-        return writer.write();
+        return _writer.write();
     }
 };
 

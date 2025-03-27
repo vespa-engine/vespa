@@ -67,7 +67,7 @@ private:
     const RawAttribute& _attr;
 public:
     RawAttributeSortBlobWriter(const RawAttribute& attr) noexcept : _attr(attr) {}
-    long write(uint32_t docid, void* buf, long available) const override {
+    long write(uint32_t docid, void* buf, long available) override {
         auto raw = _attr.get_raw(docid);
         return serialize_for_sort<desc>(raw, buf, available);
     }

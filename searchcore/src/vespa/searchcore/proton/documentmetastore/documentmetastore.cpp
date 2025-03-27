@@ -1111,12 +1111,12 @@ private:
     const DocumentMetaStore& _dms;
 public:
     DocumentMetaStoreSortBlobWriter(const DocumentMetaStore& dms) noexcept : _dms(dms) {}
-    long write(uint32_t docid, void* buf, long available) const override;
+    long write(uint32_t docid, void* buf, long available) override;
 };
 
 template <bool ascending>
 long
-DocumentMetaStoreSortBlobWriter<ascending>::write(uint32_t docid, void* buf, long available) const
+DocumentMetaStoreSortBlobWriter<ascending>::write(uint32_t docid, void* buf, long available)
 {
     if (!_dms.validLid(docid)) {
         return 0;

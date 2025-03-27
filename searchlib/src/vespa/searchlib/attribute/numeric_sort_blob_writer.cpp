@@ -40,6 +40,13 @@ NumericSortBlobWriter<T, asc>::candidate(T val)
 }
 
 template <typename T, bool asc>
+void
+NumericSortBlobWriter<T, asc>::reset()
+{
+    _best.reset();
+}
+
+template <typename T, bool asc>
 long
 NumericSortBlobWriter<T, asc>::write(void *serTo, size_t available)
 {

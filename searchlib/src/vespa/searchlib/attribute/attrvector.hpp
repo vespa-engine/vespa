@@ -107,7 +107,7 @@ private:
 public:
     NumericDirectSortBlobWriter(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx) noexcept
         : _data(data), _idx(idx) {}
-    long write(uint32_t docid, void* buf, long available) const override {
+    long write(uint32_t docid, void* buf, long available) override {
         search::attribute::NumericSortBlobWriter<BaseType, ascending> writer;
         std::span<const BaseType> values(_data.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
         for (auto& v : values) {
@@ -159,20 +159,20 @@ private:
     const std::vector<char>& _buffer;
     const search::StringAttribute::OffsetVector& _offsets;
     const std::vector<uint32_t>& _idx;
-    const search::common::BlobConverter* _converter;
+    search::attribute::StringSortBlobWriter<asc> _writer;
 public:
     StringDirectSortBlobWriter(const std::vector<char>& buffer, const search::StringAttribute::OffsetVector& offsets,
                                const std::vector<uint32_t>& idx, const search::common::BlobConverter* converter)
-        : _buffer(buffer), _offsets(offsets), _idx(idx), _converter(converter) {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        search::attribute::StringSortBlobWriter<asc> writer(buf, available, _converter);
+        : _buffer(buffer), _offsets(offsets), _idx(idx), _writer(converter) {}
+    long write(uint32_t docid, void* buf, long available) override {
+        _writer.reset(buf, available);
         std::span<const uint32_t> offsets(_offsets.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
         for (auto& offset : offsets) {
-            if (!writer.candidate(&_buffer[offset])) {
+            if (!_writer.candidate(&_buffer[offset])) {
                 return -1;
             }
         }
-        return writer.write();
+        return _writer.write();
     }
 };
 

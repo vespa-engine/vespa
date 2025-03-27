@@ -66,10 +66,11 @@ sort_data_numeric(std::vector<T> values)
 {
     size_t len = 0;
     SortData s;
+    NumericSortBlobWriter<T, asc> writer;
     while (true) {
         s.clear();
         s.resize(len);
-        NumericSortBlobWriter<T, asc> writer;
+        writer.reset();
         for (auto& v : values) {
             writer.candidate(v);
         }
@@ -88,10 +89,11 @@ sort_data_string(std::vector<const char*> values, const BlobConverter* bc)
 {
     size_t len = 0;
     SortData s;
+    StringSortBlobWriter<asc> writer(bc);
     while (true) {
         s.clear();
         s.resize(len);
-        StringSortBlobWriter<asc> writer(s.data(), s.size(), bc);
+        writer.reset(s.data(), s.size());
         bool fail = false;
         for (auto& v : values) {
             if (!writer.candidate(v)) {

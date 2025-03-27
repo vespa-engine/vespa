@@ -9,16 +9,25 @@
 namespace search::attribute {
 
 template <bool asc>
-StringSortBlobWriter<asc>::StringSortBlobWriter(void* serialize_to, size_t available, const BlobConverter* bc) noexcept
+StringSortBlobWriter<asc>::StringSortBlobWriter(const BlobConverter* bc) noexcept
     : _best_size(),
-      _serialize_to(static_cast<unsigned char*>(serialize_to)),
-      _available(available),
+      _serialize_to(nullptr),
+      _available(0),
       _bc(bc)
 {
 }
 
 template <bool asc>
 StringSortBlobWriter<asc>::~StringSortBlobWriter() noexcept = default;
+
+template <bool asc>
+void
+StringSortBlobWriter<asc>::reset(void *serialize_to, size_t available)
+{
+    _serialize_to = static_cast<unsigned char*>(serialize_to);
+    _available = available;
+    _best_size.reset();
+}
 
 template <bool asc>
 bool
