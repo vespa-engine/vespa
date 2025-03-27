@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Properties of the cloud service where the zone is deployed.
@@ -53,6 +54,11 @@ public class Cloud {
     /** Returns whether to require access control for all clusters in this */
     public boolean requireAccessControl() {
         return requireAccessControl;
+    }
+
+    /** Returns whether the cloud supports private endpoints. */
+    public boolean supportsPrivateEndpoints() {
+        return Set.of(CloudName.AZURE, CloudName.YAHOO).contains(name);
     }
 
     /** Returns the default account of this cloud */
