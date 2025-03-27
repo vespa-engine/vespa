@@ -11,6 +11,7 @@ import com.yahoo.text.Utf8;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -493,11 +494,7 @@ public class Sorting implements Cloneable {
 
         @Override
         public int hashCode() {
-            int code = missingPolicy.hashCode();
-            if (missingValue != null) {
-                code += 29 * missingValue.hashCode();
-            }
-            return code;
+            return Objects.hash(missingPolicy, missingValue);
         }
 
         @Override
@@ -591,7 +588,7 @@ public class Sorting implements Cloneable {
 
         @Override
         public int hashCode() {
-            return sortOrder.hashCode() + 17 * fieldSorter.hashCode() + 179 * missingValueSettings.hashCode();
+            return Objects.hash(sortOrder, fieldSorter, missingValueSettings);
         }
 
         @Override
@@ -617,11 +614,11 @@ public class Sorting implements Cloneable {
             pos = 0;
         }
 
-        public String token() {
+        String token() {
             if (pos >= spec.length()) {
                 return new String();
             }
-            var old_pos = pos;
+            var oldPos = pos;
             while (pos < spec.length()) {
                 var c = spec.charAt(pos);
                 if (c == ' ' || c == ',' || c == '(' || c == ')' || c == '\\' || c == '"') {
@@ -629,31 +626,31 @@ public class Sorting implements Cloneable {
                 }
                 ++pos;
             }
-            return spec.substring(old_pos, pos);
+            return spec.substring(oldPos, pos);
         }
 
-        public boolean valid() {
+        boolean valid() {
             return pos < spec.length();
         }
 
-        public char peek() {
+        char peek() {
             return (pos < spec.length()) ? spec.charAt(pos) : '\0';
         }
 
-        public void step() {
+        void step() {
             if (valid()) {
                 ++pos;
             }
         }
 
-        public boolean skipSpaces() {
+        boolean skipSpaces() {
             while(valid() && spec.charAt(pos) == ' ') {
                 ++pos;
             }
             return valid();
         }
 
-        public String spec() {
+        String spec() {
             var builder = new StringBuilder();
             builder.append('[');
             builder.append(spec.substring(0, pos));
@@ -687,7 +684,7 @@ public class Sorting implements Cloneable {
             return act;
         }
 
-        public String dequoteString() {
+        String dequoteString() {
             var b = new StringBuilder();
             expectChar('"');
             while (valid() && peek() != '"') {
