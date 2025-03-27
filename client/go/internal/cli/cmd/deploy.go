@@ -119,7 +119,8 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 }
 
 func newPrepareCmd(cli *CLI) *cobra.Command {
-	return &cobra.Command{
+	var waitSecs int
+	cmd := &cobra.Command{
 		Use:               "prepare [application-directory-or-file]",
 		Short:             "Prepare an application package for activation",
 		Args:              cobra.MaximumNArgs(1),
@@ -132,6 +133,10 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			}
 			target, err := cli.target(targetOptions{supportedType: localTargetOnly})
 			if err != nil {
+				return err
+			}
+			waiter := cli.waiter(time.Duration(waitSecs)*time.Second, cmd)
+			if _, err := waiter.DeployService(target); err != nil {
 				return err
 			}
 			opts := vespa.DeploymentOptions{ApplicationPackage: pkg, Target: target}
@@ -151,6 +156,8 @@ func newPrepareCmd(cli *CLI) *cobra.Command {
 			return nil
 		},
 	}
+	cli.bindWaitFlag(cmd, 0, &waitSecs)
+	return cmd
 }
 
 func newActivateCmd(cli *CLI) *cobra.Command {
