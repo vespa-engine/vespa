@@ -258,10 +258,11 @@ public class LoadBalancerProvisioner {
         log.log(Level.INFO, () -> "Provisioning instance for " + id);
         try {
             return service.provision(new LoadBalancerSpec(id.application(), id.cluster(), reals, settings, requested.cloudAccount(), currentLoadBalancer.idSeed()))
-                          // Provisioning a private endpoint service requires hard resources to be ready, so we delay it until activation.
-                          .withServiceIds(currentLoadBalancer.instance().map(LoadBalancerInstance::serviceIds).orElse(List.of()));
-        }
-        catch (Exception e) {
+                    // Provisioning a private endpoint service requires hard resources to be ready, so we delay it until activation.
+                    .withServiceIds(currentLoadBalancer.instance().map(LoadBalancerInstance::serviceIds).orElse(List.of()));
+        } catch (IllegalArgumentException | IllegalStateException e) {
+            throw new IllegalArgumentException("Could not provision " + id, e);
+        } catch (RuntimeException e) {
             throw new LoadBalancerServiceException("Could not provision " + id + ". The operation will be retried on next deployment.", e);
         }
     }
@@ -291,7 +292,7 @@ public class LoadBalancerProvisioner {
                                                 State.reserved,
                                                 nodeRepository.clock().instant()));
         }
-        catch (Exception e) {
+        catch (RuntimeException e) {
             log.log(Level.WARNING, "Failed to provision load balancer from pool", e);
         }
         return Optional.empty();
@@ -380,7 +381,7 @@ public class LoadBalancerProvisioner {
                                      new LoadBalancerSpec(id.application(), id.cluster(), reals, zoneEndpoint, cloudAccount, currentLoadBalancer.idSeed()),
                                      shouldDeactivateRouting || currentLoadBalancer.state() != LoadBalancer.State.active);
         }
-        catch (Exception e) {
+        catch (RuntimeException e) {
             throw new LoadBalancerServiceException("Could not (re)configure " + id + ", targeting: " + reals, e);
         }
     }
