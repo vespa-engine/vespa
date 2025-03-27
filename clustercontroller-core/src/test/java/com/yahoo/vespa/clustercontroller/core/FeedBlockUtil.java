@@ -87,11 +87,15 @@ public class FeedBlockUtil {
     }
 
     static NodeResourceExhaustion exhaustion(int index, String type) {
-        return new NodeResourceExhaustion(new Node(NodeType.STORAGE, index), type, new ResourceUsage(0.8, null), 0.7, "foo");
+        return exhaustion(index, type, 0.8);
     }
 
     static NodeResourceExhaustion exhaustion(int index, String type, double usage) {
-        return new NodeResourceExhaustion(new Node(NodeType.STORAGE, index), type, new ResourceUsage(usage, null), 0.7, "foo");
+        return new NodeResourceExhaustion(new Node(NodeType.STORAGE, index),
+                                          type,
+                                          new ResourceUsage(usage, null),
+                                          new NodeResourceExhaustion.Limit(0.7, 0.0, false),
+                                          "foo");
     }
 
     static Set<NodeResourceExhaustion> setOf(NodeResourceExhaustion... exhaustions) {

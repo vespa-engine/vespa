@@ -16,11 +16,11 @@ public class NodeResourceExhaustion {
     public final Node node;
     public final String resourceType;
     public final ResourceUsage resourceUsage;
-    public final double limit;
+    public final Limit limit;
     public final String rpcAddress;
 
     public NodeResourceExhaustion(Node node, String resourceType,
-                                  ResourceUsage resourceUsage, double limit,
+                                  ResourceUsage resourceUsage, Limit limit,
                                   String rpcAddress) {
         this.node = node;
         this.resourceType = resourceType;
@@ -34,7 +34,7 @@ public class NodeResourceExhaustion {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         NodeResourceExhaustion that = (NodeResourceExhaustion) o;
-        return Double.compare(that.limit, limit) == 0 &&
+        return Objects.equals(limit, that.limit) &&
                 Objects.equals(node, that.node) &&
                 Objects.equals(resourceType, that.resourceType) &&
                 Objects.equals(resourceUsage, that.resourceUsage) &&
@@ -47,19 +47,22 @@ public class NodeResourceExhaustion {
     }
 
     public String toExhaustionAddedDescription() {
-        return String.format(Locale.US, "%s is %.1f%% full (the configured limit is %.1f%%)",
-                makeDescriptionPrefix(), resourceUsage.getUsage() * 100.0, limit * 100.0);
+        var extraInfo = limit.isBlocked() && limit.noiseLevel() > 0.001
+                ? String.format(Locale.US, ", effective limit lowered to %.1f%% until feed unblocked", limit.effectiveLimit() * 100.0)
+                : "";
+        return String.format(Locale.US, "%s is %.1f%% full (the configured limit is %.1f%%%s)",
+                makeDescriptionPrefix(), resourceUsage.getUsage() * 100.0, limit.configuredLimit * 100.0, extraInfo);
     }
 
     public String toExhaustionRemovedDescription() {
-        return String.format(Locale.US, "%s (<= %.1f%%)", makeDescriptionPrefix(), limit * 100.0);
+        return String.format(Locale.US, "%s (<= %.1f%%)", makeDescriptionPrefix(), limit.configuredLimit * 100.0);
     }
 
     public String toShorthandDescription() {
         return String.format(Locale.US, "%s%s %.1f%% > %.1f%%",
                 resourceType,
                 (resourceUsage.getName() != null ? ":" + resourceUsage.getName() : ""),
-                resourceUsage.getUsage() * 100.0, limit * 100.0);
+                resourceUsage.getUsage() * 100.0, limit.configuredLimit * 100.0);
     }
 
     private String makeDescriptionPrefix() {
@@ -79,6 +82,16 @@ public class NodeResourceExhaustion {
             return "unknown hostname";
         }
         return spec.host();
+    }
+
+    public record Limit(double configuredLimit, double noiseLevel, boolean isBlocked) {
+
+        double effectiveLimit() {
+            return isBlocked
+                    ? Math.max(configuredLimit - noiseLevel, 0.0)
+                    : configuredLimit;
+        }
+
     }
 
 }
