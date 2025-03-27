@@ -118,7 +118,7 @@ public class ResourceExhaustionCalculatorTest {
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
         // TODO should we not change the limits themselves? Explicit mention of hysteresis state?
-        assertEquals(decorate(cf, "memory on node 1 [storage.1.local] is 49.0% full (the configured limit is 40.0%)"),
+        assertEquals(decorate(cf, "memory on node 1 [storage.1.local] is 49.0% full (the configured limit is 50.0%, effective limit lowered to 40.0% until feed unblocked)"),
                      feedBlock.getDescription());
     }
 
@@ -132,7 +132,7 @@ public class ResourceExhaustionCalculatorTest {
                 forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster());
         assertNotNull(feedBlock);
-        assertEquals(decorate(cf, "memory on node 1 [storage.1.local] is 48.0% full (the configured limit is 40.0%)"),
+        assertEquals(decorate(cf, "memory on node 1 [storage.1.local] is 48.0% full (the configured limit is 50.0%, effective limit lowered to 40.0% until feed unblocked)"),
                      feedBlock.getDescription());
     }
 
