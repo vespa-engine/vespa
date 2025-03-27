@@ -177,14 +177,14 @@ public class QueryTestCase {
     void testInvalidSortFunction() {
         assertQueryError(
                 "?query=test&sortspec=-ucca(name,en_US)",
-                "Could not set 'ranking.sorting' to '-ucca(name,en_US)': Unknown sort function 'ucca'");
+                "Could not set 'ranking.sorting' to '-ucca(name,en_US)': Unknown sort function 'ucca' at [-ucca(][name,en_US)]");
     }
 
     @Test
     void testMissingSortFunction() {
         assertQueryError(
                 "?query=test&sortspec=-(name)",
-                "Could not set 'ranking.sorting' to '-(name)': No sort function specified");
+                "Could not set 'ranking.sorting' to '-(name)': No sort function specified at [-(][name)]");
     }
 
     @Test
