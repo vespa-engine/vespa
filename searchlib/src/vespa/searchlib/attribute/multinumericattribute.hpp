@@ -10,6 +10,7 @@
 #include "primitivereader.h"
 #include "valuemodifier.h"
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.h>
 
@@ -208,33 +209,6 @@ public:
         return writer.write(buf, available);
     }
 };
-
-template <typename B, typename M>
-template <bool asc>
-long
-MultiValueNumericAttribute<B, M>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
-{
-    attribute::NumericSortBlobWriter<T, asc> writer;
-    auto indices = this->_mvMapping.get(doc);
-    for (auto& v : indices) {
-        writer.candidate(multivalue::get_value(v));
-    }
-    return writer.write(serTo, available);
-}
-
-template <typename B, typename M>
-long
-MultiValueNumericAttribute<B, M>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    return on_serialize_for_sort<true>(doc, serTo, available);
-}
-
-template <typename B, typename M>
-long
-MultiValueNumericAttribute<B, M>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    return on_serialize_for_sort<false>(doc, serTo, available);
-}
 
 template <typename B, typename M>
 std::unique_ptr<attribute::ISortBlobWriter>

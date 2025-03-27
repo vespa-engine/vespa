@@ -1,13 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/sortresults.h>
-#include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
+#include <vespa/searchlib/attribute/attribute.h>
+#include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attributemanager.h>
+#include <vespa/searchlib/common/sortresults.h>
+#include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <type_traits>
 #include <cinttypes>
