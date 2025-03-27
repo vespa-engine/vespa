@@ -58,7 +58,8 @@ public class Cloud {
 
     /** Returns whether the cloud supports private endpoints. */
     public boolean supportsPrivateEndpoints() {
-        return Set.of(CloudName.AZURE, CloudName.YAHOO).contains(name);
+        // TODO: Add Azure support
+        return Set.of(CloudName.AWS, CloudName.GCP).contains(name);
     }
 
     /** Returns the default account of this cloud */
