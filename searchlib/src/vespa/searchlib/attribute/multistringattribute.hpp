@@ -69,20 +69,19 @@ MultiValueStringAttributeT<B, M>::make_read_view(attribute::IMultiValueAttribute
     return &stash.create<attribute::EnumeratedMultiValueReadView<multivalue::WeightedValue<const char*>, M>>(this->_mvMapping.make_read_view(this->getCommittedDocIdLimit()), this->_enumStore);
 }
 
-template <typename MultiValueMappingT, typename EnumStoreT>
+template <typename MultiValueMappingT, typename EnumStoreT, bool asc>
 class MultiStringSortBlobWriter : public attribute::ISortBlobWriter {
 private:
     const MultiValueMappingT& _mv_mapping;
     const EnumStoreT& _enum_store;
     const common::BlobConverter* _converter;
-    bool _ascending;
 public:
     MultiStringSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store,
-                              const common::BlobConverter* converter, bool ascending)
-        : _mv_mapping(mv_mapping), _enum_store(enum_store), _converter(converter), _ascending(ascending)
+                              const common::BlobConverter* converter)
+        : _mv_mapping(mv_mapping), _enum_store(enum_store), _converter(converter)
     {}
     long write(uint32_t docid, void* buf, long available) const override {
-        attribute::StringSortBlobWriter writer(buf, available, _converter, _ascending);
+        attribute::StringSortBlobWriter<asc> writer(buf, available, _converter);
         auto indices = _mv_mapping.get(docid);
         for (auto& v : indices) {
             if (!writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()))) {
@@ -97,7 +96,11 @@ template <typename B, typename M>
 std::unique_ptr<attribute::ISortBlobWriter>
 MultiValueStringAttributeT<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const
 {
-    return std::make_unique<MultiStringSortBlobWriter<MultiValueMapping, EnumStore>>(this->_mvMapping, this->_enumStore, converter, ascending);
+    if (ascending) {
+        return std::make_unique<MultiStringSortBlobWriter<MultiValueMapping, EnumStore, true>>(this->_mvMapping, this->_enumStore, converter);
+    } else {
+        return std::make_unique<MultiStringSortBlobWriter<MultiValueMapping, EnumStore, false>>(this->_mvMapping, this->_enumStore, converter);
+    }
 }
 
 } // namespace search
