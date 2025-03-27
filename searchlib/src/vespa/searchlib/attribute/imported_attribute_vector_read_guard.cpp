@@ -5,7 +5,6 @@
 #include "imported_multi_value_read_view.h"
 #include "imported_search_context.h"
 #include "reference_attribute.h"
-#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -284,6 +283,20 @@ bool ImportedAttributeVectorReadGuard::isUndefined(DocId doc) const {
 
 bool ImportedAttributeVectorReadGuard::is_sortable() const noexcept {
     return _target_attribute.is_sortable();
+}
+
+long ImportedAttributeVectorReadGuard::onSerializeForAscendingSort(DocId doc,
+                                                                   void *serTo,
+                                                                   long available,
+                                                                   const common::BlobConverter *bc) const {
+    return _target_attribute.serializeForAscendingSort(getTargetLid(doc), serTo, available, bc);
+}
+
+long ImportedAttributeVectorReadGuard::onSerializeForDescendingSort(DocId doc,
+                                                                    void *serTo,
+                                                                    long available,
+                                                                    const common::BlobConverter *bc) const {
+    return _target_attribute.serializeForDescendingSort(getTargetLid(doc), serTo, available, bc);
 }
 
 class ImportedAttributeVectorReadGuard::SortBlobWriter : public attribute::ISortBlobWriter {

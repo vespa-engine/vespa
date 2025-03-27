@@ -5,10 +5,6 @@
 #include "operation_listener.h"
 #include "search_context.h"
 #include "document_meta_store_versions.h"
-#include <vespa/fastos/file.h>
-#include <vespa/persistence/spi/bucket_limits.h>
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcore/proton/bucketdb/bucketsessionbase.h>
 #include <vespa/searchcore/proton/bucketdb/joinbucketssession.h>
 #include <vespa/searchcore/proton/bucketdb/remove_batch_entry.h>
@@ -19,6 +15,8 @@
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/util/bufferwriter.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
@@ -27,6 +25,7 @@
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.documentmetastore");
@@ -1101,6 +1100,26 @@ bool
 DocumentMetaStore::is_sortable() const noexcept
 {
     return true;
+}
+
+long
+DocumentMetaStore::onSerializeForAscendingSort(DocId lid, void * serTo, long available, const search::common::BlobConverter *) const {
+    if ( ! validLid(lid)) return 0;
+    if (available < document::GlobalId::LENGTH) return -1;
+    memcpy(serTo, getRawMetaData(lid).getGid().get(), document::GlobalId::LENGTH);
+    return document::GlobalId::LENGTH;
+}
+
+long
+DocumentMetaStore::onSerializeForDescendingSort(DocId lid, void * serTo, long available, const search::common::BlobConverter *) const {
+    if ( ! validLid(lid)) return 0;
+    if (available < document::GlobalId::LENGTH) return -1;
+    const auto * src(static_cast<const uint8_t *>(getRawMetaData(lid).getGid().get()));
+    auto * dst = static_cast<uint8_t *>(serTo);
+    for (size_t i(0); i < document::GlobalId::LENGTH; ++i) {
+        dst[i] = 0xff - src[i];
+    }
+    return document::GlobalId::LENGTH;
 }
 
 namespace {

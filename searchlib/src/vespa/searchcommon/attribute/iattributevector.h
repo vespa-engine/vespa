@@ -4,6 +4,7 @@
 
 #include "basictype.h"
 #include "collectiontype.h"
+#include "default_sort_blob_writer.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <ostream>
@@ -438,10 +439,37 @@ public:
     virtual bool is_sortable() const noexcept = 0;
 
     /**
-     * Make a writer that is used for writing a serialized form of this attribute vector for sorting.
-     * The serialized form can be used by memcmp() and sort order will be preserved.
+     * Will serialize the values for the documentid in ascending order. The serialized form can be used by memcmp and
+     * sortorder will be preserved.
+     * @param doc The document id to serialize for.
+     * @param serTo The buffer to serialize into.
+     * @param available. Number of bytes available in the serialization buffer.
+     * @param bc An optional converter to use.
+     * @return The number of bytes serialized, -1 if not enough space.
      */
-    virtual std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const = 0;
+    long serializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc=nullptr) const {
+        return onSerializeForAscendingSort(doc, serTo, available, bc);
+    }
+    /**
+     * Will serialize the values for the documentid in descending order. The serialized form can be used by memcmp and
+     * sortorder will be preserved.
+     * @param doc The document id to serialize for.
+     * @param serTo The buffer to serialize into.
+     * @param available. Number of bytes available in the serialization buffer.
+     * @param bc An optional converter to use.
+     * @return The number of bytes serialized, -1 if not enough space.
+     */
+    long serializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc=nullptr) const {
+        return onSerializeForDescendingSort(doc, serTo, available, bc);
+    }
+
+    virtual std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const {
+        if (ascending) {
+            return std::make_unique<DefaultSortBlobWriter<true>>(*this, converter);
+        } else {
+            return std::make_unique<DefaultSortBlobWriter<false>>(*this, converter);
+        }
+    }
 
     /**
      * Virtual destructor to allow safe subclassing.
@@ -463,6 +491,10 @@ public:
     virtual EnumRefs make_enum_read_view() const noexcept {
         return EnumRefs();
     }
+
+private:
+    virtual long onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const = 0;
+    virtual long onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const = 0;
 
 };
 
