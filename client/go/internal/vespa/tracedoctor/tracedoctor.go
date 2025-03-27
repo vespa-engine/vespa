@@ -80,14 +80,14 @@ func (ctx *Context) analyzeThread(trace protonTrace, thread threadTrace, peer *t
 	thread.timeline().render(out)
 	queryPerf := trace.extractQuery()
 	queryPerf.importMatchPerf(thread)
-	out.fmt("match profiling for thread #%d (total time was %f ms)\n", thread.id, thread.matchTimeMs())
+	out.fmt("match profiling for thread #%d (total time was %.3f ms)\n", thread.id, thread.matchTimeMs())
 	queryPerf.render(out)
 	if firstPhasePerf := thread.firstPhasePerf(); firstPhasePerf.impact() != 0.0 {
-		out.fmt("first phase rank profiling for thread #%d (total time was %f ms)\n", thread.id, thread.firstPhaseTimeMs())
+		out.fmt("first phase rank profiling for thread #%d (total time was %.3f ms)\n", thread.id, thread.firstPhaseTimeMs())
 		firstPhasePerf.render(out)
 	}
 	if secondPhasePerf := thread.secondPhasePerf(); secondPhasePerf.impact() != 0.0 {
-		out.fmt("second phase rank profiling for thread #%d (total time was %f ms)\n", thread.id, thread.secondPhaseTimeMs())
+		out.fmt("second phase rank profiling for thread #%d (total time was %.3f ms)\n", thread.id, thread.secondPhaseTimeMs())
 		secondPhasePerf.render(out)
 	}
 }
@@ -102,6 +102,10 @@ func (ctx *Context) analyzeProtonTrace(trace protonTrace, peer *protonTrace, out
 	trace.timeline().render(out)
 	if ann := newAnnProbe(trace); ann.impact() != 0.0 {
 		ann.render(out)
+	}
+	if globalFilterPerf := trace.globalFilterPerf(); globalFilterPerf.impact() != 0.0 {
+		out.fmt("global filter profiling\n")
+		globalFilterPerf.render(out)
 	}
 	threads := trace.findThreadTraces()
 	cnt := len(threads)
