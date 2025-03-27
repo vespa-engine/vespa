@@ -62,7 +62,7 @@ func TestRunOneVisit(t *testing.T) {
 		vArgs := visitArgs{
 			contentCluster: "fooCC",
 			header:         make(http.Header),
-			stream:         false,
+			stream:         true,
 		}
 		vArgs.header.Set("X-Foo", "Bar")
 		vvo, res := runOneVisit(&vArgs, service, "BBBB")
@@ -77,7 +77,7 @@ func TestRunOneVisit(t *testing.T) {
 		assert.Equal(t, saveddoc1, string(vvo.Documents[1].blob))
 	}
 	req := withMockClient(t, withResponse, op)
-	assert.Equal(t, "cluster=fooCC&continuation=BBBB&stream=false", req.URL.RawQuery)
+	assert.Equal(t, "cluster=fooCC&continuation=BBBB&stream=true", req.URL.RawQuery)
 	assert.Equal(t, "Bar", req.Header.Get("X-Foo"))
 
 	op = func(service *vespa.Service) {
@@ -127,7 +127,7 @@ func TestVisitCommand(t *testing.T) {
 				document3 +
 				`],"documentCount":2}`,
 		},
-		"cluster=fooCC&continuation=CAFE&wantedDocumentCount=1000&bucketSpace=default&stream=true",
+		"cluster=fooCC&continuation=CAFE&wantedDocumentCount=1000&bucketSpace=default&stream=false",
 		document1+"\n"+
 			document2+"\n"+
 			document3+"\n")
