@@ -7,7 +7,6 @@
 #include "enum_store_loaders.h"
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
-#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/locale/c.h>
 
@@ -110,6 +109,23 @@ StringAttribute::is_sortable() const noexcept
     return true;
 }
 
+long
+StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+{
+    const char *value(get(doc));
+    int size = strlen(value) + 1;
+    vespalib::ConstBufferRef buf(value, size);
+    if (bc != nullptr) {
+        buf = bc->convert(buf);
+    }
+    if (available >= (long)buf.size()) {
+        memcpy(serTo, buf.data(), buf.size());
+    } else {
+        return -1;
+    }
+    return buf.size();
+}
+
 namespace {
 
 class AscendingSortBlobWriter : public attribute::ISortBlobWriter {
@@ -138,6 +154,27 @@ AscendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available) con
     return buf.size();
 }
 
+}
+
+long
+StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+{
+    const char *value(get(doc));
+    int size = strlen(value) + 1;
+    vespalib::ConstBufferRef buf(value, size);
+    if (bc != nullptr) {
+        buf = bc->convert(buf);
+    }
+    if (available >= (long)buf.size()) {
+        auto *dst = static_cast<unsigned char *>(serTo);
+        const auto * src(static_cast<const uint8_t *>(buf.data()));
+        for (size_t i(0); i < buf.size(); ++i) {
+            dst[i] = 0xff - src[i];
+        }
+    } else {
+        return -1;
+    }
+    return buf.size();
 }
 
 namespace {

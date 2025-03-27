@@ -1,12 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchcommon/attribute/config.h>
-#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
+#include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/attribute/address_space_components.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/empty_search_context.h>
-#include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/searchcommon/attribute/config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/issue.h>
 #include <filesystem>

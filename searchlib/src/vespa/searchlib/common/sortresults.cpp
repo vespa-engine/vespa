@@ -2,7 +2,6 @@
 
 #include "sortresults.h"
 #include "sort.h"
-#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
