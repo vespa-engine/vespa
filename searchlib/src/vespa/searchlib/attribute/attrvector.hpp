@@ -153,20 +153,19 @@ StringDirectAttrVector(const std::string & baseFileName) :
     setEnum(true);
 }
 
+template <bool asc>
 class StringDirectSortBlobWriter : public search::attribute::ISortBlobWriter {
 private:
     const std::vector<char>& _buffer;
     const search::StringAttribute::OffsetVector& _offsets;
     const std::vector<uint32_t>& _idx;
     const search::common::BlobConverter* _converter;
-    bool _ascending;
 public:
     StringDirectSortBlobWriter(const std::vector<char>& buffer, const search::StringAttribute::OffsetVector& offsets,
-                               const std::vector<uint32_t>& idx, const search::common::BlobConverter* converter,
-                               bool ascending)
-        : _buffer(buffer), _offsets(offsets), _idx(idx), _converter(converter), _ascending(ascending) {}
+                               const std::vector<uint32_t>& idx, const search::common::BlobConverter* converter)
+        : _buffer(buffer), _offsets(offsets), _idx(idx), _converter(converter) {}
     long write(uint32_t docid, void* buf, long available) const override {
-        search::attribute::StringSortBlobWriter writer(buf, available, _converter, _ascending);
+        search::attribute::StringSortBlobWriter<asc> writer(buf, available, _converter);
         std::span<const uint32_t> offsets(_offsets.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
         for (auto& offset : offsets) {
             if (!writer.candidate(&_buffer[offset])) {
@@ -191,5 +190,9 @@ StringDirectAttrVector<F>::make_sort_blob_writer(bool ascending, const search::c
     if (!F::IsMultiValue()) {
         return search::StringDirectAttribute::make_sort_blob_writer(ascending, converter);
     }
-    return std::make_unique<StringDirectSortBlobWriter>(this->_buffer, this->_offsets, this->_idx, converter, ascending);
+    if (ascending) {
+        return std::make_unique<StringDirectSortBlobWriter<true>>(this->_buffer, this->_offsets, this->_idx, converter);
+    } else {
+        return std::make_unique<StringDirectSortBlobWriter<false>>(this->_buffer, this->_offsets, this->_idx, converter);
+    }
 }

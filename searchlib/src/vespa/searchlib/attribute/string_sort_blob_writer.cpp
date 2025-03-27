@@ -8,19 +8,21 @@
 
 namespace search::attribute {
 
-StringSortBlobWriter::StringSortBlobWriter(void* serialize_to, size_t available, const BlobConverter* bc, bool asc) noexcept
+template <bool asc>
+StringSortBlobWriter<asc>::StringSortBlobWriter(void* serialize_to, size_t available, const BlobConverter* bc) noexcept
     : _best_size(),
       _serialize_to(static_cast<unsigned char*>(serialize_to)),
       _available(available),
-      _bc(bc),
-      _asc(asc)
+      _bc(bc)
 {
 }
 
-StringSortBlobWriter::~StringSortBlobWriter() noexcept = default;
+template <bool asc>
+StringSortBlobWriter<asc>::~StringSortBlobWriter() noexcept = default;
 
+template <bool asc>
 bool
-StringSortBlobWriter::candidate(const char* val)
+StringSortBlobWriter<asc>::candidate(const char* val)
 {
     size_t size = std::strlen(val) + 1;
     vespalib::ConstBufferRef buf(val, size);
@@ -30,7 +32,7 @@ StringSortBlobWriter::candidate(const char* val)
     if (_best_size.has_value()) {
         auto common_size = std::min(_best_size.value(), buf.size());
         auto cmpres = std::memcmp(_serialize_to + 1, buf.data(), common_size);
-        if (_asc) {
+        if constexpr (asc) {
             if (cmpres < 0 || (cmpres == 0 && _best_size.value() < buf.size())) {
                 return true;
             }
@@ -49,11 +51,12 @@ StringSortBlobWriter::candidate(const char* val)
     return true;
 }
 
+template <bool asc>
 long
-StringSortBlobWriter::write()
+StringSortBlobWriter<asc>::write()
 {
     if (_best_size.has_value()) {
-        if (!_asc) {
+        if constexpr (!asc) {
             std::span<unsigned char> buf(_serialize_to + 1, _best_size.value());
             for (auto& c : buf) {
                 c = 0xff - c;
@@ -68,5 +71,8 @@ StringSortBlobWriter::write()
         return 1;
     }
 }
+
+template class StringSortBlobWriter<false>;
+template class StringSortBlobWriter<true>;
 
 }
