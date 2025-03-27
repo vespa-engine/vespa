@@ -9,11 +9,14 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -104,4 +107,65 @@ public class SortingTestCase {
         assertTrue(sorter.compare("س", "a") < 0);
     }
 
+    private static String encodedSpec(String spec) {
+        var s = Sorting.fromString(spec);
+        var b = ByteBuffer.allocate(100);
+        var usedBytes = s.encode(b);
+        return new String(b.array(), 0, usedBytes, StandardCharsets.UTF_8);
+    }
+
+    private static String failedSpec(String spec) {
+        var e = assertThrows(IllegalInputException.class, () -> { Sorting.fromString(spec); });
+        return e.getMessage();
+    }
+
+    @Test
+    void requireExpectedEncodedSortSpec() {
+        /*
+         * If ValidateSortingSearcher doesn't update the Sorting instance with info from attribute config, e.g.
+         * when using streaming search, then the default sort order is descending.
+         */
+        assertEquals("-a", encodedSpec("a"));
+        assertEquals("-a", encodedSpec("-a"));
+        assertEquals("+a", encodedSpec("+a"));
+        assertEquals("-lowercase(a)", encodedSpec("lowercase(a)"));
+        assertEquals("-lowercase(a)", encodedSpec("-lowercase(a)"));
+        assertEquals("+lowercase(a)", encodedSpec("+lowercase(a)"));
+        assertEquals("+lowercase(a)", encodedSpec("+LOWERCASE(a)"));
+        assertEquals("-a", encodedSpec("raw(a)"));
+        assertEquals("-a", encodedSpec("-raw(a)"));
+        assertEquals("+a", encodedSpec("+raw(a)"));
+        assertEquals("-a +b", encodedSpec("-a +b"));
+        assertEquals("-a +lowercase(b)", encodedSpec("-a +lowercase(b)"));
+    }
+
+    @Test
+    void requireMissingFunctionIsHandled() {
+        assertEquals("-a", encodedSpec("missing(a,default)"));
+        assertEquals("-missing(a,first)", encodedSpec("missing(a,first)"));
+        assertEquals("-missing(a,first)", encodedSpec("-missing(a,first)"));
+        assertEquals("-missing(lowercase(a),first)", encodedSpec("-missing(lowercase(a),first)"));
+        assertEquals("+missing(a,first)", encodedSpec("+missing(a,first)"));
+        assertEquals("+missing(a,first)", encodedSpec("+MISSING(a,FIRST)"));
+        assertEquals("-missing(a,last)", encodedSpec("missing(a,last)"));
+        assertEquals("-missing(a,as,default)", encodedSpec("missing(a,as,default)"));
+        assertEquals("-missing(a,as,default)", encodedSpec("missing(a,as,\"default\")"));
+        assertEquals("-missing(a,as,\"\")", encodedSpec("missing(a,as,)"));
+        assertEquals("-missing(a,as,\"quoted \\\\ \\\" default\")",
+                encodedSpec("missing(a,as,\"quoted \\\\ \\\" default\")"));
+    }
+
+    @Test
+    void requireDetectBadSortSpec() {
+        assertEquals("Expected ' ', got 'b' at [lowercase(a)][b]", failedSpec("lowercase(a)b"));
+        assertEquals("Expected ')', end of spec reached at [lowercase(a][]", failedSpec("lowercase(a"));
+        assertEquals("No sort function specified at [(][a)]", failedSpec("(a)"));
+        assertEquals("Unknown sort function 'casefold' at [casefold(][a)]", failedSpec("casefold(a)"));
+        assertEquals("Expected '\"', end of spec reached at [missing(a,as,\"default)][]",
+                failedSpec("missing(a,as,\"default)"));
+        assertEquals("Expected '\\' or '\"', got 'n' at [missing(a,as,\"bad \\][n default\")]",
+                failedSpec("missing(a,as,\"bad \\n default\")"));
+        assertEquals("Unknown missing policy 'before' at [missing(a,before][,default)]",
+                failedSpec("missing(a,before,default)"));
+    }
 }
