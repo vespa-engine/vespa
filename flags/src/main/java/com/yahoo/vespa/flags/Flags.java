@@ -363,6 +363,13 @@ public class Flags {
             "Takes effect immediately",
             INSTANCE_ID);
 
+    public static final UnboundBooleanFlag COPY_LEGACY_CA = defineFeatureFlag(
+            "copy-legacy-ca", true,
+            List.of("olaa"), "2025-03-27", "2025-04-30",
+            "Whether legacy CA should be copied from host to container",
+            "Takes effect on container startup",
+            TENANT_ID, INSTANCE_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
