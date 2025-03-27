@@ -33,24 +33,24 @@ func TestWebServicePort(t *testing.T) {
 
 func TestConfigProxyRpcAddr(t *testing.T) {
 	setup(t)
-	addr := VespaConfigProxyRpcAddr()
+	addr := VespaConfigProxyRPCAddr()
 	assert.Equal(t, "tcp/localhost:17090", addr)
 	t.Setenv("VESPA_PORT_BASE", "")
-	addr = VespaConfigProxyRpcAddr()
+	addr = VespaConfigProxyRPCAddr()
 	assert.Equal(t, "tcp/localhost:19090", addr)
 	t.Setenv("port_configproxy_rpc", "16066")
-	addr = VespaConfigProxyRpcAddr()
+	addr = VespaConfigProxyRPCAddr()
 	assert.Equal(t, "tcp/localhost:16066", addr)
 }
 
 func TestConfigSourcesRpcAddrs(t *testing.T) {
 	setup(t)
-	cs := VespaConfigSourcesRpcAddrs()
+	cs := VespaConfigSourcesRPCAddrs()
 	assert.Equal(t, len(cs), 4)
 	assert.Equal(t, cs[0], "tcp/localhost:17090")
 	assert.Equal(t, cs[1], "tcp/foo1.local:17070")
 	t.Setenv("port_configserver_rpc", "12345")
-	cs = VespaConfigSourcesRpcAddrs()
+	cs = VespaConfigSourcesRPCAddrs()
 	assert.Equal(t, len(cs), 4)
 	assert.Equal(t, cs[1], "tcp/foo1.local:12345")
 }
