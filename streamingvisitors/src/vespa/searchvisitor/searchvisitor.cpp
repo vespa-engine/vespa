@@ -191,7 +191,7 @@ SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP 
       _ascending(true),
       _converter(nullptr),
       _attr(std::move(attr)),
-      _sort_blob_writer(_attr ? _attr->get()->make_sort_blob_writer(_ascending, _converter) : nullptr)
+      _sort_blob_writer()
 {
 }
 
@@ -201,8 +201,17 @@ SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP 
       _ascending(ascending),
       _converter(converter),
       _attr(std::move(attr)),
-      _sort_blob_writer(_attr ? _attr->get()->make_sort_blob_writer(_ascending, _converter) : nullptr)
+      _sort_blob_writer()
 {
+    make_sort_blob_writer();
+}
+
+void
+SearchVisitor::AttrInfo::make_sort_blob_writer()
+{
+    if (_attr && _attr->get()->is_sortable()) {
+        _sort_blob_writer = _attr->get()->make_sort_blob_writer(_ascending, _converter);
+    }
 }
 
 SearchVisitor::StreamingDocsumsState::StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback, ResolveClassInfo& resolve_class_info)
@@ -1031,6 +1040,7 @@ SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & 
                                 index = j;
                                 _attributeFields[index]._ascending = field_sort_spec._ascending;
                                 _attributeFields[index]._converter = field_sort_spec._converter.get();
+                                _attributeFields[index].make_sort_blob_writer();
                             }
                         }
                         if (index == _attributeFields.size()) {
