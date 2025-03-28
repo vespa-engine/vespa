@@ -49,6 +49,7 @@ public enum ControllerMetrics implements VespaMetrics {
     CERTIFICATE_REQUEST_EXCEPTIONS("requestCaSignedCertificate.exception", Unit.FAILURE, "Controller: Exceptions when requesting CA signed certificates"),
     BILLING_CREDITS("billing.credits.remaining", Unit.DOLLAR, "Controller: Billing credits remaining"),
     BILLING_EXCEPTIONS("billing.exceptions", Unit.FAILURE, "Controller: Billing related exceptions"),
+    BILLING_CREDITS_TRIAL("billing.credits.trial", Unit.DOLLAR, "Controller: total cost of trial tenants per hour"),
     BILLING_WEBHOOK_FAILURES("billing.webhook.failures", Unit.FAILURE, "Controller: webhook failures"),
     BILLING_WEBHOOK_REQUESTS("billing.webhook.requests", Unit.REQUEST, "Controller: webhook requests"),
     HUBSPOT_EXCEPTIONS("hubspot.exceptions", Unit.FAILURE, "Controller: Hubspot exceptions"),
