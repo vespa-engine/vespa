@@ -321,8 +321,7 @@ abstract class RoutableFactories80 {
                             .setDocumentId(toProtoDocId(apiMsg.getDocumentId()))
                             .setFieldSet(toProtoFieldSet(apiMsg.getFieldSet()));
 
-                        // TODO: change to hasDebugReplicaNodeId
-                        if (apiMsg.getDebugReplicaNodeId() != null) {
+                        if (apiMsg.hasDebugReplicaNodeId()) {
                             builder = builder.setDebugReplica(toProtoDebugReplica(apiMsg.getDebugReplicaNodeId()));
                         }
 

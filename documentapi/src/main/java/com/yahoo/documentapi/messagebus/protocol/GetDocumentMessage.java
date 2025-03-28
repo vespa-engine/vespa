@@ -81,6 +81,11 @@ public class GetDocumentMessage extends DocumentMessage {
         return debugReplicaNodeId;
     }
 
+    @Beta
+    public bool hasDebugReplicaNodeId() {
+        return debugReplicaNodeId != null;
+    }
+
     @Override
     public DocumentReply createReply() {
         return new GetDocumentReply();
