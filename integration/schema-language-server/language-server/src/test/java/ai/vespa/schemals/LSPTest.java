@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Location;
@@ -16,23 +15,18 @@ import org.junit.jupiter.api.Test;
 
 import com.yahoo.io.IOUtils;
 
-import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.InvalidContextException;
-import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
 import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.lsp.yqlplus.semantictokens.YQLPlusSemanticTokens;
 import ai.vespa.schemals.schemadocument.DocumentManager;
-import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolReferences;
 import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
-import ai.vespa.schemals.testutils.TestLogger;
-import ai.vespa.schemals.testutils.TestSchemaDiagnosticsHandler;
-import ai.vespa.schemals.testutils.TestSchemaMessageHandler;
+import ai.vespa.schemals.testutils.Utils.TestContext;
 
 /**
  * LSPTest
@@ -58,17 +52,14 @@ public class LSPTest {
         File file = new File(fileName);
         String fileURI = file.toURI().toString();
         String fileContent = IOUtils.readFile(file);
-        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
-        ClientLogger logger = new TestLogger(messageHandler);
-        SchemaIndex schemaIndex = new SchemaIndex(logger);
-        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
 
-        scheduler.openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
+        TestContext testContext = TestContext.create();
 
-        assertNotEquals(null, scheduler.getDocument(fileURI), "Adding a document to the scheduler should create a DocumentManager for it.");
+        testContext.scheduler().openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
 
-        DocumentManager document = scheduler.getDocument(fileURI);
+        assertNotEquals(null, testContext.scheduler().getDocument(fileURI), "Adding a document to the scheduler should create a DocumentManager for it.");
+
+        DocumentManager document = testContext.scheduler().getDocument(fileURI);
 
         // A list of tests specific to the file read above, positions are 0-indexed.
         List<DefinitionTestPair> definitionTests = List.of(
@@ -82,11 +73,8 @@ public class LSPTest {
         );
 
         for (var testPair : definitionTests) {
-            EventPositionContext definitionContext = new EventPositionContext(
-                scheduler,
-                schemaIndex,
-                messageHandler,
-                document.getVersionedTextDocumentIdentifier(),
+            EventPositionContext definitionContext = testContext.getPositionContext(
+                document,
                 testPair.startPosition() 
             );
             List<Location> result = SchemaDefinition.getDefinition(definitionContext);
@@ -146,21 +134,14 @@ public class LSPTest {
         File file = new File(fileName);
         String fileURI = file.toURI().toString();
         String fileContent = IOUtils.readFile(file);
-        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
-        ClientLogger logger = new TestLogger(messageHandler);
-        SchemaIndex schemaIndex = new SchemaIndex(logger);
-        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
 
-        scheduler.openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
+        TestContext testContext = TestContext.create();
 
+        testContext.scheduler().openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
 
-        DocumentManager document = scheduler.getDocument(fileURI);
-        EventDocumentContext context = new EventDocumentContext(
-            scheduler,
-            schemaIndex,
-            messageHandler,
-            document.getVersionedTextDocumentIdentifier()
+        DocumentManager document = testContext.scheduler().getDocument(fileURI);
+        EventDocumentContext context = testContext.getDocumentContext(
+            document
         );
 
         SchemaSemanticTokens.init();
@@ -175,7 +156,7 @@ public class LSPTest {
             assertEquals(expectedRange, computedRange, "If this test fails you should open " + fileURI + " with the Language Server running and inspect semantic tokens (syntax highlighting).");
         }
 
-        scheduler.closeDocument(fileURI);
+        testContext.scheduler().closeDocument(fileURI);
     }
 
     @Test
@@ -214,21 +195,13 @@ public class LSPTest {
         File file = new File(fileName);
         String fileURI = file.toURI().toString();
         String fileContent = IOUtils.readFile(file);
-        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
-        ClientLogger logger = new TestLogger(messageHandler);
-        SchemaIndex schemaIndex = new SchemaIndex(logger);
-        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
 
-        scheduler.openDocument(new TextDocumentItem(fileURI, "vespaYQL", 0, fileContent));
+        TestContext testContext = TestContext.create();
 
-        DocumentManager document = scheduler.getDocument(fileURI);
-        EventDocumentContext context = new EventDocumentContext(
-            scheduler,
-            schemaIndex,
-            messageHandler,
-            document.getVersionedTextDocumentIdentifier()
-        );
+        testContext.scheduler().openDocument(new TextDocumentItem(fileURI, "vespaYQL", 0, fileContent));
+
+        DocumentManager document = testContext.scheduler().getDocument(fileURI);
+        EventDocumentContext context = testContext.getDocumentContext(document);
 
         YQLPlusSemanticTokens.init();
         List<SemanticTokenMarker> computedMarkers = YQLPlusSemanticTokens.getSemanticTokenMarkers(context);
@@ -242,6 +215,6 @@ public class LSPTest {
             assertEquals(expectedRange, computedRange, "If this test fails you should open " + fileURI + " with the Language Server running and inspect semantic tokens (syntax highlighting).");
         }
 
-        scheduler.closeDocument(fileURI);
+        testContext.scheduler().closeDocument(fileURI);
     }
 }
