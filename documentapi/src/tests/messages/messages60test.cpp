@@ -200,7 +200,7 @@ TEST_F(Messages60Test, testRemoveLocationMessage) {
 TEST_F(Messages60Test, testGetDocumentMessage) {
     GetDocumentMessage tmp(document::DocumentId("id:ns:testdoc::"), "foo bar");
 
-    EXPECT_EQ(152u + 2 *sizeof(std::string), sizeof(GetDocumentMessage));
+    EXPECT_EQ(152u + 2 *sizeof(std::string) + sizeof(std::optional<uint32_t>), sizeof(GetDocumentMessage));
     EXPECT_EQ(MESSAGE_BASE_LENGTH + (size_t)31, serialize("GetDocumentMessage", tmp));
 
     for (uint32_t lang = 0; lang < NUM_LANGUAGES; ++lang) {
