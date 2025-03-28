@@ -128,7 +128,7 @@ public class StringUtils {
         return false;
     }
 
-    public static List<Range> findSingleLineComments(String content, String commentMarker, ClientLogger debug) {
+    public static List<Range> findSingleLineComments(String content, String commentMarker) {
         List<Range> commentRanges = new ArrayList<>();
         if (content == null) return commentRanges;
 
@@ -154,7 +154,6 @@ public class StringUtils {
                 commentEndOffset = content.length();
             }
 
-            debug.info("Comment found at offset: " + nextComment);
             Position commentStart = new Position(currentLineNum, nextComment - currentLineStart);
             Position commentEnd   = new Position(currentLineNum, commentEndOffset - currentLineStart);
             commentRanges.add(new Range(commentStart, commentEnd));

@@ -249,26 +249,30 @@ public class SchemaSemanticTokens {
         return ret;
     }
 
-    public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
-
+    /*
+     * Useful for testing since SemanticTokenMarker is more interpretable than the compact form
+     */
+    public static List<SemanticTokenMarker> getSemanticTokenMarkers(EventDocumentContext context) {
         if (context.document == null) {
-            return new SemanticTokens(new ArrayList<>());
+            return List.of();
         }
 
         SchemaNode node = context.document.getRootNode();
         if (node == null) {
-            return new SemanticTokens(new ArrayList<>());
+            return List.of();
         }
 
         List<SemanticTokenMarker> comments = SemanticTokenUtils.convertCommentRanges(
-            StringUtils.findSingleLineComments(context.document.getCurrentContent(), "#", context.logger)
+            StringUtils.findSingleLineComments(context.document.getCurrentContent(), "#")
         );
 
-        List<SemanticTokenMarker> markers = traverseCST(node, context.logger);
-        List<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(
-            SemanticTokenUtils.mergeSemanticTokenMarkers(markers, comments)
-        );
+        var markers = SemanticTokenUtils.mergeSemanticTokenMarkers(traverseCST(node, context.logger), comments);
+        return markers;
+    }
 
-        return new SemanticTokens(compactMarkers);
+    public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
+        return new SemanticTokens(SemanticTokenMarker.concatCompactForm(
+            getSemanticTokenMarkers(context)
+        ));
     }
 }

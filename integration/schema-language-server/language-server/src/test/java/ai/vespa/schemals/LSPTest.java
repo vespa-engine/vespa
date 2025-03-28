@@ -17,10 +17,13 @@ import org.junit.jupiter.api.Test;
 import com.yahoo.io.IOUtils;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.context.EventPositionContext;
 import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
+import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
@@ -90,5 +93,87 @@ public class LSPTest {
 
             assertEquals(testPair.resultRange(), result.get(0).getRange(), "Definition request returned wrong range for position " + testPair.startPosition().toString());
         }
+    }
+
+    /*
+     * Test if partition of semantic tokens is as expected on a test file.
+     */
+    @Test
+    void semanticTokenSchemaPartitionTest() throws IOException, InvalidContextException {
+        // This list is generated from running on a working build on the file tested on below.
+        List<Range> semanticTokenTestFileRanges = List.of(
+            new Range(new Position(0, 0), new Position(0, 30)),
+            new Range(new Position(1, 0), new Position(1, 6)),
+            new Range(new Position(1, 7), new Position(1, 20)),
+            new Range(new Position(2, 4), new Position(2, 33)),
+            new Range(new Position(3, 4), new Position(3, 12)),
+            new Range(new Position(3, 13), new Position(3, 26)),
+            new Range(new Position(4, 8), new Position(4, 13)),
+            new Range(new Position(4, 14), new Position(4, 22)),
+            new Range(new Position(4, 23), new Position(4, 27)),
+            new Range(new Position(4, 28), new Position(4, 34)),
+            new Range(new Position(6, 0), new Position(6, 26)),
+            new Range(new Position(7, 8), new Position(7, 13)),
+            new Range(new Position(7, 14), new Position(7, 20)),
+            new Range(new Position(7, 21), new Position(7, 25)),
+            new Range(new Position(7, 26), new Position(7, 41)),
+            new Range(new Position(8, 12), new Position(8, 17)),
+            new Range(new Position(8, 19), new Position(8, 26)),
+            new Range(new Position(11, 8), new Position(11, 13)),
+            new Range(new Position(11, 14), new Position(11, 17)),
+            new Range(new Position(11, 18), new Position(11, 22)),
+            new Range(new Position(11, 23), new Position(11, 26)),
+            new Range(new Position(12, 21), new Position(12, 50)),
+            new Range(new Position(13, 12), new Position(13, 17)),
+            new Range(new Position(14, 16), new Position(14, 44)),
+            new Range(new Position(14, 46), new Position(14, 49)),
+            new Range(new Position(14, 50), new Position(14, 74)),
+            new Range(new Position(18, 4), new Position(18, 16)),
+            new Range(new Position(18, 17), new Position(18, 32)),
+            new Range(new Position(19, 8), new Position(19, 16)),
+            new Range(new Position(19, 17), new Position(19, 20)),
+            new Range(new Position(20, 12), new Position(20, 22)),
+            new Range(new Position(20, 24), new Position(20, 34)),
+            new Range(new Position(20, 35), new Position(20, 41)),
+            new Range(new Position(20, 43), new Position(20, 44)),
+            new Range(new Position(20, 45), new Position(20, 55)),
+            new Range(new Position(20, 56), new Position(20, 59)),
+            new Range(new Position(24, 0), new Position(24, 24))
+        );
+
+        String fileName = "src/test/sdfiles/single/semantictoken.sd";
+        File file = new File(fileName);
+        String fileURI = file.toURI().toString();
+        String fileContent = IOUtils.readFile(file);
+        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        ClientLogger logger = new TestLogger(messageHandler);
+        SchemaIndex schemaIndex = new SchemaIndex(logger);
+        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
+
+        scheduler.openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
+
+
+        DocumentManager document = scheduler.getDocument(fileURI);
+        EventDocumentContext context = new EventDocumentContext(
+            scheduler,
+            schemaIndex,
+            messageHandler,
+            document.getVersionedTextDocumentIdentifier()
+        );
+
+        SchemaSemanticTokens.init();
+        List<SemanticTokenMarker> computedMarkers = SchemaSemanticTokens.getSemanticTokenMarkers(context);
+
+        assertEquals(semanticTokenTestFileRanges.size(), computedMarkers.size(), "Computed markers does not have the same size as expected.");
+
+        for (int i = 0; i < computedMarkers.size(); ++i) {
+            Range expectedRange = semanticTokenTestFileRanges.get(i);
+            Range computedRange = computedMarkers.get(i).getRange();
+
+            assertEquals(expectedRange, computedRange, "If this test fails you should open " + fileURI + " with the Language Server running and inspect semantic tokens (syntax highlighting).");
+        }
+
+        scheduler.closeDocument(fileURI);
     }
 }

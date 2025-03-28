@@ -91,7 +91,7 @@ public class YQLPlusSemanticTokens {
         }
 
         List<SemanticTokenMarker> comments = SemanticTokenUtils.convertCommentRanges(
-            StringUtils.findSingleLineComments(context.document.getCurrentContent(), "//", context.logger)
+            StringUtils.findSingleLineComments(context.document.getCurrentContent(), "//")
         );
 
         List<SemanticTokenMarker> markers = traverseCST(node, context.logger);
