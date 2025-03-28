@@ -78,7 +78,7 @@ public class RunVespaQuery implements SchemaCommand {
                 .build();
 
             context.messageHandler.applyEdit(new ApplyWorkspaceEditParams(wsEdit)).thenRun(() -> {
-                context.messageHandler.showDocument(targetFileURI);
+                context.messageHandler.showDocument(targetFileURI, true);
             });
         });
 
