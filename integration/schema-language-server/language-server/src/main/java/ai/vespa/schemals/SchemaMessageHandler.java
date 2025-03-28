@@ -58,9 +58,16 @@ public class SchemaMessageHandler {
         return client.showMessageRequest(params);
     }
 
-    public CompletableFuture<ShowDocumentResult> showDocument(String fileURI) {
-        return client.showDocument(new ShowDocumentParams(fileURI));
+    public CompletableFuture<ShowDocumentResult> showDocument(String fileURI, boolean openSplitScreen) {
+        var params = new ShowDocumentParams(fileURI);
+        params.setTakeFocus(!openSplitScreen);
+        return client.showDocument(params);
     }
+
+    public CompletableFuture<ShowDocumentResult> showDocument(String fileURI) {
+        return showDocument(fileURI, false);
+    }
+
 
     public CompletableFuture<ApplyWorkspaceEditResponse>  applyEdit(ApplyWorkspaceEditParams params) {
         return client.applyEdit(params);

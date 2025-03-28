@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import fs from 'fs';
 import hasbin from 'hasbin';
 
-import { ExecuteCommandParams, ExecuteCommandRequest, LanguageClient, LanguageClientOptions, ProtocolRequestType, RequestType, ServerOptions, ExecuteCommandRegistrationOptions } from 'vscode-languageclient/node';
+import { LanguageClient, LanguageClientOptions, ServerOptions, CancellationToken, ShowDocumentParams, ShowDocumentRequest, ResponseError } from 'vscode-languageclient/node';
 
 let schemaClient: LanguageClient | null = null;
 
@@ -84,6 +84,24 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
         ],
         synchronize: {
             fileEvents: vscode.workspace.createFileSystemWatcher("**/*{.sd,.profile}")
+        },
+        middleware: {
+            window: {
+                showDocument: async (params: ShowDocumentParams, next: ShowDocumentRequest.HandlerSignature) => {
+                    if (!params.takeFocus) {
+                        vscode.window.showTextDocument(vscode.Uri.parse(params.uri), {
+                            viewColumn: vscode.ViewColumn.Two,
+                            preview: false
+                        });
+                        return {success: true };
+                    }
+                    const res = await next(params, CancellationToken.None);
+                    if (res instanceof ResponseError) {
+                        return { success: false };
+                    } 
+                    return res;
+                }
+            }
         }
 	};
     const client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
