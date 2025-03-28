@@ -31,7 +31,7 @@ std::string IIndexCollection::toString() const
             }
             const IndexSearchable & is(getSearchable(i));
             s << getSourceId(i) << " : " << &is << "(";
-            if (dynamic_cast<const IDiskIndex *>(&is) != NULL) {
+            if (dynamic_cast<const IDiskIndex *>(&is) != nullptr) {
                 s << dynamic_cast<const IDiskIndex &>(is).getIndexDir().c_str();
             } else {
                 s << typeid(is).name();

@@ -23,7 +23,7 @@ public:
     /**
      * Virtual destructor to allow safe subclassing.
      **/
-    virtual ~IBlueprintRegistry() {}
+    virtual ~IBlueprintRegistry() = default;
 };
 
 }

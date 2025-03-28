@@ -314,7 +314,7 @@ struct NoFilterStrategy : FilterStrategy {
 };
 
 struct PositiveFilterBeforeStrategy : FilterStrategy {
-    virtual std::string name() const override {
+    std::string name() const override {
         return vespalib::make_string("PositiveBefore");
     }
     SearchIterator::UP createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {
@@ -326,7 +326,7 @@ struct PositiveFilterBeforeStrategy : FilterStrategy {
 };
 
 struct NegativeFilterAfterStrategy : FilterStrategy {
-    virtual std::string name() const override {
+    std::string name() const override {
         return vespalib::make_string("NegativeAfter");
     }
     SearchIterator::UP createRoot(SparseVectorFactory &vectorFactory, ChildFactory &childFactory, uint32_t childCnt, uint32_t limit) const override {

@@ -11,6 +11,7 @@ import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.BoolItem;
 import com.yahoo.prelude.query.DocumentFrequency;
+import com.yahoo.prelude.query.EquivItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.IndexedItem;
@@ -579,6 +580,20 @@ public class YqlParserTestCase {
                 "and title contains ({id: 3}\"angel\")",
                 new IllegalArgumentException("Item 'title:madonna' was specified to connect to item with ID 4, " +
                         "which does not exist in the query."));
+    }
+
+    @Test
+    void testConnectivityToEquiv() {
+        QueryTree parsed = parse("select foo from bar where " +
+                                 "title contains ({id: 1, connectivity: {id: 2, weight: 7.0}}'madonna') " +
+                                 "and title contains ({id: 2}equiv('saint','angel'))");
+        assertEquals("AND title:madonna (EQUIV title:saint title:angel)", parsed.toString());
+        AndItem root = (AndItem) parsed.getRoot();
+        WordItem first = (WordItem) root.getItem(0);
+        EquivItem second = (EquivItem) root.getItem(1);
+        assertEquals(first.getConnectedItem(), second);
+        assertEquals(first.getConnectivity(), 7.0d, 1E-6);
+        assertNull(second.getConnectedItem());
     }
 
     @Test

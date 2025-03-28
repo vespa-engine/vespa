@@ -25,13 +25,13 @@ public final class NowExpression extends Expression {
     public Timer getTimer() { return timer; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         return DataType.LONG;
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(DataType.LONG, outputType, null, context);
         return AnyDataType.instance;
     }

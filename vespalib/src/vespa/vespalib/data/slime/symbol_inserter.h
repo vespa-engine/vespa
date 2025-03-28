@@ -12,7 +12,7 @@ namespace vespalib::slime {
  **/
 struct SymbolInserter {
     virtual Symbol insert() = 0;
-    virtual ~SymbolInserter() {}
+    virtual ~SymbolInserter() = default;
 };
 
 } // namespace vespalib::slime

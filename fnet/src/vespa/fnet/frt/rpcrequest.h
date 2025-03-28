@@ -18,7 +18,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FRT_IAbortHandler(void) {}
+    virtual ~FRT_IAbortHandler() = default;
 
     virtual bool HandleAbort() = 0;
 };
@@ -31,7 +31,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FRT_IReturnHandler(void) {}
+    virtual ~FRT_IReturnHandler() = default;
 
     virtual void HandleReturn() = 0;
     virtual FNET_Connection *GetConnection() = 0;

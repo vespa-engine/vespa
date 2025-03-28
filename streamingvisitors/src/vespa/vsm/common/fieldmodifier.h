@@ -26,7 +26,7 @@ public:
     virtual document::FieldValue::UP modify(const document::FieldValue & fv,
                                             const document::FieldPath & path) = 0;
 
-    virtual ~FieldModifier() { }
+    virtual ~FieldModifier() = default;
 };
 
 using FieldModifierMapT = vespalib::hash_map<FieldIdT, FieldModifier::UP>;

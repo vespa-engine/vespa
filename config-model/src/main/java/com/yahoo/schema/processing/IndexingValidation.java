@@ -5,19 +5,14 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
-import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.SDField;
-import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
-import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.FieldTypeAdapter;
-import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.FieldTypes;
 import com.yahoo.vespa.indexinglanguage.expressions.OutputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
+import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import com.yahoo.yolean.Exceptions;
@@ -36,11 +31,11 @@ public class IndexingValidation extends Processor {
 
     @Override
     public void process(boolean validate, boolean documentsOnly) {
-        VerificationContext context = new VerificationContext(new MyAdapter(schema));
+        TypeContext context = new TypeContext(new SchemaFieldTypes(schema));
         for (SDField field : schema.allConcreteFields()) {
             ScriptExpression script = field.getIndexingScript();
             try {
-                script.verify(context);
+                script.resolve(context);
                 MyConverter converter = new MyConverter();
                 for (StatementExpression exp : script) {
                     converter.convert(exp); // TODO: stop doing this explicitly when visiting a script does not branch
@@ -87,59 +82,20 @@ public class IndexingValidation extends Processor {
         }
     }
 
-    private static class MyAdapter implements FieldTypeAdapter {
+    private static class SchemaFieldTypes implements FieldTypes {
 
         final Schema schema;
 
-        MyAdapter(Schema schema) {
+        SchemaFieldTypes(Schema schema) {
             this.schema = schema;
         }
 
         @Override
-        public DataType getInputType(Expression exp, String fieldName) {
+        public DataType getFieldType(String fieldName, Expression expression) {
             SDField field = schema.getDocumentField(fieldName);
             if (field == null)
-                throw new VerificationException(exp, "Input field '" + fieldName + "' not found");
+                throw new VerificationException(expression, "Input field '" + fieldName + "' not found");
             return field.getDataType();
-        }
-
-        @Override
-        public void tryOutputType(Expression expression, String fieldName, DataType valueType) {
-            String fieldDesc;
-            DataType fieldType;
-            if (expression instanceof AttributeExpression) {
-                Attribute attribute = schema.getAttribute(fieldName);
-                if (attribute == null)
-                    throw new VerificationException(expression, "Attribute '" + fieldName + "' not found");
-                fieldDesc = "attribute";
-                fieldType = attribute.getDataType();
-            } else if (expression instanceof IndexExpression) {
-                SDField field = schema.getConcreteField(fieldName);
-                if (field == null)
-                    throw new VerificationException(expression, "Index field '" + fieldName + "' not found");
-                fieldDesc = "index field";
-                fieldType = field.getDataType();
-            } else if (expression instanceof SummaryExpression) {
-                SummaryField field = schema.getSummaryField(fieldName);
-                if (field == null) {
-                    // Use document field if summary field is not found
-                    SDField sdField = schema.getConcreteField(fieldName);
-                    if (sdField != null && sdField.doesSummarying()) {
-                        fieldDesc = "document field";
-                        fieldType = sdField.getDataType();
-                    } else {
-                        throw new VerificationException(expression, "Summary field '" + fieldName + "' not found");
-                    }
-                } else {
-                    fieldDesc = "summary field";
-                    fieldType = field.getDataType();
-                }
-            } else {
-                throw new UnsupportedOperationException();
-            }
-            if ( ! fieldType.isAssignableFrom(valueType))
-                throw new VerificationException(expression, "Can not assign " + valueType.getName() + " to " + fieldDesc +
-                                                            " '" + fieldName + "' which is " + fieldType.getName());
         }
 
     }

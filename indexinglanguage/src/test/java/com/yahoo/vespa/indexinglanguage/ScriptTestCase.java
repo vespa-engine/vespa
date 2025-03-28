@@ -20,12 +20,10 @@ import com.yahoo.document.datatypes.WeightedSet;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
-import com.yahoo.vespa.indexinglanguage.expressions.ForEachExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.ToArrayExpression;
-import com.yahoo.vespa.indexinglanguage.expressions.VerificationContext;
+import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
@@ -76,7 +74,7 @@ public class ScriptTestCase {
                 new StatementExpression(new InputExpression("in-1"), new AttributeExpression("out-1")),
                 new StatementExpression(new AttributeExpression("out-2")));
         try {
-            exp.verify(input);
+            exp.resolve(input);
             fail("Expected exception");
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'attribute out-2': Expected string input, but no input is provided", e.getMessage());
@@ -91,7 +89,7 @@ public class ScriptTestCase {
         Expression exp = new ScriptExpression(
                 new StatementExpression(new AttributeExpression("out-2")));
         try {
-            exp.verify(input);
+            exp.resolve(input);
             fail("Expected exception");
         } catch (VerificationException e) {
             assertEquals(AttributeExpression.class, e.getExpressionType());
@@ -106,7 +104,7 @@ public class ScriptTestCase {
 
         Expression exp = new ScriptExpression(
                 new StatementExpression(new InputExpression("in-1"), new AttributeExpression("out-1")));
-        exp.verify(input);
+        exp.resolve(input);
     }
 
     @Test
@@ -148,7 +146,7 @@ public class ScriptTestCase {
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -170,7 +168,7 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("second"));
         adapter.setValue("myTextArray", array);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -190,7 +188,7 @@ public class ScriptTestCase {
         adapter.createField(intField);
         adapter.setValue("myText", new StringFieldValue("input text"));
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -212,7 +210,7 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("50;60"));
         adapter.setValue("location_str", array);
 
-        expression.verify(new VerificationContext(adapter));
+        expression.resolve(new TypeContext(adapter));
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -248,7 +246,7 @@ public class ScriptTestCase {
         array.add(new StringFieldValue("http://value2"));
         adapter.setValue("uris", array);
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -266,7 +264,7 @@ public class ScriptTestCase {
         adapter.createField(myFloat);
         adapter.setValue("myFloat", new FloatFieldValue(1.3f));
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -282,10 +280,10 @@ public class ScriptTestCase {
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
 
-        var verificationContext = new VerificationContext(adapter);
-        verificationContext.setVariable("A", DataType.STRING);
-        verificationContext.setVariable("B", DataType.STRING);
-        expression.verify(verificationContext);
+        var verificationContext = new TypeContext(adapter);
+        verificationContext.setVariableType("A", DataType.STRING);
+        verificationContext.setVariableType("B", DataType.STRING);
+        expression.resolve(verificationContext);
 
         var context = new ExecutionContext(adapter);
         context.setVariable("B", new StringFieldValue("b_value"));
@@ -303,10 +301,10 @@ public class ScriptTestCase {
         adapter.createField(new Field("myString", DataType.STRING));
         adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
 
-        var verificationContext = new VerificationContext(adapter);
-        verificationContext.setVariable("A", DataType.STRING);
-        verificationContext.setVariable("B", DataType.STRING);
-        expression.verify(verificationContext);
+        var verificationContext = new TypeContext(adapter);
+        verificationContext.setVariableType("A", DataType.STRING);
+        verificationContext.setVariableType("B", DataType.STRING);
+        expression.resolve(verificationContext);
 
         var context = new ExecutionContext(adapter);
         context.setVariable("A", new StringFieldValue("value 4"));
@@ -330,15 +328,15 @@ public class ScriptTestCase {
         adapter.createField(new Field("myString", DataType.STRING));
         adapter.createField(new Field("myStringArray", ArrayDataType.getArray(DataType.STRING)));
 
-        var verificationContext = new VerificationContext(adapter);
-        verificationContext.setVariable("BX", DataType.STRING);
-        verificationContext.setVariable("CX", DataType.STRING);
-        verificationContext.setVariable("DX", DataType.STRING);
-        verificationContext.setVariable("A", DataType.STRING);
-        verificationContext.setVariable("B", DataType.STRING);
-        verificationContext.setVariable("C", DataType.STRING);
-        verificationContext.setVariable("D", DataType.STRING);
-        expression.verify(verificationContext);
+        var verificationContext = new TypeContext(adapter);
+        verificationContext.setVariableType("BX", DataType.STRING);
+        verificationContext.setVariableType("CX", DataType.STRING);
+        verificationContext.setVariableType("DX", DataType.STRING);
+        verificationContext.setVariableType("A", DataType.STRING);
+        verificationContext.setVariableType("B", DataType.STRING);
+        verificationContext.setVariableType("C", DataType.STRING);
+        verificationContext.setVariableType("D", DataType.STRING);
+        expression.resolve(verificationContext);
 
         var context = new ExecutionContext(adapter);
         context.setVariable("BX", new StringFieldValue("value 1"));
@@ -363,7 +361,7 @@ public class ScriptTestCase {
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("myInStruct", type));
         adapter.createField(new Field("myOutStruct", type));
-        expression.verify(adapter);
+        expression.resolve(adapter);
 
         var inStruct = new Struct(type);
         inStruct.setFieldValue("myString1", "foo");
@@ -387,7 +385,7 @@ public class ScriptTestCase {
         adapter.createField(new Field("myStructField", type));
         adapter.createField(new Field("myIntArray", DataType.getArray(DataType.INT)));
         try {
-            expression.verify(adapter);
+            expression.resolve(adapter);
             fail();
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'for_each { to_array }': Struct field 'myInt' has type int but expression produces Array<int>",
@@ -399,7 +397,7 @@ public class ScriptTestCase {
     public void testMultiStatementInput() {
         var tester = new ScriptTester();
         // A multi-statement indexing block as rewritten by the config model:
-        var expression = tester.expressionFrom("clear_state | guard { input myString | { \"en\" | set_language; tokenize normalize stem:\"BEST\" | index myOutputString; }; }");
+        var expression = tester.expressionFrom("clear_state | guard { input myString | { \"en\" | set_language; tokenize normalize keep-case stem:\"BEST\" | index myOutputString; }; }");
 
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         var myString = new Field("myString", DataType.STRING);
@@ -407,7 +405,7 @@ public class ScriptTestCase {
         adapter.setValue("myString", new StringFieldValue("Test value"));
         adapter.createField(new Field("myOutputString", DataType.STRING));
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
 
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
@@ -425,7 +423,7 @@ public class ScriptTestCase {
         adapter.setValue("myString", new StringFieldValue("https://vespa.ai"));
         adapter.createField(new Field("myUri", DataType.URI));
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
         assertEquals(new UriFieldValue("https://vespa.ai"), adapter.values.get("myUri"));
@@ -443,7 +441,7 @@ public class ScriptTestCase {
         adapter.setValue("myWeightedSet", myWeightedSet);
         adapter.createField(new Field("myInts", WeightedSetDataType.getWeightedSet(DataType.INT)));
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
         assertTrue(((WeightedSet<IntegerFieldValue>)adapter.values.get("myInts")).isEmpty());
@@ -453,7 +451,7 @@ public class ScriptTestCase {
         adapter.setValue("myWeightedSet", myWeightedSet);
         adapter.createField(new Field("myInts", WeightedSetDataType.getWeightedSet(DataType.INT)));
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
         expression.execute(context);
         assertEquals(37, ((WeightedSet<IntegerFieldValue>)adapter.values.get("myInts")).get(new IntegerFieldValue(3)).intValue());
     }
@@ -470,7 +468,7 @@ public class ScriptTestCase {
         adapter.setValue("myArray", myArray);
         adapter.createField(new Field("myInts", DataType.getArray(DataType.INT)));
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
         assertTrue(((Array<IntegerFieldValue>)adapter.values.get("myInts")).isEmpty());
@@ -480,7 +478,7 @@ public class ScriptTestCase {
         adapter.setValue("myArray", myArray);
         adapter.createField(new Field("myInts", DataType.getArray(DataType.INT)));
 
-        expression.verify(adapter);
+        expression.resolve(adapter);
         expression.execute(context);
         assertEquals(37, ((Array<IntegerFieldValue>)adapter.values.get("myInts")).get(0).getInteger());
     }
@@ -512,7 +510,7 @@ public class ScriptTestCase {
         SimpleTestAdapter adapter = new SimpleTestAdapter();
         adapter.createField(new Field("attributes_src", DataType.STRING));
         adapter.createField(new Field("attributes", DataType.STRING));
-        expression.verify(adapter);
+        expression.resolve(adapter);
     }
 
 }

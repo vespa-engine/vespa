@@ -10,6 +10,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.nio.charset.StandardCharsets;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -55,12 +56,14 @@ public class DomDispatchTuningBuilderTest {
                         "  <tuning>" +
                         "    <dispatch>" +
                         "      <max-hits-per-partition>69</max-hits-per-partition>" +
+                        "      <prioritize-availability>false</prioritize-availability>" +
                         "      <min-active-docs-coverage>12.5</min-active-docs-coverage>" +
                         "      <top-k-probability>0.999</top-k-probability>" +
                         "    </dispatch>" +
                         "  </tuning>" +
                         "</content>");
         assertEquals(69, dispatch.getMaxHitsPerPartition().intValue());
+        assertFalse(dispatch.getPrioritizeAvailability());
         assertEquals(12.5, dispatch.getMinActiveDocsCoverage(), 0.0);
         assertEquals(0.999, dispatch.getTopkProbability(), 0.0);
     }

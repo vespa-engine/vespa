@@ -17,6 +17,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -95,9 +96,10 @@ public class RankingExpressionTestCase {
         List<ExpressionFunction> functions = new ArrayList<>();
         functions.add(new ExpressionFunction("foo", null, new RankingExpression("foo")));
 
-        RankingExpression exp = new RankingExpression("foo");
+        RankingExpression exp = new RankingExpression("first-phase", "foo");
         try {
             exp.getRankProperties(new SerializationContext(functions, Optional.empty()));
+            fail("Expected exception");
         } catch (RuntimeException e) {
             assertEquals("Cycle in ranking expression function 'foo' called from: [foo[]]", e.getMessage());
         }
@@ -109,9 +111,10 @@ public class RankingExpressionTestCase {
         functions.add(new ExpressionFunction("foo", null, new RankingExpression("bar")));
         functions.add(new ExpressionFunction("bar", null, new RankingExpression("foo")));
 
-        RankingExpression exp = new RankingExpression("foo");
+        RankingExpression exp = new RankingExpression("first-phase", "foo");
         try {
             exp.getRankProperties(new SerializationContext(functions, Optional.empty()));
+            fail("Expected exception");
         } catch (RuntimeException e) {
             assertEquals("Cycle in ranking expression function 'foo' called from: [foo[], bar[]]", e.getMessage());
         }

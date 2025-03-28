@@ -101,7 +101,7 @@ public class StatementTestCase {
     }
 
     private static StatementExpression verify(StatementExpression statement) {
-        statement.verify(new SimpleTestAdapter());
+        statement.resolve(new SimpleTestAdapter());
         return statement;
     }
 

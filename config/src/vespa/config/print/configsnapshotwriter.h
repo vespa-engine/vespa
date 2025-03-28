@@ -18,7 +18,7 @@ public:
      * @return true if successful, false if not.
      */
     virtual bool write(const ConfigSnapshot & snapshot) = 0;
-    virtual ~ConfigSnapshotWriter() { }
+    virtual ~ConfigSnapshotWriter() = default;
 };
 
 } // namespace config

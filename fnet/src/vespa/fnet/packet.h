@@ -25,7 +25,7 @@ public:
     FNET_Packet() {}
 
     /** Does nothing. **/
-    virtual ~FNET_Packet() {}
+    virtual ~FNET_Packet() = default;
 
 
     /**

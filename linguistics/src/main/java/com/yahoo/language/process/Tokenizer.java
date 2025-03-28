@@ -11,7 +11,7 @@ import com.yahoo.language.Language;
 public interface Tokenizer {
 
     /**
-     * Returns the tokens produced from an input string under the rules of the given Language and additional options
+     * Tokenizes the given input string.
      *
      * @param input the string to tokenize. May be arbitrarily large.
      * @param language the language of the input string.
@@ -19,7 +19,19 @@ public interface Tokenizer {
      * @param removeAccents whether to normalize accents and similar
      * @return the tokens of the input String
      * @throws ProcessingException If the underlying library throws an Exception.
+     * @deprecated use #tokenize(String, LinguisticsParameters)
      */
-    Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents);
+    @Deprecated // TODO: Remove on Vespa 9
+    default Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
+        return tokenize(input, new LinguisticsParameters(language, stemMode, removeAccents, true));
+    }
+
+    /**
+     * Tokenizes the given input string.
+     * This default implementation calls tokenize(input, language, stemMode, removeAccents)
+     */
+     default Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
+        return tokenize(input, parameters.language(), parameters.stemMode(), parameters.removeAccents());
+    }
 
 }

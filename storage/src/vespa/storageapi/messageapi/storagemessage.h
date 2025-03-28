@@ -334,7 +334,7 @@ public:
         HIGH = 50,
         VERYHIGH = 0
     }; // FIXME
-    //static const unsigned int NUM_PRIORITIES = UINT8_MAX;
+
     static const char* getPriorityString(Priority);
 
 private:
@@ -391,9 +391,9 @@ public:
 
     /**
      *  Returns the approximate memory footprint (in bytes) of a storage message.
-     *  By default, returns 50 bytes.
+     *  If unset, returns 50 bytes.
      */
-    uint32_t getApproxByteSize() const noexcept {
+    [[nodiscard]] uint32_t getApproxByteSize() const noexcept {
         return _approxByteSize;
     }
 

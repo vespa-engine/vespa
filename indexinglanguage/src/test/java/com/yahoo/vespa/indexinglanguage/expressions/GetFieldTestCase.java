@@ -9,10 +9,9 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
-import com.yahoo.vespa.indexinglanguage.SimpleDocumentAdapter;
+import com.yahoo.vespa.indexinglanguage.SimpleDocumentFieldValues;
 import org.junit.Test;
 
-import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -53,7 +52,7 @@ public class GetFieldTestCase {
         Document doc = new Document(docType, "id:scheme:my_doc::");
         doc.setFieldValue("foo", foo);
 
-        ExecutionContext ctx = new ExecutionContext(new SimpleDocumentAdapter(doc));
+        ExecutionContext ctx = new ExecutionContext(new SimpleDocumentFieldValues(doc));
         assertEquals(bar, new StatementExpression(new InputExpression("foo"),
                                                   new GetFieldExpression("bar")).execute(ctx));
     }

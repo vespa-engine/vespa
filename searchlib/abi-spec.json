@@ -24,6 +24,25 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.searchlib.ranking.features.FeatureNames" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public static com.yahoo.searchlib.rankingexpression.Reference asConstantFeature(java.lang.String)",
+      "public static com.yahoo.searchlib.rankingexpression.Reference asAttributeFeature(java.lang.String)",
+      "public static com.yahoo.searchlib.rankingexpression.Reference asQueryFeature(java.lang.String)",
+      "public static boolean isSimpleFeature(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public static boolean isConstantFeature(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public static boolean isQueryFeature(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public static boolean isAttributeFeature(com.yahoo.searchlib.rankingexpression.Reference)",
+      "public static java.util.Optional argumentOf(java.lang.String)"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.searchlib.ranking.features.Features" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],
@@ -1259,6 +1278,7 @@
       "public int size()",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value[] evaluate(com.yahoo.searchlib.rankingexpression.evaluation.Context)",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value evaluate(int, com.yahoo.searchlib.rankingexpression.evaluation.Context)",
+      "public void setAreFeatureArguments(boolean)",
       "public boolean isEmpty()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
@@ -1628,6 +1648,7 @@
       "public void <init>(java.lang.String, java.util.List, java.lang.String)",
       "public void <init>(com.yahoo.searchlib.rankingexpression.Reference)",
       "public java.lang.String getName()",
+      "public void setIsFeatureArgument(boolean)",
       "public com.yahoo.searchlib.rankingexpression.rule.Arguments getArguments()",
       "public com.yahoo.searchlib.rankingexpression.rule.ReferenceNode setArguments(java.util.List)",
       "public java.lang.String getOutput()",

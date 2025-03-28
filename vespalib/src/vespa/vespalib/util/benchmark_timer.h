@@ -62,7 +62,7 @@ private:
 
     struct Loop {
         virtual void perform(size_t cnt) const = 0;
-        virtual ~Loop() {}
+        virtual ~Loop() = default;
     };
 
     struct Caller : Loop {

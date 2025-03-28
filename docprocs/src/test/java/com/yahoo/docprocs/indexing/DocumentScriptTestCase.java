@@ -22,14 +22,11 @@ import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
-import com.yahoo.vespa.indexinglanguage.AdapterFactory;
-import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
-import com.yahoo.vespa.indexinglanguage.expressions.Expression;
+import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.InputExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
-import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -45,7 +42,7 @@ import static org.junit.Assert.fail;
 @SuppressWarnings("unchecked")
 public class DocumentScriptTestCase {
 
-    private static final AdapterFactory ADAPTER_FACTORY = new SimpleAdapterFactory();
+    private static final FieldValuesFactory fieldValuesFactory = new FieldValuesFactory();
 
     @Test
     public void requireThatDocumentWithExtraFieldsThrow() {
@@ -180,7 +177,7 @@ public class DocumentScriptTestCase {
         DocumentUpdate executeWithUpdate(String fieldName, FieldPathUpdate updateIn) {
             DocumentUpdate update = new DocumentUpdate(type, "id:ns:documentType::");
             update.addFieldPathUpdate(updateIn);
-            return newScript(type, fieldName).execute(ADAPTER_FACTORY, update);
+            return newScript(type, fieldName).execute(fieldValuesFactory, update);
         }
 
         FieldPathUpdate executeWithUpdateAndExpectFieldPath(String fieldName, FieldPathUpdate updateIn) {
@@ -240,7 +237,7 @@ public class DocumentScriptTestCase {
         docType.addField("myField", fieldValue.getDataType());
         Document doc = new Document(docType, "id:ns:myDocumentType::");
         doc.setFieldValue("myField", fieldValue.clone());
-        doc = newScript(docType).execute(ADAPTER_FACTORY, doc);
+        doc = newScript(docType).execute(fieldValuesFactory, doc);
         return doc.getFieldValue("myField");
     }
 
@@ -249,7 +246,7 @@ public class DocumentScriptTestCase {
         docType.addField("myField", fieldValue.getDataType());
         DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
         update.addFieldUpdate(FieldUpdate.createAssign(docType.getField("myField"), fieldValue));
-        update = newScript(docType).execute(ADAPTER_FACTORY, update);
+        update = newScript(docType).execute(fieldValuesFactory, update);
         return update.getFieldUpdate("myField").getValueUpdate(0);
     }
 
@@ -258,7 +255,7 @@ public class DocumentScriptTestCase {
         docType.addField("myField", fieldValue.getDataType());
         DocumentUpdate update = new DocumentUpdate(docType, "id:ns:myDocumentType::");
         update.addFieldPathUpdate(new AssignFieldPathUpdate(docType, "myField", fieldValue));
-        update = newScript(docType).execute(ADAPTER_FACTORY, update);
+        update = newScript(docType).execute(fieldValuesFactory, update);
         return update.getFieldUpdate("myField").getValueUpdate(0);
     }
 
@@ -350,11 +347,11 @@ public class DocumentScriptTestCase {
     }
 
     private static Document execute(Document document) {
-        return newScript(document.getDataType()).execute(new SimpleAdapterFactory(), document);
+        return newScript(document.getDataType()).execute(new FieldValuesFactory(), document);
     }
 
     private static DocumentUpdate execute(DocumentUpdate update) {
-        return newScript(update.getType()).execute(new SimpleAdapterFactory(), update);
+        return newScript(update.getType()).execute(new FieldValuesFactory(), update);
     }
 
 }

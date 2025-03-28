@@ -18,7 +18,7 @@ import java.util.Objects;
 public class ExecutionContext {
 
     private final Map<String, FieldValue> variables = new HashMap<>();
-    private final FieldValueAdapter fieldValue;
+    private final FieldValues fieldValues;
     private FieldValue currentValue;
     private Language language;
     private final Map<Object, Object> cache = LazyMap.newHashMap();
@@ -27,8 +27,8 @@ public class ExecutionContext {
         this(null);
     }
 
-    public ExecutionContext(FieldValueAdapter fieldValue) {
-        this.fieldValue = fieldValue;
+    public ExecutionContext(FieldValues fieldValue) {
+        this.fieldValues = fieldValue;
         this.language = Language.UNKNOWN;
     }
 
@@ -43,23 +43,23 @@ public class ExecutionContext {
      * or a partial execution of only the statements accessing the available data.
      */
     public boolean isComplete() {
-        return fieldValue != null && fieldValue.isComplete();
+        return fieldValues != null && fieldValues.isComplete();
     }
 
     public FieldValue getFieldValue(String fieldName) {
-        return fieldValue.getInputValue(fieldName);
+        return fieldValues.getInputValue(fieldName);
     }
 
     public FieldValue getFieldValue(FieldPath fieldPath) {
-        return fieldValue.getInputValue(fieldPath);
+        return fieldValues.getInputValue(fieldPath);
     }
 
     public ExecutionContext setFieldValue(String fieldName, FieldValue fieldValue, Expression expression) {
-        this.fieldValue.setOutputValue(expression, fieldName, fieldValue);
+        this.fieldValues.setOutputValue(fieldName, fieldValue, expression);
         return this;
     }
 
-    public FieldValueAdapter getFieldValue() { return fieldValue; }
+    public FieldValues getFieldValues() { return fieldValues; }
 
     public FieldValue getVariable(String name) {
         return variables.get(name);
@@ -89,12 +89,6 @@ public class ExecutionContext {
     /** Returns a mutable reference to the cache of this. */
     public Map<Object, Object> getCache() {
         return cache;
-    }
-
-    void fillVariableTypes(VerificationContext vctx) {
-        for (var entry : variables.entrySet()) {
-            vctx.setVariable(entry.getKey(), entry.getValue().getDataType());
-        }
     }
 
     public Language getLanguage() { return language; }

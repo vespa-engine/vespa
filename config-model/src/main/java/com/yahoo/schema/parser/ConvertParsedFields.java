@@ -24,10 +24,10 @@ import java.util.Map;
 import java.util.logging.Level;
 
 /**
- * Helper for converting ParsedField etc to SDField with settings
+ * Helper for converting ParsedField etc. to SDField with settings
  *
  * @author arnej27959
- **/
+ */
 public class ConvertParsedFields {
 
     private final TypeResolver context;

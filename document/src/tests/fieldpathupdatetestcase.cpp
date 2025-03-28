@@ -672,7 +672,7 @@ TEST_F(FieldPathUpdateTestCase, testAssignMapNoExistNoCreate)
     //doc->print(std::cerr, true, "");
 
     std::unique_ptr<MapFieldValue> valueNow = doc->getAs<MapFieldValue>(doc->getField("structmap"));
-    EXPECT_TRUE(valueNow.get() == 0);
+    EXPECT_TRUE(valueNow.get() == nullptr);
 }
 
 TEST_F(FieldPathUpdateTestCase, testQuotedStringKey)

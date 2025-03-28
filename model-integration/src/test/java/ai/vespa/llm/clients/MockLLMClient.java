@@ -5,7 +5,6 @@ import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.completion.Completion;
 import ai.vespa.llm.completion.Prompt;
 import ai.vespa.secret.Secrets;
-import com.yahoo.container.jdisc.secretstore.SecretStore;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

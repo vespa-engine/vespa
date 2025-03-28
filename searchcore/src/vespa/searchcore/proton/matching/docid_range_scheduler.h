@@ -112,7 +112,7 @@ struct DocidRangeScheduler {
     virtual size_t unassigned_size() const = 0;
     virtual IdleObserver make_idle_observer() const = 0;
     virtual DocidRange share_range(size_t thread_id, DocidRange todo) = 0;
-    virtual ~DocidRangeScheduler() {}
+    virtual ~DocidRangeScheduler() = default;
 };
 
 /**

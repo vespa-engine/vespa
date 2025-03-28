@@ -168,8 +168,8 @@ public:
         return buf;
     }
 private:
-    virtual void set(const ResultNode&) override;
-    virtual size_t hash() const override { return 0; }
+    void set(const ResultNode&) override;
+    size_t hash() const override { return 0; }
     const FieldValue * _fv;
 };
 

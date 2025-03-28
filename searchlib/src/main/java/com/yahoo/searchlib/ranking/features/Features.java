@@ -15,7 +15,7 @@ import java.util.Map;
 @Beta
 public class Features {
 
-    private Map<String, Value> features;
+    private final Map<String, Value> features;
 
     /** Creates a set of features by assigning ownership of map of features to this */
     Features(Map<String, Value> features) {

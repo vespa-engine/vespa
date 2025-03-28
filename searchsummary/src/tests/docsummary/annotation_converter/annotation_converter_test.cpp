@@ -70,6 +70,7 @@ protected:
     void set_span_tree(StringFieldValue& value, std::unique_ptr<SpanTree> tree);
     StringFieldValue make_annotated_string();
     StringFieldValue make_annotated_chinese_string();
+    StringFieldValue make_annotated_overlaps();
     std::string make_exp_il_annotated_string();
     std::string make_exp_il_annotated_chinese_string();
     void expect_annotated(const std::string& exp, const StringFieldValue& fv);
@@ -175,6 +176,44 @@ TEST_F(AnnotationConverterTest, convert_annotated_chinese_string)
         auto exp = make_exp_il_annotated_chinese_string();
         auto annotated_chinese_string = make_annotated_chinese_string();
         expect_annotated(exp, annotated_chinese_string);
+}
+
+std::string make_exp_overlaps() {
+    using namespace juniper::separators;
+    vespalib::asciistream exp;
+    exp << "foo " << unit_separator_string <<
+            interlinear_annotation_anchor_string <<
+            "abcde" << interlinear_annotation_separator_string <<
+            "ab" << " " <<
+            "abcde" <<  " " <<
+            "bcd" <<  " " <<
+            "de" << interlinear_annotation_terminator_string << unit_separator_string <<
+            "fg" << unit_separator_string <<
+            "hi" << unit_separator_string;
+    return exp.str();
+}
+
+StringFieldValue
+AnnotationConverterTest::make_annotated_overlaps()
+{
+    auto span_list_up = std::make_unique<SpanList>();
+    auto span_list = span_list_up.get();
+    auto tree = std::make_unique<SpanTree>(SPANTREE_NAME, std::move(span_list_up));
+    tree->annotate(span_list->add(std::make_unique<Span>(4, 2)), *AnnotationType::TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(4, 5)), *AnnotationType::TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(5, 3)), *AnnotationType::TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(7, 2)), *AnnotationType::TERM);
+    tree->annotate(span_list->add(std::make_unique<Span>(9, 2)), *AnnotationType::TERM);
+    StringFieldValue value("foo abcdefghi");
+    set_span_tree(value, std::move(tree));
+    return value;
+}
+
+TEST_F(AnnotationConverterTest, convert_annotated_overlaps)
+{
+    auto exp = make_exp_overlaps();
+    auto annotated_overlaps = make_annotated_overlaps();
+    expect_annotated(exp, annotated_overlaps);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

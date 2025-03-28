@@ -2,6 +2,8 @@
 package com.yahoo.schema;
 
 import com.yahoo.document.config.DocumentmanagerConfig;
+import com.yahoo.search.config.IndexInfoConfig;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.schema.parser.ParseException;
@@ -17,6 +19,7 @@ import java.util.List;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -562,6 +565,70 @@ public class SchemaTestCase {
         derived.getIndexingScript().getConfig(ilConfigBuilder);
         assertEquals("clear_state | guard { input myString | { \"en\" | set_language; tokenize normalize stem:\"BEST\" | index myString | summary myString; }; }",
                      ilConfigBuilder.build().ilscript().get(0).content(0));
+    }
+
+    @Test
+    void testCasedMatchingFields() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field myString type string {
+                            indexing: index
+                            match: cased
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var ilConfigBuilder = new IlscriptsConfig.Builder();
+        derived.getIndexingScript().getConfig(ilConfigBuilder);
+        assertEquals("clear_state | guard { input myString | tokenize normalize keep-case stem:\"BEST\" | index myString; }",
+                     ilConfigBuilder.build().ilscript().get(0).content(0));
+
+
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        assertFalse(indexInfoConfigBuilder.build().toString().contains("lowercase"));
+    }
+
+    /** Should not cause a cycle detection false positive by mistaking the attribute argument for a function call. */
+    @Test
+    void testFieldAndFunctionWithSameName() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field numerical_1 type double {
+                            indexing: attribute
+                        }
+                
+                    }
+                
+                    rank-profile my_profile inherits default {
+
+                        function numerical_1() {
+                            expression: attribute(numerical_1)
+                        }
+
+                        first-phase {
+                            expression: 1.0
+                        }
+                    }
+
+                }""";
+
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
     }
 
     private void assertInheritedFromParent(Schema schema, RankProfileRegistry rankProfileRegistry) {

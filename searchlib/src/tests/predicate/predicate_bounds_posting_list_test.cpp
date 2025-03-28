@@ -7,7 +7,7 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search;
 using namespace search::predicate;
@@ -15,8 +15,8 @@ using namespace search::predicate;
 namespace {
 
 struct DummyDocIdLimitProvider : public DocIdLimitProvider {
-    virtual uint32_t getDocIdLimit() const override { return 10000; }
-    virtual uint32_t getCommittedDocIdLimit() const override { return 10000; }
+    uint32_t getDocIdLimit() const override { return 10000; }
+    uint32_t getCommittedDocIdLimit() const override { return 10000; }
 };
 
 vespalib::GenerationHandler generation_handler;
@@ -25,14 +25,14 @@ DummyDocIdLimitProvider limit_provider;
 SimpleIndexConfig config;
 const uint64_t hash = 0x123;
 
-TEST("require that empty bounds posting list starts at 0.") {
+TEST(PredicateBoundsPostingListTest, require_that_empty_bounds_posting_list_starts_at_0) {
     PredicateIndex index(generation_holder, limit_provider, config, 8);
     vespalib::datastore::EntryRef ref;
     PredicateBoundsPostingList<PredicateIndex::BTreeIterator>
         posting_list(index.getIntervalStore(),
                      index.getBoundsIndex().getBTreePostingList(ref), 42);
-    EXPECT_EQUAL(0u, posting_list.getDocId());
-    EXPECT_EQUAL(0u, posting_list.getInterval());
+    EXPECT_EQ(0u, posting_list.getDocId());
+    EXPECT_EQ(0u, posting_list.getInterval());
     EXPECT_FALSE(posting_list.next(0));
 }
 
@@ -41,16 +41,16 @@ void checkNext(PredicateBoundsPostingList<PredicateIndex::BTreeIterator> &postin
     std::ostringstream ost;
     ost << "checkNext(posting_list, " << move_past << ", " << doc_id
         << ", " << interval_count << ")";
-    TEST_STATE(ost.str().c_str());
+    SCOPED_TRACE(ost.str());
     ASSERT_TRUE(posting_list.next(move_past));
-    EXPECT_EQUAL(doc_id, posting_list.getDocId());
+    EXPECT_EQ(doc_id, posting_list.getDocId());
     for (uint32_t i = 0; i < interval_count - 1; ++i) {
         ASSERT_TRUE(posting_list.nextInterval());
     }
     ASSERT_FALSE(posting_list.nextInterval());
 }
 
-TEST("require that bounds posting list checks bounds.") {
+TEST(PredicateBoundsPostingListTest, require_that_bounds_posting_list_checks_bounds) {
     PredicateIndex index(generation_holder, limit_provider, config, 8);
     const auto &bounds_index = index.getBoundsIndex();
     for (uint32_t id = 1; id < 100; ++id) {

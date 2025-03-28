@@ -88,6 +88,7 @@ ClusterControllerTuning = element cluster-controller {
 DispatchTuning = element dispatch {
     element max-hits-per-partition { xsd:nonNegativeInteger }? &
     element dispatch-policy { string "round-robin" | string "adaptive" | string "random" | "best-of-random-2" | "latency-amortized-over-requests" | "latency-amortized-over-time"}? &
+    element prioritize-availability { xsd:boolean }? &
     element min-active-docs-coverage { xsd:double }? &
     element top-k-probability { xsd:double }?
 }

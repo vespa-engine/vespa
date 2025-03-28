@@ -10,7 +10,7 @@ TestComponentRegister::TestComponentRegister(ComponentRegisterImpl::UP compReg)
       _clock(),
       _threadPool(_clock)
 {
-    assert(_compReg.get() != 0);
+    assert(_compReg.get() != nullptr);
     // Set a fake clock, giving test control of clock
     _compReg->setClock(_clock);
     // Set a thread pool so components can make threads in tests.

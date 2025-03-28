@@ -33,13 +33,13 @@ public class ParenthesisExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         return innerExpression.setInputType(inputType, context);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         return innerExpression.setOutputType(outputType, context);
     }
@@ -50,8 +50,8 @@ public class ParenthesisExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        innerExpression.verify(context);
+    protected void doResolve(TypeContext context) {
+        innerExpression.resolve(context);
     }
 
     @Override

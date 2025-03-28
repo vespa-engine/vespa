@@ -73,7 +73,7 @@ public class RankProfileList extends Derived {
                (rank.schema() != null && rank.inheritedNames().stream().allMatch(name -> registry.resolve(rank.schema().getDocument(), name) != null));
     }
 
-    private Map<String, RawRankProfile>  deriveRankProfiles(Schema schema,
+    private Map<String, RawRankProfile> deriveRankProfiles(Schema schema,
                                                             AttributeFields attributeFields,
                                                             DeployState deployState) {
         Map<String,  RawRankProfile> rawRankProfiles = new LinkedHashMap<>();

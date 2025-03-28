@@ -7,6 +7,7 @@ vespa_add_library(searchcore_test STATIC
     buckethandler.cpp
     bucketstatecalculator.cpp
     clusterstatehandler.cpp
+    disk_mem_usage_notifier.cpp
     documentdb_config_builder.cpp
     dummy_document_sub_db.cpp
     dummy_feed_view.cpp

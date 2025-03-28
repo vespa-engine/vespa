@@ -331,7 +331,7 @@ TEST_F(DocumentUpdateTest, testUpdateWeightedSet)
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field& field(doc->getType().getField("stringweightedset"));
-    EXPECT_EQ((FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ(nullptr, doc->getValue(field).get());
 	
     // Assign weightedset field
     auto wset =std::make_unique<WeightedSetFieldValue>(field.getDataType());
@@ -615,7 +615,7 @@ TEST_F(DocumentUpdateTest, testUpdateApplyNoArrayValues)
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("tags"));
-    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ(nullptr, doc->getValue(field).get());
 
     // Assign array field with no array values = empty array
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -636,7 +636,7 @@ TEST_F(DocumentUpdateTest, testUpdateArrayEmptyParamValue)
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("tags"));
-    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ(nullptr, doc->getValue(field).get());
 
     // Assign array field with no array values = empty array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -664,7 +664,7 @@ TEST_F(DocumentUpdateTest, testUpdateWeightedSetEmptyParamValue)
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("stringweightedset"));
-    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ(nullptr, doc->getValue(field).get());
 
     // Assign weighted set with no items = empty set.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -692,7 +692,7 @@ TEST_F(DocumentUpdateTest, testUpdateArrayWrongSubtype)
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("tags"));
-    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ(nullptr, doc->getValue(field).get());
 
     // Assign int values to string array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -707,7 +707,7 @@ TEST_F(DocumentUpdateTest, testUpdateArrayWrongSubtype)
 
     // Verify that the field was NOT set in the document
     FieldValue::UP fval(doc->getValue(field));
-    EXPECT_EQ((document::FieldValue*) 0, fval.get());
+    EXPECT_EQ(nullptr, fval.get());
 }
 
 TEST_F(DocumentUpdateTest, testUpdateWeightedSetWrongSubtype)
@@ -716,7 +716,7 @@ TEST_F(DocumentUpdateTest, testUpdateWeightedSetWrongSubtype)
     TestDocMan docMan;
     Document::UP doc(docMan.createDocument());
     const Field &field(doc->getType().getField("stringweightedset"));
-    EXPECT_EQ((document::FieldValue*) 0, doc->getValue(field).get());
+    EXPECT_EQ(nullptr, doc->getValue(field).get());
 
     // Assign int values to string array.
     DocumentUpdate update(docMan.getTypeRepo(), *doc->getDataType(), doc->getId());
@@ -731,7 +731,7 @@ TEST_F(DocumentUpdateTest, testUpdateWeightedSetWrongSubtype)
 
     // Verify that the field was NOT set in the document
     FieldValue::UP fval(doc->getValue(field));
-    EXPECT_EQ((document::FieldValue*) 0, fval.get());
+    EXPECT_EQ(nullptr, fval.get());
 }
 
 TEST_F(DocumentUpdateTest, testMapValueUpdate)

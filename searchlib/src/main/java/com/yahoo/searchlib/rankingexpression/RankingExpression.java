@@ -127,7 +127,7 @@ public class RankingExpression implements Serializable {
     /**
      * Creates a ranking expression from a string
      *
-     * @param expression The reader that contains the string to parse.
+     * @param expression the reader that contains the string to parse.
      * @throws ParseException if the string could not be parsed.
      */
     public RankingExpression(String expression) throws ParseException {
@@ -254,12 +254,10 @@ public class RankingExpression implements Serializable {
      * Creates the necessary rank properties required to implement this expression.
      *
      * @param context context for serialization
-     * @return a list of named rank properties required to implement this expression
+     * @return a map of the named rank properties required to implement this expression
      */
     public Map<String, String> getRankProperties(SerializationContext context) {
-        if ("".equals(name)) {
-            return Map.of();
-        }
+        if ("".equals(name)) return Map.of();
         Deque<String> path = new LinkedList<>();
         String serializedRoot = root.toString(new StringBuilder(), context, path, null).toString();
         Map<String, String> serializedExpressions = context.serializedFunctions();

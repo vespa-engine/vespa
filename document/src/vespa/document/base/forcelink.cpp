@@ -11,7 +11,7 @@ namespace document {
 
 ForceLink::ForceLink(void)
 {
-    if (time(NULL) == 0) {
+    if (time(nullptr) == 0) {
         DocumentType          type("foo", 1);
         DocumentTypeRepo      repo(type);
         Document              document(repo, *repo.getDocumentType("foo"), DocumentId("doc:ns:bar"));

@@ -44,19 +44,19 @@ const Bucket defaultBucket(defaultBucketSpace, BucketId(0));
 const TestAndSetCondition my_condition("my condition");
 
 struct MockBucketResolver : public BucketResolver {
-    virtual Bucket bucketFromId(const DocumentId &documentId) const override {
+    Bucket bucketFromId(const DocumentId &documentId) const override {
         if (documentId.getDocType() == "text/html") {
             return defaultBucket;
         }
         return Bucket(BucketSpace(0), BucketId(0));
     }
-    virtual BucketSpace bucketSpaceFromName(const std::string &bucketSpace) const override {
+    BucketSpace bucketSpaceFromName(const std::string &bucketSpace) const override {
         if (bucketSpace == defaultSpaceName) {
             return defaultBucketSpace;
         }
         return BucketSpace(0);
     }
-    virtual std::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
+    std::string nameFromBucketSpace(const document::BucketSpace &bucketSpace) const override {
         if (bucketSpace == defaultBucketSpace) {
             return defaultSpaceName;
         }

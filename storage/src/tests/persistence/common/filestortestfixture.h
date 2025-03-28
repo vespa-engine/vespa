@@ -39,7 +39,7 @@ public:
 
     struct StorageLinkInjector
     {
-        virtual ~StorageLinkInjector() {}
+        virtual ~StorageLinkInjector() = default;
 
         virtual void inject(DummyStorageLink&) const = 0;
     };

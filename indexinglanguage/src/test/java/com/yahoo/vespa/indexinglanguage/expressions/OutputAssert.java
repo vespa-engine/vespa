@@ -2,29 +2,14 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.Field;
-import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.StringFieldValue;
-import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
  */
 class OutputAssert {
-
-    public static void assertExecute(OutputExpression exp) {
-        ExecutionContext ctx = new ExecutionContext(new SimpleTestAdapter(new Field(exp.getFieldName(), DataType.STRING)));
-        ctx.setCurrentValue(new StringFieldValue("69"));
-        ctx.execute(exp);
-
-        FieldValue out = ctx.getFieldValue(exp.getFieldName());
-        assertTrue(out instanceof StringFieldValue);
-        assertEquals("69", ((StringFieldValue)out).getString());
-    }
 
     public static void assertVerify(OutputExpression exp) {
         assertVerify(new MyAdapter(null), DataType.INT, exp);
@@ -33,23 +18,23 @@ class OutputAssert {
         assertVerifyThrows(new MyAdapter(new VerificationException((Expression) null, "foo")), DataType.INT, exp, "Invalid expression 'null': foo");
     }
 
-    public static void assertVerify(FieldTypeAdapter adapter, DataType value, Expression exp) {
-        var context = new VerificationContext(adapter).setCurrentType(value);
+    public static void assertVerify(FieldTypes adapter, DataType value, Expression exp) {
+        var context = new TypeContext(adapter);
         assertEquals(value, exp.setInputType(value, context));
     }
 
-    public static void assertVerifyThrows(FieldTypeAdapter adapter, DataType value, Expression exp,
+    public static void assertVerifyThrows(FieldTypes adapter, DataType value, Expression exp,
                                           String expectedException)
     {
         try {
-            new VerificationContext(adapter).setCurrentType(value).verify(exp);
+            new TypeContext(adapter).resolve(exp);
             fail();
         } catch (VerificationException e) {
             assertEquals(expectedException, e.getMessage());
         }
     }
 
-    private static class MyAdapter implements FieldTypeAdapter {
+    private static class MyAdapter implements FieldTypes {
 
         final RuntimeException e;
 
@@ -58,15 +43,10 @@ class OutputAssert {
         }
 
         @Override
-        public DataType getInputType(Expression exp, String fieldName) {
+        public DataType getFieldType(String fieldName, Expression exp) {
             throw new AssertionError();
         }
 
-        @Override
-        public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
-            if (e != null) {
-                throw e;
-            }
-        }
     }
+
 }

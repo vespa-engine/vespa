@@ -102,7 +102,10 @@ class HttpRequestFactory {
 
     public static void copyHeaders(Request jettyRequest, HttpRequest jdiscRequest) {
         jettyRequest.getHeaders()
-                .forEach(header -> jdiscRequest.headers().add(header.getName(), header.getValueList()));
+                .forEach(header -> {
+                    if (!header.getValue().isBlank())
+                        jdiscRequest.headers().add(header.getName(), header.getValue());
+                });
     }
 
     private static X509Certificate[] getCertChain(Request jettyRequest) {

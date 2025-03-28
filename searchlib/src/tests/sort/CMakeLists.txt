@@ -11,6 +11,7 @@ vespa_add_executable(searchlib_sort_test_app
     sort_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND VESPA_USE_LTO)
   target_link_options(searchlib_sort_test_app PRIVATE "-Wno-aggressive-loop-optimizations")

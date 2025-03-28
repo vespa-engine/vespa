@@ -32,7 +32,7 @@ public:
          **/
         virtual void handle(MapDiff updateDiff) = 0;
     protected:
-        virtual ~DiffCompletionHandler() {}
+        virtual ~DiffCompletionHandler() = default;
     };
 
 private:

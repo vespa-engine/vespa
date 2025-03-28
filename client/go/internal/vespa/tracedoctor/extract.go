@@ -37,10 +37,6 @@ func (q *queryNode) desc() string {
 	return q.class
 }
 
-type perfDumpCtx struct {
-	dst *output
-}
-
 func perfPad(last, self bool) string {
 	if !last && !self {
 		return "│   "
@@ -54,46 +50,23 @@ func perfPad(last, self bool) string {
 	return "    "
 }
 
-func (ctx *perfDumpCtx) fmt(format string, args ...interface{}) {
-	ctx.dst.fmt(format, args...)
-}
-
-func (ctx *perfDumpCtx) printSeparator() {
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 5))
-	ctx.fmt("+\n")
-}
-
-func (ctx *perfDumpCtx) printHeader() {
-	ctx.fmt("|%10s ", "count")
-	ctx.fmt("|%10s ", "total_ms")
-	ctx.fmt("|%10s ", "self_ms")
-	ctx.fmt("|%5s ", "step")
-	ctx.fmt("|\n")
-}
-
-func (ctx *perfDumpCtx) printLine(qn *queryNode, prefix, padSelf, padChild string) {
-	ctx.fmt("|%10d ", qn.count)
-	ctx.fmt("|%10.3f ", qn.totalTimeMs)
-	ctx.fmt("|%10.3f ", qn.selfTimeMs)
-	ctx.fmt("|%5s ", qn.strict)
-	ctx.fmt("|  ")
-	ctx.fmt("%s%s%s\n", prefix, padSelf, qn.desc())
-	for i, child := range qn.children {
-		last := i+1 == len(qn.children)
-		ctx.printLine(child, prefix+padChild, perfPad(last, true), perfPad(last, false))
+func (q *queryNode) makeTable(tab *table, prefix, padSelf, padChild string) {
+	count := fmt.Sprintf("%d", q.count)
+	totalTimeMs := fmt.Sprintf("%.3f", q.totalTimeMs)
+	selfTimeMs := fmt.Sprintf("%.3f", q.selfTimeMs)
+	strict := q.strict
+	query := fmt.Sprintf(" %s%s%s ", prefix, padSelf, q.desc())
+	tab.addRow(count, totalTimeMs, selfTimeMs, strict, query)
+	for i, child := range q.children {
+		last := i+1 == len(q.children)
+		child.makeTable(tab, prefix+padChild, perfPad(last, true), perfPad(last, false))
 	}
 }
 
 func (q *queryNode) render(output *output) {
-	dst := perfDumpCtx{dst: output}
-	dst.printSeparator()
-	dst.printHeader()
-	dst.printSeparator()
-	dst.printLine(q, "", "", "")
-	dst.printSeparator()
+	tab := newTable("count", "total_ms", "self_ms", "step", "query tree")
+	q.makeTable(tab, "", "", "")
+	tab.render(output)
 }
 
 func extractQueryNode(obj slime.Value) *queryNode {
@@ -319,6 +292,51 @@ func (t threadTrace) profTimeMs() float64 {
 	return t.matchTimeMs() + t.firstPhaseTimeMs() + t.secondPhaseTimeMs()
 }
 
+type threadSummary struct {
+	id            int
+	matchMs       float64
+	firstPhaseMs  float64
+	secondPhaseMs float64
+}
+
+func renderThreadSummaries(out *output, threads ...*threadSummary) {
+	headers := []string{"task"}
+	for _, thread := range threads {
+		headers = append(headers, fmt.Sprintf("thread #%d", thread.id))
+	}
+	tab := newTable(headers...)
+	addRow := func(task string, get func(thread *threadSummary) float64) {
+		cells := []string{task}
+		for _, thread := range threads {
+			cells = append(cells, fmt.Sprintf("%.3f ms", get(thread)))
+		}
+		tab.addRow(cells...)
+	}
+	addRow("matching", func(thread *threadSummary) float64 { return thread.matchMs })
+	addRow("first phase", func(thread *threadSummary) float64 { return thread.firstPhaseMs })
+	addRow("second phase", func(thread *threadSummary) float64 { return thread.secondPhaseMs })
+	tab.render(out)
+}
+
+func (t threadTrace) extractSummary() *threadSummary {
+	return &threadSummary{
+		id:            t.id,
+		matchMs:       t.matchTimeMs(),
+		firstPhaseMs:  t.firstPhaseTimeMs(),
+		secondPhaseMs: t.secondPhaseTimeMs(),
+	}
+}
+
+func selectSlowestThread(threads []threadTrace) (*threadTrace, *threadTrace) {
+	if len(threads) == 0 {
+		return nil, nil
+	}
+	sort.Slice(threads, func(i, j int) bool {
+		return threads[i].profTimeMs() > threads[j].profTimeMs()
+	})
+	return &threads[0], &threads[len(threads)/2]
+}
+
 type protonTrace struct {
 	root slime.Value
 	path *slime.Path
@@ -384,6 +402,53 @@ func (p protonTrace) documentType() string {
 
 func (p protonTrace) durationMs() float64 {
 	return p.root.Field("duration_ms").AsDouble()
+}
+
+func (p protonTrace) desc() string {
+	return fmt.Sprintf("%s[%d]", p.documentType(), p.distributionKey())
+}
+
+type protonSummary struct {
+	name          string
+	filterMs      float64
+	annMs         float64
+	matchMs       float64
+	firstPhaseMs  float64
+	secondPhaseMs float64
+}
+
+func renderProtonSummaries(out *output, nodes ...*protonSummary) {
+	headers := []string{"task"}
+	for _, node := range nodes {
+		headers = append(headers, node.name)
+	}
+	tab := newTable(headers...)
+	addRow := func(task string, get func(node *protonSummary) float64) {
+		cells := []string{task}
+		for _, node := range nodes {
+			cells = append(cells, fmt.Sprintf("%.3f ms", get(node)))
+		}
+		tab.addRow(cells...)
+	}
+	addRow("global filter", func(node *protonSummary) float64 { return node.filterMs })
+	addRow("ann setup", func(node *protonSummary) float64 { return node.annMs })
+	addRow("matching", func(node *protonSummary) float64 { return node.matchMs })
+	addRow("first phase", func(node *protonSummary) float64 { return node.firstPhaseMs })
+	addRow("second phase", func(node *protonSummary) float64 { return node.secondPhaseMs })
+	tab.render(out)
+}
+
+func (p protonTrace) extractSummary() *protonSummary {
+	res := &protonSummary{name: p.desc()}
+	timeline := p.timeline()
+	res.filterMs = timeline.durationOf("Calculate global filter")
+	res.annMs = timeline.durationOf("Handle global filter in query execution plan")
+	if thread, _ := selectSlowestThread(p.findThreadTraces()); thread != nil {
+		res.matchMs = thread.matchTimeMs()
+		res.firstPhaseMs = thread.firstPhaseTimeMs()
+		res.secondPhaseMs = thread.secondPhaseTimeMs()
+	}
+	return res
 }
 
 type protonTraceGroup struct {

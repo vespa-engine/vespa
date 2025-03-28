@@ -18,7 +18,7 @@ struct TestBuilder {
     {
         add(expression, inputs, {});
     }
-    virtual ~TestBuilder() {}
+    virtual ~TestBuilder() = default;
 };
 
 struct Generator {

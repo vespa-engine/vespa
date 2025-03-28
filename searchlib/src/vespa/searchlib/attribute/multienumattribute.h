@@ -34,8 +34,10 @@ protected:
 
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
     using EnumIndex = IEnumStore::Index;
+    using EnumStore = typename B::EnumStore;
     using EnumStoreBatchUpdater = typename B::EnumStoreBatchUpdater;
     using EnumVector = IEnumStore::EnumVector;
+    using MultiValueMapping = typename MultiValueAttribute<B, M>::MultiValueMapping;
     using WeightedIndex = typename MultiValueAttribute<B, M>::MultiValueType;
     using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
     using WeightedIndexVector = typename MultiValueAttribute<B, M>::ValueVector;

@@ -6,7 +6,7 @@ namespace vespalib {
 
 class IArrayBase {
 public:
-    virtual ~IArrayBase() {}
+    virtual ~IArrayBase() = default;
     virtual void resize(size_t sz) = 0;
     virtual void reserve(size_t sz) = 0;
     virtual void clear() = 0;

@@ -61,9 +61,7 @@ public abstract class Processor {
      */
     public abstract void process(boolean validate, boolean documentsOnly);
 
-    /**
-     * As above, possibly with properties from a context.  Override if needed.
-     **/
+    /** As above, possibly with properties from a context.  Override if needed. */
     public void process(boolean validate, boolean documentsOnly, ModelContext.Properties properties) {
         process(validate, documentsOnly);
     }

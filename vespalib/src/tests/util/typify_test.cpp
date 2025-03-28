@@ -91,7 +91,7 @@ TEST(TypifyTest, complex_typification_works) {
 
 struct Singleton {
     virtual int get() const = 0;
-    virtual ~Singleton() {}
+    virtual ~Singleton() = default;
 };
 
 template <int A, int B>

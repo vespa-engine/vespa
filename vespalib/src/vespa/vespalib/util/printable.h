@@ -40,7 +40,7 @@ class asciistream;
 
 class Printable {
 public:
-    virtual ~Printable() {}
+    virtual ~Printable() = default;
 
     /**
      * Print instance textual to the given stream.
@@ -92,7 +92,7 @@ public:
 
 class AsciiPrintable : public Printable {
 public:
-    virtual ~AsciiPrintable() {}
+    ~AsciiPrintable() override = default;
 
     enum PrintMode {
         NORMAL,

@@ -229,6 +229,11 @@ public final class DeploymentSpec {
 
     Optional<Duration> hostTTL() { return hostTTL; }
 
+    // TODO: Used by models up to 8.502
+    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
+        return zoneEndpoint(instance, zone, cluster, false);
+    }
+
     /**
      * Returns the most specific zone endpoint, where specificity is given, in decreasing order:
      * 1. The given instance has declared a zone endpoint for the cluster, for the given region.
@@ -237,12 +242,21 @@ public final class DeploymentSpec {
      * 4. The application has declared a universal zone endpoint for the cluster.
      * 5. None of the above apply, and the default of a publicly visible endpoint is used.
      */
-    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
-        if (   zone.environment().isTest()
-            && instances().stream()
-                          .anyMatch(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).values().stream()
-                                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint())))
+    // TODO: Available from 8.502. Used to roll out useNonPublicEndpointForTest.
+    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster, boolean useNonPublicEndpointForTest) {
+        if (zone.environment().isTest() &&
+            (useNonPublicEndpointForTest ||
+             instances().stream()
+                        .anyMatch(spec -> spec.zoneEndpoints()
+                                              .getOrDefault(cluster, Map.of())
+                                              .values()
+                                              .stream()
+                                              .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))) &&
+            // Remove once Azure supports private endpoints
+            !zone.region().value().startsWith(CloudName.AZURE.value() + "-")) {
+
             return ZoneEndpoint.privateEndpoint;
+        }
 
         if (zone.environment().isManuallyDeployed())
             return devSpec.zoneEndpoints.getOrDefault(cluster, ZoneEndpoint.defaultEndpoint);

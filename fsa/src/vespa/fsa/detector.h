@@ -47,7 +47,7 @@ public:
     /** Default constructor. */
     Hits() {}
     /** Destructor. */
-    virtual ~Hits() {};
+    virtual ~Hits() = default;
 
     /**
      * @brief Method to receive results from the detector.

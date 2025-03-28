@@ -7,15 +7,24 @@ import (
 	"testing"
 )
 
+func leafTestValues() []Value {
+	return []Value{
+		Empty,
+		Bool(true),
+		Long(5),
+		Double(5.5),
+		String("foo"),
+		Data([]byte{1, 2, 3}),
+	}
+}
+
 func TestArray(t *testing.T) {
 	arr := Array()
-	actual := []Value{
-		arr.Add(Empty),
-		arr.Add(Bool(true)),
-		arr.Add(Long(5)),
-		arr.Add(Double(5.5)),
-		arr.Add(String("foo")),
-		arr.Add(Data([]byte{1, 2, 3}))}
+	input := leafTestValues()
+	actual := make([]Value, len(input))
+	for i, v := range input {
+		actual[i] = arr.Add(v)
+	}
 
 	expect := []expectLeaf{
 		expectLeaf{mytype: EMPTY},

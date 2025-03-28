@@ -86,7 +86,7 @@ public:
                                  const std::vector<double> &param_values,
                                  const std::string &expression,
                                  double expected_result) = 0;
-        virtual ~EvalTest() {}
+        virtual ~EvalTest() = default;
     };
     //-------------------------------------------------------------------------
     void add_terminal_cases();         // a, 1.0

@@ -40,7 +40,7 @@ public final class CatExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
 
         List<DataType> outputTypes = new ArrayList<>(expressions().size());
@@ -53,7 +53,7 @@ public final class CatExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         if (outputType == null) return null;
         if (! DataType.STRING.isAssignableTo(outputType) && ! (outputType instanceof CollectionDataType))
             throw new VerificationException(this, "Required to produce " + outputType.getName() +

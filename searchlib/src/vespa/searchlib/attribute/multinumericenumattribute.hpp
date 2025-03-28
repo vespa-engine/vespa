@@ -155,6 +155,25 @@ MultiValueNumericEnumAttribute<B, M>::is_sortable() const noexcept
     return true;
 }
 
+template <typename MultiValueMappingT, typename EnumStoreT, typename T, bool ascending>
+class MultiNumericEnumSortBlobWriter : public attribute::ISortBlobWriter {
+private:
+    const MultiValueMappingT& _mv_mapping;
+    const EnumStoreT& _enum_store;
+public:
+    MultiNumericEnumSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store)
+        : _mv_mapping(mv_mapping), _enum_store(enum_store)
+    {}
+    long write(uint32_t docid, void* buf, long available) const override {
+        attribute::NumericSortBlobWriter<T, ascending> writer;
+        auto indices = _mv_mapping.get(docid);
+        for (auto& v : indices) {
+            writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()));
+        }
+        return writer.write(buf, available);
+    }
+};
+
 template <typename B, typename M>
 template <bool asc>
 long
@@ -180,6 +199,17 @@ long
 MultiValueNumericEnumAttribute<B, M>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
 {
     return on_serialize_for_sort<false>(doc, serTo, available);
+}
+
+template <typename B, typename M>
+std::unique_ptr<attribute::ISortBlobWriter>
+MultiValueNumericEnumAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
+{
+    if (ascending) {
+        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, true>>(this->_mvMapping, this->_enumStore);
+    } else {
+        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, false>>(this->_mvMapping, this->_enumStore);
+    }
 }
 
 } // namespace search

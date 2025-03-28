@@ -7,9 +7,10 @@ type boolValue struct {
 	value bool
 }
 
-func Bool(v bool) Value           { return &boolValue{value: v} }
-func (*boolValue) Type() Type     { return BOOL }
-func (v *boolValue) AsBool() bool { return v.value }
+func Bool(v bool) Value                { return &boolValue{value: v} }
+func (*boolValue) Type() Type          { return BOOL }
+func (v *boolValue) AsBool() bool      { return v.value }
+func (v *boolValue) Emit(dst DataSink) { dst.Bool(v.value) }
 
 type longValue struct {
 	emptyValue
@@ -20,6 +21,7 @@ func Long(v int64) Value               { return &longValue{value: v} }
 func (*longValue) Type() Type          { return LONG }
 func (v *longValue) AsLong() int64     { return v.value }
 func (v *longValue) AsDouble() float64 { return float64(v.value) }
+func (v *longValue) Emit(dst DataSink) { dst.Long(v.value) }
 
 type doubleValue struct {
 	emptyValue
@@ -30,21 +32,24 @@ func Double(v float64) Value             { return &doubleValue{value: v} }
 func (*doubleValue) Type() Type          { return DOUBLE }
 func (v *doubleValue) AsLong() int64     { return int64(v.value) }
 func (v *doubleValue) AsDouble() float64 { return v.value }
+func (v *doubleValue) Emit(dst DataSink) { dst.Double(v.value) }
 
 type stringValue struct {
 	emptyValue
 	value string
 }
 
-func String(v string) Value             { return &stringValue{value: v} }
-func (*stringValue) Type() Type         { return STRING }
-func (v *stringValue) AsString() string { return v.value }
+func String(v string) Value              { return &stringValue{value: v} }
+func (*stringValue) Type() Type          { return STRING }
+func (v *stringValue) AsString() string  { return v.value }
+func (v *stringValue) Emit(dst DataSink) { dst.String(v.value) }
 
 type dataValue struct {
 	emptyValue
 	value []byte
 }
 
-func Data(v []byte) Value           { return &dataValue{value: v} }
-func (*dataValue) Type() Type       { return DATA }
-func (v *dataValue) AsData() []byte { return v.value }
+func Data(v []byte) Value              { return &dataValue{value: v} }
+func (*dataValue) Type() Type          { return DATA }
+func (v *dataValue) AsData() []byte    { return v.value }
+func (v *dataValue) Emit(dst DataSink) { dst.Data(v.value) }

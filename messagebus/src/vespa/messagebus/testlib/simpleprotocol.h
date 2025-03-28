@@ -22,7 +22,7 @@ public:
         /**
          * Required for inheritance.
          */
-        virtual ~IPolicyFactory() { }
+        virtual ~IPolicyFactory() = default;
 
         /**
          * Creates a new isntance of the routing policy that this factory encapsulates.

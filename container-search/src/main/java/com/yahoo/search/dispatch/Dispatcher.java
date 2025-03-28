@@ -16,6 +16,7 @@ import com.yahoo.search.dispatch.rpc.RpcConnectionPool;
 import com.yahoo.search.dispatch.rpc.RpcInvokerFactory;
 import com.yahoo.search.dispatch.rpc.RpcPingFactory;
 import com.yahoo.search.dispatch.rpc.RpcResourcePool;
+import com.yahoo.search.dispatch.searchcluster.AvailabilityPolicy;
 import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.SearchCluster;
@@ -125,7 +126,7 @@ public class Dispatcher extends AbstractComponent {
     Dispatcher(ComponentId clusterId, DispatchConfig dispatchConfig, RpcConnectionPool rpcConnectionPool,
                DispatchNodesConfig nodesConfig, VipStatus vipStatus, InvokerFactoryFactory invokerFactories) {
         this(dispatchConfig, rpcConnectionPool,
-             new SearchCluster(clusterId.stringValue(), dispatchConfig.minActivedocsPercentage(),
+             new SearchCluster(clusterId.stringValue(), AvailabilityPolicy.from(dispatchConfig),
                                toNodes(clusterId.stringValue(), nodesConfig), vipStatus, new RpcPingFactory(rpcConnectionPool)),
              invokerFactories);
     }
@@ -198,7 +199,7 @@ public class Dispatcher extends AbstractComponent {
             };
 
             // Update the nodes the search cluster keeps track of, and what nodes are monitored.
-            searchCluster.updateNodes(toNodes(searchCluster.name(), nodesConfig), clusterMonitor, dispatchConfig.minActivedocsPercentage());
+            searchCluster.updateNodes(AvailabilityPolicy.from(dispatchConfig), toNodes(searchCluster.name(), nodesConfig), clusterMonitor);
 
             // Update the snapshot to use the new nodes set in the search cluster; the RPC pool is ready for this.
             this.volatileItems = update();

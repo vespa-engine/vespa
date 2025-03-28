@@ -9,16 +9,15 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
-import com.yahoo.vespa.indexinglanguage.AdapterFactory;
-import com.yahoo.vespa.indexinglanguage.DocumentAdapter;
-import com.yahoo.vespa.indexinglanguage.DocumentTypeAdapter;
+import com.yahoo.vespa.indexinglanguage.DocumentFieldValues;
+import com.yahoo.vespa.indexinglanguage.DocumentFieldTypes;
 import com.yahoo.vespa.indexinglanguage.ExpressionConverter;
 import com.yahoo.vespa.indexinglanguage.ScriptParser;
 import com.yahoo.vespa.indexinglanguage.ScriptParserContext;
-import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
-import com.yahoo.vespa.indexinglanguage.UpdateAdapter;
+import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
+import com.yahoo.vespa.indexinglanguage.UpdateFieldValues;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import com.yahoo.vespa.objects.Selectable;
@@ -59,7 +58,7 @@ public abstract class Expression extends Selectable {
     /** Sets the document type and field the statement this expression is part of will write to */
     public void setStatementOutput(DocumentType documentType, Field field) {}
 
-    public DataType getInputType(VerificationContext context) { return inputType; }
+    public DataType getInputType(TypeContext context) { return inputType; }
 
     /**
      * Sets the input type of this and returns the resulting output type, or null if it cannot be
@@ -73,7 +72,7 @@ public abstract class Expression extends Selectable {
      * @return input the input type of this expression resolved from this call and current state
      * @throws IllegalArgumentException if inputType isn't assignable to requiredType
      */
-    protected final DataType setInputType(DataType inputType, DataType requiredType, VerificationContext context) {
+    protected final DataType setInputType(DataType inputType, DataType requiredType, TypeContext context) {
         if (requiredType != null && inputType == null)
             throw new VerificationException(this, "Expected " + requiredType.getName() + " input, but no input is provided");
         if (requiredType != null && ! (inputType.isAssignableTo(requiredType)))
@@ -86,7 +85,7 @@ public abstract class Expression extends Selectable {
      * uniquely determined.
      * Subtypes may implement this by calling setInputType(inputType, requiredType, VerificationContext context).
      */
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         return assignInputType(inputType);
     }
 
@@ -99,7 +98,7 @@ public abstract class Expression extends Selectable {
      * Returns the output type this is must produce (since it is part of a statement expression),
      * or null if this is not set or there is no output produced at the end of the statement.
      */
-    public DataType getOutputType(VerificationContext context) { return outputType; }
+    public DataType getOutputType(TypeContext context) { return outputType; }
 
     /** Returns the already assigned (during verification) output type, or null if no type is assigned. */
     public DataType getOutputType() { return outputType; }
@@ -127,7 +126,7 @@ public abstract class Expression extends Selectable {
      * @throws IllegalArgumentException if actualOutput
      */
     protected final DataType setOutputType(DataType actualOutput, DataType requiredOutput, DataType requiredType,
-                                           VerificationContext context) {
+                                           TypeContext context) {
         if (actualOutput != null && requiredOutput != null && ! actualOutput.isAssignableTo(requiredOutput))
             throw new VerificationException(this, "This produces type " + actualOutput.getName() + " but " + requiredOutput.getName() + " is required");
         if (requiredType != null && requiredOutput != null && ! requiredOutput.isAssignableTo(requiredType))
@@ -140,7 +139,7 @@ public abstract class Expression extends Selectable {
      * uniquely determined.
      * Subtypes implement this by calling setOutputType(outputType, requiredType, VerificationContext context).
      */
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         return assignOutputType(outputType);
     }
 
@@ -149,62 +148,62 @@ public abstract class Expression extends Selectable {
         return this.outputType = leastGeneralNonNullOf(this.outputType, outputType);
     }
 
-    public final void verify(DocumentType type) {
-        verify(new DocumentTypeAdapter(type));
+    public final void resolve(DocumentType type) {
+        resolve(new DocumentFieldTypes(type));
     }
 
-    public final void verify(Document doc) {
-        verify(new SimpleAdapterFactory(), doc);
+    public final void resolve(Document document) {
+        resolve(new FieldValuesFactory(), document);
     }
 
-    public final void verify(AdapterFactory factory, Document doc) {
-        verify(factory.newDocumentAdapter(doc));
+    public final void resolve(FieldValuesFactory factory, Document document) {
+        resolve(factory.asFieldValues(document));
     }
 
-    public final void verify(DocumentAdapter adapter) {
-        verify((FieldTypeAdapter)adapter);
-        adapter.getFullOutput();
+    public final void resolve(DocumentFieldValues fieldValues) {
+        resolve((FieldTypes)fieldValues);
+        fieldValues.getFullOutput();
     }
 
-    public final void verify(DocumentUpdate upd) {
-        verify(new SimpleAdapterFactory(), upd);
+    public final void resolve(DocumentUpdate update) {
+        resolve(new FieldValuesFactory(), update);
     }
 
-    public final void verify(AdapterFactory factory, DocumentUpdate upd) {
-        for (UpdateAdapter adapter : factory.newUpdateAdapterList(upd))
-            verify(adapter);
+    public final void resolve(FieldValuesFactory factory, DocumentUpdate update) {
+        for (UpdateFieldValues fieldValues : factory.asFieldValues(update))
+            resolve(fieldValues);
     }
 
-    public final void verify(UpdateAdapter adapter) {
-        verify((FieldTypeAdapter)adapter);
+    public final void resolve(UpdateFieldValues fieldTypes) {
+        resolve((FieldTypes)fieldTypes);
     }
 
-    public final void verify(FieldTypeAdapter adapter) {
-        verify(new VerificationContext(adapter));
+    public final void resolve(FieldTypes fieldTypes) {
+        resolve(new TypeContext(fieldTypes));
     }
 
-    public final void verify(VerificationContext context) {
-        doVerify(context);
+    public final void resolve(TypeContext context) {
+        doResolve(context);
     }
 
-    protected void doVerify(VerificationContext context) {}
+    protected void doResolve(TypeContext context) {}
 
     public final FieldValue execute(FieldValue val) {
         return execute(new ExecutionContext().setCurrentValue(val));
     }
 
-    public final Document execute(AdapterFactory factory, Document doc) {
-        return execute(factory.newDocumentAdapter(doc));
+    public final Document execute(FieldValuesFactory factory, Document doc) {
+        return execute(factory.asFieldValues(doc));
     }
 
-    public final Document execute(DocumentAdapter adapter) {
-        execute((FieldValueAdapter)adapter);
+    public final Document execute(DocumentFieldValues adapter) {
+        execute((FieldValues)adapter);
         return adapter.getFullOutput();
     }
 
-    public static DocumentUpdate execute(Expression expression, AdapterFactory factory, DocumentUpdate update) {
+    public static DocumentUpdate execute(Expression expression, FieldValuesFactory factory, DocumentUpdate update) {
         DocumentUpdate result = null;
-        for (UpdateAdapter adapter : factory.newUpdateAdapterList(update)) {
+        for (UpdateFieldValues adapter : factory.asFieldValues(update)) {
             DocumentUpdate output = adapter.getExpression(expression).execute(adapter);
             if (output == null) {
                 // ignore
@@ -220,12 +219,12 @@ public abstract class Expression extends Selectable {
         return result;
     }
 
-    public final DocumentUpdate execute(UpdateAdapter adapter) {
-        execute((FieldValueAdapter)adapter);
+    public final DocumentUpdate execute(UpdateFieldValues adapter) {
+        execute((FieldValues)adapter);
         return adapter.getOutput();
     }
 
-    public final FieldValue execute(FieldValueAdapter adapter) {
+    public final FieldValue execute(FieldValues adapter) {
         return execute(new ExecutionContext(adapter));
     }
 
@@ -249,7 +248,7 @@ public abstract class Expression extends Selectable {
         return newInstance(new ScriptParserContext(linguistics, embedders, Map.of()).setInputStream(new IndexingInput(expression)));
     }
     
-    public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders, Map<String, TextGenerator> generators) throws ParseException {
+    public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders, Map<String, FieldGenerator> generators) throws ParseException {
         return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 
@@ -259,12 +258,12 @@ public abstract class Expression extends Selectable {
 
     // Convenience For testing
     public static Document execute(Expression expression, Document doc) {
-        expression.verify(doc);
-        return expression.execute(new SimpleAdapterFactory(), doc);
+        expression.resolve(doc);
+        return expression.execute(new FieldValuesFactory(), doc);
     }
 
     public static DocumentUpdate execute(Expression expression, DocumentUpdate update) {
-        return execute(expression, new SimpleAdapterFactory(), update);
+        return execute(expression, new FieldValuesFactory(), update);
     }
 
     public final FieldValue execute() {
@@ -285,20 +284,10 @@ public abstract class Expression extends Selectable {
         throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
     }
 
-    protected DataType mostGeneralNonNullOf(DataType left, DataType right) {
-        if (left == null) return right;
-        if (right == null) return left;
-        if (left.isAssignableTo(right)) return right;
-        if (right.isAssignableTo(left)) return left;
-        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
-    }
-
     protected DataType leastGeneralNonNullOf(DataType left, DataType right) {
         if (left == null) return right;
         if (right == null) return left;
-        if (left.isAssignableTo(right)) return left;
-        if (right.isAssignableTo(left)) return right;
-        throw new VerificationException(this, left.getName() + " is incompatible with " + right.getName());
+        return leastGeneralOf(left, right);
     }
 
 }

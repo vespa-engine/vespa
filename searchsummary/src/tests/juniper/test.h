@@ -77,7 +77,7 @@ class Test {
 public:
     explicit Test(std::ostream* osptr = 0, const char* name = NULL);
     explicit Test(const char* name);
-    virtual ~Test() {}
+    virtual ~Test() = default;
     virtual void Run() = 0;
 
     const char*               get_name() const;

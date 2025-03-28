@@ -109,7 +109,7 @@ ProtonTermData::lookupField(uint32_t fieldId) const
             return &_fields[i];
         }
     }
-    return 0;
+    return nullptr;
 }
 
 TermFieldHandle

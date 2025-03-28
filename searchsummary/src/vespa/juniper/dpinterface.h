@@ -40,7 +40,7 @@ class Docsum;
  */
 class DocsumProcessor {
 public:
-    virtual ~DocsumProcessor() {}
+    virtual ~DocsumProcessor() = default;
 
     /** Process a docsum with this processor. Processing can in the cases where
      *  token based processing is necessary just be implemented as setting

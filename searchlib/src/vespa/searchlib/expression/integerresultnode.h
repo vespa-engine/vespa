@@ -15,7 +15,7 @@ class IntegerResultNode : public NumericResultNode
 public:
     DECLARE_ABSTRACT_RESULTNODE(IntegerResultNode);
 
-    virtual const BucketResultNode& getNullBucket() const override;
+    const BucketResultNode& getNullBucket() const override;
 };
 
 template <typename T>

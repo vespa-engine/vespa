@@ -18,7 +18,7 @@ public:
     /**
      * @brief Release any allocated resources.
      **/
-    virtual ~IMirrorAPI() { }
+    virtual ~IMirrorAPI() = default;
 
     /**
      * @brief pair of <name, connectionspec>.

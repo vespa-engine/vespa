@@ -661,3 +661,25 @@
    fun:call_init
    ...
 }
+{
+   Protobuf 5.30.1 suppression 1
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   ...
+   fun:_ZN6google8protobuf8internal14AddDescriptorsEPKNS1_15DescriptorTableE
+   ...
+   fun:call_init
+   ...
+}
+{
+   Protobuf 5.30.1 suppression 2
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:_Znwm
+   ...
+   fun:_ZN6google8protobuf14MessageFactory29InternalRegisterGeneratedFileEPKNS0_8internal15DescriptorTableE
+   ...
+   fun:call_init
+   ...
+}

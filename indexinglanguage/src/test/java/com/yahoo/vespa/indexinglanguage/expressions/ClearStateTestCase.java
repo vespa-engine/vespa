@@ -47,7 +47,7 @@ public class ClearStateTestCase {
         }
     }
 
-    private static class MyVerification extends VerificationContext {
+    private static class MyVerification extends TypeContext {
 
         boolean cleared = false;
 
@@ -56,7 +56,7 @@ public class ClearStateTestCase {
         }
 
         @Override
-        public VerificationContext clear() {
+        public TypeContext clear() {
             cleared = true;
             return this;
         }

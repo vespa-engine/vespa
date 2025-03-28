@@ -199,7 +199,7 @@ public:
     class AbortPredicate {
         virtual bool doShouldAbort(const document::Bucket&) const = 0;
     public:
-        virtual ~AbortPredicate() {}
+        virtual ~AbortPredicate() = default;
         bool shouldAbort(const document::Bucket &bucket) const {
             return doShouldAbort(bucket);
         }

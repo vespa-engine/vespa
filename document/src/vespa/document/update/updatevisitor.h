@@ -20,7 +20,7 @@ class TensorModifyUpdate;
 class TensorRemoveUpdate;
 
 struct UpdateVisitor {
-    virtual ~UpdateVisitor() {}
+    virtual ~UpdateVisitor() = default;
 
     virtual void visit(const DocumentUpdate &value) = 0;
     virtual void visit(const FieldUpdate &value) = 0;

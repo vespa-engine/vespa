@@ -18,7 +18,7 @@ struct ConstantValue {
     virtual const ValueType &type() const = 0;
     virtual const Value &value() const = 0;
     using UP = std::unique_ptr<ConstantValue>;
-    virtual ~ConstantValue() {}
+    virtual ~ConstantValue() = default;
 };
 
 class SimpleConstantValue : public ConstantValue {
@@ -46,7 +46,7 @@ public:
  **/
 struct ConstantValueFactory {
     virtual ConstantValue::UP create(const std::string &path, const std::string &type) const = 0;
-    virtual ~ConstantValueFactory() {}
+    virtual ~ConstantValueFactory() = default;
 };
 
 } // namespace vespalib::eval

@@ -23,7 +23,7 @@ class DualMergeDirector
 public:
     struct Source {
         virtual void merge(Source &rhs) = 0;
-        virtual ~Source() {}
+        virtual ~Source() = default;
     };
 
 private:

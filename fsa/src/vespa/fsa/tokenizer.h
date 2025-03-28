@@ -36,7 +36,7 @@ public:
   /**
    * @brief Destructor.
    */
-  virtual ~Tokenizer() {}
+  virtual ~Tokenizer() = default;
 
   /**
    * @brief Initialize the tokenizer.

@@ -46,7 +46,6 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
         tuneFlushConcurrentThreads(builder.flush);
         tuneSummaryReadIo(builder.summary.read);
         tuneSummaryCache(builder.summary.cache);
-        tuneSearchReadIo(builder.search.mmap);
     }
 
     private void tuneSummaryCache(ProtonConfig.Summary.Cache.Builder builder) {
@@ -96,12 +95,6 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private void tuneSummaryReadIo(ProtonConfig.Summary.Read.Builder builder) {
         if (resources.diskSpeed() == NodeResources.DiskSpeed.fast) {
             builder.io(ProtonConfig.Summary.Read.Io.DIRECTIO);
-        }
-    }
-
-    private void tuneSearchReadIo(ProtonConfig.Search.Mmap.Builder builder) {
-        if (resources.diskSpeed() == NodeResources.DiskSpeed.fast) {
-            builder.advise(ProtonConfig.Search.Mmap.Advise.RANDOM);
         }
     }
 

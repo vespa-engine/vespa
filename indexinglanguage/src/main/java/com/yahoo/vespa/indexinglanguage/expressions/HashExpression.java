@@ -29,13 +29,13 @@ public class HashExpression extends Expression  {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, DataType.STRING, context);
         return getOutputType(context); // Can not infer int or long
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         if (outputType != null && ! isHashCompatible(outputType))
             throw new VerificationException(this, "An " + outputType.getName() +

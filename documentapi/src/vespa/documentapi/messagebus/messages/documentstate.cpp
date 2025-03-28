@@ -14,7 +14,7 @@ DocumentState::DocumentState()
 DocumentState::DocumentState(const DocumentState& o)
     : _gid(o._gid), _timestamp(o._timestamp), _removeEntry(o._removeEntry)
 {
-    if (o._docId.get() != 0) {
+    if (o._docId.get() != nullptr) {
         _docId = std::make_unique<document::DocumentId>(*o._docId);
     }
 }

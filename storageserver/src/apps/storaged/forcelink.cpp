@@ -9,7 +9,7 @@
 namespace search {
     struct ForceLink {
         ForceLink() {
-            if (time(NULL) == 7) {
+            if (time(nullptr) == 7) {
                 // grouping stuff
                 forcelink_searchlib_aggregation();
                 forcelink_searchlib_expression();

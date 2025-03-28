@@ -9,7 +9,7 @@ namespace search::memoryindex {
  */
 class IFieldIndexInsertListener {
 public:
-    virtual ~IFieldIndexInsertListener() {}
+    virtual ~IFieldIndexInsertListener() = default;
 
     /**
      * Called when a {wordRef, docId} tuple is inserted into the field index.

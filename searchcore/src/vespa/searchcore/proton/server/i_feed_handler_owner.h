@@ -11,7 +11,7 @@ namespace proton {
  * feed handler.
  */
 struct IFeedHandlerOwner {
-    virtual ~IFeedHandlerOwner() {}
+    virtual ~IFeedHandlerOwner() = default;
     virtual void onTransactionLogReplayDone() = 0;
     virtual void enterRedoReprocessState() = 0;
     virtual void onPerformPrune(search::SerialNum flushedSerial) = 0;

@@ -13,7 +13,7 @@ LOG_SETUP(".search.attribute.sortresults");
 
 using search::RankedHit;
 using search::common::SortSpec;
-using search::common::SortInfo;
+using search::common::FieldSortSpec;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
 using vespalib::alloc::Alloc;
@@ -161,37 +161,46 @@ FastS_DefaultResultSorter FastS_DefaultResultSorter::_instance;
 
 //-----------------------------------------------------------------------------
 
-bool
-FastS_SortSpec::Add(IAttributeContext & vecMan, const SortInfo & sInfo)
+FastS_SortSpec::VectorRef::VectorRef(uint32_t type, const search::attribute::IAttributeVector* vector,
+                                     const search::common::BlobConverter* converter) noexcept
+    : _type(type),
+      _vector(vector),
+      _converter(converter),
+      _writer((_vector != nullptr) ? _vector->make_sort_blob_writer(has_ascending_sort_order(), converter) : nullptr)
 {
-    if (sInfo._field.empty())
+}
+
+bool
+FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort_spec)
+{
+    if (field_sort_spec._field.empty())
         return false;
 
     uint32_t          type   = ASC_VECTOR;
     const IAttributeVector * vector(nullptr);
 
-    if ((sInfo._field.size() == 6) && (sInfo._field == "[rank]")) {
-        type = (sInfo._ascending) ? ASC_RANK : DESC_RANK;
-    } else if ((sInfo._field.size() == 7) && (sInfo._field == "[docid]")) {
-        type = (sInfo._ascending) ? ASC_DOCID : DESC_DOCID;
+    if ((field_sort_spec._field.size() == 6) && (field_sort_spec._field == "[rank]")) {
+        type = (field_sort_spec._ascending) ? ASC_RANK : DESC_RANK;
+    } else if ((field_sort_spec._field.size() == 7) && (field_sort_spec._field == "[docid]")) {
+        type = (field_sort_spec._ascending) ? ASC_DOCID : DESC_DOCID;
         vector = vecMan.getAttribute(_documentmetastore);
     } else {
-        type = (sInfo._ascending) ? ASC_VECTOR : DESC_VECTOR;
-        vector = vecMan.getAttribute(sInfo._field);
+        type = (field_sort_spec._ascending) ? ASC_VECTOR : DESC_VECTOR;
+        vector = vecMan.getAttribute(field_sort_spec._field);
         if ( !vector) {
-            Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", sInfo._field.c_str());
+            Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", field_sort_spec._field.c_str());
             return false;
         }
         if (!vector->is_sortable()) {
-            Issue::report("sort spec: Attribute vector '%s' is not sortable. Skipped in sorting", sInfo._field.c_str());
+            Issue::report("sort spec: Attribute vector '%s' is not sortable. Skipped in sorting", field_sort_spec._field.c_str());
             return false;
         }
     }
 
     LOG(spam, "SortSpec: adding vector (%s)'%s'",
-        (sInfo._ascending) ? "+" : "-", sInfo._field.c_str());
+        (field_sort_spec._ascending) ? "+" : "-", field_sort_spec._field.c_str());
 
-    _vectors.push_back(VectorRef(type, vector, sInfo._converter.get()));
+    _vectors.push_back(VectorRef(type, vector, field_sort_spec._converter.get()));
 
     return true;
 }
@@ -249,8 +258,8 @@ FastS_SortSpec::initSortData(const VectorRef & vec, const RankedHit & hit, size_
         uint32_t available = _binarySortData.size() - offset;
         switch (vec._type) {
             case ASC_DOCID:
-                if (vec._vector != nullptr) {
-                    written = vec._vector->serializeForAscendingSort(hit.getDocId(), mySortData, available, vec._converter);
+                if (vec._writer != nullptr) {
+                    written = vec._writer->write(hit.getDocId(), mySortData, available);
                 } else {
                     if (available >= (sizeof(hit._docId) + sizeof(_partitionId))) {
                         serializeForSort<convertForSort<uint32_t, true> >(hit.getDocId(), mySortData, available);
@@ -263,7 +272,7 @@ FastS_SortSpec::initSortData(const VectorRef & vec, const RankedHit & hit, size_
                 break;
             case DESC_DOCID:
                 if (vec._vector != nullptr) {
-                    written = vec._vector->serializeForDescendingSort(hit.getDocId(), mySortData, available, vec._converter);
+                    written = vec._writer->write(hit.getDocId(), mySortData, available);
                 } else {
                     if (available >= (sizeof(hit._docId) + sizeof(_partitionId))) {
                         serializeForSort<convertForSort<uint32_t, false> >(hit.getDocId(), mySortData, available);
@@ -281,10 +290,10 @@ FastS_SortSpec::initSortData(const VectorRef & vec, const RankedHit & hit, size_
                 written = serializeForSort<convertForSort<search::HitRank, false> >(hit.getRank(), mySortData, available);
                 break;
             case ASC_VECTOR:
-                written = vec._vector->serializeForAscendingSort(hit.getDocId(), mySortData, available, vec._converter);
+                written = vec._writer->write(hit.getDocId(), mySortData, available);
                 break;
             case DESC_VECTOR:
-                written = vec._vector->serializeForDescendingSort(hit.getDocId(), mySortData, available, vec._converter);
+                written = vec._writer->write(hit.getDocId(), mySortData, available);
                 break;
         }
         if (written < 0) {

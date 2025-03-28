@@ -30,7 +30,7 @@ private:
     std::optional<uint32_t> _element_gap;
     const fef::MatchData *_md;
 
-    virtual void handle_bind_match_data(const fef::MatchData &md) override;
+    void handle_bind_match_data(const fef::MatchData &md) override;
 
 public:
     TermDistanceExecutor(const fef::IQueryEnvironment & env,

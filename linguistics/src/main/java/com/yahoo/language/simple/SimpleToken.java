@@ -79,8 +79,8 @@ public class SimpleToken implements Token {
         return tokenString;
     }
 
-    public SimpleToken setTokenString(String str) {
-        tokenString = str;
+    public SimpleToken setTokenString(String string) {
+        tokenString = string;
         return this;
     }
 

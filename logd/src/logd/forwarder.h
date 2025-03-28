@@ -18,7 +18,7 @@ using ForwardMap = std::map<ns_log::Logger::LogLevel, bool>;
 class Forwarder {
 public:
     using UP = std::unique_ptr<Forwarder>;
-    virtual ~Forwarder() {}
+    virtual ~Forwarder() = default;
     virtual void forwardLine(std::string_view log_line) = 0;
     virtual void flush() = 0;
     virtual int badLines() const = 0;

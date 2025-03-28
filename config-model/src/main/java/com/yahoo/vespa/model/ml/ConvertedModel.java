@@ -11,7 +11,7 @@ import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
-import com.yahoo.schema.FeatureNames;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.expressiontransforms.RankProfileTransformContext;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;

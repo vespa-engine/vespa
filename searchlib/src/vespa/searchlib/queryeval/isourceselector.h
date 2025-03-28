@@ -17,7 +17,7 @@ public:
     Iterator(const SourceStore & source) : _source(source) { }
     Iterator(const Iterator &) = delete;
     Iterator & operator = (const Iterator &) = delete;
-    virtual ~Iterator() { }
+    virtual ~Iterator() = default;
     /**
      * Obtain the source to be used for the given document. This
      * function should always be called with increasing document
@@ -91,7 +91,7 @@ public:
     /**
      * empty; defined for safe subclassing.
      **/
-    virtual ~ISourceSelector() {}
+    virtual ~ISourceSelector() = default;
 private:
     uint32_t _baseId;
     Source   _defaultSource;
