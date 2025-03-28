@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/value_compare.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/tensor/i_tensor_attribute.h>
@@ -515,8 +516,6 @@ struct MockAttributeVector : NotImplementedAttribute {
     mutable void* _ser_to{nullptr};
     mutable long  _available{0};
     mutable const common::BlobConverter* _bc{nullptr};
-    mutable bool _ascending_called{false};
-    mutable bool _descending_called{false};
     mutable bool _make_sort_blob_writer_called{false};
     mutable std::optional<bool> _ascending{};
 
@@ -526,30 +525,7 @@ struct MockAttributeVector : NotImplementedAttribute {
             : NotImplementedAttribute("mock") {
     }
 
-    void set_received_args(DocId doc_id, void* ser_to,
-                           long available, const common::BlobConverter* bc) const {
-        _doc_id = doc_id;
-        _ser_to = ser_to;
-        _available = available;
-        _bc = bc;
-    }
-
     bool is_sortable() const noexcept override { return true; }
-
-    long onSerializeForAscendingSort(
-            DocId doc_id, void* ser_to,
-            long available, const common::BlobConverter* bc) const override {
-        set_received_args(doc_id, ser_to, available, bc);
-        _ascending_called = true;
-        return _return_value;
-    }
-    long onSerializeForDescendingSort(
-            DocId doc_id, void* ser_to,
-            long available, const common::BlobConverter* bc) const override {
-        set_received_args(doc_id, ser_to, available, bc);
-        _descending_called = true;
-        return _return_value;
-    }
     std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
 
     // Not covered by NotImplementedAttribute
@@ -596,46 +572,6 @@ struct SerializeFixture : BaseFixture {
 
 template <typename BaseFixture>
 SerializeFixture<BaseFixture>::~SerializeFixture() {}
-
-template <typename FixtureT>
-void check_onSerializeForAscendingSort_is_forwarded_with_remapped_lid() {
-    FixtureT f;
-    int dummy_tag;
-    void* ser_to = &dummy_tag;
-    EXPECT_EQ(f.mock_target->_return_value,
-              f.get_imported_attr()->serializeForAscendingSort(
-                      DocId(4), ser_to, 777, &f.mock_converter)); // child lid 4 -> parent lid 7
-    EXPECT_TRUE(f.mock_target->_ascending_called);
-    EXPECT_EQ(DocId(7), f.mock_target->_doc_id);
-    EXPECT_EQ(ser_to, f.mock_target->_ser_to);
-    EXPECT_EQ(777, f.mock_target->_available);
-    EXPECT_EQ(&f.mock_converter, f.mock_target->_bc);
-}
-
-TEST(ImportedAttributeVectorTest, onSerializeForAscendingSort_is_forwarded_with_remapped_lid_to_target_vector)
-{
-    check_onSerializeForAscendingSort_is_forwarded_with_remapped_lid<SerializeFixture<SingleStringAttrFixture>>();
-}
-
-template <typename FixtureT>
-void check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid() {
-    FixtureT f;
-    int dummy_tag;
-    void* ser_to = &dummy_tag;
-    EXPECT_EQ(f.mock_target->_return_value,
-                 f.get_imported_attr()->serializeForDescendingSort(
-                         DocId(2), ser_to, 555, &f.mock_converter)); // child lid 2 -> parent lid 3
-    EXPECT_TRUE(f.mock_target->_descending_called);
-    EXPECT_EQ(DocId(3), f.mock_target->_doc_id);
-    EXPECT_EQ(ser_to, f.mock_target->_ser_to);
-    EXPECT_EQ(555, f.mock_target->_available);
-    EXPECT_EQ(&f.mock_converter, f.mock_target->_bc);
-}
-
-TEST(ImportedAttributeVectorTest, onSerializeForDescendingSort_is_forwarded_with_remapped_lid_to_target_vector)
-{
-    check_onSerializeForDescendingSort_is_forwarded_with_remapped_lid<SerializeFixture<SingleStringAttrFixture>>();
-}
 
 template <typename FixtureT>
 void check_make_sort_blob_writer_is_forwarded_with_remapped_lid() {
