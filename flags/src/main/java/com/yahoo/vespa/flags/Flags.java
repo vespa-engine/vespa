@@ -159,7 +159,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
-            List.of("arnej"), "2021-11-15", "2025-04-01",
+            List.of("arnej"), "2021-11-15", "2025-05-01",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -328,7 +328,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
             "use-legacy-trust-store", true,
-            List.of("marlon"), "2024-12-05", "2025-04-01",
+            List.of("marlon"), "2024-12-05", "2025-05-01",
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
 
