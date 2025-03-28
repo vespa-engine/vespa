@@ -73,8 +73,9 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
     case DocumentProtocol::MESSAGE_GETDOCUMENT:
     {
         auto & from(static_cast<documentapi::GetDocumentMessage&>(fromMsg));
-        toMsg = std::make_unique<api::GetCommand>(bucketResolver()->bucketFromId(from.getDocumentId()), from.getDocumentId(), from.getFieldSet());
-        static_cast<api::GetCommand*>(toMsg.get())->set_debug_replica_node_id(from.getDebugReplicaNodeId());
+        auto get_cmd = std::make_unique<api::GetCommand>(bucketResolver()->bucketFromId(from.getDocumentId()), from.getDocumentId(), from.getFieldSet());
+        get_cmd->set_debug_replica_node_id(from.debug_replica_node_id());
+        toMsg = std::move(get_cmd);
         break;
     }
     case DocumentProtocol::MESSAGE_CREATEVISITOR:

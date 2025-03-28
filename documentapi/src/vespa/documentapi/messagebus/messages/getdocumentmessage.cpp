@@ -28,16 +28,6 @@ GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId,
 {
 }
 
-GetDocumentMessage::GetDocumentMessage(const document::DocumentId &documentId,
-                                       std::string_view fieldSet,
-                                       std::optional<uint32_t> debugReplicaNodeId) :
-    DocumentMessage(),
-    _documentId(documentId),
-    _fieldSet(fieldSet),
-    _debugReplicaNodeId(debugReplicaNodeId)
-{
-}
-
 GetDocumentMessage::~GetDocumentMessage() = default;
 
 DocumentReply::UP

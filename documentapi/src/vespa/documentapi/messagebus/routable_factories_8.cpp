@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "routable_factories_8.h"
-#include <optional>
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/select/parser.h>
@@ -15,6 +14,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <optional>
 #include <string_view>
 
 #include <vespa/log/bufferedlogger.h>
@@ -53,17 +53,12 @@ std::string_view get_raw_field_set(const protobuf::FieldSet& src) noexcept {
     return src.spec();
 }
 
-void set_debug_replica_node_id(protobuf::DebugGetFromReplica& dest, std::optional<uint32_t> src) {
-    if (src.has_value()) {
-        dest.set_node_id(src.value());
-    }
+void set_debug_replica_node_id(protobuf::DebugGetFromReplica& dest, uint32_t src) {
+    dest.set_node_id(src);
 }
 
 std::optional<uint32_t> get_debug_replica_node_id(const protobuf::GetDocumentRequest& src) noexcept {
-    if (src.has_debug_replica()) {
-        return src.debug_replica().node_id();
-    }
-    return std::nullopt;
+    return src.debug_replica().node_id();
 }
 
 void set_raw_selection(protobuf::DocumentSelection& dest, std::string_view src) {
@@ -260,10 +255,16 @@ std::shared_ptr<IRoutableFactory> RoutableFactories80::get_document_message_fact
         [](const GetDocumentMessage& src, protobuf::GetDocumentRequest& dest) {
             set_document_id(*dest.mutable_document_id(), src.getDocumentId());
             set_raw_field_set(*dest.mutable_field_set(), src.getFieldSet());
-            set_debug_replica_node_id(*dest.mutable_debug_replica(), src.getDebugReplicaNodeId());
+            if (src.has_debug_replica_node_id()) {
+                set_debug_replica_node_id(*dest.mutable_debug_replica(), src.debug_replica_node_id().value());
+            }
         },
         [](const protobuf::GetDocumentRequest& src) {
-            return std::make_unique<GetDocumentMessage>(get_document_id(src.document_id()), get_raw_field_set(src.field_set()), get_debug_replica_node_id(src));
+            auto msg = std::make_unique<GetDocumentMessage>(get_document_id(src.document_id()), get_raw_field_set(src.field_set()));
+            if (src.has_debug_replica()) {
+                msg->set_debug_replica_node_id(get_debug_replica_node_id(src));
+            }
+            return msg;
         }
     );
 }
