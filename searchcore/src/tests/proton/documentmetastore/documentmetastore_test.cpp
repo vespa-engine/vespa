@@ -2,9 +2,10 @@
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/checksumaggregators.h>
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
@@ -17,8 +18,8 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/hw_info.h>

@@ -79,6 +79,7 @@ private:
          * @param converter is a converter to apply to the attribute before sorting.
          **/
         AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr, bool ascending, const search::common::BlobConverter * converter) noexcept;
+        void make_sort_blob_writer();
         vsm::FieldIdT          _field;
         bool                   _ascending;
         const search::common::BlobConverter * _converter;
