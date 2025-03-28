@@ -48,6 +48,7 @@ public enum ControllerMetrics implements VespaMetrics {
     CERTIFICATE_NAME_COUNT("certificate.activeNameCount", Unit.ITEM, "The total number of names (CN + SAN fields) across all active certificate in the system"),
     CERTIFICATE_REQUEST_EXCEPTIONS("requestCaSignedCertificate.exception", Unit.FAILURE, "Controller: Exceptions when requesting CA signed certificates"),
     BILLING_CREDITS("billing.credits.remaining", Unit.DOLLAR, "Controller: Billing credits remaining"),
+    BILLING_CREDITS_GLOBAL("billing.credits.global_percent", Unit.PERCENTAGE, "Controller: total percentage of global hourly credit limit used"),
     BILLING_EXCEPTIONS("billing.exceptions", Unit.FAILURE, "Controller: Billing related exceptions"),
     BILLING_WEBHOOK_FAILURES("billing.webhook.failures", Unit.FAILURE, "Controller: webhook failures"),
     BILLING_WEBHOOK_REQUESTS("billing.webhook.requests", Unit.REQUEST, "Controller: webhook requests"),

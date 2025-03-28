@@ -126,6 +126,11 @@ public class PermanentFlags {
             "Only takes effect on next deployment, if set to a value other than the default for flag!",
             TENANT_ID);
 
+    public static final UnboundDoubleFlag GLOBAL_HOURLY_CREDIT_LIMIT = defineDoubleFlag(
+            "global-hourly-credit-limit", 0.0,
+            "The global maximum credit limit per hour (for all tenants). If this limit is exceeded, trial tenant deployments are blocked. Zero/negative value indicates no limit.",
+            "Takes effect immediately");
+
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
             "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
