@@ -82,7 +82,7 @@ public class GetDocumentMessage extends DocumentMessage {
     }
 
     @Beta
-    public bool hasDebugReplicaNodeId() {
+    public boolean hasDebugReplicaNodeId() {
         return debugReplicaNodeId != null;
     }
 
