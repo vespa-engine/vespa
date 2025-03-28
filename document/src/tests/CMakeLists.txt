@@ -32,7 +32,7 @@ vespa_add_executable(document_gtest_runner_app TEST
     weightedsetfieldvaluetest.cpp
     DEPENDS
     vespa_document
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test(

@@ -77,7 +77,7 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         left.setInputType(inputType, context);
         right.setInputType(inputType, context);
@@ -88,7 +88,7 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         var inputType = left.setOutputType(AnyDataType.instance, context);
         inputType = leastGeneralOf(inputType, right.setOutputType(AnyDataType.instance, context));
@@ -117,11 +117,11 @@ public final class IfThenExpression extends CompositeExpression {
     public Expression getIfFalseExpression() { return ifFalse; }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.verify(left);
-        context.verify(right);
-        context.verify(ifTrue);
-        context.verify(ifFalse);
+    protected void doResolve(TypeContext context) {
+        context.resolve(left);
+        context.resolve(right);
+        context.resolve(ifTrue);
+        context.resolve(ifFalse);
     }
 
     @Override

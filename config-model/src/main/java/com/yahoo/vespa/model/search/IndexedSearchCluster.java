@@ -75,14 +75,14 @@ public class IndexedSearchCluster extends SearchCluster {
     }
 
     public void getConfig(DispatchConfig.Builder builder) {
-        if (tuning.dispatch.getTopkProbability() != null) {
+        if (tuning.dispatch.getTopkProbability() != null)
             builder.topKProbability(tuning.dispatch.getTopkProbability());
-        }
+        if (tuning.dispatch.getPrioritizeAvailability() != null)
+            builder.prioritizeAvailability(tuning.dispatch.getPrioritizeAvailability());
         if (tuning.dispatch.getMinActiveDocsCoverage() != null)
             builder.minActivedocsPercentage(tuning.dispatch.getMinActiveDocsCoverage());
-        if (tuning.dispatch.getDispatchPolicy() != null) {
+        if (tuning.dispatch.getDispatchPolicy() != null)
             builder.distributionPolicy(toDistributionPolicy(tuning.dispatch.getDispatchPolicy()));
-        }
         if (tuning.dispatch.getMaxHitsPerPartition() != null)
             builder.maxHitsPerNode(tuning.dispatch.getMaxHitsPerPartition());
 

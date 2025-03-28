@@ -16,7 +16,7 @@ struct Socket {
     using UP = std::unique_ptr<Socket>;
     virtual ssize_t read(char *buf, size_t len) = 0;
     virtual ssize_t write(const char *buf, size_t len) = 0;
-    virtual ~Socket() {}
+    virtual ~Socket() = default;
 };
 
 struct SimpleSocket : public Socket {

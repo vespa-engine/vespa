@@ -27,10 +27,12 @@ protected:
     using DocId = typename B::BaseClass::DocId;
     using EnumHandle = typename B::BaseClass::EnumHandle;
     using EnumIndex = IEnumStore::Index;
+    using EnumStore = typename MultiValueEnumAttribute<B, M>::EnumStore;
     using EnumVector = IEnumStore::EnumVector;
     using LoadedNumericValueT = typename B::BaseClass::LoadedNumericValueT;
     using LoadedVector = typename B::BaseClass::LoadedVector;
     using LoadedVectorR = SequentialReadModifyWriteVector<LoadedNumericValueT>;
+    using MultiValueMapping = typename MultiValueEnumAttribute<B, M>::MultiValueMapping;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using Weighted = typename B::BaseClass::Weighted;
     using WeightedEnum = typename B::BaseClass::WeightedEnum;
@@ -45,6 +47,7 @@ protected:
     long on_serialize_for_sort(DocId doc, void* serTo, long available) const;
     long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
     long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
 public:
     MultiValueNumericEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
 

@@ -135,7 +135,7 @@ private:
     };
     struct ExecutorCreatorBase {
         virtual fef::FeatureExecutor &create(uint32_t numInputs, vespalib::Stash &stash) const = 0;
-        virtual ~ExecutorCreatorBase() {}
+        virtual ~ExecutorCreatorBase() = default;
     };
 
     Dimension _dimension;

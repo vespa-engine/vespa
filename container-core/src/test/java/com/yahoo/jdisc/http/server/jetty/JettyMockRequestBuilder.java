@@ -116,7 +116,10 @@ public class JettyMockRequestBuilder {
             this.method = method;
             this.connMetaData = new DummyConnectionMetadata(b, connector, connection);
             var mutableFields = HttpFields.build();
-            b.headers.forEach(mutableFields::put);
+            b.headers.forEach((key, values) -> {
+                if (values.isEmpty()) mutableFields.put(key, "");
+                else mutableFields.put(key, values);
+            });
             this.headers = mutableFields;
             this.attributes = new ConcurrentHashMap<>(b.attributes);
             this.wrapped = mock(HttpChannelState.ChannelRequest.class);

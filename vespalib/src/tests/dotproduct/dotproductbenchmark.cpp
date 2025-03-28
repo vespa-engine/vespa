@@ -12,7 +12,7 @@ using vespalib::hwaccelerated::IAccelerated;
 
 class Benchmark {
 public:
-    virtual ~Benchmark() { }
+    virtual ~Benchmark() = default;
     virtual void compute(size_t docId) const = 0;
 };
 

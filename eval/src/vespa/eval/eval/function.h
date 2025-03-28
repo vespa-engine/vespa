@@ -18,7 +18,7 @@ enum class PassParams : uint8_t { SEPARATE, ARRAY, LAZY };
 struct SymbolExtractor {
     virtual void extract_symbol(const char *pos_in, const char *end_in,
                                 const char *&pos_out, std::string &symbol_out) const = 0;
-    virtual ~SymbolExtractor() {}
+    virtual ~SymbolExtractor() = default;
 };
 
 struct NodeVisitor;

@@ -30,12 +30,12 @@ public final class TokenizeExpression extends Expression {
     public AnnotatorConfig getConfig() { return config; }
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         return super.setInputType(input, DataType.STRING, context);
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         return super.setOutputType(DataType.STRING, output, null, context);
     }
 
@@ -45,12 +45,11 @@ public final class TokenizeExpression extends Expression {
         StringFieldValue output = input.clone();
         context.setCurrentValue(output);
 
-        AnnotatorConfig cfg = new AnnotatorConfig(config);
+        AnnotatorConfig configWithLanguage = new AnnotatorConfig(config);
         Language lang = context.resolveLanguage(linguistics);
-        if (lang != null) {
-            cfg.setLanguage(lang);
-        }
-        LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, cfg);
+        if (lang != null)
+            configWithLanguage.setLanguage(lang);
+        LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, configWithLanguage);
         annotator.annotate(output);
     }
 
@@ -60,6 +59,9 @@ public final class TokenizeExpression extends Expression {
         ret.append("tokenize");
         if (config.getRemoveAccents()) {
             ret.append(" normalize");
+        }
+        if ( ! config.getLowercase()) {
+            ret.append(" keep-case");
         }
         if (config.getStemMode() != StemMode.NONE) {
             ret.append(" stem:\""+config.getStemMode()+"\"");

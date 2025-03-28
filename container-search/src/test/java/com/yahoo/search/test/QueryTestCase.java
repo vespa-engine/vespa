@@ -9,6 +9,7 @@ import com.yahoo.language.detect.Detection;
 import com.yahoo.language.detect.Detector;
 import com.yahoo.language.detect.Hint;
 import com.yahoo.language.opennlp.OpenNlpLinguistics;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.simple.SimpleDetector;
@@ -84,8 +85,9 @@ public class QueryTestCase {
         String body = "a bb. ccc??!";
         Linguistics linguistics = new SimpleLinguistics();
 
+        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.SHORTEST, true, true);
         AndItem and = new AndItem();
-        for (Token token : linguistics.getTokenizer().tokenize(body, Language.ENGLISH, StemMode.SHORTEST, true)) {
+        for (Token token : linguistics.getTokenizer().tokenize(body, parameters)) {
             if (token.isIndexable())
                 and.addItem(new WordItem(token.getTokenString(), "body"));
         }

@@ -2614,6 +2614,7 @@ public class ParseTestCase {
         tester.assertParsed("str_map:{key:key1 value:value1}", "str_map:{key:key1 value:value1}", Query.Type.ALL);
         tester.assertParsed("map", "str_map:{", Query.Type.ALL);
         tester.assertParsed("map", "str_map:{.", Query.Type.ALL);
+        tester.assertParsed("AND 0 0001105670011010", "{{0??+++.{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{{0001105670011010.", Query.Type.ALL);
     }
 
     @Test

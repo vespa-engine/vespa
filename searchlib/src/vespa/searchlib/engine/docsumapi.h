@@ -25,7 +25,7 @@ public:
     /**
      * Empty, needed for subclassing
      **/
-    virtual ~DocsumClient() {}
+    virtual ~DocsumClient() = default;
 };
 
 /**
@@ -65,7 +65,7 @@ public:
     /**
      * Empty, needed for subclassing
      **/
-    virtual ~DocsumServer() {}
+    virtual ~DocsumServer() = default;
 };
 
 }

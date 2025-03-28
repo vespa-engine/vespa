@@ -91,6 +91,7 @@ public:
     const IArrayEnumReadView* make_read_view(ArrayEnumTag tag, vespalib::Stash& stash) const override;
     const IWeightedSetEnumReadView* make_read_view(WeightedSetEnumTag tag, vespalib::Stash& stash) const override;
 private:
+    class SortBlobWriter;
     using AtomicTargetLid = vespalib::datastore::AtomicValueWrapper<uint32_t>;
     using TargetLids = std::span<const AtomicTargetLid>;
     std::shared_ptr<MetaStoreReadGuard>  _target_document_meta_store_read_guard;
@@ -115,6 +116,7 @@ protected:
                                      const common::BlobConverter * bc) const override;
     long onSerializeForDescendingSort(DocId doc, void * serTo, long available,
                                       const common::BlobConverter * bc) const override;
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
 };
 
 }

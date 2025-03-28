@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include "collectiontype.h"
 #include "basictype.h"
+#include "collectiontype.h"
+#include "default_sort_blob_writer.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <ostream>
@@ -24,6 +25,7 @@ namespace search::attribute {
 
 class IMultiValueAttribute;
 class ISearchContext;
+class ISortBlobWriter;
 class SearchContextParams;
 
 /**
@@ -459,6 +461,14 @@ public:
      */
     long serializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc=nullptr) const {
         return onSerializeForDescendingSort(doc, serTo, available, bc);
+    }
+
+    virtual std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const {
+        if (ascending) {
+            return std::make_unique<DefaultSortBlobWriter<true>>(*this, converter);
+        } else {
+            return std::make_unique<DefaultSortBlobWriter<false>>(*this, converter);
+        }
     }
 
     /**

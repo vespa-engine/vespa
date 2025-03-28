@@ -27,7 +27,7 @@ public:
      */
     virtual size_t decode(ConfigDataBuffer & buffer) const = 0;
 
-    virtual ~ConfigFormatter() { }
+    virtual ~ConfigFormatter() = default;
 };
 
 } // namespace config

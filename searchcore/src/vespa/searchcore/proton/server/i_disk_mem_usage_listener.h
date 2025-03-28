@@ -13,7 +13,7 @@ namespace proton {
 class IDiskMemUsageListener
 {
 public:
-    virtual ~IDiskMemUsageListener() {}
+    virtual ~IDiskMemUsageListener() = default;
     virtual void notifyDiskMemUsage(DiskMemUsageState state) = 0;
 };
 

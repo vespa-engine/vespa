@@ -73,7 +73,7 @@ $ vespa deploy -t cloud -z perf.aws-us-east-1c`,
 			}
 			if target.Type() == vespa.TargetCloud {
 				services, err := readServicesXML(pkg)
-				skipCertCheck := err != nil && services.ContainsAnyTokenClient()
+				skipCertCheck := err == nil && services.ContainsAnyTokenClient()
 				if !skipCertCheck {
 					if err := requireCertificate(copyCert, true, cli, target, pkg); err != nil {
 						return err

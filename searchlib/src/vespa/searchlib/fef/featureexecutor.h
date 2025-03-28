@@ -164,7 +164,7 @@ public:
     /**
      * Virtual destructor to allow subclassing.
      **/
-    virtual ~FeatureExecutor() {}
+    virtual ~FeatureExecutor() = default;
 };
 
 double LazyValue::as_number(uint32_t docid) const {

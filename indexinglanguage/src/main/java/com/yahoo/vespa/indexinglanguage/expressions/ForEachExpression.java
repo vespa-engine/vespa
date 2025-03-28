@@ -49,7 +49,7 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         if (inputType == null) return null;
 
@@ -73,7 +73,7 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         if (outputType == null) return null;
         super.setOutputType(outputType, context);
 
@@ -109,7 +109,7 @@ public final class ForEachExpression extends CompositeExpression {
      * This is symmetric in both verification directions since the expression just need to be compatible with
      * all the struct fields.
      */
-    private DataType verifyStructFields(StructDataType struct, VerificationContext context) {
+    private DataType verifyStructFields(StructDataType struct, TypeContext context) {
         for (Field field : struct.getFields()) {
             DataType fieldType = field.getDataType();
             DataType fieldOutputType = expression.setInputType(fieldType, context);

@@ -19,7 +19,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FRT_IRequestWait(void) {}
+    virtual ~FRT_IRequestWait() = default;
 
     virtual void RequestDone(FRT_RPCRequest *req) = 0;
 };
@@ -51,7 +51,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FRT_ITimeoutHandler() {}
+    virtual ~FRT_ITimeoutHandler() = default;
 
     virtual void HandleTimeout() = 0;
 };

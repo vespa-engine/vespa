@@ -29,7 +29,7 @@ import java.util.LinkedHashMap;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.document.datatypes.*;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
@@ -44,7 +44,7 @@ public class IndexingParser {
     private String defaultFieldName;
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
-    private Map<String, TextGenerator> generators;
+    private Map<String, FieldGenerator> generators;
     private AnnotatorConfig annotatorCfg;
 
     public IndexingParser(String str) {
@@ -66,7 +66,7 @@ public class IndexingParser {
         return this;
     }
 
-    public IndexingParser setGenerators(Map<String, TextGenerator> generators) {
+    public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
         this.generators = generators;
         return this;
     }
@@ -180,6 +180,7 @@ TOKEN :
     <INDEX: "index"> |
     <INPUT: "input"> |
     <JOIN: "join"> |
+    <KEEP_CASE: "keep-case"> |
     <LOWER_CASE: "lowercase"> |
     <MAX_LENGTH: "max-length"> |
     <MAX_OCCURRENCES: "max-occurrences"> |
@@ -733,7 +734,8 @@ AnnotatorConfig tokenizeCfg() :
       <MAX_LENGTH> <COLON>  maxLength = integer() { val.setMaxTokenizeLength(maxLength); } |
       <MAX_OCCURRENCES> <COLON>  maxTermOccurrences = integer() { val.setMaxTermOccurrences(maxTermOccurrences); } |
       <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integer() { val.setMaxTokenLength(maxTokenLength); } |
-      <NORMALIZE> { val.setRemoveAccents(true); } )+
+      <NORMALIZE> { val.setRemoveAccents(true); } |
+      <KEEP_CASE> { val.setLowercase(false); } )+
     { return val; }
 }
 
@@ -987,4 +989,3 @@ void nl() : { }
 {
     ( <NL> )*
 }
-

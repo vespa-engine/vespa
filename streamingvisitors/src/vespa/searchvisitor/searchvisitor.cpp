@@ -185,6 +185,25 @@ createAttribute(const std::string & name, const document::FieldValue & fv, searc
     return {};
 }
 
+SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr) noexcept
+    : _field(fid),
+      _ascending(true),
+      _converter(nullptr),
+      _attr(std::move(attr)),
+      _sort_blob_writer(_attr ? _attr->get()->make_sort_blob_writer(_ascending, _converter) : nullptr)
+{
+}
+
+SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr,
+                                  bool ascending, const search::common::BlobConverter* converter) noexcept
+    : _field(fid),
+      _ascending(ascending),
+      _converter(converter),
+      _attr(std::move(attr)),
+      _sort_blob_writer(_attr ? _attr->get()->make_sort_blob_writer(_ascending, _converter) : nullptr)
+{
+}
+
 SearchVisitor::StreamingDocsumsState::StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback, ResolveClassInfo& resolve_class_info)
     : _state(callback),
       _resolve_class_info(resolve_class_info)
@@ -999,33 +1018,33 @@ void
 SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & sortList)
 {
     if ( ! sortList.empty() ) {
-        for (const search::common::SortInfo & sInfo : sortList) {
-            vsm::FieldIdT fid = _fieldSearchSpecMap.nameIdMap().fieldNo(sInfo._field);
+        for (const search::common::FieldSortSpec & field_sort_spec : sortList) {
+            vsm::FieldIdT fid = _fieldSearchSpecMap.nameIdMap().fieldNo(field_sort_spec._field);
             if ( fid != StringFieldIdTMap::npos ) {
-                AttributeGuard::UP attr(_attrMan.getAttribute(sInfo._field));
+                AttributeGuard::UP attr(_attrMan.getAttribute(field_sort_spec._field));
                 if (attr->valid()) {
                     if (attr->get()->is_sortable()) {
                         size_t index(_attributeFields.size());
                         for (size_t j(0); j < index; j++) {
                             if ((_attributeFields[j]._field == fid) && notContained(_sortList, j)) {
                                 index = j;
-                                _attributeFields[index]._ascending = sInfo._ascending;
-                                _attributeFields[index]._converter = sInfo._converter.get();
+                                _attributeFields[index]._ascending = field_sort_spec._ascending;
+                                _attributeFields[index]._converter = field_sort_spec._converter.get();
                             }
                         }
                         if (index == _attributeFields.size()) {
-                            _attributeFields.emplace_back(fid, std::move(attr), sInfo._ascending,
-                                                          sInfo._converter.get());
+                            _attributeFields.emplace_back(fid, std::move(attr), field_sort_spec._ascending,
+                                                          field_sort_spec._converter.get());
                         }
                         _sortList.push_back(index);
                     } else {
-                        Issue::report("Attribute '%s' is not sortable", sInfo._field.c_str());
+                        Issue::report("Attribute '%s' is not sortable", field_sort_spec._field.c_str());
                     }
                 } else {
-                    Issue::report("Attribute '%s' is not valid", sInfo._field.c_str());
+                    Issue::report("Attribute '%s' is not valid", field_sort_spec._field.c_str());
                 }
             } else {
-                Issue::report("Cannot locate field '%s' in field name registry", sInfo._field.c_str());
+                Issue::report("Cannot locate field '%s' in field name registry", field_sort_spec._field.c_str());
             }
         }
     } else {
@@ -1234,13 +1253,8 @@ SearchVisitor::fillSortBuffer()
         const AttributeGuard &finfoGuard(*finfo._attr);
         LOG(debug, "Adding sortdata for document %d for attribute '%s'",
             finfoGuard->getNumDocs() - 1, finfoGuard->getName().c_str());
-//        assert((_docsumCache.cache().size() + 1) == finfo._attr->getNumDocs());
         do {
-            if (finfo._ascending) {
-                written = finfoGuard->serializeForAscendingSort(finfoGuard->getNumDocs()-1, &_tmpSortBuffer[0]+pos, _tmpSortBuffer.size() - pos, finfo._converter);
-            } else {
-                written = finfoGuard->serializeForDescendingSort(finfoGuard->getNumDocs()-1, &_tmpSortBuffer[0]+pos, _tmpSortBuffer.size() - pos, finfo._converter);
-            }
+            written = finfo._sort_blob_writer->write(finfoGuard->getNumDocs()-1, &_tmpSortBuffer[0]+pos, _tmpSortBuffer.size() - pos);
             if (written == -1) {
                 _tmpSortBuffer.resize(_tmpSortBuffer.size()*2);
             }

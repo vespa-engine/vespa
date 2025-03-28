@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.metrics.ContainerMetrics;
 import ai.vespa.utils.BytesQuantity;
 import com.google.inject.AbstractModule;
 import com.google.inject.Module;
@@ -46,6 +47,7 @@ import org.apache.http.HttpHeaders;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.mockito.Mockito;
 
 import javax.net.ssl.SSLContext;
 import java.io.File;
@@ -97,6 +99,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -189,12 +192,11 @@ public class HttpServerTest {
         driver.client()
                 .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
                 .expectStatusCode(is(BAD_REQUEST)).expectContent(containsString("HTTP ERROR 400 Duplicate Host Header"));
-        // TODO figure out what to do with this metric - currently missing for built-in responses
-//        var aggregator = ResponseMetricAggregator.getBean(driver.server());
-//        var metric = waitForStatistics(aggregator);
-//        assertEquals(400, metric.dimensions.statusCode);
-//        assertEquals("GET", metric.dimensions.method);
-//        assertTrue(driver.close());
+        var aggregator = MetricAggregatingRequestLog.getBean(driver.server());
+        var metric = waitForStatistics(aggregator);
+        assertEquals(400, metric.dimensions.statusCode);
+        assertEquals("GET", metric.dimensions.method);
+        assertTrue(driver.close());
     }
 
     @Test
@@ -635,9 +637,9 @@ public class HttpServerTest {
         RequestTypeHandler handler = new RequestTypeHandler();
         var cfg = new ServerConfig.Builder().metric(new ServerConfig.Metric.Builder().reporterEnabled(false));
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(handler, cfg, new ConnectorConfig.Builder());
-        var statisticsCollector = ResponseMetricAggregator.getBean(driver.server());;
+        var statisticsCollector = MetricAggregatingRequestLog.getBean(driver.server());;
         {
-            List<ResponseMetricAggregator.StatisticsEntry> stats = statisticsCollector.takeStatistics();
+            List<MetricAggregatingRequestLog.StatisticsEntry> stats = statisticsCollector.takeStatistics();
             assertEquals(0, stats.size());
         }
 
@@ -671,8 +673,8 @@ public class HttpServerTest {
         assertTrue(driver.close());
     }
 
-    private ResponseMetricAggregator.StatisticsEntry waitForStatistics(ResponseMetricAggregator statisticsCollector) {
-        List<ResponseMetricAggregator.StatisticsEntry> entries = List.of();
+    private MetricAggregatingRequestLog.StatisticsEntry waitForStatistics(MetricAggregatingRequestLog statisticsCollector) {
+        List<MetricAggregatingRequestLog.StatisticsEntry> entries = List.of();
         int tries = 0;
         // Wait up to 30 seconds before giving up
         while (entries.isEmpty() && tries < 300) {
@@ -871,17 +873,38 @@ public class HttpServerTest {
 
     @Test
     void httpComplianceChecksCanBeDisabled() throws Exception {
+        var metricConsumer = new MetricConsumerMock();
         JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().compliance(
                         new ConnectorConfig.Compliance.Builder()
                                 .httpViolations(
-                                        Set.of("MISMATCHED_AUTHORITY", "DUPLICATE_HOST_HEADERS", "UNSAFE_HOST_HEADER"))));
+                                        Set.of("MISMATCHED_AUTHORITY", "DUPLICATE_HOST_HEADERS", "UNSAFE_HOST_HEADER"))),
+                binder -> binder.bind(MetricConsumer.class).toInstance(metricConsumer.mockitoMock()));
         // Verify multiple host headers are accepted after disabling compliance checks
         driver.client()
                 .newGet("/status.html").addHeader("Host", "localhost").addHeader("Host", "vespa.ai").execute()
                 .expectStatusCode(is(OK));
+
+        // Verify metric was aggregated
+        verify(metricConsumer.mockitoMock())
+                .add(eq(ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.baseName()), eq(1L), Mockito.any());
+        verify(metricConsumer.mockitoMock())
+                .createContext(eq(Map.of("mode", "RFC7230_VESPA", "violation", "DUPLICATE_HOST_HEADERS")));
+
+        assertTrue(driver.close());
+    }
+
+    @Test
+    void requestHeaderValueContainingCommaIsInterpretedAsASingleValue() throws IOException {
+        JettyTestDriver driver = JettyTestDriver.newInstance(new RequestHeaderEchoingHandler("X-Foo"));
+        driver.client().newGet("/")
+                .addHeader("X-Foo", "bar,baz")
+                .addHeader("X-Foo", "foobar")
+                .execute()
+                .expectStatusCode(is(OK))
+                .expectContent(is("bar,baz\nfoobar\n"));
         assertTrue(driver.close());
     }
 
@@ -1086,6 +1109,21 @@ public class HttpServerTest {
         public ContentChannel handleRequest(Request req, ResponseHandler handler) {
             final ContentChannel ch = handler.handleResponse(new Response(OK));
             ch.write(ByteBuffer.wrap(req.getUri().toString().getBytes(UTF_8)), null);
+            ch.close(null);
+            return null;
+        }
+    }
+
+    private static class RequestHeaderEchoingHandler extends AbstractRequestHandler {
+        final String headerName;
+        RequestHeaderEchoingHandler(String headerName) { this.headerName = headerName; }
+
+        @Override
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            var ch = handler.handleResponse(new Response(OK));
+            for (var value : request.headers().get(headerName)) {
+                ch.write(ByteBuffer.wrap((value + "\n").getBytes()), null);
+            }
             ch.close(null);
             return null;
         }

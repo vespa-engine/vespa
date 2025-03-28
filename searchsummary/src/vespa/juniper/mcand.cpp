@@ -23,7 +23,7 @@ MatchCandidate::MatchCandidate(QueryExpr* m, MatchElement** elms, off_t ctxt_sta
     _overlap(0),
     _refcnt(1),
     _klist() {
-    for (int i = 0; i < _elems; i++) element[i] = NULL;
+    for (int i = 0; i < _elems; i++) element[i] = nullptr;
 
     if (LOG_WOULD_LOG(debug)) {
         std::string s;

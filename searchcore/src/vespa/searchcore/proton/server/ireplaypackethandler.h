@@ -29,7 +29,7 @@ namespace feedoperation { struct IStreamHandler; }
  */
 struct IReplayPacketHandler
 {
-    virtual ~IReplayPacketHandler() {}
+    virtual ~IReplayPacketHandler() = default;
     virtual void replay(const PutOperation &op) = 0;
     virtual void replay(const RemoveOperation &op) = 0;
     virtual void replay(const UpdateOperation &op) = 0;

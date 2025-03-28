@@ -74,7 +74,7 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         DataType leftOutput = left.setInputType(inputType, context);
         DataType rightOutput = right.setInputType(inputType, context);
@@ -82,7 +82,7 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         if (outputType == null) return null;
         super.setOutputType(outputType, context);
         DataType leftInput = left.setOutputType(AnyNumericDataType.instance, context);

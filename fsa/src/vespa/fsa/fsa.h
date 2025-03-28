@@ -771,10 +771,7 @@ public:
      */
     HashedState(const HashedState& s) : State(s), _hash(s._hash) {}
 
-    /**
-     * @brief Destructor.
-     */
-    virtual ~HashedState() {}
+    ~HashedState() override = default;
 
     using State::start;
     using State::delta;
@@ -894,7 +891,7 @@ public:
     /**
      * @brief Destructor.
      */
-    virtual ~CounterState() {}
+    ~CounterState() override = default;
 
     using State::start;
     using State::delta;
@@ -1184,7 +1181,7 @@ public:
     /**
      * @brief Destructor.
      */
-    virtual ~MemoryState() {}
+    ~MemoryState() override = default;
 
     using State::start;
     using State::delta;
@@ -1338,7 +1335,7 @@ public:
     /**
      * @brief Destructor.
      */
-    virtual ~HashedMemoryState() {}
+    ~HashedMemoryState() override = default;
 
     using State::start;
     using State::delta;
@@ -1488,7 +1485,7 @@ public:
     /**
      * @brief Destructor.
      */
-    virtual ~HashedCounterState() {}
+    ~HashedCounterState() override = default;
 
     using State::start;
     using State::delta;

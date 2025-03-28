@@ -57,7 +57,7 @@ class Visitor : public Session
 public:
     Visitor(const std::string & domain, TransLogClient & tlc, Callback & callBack);
     bool visit(const SerialNum & from, const SerialNum & to);
-    virtual ~Visitor() override;
+    ~Visitor() override;
     RPC::Result visit(const Packet & packet) override { return _callback.receive(packet); }
     void eof() override    { _callback.eof(); }
 private:

@@ -59,7 +59,7 @@ void
 StorageComponent::setNodeStateUpdater(NodeStateUpdater& updater)
 {
     std::lock_guard guard(_lock);
-    if (_nodeStateUpdater != 0) {
+    if (_nodeStateUpdater != nullptr) {
         throw vespalib::IllegalStateException(
                 "Node state updater is already set", VESPA_STRLOC);
     }
@@ -86,7 +86,7 @@ NodeStateUpdater&
 StorageComponent::getStateUpdater() const
 {
     std::lock_guard guard(_lock);
-    if (_nodeStateUpdater == 0) {
+    if (_nodeStateUpdater == nullptr) {
         throw vespalib::IllegalStateException(
                 "Component need node state updater at this time, but it has "
                 "not been initialized.", VESPA_STRLOC);

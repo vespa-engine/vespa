@@ -193,6 +193,22 @@ MultiValueNumericAttribute<B, M>::is_sortable() const noexcept
     return true;
 }
 
+template <typename MultiValueMappingT, typename T, bool ascending>
+class MultiNumericSortBlobWriter : public attribute::ISortBlobWriter {
+private:
+    const MultiValueMappingT& _mv_mapping;
+public:
+    MultiNumericSortBlobWriter(const MultiValueMappingT& mv_mapping) : _mv_mapping(mv_mapping) {}
+    long write(uint32_t docid, void* buf, long available) const override {
+        attribute::NumericSortBlobWriter<T, ascending> writer;
+        auto indices = _mv_mapping.get(docid);
+        for (auto& v : indices) {
+            writer.candidate(multivalue::get_value(v));
+        }
+        return writer.write(buf, available);
+    }
+};
+
 template <typename B, typename M>
 template <bool asc>
 long
@@ -218,6 +234,17 @@ long
 MultiValueNumericAttribute<B, M>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
 {
     return on_serialize_for_sort<false>(doc, serTo, available);
+}
+
+template <typename B, typename M>
+std::unique_ptr<attribute::ISortBlobWriter>
+MultiValueNumericAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
+{
+    if (ascending) {
+        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, true>>(this->_mvMapping);
+    } else {
+        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, false>>(this->_mvMapping);
+    }
 }
 
 } // namespace search

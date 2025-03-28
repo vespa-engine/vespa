@@ -25,7 +25,7 @@ GetNodeStateCommand::print(std::ostream& out, bool verbose,
                            const std::string& indent) const
 {
     out << "GetNodeStateCommand(";
-    if (_expectedState.get() != 0) {
+    if (_expectedState.get() != nullptr) {
         out << "Expected state: " << *_expectedState;
     }
     out << ")";

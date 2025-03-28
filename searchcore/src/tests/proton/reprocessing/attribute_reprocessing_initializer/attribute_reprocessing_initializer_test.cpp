@@ -111,7 +111,7 @@ struct MyDocTypeInspector : public IDocumentTypeInspector
           _newCfg(newCfg)
     {
     }
-    virtual bool hasUnchangedField(const std::string &name) const override {
+    bool hasUnchangedField(const std::string &name) const override {
         return _oldCfg._fields.count(name) > 0 &&
             _newCfg._fields.count(name) > 0;
     }
@@ -124,7 +124,7 @@ struct MyIndexschemaInspector : public IIndexschemaInspector
         : _schema(schema)
     {
     }
-    virtual bool isStringIndex(const std::string &name) const override {
+    bool isStringIndex(const std::string &name) const override {
         uint32_t fieldId = _schema.getIndexFieldId(name);
         if (fieldId == Schema::UNKNOWN_FIELD_ID) {
             return false;
@@ -212,7 +212,7 @@ public:
 };
 
 class Fixture : public InitializerTest {
-    virtual void TestBody() override {}
+    void TestBody() override {}
 };
 
 TEST_F(InitializerTest, require_that_new_field_does_NOT_require_attribute_populate)

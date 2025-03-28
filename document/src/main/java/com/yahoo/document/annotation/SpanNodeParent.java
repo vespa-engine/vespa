@@ -10,6 +10,7 @@ import com.yahoo.document.datatypes.StringFieldValue;
  * @see SpanNode#getParent()
  */
 public interface SpanNodeParent {
+
     /**
      * Returns the SpanTree of this, if any.
      *

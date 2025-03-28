@@ -10,7 +10,6 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -55,18 +54,31 @@ class NodeResourcesTest {
                                                  NodeResources.DiskSpeed.fast,
                                                  NodeResources.StorageType.local,
                                                  NodeResources.Architecture.x86_64,
-                                                 new NodeResources.GpuResources(1, 16));
+                                                 new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16));
         assertTrue(gpuHostResources.satisfies(new NodeResources(1, 2, 3, 1,
                                                                 NodeResources.DiskSpeed.fast,
                                                                 NodeResources.StorageType.local,
                                                                 NodeResources.Architecture.x86_64,
-                                                                new NodeResources.GpuResources(1, 16))));
+                                                                new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 16))));
         assertFalse(gpuHostResources.satisfies(new NodeResources(1, 2, 3, 1,
                                                                  NodeResources.DiskSpeed.fast,
                                                                  NodeResources.StorageType.local,
                                                                  NodeResources.Architecture.x86_64,
-                                                                 new NodeResources.GpuResources(1, 32))));
+                                                                 new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 32))));
         assertFalse(hostResources.satisfies(gpuHostResources));
+        assertFalse(gpuHostResources.satisfies(hostResources));
+        var newerGpuResources = new NodeResources(1, 2, 3, 1,
+                                                  NodeResources.DiskSpeed.fast,
+                                                  NodeResources.StorageType.local,
+                                                  NodeResources.Architecture.x86_64,
+                                                  new NodeResources.GpuResources(NodeResources.GpuType.L40S, 1, 48));
+        assertFalse(newerGpuResources.satisfies(gpuHostResources));
+        assertFalse(gpuHostResources.satisfies(newerGpuResources));
+        assertTrue(newerGpuResources.satisfies(new NodeResources(1, 2, 3, 1,
+                                                                 NodeResources.DiskSpeed.fast,
+                                                                 NodeResources.StorageType.local,
+                                                                 NodeResources.Architecture.any,
+                                                                 new NodeResources.GpuResources(NodeResources.GpuType.L40S, 1, 48))));
     }
 
     @Test
@@ -123,25 +135,98 @@ class NodeResourcesTest {
                 NodeResources.DiskSpeed.fast,
                 NodeResources.StorageType.local,
                 NodeResources.Architecture.x86_64,
-                new NodeResources.GpuResources(4, 16));
+                new NodeResources.GpuResources(NodeResources.GpuType.T4, 4, 16));
 
         assertNotInterchangeable(resources, resources.with(NodeResources.DiskSpeed.slow));
         assertNotInterchangeable(resources, resources.with(NodeResources.StorageType.remote));
         assertNotInterchangeable(resources, resources.with(NodeResources.Architecture.arm64));
 
-        var other = resources.with(new NodeResources.GpuResources(4, 32));
+        var other = resources.with(new NodeResources.GpuResources(NodeResources.GpuType.T4, 4, 32));
         var expected = resources.withVcpu(2)
                 .withMemoryGiB(4)
                 .withDiskGb(6)
                 .withBandwidthGbps(2)
-                .with(new NodeResources.GpuResources(1, 192));
+                .with(new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 192));
         var actual = resources.add(other);
         assertEquals(expected, actual);
 
         // Subtracted back to original resources - but GPU is flattened to count=1
-        expected = resources.with(new NodeResources.GpuResources(1, 64));
+        expected = resources.with(new NodeResources.GpuResources(NodeResources.GpuType.T4, 1, 64));
         actual = actual.subtract(other);
         assertEquals(expected, actual);
+    }
+
+    private static NodeResources.GpuResources makeGpus(String t, int cnt, double mem) {
+        return new NodeResources.GpuResources(t, cnt, mem);
+    }
+
+    @Test
+    void testGpuArithmetic() {
+        var zero = NodeResources.GpuResources.zero();
+        var one = makeGpus("T4", 1, 16);
+        var big = makeGpus("T4", 1, 32);
+        var four = makeGpus("T4", 4, 16);
+        var ampere = makeGpus("A100", 1, 40);
+        var lovelace = makeGpus("L40S", 1, 48);
+        assertEquals(zero, zero.plus(zero));
+        assertEquals(one, zero.plus(one));
+        assertEquals(four, zero.plus(four));
+        assertEquals(ampere, zero.plus(ampere));
+        assertEquals(one, one.plus(zero));
+        assertEquals(one, one.minus(zero));
+        assertEquals(big, one.multipliedBy(2));
+
+        assertEquals(makeGpus("T4", 1, 80), one.plus(four));
+        assertEquals(makeGpus("T4", 1, 80), four.plus(one));
+        assertEquals(makeGpus("T4", 1, 96), big.plus(four));
+        assertEquals(makeGpus("T4", 1, 96), four.plus(big));
+
+        assertEquals(makeGpus("T4", 1, 48), four.minus(one));
+        assertEquals(makeGpus("T4", 1, -16), zero.minus(one));
+        assertEquals(makeGpus("T4", 1, -16), one.minus(big));
+        assertEquals(makeGpus("T4", 1, -32), big.minus(four));
+
+        // TODO - addition not commutative:
+        assertEquals(makeGpus("T4", 1, 56), one.plus(ampere));
+        assertEquals(makeGpus("T4", 1, 64), one.plus(lovelace));
+        assertEquals(makeGpus("A100", 1, 56), ampere.plus(one));
+        assertEquals(makeGpus("L40S", 1, 64), lovelace.plus(one));
+    }
+
+
+    // Comparing AWS (not Vespa) approx pricing for different disk options
+    // @Test
+    void ebs_vs_local_disk_pricing() {
+        // https://aws.amazon.com/ebs/pricing/
+
+        double pricePerNode = new NodeResources(32.0, 256, 7500, 1.0).cost() / 3;
+        System.out.println("Price for 7500Gb with local disk:            " + pricePerNode + " $/hr");
+
+        double totalPriceWithComparableIo2 = io2Price(1_000_000); // 1 disk does maybe 500k, each disk has size=3750Gb, so there are 2
+        System.out.println("Price for 7500Gb io2 with comparable perf.: " + totalPriceWithComparableIo2 + " $/hr");
+        double totalPriceWith16kIo2 = io2Price(16_000);
+        System.out.println("Price for 7500Gb io2 16k iops:               " + totalPriceWith16kIo2 + " $/hr");
+        double totalPriceWith3kIo2 = io2Price(3000); // What we get with gp3 (by default, and not flag overridden for anyone)
+        System.out.println("Price for 7500Gb io2  3k iops:               " + totalPriceWith3kIo2 + " $/hr");
+
+        double totalPriceWith16kGp3 = gp3Price(16_000);
+        System.out.println("Price for 7500Gb gp3 16k iops:               " + totalPriceWith16kGp3 + " $/hr");
+        double totalPriceWith3kGp3 = gp3Price(3000);
+        System.out.println("Price for 7500Gb gp3  3k iops:               " + totalPriceWith3kGp3 + " $/hr");
+    }
+
+    private double io2Price(double iops) {
+        double pricePerNodeNoDisk = new NodeResources(32.0, 256, 0, 1.0).cost() / 3;
+        double priceForIo21Gbhr = 0.125/(30*24);
+        double priceForComparableIops = 0.046/(30*24) * iops; // approx: mid range price
+        return pricePerNodeNoDisk + 7500 * priceForIo21Gbhr + priceForComparableIops;
+    }
+
+    private double gp3Price(double iops) {
+        double pricePerNodeNoDisk = new NodeResources(32.0, 256, 0, 1.0).cost() / 3;
+        double priceForIo21Gbhr = 0.08 / (30 * 24);
+        double priceForComparableIops = 0.005 / (30 * 24) * (iops - 3000);
+        return pricePerNodeNoDisk + 7500 * priceForIo21Gbhr + priceForComparableIops;
     }
 
     private void assertInvalid(String valueName, Supplier<NodeResources> nodeResources) {

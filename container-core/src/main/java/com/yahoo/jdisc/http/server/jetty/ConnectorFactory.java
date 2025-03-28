@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.metrics.ContainerMetrics;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -9,6 +10,7 @@ import com.yahoo.jdisc.http.ssl.impl.DefaultConnectorSsl;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
 import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
+import org.eclipse.jetty.http.ComplianceViolation;
 import org.eclipse.jetty.http.HttpCompliance;
 import org.eclipse.jetty.http.UriCompliance;
 import org.eclipse.jetty.http2.server.AbstractHTTP2ServerConnectionFactory;
@@ -17,19 +19,18 @@ import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
-import org.eclipse.jetty.server.HostHeaderCustomizer;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
 import org.eclipse.jetty.server.ProxyConnectionFactory;
 import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.HostPort;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Logger;
 
@@ -93,15 +94,15 @@ public class ConnectorFactory {
             return connectionFactoriesForTlsMixedMode(metric);
         } else {
             return connectorConfig.http2Enabled()
-                    ? List.of(newHttp1ConnectionFactory(), newHttp2ClearTextConnectionFactory())
-                    : List.of(newHttp1ConnectionFactory());
+                    ? List.of(newHttp1ConnectionFactory(metric), newHttp2ClearTextConnectionFactory(metric))
+                    : List.of(newHttp1ConnectionFactory(metric));
         }
     }
 
     private List<ConnectionFactory> connectionFactoriesForHttps(Metric metric) {
         List<ConnectionFactory> factories = new ArrayList<>();
         ConnectorConfig.ProxyProtocol proxyProtocolConfig = connectorConfig.proxyProtocol();
-        HttpConnectionFactory http1Factory = newHttp1ConnectionFactory();
+        HttpConnectionFactory http1Factory = newHttp1ConnectionFactory(metric);
         ALPNServerConnectionFactory alpnFactory;
         SslConnectionFactory sslFactory;
         if (connectorConfig.http2Enabled()) {
@@ -117,20 +118,20 @@ public class ConnectorFactory {
         factories.add(sslFactory);
         if (connectorConfig.http2Enabled()) factories.add(alpnFactory);
         factories.add(http1Factory);
-        if (connectorConfig.http2Enabled()) factories.add(newHttp2ConnectionFactory());
+        if (connectorConfig.http2Enabled()) factories.add(newHttp2ConnectionFactory(metric));
         return List.copyOf(factories);
     }
 
     private List<ConnectionFactory> connectionFactoriesForTlsMixedMode(Metric metric) {
         log.warning(String.format("TLS mixed mode enabled for port %d - HTTP/2 and proxy-protocol are not supported",
                 connectorConfig.listenPort()));
-        HttpConnectionFactory httpFactory = newHttp1ConnectionFactory();
+        HttpConnectionFactory httpFactory = newHttp1ConnectionFactory(metric);
         SslConnectionFactory sslFactory = newSslConnectionFactory(metric, httpFactory);
         DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory);
         return List.of(detectorFactory, httpFactory, sslFactory);
     }
 
-    private HttpConfiguration newHttpConfiguration() {
+    private HttpConfiguration newHttpConfiguration(Metric metric) {
         HttpConfiguration httpConfig = new HttpConfiguration();
         httpConfig.setSendDateHeader(true);
         httpConfig.setSendServerVersion(false);
@@ -139,6 +140,7 @@ public class ConnectorFactory {
         httpConfig.setOutputBufferSize(connectorConfig.outputBufferSize());
         httpConfig.setRequestHeaderSize(connectorConfig.requestHeaderSize());
         httpConfig.setResponseHeaderSize(connectorConfig.responseHeaderSize());
+        httpConfig.addComplianceViolationListener(new HttpComplianceViolationListener(metric));
 
         // Disable use of ByteBuffer.allocateDirect()
         httpConfig.setUseInputDirectByteBuffers(false);
@@ -181,18 +183,18 @@ public class ConnectorFactory {
                 jettyViolationsAllowed.toArray(HttpCompliance.Violation[]::new));
     }
 
-    private HttpConnectionFactory newHttp1ConnectionFactory() {
-        return new HttpConnectionFactory(newHttpConfiguration());
+    private HttpConnectionFactory newHttp1ConnectionFactory(Metric metric) {
+        return new HttpConnectionFactory(newHttpConfiguration(metric));
     }
 
-    private HTTP2ServerConnectionFactory newHttp2ConnectionFactory() {
-        HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration());
+    private HTTP2ServerConnectionFactory newHttp2ConnectionFactory(Metric metric) {
+        HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration(metric));
         setHttp2Config(factory);
         return factory;
     }
 
-    private HTTP2CServerConnectionFactory newHttp2ClearTextConnectionFactory() {
-        HTTP2CServerConnectionFactory factory = new HTTP2CServerConnectionFactory(newHttpConfiguration());
+    private HTTP2CServerConnectionFactory newHttp2ClearTextConnectionFactory(Metric metric) {
+        HTTP2CServerConnectionFactory factory = new HTTP2CServerConnectionFactory(newHttpConfiguration(metric));
         setHttp2Config(factory);
         return factory;
     }
@@ -251,5 +253,12 @@ public class ConnectorFactory {
         @Override protected String findNextProtocol(Connector __) { return null; }
     }
 
-
+    private record HttpComplianceViolationListener(Metric metric) implements ComplianceViolation.Listener {
+        @Override
+        public void onComplianceViolation(ComplianceViolation.Event e) {
+            log.fine(() -> "Compliance violation: mode=%s, violation=%s".formatted(e.mode().getName(), e.violation().getName()));
+            var ctx = metric.createContext(Map.of("mode", e.mode().getName(), "violation", e.violation().getName()));
+            metric.add(ContainerMetrics.JETTY_HTTP_COMPLIANCE_VIOLATION.baseName(), 1L, ctx);
+        }
+    }
 }

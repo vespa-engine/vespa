@@ -32,7 +32,7 @@ struct IMatchLoopCommunicator {
     virtual double estimate_match_frequency(const Matches &matches) = 0;
     virtual TaggedHits get_second_phase_work(SortedHitSequence sortedHits, size_t thread_id) = 0;
     virtual std::pair<Hits,RangePair> complete_second_phase(TaggedHits my_results, size_t thread_id) = 0;
-    virtual ~IMatchLoopCommunicator() {}
+    virtual ~IMatchLoopCommunicator() = default;
 };
 
 }

@@ -4148,10 +4148,23 @@
       "public java.util.Optional get(java.lang.String)",
       "public java.util.Optional getDouble(java.lang.String)",
       "public java.util.Optional getInt(java.lang.String)",
+      "public java.util.Optional getLong(java.lang.String)",
       "public void ifPresent(java.lang.String, java.util.function.Consumer)",
       "public ai.vespa.llm.InferenceParameters withDefaultOptions(java.util.function.Function)"
     ],
-    "fields" : [ ]
+    "fields" : [
+      "public static final java.lang.String OPTION_MODEL",
+      "public static final java.lang.String OPTION_TEMPERATURE",
+      "public static final java.lang.String OPTION_MAX_TOKENS",
+      "public static final java.lang.String OPTION_TOP_K",
+      "public static final java.lang.String OPTION_TOP_P",
+      "public static final java.lang.String OPTION_N_PREDICT",
+      "public static final java.lang.String OPTION_REPEAT_PENALTY",
+      "public static final java.lang.String OPTION_FREQUENCY_PENALTY",
+      "public static final java.lang.String OPTION_PRESENCE_PENALTY",
+      "public static final java.lang.String OPTION_SEED",
+      "public static final java.lang.String OPTION_JSON_SCHEMA"
+    ]
   },
   "ai.vespa.llm.LanguageModel" : {
     "superClass" : "java.lang.Object",
@@ -4180,25 +4193,6 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.client.openai.OpenAiClient" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
-      "ai.vespa.llm.LanguageModel"
-    ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>()",
-      "public java.util.List complete(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters)",
-      "public java.util.concurrent.CompletableFuture completeAsync(ai.vespa.llm.completion.Prompt, ai.vespa.llm.InferenceParameters, java.util.function.Consumer)"
-    ],
-    "fields" : [
-      "public static final java.lang.String OPTION_MODEL",
-      "public static final java.lang.String OPTION_TEMPERATURE",
-      "public static final java.lang.String OPTION_MAX_TOKENS"
-    ]
-  },
   "ai.vespa.llm.completion.Completion$FinishReason" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],
@@ -4217,7 +4211,10 @@
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason none",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason other",
       "public static final enum ai.vespa.llm.completion.Completion$FinishReason error",
-      "public static final enum ai.vespa.llm.completion.Completion$FinishReason discard"
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason discard",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason tool_calls",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason content_filter",
+      "public static final enum ai.vespa.llm.completion.Completion$FinishReason function_call"
     ]
   },
   "ai.vespa.llm.completion.Completion" : {

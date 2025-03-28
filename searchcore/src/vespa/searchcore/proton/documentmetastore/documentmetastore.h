@@ -274,6 +274,7 @@ public:
     bool is_sortable() const noexcept override;
     long onSerializeForAscendingSort(DocId, void *, long, const search::common::BlobConverter *) const override;
     long onSerializeForDescendingSort(DocId, void *, long, const search::common::BlobConverter *) const override;
+    std::unique_ptr<search::attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const override;
 };
 
 }

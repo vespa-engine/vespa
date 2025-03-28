@@ -326,7 +326,7 @@ public class LoadBalancerProvisionerTest {
         try {
             prepare(app1, clusterRequest(container, cluster));
             fail("Expected exception");
-        } catch (LoadBalancerServiceException ignored) {}
+        } catch (IllegalArgumentException ignored) {}
         List<LoadBalancer> loadBalancers = lbs.get();
         assertEquals(1, loadBalancers.size());
         assertSame(LoadBalancer.State.reserved, loadBalancers.get(0).state());
@@ -349,7 +349,7 @@ public class LoadBalancerProvisionerTest {
         try {
             prepare(app1, clusterRequest(container, cluster, Optional.empty(), settings));
             fail("Expected exception");
-        } catch (LoadBalancerServiceException ignored) {
+        } catch (IllegalArgumentException ignored) {
         }
         assertSame(LoadBalancer.State.active, loadBalancers.get(0).state());
         assertTrue("Load balancer has instance", loadBalancers.get(0).instance().isPresent());

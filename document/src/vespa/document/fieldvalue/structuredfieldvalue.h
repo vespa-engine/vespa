@@ -51,7 +51,7 @@ protected:
 
     struct StructuredIterator {
         using UP = std::unique_ptr<StructuredIterator>;
-        virtual ~StructuredIterator() {}
+        virtual ~StructuredIterator() = default;
 
         virtual const Field* getNextField() = 0;
     };

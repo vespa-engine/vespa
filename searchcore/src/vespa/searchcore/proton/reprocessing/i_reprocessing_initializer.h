@@ -13,7 +13,7 @@ struct IReprocessingInitializer
 {
     using UP = std::unique_ptr<IReprocessingInitializer>;
 
-    virtual ~IReprocessingInitializer() {}
+    virtual ~IReprocessingInitializer() = default;
 
     /**
      * Returns whether this initializer has any reprocessors to add to the handler.

@@ -78,7 +78,7 @@ public:
     void inherit(const DocumentType &docType);
 
     bool isA(const DataType& other) const override;
-    virtual bool isDocument() const noexcept override { return true; }
+    bool isDocument() const noexcept override { return true; }
 
     const std::vector<const DocumentType *> & getInheritedTypes() const { return _inheritedTypes; };
 

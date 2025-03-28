@@ -9,7 +9,7 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
-import com.yahoo.vespa.indexinglanguage.SimpleDocumentAdapter;
+import com.yahoo.vespa.indexinglanguage.SimpleDocumentFieldValues;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
@@ -40,10 +40,10 @@ public class InputTestCase {
     @Test
     public void requireThatExpressionCanBeVerified() {
         SimpleTestAdapter adapter = new SimpleTestAdapter(new Field("foo", DataType.STRING));
-        adapter.setOutputValue(null, "foo", new StringFieldValue("69"));
-        new InputExpression("foo").verify(adapter);
+        adapter.setOutputValue("foo", new StringFieldValue("69"), null);
+        new InputExpression("foo").resolve(adapter);
         try {
-            new StatementExpression(new InputExpression("bar")).verify(adapter);
+            new StatementExpression(new InputExpression("bar")).resolve(adapter);
             fail();
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'input bar': Field 'bar' not found.", e.getMessage());
@@ -74,7 +74,7 @@ public class InputTestCase {
         Document doc = new Document(docType, "id:scheme:my_doc::");
         doc.setFieldValue("foo", foo);
 
-        ExecutionContext ctx = new ExecutionContext(new SimpleDocumentAdapter(doc));
+        ExecutionContext ctx = new ExecutionContext(new SimpleDocumentFieldValues(doc));
         assertEquals(foo, new InputExpression("foo").execute(ctx));
         assertEquals(bar, new InputExpression("foo.bar").execute(ctx));
     }

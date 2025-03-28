@@ -21,7 +21,7 @@ class WeightedSetFieldValue;
 
 class FieldReader {
 public:
-    virtual ~FieldReader() {}
+    virtual ~FieldReader() = default;
     virtual void read(const vespalib::FieldBase &field,
                       Document &value) = 0;
     virtual void read(const vespalib::FieldBase &field,

@@ -28,12 +28,12 @@ public class BinarizeExpression extends Expression  {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         return super.setInputType(inputType, TensorDataType.any(), context);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         return super.setOutputType(null, outputType, TensorDataType.any(), context);
     }
 

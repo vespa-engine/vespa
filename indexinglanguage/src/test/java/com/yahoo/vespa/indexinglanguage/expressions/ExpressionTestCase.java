@@ -3,8 +3,6 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
-import com.yahoo.document.datatypes.IntegerFieldValue;
-import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.SimpleTestAdapter;
 import org.junit.Test;
 
@@ -51,9 +49,9 @@ public class ExpressionTestCase {
     }
 
     private static void assertVerify(Expression exp, DataType val) {
-        var context = new VerificationContext(new SimpleTestAdapter()).setCurrentType(val);
+        var context = new TypeContext(new SimpleTestAdapter());
         exp.setInputType(val, context);
-        exp.verify(context);
+        exp.resolve(context);
     }
 
     private static void assertVerifyThrows(Expression exp, DataType val, String expectedException) {

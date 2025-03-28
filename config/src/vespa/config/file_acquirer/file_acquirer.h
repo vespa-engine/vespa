@@ -15,7 +15,7 @@ namespace config {
  **/
 struct FileAcquirer {
     virtual std::string wait_for(const std::string &file_ref, double timeout_s) = 0;
-    virtual ~FileAcquirer() {}
+    virtual ~FileAcquirer() = default;
 };
 
 /**

@@ -28,7 +28,7 @@ public:
     /**
      * Required for inheritance.
      */
-    virtual ~RPCSendAdapter() { }
+    virtual ~RPCSendAdapter() = default;
 
     /**
      * Attaches this adapter to the given network.

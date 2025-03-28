@@ -70,7 +70,7 @@ public:
     using UP = std::unique_ptr<IArrayT>;
     virtual const B &operator[](size_t i) const = 0;
     virtual B &operator[](size_t i) = 0;
-    virtual IArrayT *clone() const override = 0;
+    IArrayT *clone() const override = 0;
     virtual iterator erase(iterator it) = 0;
     virtual const_iterator begin() const { return const_iterator(*this, 0); }
     virtual const_iterator end() const { return const_iterator(*this, size()); }

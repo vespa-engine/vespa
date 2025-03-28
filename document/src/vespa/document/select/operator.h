@@ -25,7 +25,7 @@ private:
 
 public:
     Operator(std::string_view name);
-    virtual ~Operator() {}
+    virtual ~Operator() = default;
 
     virtual ResultList compare(const Value&, const Value&) const = 0;
     virtual ResultList trace(const Value&, const Value&,

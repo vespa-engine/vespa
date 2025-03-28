@@ -75,7 +75,7 @@ MatcherParams::MatcherParams()
     _max_match_candidates(1000),
     _stem_min(0),
     _stem_extend(0),
-    _wordfolder(NULL),
+    _wordfolder(nullptr),
     _proximity_factor(1.0) {}
 
 MatcherParams& MatcherParams::SetMatchWindowSize(size_t winsize) {

@@ -10,8 +10,7 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace search;
 using namespace search::predicate;
@@ -23,8 +22,8 @@ using vespalib::DataBuffer;
 namespace {
 
 struct DummyDocIdLimitProvider : public DocIdLimitProvider {
-    virtual uint32_t getDocIdLimit() const override { return 10000; }
-    virtual uint32_t getCommittedDocIdLimit() const override { return 10000; }
+    uint32_t getDocIdLimit() const override { return 10000; }
+    uint32_t getCommittedDocIdLimit() const override { return 10000; }
 };
 
 vespalib::GenerationHandler generation_handler;
@@ -78,43 +77,43 @@ equal_buffers(const DataBuffer& lhs, const DataBuffer& rhs)
         (memcmp(lhs.getData(), rhs.getData(), lhs.getDataLen()) == 0);
 }
 
-TEST("require that PredicateIndex can index empty documents") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_index_empty_documents) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
-    EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
     index.indexEmptyDocument(2);
     index.commit();
-    EXPECT_EQUAL(1u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(1u, index.getZeroConstraintDocs().size());
 }
 
-TEST("require that indexDocument don't index empty documents") {
+TEST(PredicateIndexTest, require_that_indexDocument_dont_index_empty_documents) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
-    EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
     PredicateTreeAnnotations annotations;
     index.indexDocument(3, annotations);
     index.commit();
-    EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
 }
 
-TEST("require that PredicateIndex can remove empty documents") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_remove_empty_documents) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
-    EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
     index.indexEmptyDocument(2);
     index.commit();
-    EXPECT_EQUAL(1u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(1u, index.getZeroConstraintDocs().size());
     index.removeDocument(2);
     index.commit();
-    EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
 }
 
-TEST("require that indexing the same empty document multiple times is ok") {
+TEST(PredicateIndexTest, require_that_indexing_the_same_empty_document_multiple_times_is_ok) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
-    EXPECT_EQUAL(0u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(0u, index.getZeroConstraintDocs().size());
     index.indexEmptyDocument(2);
     index.commit();
-    EXPECT_EQUAL(1u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(1u, index.getZeroConstraintDocs().size());
     index.indexEmptyDocument(2);
     index.commit();
-    EXPECT_EQUAL(1u, index.getZeroConstraintDocs().size());
+    EXPECT_EQ(1u, index.getZeroConstraintDocs().size());
 }
 
 void indexFeature(PredicateIndex &attr, uint32_t doc_id, int min_feature,
@@ -136,12 +135,15 @@ PredicateIndex::BTreeIterator
 lookupPosting(const PredicateIndex &index, uint64_t hash) {
     const auto &interval_index = index.getIntervalIndex();
     auto it = interval_index.lookup(hash);
-    ASSERT_TRUE(it.valid());
+    EXPECT_TRUE(it.valid());
+    if (!it.valid()) {
+        return {};
+    }
     auto entry = it.getData();
     EXPECT_TRUE(entry.valid());
 
     auto posting_it = interval_index.getBTreePostingList(entry);
-    ASSERT_TRUE(posting_it.valid());
+    EXPECT_TRUE(posting_it.valid());
     return posting_it;
 }
 
@@ -153,20 +155,21 @@ const Interval interval = {0x0001ffff};
 const IntervalWithBounds bounds = {0x0001ffff, 0x03};
 Interval single_buf;
 
-TEST("require that PredicateIndex can index document") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_index_document) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {{hash, interval}}, {});
     index.commit();
     auto posting_it = lookupPosting(index, hash);
-    EXPECT_EQUAL(doc_id, posting_it.getKey());
+    ASSERT_TRUE(posting_it.valid());
+    EXPECT_EQ(doc_id, posting_it.getKey());
     uint32_t size;
     const auto &interval_list = index.getIntervalStore().get(posting_it.getData(), size, &single_buf);
-    ASSERT_EQUAL(1u, size);
-    EXPECT_EQUAL(interval, interval_list[0]);
+    ASSERT_EQ(1u, size);
+    EXPECT_EQ(interval, interval_list[0]);
 }
 
-TEST("require that bit vector cache is initialized correctly") {
+TEST(PredicateIndexTest, require_that_bit_vector_cache_is_initialized_correctly) {
     BitVectorCache::KeyAndCountSet keySet;
     keySet.emplace_back(hash, dummy_provider.getDocIdLimit()/2);
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
@@ -185,7 +188,7 @@ TEST("require that bit vector cache is initialized correctly") {
 }
 
 
-TEST("require that PredicateIndex can index document with bounds") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_index_document_with_bounds) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {}, {{hash, bounds}});
@@ -199,16 +202,16 @@ TEST("require that PredicateIndex can index document with bounds") {
 
     auto posting_it = bounds_index.getBTreePostingList(entry);
     ASSERT_TRUE(posting_it.valid());
-    EXPECT_EQUAL(doc_id, posting_it.getKey());
+    EXPECT_EQ(doc_id, posting_it.getKey());
 
     uint32_t size;
     IntervalWithBounds single;
     const auto &interval_list = index.getIntervalStore().get(posting_it.getData(), size, &single);
-    ASSERT_EQUAL(1u, size);
-    EXPECT_EQUAL(bounds, interval_list[0]);
+    ASSERT_EQ(1u, size);
+    EXPECT_EQ(bounds, interval_list[0]);
 }
 
-TEST("require that PredicateIndex can index multiple documents with the same feature") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_index_multiple_documents_with_the_same_feature) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     for (uint32_t id = 1; id < 100; ++id) {
@@ -219,17 +222,17 @@ TEST("require that PredicateIndex can index multiple documents with the same fea
     auto posting_it = lookupPosting(index, hash);
     for (uint32_t id = 1; id < 100; ++id) {
         ASSERT_TRUE(posting_it.valid());
-        EXPECT_EQUAL(id, posting_it.getKey());
+        EXPECT_EQ(id, posting_it.getKey());
         uint32_t size;
         const auto &interval_list = index.getIntervalStore().get(posting_it.getData(), size, &single_buf);
-        ASSERT_EQUAL(1u, size);
-        EXPECT_EQUAL(interval, interval_list[0]);
+        ASSERT_EQ(1u, size);
+        EXPECT_EQ(interval, interval_list[0]);
         ++posting_it;
     }
     ASSERT_FALSE(posting_it.valid());
 }
 
-TEST("require that PredicateIndex can remove indexed documents") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_remove_indexed_documents) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
@@ -244,7 +247,7 @@ TEST("require that PredicateIndex can remove indexed documents") {
     index.removeDocument(doc_id);
 }
 
-TEST("require that PredicateIndex can remove multiple documents") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_remove_multiple_documents) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     const auto &interval_index = index.getIntervalIndex();
     EXPECT_FALSE(interval_index.lookup(hash).valid());
@@ -264,7 +267,7 @@ TEST("require that PredicateIndex can remove multiple documents") {
     }
 }
 
-TEST("require that PredicateIndex can remove multiple documents with multiple features") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_remove_multiple_documents_with_multiple_features) {
     vector<pair<uint64_t, Interval>> intervals;
     vector<pair<uint64_t, IntervalWithBounds>> bounds_intervals;
     for (int i = 0; i < 100; ++i) {
@@ -297,14 +300,14 @@ void checkAllIntervals(Iterator posting_it, IntervalT expected_interval,
 {
     for (uint32_t id = 1; id < 100u; ++id) {
         ASSERT_TRUE(posting_it.valid());
-        EXPECT_EQUAL(id, posting_it.getKey());
+        EXPECT_EQ(id, posting_it.getKey());
         vespalib::datastore::EntryRef ref = posting_it.getData();
         ASSERT_TRUE(ref.valid());
         uint32_t size;
         IntervalT single;
         const IntervalT *read_interval = interval_store.get(ref, size, &single);
-        EXPECT_EQUAL(1u, size);
-        EXPECT_EQUAL(expected_interval, read_interval[0]);
+        EXPECT_EQ(1u, size);
+        EXPECT_EQ(expected_interval, read_interval[0]);
         ++posting_it;
     }
 }
@@ -322,7 +325,7 @@ struct DocIdLimitFinder : SimpleIndexDeserializeObserver<> {
 };
 }
 
-TEST("require that PredicateIndex can be (de)serialized") {
+TEST(PredicateIndexTest, require_that_PredicateIndex_can_be_serialized_and_deserialized) {
     vector<pair<uint64_t, Interval>> intervals;
     vector<pair<uint64_t, IntervalWithBounds>> bounds_intervals;
     for (int i = 0; i < 100; ++i) {
@@ -344,16 +347,16 @@ TEST("require that PredicateIndex can be (de)serialized") {
     PredicateIndex index2(generation_holder, dummy_provider, simple_index_config,
                           buffer, finder, PredicateAttribute::PREDICATE_ATTRIBUTE_VERSION);
     const PredicateIntervalStore &interval_store = index2.getIntervalStore();
-    EXPECT_EQUAL(199u, doc_id_limit);
+    EXPECT_EQ(199u, doc_id_limit);
 
-    EXPECT_EQUAL(index.getArity(), index2.getArity());
-    EXPECT_EQUAL(index.getZeroConstraintDocs().size(),index2.getZeroConstraintDocs().size());
+    EXPECT_EQ(index.getArity(), index2.getArity());
+    EXPECT_EQ(index.getZeroConstraintDocs().size(),index2.getZeroConstraintDocs().size());
     {
         auto it = index2.getZeroConstraintDocs().begin();
         for (uint32_t i = 1; i < 100u; ++i) {
-            TEST_STATE(vespalib::make_string("%d", i).c_str());
+            SCOPED_TRACE(std::to_string(i));
             ASSERT_TRUE(it.valid());
-            EXPECT_EQUAL(i + 100, it.getKey());
+            EXPECT_EQ(i + 100, it.getKey());
             ++it;
         }
         EXPECT_FALSE(it.valid());
@@ -377,7 +380,7 @@ TEST("require that PredicateIndex can be (de)serialized") {
     }
 }
 
-TEST("require that DocumentFeaturesStore is restored on deserialization") {
+TEST(PredicateIndexTest, require_that_DocumentFeaturesStore_is_restored_on_deserialization) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     EXPECT_FALSE(index.getIntervalIndex().lookup(hash).valid());
     indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
@@ -389,7 +392,7 @@ TEST("require that DocumentFeaturesStore is restored on deserialization") {
                           buffer, finder, PredicateAttribute::PREDICATE_ATTRIBUTE_VERSION);
     const auto &interval_index = index2.getIntervalIndex();
     const auto &bounds_index = index2.getBoundsIndex();
-    EXPECT_EQUAL(doc_id, doc_id_limit);
+    EXPECT_EQ(doc_id, doc_id_limit);
 
     auto it = interval_index.lookup(hash);
     EXPECT_TRUE(it.valid());
@@ -405,7 +408,7 @@ TEST("require that DocumentFeaturesStore is restored on deserialization") {
     EXPECT_FALSE(it2.valid());
 }
 
-TEST("require that hold lists are attempted emptied on destruction") {
+TEST(PredicateIndexTest, require_that_hold_lists_are_attempted_emptied_on_destruction) {
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     indexFeature(index, doc_id, min_feature, {{hash, interval}}, {{hash2, bounds}});
     {
@@ -418,6 +421,7 @@ TEST("require that hold lists are attempted emptied on destruction") {
 
 void verify_snapshot_property(uint32_t num_docs)
 {
+    SCOPED_TRACE(std::to_string(num_docs));
     PredicateIndex index(generation_holder, dummy_provider, simple_index_config, 10);
     for (uint32_t i = 0; i < num_docs; ++i) {
         indexFeature(index, doc_id + i, min_feature, {{hash, interval}}, {{hash2, bounds}});
@@ -433,22 +437,22 @@ void verify_snapshot_property(uint32_t num_docs)
     EXPECT_FALSE(equal_buffers(buf1, saver2.save()));
 }
 
-TEST("require that predicate index saver protected by a generation guard observes a snapshot of the predicate index")
+TEST(PredicateIndexTest, require_that_predicate_index_saver_protected_by_a_generation_guard_observes_a_snapshot_of_the_predicate_index)
 {
     /*
      * short array in simple index btree posting list
      */
-    TEST_DO(verify_snapshot_property(1));
+    verify_snapshot_property(1);
     /*
      * short array in simple index btree posting list
      */
-    TEST_DO(verify_snapshot_property(8));
+    verify_snapshot_property(8);
     /*
      * BTree in simple index btree posting list.
      * Needs copy of frozen roots in simple index saver to observe snapshot
      * of predicate index.
      */
-    TEST_DO(verify_snapshot_property(9));
+    verify_snapshot_property(9);
 }
 
 }  // namespace

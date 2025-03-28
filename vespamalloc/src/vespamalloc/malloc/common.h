@@ -112,7 +112,7 @@ private:
 
 class IAllocator {
 public:
-    virtual ~IAllocator() {}
+    virtual ~IAllocator() = default;
     virtual bool initThisThread() = 0;
     virtual bool quitThisThread() = 0;
     virtual void enableThreadSupport() = 0;

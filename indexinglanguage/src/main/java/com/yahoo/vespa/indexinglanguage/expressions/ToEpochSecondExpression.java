@@ -14,13 +14,13 @@ import java.time.Instant;
 public class ToEpochSecondExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, DataType.STRING, context);
         return DataType.LONG;
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(DataType.LONG, output, null, context);
         return DataType.STRING;
     }

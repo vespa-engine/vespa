@@ -2,6 +2,7 @@
 #pragma once
 
 #include "floatbase.h"
+#include "single_numeric_sort_blob_writer.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/searchcommon/attribute/config.h>
@@ -67,6 +68,16 @@ long
 FloatingPointAttributeTemplate<T>::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
     T origValue(get(doc));
     return vespalib::serializeForSort< vespalib::convertForSort<T, false> >(origValue, serTo, available);
+}
+
+template<typename T>
+std::unique_ptr<attribute::ISortBlobWriter>
+FloatingPointAttributeTemplate<T>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const {
+    if (ascending) {
+        return std::make_unique<attribute::SingleNumericSortBlobWriter<FloatingPointAttributeTemplate<T>, true>>(*this);
+    } else {
+        return std::make_unique<attribute::SingleNumericSortBlobWriter<FloatingPointAttributeTemplate<T>, false>>(*this);
+    }
 }
 
 }

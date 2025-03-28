@@ -7,7 +7,7 @@ namespace storage {
 Column::Column(const std::string& colName, HtmlTable* table)
     : _colName(colName), _alignment(RIGHT)
 {
-    if (table != 0) table->addColumn(*this);
+    if (table != nullptr) table->addColumn(*this);
 }
 
 Column::~Column() {}

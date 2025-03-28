@@ -35,7 +35,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FNET_IPacketHandler(void) { }
+    virtual ~FNET_IPacketHandler() = default;
 
     /**
      * Handle an incoming packet in the given context. All incoming

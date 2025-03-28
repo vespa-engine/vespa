@@ -11,7 +11,7 @@ namespace proton {
  */
 class IIndexschemaInspector {
 public:
-    virtual ~IIndexschemaInspector() { }
+    virtual ~IIndexschemaInspector() = default;
     virtual bool isStringIndex(const std::string &name) const = 0;
 };
 

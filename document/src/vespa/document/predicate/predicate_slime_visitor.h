@@ -23,7 +23,7 @@ protected:
     void visitChildren(const Inspector &i);
 
 public:
-    virtual ~PredicateSlimeVisitor() {}
+    virtual ~PredicateSlimeVisitor() = default;
 
     void visit(const Inspector &i);
 };

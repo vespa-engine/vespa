@@ -16,7 +16,7 @@ namespace storage {
 
 class ApplicationGenerationFetcher {
 public:
-    virtual ~ApplicationGenerationFetcher() {}
+    virtual ~ApplicationGenerationFetcher() = default;
 
     virtual int64_t getGeneration() const = 0;
     virtual std::string getComponentName() const = 0;

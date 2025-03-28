@@ -57,13 +57,13 @@ TEST("blob_test") {
     // destructive copy of blob
     Blob b2 = returnBlob(std::move(b));
     EXPECT_EQUAL(0u, b.size());
-    EXPECT_TRUE(b.data() == 0);
+    EXPECT_TRUE(b.data() == nullptr);
     EXPECT_TRUE(b2.size() == strlen("test") + 1);
     EXPECT_TRUE(strcmp("test", b2.data()) == 0);
 
     b.swap(b2);
     EXPECT_EQUAL(0u, b2.size());
-    EXPECT_TRUE(b2.data() == 0);
+    EXPECT_TRUE(b2.data() == nullptr);
     EXPECT_TRUE(b.size() == strlen("test") + 1);
     EXPECT_TRUE(strcmp("test", b.data()) == 0);
 }

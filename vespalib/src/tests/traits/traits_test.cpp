@@ -17,7 +17,7 @@ using Hard = std::unique_ptr<Simple>;
 
 struct Base {
     virtual void foo() = 0;
-    virtual ~Base() {}
+    virtual ~Base() = default;
 };
 struct Child1 : Base {
     void foo() override {}

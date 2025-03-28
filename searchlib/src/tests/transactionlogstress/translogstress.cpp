@@ -373,8 +373,8 @@ public:
         }
     }
     SerialNum getFrom() { return _from; }
-    virtual RPC::Result receive(const Packet & packet) override;
-    virtual void eof() override {
+    RPC::Result receive(const Packet & packet) override;
+    void eof() override {
         LOG(info, "VisitorAgent[%u]: eof", _id);
         setState(FINISHED);
     }

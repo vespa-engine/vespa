@@ -48,7 +48,7 @@ Juniper::Juniper(IJuniperProperties* props, const Fast_WordFolder* wordfolder, i
 
     LOG(debug, "Juniper result processor (interface v.%d)", JUNIPER_RP_ABI_VERSION);
 
-    unsigned int debug_mask = strtol(_props->GetProperty("juniper.debug_mask", "0"), NULL, 0);
+    unsigned int debug_mask = strtol(_props->GetProperty("juniper.debug_mask", "0"), nullptr, 0);
     if (debug_mask) SetDebug(debug_mask);
 }
 

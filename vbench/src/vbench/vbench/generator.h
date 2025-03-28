@@ -13,7 +13,7 @@ struct Generator : public vespalib::Runnable,
 {
     using UP = std::unique_ptr<Generator>;
     virtual void abort() = 0;
-    virtual ~Generator() {}
+    ~Generator() override = default;
 };
 
 } // namespace vbench

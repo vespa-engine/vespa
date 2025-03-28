@@ -42,10 +42,10 @@ public:
         using CP = vespalib::CloneablePtr<Factory>;
         virtual B * create() = 0;
         virtual Factory * clone() const = 0;
-        virtual ~Factory() { }
+        virtual ~Factory() = default;
     };
     explicit ComplexArrayT(typename Factory::UP factory) : _array(), _factory(factory.release()) { }
-    ~ComplexArrayT() { }
+    ~ComplexArrayT() override;
     const B & operator [] (size_t i) const override { return *_array[i]; }
     B & operator [] (size_t i) override { return *_array[i]; }
     void resize(size_t sz) override {
@@ -67,5 +67,8 @@ private:
     std::vector<CP> _array;
     typename Factory::CP _factory;
 };
+
+template <typename B>
+ComplexArrayT<B>::~ComplexArrayT() = default;
 
 }

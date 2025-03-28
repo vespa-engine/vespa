@@ -20,17 +20,17 @@ public final class GetVarExpression extends Expression {
     public String getVariableName() { return variableName; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
-        DataType output = context.getVariable(variableName);
+        DataType output = context.getVariableType(variableName);
         if (output == null)
             throw new VerificationException(this, "Variable '" + variableName + "' not found");
         return output;
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
-        super.setOutputType(context.getVariable(variableName), outputType, null, context);
+    public DataType setOutputType(DataType outputType, TypeContext context) {
+        super.setOutputType(context.getVariableType(variableName), outputType, null, context);
         return AnyDataType.instance;
     }
 

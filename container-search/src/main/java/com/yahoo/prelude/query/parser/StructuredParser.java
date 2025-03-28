@@ -93,7 +93,7 @@ abstract class StructuredParser extends AbstractParser {
             item = number();
             if (item == null)
                 item = phrase(indexName == null ? null : indexPath + indexName);
-            if (item == null && indexName != null && tokens.skip(LCURLYBRACKET))
+            if (item == null && explicitIndex && tokens.skip(LCURLYBRACKET))
                 item = sameElement(indexPath + indexName);
             if (item == null && explicitIndex && wordsAhead())
                 item = phrase(indexName);
@@ -551,9 +551,11 @@ abstract class StructuredParser extends AbstractParser {
 
     private Item sameElement(String indexName) {
         var same = new SameElementItem(indexName);
-
         while (tokens.hasNext() && ! tokens.currentIs(RCURLYBRACKET)) {
-            Pair<Item, Boolean> item = indexableItem(indexName + ".");
+            Pair<Item, Boolean> item = null;
+            if (tokens.currentIs(WORD)) {
+                item = indexableItem(indexName + ".");
+            }
             if (item != null && item.getSecond()) // Only if the field has an explicit index
                 same.addItem(item.getFirst());
             else

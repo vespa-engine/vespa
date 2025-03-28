@@ -202,7 +202,8 @@ cluster_feed_block_limit{} double
 cluster_feed_block_noise_level double default=0.0
 
 # For apps that have several groups this controls how many groups are allowed to
-# be down simultaneously in this cluster.
+# be down simultaneously in this cluster. The default value of -1 means that
+# 1 group at a time is allowed to be down.
 max_number_of_groups_allowed_to_be_down int default=-1
 
 ## Iff true, cluster state bundles sent from the cluster controller to distributors

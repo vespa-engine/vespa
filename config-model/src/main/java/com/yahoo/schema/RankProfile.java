@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableMap;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.path.Path;
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;

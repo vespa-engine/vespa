@@ -56,7 +56,7 @@ struct Work {
     using UP = std::unique_ptr<Work>;
     virtual std::string desc() const = 0;
     virtual void perform(uint32_t docid) const = 0;
-    virtual ~Work() {}
+    virtual ~Work() = default;
 };
 
 struct UniformWork : public Work {
@@ -109,7 +109,7 @@ struct SchedulerFactory {
     using UP = std::unique_ptr<SchedulerFactory>;
     virtual std::string desc() const = 0;    
     virtual DocidRangeScheduler::UP create(uint32_t docid_limit) const = 0;
-    virtual ~SchedulerFactory() {}
+    virtual ~SchedulerFactory() = default;
 };
 
 struct PartitionSchedulerFactory : public SchedulerFactory {
@@ -209,7 +209,7 @@ struct RangeChecker : vespalib::Rendezvous<std::reference_wrapper<const WorkTrac
     RangeChecker(size_t num_threads, size_t docid_limit_in)
         : vespalib::Rendezvous<std::reference_wrapper<const WorkTracker>,bool>(num_threads), docid_limit(docid_limit_in) {}
     ~RangeChecker() override;
-    virtual void mingle() override {
+    void mingle() override {
         std::vector<DocidRange> ranges;
         for (size_t i = 0; i < size(); ++i) {
             ranges.insert(ranges.end(), in(i).get().ranges.begin(), in(i).get().ranges.end());

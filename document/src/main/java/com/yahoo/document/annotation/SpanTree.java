@@ -565,7 +565,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     }
 
     /**
-     * Returns itself.&nbsp;Needed for this class to be able to be a parent of SpanNodes.
+     * Returns itself. Needed for this class to be able to be a parent of SpanNodes.
      *
      * @return this SpanTree instance.
      */
@@ -575,7 +575,7 @@ public class SpanTree implements Iterable<Annotation>, SpanNodeParent, Comparabl
     }
 
     /**
-     * Sets the StringFieldValue that this SpanTree belongs to.&nbsp;This is called by
+     * Sets the StringFieldValue that this SpanTree belongs to. This is called by
      * {@link StringFieldValue#setSpanTree(SpanTree)} and there is no need for the user to call this
      * except in unit tests.
      *

@@ -44,7 +44,7 @@ Receptor::getReply(duration maxWait)
 {
     steady_clock::time_point startTime = steady_clock::now();
     std::unique_lock guard(_mon);
-    while (_reply.get() == 0) {
+    while (_reply.get() == nullptr) {
         duration w = maxWait - duration_cast<milliseconds>(steady_clock::now() - startTime);
         if (w <= duration::zero() || (_cond.wait_for(guard, w) == std::cv_status::timeout)) {
             break;
