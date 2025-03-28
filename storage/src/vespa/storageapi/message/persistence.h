@@ -4,7 +4,6 @@
  */
 #pragma once
 
-#include <link.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/storageapi/defs.h>
 #include <vespa/document/base/documentid.h>
