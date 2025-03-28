@@ -1550,11 +1550,6 @@ public class ContentClusterTest extends ContentBaseTest {
         assertTrue(resolveDistributorOperationCancellationConfig(2));
     }
 
-    @Test
-    void distributor_symmetric_replica_selection_config_controlled_by_properties() throws Exception {
-        assertTrue(resolveDistributorConfig((props) -> {}).symmetric_put_and_activate_replica_selection());
-    }
-
     private int resolveMaxDistributorDocOperationSizeConfig(Integer flagValue) throws Exception {
         return resolveDistributorConfig((props) -> {
             if (flagValue != null) {
