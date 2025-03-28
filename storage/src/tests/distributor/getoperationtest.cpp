@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <gtest/gtest.h>
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/config/helper/configgetter.hpp>
@@ -769,5 +770,71 @@ TEST_F(GetOperationTest, trace_is_aggregated_from_all_sub_replies_and_propagated
     EXPECT_THAT(trace_str, HasSubstr("baz"));
 }
 
+TEST_F(GetOperationTest, debug_replica_node_id_1_gets_only_node1) {
+    setClusterState("distributor:1 storage:3");
+    addNodesToBucketDB(bucketId, "0=200,1=201,2=200");
+
+    auto cmd = std::make_shared<api::GetCommand>(
+        makeDocumentBucket(bucketId),
+        docId,
+        document::AllFields::NAME);
+    cmd->set_debug_replica_node_id(1);
+
+    start_operation(cmd, api::InternalReadConsistency::Strong);
+
+    ASSERT_EQ("Get => 1", _sender.getCommands(true));
+
+    sendReply(0, api::ReturnCode::OK, "bar", 456);
+
+    ASSERT_EQ(_sender.replies().size(), 1);
+    auto& reply = dynamic_cast<api::GetReply&>(*_sender.replies().back());
+    EXPECT_TRUE(reply.had_consistent_replicas());
+    ASSERT_TRUE(reply.getDocument());
+    EXPECT_EQ("bar",
+              reply.getDocument()->getValue(reply.getDocument()->getField("author"))->toString());
+}
+
+TEST_F(GetOperationTest, debug_replica_node_id_2_gets_only_node2) {
+    setClusterState("distributor:1 storage:3");
+    addNodesToBucketDB(bucketId, "0=200,1=201,2=200");
+
+    auto cmd = std::make_shared<api::GetCommand>(
+        makeDocumentBucket(bucketId),
+        docId,
+        document::AllFields::NAME);
+    cmd->set_debug_replica_node_id(2);
+
+    start_operation(cmd, api::InternalReadConsistency::Strong);
+
+    ASSERT_EQ("Get => 2", _sender.getCommands(true));
+
+    sendReply(0, api::ReturnCode::OK, "zinga", 999);
+
+    ASSERT_EQ(_sender.replies().size(), 1);
+    auto& reply = dynamic_cast<api::GetReply&>(*_sender.replies().back());
+    EXPECT_TRUE(reply.had_consistent_replicas());
+    ASSERT_TRUE(reply.getDocument());
+    EXPECT_EQ("zinga",
+              reply.getDocument()->getValue(reply.getDocument()->getField("author"))->toString());
+}
+
+TEST_F(GetOperationTest, debug_replica_node_id_nonexistent_node_returns_no_document) {
+    setClusterState("distributor:1 storage:3");
+    addNodesToBucketDB(bucketId, "0=200,1=201,2=200");
+
+    auto cmd = std::make_shared<api::GetCommand>(
+        makeDocumentBucket(bucketId),
+        docId,
+        document::AllFields::NAME);
+    cmd->set_debug_replica_node_id(999);
+
+    start_operation(cmd, api::InternalReadConsistency::Strong);
+
+    ASSERT_EQ("", _sender.getCommands(true));
+    ASSERT_EQ(_sender.replies().size(), 1);
+    auto& reply = dynamic_cast<api::GetReply&>(*_sender.replies().back());
+    EXPECT_EQ(api::ReturnCode::OK, reply.getResult().getResult());
+    EXPECT_FALSE(reply.getDocument());
+}
 
 }
