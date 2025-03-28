@@ -10,7 +10,6 @@ import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.language.wordpiece.WordPieceConfig;
 
 import java.io.File;
 import java.nio.file.Path;
@@ -144,4 +143,3 @@ public class WordPieceEmbedder implements Embedder, Segmenter {
     }
 
 }
-

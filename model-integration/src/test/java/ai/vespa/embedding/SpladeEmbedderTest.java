@@ -63,7 +63,7 @@ public class SpladeEmbedderTest {
             assertEmbed("tensor<float>(d[128])", "", indexingContext);
         });
         assertEquals("Invalid splade embedder tensor destination. Wanted a mapped 1-d tensor, got tensor<float>(d[128])",
-                exception.getMessage());
+                     exception.getMessage());
     }
 
     static final Embedder spladeEmbedder;
@@ -87,4 +87,5 @@ public class SpladeEmbedderTest {
         builder.transformerGpuDevice(-1);
         return  new SpladeEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build(), useCustomReduce);
     }
+
 }

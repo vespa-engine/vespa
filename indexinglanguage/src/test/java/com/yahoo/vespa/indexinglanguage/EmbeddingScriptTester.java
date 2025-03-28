@@ -116,11 +116,11 @@ public class EmbeddingScriptTester {
         }
 
         @Override
-        public List<Integer> embed(String text, Embedder.Context context) {
+        public List<Integer> embed(String text, Context context) {
             return null;
         }
 
-        void verifyDestination(Embedder.Context context) {
+        void verifyDestination(Context context) {
             assertEquals(expectedDestination, context.getDestination());
         }
 
@@ -138,7 +138,7 @@ public class EmbeddingScriptTester {
         }
 
         @Override
-        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+        public Tensor embed(String text, Context context, TensorType tensorType) {
             verifyDestination(context);
             var b = Tensor.Builder.of(tensorType);
             for (int i = 0; i < tensorType.dimensions().get(0).size().get(); i++)
@@ -160,7 +160,7 @@ public class EmbeddingScriptTester {
         }
 
         @Override
-        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+        public Tensor embed(String text, Context context, TensorType tensorType) {
             verifyDestination(context);
             context.putCachedValue("myCacheKey", "myCachedValue");
             var b = Tensor.Builder.of(tensorType);
@@ -186,7 +186,7 @@ public class EmbeddingScriptTester {
         }
 
         @Override
-        public Tensor embed(String text, Embedder.Context context, TensorType tensorType) {
+        public Tensor embed(String text, Context context, TensorType tensorType) {
             verifyDestination(context);
             var b = Tensor.Builder.of(tensorType);
             String mappedDimension = tensorType.mappedSubtype().dimensions().get(0).name();

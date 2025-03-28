@@ -18,7 +18,6 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.Tensors;
 
 import java.nio.file.Paths;
-import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;

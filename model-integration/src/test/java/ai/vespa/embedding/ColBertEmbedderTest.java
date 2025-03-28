@@ -236,7 +236,7 @@ public class ColBertEmbedderTest {
         long now = System.currentTimeMillis();
         int n = 1000;
         for (int i = 0; i < n; i++) {
-            assertEmbed("tensor<float>(dt{},x[128])", text, new Embedder.Context("schema.indexing"),128);
+            assertEmbed("tensor<float>(dt{},x[128])", text, new Embedder.Context("schema.indexing"), 128);
         }
         long elapsed = (System.currentTimeMillis() - now);
         System.out.println("Elapsed time: " + elapsed + " ms");
