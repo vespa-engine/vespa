@@ -274,8 +274,8 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
             const BucketCopy& copy = e->getNodeRef(i);
 
-            if (_msg->get_debug_replica_node_id().has_value()
-                && copy.getNode()!= _msg->get_debug_replica_node_id().value()) {
+            if (_msg->has_debug_replica_node_id()
+                && copy.getNode() != _msg->debug_replica_node_id().value()) {
                 continue;
             }
 

@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <gtest/gtest.h>
 #include <tests/distributor/distributor_stripe_test_util.h>
 #include <vespa/config/helper/configgetter.h>
 #include <vespa/config/helper/configgetter.hpp>
