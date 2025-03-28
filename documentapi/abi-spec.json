@@ -2315,6 +2315,7 @@
       "public java.lang.String getFieldSet()",
       "public void setDebugReplicaNodeId(java.lang.Integer)",
       "public java.lang.Integer getDebugReplicaNodeId()",
+      "public boolean hasDebugReplicaNodeId()",
       "public com.yahoo.documentapi.messagebus.protocol.DocumentReply createReply()",
       "public int getApproxSize()",
       "public int getType()"
