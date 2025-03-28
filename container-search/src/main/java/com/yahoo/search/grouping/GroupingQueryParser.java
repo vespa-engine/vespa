@@ -105,17 +105,17 @@ public class GroupingQueryParser extends Searcher {
         return timeZone;
     }
 
-    private static OptionalInt intProperty(Query q, CompoundName name) {
+    static OptionalInt intProperty(Query q, CompoundName name) {
         Integer val = q.properties().getInteger(name);
         return val != null ? OptionalInt.of(val) : OptionalInt.empty();
     }
 
-    private static OptionalLong longProperty(Query q, CompoundName name) {
+    static OptionalLong longProperty(Query q, CompoundName name) {
         Long val = q.properties().getLong(name);
         return val != null ? OptionalLong.of(val) : OptionalLong.empty();
     }
 
-    private static OptionalDouble doubleProperty(Query q, CompoundName name) {
+    static OptionalDouble doubleProperty(Query q, CompoundName name) {
         Double val = q.properties().getDouble(name);
         return val != null ? OptionalDouble.of(val) : OptionalDouble.empty();
     }

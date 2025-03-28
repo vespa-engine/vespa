@@ -6,12 +6,16 @@ import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.result.Group;
 import com.yahoo.search.grouping.result.RootGroup;
+import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.result.Hit;
+import com.yahoo.search.test.QueryTestCase;
 import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.OptionalDouble;
+import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -126,6 +130,26 @@ public class GroupingRequestTestCase {
 
         GroupingRequest bar = GroupingRequest.newInstance(query);
         assertEquals(List.of(foo, bar), query.getSelect().getGrouping());
+    }
+
+    @Test
+    void requireThatGroupingPropertiesAreReflected() {
+        QueryProfile profile = new QueryProfile("myProfile");
+        profile.set("grouping.defaultMaxHits", "-1", null);
+        profile.set("grouping.defaultMaxGroups", "-1", null);
+        profile.set("grouping.defaultPrecisionFactor", "1.0", null);
+        profile.set("grouping.globalMaxGroups", "-1", null);
+        Query query = new Query(QueryTestCase.httpEncode("/search?queryProfile=myProfile"), profile.compile(null));
+
+        assertEquals(List.of(), query.getSelect().getGrouping());
+
+        GroupingRequest foo = GroupingRequest.newInstanceWithGroupingProperties(query);
+
+        assertEquals(List.of(foo), query.getSelect().getGrouping());
+        assertEquals(OptionalInt.of(-1), query.getSelect().getGrouping().get(0).defaultMaxHits());
+        assertEquals(OptionalInt.of(-1), query.getSelect().getGrouping().get(0).defaultMaxGroups());
+        assertEquals(OptionalDouble.of(1.0), query.getSelect().getGrouping().get(0).defaultPrecisionFactor());
+        assertEquals(OptionalLong.of(-1), query.getSelect().getGrouping().get(0).globalMaxGroups());
     }
     
 
