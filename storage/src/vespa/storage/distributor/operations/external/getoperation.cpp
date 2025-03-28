@@ -267,19 +267,17 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
 
     auto entries = read_guard.find_parents_and_self(bid);
 
-    if (_msg->get_debug_replica_node_id()) {
-        MBUS_TRACE(_msg->getTrace(), 9, vespalib::make_string("Johan: We are wanting data from replica %d",
-            _msg->get_debug_replica_node_id().value()));
-    } else {
-        MBUS_TRACE(_msg->getTrace(), 9, vespalib::make_string("Johan, we are not wanting data from any specific replica"));
-    }
-
     for (const auto & e : entries) {
         LOG(spam, "Entry for %s: %s", e.getBucketId().toString().c_str(),
             e->toString().c_str());
 
         for (uint32_t i = 0; i < e->getNodeCount(); i++) {
             const BucketCopy& copy = e->getNodeRef(i);
+
+            if (_msg->get_debug_replica_node_id().has_value()
+                && copy.getNode()!= _msg->get_debug_replica_node_id().value()) {
+                continue;
+            }
 
             // TODO this could ideally be a set
             _replicas_in_db.emplace_back(e.getBucketId(), copy.getNode());
