@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.documentapi.messagebus.protocol;
 
+import com.yahoo.api.annotations.Beta;
 import com.yahoo.document.DocumentId;
 import com.yahoo.document.fieldset.DocumentOnly;
 
@@ -37,19 +38,6 @@ public class GetDocumentMessage extends DocumentMessage {
     }
 
     /**
-     * Constructs a new document get message.
-     *
-     * @param documentId The identifier of the document to get.
-     * @param fieldSet Which fields to retrieve from the document
-     * @param debugReplicaNodeId debug: which replica to get from.
-     */
-    public GetDocumentMessage(DocumentId documentId, String fieldSet, Integer debugReplicaNodeId) {
-        setDocumentId(documentId);
-        this.fieldSet = fieldSet;
-        this.debugReplicaNodeId = debugReplicaNodeId;
-    }
-
-    /**
      * Returns the identifier of the document to retrieve.
      *
      * @return The document id.
@@ -80,6 +68,7 @@ public class GetDocumentMessage extends DocumentMessage {
      *
      * @param debugReplicaNodeId the node ID of the replica to get the document from
      */
+    @Beta
     public void setDebugReplicaNodeId(Integer debugReplicaNodeId) {
         this.debugReplicaNodeId = debugReplicaNodeId;
     }
@@ -87,6 +76,7 @@ public class GetDocumentMessage extends DocumentMessage {
     /**
      * Returns non-null if the document should be get from a specific replica.
      */
+    @Beta
     public Integer getDebugReplicaNodeId() {
         return debugReplicaNodeId;
     }

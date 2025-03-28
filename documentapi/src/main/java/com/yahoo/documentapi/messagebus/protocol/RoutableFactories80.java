@@ -195,19 +195,13 @@ abstract class RoutableFactories80 {
         return fieldSet.getSpec();
     }
 
-    private static DocapiCommon.DebugGetFromReplica toProtoDebugReplica(Integer nodeId) {
-        if (nodeId == null) {
-            return null;
-        }
+    private static DocapiCommon.DebugGetFromReplica toProtoDebugReplica(int nodeId) {
         return DocapiCommon.DebugGetFromReplica.newBuilder()
-                .setNodeId(nodeId)
-                .build();
+            .setNodeId(nodeId)
+            .build();
     }
 
-    private static Integer fromProtoDebugReplica(DocapiCommon.DebugGetFromReplica proto) {
-        if (proto == null) {
-            return null;
-        }
+    private static int fromProtoDebugReplica(DocapiCommon.DebugGetFromReplica proto) {
         return proto.getNodeId();
     }
 
@@ -327,17 +321,23 @@ abstract class RoutableFactories80 {
                             .setDocumentId(toProtoDocId(apiMsg.getDocumentId()))
                             .setFieldSet(toProtoFieldSet(apiMsg.getFieldSet()));
 
+                        // TODO: change to hasDebugReplicaNodeId
                         if (apiMsg.getDebugReplicaNodeId() != null) {
                             builder = builder.setDebugReplica(toProtoDebugReplica(apiMsg.getDebugReplicaNodeId()));
                         }
 
                         return builder.build();
                 })
-                .decoder(DocapiFeed.GetDocumentRequest.parser(), (protoMsg) ->
-                        new GetDocumentMessage(
-                                fromProtoDocId(protoMsg.getDocumentId()),
-                                fromProtoFieldSet(protoMsg.getFieldSet()),
-                                fromProtoDebugReplica(protoMsg.getDebugReplica())))
+                .decoder(DocapiFeed.GetDocumentRequest.parser(), (protoMsg) -> {
+                        var msg = new GetDocumentMessage(fromProtoDocId(protoMsg.getDocumentId()),
+                                                         fromProtoFieldSet(protoMsg.getFieldSet()));
+
+                        if (protoMsg.hasDebugReplica()) {
+                            msg.setDebugReplicaNodeId(fromProtoDebugReplica(protoMsg.getDebugReplica()));
+                        }
+
+                        return msg;
+                })
                 .build();
     }
 

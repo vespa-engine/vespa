@@ -39,7 +39,7 @@ public class CommandLineOptions {
     public static final String XMLOUTPUT_OPTION = "xmloutput";
     public static final String SHORTTENSORS_OPTION = "shorttensors";
     public static final String DIRECTTENSORS_OPTION = "directtensors";
-    public static final String REPLICA_OPTION = "replica";
+    public static final String REPLICA_OPTION = "replica-override";
 
     private final Options options = createOptions();
     private final InputStream stdIn;
@@ -139,7 +139,7 @@ public class CommandLineOptions {
                 .hasArg(false)
                 .build());
 
-        options.addOption(Option.builder("e")
+        options.addOption(Option.builder()
             .hasArg(true)
             .desc("Specify from which replica to get the document")
             .longOpt(REPLICA_OPTION)
@@ -260,8 +260,7 @@ public class CommandLineOptions {
     }
 
     private static Integer getReplica(CommandLine cl) throws ParseException {
-        Integer traceObj = (Integer) cl.getParsedOptionValue(REPLICA_OPTION);
-        return traceObj;
+        return (Integer) cl.getParsedOptionValue(REPLICA_OPTION);
     }
 
     private static DocumentProtocol.Priority getPriority(CommandLine cl) throws ParseException {
