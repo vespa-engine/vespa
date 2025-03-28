@@ -196,14 +196,19 @@ abstract class RoutableFactories80 {
     }
 
     private static DocapiCommon.DebugGetFromReplica toProtoDebugReplica(Integer nodeId) {
-        if (nodeId == null) return DocapiCommon.DebugGetFromReplica.getDefaultInstance();
-        return DocapiCommon.DebugGetFromReplica.newBuilder().setNodeId(nodeId.intValue()).build();
+        if (nodeId == null) {
+            return null;
+        }
+        return DocapiCommon.DebugGetFromReplica.newBuilder()
+                .setNodeId(nodeId)
+                .build();
     }
 
     private static Integer fromProtoDebugReplica(DocapiCommon.DebugGetFromReplica proto) {
-        return proto == null || proto.equals(DocapiCommon.DebugGetFromReplica.getDefaultInstance())
-                ? null
-                : proto.getNodeId();
+        if (proto == null) {
+            return null;
+        }
+        return proto.getNodeId();
     }
 
     private static ByteBuffer serializeDoc(Document doc) {
@@ -317,12 +322,17 @@ abstract class RoutableFactories80 {
     static RoutableFactory createGetDocumentMessageFactory() {
         return ProtobufCodecBuilder
                 .of(GetDocumentMessage.class, DocapiFeed.GetDocumentRequest.class)
-                .encoder((apiMsg) ->
-                        DocapiFeed.GetDocumentRequest.newBuilder()
+                .encoder((apiMsg) -> {
+                        var builder = DocapiFeed.GetDocumentRequest.newBuilder()
                             .setDocumentId(toProtoDocId(apiMsg.getDocumentId()))
-                            .setFieldSet(toProtoFieldSet(apiMsg.getFieldSet()))
-                            .setDebugReplica(toProtoDebugReplica(apiMsg.getDebugReplicaNodeId()))
-                            .build())
+                            .setFieldSet(toProtoFieldSet(apiMsg.getFieldSet()));
+
+                        if (apiMsg.getDebugReplicaNodeId() != null) {
+                            builder = builder.setDebugReplica(toProtoDebugReplica(apiMsg.getDebugReplicaNodeId()));
+                        }
+
+                        return builder.build();
+                })
                 .decoder(DocapiFeed.GetDocumentRequest.parser(), (protoMsg) ->
                         new GetDocumentMessage(
                                 fromProtoDocId(protoMsg.getDocumentId()),

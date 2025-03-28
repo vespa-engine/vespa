@@ -21,7 +21,7 @@ message DocumentUpdate {
 message GetDocumentRequest {
     DocumentId document_id              = 1;
     FieldSet   field_set                = 2;
-    DebugGetFromReplica debug_replica   = 3;
+    optional DebugGetFromReplica debug_replica   = 3;
 }
 
 message GetDocumentResponse {
