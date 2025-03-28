@@ -300,7 +300,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
             newEnd += subfields[i].length() + 1;
 
             identifierStr newASTNode = new identifierStr();
-            newASTNode.setTokenSource(identifierNode.getTokenSource());
+            newASTNode.setTokenSource(identifierNode.getOriginalSchemaNode().getTokenSource());
             newASTNode.setBeginOffset(identifierNode.getOriginalSchemaNode().getBeginOffset());
             newASTNode.setEndOffset(identifierNode.getOriginalSchemaNode().getEndOffset());
 
@@ -377,7 +377,7 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
         newEnd += subfields[1].length() + 1;
 
         identifierStr newASTNode = new identifierStr();
-        newASTNode.setTokenSource(identifierNode.getTokenSource());
+        newASTNode.setTokenSource(identifierNode.getOriginalSchemaNode().getTokenSource());
         newASTNode.setBeginOffset(identifierNode.getOriginalSchemaNode().getBeginOffset());
         newASTNode.setEndOffset(identifierNode.getOriginalSchemaNode().getEndOffset());
 

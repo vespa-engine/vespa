@@ -1,0 +1,17 @@
+// comment at beginning of file
+// comments in yql parser start with //
+select * from purchase where true | all(
+   // group by item
+   group(item)
+   // order by count descending
+   order(-count())
+   // show the actual count value for each group
+   each(
+       output(count())
+   )
+);
+// comment after one statement
+
+// new yql statment:
+select * from foo where true
+// comment after

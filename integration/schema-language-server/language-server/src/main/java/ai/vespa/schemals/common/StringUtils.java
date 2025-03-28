@@ -1,12 +1,13 @@
 package ai.vespa.schemals.common;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.SchemaNode;
 
 /**
  * StringUtils
@@ -125,6 +126,42 @@ public class StringUtils {
 
         }
         return false;
+    }
+
+    public static List<Range> findSingleLineComments(String content, String commentMarker) {
+        List<Range> commentRanges = new ArrayList<>();
+        if (content == null) return commentRanges;
+
+
+        int currentLineNum = 0;
+        int currentLineStart = 0;
+        int nextComment = content.indexOf(commentMarker);
+        int nextNewLine = content.indexOf('\n');
+
+        // Iterate the text while keeping track of line offset information
+        while (nextComment != -1) {
+            // Consume lines before the comment
+            if (nextNewLine != -1 && nextNewLine < nextComment) {
+                currentLineStart = nextNewLine + 1;
+                nextNewLine = content.indexOf('\n', nextNewLine + 1);
+                currentLineNum++;
+                continue;
+            }
+
+            int commentEndOffset = nextNewLine;
+
+            if (nextNewLine == -1) {
+                commentEndOffset = content.length();
+            }
+
+            Position commentStart = new Position(currentLineNum, nextComment - currentLineStart);
+            Position commentEnd   = new Position(currentLineNum, commentEndOffset - currentLineStart);
+            commentRanges.add(new Range(commentStart, commentEnd));
+
+            nextComment = content.indexOf(commentMarker, commentEndOffset + 1);
+        }
+
+        return commentRanges;
     }
 
     public static Position getStringPosition(String str) {

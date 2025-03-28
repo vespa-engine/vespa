@@ -1,7 +1,6 @@
 schema hover {
     document hover {
         field name type weightedset<int> {
-            alias: title
             attribute: fast-access
             bolding: on
             attribute {
@@ -69,15 +68,6 @@ schema hover {
     }
     index test {
         lower-bound: 2
-    }
-    onnx-model name {
-        file: a
-        input "input": a
-        output "output": b
-        gpu-device: 0
-        intraop-threads: 1
-        interop-threads: 2
-        execution-mode: parallel
     }
     rank-profile prof {
         constants { 

@@ -15,15 +15,12 @@ import org.junit.jupiter.api.TestFactory;
 
 import com.yahoo.io.IOUtils;
 
-import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.ParseContext;
-import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.schemadocument.SchemaDocument;
 import ai.vespa.schemals.schemadocument.SchemaDocument.ParseResult;
-import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
-
-import ai.vespa.schemals.testutils.*;
+import ai.vespa.schemals.testutils.Utils;
+import ai.vespa.schemals.testutils.Utils.TestContext;
 
 public class SchemaParserTest {
 
@@ -61,18 +58,13 @@ public class SchemaParserTest {
     void checkDirectoryParses(String directoryPath) throws Exception {
         String directoryURI = new File(directoryPath).toURI().toString();
 
-        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
-        ClientLogger logger = new TestLogger(messageHandler);
-        SchemaIndex schemaIndex = new SchemaIndex(logger);
-
         List<Diagnostic> diagnostics = new ArrayList<>();
-        SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(diagnostics);
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
+        TestContext testContext = TestContext.withManagedDiagnostics(diagnostics); 
 
-        scheduler.setupWorkspace(URI.create(directoryURI));
+        testContext.scheduler().setupWorkspace(URI.create(directoryURI));
 
-        List<String> schemaFiles = FileUtils.findSchemaFiles(directoryURI, logger);
-        List<String> rankProfileFiles = FileUtils.findRankProfileFiles(directoryURI, logger);
+        List<String> schemaFiles = FileUtils.findSchemaFiles(directoryURI, testContext.logger());
+        List<String> rankProfileFiles = FileUtils.findRankProfileFiles(directoryURI, testContext.logger());
 
         diagnostics.clear();
 
@@ -80,7 +72,7 @@ public class SchemaParserTest {
         int numErrors = 0;
         for (String rankProfileURI : rankProfileFiles) {
             diagnostics.clear();
-            var documentHandle = scheduler.getRankProfileDocument(rankProfileURI);
+            var documentHandle = testContext.scheduler().getRankProfileDocument(rankProfileURI);
             documentHandle.reparseContent();
             testMessage += "\n    File: " + rankProfileURI + Utils.constructDiagnosticMessage(diagnostics, 2);
 
@@ -89,7 +81,7 @@ public class SchemaParserTest {
 
         for (String schemaURI : schemaFiles) {
             diagnostics.clear();
-            var documentHandle = scheduler.getSchemaDocument(schemaURI);
+            var documentHandle = testContext.scheduler().getSchemaDocument(schemaURI);
             documentHandle.reparseContent();
             testMessage += "\n    File: " + schemaURI + Utils.constructDiagnosticMessage(diagnostics, 2);
 
@@ -160,7 +152,7 @@ public class SchemaParserTest {
             "../../../config-model/src/test/derived/structandfieldset/test.sd",
             "../../../config-model/src/test/derived/structanyorder/structanyorder.sd",
             "../../../config-model/src/test/derived/structinheritance/simple.sd",
-            //"../../../config-model/src/test/derived/tensor/tensor.sd",
+            "../../../config-model/src/test/derived/tensor/tensor.sd",
             "../../../config-model/src/test/derived/tokenization/tokenization.sd",
             "../../../config-model/src/test/derived/types/types.sd",
             "../../../config-model/src/test/derived/uri_array/uri_array.sd",
@@ -281,7 +273,7 @@ public class SchemaParserTest {
     Stream<DynamicTest> generateBadFileTests() {
         BadFileTestCase[] tests = new BadFileTestCase[] {
             new BadFileTestCase("../../../config-model/src/test/derived/inheritfromnull/inheritfromnull.sd", 1),
-            new BadFileTestCase("../../../config-model/src/test/derived/structinheritance/bad.sd", 1), // TODO: check that the error is correct
+            new BadFileTestCase("../../../config-model/src/test/derived/structinheritance/bad.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
             new BadFileTestCase("../../../config-model/src/test/derived/function_arguments/test.sd", 3),
             new BadFileTestCase("../../../config-model/src/test/derived/flickr/flickrphotos.sd", 1),
@@ -306,7 +298,7 @@ public class SchemaParserTest {
 
             new BadFileTestCase("../../../config-model/src/test/derived/slice/test.sd", 2), // TODO: slicing?
 
-            new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5), // TODO: unused rank-profile functions should throw errors? Also rank-type doesntexist: ... in field?
+            new BadFileTestCase("../../../config-model/src/test/examples/simple.sd", 5),
 
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),

@@ -1,0 +1,25 @@
+# Comment at beginning of file
+schema semantictoken {
+    # Testing marking of comments
+    document semantictoken {
+        field testfile type string {}
+
+# comment at start of line
+        field totest type tensor<float>() {
+            match: uncased
+        }
+
+        field foo type int {
+                     # Nested and indented comment
+            index {
+                dense-posting-list-threshold: 2.0 # comment at end of line
+            }
+        }
+    }
+    rank-profile semanticprofile {
+        function foo() {
+            expression: nativeRank(totest) + subqueries(foo)
+        }
+    }
+}
+# comment at end of file
