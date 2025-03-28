@@ -20,7 +20,7 @@ public class Utils {
 
     /*
      * Sets up objects and datastructures normally set up by the language server on launch.
-     * Replaces the client-facing classes with test stubs. 
+     * Replaces the client-facing classes with test stubs.
      */
     public record TestContext(
             TestSchemaMessageHandler messageHandler, 
