@@ -266,8 +266,7 @@ public class SchemaSemanticTokens {
             StringUtils.findSingleLineComments(context.document.getCurrentContent(), "#")
         );
 
-        var markers = SemanticTokenUtils.mergeSemanticTokenMarkers(traverseCST(node, context.logger), comments);
-        return markers;
+        return SemanticTokenUtils.mergeSemanticTokenMarkers(traverseCST(node, context.logger), comments);
     }
 
     public static SemanticTokens getSemanticTokens(EventDocumentContext context) {

@@ -24,6 +24,7 @@ import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
 import ai.vespa.schemals.lsp.schema.semantictokens.SchemaSemanticTokens;
+import ai.vespa.schemals.lsp.yqlplus.semantictokens.YQLPlusSemanticTokens;
 import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 import ai.vespa.schemals.schemadocument.parser.schema.IdentifySymbolDefinition;
@@ -164,6 +165,73 @@ public class LSPTest {
 
         SchemaSemanticTokens.init();
         List<SemanticTokenMarker> computedMarkers = SchemaSemanticTokens.getSemanticTokenMarkers(context);
+
+        assertEquals(semanticTokenTestFileRanges.size(), computedMarkers.size(), "Computed markers does not have the same size as expected.");
+
+        for (int i = 0; i < computedMarkers.size(); ++i) {
+            Range expectedRange = semanticTokenTestFileRanges.get(i);
+            Range computedRange = computedMarkers.get(i).getRange();
+
+            assertEquals(expectedRange, computedRange, "If this test fails you should open " + fileURI + " with the Language Server running and inspect semantic tokens (syntax highlighting).");
+        }
+
+        scheduler.closeDocument(fileURI);
+    }
+
+    @Test
+    void semanticTokenYQLPartitionTest() throws IOException, InvalidContextException {
+        List<Range> semanticTokenTestFileRanges = List.of(
+            new Range(new Position(0, 0), new Position(0, 31)),
+            new Range(new Position(1, 0), new Position(1, 39)),
+            new Range(new Position(2, 0), new Position(2, 6)),
+            new Range(new Position(2, 9), new Position(2, 13)),
+            new Range(new Position(2, 14), new Position(2, 22)),
+            new Range(new Position(2, 23), new Position(2, 28)),
+            new Range(new Position(2, 29), new Position(2, 33)),
+            new Range(new Position(2, 36), new Position(2, 39)),
+            new Range(new Position(3, 3), new Position(3, 19)),
+            new Range(new Position(4, 3), new Position(4, 8)),
+            new Range(new Position(4, 9), new Position(4, 13)),
+            new Range(new Position(5, 3), new Position(5, 31)),
+            new Range(new Position(6, 3), new Position(6, 8)),
+            new Range(new Position(6, 9), new Position(6, 10)),
+            new Range(new Position(6, 10), new Position(6, 15)),
+            new Range(new Position(7, 3), new Position(7, 48)),
+            new Range(new Position(8, 3), new Position(8, 7)),
+            new Range(new Position(9, 7), new Position(9, 13)),
+            new Range(new Position(9, 14), new Position(9, 19)),
+            new Range(new Position(12, 0), new Position(12, 30)),
+            new Range(new Position(14, 0), new Position(14, 20)),
+            new Range(new Position(15, 0), new Position(15, 6)),
+            new Range(new Position(15, 9), new Position(15, 13)),
+            new Range(new Position(15, 14), new Position(15, 17)),
+            new Range(new Position(15, 18), new Position(15, 23)),
+            new Range(new Position(15, 24), new Position(15, 28)),
+            new Range(new Position(16, 0), new Position(16, 16))
+        );
+
+        String fileName = "src/test/yqlfiles/semantictoken.yql";
+        File file = new File(fileName);
+        String fileURI = file.toURI().toString();
+        String fileContent = IOUtils.readFile(file);
+        TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        ClientLogger logger = new TestLogger(messageHandler);
+        SchemaIndex schemaIndex = new SchemaIndex(logger);
+        TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
+
+        scheduler.openDocument(new TextDocumentItem(fileURI, "vespaYQL", 0, fileContent));
+
+        DocumentManager document = scheduler.getDocument(fileURI);
+        EventDocumentContext context = new EventDocumentContext(
+            scheduler,
+            schemaIndex,
+            messageHandler,
+            document.getVersionedTextDocumentIdentifier()
+        );
+
+        YQLPlusSemanticTokens.init();
+        List<SemanticTokenMarker> computedMarkers = YQLPlusSemanticTokens.getSemanticTokenMarkers(context);
 
         assertEquals(semanticTokenTestFileRanges.size(), computedMarkers.size(), "Computed markers does not have the same size as expected.");
 

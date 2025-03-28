@@ -7,7 +7,6 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;

@@ -79,24 +79,26 @@ public class YQLPlusSemanticTokens {
         return ret;
     }
 
-    public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
-
+    public static List<SemanticTokenMarker> getSemanticTokenMarkers(EventDocumentContext context) {
         if (context.document == null) {
-            return new SemanticTokens(new ArrayList<>());
+            return List.of();
         }
 
         YQLNode node = context.document.getRootYQLNode();
         if (node == null) {
-            return new SemanticTokens(new ArrayList<>());
+            return List.of();
         }
 
         List<SemanticTokenMarker> comments = SemanticTokenUtils.convertCommentRanges(
             StringUtils.findSingleLineComments(context.document.getCurrentContent(), "//")
         );
 
-        List<SemanticTokenMarker> markers = traverseCST(node, context.logger);
+        return SemanticTokenUtils.mergeSemanticTokenMarkers(traverseCST(node, context.logger), comments);
+    }
+
+    public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
         List<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(
-            SemanticTokenUtils.mergeSemanticTokenMarkers(comments, markers)
+            getSemanticTokenMarkers(context)
         );
 
         return new SemanticTokens(compactMarkers);
