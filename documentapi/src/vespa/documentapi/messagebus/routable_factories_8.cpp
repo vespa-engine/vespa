@@ -54,17 +54,16 @@ std::string_view get_raw_field_set(const protobuf::FieldSet& src) noexcept {
 }
 
 void set_debug_replica_node_id(protobuf::DebugGetFromReplica& dest, std::optional<uint32_t> src) {
-    if (src) {
+    if (src.has_value()) {
         dest.set_node_id(src.value());
     }
 }
 
 std::optional<uint32_t> get_debug_replica_node_id(const protobuf::GetDocumentRequest& src) noexcept {
-    if (!src.has_debug_replica()) {
-        return std::nullopt;
+    if (src.has_debug_replica()) {
+        return src.debug_replica().node_id();
     }
-
-    return src.debug_replica().node_id();
+    return std::nullopt;
 }
 
 void set_raw_selection(protobuf::DocumentSelection& dest, std::string_view src) {

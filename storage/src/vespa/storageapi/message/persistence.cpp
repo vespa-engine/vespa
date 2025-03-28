@@ -194,12 +194,13 @@ UpdateReply::print(std::ostream& out, bool verbose, const std::string& indent) c
 }
 
 GetCommand::GetCommand(const document::Bucket &bucket, const document::DocumentId& docId,
-                       std::string_view fieldSet, Timestamp before)
+                       std::string_view fieldSet, Timestamp before, std::optional<uint32_t> debugReplicaNodeId)
     : BucketInfoCommand(MessageType::GET, bucket),
       _docId(docId),
       _beforeTimestamp(before),
       _fieldSet(fieldSet),
-      _internal_read_consistency(InternalReadConsistency::Strong)
+      _internal_read_consistency(InternalReadConsistency::Strong),
+      _debug_replica_node_id(debugReplicaNodeId)
 {
 }
 

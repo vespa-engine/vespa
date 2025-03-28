@@ -4,6 +4,7 @@
  */
 #pragma once
 
+#include <link.h>
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/storageapi/defs.h>
 #include <vespa/document/base/documentid.h>
@@ -204,9 +205,10 @@ class GetCommand : public BucketInfoCommand {
     std::string        _fieldSet;
     TestAndSetCondition     _condition;
     InternalReadConsistency _internal_read_consistency;
+    std::optional<uint32_t> _debug_replica_node_id;
 public:
     GetCommand(const document::Bucket &bucket, const document::DocumentId&,
-               std::string_view fieldSet, Timestamp before = MAX_TIMESTAMP);
+               std::string_view fieldSet, Timestamp before = MAX_TIMESTAMP, std::optional<uint32_t> debugReplicaNodeId=std::nullopt);
     ~GetCommand() override;
     void setBeforeTimestamp(Timestamp ts) { _beforeTimestamp = ts; }
     const document::DocumentId& getDocumentId() const { return _docId; }
@@ -229,6 +231,9 @@ public:
     api::LockingRequirements lockingRequirements() const noexcept override {
         return api::LockingRequirements::Shared;
     }
+
+    void set_debug_replica_node_id(std::optional<uint32_t> node_id) noexcept { _debug_replica_node_id=node_id; }
+    std::optional<uint32_t> get_debug_replica_node_id() const noexcept { return _debug_replica_node_id; }
 
     DECLARE_STORAGECOMMAND(GetCommand, onGet)
 };

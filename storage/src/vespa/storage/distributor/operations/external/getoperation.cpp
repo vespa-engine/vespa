@@ -267,6 +267,13 @@ GetOperation::assignTargetNodeGroups(const BucketDatabase::ReadGuard& read_guard
 
     auto entries = read_guard.find_parents_and_self(bid);
 
+    if (_msg->get_debug_replica_node_id()) {
+        MBUS_TRACE(_msg->getTrace(), 9, vespalib::make_string("Johan: We are wanting data from replica %d",
+            _msg->get_debug_replica_node_id().value()));
+    } else {
+        MBUS_TRACE(_msg->getTrace(), 9, vespalib::make_string("Johan, we are not wanting data from any specific replica"));
+    }
+
     for (const auto & e : entries) {
         LOG(spam, "Entry for %s: %s", e.getBucketId().toString().c_str(),
             e->toString().c_str());
