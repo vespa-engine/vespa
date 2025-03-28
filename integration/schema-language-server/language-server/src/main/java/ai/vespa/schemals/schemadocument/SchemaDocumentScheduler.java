@@ -43,7 +43,7 @@ public class SchemaDocumentScheduler {
     public enum WorkspaceStatus {
         NOT_SETUP,
         INDEXING,
-        HAS_SETUP
+        SETUP_COMPLETED
     }
 
     private WorkspaceStatus workspaceStatus = WorkspaceStatus.NOT_SETUP;
@@ -331,7 +331,7 @@ public class SchemaDocumentScheduler {
         reparseInInheritanceOrder();
         setReparseDescendants(true);
 
-        this.workspaceStatus = WorkspaceStatus.HAS_SETUP;
+        this.workspaceStatus = WorkspaceStatus.SETUP_COMPLETED;
         logger.info("Workspace setup finished.");
     }
 

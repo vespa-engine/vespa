@@ -20,6 +20,6 @@ public class HasSetupWorkspace implements SchemaCommand {
 
     @Override
     public Object execute(EventExecuteCommandContext context) {
-        return Boolean.valueOf(context.scheduler.getWorkspaceStatus() == WorkspaceStatus.HAS_SETUP);
+        return Boolean.valueOf(context.scheduler.getWorkspaceStatus() == WorkspaceStatus.SETUP_COMPLETED);
     }
 }
