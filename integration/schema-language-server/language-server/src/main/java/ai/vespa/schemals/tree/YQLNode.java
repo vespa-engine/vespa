@@ -1,9 +1,11 @@
 package ai.vespa.schemals.tree;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 
-import ai.vespa.schemals.parser.GeneralTokenSource;
 import ai.vespa.schemals.parser.grouping.ast.request;
 import ai.vespa.schemals.parser.yqlplus.Node;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
@@ -142,15 +144,5 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
         Position start = range.getStart();
         Position end = range.getEnd();
         return "YQLNode(" + getASTClass() + ", " + start.getLine() + "," + start.getCharacter() + "->" + end.getLine() + "," + end.getCharacter() + ")";
-    }
-
-    @Override
-    public GeneralTokenSource getTokenSource() {
-        if (language == LanguageType.YQLPlus) {
-            return originalYQLNode.getTokenSource();
-        } else if (language == LanguageType.GROUPING) {
-            return originalGroupingNode.getTokenSource();
-        }
-        return null;
     }
 }

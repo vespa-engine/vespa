@@ -166,17 +166,6 @@ INJECT SchemaParser:
 
 }
 
-INJECT TokenSource :
-{
-    import ai.vespa.schemals.parser.GeneralTokenSource;
-}
-
-INJECT :
-{
-    abstract public class TokenSource implements GeneralTokenSource {
-    }
-}
-
 INJECT SchemaParserLexer:
 {
     public static EnumSet<TokenType> getRegularTokens() {

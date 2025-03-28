@@ -136,18 +136,6 @@ INJECT IndexingParserLexer:
     }
 }
 
-INJECT TokenSource :
-{
-    import ai.vespa.schemals.parser.GeneralTokenSource;
-}
-
-INJECT :
-{
-    abstract public class TokenSource implements GeneralTokenSource {
-    }
-}
-
-
 SKIP :
     " " | "\t" | "\r" | "\f"
 ;

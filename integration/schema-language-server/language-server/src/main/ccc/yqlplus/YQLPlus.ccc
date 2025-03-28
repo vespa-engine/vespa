@@ -19,18 +19,6 @@ INJECT YQLPlusLexer:
     }
 }
 
-INJECT TokenSource :
-{
-    import ai.vespa.schemals.parser.GeneralTokenSource;
-}
-
-INJECT :
-{
-    abstract public class TokenSource implements GeneralTokenSource {
-    }
-}
-
-
 // --------------------------------------------------------------------------------
 //
 // Token declarations.

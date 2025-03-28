@@ -7,13 +7,15 @@ import org.eclipse.lsp4j.SemanticTokenTypes;
 import org.eclipse.lsp4j.SemanticTokens;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
+import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenUtils;
 import ai.vespa.schemals.parser.yqlplus.ast.pipeline_step;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class YQLPlusSemanticTokens {
 
@@ -88,8 +90,14 @@ public class YQLPlusSemanticTokens {
             return new SemanticTokens(new ArrayList<>());
         }
 
+        List<SemanticTokenMarker> comments = SemanticTokenUtils.convertCommentRanges(
+            StringUtils.findSingleLineComments(context.document.getCurrentContent(), "//", context.logger)
+        );
+
         List<SemanticTokenMarker> markers = traverseCST(node, context.logger);
-        List<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(markers);
+        List<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(
+            SemanticTokenUtils.mergeSemanticTokenMarkers(comments, markers)
+        );
 
         return new SemanticTokens(compactMarkers);
     }

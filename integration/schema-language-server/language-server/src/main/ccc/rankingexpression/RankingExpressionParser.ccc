@@ -56,18 +56,6 @@ INJECT RankingExpressionParserLexer:
     }
 }
 
-INJECT TokenSource :
-{
-    import ai.vespa.schemals.parser.GeneralTokenSource;
-}
-
-INJECT :
-{
-    abstract public class TokenSource implements GeneralTokenSource {
-    }
-}
-
-
 INJECT BaseNode :
     import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 {

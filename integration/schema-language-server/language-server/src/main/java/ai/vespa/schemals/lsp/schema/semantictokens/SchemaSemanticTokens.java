@@ -7,13 +7,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.SemanticTokenModifiers;
 import org.eclipse.lsp4j.SemanticTokenTypes;
 import org.eclipse.lsp4j.SemanticTokens;
 
-import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
@@ -26,7 +24,6 @@ import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenUtils;
 import ai.vespa.schemals.parser.Token.TokenType;
-import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.FILTER;
 import ai.vespa.schemals.parser.ast.RANK_TYPE;
 import ai.vespa.schemals.parser.ast.bool;
@@ -252,39 +249,6 @@ public class SchemaSemanticTokens {
         return ret;
     }
 
-    // This function assumes that both of the lists are sorted, and that no elements are overlapping
-    private static List<SemanticTokenMarker> mergeSemanticTokenMarkers(List<SemanticTokenMarker> lhs, List<SemanticTokenMarker> rhs) {
-        List<SemanticTokenMarker> ret = new ArrayList<>(lhs.size() + rhs.size());
-
-        int lhsIndex = 0;
-        int rhsIndex = 0;
-        while (
-            lhsIndex < lhs.size() &&
-            rhsIndex < rhs.size()
-        ) {
-            Position rhsPos = rhs.get(rhsIndex).getRange().getStart();
-            Position lhsPos = lhs.get(lhsIndex).getRange().getStart();
-
-            if (CSTUtils.positionLT(lhsPos, rhsPos)) {
-                ret.add(lhs.get(lhsIndex));
-                lhsIndex++;
-            } else {
-                ret.add(rhs.get(rhsIndex));
-                rhsIndex++;
-            }
-        }
-
-        for (int i = lhsIndex; i < lhs.size(); i++) {
-            ret.add(lhs.get(i));
-        }
-
-        for (int i = rhsIndex; i < rhs.size(); i++) {
-            ret.add(rhs.get(i));
-        }
-
-        return ret;
-    }
-
     public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
 
         if (context.document == null) {
@@ -297,12 +261,12 @@ public class SchemaSemanticTokens {
         }
 
         List<SemanticTokenMarker> comments = SemanticTokenUtils.convertCommentRanges(
-            StringUtils.findSingleLineComments(context.document.getRootNode(), "#")
+            StringUtils.findSingleLineComments(context.document.getCurrentContent(), "#", context.logger)
         );
 
         List<SemanticTokenMarker> markers = traverseCST(node, context.logger);
         List<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(
-            mergeSemanticTokenMarkers(markers, comments)
+            SemanticTokenUtils.mergeSemanticTokenMarkers(markers, comments)
         );
 
         return new SemanticTokens(compactMarkers);

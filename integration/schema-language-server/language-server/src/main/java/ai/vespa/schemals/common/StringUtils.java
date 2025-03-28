@@ -9,8 +9,6 @@ import org.eclipse.lsp4j.Range;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 
-import ai.vespa.schemals.parser.GeneralTokenSource;
-
 /**
  * StringUtils
  * For dealing with specific problems related to Strings that represent text documents.
@@ -130,40 +128,41 @@ public class StringUtils {
         return false;
     }
 
-    /**
-     * @param rootNode Root AST node to search for single line comments
-     * @param commentMarker Substring marking the start of a single line comment
-     * @return A sorted list of {@link Range} where start position is location of commentMarker 
-     *         and end position is location of newline character at the end of the comment.
-     */
-    public static List<Range> findSingleLineComments(Node rootNode, String commentMarker) {
-        ArrayList<Range> ret = new ArrayList<>();
-        GeneralTokenSource tokenSource = rootNode.getTokenSource();
+    public static List<Range> findSingleLineComments(String content, String commentMarker, ClientLogger debug) {
+        List<Range> commentRanges = new ArrayList<>();
+        if (content == null) return commentRanges;
 
-        String content = tokenSource.toString();
 
-        int index = content.indexOf(commentMarker);
-        while (index >= 0) {
-            Position start = CSTUtils.getPositionFromOffset(tokenSource, index);
-            if (CSTUtils.getLeafNodeAtPosition(rootNode, start) != null) {
-                index = content.indexOf(commentMarker, index + 1);
+        int currentLineNum = 0;
+        int currentLineStart = 0;
+        int nextComment = content.indexOf(commentMarker);
+        int nextNewLine = content.indexOf('\n');
+
+        // Iterate the text while keeping track of line offset information
+        while (nextComment != -1) {
+            // Consume lines before the comment
+            if (nextNewLine != -1 && nextNewLine < nextComment) {
+                currentLineStart = nextNewLine + 1;
+                nextNewLine = content.indexOf('\n', nextNewLine + 1);
+                currentLineNum++;
                 continue;
             }
 
-            index = content.indexOf("\n", index + 1);
+            int commentEndOffset = nextNewLine;
 
-            if (index < 0) {
-                index = content.length() - 1;
+            if (nextNewLine == -1) {
+                commentEndOffset = content.length();
             }
 
-            Position end = CSTUtils.getPositionFromOffset(tokenSource, index);
+            debug.info("Comment found at offset: " + nextComment);
+            Position commentStart = new Position(currentLineNum, nextComment - currentLineStart);
+            Position commentEnd   = new Position(currentLineNum, commentEndOffset - currentLineStart);
+            commentRanges.add(new Range(commentStart, commentEnd));
 
-            ret.add(new Range(start, end));
-
-            index = content.indexOf(commentMarker, index + 1);
+            nextComment = content.indexOf(commentMarker, commentEndOffset + 1);
         }
 
-        return ret;
+        return commentRanges;
     }
 
     public static Position getStringPosition(String str) {
