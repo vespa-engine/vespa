@@ -3,6 +3,7 @@ package ai.vespa.schemals.lsp.common.command.commandtypes;
 import java.util.List;
 
 import ai.vespa.schemals.context.EventExecuteCommandContext;
+import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler.WorkspaceStatus;
 
 public class HasSetupWorkspace implements SchemaCommand {
 
@@ -19,6 +20,6 @@ public class HasSetupWorkspace implements SchemaCommand {
 
     @Override
     public Object execute(EventExecuteCommandContext context) {
-        return Boolean.valueOf(context.scheduler.getWorkspaceURI() != null);
+        return Boolean.valueOf(context.scheduler.getWorkspaceStatus() == WorkspaceStatus.HAS_SETUP);
     }
 }

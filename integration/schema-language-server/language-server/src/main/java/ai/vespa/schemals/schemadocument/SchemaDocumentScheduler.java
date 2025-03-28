@@ -40,6 +40,14 @@ import ai.vespa.schemals.tree.SchemaNode;
  */
 public class SchemaDocumentScheduler {
 
+    public enum WorkspaceStatus {
+        NOT_SETUP,
+        INDEXING,
+        HAS_SETUP
+    }
+
+    private WorkspaceStatus workspaceStatus = WorkspaceStatus.NOT_SETUP;
+
     private Map<String, DocumentType> fileExtensions = new HashMap<>() {{
         put("sd", DocumentType.SCHEMA);
         put("profile", DocumentType.PROFILE);
@@ -301,6 +309,7 @@ public class SchemaDocumentScheduler {
     public void setupWorkspace(URI workspaceURI) {
         // already set up
         if (this.workspaceURI != null) return;
+        this.workspaceStatus = WorkspaceStatus.INDEXING;
 
         this.workspaceURI = workspaceURI;
 
@@ -321,6 +330,13 @@ public class SchemaDocumentScheduler {
         }
         reparseInInheritanceOrder();
         setReparseDescendants(true);
+
+        this.workspaceStatus = WorkspaceStatus.HAS_SETUP;
+        logger.info("Workspace setup finished.");
+    }
+
+    public WorkspaceStatus getWorkspaceStatus() {
+        return this.workspaceStatus;
     }
 
     private boolean isInWorkspace(String fileURI) {
