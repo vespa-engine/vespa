@@ -97,7 +97,7 @@ ParallelWeakAndBlueprint::createLeafSearch(const search::fef::TermFieldMatchData
 }
 
 std::unique_ptr<SearchIterator>
-ParallelWeakAndBlueprint::createFilterSearch(FilterConstraint constraint) const
+ParallelWeakAndBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_atmost_or_filter(_terms, strict(), constraint);
 }

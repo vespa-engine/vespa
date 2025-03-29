@@ -57,7 +57,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     
     SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
-    std::unique_ptr<SearchIterator> createFilterSearch(FilterConstraint constraint) const override;
+    std::unique_ptr<SearchIterator> createFilterSearchImpl(FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     void fetchPostings(const ExecuteInfo &execInfo) override;
     bool always_needs_unpack() const override;

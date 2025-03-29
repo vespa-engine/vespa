@@ -661,7 +661,7 @@ IntermediateBlueprint::set_global_filter(const GlobalFilter &global_filter, doub
 }
 
 SearchIterator::UP
-IntermediateBlueprint::createSearch(fef::MatchData &md) const
+IntermediateBlueprint::createSearchImpl(fef::MatchData &md) const
 {
     MultiSearch::Children subSearches;
     subSearches.reserve(_children.size());
@@ -818,7 +818,7 @@ LeafBlueprint::set_matching_phase(MatchingPhase) noexcept
 }
 
 SearchIterator::UP
-LeafBlueprint::createSearch(fef::MatchData &md) const
+LeafBlueprint::createSearchImpl(fef::MatchData &md) const
 {
     const State &state = getState();
     fef::TermFieldMatchDataArray tfmda;

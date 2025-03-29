@@ -235,7 +235,7 @@ public:
 
     bool isWhiteList() const noexcept final { return true; }
 
-    SearchIterator::UP createFilterSearch(FilterConstraint) const override {
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint) const override {
         if (_all_lids_active) {
             return std::make_unique<FullSearch>();
         }

@@ -80,7 +80,7 @@ DotProductBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray
 }
 
 SearchIterator::UP
-DotProductBlueprint::createFilterSearch(FilterConstraint constraint) const
+DotProductBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_or_filter(_terms, strict(), constraint);
 }

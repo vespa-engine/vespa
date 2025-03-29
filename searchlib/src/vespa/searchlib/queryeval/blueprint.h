@@ -391,8 +391,16 @@ public:
 
     virtual void set_matching_phase(MatchingPhase matching_phase) noexcept = 0;
 
-    virtual SearchIteratorUP createSearch(fef::MatchData &md) const = 0;
-    virtual SearchIteratorUP createFilterSearch(FilterConstraint constraint) const = 0;
+protected:
+    virtual SearchIteratorUP createSearchImpl(fef::MatchData &md) const = 0;
+    virtual SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const = 0;
+    SearchIteratorUP tag_with_id(SearchIteratorUP itr) const noexcept {
+        itr->set_id(id());
+        return itr;
+    }
+public:
+    SearchIteratorUP createSearch(fef::MatchData &md) const { return tag_with_id(createSearchImpl(md)); }
+    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const { return tag_with_id(createFilterSearchImpl(constraint)); }
     static SearchIteratorUP create_and_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_or_filter(const Children &children, bool strict, FilterConstraint constraint);
     static SearchIteratorUP create_atmost_and_filter(const Children &children, bool strict, FilterConstraint constraint);
@@ -506,7 +514,7 @@ public:
     IntermediateBlueprint &addChild(Blueprint::UP child);
     Blueprint::UP removeChild(size_t n);
     Blueprint::UP removeLastChild() { return removeChild(childCnt() - 1); }
-    SearchIteratorUP createSearch(fef::MatchData &md) const override;
+    SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
     
     virtual HitEstimate combine(const std::vector<HitEstimate> &data) const = 0;
     virtual FieldSpecBaseList exposeFields() const = 0;
@@ -565,7 +573,7 @@ public:
     void fetchPostings(const ExecuteInfo &execInfo) override;
     void freeze() final;
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;
-    SearchIteratorUP createSearch(fef::MatchData &md) const override;
+    SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
     const LeafBlueprint * asLeaf() const noexcept final { return this; }
 
     virtual bool getRange(std::string & from, std::string & to) const;
