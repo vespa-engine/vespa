@@ -3,6 +3,8 @@
 #pragma once
 
 #include "compression.h"
+#include <cassert>
+#include <limits>
 
 namespace search::bitcompression {
 
@@ -45,7 +47,13 @@ public:
     void finish(const DecodeContext64Base& dc, search::index::DocIdAndFeatures& features) {
         collect(features, dc._valI);
         auto end_offset = dc.getReadOffset();
-        features.set_bit_length( end_offset - _start_offset);
+        auto bit_length = end_offset - _start_offset;
+        /*
+         * Due to limitations in search::memoryindex::FeatureStore, the feature bit length for a single
+         * (word, docid) pair should never exceed 4Gi.
+         */
+        assert(bit_length <= std::numeric_limits<uint32_t>::max());
+        features.set_bit_length(bit_length);
     }
 };
 
