@@ -17,6 +17,8 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+
 
 import java.util.Map;
 
@@ -83,7 +85,7 @@ public class RAGSearcherWithOpenAITest {
         // assert that stream is not complete - (if completeAsync had been blocking, it would be complete)
         // For this assertion to fail, OpenAI-completion must have been completed in less time than the execution time
         // of returning the search. Consider this more robust than asserting on timings.
-        assert !stream.incoming().isComplete();
+        assertFalse(stream.incoming().isComplete());
     }
 
     static class MockSecrets implements Secrets {
