@@ -157,4 +157,26 @@ public class AnnotatorConfig implements Cloneable {
                             removeAccents, lowercase, maxTermOccurrences, maxTokenLength, maxTokenizeLength);
     }
 
+    @Override
+    public String toString() {
+        return "annotator config" + parameterString();
+    }
+
+    public String parameterString() {
+        StringBuilder ret = new StringBuilder();
+        if (getRemoveAccents())
+            ret.append(" normalize");
+        if ( ! getLowercase())
+            ret.append(" keep-case");
+        if (getStemMode() != StemMode.NONE)
+            ret.append(" stem:\"" + getStemMode() + "\"");
+        if (hasNonDefaultMaxTokenizeLength())
+            ret.append(" max-length:" + getMaxTokenizeLength());
+        if (hasNonDefaultMaxTokenLength())
+            ret.append(" max-token-length:" + getMaxTokenLength());
+        if (hasNonDefaultMaxTermOccurrences())
+            ret.append(" max-occurrences:" + getMaxTermOccurrences());
+        return ret.toString();
+    }
+
 }

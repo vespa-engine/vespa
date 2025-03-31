@@ -45,7 +45,7 @@ public class IndexingParser {
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
     private Map<String, FieldGenerator> generators;
-    private AnnotatorConfig annotatorCfg;
+    private AnnotatorConfig globalAnnotatorConfig = new AnnotatorConfig();
 
     public IndexingParser(String str) {
         this(new IndexingInput(str));
@@ -71,8 +71,8 @@ public class IndexingParser {
         return this;
     }
 
-    public IndexingParser setAnnotatorConfig(AnnotatorConfig cfg) {
-        annotatorCfg = cfg;
+    public IndexingParser setGlobalAnnotatorConfig(AnnotatorConfig config) {
+        globalAnnotatorConfig = config;
         return this;
     }
 
@@ -440,11 +440,11 @@ Expression generateExp() :
 
 Expression exactExp() :
 {
-    int maxTokenLength = annotatorCfg.getMaxTokenLength();
+    AnnotatorConfig config = globalAnnotatorConfig;
 }
 {
-    ( <EXACT>  [ <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integer() ] )
-    { return new ExactExpression(maxTokenLength); }
+    ( <EXACT> [ config = annotatorConfig() ] )
+    { return new ExactExpression(config); }
 }
 
 Expression flattenExp() : { }
@@ -714,29 +714,29 @@ Expression thisExp() : { }
 
 Expression tokenizeExp() :
 {
-    AnnotatorConfig cfg = annotatorCfg;
+    AnnotatorConfig config = globalAnnotatorConfig;
 }
 {
-    ( <TOKENIZE> [ cfg = tokenizeCfg() ] )
-    { return new TokenizeExpression(linguistics, cfg); }
+    ( <TOKENIZE> [ config = annotatorConfig() ] )
+    { return new TokenizeExpression(linguistics, config); }
 }
 
-AnnotatorConfig tokenizeCfg() :
+AnnotatorConfig annotatorConfig() :
 {
-    AnnotatorConfig val = new AnnotatorConfig(annotatorCfg);
+    AnnotatorConfig config = new AnnotatorConfig(globalAnnotatorConfig);
     String str = "SHORTEST";
     Integer maxLength;
     Integer maxTermOccurrences;
     Integer maxTokenLength;
 }
 {
-    ( <STEM> ( <COLON> str = string() ) ? { val.setStemMode(str); } |
-      <MAX_LENGTH> <COLON>  maxLength = integer() { val.setMaxTokenizeLength(maxLength); } |
-      <MAX_OCCURRENCES> <COLON>  maxTermOccurrences = integer() { val.setMaxTermOccurrences(maxTermOccurrences); } |
-      <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integer() { val.setMaxTokenLength(maxTokenLength); } |
-      <NORMALIZE> { val.setRemoveAccents(true); } |
-      <KEEP_CASE> { val.setLowercase(false); } )+
-    { return val; }
+    ( <STEM> ( <COLON> str = string() ) ? { config.setStemMode(str); } |
+      <MAX_LENGTH> <COLON>  maxLength = integer() { config.setMaxTokenizeLength(maxLength); } |
+      <MAX_OCCURRENCES> <COLON>  maxTermOccurrences = integer() { config.setMaxTermOccurrences(maxTermOccurrences); } |
+      <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integer() { config.setMaxTokenLength(maxTokenLength); } |
+      <NORMALIZE> { config.setRemoveAccents(true); } |
+      <KEEP_CASE> { config.setLowercase(false); } )+
+    { return config; }
 }
 
 Expression toArrayExp() : { }

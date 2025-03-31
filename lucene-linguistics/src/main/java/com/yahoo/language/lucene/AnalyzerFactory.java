@@ -49,7 +49,7 @@ class AnalyzerFactory {
             buf.append(" {");
             buf.append(entry.getKey().toString());
             buf.append(":");
-            buf.append(entry.getValue().getClass().toString());
+            buf.append(entry.getValue().getClass());
             buf.append("}");
         }
         buf.append(" ]");
