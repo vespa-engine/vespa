@@ -4,8 +4,10 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.metric.Metric;
 import ai.vespa.metricsproxy.metric.Metrics;
 import ai.vespa.metricsproxy.metric.model.MetricId;
+import com.yahoo.system.ProcessExecuter;
 
-import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
@@ -23,6 +25,8 @@ import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 
+import static java.util.logging.Level.WARNING;
+
 /**
  * Class to get data from the system and update the services at given intervals.
  * TODO: rewrite to use ScheduledExecutorService or just call poll() directly.
@@ -34,6 +38,7 @@ public class SystemPoller {
     private static final Logger log = Logger.getLogger(SystemPoller.class.getName());
     private static final int memoryTypeVirtual = 0;
     private static final int memoryTypeResident = 1;
+    private static final long pageSize = getPageSize();
     private static final MetricId CPU = MetricId.toMetricId("cpu");
     private static final MetricId CPU_UTIL = MetricId.toMetricId("cpu_util");
     private static final MetricId MEMORY_VIRT = MetricId.toMetricId("memory_virt");
@@ -107,41 +112,31 @@ public class SystemPoller {
      * @return array[0] = memoryResident, array[1] = memoryVirtual (kB units)
      */
     static long[] getMemoryUsage(VespaService service) {
-        BufferedReader br;
+        String s;
         int pid = service.getPid();
 
         try {
-            br = new BufferedReader(new FileReader("/proc/" + pid + "/smaps"));
-        } catch (FileNotFoundException ex) {
+            s = Files.readString(Path.of("/proc/" + pid + "/statm"));
+        } catch (IOException ex) {
             service.setAlive(false);
             return new long[2];
         }
         try {
-            return getMemoryUsage(br);
+            return getMemoryUsage(s);
         } catch (IOException ex) {
-            log.log(Level.FINE, "Unable to read line from smaps file", ex);
+            log.log(Level.FINE, "Unable to read line from statm file", ex);
             return new long[2];
-        } finally {
-            try {
-                br.close();
-            } catch (IOException ex) {
-                log.log(Level.FINE, "Closing of smaps file failed", ex);
-            }
         }
     }
-    static long[] getMemoryUsage(BufferedReader br) throws IOException{
-        String line;
+
+    static long[] getMemoryUsage(String s) throws IOException{
         long[] size = new long[2];
-        while ((line = br.readLine()) != null) {
-            /* Memory size is given in kB - convert to bytes by multiply with 1024*/
-            if (line.startsWith("Rss:")) {
-                String remain = line.substring(4).trim();
-                size[memoryTypeResident] += Long.parseLong(remain.substring(0, remain.indexOf(' '))) * 1024;
-            } else if (line.startsWith("Size:")) {
-                String remain = line.substring(5).trim();
-                size[memoryTypeVirtual] += Long.parseLong(remain.substring(0, remain.indexOf(' '))) * 1024;
-            }
-        }
+        // statm line: "size rss shared text lib data dt"
+        // all values are number of pages, return values from this method are in kibibytes
+        var statmPutputs = s.split(" ");
+        size[memoryTypeVirtual] = Long.parseLong(statmPutputs[0]) * pageSize / 1024;
+        // Returning rss, we don't consider shared memory here
+        size[memoryTypeResident] = Long.parseLong(statmPutputs[1]) * pageSize / 1024;
 
         return size;
     }
@@ -305,4 +300,15 @@ public class SystemPoller {
             poller.poll();
         }
     }
+
+    private static int getPageSize() {
+        try {
+            return Integer.parseInt(new ProcessExecuter().exec("getconfig PAGESIZE").getSecond().trim());
+        } catch (IOException e) {
+            log.log(WARNING, "Getting page size failed, using fallback value 4096");
+            return 4096;
+        }
+    }
+
+
 }

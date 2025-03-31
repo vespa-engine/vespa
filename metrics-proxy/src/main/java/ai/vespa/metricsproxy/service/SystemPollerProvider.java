@@ -17,7 +17,7 @@ public class SystemPollerProvider implements Provider<SystemPoller> {
      * @param services   The list of VespaService instances to monitor for System metrics
      * @param monitoringConfig   The interval in seconds between each polling.
      */
-    public SystemPollerProvider (VespaServices services, MonitoringConfig monitoringConfig) {
+    public SystemPollerProvider(VespaServices services, MonitoringConfig monitoringConfig) {
         if (runningOnLinux()) {
             Duration interval = Duration.ofMinutes(monitoringConfig.intervalMinutes());
             poller = new SystemPoller(services.getVespaServices(), interval);
