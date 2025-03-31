@@ -94,8 +94,12 @@ public:
 
 template <typename B, typename M>
 std::unique_ptr<attribute::ISortBlobWriter>
-MultiValueStringAttributeT<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const
+MultiValueStringAttributeT<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                        search::common::sortspec::MissingPolicy policy,
+                                                        std::string_view missing_value) const
 {
+    (void) policy;
+    (void) missing_value;
     if (ascending) {
         return std::make_unique<MultiStringSortBlobWriter<MultiValueMapping, EnumStore, true>>(this->_mvMapping, this->_enumStore, converter);
     } else {

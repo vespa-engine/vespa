@@ -213,8 +213,12 @@ public:
 
 template <typename B, typename M>
 std::unique_ptr<attribute::ISortBlobWriter>
-MultiValueNumericAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
+MultiValueNumericAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
+                                                        common::sortspec::MissingPolicy policy,
+                                                        std::string_view missing_value) const
 {
+    (void) policy;
+    (void) missing_value;
     if (ascending) {
         return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, true>>(this->_mvMapping);
     } else {

@@ -176,8 +176,12 @@ DescendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available)
 }
 
 std::unique_ptr<attribute::ISortBlobWriter>
-StringAttribute::make_sort_blob_writer(bool ascending, const common::BlobConverter* bc) const
+StringAttribute::make_sort_blob_writer(bool ascending, const common::BlobConverter* bc,
+                                       common::sortspec::MissingPolicy policy,
+                                       std::string_view missing_value) const
 {
+    (void) policy;
+    (void) missing_value;
     if (ascending) {
         return std::make_unique<AscendingSortBlobWriter>(*this, bc);
     } else {

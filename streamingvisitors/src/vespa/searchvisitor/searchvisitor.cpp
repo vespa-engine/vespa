@@ -210,7 +210,9 @@ void
 SearchVisitor::AttrInfo::make_sort_blob_writer()
 {
     if (_attr && _attr->get()->is_sortable()) {
-        _sort_blob_writer = _attr->get()->make_sort_blob_writer(_ascending, _converter);
+        _sort_blob_writer = _attr->get()->make_sort_blob_writer(_ascending, _converter,
+                                                                search::common::sortspec::MissingPolicy::DEFAULT,
+                                                                std::string_view());
     }
 }
 

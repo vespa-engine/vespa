@@ -272,7 +272,10 @@ public:
     void setTrackDocumentSizes(bool trackDocumentSizes) { _trackDocumentSizes = trackDocumentSizes; }
     void foreach(const search::IGidToLidMapperVisitor &visitor) const override;
     bool is_sortable() const noexcept override;
-    std::unique_ptr<search::attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const override;
+    std::unique_ptr<search::attribute::ISortBlobWriter>
+    make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,
+                          search::common::sortspec::MissingPolicy policy,
+                          std::string_view missing_value) const override;
 };
 
 }

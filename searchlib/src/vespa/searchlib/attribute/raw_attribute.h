@@ -16,7 +16,9 @@ public:
     ~RawAttribute() override;
 
     bool is_sortable() const noexcept override;
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
+    std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                           common::sortspec::MissingPolicy policy,
+                                                           std::string_view missing_value) const override;
 };
 
 }

@@ -43,7 +43,10 @@ protected:
     using WeightedString = StringAttribute::WeightedString;
     using generation_t = StringAttribute::generation_t;
 
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                                      common::sortspec::MissingPolicy policy,
+                                                                      std::string_view missing_value) const override;
+
 public:
     MultiValueStringAttributeT(const std::string & name, const AttributeVector::Config & c);
     MultiValueStringAttributeT(const std::string & name);

@@ -23,6 +23,7 @@ using search::attribute::Config;
 using search::attribute::EmptySearchContext;
 using search::attribute::SearchContextParams;
 using search::attribute::SingleRawAttribute;
+using search::common::sortspec::MissingPolicy;
 using vespalib::Issue;
 
 using namespace std::literals;
@@ -111,8 +112,8 @@ TEST_F(RawAttributeTest, implements_serialize_for_sort) {
     memset(buf, 0, sizeof(buf));
     _attr->addDocs(10);
     _attr->commit();
-    auto asc_writer = _attr->make_sort_blob_writer(true, nullptr);
-    auto desc_writer = _attr->make_sort_blob_writer(false, nullptr);
+    auto asc_writer = _attr->make_sort_blob_writer(true, nullptr, MissingPolicy::DEFAULT, std::string_view());
+    auto desc_writer = _attr->make_sort_blob_writer(false, nullptr, MissingPolicy::DEFAULT, std::string_view());
     EXPECT_EQ(1, asc_writer->write(1, buf, sizeof(buf)));
     EXPECT_EQ(0, buf[0]);
     EXPECT_EQ(1, desc_writer->write(1, buf, sizeof(buf)));

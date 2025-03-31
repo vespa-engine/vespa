@@ -1139,7 +1139,9 @@ DocumentMetaStoreSortBlobWriter<ascending>::write(uint32_t docid, void* buf, lon
 }
 
 std::unique_ptr<search::attribute::ISortBlobWriter>
-DocumentMetaStore::make_sort_blob_writer(bool ascending, const search::common::BlobConverter*) const
+DocumentMetaStore::make_sort_blob_writer(bool ascending, const search::common::BlobConverter*,
+                                         search::common::sortspec::MissingPolicy,
+                                         std::string_view) const
 {
     if (ascending) {
         return std::make_unique<DocumentMetaStoreSortBlobWriter<true>>(*this);

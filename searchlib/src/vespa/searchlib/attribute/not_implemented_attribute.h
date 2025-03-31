@@ -30,7 +30,9 @@ struct NotImplementedAttribute : AttributeVector {
     std::vector<EnumHandle> findFoldedEnums(const char *value) const override;
 
     bool is_sortable() const noexcept override;
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                                      common::sortspec::MissingPolicy policy,
+                                                                      std::string_view missing_value) const override;
     uint32_t clearDoc(DocId) override;
     uint32_t getEnum(DocId) const override;
     bool addDoc(DocId &) override;

@@ -81,8 +81,10 @@ RawAttribute::is_sortable() const noexcept
     return true;
 }
 
-std::unique_ptr<attribute::ISortBlobWriter>
-RawAttribute::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
+std::unique_ptr<ISortBlobWriter>
+RawAttribute::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
+                                    common::sortspec::MissingPolicy,
+                                    std::string_view) const
 {
     if (ascending) {
         // Note: Template argument for the writer is "descending".

@@ -301,9 +301,11 @@ public:
     }
 };
 
-std::unique_ptr<attribute::ISortBlobWriter>
-ImportedAttributeVectorReadGuard::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const {
-    return std::make_unique<SortBlobWriter>(*this, _target_attribute.make_sort_blob_writer(ascending, converter));
+std::unique_ptr<ISortBlobWriter>
+ImportedAttributeVectorReadGuard::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                        common::sortspec::MissingPolicy policy,
+                                                        std::string_view missing_value) const {
+    return std::make_unique<SortBlobWriter>(*this, _target_attribute.make_sort_blob_writer(ascending, converter, policy, missing_value));
 }
 
 }
