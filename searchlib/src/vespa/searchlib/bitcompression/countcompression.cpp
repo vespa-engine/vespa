@@ -23,20 +23,13 @@ readCounts(PostingListCounts &counts)
     uint32_t numDocs;
 
     counts._segments.clear();
-    UC64BE_DECODEEXPGOLOMB_NS(o,
-                              K_VALUE_COUNTFILE_SPNUMDOCS,
-                              EC);
+    UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_SPNUMDOCS, EC);
     numDocs = static_cast<uint32_t>(val64) + 1;
     counts._numDocs = numDocs;
-    if (numDocs != 0) {
-        uint64_t expVal = numDocs * static_cast<uint64_t>(_avgBitsPerDoc);
-        uint32_t kVal = (expVal < 4) ? 1 : EC::asmlog2(expVal);
-        UC64BE_DECODEEXPGOLOMB_NS(o,
-                                  kVal,
-                                  EC);
-        counts._bitLength = val64;
-    } else
-        counts._bitLength = 0;
+    uint64_t expVal = numDocs * static_cast<uint64_t>(_avgBitsPerDoc);
+    uint32_t kVal = (expVal < 4) ? 1 : EC::asmlog2(expVal);
+    UC64BE_DECODEEXPGOLOMB_NS(o, kVal, EC);
+    counts._bitLength = val64;
     if (__builtin_expect(oCompr >= valE, false)) {
         UC64_DECODECONTEXT_STORE(o, _);
         _readContext->readComprBuffer();
@@ -110,12 +103,6 @@ writeCounts(const PostingListCounts &counts)
     uint32_t numDocs = counts._numDocs;
     assert(numDocs > 0);
     encodeExpGolomb(numDocs - 1, K_VALUE_COUNTFILE_SPNUMDOCS);
-    if (numDocs == 0) {
-        if (__builtin_expect(_valI >= _valE, false)) {
-            _writeContext->writeComprBuffer(false);
-        }
-        return;
-    }
     uint64_t encodeVal = counts._bitLength;
     uint64_t expVal = numDocs * static_cast<uint64_t>(_avgBitsPerDoc);
     uint32_t kVal = (expVal < 4) ? 1 : asmlog2(expVal);
