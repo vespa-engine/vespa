@@ -18,9 +18,9 @@ import java.util.List;
 import org.logstash.ObjectMappers;
 import org.yaml.snakeyaml.Yaml;
 
-public class VespaDryRunner {
-    private static final Logger logger = LogManager.getLogger(VespaDryRunner.class);
-    private final DryRunConfig config;
+public class VespaQuickStarter {
+    private static final Logger logger = LogManager.getLogger(VespaQuickStarter.class);
+    private final QuickStartConfig config;
     private final Map<String, List<String>> typeMappings;
     private final Map<String, String> detectedFields = new HashMap<>();
     private final ObjectMapper objectMapper;
@@ -28,7 +28,7 @@ public class VespaDryRunner {
     final VespaDeployer deployer;
     private final VespaAppPackageWriter appPackageWriter;
 
-    public VespaDryRunner(DryRunConfig config) {
+    public VespaQuickStarter(QuickStartConfig config) {
         this.config = config;
         this.objectMapper = ObjectMappers.JSON_MAPPER;
         try {
@@ -47,6 +47,7 @@ public class VespaDryRunner {
         if (events.isEmpty()) {
             emptyBatchesCount++;
             if (config.isDeployPackage() && emptyBatchesCount >= config.getIdleBatches()) {
+                // TODO: this should happen only if we had events
                 deployer.deployApplicationPackage();
                 emptyBatchesCount = 0;
             }

@@ -18,9 +18,11 @@
               configuration is equivalent to using a single
               security/clients.pem
             -->
-            <!-- <client id="mtls" permissions="read,write">
+            <!-- MTLS
+              <client id="mtls" permissions="read,write">
               <certificate file="security/clients.pem"/>
-            </client> -->
+            </client>
+            END MTLS -->
         
             <!--
               The below sets up a client with read permissions.

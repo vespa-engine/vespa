@@ -20,6 +20,7 @@ import org.logstash.common.io.DeadLetterQueueWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -32,12 +33,13 @@ public class VespaFeed implements Output {
     private static final Logger logger = LogManager.getLogger(VespaFeed.class);
 
     /***********************
-     * Dry run mode settings
+     * Quick start mode settings
      ***********************/
-    // dry run mode. This will not send documents to Vespa, but will generate an application package
-    public static final PluginConfigSpec<Boolean> DRY_RUN =
-            PluginConfigSpec.booleanSetting("dry_run", false);
+    // quick start mode. This will not send documents to Vespa, but will generate an application package
+    public static final PluginConfigSpec<Boolean> QUICK_START =
+            PluginConfigSpec.booleanSetting("quick_start", false);
     // save the generated application package in this directory
+    // TODO: this should be OS-specific
     public static final PluginConfigSpec<String> APPLICATION_PACKAGE_DIR =
             PluginConfigSpec.stringSetting("application_package_dir", "/tmp/vespa_app");
     // should we deploy the application after generating it?
@@ -50,6 +52,10 @@ public class VespaFeed implements Output {
     // TODO: this should default to vespa_url if not set, with port 19071
     public static final PluginConfigSpec<String> CONFIG_SERVER =
             PluginConfigSpec.stringSetting("config_server", "http://localhost:19071");
+    // whether to generate mTLS certificates
+    // if we're using Vespa Cloud, the default is "true", otherwise "false"
+    public static final PluginConfigSpec<Boolean> GENERATE_MTLS_CERTIFICATES =
+            PluginConfigSpec.booleanSetting("generate_mtls_certificates", false);
     // custom type mappings file
     public static final PluginConfigSpec<String> TYPE_MAPPINGS_FILE =
     PluginConfigSpec.stringSetting("type_mappings_file", null);
@@ -85,6 +91,14 @@ public class VespaFeed implements Output {
             PluginConfigSpec.stringSetting("client_cert", null);
     public static final PluginConfigSpec<String> CLIENT_KEY =
             PluginConfigSpec.stringSetting("client_key", null);
+    
+    // Vespa Cloud deployment options
+    public static final PluginConfigSpec<String> VESPA_CLOUD_TENANT = 
+            PluginConfigSpec.stringSetting("vespa_cloud_tenant", null);
+    public static final PluginConfigSpec<String> VESPA_CLOUD_APPLICATION = 
+            PluginConfigSpec.stringSetting("vespa_cloud_application", null);
+    public static final PluginConfigSpec<String> VESPA_CLOUD_INSTANCE = 
+            PluginConfigSpec.stringSetting("vespa_cloud_instance", "default");
     
     // authentication token (for Vespa Cloud)
     public static final PluginConfigSpec<String> AUTH_TOKEN =
@@ -159,8 +173,8 @@ public class VespaFeed implements Output {
     ObjectMapper objectMapper;
     private final boolean removeOperation;
     private DeadLetterQueueWriter dlqWriter;
-    private VespaDryRunner dryRunner;
-    private final DryRunConfig dryRunConfig;
+    private VespaQuickStarter quickStarter;
+    private final QuickStartConfig quickStartConfig;
 
     public VespaFeed(final String id, final Configuration config, final Context context) {
         this.id = id;
@@ -190,10 +204,59 @@ public class VespaFeed implements Output {
 
         // for JSON serialization
         objectMapper = ObjectMappers.JSON_MAPPER;
+        
+        // Handle certificate paths for both quick_start and normal mode
+        String applicationPackageDir = config.get(APPLICATION_PACKAGE_DIR);
+        String clientCert = config.get(CLIENT_CERT);
+        String clientKey = config.get(CLIENT_KEY);
+        
+        // Set default paths if not specified and application package dir is available
+        if (applicationPackageDir != null) {
+            if (clientCert == null) {
+                clientCert = Paths.get(applicationPackageDir, "security", "clients.pem").toString();
+                logger.info("No client_cert specified, using default path: {}", clientCert);
+            }
+            
+            if (clientKey == null) {
+                clientKey = Paths.get(applicationPackageDir, "data-plane-private-key.pem").toString();
+                logger.info("No client_key specified, using default path: {}", clientKey);
+            }
+        }
 
-        if (config.get(DRY_RUN)) {
-            dryRunConfig = new DryRunConfig(
+        if (config.get(QUICK_START)) {
+            logger.warn("Quick start mode enabled! We will not send documents to Vespa, but will generate an application package.");
+
+            // Check if we have Vespa Cloud parameters
+            boolean isVespaCloud = config.get(VESPA_CLOUD_TENANT) != null && config.get(VESPA_CLOUD_APPLICATION) != null;
+            
+            // If only one of the required Cloud params is set, throw an error
+            if ((config.get(VESPA_CLOUD_TENANT) != null && config.get(VESPA_CLOUD_APPLICATION) == null) ||
+                (config.get(VESPA_CLOUD_TENANT) == null && config.get(VESPA_CLOUD_APPLICATION) != null)) {
+                throw new IllegalArgumentException("Both vespa_cloud_tenant and vespa_cloud_application must be specified for Vespa Cloud deployment");
+            }
+            
+            // Validate that instance is provided if we're in Vespa Cloud mode
+            if (isVespaCloud) {
+                String instance = config.get(VESPA_CLOUD_INSTANCE);
+                if (instance == null || instance.trim().isEmpty()) {
+                    throw new IllegalArgumentException("vespa_cloud_instance must be specified for Vespa Cloud deployment");
+                }
+                
+                logger.info("Vespa Cloud mode enabled with tenant: {}, application: {}, instance: {}", 
+                           config.get(VESPA_CLOUD_TENANT), config.get(VESPA_CLOUD_APPLICATION), instance);
+            }
+            
+            // Set generate_mtls_certificates to true if in Cloud mode, unless explicitly set otherwise
+            boolean generateMtlsCertificates = config.get(GENERATE_MTLS_CERTIFICATES);
+            if (isVespaCloud && !config.contains(GENERATE_MTLS_CERTIFICATES)) {
+                generateMtlsCertificates = true;
+            }
+            
+            quickStartConfig = new QuickStartConfig(
                 config.get(DEPLOY_PACKAGE),
+                generateMtlsCertificates,
+                clientCert,
+                clientKey,
                 config.get(CONFIG_SERVER),
                 documentType,
                 config.get(IDLE_BATCHES).longValue(),
@@ -201,12 +264,14 @@ public class VespaFeed implements Output {
                 config.get(TYPE_MAPPINGS_FILE),
                 config.get(TYPE_CONFLICT_RESOLUTION_FILE),
                 config.get(MAX_RETRIES),
-                config.get(GRACE_PERIOD)
+                config.get(GRACE_PERIOD),
+                config.get(VESPA_CLOUD_TENANT),
+                config.get(VESPA_CLOUD_APPLICATION),
+                config.get(VESPA_CLOUD_INSTANCE)
             );
-            dryRunner = new VespaDryRunner(dryRunConfig);
-            logger.warn("Dry run mode enabled! We will not send documents to Vespa, but will generate an application package.");
+            quickStarter = new VespaQuickStarter(quickStartConfig);
         } else {
-            dryRunConfig = null;
+            quickStartConfig = null;
             if (config.get(ENABLE_DLQ)) {
                 try {
                     Path dlqPath = Paths.get(config.get(DLQ_PATH));
@@ -248,7 +313,7 @@ public class VespaFeed implements Output {
                         );
 
             // set client certificate and key (or auth token) if they are provided
-            builder = addAuthOptionsToBuilder(config, builder);
+            builder = addAuthOptionsToBuilder(config, builder, clientCert, clientKey);
 
             // now we should have the client
             client = builder.build();
@@ -263,6 +328,8 @@ public class VespaFeed implements Output {
         }
     }
 
+    // TODO we need to validate all options (not sure if here). For example, quick_start should
+    // work without namespace. And even without quick_start, we should log an error if namespace is missing.
     public void validateOperationAndCreate() {
         if (!dynamicOperation) {
             if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
@@ -274,17 +341,23 @@ public class VespaFeed implements Output {
         }
     }
 
-    protected static FeedClientBuilder addAuthOptionsToBuilder(Configuration config, FeedClientBuilder builder) {
-        String clientCert = config.get(CLIENT_CERT);
+    protected static FeedClientBuilder addAuthOptionsToBuilder(Configuration config, FeedClientBuilder builder, String clientCert, String clientKey) {
         Path clientCertPath = null;
-        if (clientCert != null) {
-            clientCertPath = Paths.get(clientCert);
-        }
-
-        String clientKey = config.get(CLIENT_KEY);
         Path clientKeyPath = null;
-        if (clientKey != null) {
-            clientKeyPath = Paths.get(clientKey);
+        
+        if (clientCert != null && clientKey != null) {
+            // Check if certificate files exist
+            Path certPath = Paths.get(clientCert);
+            Path keyPath = Paths.get(clientKey);
+            
+            if (Files.exists(certPath) && Files.exists(keyPath)) {
+                clientCertPath = certPath;
+                clientKeyPath = keyPath;
+                logger.info("Using mTLS certificates for authentication - cert: {}, key: {}", clientCert, clientKey);
+            } else {
+                logger.warn("Certificate files not found, not using mTLS: cert: {} (exists: {}), key: {} (exists: {})", 
+                    clientCert, Files.exists(certPath), clientKey, Files.exists(keyPath));
+            }
         }
 
         if (clientCertPath != null && clientKeyPath != null) {
@@ -294,19 +367,19 @@ public class VespaFeed implements Output {
 
         String authToken = config.get(AUTH_TOKEN);
         if (authToken != null) {
+            logger.info("Using auth token for authentication");
             builder.addRequestHeader("Authorization", "Bearer " + authToken);
             return builder;
         }
         
-        logger.warn("Client certificate + key combination not provided. Auth token not provided, either. Using insecure connection.");
+        logger.warn("Client certificate + key combination not found. Auth token not provided, either. Using insecure connection.");
         return builder;
     }
 
     @Override
     public void output(final Collection<Event> events) {
-        // TODO: maaaybe better here to have an interface with two implementations for dry run and non-dry run?
-        if (dryRunner != null) {
-            dryRunner.run(events);
+        if (quickStarter != null) {
+            quickStarter.run(events);
             return;
         }
 
@@ -471,16 +544,12 @@ public class VespaFeed implements Output {
             client.close();
         }
 
-        // deploy the application package, if we're in dry run mode
-        if (dryRunner != null) {
-            logger.info("Giving other threads a couple of seconds to write to the application package");
-            try {
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                logger.error("Interrupted while waiting for dry runner to deploy application package: {}", e.getMessage());
-            }
-            if (dryRunConfig.isDeployPackage()) {
-                dryRunner.deployer.deployApplicationPackage();
+        if (quickStarter != null) {
+            logger.info("Stopping VespaFeed plugin");
+            
+            // In quick start mode, deploy the application package if configured to do so
+            if (quickStartConfig != null && quickStartConfig.isDeployPackage()) {
+                quickStarter.deployer.deployApplicationPackage();
             }
         }
     }
@@ -492,11 +561,15 @@ public class VespaFeed implements Output {
 
     @Override
     public Collection<PluginConfigSpec<?>> configSchema() {
-        return List.of(VESPA_URL, CLIENT_CERT, CLIENT_KEY, OPERATION, CREATE,
-                NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID, REMOVE_OPERATION,
-                MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD,
-                ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, AUTH_TOKEN,
-                DRY_RUN, DEPLOY_PACKAGE, CONFIG_SERVER, APPLICATION_PACKAGE_DIR, IDLE_BATCHES, TYPE_MAPPINGS_FILE);
+        return List.of(
+            QUICK_START, DEPLOY_PACKAGE, CONFIG_SERVER, APPLICATION_PACKAGE_DIR, IDLE_BATCHES, TYPE_MAPPINGS_FILE,
+            TYPE_CONFLICT_RESOLUTION_FILE, GENERATE_MTLS_CERTIFICATES, CLIENT_CERT, CLIENT_KEY, VESPA_URL,
+            NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID,
+            AUTH_TOKEN, OPERATION, REMOVE_OPERATION, CREATE, MAX_CONNECTIONS, MAX_STREAMS,
+            OPERATION_TIMEOUT, MAX_RETRIES, GRACE_PERIOD, DOOM_PERIOD, ENABLE_DLQ, DLQ_PATH,
+            MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, VESPA_CLOUD_TENANT, VESPA_CLOUD_APPLICATION,
+            VESPA_CLOUD_INSTANCE
+        );
     }
 
     @Override

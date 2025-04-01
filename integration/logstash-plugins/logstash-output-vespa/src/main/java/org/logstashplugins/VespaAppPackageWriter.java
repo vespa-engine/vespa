@@ -19,11 +19,11 @@ import org.logstash.LockException;
 import org.yaml.snakeyaml.Yaml;
 
 public class VespaAppPackageWriter {
-    private final DryRunConfig config;
+    private final QuickStartConfig config;
     private static final Logger logger = LogManager.getLogger(VespaAppPackageWriter.class);
     private final Map<String, List<String>> typeMappings;
 
-    public VespaAppPackageWriter(DryRunConfig config, Map<String, List<String>> typeMappings) {
+    public VespaAppPackageWriter(QuickStartConfig config, Map<String, List<String>> typeMappings) {
         this.config = config;
         this.typeMappings = typeMappings;
 
@@ -38,6 +38,16 @@ public class VespaAppPackageWriter {
                 throw new IllegalArgumentException("Error creating application package directory: " + e.getMessage());
             }
         }
+
+        if (config.isGenerateMtlsCertificates()) {
+            try {
+                generateMtlsCertificates();
+            } catch (Exception e) {
+                logger.error("Error generating mTLS certificates: {} {}", e.getMessage(), e.getStackTrace());
+                throw new IllegalArgumentException("Error generating mTLS certificates: " + e.getMessage());
+            }
+        }
+
         // delete the write.lock file, if it exists
         Path writeLockFile = Paths.get(config.getApplicationPackageDir(), "write.lock");
         if (Files.exists(writeLockFile)) {
@@ -47,14 +57,142 @@ public class VespaAppPackageWriter {
                 logger.error("Error deleting write.lock file: {}", e.getMessage());
             }
         }
-        // copy the .vespaignore file to the application package directory
-        Path vespaIgnoreFile = Paths.get(config.getApplicationPackageDir(), ".vespaignore");
-        if (Files.exists(vespaIgnoreFile)) {
-            try {
-                Files.copy(vespaIgnoreFile, Paths.get(config.getApplicationPackageDir(), ".vespaignore"));
-            } catch (IOException e) {
-                logger.error("Error copying .vespaignore file: {}", e.getMessage());
+
+        // Copy the .vespaignore file from resources if it doesn't exist in the target directory
+        try {
+            Path vespaIgnorePath = Paths.get(config.getApplicationPackageDir(), ".vespaignore");
+            if (!Files.exists(vespaIgnorePath)) {
+                logger.info("Copying .vespaignore file from the template application package");
+                try (InputStream is = getClass().getClassLoader().getResourceAsStream(
+                         Paths.get("application_package_template", ".vespaignore").toString())) {
+                    if (is == null) {
+                        logger.error("Could not find .vespaignore template in resources");
+                    } else {
+                        Files.copy(is, vespaIgnorePath);
+                        logger.info("Created .vespaignore file at: {}", vespaIgnorePath);
+                    }
+                }
+            } else {
+                logger.info(".vespaignore file already exists in the target directory, not overwriting");
             }
+        } catch (IOException e) {
+            logger.error("Error creating .vespaignore file: {}", e.getMessage());
+        }
+    }
+
+    private void generateMtlsCertificates() throws Exception {
+        String clientCertPath = config.getClientCert();
+        String clientKeyPath = config.getClientKey();
+        
+        if (clientCertPath == null || clientKeyPath == null) {
+            logger.error("Client certificate or key path is null. Cannot generate mTLS certificates.");
+            throw new IllegalArgumentException("Client certificate or key path is null");
+        }
+        
+        // make sure the parent directories of these certificates exists. Otherwise, generate them
+        Path clientCertDir = Paths.get(clientCertPath).getParent();
+        Path clientKeyDir = Paths.get(clientKeyPath).getParent();
+        
+        if (clientCertDir == null || clientKeyDir == null) {
+            logger.error("Invalid certificate or key path. Cannot determine parent directory.");
+            throw new IllegalArgumentException("Invalid certificate or key path");
+        }
+        
+        if (!Files.exists(clientCertDir)) {
+            logger.info("Creating directory for clients certificate: {}", clientCertDir);
+            Files.createDirectories(clientCertDir);
+        }
+        
+        if (!Files.exists(clientKeyDir)) {
+            logger.info("Creating directory for data plane private key: {}", clientKeyDir);
+            Files.createDirectories(clientKeyDir);
+        }
+
+        logger.info("Generating mTLS certificates:");
+        logger.info("Clients certificate path: {}", clientCertPath);
+        logger.info("Data plane private key path: {}", clientKeyPath);
+        
+        String cn = "cloud.vespa.logstash";
+        SelfSignedCertGenerator.generate(
+            cn,
+            30,      // valid for 30 days
+            clientKeyPath,
+            clientCertPath
+        );
+        
+        logger.info("Successfully generated mTLS certificates");
+        
+        if (config.isVespaCloud()) {
+            // Copy certificates to the user's home directory for Vespa CLI
+            copyVespaCloudCertificatesToUserHome();
+            
+            logger.info("For Vespa Cloud deployment, these certificates will be used for authentication");
+        }
+    }
+    
+    private void copyVespaCloudCertificatesToUserHome() {
+        if (!config.isVespaCloud()) {
+            return;
+        }
+        
+        try {
+            String tenant = config.getVespaCloudTenant();
+            String application = config.getVespaCloudApplication();
+            String instance = config.getVespaCloudInstance();
+            
+            // Get user home directory
+            String userHome = System.getProperty("user.home");
+            if (userHome == null) {
+                logger.warn("Cannot determine user home directory, skipping certificate copy");
+                return;
+            }
+            
+            // Create target directory path
+            Path vespaAppDir = Paths.get(userHome, ".vespa", tenant + "." + application + "." + instance);
+            if (!Files.exists(vespaAppDir)) {
+                logger.info("Creating Vespa CLI app directory: {}", vespaAppDir);
+                Files.createDirectories(vespaAppDir);
+            }
+            
+            // Define source and target paths
+            Path sourceCertPath = Paths.get(config.getClientCert());
+            Path sourceKeyPath = Paths.get(config.getClientKey());
+            Path targetCertPath = vespaAppDir.resolve("data-plane-public-cert.pem");
+            Path targetKeyPath = vespaAppDir.resolve("data-plane-private-key.pem");
+            
+            // Bail out if the files already exist
+            if (Files.exists(targetCertPath) || Files.exists(targetKeyPath)) {
+                logger.warn("Certificate or key already exists in Vespa CLI directory, not overwriting: {}", targetCertPath);
+                return;
+            }
+            
+            // Copy files
+            Files.copy(sourceCertPath, targetCertPath);
+            Files.copy(sourceKeyPath, targetKeyPath);
+            
+            // Set permissions on the files to be readable only by the owner
+            targetCertPath.toFile().setReadable(false, false);
+            targetCertPath.toFile().setReadable(true, true);
+            targetCertPath.toFile().setWritable(false, false);
+            targetCertPath.toFile().setWritable(true, true);
+            
+            targetKeyPath.toFile().setReadable(false, false);
+            targetKeyPath.toFile().setReadable(true, true);
+            targetKeyPath.toFile().setWritable(false, false);
+            targetKeyPath.toFile().setWritable(true, true);
+            
+            logger.info("Certificates copied to Vespa CLI directory: {}", vespaAppDir);
+            logger.info("These can be used with Vespa CLI when you do 'vespa deploy'");
+            
+        } catch (Exception e) {
+            logger.warn("Failed to copy certificates to user home directory: {}", e.getMessage());
+            logger.info("To use these certificates with Vespa CLI, copy them manually:");
+            logger.info("  mkdir -p ~/.vespa/{}.{}.{}", 
+                config.getVespaCloudTenant(), config.getVespaCloudApplication(), config.getVespaCloudInstance());
+            logger.info("  cp {} ~/.vespa/{}.{}.{}/data-plane-public-cert.pem", 
+                config.getClientCert(), config.getVespaCloudTenant(), config.getVespaCloudApplication(), config.getVespaCloudInstance());
+            logger.info("  cp {} ~/.vespa/{}.{}.{}/", 
+                config.getClientKey(), config.getVespaCloudTenant(), config.getVespaCloudApplication(), config.getVespaCloudInstance());
         }
     }
 
@@ -210,11 +348,19 @@ public class VespaAppPackageWriter {
     }
 
     private void writeServicesXml() throws IOException {
-        String servicesXml = null;
-        servicesXml = readTemplate("services.xml");
+        String servicesXml = readTemplate("services.xml");
+        // TODO: replace cluster name with an actual name (the document type?)
+        
         // replace document_type in services.xml with the actual document type
         // TODO: handle dynamic document type
         servicesXml = servicesXml.replace("document_type", config.getDocumentType());
+
+        // If mTLS is enabled, uncomment the mTLS configuration
+        if (config.isGenerateMtlsCertificates()) {
+            servicesXml = servicesXml
+                .replace("<!-- MTLS", "")  // remove opening comment
+                .replace("END MTLS -->", "");  // remove closing comment
+        }
 
         try {
             Path filePath = Paths.get(config.getApplicationPackageDir(), "services.xml");

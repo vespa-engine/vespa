@@ -17,10 +17,10 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 public class VespaDeployer {
-    private final DryRunConfig config;
+    private final QuickStartConfig config;
     private static final Logger logger = LogManager.getLogger(VespaDeployer.class);
 
-    public VespaDeployer(DryRunConfig config) {
+    public VespaDeployer(QuickStartConfig config) {
         this.config = config;
     }
 
@@ -37,39 +37,81 @@ public class VespaDeployer {
             return;
         }
 
-        HttpURLConnection connection = null;
         try {
+            // Check if we're in Vespa Cloud mode
+            if (config.isVespaCloud()) {
+                showVespaCloudDeploymentInstructions();
+                return;
+            }
+            
+            // Continue with local Vespa deployment
             byte[] zipContent = createApplicationZip();
             
-            URI uri = URI.create(config.getConfigServer() + "/application/v2/tenant/default/prepareandactivate");
-            URL url = uri.toURL();
-            connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("POST");
-            connection.setRequestProperty("Content-Type", "application/zip");
-            connection.setDoOutput(true);
-            
-            connection.getOutputStream().write(zipContent);
-            
-            int responseCode = connection.getResponseCode();
-            if (responseCode != 200) {
-                String error = new String(connection.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
-                throw new IOException("Failed to deploy application package. Response code: " + 
-                    responseCode + ", error: " + error);
+            HttpURLConnection connection = null;
+            try {
+                URI uri = URI.create(config.getConfigServer() + "/application/v2/tenant/default/prepareandactivate");
+                URL url = uri.toURL();
+                connection = (HttpURLConnection) url.openConnection();
+                connection.setRequestMethod("POST");
+                connection.setRequestProperty("Content-Type", "application/zip");
+                connection.setDoOutput(true);
+                
+                connection.getOutputStream().write(zipContent);
+                
+                int responseCode = connection.getResponseCode();
+                if (responseCode != 200) {
+                    String error = new String(connection.getErrorStream().readAllBytes(), StandardCharsets.UTF_8);
+                    throw new IOException("Failed to deploy application package. Response code: " + 
+                        responseCode + ", error: " + error);
+                }
+                logger.info("Successfully deployed application package to local Vespa");
+            } catch (java.net.ConnectException e) {
+                logger.error("Connection refused when trying to deploy to Vespa at {}.", config.getConfigServer());
+                logger.error("Make sure the config server is running at the specified URL.");
+                logger.error("Error: {}", e.getMessage());
+            } finally {
+                if (connection != null) {
+                    connection.disconnect();
+                }
             }
-            logger.info("Successfully deployed application package");
-        
         } catch (IOException e) {
             logger.error("Error deploying application package: {}", e.getMessage());
         } finally {
-            if (connection != null) {
-                connection.disconnect();
-            }
             try {
                 Files.delete(writeLockFile);
             } catch (IOException e) {
                 logger.error("Error deleting lock file: {}", e.getMessage());
             }
         }
+    }
+    
+    private void showVespaCloudDeploymentInstructions() {
+        //TODO there must be a bug in the locking mechanism, because I see the messages twice
+
+        String tenant = config.getVespaCloudTenant();
+        String application = config.getVespaCloudApplication();
+        String instance = config.getVespaCloudInstance();
+        String appDir = config.getApplicationPackageDir();
+        
+        logger.info("===============================================================");
+        logger.info("Application package for Vespa Cloud has been generated at: {}", appDir);
+        logger.info("To deploy to Vespa Cloud, use the Vespa CLI with the following steps:");
+        logger.info("");
+        logger.info("1. If you haven't already, install the Vespa CLI: https://docs.vespa.ai/en/vespa-cli.html");
+        logger.info("");
+        logger.info("2. Point the CLI to your Vespa Cloud application:");
+        logger.info("   vespa config set target cloud");
+        logger.info("   vespa config set application {}.{}.{}", tenant, application, instance);
+        logger.info("");
+        logger.info("3. Authenticate with Vespa Cloud:");
+        logger.info("   vespa auth login");
+        logger.info("");
+        logger.info("4. Deploy your application:");
+        logger.info("   cd {}", appDir);
+        logger.info("   vespa deploy --wait 900");
+        logger.info("");
+        logger.info("For more information, see: https://cloud.vespa.ai/en/getting-started");
+        logger.info("===============================================================");
     }
 
     private byte[] createApplicationZip() throws IOException {
