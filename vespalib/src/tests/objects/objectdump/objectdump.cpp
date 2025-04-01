@@ -61,7 +61,7 @@ struct Bar : public Base
         visit(v, "_double", _double);
         visit(v, "_string", _string);
         visit(v, "info", "a dummy string");
-        visit(v, "(const char*)0", (const char*)0);
+        visit(v, "(const char*)nullptr", static_cast<const char*>(nullptr));
     }
 };
 IMPLEMENT_IDENTIFIABLE(Bar, Base);

@@ -26,8 +26,8 @@ struct wait_info {
     wait_info() :
         _count(0)
     {
-        if (pthread_mutex_init(&_mutex, NULL) != 0) { abort(); }
-        if (pthread_cond_init(&_cond, NULL) != 0) { abort(); }
+        if (pthread_mutex_init(&_mutex, nullptr) != 0) { abort(); }
+        if (pthread_cond_init(&_cond, nullptr) != 0) { abort(); }
     }
     ~wait_info() {
         if (pthread_mutex_destroy(&_mutex) != 0) { abort(); }
@@ -53,7 +53,7 @@ void * just_wait(void * arg)
 TEST_MAIN() {
     size_t threadCount(102400);
     if (argc >= 3) {
-        threadCount = strtoul(argv[2], NULL, 0);
+        threadCount = strtoul(argv[2], nullptr, 0);
     }
 
     const char * testType = argv[1];

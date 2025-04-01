@@ -169,13 +169,13 @@ getTermByLabel(const search::fef::IQueryEnvironment &env, const std::string &lab
     os << "vespa.label." << label << ".id";
     Property p = env.getProperties().lookup(os.view());
     if (!p.found()) {
-        return 0;
+        return nullptr;
     }
     uint32_t uid = strToNum<uint32_t>(p.get());
     if (uid == 0) {
         Issue::report("Query label '%s' was attached to invalid unique id: '%s'",
                       label.c_str(), p.get().c_str());
-        return 0;
+        return nullptr;
     }
     for (uint32_t i(0), m(env.getNumTerms()); i < m; ++i) {
         const ITermData *term = env.getTerm(i);
@@ -185,7 +185,7 @@ getTermByLabel(const search::fef::IQueryEnvironment &env, const std::string &lab
     }
     Issue::report("Query label '%s' was attached to non-existing unique id: '%s'",
                   label.c_str(), p.get().c_str());
-    return 0;
+    return nullptr;
 }
 
 std::optional<DocumentFrequency>

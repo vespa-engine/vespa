@@ -72,8 +72,8 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
       _names(),
       _pending(),
       _unreg(),
-      _target(0),
-      _req(0)
+      _target(nullptr),
+      _req(nullptr)
 {
     _configurator->poll();
     if ( ! _slobrokSpecs.ok()) {
@@ -87,12 +87,12 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
 RegisterAPI::~RegisterAPI()
 {
     Kill();
-    _configurator.reset(0);
-    if (_req != 0) {
+    _configurator.reset();
+    if (_req != nullptr) {
         _req->Abort();
         _req->internal_subref();
     }
-    if (_target != 0) {
+    if (_target != nullptr) {
         _target->internal_subref();
     }
 }
@@ -138,10 +138,10 @@ RegisterAPI::handleReqDone()
                     _req->GetErrorMessage(), _req->GetErrorCode());
                 // unexpected error; close our connection to this
                 // slobrok server and try again with a fresh slate
-                if (_target != 0) {
+                if (_target != nullptr) {
                     _target->internal_subref();
                 }
-                _target = 0;
+                _target = nullptr;
                 _busy.store(true, std::memory_order_relaxed);
             } else {
                 LOG(warning, "%s(%s -> %s) failed: %s",
@@ -160,7 +160,7 @@ RegisterAPI::handleReqDone()
             _backOff.reset();
         }
         _req->internal_subref();
-        _req = 0;
+        _req = nullptr;
     }
 }
 
@@ -168,16 +168,16 @@ RegisterAPI::handleReqDone()
 void
 RegisterAPI::handleReconnect()
 {
-    if (_configurator->poll() && _target != 0) {
+    if (_configurator->poll() && _target != nullptr) {
         if (! _slobrokSpecs.contains(_currSlobrok)) {
             std::string cps = _slobrokSpecs.logString();
             LOG(warning, "[RPC @ %s] location broker %s removed, will disconnect and use one of: %s",
                 createSpec(_orb).c_str(), _currSlobrok.c_str(), cps.c_str());
             _target->internal_subref();
-            _target = 0;
+            _target = nullptr;
         }
     }
-    if (_target == 0) {
+    if (_target == nullptr) {
         _logOnSuccess = true;
         _currSlobrok = _slobrokSpecs.nextSlobrokSpec();
         if (_currSlobrok.size() > 0) {
@@ -190,7 +190,7 @@ RegisterAPI::handleReconnect()
             // immediately re-register everything.
             _pending = _names;
         }
-        if (_target == 0) {
+        if (_target == nullptr) {
             // we have tried all possible servers.
             // start from the top after a delay,
             // possibly with a warning.
@@ -261,13 +261,13 @@ void
 RegisterAPI::PerformTask()
 {
     handleReqDone();
-    if (_req != 0) {
+    if (_req != nullptr) {
         LOG(debug, "req in progress");
         return; // current request still in progress, don't start anything new
     }
     handleReconnect();
     // still no connection?
-    if (_target == 0) return;
+    if (_target == nullptr) return;
     handlePending();
 }
 

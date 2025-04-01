@@ -60,7 +60,7 @@ ParameterValidator::validateField(ParameterType::Enum type,
                                   size_t i, Result & result)
 {
     const FieldInfo * field = _indexEnv.getFieldByName(_params[i]);
-    if (field == NULL) {
+    if (field == nullptr) {
         throw ValidateException(make_string("Param[%zu]: Field '%s' was not found in the index environment",
                                             i, _params[i].c_str()));
     }

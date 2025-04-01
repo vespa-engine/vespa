@@ -116,7 +116,7 @@ VespaDocumentDeserializer::readDocType(const DocumentType &guess)
         }
         return type;
     }
-    return 0;
+    return nullptr;
 }
 
 void

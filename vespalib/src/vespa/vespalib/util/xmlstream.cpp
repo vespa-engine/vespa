@@ -112,7 +112,7 @@ XmlOutputStream::operator<<(const XmlTag& tag)
 {
     //std::cerr << "Trying to add tag " << tag.getName() << ". cached tag is "
     //          << (void*) _cachedTag.get() << "\n";
-    if (_cachedTag.get() != 0) flush(false);
+    if (_cachedTag.get() != nullptr) flush(false);
     _cachedTag.reset(new XmlTag(tag));
     _cachedContentType = XmlContent::AUTO;
     //std::cerr << "Added tag " << _cachedTag->getName() << "\n";
@@ -123,7 +123,7 @@ XmlOutputStream&
 XmlOutputStream::operator<<(const XmlAttribute& attribute)
 {
     //std::cerr << "Adding attribute\n";
-    if (_cachedTag.get() == 0) {
+    if (_cachedTag.get() == nullptr) {
         throw vespalib::IllegalStateException("Cannot add attribute "
                 + attribute.getName() + ", as no tag is open");
     }
@@ -156,11 +156,11 @@ XmlOutputStream&
 XmlOutputStream::operator<<(const XmlContent& content)
 {
     //std::cerr << "Adding content\n";
-    if (_cachedTag.get() == 0 && _tagStack.empty()) {
+    if (_cachedTag.get() == nullptr && _tagStack.empty()) {
         throw vespalib::IllegalStateException(
                 "No open tag to write content in");
     }
-    if (_cachedTag.get() != 0) {
+    if (_cachedTag.get() != nullptr) {
         //std::cerr << "Content is '" << content.getContent() << "'\n";
         if (content.getType() == XmlContent::AUTO) { // Do nothing.. Always ok
         } else if (_cachedContentType == XmlContent::AUTO) {
@@ -232,7 +232,7 @@ void
 XmlOutputStream::flush(bool endTag)
 {
     //std::cerr << "Flushing\n";
-    if (_cachedTag.get() == 0) {
+    if (_cachedTag.get() == nullptr) {
         throw vespalib::IllegalStateException("Cannot write non-existing tag");
     }
     for (uint32_t i=0; i<_tagStack.size(); ++i) {
@@ -296,7 +296,7 @@ XmlOutputStream::flush(bool endTag)
             _tagStack.push_back(_cachedTag->getName());
         }
     }
-    _cachedTag.reset(0);
+    _cachedTag.reset();
 }
 
 XmlTag::XmlTag(const XmlTag& tag)

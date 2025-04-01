@@ -44,7 +44,7 @@ SocketHandle
 SocketHandle::accept()
 {
     for (;;) {
-        SocketHandle result(::accept(_fd, nullptr, 0));
+        SocketHandle result(::accept(_fd, nullptr, nullptr));
         if (result.valid() || (errno != EINTR)) {
             return result;
         }

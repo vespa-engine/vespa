@@ -146,12 +146,12 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
         NativeFieldMatchParam & param = _params.vector[fieldId];
         param.field = true;
         if ((param.firstOccTable =
-             util::lookupTable(env, getBaseName(), "firstOccurrenceTable", info->name(), _defaultFirstOcc)) == NULL)
+             util::lookupTable(env, getBaseName(), "firstOccurrenceTable", info->name(), _defaultFirstOcc)) == nullptr)
         {
             return false;
         }
         if ((param.numOccTable =
-             util::lookupTable(env, getBaseName(), "occurrenceCountTable", info->name(), _defaultNumOcc)) == NULL)
+             util::lookupTable(env, getBaseName(), "occurrenceCountTable", info->name(), _defaultNumOcc)) == nullptr)
         {
             return false;
         }
@@ -173,7 +173,7 @@ NativeFieldMatchBlueprint::setup(const IIndexEnvironment & env,
         if (NativeRankBlueprint::useTableNormalization(env)) {
             const Table * fo = param.firstOccTable;
             const Table * no = param.numOccTable;
-            if (fo != NULL && no != NULL) {
+            if (fo != nullptr && no != nullptr) {
                 double value = (fo->max() * param.firstOccImportance) +
                     (no->max() * (1 - param.firstOccImportance));
                 _params.setMaxTableSums(fieldId, value);

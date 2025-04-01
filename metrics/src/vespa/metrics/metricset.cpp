@@ -58,7 +58,7 @@ MetricSet::getMetricInternal(string_view name) const
             return metric;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 int64_t MetricSet::getLongValue(string_view) const {
@@ -80,7 +80,7 @@ MetricSet::getMetric(string_view name) const
         string_view child(name.substr(0, pos));
         string_view rest(name.substr(pos + 1));
         const Metric* m(getMetricInternal(child));
-        if (m == 0) return 0;
+        if (m == nullptr) return nullptr;
         if (!m->isMetricSet()) {
             throw vespalib::IllegalStateException(
                     "Metric " + std::string(child) + " is not a metric set. Cannot retrieve "
@@ -121,7 +121,7 @@ void
 MetricSet::tagRegistrationAltered()
 {
     _registrationAltered = true;
-    if (_owner != 0) {
+    if (_owner != nullptr) {
         _owner->tagRegistrationAltered();
     }
 }
@@ -136,7 +136,7 @@ MetricSet::registerMetric(Metric& metric)
                 "Cannot register it twice.", VESPA_STRLOC);
     }
     const Metric* existing(getMetricInternal(metric.getMangledName()));
-    if (existing != 0) {
+    if (existing != nullptr) {
         throw vespalib::IllegalStateException(
                 "A metric named " + metric.getMangledName() +
                 " is already registered in metric set " + getPath(),
@@ -160,7 +160,7 @@ MetricSet::unregisterMetric(Metric& metric)
         // In case of abrubt shutdowns, don't die hard on attempts to unregister
         // non-registered metrics. Just warn and ignore.
     const Metric* existing(getMetricInternal(metric.getMangledName()));
-    if (existing == 0) {
+    if (existing == nullptr) {
         LOG(warning, "Attempt to unregister metric %s in metric set %s, where "
                      "it wasn't registered to begin with.",
             metric.getMangledName().c_str(),
@@ -179,7 +179,7 @@ MetricSet::unregisterMetric(Metric& metric)
     }
     assert(found); // We check above for existence.
     (void) found;
-    metric.setRegistered(NULL);
+    metric.setRegistered(nullptr);
     tagRegistrationAltered();
     if (metric.isMetricSet()) {
         static_cast<MetricSet &>(metric)._owner = this;
@@ -220,7 +220,7 @@ namespace {
 void
 MetricSet::addTo(Metric& other, std::vector<Metric::UP> *ownerList) const
 {
-    bool mustAdd = (ownerList == 0);
+    bool mustAdd = (ownerList == nullptr);
     MetricSet& o(static_cast<MetricSet&>(other));
     SortedVector map1, map2;
     createMetricMap(map1, _metricOrder);

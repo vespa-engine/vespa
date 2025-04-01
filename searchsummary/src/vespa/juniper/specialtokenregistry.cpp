@@ -88,7 +88,7 @@ const char* SpecialTokenRegistry::tokenize(const char* buf, const char* bufend, 
         stream.resetAndInc();
     }
 
-    return NULL;
+    return nullptr;
 }
 
 } // namespace juniper

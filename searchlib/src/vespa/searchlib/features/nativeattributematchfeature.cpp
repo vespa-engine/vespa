@@ -139,7 +139,7 @@ NativeAttributeMatchBlueprint::setup(const IIndexEnvironment & env,
         NativeAttributeMatchParams::Param & param = _params.vector[fieldId];
         param.field = true;
         const Table * weightBoostTable = util::lookupTable(env, getBaseName(), WeightTableName, info->name(), DefaultWeightTable);
-        if (weightBoostTable == NULL) {
+        if (weightBoostTable == nullptr) {
             return false;
         }
         param.weightBoostTable = SymmetricTable(*weightBoostTable);

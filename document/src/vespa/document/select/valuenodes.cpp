@@ -570,9 +570,9 @@ IdValueNode::IdValueNode(const BucketIdFactory& bucketIdFactory,
 std::unique_ptr<Value>
 IdValueNode::getValue(const Context& context) const
 {
-    if (context._doc != NULL) {
+    if (context._doc != nullptr) {
         return getValue(context._doc->getId());
-    } else if (context._docId != NULL) {
+    } else if (context._docId != nullptr) {
         return getValue(*context._docId);
     } else {
         return getValue(context._docUpdate->getId());
@@ -632,9 +632,9 @@ std::unique_ptr<Value>
 IdValueNode::traceValue(const Context& context,
                         std::ostream &out) const
 {
-    if (context._doc != NULL) {
+    if (context._doc != nullptr) {
         return traceValue(context._doc->getId(), out);
-    } else if (context._docId != NULL) {
+    } else if (context._docId != nullptr) {
         return traceValue(*context._docId, out);
     } else {
         return traceValue(context._docUpdate->getId(), out);
@@ -976,7 +976,7 @@ ArithmeticValueNode::getValue(std::unique_ptr<Value> lval,
             }
             NumberValue* nlval(dynamic_cast<NumberValue*>(lval.get()));
             NumberValue* nrval(dynamic_cast<NumberValue*>(rval.get()));
-            if (nlval != 0 && nrval != 0) {
+            if (nlval != nullptr && nrval != nullptr) {
                 NumberValue::CommonValueType res = 0;
                 switch (_operator) {
                     case ADD: res = nlval->getCommonValue()
@@ -1063,7 +1063,7 @@ ArithmeticValueNode::traceValue(std::unique_ptr<Value> lval,
             }
             NumberValue* nlval(dynamic_cast<NumberValue*>(lval.get()));
             NumberValue* nrval(dynamic_cast<NumberValue*>(lval.get()));
-            if (nlval != 0 && nrval != 0) {
+            if (nlval != nullptr && nrval != nullptr) {
                 NumberValue::CommonValueType res = 0;
                 switch (_operator) {
                     case ADD: res = nlval->getCommonValue()

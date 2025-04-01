@@ -14,7 +14,7 @@ SummaryConfig* CreateSummaryConfig(const char* highlight_on, const char* highlig
 
 void DeleteSummaryConfig(SummaryConfig*& sumconf) {
     delete sumconf;
-    sumconf = NULL;
+    sumconf = nullptr;
 }
 
 inline char hexchar(const char* s) {

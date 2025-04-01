@@ -81,9 +81,9 @@ TEST_MAIN() {
     size_t values(10000000);
     std::string type("radix");
     if (argc > 1) {
-        values = strtol(argv[1], NULL, 0);
+        values = strtol(argv[1], nullptr, 0);
         if (argc > 2) {
-            numVectors = strtol(argv[2], NULL, 0);
+            numVectors = strtol(argv[2], nullptr, 0);
             if (argc > 2) {
                 type = argv[3];
             }

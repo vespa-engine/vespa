@@ -44,7 +44,7 @@ void ProxyCmd::finiRPC() {
     }
     if (_target != nullptr) {
         _target->internal_subref();
-        _target = NULL;
+        _target = nullptr;
     }
     _server.reset();
 }

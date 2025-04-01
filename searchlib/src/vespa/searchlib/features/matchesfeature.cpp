@@ -110,7 +110,7 @@ MatchesBlueprint::createInstance() const
 FeatureExecutor &
 MatchesBlueprint::createExecutor(const IQueryEnvironment & queryEnv, vespalib::Stash &stash) const
 {
-    if (_field == 0) {
+    if (_field == nullptr) {
         return stash.create<SingleZeroValueExecutor>();
     }
     if (_termIdx != std::numeric_limits<uint32_t>::max()) {

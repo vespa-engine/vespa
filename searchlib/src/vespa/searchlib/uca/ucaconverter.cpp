@@ -31,7 +31,7 @@ UcaConverter::UcaConverter(std::string_view locale, std::string_view strength)
       _collator()
 {
     UErrorCode status = U_ZERO_ERROR;
-    Collator *coll(NULL);
+    Collator *coll = nullptr;
     {
         std::lock_guard<std::mutex> guard(_GlobalDirtyICUThreadSafeLock);
         coll = Collator::createInstance(icu::Locale(std::string(locale).c_str()), status);

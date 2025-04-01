@@ -31,7 +31,7 @@ struct HistorySearchIterator : public SearchIterator
     void doUnpack(uint32_t docId) override { _history.unpack("x", docId); }
     const PostingInfo *getPostingInfo() const override {
         _getPostingInfoCalled = true;
-        return NULL;
+        return nullptr;
     }
 };
 

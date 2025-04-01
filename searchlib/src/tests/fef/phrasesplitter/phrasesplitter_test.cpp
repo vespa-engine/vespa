@@ -98,8 +98,8 @@ TEST(PhraseSplitterTest, test_splitter)
             // fprintf(stderr, "checking term %d\n", (int)i);
             const ITermData *td = ps.get_query_env().getTerm(i);
             EXPECT_NE(td, &terms[0]);
-            EXPECT_NE(td->lookupField(7), (ITermFieldData *)0);
-            EXPECT_EQ(td->lookupField(0), (ITermFieldData *)0);
+            EXPECT_NE(td->lookupField(7), nullptr);
+            EXPECT_EQ(td->lookupField(0), nullptr);
             assertTermData(td, 1, 1, 7, i + 4, "single phrase"); // skipHandles = 4
             EXPECT_NE(td->lookupField(7)->getHandle(),
                       terms[0].lookupField(7)->getHandle());
@@ -142,7 +142,7 @@ TEST(PhraseSplitterTest, test_splitter)
             const ITermData *td = ps.get_query_env().getTerm(i + 1);
             EXPECT_NE(td, &terms[1]);
             assertTermData(td, 1, 1, 4, i + 11, "phrase term"); // skipHandles == 11
-            EXPECT_EQ(td->lookupField(7),  (ITermFieldData *)0);
+            EXPECT_EQ(td->lookupField(7),  nullptr);
             EXPECT_NE(ps.resolveTermField(td->lookupField(4)->getHandle()),
                       md->resolveTermField(terms[1].lookupField(4)->getHandle()));
         }

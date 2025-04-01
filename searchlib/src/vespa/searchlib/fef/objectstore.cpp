@@ -13,7 +13,7 @@ ObjectStore::~ObjectStore()
 {
     for(auto & it : _objectMap) {
         delete it.second;
-        it.second = NULL;
+        it.second = nullptr;
     }
 }
 
@@ -23,7 +23,7 @@ ObjectStore::add(const std::string & key, Anything::UP value)
     auto found = _objectMap.find(key);
     if (found != _objectMap.end()) {
         delete found->second;
-        found->second = NULL;
+        found->second = nullptr;
     }
     _objectMap[key] = value.release();
 }
@@ -32,7 +32,7 @@ const Anything *
 ObjectStore::get(const std::string & key) const
 {
     auto found = _objectMap.find(key);
-    return (found != _objectMap.end()) ? found->second : NULL;
+    return (found != _objectMap.end()) ? found->second : nullptr;
 }
 
 Anything *

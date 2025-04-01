@@ -52,14 +52,14 @@ findAllFiles(const char *dir)
 {
     std::vector<std::string> rv;
     DIR *d = opendir(dir);
-    if (d == NULL) {
+    if (d == nullptr) {
         perror(dir);
         return rv;
     }
     LOG(spam, "scanning %s", dir);
 
     struct dirent *entry;
-    while ((entry = readdir(d)) != NULL) {
+    while ((entry = readdir(d)) != nullptr) {
         if (strcmp(entry->d_name, ".")  == 0) continue;
         if (strcmp(entry->d_name, "..") == 0) continue;
 
@@ -240,7 +240,7 @@ modifyLevels(const char *file, const char *componentPattern, const char *levels,
         cf.ensureComponent(componentPattern);
     }
     ComponentIterator iter(cf.getComponentIterator());
-    while ((c = iter.next()) != NULL) {
+    while ((c = iter.next()) != nullptr) {
         std::unique_ptr<Component> component(c);
         if (component->matches(componentPattern)) {
             component->modifyLevels(levels);
@@ -255,7 +255,7 @@ readLevels(const char *file, const char *componentPattern)
     ControlFile cf(file, ControlFile::READONLY);
     Component *c;
     ComponentIterator iter(cf.getComponentIterator());
-    while ((c = iter.next()) != NULL) {
+    while ((c = iter.next()) != nullptr) {
         std::unique_ptr<Component> component(c);
         if (c->matches(componentPattern)) {
             c->display();
