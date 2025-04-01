@@ -3,6 +3,8 @@ package com.yahoo.search.query;
 
 import com.google.common.base.Preconditions;
 import com.yahoo.prelude.query.FalseItem;
+import com.yahoo.prelude.query.NumericInItem;
+import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.collections.LazyMap;
@@ -57,6 +59,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -139,6 +142,7 @@ public class SelectParser implements Parser {
     private static final String CALL = "call";
     private static final String CONTAINS = "contains";
     private static final String EQ = "equals";
+    private static final String IN = "in";
     private static final String MATCHES = "matches";
     private static final String OR = "or";
 
@@ -196,10 +200,11 @@ public class SelectParser implements Parser {
                 case CALL -> item[0] = buildFunctionCall(key, value);
                 case CONTAINS -> item[0] = buildTermSearch(key, value);
                 case EQ -> item[0] = buildEquals(key, value);
+                case IN -> item[0] = buildIn(key, value);
                 case MATCHES -> item[0] = buildRegExpSearch(key, value);
                 case OR -> item[0] = buildOr(key, value);
                 case RANGE -> item[0] = buildRange(key, value);
-                default -> throw newUnexpectedArgumentException(key, AND, AND_NOT, CALL, CONTAINS, EQ, MATCHES, OR, RANGE);
+                default -> throw newUnexpectedArgumentException(key, AND, AND_NOT, CALL, CONTAINS, EQ, IN, MATCHES, OR, RANGE);
             }
         });
         return item[0];
@@ -623,6 +628,56 @@ public class SelectParser implements Parser {
                     throw new IllegalArgumentException("The second array element under 'equals' should be a boolean " +
                                                        "or int value but was " + children.get(1));
         };
+    }
+
+    private Item buildIn(String key, Inspector value) {
+        HashMap<Integer, Inspector> children = childMap(value);
+        String field = children.get(0).asString();
+        children.remove(0);
+
+        Preconditions.checkArgument(indexFactsSession.isIndex(field), "Field '%s' does not exist.", field);
+        field = indexFactsSession.getCanonicName(field);
+        var index = indexFactsSession.getIndex(field);
+
+        if (!index.isInteger() && !index.isString()) {
+            throw new IllegalArgumentException("The in operator is only supported for integer and string fields. The field '" +
+                    field + "' is not of these types");
+        }
+        if (index.isInteger() && index.isString()) {
+            throw new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer and string fields. The fieldset '" +
+                    field + "' has both");
+        }
+
+        Collection<Inspector> values = children.values();
+        Item item = null;
+        if (index.isString()) {
+           StringInItem stringInItem = new StringInItem(field);
+
+            for (Inspector child:  children.values()){
+                if (child.type() != STRING) {
+                    throw new IllegalArgumentException("The field '" + field + "' is a string field, but the argument "
+                            + child + " is of type " + child.type());
+                }
+
+                stringInItem.addToken(child.asString());
+            }
+            item = stringInItem;
+
+        } else { // Integer index
+            NumericInItem numericInItem = new NumericInItem(field);
+
+            for (Inspector child:  children.values()){
+                if (child.type() != LONG) {
+                    throw new IllegalArgumentException("The field '" + field + "' is an integer field, but the argument "
+                    + child + " is of type " + child.type());
+                }
+                numericInItem.addToken(child.asLong());
+            }
+
+            item = numericInItem;
+        }
+
+        return item;
     }
 
     private Item buildRange(String key, Inspector value) {

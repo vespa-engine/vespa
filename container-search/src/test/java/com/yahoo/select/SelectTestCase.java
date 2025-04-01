@@ -5,14 +5,20 @@ import com.yahoo.json.Jackson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.yahoo.prelude.Index;
+import com.yahoo.prelude.IndexModel;
+import com.yahoo.prelude.IndexFacts;
+import com.yahoo.prelude.SearchDefinition;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.ExactStringItem;
 import com.yahoo.prelude.query.FuzzyItem;
 import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.NumericInItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RegExpItem;
 import com.yahoo.prelude.query.SegmentingRule;
+import com.yahoo.prelude.query.StringInItem;
 import com.yahoo.prelude.query.Substring;
 import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
@@ -34,6 +40,8 @@ import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.yql.VespaGroupingStep;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -51,7 +59,35 @@ public class SelectTestCase {
 
     private static final ObjectMapper jsonMapper = Jackson.mapper();
 
-    private final SelectParser parser = new SelectParser(new ParserEnvironment());
+    private SelectParser parser;
+
+    @BeforeEach
+    public void setUp() throws Exception {
+        ParserEnvironment env = new ParserEnvironment();
+        parser = new SelectParser(env);
+    }
+
+    @AfterEach
+    public void tearDown() throws Exception {
+        parser = null;
+    }
+
+    static private IndexFacts createIndexFactsForInTest() {
+        SearchDefinition sd = new SearchDefinition("default");
+        Index fieldIndex = new Index("field");
+        fieldIndex.setInteger(true);
+        sd.addIndex(fieldIndex);
+        Index stringIndex = new Index("string");
+        stringIndex.setString(true);
+        sd.addIndex(stringIndex);
+        Index floatIndex = new Index("float");
+        sd.addIndex(floatIndex);
+        Index mixedIndex = new Index("mixed");
+        mixedIndex.setInteger(true);
+        mixedIndex.setString(true);
+        sd.addIndex(mixedIndex);
+        return new IndexFacts(new IndexModel(sd));
+    }
 
     //------------------------------------------------------------------- "where" tests
 
@@ -79,6 +115,41 @@ public class SelectTestCase {
     void testDottedFieldNames() {
         assertParse("{ 'contains' : ['my.nested.title', 'madonna']}",
                     "my.nested.title:madonna");
+    }
+
+    @Test
+    void testIn() {
+        parser = new SelectParser(new ParserEnvironment().setIndexFacts(createIndexFactsForInTest()));
+
+        // Numeric
+        Select selectNumeric = new Select("{\"in\" : [\"field\", 42, 22, -7, 26, 25, -11, 24]}", "", new Query());
+        var query = parser.parse(new Parsable().setSelect(selectNumeric));
+        assertNumericInItem("field", new long[]{-11, -7, 22, 24, 25, 26, 42}, query);
+
+        // String
+        Select selectString = new Select("{\"in\" : [\"string\", 'a','b', 'this', \"might\", \"work\"]}", "", new Query());
+        query = parser.parse(new Parsable().setSelect(selectString));
+        assertStringInItem("string", new String[]{"a","b","might","this", "work"}, query);
+
+        assertParseFail("{\"in\" : [\"field\", 29.9, -7.4]}",
+                new IllegalArgumentException("The field 'field' is an integer field, "
+                        + "but the argument 29.9 is of type DOUBLE"));
+        assertParseFail("{\"in\" : [\"string\", 'a', 25]}",
+                new IllegalArgumentException("The field 'string' is a string field, "
+                        + "but the argument 25 is of type LONG"));
+        assertParseFail("{\"in\" : [\"field\", 'a', 25]}",
+                new IllegalArgumentException("The field 'field' is an integer field, "
+                        + "but the argument \"a\" is of type STRING"));
+        assertParseFail("{\"in\" : [\"nofield\", 'a', 25]}",
+                new IllegalArgumentException("Field 'nofield' does not exist."));
+        assertParseFail("{\"not in\" : [\"field\", 25]}",
+                new IllegalArgumentException("Expected and, and_not, call, contains, equals, in, matches, or or range, got not in."));
+        assertParseFail("{\"in\" : [\"float\", 25]}",
+                new IllegalArgumentException("The in operator is only supported for integer and string fields. " +
+                        "The field 'float' is not of these types"));
+        assertParseFail("{\"in\" : [\"mixed\", 25]}",
+                new IllegalArgumentException("The in operator is not supported for fieldsets with a mix of integer " +
+                        "and string fields. The fieldset 'mixed' has both"));
     }
 
     @Test
@@ -911,4 +982,25 @@ public class SelectTestCase {
         }
     }
 
+    private static void assertNumericInItem(String field, long[] values, QueryTree query) {
+        var exp = buildNumericInItem(field, values);
+        assertEquals(exp, query.getRoot());
+    }
+
+    private static void assertStringInItem(String field, String[] values, QueryTree query) {
+        var exp = buildStringInItem(field, values);
+        assertEquals(exp, query.getRoot());
+    }
+
+    private static NumericInItem buildNumericInItem(String field, long[] values) {
+        var item = new NumericInItem(field);
+        for (var value : values) item.addToken(value);
+        return item;
+    }
+
+    private static StringInItem buildStringInItem(String field, String[] values) {
+        var item = new StringInItem(field);
+        for (var value : values) item.addToken(value);
+        return item;
+    }
 }
