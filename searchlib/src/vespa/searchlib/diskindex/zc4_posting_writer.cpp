@@ -104,7 +104,7 @@ Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
     write_zc_view(l3_skip_view);
     write_zc_view(l4_skip_view);
 
-    // Write features
+    // Write features. For very common words, this might be more than 4Gib.
     e.writeBits(_featureWriteContext.getComprBuf(), 0, _featureOffset);
 
     _counts._numDocs += numDocs;

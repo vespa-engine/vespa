@@ -546,8 +546,6 @@ readFeatures(search::index::DocIdAndFeatures &features)
         UC64_DECODEEXPGOLOMB_SMALL_NS(o, K_VALUE_POSOCC_NUMPOSITIONS, EC);
         uint32_t numPositions = static_cast<uint32_t>(val64) + 1;
 
-        features.set_bit_length(numPositions * 64);
-
         uint32_t wordPosK = EGPosOccEncodeContext<bigEndian>::calcWordPosK(numPositions, elementLen);
 
         uint32_t wordPos = static_cast<uint32_t>(-1);

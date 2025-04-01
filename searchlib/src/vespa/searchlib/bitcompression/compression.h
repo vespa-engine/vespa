@@ -1491,7 +1491,7 @@ public:
 
     using ParentClass::writeBits;
 
-    void writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength);
+    void writeBits(const uint64_t *bits, uint32_t bitOffset, uint64_t bitLength);
     void writeBytes(std::span<const char> buf);
     void writeBytes(std::span<const unsigned char> buf);
     void writeString(std::string_view buf);
