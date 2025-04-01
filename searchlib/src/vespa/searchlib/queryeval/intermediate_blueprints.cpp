@@ -449,12 +449,12 @@ WeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
 Blueprint::HitEstimate
 WeakAndBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
-    HitEstimate childEst = max(data);
-    HitEstimate myEst(_n, false);
-    if (childEst < myEst) {
-        return childEst;
+    auto or_est = sat_sum(data, get_docid_limit());
+    if (or_est.estHits < _n) {
+        return or_est;
     }
-    return myEst;
+    // use average of target hits and OR estimate
+    return {(_n + or_est.estHits + 1) / 2, false};
 }
 
 FieldSpecBaseList
