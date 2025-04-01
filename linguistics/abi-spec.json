@@ -330,6 +330,23 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.language.process.Chunker$Chunk" : {
+    "superClass" : "java.lang.Record",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "record"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public java.lang.String toString()",
+      "public final int hashCode()",
+      "public final boolean equals(java.lang.Object)",
+      "public java.lang.String text()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.language.process.Chunker$Context" : {
     "superClass" : "com.yahoo.language.process.InvocationContext",
     "interfaces" : [ ],

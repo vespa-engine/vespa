@@ -2,7 +2,6 @@
 package com.yahoo.language.process;
 
 import com.yahoo.api.annotations.Beta;
-import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 

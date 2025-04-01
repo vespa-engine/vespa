@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A chunker converts splits a text string into multiple smaller strings.
+ * A chunker converts splits a text string into multiple smaller strings (chunks).
+ * This is typically used for large pieces of text that should be split into many chunks for
+ * vector embedding.
  *
  * @author bratseth
  */
@@ -19,7 +21,7 @@ public interface Chunker {
     /** An instance of this which throws IllegalStateException if attempted used */
     Chunker throwsOnUse = new FailingChunker();
 
-    /** Returns this chunkjer instance as a map with the default chunked name */
+    /** Returns this chunker instance as a map with the default chunked name */
     default Map<String, Chunker> asMap() {
         return asMap(defaultChunkerId);
     }
@@ -30,7 +32,7 @@ public interface Chunker {
     }
 
     /**
-     * Splits a text into multiple chunks. The chunks should perferably contain all the content
+     * Splits a text into multiple chunks. The chunks should preferably contain all the content
      * of the original text, and can be overlapping.
      *
      * @param text the text to split into chunks
@@ -38,7 +40,16 @@ public interface Chunker {
      * @return the resulting chunks
      * @throws IllegalArgumentException if the language is not supported by this
      */
-    List<String> chunk(String text, Context context);
+    List<Chunk> chunk(String text, Context context);
+
+    record Chunk(String text) {
+
+        @Override
+        public String toString() {
+            return "chunk '" + text() + "'";
+        }
+
+    }
 
     class Context extends InvocationContext<Context> {
 
@@ -65,7 +76,7 @@ public interface Chunker {
         }
 
         @Override
-        public List<String> chunk(String text, Context context) {
+        public List<Chunk> chunk(String text, Context context) {
             throw new IllegalStateException(message);
         }
 
