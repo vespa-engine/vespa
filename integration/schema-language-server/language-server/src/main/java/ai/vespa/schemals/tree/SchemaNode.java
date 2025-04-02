@@ -387,14 +387,6 @@ public class SchemaNode extends Node {
         return null;
     }
 
-    public TokenSource getTokenSource() {
-        if (language == LanguageType.SCHEMA) {
-            return originalSchemaNode.getTokenSource();
-        }
-
-        return null;
-    }
-
     public void setRankNode(RankNode node) {
         rankNode = Optional.of(node);
     }

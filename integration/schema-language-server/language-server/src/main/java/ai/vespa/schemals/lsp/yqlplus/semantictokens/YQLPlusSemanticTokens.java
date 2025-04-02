@@ -7,13 +7,15 @@ import org.eclipse.lsp4j.SemanticTokenTypes;
 import org.eclipse.lsp4j.SemanticTokens;
 
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.common.StringUtils;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.lsp.common.semantictokens.CommonSemanticTokens;
 import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenMarker;
+import ai.vespa.schemals.lsp.common.semantictokens.SemanticTokenUtils;
 import ai.vespa.schemals.parser.yqlplus.ast.pipeline_step;
 import ai.vespa.schemals.tree.Node;
-import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
+import ai.vespa.schemals.tree.YQLNode;
 
 public class YQLPlusSemanticTokens {
 
@@ -77,19 +79,27 @@ public class YQLPlusSemanticTokens {
         return ret;
     }
 
-    public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
-
+    public static List<SemanticTokenMarker> getSemanticTokenMarkers(EventDocumentContext context) {
         if (context.document == null) {
-            return new SemanticTokens(new ArrayList<>());
+            return List.of();
         }
 
         YQLNode node = context.document.getRootYQLNode();
         if (node == null) {
-            return new SemanticTokens(new ArrayList<>());
+            return List.of();
         }
 
-        List<SemanticTokenMarker> markers = traverseCST(node, context.logger);
-        List<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(markers);
+        List<SemanticTokenMarker> comments = SemanticTokenUtils.convertCommentRanges(
+            StringUtils.findSingleLineComments(context.document.getCurrentContent(), "//")
+        );
+
+        return SemanticTokenUtils.mergeSemanticTokenMarkers(traverseCST(node, context.logger), comments);
+    }
+
+    public static SemanticTokens getSemanticTokens(EventDocumentContext context) {
+        List<Integer> compactMarkers = SemanticTokenMarker.concatCompactForm(
+            getSemanticTokenMarkers(context)
+        );
 
         return new SemanticTokens(compactMarkers);
     }

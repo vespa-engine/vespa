@@ -1,5 +1,8 @@
 package ai.vespa.schemals.tree;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 

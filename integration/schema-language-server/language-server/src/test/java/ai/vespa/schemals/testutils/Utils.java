@@ -7,13 +7,61 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.ClientLogger;
+import ai.vespa.schemals.context.EventDocumentContext;
+import ai.vespa.schemals.context.EventPositionContext;
+import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.schemadocument.DocumentManager;
 import ai.vespa.schemals.schemadocument.SchemaDocumentScheduler;
 
 public class Utils {
+
+    /*
+     * Sets up objects and datastructures normally set up by the language server on launch.
+     * Replaces the client-facing classes with test stubs.
+     */
+    public record TestContext(
+            TestSchemaMessageHandler messageHandler, 
+            ClientLogger logger, 
+            SchemaIndex schemaIndex, 
+            TestSchemaDiagnosticsHandler diagnosticsHandler,
+            SchemaDocumentScheduler scheduler) {
+
+        public static TestContext create() {
+            return withManagedDiagnostics(new ArrayList<>());
+        }
+
+        // Useful if produced diagnostics need to be cleared or otherwise managed by a test.
+        public static TestContext withManagedDiagnostics(List<Diagnostic> managedDiagnostics) {
+            TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+            TestLogger logger = new TestLogger(messageHandler);
+            SchemaIndex schemaIndex = new SchemaIndex(logger);
+            TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(managedDiagnostics);
+            SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
+            return new TestContext(messageHandler, logger, schemaIndex, diagnosticsHandler, scheduler);
+        }
+
+        public EventDocumentContext getDocumentContext(DocumentManager document) throws InvalidContextException {
+            return new EventDocumentContext(
+                scheduler(),
+                schemaIndex(),
+                messageHandler(),
+                document.getVersionedTextDocumentIdentifier()
+            );
+        }
+
+        public EventPositionContext getPositionContext(DocumentManager document, Position position) throws InvalidContextException {
+            return new EventPositionContext(
+                scheduler(),
+                schemaIndex(),
+                messageHandler(),
+                document.getVersionedTextDocumentIdentifier(),
+                position
+            );
+        }
+    }
 
     public static long countErrors(List<Diagnostic> diagnostics) {
         return diagnostics.stream()

@@ -8,7 +8,6 @@ import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Range;
 
 import ai.vespa.schemals.parser.ParseException;
-import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.Token.ParseExceptionSource;
 import ai.vespa.schemals.schemadocument.parser.Identifier;
 import ai.vespa.schemals.schemadocument.parser.IdentifyDirtyNodes;
@@ -46,8 +45,11 @@ public class IdentifyDirtySchemaNodes extends Identifier<SchemaNode> {
         ParseExceptionSource parseException = node.getParseExceptionSource();
         
         if (parseException != null) {
-            TokenSource tokenSource = node.getTokenSource();
-            Range range = CSTUtils.getRangeFromOffsets(tokenSource, parseException.beginOffset, parseException.endOffset);
+            Range range = CSTUtils.getRangeFromOffsets(
+                node.getOriginalSchemaNode().getTokenSource(), 
+                parseException.beginOffset, 
+                parseException.endOffset
+            );
             String message = getParseExceptionMessage(parseException.parseException);
             ret.add(new SchemaDiagnostic.Builder()
                 .setRange(range)
