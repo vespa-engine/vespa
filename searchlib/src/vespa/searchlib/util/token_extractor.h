@@ -22,13 +22,13 @@ namespace search::linguistics {
  */
 class TokenExtractor {
     const std::string& _field_name;
-    size_t                  _max_word_len;
+    size_t             _max_word_len;
 
 public:
     struct SpanTerm {
-        document::Span      span;
+        document::Span   span;
         std::string_view word;
-        bool                altered;
+        bool             altered;
 
         SpanTerm(const document::Span& span_, std::string_view word_, bool altered_) noexcept
             : span(span_),

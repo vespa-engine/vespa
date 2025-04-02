@@ -37,7 +37,7 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
 
         DataType resolvedType = null;
@@ -51,7 +51,7 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
 
         DataType resolvedType = null;
@@ -65,14 +65,6 @@ public class ChoiceExpression extends ExpressionList<Expression> {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(input);
-        for (Expression exp : this)
-            context.setCurrentType(input).verify(exp);
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         for (Expression expression : this) {
@@ -80,11 +72,6 @@ public class ChoiceExpression extends ExpressionList<Expression> {
             if (context.getCurrentValue() != null)
                 break; // value found
         }
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

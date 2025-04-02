@@ -3,6 +3,7 @@
 #include "termdistancefeature.h"
 #include "valuefeature.h"
 #include "utils.h"
+#include <vespa/searchlib/fef/featurenamebuilder.h>
 #include <vespa/searchlib/fef/fieldinfo.h>
 #include <vespa/searchlib/fef/properties.h>
 #include <vespa/vespalib/util/stash.h>
@@ -11,12 +12,34 @@ using namespace search::fef;
 
 namespace search::features {
 
+namespace {
+
+std::optional<uint32_t> get_element_gap(const IIndexEnvironment& env, const std::string& base_name,
+    const ParameterList& params) {
+    FeatureNameBuilder builder;
+    builder.baseName(base_name);
+    for (auto& param : params) {
+        builder.parameter(param.getValue());
+    }
+    auto property = env.getProperties().lookup(builder.buildName(), "elementGap");
+    if (!property.found()) {
+        return std::nullopt;
+    }
+    auto& value = property.get();
+    if (value == "infinity") {
+        return std::nullopt;
+    }
+    return util::strToNum<uint32_t>(value);
+}
+
+}
 
 TermDistanceExecutor::TermDistanceExecutor(const IQueryEnvironment & env,
                                            const TermDistanceParams & params) :
     FeatureExecutor(),
     _termA(env.getTerm(params.termX)),
     _termB(env.getTerm(params.termY)),
+    _element_gap(params.element_gap),
     _md(nullptr)
 {
     _termA.fieldHandle(util::getTermFieldData(env, params.termX, params.fieldId));
@@ -33,7 +56,7 @@ void
 TermDistanceExecutor::execute(uint32_t docId)
 {
     TermDistanceCalculator::Result result;
-    TermDistanceCalculator::run(_termA, _termB, *_md, docId, result);
+    TermDistanceCalculator::run(_termA, _termB, _element_gap, *_md, docId, result);
     outputs().set_number(0, result.forwardDist);
     outputs().set_number(1, result.forwardTermPos);
     outputs().set_number(2, result.reverseDist);
@@ -65,12 +88,13 @@ TermDistanceBlueprint::createInstance() const
 }
 
 bool
-TermDistanceBlueprint::setup(const IIndexEnvironment &,
+TermDistanceBlueprint::setup(const IIndexEnvironment &env,
                              const ParameterList & params)
 {
     _params.fieldId = params[0].asField()->id();
     _params.termX = params[1].asInteger();
     _params.termY = params[2].asInteger();
+    _params.element_gap = get_element_gap(env, getBaseName(), params);
 
     describeOutput("forward",             "the min distance between term X and term Y in the field");
     describeOutput("forwardTermPosition", "the position of term X for the forward distance");

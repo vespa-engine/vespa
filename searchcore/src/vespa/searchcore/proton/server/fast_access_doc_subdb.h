@@ -86,7 +86,7 @@ protected:
     DocIdLimit           _docIdLimit;
 
     std::shared_ptr<AttributeManager> getAndResetInitAttributeManager();
-    virtual IFlushTargetList getFlushTargetsInternal() override;
+    IFlushTargetList getFlushTargetsInternal() override;
     void reconfigure_attribute_metrics(const IAttributeManager& mgr);
 
     IReprocessingTask::UP createReprocessingTask(IReprocessingInitializer &initializer,
@@ -118,7 +118,7 @@ public:
     void onReprocessDone(SerialNum serialNum) override;
     SerialNum getOldestFlushedSerial() override;
     SerialNum getNewestFlushedSerial() override;
-    virtual void pruneRemovedFields(SerialNum serialNum) override;
+    void pruneRemovedFields(SerialNum serialNum) override;
     TransientResourceUsage get_transient_resource_usage() const override;
 };
 

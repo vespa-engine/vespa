@@ -330,7 +330,7 @@ DocumentApiConverter::transferReplyState(api::StorageReply& fromMsg, mbus::Reply
     if (toMsg.getType() == DocumentProtocol::REPLY_GETDOCUMENT) {
         api::GetReply& from(static_cast<api::GetReply&>(fromMsg));
         documentapi::GetDocumentReply& to(static_cast<documentapi::GetDocumentReply&>(toMsg));
-        if (from.getDocument().get() != 0) {
+        if (from.getDocument().get() != nullptr) {
             to.setDocument(from.getDocument());
             to.setLastModified(from.getLastModifiedTimestamp());
         }

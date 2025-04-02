@@ -49,7 +49,7 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         if (inputType == null) return null;
 
@@ -73,7 +73,7 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         if (outputType == null) return null;
         super.setOutputType(outputType, context);
 
@@ -109,7 +109,7 @@ public final class ForEachExpression extends CompositeExpression {
      * This is symmetric in both verification directions since the expression just need to be compatible with
      * all the struct fields.
      */
-    private DataType verifyStructFields(StructDataType struct, VerificationContext context) {
+    private DataType verifyStructFields(StructDataType struct, TypeContext context) {
         for (Field field : struct.getFields()) {
             DataType fieldType = field.getDataType();
             DataType fieldOutputType = expression.setInputType(fieldType, context);
@@ -127,36 +127,6 @@ public final class ForEachExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType valueType = context.getCurrentType();
-        if (valueType instanceof ArrayDataType || valueType instanceof WeightedSetDataType) {
-            // Set type for block evaluation
-            context.setCurrentType(valueType.getNestedType());
-
-            // Evaluate block, which sets valueType to the output of the block
-            context.verify(expression);
-
-            // Value type outside block becomes the collection type having the block output type as argument
-            if (valueType instanceof ArrayDataType) {
-                context.setCurrentType(DataType.getArray(context.getCurrentType()));
-            } else {
-                WeightedSetDataType wset = (WeightedSetDataType)valueType;
-                context.setCurrentType(DataType.getWeightedSet(context.getCurrentType(), wset.createIfNonExistent(), wset.removeIfZero()));
-            }
-        }
-        else if (valueType instanceof StructDataType) {
-            for (Field field : ((StructDataType)valueType).getFields())
-                context.setCurrentType(field.getDataType()).verify(expression).getCurrentType();
-            context.setCurrentType(valueType);
-        }
-        else if (valueType instanceof MapDataType) {
-            // Inner value will be MapEntryFieldValue which has the same type as the map
-            DataType outputType = context.verify(expression).getCurrentType();
-            context.setCurrentType(new ArrayDataType(outputType));
-        }
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         FieldValue input = context.getCurrentValue();
         if (input instanceof Array || input instanceof WeightedSet) {
@@ -170,14 +140,6 @@ public final class ForEachExpression extends CompositeExpression {
             throw new IllegalArgumentException("Expected Array, Struct, WeightedSet or Map input, got " +
                                                input.getDataType().getName());
         }
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        if (expression.createdOutputType() == null) {
-            return null;
-        }
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

@@ -28,24 +28,19 @@ public final class GetFieldExpression extends Expression {
     public String getFieldName() { return structFieldName; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         if (inputType == null) return null;
         return getFieldType(inputType, context);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         return getInputType(context);
     }
 
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(getFieldType(context.getCurrentType(), context));
-    }
-
-    private DataType getFieldType(DataType input, VerificationContext context) {
+    private DataType getFieldType(DataType input, TypeContext context) {
         if (input instanceof MapDataType entryInput) {
             if (structFieldName.equals(keyName))
                 return entryInput.getKeyType();
@@ -97,11 +92,6 @@ public final class GetFieldExpression extends Expression {
             throw new IllegalArgumentException("In " + this +": Field '" + structFieldName + "' not found in struct type '" +
                                                struct.getDataType().getName() + "'");
         context.setCurrentValue(struct.getFieldValue(field));
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

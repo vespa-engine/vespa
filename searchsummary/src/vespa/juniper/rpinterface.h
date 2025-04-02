@@ -58,7 +58,7 @@ class Result;
 
 class Summary {
 public:
-    virtual ~Summary() {}
+    virtual ~Summary() = default;
     // The textual representation of the generated summary
     virtual const char* Text() const = 0;
     virtual size_t      Length() const = 0;

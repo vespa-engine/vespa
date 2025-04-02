@@ -2,7 +2,6 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
-import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.UriFieldValue;
 
 /**
@@ -11,29 +10,21 @@ import com.yahoo.document.datatypes.UriFieldValue;
 public final class ToUriExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, context);
         return DataType.URI;
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(DataType.URI, output, null, context);
         return getInputType(context);
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new UriFieldValue(String.valueOf(context.getCurrentValue())));
     }
-
-    @Override
-    public DataType createdOutputType() { return DataType.URI; }
 
     @Override
     public String toString() { return "to_uri"; }

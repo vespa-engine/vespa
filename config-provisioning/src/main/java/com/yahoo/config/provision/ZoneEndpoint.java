@@ -37,10 +37,7 @@ public class ZoneEndpoint {
     private final List<AllowedUrn> allowedUrns;
 
     public ZoneEndpoint(boolean isPublicEndpoint, boolean isPrivateEndpoint, List<AllowedUrn> allowedUrns) {
-        this.isPublicEndpoint = isPublicEndpoint;
-        this.isPrivateEndpoint = isPrivateEndpoint;
-        this.authMethods = List.of(AuthMethod.mtls);
-        this.allowedUrns = List.copyOf(allowedUrns);
+        this(isPublicEndpoint, isPrivateEndpoint, List.of(AuthMethod.mtls), allowedUrns);
     }
 
     public ZoneEndpoint(boolean isPublicEndpoint, boolean isPrivateEndpoint, List<AuthMethod> authMethods, List<AllowedUrn> allowedUrns) {
@@ -50,7 +47,7 @@ public class ZoneEndpoint {
         this.allowedUrns = List.copyOf(allowedUrns);
     }
 
-    /** Whether this has an endpoint which is visible from the public internet. */
+    /** Whether this has an endpoint accessible from the public internet, e.g. public IP and DNS records. */
     public boolean isPublicEndpoint() {
         return isPublicEndpoint;
     }

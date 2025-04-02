@@ -20,7 +20,7 @@ using keylist = std::set<key_occ*, sequential_elem<key_occ*>>;
 class MatchElement {
 public:
     MatchElement(off_t startpos, off_t starttoken);
-    virtual ~MatchElement() {}
+    virtual ~MatchElement() = default;
     virtual void   set_valid() = 0; // Mark this element and its subelements as valid
     virtual void   add_to_keylist(keylist& kl) = 0;
     virtual void   dump(std::string& s) = 0;

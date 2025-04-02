@@ -28,7 +28,7 @@ public class SerializationHelperTestCase {
 
         assertTrue(data.position() == 0);
 
-        Utf8Array thisIsATest = VespaDocumentDeserializer6.parseNullTerminatedString(data.getBuf().getByteBuffer());
+        Utf8Array thisIsATest = VespaDocumentDeserializerHead.parseNullTerminatedString(data.getBuf().getByteBuffer());
 
         assertTrue(thisIsATest.equals(new Utf8Array(Utf8.toBytes("This is a test."))));
         assertTrue(data.position() == 16);
@@ -38,7 +38,7 @@ public class SerializationHelperTestCase {
 
         assertTrue(data.position() == 0);
 
-        Utf8Array thisIsATestAgain = VespaDocumentDeserializer6.parseNullTerminatedString(data.getBuf().getByteBuffer(), 15);
+        Utf8Array thisIsATestAgain = VespaDocumentDeserializerHead.parseNullTerminatedString(data.getBuf().getByteBuffer(), 15);
 
         assertTrue(thisIsATestAgain.equals(new Utf8Array(Utf8.toBytes("This is a test."))));
         assertTrue(data.position() == 16);

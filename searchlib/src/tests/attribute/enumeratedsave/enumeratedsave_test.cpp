@@ -69,11 +69,11 @@ public:
     {
     }
 
-    virtual Buffer allocBuf(size_t size) override {
+    Buffer allocBuf(size_t size) override {
         return std::make_unique<BufferBuf>(size, search::FileSettings::DIRECTIO_ALIGNMENT);
     }
 
-    virtual void writeBuf(Buffer buf_in) override {
+    void writeBuf(Buffer buf_in) override {
         if (!_buf) {
             _buf = std::move(buf_in);
         } else {
@@ -311,11 +311,11 @@ bool
 MemAttr::bufEqual(const Buffer &lhs, const Buffer &rhs) const
 {
     bool success = true;
-    EXPECT_TRUE((lhs.get() != NULL) == (rhs.get() != NULL)) << (success = false, "");
+    EXPECT_TRUE((lhs.get() != nullptr) == (rhs.get() != nullptr)) << (success = false, "");
     if (!success) {
         return false;
     }
-    if (lhs.get() == NULL)
+    if (lhs.get() == nullptr)
         return true;
     EXPECT_EQ(lhs->getDataLen(), rhs->getDataLen()) << (success = false, "");
     if (!success) {

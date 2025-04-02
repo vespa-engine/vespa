@@ -229,7 +229,8 @@ public:
                         ServiceLayerComponentRegister& compReg);
     FileStorHandlerImpl(uint32_t numThreads, uint32_t numStripes, MessageSender&, FileStorMetrics&,
                         ServiceLayerComponentRegister&,
-                        const vespalib::SharedOperationThrottler::DynamicThrottleParams& dyn_throttle_params);
+                        const vespalib::SharedOperationThrottler::DynamicThrottleParams& op_dyn_throttle_params,
+                        const vespalib::SharedOperationThrottler::DynamicThrottleParams& maintenance_dyn_throttle_params);
 
     ~FileStorHandlerImpl() override;
 
@@ -290,9 +291,16 @@ public:
         return *_active_throttler.load(std::memory_order_acquire);
     }
 
-    void reconfigure_dynamic_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) override;
+    vespalib::SharedOperationThrottler& maintenance_throttler() const noexcept override {
+        // See rationale in operation_throttler() for memory ordering.
+        return *_active_throttler.load(std::memory_order_acquire);
+    }
+
+    void reconfigure_dynamic_operation_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) override;
+    void reconfigure_dynamic_maintenance_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) override;
 
     void use_dynamic_operation_throttling(bool use_dynamic) noexcept override;
+    void use_dynamic_maintenance_throttling(bool use_dynamic) noexcept override;
 
     void set_throttle_apply_bucket_diff_ops(bool throttle_apply_bucket_diff) noexcept override {
         // Relaxed is fine, worst case from temporarily observing a stale value is that
@@ -320,6 +328,9 @@ private:
     std::unique_ptr<vespalib::SharedOperationThrottler> _dynamic_operation_throttler;
     std::unique_ptr<vespalib::SharedOperationThrottler> _unlimited_operation_throttler;
     std::atomic<vespalib::SharedOperationThrottler*>    _active_throttler;
+    std::unique_ptr<vespalib::SharedOperationThrottler> _dynamic_maintenance_throttler;
+    std::unique_ptr<vespalib::SharedOperationThrottler> _unlimited_maintenance_throttler;
+    std::atomic<vespalib::SharedOperationThrottler*>    _active_maintenance_throttler;
     std::vector<Stripe>     _stripes;
     MessageSender&          _messageSender;
     const document::BucketIdFactory& _bucketIdFactory;

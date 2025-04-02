@@ -26,7 +26,7 @@ struct CompileStrategy {
     bool is_same(const CompileStrategy &rhs) const {
         return (this == &rhs);
     }
-    virtual ~CompileStrategy() {}
+    virtual ~CompileStrategy() = default;
 };
 
 struct NullStrategy : CompileStrategy {

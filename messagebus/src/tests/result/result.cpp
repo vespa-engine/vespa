@@ -44,19 +44,19 @@ TEST(ResultTest, test_result)
     { // test accepted
         Message::UP msg(new MyMessage("test"));
         Result res = sendOk(std::move(msg));
-        EXPECT_TRUE(msg.get() == 0);
+        EXPECT_TRUE(msg.get() == nullptr);
         EXPECT_TRUE(res.isAccepted());
         EXPECT_TRUE(res.getError().getCode() == ErrorCode::NONE);
         EXPECT_TRUE(res.getError().getMessage() == "");
         Message::UP back = res.getMessage();
-        EXPECT_TRUE(back.get() == 0);
+        EXPECT_TRUE(back.get() == nullptr);
     }
     { // test failed
         Message::UP msg(new MyMessage("test"));
         Message *raw = msg.get();
-        EXPECT_TRUE(raw != 0);
+        EXPECT_TRUE(raw != nullptr);
         Result res = sendFail(std::move(msg));
-        EXPECT_TRUE(msg.get() == 0);
+        EXPECT_TRUE(msg.get() == nullptr);
         EXPECT_TRUE(!res.isAccepted());
         EXPECT_TRUE(res.getError().getCode() == ErrorCode::FATAL_ERROR);
         EXPECT_TRUE(res.getError().getMessage() == "error");

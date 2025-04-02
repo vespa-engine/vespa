@@ -647,7 +647,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .proxyProtocol(state.zone().cloud().useProxyProtocol())
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl())
-                .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent());
+                .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
+                .httpComplianceViolations(state.getProperties().jdiscHttpComplianceViolations());
         var endpointCert = state.endpointCertificateSecrets().orElse(null);
         if (endpointCert != null) {
             builder.endpointCertificate(endpointCert);
@@ -711,6 +712,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .clientAuth(SslClientAuth.NEED)
                 .knownServerNames(tokenEndpoints)
                 .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
+                .httpComplianceViolations(state.getProperties().jdiscHttpComplianceViolations())
                 .build();
         server.addConnector(connector);
 
@@ -1028,13 +1030,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private ZoneEndpoint zoneEndpoint(ConfigModelContext context, ClusterSpec.Id cluster) {
-        InstanceName instance = context.properties().applicationId().instance();
-        ZoneId zone = ZoneId.from(context.properties().zone().environment(),
-                                  context.properties().zone().region());
         return context
                 .getApplicationPackage()
                 .getDeploymentSpec()
-                .zoneEndpoint(instance, zone, cluster);
+                .zoneEndpoint(context.properties().applicationId().instance(),
+                              context.properties().zone(),
+                              cluster,
+                              context.featureFlags().useNonPublicEndpointForTest());
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {

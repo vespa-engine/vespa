@@ -126,6 +126,36 @@ StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long avail
     return buf.size();
 }
 
+namespace {
+
+class AscendingSortBlobWriter : public attribute::ISortBlobWriter {
+private:
+    const StringAttribute& _attr;
+    const common::BlobConverter* _bc;
+public:
+    AscendingSortBlobWriter(const StringAttribute& attr, const common::BlobConverter* bc) noexcept : _attr(attr), _bc(bc) {}
+    long write(uint32_t docid, void* ser_to, long available) const override;
+};
+
+long
+AscendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available) const
+{
+    const char* value = _attr.get(docid);
+    int size = strlen(value) + 1;
+    vespalib::ConstBufferRef buf(value, size);
+    if (_bc != nullptr) {
+        buf = _bc->convert(buf);
+    }
+    if (available >= (long)buf.size()) {
+        memcpy(ser_to, buf.data(), buf.size());
+    } else {
+        return -1;
+    }
+    return buf.size();
+}
+
+}
+
 long
 StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {
@@ -145,6 +175,51 @@ StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long avai
         return -1;
     }
     return buf.size();
+}
+
+namespace {
+
+class DescendingSortBlobWriter : public attribute::ISortBlobWriter
+{
+private:
+    const StringAttribute& _attr;
+    const common::BlobConverter* _bc;
+public:
+    DescendingSortBlobWriter(const StringAttribute& attr, const common::BlobConverter* bc) noexcept : _attr(attr), _bc(bc) {}
+    long write(uint32_t docid, void* ser_to, long available) const override;
+};
+
+long
+DescendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available) const
+{
+    const char* value = _attr.get(docid);
+    int size = strlen(value) + 1;
+    vespalib::ConstBufferRef buf(value, size);
+    if (_bc != nullptr) {
+        buf = _bc->convert(buf);
+    }
+    if (available >= (long)buf.size()) {
+        auto* dst = static_cast<unsigned char*>(ser_to);
+        const auto* src(static_cast<const uint8_t*>(buf.data()));
+        for (size_t i(0); i < buf.size(); ++i) {
+            dst[i] = 0xff - src[i];
+        }
+    } else {
+        return -1;
+    }
+    return buf.size();
+}
+
+}
+
+std::unique_ptr<attribute::ISortBlobWriter>
+StringAttribute::make_sort_blob_writer(bool ascending, const common::BlobConverter* bc) const
+{
+    if (ascending) {
+        return std::make_unique<AscendingSortBlobWriter>(*this, bc);
+    } else {
+        return std::make_unique<DescendingSortBlobWriter>(*this, bc);
+    }
 }
 
 uint32_t

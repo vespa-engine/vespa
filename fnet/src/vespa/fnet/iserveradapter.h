@@ -14,7 +14,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FNET_IServerAdapter(void) { }
+    virtual ~FNET_IServerAdapter() = default;
 
     /**
      * This method is called by the network layer when opening a new

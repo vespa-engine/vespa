@@ -28,9 +28,9 @@ public:
         uint8_t activateNoExistingActive {100};
         uint8_t activateWithExistingActive {100};
         uint8_t deleteBucketCopy {120};
-        uint8_t joinBuckets {155};
+        uint8_t joinBuckets {120};
         uint8_t splitDistributionBits {200};
-        uint8_t splitLargeBucket {175};
+        uint8_t splitLargeBucket {120};
         uint8_t splitInconsistentBucket {110};
         uint8_t garbageCollection {200};
     };
@@ -231,6 +231,14 @@ public:
         return _max_activation_inhibited_out_of_sync_groups;
     }
 
+    [[nodiscard]] uint32_t max_document_operation_message_size_bytes() const noexcept {
+        return _max_document_operation_message_size_bytes;
+    }
+    void set_max_document_operation_message_size_bytes(uint32_t max_size_bytes) noexcept {
+        // We use uint32_t internally but cap to INT32_MAX due to wire format restrictions
+        _max_document_operation_message_size_bytes = std::min(max_size_bytes, static_cast<uint32_t>(INT32_MAX));
+    }
+
     [[nodiscard]] bool enable_operation_cancellation() const noexcept {
         return _enable_operation_cancellation;
     }
@@ -239,7 +247,7 @@ public:
     }
 
     [[nodiscard]] bool containsTimeStatement(const std::string& documentSelection) const;
-    
+
 private:
     StorageComponent& _component;
     
@@ -251,6 +259,7 @@ private:
     uint32_t _maxNodesPerMerge;
     uint32_t _max_consecutively_inhibited_maintenance_ticks;
     uint32_t _max_activation_inhibited_out_of_sync_groups;
+    uint32_t _max_document_operation_message_size_bytes;
 
     std::string _garbageCollectionSelection;
 

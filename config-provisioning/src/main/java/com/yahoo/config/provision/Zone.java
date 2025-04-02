@@ -3,6 +3,7 @@ package com.yahoo.config.provision;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.annotation.Inject;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.config.provisioning.CloudConfig;
 
 import java.util.Objects;
@@ -54,6 +55,13 @@ public class Zone {
         this.environment = environment;
         this.region = region;
     }
+
+    /**
+     * Returns the ZoneId constructed from the environment and region.
+     *
+     * <p>WARNING: The controller zone may have the same ZoneId as another non-controller zone.</p>
+     */
+    public ZoneId id() { return ZoneId.from(environment, region); }
 
     /** Returns the current cloud */
     public Cloud cloud() { return cloud; }

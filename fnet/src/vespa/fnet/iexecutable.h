@@ -18,6 +18,6 @@ public:
     /**
      * empty
      **/
-    virtual ~FNET_IExecutable() {}
+    virtual ~FNET_IExecutable() = default;
 };
 

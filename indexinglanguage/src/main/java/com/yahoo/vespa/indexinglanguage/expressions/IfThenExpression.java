@@ -77,7 +77,7 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         left.setInputType(inputType, context);
         right.setInputType(inputType, context);
@@ -88,7 +88,7 @@ public final class IfThenExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         var inputType = left.setOutputType(AnyDataType.instance, context);
         inputType = leastGeneralOf(inputType, right.setOutputType(AnyDataType.instance, context));
@@ -117,13 +117,11 @@ public final class IfThenExpression extends CompositeExpression {
     public Expression getIfFalseExpression() { return ifFalse; }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(input).verify(left);
-        context.setCurrentType(input).verify(right);
-        var trueValue = context.setCurrentType(input).verify(ifTrue);
-        var falseValue = context.setCurrentType(input).verify(ifFalse);
-        context.setCurrentType(mostGeneralOf(trueValue.getCurrentType(), falseValue.getCurrentType()));
+    protected void doResolve(TypeContext context) {
+        context.resolve(left);
+        context.resolve(right);
+        context.resolve(ifTrue);
+        context.resolve(ifFalse);
     }
 
     @Override
@@ -153,17 +151,6 @@ public final class IfThenExpression extends CompositeExpression {
         select(right, predicate, operation);
         select(ifTrue, predicate, operation);
         select(ifFalse, predicate, operation);
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        DataType ifTrueType = ifTrue.createdOutputType();
-        DataType ifFalseType = ifFalse == null ? null : ifFalse.createdOutputType();
-        if (ifTrueType == null || ifFalseType == null) return null;
-        if (ifTrueType.isAssignableFrom(ifFalseType))
-            return ifTrueType;
-        else
-            return ifFalseType;
     }
 
     @Override

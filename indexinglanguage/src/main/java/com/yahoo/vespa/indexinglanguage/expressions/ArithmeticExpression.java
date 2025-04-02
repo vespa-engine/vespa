@@ -74,7 +74,7 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         DataType leftOutput = left.setInputType(inputType, context);
         DataType rightOutput = right.setInputType(inputType, context);
@@ -82,7 +82,7 @@ public final class ArithmeticExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         if (outputType == null) return null;
         super.setOutputType(outputType, context);
         DataType leftInput = left.setOutputType(AnyNumericDataType.instance, context);
@@ -98,13 +98,6 @@ public final class ArithmeticExpression extends CompositeExpression {
             throw new VerificationException(this, "The left argument requires " + leftInput.getName() +
                                                   ", while the right argument requires " + rightInput.getName() +
                                                   ": These are incompatible");
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        context.setCurrentType(resultingType(context.setCurrentType(input).verify(left).getCurrentType(),
-                                             context.setCurrentType(input).verify(right).getCurrentType()));
     }
 
     private DataType resultingType(DataType left, DataType right) {
@@ -130,11 +123,6 @@ public final class ArithmeticExpression extends CompositeExpression {
         FieldValue input = context.getCurrentValue();
         context.setCurrentValue(evaluate(context.setCurrentValue(input).execute(left).getCurrentValue(),
                                          context.setCurrentValue(input).execute(right).getCurrentValue()));
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return UnresolvedDataType.INSTANCE;
     }
 
     @Override

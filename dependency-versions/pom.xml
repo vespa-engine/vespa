@@ -37,7 +37,7 @@
         <guava.vespa.version>33.2.1-jre</guava.vespa.version>
         <guice.vespa.version>6.0.0</guice.vespa.version>
         <j2objc-annotations.vespa.version>3.0.0</j2objc-annotations.vespa.version>
-        <jackson2.vespa.version>2.17.2</jackson2.vespa.version>
+        <jackson2.vespa.version>2.18.3</jackson2.vespa.version>
         <jackson-databind.vespa.version>${jackson2.vespa.version}</jackson-databind.vespa.version>
         <jakarta.inject.vespa.version>2.0.1</jakarta.inject.vespa.version>
         <javax.activation-api.vespa.version>1.2.0</javax.activation-api.vespa.version>
@@ -111,7 +111,7 @@
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
         <jaxb.runtime.vespa.version>4.0.5</jaxb.runtime.vespa.version>
-        <jetty.vespa.version>11.0.24</jetty.vespa.version>
+        <jetty.vespa.version>12.0.18</jetty.vespa.version>
         <jetty-servlet-api.vespa.version>5.0.2</jetty-servlet-api.vespa.version>
         <jieba.vespa.version>1.0.2</jieba.vespa.version>
         <jimfs.vespa.version>1.3.0</jimfs.vespa.version>
@@ -130,9 +130,10 @@
         <mimepull.vespa.version>1.10.0</mimepull.vespa.version>
         <mockito.vespa.version>5.12.0</mockito.vespa.version>
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
-        <netty.vespa.version>4.1.115.Final</netty.vespa.version>
+        <netty.vespa.version>4.1.118.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
         <onnxruntime.vespa.version>1.20.0</onnxruntime.vespa.version>
+        <openai-java.vespa.version>0.34.0</openai-java.vespa.version>
         <opennlp.vespa.version>2.4.0</opennlp.vespa.version>
         <opentest4j.vespa.version>1.3.0</opentest4j.vespa.version>
         <org.json.vespa.version>20240303</org.json.vespa.version>

@@ -16,19 +16,19 @@ class ISaver;
 
 template <typename Key = uint64_t, typename DocId = uint32_t>
 struct SimpleIndexDeserializeObserver {
-    virtual ~SimpleIndexDeserializeObserver() {}
+    virtual ~SimpleIndexDeserializeObserver() = default;
     virtual void notifyInsert(Key key, DocId docId, uint32_t k) = 0;
 };
 
 template <typename Posting>
 struct PostingSaver {
-    virtual ~PostingSaver() {}
+    virtual ~PostingSaver() = default;
     virtual void save(const Posting &posting, BufferWriter& writer) const = 0;
 };
 
 template <typename Posting>
 struct PostingDeserializer {
-    virtual ~PostingDeserializer() {}
+    virtual ~PostingDeserializer() = default;
     virtual Posting deserialize(vespalib::DataBuffer &buffer) = 0;
 };
 

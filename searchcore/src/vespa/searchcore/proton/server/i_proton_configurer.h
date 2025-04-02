@@ -15,7 +15,7 @@ class ProtonConfigSnapshot;
 class IProtonConfigurer
 {
 public:
-    virtual ~IProtonConfigurer() { }
+    virtual ~IProtonConfigurer() = default;
     virtual void reconfigure(std::shared_ptr<ProtonConfigSnapshot> configSnapshot) = 0;
 };
 

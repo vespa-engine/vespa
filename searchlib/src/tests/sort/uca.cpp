@@ -52,7 +52,7 @@ TEST(UcaStressTest, from_dat)
             EXPECT_EQ(4, r);
             EXPECT_EQ(endMark, sbuf);
 
-            uint32_t wanted = coll->getSortKey(&u16buffer[0], len, NULL, 0);
+            uint32_t wanted = coll->getSortKey(&u16buffer[0], len, nullptr, 0);
 
             EXPECT_TRUE(wanted > 0);
             EXPECT_TRUE(wanted >= len);

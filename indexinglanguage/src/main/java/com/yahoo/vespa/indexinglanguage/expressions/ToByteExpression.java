@@ -10,29 +10,21 @@ import com.yahoo.document.datatypes.ByteFieldValue;
 public final class ToByteExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, context);
         return DataType.BYTE;
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(DataType.BYTE, output, null, context);
         return getInputType(context);
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new ByteFieldValue(Byte.valueOf(String.valueOf(context.getCurrentValue()))));
     }
-
-    @Override
-    public DataType createdOutputType() { return DataType.BYTE; }
 
     @Override
     public String toString() { return "to_byte"; }

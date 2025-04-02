@@ -48,7 +48,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private Quota quota = Quota.unlimited();
-    private boolean useAsyncMessageHandlingOnSchedule = false;
+    private boolean useAsyncMessageHandlingOnSchedule = true;
     private double feedConcurrency = 0.5;
     private double feedNiceness = 0.0;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
@@ -61,7 +61,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitLowWatermarkDifference = 0.0;
     private double minNodeRatioPerGroup = 0.0;
     private int maxUnCommittedMemory = 123456;
-    private String searchMmapAdvise = "NORMAL";
+    private String searchMmapAdvise = "SEQUENTIAL";
     private boolean useV8GeoPositions = true;
     private List<String> environmentVariables = List.of();
     private int mbus_java_num_targets = 2;
@@ -78,7 +78,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int contentLayerMetadataFeatureLevel = 0;
     private int persistenceThreadMaxFeedOpBatchSize = 1;
     private boolean logserverOtelCol = false;
-    private boolean symmetricPutAndActivateReplicaSelection = false;
+    private int maxContentNodeMaintenanceOpConcurrency = -1;
+    private int maxDistributorDocumentOperationSizeMib = -1;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -97,6 +98,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public Optional<AthenzDomain> athenzDomain() { return Optional.ofNullable(athenzDomain); }
+    @Override public boolean useNonPublicEndpointForTest() { return true; }
     @Override public String responseSequencerType() { return responseSequencerType; }
     @Override public int defaultNumResponseThreads() { return responseNumThreads; }
     @Override public Quota quota() { return quota; }
@@ -131,7 +133,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
     @Override public int persistenceThreadMaxFeedOpBatchSize() { return persistenceThreadMaxFeedOpBatchSize; }
     @Override public boolean logserverOtelCol() { return logserverOtelCol; }
-    @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
+    @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
+    @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
 
     public TestProperties maxUnCommittedMemory(int maxUnCommittedMemory) {
         this.maxUnCommittedMemory = maxUnCommittedMemory;
@@ -342,13 +345,18 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setSymmetricPutAndActivateReplicaSelection(boolean symmetricReplicaSelection) {
-        this.symmetricPutAndActivateReplicaSelection = symmetricReplicaSelection;
+    public TestProperties setContainerEndpoints(Set<ContainerEndpoint> containerEndpoints) {
+        this.endpoints = containerEndpoints;
         return this;
     }
 
-    public TestProperties setContainerEndpoints(Set<ContainerEndpoint> containerEndpoints) {
-        this.endpoints = containerEndpoints;
+    public TestProperties setMaxContentNodeMaintenanceOpConcurrency(int maxConcurrency) {
+        this.maxContentNodeMaintenanceOpConcurrency = maxConcurrency;
+        return this;
+    }
+
+    public TestProperties setMaxDistributorDocumentOperationSizeMib(int maxSizeMib) {
+        this.maxDistributorDocumentOperationSizeMib = maxSizeMib;
         return this;
     }
 

@@ -948,7 +948,8 @@
       "protected void writeErrorResponseOnOverload(com.yahoo.jdisc.Request, com.yahoo.jdisc.handler.ResponseHandler)"
     ],
     "fields" : [
-      "protected final com.yahoo.jdisc.Metric metric"
+      "protected final com.yahoo.jdisc.Metric metric",
+      "protected final com.yahoo.container.core.HandlerMetricContextUtil metricUtil"
     ]
   },
   "com.yahoo.container.jdisc.VespaHeaders" : {
@@ -1157,6 +1158,8 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder serverName(java.util.function.Consumer)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder accessLog(com.yahoo.jdisc.http.ConnectorConfig$AccessLog$Builder)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder accessLog(java.util.function.Consumer)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Builder compliance(com.yahoo.jdisc.http.ConnectorConfig$Compliance$Builder)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Builder compliance(java.util.function.Consumer)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -1173,8 +1176,43 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol$Builder proxyProtocol",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2$Builder http2",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName$Builder serverName",
-      "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog$Builder accessLog"
+      "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog$Builder accessLog",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Compliance$Builder compliance"
     ]
+  },
+  "com.yahoo.jdisc.http.ConnectorConfig$Compliance$Builder" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [
+      "com.yahoo.config.ConfigBuilder"
+    ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Compliance)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Compliance$Builder httpViolations(java.lang.String)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Compliance$Builder httpViolations(java.util.Collection)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Compliance build()"
+    ],
+    "fields" : [
+      "public java.util.List httpViolations"
+    ]
+  },
+  "com.yahoo.jdisc.http.ConnectorConfig$Compliance" : {
+    "superClass" : "com.yahoo.config.InnerNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.jdisc.http.ConnectorConfig$Compliance$Builder)",
+      "public java.util.List httpViolations()",
+      "public java.lang.String httpViolations(int)"
+    ],
+    "fields" : [ ]
   },
   "com.yahoo.jdisc.http.ConnectorConfig$HealthCheckProxy$Builder" : {
     "superClass" : "java.lang.Object",
@@ -1535,7 +1573,8 @@
       "public boolean http2Enabled()",
       "public com.yahoo.jdisc.http.ConnectorConfig$Http2 http2()",
       "public com.yahoo.jdisc.http.ConnectorConfig$ServerName serverName()",
-      "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog accessLog()"
+      "public com.yahoo.jdisc.http.ConnectorConfig$AccessLog accessLog()",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Compliance compliance()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",

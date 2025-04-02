@@ -180,6 +180,9 @@ public final class NewDocumentType extends StructuredDataType implements DataTyp
         return field;
     }
 
+    // XXX - if an inherited field is redeclared you will get both the
+    // inherited one and then the active version of the field.
+    // This is probably not intentional.
     public Collection<Field> getAllFields() {
         Collection<Field> collection = new LinkedList<>();
 

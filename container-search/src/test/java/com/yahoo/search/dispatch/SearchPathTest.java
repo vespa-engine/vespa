@@ -2,6 +2,7 @@
 package com.yahoo.search.dispatch;
 
 import com.yahoo.search.dispatch.SearchPath.InvalidSearchPathException;
+import com.yahoo.search.dispatch.searchcluster.AvailabilityPolicy;
 import com.yahoo.search.dispatch.searchcluster.MockSearchCluster;
 import com.yahoo.search.dispatch.searchcluster.SearchGroups;
 import com.yahoo.search.dispatch.searchcluster.Node;
@@ -92,7 +93,8 @@ public class SearchPathTest {
 
     @Test
     void searchPathMustFilterNodesBasedOnDefinition() {
-        SearchGroups cluster = MockSearchCluster.buildGroupListForTest(3, 3, 100);
+        SearchGroups cluster = MockSearchCluster.buildGroupListForTest(3, 3,
+                                                                       new AvailabilityPolicy(true, 100));
 
         assertEquals(distKeysAsString(SearchPath.selectNodes("1/1", cluster)), "4");
         assertEquals(distKeysAsString(SearchPath.selectNodes("/1", cluster)), "3,4,5");

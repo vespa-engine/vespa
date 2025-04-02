@@ -33,7 +33,7 @@ INJECT IndexingParser:
     import com.yahoo.vespa.indexinglanguage.expressions.*;
     import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
     import com.yahoo.language.process.Embedder;
-    import com.yahoo.language.process.TextGenerator;
+    import com.yahoo.language.process.FieldGenerator;
     import com.yahoo.language.Linguistics;
 {
 /**
@@ -44,8 +44,8 @@ INJECT IndexingParser:
     private String defaultFieldName;
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
-    private Map<String, TextGenerator> generators;    
-    private AnnotatorConfig annotatorCfg;
+    private Map<String, FieldGenerator> generators;    
+    private AnnotatorConfig globalAnnotatorConfig;
 
     private PrintStream logger = new PrintStream(
         new OutputStream() {
@@ -76,13 +76,13 @@ INJECT IndexingParser:
         return this;
     }
     
-    public IndexingParser setGenerators(Map<String, TextGenerator> generators) {
+    public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
         this.generators = generators;
         return this;
     }
 
-    public IndexingParser setAnnotatorConfig(AnnotatorConfig cfg) {
-        annotatorCfg = cfg;
+    public IndexingParser setGlobalAnnotatorConfig(AnnotatorConfig config) {
+        globalAnnotatorConfig = config;
         return this;
     }
 
@@ -205,6 +205,7 @@ TOKEN :
     <INDEX: "index"> |
     <INPUT: "input"> |
     <JOIN: "join"> |
+    <KEEP_CASE: "keep-case"> |
     <LOWER_CASE: "lowercase"> |
     <MAX_LENGTH: "max-length"> |
     <MAX_OCCURRENCES: "max-occurrences"> |
@@ -467,11 +468,11 @@ Expression embedExp() :
 
 Expression exactExp() :
 {
-    int maxTokenLength = annotatorCfg.getMaxTokenLength();
+    AnnotatorConfig config = globalAnnotatorConfig;
 }
  
-    ( <EXACT>  [ <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerValue() ] )
-    { return new ExactExpression(maxTokenLength); }
+    ( <EXACT> [ config = annotatorConfig() ] )
+    { return new ExactExpression(config); }
 ;
 
 Expression flattenExp() : { }
@@ -501,8 +502,7 @@ Expression generateExp() :
       ( SCAN((identifierStr)+) => (generatorArgument = identifierStr()) { generatorArguments.add(generatorArgument); } )*
     )
     {
-        // return new GenerateExpression(linguistics, generators, generatorId, generatorArguments);
-        return null;
+        return new GenerateExpression(linguistics, generators, generatorId, generatorArguments);
     }
 ;
 
@@ -757,16 +757,16 @@ Expression thisExp() : { }
 
 Expression tokenizeExp() :
 {
-    AnnotatorConfig cfg = annotatorCfg;
+    AnnotatorConfig config = globalAnnotatorConfig;
 }
  
-    ( <TOKENIZE> [ cfg = tokenizeCfg() ] )
-    { return new TokenizeExpression(linguistics, cfg); }
+    ( <TOKENIZE> [ config = annotatorConfig() ] )
+    { return new TokenizeExpression(linguistics, config); }
 ;
 
-AnnotatorConfig tokenizeCfg() :
+AnnotatorConfig annotatorConfig() :
 {
-    AnnotatorConfig val = new AnnotatorConfig(annotatorCfg);
+    AnnotatorConfig val = new AnnotatorConfig(globalAnnotatorConfig);
     String str = "SHORTEST";
     Integer maxLength;
     Integer maxTermOccurrences;
@@ -777,7 +777,8 @@ AnnotatorConfig tokenizeCfg() :
       <MAX_LENGTH> <COLON>  maxLength = integerValue() { val.setMaxTokenizeLength(maxLength); } |
       <MAX_OCCURRENCES> <COLON>  maxTermOccurrences = integerValue() { val.setMaxTermOccurrences(maxTermOccurrences); } |
       <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerValue() { val.setMaxTokenLength(maxTokenLength); } |
-      <NORMALIZE> { val.setRemoveAccents(true); } )+
+      <NORMALIZE> { val.setRemoveAccents(true); } |
+      <KEEP_CASE> { val.setLowercase(false); } )+
     { return val; }
 ;
 

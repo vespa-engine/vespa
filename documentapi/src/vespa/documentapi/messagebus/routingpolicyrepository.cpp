@@ -36,12 +36,12 @@ mbus::IRoutingPolicy::UP
 RoutingPolicyRepository::createPolicy(const string &name, const string &param) const
 {
     IRoutingPolicyFactory::SP factory = getFactory(name);
-    if (factory.get() == NULL) {
+    if (factory.get() == nullptr) {
         LOG(error, "No routing policy factory found for name '%s'.", name.c_str());
         return mbus::IRoutingPolicy::UP();
     }
     mbus::IRoutingPolicy::UP ret = factory->createPolicy(param);
-    if (ret.get() == NULL) {
+    if (ret.get() == nullptr) {
         LOG(error, "Routing policy factory failed to create a routing policy for parameter '%s'.",
             param.c_str());
         return mbus::IRoutingPolicy::UP();

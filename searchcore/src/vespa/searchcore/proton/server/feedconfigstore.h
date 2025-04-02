@@ -7,8 +7,7 @@
 namespace proton {
 
 struct FeedConfigStore : NewConfigOperation::IStreamHandler {
-    virtual ~FeedConfigStore() {}
-
+    ~FeedConfigStore() override = default;
 };
 
 }  // namespace proton

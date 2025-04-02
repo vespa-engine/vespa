@@ -9,14 +9,14 @@ class IGenerationCallback
 {
 public:
     virtual void notifyGenerationChange(int64_t generation) = 0;
-    virtual ~IGenerationCallback() {}
+    virtual ~IGenerationCallback() = default;
 };
 
 class ICallback
 {
 public:
     virtual void configure(std::unique_ptr<const ConfigInstance> config) = 0;
-    virtual ~ICallback() { }
+    virtual ~ICallback() = default;
 };
 
 /**

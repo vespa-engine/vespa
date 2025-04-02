@@ -353,6 +353,27 @@ public class StorageClusterTest {
         verifyMaxFeedOpBatchSize(1234, 1234);
     }
 
+    private void verifyMaintenanceThrottlingConfig(boolean expectedDynamic, int expectedMaxWinSize, Integer flagValue) {
+        var props = new TestProperties();
+        if (flagValue != null) {
+            props.setMaxContentNodeMaintenanceOpConcurrency(flagValue);
+        }
+        var config = filestorConfigFromProducer(simpleCluster(props));
+        assertEquals(expectedMaxWinSize, config.maintenance_operation_throttler().max_window_size());
+        var expectedThrottleType = expectedDynamic ? StorFilestorConfig.Maintenance_operation_throttler.Type.DYNAMIC
+                                                   : StorFilestorConfig.Maintenance_operation_throttler.Type.UNLIMITED;
+        assertEquals(expectedThrottleType, config.maintenance_operation_throttler().type());
+    }
+
+    @Test
+    void content_node_maintenance_throttler_max_window_size_is_controlled_by_feature_flag() {
+        verifyMaintenanceThrottlingConfig(false, -1, null); // unlimited
+        verifyMaintenanceThrottlingConfig(false, -1, 0);
+        verifyMaintenanceThrottlingConfig(false, -1, -1);
+        verifyMaintenanceThrottlingConfig(false, -1, -1000);
+        verifyMaintenanceThrottlingConfig(true, 1234, 1234);
+    }
+
     @Test
     void testCapacity() {
         String xml = joinLines(

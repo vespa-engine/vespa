@@ -24,8 +24,8 @@ public:
     DocStoreValidator(IDocumentMetaStore &dms);
     ~DocStoreValidator() override;
 
-    virtual void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
-    virtual void visit(uint32_t lid) override;
+    void visit(uint32_t lid, const std::shared_ptr<document::Document> &doc) override;
+    void visit(uint32_t lid) override;
 
     void visitDone();
     void killOrphans(search::IDocumentStore &store, search::SerialNum serialNum);

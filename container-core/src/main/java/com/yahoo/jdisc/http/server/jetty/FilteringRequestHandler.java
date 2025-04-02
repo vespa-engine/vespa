@@ -27,6 +27,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Request handler that invokes request and response filters in addition to the bound request handler.
  *
  * @author Øyvind Bakksjø
+ * @author bjorncs
  */
 class FilteringRequestHandler extends AbstractRequestHandler {
 
@@ -72,8 +73,7 @@ class FilteringRequestHandler extends AbstractRequestHandler {
         getRequestHandlerSpec(resolvedRequestHandler)
                 .ifPresent(requestHandlerSpec -> request.context().put(RequestHandlerSpec.ATTRIBUTE_NAME, requestHandlerSpec));
 
-        RequestHandler requestHandler = new ReferenceCountingRequestHandler(
-                new CapabilityEnforcingRequestHandler(resolvedRequestHandler));
+        var requestHandler = new CapabilityEnforcingRequestHandler(resolvedRequestHandler);
 
         ResponseHandler responseHandler;
         if (responseFilter != null) {

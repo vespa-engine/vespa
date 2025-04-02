@@ -1550,19 +1550,23 @@ public class ContentClusterTest extends ContentBaseTest {
         assertTrue(resolveDistributorOperationCancellationConfig(2));
     }
 
-    private boolean resolveDistributorSymmetricReplicaSelectionConfig(Boolean flagValue) throws Exception {
+    private int resolveMaxDistributorDocOperationSizeConfig(Integer flagValue) throws Exception {
         return resolveDistributorConfig((props) -> {
             if (flagValue != null) {
-                props.setSymmetricPutAndActivateReplicaSelection(flagValue);
+                props.setMaxDistributorDocumentOperationSizeMib(flagValue);
             }
-        }).symmetric_put_and_activate_replica_selection();
+        }).max_document_operation_message_size_bytes();
     }
 
     @Test
-    void distributor_symmetric_replica_selection_config_controlled_by_properties() throws Exception {
-        assertFalse(resolveDistributorSymmetricReplicaSelectionConfig(null)); // defaults to false
-        assertFalse(resolveDistributorSymmetricReplicaSelectionConfig(false));
-        assertTrue(resolveDistributorSymmetricReplicaSelectionConfig(true));
+    void distributor_max_document_operation_size_config_is_controlled_by_properties() throws Exception {
+        int mi = 1024 * 1024;
+        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(null)); // defaults to -1
+        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(-2));
+        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(0));
+        assertEquals(100*mi,  resolveMaxDistributorDocOperationSizeConfig(100));
+        assertEquals(2047*mi, resolveMaxDistributorDocOperationSizeConfig(2047));
+        assertEquals(-1,      resolveMaxDistributorDocOperationSizeConfig(2048));
     }
 
     @Test

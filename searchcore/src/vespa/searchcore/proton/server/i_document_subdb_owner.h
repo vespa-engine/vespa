@@ -17,7 +17,7 @@ class IDocumentSubDBOwner
 {
 public:
     using SessionManager = matching::SessionManager;
-    virtual ~IDocumentSubDBOwner() {}
+    virtual ~IDocumentSubDBOwner() = default;
     virtual document::BucketSpace getBucketSpace() const = 0;
     virtual std::string getName() const = 0;
     virtual uint32_t getDistributionKey() const = 0;

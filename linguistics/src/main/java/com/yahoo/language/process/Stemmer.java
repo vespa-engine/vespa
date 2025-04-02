@@ -22,7 +22,9 @@ public interface Stemmer {
      * @param removeAccents whether to normalize accents and similar
      * @return a list of possible stems. Empty if none.
      * @throws ProcessingException thrown if there is an exception stemming this input
+     * @deprecated use #stem(String, LinguisticsParameters)
      */
+    @Deprecated // TODO: Remove on Vespa 9
     default List<StemList> stem(String input, Language language, StemMode mode, boolean removeAccents) {
         return stem(input, mode, language);
     }
@@ -35,7 +37,23 @@ public interface Stemmer {
      * @param language the language to use for stemming
      * @return a list of possible stems. Empty if none.
      * @throws ProcessingException thrown if there is an exception stemming this input
+     * @deprecated use #stem(String, LinguisticsParameters)
      */
-    List<StemList> stem(String input, StemMode mode, Language language);
+    @Deprecated // TODO: Remove on Vespa 9
+    default List<StemList> stem(String input, StemMode mode, Language language) {
+        return stem(input, new LinguisticsParameters(language, mode, true, true));
+    }
+
+    /**
+     * Stems the given input.
+     *
+     * @return the stems for each segment of the input. Each segment is an entry in the outer list,
+     *         where that entry contains the possible stems of that segment. For most text there
+     *         will be a single entry in the returned list, containing either a single stem
+     *         or (if given StemMode.ALL), multiple alternative stems.
+     */
+    default List<StemList> stem(String input, LinguisticsParameters parameters) {
+        return stem(input, parameters.language(), parameters.stemMode(), parameters.removeAccents());
+    }
 
 }

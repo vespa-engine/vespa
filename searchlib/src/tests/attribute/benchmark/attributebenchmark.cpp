@@ -523,13 +523,13 @@ AttributeBenchmark::main(int argc, char **argv)
             dc._seed = atoi(optarg);
             break;
         case 'S':
-            dc._rangeStart = strtoll(optarg, NULL, 10);
+            dc._rangeStart = strtoll(optarg, nullptr, 10);
             break;
         case 'E':
-            dc._rangeEnd = strtoll(optarg, NULL, 10);
+            dc._rangeEnd = strtoll(optarg, nullptr, 10);
             break;
         case 'D':
-            dc._rangeDelta = strtoll(optarg, NULL, 10);
+            dc._rangeDelta = strtoll(optarg, nullptr, 10);
             break;
         case 'L':
             dc._prefixLength = atoi(optarg);

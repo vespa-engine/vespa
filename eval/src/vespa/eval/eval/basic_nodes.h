@@ -27,7 +27,7 @@ struct NodeVisitor;
  **/
 struct NodeHandler {
     virtual void handle(std::unique_ptr<nodes::Node> node) = 0;
-    virtual ~NodeHandler() {}
+    virtual ~NodeHandler() = default;
 };
 
 namespace nodes {
@@ -60,7 +60,7 @@ struct Node {
     virtual const Node &get_child(size_t idx) const = 0;
     virtual void detach_children(NodeHandler &handler) = 0;
     bool is_leaf() const { return (num_children() == 0); }
-    virtual ~Node() {}
+    virtual ~Node() = default;
 };
 
 using Node_UP = std::unique_ptr<Node>;
@@ -94,7 +94,7 @@ private:
     double _value;
 public:
     Number(double value_in) : _value(value_in) {}
-    virtual bool is_const_double() const override { return true; }
+    bool is_const_double() const override { return true; }
     double get_const_double_value() const override { return value(); }
     double value() const { return _value; }
     std::string dump(DumpContext &) const override;

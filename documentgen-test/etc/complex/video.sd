@@ -23,6 +23,15 @@ search video {
       field year type int {
          indexing: attribute|summary
       }
+      field id type long {
+         indexing: attribute|summary
+      }
+      field version type string {
+         indexing: attribute|summary
+      }
+      field mid type int {
+         indexing: attribute
+      }
    }
 
    field sw1 type float {

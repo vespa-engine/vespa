@@ -12,6 +12,7 @@
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/stat.h>
 #include <vespa/vdslib/state/clusterstate.h>
+#include <string_view>
 
 namespace storage::mbusprot {
 
@@ -258,9 +259,10 @@ public:
         assert(in_buf.getRemaining() <= INT_MAX);
         bool ok = _proto_obj->ParseFromArray(in_buf.getBufferAtPos(), in_buf.getRemaining());
         if (!ok) {
+            std::string full_name_copy(ProtobufType::descriptor()->full_name());
             throw vespalib::IllegalArgumentException(
                     vespalib::make_string("Malformed protobuf request payload for %s",
-                                          ProtobufType::descriptor()->full_name().c_str()));
+                                          full_name_copy.c_str()));
         }
     }
 
@@ -288,9 +290,10 @@ public:
         assert(in_buf.getRemaining() <= INT_MAX);
         bool ok = _proto_obj->ParseFromArray(in_buf.getBufferAtPos(), in_buf.getRemaining());
         if (!ok) {
+            std::string full_name_copy(ProtobufType::descriptor()->full_name());
             throw vespalib::IllegalArgumentException(
                     vespalib::make_string("Malformed protobuf response payload for %s",
-                                          ProtobufType::descriptor()->full_name().c_str()));
+                                          full_name_copy.c_str()));
         }
     }
 
@@ -355,9 +358,10 @@ std::unique_ptr<api::StorageCommand>
 ProtocolSerialization7::decode_bucket_request(document::ByteBuffer& in_buf, Func&& f) const {
     return decode_request<ProtobufType>(in_buf, [&](const ProtobufType& req) {
         if (!req.has_bucket()) {
+            std::string full_name_copy(ProtobufType::descriptor()->full_name());
             throw vespalib::IllegalArgumentException(
                     vespalib::make_string("Malformed protocol buffer request for %s; no bucket",
-                                          ProtobufType::descriptor()->full_name().c_str()));
+                                          full_name_copy.c_str()));
         }
         const auto bucket = get_bucket(req.bucket());
         return f(req, bucket);

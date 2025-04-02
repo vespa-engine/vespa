@@ -117,7 +117,7 @@ public:
     /**
      * Virtual destructor to allow safe subclassing.
      **/
-    virtual ~IIndexEnvironment() {}
+    virtual ~IIndexEnvironment() = default;
 };
 
 }

@@ -24,7 +24,7 @@ StorageReply::StorageReply(mbus::BlobRef data, const ProtocolSerialization& seri
 }
 
 StorageReply::StorageReply(api::StorageReply::SP reply)
-    : _serializer(0),
+    : _serializer(nullptr),
       _sz(0),
       _buffer(),
       _mbusType(reply->getType().getId()),
@@ -39,12 +39,12 @@ StorageReply::deserialize() const
     if (_reply.get()) return;
     StorageReply& reply(const_cast<StorageReply&>(*this));
     mbus::Message::UP msg(reply.getMessage());
-    if (msg.get() == 0) {
+    if (msg.get() == nullptr) {
         throw IllegalStateException("Cannot deserialize storage reply before message have been set", VESPA_STRLOC);
     }
     const StorageCommand* cmd(dynamic_cast<const StorageCommand*>(msg.get()));
     reply.setMessage(std::move(msg));
-    if (cmd == 0) {
+    if (cmd == nullptr) {
         throw IllegalStateException("Storage reply get message did not return a storage command", VESPA_STRLOC);
     }
     mbus::BlobRef blobRef(static_cast<char *>(_buffer.get()), _sz);

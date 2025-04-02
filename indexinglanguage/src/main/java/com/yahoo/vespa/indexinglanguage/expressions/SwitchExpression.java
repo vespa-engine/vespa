@@ -60,7 +60,7 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, DataType.STRING, context);
 
         DataType outputType = defaultExp == null ? null : defaultExp.setInputType(inputType, context);
@@ -74,7 +74,7 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
 
         if (defaultExp != null)
@@ -84,7 +84,7 @@ public final class SwitchExpression extends CompositeExpression {
         return DataType.STRING;
     }
 
-    private void setOutputType(DataType outputType, Expression expression, VerificationContext context) {
+    private void setOutputType(DataType outputType, Expression expression, TypeContext context) {
         DataType inputType = expression.setOutputType(outputType, context);
         if (inputType != null && ! DataType.STRING.isAssignableTo(inputType))
             throw new VerificationException(this, "This inputs a string, but '" + expression + "' requires type " + inputType);
@@ -98,13 +98,10 @@ public final class SwitchExpression extends CompositeExpression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        DataType input = context.getCurrentType();
-        for (Expression exp : cases.values()) {
-            context.setCurrentType(input).verify(exp);
-        }
-        context.setCurrentType(input).verify(defaultExp);
-        context.setCurrentType(input);
+    protected void doResolve(TypeContext context) {
+        for (Expression exp : cases.values())
+            context.resolve(exp);
+        context.resolve(defaultExp);
     }
 
     @Override
@@ -134,9 +131,6 @@ public final class SwitchExpression extends CompositeExpression {
             select(exp, predicate, operation);
         }
     }
-
-    @Override
-    public DataType createdOutputType() { return null; }
 
     @Override
     public String toString() {

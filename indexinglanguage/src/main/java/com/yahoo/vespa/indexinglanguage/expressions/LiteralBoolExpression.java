@@ -21,29 +21,21 @@ public class LiteralBoolExpression extends Expression {
     public boolean requiresInput() { return false; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         return DataType.BOOL;
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(DataType.BOOL, outputType, null, context);
         return AnyDataType.instance;
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new BoolFieldValue(value));
     }
-
-    @Override
-    public DataType createdOutputType() { return DataType.BOOL; }
 
     @Override
     public String toString() {

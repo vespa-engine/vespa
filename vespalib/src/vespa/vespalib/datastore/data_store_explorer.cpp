@@ -157,7 +157,7 @@ BufferTypeStats::stats_to_slime(Inserter& inserter)
 }
 
 struct GreaterResourceUsage {
-    static bool operator()(const BufferTypeStats& lhs, const BufferTypeStats &rhs) noexcept {
+    bool operator()(const BufferTypeStats& lhs, const BufferTypeStats &rhs) const noexcept {
         if (lhs.buffers() != rhs.buffers()) {
             return lhs.buffers() > rhs.buffers();
         }

@@ -9,6 +9,10 @@ public class SearchClusterTester {
         cluster = new MockSearchCluster("1", groups, nodesPerGroup);
     }
 
+    public SearchClusterTester(int groups, int nodesPerGroup, AvailabilityPolicy availabilityPolicy) {
+        cluster = new MockSearchCluster("1", groups, nodesPerGroup, null, availabilityPolicy);
+    }
+
     public SearchCluster cluster() { return cluster; }
 
     public void pingIterationCompleted() {

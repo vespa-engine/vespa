@@ -165,6 +165,7 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
+        private final boolean useNonPublicEndpointForTest;
         private final double queryDispatchWarmup;
         private final String responseSequencer;
         private final int numResponseThreads;
@@ -203,13 +204,15 @@ public class ModelContextImpl implements ModelContext {
         private final Architecture adminClusterArchitecture;
         private final double logserverNodeMemory;
         private final double clusterControllerNodeMemory;
-        private final boolean symmetricPutAndActivateReplicaSelection;
         private final boolean useLegacyWandQueryParsing;
         private final boolean forwardAllLogLevels;
         private final long zookeeperPreAllocSize;
         private final int documentV1QueueSize;
+        private final int maxContentNodeMaintenanceOpConcurrency;
+        private final int maxDistributorDocumentOperationSizeMib;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
+            this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
             this.responseSequencer = Flags.RESPONSE_SEQUENCER_TYPE.bindTo(source).with(appId).with(version).value();
             this.numResponseThreads = Flags.RESPONSE_NUM_THREADS.bindTo(source).with(appId).with(version).value();
             this.useAsyncMessageHandlingOnSchedule = Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE.bindTo(source).with(appId).with(version).value();
@@ -248,13 +251,15 @@ public class ModelContextImpl implements ModelContext {
             this.adminClusterArchitecture = Architecture.valueOf(PermanentFlags.ADMIN_CLUSTER_NODE_ARCHITECTURE.bindTo(source).with(appId).with(version).value());
             this.logserverNodeMemory = PermanentFlags.LOGSERVER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
             this.clusterControllerNodeMemory = PermanentFlags.CLUSTER_CONTROLLER_NODE_MEMORY.bindTo(source).with(appId).with(version).value();
-            this.symmetricPutAndActivateReplicaSelection = Flags.SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION.bindTo(source).with(appId).with(version).value();
             this.useLegacyWandQueryParsing = Flags.USE_LEGACY_WAND_QUERY_PARSING.bindTo(source).with(appId).with(version).value();
             this.forwardAllLogLevels = PermanentFlags.FORWARD_ALL_LOG_LEVELS.bindTo(source).with(appId).with(version).value();
             this.zookeeperPreAllocSize = Flags.ZOOKEEPER_PRE_ALLOC_SIZE_KIB.bindTo(source).value();
             this.documentV1QueueSize = Flags.DOCUMENT_V1_QUEUE_SIZE.bindTo(source).with(appId).with(version).value();
+            this.maxContentNodeMaintenanceOpConcurrency = Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY.bindTo(source).with(appId).with(version).value();
+            this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
         }
 
+        @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
         @Override public int heapSizePercentage() { return heapPercentage; }
         @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
         @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
@@ -299,11 +304,12 @@ public class ModelContextImpl implements ModelContext {
         @Override public Architecture adminClusterArchitecture() { return adminClusterArchitecture; }
         @Override public double logserverNodeMemory() { return logserverNodeMemory; }
         @Override public double clusterControllerNodeMemory() { return clusterControllerNodeMemory; }
-        @Override public boolean symmetricPutAndActivateReplicaSelection() { return symmetricPutAndActivateReplicaSelection; }
         @Override public boolean useLegacyWandQueryParsing() { return useLegacyWandQueryParsing; }
         @Override public boolean forwardAllLogLevels() { return forwardAllLogLevels; }
         @Override public long zookeeperPreAllocSize() { return zookeeperPreAllocSize; }
         @Override public int documentV1QueueSize() { return documentV1QueueSize; }
+        @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
+        @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
     }
 
     public static class Properties implements ModelContext.Properties {
@@ -336,6 +342,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean allowUserFilters;
         private final Duration endpointConnectionTtl;
         private final List<String> requestPrefixForLoggingContent;
+        private final List<String> jdiscHttpComplianceViolations;
 
         public Properties(ApplicationId applicationId,
                           Version modelVersion,
@@ -383,6 +390,8 @@ public class ModelContextImpl implements ModelContext {
             this.endpointConnectionTtl = Duration.ofSeconds(PermanentFlags.ENDPOINT_CONNECTION_TTL.bindTo(flagSource).with(applicationId).value());
             this.dataplaneTokens = dataplaneTokens;
             this.requestPrefixForLoggingContent = PermanentFlags.LOG_REQUEST_CONTENT.bindTo(flagSource).with(applicationId).value();
+            this.jdiscHttpComplianceViolations = PermanentFlags.JDISC_HTTP_COMPLIANCE_VIOLATIONS.bindTo(flagSource)
+                    .with(applicationId).with(modelVersion).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -489,6 +498,8 @@ public class ModelContextImpl implements ModelContext {
         @Override public Duration endpointConnectionTtl() { return endpointConnectionTtl; }
 
         @Override public List<String> requestPrefixForLoggingContent() { return requestPrefixForLoggingContent; }
+
+        @Override public List<String> jdiscHttpComplianceViolations() { return jdiscHttpComplianceViolations; }
     }
 
 }

@@ -68,7 +68,7 @@ public:
   /**
    * @brief Destructor
    */
-  virtual ~RefCountable(void) {}
+  virtual ~RefCountable() = default;
 
   /**
    * @brief Increase reference count.

@@ -10,14 +10,13 @@ import java.util.ListIterator;
 /**
  * Base class of nodes in a Span tree.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public abstract class SpanNode implements Comparable<SpanNode>, SpanNodeParent {
 
     private boolean valid = true;
-    /**
-     * This scratch id is used to avoid using IdentityHashMaps as they are very costly.
-     */
+
+    /** This scratch id is used to avoid using IdentityHashMaps as they are very costly. */
     private int scratchId = -1;
     private SpanNodeParent parent;
 
@@ -25,7 +24,7 @@ public abstract class SpanNode implements Comparable<SpanNode>, SpanNodeParent {
     }
 
     /**
-     * Returns whether this node is valid or not.&nbsp;When a child node from a SpanList, the child
+     * Returns whether this node is valid or not. When a child node from a SpanList, the child
      * is marked as invalid, and the reference to it is removed from the parent SpanList. However,
      * Annotations in the global list kept in SpanTree may still have references to the removed SpanNode.
      * Removing these references is costly, and is only done when calling {@link com.yahoo.document.annotation.SpanTree#cleanup()}.
@@ -75,8 +74,8 @@ public abstract class SpanNode implements Comparable<SpanNode>, SpanNodeParent {
 
     /** Returns the SpanTree this belongs to and throws a nice NullPointerException if none */
     private SpanTree getNonNullSpanTree() {
-        SpanTree spanTree=getSpanTree();
-        if (spanTree==null)
+        SpanTree spanTree = getSpanTree();
+        if (spanTree == null)
             throw new NullPointerException(this + " is not attached to a SpanTree through its parent yet");
         return spanTree;
     }
@@ -104,8 +103,8 @@ public abstract class SpanNode implements Comparable<SpanNode>, SpanNodeParent {
      * @return this for chaining
      * @throws NullPointerException if this span is not attached to a tree
      */
-    public SpanNode annotate(AnnotationType type,FieldValue value) {
-        getNonNullSpanTree().annotate(this,type,value);
+    public SpanNode annotate(AnnotationType type, FieldValue value) {
+        getNonNullSpanTree().annotate(this, type, value);
         return this;
     }
 
@@ -146,7 +145,7 @@ public abstract class SpanNode implements Comparable<SpanNode>, SpanNodeParent {
      * @throws NullPointerException if this span is not attached to a tree
      */
     public SpanNode annotate(AnnotationType type) {
-        getNonNullSpanTree().annotate(this,type);
+        getNonNullSpanTree().annotate(this, type);
         return this;
     }
 
@@ -261,9 +260,7 @@ public abstract class SpanNode implements Comparable<SpanNode>, SpanNodeParent {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof SpanNode)) return false;
-
-        SpanNode spanNode = (SpanNode) o;
+        if (!(o instanceof SpanNode spanNode)) return false;
 
         if (getFrom() != spanNode.getFrom()) return false;
         if (getTo() != spanNode.getTo()) return false;
@@ -317,4 +314,5 @@ public abstract class SpanNode implements Comparable<SpanNode>, SpanNodeParent {
         //both from and to are equal
         return 0;
     }
+
 }

@@ -21,7 +21,6 @@ import com.yahoo.vespa.filedistribution.FileReferenceDownload;
 import com.yahoo.vespa.filedistribution.LazyFileReferenceData;
 import com.yahoo.vespa.filedistribution.LazyTemporaryStorageFileReferenceData;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 
 import java.io.File;
 import java.io.IOException;
@@ -90,7 +89,7 @@ public class FileServer {
     @Inject
     public FileServer(ConfigserverConfig configserverConfig, FlagSource flagSource, FileDirectory fileDirectory) {
         this(createFileDownloader(getOtherConfigServersInCluster(configserverConfig)),
-             compressionTypesAsList(Flags.FILE_DISTRIBUTION_COMPRESSION_TYPES_TO_SERVE.bindTo(flagSource).value()),
+             compressionTypesToServe,
              fileDirectory);
         // Clean up temporary files from previous runs (e.g. if JVM was killed)
         try (var files = uncheck(() -> Files.list(tempFilereferencedataDir))) {
@@ -243,12 +242,6 @@ public class FileServer {
         if (configServers.isEmpty()) return FileDownloader.emptyConnectionPool();
 
         return new FileDistributionConnectionPool(new ConfigSourceSet(configServers), supervisor);
-    }
-
-    private static List<CompressionType> compressionTypesAsList(List<String> compressionTypes) {
-        return compressionTypes.stream()
-                               .map(CompressionType::valueOf)
-                               .toList();
     }
 
 }

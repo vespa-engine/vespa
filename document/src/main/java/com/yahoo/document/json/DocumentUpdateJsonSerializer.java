@@ -129,6 +129,10 @@ public class DocumentUpdateJsonSerializer {
             });
         }
 
+        @Override public void write(FieldPathUpdate update) { throw new IllegalStateException("should not end up here"); }
+        @Override public void write(AddFieldPathUpdate update) { throw new IllegalStateException("should not end up here"); }
+        @Override public void write(AssignFieldPathUpdate update)  { throw new IllegalStateException("should not end up here"); }
+
         private void write(FieldPath fieldPath, Collection<FieldPathUpdate> fieldPathUpdates, JsonGenerator generator) throws IOException {
             generator.writeObjectFieldStart(fieldPath.toString());
 

@@ -522,6 +522,8 @@
       "public com.yahoo.config.provision.Tags tags(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment)",
       "public java.util.Optional hostTTL(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId, com.yahoo.config.provision.ClusterSpec$Id)",
+      "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Zone, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
+      "public com.yahoo.config.provision.ZoneEndpoint zoneEndpoint(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.zone.ZoneId, com.yahoo.config.provision.ClusterSpec$Id, boolean)",
       "public java.lang.String xmlForm()",
       "public java.util.Optional instance(com.yahoo.config.provision.InstanceName)",
       "public com.yahoo.config.application.api.DeploymentInstanceSpec requireInstance(java.lang.String)",
@@ -1293,8 +1295,8 @@
       "abstract"
     ],
     "methods" : [
+      "public boolean useNonPublicEndpointForTest()",
       "public java.lang.String responseSequencerType()",
-      "public java.lang.String queryDispatchPolicy()",
       "public double queryDispatchWarmup()",
       "public int defaultNumResponseThreads()",
       "public int mbusNetworkThreads()",
@@ -1309,9 +1311,7 @@
       "public double feedNiceness()",
       "public int maxUnCommittedMemory()",
       "public java.lang.String searchMmapAdvise()",
-      "public boolean loadCodeAsHugePages()",
       "public boolean containerDumpHeapOnShutdownTimeout()",
-      "public double containerShutdownTimeout()",
       "public int heapSizePercentage()",
       "public java.util.List allowedAthenzProxyIdentities()",
       "public int maxActivationInhibitedOutOfSyncGroups()",
@@ -1321,14 +1321,12 @@
       "public double minNodeRatioPerGroup()",
       "public boolean forwardIssuesAsErrors()",
       "public boolean useV8GeoPositions()",
-      "public int maxCompactBuffers()",
       "public java.util.List ignoredHttpUserAgents()",
       "public java.lang.String logFileCompressionAlgorithm(java.lang.String)",
       "public java.lang.String summaryDecodePolicy()",
       "public int contentLayerMetadataFeatureLevel()",
       "public java.lang.String unknownConfigDefinition()",
       "public int searchHandlerThreadpool()",
-      "public boolean alwaysMarkPhraseExpensive()",
       "public boolean sortBlueprintsByCost()",
       "public int persistenceThreadMaxFeedOpBatchSize()",
       "public boolean logserverOtelCol()",
@@ -1337,11 +1335,12 @@
       "public double logserverNodeMemory()",
       "public double clusterControllerNodeMemory()",
       "public boolean symmetricPutAndActivateReplicaSelection()",
-      "public boolean enforceStrictlyIncreasingClusterStateVersions()",
       "public boolean useLegacyWandQueryParsing()",
       "public boolean forwardAllLogLevels()",
       "public long zookeeperPreAllocSize()",
-      "public int documentV1QueueSize()"
+      "public int documentV1QueueSize()",
+      "public int maxContentNodeMaintenanceOpConcurrency()",
+      "public int maxDistributorDocumentOperationSizeMib()"
     ],
     "fields" : [ ]
   },
@@ -1401,7 +1400,8 @@
       "public boolean allowUserFilters()",
       "public java.time.Duration endpointConnectionTtl()",
       "public java.util.List dataplaneTokens()",
-      "public java.util.List requestPrefixForLoggingContent()"
+      "public java.util.List requestPrefixForLoggingContent()",
+      "public java.util.List jdiscHttpComplianceViolations()"
     ],
     "fields" : [ ]
   },

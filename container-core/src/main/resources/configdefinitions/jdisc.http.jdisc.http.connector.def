@@ -159,3 +159,5 @@ accessLog.remotePortHeaders[]         string
 accessLog.content[].pathPrefix  string
 accessLog.content[].maxSize     long
 accessLog.content[].sampleRate  double
+
+compliance.httpViolations[] string

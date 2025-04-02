@@ -35,8 +35,8 @@ TEST("routablequeue_test") {
     {
         RoutableQueue rq;
         EXPECT_TRUE(rq.size() == 0);
-        EXPECT_TRUE(rq.dequeue().get() == 0);
-        EXPECT_TRUE(rq.dequeue(100ms).get() == 0);
+        EXPECT_TRUE(rq.dequeue().get() == nullptr);
+        EXPECT_TRUE(rq.dequeue(100ms).get() == nullptr);
         EXPECT_TRUE(TestMessage::getCnt() == 0);
         EXPECT_TRUE(TestReply::getCnt() == 0);
         rq.enqueue(Routable::UP(new TestMessage(101)));

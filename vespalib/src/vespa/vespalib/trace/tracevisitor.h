@@ -9,7 +9,7 @@ class TraceNode;
  * This class is an abstract visitor of {@link TraceNode}. See {@link TraceNode#accept(TraceVisitor)}.
  */
 struct TraceVisitor {
-    virtual ~TraceVisitor() { }
+    virtual ~TraceVisitor() = default;
     /**
      * Visits a {@link TraceNode}. Called by {@link TraceNode#accept(TraceVisitor)}, before visiting its children.
      *

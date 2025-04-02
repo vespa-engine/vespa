@@ -25,7 +25,7 @@ public:
     /**
      * Empty, needed for subclassing
      **/
-    virtual ~MonitorClient() {}
+    virtual ~MonitorClient() = default;
 };
 
 /**
@@ -57,7 +57,7 @@ public:
     /**
      * Empty, needed for subclassing
      **/
-    virtual ~MonitorServer() {}
+    virtual ~MonitorServer() = default;
 };
 
 }

@@ -20,7 +20,7 @@ public:
     /**
      * Destructor.  No cleanup needed for base class.
      */
-    virtual ~FNET_IPacketStreamer() { }
+    virtual ~FNET_IPacketStreamer() = default;
 
     /**
      * This method is called to obtain information about the next packet

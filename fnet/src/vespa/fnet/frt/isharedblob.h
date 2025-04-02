@@ -12,7 +12,7 @@ public:
     virtual uint32_t getLen() = 0;
     virtual const char *getData() = 0;
 protected:
-    virtual ~FRT_ISharedBlob() {}
+    virtual ~FRT_ISharedBlob() = default;
 };
 
 

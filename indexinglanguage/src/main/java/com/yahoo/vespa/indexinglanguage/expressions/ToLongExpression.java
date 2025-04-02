@@ -10,29 +10,21 @@ import com.yahoo.document.datatypes.LongFieldValue;
 public final class ToLongExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, context);
         return DataType.LONG;
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(DataType.LONG, output, null, context);
         return getInputType(context);
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(new LongFieldValue(Long.valueOf(String.valueOf(context.getCurrentValue()))));
     }
-
-    @Override
-    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
     public String toString() { return "to_long"; }

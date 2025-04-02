@@ -88,7 +88,7 @@ struct NodeVisitor {
     virtual void visit(const nodes::Bit                &) = 0;
     virtual void visit(const nodes::Hamming            &) = 0;
 
-    virtual ~NodeVisitor() {}
+    virtual ~NodeVisitor() = default;
 };
 
 /**

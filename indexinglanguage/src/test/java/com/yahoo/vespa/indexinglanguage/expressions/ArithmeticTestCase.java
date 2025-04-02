@@ -137,7 +137,7 @@ public class ArithmeticTestCase {
 
     private void assertType(DataType lhs, Operator op, DataType rhs, DataType expected) {
         newArithmetic(SimpleExpression.newOutput(lhs), op, SimpleExpression.newOutput(rhs))
-                                       .verify(new VerificationContext(new SimpleTestAdapter()));
+                                       .resolve(new TypeContext(new SimpleTestAdapter()));
         assertEquals(expected, newArithmetic(lhs.createFieldValue(6), op,
                                              rhs.createFieldValue(9)).execute().getDataType());
     }
@@ -160,10 +160,10 @@ public class ArithmeticTestCase {
         return newArithmetic(lhs, op, rhs, null);
     }
 
-    private static ArithmeticExpression newArithmetic(Expression lhs, Operator op, Expression rhs, VerificationContext context) {
+    private static ArithmeticExpression newArithmetic(Expression lhs, Operator op, Expression rhs, TypeContext context) {
         var expression = new ArithmeticExpression(lhs, op, rhs);
         if (context != null)
-            expression.verify(context);
+            expression.resolve(context);
         return expression;
     }
 
@@ -172,7 +172,7 @@ public class ArithmeticTestCase {
     }
 
     private static void assertVerify(Expression lhs, Operator op, Expression rhs, DataType val) {
-        new ArithmeticExpression(lhs, op, rhs).verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
+        new ArithmeticExpression(lhs, op, rhs).resolve(new TypeContext(new SimpleTestAdapter()));
     }
 
     private static void assertVerifyThrows(Expression lhs, Operator op, Expression rhs, DataType val,
@@ -180,8 +180,8 @@ public class ArithmeticTestCase {
         ArithmeticExpression expression = null;
         try {
             expression = new ArithmeticExpression(lhs, op, rhs);
-            expression.setInputType(null, new VerificationContext(new SimpleTestAdapter()));
-            expression.verify(new VerificationContext(new SimpleTestAdapter()).setCurrentType(val));
+            expression.setInputType(null, new TypeContext(new SimpleTestAdapter()));
+            expression.resolve(new TypeContext(new SimpleTestAdapter()));
             fail("Expected exception");
         } catch (VerificationException e) {
             String expressionString = expression == null ? "of type '" + ArithmeticExpression.class.getSimpleName() + "'"

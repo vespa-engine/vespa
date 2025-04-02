@@ -13,6 +13,9 @@ import com.yahoo.document.update.RemoveValueUpdate;
 import com.yahoo.document.update.TensorAddUpdate;
 import com.yahoo.document.update.TensorModifyUpdate;
 import com.yahoo.document.update.TensorRemoveUpdate;
+import com.yahoo.document.fieldpathupdate.FieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.AddFieldPathUpdate;
+import com.yahoo.document.fieldpathupdate.AssignFieldPathUpdate;
 
 /**
  * Interface for writing document updates in custom serializers.
@@ -31,4 +34,8 @@ public interface DocumentUpdateWriter {
     void write(TensorModifyUpdate update);
     void write(TensorAddUpdate update);
     void write(TensorRemoveUpdate update);
+
+    void write(FieldPathUpdate update);
+    void write(AddFieldPathUpdate update);
+    void write(AssignFieldPathUpdate update);
 }

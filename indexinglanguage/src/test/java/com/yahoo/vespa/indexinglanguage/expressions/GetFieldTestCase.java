@@ -9,10 +9,9 @@ import com.yahoo.document.StructDataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
-import com.yahoo.vespa.indexinglanguage.SimpleDocumentAdapter;
+import com.yahoo.vespa.indexinglanguage.SimpleDocumentFieldValues;
 import org.junit.Test;
 
-import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerify;
 import static com.yahoo.vespa.indexinglanguage.expressions.ExpressionAssert.assertVerifyThrows;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -39,17 +38,6 @@ public class GetFieldTestCase {
     }
 
     @Test
-    public void requireThatExpressionCanBeVerified() {
-        StructDataType type = new StructDataType("my_struct");
-        type.addField(new Field("foo", DataType.STRING));
-        Expression exp = new GetFieldExpression("foo");
-        assertVerify(type, exp, DataType.STRING);
-        assertVerifyThrows("Invalid expression 'get_field foo': Expected a struct or map, but got no value", null, exp);
-        assertVerifyThrows("Invalid expression 'get_field foo': my_struct is incompatible with int", DataType.INT, exp);
-        assertVerifyThrows("Invalid expression 'get_field bar': Field 'bar' not found in struct type 'my_struct'", type, new GetFieldExpression("bar"));
-    }
-
-    @Test
     public void requireThatStructFieldsCanBeRead() {
         DataType barType = DataType.STRING;
         FieldValue bar = barType.createFieldValue("bar");
@@ -64,7 +52,7 @@ public class GetFieldTestCase {
         Document doc = new Document(docType, "id:scheme:my_doc::");
         doc.setFieldValue("foo", foo);
 
-        ExecutionContext ctx = new ExecutionContext(new SimpleDocumentAdapter(doc));
+        ExecutionContext ctx = new ExecutionContext(new SimpleDocumentFieldValues(doc));
         assertEquals(bar, new StatementExpression(new InputExpression("foo"),
                                                   new GetFieldExpression("bar")).execute(ctx));
     }

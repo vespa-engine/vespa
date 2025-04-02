@@ -15,7 +15,7 @@ class IMonitoredServer
 {
 public:
     virtual void notifyDisconnected() = 0; // lost connection to service
-    virtual ~IMonitoredServer() {}
+    virtual ~IMonitoredServer() = default;
 };
 
 //-----------------------------------------------------------------------------

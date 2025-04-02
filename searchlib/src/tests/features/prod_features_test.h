@@ -76,6 +76,9 @@ protected:
     void assertFreshness(feature_t expFreshness, const std::string & attr, uint32_t age, uint32_t maxAge = 0, double halfResponse = 0, bool logScale = false);
     bool assertTermDistance(const search::features::TermDistanceCalculator::Result & exp, const std::string & query,
                             const std::string & field, uint32_t docId = 1);
+    bool assertTermDistance(const search::features::TermDistanceCalculator::Result & exp, const std::string & query,
+                        const std::vector<std::string> & field, uint32_t docId, std::optional<std::string> element_gap,
+                        std::optional<uint32_t> phrase_length);
     bool assertMatches(uint32_t output, const std::string & query, const std::string & field,
                        const std::string & feature = "matches(foo)", uint32_t docId = 1);
 

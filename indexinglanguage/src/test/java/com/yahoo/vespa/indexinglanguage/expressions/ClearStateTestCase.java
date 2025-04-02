@@ -36,13 +36,6 @@ public class ClearStateTestCase {
         assertVerify(DataType.STRING, new ClearStateExpression(), DataType.STRING);
     }
 
-    @Test
-    public void requireThatVerificationContextIsCleared() {
-        MyVerification ctx = new MyVerification();
-        ctx.verify(new ClearStateExpression());
-        assertTrue(ctx.cleared);
-    }
-
     private static class MyExecution extends ExecutionContext {
 
         boolean cleared = false;
@@ -54,7 +47,7 @@ public class ClearStateTestCase {
         }
     }
 
-    private static class MyVerification extends VerificationContext {
+    private static class MyVerification extends TypeContext {
 
         boolean cleared = false;
 
@@ -63,7 +56,7 @@ public class ClearStateTestCase {
         }
 
         @Override
-        public VerificationContext clear() {
+        public TypeContext clear() {
             cleared = true;
             return this;
         }

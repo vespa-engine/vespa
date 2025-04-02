@@ -225,8 +225,8 @@ class ConstTextFieldGenerator : public FieldGenerator
     string _value;
 public:
     ConstTextFieldGenerator(std::vector<string> argv) noexcept;
-    virtual ~ConstTextFieldGenerator() override;
-    virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    ~ConstTextFieldGenerator() override;
+    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 ConstTextFieldGenerator::ConstTextFieldGenerator(std::vector<string> argv) noexcept
@@ -253,8 +253,8 @@ class PrefixTextFieldGenerator : public FieldGenerator
     uint32_t _div;
 public:
     PrefixTextFieldGenerator(std::vector<string> argv) noexcept;
-    virtual ~PrefixTextFieldGenerator() override;
-    virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    ~PrefixTextFieldGenerator() override;
+    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 PrefixTextFieldGenerator::PrefixTextFieldGenerator(std::vector<string> argv) noexcept
@@ -301,8 +301,8 @@ public:
                            uint32_t minFill,
                            uint32_t maxFill);
     virtual ~RandTextFieldGenerator();
-    virtual void setup() override;
-    virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void setup() override;
+    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 
@@ -362,7 +362,7 @@ public:
                           vespalib::Rand48 &rnd,
                           const std::vector<uint32_t> &mods);
     virtual ~ModTextFieldGenerator();
-    virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 
@@ -400,7 +400,7 @@ class IdTextFieldGenerator : public FieldGenerator
 public:
     IdTextFieldGenerator(const string &name);
     virtual ~IdTextFieldGenerator();
-    virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
 };
 
 
@@ -434,8 +434,8 @@ public:
                           uint32_t low,
                           uint32_t count);
     virtual ~RandIntFieldGenerator();
-    virtual void generateValue(vespalib::asciistream &doc, uint32_t id) override;
-    virtual bool isString() const override { return false; }
+    void generateValue(vespalib::asciistream &doc, uint32_t id) override;
+    bool isString() const override { return false; }
 };
 
 
@@ -639,9 +639,9 @@ public:
     {
     }
 
-    virtual void usage(bool showHeader) override;
-    virtual bool getOptions(int argc, char **argv) override;
-    virtual int run() override;
+    void usage(bool showHeader) override;
+    bool getOptions(int argc, char **argv) override;
+    int run() override;
 };
 
 

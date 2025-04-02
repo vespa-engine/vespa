@@ -24,18 +24,13 @@ public final class NormalizeExpression extends Expression {
     public Linguistics getLinguistics() { return linguistics; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         return super.setInputType(inputType, DataType.STRING, context);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         return super.setOutputType(DataType.STRING, outputType, null, context);
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override
@@ -71,11 +66,6 @@ public final class NormalizeExpression extends Expression {
             }
         }
         return buf.toString();
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return DataType.STRING;
     }
 
     @Override

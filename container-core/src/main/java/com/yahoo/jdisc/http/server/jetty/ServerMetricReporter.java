@@ -6,7 +6,6 @@ import com.yahoo.jdisc.Metric;
 import org.eclipse.jetty.io.ConnectionStatistics;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 
@@ -26,10 +25,15 @@ class ServerMetricReporter {
             Executors.newScheduledThreadPool(1, new DaemonThreadFactory("jdisc-jetty-metric-reporter-"));
     private final Metric metric;
     private final Server jetty;
+    private final StatisticsHandler statisticsHandler;
+    private final MetricAggregatingRequestLog responseMetricAggregator;
 
-    ServerMetricReporter(Metric metric, Server jetty) {
+    ServerMetricReporter(Metric metric, Server jetty, StatisticsHandler statisticsHandler,
+                         MetricAggregatingRequestLog responseMetricAggregator) {
         this.metric = metric;
         this.jetty = jetty;
+        this.statisticsHandler = statisticsHandler;
+        this.responseMetricAggregator = responseMetricAggregator;
     }
 
     void start() {
@@ -51,15 +55,10 @@ class ServerMetricReporter {
 
         @Override
         public void run() {
-            var collector = ResponseMetricAggregator.getBean(jetty);
-            if (collector != null) setServerMetrics(collector);
+            setServerMetrics(responseMetricAggregator);
 
             // reset statisticsHandler to preserve earlier behavior
-            StatisticsHandler statisticsHandler = ((AbstractHandlerContainer) jetty.getHandler())
-                    .getChildHandlerByClass(StatisticsHandler.class);
-            if (statisticsHandler != null) {
-                statisticsHandler.statsReset();
-            }
+            statisticsHandler.reset();
 
             for (Connector connector : jetty.getConnectors()) {
                 setConnectorMetrics((JDiscServerConnector)connector);
@@ -68,14 +67,14 @@ class ServerMetricReporter {
             setJettyThreadpoolMetrics();
         }
 
-        private void setServerMetrics(ResponseMetricAggregator statisticsCollector) {
+        private void setServerMetrics(MetricAggregatingRequestLog statisticsCollector) {
             long timeSinceStarted = System.currentTimeMillis() - timeStarted.toEpochMilli();
             metric.set(MetricDefinitions.STARTED_MILLIS, timeSinceStarted, null);
 
             addResponseMetrics(statisticsCollector);
         }
 
-        private void addResponseMetrics(ResponseMetricAggregator statisticsCollector) {
+        private void addResponseMetrics(MetricAggregatingRequestLog statisticsCollector) {
             statisticsCollector.reportSnapshot(metric);
         }
 

@@ -29,23 +29,18 @@ public class HashExpression extends Expression  {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, DataType.STRING, context);
         return getOutputType(context); // Can not infer int or long
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         if (outputType != null && ! isHashCompatible(outputType))
             throw new VerificationException(this, "An " + outputType.getName() +
                                                   " output is required, but this produces int or long");
         return DataType.STRING;
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override
@@ -71,11 +66,6 @@ public class HashExpression extends Expression  {
         if (type.equals(DataType.INT)) return true;
         if (type.equals(DataType.LONG)) return true;
         return false;
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return getOutputType();
     }
 
     @Override

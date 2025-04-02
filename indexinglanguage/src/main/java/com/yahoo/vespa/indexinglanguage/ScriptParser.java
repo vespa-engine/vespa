@@ -43,7 +43,6 @@ public final class ScriptParser {
             throws ParseException {
         CharStream input = context.getInputStream();
         IndexingParser parser = new IndexingParser(input);
-        parser.setAnnotatorConfig(context.getAnnotatorConfig());
         parser.setDefaultFieldName(context.getDefaultFieldName());
         parser.setLinguistics(context.getLinguistcs());
         parser.setEmbedders(context.getEmbedders());

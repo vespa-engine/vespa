@@ -13,7 +13,7 @@ namespace proton {
  */
 struct IReprocessingHandler
 {
-    virtual ~IReprocessingHandler() {}
+    virtual ~IReprocessingHandler() = default;
 
     /**
      * Adds the given processing reader to this handler.

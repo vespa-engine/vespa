@@ -22,7 +22,7 @@ public class PackBitsExpression extends Expression  {
     private TensorType outputTensorType;
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         if (inputType == null) return null;
         super.setInputType(inputType, context);
         if ( ! validType(inputType))
@@ -32,7 +32,7 @@ public class PackBitsExpression extends Expression  {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         if (outputType != null && ! validType(outputType))
             throw new VerificationException(this, "Required to produce " + outputType.getName() +
@@ -55,9 +55,6 @@ public class PackBitsExpression extends Expression  {
         Tensor packed = Tensors.packBits(tensor.get());
         context.setCurrentValue(new TensorFieldValue(packed));
     }
-
-    @Override
-    public DataType createdOutputType() { return new TensorDataType(outputTensorType); }
 
     @Override
     public String toString() { return "pack_bits"; }

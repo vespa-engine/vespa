@@ -193,7 +193,7 @@ DecodeContext64Base::is_padded_for_memory_map(uint64_t file_bit_size, uint64_t f
 template <bool bigEndian>
 void
 FeatureEncodeContext<bigEndian>::
-writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength)
+writeBits(const uint64_t *bits, uint32_t bitOffset, uint64_t bitLength)
 {
     using EC = FeatureEncodeContext<bigEndian>;
     UC64_ENCODECONTEXT_CONSTRUCTOR(o, _);
@@ -211,7 +211,7 @@ writeBits(const uint64_t *bits, uint32_t bitOffset, uint32_t bitLength)
             UC64LE_WRITEBITS_NS(o, EC);
         }
     } else {
-        uint32_t bitsLeft = bitLength;
+        uint64_t bitsLeft = bitLength;
         do {
             uint32_t length = 64 - bitOffset;
             bitsLeft -= length;

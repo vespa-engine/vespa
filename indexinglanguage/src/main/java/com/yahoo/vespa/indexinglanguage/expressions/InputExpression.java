@@ -31,27 +31,22 @@ public final class InputExpression extends Expression {
     public String getFieldName() { return fieldName; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         return requireFieldType(context);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(requireFieldType(context), outputType, null, context);
         return AnyDataType.instance;
     }
 
-    private DataType requireFieldType(VerificationContext context) {
+    private DataType requireFieldType(TypeContext context) {
         DataType fieldType = context.getFieldType(fieldName, this);
         if (fieldType == null)
             throw new VerificationException(this, "Field '" + fieldName + "' not found");
         return fieldType;
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(requireFieldType(context));
     }
 
     @Override
@@ -63,16 +58,13 @@ public final class InputExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return UnresolvedDataType.INSTANCE; }
-
-    @Override
-    public DataType getOutputType(VerificationContext context) {
+    public DataType getOutputType(TypeContext context) {
         return context.getFieldType(fieldName, this);
     }
 
     @Override
     public String toString() {
-        return "input" + (fieldName != null ? " " + fieldName : "");
+        return "input " + fieldName;
     }
 
     @Override
@@ -84,7 +76,7 @@ public final class InputExpression extends Expression {
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + (fieldName != null ? fieldName.hashCode() : 0);
+        return getClass().hashCode() + fieldName.hashCode();
     }
 
     public static class FieldPathOptimizer implements ObjectOperation, ObjectPredicate {

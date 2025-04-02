@@ -41,8 +41,10 @@ import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -233,17 +235,22 @@ public class DefaultZtsClient extends ClientBase implements ZtsClient {
     }
 
     @Override
-    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId) {
-        return getExternalTemporaryCredentials("azure", athenzRole.domain(),
-                Map.of("athenzRoleName", athenzRole.roleName(), "azureClientId", azureIdentityId),
-                AzureTemporaryCredentialsResponseEntity.class);
+    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureIdentityId, String azureTokenScope) {
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("athenzRoleName", athenzRole.roleName());
+        attributes.put("azureClientId", Objects.requireNonNull(azureIdentityId));
+        if (azureTokenScope != null) attributes.put("azureTokenScope", azureTokenScope);
+        return getExternalTemporaryCredentials("azure", athenzRole.domain(), attributes, AzureTemporaryCredentialsResponseEntity.class);
     }
 
     @Override
-    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName) {
-        return getExternalTemporaryCredentials("azure", athenzRole.domain(),
-                Map.of("athenzRoleName", athenzRole.roleName(), "azureResourceGroup", azureResourceGroup, "azureClientName", azureIdentityName),
-                AzureTemporaryCredentialsResponseEntity.class);
+    public AzureTemporaryCredentials getAzureTemporaryCredentials(AthenzRole athenzRole, String azureResourceGroup, String azureIdentityName, String azureTokenScope) {
+        Map<String, String> attributes = new HashMap<>();
+        attributes.put("athenzRoleName", athenzRole.roleName());
+        attributes.put("azureResourceGroup", Objects.requireNonNull(azureResourceGroup));
+        attributes.put("azureClientName", Objects.requireNonNull(azureIdentityName));
+        if (azureTokenScope != null) attributes.put("azureTokenScope", azureTokenScope);
+        return getExternalTemporaryCredentials("azure", athenzRole.domain(), attributes, AzureTemporaryCredentialsResponseEntity.class);
     }
 
     private <T, U extends TemporaryCredentialsResponse<T>> T getExternalTemporaryCredentials(String provider, AthenzDomain domain, Map<String, String> attributes, Class<U> responseClass) {

@@ -75,6 +75,7 @@ import static com.yahoo.text.Utf8.calculateStringPositions;
  *
  * @author baldersheim
  */
+@Deprecated(forRemoval = true)
 public class VespaDocumentDeserializer6 extends BufferSerializer implements DocumentDeserializer {
 
     private final DocumentTypeManager manager;
@@ -89,22 +90,22 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         this.version = Document.SERIALIZED_VERSION;
     }
 
-    final public DocumentTypeManager getDocumentTypeManager() { return manager; }
-
     @Override
     public DocumentTypeManager getTypeRepo() {
         return manager;
     }
 
+    @Override
     public void read(Document document) {
         read(null, document);
     }
 
+    @Override
     public void read(FieldBase field, Document doc) {
         // Verify that we have correct version
         version = getShort(null);
         if (version < 8 || version > Document.SERIALIZED_VERSION) {
-            throw new DeserializationException("Unknown version " + version + ", expected " + 
+            throw new DeserializationException("Unknown version " + version + ", expected " +
                                                Document.SERIALIZED_VERSION + ".");
         }
 
@@ -129,10 +130,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public void read(FieldBase field, FieldValue value) {
         throw new IllegalArgumentException("read not implemented yet.");
     }
 
+    @Override
     public <T extends FieldValue> void read(FieldBase field, Array<T> array) {
         int numElements = getNumCollectionElems();
         ArrayList<T> list = new ArrayList<>(numElements);
@@ -146,6 +149,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         array.addAll(list);
     }
 
+    @Override
     public <K extends FieldValue, V extends FieldValue> void read(FieldBase field, MapFieldValue<K, V> map) {
         int numElements = getNumCollectionElems();
         Map<K,V> hash = new HashMap<>();
@@ -169,9 +173,11 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         return numElements;
     }
 
+    @Override
     public <T extends FieldValue> void read(FieldBase field, CollectionFieldValue<T> value) {
         throw new IllegalArgumentException("read not implemented yet.");
     }
+    @Override
     public void read(FieldBase field, ByteFieldValue value)    { value.assign(getByte(null)); }
 
     @Override
@@ -179,11 +185,16 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         value.setBoolean((getByte(null) != 0));
     }
 
+    @Override
     public void read(FieldBase field, DoubleFieldValue value)  { value.assign(getDouble(null)); }
+    @Override
     public void read(FieldBase field, FloatFieldValue value)   { value.assign(getFloat(null)); }
+    @Override
     public void read(FieldBase field, IntegerFieldValue value) { value.assign(getInt(null)); }
+    @Override
     public void read(FieldBase field, LongFieldValue value)    { value.assign(getLong(null)); }
 
+    @Override
     public void read(FieldBase field, Raw value) {
         int rawsize = getInt(null);
         byte[] rawBytes = getBytes(null, rawsize);
@@ -197,6 +208,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         value.assign(BinaryFormat.decode(buf));
     }
 
+    @Override
     public void read(FieldBase field, StringFieldValue value) {
         byte coding = getByte(null);
 
@@ -258,6 +270,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public void read(FieldBase fieldDef, Struct s) {
         s.setVersion(version);
         s.clear();
@@ -296,10 +309,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         position(afterPos);
     }
 
+    @Override
     public void read(FieldBase field, StructuredFieldValue value) {
         throw new IllegalArgumentException("read not implemented yet.");
     }
 
+    @Override
     public <T extends FieldValue> void read(FieldBase field, WeightedSet<T> ws) {
         WeightedSetDataType type = ws.getDataType();
         getInt(null); // Have no need for type
@@ -320,6 +335,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
 
     }
 
+    @Override
     public void read(FieldBase field, AnnotationReference value) {
         int seqId = buf.getInt1_2_4Bytes();
         try {
@@ -369,6 +385,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         return end;
     }
 
+    @Override
     public void read(DocumentUpdate update) {
         update.setId(new DocumentId(this));
         update.setDocumentType(readDocumentType());
@@ -391,6 +408,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
     }
 
 
+    @Override
     public void read(FieldPathUpdate update) {
         String fieldPath = getString(null);
         String whereClause = getString(null);
@@ -403,6 +421,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public void read(AssignFieldPathUpdate update) {
         byte flags = getByte(null);
         update.setRemoveIfZero((flags & AssignFieldPathUpdate.REMOVE_IF_ZERO) != 0);
@@ -417,10 +436,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public void read(RemoveFieldPathUpdate update) {
 
     }
 
+    @Override
     public void read(AddFieldPathUpdate update) {
         DataType dt = update.getFieldPath().getResultingDataType();
         FieldValue fv = dt.createFieldValue();
@@ -433,7 +454,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         update.setNewValues((Array)fv);
     }
 
-    public ValueUpdate getValueUpdate(DataType superType, DataType subType) {
+    private ValueUpdate getValueUpdate(DataType superType, DataType subType) {
         int vuTypeId = getInt(null);
 
         ValueUpdate.ValueUpdateClassID op = ValueUpdate.ValueUpdateClassID.getID(vuTypeId);
@@ -498,6 +519,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public void read(FieldUpdate fieldUpdate) {
         int fieldId = getInt(null);
         Field field = fieldUpdate.getDocumentType().getField(fieldId);
@@ -518,18 +540,20 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public DocumentId readDocumentId() {
         Utf8String uri = new Utf8String(parseNullTerminatedString(getBuf().getByteBuffer()));
         return DocumentId.createFromSerialized(uri.toString());
     }
 
+    @Override
     public DocumentType readDocumentType() {
         Utf8Array docTypeName = parseNullTerminatedString();
         int ignoredVersion = getShort(null); // used to hold the version
 
         DocumentType docType = manager.getDocumentType(new DataTypeName(docTypeName));
         if (docType == null) {
-            throw new DeserializationException("No known document type with name " + 
+            throw new DeserializationException("No known document type with name " +
                                                new Utf8String(docTypeName));
         }
         return docType;
@@ -609,10 +633,12 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public void read(SpanTree tree) {
         readSpanTree(tree, true);
     }
 
+    @Override
     public void read(Annotation annotation) {
         int annotationTypeId = buf.getInt();
         AnnotationType type = manager.getAnnotationTypeRegistry().getType(annotationTypeId);
@@ -657,6 +683,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public void read(Span span) {
         byte type = buf.get();
         if (type != Span.ID) {
@@ -678,6 +705,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         span.setLength(length);
     }
 
+    @Override
     public void read(SpanList spanList) {
         byte type = buf.get();
         if (type != SpanList.ID) {
@@ -689,6 +717,7 @@ public class VespaDocumentDeserializer6 extends BufferSerializer implements Docu
         }
     }
 
+    @Override
     public void read(AlternateSpanList altSpanList) {
         byte type = buf.get();
         if (type != AlternateSpanList.ID) {

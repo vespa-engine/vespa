@@ -19,7 +19,7 @@ public:
      * @return Instance of correct type.
      */
     virtual std::unique_ptr<ConfigType> read(const ConfigFormatter & formatter) = 0;
-    virtual ~ConfigReader() { }
+    virtual ~ConfigReader() = default;
 };
 
 } // namespace config

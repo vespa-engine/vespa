@@ -34,9 +34,7 @@ public:
     /**
      * Implements a virtual destructor to allow virtual methods.
      */
-    virtual ~IHopDirective() {
-        // empty
-    }
+    virtual ~IHopDirective() = default;
 
     /**
      * Returns the type of directive that this is.

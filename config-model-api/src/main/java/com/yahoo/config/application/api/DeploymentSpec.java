@@ -12,6 +12,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.zone.ZoneId;
 
@@ -24,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 
@@ -229,6 +231,33 @@ public final class DeploymentSpec {
 
     Optional<Duration> hostTTL() { return hostTTL; }
 
+    // TODO: Used by models up to 8.502. Scheduled to be removed.
+    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
+        return zoneEndpoint(instance, zone, cluster, false);
+    }
+
+    // TODO: Used by models from 8.505.  Remove useNonPublicEndpointForTest argument once rolled out.
+    public ZoneEndpoint zoneEndpoint(InstanceName instance, Zone zone, ClusterSpec.Id cluster, boolean useNonPublicEndpointForTest) {
+        if (zone.environment().isTest() &&
+            (useNonPublicEndpointForTest ||
+             instances().stream()
+                        .anyMatch(spec -> spec.zoneEndpoints()
+                                              .getOrDefault(cluster, Map.of())
+                                              .values()
+                                              .stream()
+                                              .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))) &&
+            zone.cloud().supportsPrivateEndpoints()) {
+
+            return ZoneEndpoint.privateEndpoint;
+        }
+
+        if (zone.environment().isManuallyDeployed())
+            return devSpec.zoneEndpoints.getOrDefault(cluster, ZoneEndpoint.defaultEndpoint);
+
+        return instance(instance).flatMap(spec -> spec.zoneEndpoint(zone.id(), cluster))
+                                 .orElse(ZoneEndpoint.defaultEndpoint);
+    }
+
     /**
      * Returns the most specific zone endpoint, where specificity is given, in decreasing order:
      * 1. The given instance has declared a zone endpoint for the cluster, for the given region.
@@ -237,12 +266,21 @@ public final class DeploymentSpec {
      * 4. The application has declared a universal zone endpoint for the cluster.
      * 5. None of the above apply, and the default of a publicly visible endpoint is used.
      */
-    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
-        if (   zone.environment().isTest()
-            && instances().stream()
-                          .anyMatch(spec -> spec.zoneEndpoints().getOrDefault(cluster, Map.of()).values().stream()
-                                                .anyMatch(endpoint -> ! endpoint.isPublicEndpoint())))
+    // TODO: Used by models on 8.502 - 8.505.  Scheduled to be removed.
+    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster, boolean useNonPublicEndpointForTest) {
+        if (zone.environment().isTest() &&
+            (useNonPublicEndpointForTest ||
+             instances().stream()
+                        .anyMatch(spec -> spec.zoneEndpoints()
+                                              .getOrDefault(cluster, Map.of())
+                                              .values()
+                                              .stream()
+                                              .anyMatch(endpoint -> ! endpoint.isPublicEndpoint()))) &&
+            // Remove once Azure supports private endpoints
+            !zone.region().value().startsWith(CloudName.AZURE.value() + "-")) {
+
             return ZoneEndpoint.privateEndpoint;
+        }
 
         if (zone.environment().isManuallyDeployed())
             return devSpec.zoneEndpoints.getOrDefault(cluster, ZoneEndpoint.defaultEndpoint);

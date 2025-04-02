@@ -100,7 +100,7 @@ public class NGramSearcher extends Searcher {
         else if (item instanceof TermItem term) {
             Index index = indexFacts.getIndex(term.getIndexName());
             if (index.isNGram()) {
-                Item grams = splitToGrams(term,term.stringValue(), index.getGramSize(), query);
+                Item grams = splitToGrams(term, term.stringValue(), index.getGramSize(), query);
                 replaceItemByGrams(item, grams, indexInParent);
                 rewritten = true;
             }
@@ -130,7 +130,7 @@ public class NGramSearcher extends Searcher {
             gramWord.setProtected(true);
             gramsItem.addItem(gramWord);
         }
-        return gramsItem.getItemCount() == 1 ? gramsItem.getItem(0) : gramsItem; // return the AndItem, or just the single gram if not multiple
+        return gramsItem.getItemCount() == 1 ? gramsItem.getItem(0) : gramsItem;
     }
 
     /**

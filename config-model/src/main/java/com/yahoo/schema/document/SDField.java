@@ -13,7 +13,7 @@ import com.yahoo.documentmodel.OwnedTemporaryType;
 import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.schema.Index;
 import com.yahoo.schema.Schema;
@@ -400,11 +400,11 @@ public class SDField extends Field implements ImmutableSDField {
 
     /** Parse an indexing expression which will use the simple linguistics implementation suitable for testing */
     public void parseIndexingScript(String schemaName, String script) {
-        parseIndexingScript(schemaName, script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), TextGenerator.throwsOnUse.asMap());
+        parseIndexingScript(schemaName, script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
     }
 
     public void parseIndexingScript(String schemaName, String script, Linguistics linguistics, 
-                                    Map<String, Embedder> embedders, Map<String, TextGenerator> generators) {
+                                    Map<String, Embedder> embedders, Map<String, FieldGenerator> generators) {
         try {
             ScriptParserContext config = new ScriptParserContext(linguistics, embedders, generators);
             config.setInputStream(new IndexingInput(script));
@@ -502,9 +502,7 @@ public class SDField extends Field implements ImmutableSDField {
     @Override
     public int getWeight() { return weight; }
 
-    /**
-     * Returns what kind of matching type should be applied.
-     */
+    /** Returns what kind of matching type should be applied. */
     @Override
     public Matching getMatching() { return matching; }
 
@@ -514,9 +512,7 @@ public class SDField extends Field implements ImmutableSDField {
      */
     public void setMatching(Matching matching) { this.matching=matching; }
 
-    /**
-     * Returns Dictionary settings.
-     */
+    /** Returns Dictionary settings. */
     public Dictionary getDictionary() { return dictionary; }
     public Dictionary getOrSetDictionary() {
         if (dictionary == null) {
@@ -525,9 +521,7 @@ public class SDField extends Field implements ImmutableSDField {
         return dictionary;
     }
 
-    /**
-     * Set the matching type for this field and all subfields.
-     */
+    /** Set the matching type for this field and all subfields. */
     // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
     //       Matching object for struct fields at lookup time instead.
     public void setMatchingType(MatchType type) {
@@ -537,9 +531,7 @@ public class SDField extends Field implements ImmutableSDField {
         }
     }
 
-    /**
-     * Set the matching type for this field and all subfields.
-     */
+    /** Set the matching type for this field and all subfields. */
     // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
     //       Matching object for struct fields at lookup time instead.
     public void setMatchingCase(Case casing) {
@@ -548,9 +540,8 @@ public class SDField extends Field implements ImmutableSDField {
             structField.setMatchingCase(casing);
         }
     }
-    /**
-     * Set matching algorithm for this field and all subfields.
-     */
+
+    /** Set matching algorithm for this field and all subfields. */
     // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
     //       Matching object for struct fields at lookup time instead.
     public void setMatchingAlgorithm(MatchAlgorithm algorithm) {

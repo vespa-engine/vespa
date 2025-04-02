@@ -464,7 +464,7 @@ struct MyTraverser : public NodeTraverser {
     explicit MyTraverser(size_t open_true_cnt_in)
         : open_true_cnt(open_true_cnt_in), history() {}
     ~MyTraverser() override;
-    virtual bool open(const nodes::Node &node) override {
+    bool open(const nodes::Node &node) override {
         history.emplace_back(true, node);
         if (open_true_cnt == 0) {
             return false;
@@ -472,7 +472,7 @@ struct MyTraverser : public NodeTraverser {
         --open_true_cnt;
         return true;
     }
-    virtual void close(const nodes::Node &node) override {
+    void close(const nodes::Node &node) override {
         history.emplace_back(false, node);
     }
     void verify(const nodes::Node &node, size_t &offset, size_t &open_cnt) {

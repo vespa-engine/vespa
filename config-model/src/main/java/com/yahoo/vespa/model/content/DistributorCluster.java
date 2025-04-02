@@ -36,6 +36,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
     private final int maxActivationInhibitedOutOfSyncGroups;
     private final int contentLayerMetadataFeatureLevel;
     private final boolean symmetricPutAndActivateReplicaSelection;
+    private final int maxDocumentOperationSizeMib;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<DistributorCluster> {
 
@@ -100,13 +101,15 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             int maxInhibitedGroups = featureFlags.maxActivationInhibitedOutOfSyncGroups();
             int contentLayerMetadataFeatureLevel = featureFlags.contentLayerMetadataFeatureLevel();
             boolean symmetricPutAndActivateReplicaSelection = featureFlags.symmetricPutAndActivateReplicaSelection();
+            int maxDocumentOperationSizeMib = featureFlags.maxDistributorDocumentOperationSizeMib();
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
                     hasIndexedDocumentType,
                     maxInhibitedGroups,
                     contentLayerMetadataFeatureLevel,
-                    symmetricPutAndActivateReplicaSelection);
+                    symmetricPutAndActivateReplicaSelection,
+                    maxDocumentOperationSizeMib);
         }
     }
 
@@ -114,7 +117,8 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
                                GcOptions gc, boolean hasIndexedDocumentType,
                                int maxActivationInhibitedOutOfSyncGroups,
                                int contentLayerMetadataFeatureLevel,
-                               boolean symmetricPutAndActivateReplicaSelection)
+                               boolean symmetricPutAndActivateReplicaSelection,
+                               int maxDocumentOperationSizeMib)
     {
         super(parent, "distributor");
         this.parent = parent;
@@ -124,6 +128,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
         this.contentLayerMetadataFeatureLevel = contentLayerMetadataFeatureLevel;
         this.symmetricPutAndActivateReplicaSelection = symmetricPutAndActivateReplicaSelection;
+        this.maxDocumentOperationSizeMib = maxDocumentOperationSizeMib;
     }
 
     @Override
@@ -139,6 +144,9 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             builder.enable_operation_cancellation(true);
         }
         builder.symmetric_put_and_activate_replica_selection(symmetricPutAndActivateReplicaSelection);
+        if (maxDocumentOperationSizeMib > 0 && maxDocumentOperationSizeMib < 2048) {
+            builder.max_document_operation_message_size_bytes(maxDocumentOperationSizeMib * 1024 * 1024);
+        }
         bucketSplitting.getConfig(builder);
     }
 

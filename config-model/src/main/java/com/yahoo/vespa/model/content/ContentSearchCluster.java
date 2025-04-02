@@ -132,7 +132,7 @@ public class ContentSearchCluster extends TreeConfigProducer<AnyConfigProducer> 
         try {
             return ProtonConfig.Search.Mmap.Advise.Enum.valueOf(searchMmapAdvise);
         } catch (Throwable t) {
-            return ProtonConfig.Search.Mmap.Advise.Enum.NORMAL;
+            return ProtonConfig.Search.Mmap.Advise.Enum.SEQUENTIAL;
         }
     }
 

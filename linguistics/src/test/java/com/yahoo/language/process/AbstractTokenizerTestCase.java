@@ -14,6 +14,7 @@ import static org.junit.Assert.assertEquals;
  */
 public abstract class AbstractTokenizerTestCase {
 
+    private boolean lowercase = true;
     private boolean accentDrop = false;
     private Language language = Language.ENGLISH;
     private Linguistics linguistics;
@@ -40,7 +41,13 @@ public abstract class AbstractTokenizerTestCase {
     }
 
     public Iterable<Token> tokenize(String input) {
-        return linguistics.getTokenizer().tokenize(input, language, stemMode, accentDrop);
+        var parameters = new LinguisticsParameters(language, stemMode, accentDrop, lowercase);
+        return linguistics.getTokenizer().tokenize(input, parameters);
+    }
+
+    public AbstractTokenizerTestCase setLowercase(boolean lowercase) {
+        this.lowercase = lowercase;
+        return this;
     }
 
     public AbstractTokenizerTestCase setAccentDrop(boolean accentDrop) {

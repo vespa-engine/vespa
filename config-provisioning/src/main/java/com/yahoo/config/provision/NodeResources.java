@@ -132,6 +132,11 @@ public class NodeResources {
             if (type == null || type.equals("")) return GpuType.T4;
             return GpuType.valueOf(type);
         }
+        private GpuType unify(GpuType other) {
+            if (this.type == GpuType.NONE) return other;
+            // XXX long-term we may need to track several GPU types, this is not good:
+            return this.type;
+        }
 
         // backwards compatibility:
         public GpuResources(int count, double memoryGiB) {
@@ -164,20 +169,18 @@ public class NodeResources {
         public static GpuResources getDefault() { return zero; }
 
         public GpuResources plus(GpuResources other) {
-            if (other.isZero()) return this;
-            if (this.isZero()) return other;
-            if (this.type != other.type) throw new IllegalArgumentException("Bad add: " + this + " + " + other);
+            if (other.count == 0) return this;
+            if (this.count == 0) return other;
             var thisMem = this.count() * this.memoryGiB();
             var otherMem = other.count() * other.memoryGiB();
-            return new NodeResources.GpuResources(this.type, 1, thisMem + otherMem);
+            return new NodeResources.GpuResources(unify(other.type), 1, thisMem + otherMem);
         }
 
         public GpuResources minus(GpuResources other) {
-            if (other.isZero()) return this;
-            if (this.type != other.type) throw new IllegalArgumentException("Bad minus: " + this + " + " + other);
+            if (other.count == 0) return this;
             var thisMem = this.count() * this.memoryGiB();
             var otherMem = other.count() * other.memoryGiB();
-            return new NodeResources.GpuResources(this.type, 1, thisMem - otherMem);
+            return new NodeResources.GpuResources(unify(other.type), 1, thisMem - otherMem);
         }
 
         public GpuResources multipliedBy(double factor) {

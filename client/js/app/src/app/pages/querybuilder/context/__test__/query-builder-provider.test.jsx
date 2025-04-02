@@ -190,7 +190,7 @@ test('set query', () => {
   error('POST', '{"ranking":{"matchPhase":{"asd":123}}}', msg);
   error('GET', 'ranking.matchPhase.asd=123', msg);
 
-  error('POST', '{"yql":"test}', 'Unexpected end of JSON input');
+  error('POST', '{"yql":"test}', 'Unterminated string in JSON at position 13');
 
   msg =
     "Property 'ranking' cannot have a value, supported children: features,freshness,listFeatures,location,matchPhase,matching,profile,properties,queryCache,rerankCount,softtimeout,sorting";

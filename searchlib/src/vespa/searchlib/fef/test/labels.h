@@ -9,17 +9,17 @@ namespace search::fef::test {
 
 struct Labels {
     virtual void inject(Properties &p) const = 0;
-    virtual ~Labels() {}
+    virtual ~Labels() = default;
 };
 struct NoLabel : public Labels {
-    virtual void inject(Properties &) const override {}
+    void inject(Properties &) const override {}
     ~NoLabel() override;
 };
 struct SingleLabel : public Labels {
     std::string label;
     uint32_t uid;
     SingleLabel(const std::string &l, uint32_t x) : label(l), uid(x) {}
-    virtual void inject(Properties &p) const override {
+    void inject(Properties &p) const override {
         vespalib::asciistream key;
         key << "vespa.label." << label << ".id";
         vespalib::asciistream value;

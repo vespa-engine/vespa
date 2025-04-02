@@ -519,21 +519,25 @@ MergeHandler::applyDiffEntry(std::shared_ptr<ApplyBucketDiffState> async_results
             return;
         }
     }
-    auto throttle_token = _env._fileStorHandler.operation_throttler().blocking_acquire_one();
+    // Important: token acquisitions MUST be in same order across all multi-throttled callsites.
+    auto op_throttle_token = _env._fileStorHandler.operation_throttler().blocking_acquire_one();
+    auto maintenance_throttle_token = _env._fileStorHandler.maintenance_throttler().blocking_acquire_one();
     spi::Timestamp timestamp(e._entry._timestamp);
     if (!(e._entry._flags & (DELETED | DELETED_IN_PLACE))) {
         // Regular put entry
         std::shared_ptr<document::Document> doc(deserializeDiffDocument(e, repo));
         document::DocumentId docId = doc->getId();
         auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), std::move(docId),
-                                                                       std::move(throttle_token), "put",
+                                                                       std::move(op_throttle_token), std::move(maintenance_throttle_token),
+                                                                       "put",
                                                                        _clock, _env._metrics.merge_handler_metrics.merge_put_latency);
         _spi.putAsync(bucket, timestamp, std::move(doc), std::move(complete));
     } else {
         std::vector<spi::IdAndTimestamp> ids;
         ids.emplace_back(document::DocumentId(e._docName), timestamp);
         auto complete = std::make_unique<ApplyBucketDiffEntryComplete>(std::move(async_results), ids[0].id,
-                                                                       std::move(throttle_token), "remove",
+                                                                       std::move(op_throttle_token), std::move(maintenance_throttle_token),
+                                                                       "remove",
                                                                        _clock, _env._metrics.merge_handler_metrics.merge_remove_latency);
         _spi.removeAsync(bucket, std::move(ids), std::move(complete));
     }

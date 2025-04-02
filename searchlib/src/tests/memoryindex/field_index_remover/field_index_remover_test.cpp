@@ -39,7 +39,7 @@ struct MockRemoveListener : public IFieldIndexRemoveListener {
     WordFieldVector _words;
     uint32_t _expDocId;
     uint32_t _fieldId;
-    virtual void remove(const std::string_view word, uint32_t docId) override {
+    void remove(const std::string_view word, uint32_t docId) override {
         EXPECT_EQ(_expDocId, docId);
         _words.emplace_back(word, _fieldId);
     }

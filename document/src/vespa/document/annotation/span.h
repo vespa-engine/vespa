@@ -18,6 +18,7 @@ public:
 
     int32_t from() const { return _from; }
     int32_t length() const { return _length; }
+    int32_t to() const { return _from + _length; }
     Span & from(int32_t from_pos) { _from = from_pos; return *this; }
     Span & length(int32_t length_pos) { _length = length_pos; return *this; }
 
@@ -41,4 +42,3 @@ inline bool operator>(const Span &span1, const Span &span2) {
 }
 
 }  // namespace document
-

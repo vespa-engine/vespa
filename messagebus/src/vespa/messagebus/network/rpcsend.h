@@ -24,7 +24,7 @@ class IProtocol;
 class PayLoadFiller
 {
 public:
-    virtual ~PayLoadFiller() { }
+    virtual ~PayLoadFiller() = default;
     virtual void fill(FRT_Values & v) const = 0;
     virtual void fill(const vespalib::Memory & name, vespalib::slime::Cursor & v) const = 0;
 };
@@ -38,7 +38,7 @@ class RPCSend : public FRT_Invokable,
 public:
     class Params {
     public:
-        virtual ~Params() {}
+        virtual ~Params() = default;
         virtual vespalib::Version getVersion() const = 0;
         virtual std::string_view getProtocol() const = 0;
         virtual uint32_t getTraceLevel() const = 0;

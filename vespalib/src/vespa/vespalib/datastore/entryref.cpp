@@ -10,7 +10,8 @@ template EntryRefT<31u, 1u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<22u,10u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<20u,12u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<19u,13u>::EntryRefT(size_t, uint32_t);
-template EntryRefT<18u, 6u>::EntryRefT(size_t, uint32_t);
+template EntryRefT<18, 14u>::EntryRefT(size_t, uint32_t);
+template EntryRefT<18u, 6u>::EntryRefT(size_t, uint32_t); // predicate interval store
 template EntryRefT<15u,17u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<10u,22u>::EntryRefT(size_t, uint32_t);
 template EntryRefT<10u,10u>::EntryRefT(size_t, uint32_t);

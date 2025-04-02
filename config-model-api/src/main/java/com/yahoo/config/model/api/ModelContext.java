@@ -74,8 +74,8 @@ public interface ModelContext {
      *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
+        @ModelFeatureFlag(owners = {"hakonhall"}) default boolean useNonPublicEndpointForTest() { return false; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.483") default String queryDispatchPolicy() { return "adaptive"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double queryDispatchWarmup() { return 5.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int defaultNumResponseThreads() { return 2; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int mbusNetworkThreads() { return 1; }
@@ -85,14 +85,12 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default int mbusCppEventsBeforeWakeup() { return 1; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int rpcNumTargets() { return 2; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int rpcEventsBeforeWakeup() { return 1; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"hmusum"}) default boolean useAsyncMessageHandlingOnSchedule() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedConcurrency() { return 0.5; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double feedNiceness() { return 0.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int maxUnCommittedMemory() { return 130000; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default String searchMmapAdvise() { return "NORMAL"; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.479") default boolean loadCodeAsHugePages() { return false; }
+        @ModelFeatureFlag(owners = {"vekterli"}) default String searchMmapAdvise() { return "SEQUENTIAL"; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default boolean containerDumpHeapOnShutdownTimeout() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.478") default double containerShutdownTimeout() { return 50.0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int heapSizePercentage() { return 0; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
@@ -102,14 +100,12 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default double minNodeRatioPerGroup() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
-        @ModelFeatureFlag(owners = {"hmusum", "toregge"}, removeAfter = "8.480") default int maxCompactBuffers() { return 1; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
         @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"hmusum"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "eager"; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 2; }
-        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.485") default boolean alwaysMarkPhraseExpensive() { return false; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int persistenceThreadMaxFeedOpBatchSize() { return 1; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
@@ -117,12 +113,13 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default boolean symmetricPutAndActivateReplicaSelection() { return false; }
-        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.489") default boolean enforceStrictlyIncreasingClusterStateVersions() { return true; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.505") default boolean symmetricPutAndActivateReplicaSelection() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
         @ModelFeatureFlag(owners = {"bjorncs"}) default int documentV1QueueSize() { return -1; }
+        @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
+        @ModelFeatureFlag(owners = {"vekterli"}) default int maxDistributorDocumentOperationSizeMib() { return -1; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -179,6 +176,8 @@ public interface ModelContext {
         default List<DataplaneToken> dataplaneTokens() { return List.of(); }
 
         default List<String> requestPrefixForLoggingContent() { return List.of(); }
+
+        default List<String> jdiscHttpComplianceViolations() { return List.of(); }
     }
 
     @Retention(RetentionPolicy.RUNTIME)

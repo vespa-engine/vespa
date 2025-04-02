@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.searchlib.rankingexpression;
 
+import com.yahoo.searchlib.ranking.features.FeatureNames;
 import com.yahoo.searchlib.rankingexpression.rule.Arguments;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
@@ -12,6 +13,7 @@ import com.yahoo.tensor.evaluation.Name;
 import java.util.Deque;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 /**
@@ -49,6 +51,8 @@ public class Reference extends Name implements Comparable<Reference> {
         this.output = output;
         this.hashCode = Objects.hash(name(), arguments, output, isIdentifier);
         this.isIdentifier = isIdentifier;
+        if (FeatureNames.isSimpleFeature(this))
+            arguments.setAreFeatureArguments(true);
     }
 
     public Arguments arguments() { return arguments; }
@@ -74,8 +78,7 @@ public class Reference extends Name implements Comparable<Reference> {
         if (arguments.expressions().size() != 1) return Optional.empty();
         ExpressionNode argument = arguments.expressions().get(0);
 
-        if (argument instanceof ReferenceNode) {
-            ReferenceNode refArgument = (ReferenceNode) argument;
+        if (argument instanceof ReferenceNode refArgument) {
 
             if ( ! refArgument.reference().isIdentifier()) return Optional.empty();
 
@@ -132,7 +135,7 @@ public class Reference extends Name implements Comparable<Reference> {
 
     public StringBuilder toString(StringBuilder b, SerializationContext context, Deque<String> path, CompositeNode parent) {
         b.append(name());
-        if (arguments.expressions().size() > 0) {
+        if (!arguments.expressions().isEmpty()) {
             b.append("(");
             if (isSimpleRankingExpressionWrapper()) {
                 b.append(simpleArgument().get());

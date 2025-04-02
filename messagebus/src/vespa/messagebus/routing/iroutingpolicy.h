@@ -28,7 +28,7 @@ public:
     /**
      * Destructor. Frees any allocated resources.
      */
-    virtual ~IRoutingPolicy() { }
+    virtual ~IRoutingPolicy() = default;
 
     /**
      * This function must choose a set of services that is to receive the given message from a list of possible

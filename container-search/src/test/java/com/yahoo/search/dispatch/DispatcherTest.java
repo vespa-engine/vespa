@@ -11,6 +11,7 @@ import com.yahoo.search.dispatch.Dispatcher.InvokerFactoryFactory;
 import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
 import com.yahoo.search.dispatch.rpc.Client.ResponseReceiver;
 import com.yahoo.search.dispatch.rpc.RpcConnectionPool;
+import com.yahoo.search.dispatch.searchcluster.AvailabilityPolicy;
 import com.yahoo.search.dispatch.searchcluster.MockSearchCluster;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.PingFactory;
@@ -193,7 +194,7 @@ public class DispatcherTest {
         };
 
         // Search cluster uses the ping factory, and zero nodes initially, later configured with two nodes.
-        SearchCluster cluster = new MockSearchCluster("cid", 0, 1, pingFactory);
+        SearchCluster cluster = new MockSearchCluster("cid", 0, 1, pingFactory, new AvailabilityPolicy(true, 88));
 
         // Dummy RPC layer where we manually tick responses for each node.
         // When a response is let go, we verify the RPC resource is not yet closed.

@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_array_store_config_test_app TEST
     array_store_config_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_array_store_config_test_app COMMAND vespalib_array_store_config_test_app)

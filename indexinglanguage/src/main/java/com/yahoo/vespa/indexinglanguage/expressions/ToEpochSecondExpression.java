@@ -14,20 +14,15 @@ import java.time.Instant;
 public class ToEpochSecondExpression extends Expression {
 
     @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, DataType.STRING, context);
         return DataType.LONG;
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(DataType.LONG, output, null, context);
         return DataType.STRING;
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override
@@ -36,9 +31,6 @@ public class ToEpochSecondExpression extends Expression {
         long epochTime =  Instant.parse(inputString).getEpochSecond();
         context.setCurrentValue(new LongFieldValue(epochTime));
     }
-
-    @Override
-    public DataType createdOutputType() { return DataType.LONG; }
 
     @Override
     public String toString() { return "to_epoch_second"; }

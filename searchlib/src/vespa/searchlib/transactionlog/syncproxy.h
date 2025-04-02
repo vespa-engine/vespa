@@ -9,7 +9,7 @@ namespace search::transactionlog {
 class SyncProxy
 {
 public:
-    virtual ~SyncProxy() { }
+    virtual ~SyncProxy() = default;
     virtual void sync(SerialNum syncTo) = 0;
 };
 

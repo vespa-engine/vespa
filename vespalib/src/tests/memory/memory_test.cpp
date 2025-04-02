@@ -9,15 +9,15 @@ using namespace vespalib;
 class B
 {
 public:
-    virtual ~B() { }
+    virtual ~B() = default;
     virtual B * clone() const { return new B(*this); }
 };
 
 class A : public B
 {
 public:
-    virtual ~A() { }
-    virtual A * clone() const override { return new A(*this); }
+    ~A() override = default;
+    A * clone() const override { return new A(*this); }
 };
 
 TEST("require that MallocAutoPtr works as expected") {

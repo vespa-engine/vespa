@@ -14,7 +14,7 @@ struct IThreadService : public vespalib::ThreadExecutor
     IThreadService(const IThreadService &) = delete;
     IThreadService & operator = (const IThreadService &) = delete;
     IThreadService() = default;
-    virtual ~IThreadService() {}
+    virtual ~IThreadService() = default;
 
     /**
      * Run the given runnable in the underlying thread and wait until its done.

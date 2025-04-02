@@ -18,7 +18,7 @@ struct IMemoryIndex;
 class IndexSearchableVisitor
 {
 public:
-    virtual ~IndexSearchableVisitor() { }
+    virtual ~IndexSearchableVisitor() = default;
     virtual void visit(const index::IDiskIndex &index) = 0;
     virtual void visit(const index::IMemoryIndex &index) = 0;
 };

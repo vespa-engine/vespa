@@ -15,11 +15,15 @@ import java.util.Map;
 public class MockSearchCluster extends SearchCluster {
 
     public MockSearchCluster(String clusterId, int groups, int nodesPerGroup) {
-        this(clusterId, groups, nodesPerGroup, null);
+        this(clusterId, groups, nodesPerGroup, null, new AvailabilityPolicy(true, 88));
     }
 
-    public MockSearchCluster(String clusterId, int groups, int nodesPerGroup, PingFactory pingFactory) {
-        super(clusterId, buildGroupListForTest(groups, nodesPerGroup, 88.0), null, pingFactory);
+    public MockSearchCluster(String clusterId,
+                             int groups, int nodesPerGroup, PingFactory pingFactory, AvailabilityPolicy availabilityPolicy) {
+        super(clusterId,
+              buildGroupListForTest(groups, nodesPerGroup, availabilityPolicy),
+              null,
+              pingFactory);
     }
 
     @Override
@@ -70,8 +74,9 @@ public class MockSearchCluster extends SearchCluster {
         return builder.build();
     }
 
-    public static SearchGroupsImpl buildGroupListForTest(int numGroups, int nodesPerGroup, double minActivedocsPercentage) {
-        return new SearchGroupsImpl(buildGroupMapForTest(numGroups, nodesPerGroup), minActivedocsPercentage);
+    public static SearchGroupsImpl buildGroupListForTest(int numGroups, int nodesPerGroup,
+                                                        AvailabilityPolicy availabilityPolicy) {
+        return new SearchGroupsImpl(availabilityPolicy, buildGroupMapForTest(numGroups, nodesPerGroup));
     }
     private static Map<Integer, Group> buildGroupMapForTest(int numGroups, int nodesPerGroup) {
         Map<Integer, Group> groups = new HashMap<>();

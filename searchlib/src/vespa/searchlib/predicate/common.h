@@ -19,7 +19,7 @@ struct Constants {
 struct DocIdLimitProvider {
     virtual uint32_t getDocIdLimit() const = 0;
     virtual uint32_t getCommittedDocIdLimit() const = 0;
-    virtual ~DocIdLimitProvider() {}
+    virtual ~DocIdLimitProvider() = default;
 };
 
 }

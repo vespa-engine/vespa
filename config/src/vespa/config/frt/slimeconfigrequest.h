@@ -33,7 +33,7 @@ public:
                        const std::string & methodName);
     ~SlimeConfigRequest();
     bool verifyState(const ConfigState & state) const override;
-    virtual std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest * request) const override = 0;
+    std::unique_ptr<ConfigResponse> createResponse(FRT_RPCRequest * request) const override = 0;
 private:
     void populateSlimeRequest(const ConfigKey & key,
                               const std::string & configXxhash64,

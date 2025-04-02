@@ -28,20 +28,15 @@ public final class RandomExpression extends Expression {
     public Integer getMaxValue() { return max; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         return DataType.INT;
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(DataType.INT, outputType, null, context);
         return AnyDataType.instance;
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
     }
 
     @Override
@@ -50,9 +45,6 @@ public final class RandomExpression extends Expression {
         max = Objects.requireNonNullElseGet(this.max, () -> Integer.parseInt(String.valueOf(context.getCurrentValue())));
         context.setCurrentValue(new IntegerFieldValue(ThreadLocalRandom.current().nextInt(max)));
     }
-
-    @Override
-    public DataType createdOutputType() { return DataType.INT; }
 
     @Override
     public String toString() {

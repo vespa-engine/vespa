@@ -26,13 +26,13 @@ public final class ConstantExpression extends Expression {
     public FieldValue getValue() { return value; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         return value.getDataType();
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         if (outputType != null && ! value.getDataType().isAssignableTo(outputType))
             throw new VerificationException(this, "Produces type " + value.getDataType().getName() + ", but type " +
                                             outputType.getName() + " is required");
@@ -41,18 +41,8 @@ public final class ConstantExpression extends Expression {
     }
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(value.getDataType());
-    }
-
-    @Override
     protected void doExecute(ExecutionContext context) {
         context.setCurrentValue(value);
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return value.getDataType();
     }
 
     @Override

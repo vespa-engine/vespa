@@ -12,8 +12,8 @@ import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.language.Language;
-import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
-import com.yahoo.vespa.indexinglanguage.UpdateAdapter;
+import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
+import com.yahoo.vespa.indexinglanguage.UpdateFieldValues;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
 
@@ -125,8 +125,8 @@ public class GuardTestCase {
         DocumentUpdate docUpdate = new DocumentUpdate(docType, "id:scheme:my_input::");
         docUpdate.addFieldUpdate(FieldUpdate.createAssign(docType.getField("my_str"), new StringFieldValue("foo")));
 
-        SimpleAdapterFactory factory = new SimpleAdapterFactory();
-        List<UpdateAdapter> lst = factory.newUpdateAdapterList(docUpdate);
+        FieldValuesFactory factory = new FieldValuesFactory();
+        List<UpdateFieldValues> lst = factory.asFieldValues(docUpdate);
         assertEquals(1, lst.size());
 
         ExecutionContext ctx = new ExecutionContext(lst.get(0));

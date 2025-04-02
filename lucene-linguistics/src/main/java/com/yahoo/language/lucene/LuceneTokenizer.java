@@ -3,6 +3,7 @@ package com.yahoo.language.lucene;
 
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.language.Language;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenScript;
@@ -40,11 +41,14 @@ class LuceneTokenizer implements Tokenizer {
     }
 
     @Override
-    public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
+    public Iterable<Token> tokenize(String input, LinguisticsParameters parameters) {
         if (input.isEmpty()) return List.of();
 
-        List<Token> tokens = textToTokens(input, analyzerFactory.getAnalyzer(language, stemMode, removeAccents));
-        log.log(Level.FINEST, () -> "Tokenized '" + language + "' text='" + input + "' into: n=" + tokens.size() + ", tokens=" + tokens);
+        List<Token> tokens = textToTokens(input, analyzerFactory.getAnalyzer(parameters.language(),
+                                                                             parameters.stemMode(),
+                                                                             parameters.removeAccents()));
+        log.log(Level.FINEST, () -> "Tokenized '" + parameters.language() +
+                                    "' text='" + input + "' into: n=" + tokens.size() + ", tokens=" + tokens);
         return tokens;
     }
 

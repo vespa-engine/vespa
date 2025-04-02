@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/datastore/buffer_type.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <cassert>
 
 using namespace vespalib::datastore;
@@ -11,7 +11,7 @@ constexpr uint32_t ARRAYS_SIZE(4);
 constexpr uint32_t MAX_ENTRIES(128);
 constexpr uint32_t NUM_ENTRIES_FOR_NEW_BUFFER(0);
 
-struct Setup {
+struct MySetup {
     uint32_t  _min_entries;
     std::atomic<EntryCount> _used_entries;
     EntryCount _needed_entries;
@@ -19,7 +19,7 @@ struct Setup {
     uint32_t  _bufferId;
     float     _allocGrowFactor;
     bool      _resizing;
-    Setup()
+    MySetup()
         : _min_entries(0),
           _used_entries(0),
           _needed_entries(0),
@@ -28,16 +28,16 @@ struct Setup {
           _allocGrowFactor(0.5),
           _resizing(false)
     {}
-    Setup(const Setup& rhs) noexcept;
-    Setup &min_entries(uint32_t value) { _min_entries = value; return *this; }
-    Setup &used(size_t value) { _used_entries = value; return *this; }
-    Setup &needed(size_t value) { _needed_entries = value; return *this; }
-    Setup &dead(size_t value) { _dead_entries = value; return *this; }
-    Setup &bufferId(uint32_t value) { _bufferId = value; return *this; }
-    Setup &resizing(bool value) { _resizing = value; return *this; }
+    MySetup(const MySetup& rhs) noexcept;
+    MySetup &min_entries(uint32_t value) { _min_entries = value; return *this; }
+    MySetup &used(size_t value) { _used_entries = value; return *this; }
+    MySetup &needed(size_t value) { _needed_entries = value; return *this; }
+    MySetup &dead(size_t value) { _dead_entries = value; return *this; }
+    MySetup &bufferId(uint32_t value) { _bufferId = value; return *this; }
+    MySetup &resizing(bool value) { _resizing = value; return *this; }
 };
 
-Setup::Setup(const Setup& rhs) noexcept
+MySetup::MySetup(const MySetup& rhs) noexcept
     : _min_entries(rhs._min_entries),
       _used_entries(rhs._used_entries.load(std::memory_order_relaxed)),
       _needed_entries(rhs._needed_entries),
@@ -49,10 +49,10 @@ Setup::Setup(const Setup& rhs) noexcept
 }
 
 struct Fixture {
-    std::vector<Setup> setups;
+    std::vector<MySetup> setups;
     IntBufferType bufferType;
     int buffer[ARRAYS_SIZE];
-    Fixture(const Setup &setup_)
+    Fixture(const MySetup &setup_)
         : setups(),
           bufferType(ARRAYS_SIZE, setup_._min_entries, MAX_ENTRIES, NUM_ENTRIES_FOR_NEW_BUFFER, setup_._allocGrowFactor),
           buffer()
@@ -66,11 +66,11 @@ struct Fixture {
             bufferType.on_free(setup._used_entries);
         }
     }
-    Setup& curr_setup() {
+    MySetup& curr_setup() {
         return setups.back();
     }
-    void add_setup(const Setup& setup_in) {
-        // The buffer type stores pointers to EntryCount (from Setup) and we must ensure these do not move in memory.
+    void add_setup(const MySetup& setup_in) {
+        // The buffer type stores pointers to EntryCount (from MySetup) and we must ensure these do not move in memory.
         assert(setups.size() < setups.capacity());
         setups.push_back(setup_in);
     }
@@ -82,101 +82,102 @@ struct Fixture {
     }
     void assert_entries_to_alloc(size_t exp) {
         onActive();
-        EXPECT_EQUAL(exp, entries_to_alloc());
+        EXPECT_EQ(exp, entries_to_alloc());
     }
 };
 
-void
-assert_entries_to_alloc(size_t exp, const Setup &setup)
+size_t
+entries_to_alloc(const MySetup &setup)
 {
     Fixture f(setup);
-    f.assert_entries_to_alloc(exp);
+    f.onActive();
+    return f.entries_to_alloc();
 }
 
-TEST("require that entries are allocated")
+TEST(BufferTypeTest, require_that_entries_are_allocated)
 {
-    TEST_DO(assert_entries_to_alloc(1, Setup().needed(1)));
-    TEST_DO(assert_entries_to_alloc(2, Setup().needed(2)));
-    TEST_DO(assert_entries_to_alloc(3, Setup().needed(3)));
-    TEST_DO(assert_entries_to_alloc(4, Setup().needed(4)));
-    TEST_DO(assert_entries_to_alloc(5, Setup().needed(5)));
+    EXPECT_EQ(1, entries_to_alloc(MySetup().needed(1)));
+    EXPECT_EQ(2, entries_to_alloc(MySetup().needed(2)));
+    EXPECT_EQ(3, entries_to_alloc(MySetup().needed(3)));
+    EXPECT_EQ(4, entries_to_alloc(MySetup().needed(4)));
+    EXPECT_EQ(5, entries_to_alloc(MySetup().needed(5)));
 }
 
-TEST("require that reserved entries are taken into account when not resizing")
+TEST(BufferTypeTest, require_that_reserved_entries_are_taken_into_account_when_not_resizing)
 {
-    TEST_DO(assert_entries_to_alloc(2, Setup().needed(1).bufferId(0)));
-    TEST_DO(assert_entries_to_alloc(5, Setup().needed(4).bufferId(0)));
-    TEST_DO(assert_entries_to_alloc(6, Setup().needed(5).bufferId(0)));
+    EXPECT_EQ(2, entries_to_alloc(MySetup().needed(1).bufferId(0)));
+    EXPECT_EQ(5, entries_to_alloc(MySetup().needed(4).bufferId(0)));
+    EXPECT_EQ(6, entries_to_alloc(MySetup().needed(5).bufferId(0)));
 }
 
-TEST("require that entries to alloc is based on currently used entries (no resizing)")
+TEST(BufferTypeTest, require_that_entries_to_alloc_is_based_on_currently_used_entries_when_not_resizing)
 {
-    TEST_DO(assert_entries_to_alloc(2, Setup().used(4).needed(1)));
-    TEST_DO(assert_entries_to_alloc(4, Setup().used(8).needed(1)));
+    EXPECT_EQ(2, entries_to_alloc(MySetup().used(4).needed(1)));
+    EXPECT_EQ(4, entries_to_alloc(MySetup().used(8).needed(1)));
 }
 
-TEST("require that entries to alloc is based on currently used entries (with resizing)")
+TEST(BufferTypeTest, require_that_entries_to_alloc_is_based_on_currently_used_entries_when_resizing)
 {
-    TEST_DO(assert_entries_to_alloc(4 + 2, Setup().used(4).needed(1).resizing(true)));
-    TEST_DO(assert_entries_to_alloc(8 + 4, Setup().used(8).needed(1).resizing(true)));
-    TEST_DO(assert_entries_to_alloc(4 + 3, Setup().used(4).needed(3).resizing(true)));
+    EXPECT_EQ(4 + 2, entries_to_alloc(MySetup().used(4).needed(1).resizing(true)));
+    EXPECT_EQ(8 + 4, entries_to_alloc(MySetup().used(8).needed(1).resizing(true)));
+    EXPECT_EQ(4 + 3, entries_to_alloc(MySetup().used(4).needed(3).resizing(true)));
 }
 
-TEST("require that entries to alloc always contain entries needed")
+TEST(BufferTypeTest, require_that_entries_to_alloc_always_contain_entries_needed)
 {
-    TEST_DO(assert_entries_to_alloc(2, Setup().used(4).needed(2)));
-    TEST_DO(assert_entries_to_alloc(3, Setup().used(4).needed(3)));
-    TEST_DO(assert_entries_to_alloc(4, Setup().used(4).needed(4)));
+    EXPECT_EQ(2, entries_to_alloc(MySetup().used(4).needed(2)));
+    EXPECT_EQ(3, entries_to_alloc(MySetup().used(4).needed(3)));
+    EXPECT_EQ(4, entries_to_alloc(MySetup().used(4).needed(4)));
 }
 
-TEST("require that entries to alloc is capped to max entries")
+TEST(BufferTypeTest, require_that_entries_to_alloc_is_capped_to_max_entries)
 {
-    TEST_DO(assert_entries_to_alloc(127, Setup().used(254).needed(1)));
-    TEST_DO(assert_entries_to_alloc(128, Setup().used(256).needed(1)));
-    TEST_DO(assert_entries_to_alloc(128, Setup().used(258).needed(2)));
+    EXPECT_EQ(127, entries_to_alloc(MySetup().used(254).needed(1)));
+    EXPECT_EQ(128, entries_to_alloc(MySetup().used(256).needed(1)));
+    EXPECT_EQ(128, entries_to_alloc(MySetup().used(258).needed(2)));
 }
 
-TEST("require that arrays to alloc is capped to min arrays")
+TEST(BufferTypeTest, require_that_arrays_to_alloc_is_capped_to_min_arrays)
 {
-    TEST_DO(assert_entries_to_alloc(16, Setup().used(30).needed(1).min_entries(16)));
-    TEST_DO(assert_entries_to_alloc(16, Setup().used(32).needed(1).min_entries(16)));
-    TEST_DO(assert_entries_to_alloc(17, Setup().used(34).needed(1).min_entries(16)));
+    EXPECT_EQ(16, entries_to_alloc(MySetup().used(30).needed(1).min_entries(16)));
+    EXPECT_EQ(16, entries_to_alloc(MySetup().used(32).needed(1).min_entries(16)));
+    EXPECT_EQ(17, entries_to_alloc(MySetup().used(34).needed(1).min_entries(16)));
 }
 
-TEST("entries to alloc considers used entries across all active buffers of same type (no resizing)")
+TEST(BufferTypeTest, entries_to_alloc_considers_used_entries_across_all_active_buffers_of_same_type_when_not_resizing)
 {
-    Fixture f(Setup().used(6));
+    Fixture f(MySetup().used(6));
     f.assert_entries_to_alloc(6 * 0.5);
-    f.add_setup(Setup().used(8).bufferId(2));
+    f.add_setup(MySetup().used(8).bufferId(2));
     f.assert_entries_to_alloc((6 + 8) * 0.5);
-    f.add_setup(Setup().used(10).bufferId(3));
+    f.add_setup(MySetup().used(10).bufferId(3));
     f.assert_entries_to_alloc((6 + 8 + 10) * 0.5);
 }
 
-TEST("entries to alloc considers used entries across all active buffers of same type when resizing")
+TEST(BufferTypeTest, entries_to_alloc_considers_used_entries_across_all_active_buffers_of_same_type_when_resizing)
 {
-    Fixture f(Setup().used(6));
+    Fixture f(MySetup().used(6));
     f.assert_entries_to_alloc(6 * 0.5);
-    f.add_setup(Setup().used(8).resizing(true).bufferId(2));
+    f.add_setup(MySetup().used(8).resizing(true).bufferId(2));
     f.assert_entries_to_alloc(8 + (6 + 8) * 0.5);
 }
 
-TEST("entries to alloc considers (and subtracts) dead entries across all active buffers of same type (no resizing)")
+TEST(BufferTypeTest, entries_to_alloc_considers_and_subtracts_dead_entries_across_all_active_buffers_of_same_type_when_not_resizing)
 {
-    Fixture f(Setup().used(6).dead(2));
+    Fixture f(MySetup().used(6).dead(2));
     f.assert_entries_to_alloc((6 - 2) * 0.5);
-    f.add_setup(Setup().used(12).dead(4).bufferId(2));
+    f.add_setup(MySetup().used(12).dead(4).bufferId(2));
     f.assert_entries_to_alloc((6 - 2 + 12 - 4) * 0.5);
-    f.add_setup(Setup().used(20).dead(6).bufferId(3));
+    f.add_setup(MySetup().used(20).dead(6).bufferId(3));
     f.assert_entries_to_alloc((6 - 2 + 12 - 4 + 20 - 6) * 0.5);
 }
 
-TEST("arrays to alloc considers (and subtracts) dead elements across all active buffers of same type when resizing")
+TEST(BufferTypeTest, arrays_to_alloc_considers_and_subtracts_dead_elements_across_all_active_buffers_of_same_type_when_resizing)
 {
-    Fixture f(Setup().used(6).dead(2));
+    Fixture f(MySetup().used(6).dead(2));
     f.assert_entries_to_alloc((6 - 2) * 0.5);
-    f.add_setup(Setup().used(12).dead(4).resizing(true).bufferId(2));
+    f.add_setup(MySetup().used(12).dead(4).resizing(true).bufferId(2));
     f.assert_entries_to_alloc(12 + (6 - 2 + 12 - 4) * 0.5);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

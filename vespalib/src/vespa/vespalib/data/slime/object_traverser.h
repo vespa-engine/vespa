@@ -14,7 +14,7 @@ class Symbol;
  **/
 struct ObjectSymbolTraverser {
     virtual void field(const Symbol &symbol, const Inspector &inspector) = 0;
-    virtual ~ObjectSymbolTraverser() {}
+    virtual ~ObjectSymbolTraverser() = default;
 };
 
 /**
@@ -23,7 +23,7 @@ struct ObjectSymbolTraverser {
  **/
 struct ObjectTraverser {
     virtual void field(const Memory &symbol, const Inspector &inspector) = 0;
-    virtual ~ObjectTraverser() {}
+    virtual ~ObjectTraverser() = default;
 };
 
 } // namespace vespalib::slime

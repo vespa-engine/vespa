@@ -36,7 +36,7 @@ private:
     {
     public:
         virtual void donePackage(WorkPackage *pkg, bool somedenied) = 0;
-        virtual ~IWorkPkgWait() {}
+        virtual ~IWorkPkgWait() = default;
     };
 
     class WorkPackage

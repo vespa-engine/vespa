@@ -3,9 +3,8 @@
 
 #include <vespa/searchlib/predicate/predicate_interval_store.h>
 #include <vespa/searchlib/predicate/predicate_index.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace search;
 using namespace search::predicate;
@@ -13,7 +12,7 @@ using std::vector;
 
 namespace {
 
-TEST("require that empty interval list gives invalid ref") {
+TEST(PredicateIntervalStoreTest, require_that_empty_interval_list_gives_invalid_ref) {
     PredicateIntervalStore store;
     vector<Interval> interval_list;
     auto ref = store.insert(interval_list);
@@ -29,7 +28,7 @@ void testInsertAndRetrieve(const std::vector<IntervalT> &interval_list) {
     for (auto &i : interval_list) {
         ost << " 0x" << std::hex << i.interval;
     }
-    TEST_STATE(ost.str().c_str());
+    SCOPED_TRACE(ost.str());
     PredicateIntervalStore store;
     auto ref = store.insert(interval_list);
     ASSERT_TRUE(ref.valid());
@@ -37,19 +36,19 @@ void testInsertAndRetrieve(const std::vector<IntervalT> &interval_list) {
     uint32_t size;
     IntervalT single;
     const IntervalT *intervals = store.get(ref, size, &single);
-    EXPECT_EQUAL(interval_list.size(), size);
+    EXPECT_EQ(interval_list.size(), size);
     ASSERT_TRUE(intervals);
     for (size_t i = 0; i < interval_list.size(); ++i) {
-        EXPECT_EQUAL(interval_list[i], intervals[i]);
+        EXPECT_EQ(interval_list[i], intervals[i]);
     }
 }
 
-TEST("require that single interval entry can be inserted") {
+TEST(PredicateIntervalStoreTest, require_that_single_interval_entry_can_be_inserted) {
     testInsertAndRetrieve<Interval>({{0x0001ffff}});
     testInsertAndRetrieve<IntervalWithBounds>({{0x0001ffff, 0x3}});
 }
 
-TEST("require that multi-interval entry can be inserted") {
+TEST(PredicateIntervalStoreTest, require_that_multi_interval_entry_can_be_inserted) {
     testInsertAndRetrieve<Interval>({{0x00010001}, {0x0002ffff}});
     testInsertAndRetrieve<Interval>(
         {{0x00010001}, {0x00020002}, {0x0003ffff}});
@@ -64,7 +63,7 @@ TEST("require that multi-interval entry can be inserted") {
          {0x00040004, 0x6}, {0x0005ffff, 0x7}});
 }
 
-TEST("require that multiple multi-interval entries can be retrieved") {
+TEST(PredicateIntervalStoreTest, require_that_multiple_multi_interval_entries_can_be_retrieved) {
     PredicateIntervalStore store;
     auto ref = store.insert<Interval>({{1}, {2}});
     ASSERT_TRUE(ref.valid());
@@ -73,74 +72,39 @@ TEST("require that multiple multi-interval entries can be retrieved") {
 
     uint32_t size;
     const Interval *intervals = store.get(ref, size, &single_buf);
-    EXPECT_EQUAL(2u, size);
+    EXPECT_EQ(2u, size);
     ASSERT_TRUE(intervals);
-    EXPECT_EQUAL(3u, intervals[0].interval);
-    EXPECT_EQUAL(4u, intervals[1].interval);
+    EXPECT_EQ(3u, intervals[0].interval);
+    EXPECT_EQ(4u, intervals[1].interval);
 }
 
-/*
-TEST("require that entries can be removed and reused") {
-    GenerationHandler gen_handler;
-    PredicateIntervalStore store(gen_handler);
-    auto ref = store.insert<IntervalWithBounds>({{0x0001ffff, 5}});
-    ASSERT_TRUE(ref.valid());
-    store.remove(ref);
-
-    auto ref2 = store.insert<Interval>({{1}, {2}, {3}, {4}, {5},
-                                        {6}, {7}, {8}, {9}});
-    ASSERT_TRUE(ref2.valid());
-    store.remove(ref2);
-    store.commit();
-
-    auto ref3 = store.insert<IntervalWithBounds>({{0x0002ffff, 10}});
-    ASSERT_EQUAL(ref.ref(), ref3.ref());
-
-    uint32_t size;
-    IntervalWithBounds single;
-    const IntervalWithBounds *bounds = store.get(ref3, size, &single);
-    EXPECT_EQUAL(1u, size);
-    EXPECT_EQUAL(0x0002ffffu, bounds->interval);
-    EXPECT_EQUAL(10u, bounds->bounds);
-
-    auto ref4 = store.insert<Interval>({{2}, {3}, {4}, {5},
-                                        {6}, {7}, {8}, {9}, {10}});
-    ASSERT_EQUAL(ref2.ref(), ref4.ref());
-
-    const Interval *intervals = store.get(ref4, size, &single_buf);
-    EXPECT_EQUAL(9u, size);
-    EXPECT_EQUAL(2u, intervals[0].interval);
-    EXPECT_EQUAL(10u, intervals[8].interval);
-}
-*/
-
-TEST("require that single interval entries are optimized") {
+TEST(PredicateIntervalStoreTest, require_that_single_interval_entries_are_optimized) {
     PredicateIntervalStore store;
     auto ref = store.insert<Interval>({{0x0001ffff}});
     ASSERT_TRUE(ref.valid());
-    ASSERT_EQUAL(0x0001ffffu, ref.ref());
+    ASSERT_EQ(0x0001ffffu, ref.ref());
 
     uint32_t size;
     const Interval *intervals = store.get(ref, size, &single_buf);
-    ASSERT_EQUAL(intervals, &single_buf);
-    EXPECT_EQUAL(0x0001ffffu, single_buf.interval);
+    ASSERT_EQ(intervals, &single_buf);
+    EXPECT_EQ(0x0001ffffu, single_buf.interval);
 
     store.remove(ref);  // Should do nothing
 }
 
-TEST("require that interval refs are reused for identical data.") {
+TEST(PredicateIntervalStoreTest, require_that_interval_refs_are_reused_for_identical_data) {
     PredicateIntervalStore store;
     auto ref = store.insert<Interval>({{0x00010001}, {0x0002ffff}});
     ASSERT_TRUE(ref.valid());
-    ASSERT_EQUAL(0x02000001u, ref.ref());
+    ASSERT_EQ(0x02000001u, ref.ref());
 
     auto ref2 = store.insert<Interval>({{0x00010001}, {0x0002ffff}});
-    EXPECT_EQUAL(ref.ref(), ref2.ref());
+    EXPECT_EQ(ref.ref(), ref2.ref());
 
     uint32_t size;
     const Interval *intervals = store.get(ref, size, &single_buf);
-    EXPECT_EQUAL(0x00010001u, intervals[0].interval);
-    EXPECT_EQUAL(0x0002ffffu, intervals[1].interval);
+    EXPECT_EQ(0x00010001u, intervals[0].interval);
+    EXPECT_EQ(0x0002ffffu, intervals[1].interval);
 }
 
 }  // namespace

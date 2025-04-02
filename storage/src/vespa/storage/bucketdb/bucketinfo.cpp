@@ -162,7 +162,7 @@ BucketInfo::getNodeInternal(uint16_t node)
             return &copy;
         }
     }
-    return 0;
+    return nullptr;
 }
 
 }

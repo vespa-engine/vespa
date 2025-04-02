@@ -49,6 +49,8 @@
 #include <vespa/vespalib/util/string_hash.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <cmath>
+#include <iomanip>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("prod_features_test");
@@ -2179,6 +2181,8 @@ TEST_F(ProdFeaturesTest, test_term_distance)
         EXPECT_TRUE(assertTermDistance(Result(), "a",   "a b"));
         EXPECT_TRUE(assertTermDistance(Result(), "a",   "a a"));
         EXPECT_TRUE(assertTermDistance(Result(1,0,UV,UV), "a b", "a b"));
+        // Change docid to give 0 hits
+        EXPECT_TRUE(assertTermDistance(Result(), "a b", "a b", 2));
         EXPECT_TRUE(assertTermDistance(Result(2,0,UV,UV), "a b", "a x b"));
         EXPECT_TRUE(assertTermDistance(Result(UV,UV,1,0), "a b", "b a"));
         EXPECT_TRUE(assertTermDistance(Result(UV,UV,2,0), "a b", "b x a"));
@@ -2187,6 +2191,21 @@ TEST_F(ProdFeaturesTest, test_term_distance)
         EXPECT_TRUE(assertTermDistance(Result(1,0,1,1),   "a b", "a b a b a")); // first best is kept
         EXPECT_TRUE(assertTermDistance(Result(1,0,1,0), "a a", "a a"));
         EXPECT_TRUE(assertTermDistance(Result(2,0,2,0), "a a", "a x a"));
+        EXPECT_TRUE(assertTermDistance(Result(1, 0, 1, 5), "a b", "a b x x x b a b x"));
+        // Get proximity between phrase "a b y" and term "b". Use postings for term "a" as posting for phrase "a b y", but adjust phrase length of query term.
+        EXPECT_TRUE(assertTermDistance(Result(3, 0, 1, 5), "a b", {"a b y y y b a b y"}, 1, std::nullopt, 3));
+        // Distance between positions in adjacent elements is not calculated when element gap is not set.
+        EXPECT_TRUE(assertTermDistance(Result(), "a b", {"a x", "x b x"}, 1, std::nullopt, std::nullopt));
+        EXPECT_TRUE(assertTermDistance(Result(), "a b", {"a i", "i b i"}, 1, "infinity", std::nullopt));
+        // Distance between positions in adjacent elements is calculated when element gap is set.
+        EXPECT_TRUE(assertTermDistance(Result(103, 0, UV, UV), "a b", {"a y", "x b y"}, 1, "100", std::nullopt));
+        EXPECT_TRUE(assertTermDistance(Result(UV, UV, 103, 0), "a b", {"b x", "x a x"}, 1, "100", std::nullopt));
+        // Best forward distance is within first element, no best reverse distance
+        EXPECT_TRUE(assertTermDistance(Result(3, 0, UV, UV), "a b", {"a x x b", "x b"}, 1, "0", std::nullopt));
+        // Best forward distance is spanning elements, best reverse distance is within first element
+        EXPECT_TRUE(assertTermDistance(Result(2, 4, 1, 3), "a b", {"a x x b a", "x b"}, 1, "0", std::nullopt));
+        // Best forward distance is within second element, best reverse distance is spanning elements
+        EXPECT_TRUE(assertTermDistance(Result(1, 3, 1, 3), "a b", {"a x x b", "a x b a b"}, 1, "0", std::nullopt));
     }
 }
 
@@ -2196,15 +2215,46 @@ Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
                          const std::string & field,
                          uint32_t docId)
 {
-    LOG(info, "assertTermDistance('%s', '%s')", query.c_str(), field.c_str());
+    std::vector<std::string> mv_field;
+    mv_field.emplace_back(field);
+    return assertTermDistance(exp, query, mv_field, docId, std::nullopt, std::nullopt);
+}
+
+bool
+Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
+                         const std::string & query,
+                         const std::vector<std::string> & field,
+                         uint32_t docId,
+                         std::optional<std::string> element_gap,
+                         std::optional<uint32_t> phrase_length)
+{
+    std::ostringstream os;
+    os << "assertTermDistance(" << std::quoted(query) << ", " << testing::PrintToString(field) << ")";
+    if (element_gap.has_value()) {
+        os << ", element_gap=" << element_gap.value();
+    }
+    if (phrase_length.has_value()) {
+        os << ", phrase_length=" << phrase_length.value();
+    }
+    SCOPED_TRACE(os.str());
+    LOG(info, "%s", os.str().c_str());
 
     std::string feature = "termDistance(foo,0,1)";
     FtFeatureTest ft(_factory, feature);
 
-    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
-    StringVectorMap index;
-    index["foo"] = FtUtil::tokenize(field);
+    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, "foo");
+    if (element_gap.has_value()) {
+        ft.getIndexEnv().getProperties().add(feature + ".elementGap", element_gap.value());
+    }
+    FtIndex index;
+    index.field("foo");
+    for (auto& elem : field) {
+        index.element(elem);
+    }
     FT_SETUP(ft, FtUtil::toQuery(query), index, 1);
+    if (phrase_length.has_value()) {
+        ft.getQueryEnv().getTerms()[0].setPhraseLength(phrase_length.value());
+    }
 
     RankResult rr;
     rr.addScore(feature + ".forward",             exp.forwardDist);

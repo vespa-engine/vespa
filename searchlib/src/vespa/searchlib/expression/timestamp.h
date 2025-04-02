@@ -39,7 +39,7 @@ private:
     class Handler {
     public:
         Handler(const TimeStampFunctionNode & ts) : _timePart(ts.getTimePart()), _isGmt(ts.isGmt()) { }
-        virtual ~Handler() { }
+        virtual ~Handler() = default;
         virtual void handle(const ResultNode & arg) = 0;
     protected:
         void handleOne(const ResultNode & arg, Int64ResultNode & result) const {

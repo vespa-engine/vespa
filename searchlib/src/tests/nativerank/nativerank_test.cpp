@@ -14,6 +14,8 @@
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <iomanip>
+#include <sstream>
 
 #include <vespa/log/log.h>
 LOG_SETUP("nativerank_test");
@@ -53,6 +55,8 @@ protected:
                                     const Properties & props = Properties());
     bool assertNativeProximity(feature_t score, const std::string & query, const std::string & field,
                                const Properties & props = Properties(), uint32_t docId = 1);
+    bool assertNativeProximity(feature_t score, const std::string & query, const std::vector<std::string> & field,
+                               const Properties & props, uint32_t docId = 1);
     bool assertNativeRank(feature_t score, feature_t fieldMatchWeight, feature_t attributeMatchWeight, feature_t proximityWeight);
 };
 
@@ -663,6 +667,18 @@ TEST_F(NativeRankTest, test_native_proximity)
 
         // change docId to give 0 hits
         EXPECT_TRUE(assertNativeProximity(0, "a b", "a b", p.clear(), 2));
+
+        //  Distance between adjacent elements is not calculated when element gap is not set.
+        using SV = std::vector<std::string>;
+        EXPECT_TRUE(assertNativeProximity(0, "a b", SV{"a x", "x b"}, p));
+        p.clear().add("nativeProximity.elementGap.foo", "infinity");
+        EXPECT_TRUE(assertNativeProximity(0, "a b", SV{"a i", "i b"}, p));
+        //  Distance between adjacent elements is calculated when element gap is set. Distance 3 + 1 => score 2
+        p.clear().add("nativeProximity.elementGap.foo", "1");
+        EXPECT_TRUE(assertNativeProximity(2, "a b", SV{"a y", "y b"}, p));
+        //  Distance 3 + 0 => score 3
+        p.clear().add("nativeProximity.elementGap.foo", "0");
+        EXPECT_TRUE(assertNativeProximity(3, "a b", SV{"a z", "z b"}, p));
     }
 }
 
@@ -673,21 +689,43 @@ NativeRankTest::assertNativeProximity(feature_t score,
                                       const Properties & props,
                                       uint32_t docId)
 {
-    LOG(info, "assertNativeProximity(%f, '%s', '%s')", score, query.c_str(), field.c_str());
+    std::vector<std::string> mv_field;
+    mv_field.emplace_back(field);
+    return assertNativeProximity(score, query, mv_field, props, docId);
+}
+
+bool
+NativeRankTest::assertNativeProximity(feature_t score,
+                                      const std::string & query,
+                                      const std::vector<std::string> & field,
+                                      const Properties & props,
+                                      uint32_t docId)
+{
+    std::ostringstream os;
+    os << "assertNativeProximity(" << score << ", " << std::quoted(query) << ", " << testing::PrintToString(field) << ")";
+    auto property = props.lookup("nativeProximity.elementGap.foo");
+    if (property.found()) {
+        os << ", element_gap=" << property.get();
+    }
+    SCOPED_TRACE(os.str());
+    LOG(info, "%s", os.str().c_str());
 
     // Setup feature test.
     std::string feature = "nativeProximity";
     FtFeatureTest ft(_factory, feature);
 
-    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::SINGLE, "foo");
+    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, "foo");
     ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(6)));
     ft.getIndexEnv().getProperties().add("nativeProximity.proximityTable", "linear(-2,10)");
     ft.getIndexEnv().getProperties().add("nativeProximity.reverseProximityTable", "linear(-2,10)");
     ft.getIndexEnv().getProperties().add("nativeProximity.slidingWindowSize", "2");
     ft.getIndexEnv().getProperties().add("nativeRank.useTableNormalization", "false"); // make it easier to test
     ft.getIndexEnv().getProperties().import(props);
-    StringVectorMap index;
-    index["foo"] = FtUtil::tokenize(field);
+    FtIndex index;
+    index.field("foo");
+    for (auto& elem : field) {
+        index.element(elem);
+    }
     FT_SETUP(ft, FtUtil::toQuery(query), index, 1);
 
     // Execute and compare results.

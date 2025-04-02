@@ -62,7 +62,7 @@ public:
         }
         return params_out;
     }
-    virtual ~Params() {}
+    virtual ~Params() = default;
 };
 
 struct ExplicitParams : Params {

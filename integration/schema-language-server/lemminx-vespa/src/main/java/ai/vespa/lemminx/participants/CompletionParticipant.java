@@ -8,6 +8,7 @@ import org.eclipse.lemminx.services.extensions.completion.ICompletionResponse;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.jsonrpc.CancelChecker;
 
+import ai.vespa.lemminx.VespaExtension;
 import ai.vespa.lemminx.command.SchemaLSCommands;
 
 public class CompletionParticipant implements ICompletionParticipant {
@@ -31,6 +32,10 @@ public class CompletionParticipant implements ICompletionParticipant {
     @Override
     public void onAttributeValue(String valuePrefix, ICompletionRequest request, ICompletionResponse response,
             CancelChecker cancelChecker) throws Exception {
+
+        if (!VespaExtension.match(request.getXMLDocument()))
+            return;
+
         if ("document".equals(request.getCurrentTag()) && "type".equals(request.getCurrentAttributeName())) {
             for (String schemaName : SchemaLSCommands.instance().getDefinedSchemas()) {
                 response.addCompletionItem(new CompletionItem(schemaName));

@@ -9,7 +9,7 @@ class SpanList;
 class SimpleSpanList;
 
 struct SpanTreeVisitor {
-    virtual ~SpanTreeVisitor() {}
+    virtual ~SpanTreeVisitor() = default;
 
     virtual void visit(const Span &) = 0;
     virtual void visit(const SpanList &node) = 0;

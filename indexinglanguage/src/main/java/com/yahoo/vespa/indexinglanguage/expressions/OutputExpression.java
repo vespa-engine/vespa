@@ -28,12 +28,12 @@ public abstract class OutputExpression extends Expression {
     public String getFieldName() { return fieldName; }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         return super.setInputType(inputType, context.getFieldType(fieldName, this), context);
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         return context.getFieldType(fieldName, this);
     }
@@ -44,10 +44,7 @@ public abstract class OutputExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return null; }
-
-    @Override
-    public DataType getInputType(VerificationContext context) {
+    public DataType getInputType(TypeContext context) {
         return context.getFieldType(fieldName, this);
     }
 

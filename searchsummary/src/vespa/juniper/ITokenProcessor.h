@@ -43,7 +43,7 @@ public:
         }
     };
 
-    virtual ~ITokenProcessor() {}
+    virtual ~ITokenProcessor() = default;
 
     /** handle the next token
      *  @param token The token to process.

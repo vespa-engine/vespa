@@ -11,7 +11,7 @@ import com.yahoo.document.select.Result;
 import com.yahoo.document.select.ResultList;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.serialization.DocumentUpdateReader;
-import com.yahoo.document.serialization.VespaDocumentSerializer6;
+import com.yahoo.document.serialization.DocumentSerializer;
 import java.util.ListIterator;
 import java.util.Objects;
 
@@ -131,7 +131,7 @@ public abstract class FieldPathUpdate {
         }
     }
 
-    public void serialize(VespaDocumentSerializer6 data) {
+    public void serialize(DocumentSerializer data) {
         data.write(this);
     }
 

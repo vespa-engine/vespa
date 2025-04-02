@@ -13,7 +13,7 @@ namespace search::queryeval {
  * used during evaluation.
  */
 struct PostingInfo {
-    virtual ~PostingInfo() { }
+    virtual ~PostingInfo() = default;
 };
 
 

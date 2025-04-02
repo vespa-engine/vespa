@@ -10,7 +10,7 @@ import java.util.Optional;
 import java.util.regex.Pattern;
 
 public record ArchiveUris(Map<TenantName, String> tenantArchiveUris, Map<CloudAccount, String> accountArchiveUris) {
-    private static final Pattern validUriPattern = Pattern.compile("[a-z0-9]+://(?:(?:[a-z0-9]+(?:[-_][a-z0-9.]+)*)+/)+");
+    private static final Pattern validUriPattern = Pattern.compile("[a-z0-9]+://(?:(?:[a-z0-9]+(?:[-_.][a-z0-9]+)*)+/)+");
 
     public ArchiveUris(Map<TenantName, String> tenantArchiveUris, Map<CloudAccount, String> accountArchiveUris) {
         this.tenantArchiveUris = Map.copyOf(tenantArchiveUris);

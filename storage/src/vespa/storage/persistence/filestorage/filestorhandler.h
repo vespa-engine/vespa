@@ -281,11 +281,14 @@ public:
 
     virtual ActiveOperationsStats get_active_operations_stats(bool reset_min_max) const = 0;
 
-    virtual vespalib::SharedOperationThrottler& operation_throttler() const noexcept = 0;
+    [[nodiscard]] virtual vespalib::SharedOperationThrottler& operation_throttler() const noexcept = 0;
+    [[nodiscard]] virtual vespalib::SharedOperationThrottler& maintenance_throttler() const noexcept = 0;
 
-    virtual void reconfigure_dynamic_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) = 0;
+    virtual void reconfigure_dynamic_operation_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) = 0;
+    virtual void reconfigure_dynamic_maintenance_throttler(const vespalib::SharedOperationThrottler::DynamicThrottleParams& params) = 0;
 
     virtual void use_dynamic_operation_throttling(bool use_dynamic) noexcept = 0;
+    virtual void use_dynamic_maintenance_throttling(bool use_dynamic) noexcept = 0;
 
     virtual void set_throttle_apply_bucket_diff_ops(bool throttle_apply_bucket_diff) noexcept = 0;
 

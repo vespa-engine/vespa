@@ -2,6 +2,7 @@
 package com.yahoo.language.opennlp;
 
 import com.yahoo.language.Language;
+import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
@@ -20,10 +21,11 @@ public class OpenNlpLinguisticsSubclassingTest {
 
     @Test
     public void testOpenNlpLinguisticsSubclassing() {
+        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, true, true);
         var subclass = new OpenNlpLinguisticsSubclass();
-        assertEquals("the only token", subclass.getTokenizer().tokenize("whatever", Language.ENGLISH, StemMode.ALL, false).iterator().next().getTokenString());
-        assertEquals("the only token", subclass.getSegmenter().segment("whatever", Language.ENGLISH).iterator().next());
-        assertEquals("the only token", subclass.getStemmer().stem("whatever", Language.ENGLISH, StemMode.ALL, true).get(0).get(0));
+        assertEquals("the only token", subclass.getTokenizer().tokenize("whatever", parameters).iterator().next().getTokenString());
+        assertEquals("the only token", subclass.getSegmenter().segment("whatever", parameters.language()).iterator().next());
+        assertEquals("the only token", subclass.getStemmer().stem("whatever", parameters).get(0).get(0));
     }
 
     static class OpenNlpLinguisticsSubclass extends OpenNlpLinguistics {
@@ -37,6 +39,7 @@ public class OpenNlpLinguisticsSubclassingTest {
 
     static class ADifferentTokenizer implements Tokenizer {
 
+        @SuppressWarnings("deprecation")
         public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
             var token = new SimpleToken("the only token", "the only token");
             token.setType(TokenType.ALPHABETIC);
@@ -44,6 +47,5 @@ public class OpenNlpLinguisticsSubclassingTest {
         }
 
     }
-
 
 }

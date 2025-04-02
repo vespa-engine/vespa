@@ -254,7 +254,7 @@ class ModifyIteratorHandler : public IteratorHandler {
 public:
     ModificationStatus doModify(FieldValue& fv) override {
         StringFieldValue* sfv = dynamic_cast<StringFieldValue*>(&fv);
-        if (sfv != NULL) {
+        if (sfv != nullptr) {
             *sfv = std::string("newvalue");
             return ModificationStatus::MODIFIED;
         }

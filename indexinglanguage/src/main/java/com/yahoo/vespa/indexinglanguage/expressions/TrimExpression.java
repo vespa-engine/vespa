@@ -10,17 +10,12 @@ import com.yahoo.document.datatypes.StringFieldValue;
 public final class TrimExpression extends Expression {
 
     @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(createdOutputType());
-    }
-
-    @Override
-    public DataType setInputType(DataType input, VerificationContext context) {
+    public DataType setInputType(DataType input, TypeContext context) {
         return super.setInputType(input, DataType.STRING, context);
     }
 
     @Override
-    public DataType setOutputType(DataType output, VerificationContext context) {
+    public DataType setOutputType(DataType output, TypeContext context) {
         return super.setOutputType(DataType.STRING, output, null, context);
     }
 
@@ -30,15 +25,11 @@ public final class TrimExpression extends Expression {
     }
 
     @Override
-    public DataType createdOutputType() { return DataType.STRING; }
-
-    @Override
     public String toString() { return "trim"; }
 
     @Override
     public boolean equals(Object obj) {
         if (!(obj instanceof TrimExpression)) return false;
-
         return true;
     }
 

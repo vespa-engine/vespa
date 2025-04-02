@@ -9,7 +9,7 @@ namespace config {
 class ConfigProvider
 {
 public:
-    virtual ~ConfigProvider() { }
+    virtual ~ConfigProvider() = default;
 
     /**
      * Fetches the appropriate ConfigValue.

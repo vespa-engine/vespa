@@ -41,6 +41,21 @@ class AnalyzerFactory {
     private final ComponentRegistry<Analyzer> analyzerComponents;
     private final DefaultAnalyzers defaultAnalyzers;
 
+    private static String dump(ComponentRegistry<Analyzer> analyzers) {
+        StringBuilder buf = new StringBuilder();
+        buf.append("[");
+        var map = analyzers.allComponentsById();
+        for (var entry : map.entrySet()) {
+            buf.append(" {");
+            buf.append(entry.getKey().toString());
+            buf.append(":");
+            buf.append(entry.getValue().getClass());
+            buf.append("}");
+        }
+        buf.append(" ]");
+        return buf.toString();
+    }
+
     public AnalyzerFactory(LuceneAnalysisConfig config, ComponentRegistry<Analyzer> analyzers) {
         this.config = config;
         this.analyzerComponents = analyzers;
@@ -48,6 +63,7 @@ class AnalyzerFactory {
         log.config("Available in classpath char filters: " + CharFilterFactory.availableCharFilters());
         log.config("Available in classpath tokenizers: " + TokenizerFactory.availableTokenizers());
         log.config("Available in classpath token filters: " + TokenFilterFactory.availableTokenFilters());
+        log.config("Available in component registry: " + dump(analyzers));
     }
 
     /**

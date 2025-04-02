@@ -56,7 +56,7 @@ struct IndexFixture {
 struct FeatureDumpFixture : public IDumpFeatureVisitor {
     std::vector<std::string> expect;
     size_t dumped;
-    virtual void visitDumpFeature(const std::string &name) override {
+    void visitDumpFeature(const std::string &name) override {
         EXPECT_LT(dumped, expect.size());
         EXPECT_EQ(expect[dumped++], name);
     }
@@ -96,8 +96,8 @@ TEST(ElementCompletenessTest, require_that_blueprint_can_be_created_from_factory
 {
     BlueprintFactoryFixture f;
     Blueprint::SP bp = f.factory.createBlueprint("elementCompleteness");
-    EXPECT_TRUE(bp.get() != 0);
-    EXPECT_TRUE(dynamic_cast<ElementCompletenessBlueprint*>(bp.get()) != 0);
+    EXPECT_TRUE(bp.get() != nullptr);
+    EXPECT_TRUE(dynamic_cast<ElementCompletenessBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST(ElementCompletenessTest, require_that_appropriate_features_are_dumped)

@@ -5,6 +5,7 @@ package tracedoctor
 import (
 	"fmt"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
+	"sort"
 	"strings"
 )
 
@@ -36,10 +37,6 @@ func (q *queryNode) desc() string {
 	return q.class
 }
 
-type perfDumpCtx struct {
-	dst *output
-}
-
 func perfPad(last, self bool) string {
 	if !last && !self {
 		return "│   "
@@ -53,46 +50,23 @@ func perfPad(last, self bool) string {
 	return "    "
 }
 
-func (ctx *perfDumpCtx) fmt(format string, args ...interface{}) {
-	ctx.dst.fmt(format, args...)
-}
-
-func (ctx *perfDumpCtx) printSeparator() {
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 10))
-	ctx.fmt("+%s-", strings.Repeat("-", 5))
-	ctx.fmt("+\n")
-}
-
-func (ctx *perfDumpCtx) printHeader() {
-	ctx.fmt("|%10s ", "count")
-	ctx.fmt("|%10s ", "total_ms")
-	ctx.fmt("|%10s ", "self_ms")
-	ctx.fmt("|%5s ", "step")
-	ctx.fmt("|\n")
-}
-
-func (ctx *perfDumpCtx) printLine(qn *queryNode, prefix, padSelf, padChild string) {
-	ctx.fmt("|%10d ", qn.count)
-	ctx.fmt("|%10.3f ", qn.totalTimeMs)
-	ctx.fmt("|%10.3f ", qn.selfTimeMs)
-	ctx.fmt("|%5s ", qn.strict)
-	ctx.fmt("|  ")
-	ctx.fmt("%s%s%s\n", prefix, padSelf, qn.desc())
-	for i, child := range qn.children {
-		last := i+1 == len(qn.children)
-		ctx.printLine(child, prefix+padChild, perfPad(last, true), perfPad(last, false))
+func (q *queryNode) makeTable(tab *table, prefix, padSelf, padChild string) {
+	count := fmt.Sprintf("%d", q.count)
+	totalTimeMs := fmt.Sprintf("%.3f", q.totalTimeMs)
+	selfTimeMs := fmt.Sprintf("%.3f", q.selfTimeMs)
+	strict := q.strict
+	query := fmt.Sprintf(" %s%s%s ", prefix, padSelf, q.desc())
+	tab.addRow(count, totalTimeMs, selfTimeMs, strict, query)
+	for i, child := range q.children {
+		last := i+1 == len(q.children)
+		child.makeTable(tab, prefix+padChild, perfPad(last, true), perfPad(last, false))
 	}
 }
 
 func (q *queryNode) render(output *output) {
-	dst := perfDumpCtx{dst: output}
-	dst.printSeparator()
-	dst.printHeader()
-	dst.printSeparator()
-	dst.printLine(q, "", "", "")
-	dst.printSeparator()
+	tab := newTable("count", "total_ms", "self_ms", "step", "query tree")
+	q.makeTable(tab, "", "", "")
+	tab.render(output)
 }
 
 func extractQueryNode(obj slime.Value) *queryNode {
@@ -318,8 +292,54 @@ func (t threadTrace) profTimeMs() float64 {
 	return t.matchTimeMs() + t.firstPhaseTimeMs() + t.secondPhaseTimeMs()
 }
 
+type threadSummary struct {
+	id            int
+	matchMs       float64
+	firstPhaseMs  float64
+	secondPhaseMs float64
+}
+
+func renderThreadSummaries(out *output, threads ...*threadSummary) {
+	headers := []string{"task"}
+	for _, thread := range threads {
+		headers = append(headers, fmt.Sprintf("thread #%d", thread.id))
+	}
+	tab := newTable(headers...)
+	addRow := func(task string, get func(thread *threadSummary) float64) {
+		cells := []string{task}
+		for _, thread := range threads {
+			cells = append(cells, fmt.Sprintf("%.3f ms", get(thread)))
+		}
+		tab.addRow(cells...)
+	}
+	addRow("matching", func(thread *threadSummary) float64 { return thread.matchMs })
+	addRow("first phase", func(thread *threadSummary) float64 { return thread.firstPhaseMs })
+	addRow("second phase", func(thread *threadSummary) float64 { return thread.secondPhaseMs })
+	tab.render(out)
+}
+
+func (t threadTrace) extractSummary() *threadSummary {
+	return &threadSummary{
+		id:            t.id,
+		matchMs:       t.matchTimeMs(),
+		firstPhaseMs:  t.firstPhaseTimeMs(),
+		secondPhaseMs: t.secondPhaseTimeMs(),
+	}
+}
+
+func selectSlowestThread(threads []threadTrace) (*threadTrace, *threadTrace) {
+	if len(threads) == 0 {
+		return nil, nil
+	}
+	sort.Slice(threads, func(i, j int) bool {
+		return threads[i].profTimeMs() > threads[j].profTimeMs()
+	})
+	return &threads[0], &threads[len(threads)/2]
+}
+
 type protonTrace struct {
 	root slime.Value
+	path *slime.Path
 }
 
 func (p protonTrace) findThreadTraces() []threadTrace {
@@ -341,40 +361,6 @@ func (p protonTrace) extractQuery() *queryNode {
 		query = plan[0].Apply(p.root).Field("optimized")
 	}
 	return extractQueryNode(query)
-}
-
-type annNode struct {
-	root slime.Value
-}
-
-func (n annNode) render(out *output) {
-	out.fmt("ANN query node:\n")
-	out.fmt("    attribute_tensor: %s\n", n.root.Field("attribute_tensor").AsString())
-	out.fmt("    query_tensor: %s\n", n.root.Field("query_tensor").AsString())
-	out.fmt("    target_hits: %d\n", n.root.Field("target_hits").AsLong())
-	if n.root.Field("adjusted_target_hits").AsLong() > n.root.Field("target_hits").AsLong() {
-		out.fmt("    adjusted_target_hits: %d\n", n.root.Field("adjusted_target_hits").AsLong())
-	}
-	out.fmt("    explore_additional_hits: %d\n", n.root.Field("explore_additional_hits").AsLong())
-	out.fmt("    algorithm: %s\n", n.root.Field("algorithm").AsString())
-	if calculated := n.root.Field("global_filter").Field("calculated"); calculated.Valid() && !calculated.AsBool() {
-		out.fmt("    global_filter: not calculated\n")
-	} else if hit_ratio := n.root.Field("global_filter").Field("hit_ratio"); hit_ratio.Valid() {
-		out.fmt("    global_filter: %.3f hit ratio\n", hit_ratio.AsDouble())
-	}
-	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
-		out.fmt("    found hits: %d\n", top_k_hits.AsLong())
-	}
-}
-
-func (p protonTrace) findAnnNodes() []annNode {
-	var res []annNode
-	slime.Select(p.root, hasTag("query_execution_plan"), func(p *slime.Path, v slime.Value) {
-		slime.Select(v.Field("optimized"), hasType("search::queryeval::NearestNeighborBlueprint"), func(p *slime.Path, v slime.Value) {
-			res = append(res, annNode{v})
-		})
-	})
-	return res
 }
 
 func (p protonTrace) makeTimeline(trace slime.Value, t *timeline) {
@@ -418,12 +404,101 @@ func (p protonTrace) durationMs() float64 {
 	return p.root.Field("duration_ms").AsDouble()
 }
 
+func (p protonTrace) desc() string {
+	return fmt.Sprintf("%s[%d]", p.documentType(), p.distributionKey())
+}
+
+type protonSummary struct {
+	name          string
+	filterMs      float64
+	annMs         float64
+	matchMs       float64
+	firstPhaseMs  float64
+	secondPhaseMs float64
+}
+
+func renderProtonSummaries(out *output, nodes ...*protonSummary) {
+	headers := []string{"task"}
+	for _, node := range nodes {
+		headers = append(headers, node.name)
+	}
+	tab := newTable(headers...)
+	addRow := func(task string, get func(node *protonSummary) float64) {
+		cells := []string{task}
+		for _, node := range nodes {
+			cells = append(cells, fmt.Sprintf("%.3f ms", get(node)))
+		}
+		tab.addRow(cells...)
+	}
+	addRow("global filter", func(node *protonSummary) float64 { return node.filterMs })
+	addRow("ann setup", func(node *protonSummary) float64 { return node.annMs })
+	addRow("matching", func(node *protonSummary) float64 { return node.matchMs })
+	addRow("first phase", func(node *protonSummary) float64 { return node.firstPhaseMs })
+	addRow("second phase", func(node *protonSummary) float64 { return node.secondPhaseMs })
+	tab.render(out)
+}
+
+func (p protonTrace) extractSummary() *protonSummary {
+	res := &protonSummary{name: p.desc()}
+	timeline := p.timeline()
+	res.filterMs = timeline.durationOf("Calculate global filter")
+	res.annMs = timeline.durationOf("Handle global filter in query execution plan")
+	if thread, _ := selectSlowestThread(p.findThreadTraces()); thread != nil {
+		res.matchMs = thread.matchTimeMs()
+		res.firstPhaseMs = thread.firstPhaseTimeMs()
+		res.secondPhaseMs = thread.secondPhaseTimeMs()
+	}
+	return res
+}
+
+type protonTraceGroup struct {
+	traces []protonTrace
+	id     int
+}
+
+func (p protonTraceGroup) durationMs() float64 {
+	var res float64
+	for _, trace := range p.traces {
+		if trace.durationMs() > res {
+			res = trace.durationMs()
+		}
+	}
+	return res
+}
+
+func (p protonTraceGroup) documentType() string {
+	if len(p.traces) > 0 {
+		return p.traces[0].documentType()
+	}
+	return ""
+}
+
+func groupProtonTraces(traces []protonTrace) []protonTraceGroup {
+	groupMap := make(map[string]*protonTraceGroup)
+	for _, trace := range traces {
+		tag := trace.path.Clone().Trim(3).Field(trace.documentType()).String()
+		if group, exists := groupMap[tag]; exists {
+			group.traces = append(group.traces, trace)
+		} else {
+			groupMap[tag] = &protonTraceGroup{traces: []protonTrace{trace}, id: len(groupMap)}
+		}
+	}
+	res := make([]protonTraceGroup, 0, len(groupMap))
+	for _, group := range groupMap {
+		res = append(res, *group)
+	}
+	sort.Slice(res, func(i, j int) bool {
+		return res[i].id < res[j].id
+	})
+	return res
+}
+
 func findProtonTraces(root slime.Value) []protonTrace {
 	var traces []protonTrace
 	slime.Select(root.Field("trace"), func(p *slime.Path, v slime.Value) bool {
 		return slime.Valid(v.Field("distribution-key"), v.Field("document-type"), v.Field("duration_ms"))
 	}, func(p *slime.Path, v slime.Value) {
-		traces = append(traces, protonTrace{v})
+		traces = append(traces, protonTrace{root: v, path: p.Clone()})
 	})
 	return traces
 }

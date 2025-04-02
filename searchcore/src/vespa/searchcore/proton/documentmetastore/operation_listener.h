@@ -12,7 +12,7 @@ namespace proton::documentmetastore {
 class OperationListener {
 public:
     using SP = std::shared_ptr<OperationListener>;
-    virtual ~OperationListener() {}
+    virtual ~OperationListener() = default;
     virtual void notify_remove_batch() = 0;
     virtual void notify_remove() = 0;
 };

@@ -36,12 +36,12 @@ public class GetVarTestCase {
 
     @Test
     public void requireThatExpressionCanBeVerified() {
-        VerificationContext ctx = new VerificationContext(new SimpleTestAdapter());
-        ctx.setVariable("foo", DataType.STRING);
+        TypeContext ctx = new TypeContext(new SimpleTestAdapter());
+        ctx.setVariableType("foo", DataType.STRING);
 
-        new GetVarExpression("foo").verify(ctx);
+        new GetVarExpression("foo").resolve(ctx);
         try {
-            new StatementExpression(new GetVarExpression("bar")).verify(ctx);
+            new StatementExpression(new GetVarExpression("bar")).resolve(ctx);
             fail();
         } catch (VerificationException e) {
             assertEquals("Invalid expression 'get_var bar': Variable 'bar' not found", e.getMessage());

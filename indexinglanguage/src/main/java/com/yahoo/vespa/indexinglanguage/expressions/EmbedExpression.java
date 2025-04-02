@@ -61,7 +61,7 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, context);
         var outputType = getOutputType(context); // Cannot be determined from input
         validateInputAndOutput(inputType, outputType);
@@ -69,7 +69,7 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(null, outputType, TensorDataType.any(), context);
         var inputType = getInputType(context); // Cannot be determined from output
         validateInputAndOutput(inputType, outputType);
@@ -128,11 +128,6 @@ public class EmbedExpression extends Expression  {
     @Override
     public void setStatementOutput(DocumentType documentType, Field field) {
         destination = documentType.getName() + "." + field.getName();
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        context.setCurrentType(new TensorDataType(toTargetTensor(getOutputType(context))));
     }
 
     @Override
@@ -244,11 +239,6 @@ public class EmbedExpression extends Expression  {
 
     private TensorType getOutputTensorType() {
         return ((TensorDataType)getOutputType()).getTensorType();
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return getOutputType();
     }
 
     private static TensorType toTargetTensor(DataType dataType) {

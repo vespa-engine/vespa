@@ -52,22 +52,15 @@ final class SimpleExpression extends Expression {
     }
 
     @Override
-    public DataType setInputType(DataType inputType, VerificationContext context) {
+    public DataType setInputType(DataType inputType, TypeContext context) {
         super.setInputType(inputType, requiredInput, context);
         return createdOutput;
     }
 
     @Override
-    public DataType setOutputType(DataType outputType, VerificationContext context) {
+    public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(createdOutput, outputType, null, context);
         return requiredInput;
-    }
-
-    @Override
-    protected void doVerify(VerificationContext context) {
-        if (hasVerifyValue) {
-            context.setCurrentType(verifyValue);
-        }
     }
 
     @Override
@@ -75,11 +68,6 @@ final class SimpleExpression extends Expression {
         if (hasExecuteValue) {
             context.setCurrentValue(executeValue);
         }
-    }
-
-    @Override
-    public DataType createdOutputType() {
-        return createdOutput;
     }
 
     @Override
@@ -122,4 +110,5 @@ final class SimpleExpression extends Expression {
     private static int hashCode(Object obj) {
         return obj != null ? obj.hashCode() : 0;
     }
+
 }

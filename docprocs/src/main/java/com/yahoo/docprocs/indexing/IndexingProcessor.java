@@ -22,12 +22,11 @@ import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Embedder;
-import com.yahoo.language.process.TextGenerator;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.language.provider.DefaultGeneratorProvider;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
-import com.yahoo.vespa.indexinglanguage.AdapterFactory;
-import com.yahoo.vespa.indexinglanguage.SimpleAdapterFactory;
+import com.yahoo.vespa.indexinglanguage.FieldValuesFactory;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 
 import java.util.Map;
@@ -47,9 +46,9 @@ public class IndexingProcessor extends DocumentProcessor {
 
     private final DocumentTypeManager documentTypeManager;
     private final ScriptManager scriptManager;
-    private final AdapterFactory adapterFactory;
+    private final FieldValuesFactory fieldValuesFactory;
 
-    private class ExpressionSelector extends SimpleAdapterFactory.SelectExpression {
+    private class ExpressionSelector extends FieldValuesFactory.SelectExpression {
         @Override
         public Expression selectExpression(DocumentType documentType, String fieldName) {
             return scriptManager.getScript(documentType, fieldName).getExpression();
@@ -61,15 +60,13 @@ public class IndexingProcessor extends DocumentProcessor {
                              IlscriptsConfig ilscriptsConfig,
                              Linguistics linguistics,
                              ComponentRegistry<Embedder> embedders,
-                             ComponentRegistry<TextGenerator> generators) {
-        this(
-                documentTypeManager, 
-                new ScriptManager(
-                        documentTypeManager, 
-                        ilscriptsConfig, 
-                        linguistics, 
-                        toMap(embedders, DefaultEmbedderProvider.class), 
-                        toMap(generators, DefaultGeneratorProvider.class)
+                             ComponentRegistry<FieldGenerator> generators) {
+        this(documentTypeManager,
+             new ScriptManager(documentTypeManager,
+                               ilscriptsConfig,
+                               linguistics,
+                               toMap(embedders, DefaultEmbedderProvider.class),
+                               toMap(generators, DefaultGeneratorProvider.class)
                 )
         );
     }
@@ -78,7 +75,7 @@ public class IndexingProcessor extends DocumentProcessor {
                              ScriptManager scriptManager) {
         this.documentTypeManager = documentTypeManager;
         this.scriptManager = scriptManager;
-        adapterFactory = new SimpleAdapterFactory(new ExpressionSelector());
+        fieldValuesFactory = new FieldValuesFactory(new ExpressionSelector());
     }
 
     @Override
@@ -127,7 +124,7 @@ public class IndexingProcessor extends DocumentProcessor {
             buffer.flip();
             inputDocument = documentTypeManager.createDocument(buffer);
         }
-        Document output = script.execute(adapterFactory, inputDocument);
+        Document output = script.execute(fieldValuesFactory, inputDocument);
         if (output == null) return;
 
         out.add(new DocumentPut(input, output));
@@ -139,7 +136,7 @@ public class IndexingProcessor extends DocumentProcessor {
             out.add(input);
             return;
         }
-        DocumentUpdate output = script.execute(adapterFactory, input);
+        DocumentUpdate output = script.execute(fieldValuesFactory, input);
         if (output == null) return;
         output.setCondition(input.getCondition());
         out.add(output);

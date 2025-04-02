@@ -18,7 +18,24 @@ namespace search::tensor {
  */
 class TensorBufferStore : public TensorStore
 {
-    using RefType = vespalib::datastore::EntryRefT<19>;
+    /*
+     * Increasing the number of buffers reduces the wasted address space due to buffer sizes being capped to 256 MiB,
+     * c.f. ArrayStoreConfig::default_max_buffer_size. This allows for more data to be stored, at the cost of a
+     * higher initial memory allocation (BufferAndMeta vector in DataStoreBase), and a higher memory allocation
+     * later on as buffers are being used (BufferState).
+     *
+     * As of 2025-03-10: sizeof(BufferAndMeta) == 24, sizeof(BufferState) == 112.
+     *
+     * Increasing the maximum buffer size (currently 256 MiB) allows for more data to be stored without a higher
+     * initial memory allocation, but the feed latency spike during compaction will be higher.
+     *
+     * 18 bits for buffer offset => 256 Ki offset limit
+     * 14 bits for buffer id     => 16 Ki buffers
+     *
+     * E.g. tensor<float>(x{},y[128]) uses ~512 bytes per vector. With more than 2 vectors per tensor, the maximum
+     * usable offset in the buffer is capped because 256 MiB / 256 Ki = 1024, which is less than the tensor size.
+     */
+    using RefType = vespalib::datastore::EntryRefT<18>;
     using ArrayStoreType = vespalib::datastore::ArrayStore<char, RefType, TensorBufferTypeMapper>;
     vespalib::eval::ValueType _tensor_type;
     TensorBufferOperations    _ops;

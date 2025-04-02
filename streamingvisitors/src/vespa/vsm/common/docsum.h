@@ -15,7 +15,7 @@ class IDocSumCache
 {
 public:
   virtual const Document & getDocSum(const search::DocumentIdT & docId) const = 0;
-  virtual ~IDocSumCache() { }
+  virtual ~IDocSumCache() = default;
 };
 
 }

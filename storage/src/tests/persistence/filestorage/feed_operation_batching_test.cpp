@@ -317,7 +317,7 @@ TEST_F(FeedOperationBatchingTest, batch_respects_persistence_throttling) {
     params.max_window_size = 3;
     params.window_size_increment = 1;
     _handler->use_dynamic_operation_throttling(true);
-    _handler->reconfigure_dynamic_throttler(params);
+    _handler->reconfigure_dynamic_operation_throttler(params);
     _handler->set_max_feed_op_batch_size(10); // > win size to make sure we test the right thing
 
     send_puts({{1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}});
