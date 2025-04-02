@@ -85,7 +85,6 @@ public class VespaFeed implements Output {
     // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<Boolean> REMOVE_NAMESPACE =
             PluginConfigSpec.booleanSetting("remove_namespace", false);
-    // TODO: if document_type is dynamic and we're in quick start mode, we bail out because it's not supported
     public static final PluginConfigSpec<String> DOCUMENT_TYPE =
             PluginConfigSpec.stringSetting("document_type", "doctype");
     // if remove_document_type is true, the document type is removed from the document (assuming it's dynamic)
@@ -102,6 +101,8 @@ public class VespaFeed implements Output {
             PluginConfigSpec.booleanSetting("remove_id", false);
 
     // client certificate and key
+    // defaults to the application package dir under
+    // security/clients.pem and data-plane-private-key.pem
     public static final PluginConfigSpec<String> CLIENT_CERT =
             PluginConfigSpec.stringSetting("client_cert", null);
     public static final PluginConfigSpec<String> CLIENT_KEY =
@@ -173,90 +174,47 @@ public class VespaFeed implements Output {
     
     private FeedClient client;
     private final String id;
-    private final String namespace;
-    private final boolean dynamicNamespace;
-    private final boolean removeNamespace;
-    private final String documentType;
-    private final boolean dynamicDocumentType;
-    private final boolean removeDocumentType;
-    private final String operation;
-    private final boolean dynamicOperation;
-    private final boolean create;
-    private final String idField;
-    private final boolean removeId; 
-    private final long operationTimeout;
     // this signals that the plugin is stopping
     private volatile boolean stopped = false;
     
     ObjectMapper objectMapper;
-    private final boolean removeOperation;
     private DeadLetterQueueWriter dlqWriter;
     private VespaQuickStarter quickStarter;
     private final QuickStartConfig quickStartConfig;
+    private final FeedConfig feedConfig;
 
     public VespaFeed(final String id, final Configuration config, final Context context) {
         this.id = id;
 
-        // if the namespace matches %{field_name} or %{[field_name]}, it's dynamic
-        DynamicOption configOption = new DynamicOption(
-            // if namespace is not set, use the document type name as namespace
-            config.get(NAMESPACE) != null ? config.get(NAMESPACE) : config.get(DOCUMENT_TYPE)
+        feedConfig = new FeedConfig(
+            config.get(NAMESPACE),
+            config.get(REMOVE_NAMESPACE),
+            config.get(DOCUMENT_TYPE),
+            config.get(REMOVE_DOCUMENT_TYPE),
+            config.get(OPERATION),
+            config.get(CREATE),
+            config.get(ID_FIELD),
+            config.get(REMOVE_ID),
+            config.get(OPERATION_TIMEOUT),
+            config.get(REMOVE_OPERATION),
+            config.get(CLIENT_CERT),
+            config.get(CLIENT_KEY),
+            config.get(APPLICATION_PACKAGE_DIR)
         );
-        dynamicNamespace = configOption.isDynamic();
-        namespace = configOption.getParsedConfigValue();
-        removeNamespace = config.get(REMOVE_NAMESPACE);
-        // same with document type
-        configOption = new DynamicOption(config.get(DOCUMENT_TYPE));
-        dynamicDocumentType = configOption.isDynamic();
-        documentType = configOption.getParsedConfigValue();
-        removeDocumentType = config.get(REMOVE_DOCUMENT_TYPE);
-        // and operation
-        configOption = new DynamicOption(config.get(OPERATION));
-        dynamicOperation = configOption.isDynamic();
-        operation = configOption.getParsedConfigValue();
-        create = config.get(CREATE);
-        validateOperationAndCreate();
-
-        operationTimeout = config.get(OPERATION_TIMEOUT);
-
-        idField = config.get(ID_FIELD);
-        removeId = config.get(REMOVE_ID);
-        this.removeOperation = config.get(REMOVE_OPERATION);
 
         // for JSON serialization
         objectMapper = ObjectMappers.JSON_MAPPER;
-        
-        // Handle certificate paths for both quick_start and normal mode
-        String applicationPackageDir = config.get(APPLICATION_PACKAGE_DIR);
-        String clientCert = config.get(CLIENT_CERT);
-        String clientKey = config.get(CLIENT_KEY);
-        
-        // Set default paths if not specified and application package dir is available
-        if (applicationPackageDir != null) {
-            if (clientCert == null) {
-                clientCert = Paths.get(applicationPackageDir, "security", "clients.pem").toString();
-                logger.info("No client_cert specified, using default path: {}", clientCert);
-            }
-            
-            if (clientKey == null) {
-                clientKey = Paths.get(applicationPackageDir, "data-plane-private-key.pem").toString();
-                logger.info("No client_key specified, using default path: {}", clientKey);
-            }
-        }
-
-        // Get vespa_url for both config_server default and feed client setup
-        URI vespaUrl = config.get(VESPA_URL);
         
         if (config.get(QUICK_START)) {
             quickStartConfig = new QuickStartConfig(
                 config.get(DEPLOY_PACKAGE),
                 config.get(GENERATE_MTLS_CERTIFICATES),
-                clientCert,
-                clientKey,
+                feedConfig.getClientCert(),
+                feedConfig.getClientKey(),
                 config.get(CONFIG_SERVER),
-                vespaUrl,
-                documentType,
-                dynamicDocumentType,
+                config.get(VESPA_URL),
+                feedConfig.getDocumentType(),
+                feedConfig.isDynamicDocumentType(),
                 config.get(IDLE_BATCHES).longValue(),
                 config.get(APPLICATION_PACKAGE_DIR),
                 config.get(TYPE_MAPPINGS_FILE),
@@ -287,7 +245,7 @@ public class VespaFeed implements Output {
             }
 
             try {
-                FeedClientBuilder builder = FeedClientBuilder.create(vespaUrl)
+                FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
                         .setConnectionsPerEndpoint(config.get(MAX_CONNECTIONS).intValue())
                         .setMaxStreamPerConnection(config.get(MAX_STREAMS).intValue())
                         .setRetryStrategy(
@@ -312,7 +270,8 @@ public class VespaFeed implements Output {
                         );
 
                 // set client certificate and key (or auth token) if they are provided
-                builder = addAuthOptionsToBuilder(config, builder, clientCert, clientKey);
+                builder = addAuthOptionsToBuilder(config, builder, 
+                            feedConfig.getClientCert(), feedConfig.getClientKey());
 
                 // now we should have the client
                 client = builder.build();
@@ -332,18 +291,8 @@ public class VespaFeed implements Output {
         }
     }
 
-    public void validateOperationAndCreate() {
-        if (!dynamicOperation) {
-            if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
-                throw new IllegalArgumentException("Operation must be put, update or remove");
-            }
-            if (operation.equals("remove") && create) {
-                throw new IllegalArgumentException("Operation remove cannot have create=true");
-            }
-        }
-    }
-
-    protected static FeedClientBuilder addAuthOptionsToBuilder(Configuration config, FeedClientBuilder builder, String clientCert, String clientKey) {
+    protected static FeedClientBuilder addAuthOptionsToBuilder(Configuration config, FeedClientBuilder builder,
+                                                String clientCert, String clientKey) {
         Path clientCertPath = null;
         Path clientKeyPath = null;
         
@@ -431,47 +380,47 @@ public class VespaFeed implements Output {
     protected CompletableFuture<Result> asyncFeed(Event event) throws JsonProcessingException {
         // try to get the doc ID from the event, otherwise generate a UUID
         String docIdStr;
-        Object docIdObj = event.getField(idField);
+        Object docIdObj = event.getField(feedConfig.getIdField());
         if (docIdObj == null) {
             docIdStr = UUID.randomUUID().toString();
         } else {
             docIdStr = docIdObj.toString();
             // Remove the ID field if configured to do so
-            if (removeId) {
-                event.remove(idField);
+            if (feedConfig.isRemoveId()) {
+                event.remove(feedConfig.getIdField());
             }
         }
 
         // if the namespace is dynamic, we need to resolve it
-        String namespace = this.namespace;
-        if (dynamicNamespace) {
-            namespace = getDynamicField(event, this.namespace);
-            if (removeNamespace) {
-                event.remove(this.namespace);
+        String namespace = feedConfig.getNamespace();
+        if (feedConfig.isDynamicNamespace()) {
+            namespace = getDynamicField(event, feedConfig.getNamespace());
+            if (feedConfig.isRemoveNamespace()) {
+                event.remove(feedConfig.getNamespace());
             }
         }
 
         // similar logic for the document type
-        String documentType = this.documentType;
-        if (dynamicDocumentType) {
-            documentType = getDynamicField(event, this.documentType);
-            if (removeDocumentType) {
-                event.remove(this.documentType);
+        String documentType = feedConfig.getDocumentType();
+        if (feedConfig.isDynamicDocumentType()) {
+            documentType = getDynamicField(event, feedConfig.getDocumentType());
+            if (feedConfig.isRemoveDocumentType()) {
+                event.remove(feedConfig.getDocumentType());
             }
         }
 
         // and the operation
-        String operation = this.operation;
-        if (dynamicOperation) {
-            operation = getDynamicField(event, this.operation);
+        String operation = feedConfig.getOperation();
+        if (feedConfig.isDynamicOperation()) {
+            operation = getDynamicField(event, feedConfig.getOperation());
             if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
                 String errorMessage = String.format("Invalid operation (must be put, update or remove): {}", operation);
                 logger.error(errorMessage);
                 writeToDlq(event, errorMessage);
                 return null;
             }
-            if (removeOperation) {
-                event.remove(this.operation);
+            if (feedConfig.isRemoveOperation()) {
+                event.remove(feedConfig.getOperation());
             }
         }
         // add create=true, if applicable
@@ -504,9 +453,9 @@ public class VespaFeed implements Output {
      */
     public OperationParameters addCreateIfApplicable(String operation, String docId) {
         OperationParameters operationParameters = OperationParameters.empty()
-                .timeout(Duration.ofSeconds(operationTimeout));
+                .timeout(Duration.ofSeconds(feedConfig.getOperationTimeout()));
 
-        if (create) {
+        if (feedConfig.isCreate()) {
             if (operation.equals("put") || operation.equals("update")) {
                 return operationParameters.createIfNonExistent(true);
             } else {
@@ -579,38 +528,6 @@ public class VespaFeed implements Output {
     @Override
     public String getId() {
         return id;
-    }
-
-    public boolean isDynamicNamespace() {
-        return dynamicNamespace;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public boolean isDynamicDocumentType() {
-        return dynamicDocumentType;
-    }
-
-    public String getDocumentType() {
-        return documentType;
-    }
-
-    public String getOperation() {
-        return operation;
-    }
-
-    public boolean isCreate() {
-        return create;
-    }
-
-    public boolean isDynamicOperation() {
-        return dynamicOperation;
-    }
-
-    public long getOperationTimeout() {
-        return operationTimeout;
     }
 
     protected void writeToDlq(Event event, String errorMessage) {
