@@ -40,7 +40,8 @@ public class HuggingFaceTokenizer extends AbstractComponent implements Embedder,
     private final Path tmpDirectory = uncheck(() -> Files.createTempDirectory("hf-tokenizer-"));
     private final Map<Language, ai.djl.huggingface.tokenizers.HuggingFaceTokenizer> models;
 
-    @Inject public HuggingFaceTokenizer(HuggingFaceTokenizerConfig cfg) { this(new Builder(cfg)); }
+    @Inject
+    public HuggingFaceTokenizer(HuggingFaceTokenizerConfig cfg) { this(new Builder(cfg)); }
 
     static {
         // Stop HuggingFace Tokenizer from reporting usage statistics back to mothership

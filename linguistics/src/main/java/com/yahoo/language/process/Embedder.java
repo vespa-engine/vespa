@@ -2,15 +2,11 @@
 package com.yahoo.language.process;
 
 import com.yahoo.api.annotations.Beta;
-import com.yahoo.collections.LazyMap;
-import com.yahoo.language.Language;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * An embedder converts a text string to a tensor
@@ -19,7 +15,7 @@ import java.util.function.Supplier;
  */
 public interface Embedder {
 
-    /** Name of embedder when none is explicity given */
+    /** ID of embedder when none is explicitly given */
     String defaultEmbedderId = "default";
 
     /** An instance of this which throws IllegalStateException if attempted used */
@@ -68,6 +64,34 @@ public interface Embedder {
      */
     Tensor embed(String text, Context context, TensorType tensorType);
 
+    class Context extends InvocationContext<Context> {
+
+        public Context(String destination) {
+            super(destination);
+        }
+
+        public Context(String destination, Map<Object, Object> cache) {
+            super(destination, cache);
+        }
+
+        public Context(Context other) {
+            super(other);
+        }
+
+        public Context copy() {
+            return new Context(this);
+        }
+
+        /** Return the component id or 'unknown' if not set. */
+        public String getEmbedderId() { return getComponentId(); }
+
+        /** Sets the component id. */
+        public Context setEmbedderId(String componentId) {
+            return setComponentId(componentId);
+        }
+
+    }
+
     /**
      * Runtime that is injectable through {@link Embedder} constructor.
      */
@@ -85,90 +109,6 @@ public interface Embedder {
                 @Override public void sampleSequenceLength(long length, Context ctx) { }
             };
         }
-    }
-
-    class Context {
-
-        private Language language = Language.UNKNOWN;
-        private String destination;
-        private String embedderId = "unknown";
-        private final Map<Object, Object> cache;
-
-        public Context(String destination) {
-            this(destination, LazyMap.newHashMap());
-        }
-
-        /**
-         * @param destination the name of the recipient of this tensor
-         * @param cache a cache shared between all embed invocations for a single request
-         */
-        public Context(String destination, Map<Object, Object> cache) {
-            this.destination = destination;
-            this.cache = Objects.requireNonNull(cache);
-        }
-
-        private Context(Context other) {
-            language = other.language;
-            destination = other.destination;
-            embedderId = other.embedderId;
-            this.cache = other.cache;
-        }
-
-        public Context copy() { return new Context(this); }
-
-        /** Returns the language of the text, or UNKNOWN (default) to use a language independent embedding */
-        public Language getLanguage() { return language; }
-
-        /** Sets the language of the text, or UNKNOWN to use language independent embedding */
-        public Context setLanguage(Language language) {
-            this.language = language != null ? language : Language.UNKNOWN;
-            return this;
-        }
-
-        /**
-         * Returns the name of the recipient of this tensor.
-         *
-         * This is either a query feature name
-         * ("query(feature)"), or a schema and field name concatenated by a dot ("schema.field").
-         * This cannot be null.
-         */
-        public String getDestination() { return destination; }
-
-        /**
-         * Sets the name of the recipient of this tensor.
-         *
-         * This is either a query feature name
-         * ("query(feature)"), or a schema and field name concatenated by a dot ("schema.field").
-         */
-        public Context setDestination(String destination) {
-            this.destination = destination;
-            return this;
-        }
-
-        /** Return the embedder id or 'unknown' if not set */
-        public String getEmbedderId() { return embedderId; }
-
-        /** Sets the embedder id */
-        public Context setEmbedderId(String embedderId) {
-            this.embedderId = embedderId;
-            return this;
-        }
-
-        public void putCachedValue(Object key, Object value) {
-            cache.put(key, value);
-        }
-
-        /** Returns a cached value, or null if not present. */
-        public Object getCachedValue(Object key) {
-            return cache.get(key);
-        }
-
-        /** Returns the cached value, or computes and caches it if not present. */
-        @SuppressWarnings("unchecked")
-        public <T> T computeCachedValueIfAbsent(Object key, Supplier<? extends T> supplier) {
-            return (T) cache.computeIfAbsent(key, __ -> supplier.get());
-        }
-
     }
 
     class FailingEmbedder implements Embedder {
