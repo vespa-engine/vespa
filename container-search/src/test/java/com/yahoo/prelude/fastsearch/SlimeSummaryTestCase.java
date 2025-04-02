@@ -92,8 +92,7 @@ public class SlimeSummaryTestCase {
         assertEquals("longdata_value", hit.getField("longdata_field").toString());
         assertEquals(XMLString.class, hit.getField("xmlstring_field").getClass());
         assertEquals("<tag>xmlstring_value</tag>", hit.getField("xmlstring_field").toString());
-        if (hit.getField("jsonstring_field") instanceof JSONString) {
-            JSONString jstr = (JSONString) hit.getField("jsonstring_field");
+        if (hit.getField("jsonstring_field") instanceof JSONString jstr) {
             assertEquals("{\"foo\":1,\"bar\":2}", jstr.getContent());
             assertNotNull(jstr.getContent());
 
@@ -112,7 +111,7 @@ public class SlimeSummaryTestCase {
         assertEquals(tensor2, hit.getField("tensor_field2"));
         FeatureData featureData = hit.features();
         assertEquals("double_feature,rankingExpression(tensor1_feature),tensor2_feature",
-                featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
+                     featureData.featureNames().stream().sorted().collect(Collectors.joining(",")));
         assertEquals(0.5, featureData.getDouble("double_feature"), 0.00000001);
         assertEquals(tensor1, featureData.getTensor("tensor1_feature"));
         assertEquals(tensor1, featureData.getTensor("rankingExpression(tensor1_feature)"));

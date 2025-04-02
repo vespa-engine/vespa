@@ -3,6 +3,7 @@ package com.yahoo.search.searchers.test;
 
 import com.yahoo.component.chain.Chain;
 import com.yahoo.data.access.simple.Value;
+import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
@@ -12,6 +13,7 @@ import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.testutil.DocumentSourceSearcher;
 import com.yahoo.search.searchers.ChunkLimitingSearcher;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 import com.yahoo.yolean.trace.TraceNode;
 import com.yahoo.yolean.trace.TraceVisitor;
 import org.junit.jupiter.api.Test;
@@ -24,79 +26,127 @@ public class ChunkLimitingSearcherTestCase {
 
     @Test
     void testChunkLimiting() {
+        var tester = new ChunkLimitingTester();
 
-        Query testQuery = new Query();
-        testQuery.properties().set("chunk.limit.max", 3);
-        testQuery.properties().set("chunk.limit.field", "paragraphs");
-        testQuery.properties().set("chunk.limit.tensor", "paragraphScores");
-        testQuery.getTrace().setLevel(10);
+        Query query = new Query();
+        query.properties().set("chunk.limit.max", 3);
+        query.properties().set("chunk.limit.field", "paragraphs");
+        query.properties().set("chunk.limit.tensor", "paragraphScores");
+        query.getTrace().setLevel(10);
 
-        Result mockResult = new Result(testQuery);
-        mockResult.hits().add(makeHit(1, 0.9)); // no chunks
-        mockResult.hits().add(makeHit(2, 0.8, "first")); // below limit
-        mockResult.hits().add(makeHit(3, 0.7, "first", "second", "third")); // at limit
-        mockResult.hits().add(makeHit(3, 0.7, "first", "second", "third", "fourth"));
-        mockResult.hits().add(makeHit(4, 0.6, "first", "second", "third", "fourth", "fifth"));
-
-        DocumentSourceSearcher docSource = new DocumentSourceSearcher();
-        docSource.addResult(testQuery, mockResult);
-        Chain<Searcher> myChain = new Chain<>(new ChunkLimitingSearcher(), docSource);
-        Execution.Context context = Execution.Context.createContextStub();
-        Execution execution = new Execution(myChain, context);
-
-        Result result = execution.search(testQuery);
-        execution.fill(result);
-        printTrace(execution);
+        Result result = tester.execute(query);
 
         assertEquals(5, result.hits().size());
 
-        assertParagraphs(result, 1);
-        assertParagraphs(result, 2, "first");
-        assertParagraphs(result, 3, "first", "second", "third");
-        assertParagraphs(result, 4, "first", "second", "third");
-        assertParagraphs(result, 5, "first", "third", "fifth");
+        tester.assertParagraphs(result, 1);
+        tester.assertParagraphs(result, 2, "first");
+        tester.assertParagraphs(result, 3, "first", "second", "third");
+        tester.assertParagraphs(result, 4, "first", "second", "third");
+        tester.assertParagraphs(result, 5, "first", "third", "fifth");
+
+        var expected = Tensor.Builder.of("tensor(p{})");
+        expected.cell(TensorAddress.of(0), ChunkLimitingTester.scoreOf("first"));
+        expected.cell(TensorAddress.of(1), ChunkLimitingTester.scoreOf("second"));
+        expected.cell(TensorAddress.of(2), ChunkLimitingTester.scoreOf("third"));
+        expected.cell(TensorAddress.of(3), ChunkLimitingTester.scoreOf("fourth"));
+        expected.cell(TensorAddress.of(4), ChunkLimitingTester.scoreOf("fifth"));
+        assertEquals(expected.build(), result.hits().get(4).features().getTensor("paragraphScores"));
     }
 
-    private void assertParagraphs(Result result, int i, String... paragraphs) {
-        Value.ArrayValue expected = new Value.ArrayValue();
-        for (String p : paragraphs) {
-            expected.add(p);
-        }
+    @Test
+    void testChunkLimitingIncludingSummaryFeature() {
+        var tester = new ChunkLimitingTester();
 
-        Value.ArrayValue fromHit = (Value.ArrayValue) result.hits().get(i - 1).getField("paragraphs");
+        Query query = new Query();
+        query.properties().set("chunk.limit.max", 3);
+        query.properties().set("chunk.limit.field", "paragraphs, summaryfeatures.paragraphScores");
+        query.properties().set("chunk.limit.tensor", "paragraphScores");
+        query.getTrace().setLevel(10);
 
-        assertEquals(expected.toJson(), fromHit.toJson());
+        Result result = tester.execute(query);
+
+        assertEquals(5, result.hits().size());
+
+        tester.assertParagraphs(result, 1);
+        tester.assertParagraphs(result, 2, "first");
+        tester.assertParagraphs(result, 3, "first", "second", "third");
+        tester.assertParagraphs(result, 4, "first", "second", "third");
+        tester.assertParagraphs(result, 5, "first", "third", "fifth");
+
+        var expected = Tensor.Builder.of("tensor(p{})");
+        expected.cell(TensorAddress.of(0), ChunkLimitingTester.scoreOf("first"));
+        expected.cell(TensorAddress.of(2), ChunkLimitingTester.scoreOf("third"));
+        expected.cell(TensorAddress.of(4), ChunkLimitingTester.scoreOf("fifth"));
+        assertEquals(expected.build(), result.hits().get(4).features().getTensor("paragraphScores"));
     }
 
-    private static Hit makeHit(int id, double relevance, String... paragraphs) {
-        Hit newHit = new Hit("hit:" + id, relevance);
+    static class ChunkLimitingTester {
 
-        Value.ArrayValue stringArrayFieldValue = new Value.ArrayValue();
-        for (String p : paragraphs) {
-            stringArrayFieldValue.add(p);
+        Result execute(Query query) {
+            Result mockResult = new Result(query);
+            mockResult.hits().add(makeHit(1, 0.9)); // no chunks
+            mockResult.hits().add(makeHit(2, 0.8, "first")); // below limit
+            mockResult.hits().add(makeHit(3, 0.7, "first", "second", "third")); // at limit
+            mockResult.hits().add(makeHit(3, 0.7, "first", "second", "third", "fourth"));
+            mockResult.hits().add(makeHit(4, 0.6, "first", "second", "third", "fourth", "fifth"));
+
+            DocumentSourceSearcher docSource = new DocumentSourceSearcher();
+            docSource.addResult(query, mockResult);
+            Chain<Searcher> myChain = new Chain<>(new ChunkLimitingSearcher(), docSource);
+            Execution.Context context = Execution.Context.createContextStub();
+            Execution execution = new Execution(myChain, context);
+
+            Result result = execution.search(query);
+            execution.fill(result);
+            // tester.printTrace(execution);
+            return result;
         }
 
-        StringBuilder tensorString = new StringBuilder("tensor(p{}):{");
-        for (int i = 0; i < paragraphs.length; i++) {
-            tensorString.append(i).append(": ").append(paragraphs[i].hashCode() / (double) Integer.MAX_VALUE);
-            if (i < paragraphs.length - 1) tensorString.append(", ");
+        void assertParagraphs(Result result, int i, String... paragraphs) {
+            Value.ArrayValue expected = new Value.ArrayValue();
+            for (String p : paragraphs)
+                expected.add(p);
+
+            Value.ArrayValue fromHit = (Value.ArrayValue) result.hits().get(i - 1).getField("paragraphs");
+            assertEquals(expected.toJson(), fromHit.toJson());
         }
-        tensorString.append("}");
-        Tensor scoreTensor = Tensor.from(tensorString.toString());
 
-        FeatureData featureData = new FeatureData(Map.of("paragraphScores", scoreTensor));
+        static Hit makeHit(int id, double relevance, String... paragraphs) {
+            Hit newHit = new FastHit("hit:" + id, relevance);
 
-        newHit.setField("paragraphs", stringArrayFieldValue);
-        newHit.setField("summaryfeatures", featureData);
-        return newHit;
-    }
-
-    private static void printTrace(Execution execution) {
-        execution.trace().accept(new TraceVisitor() {
-            @Override
-            public void visit(TraceNode node) {
-                System.out.println(node);
+            Value.ArrayValue stringArrayFieldValue = new Value.ArrayValue();
+            for (String p : paragraphs) {
+                stringArrayFieldValue.add(p);
             }
-        });
+
+            StringBuilder tensorString = new StringBuilder("tensor(p{}):{");
+            for (int i = 0; i < paragraphs.length; i++) {
+                tensorString.append(i).append(": ").append(scoreOf(paragraphs[i]));
+                if (i < paragraphs.length - 1) tensorString.append(", ");
+            }
+            tensorString.append("}");
+            Tensor scoreTensor = Tensor.from(tensorString.toString());
+            FeatureData featureData = new FeatureData(Map.of("paragraphScores", scoreTensor));
+
+            newHit.setField("paragraphs", stringArrayFieldValue);
+            newHit.setField("summaryfeatures", featureData);
+            return newHit;
+        }
+
+        static double scoreOf(String value) {
+            return value.hashCode() / (double) Integer.MAX_VALUE;
+        }
+            
+
+        static void printTrace(Execution execution) {
+            execution.trace().accept(new TraceVisitor() {
+                @Override
+                public void visit(TraceNode node) {
+                    System.out.println(node);
+                }
+            });
+        }
+
     }
+
 }

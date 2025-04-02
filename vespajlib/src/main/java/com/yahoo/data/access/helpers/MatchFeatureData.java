@@ -19,6 +19,7 @@ import java.util.function.Function;
  * MatchFeatureData helps pack match features for hits into
  * inspectable HitValue objects, all sharing the same Hashlet
  * for the field names.
+ *
  * @author arnej
  */
 public class MatchFeatureData {
