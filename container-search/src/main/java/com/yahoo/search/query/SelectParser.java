@@ -648,7 +648,6 @@ public class SelectParser implements Parser {
                     field + "' has both");
         }
 
-        Collection<Inspector> values = children.values();
         Item item = null;
         if (index.isString()) {
            StringInItem stringInItem = new StringInItem(field);
