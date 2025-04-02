@@ -18,15 +18,18 @@ public class SchemaProgressHandler {
     public static class Progress {
         private final Either<String, Integer> token;
         private final LanguageClient client;
+        private final boolean sendPercentage;
 
         protected Progress(LanguageClient client, Either<String, Integer> token) {
             this.client = client;
             this.token = token;
+            this.sendPercentage = false;
         }
 
-        Progress(LanguageClient client, String title) {
+        Progress(LanguageClient client, String title, boolean sendPercentage) {
             this.token = Either.forLeft(UUID.randomUUID().toString());
             this.client = client;
+            this.sendPercentage = sendPercentage;
 
             client.createProgress(
                 new WorkDoneProgressCreateParams(
@@ -37,6 +40,9 @@ public class SchemaProgressHandler {
 
             WorkDoneProgressBegin beginReport = new WorkDoneProgressBegin();
             beginReport.setTitle(title);
+            if (sendPercentage) {
+                beginReport.setPercentage(0);
+            }
             sendNotification(beginReport);
         }
 
@@ -50,18 +56,17 @@ public class SchemaProgressHandler {
         public void partialResult(String message, Integer percentage) {
             WorkDoneProgressReport report = new WorkDoneProgressReport();
 
-            if (message != null) {
-                report.setMessage(message);
-            }
-
-            if (percentage != null) {
-                report.setPercentage(percentage);
-            }
+            report.setMessage(message);
+            report.setPercentage(percentage);
 
             sendNotification(report);
         }
 
         public void partialResult(String message) {
+            if (sendPercentage) {
+                throw new IllegalArgumentException("For Progresses with percentage, a percentage must be given");
+            }
+
             partialResult(message, null);
         }
 
@@ -90,7 +95,7 @@ public class SchemaProgressHandler {
      * This is used for server initiated Progress
      */
     public Progress newWorkDoneProgress(String title) {
-        return new Progress(client, title);
+        return new Progress(client, title, true);
     }
 
 }

@@ -297,10 +297,16 @@ public class SchemaDocumentScheduler {
         return workspaceFiles.containsKey(fileURI);
     }
 
-    public void reparseInInheritanceOrder() {
-        for (String fileURI : schemaIndex.getDocumentInheritanceGraph().getTopoOrdering()) {
+    public void reparseInInheritanceOrder(Optional<Progress> progress) {
+        List<String> fileURIs = schemaIndex.getDocumentInheritanceGraph().getTopoOrdering();
+        for (int i = 0; i < fileURIs.size(); i++) {
+            String fileURI = fileURIs.get(i);
             if (workspaceFiles.containsKey(fileURI)) {
                 workspaceFiles.get(fileURI).reparseContent();
+            }
+
+            if (progress.isPresent()) {
+                progress.get().partialResult("Verifying inheritance " + i + " of " + fileURIs.size() + " schemas searched.", 50 + i * 50 / fileURIs.size());
             }
         }
     }
@@ -325,9 +331,9 @@ public class SchemaDocumentScheduler {
 
         int totalFiles = schemaFiles.size() + rankProfileFiles.size();
 
-        Progress progress = null;
+        Optional<Progress> progress = Optional.empty();
         if (totalFiles > 15) {
-            progress = progressHandler.newWorkDoneProgress("Vespa Indexing workspace");
+            progress = Optional.of(progressHandler.newWorkDoneProgress("Indexing workspace"));
         }
 
         for (int i = 0; i < totalFiles; i++) {
@@ -340,20 +346,16 @@ public class SchemaDocumentScheduler {
 
             addDocument(fileURI);
 
-            if (progress != null && (i % 5 == 0)) {
-                progress.partialResult(i + " of " + totalFiles + " files indexed.", i / totalFiles * 80); // maybe about of 80% of the time is used here?
+            if (progress.isPresent()) {
+                progress.get().partialResult(i + " of " + totalFiles + " files indexed.", i * 50 / totalFiles);
             }
         }
 
-        if (progress != null) {
-            progress.partialResult("Finishing...", 81);
-        }
-
-        reparseInInheritanceOrder();
+        reparseInInheritanceOrder(progress);
         setReparseDescendants(true);
 
-        if (progress != null) {
-            progress.end("Finished");
+        if (progress.isPresent()) {
+            progress.get().end("Finished");
         }
 
         this.workspaceStatus = WorkspaceStatus.SETUP_COMPLETED;
