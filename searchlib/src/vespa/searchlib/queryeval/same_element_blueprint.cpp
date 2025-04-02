@@ -117,7 +117,7 @@ SameElementBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArra
 }
 
 SearchIterator::UP
-SameElementBlueprint::createFilterSearch(FilterConstraint constraint) const
+SameElementBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_atmost_and_filter(_terms, strict(), constraint);
 }

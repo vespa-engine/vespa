@@ -174,7 +174,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(const f
 
 template <typename PostingStoreType, typename SearchType>
 std::unique_ptr<queryeval::SearchIterator>
-DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearch(FilterConstraint) const
+DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearchImpl(FilterConstraint) const
 {
     assert(getState().numFields() == 1);
     auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());

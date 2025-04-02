@@ -170,7 +170,7 @@ AttributeWeightedSetBlueprint::createLeafSearch(const fef::TermFieldMatchDataArr
 }
 
 queryeval::SearchIterator::UP
-AttributeWeightedSetBlueprint::createFilterSearch(FilterConstraint) const
+AttributeWeightedSetBlueprint::createFilterSearchImpl(FilterConstraint) const
 {
     std::vector<std::unique_ptr<queryeval::SearchIterator>> children;
     children.reserve(_contexts.size());

@@ -57,7 +57,7 @@ public:
 
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
 
-    std::unique_ptr<queryeval::SearchIterator> createFilterSearch(FilterConstraint) const override;
+    std::unique_ptr<queryeval::SearchIterator> createFilterSearchImpl(FilterConstraint) const override;
 
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
 };

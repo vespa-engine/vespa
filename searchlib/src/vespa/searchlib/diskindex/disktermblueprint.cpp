@@ -162,7 +162,7 @@ DiskTermBlueprint::createLeafSearch(const TermFieldMatchDataArray & tfmda) const
 }
 
 SearchIterator::UP
-DiskTermBlueprint::createFilterSearch(FilterConstraint) const
+DiskTermBlueprint::createFilterSearchImpl(FilterConstraint) const
 {
     auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
     auto & tfmda = wrapper->tfmda();

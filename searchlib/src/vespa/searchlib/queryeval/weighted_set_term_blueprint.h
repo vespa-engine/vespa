@@ -39,7 +39,7 @@ public:
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
 
     SearchIteratorUP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override;
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override;
     std::unique_ptr<MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 private:

@@ -141,7 +141,7 @@ public:
     // make public
     using LeafBlueprint::set_want_global_filter;
 
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
 };

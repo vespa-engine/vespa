@@ -34,7 +34,7 @@ public:
     void sort(queryeval::InFlow in_flow) override;
     queryeval::FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
     queryeval::SearchIterator::UP createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
-    queryeval::SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
+    queryeval::SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
     void fetchPostings(const queryeval::ExecuteInfo &execInfo) override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };

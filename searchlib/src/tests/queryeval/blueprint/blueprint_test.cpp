@@ -48,7 +48,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches, MatchData &md) const override {
         return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict());
     }
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
     static MyOr& create() { return *(new MyOr()); }
@@ -136,7 +136,7 @@ struct MyTerm : SimpleLeafBlueprint {
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &) const override {
         return {};
     }
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
 };
