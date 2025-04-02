@@ -536,7 +536,7 @@ struct MockAttributeVector : NotImplementedAttribute {
 struct MockSortBlobWriter : public ISortBlobWriter {
     MockAttributeVector& attr;
     MockSortBlobWriter(MockAttributeVector& attr_in) : attr(attr_in) {}
-    long write(uint32_t docid, void* buf, long available) const override {
+    long write(uint32_t docid, void* buf, long available) override {
         attr._doc_id = docid;
         attr._ser_to = buf;
         attr._available = available;

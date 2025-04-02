@@ -296,7 +296,7 @@ public:
                    std::unique_ptr<attribute::ISortBlobWriter> target_writer)
         : _attr(attr), _target_writer(std::move(target_writer))
     {}
-    long write(uint32_t docid, void* buf, long available) const override {
+    long write(uint32_t docid, void* buf, long available) override {
         return _target_writer->write(_attr.getTargetLid(docid), buf, available);
     }
 };

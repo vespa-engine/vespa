@@ -161,17 +161,18 @@ class MultiNumericEnumSortBlobWriter : public attribute::ISortBlobWriter {
 private:
     const MultiValueMappingT& _mv_mapping;
     const EnumStoreT& _enum_store;
+    attribute::NumericSortBlobWriter<T, ascending> _writer;
 public:
     MultiNumericEnumSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store)
         : _mv_mapping(mv_mapping), _enum_store(enum_store)
     {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        attribute::NumericSortBlobWriter<T, ascending> writer;
+    long write(uint32_t docid, void* buf, long available) override {
+        _writer.reset();
         auto indices = _mv_mapping.get(docid);
         for (auto& v : indices) {
-            writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()));
+            _writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()));
         }
-        return writer.write(buf, available);
+        return _writer.write(buf, available);
     }
 };
 

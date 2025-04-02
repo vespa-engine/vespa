@@ -19,6 +19,7 @@ public:
     NumericSortBlobWriter() noexcept;
     ~NumericSortBlobWriter() noexcept;
     void candidate(T val);
+    void reset();
     long write(void *serTo, size_t available);
 };
 

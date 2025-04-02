@@ -107,7 +107,7 @@ private:
 public:
     NumericDirectSortBlobWriter(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx) noexcept
         : _data(data), _idx(idx) {}
-    long write(uint32_t docid, void* buf, long available) const override {
+    long write(uint32_t docid, void* buf, long available) override {
         search::attribute::NumericSortBlobWriter<BaseType, ascending> writer;
         std::span<const BaseType> values(_data.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
         for (auto& v : values) {
@@ -153,27 +153,26 @@ StringDirectAttrVector(const std::string & baseFileName) :
     setEnum(true);
 }
 
+template <bool asc>
 class StringDirectSortBlobWriter : public search::attribute::ISortBlobWriter {
 private:
     const std::vector<char>& _buffer;
     const search::StringAttribute::OffsetVector& _offsets;
     const std::vector<uint32_t>& _idx;
-    const search::common::BlobConverter* _converter;
-    bool _ascending;
+    search::attribute::StringSortBlobWriter<asc> _writer;
 public:
     StringDirectSortBlobWriter(const std::vector<char>& buffer, const search::StringAttribute::OffsetVector& offsets,
-                               const std::vector<uint32_t>& idx, const search::common::BlobConverter* converter,
-                               bool ascending)
-        : _buffer(buffer), _offsets(offsets), _idx(idx), _converter(converter), _ascending(ascending) {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        search::attribute::StringSortBlobWriter writer(buf, available, _converter, _ascending);
+                               const std::vector<uint32_t>& idx, const search::common::BlobConverter* converter)
+        : _buffer(buffer), _offsets(offsets), _idx(idx), _writer(converter) {}
+    long write(uint32_t docid, void* buf, long available) override {
+        _writer.reset(buf, available);
         std::span<const uint32_t> offsets(_offsets.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
         for (auto& offset : offsets) {
-            if (!writer.candidate(&_buffer[offset])) {
+            if (!_writer.candidate(&_buffer[offset])) {
                 return -1;
             }
         }
-        return writer.write();
+        return _writer.write();
     }
 };
 
@@ -191,5 +190,9 @@ StringDirectAttrVector<F>::make_sort_blob_writer(bool ascending, const search::c
     if (!F::IsMultiValue()) {
         return search::StringDirectAttribute::make_sort_blob_writer(ascending, converter);
     }
-    return std::make_unique<StringDirectSortBlobWriter>(this->_buffer, this->_offsets, this->_idx, converter, ascending);
+    if (ascending) {
+        return std::make_unique<StringDirectSortBlobWriter<true>>(this->_buffer, this->_offsets, this->_idx, converter);
+    } else {
+        return std::make_unique<StringDirectSortBlobWriter<false>>(this->_buffer, this->_offsets, this->_idx, converter);
+    }
 }

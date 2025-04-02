@@ -22,7 +22,7 @@ public:
      * @param available Number of bytes available in the buffer.
      * @return The number of bytes written, -1 if not enough space.
      */
-    virtual long write(uint32_t docid, void* buf, long available) const = 0;
+    virtual long write(uint32_t docid, void* buf, long available) = 0;
 };
 
 }
