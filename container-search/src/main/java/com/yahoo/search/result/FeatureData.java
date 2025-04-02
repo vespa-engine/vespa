@@ -7,15 +7,17 @@ import com.yahoo.data.access.Type;
 import com.yahoo.data.JsonProducer;
 import com.yahoo.data.access.simple.JsonRender;
 import com.yahoo.data.access.simple.Value;
+import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.io.GrowableByteBuffer;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.serialization.JsonFormat;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import static com.yahoo.searchlib.rankingexpression.Reference.wrapInRankingExpression;
 
 import java.nio.charset.StandardCharsets;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Objects;
@@ -30,29 +32,26 @@ import java.util.Set;
  */
 public class FeatureData implements Inspectable, JsonProducer {
 
-    // WARNING: Not thread safe but using a shared empty. Take care if adding mutating methods.
-    private static final FeatureData empty = new FeatureData(Value.empty());
+    /** Whether values have been written to this (using set()) since it was constructed. */
+    private boolean mutated = false;
 
-    /** If not null: The source of all the values of this. */
+    /** If not null: The initial source of values of this. */
     private final Inspector encodedValues;
 
-    /** If encodedValues is null: The content of this. If encodedValues is non-null: Lazily decoded values. */
+    /** Values that are either set in this or lazily decoded from encodedValues. */
     private Map<String, Tensor> values = null;
-
-    /** The lazily computed feature names of this */
-    private Set<String> featureNames = null;
 
     public FeatureData(Inspector encodedValues) {
         this.encodedValues = Objects.requireNonNull(encodedValues);
     }
 
-    /** Creates a feature data from a map of values. This transfers ownership of the map to this object. */
+    /** Creates a feature data from a map of values. */
     public FeatureData(Map<String, Tensor> values) {
         this.encodedValues = null;
-        this.values = values;
+        this.values = new LinkedHashMap<>(values);
     }
 
-    public static FeatureData empty() { return empty; }
+    public static FeatureData empty() { return new FeatureData(Value.empty()); }
 
     /**
      * Returns the fields of this as an inspector, where tensors are represented as binary data
@@ -61,9 +60,21 @@ public class FeatureData implements Inspectable, JsonProducer {
      */
     @Override
     public Inspector inspect() {
-        if (encodedValues == null)
-            throw new IllegalStateException("FeatureData not created from an inspector cannot be inspected");
-        return encodedValues;
+        if (isEmpty()) return Value.empty();
+
+        // We may have cached values in values, but unless we have changed values we can still use the inspector
+        if (!mutated) return encodedValues;
+
+        decodeAll();
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        for (var entry : values.entrySet()) {
+            if (entry.getValue().type().rank() == 0)
+                root.setDouble(entry.getKey(), entry.getValue().asDouble());
+            else
+                root.setData(entry.getKey(), TypedBinaryFormat.encode(entry.getValue()));
+        }
+        return new SlimeAdapter(root);
     }
 
     @Override
@@ -89,12 +100,16 @@ public class FeatureData implements Inspectable, JsonProducer {
     }
 
     private StringBuilder writeJson(JsonFormat.EncodeOptions tensorOptions, StringBuilder target) {
-        if (this == empty) return target.append("{}");
+        if (isEmpty()) return target.append("{}");
 
-        if (encodedValues != null)
+        //implement instead of this:
+        if (encodedValues != null && ! mutated) {
             return JsonRender.render(encodedValues, new Encoder(target, true, tensorOptions));
-        else
+        }
+        else {
+            decodeAll();
             return writeJson(values, tensorOptions, target);
+        }
     }
 
     private StringBuilder writeJson(Map<String, Tensor> values, JsonFormat.EncodeOptions tensorOptions, StringBuilder target) {
@@ -114,6 +129,14 @@ public class FeatureData implements Inspectable, JsonProducer {
         return target;
     }
 
+    private void decodeAll() {
+        if (encodedValues == null) return;
+        encodedValues.traverse((String name, Inspector value) -> {
+            if ( ! values.containsKey(name))
+                values.put(name, decodeTensor(value));
+        });
+    }
+
     /**
      * Returns the value of a scalar feature, or null if it is not present.
      *
@@ -131,7 +154,7 @@ public class FeatureData implements Inspectable, JsonProducer {
      */
     public Tensor getTensor(String featureName) {
         if (values == null)
-            values = new HashMap<>();
+            values = new LinkedHashMap<>();
 
         Tensor value = values.get(featureName);
         if (value != null) return value;
@@ -143,8 +166,29 @@ public class FeatureData implements Inspectable, JsonProducer {
         return value;
     }
 
+    /** Sets a new or modified value in this. */
+    public void set(String featureName, Tensor value) {
+        mutated = true;
+        if (values == null)
+            values = new LinkedHashMap<>();
+        values.put(featureName, value);
+    }
+
+    /** Sets a new or modified value in this. */
+    public void set(String featureName, double value) {
+        set(featureName, Tensor.from(value));
+    }
+
+    public boolean isEmpty() {
+        return (encodedValues == null || encodedValues.type() == Type.EMPTY) &&
+               (values == null || values.isEmpty());
+    }
+
     private Tensor decodeTensor(String featureName) {
-        Inspector featureValue = getInspector(featureName);
+        return decodeTensor(getInspector(featureName));
+    }
+
+    private Tensor decodeTensor(Inspector featureValue) {
         if ( ! featureValue.valid()) return null;
 
         return switch (featureValue.type()) {
@@ -163,19 +207,20 @@ public class FeatureData implements Inspectable, JsonProducer {
     }
 
     /** Returns the names of the features available in this */
+    // TODO: Not used by us - deprecate?
     public Set<String> featureNames() {
-        if (this == empty) return Set.of();
-        if (featureNames != null) return featureNames;
-        if (encodedValues == null) return values.keySet();
-
-        featureNames = new LinkedHashSet<>();
-        encodedValues.fields().forEach(field -> featureNames.add(field.getKey()));
+        if (isEmpty()) return Set.of();
+        Set<String> featureNames = new LinkedHashSet<>();
+        if (encodedValues != null)
+            encodedValues.fields().forEach(field -> featureNames.add(field.getKey()));
+        if (values != null)
+            featureNames.addAll(values.keySet());
         return featureNames;
     }
 
     @Override
     public String toString() {
-        if (encodedValues != null && encodedValues.type() == Type.EMPTY) return "";
+        if (isEmpty()) return "";
         return toJson();
     }
 
@@ -212,4 +257,5 @@ public class FeatureData implements Inspectable, JsonProducer {
     private static Tensor tensorFromData(byte[] value) {
         return TypedBinaryFormat.decode(Optional.empty(), GrowableByteBuffer.wrap(value));
     }
+
 }

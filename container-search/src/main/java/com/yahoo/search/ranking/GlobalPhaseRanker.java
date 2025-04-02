@@ -106,7 +106,7 @@ public class GlobalPhaseRanker {
     }
 
     private static void hideImplicitMatchFeatures(Result result, Collection<String> namesToHide) {
-        if (namesToHide.size() == 0) return;
+        if (namesToHide.isEmpty()) return;
         var filter = new MatchFeatureFilter(namesToHide);
         for (var iterator = result.hits().deepIterator(); iterator.hasNext();) {
             Hit hit = iterator.next();
