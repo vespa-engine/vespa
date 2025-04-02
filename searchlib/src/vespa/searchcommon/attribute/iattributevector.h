@@ -5,6 +5,7 @@
 #include "basictype.h"
 #include "collectiontype.h"
 #include <vespa/searchcommon/common/iblobconverter.h>
+#include <vespa/searchlib/common/sortspec.h>
 #include <vespa/vespalib/datastore/atomic_entry_ref.h>
 #include <ostream>
 #include <span>
@@ -441,7 +442,9 @@ public:
      * Make a writer that is used for writing a serialized form of this attribute vector for sorting.
      * The serialized form can be used by memcmp() and sort order will be preserved.
      */
-    virtual std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const = 0;
+    virtual std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                                   common::sortspec::MissingPolicy policy,
+                                                                   std::string_view missing_value) const = 0;
 
     /**
      * Virtual destructor to allow safe subclassing.

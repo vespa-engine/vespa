@@ -126,7 +126,9 @@ private:
     uint32_t get(DocId doc, WeightedInt * v, uint32_t sz)   const override { return getAllHelper<WeightedInt, largeint_t>(doc, v, sz); }
     uint32_t get(DocId doc, WeightedFloat * v, uint32_t sz) const override { return getAllHelper<WeightedFloat, double>(doc, v, sz); }
     bool is_sortable() const noexcept override;
-    std::unique_ptr<search::attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const override;
+    std::unique_ptr<search::attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,
+                                                                              search::common::sortspec::MissingPolicy policy,
+                                                                              std::string_view missing_value) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -223,6 +225,9 @@ private:
         return available;
     }
     bool is_sortable() const noexcept override;
-    std::unique_ptr<search::attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const override;
+    std::unique_ptr<search::attribute::ISortBlobWriter>
+    make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,
+                          search::common::sortspec::MissingPolicy policy,
+                          std::string_view missing_value) const override;
 };
 

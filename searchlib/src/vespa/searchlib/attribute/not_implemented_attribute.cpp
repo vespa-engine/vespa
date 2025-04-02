@@ -120,7 +120,9 @@ NotImplementedAttribute::is_sortable() const noexcept
 }
 
 std::unique_ptr<attribute::ISortBlobWriter>
-NotImplementedAttribute::make_sort_blob_writer(bool, const common::BlobConverter*) const {
+NotImplementedAttribute::make_sort_blob_writer(bool, const common::BlobConverter*,
+                                               common::sortspec::MissingPolicy,
+                                               std::string_view) const {
     notImplemented();
 }
 

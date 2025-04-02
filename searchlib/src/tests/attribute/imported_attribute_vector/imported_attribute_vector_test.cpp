@@ -20,6 +20,7 @@ using vespalib::eval::Value;
 using vespalib::eval::ValueType;
 using vespalib::eval::TensorSpec;
 using vespalib::eval::SimpleValue;
+using search::common::sortspec::MissingPolicy;
 
 Value::UP createTensor(const TensorSpec &spec) {
     return SimpleValue::from_spec(spec);
@@ -518,6 +519,8 @@ struct MockAttributeVector : NotImplementedAttribute {
     mutable const common::BlobConverter* _bc{nullptr};
     mutable bool _make_sort_blob_writer_called{false};
     mutable std::optional<bool> _ascending{};
+    mutable std::optional<MissingPolicy> _policy{};
+    mutable std::optional<std::string> _missing_value{};
 
     long _return_value{1234};
 
@@ -526,7 +529,9 @@ struct MockAttributeVector : NotImplementedAttribute {
     }
 
     bool is_sortable() const noexcept override { return true; }
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
+    std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                           common::sortspec::MissingPolicy policy,
+                                                           std::string_view missing_value) const override;
 
     // Not covered by NotImplementedAttribute
     void onCommit() override {}
@@ -544,11 +549,15 @@ struct MockSortBlobWriter : public ISortBlobWriter {
     }
 };
 
-std::unique_ptr<attribute::ISortBlobWriter>
-MockAttributeVector::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const {
+std::unique_ptr<ISortBlobWriter>
+MockAttributeVector::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                           search::common::sortspec::MissingPolicy policy,
+                                           std::string_view missing_value) const {
     _make_sort_blob_writer_called = true;
     _ascending = ascending;
     _bc = converter;
+    _policy = policy;
+    _missing_value = std::string(missing_value);
     return std::make_unique<MockSortBlobWriter>(*const_cast<MockAttributeVector*>(this));
 }
 
@@ -579,10 +588,12 @@ void check_make_sort_blob_writer_is_forwarded_with_remapped_lid() {
     int dummy_tag;
     void* ser_to = &dummy_tag;
     auto read_guard = f.get_imported_attr();
-    auto writer = read_guard->make_sort_blob_writer(true, &f.mock_converter);
+    auto writer = read_guard->make_sort_blob_writer(true, &f.mock_converter, MissingPolicy::AS, "my_missing");
     EXPECT_TRUE(f.mock_target->_make_sort_blob_writer_called);
     EXPECT_TRUE(f.mock_target->_ascending);
     EXPECT_EQ(&f.mock_converter, f.mock_target->_bc);
+    EXPECT_EQ(MissingPolicy::AS, f.mock_target->_policy);
+    EXPECT_EQ("my_missing", f.mock_target->_missing_value);
     EXPECT_EQ(f.mock_target->_return_value, writer->write(4, ser_to, 777)); // child lid 4 -> parent lid 7
     EXPECT_EQ(DocId(7), f.mock_target->_doc_id);
     EXPECT_EQ(ser_to, f.mock_target->_ser_to);

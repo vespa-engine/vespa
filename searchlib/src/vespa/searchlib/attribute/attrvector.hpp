@@ -119,10 +119,12 @@ public:
 
 template <typename F, typename B>
 std::unique_ptr<search::attribute::ISortBlobWriter>
-NumericDirectAttrVector<F, B>::make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const
+NumericDirectAttrVector<F, B>::make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,
+                                                     search::common::sortspec::MissingPolicy policy,
+                                                     std::string_view missing_value) const
 {
     if (!F::IsMultiValue()) {
-        return search::NumericDirectAttribute<B>::make_sort_blob_writer(ascending, converter);
+        return search::NumericDirectAttribute<B>::make_sort_blob_writer(ascending, converter, policy, missing_value);
     }
     if (ascending) {
         return std::make_unique<NumericDirectSortBlobWriter<BaseType, true>>(this->_data, this->_idx);
@@ -185,10 +187,12 @@ StringDirectAttrVector<F>::is_sortable() const noexcept
 
 template <typename F>
 std::unique_ptr<search::attribute::ISortBlobWriter>
-StringDirectAttrVector<F>::make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter) const
+StringDirectAttrVector<F>::make_sort_blob_writer(bool ascending, const search::common::BlobConverter* converter,
+                                                 search::common::sortspec::MissingPolicy policy,
+                                                 std::string_view missing_value) const
 {
     if (!F::IsMultiValue()) {
-        return search::StringDirectAttribute::make_sort_blob_writer(ascending, converter);
+        return search::StringDirectAttribute::make_sort_blob_writer(ascending, converter, policy, missing_value);
     }
     if (ascending) {
         return std::make_unique<StringDirectSortBlobWriter<true>>(this->_buffer, this->_offsets, this->_idx, converter);

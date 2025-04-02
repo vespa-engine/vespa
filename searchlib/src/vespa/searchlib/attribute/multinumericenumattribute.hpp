@@ -178,8 +178,12 @@ public:
 
 template <typename B, typename M>
 std::unique_ptr<attribute::ISortBlobWriter>
-MultiValueNumericEnumAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
+MultiValueNumericEnumAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
+                                                            search::common::sortspec::MissingPolicy policy,
+                                                            std::string_view missing_value) const
 {
+    (void) policy;
+    (void) missing_value;
     if (ascending) {
         return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, true>>(this->_mvMapping, this->_enumStore);
     } else {
