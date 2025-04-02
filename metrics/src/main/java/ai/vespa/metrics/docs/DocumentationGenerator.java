@@ -15,9 +15,13 @@ import ai.vespa.metrics.Unit;
 import ai.vespa.metrics.VespaMetrics;
 import ai.vespa.metrics.set.DefaultMetrics;
 import ai.vespa.metrics.set.MetricSet;
+import ai.vespa.metrics.set.MicrometerMetrics;
 import ai.vespa.metrics.set.VespaMetricSet;
 
+import java.util.Arrays;
 import java.util.Map;
+import java.util.stream.Stream;
+
 import static ai.vespa.metrics.docs.MetricDocumentation.writeMetricDocumentation;
 import static ai.vespa.metrics.docs.MetricSetDocumentation.writeMetricSetDocumentation;
 
@@ -46,7 +50,8 @@ public class DocumentationGenerator {
 
     private static Map<String, VespaMetrics[]> getMetrics() {
         return Map.of(
-                "Container", ContainerMetrics.values(),
+                "Container", Stream.concat(Arrays.stream(ContainerMetrics.values()), Arrays.stream(MicrometerMetrics.values()))
+                    .toArray(VespaMetrics[]::new),
                 "SearchNode", SearchNodeMetrics.values(),
                 "Storage", StorageMetrics.values(),
                 "Distributor", DistributorMetrics.values(),
