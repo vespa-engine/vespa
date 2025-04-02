@@ -20,6 +20,8 @@ import org.eclipse.lsp4j.TextDocumentItem;
 
 import ai.vespa.schemals.SchemaDiagnosticsHandler;
 import ai.vespa.schemals.SchemaMessageHandler;
+import ai.vespa.schemals.SchemaProgressHandler;
+import ai.vespa.schemals.SchemaProgressHandler.Progress;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.common.SchemaDiagnostic;
@@ -58,15 +60,17 @@ public class SchemaDocumentScheduler {
     private SchemaDiagnosticsHandler diagnosticsHandler;
     private SchemaIndex schemaIndex;
     private SchemaMessageHandler messageHandler;
+    private SchemaProgressHandler progressHandler;
     private Map<String, DocumentManager> workspaceFiles = new HashMap<>();
     private boolean reparseDescendants = true;
     private URI workspaceURI = null;
 
-    public SchemaDocumentScheduler(ClientLogger logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaMessageHandler messageHandler) {
+    public SchemaDocumentScheduler(ClientLogger logger, SchemaDiagnosticsHandler diagnosticsHandler, SchemaIndex schemaIndex, SchemaMessageHandler messageHandler, SchemaProgressHandler progressHandler) {
         this.logger = logger;
         this.diagnosticsHandler = diagnosticsHandler;
         this.schemaIndex = schemaIndex;
         this.messageHandler = messageHandler;
+        this.progressHandler = progressHandler;
     }
 
     public void updateFile(String fileURI, String content) {
@@ -313,23 +317,44 @@ public class SchemaDocumentScheduler {
 
         this.workspaceURI = workspaceURI;
 
-        //messageHandler.messageTrace("Scanning workspace: " + workspaceURI.toString());
-        messageHandler.logMessage(MessageType.Info, "Scanning workspace: " + workspaceURI.toString());
-
+        logger.info("Scanning workspace: " + workspaceURI.toString());
         setReparseDescendants(false);
-        for (String fileURI : FileUtils.findSchemaFiles(workspaceURI.toString(), this.logger)) {
-            //messageHandler.messageTrace("Parsing file: " + fileURI);
-            messageHandler.logMessage(MessageType.Info, "Parsing file: " + fileURI);
-            addDocument(fileURI);
+
+        List<String> schemaFiles = FileUtils.findSchemaFiles(workspaceURI.toString(), this.logger);
+        List<String> rankProfileFiles = FileUtils.findRankProfileFiles(workspaceURI.toString(), this.logger);
+
+        int totalFiles = schemaFiles.size() + rankProfileFiles.size();
+
+        Progress progress = null;
+        if (totalFiles > 15) {
+            progress = progressHandler.newWorkDoneProgress("Vespa Indexing workspace");
         }
 
-        for (String fileURI : FileUtils.findRankProfileFiles(workspaceURI.toString(), this.logger)) {
-            //messageHandler.messageTrace("Parsing file: " + fileURI);
-            messageHandler.logMessage(MessageType.Info, "Parsing file: " + fileURI);
+        for (int i = 0; i < totalFiles; i++) {
+            String fileURI;
+            if (i < schemaFiles.size()) {
+                fileURI = schemaFiles.get(i);
+            } else {
+                fileURI = rankProfileFiles.get(i - schemaFiles.size());
+            }
+
             addDocument(fileURI);
+
+            if (progress != null && (i % 5 == 0)) {
+                progress.partialResult(i + " of " + totalFiles + " files indexed.", i / totalFiles * 80); // maybe about of 80% of the time is used here?
+            }
         }
+
+        if (progress != null) {
+            progress.partialResult("Finishing...", 81);
+        }
+
         reparseInInheritanceOrder();
         setReparseDescendants(true);
+
+        if (progress != null) {
+            progress.end("Finished");
+        }
 
         this.workspaceStatus = WorkspaceStatus.SETUP_COMPLETED;
         logger.info("Workspace setup finished.");

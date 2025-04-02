@@ -62,12 +62,13 @@ public class SchemaParserTest {
         String directoryURI = new File(directoryPath).toURI().toString();
 
         TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        TestSchemaProgressHandler progressHandler = new TestSchemaProgressHandler();
         ClientLogger logger = new TestLogger(messageHandler);
         SchemaIndex schemaIndex = new SchemaIndex(logger);
 
         List<Diagnostic> diagnostics = new ArrayList<>();
         SchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(diagnostics);
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler, progressHandler);
 
         scheduler.setupWorkspace(URI.create(directoryURI));
 
