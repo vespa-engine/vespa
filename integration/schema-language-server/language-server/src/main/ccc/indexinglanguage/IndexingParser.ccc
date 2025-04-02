@@ -45,7 +45,7 @@ INJECT IndexingParser:
     private Linguistics linguistics;
     private Map<String, Embedder> embedders;
     private Map<String, FieldGenerator> generators;    
-    private AnnotatorConfig annotatorCfg;
+    private AnnotatorConfig globalAnnotatorConfig;
 
     private PrintStream logger = new PrintStream(
         new OutputStream() {
@@ -81,8 +81,8 @@ INJECT IndexingParser:
         return this;
     }
 
-    public IndexingParser setAnnotatorConfig(AnnotatorConfig cfg) {
-        annotatorCfg = cfg;
+    public IndexingParser setGlobalAnnotatorConfig(AnnotatorConfig config) {
+        globalAnnotatorConfig = config;
         return this;
     }
 
@@ -468,11 +468,11 @@ Expression embedExp() :
 
 Expression exactExp() :
 {
-    int maxTokenLength = annotatorCfg.getMaxTokenLength();
+    AnnotatorConfig config = globalAnnotatorConfig;
 }
  
-    ( <EXACT>  [ <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerValue() ] )
-    { return new ExactExpression(maxTokenLength); }
+    ( <EXACT> [ config = annotatorConfig() ] )
+    { return new ExactExpression(config); }
 ;
 
 Expression flattenExp() : { }
@@ -757,16 +757,16 @@ Expression thisExp() : { }
 
 Expression tokenizeExp() :
 {
-    AnnotatorConfig cfg = annotatorCfg;
+    AnnotatorConfig config = globalAnnotatorConfig;
 }
  
-    ( <TOKENIZE> [ cfg = tokenizeCfg() ] )
-    { return new TokenizeExpression(linguistics, cfg); }
+    ( <TOKENIZE> [ config = annotatorConfig() ] )
+    { return new TokenizeExpression(linguistics, config); }
 ;
 
-AnnotatorConfig tokenizeCfg() :
+AnnotatorConfig annotatorConfig() :
 {
-    AnnotatorConfig val = new AnnotatorConfig(annotatorCfg);
+    AnnotatorConfig val = new AnnotatorConfig(globalAnnotatorConfig);
     String str = "SHORTEST";
     Integer maxLength;
     Integer maxTermOccurrences;

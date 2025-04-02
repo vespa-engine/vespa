@@ -9,6 +9,8 @@ import com.yahoo.language.process.StemMode;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
 import com.yahoo.vespa.indexinglanguage.linguistics.LinguisticsAnnotator;
 
+import java.util.Objects;
+
 /**
  * @author Simon Thoresen Hult
  */
@@ -55,39 +57,19 @@ public final class TokenizeExpression extends Expression {
 
     @Override
     public String toString() {
-        StringBuilder ret = new StringBuilder();
-        ret.append("tokenize");
-        if (config.getRemoveAccents()) {
-            ret.append(" normalize");
-        }
-        if ( ! config.getLowercase()) {
-            ret.append(" keep-case");
-        }
-        if (config.getStemMode() != StemMode.NONE) {
-            ret.append(" stem:\""+config.getStemMode()+"\"");
-        }
-        if (config.hasNonDefaultMaxTokenizeLength()) {
-            ret.append(" max-length:" + config.getMaxTokenizeLength());
-        }
-        if (config.hasNonDefaultMaxTokenLength()) {
-            ret.append(" max-token-length:" + config.getMaxTokenLength());
-        }
-        if (config.hasNonDefaultMaxTermOccurrences()) {
-            ret.append(" max-occurrences:" + config.getMaxTermOccurrences());
-        }
-        return ret.toString();
+        return "tokenize" + config.parameterString();
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (!(obj instanceof TokenizeExpression rhs)) return false;
-        if (!config.equals(rhs.config)) return false;
+    public boolean equals(Object o) {
+        if (!(o instanceof TokenizeExpression other)) return false;
+        if (!config.equals(other.config)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return getClass().hashCode() + config.hashCode();
+        return Objects.hash(getClass(), config);
     }
 
 }

@@ -6,7 +6,9 @@ import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
+import com.yahoo.schema.document.Case;
 import com.yahoo.schema.document.MatchType;
+import com.yahoo.schema.document.Matching;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Stemming;
 import com.yahoo.vespa.indexinglanguage.ExpressionSearcher;
@@ -60,7 +62,7 @@ public class ExactMatch extends Processor {
         } else { // exact
             String exactTerminator = DEFAULT_EXACT_TERMINATOR;
             if (field.getMatching().getExactMatchTerminator() != null
-                && ! field.getMatching().getExactMatchTerminator().equals("")) {
+                && !field.getMatching().getExactMatchTerminator().isEmpty()) {
                 exactTerminator = field.getMatching().getExactMatchTerminator();
             } else {
                 info(schema, field,
@@ -76,25 +78,32 @@ public class ExactMatch extends Processor {
         }
         ScriptExpression script = field.getIndexingScript();
         if (new ExpressionSearcher<>(IndexExpression.class).containedIn(script)) {
-            var maxTokenLength = field.getMatching().maxTokenLength();
-            if (maxTokenLength == null) {
-                maxTokenLength = AnnotatorConfig.getDefaultMaxTokenLength();
-            }
-            field.setIndexingScript(schema.getName(), (ScriptExpression)new MyProvider(schema, maxTokenLength).convert(field.getIndexingScript()));
+
+            var exactTransformer = new ExactScriptTransformer(schema, toAnnotatorConfig(field.getMatching()));
+            field.setIndexingScript(schema.getName(), (ScriptExpression)exactTransformer.convert(field.getIndexingScript()));
         }
+    }
+
+    private AnnotatorConfig toAnnotatorConfig(Matching matching) {
+        var config = new AnnotatorConfig();
+        if (matching.maxTokenLength() != null)
+            config.setMaxTokenLength(matching.maxTokenLength());
+        if (matching.getCase() == Case.CASED)
+            config.setLowercase(false);
+        return config;
     }
 
     private void exactMatchSettingsForField(SDField field) {
         field.getRanking().setFilter(true);
     }
 
-    private static class MyProvider extends TypedTransformProvider {
+    private static class ExactScriptTransformer extends TypedTransformProvider {
 
-        private final int maxTokenLength;
+        private final AnnotatorConfig config;
 
-        MyProvider(Schema schema, int maxTokenLength) {
+        ExactScriptTransformer(Schema schema, AnnotatorConfig config) {
             super(ExactExpression.class, schema);
-            this.maxTokenLength = maxTokenLength;
+            this.config = config;
         }
 
         @Override
@@ -104,14 +113,12 @@ public class ExactMatch extends Processor {
 
         @Override
         protected Expression newTransform(DataType fieldType) {
-            Expression exp = new ExactExpression(maxTokenLength);
-            if (fieldType instanceof CollectionDataType) {
-                exp = new ForEachExpression(exp);
-            }
-            return exp;
+            Expression expression = new ExactExpression(config);
+            if (fieldType instanceof CollectionDataType)
+                expression = new ForEachExpression(expression);
+            return expression;
         }
 
     }
 
 }
-

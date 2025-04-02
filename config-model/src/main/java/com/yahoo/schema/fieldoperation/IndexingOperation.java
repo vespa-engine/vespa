@@ -43,7 +43,6 @@ public class IndexingOperation implements FieldOperation {
             SimpleCharStream input, boolean multiLine, Linguistics linguistics, Map<String, Embedder> embedders, 
             Map<String, FieldGenerator> generators) throws ParseException {
         ScriptParserContext config = new ScriptParserContext(linguistics, embedders, generators);
-        config.setAnnotatorConfig(new AnnotatorConfig());
         config.setInputStream(input);
         ScriptExpression exp;
         try {

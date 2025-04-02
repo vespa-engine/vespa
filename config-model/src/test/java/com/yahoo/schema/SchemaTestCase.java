@@ -568,7 +568,7 @@ public class SchemaTestCase {
     }
 
     @Test
-    void testCasedMatchingFields() throws Exception {
+    void testCasedMatching() throws Exception {
         String schema =
                 """
                 schema doc {
@@ -589,6 +589,39 @@ public class SchemaTestCase {
         var ilConfigBuilder = new IlscriptsConfig.Builder();
         derived.getIndexingScript().getConfig(ilConfigBuilder);
         assertEquals("clear_state | guard { input myString | tokenize normalize keep-case stem:\"BEST\" | index myString; }",
+                     ilConfigBuilder.build().ilscript().get(0).content(0));
+
+
+        var indexInfoConfigBuilder = new IndexInfoConfig.Builder();
+        derived.getIndexInfo().getConfig(indexInfoConfigBuilder);
+        assertFalse(indexInfoConfigBuilder.build().toString().contains("lowercase"));
+    }
+
+    @Test
+    void testCasedWordMatching() throws Exception {
+        String schema =
+                """
+                schema doc {
+
+                    document doc {
+
+                        field myString type string {
+                            indexing: index
+                            match {
+                                word
+                                cased
+                            }
+                        }
+                    }
+                }""";
+        ApplicationBuilder builder = new ApplicationBuilder(new DeployLoggerStub());
+        builder.addSchema(schema);
+        var application = builder.build(true);
+        var derived = new DerivedConfiguration(application.schemas().get("doc"), application.rankProfileRegistry());
+
+        var ilConfigBuilder = new IlscriptsConfig.Builder();
+        derived.getIndexingScript().getConfig(ilConfigBuilder);
+        assertEquals("clear_state | guard { input myString | exact keep-case | index myString; }",
                      ilConfigBuilder.build().ilscript().get(0).content(0));
 
 
