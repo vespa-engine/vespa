@@ -26,6 +26,7 @@ import ai.vespa.schemals.parser.yqlplus.ast.where_fun;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.YQLNode;
+import ai.vespa.schemals.tree.Node.LanguageType;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class RootCompletion implements CompletionProvider {
@@ -36,13 +37,13 @@ public class RootCompletion implements CompletionProvider {
     ) {}
 
     private final List<StatementPair> statementOrder = new ArrayList<StatementPair>() {{
-        add(new StatementPair(select_statement.class, "SELECT"));
-        add(new StatementPair(select_source.class, "FROM"));
-        add(new StatementPair(where_fun.class, "WHERE"));
-        add(new StatementPair(orderby_fun.class, "ORDER BY"));
-        add(new StatementPair(limit_fun.class, "LIMIT"));
-        add(new StatementPair(offset_fun.class, "OFFSET"));
-        add(new StatementPair(timeout_fun.class, "TIMEOUT"));
+        add(new StatementPair(select_statement.class, "select"));
+        add(new StatementPair(select_source.class, "from"));
+        add(new StatementPair(where_fun.class, "where"));
+        add(new StatementPair(orderby_fun.class, "order by"));
+        add(new StatementPair(limit_fun.class, "limit"));
+        add(new StatementPair(offset_fun.class, "offset"));
+        add(new StatementPair(timeout_fun.class, "timeout"));
     }};
 
     private int statementOrderListContains(Class<?> cls) {
@@ -55,7 +56,7 @@ public class RootCompletion implements CompletionProvider {
         return -1;
     }
 
-    private List<String> getLasterStatement(YQLNode node) {
+    private List<String> getLastestStatement(YQLNode node) {
         YQLNode iterator = node;
         YQLNode lastIterator = node;
         while (!iterator.isASTInstance(query_statement.class) && iterator != null) {
@@ -72,7 +73,11 @@ public class RootCompletion implements CompletionProvider {
             }
 
             lastIterator = iterator;
-            iterator = iterator.getParent().getYQLNode();
+            if (iterator.getParent() == null) {
+                iterator = null;
+            } else {
+                iterator = iterator.getParent().getYQLNode();
+            }
         }
 
         return List.of();
@@ -85,8 +90,6 @@ public class RootCompletion implements CompletionProvider {
         Position searchPos = context.startOfWord();
         if (searchPos == null)searchPos = context.position;
 
-        YQLUtils.printTree(context.logger, context.document.getRootYQLNode());
-
         Node last = CSTUtils.getLastCleanNode(context.document.getRootYQLNode(), searchPos);
 
         if (last == null) {
@@ -97,15 +100,25 @@ public class RootCompletion implements CompletionProvider {
             throw new IllegalArgumentException("Unexpected node type, expected a YQLNode");
         }
 
-        YQLNode node = last.getYQLNode();
-        YQLUtils.printTree(context.logger, node);
-
-        if (node.isASTInstance(YQLNode.class)) {
-            ret.add(CompletionUtils.constructSnippet("SELECT", "SELECT $0"));
+        if (last.getLanguageType() == LanguageType.GROUPING) {
             return ret;
         }
 
-        List<String> completionStrings = getLasterStatement(node);
+        YQLNode node = last.getYQLNode();
+
+        if (node.getLanguageType() == LanguageType.CUSTOM && node.getText() == "|") {
+            return ret;
+        }
+
+        context.logger.info("YQL comp:");
+        YQLUtils.printTree(context.logger, node);
+
+        if (node.isASTInstance(YQLNode.class)) {
+            ret.add(CompletionUtils.constructSnippet("select", "select ${1:*} from $2 where $0"));
+            return ret;
+        }
+
+        List<String> completionStrings = getLastestStatement(node);
 
         for (String completionStr : completionStrings) {
             ret.add(CompletionUtils.constructSnippet(completionStr, completionStr + " $0"));

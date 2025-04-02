@@ -8,6 +8,8 @@ import org.eclipse.lsp4j.CompletionItem;
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.yqlplus.completion.provider.RootCompletion;
+import ai.vespa.schemals.lsp.yqlplus.completion.provider.RootGroupingCompletion;
+import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 /**
  * Responsible for LSP textDocument/completion requests for YQL language
@@ -15,11 +17,15 @@ import ai.vespa.schemals.lsp.yqlplus.completion.provider.RootCompletion;
 public class YQLCompletion {
 
     private static CompletionProvider[] providers = {
-        new RootCompletion()
+        new RootCompletion(),
+        new RootGroupingCompletion()
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventCompletionContext context, PrintStream errorLogger) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
+
+        context.logger.info("Root tree:");
+        YQLUtils.printTree(context.logger, context.document.getRootYQLNode());
 
         for (CompletionProvider provider : providers) {
             try {
