@@ -1030,13 +1030,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private ZoneEndpoint zoneEndpoint(ConfigModelContext context, ClusterSpec.Id cluster) {
-        InstanceName instance = context.properties().applicationId().instance();
-        ZoneId zone = ZoneId.from(context.properties().zone().environment(),
-                                  context.properties().zone().region());
         return context
                 .getApplicationPackage()
                 .getDeploymentSpec()
-                .zoneEndpoint(instance, zone, cluster, context.featureFlags().useNonPublicEndpointForTest());
+                .zoneEndpoint(context.properties().applicationId().instance(),
+                              context.properties().zone(),
+                              cluster,
+                              context.featureFlags().useNonPublicEndpointForTest());
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
