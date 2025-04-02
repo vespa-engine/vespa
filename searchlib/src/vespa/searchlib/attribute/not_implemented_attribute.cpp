@@ -119,13 +119,8 @@ NotImplementedAttribute::is_sortable() const noexcept
     return false;
 }
 
-long
-NotImplementedAttribute::onSerializeForAscendingSort(DocId, void *, long, const common::BlobConverter *) const {
-    notImplemented();
-}
-
-long
-NotImplementedAttribute::onSerializeForDescendingSort(DocId, void *, long, const common::BlobConverter *) const {
+std::unique_ptr<attribute::ISortBlobWriter>
+NotImplementedAttribute::make_sort_blob_writer(bool, const common::BlobConverter*) const {
     notImplemented();
 }
 
