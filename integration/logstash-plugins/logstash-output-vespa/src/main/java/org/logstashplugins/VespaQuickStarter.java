@@ -83,14 +83,18 @@ public class VespaQuickStarter {
                     if (type != null) {
                         String existingType = detectedFields.get(fieldName);
                         if (existingType != null && !existingType.equals(type)) {
-                            logger.warn("Field {} type changed from {} to {}", fieldName, existingType, type);
+                            logger.warn("Field '{}' type changed from {} to {}", fieldName, existingType, type);
                             String resolvedType = appPackageWriter.resolveTypeConflict(existingType, type);
                             if (resolvedType != null) {
-                                logger.info("Resolved type conflict for field {}: using type {}", fieldName, resolvedType);
+                                logger.info("Resolved type conflict for field '{}': using type {}", fieldName, resolvedType);
                                 type = resolvedType;
                             } else {
-                                logger.warn("Could not resolve type conflict for field {}, simply switching to type {}. But this implies that previous documents might throw errors when indexed.", fieldName, type);
+                                logger.warn("Could not resolve type conflict for field '{}', simply switching to type '{}'. But this implies that previous documents might throw errors when indexed.", fieldName, type);
                             }
+                        }
+
+                        if (existingType == null) {
+                            logger.info("Detected new field '{}' type: {}", fieldName, type);
                         }
                         detectedFields.put(fieldName, type);
                     }
