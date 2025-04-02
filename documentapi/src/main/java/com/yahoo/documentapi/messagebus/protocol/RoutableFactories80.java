@@ -26,6 +26,7 @@ import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
 import com.yahoo.vespa.objects.BufferSerializer;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -33,6 +34,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -73,7 +75,8 @@ abstract class RoutableFactories80 {
                 protoStream.checkNoSpaceLeft();
                 return buf;
             } catch (IOException | RuntimeException e) {
-                log.severe("Error during Protobuf encoding of message type %s: %s".formatted(apiClass.getSimpleName(), e.getMessage()));
+                log.severe("Error during Protobuf encoding of message type %s: %s".formatted(apiClass.getSimpleName(), Exceptions.toMessageString(e)));
+                log.log(Level.FINE, "Protobuf encode error has exception trace:", e);
                 return null;
             }
         }
