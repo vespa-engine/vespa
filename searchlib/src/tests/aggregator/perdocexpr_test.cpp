@@ -1430,7 +1430,7 @@ TEST(PerDocExprTest, testGrouping) {
                                         .addResult(std::move(result1))
                                         .addResult(std::move(result2))));
 
-    grouping.configureStaticStuff(ConfigureStaticParams(0, 0));
+    grouping.configureStaticStuff(ConfigureStaticParams(nullptr, nullptr));
     grouping.aggregate(0u, 10u);
     const Group::GroupList &groups = grouping.getRoot().groups();
     EXPECT_EQ(grouping.getRoot().getChildrenSize(), 9u);
@@ -1491,7 +1491,7 @@ TEST(PerDocExprTest, testGrouping2) {
                               .setExpression(createPredefRangeBucket(attr1))
                               .addResult(std::move(result1))));
 
-    grouping.configureStaticStuff(ConfigureStaticParams(0, 0));
+    grouping.configureStaticStuff(ConfigureStaticParams(nullptr, nullptr));
     grouping.aggregate(0u, 10u);
     const Group::GroupList &groups = grouping.getRoot().groups();
     EXPECT_EQ(grouping.getRoot().getChildrenSize(), 5u);

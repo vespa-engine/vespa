@@ -69,7 +69,7 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
                         vespalib::Stash &stash)
 {
     const IAttributeVector *attribute = env.getAttributeContext().getAttribute(attrName);
-    if (attribute == NULL) {
+    if (attribute == nullptr) {
         Issue::report("tensor_from_labels feature: The attribute vector '%s' was not found."
                       " Returning empty tensor.", attrName.c_str());
         return ConstantTensorExecutor::createEmpty(valueType, stash);

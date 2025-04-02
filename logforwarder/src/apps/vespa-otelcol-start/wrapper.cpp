@@ -16,7 +16,7 @@ namespace {
 std::string fixDir(const std::string &parent, const std::string &subdir) {
     auto dirname = parent + "/" + subdir;
     DIR *dp = opendir(dirname.c_str());
-    if (dp == NULL) {
+    if (dp == nullptr) {
         if (errno != ENOENT || mkdir(dirname.c_str(), 0755) != 0) {
             LOG(warning, "Could not create directory '%s'", dirname.c_str());
             perror(dirname.c_str());
@@ -37,7 +37,7 @@ void  writeConfig(const std::string &config, const std::string &path) {
     LOG(info, "got config, writing %s", path.c_str());
     std::string tmpPath = path + ".new";
     FILE *fp = fopen(tmpPath.c_str(), "w");
-    if (fp == NULL) {
+    if (fp == nullptr) {
         LOG(warning, "could not open '%s' for write", tmpPath.c_str());
         return;
     }

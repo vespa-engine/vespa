@@ -22,7 +22,7 @@ RejectFilter::addExactRejectRule(Logger::LogLevel level, const std::string & mes
 bool
 RejectFilter::shouldReject(Logger::LogLevel level, const char * message)
 {
-    if (message == NULL) {
+    if (message == nullptr) {
         return false;
     }
     for (size_t i = 0; i < _rejectRules.size(); i++) {
@@ -44,7 +44,7 @@ RejectFilter::RejectRule::shouldReject(Logger::LogLevel level, const char * mess
                 return true;
             }
         } else {
-            if (strstr(message, _message.c_str()) != NULL) {
+            if (strstr(message, _message.c_str()) != nullptr) {
                 return true;
             }
         }

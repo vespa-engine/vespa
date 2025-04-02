@@ -32,7 +32,7 @@ LogTarget *
 LogTarget::makeTarget(const char *const target)
 {
     if (strncmp(target, "fd:", 3) == 0) {
-        int fd_spec = strtol(target + 3, NULL, 0);
+        int fd_spec = strtol(target + 3, nullptr, 0);
         if (fd_spec > 0) {
             return new LogTargetFd(fd_spec, target);
         }

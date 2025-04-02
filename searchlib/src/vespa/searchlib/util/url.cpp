@@ -234,8 +234,7 @@ void
 URL::SetURL(const unsigned char *url, size_t length)
 {
     int len = 0;
-    unsigned char
-        *p, *ptmp, *siteowner = 0, *filename = 0, *extension = 0;
+    unsigned char *p, *ptmp, *siteowner = nullptr, *filename = nullptr, *extension = nullptr;
 
     Reset();
     if (length > MAX_URL_LEN) {

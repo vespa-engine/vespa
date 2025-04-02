@@ -36,10 +36,10 @@ struct Fixture
         _type = argv[1];
         _strict = std::string(argv[2]) == std::string("strict");
         _optimize = std::string(argv[3]) == std::string("optimize");
-        _numSearch = strtoul(argv[4], NULL, 0);
-        _numDocs = strtoul(argv[5], NULL, 0);
+        _numSearch = strtoul(argv[4], nullptr, 0);
+        _numDocs = strtoul(argv[5], nullptr, 0);
         for (int i(6); i < argc; i++) {
-            _fillLimits.push_back((RAND_MAX/100) * strtoul(argv[i], NULL, 0));
+            _fillLimits.push_back((RAND_MAX/100) * strtoul(argv[i], nullptr, 0));
         }
     }
     ~Fixture();

@@ -16,7 +16,7 @@ namespace fsa {
 
 // {{{ SingletonExitHandler::_instance
 
-SingletonExitHandler* SingletonExitHandler::_instance = NULL;
+SingletonExitHandler* SingletonExitHandler::_instance = nullptr;
 
 // }}}
 
@@ -45,7 +45,7 @@ SingletonExitHandler::~SingletonExitHandler()
 
 SingletonExitHandler* SingletonExitHandler::instance()
 {
-  if (_instance == NULL) {
+  if (_instance == nullptr) {
     _instance = new SingletonExitHandler();
   }
   return _instance;

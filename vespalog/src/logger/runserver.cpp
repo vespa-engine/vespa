@@ -126,7 +126,7 @@ int
 PidFile::readPid()
 {
     FILE *pf = fopen(_pidfile.c_str(), "r");
-    if (pf == NULL) return 0;
+    if (pf == nullptr) return 0;
     char buf[100];
     strcpy(buf, "0");
     char *fgetsres = fgets(buf, 100, pf);
@@ -202,7 +202,7 @@ int loop(const char *svc, char * const * run)
 
     LOG(debug, "started %s (pid %d)", run[0], (int)child);
     std::string torun = run[0];
-    for (char * const *arg = (run + 1); *arg != NULL; ++arg) {
+    for (char * const *arg = (run + 1); *arg != nullptr; ++arg) {
         torun += " ";
         torun += *arg;
     }
@@ -345,7 +345,7 @@ int main(int argc, char *argv[])
     int restart = 0;
     const char *service = "runserver";
     const char *pidfile = "vespa-runserver.pid"; // XXX bad default?
-    const char *killcmd = NULL;
+    const char *killcmd = nullptr;
 
     signal(SIGQUIT, SIG_IGN);
 
@@ -376,7 +376,7 @@ int main(int argc, char *argv[])
     }
 
     const char *envROOT = getenv("ROOT");
-    if (envROOT == NULL || envROOT[0] == '\0') {
+    if (envROOT == nullptr || envROOT[0] == '\0') {
         envROOT = vespa::Defaults::vespaHome();
         setenv("ROOT", envROOT, 1);
     }
@@ -397,7 +397,7 @@ int main(int argc, char *argv[])
     if (doStop) {
         if (mypf.anotherRunning()) {
             int pid = mypf.readPid();
-            if (killcmd != NULL) {
+            if (killcmd != nullptr) {
                 fprintf(stdout, "%s was running with pid %d, running '%s' to stop it\n",
                         service, pid, killcmd);
                 if (system(killcmd) != 0) {
@@ -457,7 +457,7 @@ int main(int argc, char *argv[])
         mypf.cleanUp();
         return 0;
     }
-    if (optind >= argc || killcmd != NULL) {
+    if (optind >= argc || killcmd != nullptr) {
         return usage(argv[0], 1);
     }
 

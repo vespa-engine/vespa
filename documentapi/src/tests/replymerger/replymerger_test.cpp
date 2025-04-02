@@ -238,7 +238,7 @@ TEST(ReplyMergerTest, merging_zero_replies_returns_default_empty_reply)
     ASSERT_FALSE(ret.isSuccessful());
     ASSERT_TRUE(ret.hasGeneratedReply());
     std::unique_ptr<mbus::Reply> gen(ret.releaseGeneratedReply());
-    ASSERT_TRUE(dynamic_cast<mbus::EmptyReply*>(gen.get()) != 0);
+    ASSERT_TRUE(dynamic_cast<mbus::EmptyReply*>(gen.get()) != nullptr);
     assertReplyErrorsMatch(*gen, {});
 }
 

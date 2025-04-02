@@ -21,7 +21,7 @@ struct SubSubMetricSet : public MetricSet {
     DoubleAverageMetric average2;
     SumMetric<DoubleAverageMetric> averageSum;
 
-    explicit SubSubMetricSet(const std::string & name, MetricSet* owner = 0);
+    explicit SubSubMetricSet(const std::string & name, MetricSet* owner = nullptr);
     ~SubSubMetricSet() override;
     MetricSet* clone(std::vector<Metric::UP> &ownerList, CopyType copyType,
                      metrics::MetricSet* owner, bool includeUnused) const override;
@@ -153,7 +153,7 @@ void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *na
 void ASSERT_VALUE(int32_t value, const MetricSnapshot & snapshot, const char *name)
 {
     const Metric* _metricValue_((snapshot).getMetrics().getMetric(name));
-    if (_metricValue_ == 0) {
+    if (_metricValue_ == nullptr) {
         FAIL() << ("Metric value '" + std::string(name) + "' not found in snapshot");
     }
     EXPECT_EQ(value, int32_t(_metricValue_->getLongValue("value")));

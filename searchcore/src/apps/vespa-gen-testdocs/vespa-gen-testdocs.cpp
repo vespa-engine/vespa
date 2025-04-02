@@ -675,20 +675,20 @@ GenTestDocsApp::getOptions(int argc, char **argv)
     int c;
     int longopt_index = 0;
     static struct option longopts[] = {
-        { "basedir", 1, NULL, 0 },
-        { "consttextfield", 1, NULL, 0 },
-        { "prefixtextfield", 1, NULL, 0 },
-        { "randtextfield", 1, NULL, 0 },
-        { "modtextfield", 1, NULL, 0 },
-        { "idtextfield", 1, NULL, 0 },
-        { "randintfield", 1, NULL, 0 },
-        { "docidlimit", 1, NULL, 0 },
-        { "mindocid", 1, NULL, 0 },
-        { "numwords", 1, NULL, 0 },
-        { "doctype", 1, NULL, 0 },
-        { "headers", 0, NULL, 0 }, 
-        { "json", 0, NULL, 0 },
-        { NULL, 0, NULL, 0 }
+        { "basedir", 1, nullptr, 0 },
+        { "consttextfield", 1, nullptr, 0 },
+        { "prefixtextfield", 1, nullptr, 0 },
+        { "randtextfield", 1, nullptr, 0 },
+        { "modtextfield", 1, nullptr, 0 },
+        { "idtextfield", 1, nullptr, 0 },
+        { "randintfield", 1, nullptr, 0 },
+        { "docidlimit", 1, nullptr, 0 },
+        { "mindocid", 1, nullptr, 0 },
+        { "numwords", 1, nullptr, 0 },
+        { "doctype", 1, nullptr, 0 },
+        { "headers", 0, nullptr, 0 },
+        { "json", 0, nullptr, 0 },
+        { nullptr, 0, nullptr, 0 }
     };
     enum longopts_enum {
         LONGOPT_BASEDIR,
@@ -766,7 +766,7 @@ GenTestDocsApp::getOptions(int argc, char **argv)
                 _json = true;
                 break;
             default:
-                if (optarg != NULL) {
+                if (optarg != nullptr) {
                     LOG(error,
                         "longopt %s with arg %s",
                         longopts[longopt_index].name, optarg);

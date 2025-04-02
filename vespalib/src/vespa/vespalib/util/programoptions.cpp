@@ -113,7 +113,7 @@ std::string ProgramOptions::OptionParser::getOptSyntaxString() const
 
 ProgramOptions::ProgramOptions()
     : _argc(0),
-      _argv(0),
+      _argv(nullptr),
       _options(),
       _optionMap(),
       _setOptions(),

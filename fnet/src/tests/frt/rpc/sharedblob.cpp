@@ -99,11 +99,11 @@ struct ServerSampler : public FRT_Invokable
     FRT_RPCRequest *clientReq;
     FRT_RPCRequest *serverReq;
 
-    ServerSampler(DataSet &ds, FRT_RPCRequest *cr) : dataSet(ds), clientReq(cr), serverReq(0) {}
+    ServerSampler(DataSet &ds, FRT_RPCRequest *cr) : dataSet(ds), clientReq(cr), serverReq(nullptr) {}
 
     void RPC_test(FRT_RPCRequest *req)
     {
-        if (clientReq != 0) {
+        if (clientReq != nullptr) {
             dataSet.sample(*clientReq->GetParams()); // client params after drop
         }
 
@@ -223,7 +223,7 @@ TEST("testImplicitShared") {
 
     target->InvokeSync(req, 30.0);
 
-    if (serverSampler.serverReq != 0) {
+    if (serverSampler.serverReq != nullptr) {
         dataSet.sample(*serverSampler.serverReq->GetReturn()); // server return after drop
     }
     dataSet.sample(*req->GetReturn()); // client return before drop
@@ -261,7 +261,7 @@ TEST("testImplicitShared") {
         EXPECT_TRUE(dataSet.blobs[i + 19].check(0, 0));
     }
 
-    if (serverSampler.serverReq != 0) {
+    if (serverSampler.serverReq != nullptr) {
         serverSampler.serverReq->internal_subref();
     }
     req->internal_subref();

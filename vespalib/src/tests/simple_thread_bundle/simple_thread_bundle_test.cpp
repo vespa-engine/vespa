@@ -169,7 +169,7 @@ TEST_F("require that bundle pool gives out bundles", SimpleThreadBundle::Pool(5)
 
 TEST_F("require that bundles do not need to be put back on the pool", SimpleThreadBundle::Pool(5)) {
     SimpleThreadBundle::UP b1 = f1.obtain();
-    ASSERT_TRUE(b1.get() != 0);
+    ASSERT_TRUE(b1.get() != nullptr);
     EXPECT_EQUAL(5u, b1->size());
 }
 
@@ -183,7 +183,7 @@ TEST_F("require that bundle pool reuses bundles", SimpleThreadBundle::Pool(5)) {
 }
 
 TEST_MT_FF("require that bundle pool works with multiple threads", 32, SimpleThreadBundle::Pool(3),
-           std::vector<SimpleThreadBundle*>(num_threads, 0))
+           std::vector<SimpleThreadBundle*>(num_threads, nullptr))
 {
     SimpleThreadBundle::Pool::Guard bundle = f1.getBundle();
     EXPECT_EQUAL(3u, bundle.bundle().size());

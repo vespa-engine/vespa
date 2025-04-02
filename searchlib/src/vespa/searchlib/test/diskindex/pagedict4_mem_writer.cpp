@@ -8,9 +8,9 @@ namespace search::diskindex::test {
 PageDict4MemWriter::PageDict4MemWriter(uint32_t chunkSize, uint64_t numWordIds, uint32_t ssPad, uint32_t spPad, uint32_t pPad)
     : _encoders(chunkSize, numWordIds),
       _buffers(_encoders.sse, _encoders.spe, _encoders.pe),
-      _ssw(NULL),
-      _spw(NULL),
-      _pw(NULL)
+      _ssw(nullptr),
+      _spw(nullptr),
+      _pw(nullptr)
 {
     _buffers.startPad(ssPad, spPad, pPad);
     allocWriters();

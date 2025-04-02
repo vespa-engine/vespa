@@ -23,7 +23,7 @@ void PropReader::Process(const char* filename) {
     }
     char  line[BUFLEN];
     char* linep;
-    while ((linep = propfile.ReadLine(line, BUFLEN - 1)) != NULL) {
+    while ((linep = propfile.ReadLine(line, BUFLEN - 1)) != nullptr) {
         int   i;
         char* key;
         if (line[0] == '#') continue; // skip comments

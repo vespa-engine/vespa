@@ -15,7 +15,7 @@ int32_t convertValue(const ::vespalib::slime::Inspector & __inspector) {
     switch (__inspector.type().getId()) {
         case LONG::ID:   return static_cast<int32_t>(__inspector.asLong());
         case DOUBLE::ID: return static_cast<int32_t>(__inspector.asDouble());
-        case STRING::ID: return static_cast<int32_t>(strtoll(__inspector.asString().make_string().c_str(), 0, 0));
+        case STRING::ID: return static_cast<int32_t>(strtoll(__inspector.asString().make_string().c_str(), nullptr, 0));
     }
     throw InvalidConfigException(make_string("Expected int32_t, but got incompatible config type %u", __inspector.type().getId()));
 }
@@ -25,7 +25,7 @@ int64_t convertValue(const ::vespalib::slime::Inspector & __inspector) {
     switch (__inspector.type().getId()) {
         case LONG::ID:   return static_cast<int64_t>(__inspector.asLong());
         case DOUBLE::ID: return static_cast<int64_t>(__inspector.asDouble());
-        case STRING::ID: return static_cast<int64_t>(strtoll(__inspector.asString().make_string().c_str(), 0, 0));
+        case STRING::ID: return static_cast<int64_t>(strtoll(__inspector.asString().make_string().c_str(), nullptr, 0));
     }
     throw InvalidConfigException(make_string("Expected int64_t, but got incompatible config type %u", __inspector.type().getId()));
 }
@@ -35,7 +35,7 @@ double convertValue(const ::vespalib::slime::Inspector & __inspector) {
     switch (__inspector.type().getId()) {
         case LONG::ID:   return static_cast<double>(__inspector.asLong());
         case DOUBLE::ID: return static_cast<double>(__inspector.asDouble());
-        case STRING::ID: return static_cast<double>(vespalib::locale::c::strtod(__inspector.asString().make_string().c_str(), 0));
+        case STRING::ID: return static_cast<double>(vespalib::locale::c::strtod(__inspector.asString().make_string().c_str(), nullptr));
     }
     throw InvalidConfigException(make_string("Expected double, but got incompatible config type %u", __inspector.type().getId()));
 }

@@ -27,8 +27,8 @@ MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
       _currSlobrok(""),
       _rpc_ms(100),
       _backOff(),
-      _target(0),
-      _req(0)
+      _target(nullptr),
+      _req(nullptr)
 {
     _configurator->poll();
     if (!_slobrokSpecs.ok()) {
@@ -41,12 +41,12 @@ MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
 MirrorAPI::~MirrorAPI()
 {
     Kill();
-    _configurator.reset(0);
-    if (_req != 0) {
+    _configurator.reset();
+    if (_req != nullptr) {
         _req->Abort();
         _req->internal_subref();
     }
-    if (_target != 0) {
+    if (_target != nullptr) {
         _target->internal_subref();
     }
 }
@@ -203,13 +203,13 @@ MirrorAPI::handleIncrementalFetch()
 void
 MirrorAPI::handleReconfig()
 {
-    if (_configurator->poll() && _target != 0) {
+    if (_configurator->poll() && _target != nullptr) {
         if (! _slobrokSpecs.contains(_currSlobrok)) {
             std::string cps = _slobrokSpecs.logString();
             LOG(warning, "current server %s not in list of location brokers: %s",
                 _currSlobrok.c_str(), cps.c_str());
             _target->internal_subref();
-            _target = 0;
+            _target = nullptr;
         }
     }
 }
@@ -223,10 +223,10 @@ MirrorAPI::handleReqDone()
         bool reconn = _req->IsError() ? true : handleIncrementalFetch();
 
         if (reconn) {
-            if (_target != 0) {
+            if (_target != nullptr) {
                 _target->internal_subref();
             }
-            _target = 0;
+            _target = nullptr;
         } else {
             _backOff.reset();
             // req done OK
@@ -245,14 +245,14 @@ MirrorAPI::handleReqDone()
 void
 MirrorAPI::handleReconnect()
 {
-    if (_target == 0) {
+    if (_target == nullptr) {
         _logOnSuccess = true;
         _currSlobrok = _slobrokSpecs.nextSlobrokSpec();
         if (_currSlobrok.size() > 0) {
             _target = _orb.GetTarget(_currSlobrok.c_str());
         }
         _specsGen.reset();
-        if (_target == 0) {
+        if (_target == nullptr) {
             if (_rpc_ms < 50000) {
                 _rpc_ms += 100;
             }
