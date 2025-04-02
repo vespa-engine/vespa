@@ -1,3 +1,5 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package org.logstashplugins;
 
 import java.io.ByteArrayOutputStream;
@@ -12,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -19,6 +22,7 @@ import org.apache.logging.log4j.Logger;
 public class VespaDeployer {
     private final QuickStartConfig config;
     private static final Logger logger = LogManager.getLogger(VespaDeployer.class);
+    private static final AtomicBoolean deploymentInstructionsShown = new AtomicBoolean(false);
 
     public VespaDeployer(QuickStartConfig config) {
         this.config = config;
@@ -49,7 +53,7 @@ public class VespaDeployer {
             
             HttpURLConnection connection = null;
             try {
-                URI uri = URI.create(config.getConfigServer() + "/application/v2/tenant/default/prepareandactivate");
+                URI uri = config.getConfigServer().resolve("/application/v2/tenant/default/prepareandactivate");
                 URL url = uri.toURL();
                 connection = (HttpURLConnection) url.openConnection();
                 connection.setRequestMethod("POST");
@@ -86,32 +90,33 @@ public class VespaDeployer {
     }
     
     private void showVespaCloudDeploymentInstructions() {
-        //TODO there must be a bug in the locking mechanism, because I see the messages twice
-
-        String tenant = config.getVespaCloudTenant();
-        String application = config.getVespaCloudApplication();
-        String instance = config.getVespaCloudInstance();
-        String appDir = config.getApplicationPackageDir();
-        
-        logger.info("===============================================================");
-        logger.info("Application package for Vespa Cloud has been generated at: {}", appDir);
-        logger.info("To deploy to Vespa Cloud, use the Vespa CLI with the following steps:");
-        logger.info("");
-        logger.info("1. If you haven't already, install the Vespa CLI: https://docs.vespa.ai/en/vespa-cli.html");
-        logger.info("");
-        logger.info("2. Point the CLI to your Vespa Cloud application:");
-        logger.info("   vespa config set target cloud");
-        logger.info("   vespa config set application {}.{}.{}", tenant, application, instance);
-        logger.info("");
-        logger.info("3. Authenticate with Vespa Cloud:");
-        logger.info("   vespa auth login");
-        logger.info("");
-        logger.info("4. Deploy your application:");
-        logger.info("   cd {}", appDir);
-        logger.info("   vespa deploy --wait 900");
-        logger.info("");
-        logger.info("For more information, see: https://cloud.vespa.ai/en/getting-started");
-        logger.info("===============================================================");
+        // Only show instructions once
+        if (deploymentInstructionsShown.compareAndSet(false, true)) {
+            String tenant = config.getVespaCloudTenant();
+            String application = config.getVespaCloudApplication();
+            String instance = config.getVespaCloudInstance();
+            String appDir = config.getApplicationPackageDir();
+            
+            logger.info("===============================================================");
+            logger.info("Application package for Vespa Cloud has been generated at: {}", appDir);
+            logger.info("To deploy to Vespa Cloud, use the Vespa CLI with the following steps:");
+            logger.info("");
+            logger.info("1. If you haven't already, install the Vespa CLI: https://docs.vespa.ai/en/vespa-cli.html");
+            logger.info("");
+            logger.info("2. Point the CLI to your Vespa Cloud application:");
+            logger.info("   vespa config set target cloud");
+            logger.info("   vespa config set application {}.{}.{}", tenant, application, instance);
+            logger.info("");
+            logger.info("3. Authenticate with Vespa Cloud:");
+            logger.info("   vespa auth login");
+            logger.info("");
+            logger.info("4. Deploy your application:");
+            logger.info("   cd {}", appDir);
+            logger.info("   vespa deploy --wait 900");
+            logger.info("");
+            logger.info("For more information, see: https://cloud.vespa.ai/en/getting-started");
+            logger.info("===============================================================");
+        }
     }
 
     private byte[] createApplicationZip() throws IOException {
@@ -121,7 +126,6 @@ public class VespaDeployer {
             addFileToZip(zos, "services.xml");
             
             // Add schema file
-            // TODO: handle multiple schemas
             String schemaFileName = "schemas/" + config.getDocumentType() + ".sd";
             addFileToZip(zos, schemaFileName);
         }

@@ -1,3 +1,5 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package org.logstashplugins;
 
 import java.io.IOException;
@@ -239,8 +241,9 @@ public class VespaAppPackageWriter {
 
         try {
             writeServicesXml();
-            writeSchemas(detectedFields);
-            logger.info("Wrote application package", config.getApplicationPackageDir());
+            writeSchema(detectedFields);
+
+            logger.info("Wrote application package to {}", config.getApplicationPackageDir());
         } finally {
             Files.delete(writeLockFile);
         }
@@ -288,6 +291,20 @@ public class VespaAppPackageWriter {
         }
         
         return result;
+    }
+
+    /**
+     * Resolves a type conflict between two Vespa field types.
+     * Uses the type conflict resolution rules defined in the type_conflict_resolution.yml file.
+     * If no resolution is found, returns null.
+     *
+     * @param type1 First Vespa field type
+     * @param type2 Second Vespa field type
+     * @return The resolved type, or null if no resolution is found
+     */
+    public String resolveTypeConflict(String type1, String type2) {
+        Map<String, Map<String, String>> typeConflictResolution = loadTypeConflictResolution();
+        return resolveTypeConflict(type1, type2, typeConflictResolution);
     }
 
     private String resolveTypeConflict(String type1, String type2, Map<String, Map<String, String>> resolutions) {
@@ -349,10 +366,8 @@ public class VespaAppPackageWriter {
 
     private void writeServicesXml() throws IOException {
         String servicesXml = readTemplate("services.xml");
-        // TODO: replace cluster name with an actual name (the document type?)
         
         // replace document_type in services.xml with the actual document type
-        // TODO: handle dynamic document type
         servicesXml = servicesXml.replace("document_type", config.getDocumentType());
 
         // If mTLS is enabled, uncomment the mTLS configuration
@@ -406,8 +421,7 @@ public class VespaAppPackageWriter {
         return result;
     }
 
-    // TODO: handle multiple/new schemas
-    private void writeSchemas(Map<String, String> detectedFields) throws IOException {
+    private void writeSchema(Map<String, String> detectedFields) throws IOException {
         Path schemaPath = Paths.get("schemas", "document_type.sd");
         String schema = readTemplate(schemaPath.toString());
         // replace document_type in schema with the actual document type

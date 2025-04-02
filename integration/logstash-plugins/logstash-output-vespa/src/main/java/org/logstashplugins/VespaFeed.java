@@ -38,20 +38,21 @@ public class VespaFeed implements Output {
     // quick start mode. This will not send documents to Vespa, but will generate an application package
     public static final PluginConfigSpec<Boolean> QUICK_START =
             PluginConfigSpec.booleanSetting("quick_start", false);
+
+    // Other options in this section are ignored/irrelevant if quick_start is false
+
     // save the generated application package in this directory
-    // TODO: this should be OS-specific
     public static final PluginConfigSpec<String> APPLICATION_PACKAGE_DIR =
-            PluginConfigSpec.stringSetting("application_package_dir", "/tmp/vespa_app");
+            PluginConfigSpec.stringSetting("application_package_dir", System.getProperty("java.io.tmpdir") + File.separator + "vespa_app");
     // should we deploy the application after generating it?
     public static final PluginConfigSpec<Boolean> DEPLOY_PACKAGE =
             PluginConfigSpec.booleanSetting("deploy_package", true);
     // when? What do we consider idle time in terms of empty pipeline batches?
     public static final PluginConfigSpec<Long> IDLE_BATCHES =
             PluginConfigSpec.numSetting("idle_batches", 10);
-    // where? what's the config server endpoint?
-    // TODO: this should default to vespa_url if not set, with port 19071
-    public static final PluginConfigSpec<String> CONFIG_SERVER =
-            PluginConfigSpec.stringSetting("config_server", "http://localhost:19071");
+    // where to deploy on local installs. Defaults to the same host as the vespa_url, with port 19071
+    public static final PluginConfigSpec<URI> CONFIG_SERVER =
+            PluginConfigSpec.uriSetting("config_server", null);
     // whether to generate mTLS certificates
     // if we're using Vespa Cloud, the default is "true", otherwise "false"
     public static final PluginConfigSpec<Boolean> GENERATE_MTLS_CERTIFICATES =
@@ -63,26 +64,40 @@ public class VespaFeed implements Output {
     public static final PluginConfigSpec<String> TYPE_CONFLICT_RESOLUTION_FILE =
             PluginConfigSpec.stringSetting("type_conflict_resolution_file", null);
     
+    // Vespa Cloud deployment options
+    public static final PluginConfigSpec<String> VESPA_CLOUD_TENANT = 
+            PluginConfigSpec.stringSetting("vespa_cloud_tenant", null);
+    public static final PluginConfigSpec<String> VESPA_CLOUD_APPLICATION = 
+            PluginConfigSpec.stringSetting("vespa_cloud_application", null);
+    public static final PluginConfigSpec<String> VESPA_CLOUD_INSTANCE = 
+            PluginConfigSpec.stringSetting("vespa_cloud_instance", "default");
+    
     /***********************
      * Vespa API settings
      ***********************/
     public static final PluginConfigSpec<URI> VESPA_URL =
             PluginConfigSpec.uriSetting("vespa_url", "http://localhost:8080");
-    public static final PluginConfigSpec<String> NAMESPACE =
-            PluginConfigSpec.requiredStringSetting("namespace");
     // if namespace is set to %{field_name} or %{[field_name]}, it's dynamic
+    // irrelevant/ignored for if quick_start is true
+    public static final PluginConfigSpec<String> NAMESPACE =
+            PluginConfigSpec.stringSetting("namespace", null);
     // if remove_namespace is true, the namespace is removed from the document
+    // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<Boolean> REMOVE_NAMESPACE =
             PluginConfigSpec.booleanSetting("remove_namespace", false);
+    // TODO: if document_type is dynamic and we're in quick start mode, we bail out because it's not supported
     public static final PluginConfigSpec<String> DOCUMENT_TYPE =
-            PluginConfigSpec.requiredStringSetting("document_type");
+            PluginConfigSpec.stringSetting("document_type", "doctype");
     // if remove_document_type is true, the document type is removed from the document (assuming it's dynamic)
+    // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<Boolean> REMOVE_DOCUMENT_TYPE =
             PluginConfigSpec.booleanSetting("remove_document_type", false);
     // field from the event to use as doc ID
+    // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<String> ID_FIELD =
             PluginConfigSpec.stringSetting("id_field", "id");
     // if remove_id is true, the id field is removed from the document
+    // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<Boolean> REMOVE_ID =
             PluginConfigSpec.booleanSetting("remove_id", false);
 
@@ -92,28 +107,28 @@ public class VespaFeed implements Output {
     public static final PluginConfigSpec<String> CLIENT_KEY =
             PluginConfigSpec.stringSetting("client_key", null);
     
-    // Vespa Cloud deployment options
-    public static final PluginConfigSpec<String> VESPA_CLOUD_TENANT = 
-            PluginConfigSpec.stringSetting("vespa_cloud_tenant", null);
-    public static final PluginConfigSpec<String> VESPA_CLOUD_APPLICATION = 
-            PluginConfigSpec.stringSetting("vespa_cloud_application", null);
-    public static final PluginConfigSpec<String> VESPA_CLOUD_INSTANCE = 
-            PluginConfigSpec.stringSetting("vespa_cloud_instance", "default");
-    
     // authentication token (for Vespa Cloud)
+    // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<String> AUTH_TOKEN =
             PluginConfigSpec.stringSetting("auth_token", null);
 
     // put, update or remove
+    // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<String> OPERATION =
             PluginConfigSpec.stringSetting("operation", "put");
     // if remove_operation is true, the operation field is removed from the document (assuming it's dynamic)
+    // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<Boolean> REMOVE_OPERATION =
             PluginConfigSpec.booleanSetting("remove_operation", false);
     // whether to add create=true to the put/update request
+    // ignored/irrelevant for if quick_start is true
     public static final PluginConfigSpec<Boolean> CREATE =
             PluginConfigSpec.booleanSetting("create", false);
 
+    /***********************
+     * Feed client settings
+     (ignored/irrelevant for if quick_start is true)
+     ***********************/
     // max HTTP/2 connections per endpoint. We only have 1
     public static final PluginConfigSpec<Long> MAX_CONNECTIONS =
             PluginConfigSpec.numSetting("max_connections", 1);
@@ -138,6 +153,7 @@ public class VespaFeed implements Output {
     
     /***********
      * Dead Letter Queue settings
+     (ignored/irrelevant for if quick_start is true)
      ***********/
     // enable dead letter queue. This overrides the global setting in logstash.yml
     public static final PluginConfigSpec<Boolean> ENABLE_DLQ =
@@ -169,7 +185,9 @@ public class VespaFeed implements Output {
     private final String idField;
     private final boolean removeId; 
     private final long operationTimeout;
+    // this signals that the plugin is stopping
     private volatile boolean stopped = false;
+    
     ObjectMapper objectMapper;
     private final boolean removeOperation;
     private DeadLetterQueueWriter dlqWriter;
@@ -180,7 +198,10 @@ public class VespaFeed implements Output {
         this.id = id;
 
         // if the namespace matches %{field_name} or %{[field_name]}, it's dynamic
-        DynamicOption configOption = new DynamicOption(config.get(NAMESPACE));
+        DynamicOption configOption = new DynamicOption(
+            // if namespace is not set, use the document type name as namespace
+            config.get(NAMESPACE) != null ? config.get(NAMESPACE) : config.get(DOCUMENT_TYPE)
+        );
         dynamicNamespace = configOption.isDynamic();
         namespace = configOption.getParsedConfigValue();
         removeNamespace = config.get(REMOVE_NAMESPACE);
@@ -223,42 +244,19 @@ public class VespaFeed implements Output {
             }
         }
 
+        // Get vespa_url for both config_server default and feed client setup
+        URI vespaUrl = config.get(VESPA_URL);
+        
         if (config.get(QUICK_START)) {
-            logger.warn("Quick start mode enabled! We will not send documents to Vespa, but will generate an application package.");
-
-            // Check if we have Vespa Cloud parameters
-            boolean isVespaCloud = config.get(VESPA_CLOUD_TENANT) != null && config.get(VESPA_CLOUD_APPLICATION) != null;
-            
-            // If only one of the required Cloud params is set, throw an error
-            if ((config.get(VESPA_CLOUD_TENANT) != null && config.get(VESPA_CLOUD_APPLICATION) == null) ||
-                (config.get(VESPA_CLOUD_TENANT) == null && config.get(VESPA_CLOUD_APPLICATION) != null)) {
-                throw new IllegalArgumentException("Both vespa_cloud_tenant and vespa_cloud_application must be specified for Vespa Cloud deployment");
-            }
-            
-            // Validate that instance is provided if we're in Vespa Cloud mode
-            if (isVespaCloud) {
-                String instance = config.get(VESPA_CLOUD_INSTANCE);
-                if (instance == null || instance.trim().isEmpty()) {
-                    throw new IllegalArgumentException("vespa_cloud_instance must be specified for Vespa Cloud deployment");
-                }
-                
-                logger.info("Vespa Cloud mode enabled with tenant: {}, application: {}, instance: {}", 
-                           config.get(VESPA_CLOUD_TENANT), config.get(VESPA_CLOUD_APPLICATION), instance);
-            }
-            
-            // Set generate_mtls_certificates to true if in Cloud mode, unless explicitly set otherwise
-            boolean generateMtlsCertificates = config.get(GENERATE_MTLS_CERTIFICATES);
-            if (isVespaCloud && !config.contains(GENERATE_MTLS_CERTIFICATES)) {
-                generateMtlsCertificates = true;
-            }
-            
             quickStartConfig = new QuickStartConfig(
                 config.get(DEPLOY_PACKAGE),
-                generateMtlsCertificates,
+                config.get(GENERATE_MTLS_CERTIFICATES),
                 clientCert,
                 clientKey,
                 config.get(CONFIG_SERVER),
+                vespaUrl,
                 documentType,
+                dynamicDocumentType,
                 config.get(IDLE_BATCHES).longValue(),
                 config.get(APPLICATION_PACKAGE_DIR),
                 config.get(TYPE_MAPPINGS_FILE),
@@ -288,7 +286,8 @@ public class VespaFeed implements Output {
                 dlqWriter = null;
             }
 
-            FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
+            try {
+                FeedClientBuilder builder = FeedClientBuilder.create(vespaUrl)
                         .setConnectionsPerEndpoint(config.get(MAX_CONNECTIONS).intValue())
                         .setMaxStreamPerConnection(config.get(MAX_STREAMS).intValue())
                         .setRetryStrategy(
@@ -312,11 +311,16 @@ public class VespaFeed implements Output {
                                 )
                         );
 
-            // set client certificate and key (or auth token) if they are provided
-            builder = addAuthOptionsToBuilder(config, builder, clientCert, clientKey);
+                // set client certificate and key (or auth token) if they are provided
+                builder = addAuthOptionsToBuilder(config, builder, clientCert, clientKey);
 
-            // now we should have the client
-            client = builder.build();
+                // now we should have the client
+                client = builder.build();
+            } catch (Exception e) {
+                String errorMessage = "Failed to create Vespa feed client: " + e.getMessage();
+                logger.error(errorMessage, e);
+                throw new IllegalArgumentException(errorMessage, e);
+            }
         }
     }
 
@@ -328,8 +332,6 @@ public class VespaFeed implements Output {
         }
     }
 
-    // TODO we need to validate all options (not sure if here). For example, quick_start should
-    // work without namespace. And even without quick_start, we should log an error if namespace is missing.
     public void validateOperationAndCreate() {
         if (!dynamicOperation) {
             if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
@@ -538,7 +540,9 @@ public class VespaFeed implements Output {
 
     @Override
     public void stop() {
+        // this will tell the main loop to stop... looping :)
         stopped = true;
+       
         // close the client, if we're in standard mode
         if (client != null) {
             client.close();

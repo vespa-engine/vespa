@@ -73,7 +73,7 @@
         See:
           - Reference: https://docs.vespa.ai/en/reference/services-content.html
     -->
-    <content id="blog" version="1.0">
+    <content id="content" version="1.0">
         <min-redundancy>2</min-redundancy>
         <documents>
             <document type="document_type" mode="index" />

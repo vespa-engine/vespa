@@ -1,3 +1,5 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package org.logstashplugins;
 
 import java.io.IOException;
@@ -25,6 +27,7 @@ public class VespaQuickStarter {
     private final Map<String, String> detectedFields = new HashMap<>();
     private final ObjectMapper objectMapper;
     private int emptyBatchesCount = 0;
+    private boolean gotEvents = false;
     final VespaDeployer deployer;
     private final VespaAppPackageWriter appPackageWriter;
 
@@ -46,15 +49,17 @@ public class VespaQuickStarter {
         // the batch may be empty - a hiccup or we're done processing?
         if (events.isEmpty()) {
             emptyBatchesCount++;
-            if (config.isDeployPackage() && emptyBatchesCount >= config.getIdleBatches()) {
-                // TODO: this should happen only if we had events
+            logger.debug("Empty batch {}, got events in this thread: {}", emptyBatchesCount, gotEvents);
+            if (config.isDeployPackage() && emptyBatchesCount >= config.getIdleBatches() && gotEvents) {
+                logger.info("{} batches of {} empty, deploying application package", emptyBatchesCount, config.getIdleBatches());
                 deployer.deployApplicationPackage();
                 emptyBatchesCount = 0;
             }
             return;
         }
-        // Got events - reset counter
+        // Got events - reset counters
         emptyBatchesCount = 0;
+        gotEvents = true;
 
         // Process each event to detect field types
         for (Event event : events) {
@@ -79,9 +84,13 @@ public class VespaQuickStarter {
                         String existingType = detectedFields.get(fieldName);
                         if (existingType != null && !existingType.equals(type)) {
                             logger.warn("Field {} type changed from {} to {}", fieldName, existingType, type);
-                            // TODO: handle type conflicts (e.g. use the more general type)
-                            // e.g. if the int8 tensor size is different, let's
-                            // treat it as a long array
+                            String resolvedType = appPackageWriter.resolveTypeConflict(existingType, type);
+                            if (resolvedType != null) {
+                                logger.info("Resolved type conflict for field {}: using type {}", fieldName, resolvedType);
+                                type = resolvedType;
+                            } else {
+                                logger.warn("Could not resolve type conflict for field {}, simply switching to type {}. But this implies that previous documents might throw errors when indexed.", fieldName, type);
+                            }
                         }
                         detectedFields.put(fieldName, type);
                     }
