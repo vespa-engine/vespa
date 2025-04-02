@@ -11,6 +11,7 @@ import com.yahoo.text.Utf8;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 /**
@@ -28,6 +29,7 @@ public class Sorting implements Cloneable {
     public static final String UCA = "uca";
     public static final String RAW = "raw";
     public static final String LOWERCASE = "lowercase";
+    static final String MISSING = "missing";
 
     private final List<FieldOrder> fieldOrders = new ArrayList<>(2);
 
@@ -62,32 +64,37 @@ public class Sorting implements Cloneable {
     }
 
     private void setSpec(String rawSortSpec, IndexFacts.Session indexFacts) {
-        for (String sortString : rawSortSpec.split(" ")) {
-            // A sortspec element must be at least two characters long,
-            // a sorting order and an attribute vector name
-            if (sortString.length() < 1) continue;
+        var tokenizer = new Tokenizer(rawSortSpec);
+        while (tokenizer.skipSpaces()) {
 
-            char orderMarker = sortString.charAt(0);
-            int funcAttrStart = 0;
-            if ((orderMarker == '+') || (orderMarker == '-')) {
-                funcAttrStart = 1;
+            char orderMarker = tokenizer.peek();
+            if (orderMarker == '+' || orderMarker == '-') {
+                tokenizer.step();
+            }
+            var functionName = tokenizer.token();
+            var inMissing = false;
+            if (tokenizer.peek() == '(' && MISSING.equalsIgnoreCase(functionName)) {
+                inMissing = true;
+                tokenizer.step();
+                functionName = tokenizer.token();
             }
             AttributeSorter sorter;
-            int startPar = sortString.indexOf('(',funcAttrStart);
-            int endPar = sortString.lastIndexOf(')');
-            if ((startPar > 0) && (endPar > startPar)) {
-                String functionName = sortString.substring(funcAttrStart, startPar);
+            if (tokenizer.peek() == '(') {
+                tokenizer.step();
                 if (LOWERCASE.equalsIgnoreCase(functionName)) {
-                    sorter = new LowerCaseSorter(canonic(sortString.substring(startPar+1, endPar), indexFacts));
+                    sorter = new LowerCaseSorter(canonic(tokenizer.token(), indexFacts));
+                    tokenizer.expectChar(')');
                 } else if (RAW.equalsIgnoreCase(functionName)) {
-                    sorter = new RawSorter(canonic(sortString.substring(startPar+1, endPar), indexFacts));
+                    sorter = new RawSorter(canonic(tokenizer.token(), indexFacts));
+                    tokenizer.expectChar(')');
                 } else if (UCA.equalsIgnoreCase(functionName)) {
-                    int commaPos = sortString.indexOf(',', startPar+1);
-                    if ((startPar+1 < commaPos) && (commaPos < endPar)) {
-                        int commaopt = sortString.indexOf(',', commaPos + 1);
+                    var attrName = tokenizer.token();
+                    if (tokenizer.expectChars(',', ')') == ',') {
                         UcaSorter.Strength strength = UcaSorter.Strength.UNDEFINED;
-                        if (commaopt > 0) {
-                            String s = sortString.substring(commaopt+1, endPar);
+                        var locale = tokenizer.token();
+                        if (tokenizer.expectChars(',', ')') == ',') {
+                            var s = tokenizer.token();
+                            tokenizer.expectChar(')');
                             if (STRENGTH_PRIMARY.equalsIgnoreCase(s)) {
                                 strength = UcaSorter.Strength.PRIMARY;
                             } else if (STRENGTH_SECONDARY.equalsIgnoreCase(s)) {
@@ -101,31 +108,58 @@ public class Sorting implements Cloneable {
                             } else {
                                 throw new IllegalInputException("Unknown collation strength: '" + s + "'");
                             }
-                            sorter = new UcaSorter(canonic(sortString.substring(startPar+1, commaPos), indexFacts),
-                                                   sortString.substring(commaPos+1, commaopt), strength);
-                        } else {
-                            sorter = new UcaSorter(canonic(sortString.substring(startPar+1, commaPos), indexFacts),
-                                                   sortString.substring(commaPos+1, endPar), strength);
                         }
+                        sorter = new UcaSorter(canonic(attrName, indexFacts), locale, strength);
                     } else {
-                        sorter = new UcaSorter(canonic(sortString.substring(startPar+1, endPar), indexFacts));
+                        sorter = new UcaSorter(canonic(attrName, indexFacts));
                     }
                 } else {
                     if (functionName.isEmpty()) {
-                        throw new IllegalInputException("No sort function specified");
+                        throw new IllegalInputException("No sort function specified at " + tokenizer.spec());
                     } else {
-                        throw new IllegalInputException("Unknown sort function '" + functionName + "'");
+                        throw new IllegalInputException("Unknown sort function '" + functionName + "' at " + tokenizer.spec());
                     }
                 }
             } else {
-                sorter = new AttributeSorter(canonic(sortString.substring(funcAttrStart), indexFacts));
+                sorter = new AttributeSorter(canonic(functionName, indexFacts));
             }
             Order order = Order.UNDEFINED;
-            if (funcAttrStart != 0) {
+            if (orderMarker == '+' || orderMarker == '-') {
                 // Override in sortspec
                 order = (orderMarker == '+') ? Order.ASCENDING : Order.DESCENDING;
             }
-            fieldOrders.add(new FieldOrder(sorter, order));
+            MissingPolicy missingPolicy = MissingPolicy.DEFAULT;
+            String missingValue = null;
+            if (inMissing) {
+                tokenizer.expectChar(',');
+                missingPolicy = decodeMissingPolicy(tokenizer);
+                if (missingPolicy == MissingPolicy.AS) {
+                    tokenizer.expectChar(',');
+                    missingValue = decodeMissingValue(tokenizer);
+                }
+                tokenizer.expectChar(')');
+            }
+            fieldOrders.add(new FieldOrder(sorter, order, missingPolicy, missingValue));
+            if (tokenizer.valid()) {
+                tokenizer.expectChar(' ');
+            }
+        }
+    }
+
+    private static MissingPolicy decodeMissingPolicy(Tokenizer tokenizer) {
+        var policyName = tokenizer.token();
+        try {
+            return MissingPolicy.valueOf(policyName.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalInputException("Unknown missing policy '" + policyName +"' at " + tokenizer.spec());
+        }
+    }
+
+    private static String decodeMissingValue(Tokenizer tokenizer) {
+        if (tokenizer.peek() == '"') {
+            return tokenizer.dequoteString();
+        } else {
+            return tokenizer.token();
         }
     }
 
@@ -153,6 +187,16 @@ public class Sorting implements Cloneable {
     }
 
     public enum Order { ASCENDING, DESCENDING, UNDEFINED}
+
+    enum MissingPolicy {
+        DEFAULT("default"),
+        FIRST("first"),
+        LAST("last"),
+        AS("as");
+        private final String name;
+        MissingPolicy(String name) { this.name = name; }
+        String getName() { return name; }
+    }
 
     /**
      * Returns the field orders of this sort specification as list. This is never null but can be empty.
@@ -192,9 +236,17 @@ public class Sorting implements Cloneable {
                 buffer.put((byte) '-');
             }
             usedBytes++;
+            var missingValueSettings = fieldOrder.getMissingValueSettings();
+            boolean emitMissingFunction = missingValueSettings.hasNondefaultSetting();
+            if (emitMissingFunction) {
+                usedBytes += missingValueSettings.encodePrefix(buffer);
+            }
             nameBuffer = Utf8.toBytes(fieldOrder.getSorter().toSerialForm());
             buffer.put(nameBuffer);
             usedBytes += nameBuffer.length;
+            if (emitMissingFunction) {
+                usedBytes += missingValueSettings.encodeSuffix(buffer);
+            }
             // If this isn't the last element, append a separating space
             //if (i + 1 < sortSpec.size()) {
             space = ' ';
@@ -373,6 +425,98 @@ public class Sorting implements Cloneable {
         }
     }
 
+    private static class MissingValueSettings {
+        private MissingPolicy missingPolicy;
+        private String missingValue;
+
+        MissingValueSettings(MissingPolicy missingPolicy, String missingValue) {
+            this.missingPolicy = missingPolicy;
+            this.missingValue = missingValue;
+        }
+
+        boolean hasNondefaultSetting() { return missingPolicy != MissingPolicy.DEFAULT; }
+
+        int encodePrefix(ByteBuffer buffer) {
+            var prefix = Utf8.toBytes("missing(");
+            buffer.put(prefix);
+            return prefix.length;
+        }
+
+        static boolean needQuotes(String value) {
+            if (value.isEmpty()) return true;
+            for (int i = 0; i < value.length(); ++i) {
+                var c = value.charAt(i);
+                if (c == ' ' || c == ',' || c == '(' || c == ')' || c == '\\' || c == '"') {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        static void appendQuoted(StringBuilder b, String value) {
+            b.append('"');
+            for (int i = 0; i < value.length(); ++i) {
+                var c = value.charAt(i);
+                if (c == '\\' || c == '"') {
+                    b.append('\\');
+                }
+                b.append(c);
+            }
+            b.append('"');
+        }
+
+        void appendMissingValue(StringBuilder b)
+        {
+            if (missingValue == null) {
+                b.append("\"\"");
+            } else {
+                if (needQuotes(missingValue)) {
+                    appendQuoted(b, missingValue);
+                } else {
+                    b.append(missingValue);
+                }
+            }
+        }
+
+        int encodeSuffix(ByteBuffer buffer) {
+            var b = new StringBuilder();
+            b.append(',');
+            b.append(missingPolicy.getName());
+            if (missingPolicy == MissingPolicy.AS) {
+                b.append(",");
+                appendMissingValue(b);
+            }
+            b.append(')');
+            var suffix = Utf8.toBytes(b.toString());
+            buffer.put(suffix);
+            return suffix.length;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(missingPolicy, missingValue);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (!(o instanceof MissingValueSettings other)) return false;
+            if (missingPolicy != other.missingPolicy) return false;
+            if (missingValue == null) {
+                return other.missingValue == null;
+            }
+            if (other.missingValue == null) return false;
+            return missingValue.equals(other.missingValue);
+        }
+
+        MissingPolicy getPolicy() {
+            return missingPolicy;
+        }
+
+        String getMissingValue() {
+            return missingValue;
+        }
+    }
+
     /**
      * An attribute (field) and how it should be sorted
      */
@@ -380,6 +524,7 @@ public class Sorting implements Cloneable {
 
         private AttributeSorter fieldSorter;
         private Order sortOrder;
+        private MissingValueSettings missingValueSettings;
 
         /**
          * Creates an attribute vector
@@ -388,8 +533,21 @@ public class Sorting implements Cloneable {
          * @param sortOrder    whether to sort this ascending or descending
          */
         public FieldOrder(AttributeSorter fieldSorter, Order sortOrder) {
+            this(fieldSorter, sortOrder, MissingPolicy.DEFAULT, null);
+        }
+
+        /**
+         * Creates an attribute vector
+         *
+         * @param fieldSorter the sorter of this attribute
+         * @param sortOrder    whether to sort this ascending or descending
+         * @param missingPolicy policy for handling of missing value
+         * @param missingValue replacement value
+         */
+        FieldOrder(AttributeSorter fieldSorter, Order sortOrder, MissingPolicy missingPolicy, String missingValue) {
             this.fieldSorter = fieldSorter;
             this.sortOrder = sortOrder;
+            this.missingValueSettings = new MissingValueSettings(missingPolicy, missingValue);
         }
 
         /**
@@ -412,6 +570,10 @@ public class Sorting implements Cloneable {
             return sortOrder;
         }
 
+        MissingValueSettings getMissingValueSettings() {
+            return missingValueSettings;
+        }
+
         /**
          * Decide if sortorder is ascending or not.
          */
@@ -426,20 +588,123 @@ public class Sorting implements Cloneable {
 
         @Override
         public int hashCode() {
-            return sortOrder.hashCode() + 17 * fieldSorter.hashCode();
+            return Objects.hash(sortOrder, fieldSorter, missingValueSettings);
         }
 
         @Override
         public boolean equals(Object o) {
             if (!(o instanceof FieldOrder other)) return false;
-            return other.sortOrder.equals(sortOrder) && other.fieldSorter.equals(fieldSorter);
+            return other.sortOrder.equals(sortOrder) && other.fieldSorter.equals(fieldSorter) &&
+                    other.missingValueSettings.equals(missingValueSettings);
         }
 
         @Override
         public FieldOrder clone() {
-            return new FieldOrder(fieldSorter.clone(), sortOrder);
+            return new FieldOrder(fieldSorter.clone(), sortOrder, missingValueSettings.getPolicy(),
+                    missingValueSettings.getMissingValue());
         }
 
+    }
+
+    private static class Tokenizer {
+        private String spec;
+        private int pos;
+        public Tokenizer(String spec) {
+            this.spec = spec;
+            pos = 0;
+        }
+
+        String token() {
+            if (pos >= spec.length()) {
+                return new String();
+            }
+            var oldPos = pos;
+            while (pos < spec.length()) {
+                var c = spec.charAt(pos);
+                if (c == ' ' || c == ',' || c == '(' || c == ')' || c == '\\' || c == '"') {
+                    break;
+                }
+                ++pos;
+            }
+            return spec.substring(oldPos, pos);
+        }
+
+        boolean valid() {
+            return pos < spec.length();
+        }
+
+        char peek() {
+            return (pos < spec.length()) ? spec.charAt(pos) : '\0';
+        }
+
+        void step() {
+            if (valid()) {
+                ++pos;
+            }
+        }
+
+        boolean skipSpaces() {
+            while(valid() && spec.charAt(pos) == ' ') {
+                ++pos;
+            }
+            return valid();
+        }
+
+        String spec() {
+            var builder = new StringBuilder();
+            builder.append('[');
+            builder.append(spec.substring(0, pos));
+            builder.append(']');
+            builder.append('[');
+            builder.append(spec.substring(pos));
+            builder.append(']');
+            return builder.toString();
+        }
+
+        void expectChar(char expected) {
+            if (!valid()) {
+                throw new IllegalInputException("Expected '" + expected + "', end of spec reached at " + spec());
+            }
+            var act = peek();
+            if (act != expected) {
+                throw new IllegalInputException("Expected '" + expected + "', got '" + act + "' at " + spec());
+            }
+            step();
+        }
+
+        char expectChars(char expected1, char expected2) {
+            if (!valid()) {
+                throw new IllegalInputException("Expected '" + expected1 + "' or '" + expected2 +"', end of spec reached at " + spec());
+            }
+            var act = peek();
+            if (act != expected1 && act != expected2) {
+                throw new IllegalInputException("Expected '" + expected1 + "' or '" + expected2 + "', got '" + act + "' at " + spec());
+            }
+            step();
+            return act;
+        }
+
+        String dequoteString() {
+            var b = new StringBuilder();
+            expectChar('"');
+            while (valid() && peek() != '"') {
+                var fragment = token();
+                b.append(fragment);
+                if (valid()) {
+                    var c = peek();
+                    if (c == '\\') {
+                        step();
+                        c = expectChars('\\', '"');
+                        b.append(c);
+                    } else if (c != '"') {
+                        b.append(c);
+                        step();
+                    }
+                }
+            }
+            expectChar('"');
+            return b.toString();
+        }
     }
 
 }
