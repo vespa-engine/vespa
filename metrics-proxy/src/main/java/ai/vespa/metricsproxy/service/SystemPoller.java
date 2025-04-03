@@ -303,7 +303,7 @@ public class SystemPoller {
 
     private static int getPageSize() {
         try {
-            return Integer.parseInt(new ProcessExecuter().exec("getconfig PAGESIZE").getSecond().trim());
+            return Integer.parseInt(new ProcessExecuter().exec("getconf PAGESIZE").getSecond().trim());
         } catch (IOException e) {
             log.log(WARNING, "Getting page size failed, using fallback value 4096");
             return 4096;
