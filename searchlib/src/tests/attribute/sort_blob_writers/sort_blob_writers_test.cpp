@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/attribute/numeric_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/string_sort_blob_writer.h>
 #include <vespa/searchlib/common/converters.h>
@@ -10,7 +11,6 @@
 #include <span>
 
 using search::attribute::NumericSortBlobWriter;
-using search::attribute::SortBlobWriter;
 using search::attribute::StringSortBlobWriter;
 using search::common::BlobConverter;
 using search::common::LowercaseConverter;
@@ -22,17 +22,39 @@ using SortData = std::vector<unsigned char>;
 
 // Missing value sort blob for multi value attribute when using default missing policy
 SortData default_missing_value_sort_blob{1};
+// value prefix for multi value attribute when using default missing policy
+constexpr unsigned char default_multi_value_value_prefix = 0;
+
+// undefined value for single value integer attribute
+constexpr int32_t no_int = search::attribute::getUndefined<int32_t>();
+
+template <typename T, bool asc>
+SortData
+serialized_numeric(std::optional<unsigned char> prefix, T value)
+{
+    SortData s;
+    auto plen = prefix.has_value() ? 1 : 0;
+    s.resize(plen + sizeof(T));
+    if (prefix.has_value()) {
+        s[0] = prefix.value();
+    }
+    auto ret = vespalib::serializeForSort<vespalib::convertForSort<T, asc>>(value, s.data() + plen, s.size() - plen);
+    assert(size_t(ret) == s.size() - plen);
+    return s;
+}
 
 template <typename T, bool asc>
 SortData
 serialized_present_numeric(T value)
 {
-    SortData s;
-    s.resize(1 + sizeof(T));
-    s[0] = SortBlobWriter::has_value;
-    auto ret = vespalib::serializeForSort<vespalib::convertForSort<T, asc>>(value, s.data() + 1, s.size() - 1);
-    assert(size_t(ret) == s.size() - 1);
-    return s;
+    return serialized_numeric<T, asc>(default_multi_value_value_prefix, value);
+}
+
+template <bool asc>
+SortData
+serialized_integer(std::optional<unsigned char> prefix, int32_t value)
+{
+    return serialized_numeric<int32_t,asc>(prefix, value);
 }
 
 SortData
@@ -54,7 +76,7 @@ serialized_string(std::optional<unsigned char> prefix, const char* value, bool a
 SortData
 serialized_present_string(const char* value, bool asc)
 {
-    return serialized_string(SortBlobWriter::has_value, value, asc);
+    return serialized_string(default_multi_value_value_prefix, value, asc);
 }
 
 template <typename T>
@@ -73,11 +95,11 @@ serialized_present(T value, bool asc)
 
 template <typename T, bool asc>
 SortData
-sort_data_numeric(std::vector<T> values)
+sort_data_numeric(std::vector<T> values, MissingPolicy policy, T missing_value, bool multi_value)
 {
     size_t len = 0;
     SortData s;
-    NumericSortBlobWriter<T, asc> writer;
+    NumericSortBlobWriter<T, asc> writer(policy, missing_value, multi_value);
     while (true) {
         s.clear();
         s.resize(len);
@@ -92,6 +114,19 @@ sort_data_numeric(std::vector<T> values)
         }
         ++len;
     }
+}
+
+template <typename T, bool asc>
+SortData
+sort_data_numeric(std::vector<T> values)
+{
+    return sort_data_numeric<T, asc>(values, MissingPolicy::DEFAULT, T(), true);
+}
+
+template <bool asc>
+SortData
+sort_data_integer(std::vector<int32_t> values, MissingPolicy policy, int32_t missing_value, bool multi_value) {
+    return sort_data_numeric<int32_t, asc>(values, policy, missing_value, multi_value);
 }
 
 template <bool asc>
@@ -429,6 +464,72 @@ TEST_F(SortBlobStringWriterTest, missing_policy_as)
     // Multi value descending
     EXPECT_EQ(serialized_string(std::nullopt, "hello", false), sort_data_string<false>({}, nullptr, MissingPolicy::AS, "hello", true));
     EXPECT_EQ(serialized_string(std::nullopt, "bbb", false), sort_data_string<false>({"aaa", "bbb"}, nullptr, MissingPolicy::AS, "hello", true));
+}
+
+using SortBlobIntegerWriterTest = SortBlobWritersTest<int32_t>;
+
+TEST_F(SortBlobIntegerWriterTest, missing_policy_default)
+{
+    // Single value ascending
+    EXPECT_EQ(serialized_integer<true>(std::nullopt, no_int), sort_data_integer<true>({}, MissingPolicy::DEFAULT, 0, false));
+    EXPECT_EQ(serialized_integer<true>(std::nullopt, 10), sort_data_integer<true>({10}, MissingPolicy::DEFAULT, 0, false));
+    // Single value descending
+    EXPECT_EQ(serialized_integer<false>(std::nullopt, no_int), sort_data_integer<false>({}, MissingPolicy::DEFAULT, 0, false));
+    EXPECT_EQ(serialized_integer<false>(std::nullopt, 15), sort_data_integer<false>({15}, MissingPolicy::DEFAULT, 0, false));
+    // Multi value ascending
+    EXPECT_EQ(default_missing_value_sort_blob, sort_data_integer<true>({}, MissingPolicy::DEFAULT, 0, true));
+    EXPECT_EQ(serialized_integer<true>(0, 10), sort_data_integer<true>({10, 15}, MissingPolicy::DEFAULT, 0, true));
+    // Multi value descending
+    EXPECT_EQ(default_missing_value_sort_blob, sort_data_integer<false>({}, MissingPolicy::DEFAULT, 0, true));
+    EXPECT_EQ(serialized_integer<false>(0, 15), sort_data_integer<false>({10, 15}, MissingPolicy::DEFAULT, 0, true));
+}
+
+TEST_F(SortBlobIntegerWriterTest, missing_policy_first)
+{
+    // Single value ascending
+    EXPECT_EQ(SortData{0}, sort_data_integer<true>({}, MissingPolicy::FIRST, 0, false));
+    EXPECT_EQ(serialized_integer<true>(1, 10), sort_data_integer<true>({10}, MissingPolicy::FIRST, 0, false));
+    // Single value descending
+    EXPECT_EQ(SortData{0}, sort_data_integer<false>({}, MissingPolicy::FIRST, 0, false));
+    EXPECT_EQ(serialized_integer<false>(1, 15), sort_data_integer<false>({15}, MissingPolicy::FIRST, 0, false));
+    // Multi value ascending
+    EXPECT_EQ(SortData{0}, sort_data_integer<true>({}, MissingPolicy::FIRST, 0, true));
+    EXPECT_EQ(serialized_integer<true>(1, 10), sort_data_integer<true>({10, 15}, MissingPolicy::FIRST, 0, true));
+    // Multi value descending
+    EXPECT_EQ(SortData{0}, sort_data_integer<false>({}, MissingPolicy::FIRST, 0, true));
+    EXPECT_EQ(serialized_integer<false>(1, 15), sort_data_integer<false>({10, 15}, MissingPolicy::FIRST, 0, true));
+}
+
+TEST_F(SortBlobIntegerWriterTest, missing_policy_last)
+{
+    // Single value ascending
+    EXPECT_EQ(SortData{1}, sort_data_integer<true>({}, MissingPolicy::LAST, 0, false));
+    EXPECT_EQ(serialized_integer<true>(0, 10), sort_data_integer<true>({10}, MissingPolicy::LAST, 0, false));
+    // Single value descending
+    EXPECT_EQ(SortData{1}, sort_data_integer<false>({}, MissingPolicy::LAST, 0, false));
+    EXPECT_EQ(serialized_integer<false>(0, 15), sort_data_integer<false>({15}, MissingPolicy::LAST, 0, false));
+    // Multi value ascending
+    EXPECT_EQ(SortData{1}, sort_data_integer<true>({}, MissingPolicy::LAST, 0, true));
+    EXPECT_EQ(serialized_integer<true>(0, 10), sort_data_integer<true>({10, 15}, MissingPolicy::LAST, 0, true));
+    // Multi value descending
+    EXPECT_EQ(SortData{1}, sort_data_integer<false>({}, MissingPolicy::LAST, 0, true));
+    EXPECT_EQ(serialized_integer<false>(0, 15), sort_data_integer<false>({10, 15}, MissingPolicy::LAST, 0, true));
+}
+
+TEST_F(SortBlobIntegerWriterTest, missing_policy_as)
+{
+    // Single value ascending
+    EXPECT_EQ(serialized_integer<true>(std::nullopt, 42), sort_data_integer<true>({}, MissingPolicy::AS, 42, false));
+    EXPECT_EQ(serialized_integer<true>(std::nullopt, 10), sort_data_integer<true>({10}, MissingPolicy::AS, 42, false));
+    // Single value descending
+    EXPECT_EQ(serialized_integer<false>(std::nullopt, 42), sort_data_integer<false>({}, MissingPolicy::AS, 42, false));
+    EXPECT_EQ(serialized_integer<false>(std::nullopt, 15), sort_data_integer<false>({15}, MissingPolicy::AS, 42, false));
+    // Multi value ascending
+    EXPECT_EQ(serialized_integer<true>(std::nullopt, 42), sort_data_integer<true>({}, MissingPolicy::AS, 42, true));
+    EXPECT_EQ(serialized_integer<true>(std::nullopt, 10), sort_data_integer<true>({10, 15}, MissingPolicy::AS, 42, true));
+    // Multi value descending
+    EXPECT_EQ(serialized_integer<false>(std::nullopt, 42), sort_data_integer<false>({}, MissingPolicy::AS, 42, true));
+    EXPECT_EQ(serialized_integer<false>(std::nullopt, 15), sort_data_integer<false>({10, 15}, MissingPolicy::AS, 42, true));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

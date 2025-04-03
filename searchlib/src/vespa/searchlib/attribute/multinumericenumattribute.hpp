@@ -163,8 +163,11 @@ private:
     const EnumStoreT& _enum_store;
     attribute::NumericSortBlobWriter<T, ascending> _writer;
 public:
-    MultiNumericEnumSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store)
-        : _mv_mapping(mv_mapping), _enum_store(enum_store)
+    MultiNumericEnumSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store,
+                                   search::common::sortspec::MissingPolicy policy, T missing_value)
+        : _mv_mapping(mv_mapping),
+          _enum_store(enum_store),
+          _writer(policy, missing_value, true)
     {}
     long write(uint32_t docid, void* buf, long available) override {
         _writer.reset();
@@ -185,9 +188,11 @@ MultiValueNumericEnumAttribute<B, M>::make_sort_blob_writer(bool ascending, cons
     (void) policy;
     (void) missing_value;
     if (ascending) {
-        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, true>>(this->_mvMapping, this->_enumStore);
+        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, true>>(this->_mvMapping,
+            this->_enumStore, policy, T());
     } else {
-        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, false>>(this->_mvMapping, this->_enumStore);
+        return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, false>>(this->_mvMapping,
+            this->_enumStore, policy, T());
     }
 }
 
