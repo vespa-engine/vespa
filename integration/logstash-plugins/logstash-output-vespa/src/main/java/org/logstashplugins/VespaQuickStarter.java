@@ -89,7 +89,8 @@ public class VespaQuickStarter {
                                 logger.info("Resolved type conflict for field '{}': using type {}", fieldName, resolvedType);
                                 type = resolvedType;
                             } else {
-                                logger.warn("Could not resolve type conflict for field '{}', simply switching to type '{}'. But this implies that previous documents might throw errors when indexed.", fieldName, type);
+                                logger.warn("Could not resolve type conflict for field '{}', simply switching to type '{}'. " +
+                                            "This implies that previous documents might throw errors when indexed.", fieldName, type);
                             }
                         }
 
@@ -138,6 +139,7 @@ public class VespaQuickStarter {
                 return "position";
             }
 
+            // infer the type of the map from the first value
             Object firstValue = map.values().iterator().next();
             String firstValueType = detectType(firstValue);
             if (firstValueType != null) {
@@ -146,6 +148,7 @@ public class VespaQuickStarter {
             logger.error("Unsupported map type: {}", value.getClass().getName());
             return null;
         } else if (value instanceof List) {
+            // infer the type of the list from the first element
             List<?> list = (List<?>) value;
             if (!list.isEmpty()) {
                 Object firstElement = list.get(0);

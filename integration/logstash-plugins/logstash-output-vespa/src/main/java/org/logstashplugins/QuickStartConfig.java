@@ -25,6 +25,8 @@ public class QuickStartConfig {
     private final String vespaCloudTenant;
     private final String vespaCloudApplication;
     private final String vespaCloudInstance;
+    private final String certificateCommonName;
+    private final int certificateValidityDays;
 
     public QuickStartConfig(boolean deployPackage, 
                        boolean generateMtlsCertificates,
@@ -42,7 +44,9 @@ public class QuickStartConfig {
                        long gracePeriod,
                        String vespaCloudTenant,
                        String vespaCloudApplication,
-                       String vespaCloudInstance) {
+                       String vespaCloudInstance,
+                       String certificateCommonName,
+                       long certificateValidityDays) {
         
         logger.warn("Quick start mode enabled! We will not send documents to Vespa, but will generate an application package.");
 
@@ -56,6 +60,7 @@ public class QuickStartConfig {
         this.clientCert = clientCert;
         this.clientKey = clientKey;
 
+        // valid for self-hosted Vespa
         this.configServer = getConfigServer(configServer, vespaUrl);
         
         this.documentType = documentType;
@@ -68,8 +73,12 @@ public class QuickStartConfig {
         this.vespaCloudTenant = vespaCloudTenant;
         this.vespaCloudApplication = vespaCloudApplication;
         this.vespaCloudInstance = vespaCloudInstance;
+        this.certificateCommonName = certificateCommonName;
         
-        // Validate Vespa Cloud settings
+        // we need this to be int when we use it in the SelfSignedCertGenerator
+        this.certificateValidityDays = (int) certificateValidityDays;
+        
+        // valid for Vespa Cloud
         validateVespaCloudSettings();
     }
 
@@ -106,6 +115,7 @@ public class QuickStartConfig {
         
         // Validate that instance is provided if we're in Vespa Cloud mode
         if (isVespaCloud()) {
+            // we default to "default", so this shouldn't happen unless the user set it to an empty string
             if (vespaCloudInstance == null || vespaCloudInstance.trim().isEmpty()) {
                 throw new IllegalArgumentException("vespa_cloud_instance must be specified for Vespa Cloud deployment");
             }
@@ -114,10 +124,14 @@ public class QuickStartConfig {
                        vespaCloudTenant, vespaCloudApplication, vespaCloudInstance);
 
             if (!generateMtlsCertificates) {
-                logger.info("Defaulting to generating mTLS certificates for Vespa Cloud.");
+                logger.info("Generating mTLS certificates for Vespa Cloud: you're very likely going to need them :)");
                 generateMtlsCertificates = true;
             }
         }
+    }
+    
+    public boolean isVespaCloud() { 
+        return vespaCloudTenant != null && vespaCloudApplication != null; 
     }
 
     public boolean isDeployPackage() { return deployPackage; }
@@ -135,8 +149,6 @@ public class QuickStartConfig {
     public String getVespaCloudTenant() { return vespaCloudTenant; }
     public String getVespaCloudApplication() { return vespaCloudApplication; }
     public String getVespaCloudInstance() { return vespaCloudInstance; }
-    
-    public boolean isVespaCloud() { 
-        return vespaCloudTenant != null && vespaCloudApplication != null; 
-    }
+    public String getCertificateCommonName() { return certificateCommonName; }
+    public int getCertificateValidityDays() { return certificateValidityDays; }
 } 

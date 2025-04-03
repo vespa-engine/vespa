@@ -50,7 +50,8 @@ public class VespaAppPackageWriter {
             }
         }
 
-        // delete the write.lock file, if it exists
+        // delete the write.lock file, if it exists, we start from scratch
+        // we lock only when we write the application package
         Path writeLockFile = Paths.get(config.getApplicationPackageDir(), "write.lock");
         if (Files.exists(writeLockFile)) {
             try {
@@ -86,6 +87,7 @@ public class VespaAppPackageWriter {
         String clientCertPath = config.getClientCert();
         String clientKeyPath = config.getClientKey();
         
+        // this shouldn't happen, but better safe than NPE
         if (clientCertPath == null || clientKeyPath == null) {
             logger.error("Client certificate or key path is null. Cannot generate mTLS certificates.");
             throw new IllegalArgumentException("Client certificate or key path is null");
@@ -114,10 +116,11 @@ public class VespaAppPackageWriter {
         logger.info("Clients certificate path: {}", clientCertPath);
         logger.info("Data plane private key path: {}", clientKeyPath);
         
-        String cn = "cloud.vespa.logstash";
+        String cn = config.getCertificateCommonName();
+        int validityDays = config.getCertificateValidityDays();
         SelfSignedCertGenerator.generate(
             cn,
-            30,      // valid for 30 days
+            validityDays,
             clientKeyPath,
             clientCertPath
         );
@@ -249,6 +252,13 @@ public class VespaAppPackageWriter {
         }
     }
 
+    /**
+     * Reconciles the detected fields with the existing fields.
+     * 
+     * @param detectedFields The fields detected in the input data
+     * @param existingFields The fields already defined in the application package
+     * @return A map of reconciled fields
+     */
     private Map<String, String> reconcileFields(Map<String, String> detectedFields, Map<String, String> existingFields) {
         Map<String, String> result = new HashMap<>();
         Map<String, Map<String, String>> typeConflictResolution = loadTypeConflictResolution();
@@ -364,6 +374,11 @@ public class VespaAppPackageWriter {
         return existingFields;
     }
 
+    /**
+     * Writes the services.xml file by replacing template placeholders with actual values.
+     * 
+     * @throws IOException if an error occurs while writing the services.xml file
+     */
     private void writeServicesXml() throws IOException {
         String servicesXml = readTemplate("services.xml");
         
@@ -386,6 +401,13 @@ public class VespaAppPackageWriter {
         }
     }
 
+    /**
+     * Reads a template file from the "resources/application_package_template" directory.
+     * 
+     * @param path The path to the template file
+     * @return The content of the template file
+     * @throws IOException if an error occurs while reading the template file
+     */
     private String readTemplate(String path) throws IOException {
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(
                 Paths.get("application_package_template", path).toString())) {
@@ -421,6 +443,12 @@ public class VespaAppPackageWriter {
         return result;
     }
 
+    /**
+     * Writes the schema file by replacing template placeholders with definitions of detected fields.
+     * 
+     * @param detectedFields The fields detected in the input data
+     * @throws IOException if an error occurs while writing the schema file
+     */
     private void writeSchema(Map<String, String> detectedFields) throws IOException {
         Path schemaPath = Paths.get("schemas", "document_type.sd");
         String schema = readTemplate(schemaPath.toString());

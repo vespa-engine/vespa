@@ -57,6 +57,12 @@ public class VespaFeed implements Output {
     // if we're using Vespa Cloud, the default is "true", otherwise "false"
     public static final PluginConfigSpec<Boolean> GENERATE_MTLS_CERTIFICATES =
             PluginConfigSpec.booleanSetting("generate_mtls_certificates", false);
+    // common name for the mTLS certificates
+    public static final PluginConfigSpec<String> CERTIFICATE_COMMON_NAME =
+            PluginConfigSpec.stringSetting("certificate_common_name", "cloud.vespa.logstash");
+    // validity days for the mTLS certificates
+    public static final PluginConfigSpec<Long> CERTIFICATE_VALIDITY_DAYS =
+            PluginConfigSpec.numSetting("certificate_validity_days", 30);
     // custom type mappings file
     public static final PluginConfigSpec<String> TYPE_MAPPINGS_FILE =
     PluginConfigSpec.stringSetting("type_mappings_file", null);
@@ -172,12 +178,16 @@ public class VespaFeed implements Output {
     public static final PluginConfigSpec<Long> FLUSH_INTERVAL =
             PluginConfigSpec.numSetting("flush_interval", 5000);
     
+    /***********************
+     * Config options END
+     ***********************/
+
     private FeedClient client;
     private final String id;
     // this signals that the plugin is stopping
     private volatile boolean stopped = false;
     
-    ObjectMapper objectMapper;
+    ObjectMapper objectMapper = ObjectMappers.JSON_MAPPER;
     private DeadLetterQueueWriter dlqWriter;
     private VespaQuickStarter quickStarter;
     private final QuickStartConfig quickStartConfig;
@@ -201,9 +211,6 @@ public class VespaFeed implements Output {
             config.get(CLIENT_KEY),
             config.get(APPLICATION_PACKAGE_DIR)
         );
-
-        // for JSON serialization
-        objectMapper = ObjectMappers.JSON_MAPPER;
         
         if (config.get(QUICK_START)) {
             quickStartConfig = new QuickStartConfig(
@@ -223,7 +230,9 @@ public class VespaFeed implements Output {
                 config.get(GRACE_PERIOD),
                 config.get(VESPA_CLOUD_TENANT),
                 config.get(VESPA_CLOUD_APPLICATION),
-                config.get(VESPA_CLOUD_INSTANCE)
+                config.get(VESPA_CLOUD_INSTANCE),
+                config.get(CERTIFICATE_COMMON_NAME),
+                config.get(CERTIFICATE_VALIDITY_DAYS)
             );
             quickStarter = new VespaQuickStarter(quickStartConfig);
         } else {
@@ -237,7 +246,7 @@ public class VespaFeed implements Output {
                                     Duration.ofMillis(config.get(FLUSH_INTERVAL).longValue()))
                                 .build();
                 } catch (IOException e) {
-                    logger.error("Failed to create DLQ writer: ", e);
+                    logger.error("Failed to create Dead Letter Queue writer: ", e);
                     dlqWriter = null;
                 }
             } else {
@@ -498,8 +507,6 @@ public class VespaFeed implements Output {
         }
 
         if (quickStarter != null) {
-            logger.info("Stopping VespaFeed plugin");
-            
             // In quick start mode, deploy the application package if configured to do so
             if (quickStartConfig != null && quickStartConfig.isDeployPackage()) {
                 quickStarter.deployer.deployApplicationPackage();
@@ -547,5 +554,9 @@ public class VespaFeed implements Output {
     // for testing DLQ functionality
     protected void setDlqWriter(DeadLetterQueueWriter writer) {
         this.dlqWriter = writer;
+    }
+
+    protected FeedConfig getFeedConfig() {
+        return this.feedConfig;
     }
 }

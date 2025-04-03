@@ -1,5 +1,7 @@
 # Default type mappings for Vespa schema fields
 
+# the number 1 you see everywhere is to fix the indentation of the multi-line strings in the generated schema file
+
 # single-valued fields
 string:
   - |1

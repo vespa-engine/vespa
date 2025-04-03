@@ -40,7 +40,6 @@ public class FeedConfig {
         String clientKey,
         String applicationPackageDir
     ) {
-        this.namespace = namespace;
         this.removeNamespace = removeNamespace;
         this.removeDocumentType = removeDocumentType;
         this.create = create;
@@ -52,14 +51,17 @@ public class FeedConfig {
         // if the namespace matches %{field_name} or %{[field_name]}, it's dynamic
         DynamicOption configOption = new DynamicOption(
             // if namespace is not set, use the document type name as namespace
-            this.namespace != null ? this.namespace : documentType
+            namespace != null ? namespace : documentType
         );
         dynamicNamespace = configOption.isDynamic();
-        namespace = configOption.getParsedConfigValue();
-        // same with document type
+        // we store here the field name of the namespace
+        this.namespace = configOption.getParsedConfigValue();
+
+        // same logic for document type
         configOption = new DynamicOption(documentType);
         dynamicDocumentType = configOption.isDynamic();
         this.documentType = configOption.getParsedConfigValue();
+        
         // and operation
         configOption = new DynamicOption(operation);
         dynamicOperation = configOption.isDynamic();
@@ -71,7 +73,7 @@ public class FeedConfig {
     }
 
     private void setClientCertAndKey(String clientCert, String clientKey, String applicationPackageDir) {
-        // Set default paths if not specified and application package dir is available
+        // Set default paths to application package dir. This is where we'd generate them by default (if the user chooses to generate them)
         if (applicationPackageDir != null) {
             if (clientCert == null) {
                 this.clientCert = Paths.get(applicationPackageDir, "security", "clients.pem").toString();
@@ -81,6 +83,17 @@ public class FeedConfig {
             if (clientKey == null) {
                 this.clientKey = Paths.get(applicationPackageDir, "data-plane-private-key.pem").toString();
                 logger.info("No client_key specified, using default path: {}", this.clientKey);
+            }
+        }
+    }
+
+    public void validateOperationAndCreate() {
+        if (!dynamicOperation) {
+            if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
+                throw new IllegalArgumentException("Operation must be put, update or remove");
+            }
+            if (operation.equals("remove") && create) {
+                throw new IllegalArgumentException("Operation remove cannot have create=true");
             }
         }
     }
@@ -142,16 +155,5 @@ public class FeedConfig {
 
     public boolean isRemoveOperation() {
         return removeOperation;
-    }
-
-    public void validateOperationAndCreate() {
-        if (!dynamicOperation) {
-            if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
-                throw new IllegalArgumentException("Operation must be put, update or remove");
-            }
-            if (operation.equals("remove") && create) {
-                throw new IllegalArgumentException("Operation remove cannot have create=true");
-            }
-        }
     }
 }
