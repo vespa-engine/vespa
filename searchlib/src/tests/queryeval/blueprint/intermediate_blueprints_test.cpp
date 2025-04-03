@@ -807,10 +807,13 @@ struct make {
     static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window)); }
     static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
     static make WEAKAND_ADJUST(double limit) {
-        return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(-limit, 1.0, 0), true));
+        return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(-limit, 1.0, 0, false), true));
     }
     static make WEAKAND_DROP(double limit) {
-        return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(1.0, -limit, 0), true));
+        return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(1.0, -limit, 0, false), true));
+    }
+    static make WEAKAND_DROP_ALLOW_ALL(double limit) {
+        return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(1.0, -limit, 0, true), true));
     }
 };
 
@@ -931,6 +934,12 @@ TEST(IntermediateBlueprintsTest, test_WeakAnd_drop_stop_words) {
 TEST(IntermediateBlueprintsTest, test_WeakAnd_drop_stop_words_with_only_stop_words) {
     Blueprint::UP top = make::WEAKAND_DROP(10).leafs({20,15,25});
     Blueprint::UP expect(MyLeafSpec(15).create());
+    optimize_and_compare(std::move(top), std::move(expect));
+}
+
+TEST(IntermediateBlueprintsTest, test_WeakAnd_drop_all_words) {
+    Blueprint::UP top = make::WEAKAND_DROP_ALLOW_ALL(10).leafs({20,15,25});
+    Blueprint::UP expect = std::make_unique<EmptyBlueprint>();
     optimize_and_compare(std::move(top), std::move(expect));
 }
 

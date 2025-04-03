@@ -35,6 +35,7 @@ void maybe_eliminate_self(Blueprint* &self, Blueprint::UP replacement) {
         self = replacement.release();
         self->setParent(discard->getParent());
         self->setSourceId(discard->getSourceId());
+        self->setDocIdLimit(discard->get_docid_limit());
         discard->setParent(nullptr);
     }
     // replace with empty blueprint if empty, skip if already empty blueprint

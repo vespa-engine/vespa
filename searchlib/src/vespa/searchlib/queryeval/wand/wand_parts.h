@@ -32,6 +32,7 @@ class StopWordStrategy {
 private:
     uint32_t _adjust_limit;
     uint32_t _drop_limit;
+    bool     _allow_drop_all;
 
     static uint32_t to_abs(double rate, uint32_t docid_limit) {
         if (rate < 0.0) {
@@ -47,16 +48,18 @@ private:
     }
 
 public:
-    StopWordStrategy(double adjust_limit, double drop_limit, uint32_t docid_limit) noexcept
+    StopWordStrategy(double adjust_limit, double drop_limit, uint32_t docid_limit, bool allow_drop_all) noexcept
         : _adjust_limit(to_abs(adjust_limit, docid_limit)),
-          _drop_limit(to_abs(drop_limit, docid_limit)) {}
+          _drop_limit(to_abs(drop_limit, docid_limit)),
+          _allow_drop_all(allow_drop_all){}
     [[nodiscard]] bool auto_adjust() const noexcept { return _adjust_limit != uint32_t(-1); }
     [[nodiscard]] uint32_t adjust_distance(uint32_t hits) const noexcept {
         return (hits > _adjust_limit) ? (hits - _adjust_limit) : (_adjust_limit - hits);
     }
     [[nodiscard]] bool keep_all() const noexcept { return _drop_limit == uint32_t(-1); }
+    [[nodiscard]] bool allow_drop_all() const noexcept { return _allow_drop_all; }
     [[nodiscard]] bool should_drop(uint32_t hits) const noexcept { return hits > _drop_limit; }
-    [[nodiscard]] static StopWordStrategy none() noexcept { return {1.0, 1.0, 0}; }
+    [[nodiscard]] static StopWordStrategy none() noexcept { return {1.0, 1.0, 0, false}; }
 };
 
 /**
