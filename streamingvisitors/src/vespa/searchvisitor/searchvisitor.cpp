@@ -5,30 +5,31 @@
 #include "search_environment_snapshot.h"
 #include "searchvisitor.h"
 #include "matching_elements_filler.h"
-#include <vespa/persistence/spi/docentry.h>
-#include <vespa/document/datatype/positiondatatype.h>
+#include <vespa/document/base/exceptions.h>
 #include <vespa/document/datatype/documenttype.h>
+#include <vespa/document/datatype/mapdatatype.h>
+#include <vespa/document/datatype/positiondatatype.h>
 #include <vespa/document/datatype/tensor_data_type.h>
 #include <vespa/document/datatype/weightedsetdatatype.h>
-#include <vespa/document/datatype/mapdatatype.h>
-#include <vespa/document/base/exceptions.h>
+#include <vespa/fastlib/text/normwordfolder.h>
+#include <vespa/fnet/databuffer.h>
+#include <vespa/persistence/spi/docentry.h>
+#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/common/packets.h>
-#include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/tensor/tensor_ext_attribute.h>
-#include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchlib/uca/ucaconverter.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
-#include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
-#include <vespa/fnet/databuffer.h>
-#include <vespa/fastlib/text/normwordfolder.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <optional>
 #include <string>
 
@@ -190,7 +191,7 @@ SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP 
       _ascending(true),
       _converter(nullptr),
       _attr(std::move(attr)),
-      _sort_blob_writer(_attr ? _attr->get()->make_sort_blob_writer(_ascending, _converter) : nullptr)
+      _sort_blob_writer()
 {
 }
 
@@ -200,8 +201,19 @@ SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP 
       _ascending(ascending),
       _converter(converter),
       _attr(std::move(attr)),
-      _sort_blob_writer(_attr ? _attr->get()->make_sort_blob_writer(_ascending, _converter) : nullptr)
+      _sort_blob_writer()
 {
+    make_sort_blob_writer();
+}
+
+void
+SearchVisitor::AttrInfo::make_sort_blob_writer()
+{
+    if (_attr && _attr->get()->is_sortable()) {
+        _sort_blob_writer = _attr->get()->make_sort_blob_writer(_ascending, _converter,
+                                                                search::common::sortspec::MissingPolicy::DEFAULT,
+                                                                std::string_view());
+    }
 }
 
 SearchVisitor::StreamingDocsumsState::StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback, ResolveClassInfo& resolve_class_info)
@@ -1030,6 +1042,7 @@ SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & 
                                 index = j;
                                 _attributeFields[index]._ascending = field_sort_spec._ascending;
                                 _attributeFields[index]._converter = field_sort_spec._converter.get();
+                                _attributeFields[index].make_sort_blob_writer();
                             }
                         }
                         if (index == _attributeFields.size()) {

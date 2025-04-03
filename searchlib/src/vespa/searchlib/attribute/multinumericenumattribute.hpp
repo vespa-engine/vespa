@@ -9,6 +9,7 @@
 #include "enumerated_multi_value_read_view.h"
 #include "multi_numeric_enum_search_context.h"
 #include "numeric_sort_blob_writer.h"
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.hpp>
 #include <vespa/vespalib/util/array.hpp>
@@ -160,51 +161,29 @@ class MultiNumericEnumSortBlobWriter : public attribute::ISortBlobWriter {
 private:
     const MultiValueMappingT& _mv_mapping;
     const EnumStoreT& _enum_store;
+    attribute::NumericSortBlobWriter<T, ascending> _writer;
 public:
     MultiNumericEnumSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store)
         : _mv_mapping(mv_mapping), _enum_store(enum_store)
     {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        attribute::NumericSortBlobWriter<T, ascending> writer;
+    long write(uint32_t docid, void* buf, long available) override {
+        _writer.reset();
         auto indices = _mv_mapping.get(docid);
         for (auto& v : indices) {
-            writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()));
+            _writer.candidate(_enum_store.get_value(multivalue::get_value_ref(v).load_acquire()));
         }
-        return writer.write(buf, available);
+        return _writer.write(buf, available);
     }
 };
 
 template <typename B, typename M>
-template <bool asc>
-long
-MultiValueNumericEnumAttribute<B, M>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
-{
-    attribute::NumericSortBlobWriter<T, asc> writer;
-    auto indices = this->_mvMapping.get(doc);
-    for (auto& v : indices) {
-        writer.candidate(this->_enumStore.get_value(multivalue::get_value_ref(v).load_acquire()));
-    }
-    return writer.write(serTo, available);
-}
-
-template <typename B, typename M>
-long
-MultiValueNumericEnumAttribute<B, M>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    return on_serialize_for_sort<true>(doc, serTo, available);
-}
-
-template <typename B, typename M>
-long
-MultiValueNumericEnumAttribute<B, M>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    return on_serialize_for_sort<false>(doc, serTo, available);
-}
-
-template <typename B, typename M>
 std::unique_ptr<attribute::ISortBlobWriter>
-MultiValueNumericEnumAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
+MultiValueNumericEnumAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
+                                                            search::common::sortspec::MissingPolicy policy,
+                                                            std::string_view missing_value) const
 {
+    (void) policy;
+    (void) missing_value;
     if (ascending) {
         return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, true>>(this->_mvMapping, this->_enumStore);
     } else {

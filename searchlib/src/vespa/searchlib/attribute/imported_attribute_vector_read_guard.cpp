@@ -5,6 +5,7 @@
 #include "imported_multi_value_read_view.h"
 #include "imported_search_context.h"
 #include "reference_attribute.h"
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -285,20 +286,6 @@ bool ImportedAttributeVectorReadGuard::is_sortable() const noexcept {
     return _target_attribute.is_sortable();
 }
 
-long ImportedAttributeVectorReadGuard::onSerializeForAscendingSort(DocId doc,
-                                                                   void *serTo,
-                                                                   long available,
-                                                                   const common::BlobConverter *bc) const {
-    return _target_attribute.serializeForAscendingSort(getTargetLid(doc), serTo, available, bc);
-}
-
-long ImportedAttributeVectorReadGuard::onSerializeForDescendingSort(DocId doc,
-                                                                    void *serTo,
-                                                                    long available,
-                                                                    const common::BlobConverter *bc) const {
-    return _target_attribute.serializeForDescendingSort(getTargetLid(doc), serTo, available, bc);
-}
-
 class ImportedAttributeVectorReadGuard::SortBlobWriter : public attribute::ISortBlobWriter {
 private:
     const ImportedAttributeVectorReadGuard& _attr;
@@ -309,14 +296,16 @@ public:
                    std::unique_ptr<attribute::ISortBlobWriter> target_writer)
         : _attr(attr), _target_writer(std::move(target_writer))
     {}
-    long write(uint32_t docid, void* buf, long available) const override {
+    long write(uint32_t docid, void* buf, long available) override {
         return _target_writer->write(_attr.getTargetLid(docid), buf, available);
     }
 };
 
-std::unique_ptr<attribute::ISortBlobWriter>
-ImportedAttributeVectorReadGuard::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const {
-    return std::make_unique<SortBlobWriter>(*this, _target_attribute.make_sort_blob_writer(ascending, converter));
+std::unique_ptr<ISortBlobWriter>
+ImportedAttributeVectorReadGuard::make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                        common::sortspec::MissingPolicy policy,
+                                                        std::string_view missing_value) const {
+    return std::make_unique<SortBlobWriter>(*this, _target_attribute.make_sort_blob_writer(ascending, converter, policy, missing_value));
 }
 
 }

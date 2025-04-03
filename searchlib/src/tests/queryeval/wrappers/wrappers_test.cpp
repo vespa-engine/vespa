@@ -41,7 +41,7 @@ public:
         }
         void doUnpack(uint32_t docid) override {
             ++_data.unpackCnt;
-            if (_match != 0) {
+            if (_match != nullptr) {
                 _data.unpackedDocId = docid;
             }
         }

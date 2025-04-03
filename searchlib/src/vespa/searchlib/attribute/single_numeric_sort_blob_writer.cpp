@@ -14,7 +14,7 @@ SingleNumericSortBlobWriter<AttrType, ascending>::SingleNumericSortBlobWriter(co
 
 template <typename AttrType, bool ascending>
 long
-SingleNumericSortBlobWriter<AttrType, ascending>::write(uint32_t docid, void* buf, long available) const
+SingleNumericSortBlobWriter<AttrType, ascending>::write(uint32_t docid, void* buf, long available)
 {
     T orig_value = _attr.get(docid);
     return vespalib::serializeForSort<vespalib::convertForSort<T, ascending>>(orig_value, buf, available);

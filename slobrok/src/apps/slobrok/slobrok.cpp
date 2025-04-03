@@ -42,7 +42,7 @@ hook_sigterm(void)
     act.sa_handler = sigtermhandler;
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
-    sigaction(SIGTERM, &act, NULL);
+    sigaction(SIGTERM, &act, nullptr);
 }
 
 

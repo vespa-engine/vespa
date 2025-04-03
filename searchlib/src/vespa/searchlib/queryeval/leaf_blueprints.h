@@ -20,7 +20,7 @@ public:
     EmptyBlueprint(FieldSpecBase field) : SimpleLeafBlueprint(field) {}
     EmptyBlueprint() = default;
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
     EmptyBlueprint *as_empty() noexcept final override { return this; }
 };
 
@@ -31,7 +31,7 @@ protected:
 public:
     AlwaysTrueBlueprint();
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
     const AlwaysTrueBlueprint *asAlwaysTrue() const noexcept override { return this; }
 };
 
@@ -52,7 +52,7 @@ public:
     SimpleBlueprint &tag(const std::string &tag);
     const std::string &tag() const { return _tag; }
     FlowStats calculate_flow_stats(uint32_t docid_limit) const override;
-    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -96,7 +96,7 @@ public:
         return default_flow_stats(docid_limit, _result.inspect().size(), 0);
     }
 
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
 };

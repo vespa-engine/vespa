@@ -15,7 +15,7 @@ private:
     const AttrType& _attr;
 public:
     SingleNumericSortBlobWriter(const AttrType& attr);
-    long write(uint32_t docid, void* buf, long available) const override;
+    long write(uint32_t docid, void* buf, long available) override;
 };
 
 }

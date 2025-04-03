@@ -23,7 +23,9 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.file.Path;
+import java.util.Locale;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -121,13 +123,16 @@ class ProxyProtocolTest {
 
     @Test
     void requireThatSslConnectionFailsWhenMixedModeIsDisabled() throws Exception {
-        JettyTestDriver driver = createSslWithProxyProtocolTestDriver(
-                certificateFile, privateKeyFile, requestLogMock, connectionLog, false);
-        try {
-            sendJettyClientRequest(driver, certificateFile, null);
+        var driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, connectionLog, false);
+        try (var client = createJettyHttpClient(certificateFile)) {
+            var uri = URI.create("https://localhost:" + driver.server().getListenPort() + "/");
+            client.newRequest(uri).send();
             fail("Expected exception");
         } catch (ExecutionException e) {
             assertInstanceOf(IOException.class, e.getCause());
+        } catch (TimeoutException e) {
+            // The test has been observed to sporadically fail with idle timeout in CI
+            assertTrue(e.getMessage().toLowerCase(Locale.US).contains("idle"), e.getMessage());
         } finally {
             assertTrue(driver.close());
         }

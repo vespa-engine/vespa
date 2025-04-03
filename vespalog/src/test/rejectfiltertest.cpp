@@ -13,7 +13,7 @@ using ns_log::Logger;
 void
 assertShouldNotReject(RejectFilter & filter, Logger::LogLevel level, const char * msg)
 {
-    std::cerr << "Filter should not reject level '" << Logger::levelName(level) << "' message '" << (msg == NULL ? "NULL" : msg)  << "' ...: ";
+    std::cerr << "Filter should not reject level '" << Logger::levelName(level) << "' message '" << (msg == nullptr ? "nullptr" : msg)  << "' ...: ";
     if (filter.shouldReject(level, msg)) {
         std::cerr << "Failed!\n";
         std::_Exit(EXIT_FAILURE);
@@ -24,7 +24,7 @@ assertShouldNotReject(RejectFilter & filter, Logger::LogLevel level, const char 
 void
 assertShouldReject(RejectFilter & filter, Logger::LogLevel level, const char * msg)
 {
-    std::cerr << "Filter should reject level '" << Logger::levelName(level) << "' message '" << (msg == NULL ? "NULL" : msg)  << "' ...: ";
+    std::cerr << "Filter should reject level '" << Logger::levelName(level) << "' message '" << (msg == nullptr ? "nullptr" : msg)  << "' ...: ";
     if (!filter.shouldReject(level, msg)) {
         std::cerr << "Failed!\n";
         std::_Exit(EXIT_FAILURE);
@@ -40,7 +40,7 @@ main(int argc, char **argv)
 
     ns_log::RejectFilter filter;
     filter.addRejectRule(Logger::warning, "bar");
-    assertShouldNotReject(filter, Logger::warning, NULL);
+    assertShouldNotReject(filter, Logger::warning, nullptr);
     assertShouldNotReject(filter, Logger::warning, "");
     assertShouldNotReject(filter, Logger::warning, "foo");
     assertShouldReject(filter, Logger::warning, "bar");
@@ -52,7 +52,7 @@ main(int argc, char **argv)
     assertShouldReject(defaultFilter, Logger::warning, "E 23-235018.067240 14650 23/10/2012 23:50:18 yjava_preload.so: [preload.c:350] Using FILTER_NONE:  This must be paranoid approved, and since you are using FILTER_NONE you must live with this error.");
     assertShouldReject(defaultFilter, Logger::warning, "");
     assertShouldNotReject(defaultFilter, Logger::warning, "foobar");
-    assertShouldNotReject(defaultFilter, Logger::event, NULL);
+    assertShouldNotReject(defaultFilter, Logger::event, nullptr);
     assertShouldReject(defaultFilter, Logger::warning, "E 18-140313.398540 10727 18/11/2012 14:03:13 yjava_preload.so: [preload.c:670] Accept failed: -1 (4)");
     return EXIT_SUCCESS;
 }

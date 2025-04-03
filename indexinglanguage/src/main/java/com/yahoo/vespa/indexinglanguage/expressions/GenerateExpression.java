@@ -20,6 +20,7 @@ import java.util.Map;
  * @author glebashnik
  */
 public class GenerateExpression extends Expression {
+
     private final Linguistics linguistics;
     private final FieldGenerator generator;
     private final String generatorId;
@@ -31,12 +32,10 @@ public class GenerateExpression extends Expression {
     /** The target type we are generating into. */
     private DataType targetType;
     
-    public GenerateExpression(
-            Linguistics linguistics, 
-            Map<String, FieldGenerator> generators, 
-            String generatorId, 
-            List<String> generatorArguments
-    ) {
+    public GenerateExpression(Linguistics linguistics,
+                              Map<String, FieldGenerator> generators,
+                              String generatorId,
+                              List<String> generatorArguments) {
         this.linguistics = linguistics;
         this.generatorId = generatorId;
         this.generatorArguments = List.copyOf(generatorArguments);
@@ -118,7 +117,7 @@ public class GenerateExpression extends Expression {
     private FieldValue generate(Prompt prompt, ExecutionContext context) {
         var generatorContext =  new FieldGenerator.Context(destination, targetType, context.getCache())
                 .setLanguage(context.resolveLanguage(linguistics))
-                .setGeneratorId(generatorId);
+                .setComponentId(generatorId);
 
         return generator.generate(prompt, generatorContext);
     }

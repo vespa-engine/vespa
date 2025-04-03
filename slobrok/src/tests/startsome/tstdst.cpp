@@ -136,7 +136,7 @@ TstEnv::TstEnv(int sbp, int myp, const char *n)
       _supervisor(new FRT_Supervisor(_transport)),
       _myport(myp),
       _sbport(sbp),
-      _rpcHooks(NULL),
+      _rpcHooks(nullptr),
       _id(n)
 {
     _rpcHooks = new RPCHooks(*this);
@@ -153,7 +153,7 @@ TstEnv::~TstEnv()
 int
 TstEnv::MainLoop()
 {
-    srandom(time(NULL));
+    srandom(time(nullptr));
 
     if (! getSupervisor()->Listen(_myport)) {
         LOG(error, "TestRpcServer: unable to listen to port %d", _myport);

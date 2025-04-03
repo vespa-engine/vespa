@@ -57,7 +57,7 @@ VerifyLogDataStoreApp::verify(const std::string & dir)
     try {
         LogDataStore store(executor, dir, config, growStrategy, tuning,
                            fileHeaderContext,
-                           noTlSyncer, NULL, true);
+                           noTlSyncer, nullptr, true);
         store.verify(false);
     } catch (const vespalib::Exception & e) {
         fprintf(stderr, "Got exception: %s", e.what());

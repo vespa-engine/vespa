@@ -14,17 +14,18 @@ namespace search::attribute {
  * weighted sets of string with ascending or descending
  * sort order.
  */
+template <bool asc>
 class StringSortBlobWriter : public SortBlobWriter {
     using BlobConverter = common::BlobConverter;
     std::optional<size_t> _best_size;
     unsigned char*        _serialize_to;
     size_t                _available;
     const BlobConverter*  _bc;
-    const bool            _asc;
 public:
-    StringSortBlobWriter(void* serialize_to, size_t available, const BlobConverter* bc, bool asc) noexcept;
+    StringSortBlobWriter(const BlobConverter* bc) noexcept;
     ~StringSortBlobWriter() noexcept;
     bool candidate(const char* val);
+    void reset(void* serialize_to, size_t available);
     long write();
 };
 

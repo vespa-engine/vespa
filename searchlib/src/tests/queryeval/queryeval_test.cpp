@@ -376,7 +376,7 @@ public:
         (void) tfmda;
         return _sc->createIterator(&_tfmd, strict());
     }
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
 private:
@@ -817,8 +817,8 @@ TEST(QueryEvalTest, require_that_we_can_insert_indexes_into_unpack_info_that_we_
 
 TEST(QueryEvalTest, test_true_search)
 {
-    EXPECT_EQ(16u, sizeof(EmptySearch));
-    EXPECT_EQ(24u, sizeof(TrueSearch));
+    EXPECT_EQ(24u, sizeof(EmptySearch));
+    EXPECT_EQ(32u, sizeof(TrueSearch));
 
     TermFieldMatchData tfmd;
     TrueSearch t(tfmd);

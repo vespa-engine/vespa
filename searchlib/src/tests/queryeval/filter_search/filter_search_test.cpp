@@ -70,7 +70,7 @@ struct LeafProxy : SimpleLeafBlueprint {
         child->sort(in_flow);
     }
     SearchIteratorUP createLeafSearch(const TermFieldMatchDataArray &) const override { abort(); }
-    SearchIteratorUP createFilterSearch(Constraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(Constraint constraint) const override {
         return child->createFilterSearch(constraint);
     }
 };
@@ -87,7 +87,7 @@ struct CheckParamsProxy : LeafProxy {
         expect_inherit_strict(expect_inherit_strict_in), expect_same_constraint(expect_same_constraint_in) {}
     CheckParamsProxy(std::unique_ptr<Blueprint> child_in)
       : LeafProxy(std::move(child_in)), expect_forced_strict(true), expect_inherit_strict(false), expect_same_constraint(true) {}
-    SearchIteratorUP createFilterSearch(Constraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(Constraint constraint) const override {
         if (expect_forced_strict) {
             EXPECT_EQ(strict(), true);
         } else {
@@ -105,7 +105,7 @@ struct CheckDroppedProxy : LeafProxy {
     mutable bool used;
     CheckDroppedProxy(std::unique_ptr<Blueprint> child_in)
       : LeafProxy(std::move(child_in)), used(false) {}
-    SearchIteratorUP createFilterSearch(Constraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(Constraint constraint) const override {
         used = true;
         return child->createFilterSearch(constraint);
     }

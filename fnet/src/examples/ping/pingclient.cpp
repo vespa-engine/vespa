@@ -42,7 +42,7 @@ PingClient::main(int argc, char **argv)
     uint32_t channelCnt = 0;
     for (uint32_t i = 0; i < 10; i++) {
         channels[i] = (conn == nullptr) ? nullptr : conn->OpenChannel(&queue, FNET_Context(i));
-        if (channels[i] == 0) {
+        if (channels[i] == nullptr) {
             fprintf(stderr, "Could not make channel[%d] to %s\n", i, argv[1]);
             break;
         }

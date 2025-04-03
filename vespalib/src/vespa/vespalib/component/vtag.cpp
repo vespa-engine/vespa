@@ -40,7 +40,7 @@ Vtag::printVersionNice()
     if (strncmp(VersionTag, "V_", 2) == 0) {
         s += 2;
         do {
-            while (strchr("0123456789", *s) != NULL) {
+            while (strchr("0123456789", *s) != nullptr) {
                 printf("%c", *s++);
             }
             if (strncmp(s, "_RELEASE", 8) == 0) {
@@ -49,7 +49,7 @@ Vtag::printVersionNice()
             }
             if (strncmp(s, "_RC", 3) == 0) {
                 char *e = strchr(s, '-');
-                if (e == NULL) {
+                if (e == nullptr) {
                     printf("%s", s);
                 } else {
                     printf("%.*s", (int)(e-s), s);
@@ -65,7 +65,7 @@ Vtag::printVersionNice()
         } while (*s && *s != '-');
     } else {
         char *e = strchr(s, '-');
-        if (e == NULL) {
+        if (e == nullptr) {
             printf("%s", s);
         } else {
             printf("%.*s", (int)(e-s), s);
@@ -74,7 +74,7 @@ Vtag::printVersionNice()
     if (needdate) {
         s = VersionTagDate;
         char *e = strchr(s, '-');
-        if (e == NULL) {
+        if (e == nullptr) {
             printf("-%s", s);
         } else {
             printf("-%.*s", (int)(e-s), s);

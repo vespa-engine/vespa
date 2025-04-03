@@ -349,7 +349,7 @@ struct VerifyMatchData {
         FlowStats calculate_flow_stats(uint32_t docid_limit) const override {
             return default_flow_stats(docid_limit, 0, 0);
         }
-        [[nodiscard]] SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+        [[nodiscard]] SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
             return create_default_filter(constraint);
         }
     };

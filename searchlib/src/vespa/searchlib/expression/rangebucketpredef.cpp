@@ -11,7 +11,7 @@ RangeBucketPreDefFunctionNode::~RangeBucketPreDefFunctionNode() {}
 RangeBucketPreDefFunctionNode::RangeBucketPreDefFunctionNode(const RangeBucketPreDefFunctionNode & rhs) :
     UnaryFunctionNode(rhs),
     _predef(rhs._predef),
-    _result(NULL),
+    _result(nullptr),
     _nullResult(rhs._nullResult),
     _handler()
 {
@@ -22,7 +22,7 @@ RangeBucketPreDefFunctionNode & RangeBucketPreDefFunctionNode::operator = (const
     if (this != & rhs) {
         UnaryFunctionNode::operator = (rhs);
         _predef = rhs._predef;
-        _result = NULL;
+        _result = nullptr;
         _nullResult = rhs._nullResult;
         _handler.reset();
     }
@@ -68,7 +68,7 @@ const ResultNode * RangeBucketPreDefFunctionNode::MultiValueHandler::handle(cons
     _result.clear();
     for(size_t i(0), m(v.size()); i < m; i++) {
         const ResultNode * bucket = _predef.find(v.get(i));
-        if (bucket != NULL) {
+        if (bucket != nullptr) {
             _result.push_back(*bucket);
         } else {
             _result.push_back(*_nullResult);

@@ -28,7 +28,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(FilterConstraint constraint) const override;
+    createFilterSearchImpl(FilterConstraint constraint) const override;
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
     uint8_t calculate_cost_tier() const override {
@@ -55,7 +55,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(FilterConstraint constraint) const override;
+    createFilterSearchImpl(FilterConstraint constraint) const override;
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
 };
@@ -79,7 +79,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(FilterConstraint constraint) const override;
+    createFilterSearchImpl(FilterConstraint constraint) const override;
 private:
     AnyFlow my_flow(InFlow in_flow) const override;
     uint8_t calculate_cost_tier() const override;
@@ -109,7 +109,7 @@ public:
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
-    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 
     explicit WeakAndBlueprint(uint32_t n) : WeakAndBlueprint(n, wand::StopWordStrategy::none(), true) {}
     WeakAndBlueprint(uint32_t n, wand::StopWordStrategy stop_word_strategy, bool thread_safe);
@@ -136,11 +136,11 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, InFlow in_flow) const override;
-    SearchIteratorUP createSearch(fef::MatchData &md) const override;
+    SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
-    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 
     explicit NearBlueprint(uint32_t window) noexcept : _window(window) {}
 };
@@ -158,11 +158,11 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void sort(Children &children, InFlow in_flow) const override;
-    SearchIteratorUP createSearch(fef::MatchData &md) const override;
+    SearchIteratorUP createSearchImpl(fef::MatchData &md) const override;
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
-    SearchIterator::UP createFilterSearch(FilterConstraint constraint) const override;
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 
     explicit ONearBlueprint(uint32_t window) noexcept : _window(window) {}
 };
@@ -183,7 +183,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(FilterConstraint constraint) const override;
+    createFilterSearchImpl(FilterConstraint constraint) const override;
     uint8_t calculate_cost_tier() const override {
         return (childCnt() > 0) ? get_children()[0]->getState().cost_tier() : State::COST_TIER_NORMAL;
     }
@@ -210,7 +210,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              fef::MatchData &md) const override;
     SearchIterator::UP
-    createFilterSearch(FilterConstraint constraint) const override;
+    createFilterSearchImpl(FilterConstraint constraint) const override;
 
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;

@@ -4,6 +4,8 @@ package com.yahoo.search.searchers;
 
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.data.access.Inspectable;
+import com.yahoo.data.access.Inspector;
+import com.yahoo.data.access.Type;
 import com.yahoo.data.access.simple.Value;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -13,6 +15,7 @@ import com.yahoo.search.result.FeatureData;
 import com.yahoo.search.result.Hit;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.tensor.Tensor;
+import com.yahoo.tensor.TensorAddress;
 
 import java.util.Iterator;
 import java.util.Map;
@@ -45,68 +48,91 @@ public class ChunkLimitingSearcher extends Searcher {
         Query query = result.getQuery();
 
         int chunkLimit = query.properties().getInteger(CHUNK_LIMIT_MAX, 0);
-        String chunkLimitedField = query.properties().getString(CHUNK_LIMIT_FIELD);
-        String chunkLimitTensor = query.properties().getString(CHUNK_LIMIT_TENSOR);
-
-        if (chunkLimit == 0 || chunkLimitedField == null || chunkLimitTensor == null) return;
+        String chunkFieldNames = query.properties().getString(CHUNK_LIMIT_FIELD);
+        String chunkScoresFieldName = query.properties().getString(CHUNK_LIMIT_TENSOR);
+        if (chunkLimit == 0 || chunkFieldNames == null || chunkScoresFieldName == null) return;
 
         query.trace("Pruning excessive chunks from result", 2);
         Iterator<Hit> hitIterator = result.hits().unorderedDeepIterator();
-        while(hitIterator.hasNext()) {
+        while (hitIterator.hasNext()) {
             Hit hit = hitIterator.next();
-            limitChunks(hit, query, chunkLimit, chunkLimitedField, chunkLimitTensor);
+            Set<Integer> topChunkIndexes = topChunkIndices(hit, query, chunkLimit, chunkScoresFieldName);
+            if (topChunkIndexes == null) continue;
+            limitChunks(hit, query, chunkFieldNames.split(","), topChunkIndexes);
         }
     }
 
-    private void limitChunks(Hit hit, Query query, int chunkLimit, String chunkLimitedField, String chunkLimitTensor) {
-
-        var chunks = ((Inspectable) hit.getField(chunkLimitedField)).inspect();
-        if(chunks.entryCount() <= chunkLimit) return;
-
-        FeatureData summaryFeatures = (FeatureData) hit.getField("summaryfeatures");
+    private Set<Integer> topChunkIndices(Hit hit, Query query, int chunkLimit, String chunkScoresFieldName) {
+        FeatureData summaryFeatures = (FeatureData)hit.getField("summaryfeatures");
         if (summaryFeatures == null) {
             query.trace("No summaryfeatures found for hit " + hit.getDisplayId() + ", not limiting", 2);
-            return;
+            return null;
         }
-
-        var chunkScores = getChunkScores(summaryFeatures, chunkLimitTensor);
-        if(chunkScores == null) {
-            query.trace("chunk.limit.tensor not present for hit " + hit.getDisplayId() + ", not limiting", 2);
-            return;
+        Tensor chunkScores = summaryFeatures.getTensor(chunkScoresFieldName);
+        if (chunkScores == null) {
+            query.trace("Field '" + chunkScoresFieldName + "' not present for hit " + hit.getDisplayId() + ", not limiting", 2);
+            return null;
         }
-
-        if(chunkScores.isEmpty()) {
-            query.trace("chunk.limit.tensor has no entries for hit " + hit.getDisplayId() + ", not limiting", 2);
-            return;
-        }
-
-        Set<Integer> topChunkIndices = chunkScores.entrySet().stream()
-                .sorted((b, a) -> a.getValue().compareTo(b.getValue()))
-                .limit(chunkLimit)
-                .map(Map.Entry::getKey).map(Long::intValue)
-                .collect(Collectors.toSet());
-
-        var limitedChunks = new Value.ArrayValue(chunkLimit);
-        for (int i = 0; i < chunks.entryCount(); i++) {
-            if(topChunkIndices.contains(i)) limitedChunks.add(chunks.entry(i));
-        }
-        hit.setField(chunkLimitedField, limitedChunks);
-
-        query.trace("limited " + hit.getDisplayId() + " to " + limitedChunks.entryCount() + " chunks down from " + chunks.entryCount(), 3);
-    }
-
-    private HashMap<Long, Double> getChunkScores(FeatureData summaryFeatures, String chunkLimitTensorName) {
-        HashMap<Long, Double> paragraphSimilarities = new HashMap<>();
-
-        Tensor chunkLimitTensor = summaryFeatures.getTensor(chunkLimitTensorName);
-
-        if(chunkLimitTensor == null) {
+        if (chunkScores.isEmpty()) {
+            query.trace("Field '" + chunkScoresFieldName + "' has no entries for hit " + hit.getDisplayId() + ", not limiting", 2);
             return null;
         }
 
-        chunkLimitTensor.cellIterator()
-                .forEachRemaining(cell -> paragraphSimilarities.put(cell.getKey().numericLabel(0), cell.getValue()));
-
-        return paragraphSimilarities;
+        return chunkScoresAsMap(chunkScores).entrySet().stream()
+                                                       .sorted((b, a) -> a.getValue().compareTo(b.getValue()))
+                                                       .limit(chunkLimit)
+                                                       .map(Map.Entry::getKey).map(Long::intValue)
+                                                       .collect(Collectors.toSet());
     }
+
+    private void limitChunks(Hit hit, Query query, String[] chunkFieldNames, Set<Integer> topChunkIndexes) {
+        for (String fieldName : chunkFieldNames) {
+            fieldName = fieldName.trim();
+            if (fieldName.startsWith("summaryfeatures.") || fieldName.startsWith("matchfeatures."))
+                limitChunkFeature(hit, query, fieldName, topChunkIndexes);
+            else
+                limitChunkField(hit, query, fieldName, topChunkIndexes);
+        }
+    }
+
+    private void limitChunkFeature(Hit hit, Query query, String fieldName, Set<Integer> topChunkIndexes) {
+        String[] components = fieldName.split("\\.");
+        FeatureData features = (FeatureData)hit.getField(components[0]);
+        if (features == null) return;
+        Tensor tensor = features.getTensor(components[1]);
+        if (tensor == null) return;
+        if (tensor.type().rank() != 1) {
+            query.trace("Tensor '" + fieldName + "' doesn't have a single mapped dimension, but has type " +
+                        tensor.type() + ". Not limiting.", 2);
+        }
+        if (tensor.size() <= topChunkIndexes.size()) return;
+        Tensor.Builder b = Tensor.Builder.of(tensor.type());
+        for (Integer index : topChunkIndexes)
+            b.cell(tensor.get(TensorAddress.of(index)), index);
+        features.set(components[1], b.build());
+    }
+
+    private void limitChunkField(Hit hit, Query query, String fieldName, Set<Integer> topChunkIndexes) {
+        var chunks = ((Inspectable) hit.getField(fieldName)).inspect();
+        if (chunks.type() != Type.ARRAY) return;
+        if (chunks.entryCount() <= topChunkIndexes.size()) return;
+        var limitedChunks = new Value.ArrayValue(topChunkIndexes.size());
+        for (int i = 0; i < chunks.entryCount(); i++) {
+            if (topChunkIndexes.contains(i))
+                limitedChunks.add(chunks.entry(i));
+        }
+        hit.setField(fieldName, limitedChunks);
+        if (query.getTrace().isTraceable(3))
+            query.trace("limited '" + fieldName + "' in " + hit.getDisplayId() +
+                        " to " + limitedChunks.entryCount() +
+                        " chunks, down from " + chunks.entryCount(), 3);
+    }
+
+    private Map<Long, Double> chunkScoresAsMap(Tensor chunkLimitTensor) {
+        Map<Long, Double> chunkScores = new HashMap<>();
+        chunkLimitTensor.cellIterator()
+                .forEachRemaining(cell -> chunkScores.put(cell.getKey().numericLabel(0), cell.getValue()));
+        return chunkScores;
+    }
+
 }

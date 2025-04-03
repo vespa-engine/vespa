@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "raw_attribute.h"
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <cassert>
 
 namespace search::attribute {
@@ -66,7 +67,7 @@ private:
     const RawAttribute& _attr;
 public:
     RawAttributeSortBlobWriter(const RawAttribute& attr) noexcept : _attr(attr) {}
-    long write(uint32_t docid, void* buf, long available) const override {
+    long write(uint32_t docid, void* buf, long available) override {
         auto raw = _attr.get_raw(docid);
         return serialize_for_sort<desc>(raw, buf, available);
     }
@@ -80,22 +81,10 @@ RawAttribute::is_sortable() const noexcept
     return true;
 }
 
-long
-RawAttribute::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    auto raw = get_raw(doc);
-    return serialize_for_sort<false>(raw, serTo, available);
-}
-
-long
-RawAttribute::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    auto raw = get_raw(doc);
-    return serialize_for_sort<true>(raw, serTo, available);
-}
-
-std::unique_ptr<attribute::ISortBlobWriter>
-RawAttribute::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
+std::unique_ptr<ISortBlobWriter>
+RawAttribute::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
+                                    common::sortspec::MissingPolicy,
+                                    std::string_view) const
 {
     if (ascending) {
         // Note: Template argument for the writer is "descending".

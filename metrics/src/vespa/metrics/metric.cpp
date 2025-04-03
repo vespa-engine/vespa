@@ -161,15 +161,15 @@ Metric::registerWithOwnerIfRequired(MetricSet* owner)
 const MetricSet*
 Metric::getRoot() const
 {
-    return (_owner == 0 ? (isMetricSet() ? static_cast<const MetricSet*>(this)
-                                         : 0)
+    return (_owner == nullptr ? (isMetricSet() ? static_cast<const MetricSet*>(this)
+                                               : nullptr)
                         : _owner->getRoot());
 }
 
 std::string
 Metric::getPath() const
 {
-    if (_owner == 0 || _owner->_owner == 0) {
+    if (_owner == nullptr || _owner->_owner == nullptr) {
         return getName();
     } else {
         std::string path(_owner->getPath());
@@ -185,7 +185,7 @@ Metric::getPathVector() const
     std::vector<String> result;
     result.push_back(getName());
     const MetricSet* owner(_owner);
-    while (owner != 0) {
+    while (owner != nullptr) {
         result.push_back(owner->getName());
         owner = owner->_owner;
     }

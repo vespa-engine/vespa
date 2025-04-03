@@ -2,9 +2,10 @@
 
 #include <vespa/document/base/documentid.h>
 #include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/bucketdb/bucketdbhandler.h>
 #include <vespa/searchcore/proton/bucketdb/checksumaggregators.h>
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
@@ -17,8 +18,8 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/hw_info.h>
@@ -44,6 +45,7 @@ using search::QueryTermSimple;
 using search::TuneFileAttributes;
 using search::attribute::SearchContext;
 using search::attribute::SearchContextParams;
+using search::common::sortspec::MissingPolicy;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldMatchData;
@@ -1978,7 +1980,7 @@ TEST(DocumentMetaStoreTest, serialize_for_sort)
     EXPECT_EQ(12u, SZ);
     EXPECT_EQ(SZ, dms.getFixedWidth());
     uint8_t asc_dest[SZ];
-    auto asc_writer = dms.make_sort_blob_writer(true, nullptr);
+    auto asc_writer = dms.make_sort_blob_writer(true, nullptr, MissingPolicy::DEFAULT, std::string_view());
     EXPECT_EQ(0, asc_writer->write(3, asc_dest, sizeof(asc_dest)));
     EXPECT_EQ(-1, asc_writer->write(1, asc_dest, sizeof(asc_dest) - 1));
     document::GlobalId gid;
@@ -1992,7 +1994,7 @@ TEST(DocumentMetaStoreTest, serialize_for_sort)
     EXPECT_EQ(0, memcmp(asc_dest, gid.get(), SZ));
 
     uint8_t desc_dest[SZ];
-    auto desc_writer = dms.make_sort_blob_writer(false, nullptr);
+    auto desc_writer = dms.make_sort_blob_writer(false, nullptr, MissingPolicy::DEFAULT, std::string_view());
     EXPECT_EQ(SZ, desc_writer->write(2, desc_dest, sizeof(desc_dest)));
     for (size_t i(0); i < SZ; i++) {
         EXPECT_EQ(0xff - asc_dest[i], desc_dest[i]);

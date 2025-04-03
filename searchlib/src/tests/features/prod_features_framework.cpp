@@ -46,27 +46,27 @@ TEST_F(ProdFeaturesTest, test_framework)
         QueryEnvironmentBuilder qeb(queryEnv, layout);
         {
             SimpleTermData &tr = qeb.addAllFields();
-            ASSERT_TRUE(tr.lookupField(0) != 0);
-            ASSERT_TRUE(tr.lookupField(1) != 0);
-            ASSERT_TRUE(tr.lookupField(2) != 0);
-            EXPECT_TRUE(tr.lookupField(3) == 0);
+            ASSERT_TRUE(tr.lookupField(0) != nullptr);
+            ASSERT_TRUE(tr.lookupField(1) != nullptr);
+            ASSERT_TRUE(tr.lookupField(2) != nullptr);
+            EXPECT_TRUE(tr.lookupField(3) == nullptr);
             EXPECT_TRUE(tr.lookupField(0)->getHandle() == 0u);
             EXPECT_TRUE(tr.lookupField(1)->getHandle() == 1u);
             EXPECT_TRUE(tr.lookupField(2)->getHandle() == 2u);
             const ITermData *tp = queryEnv.getTerm(0);
-            ASSERT_TRUE(tp != NULL);
+            ASSERT_TRUE(tp != nullptr);
             EXPECT_EQ(tp, &tr);
         }
         {
             SimpleTermData *tr = qeb.addAttributeNode("bar");
-            ASSERT_TRUE(tr != 0);
-            ASSERT_TRUE(tr->lookupField(1) != 0);
-            EXPECT_TRUE(tr->lookupField(0) == 0);
-            EXPECT_TRUE(tr->lookupField(2) == 0);
-            EXPECT_TRUE(tr->lookupField(3) == 0);
+            ASSERT_TRUE(tr != nullptr);
+            ASSERT_TRUE(tr->lookupField(1) != nullptr);
+            EXPECT_TRUE(tr->lookupField(0) == nullptr);
+            EXPECT_TRUE(tr->lookupField(2) == nullptr);
+            EXPECT_TRUE(tr->lookupField(3) == nullptr);
             EXPECT_TRUE(tr->lookupField(1)->getHandle() == 3u);
             const ITermData *tp = queryEnv.getTerm(1);
-            ASSERT_TRUE(tp != NULL);
+            ASSERT_TRUE(tp != nullptr);
             EXPECT_EQ(tp, tr);
         }
     }

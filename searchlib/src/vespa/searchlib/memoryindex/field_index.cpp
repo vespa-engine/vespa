@@ -287,7 +287,7 @@ public:
         return result;
     }
 
-    SearchIterator::UP createFilterSearch(FilterConstraint) const override {
+    SearchIterator::UP createFilterSearchImpl(FilterConstraint) const override {
         auto wrapper = std::make_unique<queryeval::FilterWrapper>(getState().numFields());
         auto & tfmda = wrapper->tfmda();
         wrapper->wrap(make_search_iterator<interleaved_features>(_posting_itr, _feature_store, _field_id, tfmda));

@@ -43,11 +43,9 @@ protected:
     using largeint_t = typename B::BaseClass::largeint_t;
 
     bool is_sortable() const noexcept override;
-    template <bool asc>
-    long on_serialize_for_sort(DocId doc, void* serTo, long available) const;
-    long onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
-    long onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter* bc) const override;
-    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter) const override;
+    std::unique_ptr<attribute::ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
+                                                                      common::sortspec::MissingPolicy policy,
+                                                                      std::string_view missing_value) const override;
 public:
     MultiValueNumericEnumAttribute(const std::string & baseFileName, const AttributeVector::Config & cfg);
 

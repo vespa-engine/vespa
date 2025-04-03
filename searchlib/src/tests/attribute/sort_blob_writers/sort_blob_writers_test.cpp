@@ -66,10 +66,11 @@ sort_data_numeric(std::vector<T> values)
 {
     size_t len = 0;
     SortData s;
+    NumericSortBlobWriter<T, asc> writer;
     while (true) {
         s.clear();
         s.resize(len);
-        NumericSortBlobWriter<T, asc> writer;
+        writer.reset();
         for (auto& v : values) {
             writer.candidate(v);
         }
@@ -82,15 +83,17 @@ sort_data_numeric(std::vector<T> values)
     }
 }
 
+template <bool asc>
 SortData
-sort_data_string(std::vector<const char*> values, const BlobConverter* bc, bool asc)
+sort_data_string(std::vector<const char*> values, const BlobConverter* bc)
 {
     size_t len = 0;
     SortData s;
+    StringSortBlobWriter<asc> writer(bc);
     while (true) {
         s.clear();
         s.resize(len);
-        StringSortBlobWriter writer(s.data(), s.size(), bc, asc);
+        writer.reset(s.data(), s.size());
         bool fail = false;
         for (auto& v : values) {
             if (!writer.candidate(v)) {
@@ -112,7 +115,11 @@ sort_data_string(std::vector<const char*> values, const BlobConverter* bc, bool 
 SortData
 sort_data_string(std::vector<const char*> values, bool asc)
 {
-    return sort_data_string(values, nullptr, asc);
+    if (asc) {
+        return sort_data_string<true>(values, nullptr);
+    } else {
+        return sort_data_string<false>(values, nullptr);
+    }
 }
 
 template <typename T>
@@ -329,10 +336,10 @@ using SortBlobStringWriterTest = SortBlobWritersTest<const char*>;
 TEST_F(SortBlobStringWriterTest, blob_converter_is_used)
 {
     LowercaseConverter lowercase;
-    EXPECT_EQ(serialized_present_string("hello", true), sort_data_string({"Hello"}, &lowercase, true));
-    EXPECT_EQ(serialized_present_string("hello", false), sort_data_string({"Hello"}, &lowercase, false));
-    EXPECT_EQ(serialized_present_string("always", true), sort_data_string({"Hello", "always"}, &lowercase, true));
-    EXPECT_EQ(serialized_present_string("hello", false), sort_data_string({"Hello", "always"}, &lowercase, false));
+    EXPECT_EQ(serialized_present_string("hello", true), sort_data_string<true>({"Hello"}, &lowercase));
+    EXPECT_EQ(serialized_present_string("hello", false), sort_data_string<false>({"Hello"}, &lowercase));
+    EXPECT_EQ(serialized_present_string("always", true), sort_data_string<true>({"Hello", "always"}, &lowercase));
+    EXPECT_EQ(serialized_present_string("hello", false), sort_data_string<false>({"Hello", "always"}, &lowercase));
 }
 
 TEST_F(SortBlobStringWriterTest, prefix_is_first)

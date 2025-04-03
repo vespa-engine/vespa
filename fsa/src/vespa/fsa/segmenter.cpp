@@ -15,7 +15,7 @@ namespace fsa {
 
 Segmenter::Segments::Segments()
   : _text(), _segments(), _map(),
-    _segmentation(Segmenter::SEGMENTATION_METHODS,NULL)
+    _segmentation(Segmenter::SEGMENTATION_METHODS,nullptr)
 { }
 
 Segmenter::Segments::~Segments()
@@ -62,7 +62,7 @@ void Segmenter::Segments::buildSegmentation(Segmenter::SegmentationMethod method
   std::vector<int> nextid(n_sgm,-1);
   std::vector<unsigned int> maxScore(n_sgm,0);
 
-  if(_segmentation[method]==NULL){
+  if(_segmentation[method]==nullptr){
     _segmentation[method] = new Segmenter::Segmentation;
   }
   else {

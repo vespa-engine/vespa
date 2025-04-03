@@ -16,7 +16,7 @@ namespace {
 std::string fixDir(const std::string &parent, const std::string &subdir) {
     auto dirname = parent + "/" + subdir;
     DIR *dp = opendir(dirname.c_str());
-    if (dp == NULL) {
+    if (dp == nullptr) {
         if (errno != ENOENT || mkdir(dirname.c_str(), 0755) != 0) {
             LOG(warning, "Could not create directory '%s'", dirname.c_str());
             perror(dirname.c_str());
@@ -47,7 +47,7 @@ std::string splunkCertPath(const std::string &parent, const std::string &filenam
 
 void appendFile(FILE *target, const std::string &filename) {
     FILE *fp = fopen(filename.c_str(), "r");
-    if (fp != NULL) {
+    if (fp != nullptr) {
         int c;
         while (EOF != (c = fgetc(fp))) {
             fputc(c, target);
@@ -63,7 +63,7 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
     LOG(debug, "got config, writing %s", path.c_str());
     std::string tmpPath = path + ".new";
     FILE *fp = fopen(tmpPath.c_str(), "w");
-    if (fp == NULL) {
+    if (fp == nullptr) {
         LOG(warning, "could not open '%s' for write", tmpPath.c_str());
         return;
     }
@@ -78,17 +78,17 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
     fclose(fp);
     rename(tmpPath.c_str(), path.c_str());
 
-    if (getenv("VESPA_HOSTNAME") != NULL &&
-        getenv("VESPA_TENANT") != NULL &&
-        getenv("VESPA_APPLICATION")!= NULL &&
-        getenv("VESPA_INSTANCE") != NULL &&
-        getenv("VESPA_ENVIRONMENT") != NULL &&
-        getenv("VESPA_REGION") != NULL)
+    if (getenv("VESPA_HOSTNAME") != nullptr &&
+        getenv("VESPA_TENANT") != nullptr &&
+        getenv("VESPA_APPLICATION")!= nullptr &&
+        getenv("VESPA_INSTANCE") != nullptr &&
+        getenv("VESPA_ENVIRONMENT") != nullptr &&
+        getenv("VESPA_REGION") != nullptr)
     {
         path = cfFilePath(config.splunkHome, "inputs.conf");
         tmpPath = path + ".new";
         fp = fopen(tmpPath.c_str(), "w");
-        if (fp != NULL) {
+        if (fp != nullptr) {
             fprintf(fp, "[default]\n");
             fprintf(fp, "host = %s\n", getenv("VESPA_HOSTNAME"));
             fprintf(fp, "_meta = vespa_tenant::%s vespa_app::%s.%s vespa_zone::%s.%s\n",
@@ -116,7 +116,7 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
         path = cfFilePath(config.splunkHome, "outputs.conf");
         tmpPath = path + ".new";
         fp = fopen(tmpPath.c_str(), "w");
-        if (fp != NULL) {
+        if (fp != nullptr) {
             fprintf(fp, "[tcpout]\n");
             fprintf(fp, "clientCert = %s\n", certPath.c_str());
             fclose(fp);
@@ -125,7 +125,7 @@ void SplunkStarter::gotConfig(const LogforwarderConfig& config) {
         path = cfFilePath(config.splunkHome, "server.conf");
         tmpPath = path + ".new";
         fp = fopen(tmpPath.c_str(), "w");
-        if (fp != NULL) {
+        if (fp != nullptr) {
             fprintf(fp, "[sslConfig]\n");
             fprintf(fp, "enableSplunkdSSL = true\n");
             fprintf(fp, "requireClientCert = true\n");

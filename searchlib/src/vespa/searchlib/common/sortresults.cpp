@@ -2,6 +2,7 @@
 
 #include "sortresults.h"
 #include "sort.h"
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
@@ -166,7 +167,9 @@ FastS_SortSpec::VectorRef::VectorRef(uint32_t type, const search::attribute::IAt
     : _type(type),
       _vector(vector),
       _converter(converter),
-      _writer((_vector != nullptr) ? _vector->make_sort_blob_writer(has_ascending_sort_order(), converter) : nullptr)
+      _writer((_vector != nullptr) ? _vector->make_sort_blob_writer(has_ascending_sort_order(), converter,
+                                                                    search::common::sortspec::MissingPolicy::DEFAULT,
+                                                                    std::string_view()) : nullptr)
 {
 }
 

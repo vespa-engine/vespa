@@ -183,7 +183,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.67), usage("wine", 0.5)));
         bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals(decorate("cheese on node 1 [unknown hostname] is 67.0% full (the configured limit is 60.0%), " +
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 67.0% full (the configured limit is 70.0%, effective limit lowered to 60.0% until feed unblocked), " +
                               "wine on node 1 [unknown hostname] is 50.0% full (the configured limit is 40.0%)"), // Not under hysteresis
                      bundle.getFeedBlock().get().getDescription());
 
@@ -191,7 +191,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.611), usage("wine", 0.2)));
         bundle = ctrl.getClusterStateBundle();
         assertTrue(bundle.clusterFeedIsBlocked());
-        assertEquals(decorate("cheese on node 1 [unknown hostname] is 61.1% full (the configured limit is 60.0%)"),
+        assertEquals(decorate("cheese on node 1 [unknown hostname] is 61.1% full (the configured limit is 70.0%, effective limit lowered to 60.0% until feed unblocked)"),
                      bundle.getFeedBlock().get().getDescription());
 
         // Cheese now drops below hysteresis range, should be unblocked as well.

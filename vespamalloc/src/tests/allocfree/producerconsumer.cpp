@@ -4,7 +4,7 @@
 namespace vespalib {
 
 Consumer::Consumer(uint32_t maxQueue, bool inverse) :
-   _queue(NULL, maxQueue),
+   _queue(nullptr, maxQueue),
    _inverse(inverse),
    _operations(0)
 {
@@ -41,7 +41,7 @@ ProducerConsumer::~ProducerConsumer()
 void Consumer::run(std::atomic<bool> &) {
     for (;;) {
         MemList ml = _queue.dequeue();
-        if (ml == NULL) {
+        if (ml == nullptr) {
             return;
         }
         if (_inverse) {

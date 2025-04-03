@@ -41,7 +41,7 @@ void QueryParserTest::testWeight() {
         juniper::QueryParser p2("OR(ANDNOT(AND(a,b),c),OR(d,e))");
         _test(p2.ParseError() == 0);
 
-        juniper::QueryHandle qh2(p2, NULL);
+        juniper::QueryHandle qh2(p2, nullptr);
         std::string          stk2;
         qh2.MatchObj()->Query()->Dump(stk2);
         _test_equal(stk2, "Node<a:2>[Node<a:2>[a:100,b:100],Node<a:2>[d:100,e:100]]");
@@ -51,7 +51,7 @@ void QueryParserTest::testWeight() {
         juniper::QueryParser p2("OR(ANDNOT(RANK(a,OR(b,c)),d),OR(e,f))");
         _test(p2.ParseError() == 0);
 
-        juniper::QueryHandle qh2(p2, NULL);
+        juniper::QueryHandle qh2(p2, nullptr);
         std::string          stk2;
         qh2.MatchObj()->Query()->Dump(stk2);
         _test_equal(stk2, "Node<a:2>[a:100,Node<a:2>[e:100,f:100]]");
@@ -66,7 +66,7 @@ void QueryParserTest::testTraverse() {
     juniper::QueryParser p1("OR(a,b,c)");
     _test(p1.ParseError() == 0);
 
-    juniper::QueryHandle qh1(p1, NULL);
+    juniper::QueryHandle qh1(p1, nullptr);
     std::string          stk1;
     qh1.MatchObj()->Query()->Dump(stk1);
     _test(strcmp(stk1.c_str(), "Node<a:3>[a:100,b:100,c:100]") == 0);
@@ -76,7 +76,7 @@ void QueryParserTest::testTraverse() {
         juniper::QueryParser p2("OR(AND(xx,yy),PHRASE(junip*,proximity),PHRASE(data,search))");
         _test(p2.ParseError() == 0);
 
-        juniper::QueryHandle qh2(p2, NULL);
+        juniper::QueryHandle qh2(p2, nullptr);
         std::string          stk2;
         qh2.MatchObj()->Query()->Dump(stk2);
         _test(strcmp(stk2.c_str(), "Node<a:3,v>["
@@ -93,7 +93,7 @@ void QueryParserTest::testTraverse() {
                                 "PHRASE(marketing,strategy))),a))");
         _test(p2.ParseError() == 0);
 
-        juniper::QueryHandle qh2(p2, NULL);
+        juniper::QueryHandle qh2(p2, nullptr);
         std::string          stk2;
         qh2.MatchObj()->Query()->Dump(stk2);
         std::string s(stk2.c_str());
@@ -107,7 +107,7 @@ void QueryParserTest::testTraverse() {
     juniper::QueryParser p3("OR(NEAR/1(linux,kernel),WITHIN/3(linus,torvalds))");
     _test(p3.ParseError() == 0);
 
-    juniper::QueryHandle qh3(p3, NULL);
+    juniper::QueryHandle qh3(p3, nullptr);
     std::string          stk3;
     qh3.MatchObj()->Query()->Dump(stk3);
     _test(strcmp(stk3.c_str(), "Node<a:2,v>["
@@ -118,7 +118,7 @@ void QueryParserTest::testTraverse() {
     juniper::QueryParser p4("OR(ONEAR/3(linus,torvalds))");
     _test(p4.ParseError() == 0);
 
-    juniper::QueryHandle qh4(p4, NULL);
+    juniper::QueryHandle qh4(p4, nullptr);
     std::string          stk4;
     qh4.MatchObj()->Query()->Dump(stk4);
     _test(strcmp(stk4.c_str(), "Node<a:2,o,l:3,v,c>[linus:100,torvalds:100]") == 0);
