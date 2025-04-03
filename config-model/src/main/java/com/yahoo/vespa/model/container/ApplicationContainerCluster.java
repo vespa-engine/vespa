@@ -230,7 +230,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
             double availableMemoryGb = Math.max(0, totalMemoryMinusOverhead - onnxModelCostGb);
             int memoryPercentageOfAvailable = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryMinusOverhead);
             int memoryPercentageOfTotal = (int) (heapSizePercentageOfAvailable * availableMemoryGb / totalMemoryGb);
-            logger.log(FINE, () -> ("cluster id '%s': memoryPercentageOfAvailable=%d, memoryPercentageOfTotal=%d, " +
+            logger.log(FINE, () -> ("%s: memoryPercentageOfAvailable=%d, memoryPercentageOfTotal=%d, " +
                                     "availableMemoryGb=%f, totalMemoryGb=%f, heapSizePercentageOfAvailable=%d, onnxModelCostGb=%f")
                     .formatted(id(), memoryPercentageOfAvailable, memoryPercentageOfTotal,
                                availableMemoryGb, totalMemoryGb, heapSizePercentageOfAvailable, onnxModelCostGb));
