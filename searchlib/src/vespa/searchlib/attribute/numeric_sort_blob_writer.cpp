@@ -28,11 +28,11 @@ NumericSortBlobWriter<T, asc>::NumericSortBlobWriter(MissingPolicy policy, T mis
         break;
         case MissingPolicy::FIRST:
             _missing_blob.emplace_back(0);
-        _value_prefix.emplace(1);
+            _value_prefix.emplace(1);
         break;
         case MissingPolicy::LAST:
             _missing_blob.emplace_back(1);
-        _value_prefix.emplace(0);
+            _value_prefix.emplace(0);
         break;
         case MissingPolicy::AS:
             set_missing_blob(missing_value);
