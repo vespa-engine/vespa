@@ -104,11 +104,11 @@ public class SystemPoller {
     }
 
     /**
-     * Return memory usage for a given process, both resident and virtual is
+     * Return memory usage in bytes for a given process, both resident and virtual is
      * returned.
      *
      * @param service The instance to get memory usage for
-     * @return array[0] = memoryResident, array[1] = memoryVirtual (kB units)
+     * @return array[0] = memoryResident, array[1] = memoryVirtual (both in bytes)
      */
     static long[] getMemoryUsage(VespaService service) {
         return getMemoryUsage(service, getPageSize());
