@@ -104,16 +104,23 @@ class NumericDirectSortBlobWriter : public search::attribute::ISortBlobWriter {
 private:
     const std::vector<BaseType>& _data;
     const std::vector<uint32_t>& _idx;
+    search::attribute::NumericSortBlobWriter<BaseType, ascending> _writer;
 public:
-    NumericDirectSortBlobWriter(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx) noexcept
-        : _data(data), _idx(idx) {}
+    NumericDirectSortBlobWriter(const std::vector<BaseType>& data, const std::vector<uint32_t>& idx,
+                                search::common::sortspec::MissingPolicy policy,
+                                BaseType missing_value) noexcept
+        : _data(data),
+          _idx(idx),
+          _writer(policy, missing_value, true)
+    {
+    }
     long write(uint32_t docid, void* buf, long available) override {
-        search::attribute::NumericSortBlobWriter<BaseType, ascending> writer;
+        _writer.reset();
         std::span<const BaseType> values(_data.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
         for (auto& v : values) {
-            writer.candidate(v);
+            _writer.candidate(v);
         }
-        return writer.write(buf, available);
+        return _writer.write(buf, available);
     }
 };
 
@@ -127,9 +134,9 @@ NumericDirectAttrVector<F, B>::make_sort_blob_writer(bool ascending, const searc
         return search::NumericDirectAttribute<B>::make_sort_blob_writer(ascending, converter, policy, missing_value);
     }
     if (ascending) {
-        return std::make_unique<NumericDirectSortBlobWriter<BaseType, true>>(this->_data, this->_idx);
+        return std::make_unique<NumericDirectSortBlobWriter<BaseType, true>>(this->_data, this->_idx, policy, BaseType());
     } else {
-        return std::make_unique<NumericDirectSortBlobWriter<BaseType, false>>(this->_data, this->_idx);
+        return std::make_unique<NumericDirectSortBlobWriter<BaseType, false>>(this->_data, this->_idx, policy, BaseType());
     }
 }
 

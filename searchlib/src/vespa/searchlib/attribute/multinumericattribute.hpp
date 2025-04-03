@@ -200,7 +200,12 @@ private:
     const MultiValueMappingT& _mv_mapping;
     attribute::NumericSortBlobWriter<T, ascending> _writer;
 public:
-    MultiNumericSortBlobWriter(const MultiValueMappingT& mv_mapping) : _mv_mapping(mv_mapping) {}
+    MultiNumericSortBlobWriter(const MultiValueMappingT &mv_mapping, common::sortspec::MissingPolicy policy,
+                               T missing_value)
+        : _mv_mapping(mv_mapping),
+          _writer(policy, missing_value, true)
+    {
+    }
     long write(uint32_t docid, void* buf, long available) override {
         _writer.reset();
         auto indices = _mv_mapping.get(docid);
@@ -217,12 +222,11 @@ MultiValueNumericAttribute<B, M>::make_sort_blob_writer(bool ascending, const co
                                                         common::sortspec::MissingPolicy policy,
                                                         std::string_view missing_value) const
 {
-    (void) policy;
     (void) missing_value;
     if (ascending) {
-        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, true>>(this->_mvMapping);
+        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, true>>(this->_mvMapping, policy, T());
     } else {
-        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, false>>(this->_mvMapping);
+        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, false>>(this->_mvMapping, policy, T());
     }
 }
 
