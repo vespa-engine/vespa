@@ -164,8 +164,9 @@ private:
     search::attribute::StringSortBlobWriter<asc> _writer;
 public:
     StringDirectSortBlobWriter(const std::vector<char>& buffer, const search::StringAttribute::OffsetVector& offsets,
-                               const std::vector<uint32_t>& idx, const search::common::BlobConverter* converter)
-        : _buffer(buffer), _offsets(offsets), _idx(idx), _writer(converter) {}
+                               const std::vector<uint32_t>& idx, const search::common::BlobConverter* converter,
+                               search::common::sortspec::MissingPolicy policy, std::string_view missing_value)
+        : _buffer(buffer), _offsets(offsets), _idx(idx), _writer(converter, policy, missing_value, true) {}
     long write(uint32_t docid, void* buf, long available) override {
         _writer.reset(buf, available);
         std::span<const uint32_t> offsets(_offsets.data() + _idx[docid], _idx[docid + 1] - _idx[docid]);
@@ -195,8 +196,10 @@ StringDirectAttrVector<F>::make_sort_blob_writer(bool ascending, const search::c
         return search::StringDirectAttribute::make_sort_blob_writer(ascending, converter, policy, missing_value);
     }
     if (ascending) {
-        return std::make_unique<StringDirectSortBlobWriter<true>>(this->_buffer, this->_offsets, this->_idx, converter);
+        return std::make_unique<StringDirectSortBlobWriter<true>>(this->_buffer, this->_offsets, this->_idx, converter,
+                                                                  policy, missing_value);
     } else {
-        return std::make_unique<StringDirectSortBlobWriter<false>>(this->_buffer, this->_offsets, this->_idx, converter);
+        return std::make_unique<StringDirectSortBlobWriter<false>>(this->_buffer, this->_offsets, this->_idx, converter,
+                                                                   policy, missing_value);
     }
 }

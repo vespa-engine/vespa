@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "sort_blob_writer.h"
+#include <vespa/searchlib/common/sortspec.h>
 #include <optional>
 
 namespace search::common { class BlobConverter; }
@@ -15,14 +15,20 @@ namespace search::attribute {
  * sort order.
  */
 template <bool asc>
-class StringSortBlobWriter : public SortBlobWriter {
+class StringSortBlobWriter {
     using BlobConverter = common::BlobConverter;
-    std::optional<size_t> _best_size;
-    unsigned char*        _serialize_to;
-    size_t                _available;
-    const BlobConverter*  _bc;
+    std::optional<size_t>        _best_size;
+    unsigned char*               _serialize_to;
+    size_t                       _available;
+    const BlobConverter*         _bc;
+    std::vector<unsigned char>   _missing_blob; // blob to emit when not having a value
+    std::optional<unsigned char> _value_prefix; // optional prefix to emit when having a value
+
+    size_t value_prefix_len() const noexcept { return _value_prefix.has_value() ? 1 : 0; }
+    void set_missing_blob(std::string_view value);
 public:
-    StringSortBlobWriter(const BlobConverter* bc) noexcept;
+    StringSortBlobWriter(const BlobConverter* bc, search::common::sortspec::MissingPolicy policy,
+                         std::string_view missing_value, bool multi_value) noexcept;
     ~StringSortBlobWriter() noexcept;
     bool candidate(const char* val);
     void reset(void* serialize_to, size_t available);

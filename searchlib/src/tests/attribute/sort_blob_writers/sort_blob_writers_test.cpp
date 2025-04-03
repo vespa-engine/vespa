@@ -3,6 +3,7 @@
 #include <vespa/searchlib/attribute/numeric_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/string_sort_blob_writer.h>
 #include <vespa/searchlib/common/converters.h>
+#include <vespa/searchlib/common/sortspec.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/sort.h>
@@ -13,12 +14,14 @@ using search::attribute::SortBlobWriter;
 using search::attribute::StringSortBlobWriter;
 using search::common::BlobConverter;
 using search::common::LowercaseConverter;
+using search::common::sortspec::MissingPolicy;
 
 namespace {
 
 using SortData = std::vector<unsigned char>;
 
-SortData missing_value{1};
+// Missing value sort blob for multi value attribute when using default missing policy
+SortData default_missing_value_sort_blob{1};
 
 template <typename T, bool asc>
 SortData
@@ -33,17 +36,25 @@ serialized_present_numeric(T value)
 }
 
 SortData
-serialized_present_string(const char *value, bool asc)
+serialized_string(std::optional<unsigned char> prefix, const char* value, bool asc)
 {
     std::span<const unsigned char> src(reinterpret_cast<const unsigned char*>(value), strlen(value) + 1);
     SortData s;
-    s.reserve(src.size() + 1);
-    s.emplace_back(SortBlobWriter::has_value);
+    s.reserve(src.size() + (prefix.has_value() ? 1 : 0));
+    if (prefix.has_value()) {
+        s.emplace_back(prefix.value());
+    }
     unsigned char xor_value = asc ? 0 : 255;
     for (auto c : src) {
         s.emplace_back(c ^ xor_value);
     }
     return s;
+}
+
+SortData
+serialized_present_string(const char* value, bool asc)
+{
+    return serialized_string(SortBlobWriter::has_value, value, asc);
 }
 
 template <typename T>
@@ -85,11 +96,12 @@ sort_data_numeric(std::vector<T> values)
 
 template <bool asc>
 SortData
-sort_data_string(std::vector<const char*> values, const BlobConverter* bc)
+sort_data_string(std::vector<const char*> values, const BlobConverter* bc, MissingPolicy missing_policy,
+                 std::string_view missing_value, bool multi_value)
 {
     size_t len = 0;
     SortData s;
-    StringSortBlobWriter<asc> writer(bc);
+    StringSortBlobWriter<asc> writer(bc, missing_policy, missing_value, multi_value);
     while (true) {
         s.clear();
         s.resize(len);
@@ -110,6 +122,13 @@ sort_data_string(std::vector<const char*> values, const BlobConverter* bc)
         }
         ++len;
     }
+}
+
+template <bool asc>
+SortData
+sort_data_string(std::vector<const char*> values, const BlobConverter* bc)
+{
+    return sort_data_string<asc>(values, bc, MissingPolicy::DEFAULT, "", true);
 }
 
 SortData
@@ -285,8 +304,8 @@ TYPED_TEST_SUITE(SortBlobWritersTest, SortBlobWritersTestTypes);
 TYPED_TEST(SortBlobWritersTest, empty_arrays)
 {
     using Type = typename TypeParam::Type;
-    EXPECT_EQ(missing_value, sort_data<Type>({}, true));
-    EXPECT_EQ(missing_value, sort_data<Type>({}, false));
+    EXPECT_EQ(default_missing_value_sort_blob, sort_data<Type>({}, true));
+    EXPECT_EQ(default_missing_value_sort_blob, sort_data<Type>({}, false));
 }
 
 TYPED_TEST(SortBlobWritersTest, single_values)
@@ -301,8 +320,8 @@ TYPED_TEST(SortBlobWritersTest, single_values)
     }
     EXPECT_EQ(switch_sort_order(sort_data<Type>({value}, false)), sort_data<Type>({value}, true));
     EXPECT_EQ(switch_sort_order(sort_data<Type>({value}, true)), sort_data<Type>({value}, false));
-    EXPECT_GT(missing_value, sort_data<Type>({value}, true));
-    EXPECT_GT(missing_value, sort_data<Type>({value}, false));
+    EXPECT_GT(default_missing_value_sort_blob, sort_data<Type>({value}, true));
+    EXPECT_GT(default_missing_value_sort_blob, sort_data<Type>({value}, false));
 }
 
 TYPED_TEST(SortBlobWritersTest, multiple_values)
@@ -325,8 +344,8 @@ TYPED_TEST(SortBlobFloatingPointWritersTest, skip_nan_values)
     using Type = typename TypeParam::Type;
     auto& values_only_nan = TypeParam::values_only_nan;
     auto& values_with_nan = TypeParam::values_with_nan;
-    EXPECT_EQ(missing_value, sort_data<Type>(values_only_nan, true));
-    EXPECT_EQ(missing_value, sort_data<Type>(values_only_nan, false));
+    EXPECT_EQ(default_missing_value_sort_blob, sort_data<Type>(values_only_nan, true));
+    EXPECT_EQ(default_missing_value_sort_blob, sort_data<Type>(values_only_nan, false));
     EXPECT_EQ(serialized_present<Type>(TypeParam::min_value, true), sort_data<Type>(values_with_nan, true));
     EXPECT_EQ(serialized_present<Type>(TypeParam::max_value, false), sort_data<Type>(values_with_nan, false));
 }
@@ -346,6 +365,70 @@ TEST_F(SortBlobStringWriterTest, prefix_is_first)
 {
     EXPECT_EQ(serialized_present_string("aaa", true), sort_data_string({"aaa", "aaaa"}, true));
     EXPECT_EQ(serialized_present_string("aaaa", false), sort_data_string({"aaa", "aaaa"}, false));
+}
+
+TEST_F(SortBlobStringWriterTest, missing_policy_default)
+{
+    // Single value ascending
+    EXPECT_EQ(serialized_string(std::nullopt, "", true), sort_data_string<true>({}, nullptr, MissingPolicy::DEFAULT, "", false));
+    EXPECT_EQ(serialized_string(std::nullopt, "aaa", true), sort_data_string<true>({"aaa"}, nullptr, MissingPolicy::DEFAULT, "", false));
+    // Single value descending
+    EXPECT_EQ(serialized_string(std::nullopt, "", false), sort_data_string<false>({}, nullptr, MissingPolicy::DEFAULT, "", false));
+    EXPECT_EQ(serialized_string(std::nullopt, "bbb", false), sort_data_string<false>({"bbb"}, nullptr, MissingPolicy::DEFAULT, "", false));
+    // Multi value ascending
+    EXPECT_EQ(default_missing_value_sort_blob, sort_data_string<true>({}, nullptr, MissingPolicy::DEFAULT, "", true));
+    EXPECT_EQ(serialized_string(0, "aaa", true), sort_data_string<true>({"aaa", "bbb"}, nullptr, MissingPolicy::DEFAULT, "", true));
+    // Multi value descending
+    EXPECT_EQ(default_missing_value_sort_blob, sort_data_string<false>({}, nullptr, MissingPolicy::DEFAULT, "", true));
+    EXPECT_EQ(serialized_string(0, "bbb", false), sort_data_string<false>({"aaa", "bbb"}, nullptr, MissingPolicy::DEFAULT, "", true));
+}
+
+TEST_F(SortBlobStringWriterTest, missing_policy_first)
+{
+    // Single value ascending
+    EXPECT_EQ(SortData{0}, sort_data_string<true>({}, nullptr, MissingPolicy::FIRST, "", false));
+    EXPECT_EQ(serialized_string(1, "aaa", true), sort_data_string<true>({"aaa"}, nullptr, MissingPolicy::FIRST, "", false));
+    // Single value descending
+    EXPECT_EQ(SortData{0}, sort_data_string<false>({}, nullptr, MissingPolicy::FIRST, "", false));
+    EXPECT_EQ(serialized_string(1, "bbb", false), sort_data_string<false>({"bbb"}, nullptr, MissingPolicy::FIRST, "", false));
+    // Multi value ascending
+    EXPECT_EQ(SortData{0}, sort_data_string<true>({}, nullptr, MissingPolicy::FIRST, "", true));
+    EXPECT_EQ(serialized_string(1, "aaa", true), sort_data_string<true>({"aaa", "bbb"}, nullptr, MissingPolicy::FIRST, "", true));
+    // Multi value descending
+    EXPECT_EQ(SortData{0}, sort_data_string<false>({}, nullptr, MissingPolicy::FIRST, "", true));
+    EXPECT_EQ(serialized_string(1, "bbb", false), sort_data_string<false>({"aaa", "bbb"}, nullptr, MissingPolicy::FIRST, "", true));
+}
+
+TEST_F(SortBlobStringWriterTest, missing_policy_last)
+{
+    // Single value ascending
+    EXPECT_EQ(SortData{1}, sort_data_string<true>({}, nullptr, MissingPolicy::LAST, "", false));
+    EXPECT_EQ(serialized_string(0, "aaa", true), sort_data_string<true>({"aaa"}, nullptr, MissingPolicy::LAST, "", false));
+    // Single value descending
+    EXPECT_EQ(SortData{1}, sort_data_string<false>({}, nullptr, MissingPolicy::LAST, "", false));
+    EXPECT_EQ(serialized_string(0, "bbb", false), sort_data_string<false>({"bbb"}, nullptr, MissingPolicy::LAST, "", false));
+    // Multi value ascending
+    EXPECT_EQ(SortData{1}, sort_data_string<true>({}, nullptr, MissingPolicy::LAST, "", true));
+    EXPECT_EQ(serialized_string(0, "aaa", true), sort_data_string<true>({"aaa", "bbb"}, nullptr, MissingPolicy::LAST, "", true));
+    // Multi value descending
+    EXPECT_EQ(SortData{1}, sort_data_string<false>({}, nullptr, MissingPolicy::LAST, "", true));
+    EXPECT_EQ(serialized_string(0, "bbb", false), sort_data_string<false>({"aaa", "bbb"}, nullptr, MissingPolicy::LAST, "", true));
+}
+
+TEST_F(SortBlobStringWriterTest, missing_policy_as)
+{
+    // Single value ascending
+    EXPECT_EQ(serialized_string(std::nullopt, "hello", true), sort_data_string<true>({}, nullptr, MissingPolicy::AS, "hello", false));
+    EXPECT_EQ(serialized_string(std::nullopt, "aaa", true), sort_data_string<true>({"aaa"}, nullptr, MissingPolicy::AS, "hello", false));
+    // Single value descending
+    EXPECT_EQ(serialized_string(std::nullopt, "hello", false), sort_data_string<false>({}, nullptr, MissingPolicy::AS, "hello", false));
+    EXPECT_EQ(serialized_string(std::nullopt, "bbb", false), sort_data_string<false>({"bbb"}, nullptr, MissingPolicy::AS, "hello", false));
+    // Multi value ascending
+    EXPECT_EQ(serialized_string(std::nullopt, "hello", true), sort_data_string<true>({}, nullptr, MissingPolicy::AS, "hello", true));
+    EXPECT_EQ(serialized_string(std::nullopt, "aaa", true), sort_data_string<true>({"aaa", "bbb"}, nullptr, MissingPolicy::AS, "hello", true));
+    // Multi value descending
+    EXPECT_EQ(serialized_string(std::nullopt, "hello", false), sort_data_string<false>({}, nullptr, MissingPolicy::AS, "hello", true));
+    EXPECT_EQ(serialized_string(std::nullopt, "bbb", false), sort_data_string<false>({"aaa", "bbb"}, nullptr, MissingPolicy::AS, "hello", true));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -76,9 +76,10 @@ private:
     const EnumStoreT& _enum_store;
     attribute::StringSortBlobWriter<asc> _writer;
 public:
-    MultiStringSortBlobWriter(const MultiValueMappingT& mv_mapping, const EnumStoreT& enum_store,
-                              const common::BlobConverter* converter)
-        : _mv_mapping(mv_mapping), _enum_store(enum_store), _writer(converter)
+    MultiStringSortBlobWriter(const MultiValueMappingT &mv_mapping, const EnumStoreT &enum_store,
+                              const common::BlobConverter *converter, search::common::sortspec::MissingPolicy policy,
+                              std::string_view missing_value)
+        : _mv_mapping(mv_mapping), _enum_store(enum_store), _writer(converter, policy, missing_value, true)
     {}
     long write(uint32_t docid, void* buf, long available) override {
         _writer.reset(buf, available);
@@ -98,12 +99,12 @@ MultiValueStringAttributeT<B, M>::make_sort_blob_writer(bool ascending, const co
                                                         search::common::sortspec::MissingPolicy policy,
                                                         std::string_view missing_value) const
 {
-    (void) policy;
-    (void) missing_value;
     if (ascending) {
-        return std::make_unique<MultiStringSortBlobWriter<MultiValueMapping, EnumStore, true>>(this->_mvMapping, this->_enumStore, converter);
+        using SBW = MultiStringSortBlobWriter<MultiValueMapping, EnumStore, true>;
+        return std::make_unique<SBW>(this->_mvMapping, this->_enumStore, converter, policy, missing_value);
     } else {
-        return std::make_unique<MultiStringSortBlobWriter<MultiValueMapping, EnumStore, false>>(this->_mvMapping, this->_enumStore, converter);
+        using SBW = MultiStringSortBlobWriter<MultiValueMapping, EnumStore, false>;
+        return std::make_unique<SBW>(this->_mvMapping, this->_enumStore, converter, policy, missing_value);
     }
 }
 
