@@ -59,10 +59,6 @@ public class QuickStartConfig {
         this.generateMtlsCertificates = generateMtlsCertificates;
         this.clientCert = clientCert;
         this.clientKey = clientKey;
-
-        // valid for self-hosted Vespa
-        this.configServer = getConfigServer(configServer, vespaUrl);
-        
         this.documentType = documentType;
         this.typeConflictResolutionFile = typeConflictResolutionFile;
         this.applicationPackageDir = applicationPackageDir;
@@ -80,6 +76,9 @@ public class QuickStartConfig {
         
         // valid for Vespa Cloud
         validateVespaCloudSettings();
+
+        // valid for self-hosted Vespa
+        this.configServer = getConfigServer(configServer, vespaUrl);
     }
 
     public URI getConfigServer(URI configServer, URI vespaUrl) {
@@ -89,12 +88,13 @@ public class QuickStartConfig {
                 " and vespa_cloud_tenant+vespa_cloud_application+vespa_cloud_instance for Vespa Cloud. You can't have both set.");
         }
 
-        // Set config_server to vespa_url with port 19071 if not explicitly set
-        if (configServer == null && vespaUrl != null) {
+        // If we're not in Cloud mode, set config_server to vespa_url with port 19071 if not explicitly set
+        if (!isVespaCloud() && configServer == null && vespaUrl != null) {
             String scheme = vespaUrl.getScheme();
             String host = vespaUrl.getHost();
-            logger.info("No config_server specified, using default from vespa_url: {}", this.configServer);
-            return URI.create(scheme + "://" + host + ":19071");
+            String configServerUrl = scheme + "://" + host + ":19071";
+            logger.info("No config_server specified, using default derived from vespa_url: {}", configServerUrl);
+            return URI.create(configServerUrl);
         } else {
             return configServer;
         }
