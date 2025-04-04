@@ -48,64 +48,36 @@ import org.logstash.common.io.DeadLetterQueueWriter;
 public class VespaFeedTest {
 
     @Test
-    public void testValidateOperationAndCreate_ValidOperations() {
-        // Test valid "put" operation
-        VespaFeed feed = new VespaFeed("test-id", VespaFeedTestHelper.createMockConfig("put", false, false), null);
-        feed.validateOperationAndCreate(); // Should not throw exception
-
-        // Test valid "update" operation
-        feed = new VespaFeed("test-id", VespaFeedTestHelper.createMockConfig("update", false, false), null);
-        feed.validateOperationAndCreate(); // Should not throw exception
-
-        // Test valid "remove" operation
-        feed = new VespaFeed("test-id", VespaFeedTestHelper.createMockConfig("remove", false, false), null);
-        feed.validateOperationAndCreate(); // Should not throw exception
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testValidateOperationAndCreate_InvalidOperation() {
-        VespaFeed feed = new VespaFeed("test-id", VespaFeedTestHelper.createMockConfig("invalid", false, false), null);
-        feed.validateOperationAndCreate();
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testValidateOperationAndCreate_RemoveWithCreate() {
-        VespaFeed feed = new VespaFeed("test-id", VespaFeedTestHelper.createMockConfig("remove", true, false), null);
-        feed.validateOperationAndCreate();
-    }
-
-    @Test
-    public void testValidateOperationAndCreate_DynamicOperation() {
-        // When operation is dynamic, validation should be skipped
-        VespaFeed feed = new VespaFeed("test-id", VespaFeedTestHelper.createMockConfig("%{operation}", false, true), null);
-        feed.validateOperationAndCreate(); // Should not throw exception
-    }
-
-    @Test
     public void testConstructor_DynamicOptions() {
         // Test non-dynamic options
-        VespaFeed feed = new VespaFeed("test-id", VespaFeedTestHelper.createMockConfig("put", false, false), null);
-        assertFalse("Operation should not be dynamic", feed.isDynamicOperation());
-        assertEquals("Operation should be 'put'", "put", feed.getOperation());
+        Configuration config = VespaFeedTestHelper.createMockConfig("put", false, false);
+        VespaFeed feed = new VespaFeed("test-id", config, null);
+        FeedConfig feedConfig = feed.getFeedConfig();
+        assertFalse("Operation should not be dynamic", feedConfig.isDynamicOperation());
+        assertEquals("Operation should be 'put'", "put", feedConfig.getOperation());
 
         // Test dynamic operation
-        feed = new VespaFeed("test-id", VespaFeedTestHelper.createMockConfig("%{operation}", false, true), null);
-        assertTrue("Operation should be dynamic", feed.isDynamicOperation());
-        assertEquals("Operation field should be 'operation'", "operation", feed.getOperation());
+        config = VespaFeedTestHelper.createMockConfig("%{operation}", false, true);
+        feed = new VespaFeed("test-id", config, null);
+        feedConfig = feed.getFeedConfig();
+        assertTrue("Operation should be dynamic", feedConfig.isDynamicOperation());
+        assertEquals("Operation field should be 'operation'", "operation", feedConfig.getOperation());
 
         // Test dynamic namespace
-        Configuration config = VespaFeedTestHelper.createMockConfig("put", false, false);
+        config = VespaFeedTestHelper.createMockConfig("put", false, false);
         when(config.get(VespaFeed.NAMESPACE)).thenReturn("%{my_namespace}");
         feed = new VespaFeed("test-id", config, null);
-        assertTrue("Namespace should be dynamic", feed.isDynamicNamespace());
-        assertEquals("Namespace field should be 'my_namespace'", "my_namespace", feed.getNamespace());
+        feedConfig = feed.getFeedConfig();
+        assertTrue("Namespace should be dynamic", feedConfig.isDynamicNamespace());
+        assertEquals("Namespace field should be 'my_namespace'", "my_namespace", feedConfig.getNamespace());
 
         // Test dynamic document type
         config = VespaFeedTestHelper.createMockConfig("put", false, false);
         when(config.get(VespaFeed.DOCUMENT_TYPE)).thenReturn("%{doc_type}");
         feed = new VespaFeed("test-id", config, null);
-        assertTrue("Document type should be dynamic", feed.isDynamicDocumentType());
-        assertEquals("Document type field should be 'doc_type'", "doc_type", feed.getDocumentType());
+        feedConfig = feed.getFeedConfig();
+        assertTrue("Document type should be dynamic", feedConfig.isDynamicDocumentType());
+        assertEquals("Document type field should be 'doc_type'", "doc_type", feedConfig.getDocumentType());
     }
 
     @Test
@@ -150,11 +122,11 @@ public class VespaFeedTest {
         // Test that create=true is allowed for put and update
         config = VespaFeedTestHelper.createMockConfig("put", true, false);
         VespaFeed feed = new VespaFeed("test-id", config, null);
-        assertTrue("Create should be true for put operation", feed.isCreate());
+        assertTrue("Create should be true for put operation", feed.getFeedConfig().isCreate());
 
         config = VespaFeedTestHelper.createMockConfig("update", true, false);
         feed = new VespaFeed("test-id", config, null);
-        assertTrue("Create should be true for update operation", feed.isCreate());
+        assertTrue("Create should be true for update operation", feed.getFeedConfig().isCreate());
     }
 
     @Test
@@ -173,12 +145,12 @@ public class VespaFeedTest {
             // Test with both cert and key. It should not throw an exception
             when(config.get(VespaFeed.CLIENT_CERT)).thenReturn(certPath.toString());
             when(config.get(VespaFeed.CLIENT_KEY)).thenReturn(keyPath.toString());
-            VespaFeed.addAuthOptionsToBuilder(config, builder);
+            VespaFeed.addAuthOptionsToBuilder(config, builder, certPath.toString(), keyPath.toString());
 
             // Test with missing cert/key. Similarly, it should not throw an exception
             when(config.get(VespaFeed.CLIENT_CERT)).thenReturn(null);
             when(config.get(VespaFeed.CLIENT_KEY)).thenReturn(null);
-            VespaFeed.addAuthOptionsToBuilder(config, builder);
+            VespaFeed.addAuthOptionsToBuilder(config, builder, null, null);
         } finally {
             // Clean up
             Files.deleteIfExists(certPath);
@@ -578,7 +550,7 @@ public class VespaFeedTest {
         when(config.get(VespaFeed.AUTH_TOKEN)).thenReturn("my-secret-token");
         
         FeedClientBuilder builder = spy(FeedClientBuilder.create(URI.create("http://localhost:8080")));
-        builder = VespaFeed.addAuthOptionsToBuilder(config, builder);
+        builder = VespaFeed.addAuthOptionsToBuilder(config, builder, null, null);
         
         // Verify that the builder was configured with the auth token
         verify(builder).addRequestHeader("Authorization", "Bearer my-secret-token");

@@ -48,14 +48,29 @@ public class VespaFeedTestHelper {
             when(config.get(VespaFeed.DOOM_PERIOD)).thenReturn(60L);
             // Add DLQ configuration mocks
             when(config.get(VespaFeed.ENABLE_DLQ)).thenReturn(false);  // disable DLQ by default in tests
-            when(config.get(VespaFeed.DLQ_PATH)).thenReturn("data/dead_letter_queue");
-            when(config.get(VespaFeed.MAX_QUEUE_SIZE)).thenReturn(1024L * 1024L * 1024L);
-            when(config.get(VespaFeed.MAX_SEGMENT_SIZE)).thenReturn(10L * 1024L * 1024L);
-            when(config.get(VespaFeed.FLUSH_INTERVAL)).thenReturn(5000L);
-            return config;
+            when(config.get(VespaFeed.DLQ_PATH)).thenReturn("dlq");
+            when(config.get(VespaFeed.MAX_QUEUE_SIZE)).thenReturn(1024L);
+            when(config.get(VespaFeed.MAX_SEGMENT_SIZE)).thenReturn(1024L);
+            when(config.get(VespaFeed.FLUSH_INTERVAL)).thenReturn(1000L);
+            // Add quick start configuration mocks
+            when(config.get(VespaFeed.QUICK_START)).thenReturn(false);
+            when(config.get(VespaFeed.DEPLOY_PACKAGE)).thenReturn(false);
+            when(config.get(VespaFeed.GENERATE_MTLS_CERTIFICATES)).thenReturn(false);
+            when(config.get(VespaFeed.CONFIG_SERVER)).thenReturn(null);
+            when(config.get(VespaFeed.APPLICATION_PACKAGE_DIR)).thenReturn(null);
+            when(config.get(VespaFeed.TYPE_MAPPINGS_FILE)).thenReturn(null);
+            when(config.get(VespaFeed.TYPE_CONFLICT_RESOLUTION_FILE)).thenReturn(null);
+            when(config.get(VespaFeed.IDLE_BATCHES)).thenReturn(10L);
+            when(config.get(VespaFeed.VESPA_CLOUD_TENANT)).thenReturn(null);
+            when(config.get(VespaFeed.VESPA_CLOUD_APPLICATION)).thenReturn(null);
+            when(config.get(VespaFeed.VESPA_CLOUD_INSTANCE)).thenReturn(null);
+            when(config.get(VespaFeed.CLIENT_CERT)).thenReturn(null);
+            when(config.get(VespaFeed.CLIENT_KEY)).thenReturn(null);
+            when(config.get(VespaFeed.AUTH_TOKEN)).thenReturn(null);
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Failed to create mock config", e);
         }
+        return config;
     }
 
     public static Event createMockEvent(String docId, String value, String additionalFieldName, String additionalFieldValue) {
