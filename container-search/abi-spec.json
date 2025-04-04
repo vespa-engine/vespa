@@ -7325,8 +7325,10 @@
       "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
       "public java.lang.Double getStopwordLimit()",
       "public java.lang.Double getAdjustTarget()",
+      "public java.lang.Boolean getAllowDropAll()",
       "public void setStopwordLimit(double)",
       "public void setAdjustTarget(double)",
+      "public void setAllowDropAll(boolean)",
       "public void prepare(com.yahoo.search.query.ranking.RankProperties)",
       "public com.yahoo.search.query.ranking.WeakAnd clone()",
       "public boolean equals(java.lang.Object)",
@@ -7335,7 +7337,8 @@
     ],
     "fields" : [
       "public static final java.lang.String STOPWORD_LIMIT",
-      "public static final java.lang.String ADJUST_TARGET"
+      "public static final java.lang.String ADJUST_TARGET",
+      "public static final java.lang.String ALLOW_DROP_ALL"
     ]
   },
   "com.yahoo.search.query.rewrite.QueryRewriteSearcher" : {
