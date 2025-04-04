@@ -5,6 +5,7 @@
 #include "load_utils.h"
 #include "numeric_sort_blob_writer.h"
 #include "string_sort_blob_writer.h"
+#include "string_to_number.h"
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/hdr_abort.h>
@@ -133,10 +134,11 @@ NumericDirectAttrVector<F, B>::make_sort_blob_writer(bool ascending, const searc
     if (!F::IsMultiValue()) {
         return search::NumericDirectAttribute<B>::make_sort_blob_writer(ascending, converter, policy, missing_value);
     }
+    BaseType missing_num = search::string_to_number<BaseType>(missing_value);
     if (ascending) {
-        return std::make_unique<NumericDirectSortBlobWriter<BaseType, true>>(this->_data, this->_idx, policy, BaseType());
+        return std::make_unique<NumericDirectSortBlobWriter<BaseType, true>>(this->_data, this->_idx, policy, missing_num);
     } else {
-        return std::make_unique<NumericDirectSortBlobWriter<BaseType, false>>(this->_data, this->_idx, policy, BaseType());
+        return std::make_unique<NumericDirectSortBlobWriter<BaseType, false>>(this->_data, this->_idx, policy, missing_num);
     }
 }
 

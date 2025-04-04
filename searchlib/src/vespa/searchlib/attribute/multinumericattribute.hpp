@@ -3,11 +3,12 @@
 
 #include "multinumericattribute.h"
 #include "attributevector.hpp"
-#include "multinumericattributesaver.h"
-#include "multi_numeric_search_context.h"
-#include "numeric_sort_blob_writer.h"
 #include "load_utils.h"
+#include "multi_numeric_search_context.h"
+#include "multinumericattributesaver.h"
+#include "numeric_sort_blob_writer.h"
 #include "primitivereader.h"
+#include "string_to_number.h"
 #include "valuemodifier.h"
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
@@ -222,11 +223,11 @@ MultiValueNumericAttribute<B, M>::make_sort_blob_writer(bool ascending, const co
                                                         common::sortspec::MissingPolicy policy,
                                                         std::string_view missing_value) const
 {
-    (void) missing_value;
+    T missing_num = string_to_number<T>(missing_value);
     if (ascending) {
-        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, true>>(this->_mvMapping, policy, T());
+        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, true>>(this->_mvMapping, policy, missing_num);
     } else {
-        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, false>>(this->_mvMapping, policy, T());
+        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, false>>(this->_mvMapping, policy, missing_num);
     }
 }
 
