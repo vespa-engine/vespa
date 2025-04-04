@@ -6,9 +6,9 @@ import com.ibm.icu.util.ULocale;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.search.Query;
-import com.yahoo.text.Utf8;
 
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -221,37 +221,25 @@ public class Sorting implements Cloneable {
         return fieldOrders.equals(ss.fieldOrders);
     }
 
-    public int encode(ByteBuffer buffer) {
-        int usedBytes = 0;
-        byte[] nameBuffer;
-        byte space = '.';
+    public String toSerialForm() {
+        var b = new StringBuilder();
+        var first = true;
         for (FieldOrder fieldOrder : fieldOrders) {
-            if (space == ' ')   {
-                buffer.put(space);
-                usedBytes++;
-            }
-            if (fieldOrder.getSortOrder() == Order.ASCENDING) {
-                buffer.put((byte) '+');
+            if (first) {
+                first = false;
             } else {
-                buffer.put((byte) '-');
+                b.append(' ');
             }
-            usedBytes++;
-            var missingValueSettings = fieldOrder.getMissingValueSettings();
-            boolean emitMissingFunction = missingValueSettings.hasNondefaultSetting();
-            if (emitMissingFunction) {
-                usedBytes += missingValueSettings.encodePrefix(buffer);
-            }
-            nameBuffer = Utf8.toBytes(fieldOrder.getSorter().toSerialForm());
-            buffer.put(nameBuffer);
-            usedBytes += nameBuffer.length;
-            if (emitMissingFunction) {
-                usedBytes += missingValueSettings.encodeSuffix(buffer);
-            }
-            // If this isn't the last element, append a separating space
-            //if (i + 1 < sortSpec.size()) {
-            space = ' ';
+            fieldOrder.appendSerialForm(b, true);
         }
-        return usedBytes;
+        return b.toString();
+    }
+
+    public int encode(ByteBuffer buffer) {
+        var serialForm = toSerialForm();
+        var b = serialForm.getBytes(StandardCharsets.UTF_8);
+        buffer.put(b);
+        return b.length;
     }
 
     public static class AttributeSorter implements Cloneable {
@@ -436,10 +424,8 @@ public class Sorting implements Cloneable {
 
         boolean hasNondefaultSetting() { return missingPolicy != MissingPolicy.DEFAULT; }
 
-        int encodePrefix(ByteBuffer buffer) {
-            var prefix = Utf8.toBytes("missing(");
-            buffer.put(prefix);
-            return prefix.length;
+        void appendPrefix(StringBuilder b) {
+            b.append("missing(");
         }
 
         static boolean needQuotes(String value) {
@@ -478,8 +464,7 @@ public class Sorting implements Cloneable {
             }
         }
 
-        int encodeSuffix(ByteBuffer buffer) {
-            var b = new StringBuilder();
+        void appendSuffix(StringBuilder b) {
             b.append(',');
             b.append(missingPolicy.getName());
             if (missingPolicy == MissingPolicy.AS) {
@@ -487,9 +472,6 @@ public class Sorting implements Cloneable {
                 appendMissingValue(b);
             }
             b.append(')');
-            var suffix = Utf8.toBytes(b.toString());
-            buffer.put(suffix);
-            return suffix.length;
         }
 
         @Override
@@ -572,6 +554,30 @@ public class Sorting implements Cloneable {
 
         MissingValueSettings getMissingValueSettings() {
             return missingValueSettings;
+        }
+
+        void appendSerialForm(StringBuilder b, boolean includeOrder) {
+            if (includeOrder) {
+                if (sortOrder == Order.ASCENDING) {
+                    b.append('+');
+                } else {
+                    b.append('-');
+                }
+            }
+            boolean emitMissingFunction = missingValueSettings.hasNondefaultSetting();
+            if (emitMissingFunction) {
+                missingValueSettings.appendPrefix(b);
+            }
+            b.append(fieldSorter.toSerialForm());
+            if (emitMissingFunction) {
+                missingValueSettings.appendSuffix(b);
+            }
+        }
+
+        public String toSerialForm(boolean includeOrder) {
+            var b = new StringBuilder();
+            appendSerialForm(b, includeOrder);
+            return b.toString();
         }
 
         /**
