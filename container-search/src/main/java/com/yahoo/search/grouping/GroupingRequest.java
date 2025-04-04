@@ -3,6 +3,7 @@ package com.yahoo.search.grouping;
 
 import com.yahoo.api.annotations.Beta;
 import com.yahoo.net.URI;
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.request.GroupingOperation;
@@ -184,26 +185,28 @@ public class GroupingRequest {
      */
     public static GroupingRequest newInstance(Query query) {
         GroupingRequest newRequest = new GroupingRequest(query.getSelect());
+        intProperty(query, GroupingQueryParser.PARAM_DEFAULT_MAX_GROUPS).ifPresent(newRequest::setDefaultMaxGroups);
+        intProperty(query, GroupingQueryParser.PARAM_DEFAULT_MAX_HITS).ifPresent(newRequest::setDefaultMaxHits);
+        longProperty(query, GroupingQueryParser.GROUPING_GLOBAL_MAX_GROUPS).ifPresent(newRequest::setGlobalMaxGroups);
+        doubleProperty(query, GroupingQueryParser.PARAM_DEFAULT_PRECISION_FACTOR).ifPresent(newRequest::setDefaultPrecisionFactor);
         query.getSelect().getGrouping().add(newRequest);
         return newRequest;
     }
 
-    /**
-     * Creates a new grouping request with grouping properties and adds it to the query.getSelect().getGrouping() list
-     *
-     * @param query the query to attach the request to.
-     * @return The created request.
-     */
-    public static GroupingRequest newInstanceWithGroupingProperties(Query query) {
-        GroupingRequest newRequest = new GroupingRequest(query.getSelect());
-        GroupingQueryParser.intProperty(query, GroupingQueryParser.PARAM_DEFAULT_MAX_GROUPS).ifPresent(newRequest::setDefaultMaxGroups);
-        GroupingQueryParser.intProperty(query, GroupingQueryParser.PARAM_DEFAULT_MAX_HITS).ifPresent(newRequest::setDefaultMaxHits);
-        GroupingQueryParser.longProperty(query, GroupingQueryParser.GROUPING_GLOBAL_MAX_GROUPS).ifPresent(newRequest::setGlobalMaxGroups);
-        GroupingQueryParser.doubleProperty(query, GroupingQueryParser.PARAM_DEFAULT_PRECISION_FACTOR).ifPresent(newRequest::setDefaultPrecisionFactor);
-        query.getSelect().getGrouping().add(newRequest);
-        return newRequest;
+    private static OptionalInt intProperty(Query q, CompoundName name) {
+        Integer val = q.properties().getInteger(name);
+        return val != null ? OptionalInt.of(val) : OptionalInt.empty();
     }
 
+    private static OptionalLong longProperty(Query q, CompoundName name) {
+        Long val = q.properties().getLong(name);
+        return val != null ? OptionalLong.of(val) : OptionalLong.empty();
+    }
+
+    private static OptionalDouble doubleProperty(Query q, CompoundName name) {
+        Double val = q.properties().getDouble(name);
+        return val != null ? OptionalDouble.of(val) : OptionalDouble.empty();
+    }
     @Override
     public String toString() {
         return root == null ? "(empty)" : root.toString();

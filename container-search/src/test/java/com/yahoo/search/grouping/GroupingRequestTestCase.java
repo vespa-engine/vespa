@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.grouping;
 
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.grouping.result.Group;
@@ -143,7 +142,7 @@ public class GroupingRequestTestCase {
 
         assertEquals(List.of(), query.getSelect().getGrouping());
 
-        GroupingRequest foo = GroupingRequest.newInstanceWithGroupingProperties(query);
+        GroupingRequest foo = GroupingRequest.newInstance(query);
 
         assertEquals(List.of(foo), query.getSelect().getGrouping());
         assertEquals(OptionalInt.of(-1), query.getSelect().getGrouping().get(0).defaultMaxHits());
