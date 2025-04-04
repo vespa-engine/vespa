@@ -6,12 +6,12 @@
 string:
   - |1
           field {{FIELD_NAME}} type string {
-              indexing: summary | index
+              indexing: index
           }
 
   - |1
        field {{FIELD_NAME}}_att type string {
-           indexing: input {{FIELD_NAME}} | attribute
+           indexing: input {{FIELD_NAME}} | attribute | summary
        }
 
 long:
@@ -36,12 +36,12 @@ bool:
 array<string>:
   - |1
           field {{FIELD_NAME}} type array<string> {
-              indexing: summary | index
+              indexing: index
           }
   
   - |1
        field {{FIELD_NAME}}_att type array<string> {
-           indexing: input {{FIELD_NAME}} | attribute
+           indexing: input {{FIELD_NAME}} | attribute | summary
        }
 
 array<long>:
@@ -54,27 +54,45 @@ array<int8>:
   # this is the only integer tensor type supported by Vespa (you can use it to store size * 8 bits)
   - |1
           field {{FIELD_NAME}} type tensor<int8>(x[{{ARRAY_SIZE}}]) {
-              indexing: summary | attribute | index
+              # add summary if you want to see the tensor in the search results
+              # for debugging purposes
+              indexing: attribute | index
               attribute {
                 # we assume this is a bit vector, which typically uses hamming distance
                 distance-metric: hamming
               }
           }
 
+# if we have documents with different array sizes, we can't have a fixed size tensor
+variablearray<int8>:
+  - |1
+          field {{FIELD_NAME}} type array<int8> {
+              indexing: summary | index
+          }
+
 array<float>:
   - |1
           field {{FIELD_NAME}} type tensor<float>(x[{{ARRAY_SIZE}}]) {
-              indexing: summary | attribute | index
+              # add summary if you want to see the tensor in the search results
+              # for debugging purposes
+              indexing: attribute | index
               attribute {
                 # angular distance is the most common one for float tensors
                 distance-metric: angular
               }
           }
 
+# if we have documents with different array sizes, we can't have a fixed size tensor
+variablearray<float>:
+  - |1
+          field {{FIELD_NAME}} type array<float> {
+              indexing: summary | index
+          }
+
 array<bool>:
   - |1
           field {{FIELD_NAME}} type array<bool> {
-              indexing: summary | index
+              indexing: summary | attribute
           }
 
 position:
@@ -86,13 +104,17 @@ position:
 object<float>:
   - |1
           field {{FIELD_NAME}} type tensor<float>(category{}) {
-              indexing: summary | attribute
+              # add summary if you want to see the tensor in the search results
+              # for debugging purposes
+              indexing: attribute
           }
 
 object<int8>:
   - |1
           field {{FIELD_NAME}} type tensor<int8>(category{}) {
-              indexing: summary | attribute
+              # add summary if you want to see the tensor in the search results
+              # for debugging purposes
+              indexing: attribute
           }
 
 object<bool>:

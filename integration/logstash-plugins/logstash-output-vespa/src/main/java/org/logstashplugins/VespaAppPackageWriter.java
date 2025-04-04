@@ -287,6 +287,8 @@ public class VespaAppPackageWriter {
                 if (detectedFieldType.equals(existingFieldType)) {
                     result.put(fieldName, detectedFieldType);
                 } else {
+                    logger.info("Resolving type conflict for field {} ({}) vs ({})", 
+                                fieldName, detectedFieldType, existingFieldType);
                     String resolvedType = resolveTypeConflict(detectedFieldType, existingFieldType, typeConflictResolution);
                     if (resolvedType == null) {
                         logger.error("Cannot resolve type conflict for field {} ({}) vs ({})", 
@@ -294,6 +296,8 @@ public class VespaAppPackageWriter {
                         logger.warn("Leaving field {} as is", fieldName);
                         result.put(fieldName, existingFieldType);
                     } else {
+                        logger.info("Resolved type conflict for field {} ({}) vs ({}) to {}", 
+                                    fieldName, detectedFieldType, existingFieldType, resolvedType);
                         result.put(fieldName, resolvedType);
                     }
                 }
@@ -318,6 +322,69 @@ public class VespaAppPackageWriter {
     }
 
     private String resolveTypeConflict(String type1, String type2, Map<String, Map<String, String>> resolutions) {
+        // Check if we have an array in either type
+        Pattern arrayPattern = Pattern.compile("array<([^>]+)>\\[(\\d+)\\]");
+        Matcher matcher1 = arrayPattern.matcher(type1);
+        Matcher matcher2 = arrayPattern.matcher(type2);
+
+        Integer type1arraySize = null;
+        Integer type2arraySize = null;
+        String type1baseType = null;
+        String type2baseType = null;
+        if (matcher1.matches()) {
+            type1arraySize = Integer.parseInt(matcher1.group(2));
+            type1baseType = matcher1.group(1);
+        }
+        if (matcher2.matches()) {
+            type2arraySize = Integer.parseInt(matcher2.group(2));
+        }
+        
+        // two arrays?
+        if (type1arraySize != null && type2arraySize != null) {
+            // If base types are the same but array sizes differ, use variablearray
+            if (type1baseType.equals(type2baseType)) {
+                return "variablearray<" + type1baseType + ">";
+            } else {
+                // see if we can resolve the base types
+                String resolvedBaseType = getBaseResolvedType(type1baseType, type2baseType, resolutions);
+                // if we can, return a variablearray with the resolved base type
+                if (resolvedBaseType != null) {
+                    return "variablearray<" + resolvedBaseType + ">";
+                } else {
+                    // otherwise, we can't resolve the conflict
+                    return null;
+                }
+            }
+        }
+
+        // one array and one non-array?
+        // look up the resolutions without the array size
+        if (type1arraySize != null) {
+            String resolvedBaseType = getBaseResolvedType("array<" + type1baseType + ">", type2, resolutions);
+            // if the result is an array, return it with the array size
+            if (resolvedBaseType != null && resolvedBaseType.startsWith("array<")) {
+                return resolvedBaseType + "[" + type1arraySize + "]";
+            } else {
+                // otherwise, we return the resolved type as is
+                return resolvedBaseType;
+            }
+        }
+        // same logic as above
+        if (type2arraySize != null) {
+            String resolvedBaseType = getBaseResolvedType("array<" + type2baseType + ">", type1, resolutions);
+            if (resolvedBaseType != null && resolvedBaseType.startsWith("array<")) {
+                return resolvedBaseType + "[" + type2arraySize + "]";
+            } else {
+                return resolvedBaseType;
+            }
+        }
+
+        // two non-array types?
+        // just look them up in the resolutions
+        return getBaseResolvedType(type1, type2, resolutions);
+    }
+
+    private String getBaseResolvedType(String type1, String type2, Map<String, Map<String, String>> resolutions) {
         // Try both orderings since the resolution might only be defined one way
         Map<String, String> type1Resolutions = resolutions.get(type1);
         if (type1Resolutions != null && type1Resolutions.containsKey(type2)) {
@@ -328,7 +395,7 @@ public class VespaAppPackageWriter {
         if (type2Resolutions != null && type2Resolutions.containsKey(type1)) {
             return type2Resolutions.get(type1);
         }
-        
+
         return null;
     }
 

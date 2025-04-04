@@ -37,9 +37,9 @@ public class VespaFeed implements Output {
      ***********************/
     // quick start mode. This will not send documents to Vespa, but will generate an application package
     public static final PluginConfigSpec<Boolean> QUICK_START =
-            PluginConfigSpec.booleanSetting("quick_start", false);
+            PluginConfigSpec.booleanSetting("detect_schema", false);
 
-    // Other options in this section are ignored/irrelevant if quick_start is false
+    // Other options in this section are ignored/irrelevant if QUICK_START is false
 
     // save the generated application package in this directory
     public static final PluginConfigSpec<String> APPLICATION_PACKAGE_DIR =
@@ -84,25 +84,25 @@ public class VespaFeed implements Output {
     public static final PluginConfigSpec<URI> VESPA_URL =
             PluginConfigSpec.uriSetting("vespa_url", "http://localhost:8080");
     // if namespace is set to %{field_name} or %{[field_name]}, it's dynamic
-    // irrelevant/ignored for if quick_start is true
+    // irrelevant/ignored for if QUICK_START is true
     public static final PluginConfigSpec<String> NAMESPACE =
             PluginConfigSpec.stringSetting("namespace", null);
     // if remove_namespace is true, the namespace is removed from the document
-    // ignored/irrelevant for if quick_start is true
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> REMOVE_NAMESPACE =
             PluginConfigSpec.booleanSetting("remove_namespace", false);
     public static final PluginConfigSpec<String> DOCUMENT_TYPE =
             PluginConfigSpec.stringSetting("document_type", "doctype");
     // if remove_document_type is true, the document type is removed from the document (assuming it's dynamic)
-    // ignored/irrelevant for if quick_start is true
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> REMOVE_DOCUMENT_TYPE =
             PluginConfigSpec.booleanSetting("remove_document_type", false);
     // field from the event to use as doc ID
-    // ignored/irrelevant for if quick_start is true
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<String> ID_FIELD =
             PluginConfigSpec.stringSetting("id_field", "id");
     // if remove_id is true, the id field is removed from the document
-    // ignored/irrelevant for if quick_start is true
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> REMOVE_ID =
             PluginConfigSpec.booleanSetting("remove_id", false);
 
@@ -115,26 +115,26 @@ public class VespaFeed implements Output {
             PluginConfigSpec.stringSetting("client_key", null);
     
     // authentication token (for Vespa Cloud)
-    // ignored/irrelevant for if quick_start is true
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<String> AUTH_TOKEN =
             PluginConfigSpec.stringSetting("auth_token", null);
 
     // put, update or remove
-    // ignored/irrelevant for if quick_start is true
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<String> OPERATION =
             PluginConfigSpec.stringSetting("operation", "put");
     // if remove_operation is true, the operation field is removed from the document (assuming it's dynamic)
-    // ignored/irrelevant for if quick_start is true
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> REMOVE_OPERATION =
             PluginConfigSpec.booleanSetting("remove_operation", false);
     // whether to add create=true to the put/update request
-    // ignored/irrelevant for if quick_start is true
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> CREATE =
             PluginConfigSpec.booleanSetting("create", false);
 
     /***********************
      * Feed client settings
-     (ignored/irrelevant for if quick_start is true)
+     (ignored/irrelevant for if QUICK_START is true)
      ***********************/
     // max HTTP/2 connections per endpoint. We only have 1
     public static final PluginConfigSpec<Long> MAX_CONNECTIONS =
@@ -160,7 +160,7 @@ public class VespaFeed implements Output {
     
     /***********
      * Dead Letter Queue settings
-     (ignored/irrelevant for if quick_start is true)
+     (ignored/irrelevant for if QUICK_START is true)
      ***********/
     // enable dead letter queue. This overrides the global setting in logstash.yml
     public static final PluginConfigSpec<Boolean> ENABLE_DLQ =

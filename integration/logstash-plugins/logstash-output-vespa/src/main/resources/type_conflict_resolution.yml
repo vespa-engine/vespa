@@ -12,6 +12,15 @@ array<int8>:
   array<long>: array<long>
   array<float>: array<float>
 
+# if the array size changed, we'll call it "variablearray"
+# which can have a different mapping in the type_mappings.yml file
+variablearray<int8>:
+  array<int8>: variablearray<int8>
+  array<float>: variablearray<float>
+variablearray<float>:
+  array<int8>: variablearray<float>
+  array<float>: variablearray<float>
+
 array<long>:
   array<float>: array<float>
 
