@@ -4,11 +4,12 @@
 
 #include "multinumericenumattribute.h"
 #include "enum_store_loaders.h"
+#include "enumerated_multi_value_read_view.h"
 #include "load_utils.h"
 #include "loadednumericvalue.h"
-#include "enumerated_multi_value_read_view.h"
 #include "multi_numeric_enum_search_context.h"
 #include "numeric_sort_blob_writer.h"
+#include "string_to_number.h"
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.hpp>
@@ -185,14 +186,13 @@ MultiValueNumericEnumAttribute<B, M>::make_sort_blob_writer(bool ascending, cons
                                                             search::common::sortspec::MissingPolicy policy,
                                                             std::string_view missing_value) const
 {
-    (void) policy;
-    (void) missing_value;
+    T missing_num = string_to_number<T>(missing_value);
     if (ascending) {
         return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, true>>(this->_mvMapping,
-            this->_enumStore, policy, T());
+            this->_enumStore, policy, missing_num);
     } else {
         return std::make_unique<MultiNumericEnumSortBlobWriter<MultiValueMapping, EnumStore, T, false>>(this->_mvMapping,
-            this->_enumStore, policy, T());
+            this->_enumStore, policy, missing_num);
     }
 }
 

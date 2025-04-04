@@ -150,6 +150,7 @@ vespa_add_library(searchlib_attribute OBJECT
     string_search_context.cpp
     string_search_helper.cpp
     string_sort_blob_writer.cpp
+    string_to_number.cpp
     stringbase.cpp
     valuemodifier.cpp
     DEPENDS

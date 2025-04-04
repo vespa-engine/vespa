@@ -441,6 +441,7 @@ public:
     /**
      * Make a writer that is used for writing a serialized form of this attribute vector for sorting.
      * The serialized form can be used by memcmp() and sort order will be preserved.
+     * Throws vespalib::IllegalArgumentException if the missing value cannot be converted to the actual data type.
      */
     virtual std::unique_ptr<ISortBlobWriter> make_sort_blob_writer(bool ascending, const common::BlobConverter* converter,
                                                                    common::sortspec::MissingPolicy policy,
