@@ -17,6 +17,7 @@ public class WeakAnd implements Cloneable {
 
     public static final String STOPWORD_LIMIT = "stopwordLimit";
     public static final String ADJUST_TARGET = "adjustTarget";
+    public static final String ALLOW_DROP_ALL = "allowDropAll";
 
     static {
         argumentType = new QueryProfileType(Matching.WEAKAND);
@@ -24,15 +25,18 @@ public class WeakAnd implements Cloneable {
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription(STOPWORD_LIMIT, "double"));
         argumentType.addField(new FieldDescription(ADJUST_TARGET, "double"));
+        argumentType.addField(new FieldDescription(ALLOW_DROP_ALL, "boolean"));
     }
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
     private Double stopwordLimit = null;
     private Double adjustTarget = null;
+    private Boolean allowDropAll = null;
 
     public Double getStopwordLimit() { return stopwordLimit; }
     public Double getAdjustTarget() { return adjustTarget; }
+    public Boolean getAllowDropAll() { return allowDropAll; }
 
     private static void validateRange(String field, double v, double lboundIncl, double uboundIncl) {
         if (v < lboundIncl || v > uboundIncl) {
@@ -48,6 +52,9 @@ public class WeakAnd implements Cloneable {
         validateRange(ADJUST_TARGET, target, 0.0, 1.0);
         adjustTarget = target;
     }
+    public void setAllowDropAll(boolean allowDropAll) {
+        this.allowDropAll = allowDropAll;
+    }
 
     /** Internal operation - DO NOT USE DIRECTLY */
     public void prepare(RankProperties rankProperties) {
@@ -56,6 +63,9 @@ public class WeakAnd implements Cloneable {
         }
         if (adjustTarget != null) {
             rankProperties.put("vespa.matching.weakand.stop_word_adjust_limit", String.valueOf(adjustTarget));
+        }
+        if (allowDropAll != null) {
+            rankProperties.put("vespa.matching.weakand.allow_drop_all", String.valueOf(allowDropAll));
         }
     }
 
@@ -73,11 +83,12 @@ public class WeakAnd implements Cloneable {
         if (o == null || getClass() != o.getClass()) return false;
         WeakAnd weakAnd = (WeakAnd) o;
         return Objects.equals(stopwordLimit, weakAnd.stopwordLimit) &&
-                Objects.equals(adjustTarget, weakAnd.adjustTarget);
+                Objects.equals(adjustTarget, weakAnd.adjustTarget) &&
+                Objects.equals(allowDropAll, weakAnd.allowDropAll);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(stopwordLimit, adjustTarget);
+        return Objects.hash(stopwordLimit, adjustTarget, allowDropAll);
     }
 }
