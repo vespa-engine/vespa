@@ -324,7 +324,7 @@ FastS_SortSpec::~FastS_SortSpec()
 bool
 FastS_SortSpec::Init(const std::string & sortStr, IAttributeContext & vecMan)
 {
-    LOG(spam, "sortStr = %s", sortStr.c_str());
+    LOG(info, "sortStr = %s", sortStr.c_str());
     bool retval(true);
     try {
         _sortSpec = SortSpec(sortStr, _ucaFactory);

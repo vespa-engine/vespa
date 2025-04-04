@@ -525,7 +525,7 @@ SearchVisitor::init(const Parameters & params)
         if ( hasSortSpec ) {
             search::uca::UcaConverterFactory ucaFactory;
             _sortSpec = search::common::SortSpec(std::string(sortRef.data(), sortRef.size()), ucaFactory);
-            LOG(debug, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
+            LOG(info, "Received sort specification: '%s'", _sortSpec.getSpec().c_str());
         }
 
         Parameters::ValueRef queryBlob;
