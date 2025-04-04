@@ -75,6 +75,7 @@ RankSetup::RankSetup(const BlueprintFactory &factory, const IIndexEnvironment &i
       _target_hits_max_adjustment_factor(20.0),
       _weakand_stop_word_adjust_limit(matching::WeakAndStopWordAdjustLimit::DEFAULT_VALUE),
       _weakand_stop_word_drop_limit(matching::WeakAndStopWordDropLimit::DEFAULT_VALUE),
+      _weakand_allow_drop_all(matching::WeakAndAllowDropAll::DEFAULT_VALUE),
       _fuzzy_matching_algorithm(vespalib::FuzzyMatchingAlgorithm::DfaTable),
       _mutateOnMatch(),
       _mutateOnFirstPhase(),
@@ -133,6 +134,7 @@ RankSetup::configure()
     set_fuzzy_matching_algorithm(matching::FuzzyAlgorithm::lookup(_indexEnv.getProperties()));
     set_weakand_stop_word_adjust_limit(matching::WeakAndStopWordAdjustLimit::lookup(_indexEnv.getProperties()));
     set_weakand_stop_word_drop_limit(matching::WeakAndStopWordDropLimit::lookup(_indexEnv.getProperties()));
+    set_weakand_allow_drop_all(matching::WeakAndAllowDropAll::lookup(_indexEnv.getProperties()));
     _mutateOnMatch._attribute = mutate::on_match::Attribute::lookup(_indexEnv.getProperties());
     _mutateOnMatch._operation = mutate::on_match::Operation::lookup(_indexEnv.getProperties());
     _mutateOnFirstPhase._attribute = mutate::on_first_phase::Attribute::lookup(_indexEnv.getProperties());

@@ -353,6 +353,18 @@ namespace matching {
     };
 
     /**
+     * Do we allow dropping all words if they are stop words?
+     * default is 'false' -> keep the rarest word
+     * 'true' -> wands with only stop words will produce no hits
+     **/
+    struct WeakAndAllowDropAll {
+        static const std::string NAME;
+        static const bool DEFAULT_VALUE;
+        static bool lookup(const Properties &props);
+        static bool lookup(const Properties &props, bool defaultValue);
+    };
+
+    /**
      * Property to extract the filter threshold settings for a query (see search::fef::FilterThreshold for details).
      * The per field filter threshold has precedence over the overall filter threshold.
      */

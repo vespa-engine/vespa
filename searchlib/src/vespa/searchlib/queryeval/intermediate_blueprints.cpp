@@ -7,6 +7,7 @@
 #include "orsearch.h"
 #include "nearsearch.h"
 #include "ranksearch.h"
+#include "leaf_blueprints.h"
 #include "sourceblendersearch.h"
 #include "termwise_blueprint_helper.h"
 #include "isourceselector.h"
@@ -483,7 +484,7 @@ WeakAndBlueprint::optimize_self(OptimizePass pass)
         while (!drop.empty()) {
             uint32_t idx = drop.back();
             drop.pop_back();
-            if (idx != min_est_idx) {
+            if (idx != min_est_idx || _stop_word_strategy.allow_drop_all()) {
                 removeChild(idx);
                 _weights.erase(_weights.begin() + idx);
             }
@@ -494,6 +495,9 @@ WeakAndBlueprint::optimize_self(OptimizePass pass)
 Blueprint::UP
 WeakAndBlueprint::get_replacement()
 {
+    if (childCnt() == 0) {
+        return std::make_unique<EmptyBlueprint>();
+    }
     if (childCnt() == 1) {
         return removeChild(0);
     }

@@ -443,6 +443,13 @@ double WeakAndStopWordDropLimit::lookup(const Properties &props, double defaultV
     return lookupDouble(props, NAME, defaultValue);
 }
 
+const std::string WeakAndAllowDropAll::NAME("vespa.matching.weakand.allow_drop_all");
+const bool WeakAndAllowDropAll::DEFAULT_VALUE(false);
+bool WeakAndAllowDropAll::lookup(const Properties &props) { return lookup(props, DEFAULT_VALUE); }
+bool WeakAndAllowDropAll::lookup(const Properties &props, bool defaultValue) {
+    return lookupBool(props, NAME, defaultValue);
+}
+
 const std::string FilterThreshold::NAME("vespa.matching.filter_threshold");
 const std::optional<double> FilterThreshold::DEFAULT_VALUE(std::nullopt);
 std::optional<double> FilterThreshold::lookup(const search::fef::Properties &props) {

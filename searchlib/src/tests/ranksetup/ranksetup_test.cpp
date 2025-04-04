@@ -525,6 +525,7 @@ TEST_F(RankSetupTest, rank_setup)
 {
     using namespace search::fef::indexproperties;
     IndexEnvironment env;
+    IndexEnvironment empty_env;
     env.getProperties().add(rank::FirstPhase::NAME, "firstphase");
     env.getProperties().add(rank::SecondPhase::NAME, "secondphase");
     env.getProperties().add(match::Feature::NAME, "match_foo");
@@ -563,10 +564,13 @@ TEST_F(RankSetupTest, rank_setup)
     env.getProperties().add(matching::FuzzyAlgorithm::NAME, "dfa_implicit");
     env.getProperties().add(matching::WeakAndStopWordAdjustLimit::NAME, "0.05");
     env.getProperties().add(matching::WeakAndStopWordDropLimit::NAME, "0.5");
+    env.getProperties().add(matching::WeakAndAllowDropAll::NAME, "true");
 
     RankSetup rs(_factory, env);
+    RankSetup empty_rs(_factory, empty_env);
     EXPECT_FALSE(rs.has_match_features());
     rs.configure();
+    empty_rs.configure();
     EXPECT_EQ(rs.getFirstPhaseRank(), std::string("firstphase"));
     EXPECT_EQ(rs.getSecondPhaseRank(), std::string("secondphase"));
     EXPECT_TRUE(rs.has_match_features());
@@ -606,8 +610,12 @@ TEST_F(RankSetupTest, rank_setup)
     EXPECT_EQ(rs.get_global_filter_upper_limit(), 0.7);
     EXPECT_EQ(rs.get_target_hits_max_adjustment_factor(), 5.0);
     EXPECT_EQ(rs.get_fuzzy_matching_algorithm(), vespalib::FuzzyMatchingAlgorithm::DfaImplicit);
+    EXPECT_EQ(empty_rs.get_weakand_stop_word_adjust_limit(), 1.0);
+    EXPECT_EQ(empty_rs.get_weakand_stop_word_drop_limit(), 1.0);
+    EXPECT_EQ(empty_rs.get_weakand_allow_drop_all(), false);
     EXPECT_EQ(rs.get_weakand_stop_word_adjust_limit(), 0.05);
     EXPECT_EQ(rs.get_weakand_stop_word_drop_limit(), 0.5);
+    EXPECT_EQ(rs.get_weakand_allow_drop_all(), true);
 }
 
 bool

@@ -41,7 +41,7 @@ struct MyWandSpec : public WandSpec
     }
     void set_second_phase() { matching_phase = MatchingPhase::SECOND_PHASE; }
     void set_abs_stop_word_adjust_limit(double limit) {
-        my_params.stop_words = wand::StopWordStrategy(-limit, 1.0, docid_limit);
+        my_params.stop_words = wand::StopWordStrategy(-limit, 1.0, docid_limit, false);
     }
     SimpleResult search() {
         SearchIterator::UP search(create());
