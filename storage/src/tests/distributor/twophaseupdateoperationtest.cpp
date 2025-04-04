@@ -1073,7 +1073,7 @@ TEST_F(TwoPhaseUpdateOperationTest, safe_path_condition_with_missing_doc_and_no_
                           "BucketId(0x0000000000000000), "
                           "timestamp 0, timestamp of updated doc: 0) "
                           "ReturnCode(TEST_AND_SET_CONDITION_FAILED, "
-                                     "Document did not exist)",
+                                     "Document does not exist)",
               _sender.getLastReply(true));
 
     EXPECT_EQ(metrics().updates.failures.notfound.getValue(), 0); // Not counted as "not found" failure when TaS is present

@@ -547,7 +547,7 @@ TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSende
         docToUpdate = reply.getDocument();
         setUpdatedForTimestamp(receivedTimestamp);
     } else if (hasTasCondition() && !shouldCreateIfNonExistent()) {
-        replyWithTasFailure(sender, "Document did not exist");
+        replyWithTasFailure(sender, "Document does not exist");
         return;
     } else if (shouldCreateIfNonExistent()) {
         LOG(debug, "No existing documents found for %s, creating blank document to update",
