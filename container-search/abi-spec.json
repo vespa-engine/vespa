@@ -5685,6 +5685,7 @@
       "public com.yahoo.search.query.Sorting$AttributeSorter getSorter()",
       "public void setSorter(com.yahoo.search.query.Sorting$AttributeSorter)",
       "public com.yahoo.search.query.Sorting$Order getSortOrder()",
+      "public java.lang.String toSerialForm(boolean)",
       "public void setAscending(boolean)",
       "public java.lang.String toString()",
       "public int hashCode()",
@@ -5802,6 +5803,7 @@
       "public com.yahoo.search.query.Sorting clone()",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
+      "public java.lang.String toSerialForm()",
       "public int encode(java.nio.ByteBuffer)",
       "public bridge synthetic java.lang.Object clone()"
     ],
