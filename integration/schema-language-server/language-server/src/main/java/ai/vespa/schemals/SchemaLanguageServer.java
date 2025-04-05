@@ -63,6 +63,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
     private SchemaIndex schemaIndex;
     private SchemaDiagnosticsHandler schemaDiagnosticsHandler;
     private SchemaMessageHandler schemaMessageHandler;
+    private SchemaProgressHandler schemaProgressHandler;
 
     // Error code starts at 1 and turns into 0 if we receive shutdown request.
     private int errorCode = 1;
@@ -82,7 +83,8 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.logger = new ClientLogger(schemaMessageHandler);
         this.schemaIndex = new SchemaIndex(logger);
         this.schemaDiagnosticsHandler = new SchemaDiagnosticsHandler();
-        this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex, schemaMessageHandler);
+        this.schemaProgressHandler = new SchemaProgressHandler();
+        this.schemaDocumentScheduler = new SchemaDocumentScheduler(logger, schemaDiagnosticsHandler, schemaIndex, schemaMessageHandler, schemaProgressHandler);
 
         this.textDocumentService = new SchemaTextDocumentService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
         this.workspaceService = new SchemaWorkspaceService(this.logger, schemaDocumentScheduler, schemaIndex, schemaMessageHandler);
@@ -168,6 +170,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         this.client = languageClient;
         this.schemaDiagnosticsHandler.connectClient(languageClient);
         this.schemaMessageHandler.connectClient(languageClient);
+        this.schemaProgressHandler.connectClient(languageClient);
         this.client.logMessage(new MessageParams(MessageType.Log, "Language Server successfully connected to client."));
 
         if (serverPath == null) return;

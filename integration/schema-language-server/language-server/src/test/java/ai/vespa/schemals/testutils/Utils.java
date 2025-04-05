@@ -7,7 +7,6 @@ import org.eclipse.lsp4j.Diagnostic;
 import org.eclipse.lsp4j.DiagnosticSeverity;
 import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.SchemaMessageHandler;
 import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.ParseContext;
 import ai.vespa.schemals.index.SchemaIndex;
@@ -38,10 +37,11 @@ public class Utils {
 
     public static ParseContext createTestContext(String input, String fileName) {
         TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        TestSchemaProgressHandler progressHandler = new TestSchemaProgressHandler();
         ClientLogger logger = new TestLogger(messageHandler);
         SchemaIndex schemaIndex = new SchemaIndex(logger);
         TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler, progressHandler);
         schemaIndex.clearDocument(fileName);
         ParseContext context = new ParseContext(input, logger, fileName, schemaIndex, scheduler);
         return context;
