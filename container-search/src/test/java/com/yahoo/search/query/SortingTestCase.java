@@ -108,10 +108,7 @@ public class SortingTestCase {
     }
 
     private static String encodedSpec(String spec) {
-        var s = Sorting.fromString(spec);
-        var b = ByteBuffer.allocate(100);
-        var usedBytes = s.encode(b);
-        return new String(b.array(), 0, usedBytes, StandardCharsets.UTF_8);
+        return Sorting.fromString(spec).toSerialForm();
     }
 
     private static String failedSpec(String spec) {
