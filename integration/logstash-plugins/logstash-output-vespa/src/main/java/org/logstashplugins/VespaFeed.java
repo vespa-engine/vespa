@@ -195,8 +195,30 @@ public class VespaFeed implements Output {
 
     public VespaFeed(final String id, final Configuration config, final Context context) {
         this.id = id;
+        this.feedConfig = initFeedConfig(config);
+        this.quickStartConfig = initQuickStartConfig(config);
+        initializeClient(config, false, null);
+    }
 
-        feedConfig = new FeedConfig(
+    // Constructor for testing with a mock client
+    protected VespaFeed(String id, Configuration config, Context context, FeedClient testClient) {
+        this.id = id;
+        this.feedConfig = initFeedConfig(config);
+        this.quickStartConfig = initQuickStartConfig(config);
+        initializeClient(config, testClient == null, testClient);
+    }
+
+    // Constructor for testing that skips client initialization
+    public VespaFeed(final String id, final Configuration config, final Context context, boolean skipClientInit) {
+        this.id = id;
+        this.feedConfig = initFeedConfig(config);
+        this.quickStartConfig = initQuickStartConfig(config);
+        initializeClient(config, skipClientInit, null);
+    }
+
+    // Initialize feed configuration
+    private FeedConfig initFeedConfig(Configuration config) {
+        return new FeedConfig(
             config.get(NAMESPACE),
             config.get(REMOVE_NAMESPACE),
             config.get(DOCUMENT_TYPE),
@@ -211,9 +233,12 @@ public class VespaFeed implements Output {
             config.get(CLIENT_KEY),
             config.get(APPLICATION_PACKAGE_DIR)
         );
-        
+    }
+
+    // Initialize quick start configuration
+    private QuickStartConfig initQuickStartConfig(Configuration config) {
         if (config.get(QUICK_START)) {
-            quickStartConfig = new QuickStartConfig(
+            return new QuickStartConfig(
                 config.get(DEPLOY_PACKAGE),
                 config.get(GENERATE_MTLS_CERTIFICATES),
                 feedConfig.getClientCert(),
@@ -234,69 +259,77 @@ public class VespaFeed implements Output {
                 config.get(CERTIFICATE_COMMON_NAME),
                 config.get(CERTIFICATE_VALIDITY_DAYS)
             );
-            quickStarter = new VespaQuickStarter(quickStartConfig);
-        } else {
-            quickStartConfig = null;
-            if (config.get(ENABLE_DLQ)) {
-                try {
-                    Path dlqPath = Paths.get(config.get(DLQ_PATH));
-                    dlqWriter = DeadLetterQueueWriter.newBuilder(dlqPath,
-                                    config.get(MAX_QUEUE_SIZE).longValue(),
-                                    config.get(MAX_SEGMENT_SIZE).longValue(),
-                                    Duration.ofMillis(config.get(FLUSH_INTERVAL).longValue()))
-                                .build();
-                } catch (IOException e) {
-                    logger.error("Failed to create Dead Letter Queue writer: ", e);
-                    dlqWriter = null;
-                }
-            } else {
-                dlqWriter = null;
-            }
-
-            try {
-                FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
-                        .setConnectionsPerEndpoint(config.get(MAX_CONNECTIONS).intValue())
-                        .setMaxStreamPerConnection(config.get(MAX_STREAMS).intValue())
-                        .setRetryStrategy(
-                                new FeedClient.RetryStrategy() {
-                                    @Override
-                                    public boolean retry(FeedClient.OperationType type) {
-                                        // retry all operations
-                                        return true;
-                                    }
-
-                                    @Override
-                                    public int retries() {
-                                        return config.get(MAX_RETRIES).intValue();
-                                    }
-                                }
-                        )
-                        .setCircuitBreaker(
-                                new GracePeriodCircuitBreaker(
-                                        Duration.ofSeconds(config.get(GRACE_PERIOD)),
-                                        Duration.ofSeconds(config.get(DOOM_PERIOD))
-                                )
-                        );
-
-                // set client certificate and key (or auth token) if they are provided
-                builder = addAuthOptionsToBuilder(config, builder, 
-                            feedConfig.getClientCert(), feedConfig.getClientKey());
-
-                // now we should have the client
-                client = builder.build();
-            } catch (Exception e) {
-                String errorMessage = "Failed to create Vespa feed client: " + e.getMessage();
-                logger.error(errorMessage, e);
-                throw new IllegalArgumentException(errorMessage, e);
-            }
         }
+        return null;
     }
 
-    // Constructor for testing
-    protected VespaFeed(String id, Configuration config, Context context, FeedClient testClient) {
-        this(id, config, context);
+    // Private initialization method to handle client creation
+    private void initializeClient(Configuration config, boolean skipClientInit, FeedClient testClient) {
+        if (quickStartConfig != null) {
+            quickStarter = new VespaQuickStarter(quickStartConfig);
+            return;
+        }
+        
+        if (config.get(ENABLE_DLQ)) {
+            try {
+                Path dlqPath = Paths.get(config.get(DLQ_PATH));
+                dlqWriter = DeadLetterQueueWriter.newBuilder(dlqPath,
+                                config.get(MAX_QUEUE_SIZE).longValue(),
+                                config.get(MAX_SEGMENT_SIZE).longValue(),
+                                Duration.ofMillis(config.get(FLUSH_INTERVAL).longValue()))
+                            .build();
+            } catch (IOException e) {
+                logger.error("Failed to create Dead Letter Queue writer: ", e);
+                dlqWriter = null;
+            }
+        }
+
+        // If we have a test client, use it
         if (testClient != null) {
             this.client = testClient;
+            return;
+        }
+        
+        // Skip client initialization for testing if requested
+        if (skipClientInit) {
+            return;
+        }
+
+        try {
+            FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
+                    .setConnectionsPerEndpoint(config.get(MAX_CONNECTIONS).intValue())
+                    .setMaxStreamPerConnection(config.get(MAX_STREAMS).intValue())
+                    .setRetryStrategy(
+                            new FeedClient.RetryStrategy() {
+                                @Override
+                                public boolean retry(FeedClient.OperationType type) {
+                                    // retry all operations
+                                    return true;
+                                }
+
+                                @Override
+                                public int retries() {
+                                    return config.get(MAX_RETRIES).intValue();
+                                }
+                            }
+                    )
+                    .setCircuitBreaker(
+                            new GracePeriodCircuitBreaker(
+                                    Duration.ofSeconds(config.get(GRACE_PERIOD)),
+                                    Duration.ofSeconds(config.get(DOOM_PERIOD))
+                            )
+                    );
+
+            // set client certificate and key (or auth token) if they are provided
+            builder = addAuthOptionsToBuilder(config, builder, 
+                        feedConfig.getClientCert(), feedConfig.getClientKey());
+
+            // now we should have the client
+            client = builder.build();
+        } catch (Exception e) {
+            String errorMessage = "Failed to create Vespa feed client: " + e.getMessage();
+            logger.error(errorMessage, e);
+            throw new IllegalArgumentException(errorMessage, e);
         }
     }
 
