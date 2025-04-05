@@ -295,8 +295,10 @@ PageDict4FileSeqWrite::DictFileContext::DictFileContext(bool extended, std::stri
     _valid = true;
 }
 
+PageDict4FileSeqWrite::DictFileContext::~DictFileContext() = default;
+
 bool
-PageDict4FileSeqWrite::DictFileContext::DictFileContext::close()
+PageDict4FileSeqWrite::DictFileContext::close()
 {
     _ec.pad_for_memory_map_and_flush();
     _writeContext.dropComprBuf();
@@ -305,8 +307,6 @@ PageDict4FileSeqWrite::DictFileContext::DictFileContext::close()
     _writeContext.setFile(nullptr);
     return success;
 }
-
-PageDict4FileSeqWrite::DictFileContext::~DictFileContext() = default;
 
 PageDict4FileSeqWrite::PageDict4FileSeqWrite()
     : _params(),
