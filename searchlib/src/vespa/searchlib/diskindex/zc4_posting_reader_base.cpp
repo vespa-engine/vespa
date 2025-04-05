@@ -198,6 +198,7 @@ Zc4PostingReaderBase::Zc4PostingReaderBase(bool dynamic_k)
       _num_docs(0),
       _readContext(sizeof(uint64_t)),
       _has_more(false),
+      _features_size_flush(false),
       _posting_params(64, 1 << 30, 10000000, dynamic_k, true, false),
       _last_doc_id(0),
       _no_skip(),
@@ -254,17 +255,18 @@ Zc4PostingReaderBase::read_common_word_doc_id(DecodeContext64Base &decode_contex
 void
 Zc4PostingReaderBase::read_word_start_with_skip(DecodeContext64Base &decode_context, const Zc4PostingHeader &header)
 {
-    assert(_num_docs >= _posting_params._min_skip_docs || _has_more);
+    assert(_num_docs >= _posting_params._min_skip_docs || _has_more || header._features_size_flush);
     bool has_more = header._has_more;
+    bool features_size_flush = header._features_size_flush;
     if (_has_more || has_more) {
         assert(has_more == (_chunkNo + 1 < _counts._segments.size()));
         assert(_num_docs == _counts._segments[_chunkNo]._numDocs);
-        if (has_more) {
+        if (has_more && !features_size_flush) {
             assert(_num_docs >= _posting_params._min_skip_docs);
             assert(_num_docs >= _posting_params._min_chunk_docs);
         }
     } else {
-        assert(_num_docs >= _posting_params._min_skip_docs);
+        assert(_num_docs >= _posting_params._min_skip_docs || features_size_flush);
         assert(_num_docs == _counts._numDocs);
     }
     uint32_t prev_doc_id = _no_skip.get_doc_id();
@@ -284,6 +286,7 @@ Zc4PostingReaderBase::read_word_start_with_skip(DecodeContext64Base &decode_cont
     _l3_skip.set_features_pos(features_pos);
     _l4_skip.set_features_pos(features_pos);
     _has_more = has_more;
+    _features_size_flush = features_size_flush;
     // Decode context is now positioned at start of features
 }
 
@@ -307,10 +310,12 @@ Zc4PostingReaderBase::read_word_start(DecodeContext64Base &decode_context)
     assert(_num_docs <= _counts._numDocs);
     assert(_num_docs == _counts._numDocs ||
            _num_docs >= _posting_params._min_chunk_docs ||
-           _has_more);
+           _has_more || header._features_size_flush);
 
-    if (_num_docs >= _posting_params._min_skip_docs || _has_more) {
+    if (_num_docs >= _posting_params._min_skip_docs || _has_more || header._features_size_flush) {
         read_word_start_with_skip(decode_context, header);
+    } else {
+        _features_size_flush = false;
     }
 }
 

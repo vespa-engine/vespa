@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "features_size_flush.h"
 #include "zc4_posting_writer.h"
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
@@ -46,17 +47,28 @@ template <bool bigEndian>
 void
 Zc4PostingWriter<bigEndian>::flush_word_with_skip(bool hasMore)
 {
-    assert(_docIds.size() >= _minSkipDocs || !_counts._segments.empty());
+    uint32_t numDocs = _docIds.size();
+    assert(numDocs > 0);
+
+    /*
+     * When flushing due to feature size, posting list variant with skip info is always selected and the "more"
+     * bit is always written. A marker value is needed to keep readers in sync.
+     */
+    bool features_size_flush = (numDocs < _minSkipDocs && _counts._segments.empty()) ||
+                               (numDocs < _minChunkDocs && hasMore) ||
+                               (numDocs == features_size_flush_marker);
 
     if (_encode_features != nullptr) {
         _encode_features->flush();
     }
     EncodeContext &e = _encode_context;
 
-    uint32_t numDocs = _docIds.size();
-
+    if (features_size_flush) {
+        // Inform readers that chunk was flushed due to features size
+        e.encodeExpGolomb(features_size_flush_marker - 1, K_VALUE_ZCPOSTING_NUMDOCS);
+    }
     e.encodeExpGolomb(numDocs - 1, K_VALUE_ZCPOSTING_NUMDOCS);
-    if (numDocs >= _minChunkDocs) {
+    if (numDocs >= _minChunkDocs || features_size_flush) {
         e.writeBits((hasMore ? 1 : 0), 1);
     }
 
@@ -126,7 +138,7 @@ template <bool bigEndian>
 void
 Zc4PostingWriter<bigEndian>::write_docid_and_features(const DocIdAndFeatures &features)
 {
-    if (__builtin_expect(_docIds.size() >= _minChunkDocs, false)) {
+    if (__builtin_expect(_docIds.size() >= _minChunkDocs || (_featureOffset >= _features_size_flush_bits), false)) {
         flush_word_with_skip(true);
     }
     if (_encode_features != nullptr) {
@@ -189,9 +201,9 @@ template <bool bigEndian>
 void
 Zc4PostingWriter<bigEndian>::flush_word()
 {
-    if (__builtin_expect(_docIds.size() >= _minSkipDocs ||
+    if (__builtin_expect(_docIds.size() >= _minSkipDocs || (_featureOffset >= _features_size_flush_bits) ||
                          !_counts._segments.empty(), false)) {
-        // Use skip information if enough documents or chunking has happened
+        // Use skip information if enough documents, feature bits or chunking has happened
         flush_word_with_skip(false);
         _numWords++;
     } else if (_docIds.size() > 0) {

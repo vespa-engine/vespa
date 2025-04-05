@@ -6,6 +6,7 @@
 #define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
+#include <vespa/searchlib/diskindex/features_size_flush.h>
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
@@ -26,7 +27,9 @@ using search::diskindex::DiskIndex;
 using search::diskindex::DiskTermBlueprint;
 using search::diskindex::FieldIndex;
 using search::diskindex::TestDiskIndex;
+using search::diskindex::ZcPosOccIterator;
 using search::diskindex::ZcRareWordPosOccIterator;
+using search::diskindex::force_features_size_flush_always;
 using search::fef::FilterThreshold;
 using search::fef::TermFieldMatchDataArray;
 using search::index::DictionaryLookupResult;
@@ -274,7 +277,7 @@ DiskIndexTest::requireThatWeCanReadPostingList(const IOSettings& io_settings)
         auto& field_index = _index->get_field_index(0);
         auto h = field_index.read_posting_list(r);
         if (field_index.is_posting_list_cache_enabled()) {
-            EXPECT_GT(64, h._allocSize);
+            EXPECT_GT(force_features_size_flush_always ? 96 : 64, h._allocSize);
         }
         EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, h));
         if (io_settings._use_directio && !io_settings._use_mmap) {
@@ -286,7 +289,7 @@ DiskIndexTest::requireThatWeCanReadPostingList(const IOSettings& io_settings)
 #endif
             EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, directio_handle));
             auto trimmed_directio_handle = field_index.read_uncached_posting_list(r, true);
-            EXPECT_GT(64, trimmed_directio_handle._allocSize);
+            EXPECT_GT(force_features_size_flush_always ? 96 : 64, trimmed_directio_handle._allocSize);
             EXPECT_EQ(SimpleResult({1,3}), search(field_index, r, trimmed_directio_handle));
         }
     }
@@ -405,7 +408,11 @@ DiskIndexTest::requireThatBlueprintCanCreateSearchIterators()
         b = create_blueprint(FieldSpec("f1", 0, 0), makeTerm("w1"));
         auto& leaf_b = dynamic_cast<LeafBlueprint&>(*b);
         s = leaf_b.createLeafSearch(mda);
-        ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != nullptr));
+        if (force_features_size_flush_always) {
+            ASSERT_TRUE((dynamic_cast<ZcPosOccIterator<true, false> *>(s.get()) != nullptr));
+        } else {
+            ASSERT_TRUE((dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(s.get()) != nullptr));
+        }
         EXPECT_EQ(result_f1_w1, SimpleResult().search(*s));
         EXPECT_EQ(result_f1_w1, SimpleResult().search(*leaf_b.createFilterSearch(upper_bound)));
     }

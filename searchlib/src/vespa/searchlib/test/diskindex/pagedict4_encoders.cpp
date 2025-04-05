@@ -2,6 +2,8 @@
 
 #include "pagedict4_encoders.h"
 
+using search::index::PostingListParams;
+
 namespace search::diskindex::test {
 
 PageDict4Encoders::PageDict4Encoders(uint32_t chunkSize, uint64_t numWordIds)

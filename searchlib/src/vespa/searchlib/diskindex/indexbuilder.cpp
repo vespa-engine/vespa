@@ -151,7 +151,7 @@ FileHandle::open(std::string_view dir,
 
     _fieldWriter = std::make_shared<FieldWriter>(docIdLimit, numWordIds, std::string(dir) + "/");
 
-    if (!_fieldWriter->open(64, 262144u, false,
+    if (!_fieldWriter->open(64, 262144u, 0, false,
                             index.use_interleaved_features(),
                             index.getSchema(), index.getIndex(),
                             field_length_info,

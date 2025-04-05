@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "extposocc.h"
+#include "features_size_flush.h"
 #include "zcposocc.h"
 #include "fileheader.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
@@ -38,6 +39,7 @@ setupDefaultPosOccParameters(PostingListParams *countParams,
 {
     params->set("minSkipDocs", 64u);
     params->set("minChunkDocs", 262144u);
+    setup_default_features_size_flush(*params);
 
     countParams->set("numWordIds", numWordIds);
     /*

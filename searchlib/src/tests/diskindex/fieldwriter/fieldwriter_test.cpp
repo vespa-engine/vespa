@@ -70,6 +70,7 @@ namespace fieldwriter {
 
 uint32_t minSkipDocs = 64;
 uint32_t minChunkDocs = 256_Ki;
+uint64_t features_size_flush_bits = 0;
 
 std::string dirprefix = "index/";
 
@@ -77,18 +78,28 @@ void disableSkip()
 {
     minSkipDocs = 10000000;
     minChunkDocs = 1 << 30;
+    features_size_flush_bits = 0;
 }
 
 void enableSkip()
 {
     minSkipDocs = 64;
     minChunkDocs = 1 << 30;
+    features_size_flush_bits = 0;
 }
 
 void enableSkipChunks()
 {
     minSkipDocs = 64;
     minChunkDocs = 9000;    // Unrealistic low for testing
+    features_size_flush_bits = 0;
+}
+
+void
+enable_features_size_flush() {
+    minSkipDocs = 64;
+    minChunkDocs = 9000;          // Unrealistic low for testing
+    features_size_flush_bits = 2; // Unrealistic low for testing, 1 document per chunk
 }
 
 const char *bool_to_str(bool val) { return (val ? "true" : "false"); }
@@ -208,7 +219,7 @@ WrappedFieldWriter::open()
     DummyFileHeaderContext fileHeaderContext;
     fileHeaderContext.disableFileName();
     _fieldWriter = std::make_unique<FieldWriter>(_docIdLimit, _numWordIds, _namepref);
-    _fieldWriter->open(minSkipDocs, minChunkDocs,
+    _fieldWriter->open(minSkipDocs, minChunkDocs, features_size_flush_bits,
                        _dynamicK, _encode_interleaved_features,
                        _schema, _indexId,
                        FieldLengthInfo(4.5, 4.5, 42),
@@ -630,6 +641,9 @@ testFieldWriterVariants(FakeWordSet &wordSet,
     testFieldWriterVariant(wordSet, docIdLimit, "newchunk4", true, false, verbose);
     testFieldWriterVariant(wordSet, docIdLimit, "newchunk5", false, false, verbose);
     testFieldWriterVariant(wordSet, docIdLimit, "newchunkcf4", true, true, verbose);
+    enable_features_size_flush();
+    testFieldWriterVariant(wordSet, docIdLimit, "newfs4", true, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "newfs5", false, false, verbose);
 }
 
 

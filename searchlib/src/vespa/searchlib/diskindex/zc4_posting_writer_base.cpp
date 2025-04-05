@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "zc4_posting_writer_base.h"
+#include "features_size_flush.h"
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <cassert>
@@ -208,6 +209,7 @@ Zc4PostingWriterBase::Zc4PostingWriterBase(PostingListCounts &counts)
       _writePos(0),
       _dynamicK(false),
       _encode_interleaved_features(false),
+      _features_size_flush_bits(std::numeric_limits<uint64_t>::max()),
       _zcDocIds(),
       _l1Skip(),
       _l2Skip(),
@@ -284,6 +286,7 @@ Zc4PostingWriterBase::set_posting_list_params(const PostingListParams &params)
     params.get("minChunkDocs", _minChunkDocs);
     params.get("minSkipDocs", _minSkipDocs);
     params.get("interleaved_features", _encode_interleaved_features);
+    params.get(tags::FEATURES_SIZE_FLUSH_BITS, _features_size_flush_bits);
 }
 
 }

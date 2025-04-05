@@ -11,6 +11,10 @@ std::string empty;
 
 namespace search::index {
 
+PostingListParams::PostingListParams() = default;
+
+PostingListParams::~PostingListParams() = default;
+
 bool
 PostingListParams::isSet(const std::string &key) const
 {
