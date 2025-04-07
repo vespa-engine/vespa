@@ -4,6 +4,7 @@
 #include "sort.h"
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
 
@@ -17,6 +18,7 @@ using search::common::SortSpec;
 using search::common::FieldSortSpec;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
+using search::attribute::make_sort_blob_writer;
 using vespalib::alloc::Alloc;
 using namespace vespalib;
 
@@ -163,13 +165,10 @@ FastS_DefaultResultSorter FastS_DefaultResultSorter::_instance;
 //-----------------------------------------------------------------------------
 
 FastS_SortSpec::VectorRef::VectorRef(uint32_t type, const search::attribute::IAttributeVector* vector,
-                                     const search::common::BlobConverter* converter) noexcept
+                                     std::unique_ptr<search::attribute::ISortBlobWriter> writer) noexcept
     : _type(type),
       _vector(vector),
-      _converter(converter),
-      _writer((_vector != nullptr) ? _vector->make_sort_blob_writer(has_ascending_sort_order(), converter,
-                                                                    search::common::sortspec::MissingPolicy::DEFAULT,
-                                                                    std::string_view()) : nullptr)
+      _writer(std::move(writer))
 {
 }
 
@@ -200,10 +199,15 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort
         }
     }
 
+    auto sort_blob_writer = make_sort_blob_writer(vector, field_sort_spec);
+    if (vector != nullptr && !sort_blob_writer) {
+        return false;
+    }
+
     LOG(spam, "SortSpec: adding vector (%s)'%s'",
         (field_sort_spec._ascending) ? "+" : "-", field_sort_spec._field.c_str());
 
-    _vectors.push_back(VectorRef(type, vector, field_sort_spec._converter.get()));
+    _vectors.emplace_back(type, vector, std::move(sort_blob_writer));
 
     return true;
 }

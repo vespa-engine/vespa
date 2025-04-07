@@ -70,19 +70,7 @@ private:
          **/
         AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr) noexcept;
 
-        /**
-         * Construct a new object.
-         *
-         * @param fid the field id of the attribute field.
-         * @param attr a guard to the attribute vector.
-         * @param ascending whether this attribute should be sorted ascending or not.
-         * @param converter is a converter to apply to the attribute before sorting.
-         **/
-        AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr, bool ascending, const search::common::BlobConverter * converter) noexcept;
-        void make_sort_blob_writer();
         vsm::FieldIdT          _field;
-        bool                   _ascending;
-        const search::common::BlobConverter * _converter;
         search::AttributeGuard::UP _attr;
         std::unique_ptr<search::attribute::ISortBlobWriter> _sort_blob_writer;
     };
