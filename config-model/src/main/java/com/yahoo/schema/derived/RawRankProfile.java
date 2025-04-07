@@ -34,6 +34,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.Set;
 
@@ -170,6 +171,7 @@ public class RawRankProfile {
         private final OptionalDouble approximateThreshold;
         private final OptionalDouble targetHitsMaxAdjustmentFactor;
         private final OptionalDouble weakandStopwordLimit;
+        private final Boolean weakandAllowDropAll;
         private final OptionalDouble weakandAdjustTarget;
         private final OptionalDouble filterThreshold;
         private final double rankScoreDropLimit;
@@ -225,6 +227,7 @@ public class RawRankProfile {
             targetHitsMaxAdjustmentFactor = compiled.getTargetHitsMaxAdjustmentFactor();
             weakandStopwordLimit = compiled.getWeakandStopwordLimit();
             weakandAdjustTarget = compiled.getWeakandAdjustTarget();
+            weakandAllowDropAll = compiled.getWeakandAllowDropAll();
             filterThreshold = compiled.getFilterThreshold();
             keepRankCount = compiled.getKeepRankCount();
             rankScoreDropLimit = compiled.getRankScoreDropLimit();
@@ -490,6 +493,9 @@ public class RawRankProfile {
             }
             if (weakandStopwordLimit.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.weakand.stop_word_drop_limit", String.valueOf(weakandStopwordLimit.getAsDouble())));
+            }
+            if (weakandAllowDropAll != null) {
+                properties.add(new Pair<>("vespa.matching.weakand.allow_drop_all", String.valueOf(weakandAllowDropAll)));
             }
             if (weakandAdjustTarget.isPresent()) {
                 properties.add(new Pair<>("vespa.matching.weakand.stop_word_adjust_limit", String.valueOf(weakandAdjustTarget.getAsDouble())));

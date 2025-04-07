@@ -192,6 +192,7 @@ TOKEN :
 | < USE_MODEL: "use-model">
 | < WEAKAND: "weakand">
 | < STOPWORD_LIMIT: "stopword-limit">
+| < ALLOW_DROP_ALL: "allow-drop-all">
 | < ADJUST_TARGET: "adjust-target">
 | < FILTER_THRESHOLD: "filter-threshold">
 | < INTRAOP_THREADS: "intraop-threads">
@@ -1898,7 +1899,7 @@ void matchPhaseItem(ParsedRankProfile profile, MatchPhaseSettings settings) :
 {
     ( <ATTRIBUTE> <COLON> str = identifier() { settings.setAttribute(str); }
       | diversityDeprecated(profile)
-      | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); } 
+      | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); }
                           | <DESCENDING> { settings.setAscending(false); } )
       | <MAX_HITS> <COLON> num = integer() { settings.setMaxHits(num); }
       | <MAX_FILTER_COVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
@@ -2179,6 +2180,7 @@ void weakandItem(ParsedRankProfile profile) :
 {}
 {
     ( weakandStopwordLimit(profile)
+      | weakandAllowDropAll(profile)
       | weakandAdjustTarget(profile))
 }
 
@@ -2188,6 +2190,14 @@ void weakandStopwordLimit(ParsedRankProfile profile) :
 }
 {
     (<STOPWORD_LIMIT> <COLON> limit = floatValue()) { profile.setWeakandStopwordLimit(limit); }
+}
+
+void weakandAllowDropAll(ParsedRankProfile profile) :
+{
+    boolean value;
+}
+{
+    (<ALLOW_DROP_ALL> <COLON> value = bool()) { profile.setWeakandAllowDropAll(value); }
 }
 
 void weakandAdjustTarget(ParsedRankProfile profile) :
@@ -2746,6 +2756,7 @@ String identifierWithDash() :
     |
     ( <IDENTIFIER_WITH_DASH>
     | <ADJUST_TARGET>
+    | <ALLOW_DROP_ALL>
     | <APPROXIMATE_THRESHOLD>
     | <CREATE_IF_NONEXISTENT>
     | <CUTOFF_FACTOR>

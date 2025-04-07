@@ -50,6 +50,7 @@ public class ParsedRankProfile extends ParsedBlock {
     private Boolean strict = null;
     private Boolean useSignificanceModel = null;
     private Double weakandStopwordLimit = null;
+    private Boolean weakandAllowDropAll = null;
     private Double weakandAdjustTarget = null;
     private Double filterThreshold = null;
     private final List<MutateOperation> mutateOperations = new ArrayList<>();
@@ -112,6 +113,7 @@ public class ParsedRankProfile extends ParsedBlock {
     Optional<Boolean> isUseSignificanceModel() { return Optional.ofNullable(this.useSignificanceModel); }
 
     Optional<Double> getWeakandStopwordLimit() { return Optional.ofNullable(this.weakandStopwordLimit); }
+    Optional<Boolean> getWeakandAllowDropAll() { return Optional.ofNullable(this.weakandAllowDropAll); }
     Optional<Double> getWeakandAdjustTarget() { return Optional.ofNullable(this.weakandAdjustTarget); }
     Optional<Double> getFilterThreshold() { return Optional.ofNullable(this.filterThreshold); }
 
@@ -266,6 +268,11 @@ public class ParsedRankProfile extends ParsedBlock {
         verifyThat(this.weakandStopwordLimit == null, "already has weakand stopword-limit");
         verifyThat(limit >= 0.0 && limit <= 1.0, "weakand stopword-limit must be in range [0, 1]");
         this.weakandStopwordLimit = limit;
+    }
+
+    public void setWeakandAllowDropAll(boolean value) {
+        verifyThat(this.weakandAllowDropAll == null, "already has weakand allow-drop-all");
+        this.weakandAllowDropAll = value;
     }
 
     public void setWeakandAdjustTarget(double target) {
