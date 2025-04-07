@@ -74,11 +74,23 @@ public class AbiCheck extends AbstractMojo {
   }
   // CLOVER:ON
 
+  private static class FinalNewlineWriter extends FileWriter {
+    private boolean closed = false;
+    FinalNewlineWriter(File file) throws IOException { super(file); }
+    @Override
+    public void close() throws IOException {
+      if (closed) return;
+      write("\n"); // Add newline after top-level object
+      super.close();
+      closed = true;
+    }
+  }
+
   // CLOVER:OFF
   // Testing that Gson can write JSON files is not very useful
   private static void writeSpec(Map<String, JavaClassSignature> signatures, File file)
       throws IOException {
-    try (FileWriter writer = new FileWriter(file)) {
+    try (FileWriter writer = new FinalNewlineWriter(file)) {
       new ObjectMapper().writer(new DefaultPrettyPrinter().withArrayIndenter(DefaultIndenter.SYSTEM_LINEFEED_INSTANCE))
                         .writeValue(writer, signatures);
     }
