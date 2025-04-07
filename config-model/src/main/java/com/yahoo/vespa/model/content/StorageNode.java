@@ -16,6 +16,8 @@ import com.yahoo.vespa.model.content.storagecluster.StorageCluster;
 import org.w3c.dom.Element;
 import java.util.Optional;
 
+import static java.util.logging.Level.WARNING;
+
 /**
  * Class to provide config related to a specific storage node.
  */
@@ -33,7 +35,10 @@ public class StorageNode extends ContentNode implements StorServerConfig.Produce
         @Override
         protected StorageNode doBuild(DeployState deployState, TreeConfigProducer<StorageNode> ancestor, Element producerSpec) {
             ModelElement e = new ModelElement(producerSpec);
-            return new StorageNode(deployState.getProperties(), (StorageCluster)ancestor, e.doubleAttribute("capacity"), e.integerAttribute("distribution-key"), false);
+            Double capacity = e.doubleAttribute("capacity");
+            if (capacity != null)
+                deployState.getDeployLogger().logApplicationPackage(WARNING, "'capacity' is deprecated, see https://docs.vespa.ai/en/reference/services-content#node");
+            return new StorageNode(deployState.getProperties(), (StorageCluster)ancestor, capacity, e.integerAttribute("distribution-key"), false);
         }
 
     }
