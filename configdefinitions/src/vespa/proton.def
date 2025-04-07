@@ -181,9 +181,8 @@ search.io enum {NORMAL, DIRECTIO, MMAP } default=MMAP restart
 ## Multiple optional options for use with mmap
 search.mmap.options[] enum {POPULATE, HUGETLB} restart
 
-## Advise to give to os when mapping memory.
-## TODO Check if default should be random
-search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=NORMAL restart
+## Advise to give to os when memory mapping disk index posting list files used for search.
+search.mmap.advise enum {NORMAL, RANDOM, SEQUENTIAL} default=SEQUENTIAL restart
 
 ## Max number of threads allowed to handle large queries concurrently
 ## Positive number means there is a limit, 0 or negative means no limit.
