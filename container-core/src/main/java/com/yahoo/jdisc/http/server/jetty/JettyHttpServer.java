@@ -19,7 +19,6 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
-import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -45,14 +44,6 @@ import java.util.stream.Collectors;
 public class JettyHttpServer extends AbstractResource implements ServerProvider {
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
-
-    @SuppressWarnings("LoggerInitializedWithForeignClass")
-    private static final Logger jettyErrorHandlerLog = Logger.getLogger(ErrorHandler.class.getName());
-    static {
-        // Disable warning log entry whenever the rendered message is too large to fit the output buffer.
-        // The response content will be empty in those cases. This is fine as it's typically a result of a malicious request.
-        jettyErrorHandlerLog.setLevel(Level.SEVERE);
-    }
 
     private final ServerConfig config;
     private final Server server;
