@@ -193,6 +193,7 @@ public class InfrastructureMetricSet {
         addMetric(metrics, ControllerMetrics.COREDUMP_PROCESSED.count());
         addMetric(metrics, ControllerMetrics.AUTH0_EXCEPTIONS.count());
         addMetric(metrics, ControllerMetrics.BILLING_CREDITS.last());
+        addMetric(metrics, ControllerMetrics.BILLING_CREDITS_GLOBAL.last());
         addMetric(metrics, ControllerMetrics.BILLING_EXCEPTIONS.count());
         addMetric(metrics, ControllerMetrics.BILLING_WEBHOOK_FAILURES.count());
         addMetric(metrics, ControllerMetrics.CERTIFICATE_POOL_AVAILABLE.max());
