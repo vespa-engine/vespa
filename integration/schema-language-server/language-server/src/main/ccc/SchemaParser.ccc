@@ -131,7 +131,7 @@ INJECT SchemaParser:
                 braceLevel--;
             }
         }
-        
+
         int endSplit = lastConsumedToken.getEndOffset();
 
         inputString = inputString.substring(startSplit, endSplit);
@@ -174,7 +174,7 @@ INJECT SchemaParserLexer:
 }
 
 /**
- * The following stores the indexinglanguage script at the AST node 
+ * The following stores the indexinglanguage script at the AST node
  * for parsing later.
  */
 INJECT indexingElm:
@@ -193,7 +193,7 @@ INJECT indexingElm:
 }
 
 /**
- * The following stores feature list string at the AST node 
+ * The following stores feature list string at the AST node
  * for parsing later
  */
 INJECT featureListElm:
@@ -209,7 +209,7 @@ INJECT featureListElm:
 }
 
 /**
- * The following stores rank expression string at the AST node 
+ * The following stores rank expression string at the AST node
  * for parsing later
  */
 INJECT expression:
@@ -265,9 +265,9 @@ INJECT valueType:
  *
  * ParseExceptions are syntactical errors, so storing them is mainly to provide a better indication on
  * where the error occurred (rather than "there is some error in this document").
- * 
+ *
  * IllegalArgumentExceptions come from the Parsed* classes in config-model, these are more semantic errors
- * coming from invalid constructs that can be caught early during parsing. They do however not cover all errors that 
+ * coming from invalid constructs that can be caught early during parsing. They do however not cover all errors that
  * can occur in schemas when deploying an application.
  */
 INJECT Token :
@@ -383,6 +383,7 @@ TOKEN :
 | < WEAKAND: "weakand">
 | < STOPWORD_LIMIT: "stopword-limit">
 | < ADJUST_TARGET: "adjust-target">
+| < ALLOW_DROP_ALL: "allow-drop-all">
 | < FILTER_THRESHOLD: "filter-threshold">
 | < INTRAOP_THREADS: "intraop-threads">
 | < INTEROP_THREADS: "interop-threads">
@@ -616,7 +617,7 @@ ParsedSchema rootSchema :
  * @param schema the schema object to modify.
  */
 rootSchemaItem(ParsedSchema schema) : {}
-    ( 
+    (
         documentElm(schema)
        | rawAsBase64(schema)
        | searchStemming(schema)
@@ -643,7 +644,7 @@ ParsedSchema rootDocument() :
 {
     ParsedSchema schema = null;
 }
- 
+
     ( (schema = rootDocumentItem(schema) | <NL>)*<EOF> )
     {
         return schema;
@@ -659,7 +660,7 @@ ParsedSchema rootDocumentItem(ParsedSchema schema) :
 {
     ParsedDocument doc = null;
 }
- 
+
     ( doc = namedDocument() {
         if (schema == null) schema = new ParsedSchema(doc.name());
         schema.addDocument(doc);
@@ -704,7 +705,7 @@ ParsedDocument namedDocument() :
     String name;
     ParsedDocument document;
 }
- 
+
     ( <DOCUMENT> name = identifierStr() (<NL>)* { document = new ParsedDocument(name); }
       [ inheritsDocument(document) (<NL>)* ]
       <LBRACE> (<NL>)* (documentBodyElm(document) | <NL>)* <RBRACE> )
@@ -731,7 +732,7 @@ void rawAsBase64(ParsedSchema schema) :
 {
     boolean enabled = false;
 }
- 
+
     <RAW_AS_BASE64_IN_SUMMARY>
     {
         enabled = true;
@@ -751,7 +752,7 @@ void inheritsStruct(ParsedStruct struct) :
 {
     String name;
 }
- 
+
     <INHERITS> name = identifierStr() { struct.inherit(name); }
     ( <COMMA>  name = identifierStr() { struct.inherit(name); } )*
 ;
@@ -765,7 +766,7 @@ void inheritsDocument(ParsedDocument document) :
 {
     String name;
 }
- 
+
     <INHERITS> name = identifierStr() { document.inherit(name); }
     ( <COMMA>  name = identifierStr() { document.inherit(name); } )*
 ;
@@ -878,7 +879,7 @@ void annotationOutside(ParsedSchema schema) :
     String name;
     ParsedAnnotation type;
 }
- 
+
     <ANNOTATION> name = identifierStr() { type = new ParsedAnnotation(name); }
     [ inheritsAnnotation(type) (<NL>)* ]
     openLbrace() annotationBody(type) <RBRACE>
@@ -897,7 +898,7 @@ void annotationElm(ParsedDocument document) :
     String name;
     ParsedAnnotation type;
 }
- 
+
     <ANNOTATION> name = identifierStr() { type = new ParsedAnnotation(name); }
     [ inheritsAnnotation(type) (<NL>)* ]
     openLbrace() annotationBody(type) <RBRACE>
@@ -914,7 +915,7 @@ void annotationBody(ParsedAnnotation type) :
     ParsedStruct struct = new ParsedStruct("annotation." + type.name());
     boolean seenField = false;
 }
- 
+
     (structFieldDefinition(struct) { seenField = true; } (<NL>)*)*
     {
         if (seenField) type.setStruct(struct);
@@ -925,7 +926,7 @@ void inheritsAnnotation(ParsedAnnotation annotation) :
 {
     String name;
 }
- 
+
     <INHERITS> name = identifierStr() { annotation.inherit(name); }
 ;
 
@@ -987,45 +988,45 @@ ParsedType dataType() :
     TensorType tensorType;
     ParsedType referenceType;
 }
-    (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN> 
-            { 
+    (     SCAN(<ARRAY> <LESSTHAN>)               => ( <ARRAY> <LESSTHAN> arrayType = dataType() <GREATERTHAN>
+            {
 
-                ParsedType type = ParsedType.arrayOf(arrayType); 
+                ParsedType type = ParsedType.arrayOf(arrayType);
                 thisProduction.setParsedType(type);
                 return type;
-            } 
+            }
     )
-        | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN> 
-            { 
-                ParsedType type = ParsedType.wsetOf(wsetType); 
+        | SCAN(<WEIGHTEDSET> <LESSTHAN>)         => ( <WEIGHTEDSET> <LESSTHAN> wsetType = dataType() <GREATERTHAN>
+            {
+                ParsedType type = ParsedType.wsetOf(wsetType);
                 thisProduction.setParsedType(type);
                 return type;
-            } 
+            }
     )
-        | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType() 
-            { 
+        | SCAN(<MAP> <LESSTHAN>)                 => ( mapType = mapDataType()
+            {
                 thisProduction.setParsedType(mapType);
-                return mapType; 
-            } 
+                return mapType;
+            }
     )
-        | SCAN(<ANNOTATIONREFERENCE> <LESSTHAN>) => ( mapType = annotationRefDataType() 
-            { 
+        | SCAN(<ANNOTATIONREFERENCE> <LESSTHAN>) => ( mapType = annotationRefDataType()
+            {
                 thisProduction.setParsedType(mapType);
-                return mapType; 
-            } 
+                return mapType;
+            }
     )
-        | SCAN(<TENSOR_TYPE>)                    => ( tensorType = tensorTypeElm("Field type") 
-            { 
-                ParsedType type = ParsedType.tensorType(tensorType); 
+        | SCAN(<TENSOR_TYPE>)                    => ( tensorType = tensorTypeElm("Field type")
+            {
+                ParsedType type = ParsedType.tensorType(tensorType);
                 thisProduction.setParsedType(type);
                 return type;
-            } 
+            }
     )
-        | SCAN(<REFERENCE>)                      => ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN> 
-            { 
+        | SCAN(<REFERENCE>)                      => ( <REFERENCE> <LESSTHAN> referenceType = referenceType() <GREATERTHAN>
+            {
                 thisProduction.setParsedType(referenceType);
-                return ParsedType.documentRef(referenceType); 
-            } 
+                return ParsedType.documentRef(referenceType);
+            }
     )
         | ( typeName = identifierStr ["[]" { isArrayOldStyle = true; }] )
     )
@@ -1115,8 +1116,8 @@ void structFieldElm(ParsedField field) :
         structField = new ParsedField(name, null);
     }
     openLbrace() (structFieldBodyElm(structField) | <NL>)* <RBRACE>
-    { 
-        field.addStructField(structField); 
+    {
+        field.addStructField(structField);
     }
 ;
 
@@ -1172,7 +1173,7 @@ void structFieldBodyElm(ParsedField field) : { }
  *
  * @param field The field to modify.
  */
-void indexingElm(ParsedField field) : 
+void indexingElm(ParsedField field) :
 {
     SubLanguageData ILScript;
 }
@@ -1320,7 +1321,7 @@ void sortingSetting(ParsedSorting sorting) :
 {
     String locale;
 }
- 
+
     (
         <ASCENDING> { sorting.setAscending(); }
       | <DESCENDING> { sorting.setDescending(); }
@@ -1406,7 +1407,7 @@ void summaryInDocument(ParsedDocumentSummary docsum) :
  * @param field The field to modify.
  */
 void summaryInField(ParsedField field) : { }
- 
+
     <SUMMARY> ( SCAN([identifierStr] <COLON>) => summaryInFieldShort(field)
               | summaryInFieldLong(field) )
 ;
@@ -1419,7 +1420,7 @@ void summaryInFieldShort(ParsedField field) :
     String name = field.name();
     ParsedSummaryField psf;
 }
- 
+
     [ name = identifierStr() ]
     {
         psf = field.summaryFieldFor(name);
@@ -1441,7 +1442,7 @@ void summaryInFieldLong(ParsedField field) :
     boolean explicitType = false;
     ParsedSummaryField psf;
 }
- 
+
     ( [ name = identifierStr() [ <TYPE> { type = dataType(); explicitType = true; } ] ]
       openLbrace()
       {
@@ -1459,7 +1460,7 @@ void summaryInFieldLong(ParsedField field) :
  * @param field The field to modify.
  */
 void summaryItem(ParsedSummaryField field) : { }
- 
+
     ( summaryTransform(field)
       | summaryBolding(field)
       | summarySourceList(field)
@@ -1473,7 +1474,7 @@ void summaryItem(ParsedSummaryField field) : { }
  * @param field            The field to modify.
  */
 void summaryTransform(ParsedSummaryField field) : { }
- 
+
     ( <DYNAMIC>              { field.setDynamic(); }
      | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
      | (<FULL> | <STATIC>)   { field.setFull(); }
@@ -1490,7 +1491,7 @@ void summaryBolding(ParsedSummaryField field) :
 {
     boolean bold;
 }
- 
+
     <BOLDING> <COLON> bold = bool()
     { field.setBold(bold); }
 ;
@@ -1504,7 +1505,7 @@ void summarySourceList(ParsedSummaryField field) :
 {
     String str;
 }
- 
+
     ( <SOURCE> <COLON> str = identifierStr() { field.addSource(str); }
       (        <COMMA> str = identifierStr() { field.addSource(str); } )* ) +
 ;
@@ -1518,7 +1519,7 @@ void summaryDestinationList(ParsedSummaryField field) :
 {
     String str;
 }
- 
+
     <TO> <COLON> str = identifierStr() { field.addDestination(str); }
     (    <COMMA> str = identifierStr() { field.addDestination(str); } )*
 ;
@@ -1532,7 +1533,7 @@ void fieldStemming(ParsedField field) :
 {
     String setting;
 }
- 
+
     <STEMMING> <COLON> setting = identifierWithDashStr
     {
         field.setStemming(Stemming.get(setting));
@@ -1548,7 +1549,7 @@ void searchStemming(ParsedSchema schema) :
 {
     String setting;
 }
- 
+
     <STEMMING> <COLON> setting = identifierWithDashStr
     { schema.setStemming(Stemming.get(setting)); }
 ;
@@ -1563,7 +1564,7 @@ void normalizingElm(ParsedField field) :
 {
     String setting;
 }
- 
+
     <NORMALIZING> <COLON> setting = identifierWithDashStr
     {
         field.setNormalizing(setting);
@@ -1579,7 +1580,7 @@ void boldingElm(ParsedField field) :
 {
     boolean bold;
 }
- 
+
     <BOLDING> <COLON> bold = bool() { field.setBolding(bold); }
 ;
 
@@ -1589,14 +1590,14 @@ void boldingElm(ParsedField field) :
  * @param field The field to modify.
  */
 void dictionaryElm(ParsedField field) : { }
- 
+
     <DICTIONARY>
     ( (<COLON> dictionarySetting(field))
     | (openLbrace() (dictionarySetting(field) | <NL>)* <RBRACE>))
 ;
 
 void dictionarySetting(ParsedField field) : { }
- 
+
     (   <HASH>            { field.dictionary(DictionaryOption.HASH); }
       | <BTREE>           { field.dictionary(DictionaryOption.BTREE); }
       | <CASED>           { field.dictionary(DictionaryOption.CASED); }
@@ -1608,7 +1609,7 @@ void queryCommandInField(ParsedField field) :
 {
     String command;
 }
- 
+
     <QUERY_COMMAND> <COLON> ( command = identifierWithDashStr() | command = quotedString() )
     {
         field.addQueryCommand(command);
@@ -1653,7 +1654,7 @@ void matchType(ParsedMatchSettings matchInfo) : { }
  * @param matchInfo The settings to modify.
  */
 void matchItem(ParsedMatchSettings matchInfo) : { }
- 
+
     ( matchType(matchInfo) | exactTerminator(matchInfo) | gramSize(matchInfo) | matchSize(matchInfo) |
      maxTermOccurrences(matchInfo) | maxTokenLength(matchInfo) )
 ;
@@ -1662,7 +1663,7 @@ void exactTerminator(ParsedMatchSettings matchInfo) :
 {
     String terminator;
 }
- 
+
     <EXACT_TERMINATOR> <COLON> terminator = quotedString()
     {
         matchInfo.setExactTerminator(terminator);
@@ -1673,7 +1674,7 @@ void gramSize(ParsedMatchSettings matchInfo) :
 {
     int gramSize;
 }
- 
+
     <GRAM_SIZE> <COLON> gramSize = integerElm()
     {
         matchInfo.setGramSize(gramSize);
@@ -1684,7 +1685,7 @@ void matchSize(ParsedMatchSettings matchInfo) :
 {
     int matchSize;
 }
- 
+
     <MAX_LENGTH> <COLON> matchSize = integerElm() {
         matchInfo.setMaxLength(matchSize);
     }
@@ -1694,7 +1695,7 @@ void maxTermOccurrences(ParsedMatchSettings matchInfo) :
 {
     int maxTermOccurrences;
 }
- 
+
     <MAX_OCCURRENCES> <COLON> maxTermOccurrences = integerElm() {
         matchInfo.setMaxTermOccurrences(maxTermOccurrences);
     }
@@ -1704,7 +1705,7 @@ void maxTokenLength(ParsedMatchSettings matchInfo) :
 {
     int maxTokenLength;
 }
- 
+
     <MAX_TOKEN_LENGTH> <COLON> maxTokenLength = integerElm() {
         matchInfo.setMaxTokenLength(maxTokenLength);
     }
@@ -1760,7 +1761,7 @@ void documentSummary(ParsedSchema schema) :
     String name;
     ParsedDocumentSummary summary;
 }
- 
+
     ( <DOCUMENT_SUMMARY>
       name = identifierWithDashStr() { summary = new ParsedDocumentSummary(name); }
       [inheritsDocumentSummary(summary)]
@@ -1785,7 +1786,7 @@ void inheritsDocumentSummary(ParsedDocumentSummary documentSummary) :
 {
     String name;
 }
- 
+
     <INHERITS> name = identifierWithDashStr() { documentSummary.inherit(name); }
     ( <COMMA>  name = identifierWithDashStr() { documentSummary.inherit(name); } )*
 ;
@@ -1796,7 +1797,7 @@ void inheritsDocumentSummary(ParsedDocumentSummary documentSummary) :
  * @param summary The document summary to modify.
  */
 void documentSummaryItem(ParsedDocumentSummary summary) : { }
- 
+
     summaryInDocument(summary)
 ;
 
@@ -1810,7 +1811,7 @@ void indexOutsideDoc(ParsedSchema schema) :
     ParsedIndex op;
     String indexName;
 }
- 
+
     <INDEX> indexName = identifierStr()
     {
         op = new ParsedIndex(indexName);
@@ -1832,7 +1833,7 @@ void indexInsideField(ParsedField field) :
     ParsedIndex op;
     String indexName = field.name();
 }
- 
+
     <INDEX> [indexName = identifierStr()]
     {
         // TODO: Remove support for index with different name than field name in Vespa 9
@@ -1862,7 +1863,7 @@ void indexBody(ParsedIndex index) :
     long num;
     double threshold;
 }
- 
+
     ( <PREFIX>                                                       { index.setPrefix(true); }
       | <ALIAS> <COLON> str = identifierWithDashStr()                   { index.addAlias(str); }
       | <STEMMING> <COLON> str = identifierWithDashStr()                { index.setStemming(Stemming.get(str)); }
@@ -1879,7 +1880,7 @@ void hnswIndex(ParsedIndex index) :
 {
     HnswIndexParams.Builder params = new HnswIndexParams.Builder();
 }
- 
+
     ( SCAN(<HNSW> openLbrace()) =>
       (<HNSW> ( (openLbrace() (hnswIndexBody(params) | <NL>)* <RBRACE>) )) |
       <HNSW> )
@@ -1894,7 +1895,7 @@ void hnswIndexBody(HnswIndexParams.Builder params) :
     int num;
     boolean bool;
 }
- 
+
     ( <MAX_LINKS_PER_NODE> <COLON> num = integerElm() { params.setMaxLinksPerNode(num); }
       | <NEIGHBORS_TO_EXPLORE_AT_INSERT> <COLON> num = integerElm() { params.setNeighborsToExploreAtInsert(num); }
       | <MULTI_THREADED_INDEXING> <COLON> bool = bool() { params.setMultiThreadedIndexing(bool); } )
@@ -1904,7 +1905,7 @@ void onnxModelInSchema(ParsedSchema schema) :
 {
     OnnxModel onnxModel;
 }
- 
+
     onnxModel = onnxModel() { schema.add(onnxModel); }
 ;
 
@@ -1912,7 +1913,7 @@ void onnxModelInProfile(ParsedRankProfile profile) :
 {
     OnnxModel onnxModel;
 }
- 
+
     onnxModel = onnxModel() { profile.add(onnxModel); }
 ;
 
@@ -1922,7 +1923,7 @@ OnnxModel onnxModel() :
     String name;
     OnnxModel onnxModel;
 }
- 
+
     ( <ONNX_MODEL> name = identifierStr() { onnxModel = new OnnxModel(name); }
       openLbrace() (onnxModelItem(onnxModel) | <NL>)+ <RBRACE> )
     { return onnxModel; }
@@ -1938,7 +1939,7 @@ void onnxModelItem(OnnxModel onnxModel) :
     String path = null;
     int num;
 }
- 
+
     (
         (path = fileItem()) { onnxModel.setFileName(path); } |
         (path = uriItem()) { onnxModel.setUri(path); } |
@@ -1974,7 +1975,7 @@ void rankingConstant(ParsedSchema schema) :
     DistributableResource.PathType pathType = DistributableResource.PathType.FILE;
     TensorType type = null;
 }
- 
+
     ( <CONSTANT> name = identifierStr() openLbrace()
       (path = fileItem() { pathType = DistributableResource.PathType.FILE; }
        | path = uriItem() { pathType = DistributableResource.PathType.URI; } // Undocumented. Remove?
@@ -1993,7 +1994,7 @@ String fileItem() :
 {
    String path;
 }
- 
+
   (<FILE> <COLON> ( <FILE_PATH> | <STRING> | <IDENTIFIER>) { path = com.yahoo.path.Path.fromString(lastConsumedToken.toString()).getRelative(); } { } (<NL>)*) { return path; }
 ;
 
@@ -2001,12 +2002,12 @@ String uriItem() :
 {
    String path;
 }
- 
+
   (<URI> <COLON> ( <URI_PATH> ) { path = lastConsumedToken.toString(); } (<NL>)*) { return path; }
 ;
 
 String rankingConstantErrorMessage(String name) : {}
- 
+
     { return "For ranking constant ' " + name + "'"; }
 ;
 
@@ -2101,7 +2102,7 @@ void inheritsRankProfile(ParsedRankProfile profile) :
  * @param profile The profile to modify.
  */
 void mutateElm(ParsedRankProfile profile) : { }
- 
+
     <MUTATE> openLbrace() (mutate_operation(profile) <NL>)+ <RBRACE>
 ;
 
@@ -2110,7 +2111,7 @@ void mutate_operation(ParsedRankProfile profile) :
     String attribute, operation;
     RankProfile.MutateOperation.Phase phase;
 }
- 
+
    ( <ON_MATCH> { phase = RankProfile.MutateOperation.Phase.on_match; }
    | <ON_FIRST_PHASE> { phase = RankProfile.MutateOperation.Phase.on_first_phase; }
    | <ON_SECOND_PHASE> { phase = RankProfile.MutateOperation.Phase.on_second_phase; }
@@ -2125,7 +2126,7 @@ String mutate_expr() :
      String op;
      Number constant = null;
 }
- 
+
     (("+=" | "-=" | "=") { op = lastConsumedToken.toString(); } constant = number())
     { return constant != null ? (op + constant) : op; }
 ;
@@ -2141,7 +2142,7 @@ void functionElm(ParsedRankProfile profile) :
     boolean inline = false;
     ParsedRankFunction func;
 }
- 
+
     (  ( <FUNCTION> | <MACRO> ) inline = inlineElm() name = identifierStr() [ "$" { name = name + lastConsumedToken.toString(); } ]
       "("
                                              { func = new ParsedRankFunction(name); }
@@ -2162,7 +2163,7 @@ void functionElm(ParsedRankProfile profile) :
 ;
 
 boolean inlineElm() : { }
- 
+
     ( <INLINE> { return true; } ) ?
     { return false; }
 ;
@@ -2177,7 +2178,7 @@ void matchPhase(ParsedRankProfile profile) :
 {
     MatchPhaseSettings settings = new MatchPhaseSettings();
 }
- 
+
     <MATCH_PHASE> openLbrace() (matchPhaseItem(profile, settings) | <NL>)* <RBRACE>
     {
         settings.checkValid();
@@ -2192,10 +2193,10 @@ void matchPhaseItem(ParsedRankProfile profile, MatchPhaseSettings settings) :
     double multiplier;
     double coverage;
 }
- 
+
     ( <ATTRIBUTE> <COLON> str = identifierStr() { settings.setAttribute(str); }
       | diversityDeprecated(profile)
-      | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); } 
+      | <ORDER> <COLON> ( <ASCENDING> { settings.setAscending(true); }
                           | <DESCENDING> { settings.setAscending(false); } )
       | <MAX_HITS> <COLON> num = integerElm() { settings.setMaxHits(num); }
       | <MAX_FILTER_COVERAGE> <COLON> coverage = floatValue() { settings.setMaxFilterCoverage(coverage); }
@@ -2214,7 +2215,7 @@ void diversityElm(ParsedRankProfile profile) :
 {
     DiversitySettings settings = new DiversitySettings();
 }
- 
+
     <DIVERSITY> openLbrace() (diversityItem(settings) | <NL>)* <RBRACE>
     {
  	    profile.setDiversity(settings);
@@ -2225,7 +2226,7 @@ void diversityDeprecated(ParsedRankProfile profile) :
 {
     DiversitySettings settings = new DiversitySettings();
 }
- 
+
     <DIVERSITY> openLbrace() (diversityItem(settings) | <NL>)* <RBRACE>
     {
  	    profile.setDiversity(settings);
@@ -2239,7 +2240,7 @@ void diversityItem(DiversitySettings settings) :
     int num;
     double multiplier;
 }
- 
+
     (   <ATTRIBUTE> <COLON> str = identifierStr() { settings.setAttribute(str); }
       | <MIN_GROUPS> <COLON> num = integerElm() { settings.setMinGroups(num); }
       | <CUTOFF_FACTOR> <COLON> multiplier = floatValue() { settings.setCutoffFactor(multiplier); }
@@ -2284,7 +2285,7 @@ void firstPhaseItem(ParsedRankProfile profile) :
  * @param profile The rank profile to modify.
  */
 void secondPhase(ParsedRankProfile profile) : { }
- 
+
     <SECOND_PHASE> openLbrace() (secondPhaseItem(profile) | <NL>)* <RBRACE>
 ;
 
@@ -2299,7 +2300,7 @@ void secondPhaseItem(ParsedRankProfile profile) :
     int rerankCount;
     double dropLimit;
 }
- 
+
     ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setRerankCount(rerankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setSecondPhaseRankScoreDropLimit(dropLimit); }
@@ -2312,7 +2313,7 @@ void secondPhaseItem(ParsedRankProfile profile) :
  * @param profile The rank profile to modify.
  */
 void globalPhase(ParsedRankProfile profile) : { }
- 
+
     <GLOBAL_PHASE> openLbrace() (globalPhaseItem(profile) | <NL>)* <RBRACE>
 ;
 
@@ -2327,7 +2328,7 @@ void globalPhaseItem(ParsedRankProfile profile) :
     int rerankCount;
     double dropLimit;
 }
- 
+
     ( expression = expression()                       { profile.setGlobalPhaseExpression(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setGlobalPhaseRerankCount(rerankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setGlobalPhaseRankScoreDropLimit(dropLimit); }
@@ -2343,7 +2344,7 @@ void inputsElm(ParsedRankProfile profile) :
     TensorType type;
     List<Reference> seenInputs = new ArrayList<>();
 }
- 
+
     <INPUTS> <LBRACE> (<NL>)*
     (
         reference = inputElm(profile) { seenInputs.add(reference); }
@@ -2367,7 +2368,7 @@ Reference inputElm(ParsedRankProfile profile) :
     InputType type = new InputType(TensorType.empty, false);
     Tensor defaultValue = null;
 }
- 
+
     reference = inputName() ( type = valueType(reference))? ( <COLON> (<NL>)* defaultValue = tensorValue(type.tensorType()) )?
     {
         profile.addInput(reference, new RankProfile.Input(reference, type, Optional.ofNullable(defaultValue)));
@@ -2380,7 +2381,7 @@ Reference inputName() :
 {
     String name;
 }
- 
+
     (
         ( <QUERY> "(" name = identifierStr() ")" )
         |
@@ -2394,7 +2395,7 @@ InputType valueType(Reference reference) :
     TensorType type;
     InputType result;
 }
- 
+
     (
       ( type = tensorTypeElm("Type of " + reference) { result = new InputType(type, false); } )
       |
@@ -2441,7 +2442,7 @@ String summaryFeaturesElm(ParsedRankProfile profile) :
     String features;
     String inherited = null;
 }
- 
+
     ( <SUMMARYFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } |
       <SUMMARYFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
                                                               lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } |
@@ -2463,7 +2464,7 @@ String summaryFeaturesElm(ParsedRankProfile profile) :
 
 void strictElm(ParsedRankProfile profile) :
 {}
- 
+
     <STRICT> <COLON> (
         ( <TRUE> { profile.setStrict(true); } ) |
         ( <FALSE> { profile.setStrict(false); } )
@@ -2472,14 +2473,14 @@ void strictElm(ParsedRankProfile profile) :
 
 void significanceElm(ParsedRankProfile profile) :
 {}
- 
+
     <SIGNIFICANCE> openLbrace() (significanceItem(profile) | <NL>)* <RBRACE>
     {}
 ;
 
 void significanceItem(ParsedRankProfile profile) :
 {}
- 
+
     <USE_MODEL> <COLON> (
         ( <TRUE>  { profile.setUseSignificanceModel(true);  } ) |
         ( <FALSE> { profile.setUseSignificanceModel(false); } )
@@ -2495,8 +2496,8 @@ void weakandElm(ParsedRankProfile profile) :
 
 void weakandItem(ParsedRankProfile profile) :
 {}
-
     ( weakandStopwordLimit(profile)
+      | weakandAllowDropAll(profile)
       | weakandAdjustTarget(profile))
 ;
 
@@ -2504,15 +2505,20 @@ void weakandStopwordLimit(ParsedRankProfile profile) :
 {
     double limit;
 }
-
     (<STOPWORD_LIMIT> <COLON> limit = floatValue()) { profile.setWeakandStopwordLimit(limit); }
+;
+
+void weakandAllowDropAll(ParsedRankProfile profile) :
+{
+    boolean allow;
+}
+    (<ALLOW_DROP_ALL> <COLON> allow = bool()) { profile.setWeakandAllowDropAll(allow); }
 ;
 
 void weakandAdjustTarget(ParsedRankProfile profile) :
 {
     double target;
 }
-
     (<ADJUST_TARGET> <COLON> target = floatValue()) { profile.setWeakandAdjustTarget(target); }
 ;
 
@@ -2520,7 +2526,6 @@ void filterThreshold(ParsedRankProfile profile) :
 {
     double threshold;
 }
-
     (<FILTER_THRESHOLD> <COLON> threshold = floatValue()) { profile.setFilterThreshold(threshold); }
 ;
 
@@ -2559,7 +2564,7 @@ String rankFeaturesElm(ParsedRankProfile profile) :
     String features;
 }
 
-    ( <RANKFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } 
+    ( <RANKFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ }
     | <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
                                                                             lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } )
     {
@@ -2578,7 +2583,7 @@ String rankFeaturesElm(ParsedRankProfile profile) :
  * @param profile The rank profile to modify.
  */
 void ignoreRankFeatures(ParsedRankProfile profile) : { }
- 
+
     <IGNORE_DEFAULT_RANK_FEATURES> { profile.setIgnoreDefaultRankFeatures(true); }
 ;
 
@@ -2591,7 +2596,7 @@ void numThreadsPerSearch(ParsedRankProfile profile) :
 {
     int num;
 }
- 
+
     (<NUM_THREADS_PER_SEARCH> <COLON> num = integerElm()) { profile.setNumThreadsPerSearch(num); }
 ;
 
@@ -2604,7 +2609,7 @@ void minHitsPerThread(ParsedRankProfile profile) :
 {
     int num;
 }
- 
+
     (<MIN_HITS_PER_THREAD> <COLON> num = integerElm()) { profile.setMinHitsPerThread(num); }
 ;
 
@@ -2617,7 +2622,7 @@ void numSearchPartitions(ParsedRankProfile profile) :
 {
     int num;
 }
- 
+
     (<NUM_SEARCH_PARTITIONS> <COLON> num = integerElm()) { profile.setNumSearchPartitions(num); }
 ;
 
@@ -2630,7 +2635,7 @@ void termwiseLimit(ParsedRankProfile profile) :
 {
     double num;
 }
- 
+
     (<TERMWISE_LIMIT> <COLON> num = floatValue()) { profile.setTermwiseLimit(num); }
 ;
 
@@ -2643,7 +2648,7 @@ void postFilterThreshold(ParsedRankProfile profile) :
 {
     double threshold;
 }
- 
+
     (<POST_FILTER_THRESHOLD> <COLON> threshold = floatValue()) { profile.setPostFilterThreshold(threshold); }
 ;
 
@@ -2656,7 +2661,7 @@ void approximateThreshold(ParsedRankProfile profile) :
 {
     double threshold;
 }
- 
+
     (<APPROXIMATE_THRESHOLD> <COLON> threshold = floatValue()) { profile.setApproximateThreshold(threshold); }
 ;
 
@@ -2669,7 +2674,7 @@ void targetHitsMaxAdjustmentFactor(ParsedRankProfile profile) :
 {
     double factor;
 }
- 
+
     (<TARGET_HITS_MAX_ADJUSTMENT_FACTOR> <COLON> factor = floatValue()) { profile.setTargetHitsMaxAdjustmentFactor(factor); }
 ;
 
@@ -2681,7 +2686,7 @@ void targetHitsMaxAdjustmentFactor(ParsedRankProfile profile) :
  * @param profile the rank profile to modify
  */
 void rankProperties(ParsedRankProfile profile) : { }
- 
+
     <RANK_PROPERTIES> openLbrace() (SCAN(rankPropertyItem() <COLON> rankPropertyItem() <NL>) =>
                                (rankProperty(profile) (<NL>)+))* [rankProperty(profile)] <RBRACE>
 ;
@@ -2695,7 +2700,7 @@ void rankProperty(ParsedRankProfile profile) :
 {
     String key, val;
 }
- 
+
     key = rankPropertyItem() <COLON> val = rankPropertyItem()
     { profile.addRankProperty(key, val); }
 ;
@@ -2711,7 +2716,7 @@ String rankPropertyItem() :
     String ret = "";
     Token dToken = null;
 }
- 
+
     ( ( image = identifierWithDashStr() { ret += image; }
         | dToken = <DOUBLE> { ret += dToken.toString(); }
         | image = quotedString()                  { ret += image; }
@@ -2729,7 +2734,7 @@ void fieldWeight(ParsedRankProfile profile) :
     Integer num;
     String name;
 }
- 
+
     <WEIGHT> name = identifierStr() <COLON> num = integerElm()
     { profile.addFieldRankWeight(name, num); }
 ;
@@ -2744,7 +2749,7 @@ void fieldRankType(ParsedRankProfile profile) :
     String name;
     String type;
 }
- 
+
     <RANK_TYPE> name = identifierStr() <COLON> type = identifierStr()
     { profile.addFieldRankType(name, type); }
 ;
@@ -2759,7 +2764,7 @@ void fieldRankFilter(ParsedRankProfile profile) :
     String name;
     double filterThreshold;
 }
- 
+
     <RANK> name = identifierStr()
     ( ( <COLON> <FILTER> ) { profile.addFieldRankFilter(name, true); }
     | ( openLbrace() <FILTER_THRESHOLD> <COLON> filterThreshold = floatValue()
@@ -2775,7 +2780,7 @@ void constantsElm(ParsedSchema schema, ParsedRankProfile profile) :
 {
     String name;
 }
- 
+
     <CONSTANTS> <LBRACE> (<NL>)*
     ( constantElm(schema, profile) (<NL>)* )*
     <RBRACE>
@@ -2788,11 +2793,11 @@ void constantElm(ParsedSchema schema, ParsedRankProfile profile) :
     Tensor value = null;
     String valuePath = null;
 }
- 
+
     (
       name = constantName()
       (
-        SCAN( (type = valueType(name))? <COLON> (<NL>)* (tensorValue(type.tensorType()) | fileItem)) => 
+        SCAN( (type = valueType(name))? <COLON> (<NL>)* (tensorValue(type.tensorType()) | fileItem)) =>
         ( ( type = valueType(name) )? <COLON> (<NL>)* ( value = tensorValue(type.tensorType()) | valuePath = fileItem())
         {
             if (value != null)
@@ -2812,7 +2817,7 @@ Reference constantName() :
 {
     String name;
 }
- 
+
     (
         ( <CONSTANT> "(" name = identifierStr() ")" )
         |
@@ -2826,7 +2831,7 @@ void constantValue(ParsedRankProfile profile, Reference name) :
 {
     Token value;
 }
- 
+
     <COLON> ( value = <DOUBLE> | value = <INTEGER> | value = <IDENTIFIER> )
     { profile.add(new RankProfile.Constant(name, Tensor.from(value.toString()))); }
 ;
@@ -2837,7 +2842,7 @@ void constantTensor(ParsedRankProfile profile, Reference name) :
     String tensorString = "";
     TensorType type = null;
 }
- 
+
     <LBRACE> (<NL>)*
       (( tensorString = tensorValuePrefixedByValue() |
          type = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
@@ -2846,7 +2851,7 @@ void constantTensor(ParsedRankProfile profile, Reference name) :
 ;
 
 String constantTensorErrorMessage(String rankProfileName, Reference name) : {}
- 
+
     { return "For constant tensor '" + name + "' in rank profile '" + rankProfileName + "'"; }
 ;
 
@@ -2860,7 +2865,7 @@ Tensor tensorValue(TensorType type) :
     Tensor.Builder builder = Tensor.Builder.of(type);
     Number doubleValue = null;
 }
- 
+
     ( mappedTensorValue(builder) | indexedTensorValues(builder) |  doubleValue = number() )
     {
         if (doubleValue != null) {
@@ -2874,7 +2879,7 @@ Tensor tensorValue(TensorType type) :
 
 /** A mapped or mixed tensor value. */
 void mappedTensorValue(Tensor.Builder builder) : {}
- 
+
     "{"
     ( mappedTensorBlock(builder) )*
     ( <COMMA> (<NL>)* mappedTensorBlock(builder) )*
@@ -2886,7 +2891,7 @@ void mappedTensorBlock(Tensor.Builder builder) :
 {
     TensorAddress mappedAddress;
 }
- 
+
     mappedAddress = tensorAddress(builder.type()) <COLON> (<NL>)*
     ( mappedTensorCellValue(mappedAddress, builder) | indexedTensorBlockValues(mappedAddress, builder) )
 ;
@@ -2895,7 +2900,7 @@ void indexedTensorBlockValues(TensorAddress mappedAddress, Tensor.Builder builde
 {
     List<Double> values = new ArrayList<Double>();
 }
- 
+
     arrayTensorValues(values)
     {
         MixedTensor.BoundBuilder boundBuilder = (MixedTensor.BoundBuilder)builder;
@@ -2911,7 +2916,7 @@ void indexedTensorValues(Tensor.Builder builder) :
 {
     List<Double> values = new ArrayList<Double>();
 }
- 
+
     arrayTensorValues(values)
     {
         IndexedTensor.BoundBuilder boundBuilder = (IndexedTensor.BoundBuilder)builder;
@@ -2925,7 +2930,7 @@ void indexedTensorValues(Tensor.Builder builder) :
 
 /** Tensor array values. Using sub-bracketing for multiple dimensions is optional and therefore ignored here. */
 void arrayTensorValues(List<Double> values) : {}
- 
+
     "[" (                 ( indexedTensorValue(values) | arrayTensorValues(values)) )*
         ( <COMMA> (<NL>)* ( indexedTensorValue(values) | arrayTensorValues(values)) )*
     "]"
@@ -2935,7 +2940,7 @@ void indexedTensorValue(List<Double> values) :
 {
     Number value;
 }
- 
+
     value = number()
     { values.add(value.doubleValue()); }
 ;
@@ -2944,7 +2949,7 @@ void mappedTensorCellValue(TensorAddress address, Tensor.Builder builder) :
 {
     double value;
 }
- 
+
     value = tensorCellValue()
     { builder.cell(address, value); }
 ;
@@ -2954,7 +2959,7 @@ TensorAddress tensorAddress(TensorType type) :
     TensorAddress.Builder builder = new TensorAddress.PartialBuilder(type);
     String label;
 }
- 
+
     (
         label = tensorAddressLabel() { builder.add(label); }
         |
@@ -2968,7 +2973,7 @@ void tensorAddressElement(TensorAddress.Builder builder) :
     String dimension;
     String label;
 }
- 
+
     dimension = identifierStr() <COLON> (<NL>)* label = tensorAddressLabel()
     { builder.add(dimension, label); }
 ;
@@ -2977,7 +2982,7 @@ String tensorAddressLabel() :
 {
     String label;
 }
- 
+
     ( label = identifierStr() | label = quotedString() )
     { return label; }
 ;
@@ -2986,7 +2991,7 @@ double tensorCellValue() :
 {
     Number value;
 }
- 
+
     value = number()
     { return value.doubleValue(); }
 ;
@@ -2996,7 +3001,7 @@ String tensorValuePrefixedByValue() :
 {
     String tensor;
 }
- 
+
     ( <TENSOR_VALUE_SL> { tensor = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1); } |
       <TENSOR_VALUE_ML> { tensor = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
                                                          lastConsumedToken.toString().lastIndexOf("}")); } )
@@ -3007,7 +3012,7 @@ String tensorValuePrefixedByValue() :
 
 TensorType tensorTypeWithPrefix(String errorMessage) :
 { TensorType type; }
- 
+
     <TYPE> <COLON> type = tensorTypeElm(errorMessage)
     { return type; }
 ;
@@ -3037,7 +3042,7 @@ void importField(ParsedSchema schema) :
     String fieldRefSpec;
     String aliasFieldName;
 }
- 
+
     <IMPORT> <FIELD> fieldRefSpec = identifierStr() <AS> aliasFieldName = identifierStr() openLbrace()
     <RBRACE>
     {
@@ -3080,6 +3085,7 @@ String identifierWithDashStr :
     |
     ( <IDENTIFIER_WITH_DASH>
     | <ADJUST_TARGET>
+    | <ALLOW_DROP_ALL>
     | <APPROXIMATE_THRESHOLD>
     | <CREATE_IF_NONEXISTENT>
     | <CUTOFF_FACTOR>

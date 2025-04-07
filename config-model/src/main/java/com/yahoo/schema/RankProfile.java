@@ -106,6 +106,7 @@ public class RankProfile implements Cloneable {
     private Double approximateThreshold = null;
     private Double targetHitsMaxAdjustmentFactor = null;
     private Double weakandStopwordLimit = null;
+    private Boolean weakandAllowDropAll = null;
     private Double weakandAdjustTarget = null;
     private Double filterThreshold = null;
 
@@ -790,6 +791,7 @@ public class RankProfile implements Cloneable {
     public void setTargetHitsMaxAdjustmentFactor(double factor) { this.targetHitsMaxAdjustmentFactor = factor; }
     public void setWeakandStopwordLimit(double limit) { this.weakandStopwordLimit = limit; }
     public void setWeakandAdjustTarget(double target) { this.weakandAdjustTarget = target; }
+    public void setWeakandAllowDropAll(boolean value) { this.weakandAllowDropAll = value; }
     public void setFilterThreshold(double threshold) { this.filterThreshold = threshold; }
 
     public OptionalDouble getTermwiseLimit() {
@@ -824,6 +826,13 @@ public class RankProfile implements Cloneable {
             return OptionalDouble.of(weakandStopwordLimit);
         }
         return uniquelyInherited(RankProfile::getWeakandStopwordLimit, OptionalDouble::isPresent, "weakand-stopword-limit").orElse(OptionalDouble.empty());
+    }
+
+    public Boolean getWeakandAllowDropAll() {
+        if (weakandAllowDropAll != null) {
+            return weakandAllowDropAll;
+        }
+        return uniquelyInherited(RankProfile::getWeakandAllowDropAll, "weakand-allow-drop-all").orElse(null);
     }
 
     public OptionalDouble getWeakandAdjustTarget() {
