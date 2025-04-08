@@ -60,14 +60,9 @@ template<typename T>
 std::unique_ptr<attribute::ISortBlobWriter>
 FloatingPointAttributeTemplate<T>::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
                                                          common::sortspec::MissingPolicy policy,
-                                                         std::string_view missing_value) const {
-    (void) policy;
-    (void) missing_value;
-    if (ascending) {
-        return std::make_unique<attribute::SingleNumericSortBlobWriter<FloatingPointAttributeTemplate<T>, true>>(*this);
-    } else {
-        return std::make_unique<attribute::SingleNumericSortBlobWriter<FloatingPointAttributeTemplate<T>, false>>(*this);
-    }
+                                                         std::string_view missing_value) const
+{
+    return make_single_numeric_sort_blob_writer<FloatingPointAttributeTemplate<T>>(*this, ascending, policy, missing_value);
 }
 
 }
