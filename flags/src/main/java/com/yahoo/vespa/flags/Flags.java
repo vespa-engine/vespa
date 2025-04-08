@@ -276,15 +276,6 @@ public class Flags {
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment", INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
-            "symmetric-put-and-activate-replica-selection", true,
-            List.of("vekterli"), "2024-05-23", "2025-06-01",
-            "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
-            "for Put operations and the replica selection logic for bucket activation. If false, " +
-            "legacy feed behavior is used.",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2025-12-31",
