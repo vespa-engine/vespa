@@ -96,6 +96,7 @@ protected:
     uint32_t _num_docs;      // Documents in chunk or word
     search::ComprFileReadContext _readContext;
     bool _has_more;
+    bool _features_size_flush;
     Zc4PostingParams _posting_params;
     uint32_t _last_doc_id;   // last document in chunk or word
 

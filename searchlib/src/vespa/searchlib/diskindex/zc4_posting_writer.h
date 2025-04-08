@@ -29,6 +29,7 @@ class Zc4PostingWriter : public Zc4PostingWriterBase
     EncodeContext *_encode_features;
 
     void write_zc_view(std::span<const uint8_t> view);
+
 public:
     Zc4PostingWriter(const Zc4PostingWriter &) = delete;
     Zc4PostingWriter(Zc4PostingWriter &&) = delete;

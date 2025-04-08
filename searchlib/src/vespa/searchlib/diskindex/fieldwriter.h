@@ -44,7 +44,7 @@ public:
 
     uint64_t getSparseWordNum() const { return _wordNum; }
 
-    bool open(uint32_t minSkipDocs, uint32_t minChunkDocs,
+    bool open(uint32_t minSkipDocs, uint32_t minChunkDocs, uint64_t features_size_flush_bits,
               bool dynamicKPosOccFormat,
               bool encode_interleaved_features,
               const Schema &schema, uint32_t indexId,

@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "features_size_flush.h"
 #include "zc4_posting_header.h"
 #include "zc4_posting_params.h"
 #include <vespa/searchlib/bitcompression/compression.h>
@@ -8,6 +9,7 @@ namespace search::diskindex {
 
 Zc4PostingHeader::Zc4PostingHeader()
     : _has_more(false),
+      _features_size_flush(false),
       _doc_id_k(K_VALUE_ZCPOSTING_LASTDOCID),
       _num_docs(0u),
       _doc_ids_size(0u),
@@ -24,10 +26,15 @@ void
 Zc4PostingHeader::read(bitcompression::DecodeContext64Base &decode_context, const Zc4PostingParams &params)
 {
     using EC = bitcompression::FeatureEncodeContext<true>;
+    bool features_size_flush = false;
     _num_docs = decode_context.decode_exp_golomb(K_VALUE_ZCPOSTING_NUMDOCS) + 1;
-    bool has_more = (_num_docs >= params._min_chunk_docs) ? (decode_context.readBits(1) != 0) : false;
+    if (_num_docs == features_size_flush_marker) {
+        features_size_flush = true;
+        _num_docs = decode_context.decode_exp_golomb(K_VALUE_ZCPOSTING_NUMDOCS) + 1;
+    }
+    bool has_more = (_num_docs >= params._min_chunk_docs || features_size_flush) ? (decode_context.readBits(1) != 0) : false;
     _doc_id_k = params._dynamic_k ? EC::calcDocIdK((_has_more || has_more) ? 1 : _num_docs, params._doc_id_limit) : K_VALUE_ZCPOSTING_LASTDOCID;
-    if (_num_docs < params._min_skip_docs && !_has_more) {
+    if (_num_docs < params._min_skip_docs && !_has_more && !features_size_flush) {
         _doc_ids_size = 0;
         _l1_skip_size = 0;
         _l2_skip_size = 0;
@@ -46,6 +53,7 @@ Zc4PostingHeader::read(bitcompression::DecodeContext64Base &decode_context, cons
         decode_context.align(8);
     }
     _has_more = has_more;
+    _features_size_flush = features_size_flush;
 }
 
 }

@@ -30,6 +30,7 @@ protected:
     const bitcompression::PosOccFieldsParams &_fieldsParams;
     bool                          _bigEndian;
     diskindex::Zc4PostingParams   _posting_params;
+    index::PostingListCounts      _counts;
 protected:
     void setup(const FakeWord &fw);
 

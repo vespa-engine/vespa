@@ -244,6 +244,7 @@ protected:
     ChunkSkip _chunk;
     uint64_t _featuresSize;
     bool     _hasMore;
+    bool     _features_size_flush;
     bool     _decode_normal_features;
     bool     _decode_interleaved_features;
     bool     _unpack_normal_features;

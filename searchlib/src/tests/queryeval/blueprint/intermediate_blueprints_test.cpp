@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mysearch.h"
+#include <vespa/searchlib/diskindex/features_size_flush.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
 #include <vespa/searchlib/queryeval/flow.h>
@@ -1241,8 +1242,13 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQ(strict_bitvector_iterator_class_name, e.getChildren()[0]->getClassName());
-        EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
-        EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
+        if (search::diskindex::force_features_size_flush_always) {
+            EXPECT_EQ("search::diskindex::ZcPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
+            EXPECT_EQ("search::diskindex::ZcPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
+        } else {
+            EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
+            EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
+        }
     }
 
     md->resolveTermField(12)->tagAsNotNeeded();
@@ -1251,8 +1257,13 @@ TEST(IntermediateBlueprintsTest, require_that_children_does_not_optimize_when_pa
     {
         const auto & e = dynamic_cast<const MultiSearch &>(*search);
         EXPECT_EQ(strict_bitvector_iterator_class_name, e.getChildren()[0]->getClassName());
-        EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
-        EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
+        if (search::diskindex::force_features_size_flush_always) {
+            EXPECT_EQ("search::diskindex::ZcPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
+            EXPECT_EQ("search::diskindex::ZcPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
+        } else {
+            EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[1]->getClassName());
+            EXPECT_EQ("search::diskindex::ZcRareWordPosOccIterator<true, false>", e.getChildren()[2]->getClassName());
+        }
     }
 }
 

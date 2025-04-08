@@ -3,6 +3,7 @@
 #include "fakezcfilterocc.h"
 #include "fpfactory.h"
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/searchlib/diskindex/features_size_flush.h>
 #include <vespa/searchlib/diskindex/zc_decoder_validator.h>
 #include <vespa/searchlib/diskindex/zcposocciterators.h>
 #include <vespa/searchlib/diskindex/zc4_posting_header.h>
@@ -71,7 +72,8 @@ FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw)
       _featuresSize(0),
       _fieldsParams(fw.getFieldsParams()),
       _bigEndian(true),
-      _posting_params(force_skip, disable_chunking, fw._docIdLimit, true, false, false)
+      _posting_params(force_skip, disable_chunking, fw._docIdLimit, true, false, false),
+      _counts()
 {
     setup(fw);
 }
@@ -94,7 +96,8 @@ FakeZcFilterOcc::FakeZcFilterOcc(const FakeWord &fw,
       _featuresSize(0),
       _fieldsParams(fw.getFieldsParams()),
       _bigEndian(bigEndian),
-      _posting_params(posting_params)
+      _posting_params(posting_params),
+      _counts()
 {
     // subclass responsible for calling setup(fw);
 }
@@ -139,6 +142,7 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     params.set("minChunkDocs", _posting_params._min_chunk_docs); // Control chunking
     params.set("minSkipDocs", _posting_params._min_skip_docs);   // Control skip info
     params.set("interleaved_features", _posting_params._encode_interleaved_features);
+    setup_default_features_size_flush(params);
     writer.set_posting_list_params(params);
     auto &writeContext = writer.get_write_context();
     search::ComprBuffer &cb = writeContext;
@@ -169,6 +173,7 @@ FakeZcFilterOcc::setupT(const FakeWord &fw)
     writer.on_close();
 
     _compressed = writeContext.grabComprBuffer(_compressedAlloc);
+    _counts = counts;
     read_header<bigEndian>();
 }
 
@@ -187,9 +192,11 @@ FakeZcFilterOcc::read_header()
     _l3SkipSize = header._l3_skip_size;
     _l4SkipSize = header._l4_skip_size;
     _featuresSize = header._features_size;
-    assert(header._num_docs == _hitDocs);
-    if (header._num_docs >= _posting_params._min_skip_docs) {
-        assert(_lastDocId == header._last_doc_id);
+    assert(header._num_docs == _hitDocs || header._features_size_flush);
+    if (header._num_docs >= _posting_params._min_skip_docs || header._features_size_flush) {
+        assert(header._last_doc_id > 0);
+        assert(header._last_doc_id <= _lastDocId);
+        assert(_lastDocId == header._last_doc_id || _counts._segments.size() > 1);
     } else {
         assert(header._last_doc_id == 0);
     }
@@ -221,9 +228,9 @@ FakeZcFilterOcc::validate_read(const FakeWord &fw) const
     params = _posting_params;
     reader.get_read_context().reference_compressed_buffer(_compressed.first, _compressed.second);
     assert(decode_context.getReadOffset() == 0u);
-    PostingListCounts counts;
-    counts._bitLength = _compressedBits;
-    counts._numDocs = _hitDocs;
+    PostingListCounts counts = _counts;
+    assert(counts._bitLength == _compressedBits);
+    assert(counts._numDocs == _hitDocs);
     reader.set_word_and_counts(fw.getName(), counts);
     auto word_pos_iterator(fw._wordPosFeatures.begin());
     auto word_pos_iterator_end(fw._wordPosFeatures.end());

@@ -36,7 +36,7 @@ bool
 FieldWriterWrapper::open(const Schema &schema, const uint32_t indexId,
                          const TuneFileSeqWrite &tuneFileWrite, const common::FileHeaderContext &fileHeaderContext)
 {
-    return _writer.open(64, 10000, false, false, schema, indexId, FieldLengthInfo(), tuneFileWrite, fileHeaderContext);
+    return _writer.open(64, 10000, 0, false, false, schema, indexId, FieldLengthInfo(), tuneFileWrite, fileHeaderContext);
 }
 
 FieldWriterWrapper &

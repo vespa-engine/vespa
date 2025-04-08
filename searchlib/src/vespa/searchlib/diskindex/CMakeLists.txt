@@ -10,6 +10,7 @@ vespa_add_library(searchlib_diskindex OBJECT
     disktermblueprint.cpp
     docidmapper.cpp
     extposocc.cpp
+    features_size_flush.cpp
     field_index.cpp
     field_merger.cpp
     field_mergers_state.cpp

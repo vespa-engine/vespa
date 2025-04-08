@@ -15,6 +15,7 @@ struct Zc4PostingParams;
  */
 struct Zc4PostingHeader {
     bool     _has_more;
+    bool     _features_size_flush;
     uint32_t _doc_id_k;
     uint32_t _num_docs;
     uint32_t _doc_ids_size;

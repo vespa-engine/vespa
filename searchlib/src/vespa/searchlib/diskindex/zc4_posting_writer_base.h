@@ -44,6 +44,7 @@ protected:
     uint64_t _writePos; // Bit position for start of current word
     bool _dynamicK;     // Caclulate EG compression parameters ?
     bool _encode_interleaved_features;
+    uint64_t _features_size_flush_bits;
     ZcBuf _zcDocIds;    // Document id deltas
     ZcBuf _l1Skip;      // L1 skip info
     ZcBuf _l2Skip;      // L2 skip info
