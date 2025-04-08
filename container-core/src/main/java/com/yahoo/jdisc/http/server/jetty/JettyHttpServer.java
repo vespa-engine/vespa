@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.utils.BytesQuantity;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.ConnectionLog;
@@ -19,6 +20,7 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.server.handler.ContextHandlerCollection;
+import org.eclipse.jetty.server.handler.ErrorHandler;
 import org.eclipse.jetty.server.handler.StatisticsHandler;
 import org.eclipse.jetty.server.handler.gzip.GzipHandler;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
@@ -62,6 +64,16 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
 
         this.config = serverConfig;
         server = new Server();
+
+        // Create a custom error handler
+        // - Increased buffer size to avoid buffer overflow for large error messages (e.g. massive YQL query in URI).
+        // - Show stack trace and cause when developer mode is enabled.
+        var errorHandler = new ErrorHandler();
+        errorHandler.setBufferSize((int)BytesQuantity.ofKB(16).toBytes());
+        errorHandler.setShowStacks(serverConfig.developerMode());
+        errorHandler.setShowCauses(serverConfig.developerMode());
+        server.setErrorHandler(errorHandler);
+
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
         var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric());
         server.addBean(metricAggregatingRequestLog);
