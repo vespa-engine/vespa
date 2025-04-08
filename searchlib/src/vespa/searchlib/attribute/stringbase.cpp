@@ -5,6 +5,7 @@
 #include "load_utils.h"
 #include "readerbase.h"
 #include "enum_store_loaders.h"
+#include "string_sort_blob_writer.h"
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/searchlib/query/query_term_ucs4.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
@@ -112,65 +113,41 @@ StringAttribute::is_sortable() const noexcept
 
 namespace {
 
-class AscendingSortBlobWriter : public attribute::ISortBlobWriter {
-private:
+template <bool asc>
+class SingleStringSortBlobWriter : public attribute::ISortBlobWriter {
     const StringAttribute& _attr;
-    const common::BlobConverter* _bc;
+    attribute::StringSortBlobWriter<asc> _writer;
 public:
-    AscendingSortBlobWriter(const StringAttribute& attr, const common::BlobConverter* bc) noexcept : _attr(attr), _bc(bc) {}
+    SingleStringSortBlobWriter(const StringAttribute& attr, const common::BlobConverter* bc,
+                               common::sortspec::MissingPolicy policy, std::string_view missing_value) noexcept;
+    ~SingleStringSortBlobWriter() override;
     long write(uint32_t docid, void* ser_to, long available) override;
 };
 
-long
-AscendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available)
+template <bool asc>
+SingleStringSortBlobWriter<asc>::SingleStringSortBlobWriter(const StringAttribute& attr,
+                                                            const common::BlobConverter* bc,
+                                                            common::sortspec::MissingPolicy policy,
+                                                            std::string_view missing_value) noexcept
+    : _attr(attr),
+      _writer(bc, policy, missing_value, false)
 {
-    const char* value = _attr.get(docid);
-    int size = strlen(value) + 1;
-    vespalib::ConstBufferRef buf(value, size);
-    if (_bc != nullptr) {
-        buf = _bc->convert(buf);
-    }
-    if (available >= (long)buf.size()) {
-        memcpy(ser_to, buf.data(), buf.size());
-    } else {
-        return -1;
-    }
-    return buf.size();
 }
 
-}
+template <bool asc>
+SingleStringSortBlobWriter<asc>::~SingleStringSortBlobWriter() = default;
 
-namespace {
-
-class DescendingSortBlobWriter : public attribute::ISortBlobWriter
-{
-private:
-    const StringAttribute& _attr;
-    const common::BlobConverter* _bc;
-public:
-    DescendingSortBlobWriter(const StringAttribute& attr, const common::BlobConverter* bc) noexcept : _attr(attr), _bc(bc) {}
-    long write(uint32_t docid, void* ser_to, long available) override;
-};
-
+template <bool asc>
 long
-DescendingSortBlobWriter::write(uint32_t docid, void* ser_to, long available)
-{
+SingleStringSortBlobWriter<asc>::write(uint32_t docid, void* ser_to, long available) {
+    _writer.reset(ser_to, available);
     const char* value = _attr.get(docid);
-    int size = strlen(value) + 1;
-    vespalib::ConstBufferRef buf(value, size);
-    if (_bc != nullptr) {
-        buf = _bc->convert(buf);
-    }
-    if (available >= (long)buf.size()) {
-        auto* dst = static_cast<unsigned char*>(ser_to);
-        const auto* src(static_cast<const uint8_t*>(buf.data()));
-        for (size_t i(0); i < buf.size(); ++i) {
-            dst[i] = 0xff - src[i];
+    if (!attribute::isUndefined(value)) {
+        if (!_writer.candidate(value)) {
+            return -1;
         }
-    } else {
-        return -1;
     }
-    return buf.size();
+    return _writer.write();
 }
 
 }
@@ -180,12 +157,10 @@ StringAttribute::make_sort_blob_writer(bool ascending, const common::BlobConvert
                                        common::sortspec::MissingPolicy policy,
                                        std::string_view missing_value) const
 {
-    (void) policy;
-    (void) missing_value;
     if (ascending) {
-        return std::make_unique<AscendingSortBlobWriter>(*this, bc);
+        return std::make_unique<SingleStringSortBlobWriter<true>>(*this, bc, policy, missing_value);
     } else {
-        return std::make_unique<DescendingSortBlobWriter>(*this, bc);
+        return std::make_unique<SingleStringSortBlobWriter<false>>(*this, bc, policy, missing_value);
     }
 }
 
