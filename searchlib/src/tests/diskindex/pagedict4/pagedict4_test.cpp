@@ -402,9 +402,9 @@ testWords(const std::string &logname,
         "%s: Used %" PRIu64 "+%" PRIu64 "+%" PRIu64
         " bits for %d words",
         logname.c_str(),
-        w._buffers._pFileBitSize,
-        w._buffers._spFileBitSize,
-        w._buffers._ssFileBitSize,
+        w._buffers._p.get_file_bit_size(),
+        w._buffers._sp.get_file_bit_size(),
+        w._buffers._ss.get_file_bit_size(),
         (int) myrand.size());
 
     StartOffset checkOffset;
@@ -427,7 +427,7 @@ testWords(const std::string &logname,
             checkOffset._fileOffset += counts._bitLength;
             checkOffset._accNumDocs += counts._numDocs;
         }
-        assert(r._decoders.pd.getReadOffset() == w._buffers._pFileBitSize);
+        assert(r._decoders.pd.getReadOffset() == w._buffers._p.get_file_bit_size());
         LOG(info, "%s: words seqRead test OK", logname.c_str());
     }
 

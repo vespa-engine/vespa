@@ -906,7 +906,7 @@ PageDict4SSLookupRes::~PageDict4SSLookupRes() = default;
 
 
 PageDict4SSReader::
-PageDict4SSReader(ComprBuffer &cb,
+PageDict4SSReader(const ComprBuffer &cb,
                   uint32_t ssFileHeaderSize,
                   uint64_t ssFileBitLen,
                   uint32_t spFileHeaderSize,

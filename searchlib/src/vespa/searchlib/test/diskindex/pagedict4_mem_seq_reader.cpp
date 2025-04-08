@@ -8,10 +8,10 @@ PageDict4MemSeqReader::PageDict4MemSeqReader(uint32_t chunkSize, uint64_t numWor
                                              ThreeLevelCountWriteBuffers &wb)
     : _decoders(chunkSize, numWordIds),
       _buffers(_decoders.ssd, _decoders.spd, _decoders.pd, wb),
-      _ssr(_buffers._rcssd,
-           wb._ssHeaderLen, wb._ssFileBitSize,
-           wb._spHeaderLen, wb._spFileBitSize,
-           wb._pHeaderLen, wb._pFileBitSize),
+      _ssr(_buffers._ss.get_read_context(),
+           wb._ss.get_header_len(), wb._ss.get_file_bit_size(),
+           wb._sp.get_header_len(), wb._sp.get_file_bit_size(),
+           wb._p.get_header_len(), wb._p.get_file_bit_size()),
       _pr(_ssr, _decoders.spd, _decoders.pd)
 {
     _ssr.setup(_decoders.ssd);
