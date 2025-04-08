@@ -17,6 +17,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/aggregation/modifiers.h>
+#include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/single_raw_ext_attribute.h>
 #include <vespa/searchlib/common/packets.h>
 #include <vespa/searchlib/features/setup.h>
@@ -44,6 +45,7 @@ using search::AttributeGuard;
 using search::AttributeVector;
 using search::aggregation::HitsAggregationResult;
 using search::attribute::IAttributeVector;
+using search::attribute::make_sort_blob_writer;
 using search::expression::ConfigureStaticParams;
 using search::streaming::Query;
 using search::Normalizing;
@@ -188,32 +190,9 @@ createAttribute(const std::string & name, const document::FieldValue & fv, searc
 
 SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr) noexcept
     : _field(fid),
-      _ascending(true),
-      _converter(nullptr),
       _attr(std::move(attr)),
       _sort_blob_writer()
 {
-}
-
-SearchVisitor::AttrInfo::AttrInfo(vsm::FieldIdT fid, search::AttributeGuard::UP attr,
-                                  bool ascending, const search::common::BlobConverter* converter) noexcept
-    : _field(fid),
-      _ascending(ascending),
-      _converter(converter),
-      _attr(std::move(attr)),
-      _sort_blob_writer()
-{
-    make_sort_blob_writer();
-}
-
-void
-SearchVisitor::AttrInfo::make_sort_blob_writer()
-{
-    if (_attr && _attr->get()->is_sortable()) {
-        _sort_blob_writer = _attr->get()->make_sort_blob_writer(_ascending, _converter,
-                                                                search::common::sortspec::MissingPolicy::DEFAULT,
-                                                                std::string_view());
-    }
 }
 
 SearchVisitor::StreamingDocsumsState::StreamingDocsumsState(search::docsummary::GetDocsumsStateCallback& callback, ResolveClassInfo& resolve_class_info)
@@ -1037,18 +1016,19 @@ SearchVisitor::setupAttributeVectorsForSorting(const search::common::SortSpec & 
                 if (attr->valid()) {
                     if (attr->get()->is_sortable()) {
                         size_t index(_attributeFields.size());
+                        auto sort_blob_writer = make_sort_blob_writer(attr->get(), field_sort_spec);
+                        if (!sort_blob_writer) {
+                            continue;
+                        }
                         for (size_t j(0); j < index; j++) {
                             if ((_attributeFields[j]._field == fid) && notContained(_sortList, j)) {
                                 index = j;
-                                _attributeFields[index]._ascending = field_sort_spec._ascending;
-                                _attributeFields[index]._converter = field_sort_spec._converter.get();
-                                _attributeFields[index].make_sort_blob_writer();
                             }
                         }
                         if (index == _attributeFields.size()) {
-                            _attributeFields.emplace_back(fid, std::move(attr), field_sort_spec._ascending,
-                                                          field_sort_spec._converter.get());
+                            _attributeFields.emplace_back(fid, std::move(attr));
                         }
+                        _attributeFields[index]._sort_blob_writer = std::move(sort_blob_writer);
                         _sortList.push_back(index);
                     } else {
                         Issue::report("Attribute '%s' is not sortable", field_sort_spec._field.c_str());

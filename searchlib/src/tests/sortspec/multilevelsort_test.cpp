@@ -7,6 +7,7 @@
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributemanager.h>
+#include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/searchlib/attribute/string_to_number.h>
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
@@ -18,6 +19,7 @@
 LOG_SETUP("multilevelsort_test");
 
 using namespace search;
+using search::attribute::make_sort_blob_writer;
 
 using Float = FloatingPointAttributeTemplate<float>;
 using Double = FloatingPointAttributeTemplate<double>;
@@ -255,7 +257,9 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &specs, uint32_t num,
             sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_DOCID : FastS_SortSpec::DESC_DOCID, nullptr, nullptr);
         } else {
             const search::attribute::IAttributeVector * v = vec[spec._name].get();
-            sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_VECTOR : FastS_SortSpec::DESC_VECTOR, v, nullptr);
+            search::common::FieldSortSpec fss(spec._name, spec._asc, {});
+            auto sort_blob_writer = make_sort_blob_writer(v, fss);
+            sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_VECTOR : FastS_SortSpec::DESC_VECTOR, v, std::move(sort_blob_writer));
         }
     }
 
