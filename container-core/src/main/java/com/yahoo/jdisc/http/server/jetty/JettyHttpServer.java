@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.utils.BytesQuantity;
 import com.google.inject.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.container.logging.ConnectionLog;
@@ -46,14 +47,6 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
 
-    @SuppressWarnings("LoggerInitializedWithForeignClass")
-    private static final Logger jettyErrorHandlerLog = Logger.getLogger(ErrorHandler.class.getName());
-    static {
-        // Disable warning log entry whenever the rendered message is too large to fit the output buffer.
-        // The response content will be empty in those cases. This is fine as it's typically a result of a malicious request.
-        jettyErrorHandlerLog.setLevel(Level.SEVERE);
-    }
-
     private final ServerConfig config;
     private final Server server;
     private final List<Integer> listenedPorts = new ArrayList<>();
@@ -71,6 +64,16 @@ public class JettyHttpServer extends AbstractResource implements ServerProvider 
 
         this.config = serverConfig;
         server = new Server();
+
+        // Create a custom error handler
+        // - Increased buffer size to avoid buffer overflow for large error messages (e.g. massive YQL query in URI).
+        // - Show stack trace and cause when developer mode is enabled.
+        var errorHandler = new ErrorHandler();
+        errorHandler.setBufferSize((int)BytesQuantity.ofKB(16).toBytes());
+        errorHandler.setShowStacks(serverConfig.developerMode());
+        errorHandler.setShowCauses(serverConfig.developerMode());
+        server.setErrorHandler(errorHandler);
+
         server.setStopTimeout((long)(serverConfig.stopTimeout() * 1000.0));
         var metricAggregatingRequestLog = new MetricAggregatingRequestLog(config.metric());
         server.addBean(metricAggregatingRequestLog);

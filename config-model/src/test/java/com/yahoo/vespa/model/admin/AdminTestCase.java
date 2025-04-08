@@ -277,7 +277,7 @@ public class AdminTestCase {
 
         VespaModel vespaModel = new VespaModelCreatorWithMockPkg(hosts, services).create();
         List<LogctlSpec> logctlSpecs = vespaModel.getAdmin().getLogctlSpecs();
-        assertEquals(4, logctlSpecs.size());  // Default logctl specs
+        assertEquals(5, logctlSpecs.size());  // Default logctl specs
         assertEquals(1, logctlSpecs
                 .stream()
                      .filter(l -> (l.componentSpec()
@@ -291,8 +291,8 @@ public class AdminTestCase {
         String localhostConfigId = "hosts/myhost0";
         SentinelConfig sentinelConfig = vespaModel.getConfig(SentinelConfig.class, localhostConfigId);
         System.out.println(sentinelConfig);
-        assertEquals(4, getConfigForService("container", sentinelConfig).logctl().size());
-        assertEquals(4, getConfigForService("metricsproxy-container", sentinelConfig).logctl().size());
+        assertEquals(5, getConfigForService("container", sentinelConfig).logctl().size());
+        assertEquals(5, getConfigForService("metricsproxy-container", sentinelConfig).logctl().size());
     }
 
     @Test

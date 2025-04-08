@@ -343,6 +343,7 @@ public class Admin extends TreeConfigProducer<AnyConfigProducer> implements Seri
         return List.of(new LogctlSpec("com.yahoo.vespa.spifly.repackaged.spifly.BaseActivator", getLevelModSpec("-info")),
                        new LogctlSpec("org.eclipse.jetty.server.Server", getLevelModSpec("-info")),
                        new LogctlSpec("org.eclipse.jetty.server.handler.ContextHandler", getLevelModSpec("-info")),
+                       new LogctlSpec("org.eclipse.jetty.server.handler.ErrorHandler", getLevelModSpec("-info -warning")),
                        new LogctlSpec("org.eclipse.jetty.server.AbstractConnector", getLevelModSpec("-info")));
     }
 
