@@ -14,8 +14,7 @@ using vespalib::Issue;
 namespace search::attribute {
 
 std::unique_ptr<search::attribute::ISortBlobWriter>
-make_sort_blob_writer(const IAttributeVector* vector,
-                                      const FieldSortSpec& field_sort_spec) {
+make_sort_blob_writer(const IAttributeVector* vector, const FieldSortSpec& field_sort_spec) {
     if (vector == nullptr) {
         return {};
     }
@@ -24,7 +23,7 @@ make_sort_blob_writer(const IAttributeVector* vector,
                                              field_sort_spec._converter.get(),
                                              field_sort_spec._missing_policy,
                                              field_sort_spec._missing_value);
-    } catch (IllegalArgumentException& e) {
+    } catch (const IllegalArgumentException& e) {
         Issue::report("make_sort_blob_writer: For attribute vector %s (basic type %s): %s",
                       vector->getName().c_str(),
                       BasicType(vector->getBasicType()).asString(),
