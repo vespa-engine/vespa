@@ -172,6 +172,21 @@ public class SchemaParserTestCase {
     }
 
     @Test
+    void weakand_allow_drop_all_can_be_parsed() throws Exception {
+        String input = joinLines("schema foo {",
+                        "rank-profile rp {",
+                            "weakand {",
+                                "allow-drop-all: true",
+                            "}",
+                        "}",
+                    "}");
+        var schema = parseString(input);
+        var target = schema.getRankProfiles().get(0).getWeakandAllowDropAll();
+        assertTrue(target.isPresent());
+        assertEquals(true, target.get());
+    }
+
+    @Test
     void weakand_adjust_target_can_be_parsed() throws Exception {
         String input = joinLines("schema foo {",
                         "rank-profile rp {",

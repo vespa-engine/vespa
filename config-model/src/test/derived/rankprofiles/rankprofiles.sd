@@ -54,6 +54,9 @@ schema rankprofiles {
       attribute: field3
       max-hits: 666
     }
+    weakand {
+      allow-drop-all: off
+    }
   }
 
   model seven {
@@ -66,7 +69,7 @@ schema rankprofiles {
   }
 
   model eight inherits seven {
-  
+
   }
 
 }

@@ -551,19 +551,32 @@ rank-profile feature_logging {
     }
 
     @Test
+    void weakand_allow_drop_all_is_configurable() throws ParseException {
+        verifyWeakandAllowDropAll(null);
+        verifyWeakandAllowDropAll(true);
+        verifyWeakandAllowDropAll(false);
+    }
+
+    @Test
     void weakand_adjust_target_is_configurable() throws ParseException {
         verifyWeakandAdjustTarget(null);
         verifyWeakandAdjustTarget(0.01);
     }
 
     private void verifyWeakandStopwordLimit(Double stopwordLimit) throws ParseException {
-        var rp = createWeakandRankProfile(stopwordLimit, null);
+        var rp = createWeakandRankProfile(stopwordLimit, null, null);
         verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getWeakandStopwordLimit,
                                  stopwordLimit, "vespa.matching.weakand.stop_word_drop_limit");
     }
 
+    private void verifyWeakandAllowDropAll(Boolean allowed) throws ParseException {
+        var rp = createWeakandRankProfile(null, allowed, null);
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getWeakandAllowDropAll,
+                                 allowed, "vespa.matching.weakand.allow_drop_all");
+    }
+
     private void verifyWeakandAdjustTarget(Double adjustTarget) throws ParseException {
-        var rp = createWeakandRankProfile(null, adjustTarget);
+        var rp = createWeakandRankProfile(null, null, adjustTarget);
         verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getWeakandAdjustTarget,
                                  adjustTarget, "vespa.matching.weakand.stop_word_adjust_limit");
     }
@@ -575,7 +588,7 @@ rank-profile feature_logging {
     }
 
     private void verifyFilterThreshold(Double threshold) throws ParseException {
-        var rp = createRankProfile(createSDWithRankProfile(null, null, null, null, null, threshold));
+        var rp = createRankProfile(createSDWithRankProfile(null, null, null, null, null, null, threshold));
         verifyRankProfileSetting(rp.getFirst(), rp.getSecond(), RankProfile::getFilterThreshold,
                 threshold, "vespa.matching.filter_threshold");
     }
@@ -620,7 +633,18 @@ rank-profile feature_logging {
                 0.11, "vespa.matching.filter_threshold.f2");
         verifyRankProfileSetting(rp.getFirst(), rp.getSecond(),
                 (myRp) -> optionalDoubleOfNullable(myRp.explicitFieldRankFilterThresholds().get("f3")),
-                null, "vespa.matching.filter_threshold.f3");
+                (Double)null, "vespa.matching.filter_threshold.f3");
+    }
+
+    private void verifyRankProfileSetting(RankProfile rankProfile, RawRankProfile rawRankProfile, Function<RankProfile, Boolean> func,
+                                          Boolean expValue, String expPropertyName) {
+        if (expValue != null) {
+            assertEquals(expValue, func.apply(rankProfile));
+            assertEquals(String.valueOf(expValue), findProperty(rawRankProfile.configProperties(), expPropertyName).get());
+        } else {
+            assertNull(func.apply(rankProfile));
+            assertFalse(findProperty(rawRankProfile.configProperties(), expPropertyName).isPresent());
+        }
     }
 
     private void verifyRankProfileSetting(RankProfile rankProfile, RawRankProfile rawRankProfile, Function<RankProfile, OptionalDouble> func,
@@ -637,12 +661,13 @@ rank-profile feature_logging {
     private Pair<RankProfile, RawRankProfile> createRankProfile(Double postFilterThreshold,
                                                                 Double approximateThreshold,
                                                                 Double targetHitsMaxAdjustmentFactor) throws ParseException {
-        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, null, null, null));
+        return createRankProfile(createSDWithRankProfile(postFilterThreshold, approximateThreshold, targetHitsMaxAdjustmentFactor, null, null, null, null));
     }
 
     private Pair<RankProfile, RawRankProfile> createWeakandRankProfile(Double weakAndStopwordLimit,
+                                                                       Boolean allowDropAll,
                                                                        Double weakAndAdjustTarget) throws ParseException {
-        return createRankProfile(createSDWithRankProfile(null, null, null,  weakAndStopwordLimit, weakAndAdjustTarget, null));
+        return createRankProfile(createSDWithRankProfile(null, null, null,  weakAndStopwordLimit, allowDropAll, weakAndAdjustTarget, null));
     }
 
     private Pair<RankProfile, RawRankProfile> createRankProfile(String schemaContent) throws ParseException {
@@ -664,6 +689,7 @@ rank-profile feature_logging {
                                            Double approximateThreshold,
                                            Double targetHitsMaxAdjustmentFactor,
                                            Double weakandStopwordLimit,
+                                           Boolean weakandAllowDropAll,
                                            Double weakandAdjustTarget,
                                            Double filterThreshold) {
         return joinLines(
@@ -674,6 +700,7 @@ rank-profile feature_logging {
                 (approximateThreshold != null ?          ("        approximate-threshold: " + approximateThreshold) : ""),
                 (targetHitsMaxAdjustmentFactor != null ? ("        target-hits-max-adjustment-factor: " + targetHitsMaxAdjustmentFactor) : ""),
                 (weakandStopwordLimit != null ?          ("        weakand { stopword-limit: " + weakandStopwordLimit + "}") : ""),
+                (weakandAllowDropAll != null ?           ("        weakand { allow-drop-all: " + weakandAllowDropAll + "}") : ""),
                 (weakandAdjustTarget != null ?           ("        weakand { adjust-target: " + weakandAdjustTarget + "}") : ""),
                 (filterThreshold != null ?               ("        filter-threshold: " + filterThreshold) : ""),
                 "    }",
