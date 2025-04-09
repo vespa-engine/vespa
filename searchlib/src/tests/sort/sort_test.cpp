@@ -75,7 +75,7 @@ void PrintTo(MissingPolicy missing_policy, std::ostream *os) {
 namespace search::common {
 
 void PrintTo(const FieldSortSpec& spec, std::ostream* os) {
-    *os << "{" << spec._field << ", " << std::boolalpha << spec._ascending << ", ";
+    *os << "{" << spec._field << ", ";
     PrintTo(spec._sort_order, os);
     *os << ", " << converter_as_string_view(spec._converter) << ", ";
     PrintTo(spec._missing_policy, os);
@@ -84,7 +84,6 @@ void PrintTo(const FieldSortSpec& spec, std::ostream* os) {
 
 bool operator==(const FieldSortSpec& lhs, const FieldSortSpec& rhs) {
     return lhs._field == rhs._field &&
-           lhs._ascending == rhs._ascending &&
            lhs._sort_order == rhs._sort_order &&
            converter_as_string_view(lhs._converter) == converter_as_string_view(rhs._converter) &&
            lhs._missing_policy == rhs._missing_policy &&
