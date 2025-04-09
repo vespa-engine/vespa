@@ -14,7 +14,7 @@ public enum ValidationId {
     indexModeChange("indexing-mode-change"), // Changing the index mode (streaming, indexed, store-only) of documents 
     fieldTypeChange("field-type-change"), // Field type changes
     clusterSizeReduction("cluster-size-reduction"), // NOT USED. TODO: Remove on Vespa 9
-    tensorTypeChange("tensor-type-change"), // Tensor type change
+    tensorTypeChange("tensor-type-change"), // // NOT USED. TODO: Remove on Vespa 9
     resourcesReduction("resources-reduction"), // Large reductions in node resources (> 50% of the current max total resources)
     contentTypeRemoval("schema-removal"), // Removal of a schema (causes deletion of all documents)
     contentClusterRemoval("content-cluster-removal"), // Removal (or id change) of content clusters
