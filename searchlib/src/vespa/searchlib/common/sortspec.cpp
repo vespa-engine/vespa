@@ -50,7 +50,6 @@ FieldSortSpec::FieldSortSpec(std::string_view field, bool ascending, std::shared
 FieldSortSpec::FieldSortSpec(std::string_view field, SortOrder sort_order, std::shared_ptr<BlobConverter> converter,
                              MissingPolicy missing_policy, std::string missing_value) noexcept
     : _field(field),
-      _ascending(sort_order == SortOrder::ASCENDING),
       _sort_order(sort_order),
       _converter(std::move(converter)),
       _missing_policy(missing_policy),

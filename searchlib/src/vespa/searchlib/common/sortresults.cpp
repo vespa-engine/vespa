@@ -182,12 +182,12 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort
     const IAttributeVector * vector(nullptr);
 
     if ((field_sort_spec._field.size() == 6) && (field_sort_spec._field == "[rank]")) {
-        type = (field_sort_spec._ascending) ? ASC_RANK : DESC_RANK;
+        type = (field_sort_spec.is_ascending()) ? ASC_RANK : DESC_RANK;
     } else if ((field_sort_spec._field.size() == 7) && (field_sort_spec._field == "[docid]")) {
-        type = (field_sort_spec._ascending) ? ASC_DOCID : DESC_DOCID;
+        type = (field_sort_spec.is_ascending()) ? ASC_DOCID : DESC_DOCID;
         vector = vecMan.getAttribute(_documentmetastore);
     } else {
-        type = (field_sort_spec._ascending) ? ASC_VECTOR : DESC_VECTOR;
+        type = (field_sort_spec.is_ascending()) ? ASC_VECTOR : DESC_VECTOR;
         vector = vecMan.getAttribute(field_sort_spec._field);
         if ( !vector) {
             Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", field_sort_spec._field.c_str());
@@ -205,7 +205,7 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort
     }
 
     LOG(spam, "SortSpec: adding vector (%s)'%s'",
-        (field_sort_spec._ascending) ? "+" : "-", field_sort_spec._field.c_str());
+        (field_sort_spec.is_ascending()) ? "+" : "-", field_sort_spec._field.c_str());
 
     _vectors.emplace_back(type, vector, std::move(sort_blob_writer));
 

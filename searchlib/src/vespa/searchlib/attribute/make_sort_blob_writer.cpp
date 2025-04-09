@@ -19,7 +19,7 @@ make_sort_blob_writer(const IAttributeVector* vector, const FieldSortSpec& field
         return {};
     }
     try {
-        return vector->make_sort_blob_writer(field_sort_spec._ascending,
+        return vector->make_sort_blob_writer(field_sort_spec.is_ascending(),
                                              field_sort_spec._converter.get(),
                                              field_sort_spec._missing_policy,
                                              field_sort_spec._missing_value);

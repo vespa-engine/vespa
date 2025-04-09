@@ -34,11 +34,13 @@ struct FieldSortSpec {
                   sortspec::MissingPolicy missing_policy, std::string missing_value) noexcept;
     ~FieldSortSpec();
     std::string                    _field;
-    bool                           _ascending;  // Deprecated, _sort order will take over.
     sortspec::SortOrder            _sort_order;
     std::shared_ptr<BlobConverter> _converter;
     sortspec::MissingPolicy        _missing_policy;
     std::string                    _missing_value;
+    bool is_ascending() const noexcept {
+        return _sort_order == sortspec::SortOrder::ASCENDING;
+    }
 };
 
 class SortSpec
