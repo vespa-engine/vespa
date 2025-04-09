@@ -589,7 +589,7 @@ public class Sorting implements Cloneable {
 
         @Override
         public String toString() {
-            return sortOrder.toString() + ":" + fieldSorter.toString();
+            return sortOrder.toString() + ":" + toSerialForm(false);
         }
 
         @Override
