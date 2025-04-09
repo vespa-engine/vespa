@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -90,6 +91,7 @@ public class GroupingParserTestCase {
                 "docidnsspecific",
                 "each",
                 "exp",
+                "filter",
                 "fixedwidth",
                 "floor",
                 "group",
@@ -113,6 +115,7 @@ public class GroupingParserTestCase {
                 "pow",
                 "precision",
                 "predefined",
+                "regex",
                 "relevance",
                 "reverse",
                 "sin",
@@ -619,6 +622,15 @@ public class GroupingParserTestCase {
                         "At position:\n" +
                         " foo\n" +
                         " ^");
+    }
+
+    @Test
+    void testFilter() {
+        assertAll("filter with regex",
+                () -> assertParse("all(group(foo) filter(regex(\".*mysubstring.*\", foo)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(regex(\"^myexactstring$\", foo)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(regex(\"(stringinparentheses)?\", foo)) each(output(count())))"),
+                () -> assertParse("all(group(foo) filter(regex(\"[a-zA-Z_]+characterclass\", foo)) each(output(count())))"));
     }
 
     // --------------------------------------------------------------------------------

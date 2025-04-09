@@ -13,6 +13,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -35,6 +37,7 @@ public abstract class GroupingOperation extends GroupingNode {
     private final Set<String> hints = LazySet.newHashSet();
 
     private GroupingExpression groupBy = null;
+    private FilterExpression filterBy = null;
     private GroupingOperation parent = null;
     private String where = null;
     private boolean forceSinglePass = false;
@@ -56,6 +59,7 @@ public abstract class GroupingOperation extends GroupingNode {
                                 Map<String, GroupingExpression> aliases,
                                 Set<String> hints,
                                 GroupingExpression groupBy,
+                                FilterExpression filterBy,
                                 String where,
                                 boolean forceSinglePass,
                                 double accuracy,
@@ -70,6 +74,7 @@ public abstract class GroupingOperation extends GroupingNode {
         aliases.forEach((key, value) -> this.aliases.put(key, value.copy()));
         this.hints.addAll(hints);
         if (groupBy != null) this.groupBy = groupBy.copy();
+        if (filterBy != null) this.filterBy = filterBy.copy();
         this.where = where;
         this.forceSinglePass = forceSinglePass;
         this.accuracy = accuracy;
@@ -193,6 +198,17 @@ public abstract class GroupingOperation extends GroupingNode {
     public GroupingExpression getGroupBy() {
         return groupBy;
     }
+
+    /** Assigns an {@link FilterExpression} as the filter-by clause of this operation. */
+    @Beta
+    public GroupingOperation setFilterBy(FilterExpression exp) {
+        filterBy = Objects.requireNonNull(exp, "Filter expression can not be null");
+        return this;
+    }
+
+    /** Returns the {@link FilterExpression} assigned as the filter-by clause of this operation. */
+    @Beta
+    public Optional<FilterExpression> getFilterBy() { return Optional.ofNullable(filterBy); }
 
     /**
      * Returns the conceptual level of this node.
@@ -480,6 +496,9 @@ public abstract class GroupingOperation extends GroupingNode {
         }
         for (String hint : hints) {
             ret.append("hint(").append(hint).append(") ");
+        }
+        if (filterBy != null) {
+            ret.append("filter(").append(filterBy).append(") ");
         }
         if (hasMax()) {
             ret.append("max(").append(max).append(") ");
