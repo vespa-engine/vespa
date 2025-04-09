@@ -1,3 +1,5 @@
+// Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package tracedoctor
 
 import (
@@ -30,7 +32,7 @@ func (n annNode) makeRows(tab *table) {
 
 func (p protonTrace) findAnnNodes() []annNode {
 	var res []annNode
-	slime.Select(p.root, hasTag("query_execution_plan"), func(p *slime.Path, v slime.Value) {
+	slime.Select(p.source, hasTag("query_execution_plan"), func(p *slime.Path, v slime.Value) {
 		slime.Select(v.Field("optimized"), hasType("search::queryeval::NearestNeighborBlueprint"), func(p *slime.Path, v slime.Value) {
 			res = append(res, annNode{v})
 		})
