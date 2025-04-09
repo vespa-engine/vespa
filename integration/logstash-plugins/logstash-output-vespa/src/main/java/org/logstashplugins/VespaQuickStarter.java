@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import co.elastic.logstash.api.Event;
 import org.apache.logging.log4j.LogManager;
@@ -43,6 +44,16 @@ public class VespaQuickStarter {
 
         this.deployer = new VespaDeployer(config);
         this.appPackageWriter = new VespaAppPackageWriter(config, typeMappings);
+    }
+    
+    // Getter for emptyBatchesCount - useful for testing
+    public int getEmptyBatchesCount() {
+        return emptyBatchesCount;
+    }
+    
+    // Getter for gotEvents - useful for testing
+    public boolean hasGotEvents() {
+        return gotEvents;
     }
 
     public void run(Collection<Event> events) {
@@ -106,13 +117,17 @@ public class VespaQuickStarter {
         }
 
         try {
-            appPackageWriter.writeApplicationPackage(detectedFields);
+            if (detectedFields.isEmpty()) {
+                logger.warn("No fields detected, skipping application package write");
+            } else {
+                appPackageWriter.writeApplicationPackage(detectedFields);
+            }
         } catch (IOException e) {
             logger.error("Error writing application package: {} {}", e.getMessage(), e.getStackTrace());
         }
     }
 
-    private String detectType(Object value) {
+    String detectType(Object value) {
         if (value instanceof String) {
             return "string";
         } else if (value instanceof Integer) {
@@ -140,10 +155,15 @@ public class VespaQuickStarter {
             }
 
             // infer the type of the map from the first value
-            Object firstValue = map.values().iterator().next();
-            String firstValueType = detectType(firstValue);
-            if (firstValueType != null) {
-                return "object<" + firstValueType + ">";
+            try {
+                Object firstValue = map.values().iterator().next();
+                String firstValueType = detectType(firstValue);
+                if (firstValueType != null) {
+                    return "object<" + firstValueType + ">";
+                }
+            } catch (NoSuchElementException e) {
+                logger.error("Empty map: {}", value.getClass().getName());
+                return null;
             }
             logger.error("Unsupported map type: {}", value.getClass().getName());
             return null;

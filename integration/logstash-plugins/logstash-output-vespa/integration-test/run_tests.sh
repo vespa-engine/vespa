@@ -39,6 +39,25 @@ if ! command_exists podman; then
     exit 1
 fi
 
+# netcat (nc) for port checking
+if ! command_exists nc; then
+    echo -e "${RED}Error: netcat (nc) is required but not installed${NC}"
+    exit 1
+fi
+
+# Check if ports required by Vespa are already in use
+if nc -z localhost 8080 >/dev/null 2>&1; then
+    echo -e "${RED}Error: Port 8080 is already in use${NC}"
+    exit 1
+fi
+
+if nc -z localhost 19071 >/dev/null 2>&1; then
+    echo -e "${RED}Error: Port 19071 is already in use${NC}"
+    exit 1
+fi
+
+# TODO is port 8080 or 19071 already in use?
+
 ### Build and install plugin
 echo -e "${ORANGE}Building plugin...${NC}"
 cd ..

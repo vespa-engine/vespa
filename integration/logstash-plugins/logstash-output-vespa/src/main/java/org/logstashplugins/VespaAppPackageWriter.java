@@ -30,14 +30,12 @@ public class VespaAppPackageWriter {
         this.typeMappings = typeMappings;
 
         // create the application package directory, if it doesn't exist. Also write the "schemas" directory within it
-        Path applicationPackageDir = Paths.get(config.getApplicationPackageDir());
-        if (!Files.exists(applicationPackageDir)) {
+        Path schemasDir = Paths.get(config.getApplicationPackageDir(), "schemas");
+        if (!Files.exists(schemasDir)) {
             try {
-                Path schemasDir = Paths.get(config.getApplicationPackageDir(), "schemas");
                 Files.createDirectories(schemasDir);
             } catch (IOException e) {
-                logger.error("Error creating application package directory: {}", e.getMessage());
-                throw new IllegalArgumentException("Error creating application package directory: " + e.getMessage());
+                throw new IllegalArgumentException("Error creating application package + schemas directory: " + e.getMessage());
             }
         }
 
@@ -45,19 +43,7 @@ public class VespaAppPackageWriter {
             try {
                 generateMtlsCertificates();
             } catch (Exception e) {
-                logger.error("Error generating mTLS certificates: {} {}", e.getMessage(), e.getStackTrace());
                 throw new IllegalArgumentException("Error generating mTLS certificates: " + e.getMessage());
-            }
-        }
-
-        // delete the write.lock file, if it exists, we start from scratch
-        // we lock only when we write the application package
-        Path writeLockFile = Paths.get(config.getApplicationPackageDir(), "write.lock");
-        if (Files.exists(writeLockFile)) {
-            try {
-                Files.delete(writeLockFile);
-            } catch (IOException e) {
-                logger.error("Error deleting write.lock file: {}", e.getMessage());
             }
         }
 
@@ -248,7 +234,7 @@ public class VespaAppPackageWriter {
 
             logger.info("Wrote application package to {}", config.getApplicationPackageDir());
         } finally {
-            Files.delete(writeLockFile);
+            Files.deleteIfExists(writeLockFile);
         }
     }
 
@@ -316,12 +302,12 @@ public class VespaAppPackageWriter {
      * @param type2 Second Vespa field type
      * @return The resolved type, or null if no resolution is found
      */
-    public String resolveTypeConflict(String type1, String type2) {
+    String resolveTypeConflict(String type1, String type2) {
         Map<String, Map<String, String>> typeConflictResolution = loadTypeConflictResolution();
         return resolveTypeConflict(type1, type2, typeConflictResolution);
     }
 
-    private String resolveTypeConflict(String type1, String type2, Map<String, Map<String, String>> resolutions) {
+    String resolveTypeConflict(String type1, String type2, Map<String, Map<String, String>> resolutions) {
         // Check if we have an array in either type
         Pattern arrayPattern = Pattern.compile("array<([^>]+)>\\[(\\d+)\\]");
         Matcher matcher1 = arrayPattern.matcher(type1);
@@ -337,6 +323,7 @@ public class VespaAppPackageWriter {
         }
         if (matcher2.matches()) {
             type2arraySize = Integer.parseInt(matcher2.group(2));
+            type2baseType = matcher2.group(1);
         }
         
         // two arrays?
@@ -399,7 +386,7 @@ public class VespaAppPackageWriter {
         return null;
     }
 
-    private Map<String, Map<String, String>> loadTypeConflictResolution() {
+    Map<String, Map<String, String>> loadTypeConflictResolution() {
         String source = "built-in type conflict resolution";
         InputStream resolutionStream = getClass().getClassLoader().getResourceAsStream("type_conflict_resolution.yml");
 

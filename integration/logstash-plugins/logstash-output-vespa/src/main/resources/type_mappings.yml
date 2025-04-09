@@ -67,7 +67,7 @@ array<int8>:
 variablearray<int8>:
   - |1
           field {{FIELD_NAME}} type array<int8> {
-              indexing: summary | index
+              indexing: summary | attribute
           }
 
 array<float>:
@@ -86,7 +86,7 @@ array<float>:
 variablearray<float>:
   - |1
           field {{FIELD_NAME}} type array<float> {
-              indexing: summary | index
+              indexing: summary | attribute
           }
 
 array<bool>:

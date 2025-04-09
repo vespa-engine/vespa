@@ -34,7 +34,7 @@ public class VespaDeployer {
         try {
             Files.createFile(writeLockFile);
         } catch (FileAlreadyExistsException e) {
-            logger.warn("Write lock file exists. We'll assume another thread is already deploying the application package.");
+            logger.warn("Write lock file exists. We'll assume another thread is already deploying the application package or we're still writing the package.");
             return;
         } catch (IOException e) {
             logger.error("Error creating write lock file: {}", e.getMessage());
@@ -119,7 +119,7 @@ public class VespaDeployer {
         }
     }
 
-    private byte[] createApplicationZip() throws IOException {
+    byte[] createApplicationZip() throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ZipOutputStream zos = new ZipOutputStream(baos)) {
             // Add services.xml

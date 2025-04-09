@@ -4,7 +4,6 @@ package org.logstashplugins;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
 import java.net.URI;
 
 public class QuickStartConfig {
@@ -79,11 +78,22 @@ public class QuickStartConfig {
 
         // valid for self-hosted Vespa
         this.configServer = getConfigServer(configServer, vespaUrl);
+
+        // Validate certificate parameters if we're going to generate certificates
+        if (this.generateMtlsCertificates) {
+            if (certificateValidityDays <= 0) {
+                throw new IllegalArgumentException("Certificate validity period must be positive, got: " + certificateValidityDays);
+            }
+
+            if (certificateCommonName == null || certificateCommonName.trim().isEmpty()) {
+                throw new IllegalArgumentException("Certificate common name must not be null or empty");
+            }
+        }
     }
 
     public URI getConfigServer(URI configServer, URI vespaUrl) {
         // throw an error if configServer AND one of the Vespa Cloud parameters are set as well
-        if (configServer != null && (vespaCloudTenant != null || vespaCloudApplication != null || vespaCloudInstance != null)) {
+        if (configServer != null && (vespaCloudTenant != null || vespaCloudApplication != null)) {
             throw new IllegalArgumentException("Use config_server for local deployments" + 
                 " and vespa_cloud_tenant+vespa_cloud_application+vespa_cloud_instance for Vespa Cloud. You can't have both set.");
         }
