@@ -2,30 +2,24 @@
 
 #pragma once
 
-#include <vespa/searchlib/bitcompression/countcompression.h>
-#include <limits>
+#include "compressed_read_buffer.h"
+#include "compressed_write_buffer.h"
 
 namespace search::diskindex {
 
+/*
+ * This class contains memory buffers for a disk index dictionary. It is used with the related
+ * ThreeLevelCountReadBuffers by unit tests to verify that encode + decode roundtrip generates
+ * original values, and by PageDictMemRandReader to verify that lookup works.
+ */
 class ThreeLevelCountWriteBuffers
 {
 public:
-    using EC = search::bitcompression::PostingListCountFileEncodeContext;
-    EC &_sse;
-    EC &_spe;
-    EC &_pe;
-    ComprFileWriteContext _wcsse;
-    ComprFileWriteContext _wcspe;
-    ComprFileWriteContext _wcpe;
-
-    uint32_t _ssHeaderLen; // Length of header for sparse sparse file (bytes)
-    uint32_t _spHeaderLen; // Length of header for sparse page file (bytes)
-    uint32_t _pHeaderLen;  // Length of header for page file (bytes)
-
-    uint64_t _ssFileBitSize;
-    uint64_t _spFileBitSize;
-    uint64_t _pFileBitSize;
-
+    using EC = search::bitcompression::FeatureEncodeContext<true>;
+    using WriteBuffer = test::CompressedWriteBuffer<true>;
+    WriteBuffer _ss; // sparse sparse buffer
+    WriteBuffer _sp; // sparse page buffer
+    WriteBuffer _p;  // page buffer
     ThreeLevelCountWriteBuffers(EC &sse, EC &spe, EC &pe);
     ~ThreeLevelCountWriteBuffers();
 
@@ -35,32 +29,21 @@ public:
     void startPad(uint32_t ssHeaderLen, uint32_t spHeaderLen, uint32_t pHeaderLen);
 };
 
-
+/*
+ * This class contains a view of compressed data owned by the related ThreeLevelCountWriteBuffers class.
+ * It is used to test that encode + decode round trip reconstructs original values.
+ */
 class ThreeLevelCountReadBuffers
 {
 public:
-    using EC = search::bitcompression::PostingListCountFileEncodeContext;
-    using DC = search::bitcompression::PostingListCountFileDecodeContext;
-    DC &_ssd;
-    DC &_spd;
-    DC &_pd;
-    ComprFileReadContext _rcssd;
-    ComprFileReadContext _rcspd;
-    ComprFileReadContext _rcpd;
-
-    uint32_t _ssHeaderLen;
-    uint32_t _spHeaderLen;
-    uint32_t _pHeaderLen;
-
-    uint64_t _ssFileBitSize;
-    uint64_t _spFileBitSize;
-    uint64_t _pFileBitSize;
+    using DC = search::bitcompression::FeatureDecodeContext<true>;
+    using ReadBuffer = test::CompressedReadBuffer<true>;
+    ReadBuffer _ss;
+    ReadBuffer _sp;
+    ReadBuffer _p;
 
     // Unit test usage constructor.
-    ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd, ThreeLevelCountWriteBuffers &wb);
-
-    // Normal usage constructor
-    ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd);
+    ThreeLevelCountReadBuffers(DC &ssd, DC &spd, DC &pd, const ThreeLevelCountWriteBuffers &wb);
     ~ThreeLevelCountReadBuffers();
 };
 
