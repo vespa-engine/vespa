@@ -114,7 +114,7 @@ public class PrometheusHandlerTest extends HttpHandlerTestBase {
                 .putMetric(toMetricId("service-metric"), 1234)
                 .putDimension(toDimensionId("service-dim"), "service-dim-value")
                 .build();
-        var model = PrometheusUtil.toPrometheusModel(List.of(servicePacket));
+        var model = PrometheusUtil.toPrometheusModel(List.of(servicePacket), getApplicationDimensions(), getNodeDimensions());
         assertTrue(model.hasMoreElements());
         var metricsFamily = model.nextElement();
         assertEquals(1, metricsFamily.samples.size());
