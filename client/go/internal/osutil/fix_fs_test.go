@@ -85,8 +85,6 @@ func TestSimpleFixes(t *testing.T) {
 
 func TestSuperUserOnly(t *testing.T) {
 	trace.AdjustVerbosity(0)
-	var userId int = -1
-	var groupId int = -1
 	if os.Getuid() != 0 {
 		trace.Trace("skip TestSuperUserOnly, uid != 0")
 		return
@@ -102,19 +100,20 @@ func TestSuperUserOnly(t *testing.T) {
 		trace.Trace("skip TestSuperUserOnly, user nobody was not found")
 		return
 	}
-	userId, err = strconv.Atoi(u.Uid)
-	if err != nil || userId < 1 {
+	userID, err := strconv.Atoi(u.Uid)
+	if err != nil || userID < 1 {
 		trace.Trace("skip TestSuperUserOnly, user ID of nobody was not found")
 		return
 	}
 	g, err := user.LookupGroup("users")
+	groupID := -1
 	if err == nil {
-		groupId, _ = strconv.Atoi(g.Gid)
+		groupID, _ = strconv.Atoi(g.Gid)
 	}
 	fixSpec := NewFixSpec()
-	fixSpec.UserId = userId
-	if groupId > 0 {
-		fixSpec.GroupId = groupId
+	fixSpec.UserId = userID
+	if groupID > 0 {
+		fixSpec.GroupId = groupID
 	}
 	testFixSpec(t, fixSpec)
 }

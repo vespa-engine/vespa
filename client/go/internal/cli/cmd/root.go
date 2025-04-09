@@ -55,7 +55,6 @@ type CLI struct {
 
 	now           func() time.Time
 	retryInterval time.Duration
-	waitTimeout   *time.Duration
 
 	cmd     *cobra.Command
 	config  *Config

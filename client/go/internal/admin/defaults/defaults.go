@@ -105,7 +105,7 @@ func VespaConfigserverHosts() []string {
 }
 
 func findConfigserverHttpPort() int {
-	return findConfigserverRpcPort() + 1
+	return findConfigserverRPCPort() + 1
 }
 
 // Find the RPC addresses to configservers that are configured.
@@ -117,7 +117,7 @@ func VespaConfigserverRpcAddrs() []string {
 		if colon := strings.Index(part, ":"); colon > 0 {
 			rv[idx] = fmt.Sprintf("tcp/%s", part)
 		} else {
-			rv[idx] = fmt.Sprintf("tcp/%s:%d", part, findConfigserverRpcPort())
+			rv[idx] = fmt.Sprintf("tcp/%s:%d", part, findConfigserverRPCPort())
 		}
 		trace.Debug("config server rpc addr:", rv[idx])
 	}
@@ -146,19 +146,17 @@ func VespaConfigserverRestUrls() []string {
 
 // Find the RPC address to the local config proxy
 // Returns one RPC spec in the format tcp/{hostname}:{portnumber}
-func VespaConfigProxyRpcAddr() string {
-	return fmt.Sprintf("tcp/localhost:%d", findConfigproxyRpcPort())
+func VespaConfigProxyRPCAddr() string {
+	return fmt.Sprintf("tcp/localhost:%d", findConfigproxyRPCPort())
 }
 
 // Get the RPC addresses to all known config sources
 // Returns same as vespaConfigProxyRpcAddr + vespaConfigserverRpcAddrs
-func VespaConfigSourcesRpcAddrs() []string {
+func VespaConfigSourcesRPCAddrs() []string {
 	cs := VespaConfigserverRpcAddrs()
 	rv := make([]string, 0, len(cs)+1)
-	rv = append(rv, VespaConfigProxyRpcAddr())
-	for _, addr := range cs {
-		rv = append(rv, addr)
-	}
+	rv = append(rv, VespaConfigProxyRPCAddr())
+	rv = append(rv, cs...)
 	return rv
 }
 
@@ -187,7 +185,7 @@ func splitVespaConfigservers() []string {
 	return parts
 }
 
-func findConfigproxyRpcPort() int {
+func findConfigproxyRPCPort() int {
 	p := getNumFromEnv(envvars.CONFIGPROXY_RPC_PORT)
 	if p > 0 {
 		return p
@@ -195,7 +193,7 @@ func findConfigproxyRpcPort() int {
 	return VespaPortBase() + CONFIGPROXY_RPC_PORT_OFFSET
 }
 
-func findConfigserverRpcPort() int {
+func findConfigserverRPCPort() int {
 	p := getNumFromEnv(envvars.CONFIGSERVER_RPC_PORT)
 	if p > 0 {
 		trace.Debug(envvars.CONFIGSERVER_RPC_PORT, p)
