@@ -654,6 +654,41 @@ public class OsVersionsTest {
         assertEquals("Host upgrade is triggered", version0, host.get().status().osVersion().wanted().get());
     }
 
+    @Test
+    public void defer_os_upgrade_if_flag_is_set() {
+        OsVersions versions = new OsVersions(tester.nodeRepository(), Cloud.defaultCloud(), Optional.ofNullable(tester.hostProvisioner()));
+
+        // Provision hosts and applications
+        ApplicationId app1 = ApplicationId.from("t1", "a1", "i1");
+        ApplicationId app2 = ApplicationId.from("t2", "a2", "i2");
+        provisionInfraApplication(5, NodeType.host);
+        deployApplication(app1);
+        deployApplication(app2);
+
+        // Set current and target OS versions
+        Version version0 = Version.fromString("7.0");
+        NodeList nodes = tester.nodeRepository().nodes().list().nodeType(NodeType.host);
+        versions.setTarget(NodeType.host, version0, false);
+        setCurrentVersion(nodes.asList(), version0);
+        Version version1 = Version.fromString("8.0");
+        versions.setTarget(NodeType.host, version1, false);
+        Supplier<Long> osUpgradingHostCount = () -> tester.nodeRepository().nodes().list()
+                .nodeType(NodeType.host)
+                .changingOsVersion()
+                .stream()
+                .count();
+
+        // No hosts are upgraded when flag is set
+        flagSource.withBooleanFlag(Flags.DEFER_OS_UPGRADE.id(), true);
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertEquals(0, (long) osUpgradingHostCount.get());
+
+        // Unset flag leads to OS upgrade
+        flagSource.withBooleanFlag(Flags.DEFER_OS_UPGRADE.id(), false);
+        versions.resumeUpgradeOf(NodeType.host, true);
+        assertEquals(3, (long) osUpgradingHostCount.get());
+    }
+
     private void setMaxActiveUpgrades(int max) {
         tester.flagSource().withIntFlag(PermanentFlags.MAX_OS_UPGRADES.id(), max);
     }

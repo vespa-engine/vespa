@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -27,12 +29,14 @@ public abstract class OsUpgrader {
     private final Logger LOG = Logger.getLogger(OsUpgrader.class.getName());
 
     private final IntFlag maxActiveUpgrades;
+    private final BooleanFlag deferOsUpgrade;
 
     final NodeRepository nodeRepository;
 
     public OsUpgrader(NodeRepository nodeRepository) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.maxActiveUpgrades = PermanentFlags.MAX_OS_UPGRADES.bindTo(nodeRepository.flagSource());
+        this.deferOsUpgrade = Flags.DEFER_OS_UPGRADE.bindTo(nodeRepository.flagSource());
     }
 
     /** Trigger upgrade to given target */
@@ -66,8 +70,9 @@ public abstract class OsUpgrader {
 
     /** Returns whether node is deferring upgrade at given instant */
     final boolean deferringUpgrade(Node node, Instant instant) {
-        return !node.status().osVersion().downgrading() && // Never defer downgrades
-               node.history().age(instant).compareTo(gracePeriod()) <= 0;
+        return deferOsUpgrade.with(node.cloudAccount(), nodeRepository.zone()).value() ||
+                !node.status().osVersion().downgrading() && // Never defer downgrades
+                node.history().age(instant).compareTo(gracePeriod()) <= 0;
     }
 
     /** The duration this leaves new nodes alone before scheduling any upgrade */

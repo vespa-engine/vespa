@@ -361,6 +361,14 @@ public class Flags {
             "Takes effect on container startup",
             TENANT_ID, INSTANCE_ID);
 
+    public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
+            "defer-os-upgrade", false,
+            List.of("olaa"), "2025-04-09", "2025-06-01",
+            "Whether OS upgrade should be deferred",
+            "Takes effect immediately",
+            CLOUD_ACCOUNT
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
