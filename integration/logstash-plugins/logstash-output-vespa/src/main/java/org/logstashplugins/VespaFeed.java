@@ -33,9 +33,9 @@ public class VespaFeed implements Output {
     private static final Logger logger = LogManager.getLogger(VespaFeed.class);
 
     /***********************
-     * Quick start mode settings
+     * Detect schema mode settings
      ***********************/
-    // quick start mode. This will not send documents to Vespa, but will generate an application package
+    // detect schema mode. This will not send documents to Vespa, but will generate an application package
     public static final PluginConfigSpec<Boolean> QUICK_START =
             PluginConfigSpec.booleanSetting("detect_schema", false);
 
