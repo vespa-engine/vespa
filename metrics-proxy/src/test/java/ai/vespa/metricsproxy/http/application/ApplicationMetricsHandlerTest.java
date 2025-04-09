@@ -3,6 +3,10 @@ package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.core.ConsumersConfig;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
+import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
+import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
+import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
+import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.PublicDimensions;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.json.GenericApplicationModel;
@@ -79,7 +83,9 @@ public class ApplicationMetricsHandlerTest {
 
         ApplicationMetricsHandler handler = new ApplicationMetricsHandler(Executors.newSingleThreadExecutor(),
                                                                           applicationMetricsRetriever,
-                                                                          getMetricsConsumers());
+                                                                          getMetricsConsumers(),
+                                                                          getApplicationDimensions(),
+                                                                          getNodeDimensions());
         applicationMetricsRetriever.getMetrics(defaultMetricsConsumerId);
         applicationMetricsRetriever.getMetrics(ConsumerId.toConsumerId(CUSTOM_CONSUMER));
         applicationMetricsRetriever.startPollAndWait();
@@ -145,9 +151,10 @@ public class ApplicationMetricsHandlerTest {
     @Test
     public void prometheus_response_contains_hostname() {
         String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
-        Arrays.stream(response.split("\n"))
-                .filter(line -> line.contains("{"))
-                .forEach(line -> assertTrue(line.contains("hostname")));
+        long hostnameCount = Arrays.stream(response.split("\n"))
+                .filter(line -> line.contains("hostname="))
+                .count();
+        assertEquals(3, hostnameCount);
     }
 
     @Test
@@ -203,6 +210,12 @@ public class ApplicationMetricsHandlerTest {
         assertTrue(root.has("error"));
     }
 
+    @Test
+    public void status_metrics_contains_application_dimensions() {
+        String response = testDriver.sendRequest(PROMETHEUS_VALUES_URI).readAll();
+        assertTrue(response.contains("vespa_node_status{applicationId=\"my-app\",} 1.0"));
+    }
+
     private GenericApplicationModel getResponseAsJsonModel(String consumer) {
         String response = testDriver.sendRequest(METRICS_VALUES_URI + "?consumer=" + consumer).readAll();
         try {
@@ -237,5 +250,15 @@ public class ApplicationMetricsHandlerTest {
                                             .consumer(new ConsumersConfig.Consumer.Builder()
                                                               .name(CUSTOM_CONSUMER))
                                             .build());
+    }
+
+    protected static ApplicationDimensions getApplicationDimensions() {
+        return new ApplicationDimensions(new ApplicationDimensionsConfig.Builder()
+                .dimensions("applicationId", "my-app")
+                .build());
+    }
+
+    protected static NodeDimensions getNodeDimensions() {
+        return new NodeDimensions(new NodeDimensionsConfig.Builder().build());
     }
 }
