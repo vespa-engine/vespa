@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "countcompression.h"
+#include <vespa/searchlib/diskindex/features_size_flush.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <cassert>
 
@@ -25,6 +26,11 @@ readCounts(PostingListCounts &counts)
     counts._segments.clear();
     UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_SPNUMDOCS, EC);
     numDocs = static_cast<uint32_t>(val64) + 1;
+    bool features_size_flush = (numDocs == diskindex::features_size_flush_marker);
+    if (features_size_flush) {
+        UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_SPNUMDOCS, EC);
+        numDocs = static_cast<uint32_t>(val64) + 1;
+    }
     counts._numDocs = numDocs;
     uint64_t expVal = numDocs * static_cast<uint64_t>(_avgBitsPerDoc);
     uint32_t kVal = (expVal < 4) ? 1 : EC::asmlog2(expVal);
@@ -37,7 +43,7 @@ readCounts(PostingListCounts &counts)
         UC64_DECODECONTEXT_LOAD(o, _);
     }
     uint32_t numChunks = 0;
-    if (numDocs >= _minChunkDocs) {
+    if (numDocs >= _minChunkDocs || features_size_flush) {
         UC64BE_DECODEEXPGOLOMB_NS(o,
                                   K_VALUE_COUNTFILE_NUMCHUNKS,
                                   EC);
@@ -98,17 +104,25 @@ void
 PostingListCountFileEncodeContext::
 writeCounts(const PostingListCounts &counts)
 {
-    assert(counts._segments.empty() ||
-           counts._numDocs >= _minChunkDocs);
     uint32_t numDocs = counts._numDocs;
     assert(numDocs > 0);
+    /*
+     * Posting list chunks might have few documents but the number of chunks should still be written when flushing due
+     * to features size. A marker value is needed to keep readers in sync.
+     */
+    bool features_size_flush = (numDocs < _minChunkDocs && !counts._segments.empty()) ||
+                               numDocs == diskindex::features_size_flush_marker;
+    if (features_size_flush) {
+        // Inform readers that a chunk has been flushed due to features size.
+        encodeExpGolomb(diskindex::features_size_flush_marker - 1, K_VALUE_COUNTFILE_SPNUMDOCS);
+    }
     encodeExpGolomb(numDocs - 1, K_VALUE_COUNTFILE_SPNUMDOCS);
     uint64_t encodeVal = counts._bitLength;
     uint64_t expVal = numDocs * static_cast<uint64_t>(_avgBitsPerDoc);
     uint32_t kVal = (expVal < 4) ? 1 : asmlog2(expVal);
     encodeExpGolomb(encodeVal, kVal);
     uint32_t numChunks = counts._segments.size();
-    if (numDocs >= _minChunkDocs) {
+    if (numDocs >= _minChunkDocs || features_size_flush) {
         encodeExpGolomb(numChunks, K_VALUE_COUNTFILE_NUMCHUNKS);
     }
     if (numChunks != 0) {
