@@ -26,7 +26,7 @@ readCounts(PostingListCounts &counts)
     counts._segments.clear();
     UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_SPNUMDOCS, EC);
     numDocs = static_cast<uint32_t>(val64) + 1;
-    bool features_size_flush = numDocs == diskindex::features_size_flush_marker;
+    bool features_size_flush = (numDocs == diskindex::features_size_flush_marker);
     if (features_size_flush) {
         UC64BE_DECODEEXPGOLOMB_NS(o, K_VALUE_COUNTFILE_SPNUMDOCS, EC);
         numDocs = static_cast<uint32_t>(val64) + 1;
