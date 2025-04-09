@@ -73,6 +73,26 @@ case $COMMAND in
     }" \
     "$FACTORY_API/releases/$VERSION"
     ;;
+  update-job-run)
+    START_SECONDS=$1
+    FACTORY_PIPELINE_ID=$2   #LONG
+    JOB_ID=$3                #LONG
+    STATUS=$4
+    FACTORY_BUILD_NUMBER=$GITHUB_RUN_ID # TODO: must probably match BUILDKITE_BUILD_NUMBER
+    if [[ -z $START_SECONDS ]] || [[ -z $FACTORY_PIPELINE_ID ]] || [[ -z $JOB_ID ]] || [[ -z $STATUS ]]; then
+      echo "Usage: $0 $COMMAND <start seconds> <pipeline id> <job id> <status>"
+      exit 1
+    fi
+    $CURL -H "Authorization: Bearer $TOKEN" -d "{
+        \"startSeconds\": $START_SECONDS,
+        \"sdApiUrl\": \"https://https://github.com/vespaai/cloud/actions\",
+        \"pipelineId\": $FACTORY_PIPELINE_ID,
+        \"jobId\": $JOB_ID,               #LONG
+        \"buildId\": $FACTORY_BUILD_NUMBER,   #LONG
+        \"status\": \"$STATUS\"
+    }" \
+    "$FACTORY_API/builds/$FACTORY_BUILD_NUMBER/jobs/$JOB_ID/status"
+    ;;
   *)
     echo "Unknown command $COMMAND"
     exit 1
