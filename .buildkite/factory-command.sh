@@ -73,6 +73,26 @@ case $COMMAND in
     }" \
     "$FACTORY_API/releases/$VERSION"
     ;;
+  update-job-run)
+    START_SECONDS=$1
+    FACTORY_PIPELINE_ID=$2   #LONG
+    JOB_ID=$3                #LONG, hardcoded in ScrewdriverJob.java
+    STATUS=$4
+    FACTORY_BUILD_NUMBER=$(( FACTORY_PIPELINE_ID << 32 | GITHUB_RUN_ID & 0xFFFFFF << 8 | GITHUB_RUN_ATTEMPT & 0xFF ))
+    if [[ -z $START_SECONDS ]] || [[ -z $FACTORY_PIPELINE_ID ]] || [[ -z $JOB_ID ]] || [[ -z $STATUS ]]; then
+      echo "Usage: $0 $COMMAND <start seconds> <pipeline id> <job id> <status>"
+      exit 1
+    fi
+    $CURL -H "Authorization: Bearer $TOKEN" -d "{
+        \"startSeconds\": $START_SECONDS,
+        \"sdApiUrl\": \"https://github.com/vespaai/cloud/actions\",
+        \"pipelineId\": $FACTORY_PIPELINE_ID,
+        \"jobId\": $JOB_ID,               #LONG, but I can add my own params in UpdateJobRunEndpoint to use instead
+        \"buildId\": $FACTORY_BUILD_NUMBER,   #LONG
+        \"status\": \"$STATUS\"
+    }" \
+    "$FACTORY_API/builds/$FACTORY_BUILD_NUMBER/jobs/$JOB_ID/status"
+    ;;
   *)
     echo "Unknown command $COMMAND"
     exit 1
