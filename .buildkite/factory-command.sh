@@ -73,6 +73,32 @@ case $COMMAND in
     }" \
     "$FACTORY_API/releases/$VERSION"
     ;;
+  update-github-job-run)
+    # TODO: remove this when we have vespa-factory-cli in the build image (this must be implemented in the cli)
+    START_SECONDS=$1
+    GITHUB_API_URL=$2        # STRING, used to lookup ScrewdriverInstance
+    WORKFLOW_NAME=$3         # STRING, used to lookup ScrewdriverPipeline
+    JOB_NAME=$4              # STRING, used to lookup crewdriverJob
+    JOB_ID=$5                # LONG, github's numeric job id, used as the build id in factory
+    WEB_URL=$6               # STRING, the URL to the job in the github UI
+    STATUS=$7
+    if [[ -z $START_SECONDS ]] || [[ -z $GITHUB_API_URL ]] ||  [[ -z $WORKFLOW_NAME ]] || \
+       [[ -z $JOB_NAME ]] || [[ -z $JOB_ID ]] || [[ -z $WEB_URL ]] || [[ -z $STATUS ]]; then
+      echo "Usage: $0 $COMMAND <start seconds> <pipeline id> <job id> <status>"
+      exit 1
+    fi
+    # Note: The apiUrl is hardcoded to vespaai/cloud. This must be changed if we want to use this for other github repos.
+    $CURL -H "Authorization: Bearer $TOKEN" -d "{
+        \"startSeconds\": $START_SECONDS,
+        \"apiUrl\": $GITHUB_API_URL,
+        \"pipelineName\": $WORKFLOW_NAME,
+        \"jobName\": $JOB_NAME,
+        \"buildId\": $JOB_ID,
+        \"webUrl\": \"$WEB_URL\",
+        \"status\": \"$STATUS\"
+    }" \
+    "$FACTORY_API/job-runs"
+    ;;
   *)
     echo "Unknown command $COMMAND"
     exit 1
