@@ -210,39 +210,39 @@ class ExpressionConverter {
             throw new IllegalInputException(
                     "Can not aggregate on " + GroupingOperation.getLevelDesc(level) + ".");
         }
-        if (exp instanceof AvgAggregator) {
+        if (exp instanceof AvgAggregator avgAggregator) {
             return new AverageAggregationResult()
-                    .setExpression(toExpressionNode(((AvgAggregator)exp).getExpression()));
+                    .setExpression(toExpressionNode(avgAggregator.getExpression()));
         }
         if (exp instanceof CountAggregator) {
             return new CountAggregationResult()
                     .setExpression(new ConstantNode(new IntegerResultNode(0)));
         }
-        if (exp instanceof MaxAggregator) {
+        if (exp instanceof MaxAggregator aggregator) {
             return new MaxAggregationResult()
-                    .setExpression(toExpressionNode(((MaxAggregator)exp).getExpression()));
+                    .setExpression(toExpressionNode(aggregator.getExpression()));
         }
-        if (exp instanceof MinAggregator) {
+        if (exp instanceof MinAggregator aggregator) {
             return new MinAggregationResult()
-                    .setExpression(toExpressionNode(((MinAggregator)exp).getExpression()));
+                    .setExpression(toExpressionNode(aggregator.getExpression()));
         }
-        if (exp instanceof SumAggregator) {
+        if (exp instanceof SumAggregator aggregator) {
             return new SumAggregationResult()
-                    .setExpression(toExpressionNode(((SumAggregator)exp).getExpression()));
+                    .setExpression(toExpressionNode(aggregator.getExpression()));
         }
-        if (exp instanceof SummaryValue) {
-            String summaryName = ((SummaryValue)exp).getSummaryName();
+        if (exp instanceof SummaryValue summaryValue) {
+            String summaryName = summaryValue.getSummaryName();
             return new HitsAggregationResult()
                     .setSummaryClass(summaryName != null ? summaryName : defaultSummaryName)
                     .setExpression(new ConstantNode(new IntegerResultNode(0)));
         }
-        if (exp instanceof StandardDeviationAggregator) {
+        if (exp instanceof StandardDeviationAggregator aggregator) {
             return new StandardDeviationAggregationResult()
-                    .setExpression(toExpressionNode(((StandardDeviationAggregator) exp).getExpression()));
+                    .setExpression(toExpressionNode(aggregator.getExpression()));
         }
-        if (exp instanceof XorAggregator) {
+        if (exp instanceof XorAggregator aggregator) {
             return new XorAggregationResult()
-                    .setExpression(toExpressionNode(((XorAggregator)exp).getExpression()));
+                    .setExpression(toExpressionNode(aggregator.getExpression()));
         }
         throw new IllegalInputException("Can not convert '" + exp + "' to an aggregator.");
     }
@@ -255,17 +255,16 @@ class ExpressionConverter {
      * @throws IllegalInputException Thrown if the given expression could not be converted.
      */
     public ExpressionNode toExpressionNode(GroupingExpression exp) {
-        if (exp instanceof AddFunction) {
-            return addArguments(new AddFunctionNode(), (AddFunction)exp);
+        if (exp instanceof AddFunction addFunction) {
+            return addArguments(new AddFunctionNode(), addFunction);
         }
         if (exp instanceof AggregatorNode) {
             return new AggregationRefNode(toAggregationResult(exp));
         }
-        if (exp instanceof AndFunction) {
-            return addArguments(new AndFunctionNode(), (AndFunction)exp);
+        if (exp instanceof AndFunction andFunction) {
+            return addArguments(new AndFunctionNode(), andFunction);
         }
-        if (exp instanceof AttributeMapLookupValue) {
-            AttributeMapLookupValue mapLookup = (AttributeMapLookupValue) exp;
+        if (exp instanceof AttributeMapLookupValue mapLookup) {
             if (mapLookup.hasKeySourceAttribute()) {
                 return AttributeMapLookupNode.fromKeySourceAttribute(mapLookup.getAttributeName(),
                         mapLookup.getKeyAttribute(), mapLookup.getValueAttribute(), mapLookup.getKeySourceAttribute());
@@ -274,121 +273,118 @@ class ExpressionConverter {
                         mapLookup.getKeyAttribute(), mapLookup.getValueAttribute(), mapLookup.getKey());
             }
         }
-        if (exp instanceof AttributeValue) {
-            return new AttributeNode(((AttributeValue)exp).getAttributeName());
+        if (exp instanceof AttributeValue value) {
+            return new AttributeNode(value.getAttributeName());
         }
-        if (exp instanceof AttributeFunction) {
-            return new AttributeNode(((AttributeFunction)exp).getAttributeName());
+        if (exp instanceof AttributeFunction function) {
+            return new AttributeNode(function.getAttributeName());
         }
-        if (exp instanceof CatFunction) {
-            return addArguments(new CatFunctionNode(), (CatFunction)exp);
+        if (exp instanceof CatFunction function) {
+            return addArguments(new CatFunctionNode(), function);
         }
-        if (exp instanceof DebugWaitFunction) {
-            return new DebugWaitFunctionNode(toExpressionNode(((DebugWaitFunction)exp).getArg(0)),
-                                             ((DebugWaitFunction)exp).getWaitTime(),
-                                             ((DebugWaitFunction)exp).getBusyWait());
+        if (exp instanceof DebugWaitFunction waitFunction) {
+            return new DebugWaitFunctionNode(toExpressionNode(waitFunction.getArg(0)),
+                                             waitFunction.getWaitTime(),
+                                             waitFunction.getBusyWait());
         }
         if (exp instanceof DocIdNsSpecificValue) {
             return new GetDocIdNamespaceSpecificFunctionNode();
         }
-        if (exp instanceof DoubleValue) {
-            return new ConstantNode(new FloatResultNode(((DoubleValue)exp).getValue()));
+        if (exp instanceof DoubleValue value) {
+            return new ConstantNode(new FloatResultNode(value.getValue()));
         }
-        if (exp instanceof DivFunction) {
-            return addArguments(new DivideFunctionNode(), (DivFunction)exp);
+        if (exp instanceof DivFunction divFunction) {
+            return addArguments(new DivideFunctionNode(), divFunction);
         }
-        if (exp instanceof FixedWidthFunction) {
-            Number w = ((FixedWidthFunction)exp).getWidth();
+        if (exp instanceof FixedWidthFunction fixedWidthFunction) {
+            Number w = fixedWidthFunction.getWidth();
             return new FixedWidthBucketFunctionNode(
                     w instanceof Double ? new FloatResultNode(w.doubleValue()) : new IntegerResultNode(w.longValue()),
-                    toExpressionNode(((FixedWidthFunction)exp).getArg(0)));
+                    toExpressionNode(fixedWidthFunction.getArg(0)));
         }
-        if (exp instanceof LongValue) {
-            return new ConstantNode(new IntegerResultNode(((LongValue)exp).getValue()));
+        if (exp instanceof LongValue value) {
+            return new ConstantNode(new IntegerResultNode(value.getValue()));
         }
-        if (exp instanceof MaxFunction) {
-            return addArguments(new MaxFunctionNode(), (MaxFunction)exp);
+        if (exp instanceof MaxFunction maxFunction) {
+            return addArguments(new MaxFunctionNode(), maxFunction);
         }
-        if (exp instanceof Md5Function) {
-            return new MD5BitFunctionNode().setNumBits(((Md5Function)exp).getNumBits())
-                                           .addArg(toExpressionNode(((Md5Function)exp).getArg(0)));
+        if (exp instanceof Md5Function md5Function) {
+            return new MD5BitFunctionNode().setNumBits(md5Function.getNumBits())
+                                           .addArg(toExpressionNode(md5Function.getArg(0)));
         }
-        if (exp instanceof UcaFunction) {
-            UcaFunction uca = (UcaFunction)exp;
+        if (exp instanceof UcaFunction uca) {
             return new UcaFunctionNode(toExpressionNode(uca.getArg(0)), uca.getLocale(), uca.getStrength());
         }
-        if (exp instanceof MinFunction) {
-            return addArguments(new MinFunctionNode(), (MinFunction)exp);
+        if (exp instanceof MinFunction minFunction) {
+            return addArguments(new MinFunctionNode(), minFunction);
         }
-        if (exp instanceof ModFunction) {
-            return addArguments(new ModuloFunctionNode(), (ModFunction)exp);
+        if (exp instanceof ModFunction modFunction) {
+            return addArguments(new ModuloFunctionNode(), modFunction);
         }
-        if (exp instanceof MulFunction) {
-            return addArguments(new MultiplyFunctionNode(), (MulFunction)exp);
+        if (exp instanceof MulFunction mulFunction) {
+            return addArguments(new MultiplyFunctionNode(), mulFunction);
         }
-        if (exp instanceof NegFunction) {
-            return new NegateFunctionNode(toExpressionNode(((NegFunction)exp).getArg(0)));
+        if (exp instanceof NegFunction negFunction) {
+            return new NegateFunctionNode(toExpressionNode(negFunction.getArg(0)));
         }
-        if (exp instanceof NormalizeSubjectFunction) {
-            return new NormalizeSubjectFunctionNode(toExpressionNode(((NormalizeSubjectFunction)exp).getArg(0)));
+        if (exp instanceof NormalizeSubjectFunction normalizeSubjectFunction) {
+            return new NormalizeSubjectFunctionNode(toExpressionNode(normalizeSubjectFunction.getArg(0)));
         }
         if (exp instanceof NowFunction) {
             return new ConstantNode(new IntegerResultNode(System.currentTimeMillis() / 1000));
         }
-        if (exp instanceof OrFunction) {
-            return addArguments(new OrFunctionNode(), (OrFunction)exp);
+        if (exp instanceof OrFunction orFunction) {
+            return addArguments(new OrFunctionNode(), orFunction);
         }
-        if (exp instanceof PredefinedFunction) {
-            return new RangeBucketPreDefFunctionNode(toBucketList((PredefinedFunction)exp),
-                                                     toExpressionNode(((PredefinedFunction)exp).getArg(0)));
+        if (exp instanceof PredefinedFunction predefinedFunction) {
+            return new RangeBucketPreDefFunctionNode(toBucketList(predefinedFunction),
+                                                     toExpressionNode(predefinedFunction.getArg(0)));
         }
         if (exp instanceof RelevanceValue) {
             return new RelevanceNode();
         }
-        if (exp instanceof ReverseFunction) {
-            return new ReverseFunctionNode(toExpressionNode(((ReverseFunction)exp).getArg(0)));
+        if (exp instanceof ReverseFunction reverseFunction) {
+            return new ReverseFunctionNode(toExpressionNode(reverseFunction.getArg(0)));
         }
-        if (exp instanceof SizeFunction) {
-            return new NumElemFunctionNode(toExpressionNode(((SizeFunction)exp).getArg(0)));
+        if (exp instanceof SizeFunction sizeFunction) {
+            return new NumElemFunctionNode(toExpressionNode(sizeFunction.getArg(0)));
         }
-        if (exp instanceof SortFunction) {
-            return new SortFunctionNode(toExpressionNode(((SortFunction)exp).getArg(0)));
+        if (exp instanceof SortFunction sortFunction) {
+            return new SortFunctionNode(toExpressionNode(sortFunction.getArg(0)));
         }
-        if (exp instanceof ArrayAtLookup) {
-            ArrayAtLookup aal = (ArrayAtLookup) exp;
-            return new ArrayAtLookupNode(aal.getAttributeName(), toExpressionNode(aal.getIndexArgument()));
+        if (exp instanceof ArrayAtLookup lookup) {
+            return new ArrayAtLookupNode(lookup.getAttributeName(), toExpressionNode(lookup.getIndexArgument()));
         }
-        if (exp instanceof InterpolatedLookup) {
-            InterpolatedLookup sarl = (InterpolatedLookup) exp;
-            return new InterpolatedLookupNode(sarl.getAttributeName(), toExpressionNode(sarl.getLookupArgument()));
+        if (exp instanceof InterpolatedLookup lookup) {
+            return new InterpolatedLookupNode(lookup.getAttributeName(), toExpressionNode(lookup.getLookupArgument()));
         }
-        if (exp instanceof StrCatFunction) {
-            return addArguments(new StrCatFunctionNode(), (StrCatFunction)exp);
+        if (exp instanceof StrCatFunction strCatFunction) {
+            return addArguments(new StrCatFunctionNode(), strCatFunction);
         }
-        if (exp instanceof StringValue) {
-            return new ConstantNode(new StringResultNode(((StringValue)exp).getValue()));
+        if (exp instanceof StringValue value) {
+            return new ConstantNode(new StringResultNode(value.getValue()));
         }
-        if (exp instanceof StrLenFunction) {
-            return new StrLenFunctionNode(toExpressionNode(((StrLenFunction)exp).getArg(0)));
+        if (exp instanceof StrLenFunction strLenFunction) {
+            return new StrLenFunctionNode(toExpressionNode(strLenFunction.getArg(0)));
         }
-        if (exp instanceof SubFunction) {
-            return toSubNode((SubFunction)exp);
+        if (exp instanceof SubFunction subFunction) {
+            return toSubNode(subFunction);
         }
-        if (exp instanceof ToDoubleFunction) {
-            return new ToFloatFunctionNode(toExpressionNode(((ToDoubleFunction)exp).getArg(0)));
+        if (exp instanceof ToDoubleFunction toDoubleFunction) {
+            return new ToFloatFunctionNode(toExpressionNode(toDoubleFunction.getArg(0)));
         }
-        if (exp instanceof ToLongFunction) {
-            return new ToIntFunctionNode(toExpressionNode(((ToLongFunction)exp).getArg(0)));
+        if (exp instanceof ToLongFunction toLongFunction) {
+            return new ToIntFunctionNode(toExpressionNode(toLongFunction.getArg(0)));
         }
-        if (exp instanceof ToRawFunction) {
-            return new ToRawFunctionNode(toExpressionNode(((ToRawFunction)exp).getArg(0)));
+        if (exp instanceof ToRawFunction toRawFunction) {
+            return new ToRawFunctionNode(toExpressionNode(toRawFunction.getArg(0)));
         }
-        if (exp instanceof ToStringFunction) {
-            return new ToStringFunctionNode(toExpressionNode(((ToStringFunction)exp).getArg(0)));
+        if (exp instanceof ToStringFunction toStringFunction) {
+            return new ToStringFunctionNode(toExpressionNode(toStringFunction.getArg(0)));
         }
-        if (exp instanceof DateFunction) {
+        if (exp instanceof DateFunction dateFunction) {
             StrCatFunctionNode ret = new StrCatFunctionNode();
-            GroupingExpression arg = ((DateFunction)exp).getArg(0);
+            GroupingExpression arg = dateFunction.getArg(0);
             ret.addArg(new ToStringFunctionNode(toTime(arg, TimeStampFunctionNode.TimePart.Year)));
             ret.addArg(new ConstantNode(new StringResultNode("-")));
             ret.addArg(new ToStringFunctionNode(toTime(arg, TimeStampFunctionNode.TimePart.Month)));
@@ -396,130 +392,130 @@ class ExpressionConverter {
             ret.addArg(new ToStringFunctionNode(toTime(arg, TimeStampFunctionNode.TimePart.MonthDay)));
             return ret;
         }
-        if (exp instanceof MathSqrtFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathSqrtFunction)exp).getArg(0)),
+        if (exp instanceof MathSqrtFunction mathSqrtFunction) {
+            return new MathFunctionNode(toExpressionNode(mathSqrtFunction.getArg(0)),
                                         MathFunctionNode.Function.SQRT);
         }
-        if (exp instanceof MathCbrtFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathCbrtFunction)exp).getArg(0)),
+        if (exp instanceof MathCbrtFunction mathCbrtFunction) {
+            return new MathFunctionNode(toExpressionNode(mathCbrtFunction.getArg(0)),
                                         MathFunctionNode.Function.CBRT);
         }
-        if (exp instanceof MathLogFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathLogFunction)exp).getArg(0)),
+        if (exp instanceof MathLogFunction mathLogFunction) {
+            return new MathFunctionNode(toExpressionNode(mathLogFunction.getArg(0)),
                                         MathFunctionNode.Function.LOG);
         }
-        if (exp instanceof MathLog1pFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathLog1pFunction)exp).getArg(0)),
+        if (exp instanceof MathLog1pFunction mathLog1pFunction) {
+            return new MathFunctionNode(toExpressionNode(mathLog1pFunction.getArg(0)),
                                         MathFunctionNode.Function.LOG1P);
         }
-        if (exp instanceof MathLog10Function) {
-            return new MathFunctionNode(toExpressionNode(((MathLog10Function)exp).getArg(0)),
+        if (exp instanceof MathLog10Function mathLog10Function) {
+            return new MathFunctionNode(toExpressionNode(mathLog10Function.getArg(0)),
                                         MathFunctionNode.Function.LOG10);
         }
-        if (exp instanceof MathExpFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathExpFunction)exp).getArg(0)),
+        if (exp instanceof MathExpFunction mathExpFunction) {
+            return new MathFunctionNode(toExpressionNode(mathExpFunction.getArg(0)),
                                         MathFunctionNode.Function.EXP);
         }
-        if (exp instanceof MathPowFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathPowFunction)exp).getArg(0)),
+        if (exp instanceof MathPowFunction mathPowFunction) {
+            return new MathFunctionNode(toExpressionNode(mathPowFunction.getArg(0)),
                                         MathFunctionNode.Function.POW)
-                    .addArg(toExpressionNode(((MathPowFunction)exp).getArg(1)));
+                    .addArg(toExpressionNode(mathPowFunction.getArg(1)));
         }
-        if (exp instanceof MathHypotFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathHypotFunction)exp).getArg(0)),
+        if (exp instanceof MathHypotFunction mathHypotFunction) {
+            return new MathFunctionNode(toExpressionNode(mathHypotFunction.getArg(0)),
                                         MathFunctionNode.Function.HYPOT)
-                    .addArg(toExpressionNode(((MathHypotFunction)exp).getArg(1)));
+                    .addArg(toExpressionNode(mathHypotFunction.getArg(1)));
         }
-        if (exp instanceof MathSinFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathSinFunction)exp).getArg(0)),
+        if (exp instanceof MathSinFunction mathSinFunction) {
+            return new MathFunctionNode(toExpressionNode(mathSinFunction.getArg(0)),
                                         MathFunctionNode.Function.SIN);
         }
-        if (exp instanceof MathASinFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathASinFunction)exp).getArg(0)),
+        if (exp instanceof MathASinFunction mathASinFunction) {
+            return new MathFunctionNode(toExpressionNode(mathASinFunction.getArg(0)),
                                         MathFunctionNode.Function.ASIN);
         }
-        if (exp instanceof MathCosFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathCosFunction)exp).getArg(0)),
+        if (exp instanceof MathCosFunction mathCosFunction) {
+            return new MathFunctionNode(toExpressionNode(mathCosFunction.getArg(0)),
                                         MathFunctionNode.Function.COS);
         }
-        if (exp instanceof MathACosFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathACosFunction)exp).getArg(0)),
+        if (exp instanceof MathACosFunction mathACosFunction) {
+            return new MathFunctionNode(toExpressionNode(mathACosFunction.getArg(0)),
                                         MathFunctionNode.Function.ACOS);
         }
-        if (exp instanceof MathTanFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathTanFunction)exp).getArg(0)),
+        if (exp instanceof MathTanFunction mathTanFunction) {
+            return new MathFunctionNode(toExpressionNode(mathTanFunction.getArg(0)),
                                         MathFunctionNode.Function.TAN);
         }
-        if (exp instanceof MathATanFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathATanFunction)exp).getArg(0)),
+        if (exp instanceof MathATanFunction mathATanFunction) {
+            return new MathFunctionNode(toExpressionNode(mathATanFunction.getArg(0)),
                                         MathFunctionNode.Function.ATAN);
         }
-        if (exp instanceof MathSinHFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathSinHFunction)exp).getArg(0)),
+        if (exp instanceof MathSinHFunction mathSinHFunction) {
+            return new MathFunctionNode(toExpressionNode(mathSinHFunction.getArg(0)),
                                         MathFunctionNode.Function.SINH);
         }
-        if (exp instanceof MathASinHFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathASinHFunction)exp).getArg(0)),
+        if (exp instanceof MathASinHFunction mathASinHFunction) {
+            return new MathFunctionNode(toExpressionNode(mathASinHFunction.getArg(0)),
                                         MathFunctionNode.Function.ASINH);
         }
-        if (exp instanceof MathCosHFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathCosHFunction)exp).getArg(0)),
+        if (exp instanceof MathCosHFunction mathCosHFunction) {
+            return new MathFunctionNode(toExpressionNode(mathCosHFunction.getArg(0)),
                                         MathFunctionNode.Function.COSH);
         }
-        if (exp instanceof MathACosHFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathACosHFunction)exp).getArg(0)),
+        if (exp instanceof MathACosHFunction mathACosHFunction) {
+            return new MathFunctionNode(toExpressionNode(mathACosHFunction.getArg(0)),
                                         MathFunctionNode.Function.ACOSH);
         }
-        if (exp instanceof MathTanHFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathTanHFunction)exp).getArg(0)),
+        if (exp instanceof MathTanHFunction mathTanHFunction) {
+            return new MathFunctionNode(toExpressionNode(mathTanHFunction.getArg(0)),
                                         MathFunctionNode.Function.TANH);
         }
-        if (exp instanceof MathATanHFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathATanHFunction)exp).getArg(0)),
+        if (exp instanceof MathATanHFunction mathATanHFunction) {
+            return new MathFunctionNode(toExpressionNode(mathATanHFunction.getArg(0)),
                                         MathFunctionNode.Function.ATANH);
         }
-        if (exp instanceof MathFloorFunction) {
-            return new MathFunctionNode(toExpressionNode(((MathFloorFunction)exp).getArg(0)),
+        if (exp instanceof MathFloorFunction mathFloorFunction) {
+            return new MathFunctionNode(toExpressionNode(mathFloorFunction.getArg(0)),
                                         MathFunctionNode.Function.FLOOR);
         }
-        if (exp instanceof ZCurveXFunction) {
-            return new ZCurveFunctionNode(toExpressionNode(((ZCurveXFunction)exp).getArg(0)),
+        if (exp instanceof ZCurveXFunction zCurveXFunction) {
+            return new ZCurveFunctionNode(toExpressionNode(zCurveXFunction.getArg(0)),
                                           ZCurveFunctionNode.Dimension.X);
         }
-        if (exp instanceof ZCurveYFunction) {
-            return new ZCurveFunctionNode(toExpressionNode(((ZCurveYFunction)exp).getArg(0)),
+        if (exp instanceof ZCurveYFunction zCurveYFunction) {
+            return new ZCurveFunctionNode(toExpressionNode(zCurveYFunction.getArg(0)),
                                           ZCurveFunctionNode.Dimension.Y);
         }
-        if (exp instanceof DayOfMonthFunction) {
-            return toTime(((DayOfMonthFunction)exp).getArg(0), TimeStampFunctionNode.TimePart.MonthDay);
+        if (exp instanceof DayOfMonthFunction dayOfMonthFunction) {
+            return toTime(dayOfMonthFunction.getArg(0), TimeStampFunctionNode.TimePart.MonthDay);
         }
-        if (exp instanceof DayOfWeekFunction) {
-            return toTime(((DayOfWeekFunction)exp).getArg(0), TimeStampFunctionNode.TimePart.WeekDay);
+        if (exp instanceof DayOfWeekFunction dayOfWeekFunction) {
+            return toTime(dayOfWeekFunction.getArg(0), TimeStampFunctionNode.TimePart.WeekDay);
         }
-        if (exp instanceof DayOfYearFunction) {
-            return toTime(((DayOfYearFunction)exp).getArg(0), TimeStampFunctionNode.TimePart.YearDay);
+        if (exp instanceof DayOfYearFunction dayOfYearFunction) {
+            return toTime(dayOfYearFunction.getArg(0), TimeStampFunctionNode.TimePart.YearDay);
         }
-        if (exp instanceof HourOfDayFunction) {
-            return toTime(((HourOfDayFunction)exp).getArg(0), TimeStampFunctionNode.TimePart.Hour);
+        if (exp instanceof HourOfDayFunction hourOfDayFunction) {
+            return toTime(hourOfDayFunction.getArg(0), TimeStampFunctionNode.TimePart.Hour);
         }
-        if (exp instanceof MinuteOfHourFunction) {
-            return toTime(((MinuteOfHourFunction)exp).getArg(0), TimeStampFunctionNode.TimePart.Minute);
+        if (exp instanceof MinuteOfHourFunction minuteOfHourFunction) {
+            return toTime(minuteOfHourFunction.getArg(0), TimeStampFunctionNode.TimePart.Minute);
         }
-        if (exp instanceof MonthOfYearFunction) {
-            return toTime(((MonthOfYearFunction)exp).getArg(0), TimeStampFunctionNode.TimePart.Month);
+        if (exp instanceof MonthOfYearFunction monthOfYearFunction) {
+            return toTime(monthOfYearFunction.getArg(0), TimeStampFunctionNode.TimePart.Month);
         }
-        if (exp instanceof SecondOfMinuteFunction) {
-            return toTime(((SecondOfMinuteFunction)exp).getArg(0), TimeStampFunctionNode.TimePart.Second);
+        if (exp instanceof SecondOfMinuteFunction secondOfMinuteFunction) {
+            return toTime(secondOfMinuteFunction.getArg(0), TimeStampFunctionNode.TimePart.Second);
         }
-        if (exp instanceof YearFunction) {
-            return toTime(((YearFunction)exp).getArg(0), TimeStampFunctionNode.TimePart.Year);
+        if (exp instanceof YearFunction yearFunction) {
+            return toTime(yearFunction.getArg(0), TimeStampFunctionNode.TimePart.Year);
         }
-        if (exp instanceof XorFunction) {
-            return addArguments(new XorFunctionNode(), (XorFunction)exp);
+        if (exp instanceof XorFunction xorFunction) {
+            return addArguments(new XorFunctionNode(), xorFunction);
         }
-        if (exp instanceof XorBitFunction) {
-            return new XorBitFunctionNode().setNumBits(((XorBitFunction)exp).getNumBits())
-                                           .addArg(toExpressionNode(((XorBitFunction)exp).getArg(0)));
+        if (exp instanceof XorBitFunction xorBitFunction) {
+            return new XorBitFunctionNode().setNumBits(xorBitFunction.getNumBits())
+                                           .addArg(toExpressionNode(xorBitFunction.getArg(0)));
         }
         throw new IllegalInputException("Can not convert '" + exp + "' of class " + exp.getClass().getName() +
                                         " to an expression.");
@@ -576,11 +572,11 @@ class ExpressionConverter {
     }
 
     private BucketResultNode toBucket(GroupingExpression exp) {
-        if (!(exp instanceof BucketValue)) {
+        if (!(exp instanceof BucketValue bucketValue)) {
             throw new IllegalInputException("Can not convert '" + exp + "' to a bucket.");
         }
-        ConstantValue<?> begin = ((BucketValue)exp).getFrom();
-        ConstantValue<?> end = ((BucketValue)exp).getTo();
+        ConstantValue<?> begin = bucketValue.getFrom();
+        ConstantValue<?> end = bucketValue.getTo();
         if (begin instanceof DoubleValue || end instanceof DoubleValue) {
             return new FloatBucketResultNode(
                     begin instanceof InfiniteValue ? FloatResultNode.getNegativeInfinity().getFloat()
