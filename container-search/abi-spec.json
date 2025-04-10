@@ -3010,6 +3010,20 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.search.grouping.request.FilterExpression" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "abstract"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public abstract java.lang.String toString()",
+      "public abstract com.yahoo.search.grouping.request.FilterExpression copy()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.search.grouping.request.FixedWidthFunction" : {
     "superClass" : "com.yahoo.search.grouping.request.FunctionNode",
     "interfaces" : [ ],
@@ -3093,7 +3107,7 @@
     ],
     "methods" : [
       "protected void <init>(java.lang.String, java.lang.String)",
-      "protected void <init>(com.yahoo.search.grouping.request.GroupingOperation, java.lang.String, java.lang.String, java.util.List, java.util.List, java.util.List, java.util.Map, java.util.Set, com.yahoo.search.grouping.request.GroupingExpression, java.lang.String, boolean, double, int, int, int)",
+      "protected void <init>(com.yahoo.search.grouping.request.GroupingOperation, java.lang.String, java.lang.String, java.util.List, java.util.List, java.util.List, java.util.Map, java.util.Set, com.yahoo.search.grouping.request.GroupingExpression, com.yahoo.search.grouping.request.FilterExpression, java.lang.String, boolean, double, int, int, int)",
       "public abstract com.yahoo.search.grouping.request.GroupingOperation copy(com.yahoo.search.grouping.request.GroupingOperation)",
       "public com.yahoo.search.grouping.request.GroupingOperation putAlias(java.lang.String, com.yahoo.search.grouping.request.GroupingExpression)",
       "public com.yahoo.search.grouping.request.GroupingExpression getAlias(java.lang.String)",
@@ -3108,6 +3122,8 @@
       "public java.util.List getChildren()",
       "public com.yahoo.search.grouping.request.GroupingOperation setGroupBy(com.yahoo.search.grouping.request.GroupingExpression)",
       "public com.yahoo.search.grouping.request.GroupingExpression getGroupBy()",
+      "public com.yahoo.search.grouping.request.GroupingOperation setFilterBy(com.yahoo.search.grouping.request.FilterExpression)",
+      "public com.yahoo.search.grouping.request.FilterExpression getFilterBy()",
       "public int getLevel()",
       "public void resolveLevel(int)",
       "protected com.yahoo.search.grouping.request.GroupingOperation getParent()",
@@ -3864,6 +3880,21 @@
       "public com.yahoo.search.grouping.request.RawValue copy()",
       "public bridge synthetic com.yahoo.search.grouping.request.ConstantValue copy()",
       "public bridge synthetic com.yahoo.search.grouping.request.GroupingExpression copy()"
+    ],
+    "fields" : [ ]
+  },
+  "com.yahoo.search.grouping.request.RegexPredicate" : {
+    "superClass" : "com.yahoo.search.grouping.request.FilterExpression",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String, com.yahoo.search.grouping.request.GroupingExpression)",
+      "public java.lang.String getPattern()",
+      "public com.yahoo.search.grouping.request.GroupingExpression getExpression()",
+      "public java.lang.String toString()",
+      "public com.yahoo.search.grouping.request.FilterExpression copy()"
     ],
     "fields" : [ ]
   },

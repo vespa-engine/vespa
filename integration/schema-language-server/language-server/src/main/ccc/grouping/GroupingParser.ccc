@@ -114,6 +114,7 @@ TOKEN :
     <DOCIDNSSPECIFIC: "docidnsspecific"> |
     <EACH: "each"> |
     <EXP: "exp"> |
+    <FILTER: "filter"> |
     <FIXEDWIDTH: "fixedwidth"> |
     <FLOOR: "floor"> |
     <GROUP: "group"> |
@@ -137,6 +138,7 @@ TOKEN :
     <POW: "pow"> |
     <PRECISION: "precision"> |
     <PREDEFINED: "predefined"> |
+    <REGEX: "regex"> |
     <RELEVANCE: "relevance"> |
     <REVERSE: "reverse"> |
     <SIN: "sin"> |
@@ -250,6 +252,7 @@ GroupingOperation eachOperation(GroupingOperation parent) :
 ;
 operationBody(GroupingOperation parent) :
 {
+    FilterExpression filterExp = null;
     ConstantValue<?> maxOperand = null;
     String str;
     Number num;
@@ -260,6 +263,7 @@ operationBody(GroupingOperation parent) :
     ( ( <ACCURACY>  lbraceElm num = number                               rbraceElm { parent.setAccuracy(num.doubleValue()); } ) |
       ( <ALIAS>     lbraceElm str = identifierStr commaElm exp = expElm(parent) rbraceElm { parent.putAlias(str, exp); }             ) |
       ( <HINT>      lbraceElm str = identifierStr                           rbraceElm { parent.addHint(str); }                   ) |
+      ( <FILTER>    lbraceElm filterExp = filterExp(parent)                 rbraceElm { parent.setFilterBy(filterExp); }        ) |
       ( <MAX>       lbraceElm ( maxOperand = infinitePositiveValue | maxOperand = constantValue ) rbraceElm
       {
             if (maxOperand instanceof InfiniteValue) {
@@ -305,6 +309,14 @@ GroupingExpression expElm(GroupingOperation grp) :
     ( [ addElm | subElm                         { neg = true; } ]
       exp = expAlias(grp)                     { if (neg) { exp = resolveNegation(exp); } }
       [ <AS> lbraceElm str = stringElm rbraceElm { exp.setLabel(str); } ] )
+    { return exp; }
+;
+
+FilterExpression filterExp(GroupingOperation grp) :
+{
+    FilterExpression exp;
+}
+    ( exp = regexPredicate(grp) )
     { return exp; }
 ;
 
@@ -921,6 +933,16 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     ( <XORBIT> lbraceElm exp = expElm(grp) commaElm num = number rbraceElm )
     { return new XorBitFunction(exp, num.intValue()); }
 ;
+
+RegexPredicate regexPredicate(GroupingOperation grp) :
+{
+    String pattern;
+    GroupingExpression exp;
+}
+    ( <REGEX> lbraceElm pattern = stringElm commaElm exp = expElm(grp) rbraceElm )
+    { return new RegexPredicate(pattern, exp); }
+;
+
 bucketElm(GroupingOperation grp, BucketResolver resolver) :
 {
     ConstantValue from, to = null;
