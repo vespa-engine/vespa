@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "features_size_flush.h"
 #include "zcposocciterators.h"
 #include "zc4_posting_params.h"
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
@@ -60,9 +61,15 @@ create_zc_posocc_iterator(const PostingListCounts &counts, bitcompression::Posit
     uint32_t length;
     uint64_t val64;
     UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
+    bool features_size_flush = false;
     uint32_t num_docs = static_cast<uint32_t>(val64) + 1;
-    assert((num_docs == counts._numDocs) || ((num_docs == posting_params._min_chunk_docs) && (num_docs < counts._numDocs)));
-    if (num_docs < posting_params._min_skip_docs) {
+    if (num_docs == features_size_flush_marker) {
+        features_size_flush = true;
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
+        num_docs = static_cast<uint32_t>(val64) + 1;
+    }
+    assert((num_docs == counts._numDocs) || ((num_docs == posting_params._min_chunk_docs || features_size_flush) && (num_docs < counts._numDocs)));
+    if (num_docs < posting_params._min_skip_docs && !features_size_flush) {
         if (posting_params._dynamic_k) {
             return std::make_unique<ZcRareWordPosOccIterator<bigEndian, true>>(start, bit_length, posting_params._doc_id_limit,
                     posting_params._encode_features, posting_params._encode_interleaved_features, unpack_normal_features,

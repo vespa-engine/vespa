@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "fieldwriter.h"
+#include "features_size_flush.h"
 #include "zcposocc.h"
 #include "extposocc.h"
 #include "pagedict4file.h"
@@ -37,6 +38,7 @@ FieldWriter::~FieldWriter() = default;
 bool
 FieldWriter::open(uint32_t minSkipDocs,
                   uint32_t minChunkDocs,
+                  uint64_t features_size_flush_bits,
                   bool dynamicKPosOccFormat,
                   bool encode_interleaved_features,
                   const Schema &schema,
@@ -60,6 +62,9 @@ FieldWriter::open(uint32_t minSkipDocs,
     if (minChunkDocs != 0) {
         countParams.set("minChunkDocs", minChunkDocs);
         params.set("minChunkDocs", minChunkDocs);
+    }
+    if (features_size_flush_bits != 0) {
+        params.set(tags::FEATURES_SIZE_FLUSH_BITS, features_size_flush_bits);
     }
     if (encode_interleaved_features) {
         params.set("interleaved_features", encode_interleaved_features);
