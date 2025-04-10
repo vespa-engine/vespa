@@ -55,7 +55,7 @@ public class Flags {
             INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
-            "summary-decode-policy", "eager",
+            "summary-decode-policy", "on-demand",
             List.of("hmusum"), "2023-03-30", "2025-05-01",
             "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
             "Takes effect at redeployment (requires restart)",
