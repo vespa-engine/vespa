@@ -5,6 +5,9 @@
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/expression/current_index_setup.h>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.aggregation.groupinglevel");
+
 namespace search::aggregation {
 
 using expression::ResultNodeVector;
@@ -41,6 +44,29 @@ Deserializer &
 GroupingLevel::onDeserialize(Deserializer & is)
 {
     return is >> _maxGroups >> _precision >> _classify >> _collect;
+}
+
+Serializer &
+GroupingLevel::serializeVariant(Serializer & os, bool allowV2) const {
+    if (allowV2 && _filter.getRoot()) {
+        uint32_t cid = CID_search_aggregation_GroupingLevelV2;
+        return os << cid << _maxGroups << _precision << _classify << _filter << _collect;
+    } else {
+        uint32_t cid = CID_search_aggregation_GroupingLevel;
+        return onSerialize(os << cid);
+    }
+}
+
+Deserializer &
+GroupingLevel::deserializeVariant(Deserializer & is, bool allowV2) {
+    uint32_t cid;
+    is.get(cid);
+    if (allowV2 && (cid == CID_search_aggregation_GroupingLevelV2)) {
+        return is >> _maxGroups >> _precision >> _classify >> _filter >> _collect;
+    } else {
+        // assume old (V1):
+        return onDeserialize(is);
+    }
 }
 
 void

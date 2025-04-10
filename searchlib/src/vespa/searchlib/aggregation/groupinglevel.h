@@ -81,6 +81,7 @@ private:
     bool           _frozen;
     CurrentIndex   _currentIndex;
     ExpressionTree _classify;
+    ExpressionTree _filter;
     Group          _collect;
 
     vespalib::CloneablePtr<Grouper>    _grouper;
@@ -93,6 +94,8 @@ public:
     ~GroupingLevel();
     DECLARE_IDENTIFIABLE_NS2(search, aggregation, GroupingLevel);
     DECLARE_NBO_SERIALIZE;
+    vespalib::Serializer& serializeVariant(vespalib::Serializer& os, bool allowV2) const;
+    vespalib::Deserializer& deserializeVariant(vespalib::Deserializer& is, bool allowV2);
 
     GroupingLevel unchain() const { return *this; }
 

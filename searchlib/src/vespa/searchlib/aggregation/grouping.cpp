@@ -24,6 +24,31 @@ namespace search::aggregation {
 
 namespace {
 
+struct LevelListSerializer {
+    const Grouping::GroupingLevelList& levels;
+};
+Serializer& operator << (Serializer& os, LevelListSerializer helper) {
+    uint32_t sz = helper.levels.size();
+    os << sz;
+    for (const auto& level : helper.levels) {
+        level.serializeVariant(os, true);
+    }
+    return os;
+}
+
+struct LevelListDeserializer {
+    Grouping::GroupingLevelList& levels;
+};
+Deserializer& operator >> (Deserializer &is, LevelListDeserializer helper) {
+    uint32_t numLevels;
+    is.get(numLevels);
+    helper.levels.resize(numLevels);
+    for (auto & level : helper.levels) {
+        level.deserializeVariant(is, true);
+    }
+    return is;
+}
+
 void
 selectGroups(const vespalib::ObjectPredicate &p, vespalib::ObjectOperation &op,
              Group &group, uint32_t first, uint32_t last, uint32_t curr)
@@ -318,8 +343,9 @@ bool
 Grouping::needResort() const
 {
     bool resort(_root.needResort());
-    for (auto it(_levels.begin()), mt(_levels.end()); !resort && (it != mt); ++it) {
-        resort = it->needResort();
+    for (const auto & level : _levels) {
+        if (resort) break;
+        resort = level.needResort();
     }
     return (resort && getTopN() <= 0);
 }
@@ -329,13 +355,17 @@ Serializer &
 Grouping::onSerialize(Serializer & os) const
 {
     LOG(spam, "Grouping = %s", asString().c_str());
-    return os << _id << _valid << _all << _topN << _firstLevel << _lastLevel << _levels << _root;
+    return os << _id << _valid << _all << _topN << _firstLevel << _lastLevel
+              << LevelListSerializer(_levels)
+              << _root;
 }
 
 Deserializer &
 Grouping::onDeserialize(Deserializer & is)
 {
-    is >> _id >> _valid >> _all >> _topN >> _firstLevel >> _lastLevel >> _levels >> _root;
+    is >> _id >> _valid >> _all >> _topN >> _firstLevel >> _lastLevel
+       >> LevelListDeserializer(_levels)
+       >> _root;
     LOG(spam, "Grouping = %s", asString().c_str());
     return is;
 }
