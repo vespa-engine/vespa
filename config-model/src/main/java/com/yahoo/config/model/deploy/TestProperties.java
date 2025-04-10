@@ -41,7 +41,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
-    private String summaryDecodePolicy = "eager";
+    private String summaryDecodePolicy = "on-demand";
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
     private int responseNumThreads = 2;
