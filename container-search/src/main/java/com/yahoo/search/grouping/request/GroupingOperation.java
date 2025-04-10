@@ -206,9 +206,12 @@ public abstract class GroupingOperation extends GroupingNode {
         return this;
     }
 
-    /** Returns the {@link FilterExpression} assigned as the filter-by clause of this operation. */
+    /**
+     * Returns the {@link FilterExpression} assigned as the filter-by clause of this operation.
+     * @return the filter expression or {@code null} if not specified
+     */
     @Beta
-    public Optional<FilterExpression> getFilterBy() { return Optional.ofNullable(filterBy); }
+    public FilterExpression getFilterBy() { return filterBy; }
 
     /**
      * Returns the conceptual level of this node.

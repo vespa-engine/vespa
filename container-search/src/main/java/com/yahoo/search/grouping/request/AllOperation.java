@@ -52,7 +52,7 @@ public class AllOperation extends GroupingOperation {
                                 getAliases(),
                                 getHints(),
                                 getGroupBy(),
-                                getFilterBy().orElse(null),
+                                getFilterBy(),
                                 getWhere(),
                                 getForceSinglePass(),
                                 getAccuracy(),

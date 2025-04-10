@@ -30,14 +30,14 @@ public class EachOperation extends GroupingOperation {
                           Map<String, GroupingExpression> aliases,
                           Set<String> hints,
                           GroupingExpression groupBy,
-                          FilterExpression filerBy,
+                          FilterExpression filterBy,
                           String where,
                           boolean forceSinglePass,
                           double accuracy,
                           int precision,
                           int level,
                           int max) {
-        super(parentOfCopy, image, label, orderBy, outputs, children, aliases, hints, groupBy, filerBy,
+        super(parentOfCopy, image, label, orderBy, outputs, children, aliases, hints, groupBy, filterBy,
                 where, forceSinglePass, accuracy, precision, level, max);
     }
 
@@ -52,7 +52,7 @@ public class EachOperation extends GroupingOperation {
                                  getAliases(),
                                  getHints(),
                                  getGroupBy(),
-                                 getFilterBy().orElse(null),
+                                 getFilterBy(),
                                  getWhere(),
                                  getForceSinglePass(),
                                  getAccuracy(),
