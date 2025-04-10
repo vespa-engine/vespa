@@ -631,6 +631,11 @@ public class GroupingParserTestCase {
                 () -> assertParse("all(group(foo) filter(regex(\"^myexactstring$\", foo)) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(regex(\"(stringinparentheses)?\", foo)) each(output(count())))"),
                 () -> assertParse("all(group(foo) filter(regex(\"[a-zA-Z_]+characterclass\", foo)) each(output(count())))"));
+
+        assertAll("filter with alias",
+                () -> assertParse(
+                        "all(group($myalias=foo) filter(regex(\".*mysubstring.*\", $myalias)) each(output(count())))",
+                        "all(group(foo) filter(regex(\".*mysubstring.*\", foo)) each(output(count())))"));
     }
 
     // --------------------------------------------------------------------------------
