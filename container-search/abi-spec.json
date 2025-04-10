@@ -3123,7 +3123,7 @@
       "public com.yahoo.search.grouping.request.GroupingOperation setGroupBy(com.yahoo.search.grouping.request.GroupingExpression)",
       "public com.yahoo.search.grouping.request.GroupingExpression getGroupBy()",
       "public com.yahoo.search.grouping.request.GroupingOperation setFilterBy(com.yahoo.search.grouping.request.FilterExpression)",
-      "public java.util.Optional getFilterBy()",
+      "public com.yahoo.search.grouping.request.FilterExpression getFilterBy()",
       "public int getLevel()",
       "public void resolveLevel(int)",
       "protected com.yahoo.search.grouping.request.GroupingOperation getParent()",
