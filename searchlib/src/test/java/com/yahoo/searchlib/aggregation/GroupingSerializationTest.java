@@ -32,6 +32,7 @@ import com.yahoo.searchlib.expression.RangeBucketPreDefFunctionNode;
 import com.yahoo.searchlib.expression.RawBucketResultNode;
 import com.yahoo.searchlib.expression.RawBucketResultNodeVector;
 import com.yahoo.searchlib.expression.RawResultNode;
+import com.yahoo.searchlib.expression.RegexPredicateNode;
 import com.yahoo.searchlib.expression.ReverseFunctionNode;
 import com.yahoo.searchlib.expression.SortFunctionNode;
 import com.yahoo.searchlib.expression.StringBucketResultNode;
@@ -48,9 +49,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -66,6 +70,9 @@ import static org.junit.Assert.fail;
  * Note: This test relies heavily on proper implementation of {@link Object#equals(Object)}!
  */
 public class GroupingSerializationTest {
+
+    // Flip flag to update spec files instead of asserting against them.
+    private static final boolean UPDATE_SPEC = false;
 
     @BeforeClass
     public static void forceLoadingOfSerializableClasses() {
@@ -237,14 +244,24 @@ public class GroupingSerializationTest {
     @Test
     public void testGroupingLevel() throws IOException {
         try (SerializationTester t = new SerializationTester("testGroupingLevel")) {
-            GroupingLevel groupingLevel = new GroupingLevel();
-            groupingLevel.setMaxGroups(100)
+            GroupingLevel withoutFilter = new GroupingLevel();
+            withoutFilter.setMaxGroups(100)
                     .setExpression(createDummyExpression())
                     .getGroupPrototype()
                     .addAggregationResult(
                             new SumAggregationResult()
                                     .setExpression(createDummyExpression()));
-            t.assertMatch(groupingLevel);
+            t.assertMatch(withoutFilter);
+
+            var withFilter = new GroupingLevel();
+            withFilter.setMaxGroups(100)
+                    .setExpression(createDummyExpression())
+                    .setFilter(new RegexPredicateNode("^foo.*", new AttributeNode("attributeA")))
+                    .getGroupPrototype()
+                    .addAggregationResult(
+                            new SumAggregationResult()
+                                    .setExpression(createDummyExpression()));
+            t.assertMatch(withFilter);
         }
     }
 
@@ -316,6 +333,14 @@ public class GroupingSerializationTest {
         }
     }
 
+    @Test
+    public void testFilterExpression() throws IOException {
+        try (SerializationTester t = new SerializationTester("testFilterExpression")) {
+            t.assertMatch(new RegexPredicateNode("^foo.*", new AttributeNode("attributeA")));
+            t.assertMatch(new RegexPredicateNode("^foo.*", null));
+        }
+    }
+
 
     private static GlobalId createGlobalId(int docId) {
         return new GlobalId(
@@ -329,21 +354,46 @@ public class GroupingSerializationTest {
     }
 
     private static class SerializationTester implements AutoCloseable {
-
         private static final String FILE_PATH = "src/test/files";
 
         private final DataInputStream in;
+        private final DataOutputStream out;
         private final String fileName;
 
         public SerializationTester(String fileName) throws IOException {
             this.fileName = fileName;
-            this.in = new DataInputStream(
-                    new BufferedInputStream(
-                            new FileInputStream(
-                                    new File(FILE_PATH, fileName))));
+            var file = new File(FILE_PATH, fileName);
+            if (UPDATE_SPEC) {
+                this.in = null;
+                this.out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file, false)));
+            } else {
+                this.in = new DataInputStream(new BufferedInputStream(new FileInputStream(file)));
+                this.out = null;
+            }
         }
 
         public SerializationTester assertMatch(Identifiable expectedObject) throws IOException {
+            // Ignore assert if we are updating the spec files
+            if (UPDATE_SPEC) {
+                var buffer = new GrowableByteBuffer(1024 * 8);
+                var serializer = new BufferSerializer(buffer);
+                expectedObject.serializeWithId(serializer);
+                buffer.flip();
+
+                // Write buffer length in little endian
+                var lengthBuffer = ByteBuffer.allocate(4);
+                lengthBuffer.order(ByteOrder.LITTLE_ENDIAN);
+                lengthBuffer.putInt(buffer.limit());
+                out.write(lengthBuffer.array());
+
+                // Write buffer data
+                var data = new byte[buffer.limit()];
+                buffer.get(data);
+                out.write(data);
+                out.flush();
+                return this;
+            }
+
             int length = readLittleEndianInt(in);
             byte[] originalData = new byte[length];
             in.readFully(originalData);
@@ -401,6 +451,10 @@ public class GroupingSerializationTest {
 
         @Override
         public void close() throws IOException {
+            if (UPDATE_SPEC) {
+                out.close();
+                return;
+            }
             int bytesLeft = 0;
             while (in.read() != -1)
                 bytesLeft++;

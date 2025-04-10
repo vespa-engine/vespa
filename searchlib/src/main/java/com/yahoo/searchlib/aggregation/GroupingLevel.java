@@ -2,10 +2,13 @@
 package com.yahoo.searchlib.aggregation;
 
 import com.yahoo.searchlib.expression.ExpressionNode;
+import com.yahoo.searchlib.expression.FilterExpressionNode;
 import com.yahoo.vespa.objects.Deserializer;
 import com.yahoo.vespa.objects.Identifiable;
 import com.yahoo.vespa.objects.ObjectVisitor;
 import com.yahoo.vespa.objects.Serializer;
+
+import java.util.Objects;
 
 public class GroupingLevel extends Identifiable {
 
@@ -23,7 +26,7 @@ public class GroupingLevel extends Identifiable {
     private ExpressionNode classify = null;
 
     // The filter expression
-    private ExpressionNode filter = null; // XXX change to new node type when we get it
+    private FilterExpressionNode filter = null;
     private boolean v2 = false;
     GroupingLevel setV2() { v2 = true; return this; }
     boolean hasFilter() { return filter != null; }
@@ -72,6 +75,13 @@ public class GroupingLevel extends Identifiable {
         return this;
     }
 
+    public FilterExpressionNode getFilter() { return filter; }
+
+    public GroupingLevel setFilter(FilterExpressionNode filter) {
+        this.filter = filter;
+        return setV2(); // Always v2 when filter is set
+    }
+
     /**
      * <p>Sets the prototype to use when creating groups at this level.</p>
      *
@@ -113,6 +123,8 @@ public class GroupingLevel extends Identifiable {
         serializeOptional(buf, classify);
         if (v2) {
             serializeOptional(buf, filter);
+        } else if (filter != null) {
+            throw new IllegalStateException("Filter set on v1 GroupingLevel");
         }
         collect.serializeWithId(buf);
     }
@@ -123,14 +135,14 @@ public class GroupingLevel extends Identifiable {
         precision = buf.getLong(null);
         classify = (ExpressionNode)deserializeOptional(buf);
         if (v2) {
-            filter = (ExpressionNode)deserializeOptional(buf);
+            filter = (FilterExpressionNode) deserializeOptional(buf);
         }
         collect.deserializeWithId(buf);
     }
 
     @Override
     public int hashCode() {
-        return super.hashCode() + (int)maxGroups + (int)precision + collect.hashCode();
+        return super.hashCode() + (int)maxGroups + (int)precision + collect.hashCode() + Objects.hashCode(filter);
     }
 
     @Override
@@ -148,6 +160,9 @@ public class GroupingLevel extends Identifiable {
         if (!equals(classify, rhs.classify)) {
             return false;
         }
+        if (!equals(filter, rhs.filter)) {
+            return false;
+        }
         if (!collect.equals(rhs.collect)) {
             return false;
         }
@@ -160,6 +175,9 @@ public class GroupingLevel extends Identifiable {
         if (classify != null) {
             obj.classify = classify.clone();
         }
+        if (filter != null) {
+            obj.filter = filter.clone();
+        }
         obj.collect = collect.clone();
         return obj;
     }
@@ -170,6 +188,7 @@ public class GroupingLevel extends Identifiable {
         visitor.visit("maxGroups", maxGroups);
         visitor.visit("precision", precision);
         visitor.visit("classify", classify);
+        visitor.visit("filter", filter);
         visitor.visit("collect", collect);
     }
 }
