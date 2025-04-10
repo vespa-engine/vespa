@@ -252,8 +252,9 @@ public class GroupingSerializationTest {
                             new SumAggregationResult()
                                     .setExpression(createDummyExpression()));
             t.assertMatch(withoutFilter);
-
-            var withFilter = new GroupingLevel();
+        }
+        try (var t = new SerializationTester("testGroupingLevelWithFilter")) {
+            GroupingLevel withFilter = new GroupingLevel();
             withFilter.setMaxGroups(100)
                     .setExpression(createDummyExpression())
                     .setFilter(new RegexPredicateNode("^foo.*", new AttributeNode("attributeA")))
