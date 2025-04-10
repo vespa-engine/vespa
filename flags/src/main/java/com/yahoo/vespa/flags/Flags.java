@@ -54,14 +54,6 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
-    public static final UnboundBooleanFlag UPGRADE_WIREGUARD = defineFeatureFlag(
-            "upgrade-wireguard", false,
-            List.of("hakonhall"), "2025-02-04",
-            "2025-04-04", // TODO: Remove flag once all machine images have been built after 2025-02-13
-            "Whether to upgrade vespa-wireguard-go to latest",
-            "Takes effect on start of host-admin.",
-            HOSTNAME);
-
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "eager",
             List.of("hmusum"), "2023-03-30", "2025-05-01",
