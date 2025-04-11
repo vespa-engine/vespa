@@ -115,6 +115,7 @@ public class SchemaLanguageServer implements LanguageServer, LanguageClientAware
         initializeResult.getCapabilities().setDocumentSymbolProvider(true);
         initializeResult.getCapabilities().setExecuteCommandProvider(new ExecuteCommandOptions(CommandRegistry.getSupportedCommandList()));
         initializeResult.getCapabilities().setCodeLensProvider(new CodeLensOptions());
+        initializeResult.getCapabilities().setDocumentFormattingProvider(true);
 
         var options = new CodeActionOptions(List.of( 
             CodeActionKind.QuickFix,
