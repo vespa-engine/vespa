@@ -22,6 +22,7 @@ import com.yahoo.search.grouping.request.DebugWaitFunction;
 import com.yahoo.search.grouping.request.DivFunction;
 import com.yahoo.search.grouping.request.DocIdNsSpecificValue;
 import com.yahoo.search.grouping.request.DoubleValue;
+import com.yahoo.search.grouping.request.FilterExpression;
 import com.yahoo.search.grouping.request.FixedWidthFunction;
 import com.yahoo.search.grouping.request.GroupingExpression;
 import com.yahoo.search.grouping.request.GroupingOperation;
@@ -65,6 +66,7 @@ import com.yahoo.search.grouping.request.NowFunction;
 import com.yahoo.search.grouping.request.OrFunction;
 import com.yahoo.search.grouping.request.PredefinedFunction;
 import com.yahoo.search.grouping.request.RawValue;
+import com.yahoo.search.grouping.request.RegexPredicate;
 import com.yahoo.search.grouping.request.RelevanceValue;
 import com.yahoo.search.grouping.request.ReverseFunction;
 import com.yahoo.search.grouping.request.SecondOfMinuteFunction;
@@ -110,6 +112,7 @@ import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.DebugWaitFunctionNode;
 import com.yahoo.searchlib.expression.DivideFunctionNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
+import com.yahoo.searchlib.expression.FilterExpressionNode;
 import com.yahoo.searchlib.expression.FixedWidthBucketFunctionNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNode;
 import com.yahoo.searchlib.expression.FloatBucketResultNodeVector;
@@ -134,6 +137,7 @@ import com.yahoo.searchlib.expression.RangeBucketPreDefFunctionNode;
 import com.yahoo.searchlib.expression.RawBucketResultNode;
 import com.yahoo.searchlib.expression.RawBucketResultNodeVector;
 import com.yahoo.searchlib.expression.RawResultNode;
+import com.yahoo.searchlib.expression.RegexPredicateNode;
 import com.yahoo.searchlib.expression.RelevanceNode;
 import com.yahoo.searchlib.expression.ResultNodeVector;
 import com.yahoo.searchlib.expression.ReverseFunctionNode;
@@ -245,6 +249,16 @@ class ExpressionConverter {
                     .setExpression(toExpressionNode(aggregator.getExpression()));
         }
         throw new IllegalInputException("Can not convert '" + exp + "' to an aggregator.");
+    }
+
+    /** Converts instances of {@link FilterExpression} to a corresponding back-end type ({@link FilterExpressionNode}). */
+    public FilterExpressionNode toFilterExpressionNode(FilterExpression expression) {
+        if (expression instanceof RegexPredicate rp) {
+            return new RegexPredicateNode(rp.getPattern(), toExpressionNode(rp.getExpression()));
+        } else {
+            throw new IllegalInputException(
+                    "Can not convert '%s' to a filter expression.".formatted(expression.getClass().getSimpleName()));
+        }
     }
 
     /**

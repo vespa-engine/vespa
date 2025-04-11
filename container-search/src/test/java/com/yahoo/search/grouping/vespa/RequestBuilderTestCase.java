@@ -21,6 +21,8 @@ import com.yahoo.searchlib.expression.AttributeMapLookupNode;
 import com.yahoo.searchlib.expression.AttributeNode;
 import com.yahoo.searchlib.expression.ConstantNode;
 import com.yahoo.searchlib.expression.ExpressionNode;
+import com.yahoo.searchlib.expression.FilterExpressionNode;
+import com.yahoo.searchlib.expression.RegexPredicateNode;
 import com.yahoo.searchlib.expression.StrCatFunctionNode;
 import com.yahoo.searchlib.expression.StringResultNode;
 import com.yahoo.searchlib.expression.TimeStampFunctionNode;
@@ -815,6 +817,20 @@ public class RequestBuilderTestCase {
         assertEquals(10, builder.getRequestList().get(0).getLevels().get(0).getPrecision());
     }
 
+    @Test
+    void require_that_filter_layout_is_correct() {
+        assertLayout("all(group(a) filter(regex(\".*suffix$\", a)) each(output(count())))",
+                "[[{ Attribute, filter = [Regex [Attribute]], result = [Count] }]]");
+        assertLayout("all(group(time.dayofmonth(a)) filter(regex(\".*suffix$\", b)) each(output(count())))",
+                "[[{ TimeStamp, filter = [Regex [Attribute]], result = [Count] }]]");
+        assertLayout("all(group(time.dayofmonth(a)) filter(regex(\"^\\d\\d$\", tostring(array.at(mylongarray, 0)))) each(output(count())))",
+                "[[{ TimeStamp, filter = [Regex [ToString]], result = [Count] }]]");
+        assertLayout("all(group(a) each(group(b) filter(regex(\".*suffix$\", c)) each(output(count()))))",
+                "[[{ Attribute }, { Attribute, filter = [Regex [Attribute]], result = [Count] }]]");
+        assertLayout("all(group(a) filter(regex(\".*suffix$\", b)) each(group(c) each(output(count()))))",
+                "[[{ Attribute, filter = [Regex [Attribute]] }, { Attribute, result = [Count] }]]");
+    }
+
     private static void assertTotalGroupsAndSummaries(long expected, String query) {
         assertTotalGroupsAndSummaries(expected, Long.MAX_VALUE, query);
     }
@@ -1017,6 +1033,9 @@ public class RequestBuilderTestCase {
                 for (GroupingLevel level : grouping.getLevels()) {
                     StringBuilder str = new StringBuilder("{ ");
                     str.append(toSimpleName(level.getExpression())).append(", ");
+                    if (level.getFilter() != null) {
+                        str.append("filter = [").append(toSimpleName(level.getFilter())).append("], ");
+                    }
                     if (level.getMaxGroups() >= 0 || level.getPrecision() >= 0) {
                         str.append("max = [").append(level.getMaxGroups()).append(", ")
                            .append(level.getPrecision()).append("], ");
@@ -1063,6 +1082,14 @@ public class RequestBuilderTestCase {
                 return ret.substring(0, ret.length() - 4);
             }
             return ret;
+        }
+
+        private static String toSimpleName(FilterExpressionNode filterExp) {
+            if (filterExp instanceof RegexPredicateNode rpn) {
+                var simpleName = rpn.getExpression().map(LayoutWriter::toSimpleName).orElse("");
+                return "Regex [%s]".formatted(simpleName);
+            }
+            return filterExp.getClass().getSimpleName();
         }
     }
 

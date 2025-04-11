@@ -16,6 +16,7 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.searchlib.aggregation.GroupingLevel;
 import com.yahoo.searchlib.aggregation.HitsAggregationResult;
 import com.yahoo.searchlib.expression.ExpressionNode;
+import com.yahoo.searchlib.expression.FilterExpressionNode;
 import com.yahoo.searchlib.expression.RangeBucketPreDefFunctionNode;
 
 import java.util.ArrayDeque;
@@ -210,6 +211,12 @@ class RequestBuilder {
                 grpLevel.setMaxGroups(LOOKAHEAD + frame.state.max + offset);
                 frame.state.max = null;
             }
+
+            if (frame.state.filterBy != null) {
+                grpLevel.setFilter(frame.state.filterBy);
+                frame.state.filterBy = null;
+            }
+
             frame.grouping.getLevels().add(grpLevel);
         }
         String label = frame.astNode.getLabel();
@@ -233,6 +240,7 @@ class RequestBuilder {
 
     private void resolveState(BuildFrame frame) {
         resolveGroupBy(frame);
+        resolveFilterBy(frame);
         resolveMax(frame);
         resolveOrderBy(frame);
         resolvePrecision(frame);
@@ -258,6 +266,12 @@ class RequestBuilder {
                 throw new IllegalInputException("Can not create anonymous " +
                                                         GroupingOperation.getLevelDesc(level) + ".");
             }
+        }
+    }
+
+    private void resolveFilterBy(BuildFrame frame) {
+        if (frame.astNode.getFilterBy() != null) {
+            frame.state.filterBy = converter.toFilterExpressionNode(frame.astNode.getFilterBy());
         }
     }
 
@@ -476,6 +490,7 @@ class RequestBuilder {
         final List<ExpressionNode> orderByExp = new ArrayList<>();
         final List<Boolean> orderByAsc = new ArrayList<>();
         ExpressionNode groupBy = null;
+        FilterExpressionNode filterBy = null;
         String label = null;
         Integer max = null;
         Integer precision = null;
@@ -490,6 +505,7 @@ class RequestBuilder {
             }
             orderByAsc.addAll(obj.orderByAsc);
             groupBy = obj.groupBy;
+            filterBy = obj.filterBy;
             label = obj.label;
             max = obj.max;
             precision = obj.precision;
