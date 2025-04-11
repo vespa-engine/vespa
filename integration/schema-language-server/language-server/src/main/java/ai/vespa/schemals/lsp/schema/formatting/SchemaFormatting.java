@@ -13,6 +13,7 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventFormattingContext;
 import ai.vespa.schemals.parser.ast.LBRACE;
 import ai.vespa.schemals.parser.ast.NL;
+import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -27,7 +28,7 @@ public class SchemaFormatting {
         context.logger.info("received formatting request with params: " + context.getOptions().toString());
         SchemaNode root = context.document.getRootNode();
         List<TextEdit> result = new ArrayList<>();
-        FormatPositionInformation info = new FormatPositionInformation(0, false);
+        FormatPositionInformation info = new FormatPositionInformation(0, true);
         formatTraverse(result, root, info, context.getOptions(), context.logger);
         return result;
     }
@@ -44,11 +45,37 @@ public class SchemaFormatting {
             return;
         }
 
-        if (node.isLeaf()) {
-            return;
-        }
+        // Don't apply formatting on NL
+        if (node.isASTInstance(NL.class)) return;
 
-        logger.info(node.getASTClass().toString() + ": " + node.getRange().getStart().toString());
+        if (info.nlBeforeSibling()) {
+            int indentLevel = info.indentLevel;
+            if (node.isASTInstance(RBRACE.class))--indentLevel;
+            String indentationString = getIndentationString(indentLevel, options);
+            boolean hasInsertedIndent = false;
+
+            if (node.getPreviousSibling() != null) {
+                Node shouldBeNL = node.getPreviousSibling().getLastLeafDecendant();
+                if (!shouldBeNL.isASTInstance(NL.class)) {
+                    edits.add(new TextEdit(new Range(
+                        shouldBeNL.getRange().getEnd(),
+                        node.getRange().getStart()
+                    ), "\n" + indentationString));
+                    hasInsertedIndent = true;
+                }
+            }
+
+            // ensure indentation is goot
+            if (!hasInsertedIndent && !node.isASTInstance(NL.class) && !node.getSchemaNode().getIsDirty()) {
+                Range range = new Range(
+                        new Position(
+                            node.getRange().getStart().getLine(), 0
+                        ),
+                        node.getRange().getStart()
+                    );
+                edits.add(new TextEdit(range, indentationString));
+            }
+        }
 
         int lbraceIndex = -1;
 
@@ -83,27 +110,32 @@ public class SchemaFormatting {
                     LBRACENode.getRange().getStart()
                 ), " "));
             }
-
-            if (LBRACENode.getNextSibling() == null) {
-                // No new line after lbrace
-                edits.add(new TextEdit(new Range(
-                    LBRACENode.getRange().getEnd(),
-                    LBRACENode.getRange().getEnd()
-                ), "\n"));
-            }
         }
 
         for (int i = 0; i < node.size(); ++i) {
             Node child = node.get(i);
             if (!child.isSchemaNode()) continue;
+            int indentLevel = info.indentLevel;
             boolean requireNewLine = lbraceIndex != -1 && i > lbraceIndex;
+            if (requireNewLine)++indentLevel;
             formatTraverse(
                 edits, 
                 child.getSchemaNode(), 
-                new FormatPositionInformation(info.indentLevel, requireNewLine), 
+                new FormatPositionInformation(indentLevel, requireNewLine), 
                 options, 
                 logger
             );
         }
+    }
+
+    /*
+     * Gives a string of either tabs or spaces, depending on options
+     */
+    private static String getIndentationString(int indentLevel, FormattingOptions options) {
+        if (indentLevel == 0) return "";
+        if (options.isInsertSpaces()) {
+            return new String(new char[indentLevel * options.getTabSize()]).replace("\0", " ");
+        }
+        return new String(new char[indentLevel]).replace("\0", "\t");
     }
 }

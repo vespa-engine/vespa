@@ -238,6 +238,14 @@ public abstract class Node implements Iterable<Node> {
         return symbol;
     }
 
+    /*
+     * Return the last node in the preorder traversal of this node.
+     */
+    public Node getLastLeafDecendant() {
+        if (isLeaf()) return this;
+        return get(size() - 1).getLastLeafDecendant();
+    }
+
     public abstract int getBeginOffset();
     public abstract int getEndOffset();
 
