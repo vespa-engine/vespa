@@ -1863,6 +1863,10 @@ TEST(GroupingTest, test_that_attributes_can_be_unconditionally_converted_to_docu
 TEST(GroupingTest, test_bad_grouping)
 {
     Grouping baseRequest;
+    /*
+     * The children ids of a group must be strictly increasing. A group violating this invariant
+     * is considered bad. Currently, Group::onSerialize() and Group::onDeserialize() validates the id order.
+     */
     baseRequest.setRoot(Group().addChild(Group().setId(FloatBucketResultNode(0.2, 0.3)))
         .addChild(Group().setId(FloatBucketResultNode(0.2, 0.3))));
     vespalib::nbostream os;

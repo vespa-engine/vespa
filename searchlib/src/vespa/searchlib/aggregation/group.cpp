@@ -554,7 +554,7 @@ Group::Value::validate_id_order() const {
                     child_id_as_string(i - 1, _children[i - 1]).c_str(),
                     getChildrenSize());
                 throw vespalib::IllegalArgumentException(msg);
-            };
+            }
         }
     }
 }
