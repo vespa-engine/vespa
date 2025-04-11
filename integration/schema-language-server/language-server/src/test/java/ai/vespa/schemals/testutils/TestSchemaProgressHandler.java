@@ -3,6 +3,7 @@ package ai.vespa.schemals.testutils;
 import java.util.UUID;
 
 import org.eclipse.lsp4j.jsonrpc.messages.Either;
+import org.eclipse.lsp4j.services.LanguageClient;
 
 import ai.vespa.schemals.SchemaProgressHandler;
 
@@ -41,7 +42,8 @@ public class TestSchemaProgressHandler extends SchemaProgressHandler {
     @Override
     public boolean connected() { return true; }
 
-    public Progress newWorkDoneProgress() {
+    @Override
+    public Progress newWorkDoneProgress(String title) {
         return new TestProgress();
     }
 

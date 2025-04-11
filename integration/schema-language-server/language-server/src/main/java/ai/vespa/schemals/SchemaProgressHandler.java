@@ -83,7 +83,7 @@ public class SchemaProgressHandler {
         }
     }
 
-    void connectClient(LanguageClient client) {
+    public void connectClient(LanguageClient client) {
         this.client = client;
     }
 

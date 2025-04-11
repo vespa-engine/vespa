@@ -297,7 +297,7 @@ public class SchemaDocumentScheduler {
         return workspaceFiles.containsKey(fileURI);
     }
 
-    public void reparseInInheritanceOrder(Optional<Progress> progress) {
+    public void reparseInInheritanceOrder(Progress progress) {
         List<String> fileURIs = schemaIndex.getDocumentInheritanceGraph().getTopoOrdering();
         for (int i = 0; i < fileURIs.size(); i++) {
             String fileURI = fileURIs.get(i);
@@ -305,9 +305,7 @@ public class SchemaDocumentScheduler {
                 workspaceFiles.get(fileURI).reparseContent();
             }
 
-            if (progress.isPresent()) {
-                progress.get().partialResult("Verifying inheritance " + i + " of " + fileURIs.size() + " schemas searched.", 50 + i * 50 / fileURIs.size());
-            }
+            progress.partialResult("Verifying inheritance " + i + " of " + fileURIs.size() + " schemas searched.", 50 + i * 50 / fileURIs.size());
         }
     }
 
@@ -331,10 +329,7 @@ public class SchemaDocumentScheduler {
 
         int totalFiles = schemaFiles.size() + rankProfileFiles.size();
 
-        Optional<Progress> progress = Optional.empty();
-        if (totalFiles > 15) {
-            progress = Optional.of(progressHandler.newWorkDoneProgress("Indexing workspace"));
-        }
+        Progress progress = progressHandler.newWorkDoneProgress("Indexing workspace");
 
         for (int i = 0; i < totalFiles; i++) {
             String fileURI;
@@ -345,18 +340,13 @@ public class SchemaDocumentScheduler {
             }
 
             addDocument(fileURI);
-
-            if (progress.isPresent()) {
-                progress.get().partialResult(i + " of " + totalFiles + " files indexed.", i * 50 / totalFiles);
-            }
+            progress.partialResult(i + " of " + totalFiles + " files indexed.", i * 50 / totalFiles);
         }
 
         reparseInInheritanceOrder(progress);
         setReparseDescendants(true);
 
-        if (progress.isPresent()) {
-            progress.get().end("Finished");
-        }
+        progress.end("Finished");
 
         this.workspaceStatus = WorkspaceStatus.SETUP_COMPLETED;
         logger.info("Workspace setup finished.");
