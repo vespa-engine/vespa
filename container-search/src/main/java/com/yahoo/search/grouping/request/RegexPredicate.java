@@ -19,6 +19,7 @@ public class RegexPredicate extends FilterExpression {
 
     public RegexPredicate(String pattern, GroupingExpression expression) {
         validateRegex(pattern);
+        validateExpression(expression);
         this.pattern = pattern;
         this.expression = expression;
     }
@@ -30,6 +31,18 @@ public class RegexPredicate extends FilterExpression {
         } catch (PatternSyntaxException e) {
             throw new IllegalArgumentException("Invalid regex pattern: %s (%s)".formatted(pattern, e.getMessage()), e);
         }
+    }
+
+    private static void validateExpression(GroupingExpression exp) {
+        // Fail in obviously invalid expressions
+        if (exp instanceof BucketValue)
+            throw new IllegalArgumentException("Regex predicate cannot be used with a bucket value");
+        else if (exp instanceof AggregatorNode)
+            throw new IllegalArgumentException("Regex predicate cannot be used with an aggregator");
+        else if (exp instanceof PredefinedFunction)
+            throw new IllegalArgumentException("Regex predicate cannot be used with a predefined function");
+        else if (exp instanceof FixedWidthFunction)
+            throw new IllegalArgumentException("Regex predicate cannot be used with a fixed width function");
     }
 
     public String getPattern() { return pattern; }
