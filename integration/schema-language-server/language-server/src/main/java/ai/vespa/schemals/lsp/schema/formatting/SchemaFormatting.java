@@ -14,8 +14,10 @@ import ai.vespa.schemals.parser.ast.LBRACE;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.RBRACE;
 import ai.vespa.schemals.parser.ast.openLbrace;
+import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.SchemaNode;
+import ai.vespa.schemals.tree.Node.LanguageType;
 
 public class SchemaFormatting {
     private record FormatPositionInformation(
@@ -49,12 +51,16 @@ public class SchemaFormatting {
             // TODO: Format YQL, RankExpressions and Indexing
             return;
         }
+        if (node.getLanguageType() != LanguageType.SCHEMA) return;
+
 
         // Don't apply formatting on NL
         if (node.isASTInstance(NL.class)) return;
 
         if (info.nodeStartsLine())
             formatLineStartNodePosition(edits, node, info, options);
+        else
+            formatLineMiddleNodePosition(edits, node, logger);
 
         int lbraceIndex = -1;
         for (int i = 0; i < node.size(); ++i) {
@@ -93,7 +99,6 @@ public class SchemaFormatting {
         if (node.isASTInstance(RBRACE.class))--indentLevel;
 
         String indentationString = createIndentationString(indentLevel, options);
-        boolean hasInsertedIndent = false;
 
         // Insert a new line + indent if node is not on its own line
         if (node.getPreviousSibling() != null) {
@@ -103,21 +108,53 @@ public class SchemaFormatting {
                     shouldBeNL.getRange().getEnd(),
                     node.getRange().getStart()
                 ), "\n" + indentationString));
-                hasInsertedIndent = true;
+                return;
             }
         }
 
         // Ensure indentation is good. 
         // Edits here could end up being no-ops, but editors handle it nicely.
-        if (!hasInsertedIndent) {
-            Range range = new Range(
-                    new Position(
-                        node.getRange().getStart().getLine(), 0
-                    ),
-                    node.getRange().getStart()
-                );
-            edits.add(new TextEdit(range, indentationString));
-        }
+        Range range = new Range(
+            new Position(node.getRange().getStart().getLine(), 0),
+            node.getRange().getStart()
+        );
+        edits.add(new TextEdit(range, indentationString));
+    }
+
+    private static void formatLineMiddleNodePosition(List<TextEdit> edits, Node node, ClientLogger logger) {
+        if (node.getPreviousSibling() == null) return;
+        if (node.getASTClass() == null) return;
+        if (node.isASTInstance(LBRACE.class)) return;
+        if (node.isASTInstance(openLbrace.class)) return;
+
+        Node prev = node.getPreviousSibling();
+        while (prev != null && (prev.isASTInstance(NL.class) || CSTUtils.rangeIsEmpty(prev.getRange())))
+            prev = prev.getPreviousSibling();
+
+        if (prev == null) return;
+
+        String insertText = "";
+
+        if (shouldHaveSpaceBetween(prev, node))
+            insertText = " ";
+
+        Range range = new Range(prev.getRange().getEnd(), node.getRange().getStart());
+        edits.add(new TextEdit(
+            range,
+            insertText
+        ));
+    }
+
+    private static boolean shouldHaveSpaceBetween(Node left, Node right) {
+        String leftText = left.getLastLeafDescendant().getText();
+        String rightText = right.getText();
+        if (leftText.isEmpty() || rightText.isEmpty()) return false;
+
+        int leftLast   = leftText.codePointAt(leftText.length() - 1);
+        int rightFirst = rightText.codePointAt(0);
+        if (Character.isLetterOrDigit(rightFirst) && Character.isLetterOrDigit(leftLast)) return true;
+        if (leftLast == ':' || leftLast == ',') return true;
+        return false;
     }
 
     /*
