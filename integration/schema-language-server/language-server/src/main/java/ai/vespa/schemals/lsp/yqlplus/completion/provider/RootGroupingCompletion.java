@@ -49,9 +49,6 @@ public class RootGroupingCompletion implements CompletionProvider {
 
         YQLNode node = last.getYQLNode();
 
-        context.logger.info("NODE");
-        YQLUtils.printTree(context.logger, node);
-
         if (node.isASTInstance(SPACE.class)) {
             node = node.getParent().getYQLNode();
         }
