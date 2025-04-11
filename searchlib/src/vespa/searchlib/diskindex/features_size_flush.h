@@ -12,7 +12,7 @@ namespace search::diskindex {
  * When this value is read, the real number of documents follows, but further decoding is slightly adjusted.
  *
  * A posting list on disk starts with the number of documents in the posting list chunk.
- * When encountering the marker, the has more bit is always read, and variant with skip info is always selected.
+ * When encountering the marker, the "has more"-bit is always read, and variant with skip info is always selected.
  *
  * A posting list counts entry in the dictionary starts with the number of documents for the word.
  * When encountering this marker, the number of chunks for the counts entry is always read.
