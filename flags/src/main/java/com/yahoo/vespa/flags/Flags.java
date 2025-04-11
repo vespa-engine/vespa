@@ -156,13 +156,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundStringFlag LOG_FILE_COMPRESSION_ALGORITHM = defineStringFlag(
-            "log-file-compression-algorithm", "",
-            List.of("arnej"), "2022-06-14", "2025-12-01",
-            "Which algorithm to use for compressing log files. Valid values: empty string (default), gzip, zstd",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
             List.of("olaa"), "2022-09-23", "2025-06-01",

@@ -101,7 +101,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
-        @ModelFeatureFlag(owners = {"arnej"}) default String logFileCompressionAlgorithm(String defVal) { return defVal; }
+        @ModelFeatureFlag(owners = {"arnej"}, removeAfter = "8.511") default String logFileCompressionAlgorithm(String defVal) { return defVal; }
         @ModelFeatureFlag(owners = {"hmusum"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "on-demand"; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
