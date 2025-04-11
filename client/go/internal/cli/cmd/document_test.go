@@ -97,6 +97,34 @@ func TestDocumentSendPutFromStdin(t *testing.T) {
 	assertFieldsEqual(t, doc, body)
 }
 
+func TestDocumentSendPutWithData(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+	doc, err := os.ReadFile("testdata/A-Head-Full-of-Dreams-Put.json")
+	require.Nil(t, err)
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put", "--data", string(doc)))
+	assert.Equal(t, "Success: put id:mynamespace:music::a-head-full-of-dreams\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
+	body, err := io.ReadAll(client.LastRequest.Body)
+	require.Nil(t, err)
+	assertFieldsEqual(t, doc, body)
+}
+
+func TestDocumentSendPutWithDataAndId(t *testing.T) {
+	client := &mock.HTTPClient{}
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+	doc, err := os.ReadFile("testdata/A-Head-Full-of-Dreams-Without-Operation.json")
+	require.Nil(t, err)
+	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put", "id:mynamespace:music::a-head-full-of-dreams", "--data", string(doc)))
+	assert.Equal(t, "Success: put id:mynamespace:music::a-head-full-of-dreams\n", stdout.String())
+	assert.Equal(t, "", stderr.String())
+	body, err := io.ReadAll(client.LastRequest.Body)
+	require.Nil(t, err)
+	assertFieldsEqual(t, doc, body)
+}
+
 func TestDocumentSendMissingId(t *testing.T) {
 	cli, _, stderr := newTestCLI(t)
 	assert.NotNil(t, cli.Run("-t", "http://127.0.0.1:8080", "document", "put", "testdata/A-Head-Full-of-Dreams-Without-Operation.json"))
