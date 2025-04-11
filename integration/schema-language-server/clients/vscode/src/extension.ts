@@ -14,7 +14,7 @@ const RECOMMEND_XML_SETTING = 'recommendXML';
 const JAVA_DOWNLOAD_URL = 'https://www.oracle.com/java/technologies/downloads/#java17';
 
 
-type maybeString = string|null|undefined;
+type maybeString = string | null | undefined;
 
 function javaExecutableExists(javaHome: maybeString) {
     if (javaHome === null || javaHome === undefined) {
@@ -24,7 +24,7 @@ function javaExecutableExists(javaHome: maybeString) {
 }
 
 function findJavaHomeExecutable(): maybeString {
-	// Try workspace setting first
+    // Try workspace setting first
     const config = vscode.workspace.getConfiguration(EXTENSION_NAME);
     const javaHome = config.get(JAVA_HOME_SETTING) as maybeString;
     if (javaExecutableExists(javaHome)) {
@@ -42,7 +42,7 @@ function findJavaHomeExecutable(): maybeString {
     return null;
 }
 
-function findJavaExecutable(): string|null {
+function findJavaExecutable(): string | null {
     const javaPath = findJavaHomeExecutable();
     if (javaPath !== null && javaPath !== undefined) {
         return javaPath as string;
@@ -64,19 +64,19 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
         return null;
     }
 
-	const serverOptions: ServerOptions = {
-		command: javaExecutable,
-		args: ['-jar', serverPath],
-		options: {}
-	};
+    const serverOptions: ServerOptions = {
+        command: javaExecutable,
+        args: ['-jar', serverPath],
+        options: {}
+    };
 
-	let clientOptions: LanguageClientOptions = {
-		// Register the server for plain text documents
-		documentSelector: [
+    let clientOptions: LanguageClientOptions = {
+        // Register the server for plain text documents
+        documentSelector: [
             {
-			    scheme: 'file',
-			    language: 'vespaSchema',
-		    },
+                scheme: 'file',
+                language: 'vespaSchema',
+            },
             {
                 scheme: 'file',
                 language: 'vespaYQL'
@@ -93,24 +93,24 @@ function createAndStartClient(serverPath: string): LanguageClient | null {
                             viewColumn: vscode.ViewColumn.Two,
                             preview: false
                         });
-                        return {success: true };
+                        return { success: true };
                     }
                     const res = await next(params, CancellationToken.None);
                     if (res instanceof ResponseError) {
                         return { success: false };
-                    } 
+                    }
                     return res;
                 }
             }
         }
-	};
+    };
     const client = new LanguageClient('vespaSchemaLS', 'Vespa Schema Language Server', serverOptions, clientOptions);
 
     client.start().then(result => {
         console.log(result);
     });
-    return client; 
-} 
+    return client;
+}
 
 function showJavaErrorMessage() {
     const openSettingsButton = {
@@ -129,7 +129,7 @@ function showJavaErrorMessage() {
             vscode.commands.executeCommand('workbench.action.openSettings', JAVA_HOME_SETTING);
         } else if (result === openOracleDownloadsButton) {
             vscode.env.openExternal(vscode.Uri.parse(JAVA_DOWNLOAD_URL));
-        } 
+        }
     });
 }
 
@@ -137,11 +137,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     checkForXMLExtension();
 
-	const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
+    const jarPath = path.join(__dirname, '..', 'server', 'schema-language-server-jar-with-dependencies.jar');
 
     schemaClient = createAndStartClient(jarPath);
 
-    const logger = vscode.window.createOutputChannel("Vespa language client", {log: true});
+    const logger = vscode.window.createOutputChannel("Vespa language client", { log: true });
 
     context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.restart", (() => {
         if (schemaClient === null) {
@@ -181,7 +181,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }));
 
-    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.hasSetupWorkspace", async () =>  {
+    context.subscriptions.push(vscode.commands.registerCommand("vespaSchemaLS.commands.schema.hasSetupWorkspace", async () => {
         if (schemaClient === null) { return false; }
 
         try {
@@ -225,11 +225,11 @@ export function activate(context: vscode.ExtensionContext) {
 }
 
 
-export function deactivate() { 
-	if (!schemaClient) {
-		return undefined;
-	}
-	return schemaClient.stop();
+export function deactivate() {
+    if (!schemaClient) {
+        return undefined;
+    }
+    return schemaClient.stop();
 }
 
 async function checkForXMLExtension() {
