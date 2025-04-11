@@ -174,5 +174,6 @@
 
 #define CID_search_expression_InterpolatedDocumentFieldLookupNode SEARCHLIB_CID(166)
 
+#define CID_search_aggregation_GroupingLevelV2              SEARCHLIB_CID(169)
 #define CID_search_NormalSketch                             SEARCHLIB_CID(170)
 #define CID_search_SparseSketch                             SEARCHLIB_CID(171)
