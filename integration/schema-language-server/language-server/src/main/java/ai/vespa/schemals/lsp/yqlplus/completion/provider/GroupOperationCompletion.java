@@ -64,11 +64,11 @@ public class GroupOperationCompletion implements CompletionProvider {
             return ret;
         }
 
-        context.logger.info("GROUPING Completion:");
-        YQLUtils.printTree(context.logger, node);
-
-        context.logger.info("GRAND PARENT");
-        YQLUtils.printTree(context.logger, node.getParent().getParent());
+        // context.logger.info("GROUPING Completion:");
+        // YQLUtils.printTree(context.logger, node);
+        //
+        // context.logger.info("GRAND PARENT");
+        // YQLUtils.printTree(context.logger, node.getParent().getParent());
 
         if (!node.isASTInstance(rbraceElm.class)) {
             return List.of();

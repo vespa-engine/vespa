@@ -9,12 +9,14 @@ import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
 import ai.vespa.schemals.parser.grouping.ast.SPACE;
+import ai.vespa.schemals.parser.grouping.ast.rbraceElm;
 import ai.vespa.schemals.parser.grouping.ast.request;
 import ai.vespa.schemals.parser.grouping.ast.spaceElm;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.Node;
 import ai.vespa.schemals.tree.YQLNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
+import ai.vespa.schemals.tree.YQL.YQLUtils;
 
 public class RootGroupingCompletion implements CompletionProvider {
 
@@ -27,7 +29,7 @@ public class RootGroupingCompletion implements CompletionProvider {
     public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         List<CompletionItem> empty = List.of();
 
-        Node last = CSTUtils.getLastCleanNode(context.document.getRootYQLNode(), context.position);
+        Node last = CSTUtils.getLastCleanNode(context.document.getRootYQLNode(), CSTUtils.subtractOneChar(context.position));
 
         if (last == null) {
             return empty;
@@ -37,11 +39,18 @@ public class RootGroupingCompletion implements CompletionProvider {
             throw new IllegalArgumentException("Unexpected node type, expected a YQLNode");
         }
 
+        if (last.getLanguageType() == LanguageType.CUSTOM && last.getText() == "|") {
+            return items;
+        }
+
         if (last.getLanguageType() != LanguageType.GROUPING) {
             return empty;
         }
 
         YQLNode node = last.getYQLNode();
+
+        context.logger.info("NODE");
+        YQLUtils.printTree(context.logger, node);
 
         if (node.isASTInstance(SPACE.class)) {
             node = node.getParent().getYQLNode();
@@ -51,8 +60,16 @@ public class RootGroupingCompletion implements CompletionProvider {
             return items;
         }
 
+
+        Node possibleRBraceNode = node.getParent();
         Node possibleRequestNode = node.getParent(5);
-        if (possibleRequestNode != null & possibleRequestNode.isASTInstance(request.class)) {
+        YQLUtils.printTree(context.logger, possibleRequestNode);
+        if (
+            possibleRBraceNode != null &&
+            possibleRBraceNode.isASTInstance(rbraceElm.class) &&
+            possibleRequestNode != null &&
+            possibleRequestNode.isASTInstance(request.class)
+        ) {
             return List.of(CompletionUtils.constructSnippet("where", "where($0)"));
         }
 
