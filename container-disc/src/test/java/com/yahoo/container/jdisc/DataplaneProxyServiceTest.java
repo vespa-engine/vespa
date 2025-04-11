@@ -51,6 +51,31 @@ public class DataplaneProxyServiceTest {
     }
 
     @Test
+    public void azure_template_used_when_available() throws IOException {
+        Path root = fileSystem.getPath("/opt/vespa");
+        Path defaultTemplate = root.resolve("conf/nginx/nginx.conf.template");
+        Path azureTemplate = root.resolve("conf/nginx/nginx.conf.template.azure");
+
+        Files.createDirectories(defaultTemplate.getParent());
+        Files.write(defaultTemplate, "default_template".getBytes(StandardCharsets.UTF_8));
+        Files.write(azureTemplate, "azure_template".getBytes(StandardCharsets.UTF_8));
+
+        DataplaneProxyService service = new DataplaneProxyService(root, proxyCommandsMock, 100, "azure");
+
+        assertEquals(azureTemplate, service.getSelectedConfigTemplate());
+
+        // Test config generation uses the azure template
+        DataplaneProxyConfig config = proxyConfig();
+        DataplaneProxyCredentials credentials = credentials(fileSystem);
+        service.reconfigure(config, credentials);
+        service.converge();
+
+        // Verify the generated config contains azure_template content
+        String generatedConfig = Files.readString(root.resolve("conf/nginx/nginx.conf"));
+        assertTrue(generatedConfig.contains("azure_template"), "Azure template should be used");
+    }
+
+    @Test
     public void retries_startup_errors() throws IOException {
         Mockito.doThrow(new RuntimeException("IO error")).doNothing().when(proxyCommandsMock).start(any());
         DataplaneProxyService service = dataplaneProxyService(proxyCommandsMock);
@@ -159,7 +184,7 @@ public class DataplaneProxyServiceTest {
 
         Path nginxConf = root.resolve("conf/nginx/nginx.conf.template");
         Files.createDirectories(nginxConf.getParent());
-        Files.write(nginxConf, "".getBytes(StandardCharsets.UTF_8));
+        Files.write(nginxConf, "default_template".getBytes(StandardCharsets.UTF_8));
 
         DataplaneProxyService service = new DataplaneProxyService(root, proxyCommands, 100);
         return service;

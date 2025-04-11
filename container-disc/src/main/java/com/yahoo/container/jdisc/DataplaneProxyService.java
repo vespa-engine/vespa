@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import ai.vespa.cloud.SystemInfo;
 import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
@@ -12,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
@@ -28,7 +30,10 @@ public final class DataplaneProxyService extends AbstractComponent {
     private static final Logger logger = Logger.getLogger(DataplaneProxyService.class.getName());
     private static final String PREFIX = "/opt/vespa";
 
+    private static final String CLOUD_AZURE = "azure";
+
     private final Path configTemplate;
+    private final Path configTemplateAzure;
     private final Path serverCertificateFile;
     private final Path serverKeyFile;
     private final Path nginxConf;
@@ -36,6 +41,7 @@ public final class DataplaneProxyService extends AbstractComponent {
     private final ProxyCommands proxyCommands;
     private final ScheduledThreadPoolExecutor executorService;
     private final Path root;
+    private final String cloudProvider;
 
     enum NginxState {INITIALIZING, RUNNING, RELOAD_REQUIRED, STOPPED};
     private volatile NginxState state;
@@ -47,16 +53,32 @@ public final class DataplaneProxyService extends AbstractComponent {
 
 
     @Inject
-    public DataplaneProxyService() {
-        this(Paths.get(PREFIX), new NginxProxyCommands(), 1);
+    public DataplaneProxyService(Optional<SystemInfo> systemInfo) {
+        this(Paths.get(PREFIX), new NginxProxyCommands(), 1, getCloudProvider(systemInfo));
     }
-    
+
+    private static String getCloudProvider(Optional<SystemInfo> systemInfo) {
+        if (systemInfo.isPresent()) {
+            String cloudName = systemInfo.get().cloud().name().toLowerCase();
+            logger.log(Level.INFO, "Initializing DataplaneProxyService with cloud provider: " + cloudName);
+            return cloudName;
+        }
+        return "";
+    }
+
     DataplaneProxyService(Path root, ProxyCommands proxyCommands, int reloadPeriodMinutes) {
+        this(root, proxyCommands, reloadPeriodMinutes, "");
+    }
+
+    DataplaneProxyService(Path root, ProxyCommands proxyCommands, int reloadPeriodMinutes, String cloudProvider) {
         this.root = root;
         this.proxyCommands = proxyCommands;
+        this.cloudProvider = cloudProvider;
         changeState(NginxState.INITIALIZING);
         wantedState = NginxState.RUNNING;
+
         configTemplate = root.resolve("conf/nginx/nginx.conf.template");
+        configTemplateAzure = root.resolve("conf/nginx/nginx.conf.template.azure");
         serverCertificateFile = root.resolve("conf/nginx/server_cert.pem");
         serverKeyFile = root.resolve("conf/nginx/server_key.pem");
         nginxConf = root.resolve("conf/nginx/nginx.conf");
@@ -91,7 +113,6 @@ public final class DataplaneProxyService extends AbstractComponent {
         }
         if (config != null) {
             try {
-
                 String serverCert = config.serverCertificate();
                 String serverKey = config.serverKey();
 
@@ -99,19 +120,19 @@ public final class DataplaneProxyService extends AbstractComponent {
                 configChanged |= writeFile(serverCertificateFile, serverCert);
                 configChanged |= writeFile(serverKeyFile, serverKey);
                 configChanged |= writeFile(nginxConf,
-                                           nginxConfig(
-                                                   configTemplate,
-                                                   proxyCredentialsCert,
-                                                   proxyCredentialsKey,
-                                                   serverCertificateFile,
-                                                   serverKeyFile,
-                                                   config.mtlsPort(),
-                                                   config.tokenPort(),
-                                                   config.tokenEndpoints(),
-                                                   root));
+                        generateNginxConfig(
+                                proxyCredentialsCert,
+                                proxyCredentialsKey,
+                                serverCertificateFile,
+                                serverKeyFile,
+                                config.mtlsPort(),
+                                config.tokenPort(),
+                                config.tokenEndpoints(),
+                                root));
                 if (configChanged) {
-                    logger.log(Level.INFO, "Configuring data plane proxy service. Token endpoints: [%s]"
-                            .formatted(String.join(", ", config.tokenEndpoints())));
+                    logger.log(Level.INFO, "Configuring data plane proxy service for {0}. Token endpoints: [{1}]"
+                            .formatted(cloudProvider.isEmpty() ? "default" : cloudProvider,
+                                    String.join(", ", config.tokenEndpoints())));
                 }
                 if (configChanged && state == NginxState.RUNNING) {
                     changeState(NginxState.RELOAD_REQUIRED);
@@ -192,6 +213,40 @@ public final class DataplaneProxyService extends AbstractComponent {
         }
     }
 
+    /**
+     * Generates the nginx configuration based on the cloud provider
+     */
+    String generateNginxConfig(
+            Path clientCert,
+            Path clientKey,
+            Path serverCert,
+            Path serverKey,
+            int vespaMtlsPort,
+            int vespaTokenPort,
+            List<String> tokenEndpoints,
+            Path root) {
+
+        // Use Azure template if available and if we're in Azure
+        Path templateToUse = configTemplate;
+        if (CLOUD_AZURE.equalsIgnoreCase(cloudProvider) && Files.exists(configTemplateAzure)) {
+            templateToUse = configTemplateAzure;
+            logger.log(Level.FINE, "Using Azure-specific nginx template: {0}", templateToUse);
+        } else {
+            logger.log(Level.FINE, "Using default nginx template: {0}", templateToUse);
+        }
+
+        return nginxConfig(
+                templateToUse,
+                clientCert,
+                clientKey,
+                serverCert,
+                serverKey,
+                vespaMtlsPort,
+                vespaTokenPort,
+                tokenEndpoints,
+                root);
+    }
+
     static String nginxConfig(
             Path configTemplate,
             Path clientCert,
@@ -236,6 +291,19 @@ public final class DataplaneProxyService extends AbstractComponent {
     // Used for testing
     NginxState wantedState() {
         return wantedState;
+    }
+
+    // Used for testing
+    String cloudProvider() {
+        return cloudProvider;
+    }
+
+    // For testing to check which template is selected
+    Path getSelectedConfigTemplate() {
+        if (CLOUD_AZURE.equalsIgnoreCase(cloudProvider) && Files.exists(configTemplateAzure)) {
+            return configTemplateAzure;
+        }
+        return configTemplate;
     }
 
     public interface ProxyCommands {
