@@ -77,6 +77,13 @@ public class CSTUtils {
         return new Position(line, column);
     }
 
+    public static Position subtractOneChar(Position pos) {
+        if (pos.getCharacter() < 1) {
+            return pos;
+        }
+        return new Position(pos.getLine(), pos.getCharacter() - 1);
+    }
+
     public static Range unionRanges(Range a, Range b) {
         Position newStart = positionLT(a.getStart(), b.getStart()) ? a.getStart() : b.getStart(); // the smaller of the two
         Position newEnd   = positionLT(a.getEnd(), b.getEnd()) ? b.getEnd() : a.getEnd(); // the larger of the two

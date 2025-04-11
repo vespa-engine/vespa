@@ -140,6 +140,12 @@ public class YQLNode extends ai.vespa.schemals.tree.Node {
         Range range = getRange();
         Position start = range.getStart();
         Position end = range.getEnd();
-        return "YQLNode(" + getASTClass() + ", " + start.getLine() + "," + start.getCharacter() + "->" + end.getLine() + "," + end.getCharacter() + ")";
+        String ret = "YQLNode(" + getASTClass() + ", " + start.getLine() + "," + start.getCharacter() + "->" + end.getLine() + "," + end.getCharacter();
+
+        if (getIsDirty()) {
+            ret += " DIRTY";
+        }
+
+        return ret + ")";
     }
 }

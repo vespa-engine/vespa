@@ -1,4 +1,4 @@
-package ai.vespa.schemals.lsp.schema.completion.provider;
+package ai.vespa.schemals.lsp.common.completion;
 
 import java.util.List;
 

@@ -61,8 +61,8 @@ import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.index.SchemaIndex;
+import ai.vespa.schemals.lsp.common.completion.CommonCompletion;
 import ai.vespa.schemals.lsp.schema.codeaction.SchemaCodeAction;
-import ai.vespa.schemals.lsp.schema.completion.SchemaCompletion;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
 import ai.vespa.schemals.lsp.schema.documentsymbols.SchemaDocumentSymbols;
 import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
@@ -99,7 +99,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
                 ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                 PrintStream errorLogger = new PrintStream(outputStream);
                 Either<List<CompletionItem>, CompletionList> result =
-                    Either.forLeft(SchemaCompletion.getCompletionItems(eventContextCreator.createContext(completionParams), errorLogger));
+                    Either.forLeft(CommonCompletion.getCompletionItems(eventContextCreator.createContext(completionParams), errorLogger));
 
                 if (outputStream.size() > 0) {
                     schemaMessageHandler.logMessage(MessageType.Error, 
