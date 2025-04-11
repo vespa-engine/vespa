@@ -4,5 +4,6 @@ vespa_add_executable(vespalib_socket_spec_test_app TEST
     socket_spec_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_socket_spec_test_app COMMAND vespalib_socket_spec_test_app)
