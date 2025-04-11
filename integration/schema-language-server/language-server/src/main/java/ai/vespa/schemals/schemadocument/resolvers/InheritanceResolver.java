@@ -149,6 +149,10 @@ public class InheritanceResolver {
         }
     }
 
+    private static boolean rankProfileBuiltinIdentifier(String identifier) {
+        return identifier.equals("default") || identifier.equals("unranked");
+    }
+
     private static void resolveRankProfileInheritance(SchemaNode inheritanceNode, ParseContext context, List<Diagnostic> diagnostics) {
         Node myRankProfileDefinitionNode = inheritanceNode.getParent().getPreviousSibling();
         String inheritedIdentifier = inheritanceNode.getText();
@@ -160,9 +164,12 @@ public class InheritanceResolver {
 
         if (parentSymbols.isEmpty() || 
             // prevents rank-profile default inherits default from causing cyclic inheritance
-            (inheritedIdentifier.equals("default") && myRankProfileDefinitionNode.getSymbol().getShortIdentifier().equals("default"))
+            (
+             rankProfileBuiltinIdentifier(inheritedIdentifier) 
+             && myRankProfileDefinitionNode.getSymbol().getShortIdentifier().equals(inheritedIdentifier)
+            )
         ) {
-            if (inheritedIdentifier.equals("default")) {
+            if (rankProfileBuiltinIdentifier(inheritedIdentifier)) {
                 inheritanceNode.setSymbolStatus(SymbolStatus.BUILTIN_REFERENCE);
                 return;
             }

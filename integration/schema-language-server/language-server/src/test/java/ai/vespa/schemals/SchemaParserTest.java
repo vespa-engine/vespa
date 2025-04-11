@@ -234,6 +234,7 @@ public class SchemaParserTest {
             "src/test/sdfiles/single/attributeposition.sd",
             "src/test/sdfiles/single/defaultdefault.sd",
             "src/test/sdfiles/single/subqueries.sd",
+            "src/test/sdfiles/single/rankprofilebuiltin.sd"
         };
 
         return Arrays.stream(filePaths)
