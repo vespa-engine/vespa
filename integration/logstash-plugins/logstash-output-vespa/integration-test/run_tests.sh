@@ -56,7 +56,27 @@ if nc -z localhost 19071 >/dev/null 2>&1; then
     exit 1
 fi
 
-# TODO is port 8080 or 19071 already in use?
+# Check gem file size function
+check_gem_size() {
+    local gem_file=$1
+    local max_size_mb=$2
+    
+    # Get file size in bytes using ls -l
+    local size_bytes=$(ls -l "$gem_file" | awk '{print $5}')
+    # Convert to MB using integer division (1048576 = 1024*1024)
+    local size_mb=$(( size_bytes / 1048576 ))
+    
+    test_count=$((test_count + 1))
+    
+    if [ $size_mb -gt $max_size_mb ]; then
+        echo -e "${RED}✗ Test failed - Gem file is too large: ${size_mb}MB (max: ${max_size_mb}MB)${NC}"
+        failed_count=$((failed_count + 1))
+        return 1
+    else
+        echo -e "${GREEN}✓ Test passed ${NC}"
+        return 0
+    fi
+}
 
 ### Build and install plugin
 echo -e "${ORANGE}Building plugin...${NC}"
@@ -68,9 +88,14 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Check gem file size (max 20MB)
+GEM_FILE="logstash-output-vespa_feed-$PLUGIN_VERSION.gem"
+echo -e "${ORANGE}Checking if gem file size is under 20MB...${NC}"
+check_gem_size "$GEM_FILE" 20
+
 cd integration-test
 echo -e "${ORANGE}Installing plugin...${NC}"
-$LOGSTASH_HOME/bin/logstash-plugin install --no-verify ../logstash-output-vespa_feed-$PLUGIN_VERSION.gem
+$LOGSTASH_HOME/bin/logstash-plugin install --no-verify ../$GEM_FILE
 # bail if the plugin is not installed
 if [ $? -ne 0 ]; then
     echo -e "${RED}Error: Plugin not installed${NC}"
