@@ -124,9 +124,6 @@ public class RootCompletion implements CompletionProvider {
             ret.add(CompletionUtils.constructSnippet(completionStr, completionStr + " $0"));
         }
 
-
-
-
         return ret;
     }
 }

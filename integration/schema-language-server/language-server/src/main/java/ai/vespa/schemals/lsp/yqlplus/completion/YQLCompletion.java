@@ -7,6 +7,7 @@ import org.eclipse.lsp4j.CompletionItem;
 
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
+import ai.vespa.schemals.lsp.yqlplus.completion.provider.GroupOperationCompletion;
 import ai.vespa.schemals.lsp.yqlplus.completion.provider.RootCompletion;
 import ai.vespa.schemals.lsp.yqlplus.completion.provider.RootGroupingCompletion;
 import ai.vespa.schemals.tree.YQL.YQLUtils;
@@ -18,7 +19,8 @@ public class YQLCompletion {
 
     private static CompletionProvider[] providers = {
         new RootCompletion(),
-        new RootGroupingCompletion()
+        new RootGroupingCompletion(),
+        new GroupOperationCompletion()
     };
 
     public static ArrayList<CompletionItem> getCompletionItems(EventCompletionContext context, PrintStream errorLogger) {
