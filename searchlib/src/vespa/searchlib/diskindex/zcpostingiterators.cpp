@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include "features_size_flush.h"
 #include "zcpostingiterators.h"
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -250,7 +251,13 @@ ZcPostingIterator<bigEndian>::readWordStart(uint32_t docIdLimit)
 
     _numDocs = static_cast<uint32_t>(val64) + 1;
     bool hasMore = false;
-    if (__builtin_expect(_numDocs >= _minChunkDocs, false)) {
+    bool features_size_flush = false;
+    if (_numDocs == features_size_flush_marker) {
+        features_size_flush = true;
+        UC64_DECODEEXPGOLOMB_NS(o, K_VALUE_ZCPOSTING_NUMDOCS, EC);
+        _numDocs = static_cast<uint32_t>(val64) + 1;
+    }
+    if (__builtin_expect(_numDocs >= _minChunkDocs || features_size_flush, false)) {
         if (bigEndian) {
             hasMore = static_cast<int64_t>(oVal) < 0;
             oVal <<= 1;

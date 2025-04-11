@@ -4,6 +4,7 @@
 #include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
+#include <vespa/searchlib/diskindex/zcposocciterators.h>
 #include <vespa/searchlib/diskindex/zcposoccrandread.h>
 #include <vespa/searchlib/index/docidandfeatures.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -33,6 +34,7 @@ using search::diskindex::FieldReader;
 using search::diskindex::FieldWriter;
 using search::diskindex::PageDict4RandRead;
 using search::diskindex::WordNumMapping;
+using search::diskindex::ZcRareWordPosOccIterator;
 using search::fakedata::FakeWord;
 using search::fakedata::FakeWordSet;
 using search::fef::TermFieldMatchData;
@@ -70,6 +72,9 @@ namespace fieldwriter {
 
 uint32_t minSkipDocs = 64;
 uint32_t minChunkDocs = 256_Ki;
+constexpr uint64_t disable_features_size_flush = std::numeric_limits<uint64_t>::max();
+constexpr uint64_t force_features_size_flush = 2; // Unrealistic low for testing, 1 document per chunk
+uint64_t features_size_flush_bits = disable_features_size_flush;
 
 std::string dirprefix = "index/";
 
@@ -77,18 +82,28 @@ void disableSkip()
 {
     minSkipDocs = 10000000;
     minChunkDocs = 1 << 30;
+    features_size_flush_bits = disable_features_size_flush;
 }
 
 void enableSkip()
 {
     minSkipDocs = 64;
     minChunkDocs = 1 << 30;
+    features_size_flush_bits = disable_features_size_flush;
 }
 
 void enableSkipChunks()
 {
     minSkipDocs = 64;
     minChunkDocs = 9000;    // Unrealistic low for testing
+    features_size_flush_bits = disable_features_size_flush;
+}
+
+void
+enable_features_size_flush() {
+    minSkipDocs = 64;
+    minChunkDocs = 9000;          // Unrealistic low for testing
+    features_size_flush_bits = force_features_size_flush;
 }
 
 const char *bool_to_str(bool val) { return (val ? "true" : "false"); }
@@ -208,7 +223,7 @@ WrappedFieldWriter::open()
     DummyFileHeaderContext fileHeaderContext;
     fileHeaderContext.disableFileName();
     _fieldWriter = std::make_unique<FieldWriter>(_docIdLimit, _numWordIds, _namepref);
-    _fieldWriter->open(minSkipDocs, minChunkDocs,
+    _fieldWriter->open(minSkipDocs, minChunkDocs, features_size_flush_bits,
                        _dynamicK, _encode_interleaved_features,
                        _schema, _indexId,
                        FieldLengthInfo(4.5, 4.5, 42),
@@ -448,7 +463,7 @@ readField(FakeWordSet &wordSet,
 }
 
 
-void
+uint32_t
 randReadField(FakeWordSet &wordSet,
               const std::string &namepref,
               bool dynamicK,
@@ -488,6 +503,7 @@ randReadField(FakeWordSet &wordSet,
     assert(4.5 == field_length_info.get_average_field_length());
     assert(42u == field_length_info.get_num_samples());
 
+    uint32_t rare_word_iterators = 0;
     for (int loop = 0; loop < 1; ++loop) {
         unsigned int wordNum = 1;
         for (const auto& words : wordSet.words()) {
@@ -511,6 +527,10 @@ randReadField(FakeWordSet &wordSet,
                 tfmda.add(&mdfield1);
 
                 auto sb(postingFile->createIterator(lookup_result, handle, tfmda));
+                if ((!dynamicK && dynamic_cast<ZcRareWordPosOccIterator<true, false> *>(sb.get()) != nullptr) ||
+                    (dynamicK && dynamic_cast<ZcRareWordPosOccIterator<true, true> *>(sb.get()) != nullptr)) {
+                    ++rare_word_iterators;
+                }
 
                 // LOG(info, "loop=%d, wordNum=%u", loop, wordNum);
                 word->validate(sb.get(), tfmda, true, decode_interleaved_features, verbose);
@@ -533,6 +553,7 @@ randReadField(FakeWordSet &wordSet,
         dynamicKStr,
         bool_to_str(decode_interleaved_features),
         vespalib::to_s(tv.elapsed()));
+    return rare_word_iterators;
 }
 
 
@@ -603,7 +624,8 @@ testFieldWriterVariant(FakeWordSet &wordSet, uint32_t doc_id_limit,
 {
     writeField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_interleaved_features);
     readField(wordSet, doc_id_limit, file_name_prefix, dynamic_k, encode_interleaved_features, verbose);
-    randReadField(wordSet, file_name_prefix, dynamic_k, encode_interleaved_features, verbose);
+    auto rare_word_iterators = randReadField(wordSet, file_name_prefix, dynamic_k, encode_interleaved_features, verbose);
+    assert((rare_word_iterators > 0) == (features_size_flush_bits > force_features_size_flush));
     fusionField(wordSet.getNumWords(),
                 doc_id_limit,
                 file_name_prefix, file_name_prefix + "x",
@@ -630,6 +652,9 @@ testFieldWriterVariants(FakeWordSet &wordSet,
     testFieldWriterVariant(wordSet, docIdLimit, "newchunk4", true, false, verbose);
     testFieldWriterVariant(wordSet, docIdLimit, "newchunk5", false, false, verbose);
     testFieldWriterVariant(wordSet, docIdLimit, "newchunkcf4", true, true, verbose);
+    enable_features_size_flush();
+    testFieldWriterVariant(wordSet, docIdLimit, "newfs4", true, false, verbose);
+    testFieldWriterVariant(wordSet, docIdLimit, "newfs5", false, false, verbose);
 }
 
 
