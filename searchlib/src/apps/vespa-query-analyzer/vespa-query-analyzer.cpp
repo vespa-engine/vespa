@@ -295,7 +295,6 @@ BlueprintMeta blueprint_meta;
 
 struct Node {
     std::string  type = "unknown";
-    uint32_t          id = 0;
     uint32_t          docid_limit = 0;
     std::string  field_name;
     std::string  query_term;
@@ -314,7 +313,6 @@ struct Node {
     explicit Node(const Inspector &obj) {
         extract(type, obj["[type]"]);
         type = strip_name(type);
-        id = obj["id"].asLong();
         docid_limit = obj["docid_limit"].asLong();
         query_term = obj["query_term"].asString().make_stringview();
         if (query_term.size() > 0) {
@@ -354,9 +352,6 @@ struct Node {
     ~Node();
     std::string name() const {
         std::string res = type;
-        if (id > 0) {
-            res.append(fmt("[%u]", id));
-        }
         if (query_term.size() > 0) {
             if (field_name.size() > 0) {
                 res.append(fmt(" %s:%s", field_name.c_str(), query_term.c_str()));

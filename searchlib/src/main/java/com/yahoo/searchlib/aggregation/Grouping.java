@@ -262,6 +262,8 @@ public final class Grouping extends Identifiable {
         buf.putInt(null, lastLevel);
         buf.putInt(null, groupingLevels.size());
         for (GroupingLevel level : groupingLevels) {
+            if (level.hasFilter())
+                level.setV2();
             level.serializeWithId(buf);
         }
         root.serializeWithId(buf);
@@ -279,8 +281,7 @@ public final class Grouping extends Identifiable {
         lastLevel = buf.getInt(null);
         int numLevels = buf.getInt(null);
         for (int i = 0; i < numLevels; i++) {
-            GroupingLevel level = new GroupingLevel();
-            level.deserializeWithId(buf);
+            GroupingLevel level = (GroupingLevel) create(buf);
             groupingLevels.add(level);
         }
         root.deserializeWithId(buf);

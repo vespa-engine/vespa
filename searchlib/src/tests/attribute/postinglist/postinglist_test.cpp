@@ -217,11 +217,11 @@ AttributePostingListTest::AttributePostingListTest()
     : ::testing::Test(),
       _randomValues(),
       _handler(),
-      _intKeyStore(NULL),
-      _intNodeAlloc(NULL),
-      _intTree(NULL),
-      _intPostings(NULL),
-      _stlTree(NULL),
+      _intKeyStore(nullptr),
+      _intNodeAlloc(nullptr),
+      _intTree(nullptr),
+      _intPostings(nullptr),
+      _stlTree(nullptr),
       _randomGenerator()
 {}
 
@@ -266,15 +266,15 @@ AttributePostingListTest::freeTree(bool verbose)
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytes()),
         static_cast<uint64_t>(_intNodeAlloc->getMemoryUsage().allocatedBytesOnHold()));
     delete _stlTree;
-    _stlTree = NULL;
+    _stlTree = nullptr;
     delete _intTree;
-    _intTree = NULL;
+    _intTree = nullptr;
     delete _intNodeAlloc;
-    _intNodeAlloc = NULL;
+    _intNodeAlloc = nullptr;
     delete _intKeyStore;
-    _intKeyStore = NULL;
+    _intKeyStore = nullptr;
     delete _intPostings;
-    _intPostings = NULL;
+    _intPostings = nullptr;
 }
 
 
@@ -380,7 +380,7 @@ insertRandomValues(Tree &tree,
         std::atomic_thread_fence(std::memory_order_release);
         itr.writeData(newIdx);
 
-        if (stlTree != NULL) {
+        if (stlTree != nullptr) {
             STLValueTree::iterator it;
             it = stlTree->find(i->_value);
             if (it == stlTree->end()) {
@@ -469,7 +469,7 @@ removeRandomValues(Tree &tree,
                 }
             }
         }
-        if (stlTree != NULL) {
+        if (stlTree != nullptr) {
             STLValueTree::iterator it;
             it = stlTree->find(i->_value);
             ASSERT_TRUE(it != stlTree->end() && it->first == i->_value);
@@ -533,7 +533,7 @@ lookupRandomValues(Tree &tree,
         Tree::Iterator itr = tree.find(StoreIndex(), treeMgr, IntComp(valueHandle, i->_value));
         ASSERT_TRUE(itr.valid() &&
                     valueHandle.getEntry(itr.getKey()) == i->_value);
-        if (stlTree != NULL) {
+        if (stlTree != nullptr) {
             STLValueTree::iterator it;
             it = stlTree->find(i->_value);
             ASSERT_TRUE(it != stlTree->end() && it->first == i->_value);

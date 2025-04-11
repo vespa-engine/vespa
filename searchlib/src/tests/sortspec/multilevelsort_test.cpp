@@ -1,20 +1,25 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/searchlib/common/sortresults.h>
-#include <vespa/searchlib/attribute/attribute.h>
-#include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributecontext.h>
-#include <vespa/searchlib/attribute/attributemanager.h>
-#include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
+#include <vespa/searchlib/attribute/attribute.h>
+#include <vespa/searchlib/attribute/attributecontext.h>
+#include <vespa/searchlib/attribute/attributefactory.h>
+#include <vespa/searchlib/attribute/attributeguard.h>
+#include <vespa/searchlib/attribute/attributemanager.h>
+#include <vespa/searchlib/attribute/make_sort_blob_writer.h>
+#include <vespa/searchlib/attribute/string_to_number.h>
+#include <vespa/searchlib/common/sortresults.h>
+#include <vespa/searchlib/uca/ucaconverter.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <type_traits>
 #include <cinttypes>
 #include <vespa/log/log.h>
 LOG_SETUP("multilevelsort_test");
 
 using namespace search;
+using search::attribute::make_sort_blob_writer;
 
 using Float = FloatingPointAttributeTemplate<float>;
 using Double = FloatingPointAttributeTemplate<double>;
@@ -252,7 +257,9 @@ MultilevelSortTest::sortAndCheck(const std::vector<Spec> &specs, uint32_t num,
             sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_DOCID : FastS_SortSpec::DESC_DOCID, nullptr, nullptr);
         } else {
             const search::attribute::IAttributeVector * v = vec[spec._name].get();
-            sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_VECTOR : FastS_SortSpec::DESC_VECTOR, v, nullptr);
+            search::common::FieldSortSpec fss(spec._name, spec._asc, {});
+            auto sort_blob_writer = make_sort_blob_writer(v, fss);
+            sorter._vectors.emplace_back(spec._asc ? FastS_SortSpec::ASC_VECTOR : FastS_SortSpec::DESC_VECTOR, v, std::move(sort_blob_writer));
         }
     }
 
@@ -447,6 +454,46 @@ TEST("test that [docid] uses attribute when one exists") {
     sr2 = desc.getSortRef(1);
     EXPECT_EQUAL(8u, sr2.second);
     EXPECT_EQUAL(0, memcmp(SECOND_DESC, sr2.first, 8));
+}
+
+using search::string_to_number;
+
+TEST("string to number for missing value in sort spec") {
+    EXPECT_EQUAL((int8_t)0, string_to_number<int8_t>(""));
+    EXPECT_EQUAL((int16_t)0, string_to_number<int16_t>(""));
+    EXPECT_EQUAL((int32_t)0, string_to_number<int32_t>(""));
+    EXPECT_EQUAL((int64_t)0, string_to_number<int64_t>(""));
+    EXPECT_EQUAL((float)0.0, string_to_number<float>(""));
+    EXPECT_EQUAL((double)0.0, string_to_number<double>(""));
+
+    EXPECT_EQUAL(std::numeric_limits<int8_t>::max(), string_to_number<int8_t>("127"));
+    EXPECT_EQUAL(std::numeric_limits<int16_t>::max(), string_to_number<int16_t>("32767"));
+    EXPECT_EQUAL(std::numeric_limits<int32_t>::max(), string_to_number<int32_t>("2147483647"));
+    EXPECT_EQUAL((int64_t)(std::numeric_limits<int32_t>::max())+1, string_to_number<int64_t>("2147483648"));
+    EXPECT_EQUAL((float)37.4, string_to_number<float>("37.4"));
+    EXPECT_EQUAL((double)37.4, string_to_number<double>("37.4"));
+
+    EXPECT_EQUAL(std::numeric_limits<int8_t>::min(), string_to_number<int8_t>("-128"));
+    EXPECT_EQUAL(std::numeric_limits<int16_t>::min(), string_to_number<int16_t>("-32768"));
+    EXPECT_EQUAL(std::numeric_limits<int32_t>::min(), string_to_number<int32_t>("-2147483648"));
+    EXPECT_EQUAL((int64_t)(std::numeric_limits<int32_t>::min())-1, string_to_number<int64_t>("-2147483649"));
+    EXPECT_EQUAL((float)-37.4, string_to_number<float>("-37.4"));
+    EXPECT_EQUAL((double)-37.4, string_to_number<double>("-37.4"));
+}
+
+void verify_make_sort_blob_writer_throws(BasicType b_type, CollectionType c_type, bool fast_search) {
+    Config cfg(b_type, c_type);
+    cfg.setFastSearch(fast_search);
+    auto attr = AttributeFactory::createAttribute("my_attr", cfg);
+    EXPECT_EXCEPTION(attr->make_sort_blob_writer(true, nullptr, search::common::sortspec::MissingPolicy::AS, "illegal"),
+                     vespalib::IllegalArgumentException, "Failed converting string 'illegal' to a number")
+}
+
+TEST("make_sort_blob_writer() throws when missing value is illegal") {
+    verify_make_sort_blob_writer_throws(BasicType::INT64, CollectionType::ARRAY, false);
+    verify_make_sort_blob_writer_throws(BasicType::INT64, CollectionType::ARRAY, true);
+    verify_make_sort_blob_writer_throws(BasicType::FLOAT, CollectionType::ARRAY, false);
+    verify_make_sort_blob_writer_throws(BasicType::FLOAT, CollectionType::ARRAY, true);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

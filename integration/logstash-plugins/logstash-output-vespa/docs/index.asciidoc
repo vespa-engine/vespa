@@ -51,7 +51,26 @@ Writes documents to Vespa.
 | <<plugins-{type}s-{plugin}-max_streams>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-operation_timeout>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-grace_period>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-doom_period>> |<<number,number>>|No
 | <<plugins-{type}s-{plugin}-auth_token>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-enable_dlq>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-dlq_path>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-max_queue_size>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-max_segment_size>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-flush_interval>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-detect_schema>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-application_package_dir>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-deploy_package>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-idle_batches>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-config_server>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-generate_mtls_certificates>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-certificate_common_name>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-certificate_validity_days>> |<<number,number>>|No
+| <<plugins-{type}s-{plugin}-type_mappings_file>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-type_conflict_resolution_file>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-vespa_cloud_tenant>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-vespa_cloud_application>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-vespa_cloud_instance>> |<<string,string>>|No
 |=======================================================================
 
 [id="plugins-{type}s-{plugin}-vespa_url"]
@@ -199,6 +218,15 @@ After this time (seconds), the circuit breaker will be half-open:
 it will ping the endpoint to see if it's back,
 then resume sending requests when it's back.
 
+[id="plugins-{type}s-{plugin}-doom_period"]
+===== `doom_period`
+
+* Value type is <<number,number>>
+* Default value is `60`
+
+After this time (seconds), if the connection is still broken, the connection will close
+and stop sending requests until the Vespa service comes back up.
+
 [id="plugins-{type}s-{plugin}-enable_dlq"]
 ===== `enable_dlq`
 
@@ -239,6 +267,114 @@ Maximum size of each Dead Letter Queue segment file in bytes.
 * Default value is `5000`
 
 How often to commit the Dead Letter Queue to disk, in milliseconds.
+
+[id="plugins-{type}s-{plugin}-detect_schema"]
+===== `detect_schema`
+
+* Value type is <<boolean,boolean>>
+* Default value is `false`
+
+Enable detect schema mode. This will not send documents to Vespa, but will generate an application package
+based on the incoming data. This is useful for quickly getting started with Vespa when you don't have
+a schema yet.
+
+[id="plugins-{type}s-{plugin}-application_package_dir"]
+===== `application_package_dir`
+
+* Value type is <<string,string>>
+* Default value is `/tmp/vespa_app` (system temporary directory)
+
+Directory where the generated application package will be stored. Only relevant if `detect_schema` is `true`.
+
+[id="plugins-{type}s-{plugin}-deploy_package"]
+===== `deploy_package`
+
+* Value type is <<boolean,boolean>>
+* Default value is `true`
+
+Whether to deploy the generated application package. Only relevant if `detect_schema` is `true`.
+
+[id="plugins-{type}s-{plugin}-idle_batches"]
+===== `idle_batches`
+
+* Value type is <<number,number>>
+* Default value is `10`
+
+Number of empty batches to wait before deploying the application package. Only relevant if `detect_schema` is `true`
+and `deploy_package` is `true`.
+
+[id="plugins-{type}s-{plugin}-config_server"]
+===== `config_server`
+
+* Value type is <<string,string>>
+* Default value is `nil` (uses the host from `vespa_url`, if defined, with port 19071)
+
+URL to the Vespa config server for deployment. Only relevant if `detect_schema` is `true` and `deploy_package` is `true`.
+
+[id="plugins-{type}s-{plugin}-generate_mtls_certificates"]
+===== `generate_mtls_certificates`
+
+* Value type is <<boolean,boolean>>
+* Default value is `false`
+
+Whether to generate self-signed mTLS certificates for the application package. Only relevant if `detect_schema` is `true`.
+Defaults to `true` if using Vespa Cloud, otherwise `false`.
+
+[id="plugins-{type}s-{plugin}-certificate_common_name"]
+===== `certificate_common_name`
+
+* Value type is <<string,string>>
+* Default value is `cloud.vespa.logstash`
+
+Common name for the generated mTLS certificates. Only relevant if `detect_schema` is `true` and `generate_mtls_certificates` is `true`.
+
+[id="plugins-{type}s-{plugin}-certificate_validity_days"]
+===== `certificate_validity_days`
+
+* Value type is <<number,number>>
+* Default value is `30`
+
+Validity period in days for the generated mTLS certificates. Only relevant if `detect_schema` is `true` and `generate_mtls_certificates` is `true`.
+
+[id="plugins-{type}s-{plugin}-type_mappings_file"]
+===== `type_mappings_file`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+Path to a YAML file containing custom type mappings for schema detection. Only relevant if `detect_schema` is `true`.
+
+[id="plugins-{type}s-{plugin}-type_conflict_resolution_file"]
+===== `type_conflict_resolution_file`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+Path to a YAML file containing custom type conflict resolution rules. Only relevant if `detect_schema` is `true`.
+
+[id="plugins-{type}s-{plugin}-vespa_cloud_tenant"]
+===== `vespa_cloud_tenant`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+Tenant name for Vespa Cloud deployment. Only relevant if `detect_schema` is `true` and deploying to Vespa Cloud.
+
+[id="plugins-{type}s-{plugin}-vespa_cloud_application"]
+===== `vespa_cloud_application`
+
+* Value type is <<string,string>>
+* Default value is `nil`
+
+Application name for Vespa Cloud deployment. Only relevant if `detect_schema` is `true` and deploying to Vespa Cloud.
+
+[id="plugins-{type}s-{plugin}-vespa_cloud_instance"]
+===== `vespa_cloud_instance`
+
+* Value type is <<string,string>>
+* Default value is `default`
+
+Instance name for Vespa Cloud deployment. Only relevant if `detect_schema` is `true` and deploying to Vespa Cloud.
 
 [id="plugins-{type}s-{plugin}-auth_token"]
 ===== `auth_token`

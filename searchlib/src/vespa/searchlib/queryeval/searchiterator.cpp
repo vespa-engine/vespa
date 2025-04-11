@@ -6,11 +6,21 @@
 #include <vespa/vespalib/objects/object2slime.h>
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/classname.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 
 namespace search::queryeval {
+
+std::string
+SearchIterator::make_id_ref_str() const
+{
+    if (_id == 0) {
+        return "[]";
+    }
+    return vespalib::make_string("[%u]", _id);
+}
 
 BitVector::UP
 SearchIterator::get_hits(uint32_t begin_id)

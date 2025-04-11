@@ -52,7 +52,7 @@ GetTokenString(search::util::URL &url)
 
     tokenbuffer[0] = '\0';
 
-    while ((token = url.GetToken(ctx)) != NULL) {
+    while ((token = url.GetToken(ctx)) != nullptr) {
         if (tokenbuffer[0] != '\0')
             strcat(tokenbuffer, ",");
         strcat(tokenbuffer, url.ContextName(ctx));

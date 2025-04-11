@@ -96,7 +96,7 @@ SimplePhraseBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &tfmd
 }
 
 SearchIterator::UP
-SimplePhraseBlueprint::createFilterSearch(FilterConstraint constraint) const
+SimplePhraseBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_atmost_and_filter(_terms, strict(), constraint);
 }

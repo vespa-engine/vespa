@@ -10,6 +10,9 @@ class PostingListParams {
     using Map = std::map<std::string, std::string>;
     Map _map;
 public:
+    PostingListParams();
+    ~PostingListParams();
+
     template <typename TYPE>
     void set(const std::string &key, const TYPE &val);
 

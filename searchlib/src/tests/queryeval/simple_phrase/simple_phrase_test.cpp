@@ -41,7 +41,7 @@ struct MyTerm : public search::queryeval::SimpleLeafBlueprint {
     SearchIterator::UP createLeafSearch(const search::fef::TermFieldMatchDataArray &) const override {
         return {};
     }
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
 };

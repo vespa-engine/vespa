@@ -332,6 +332,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
     private boolean scheduledSendCreateVisitors = false;
     private boolean done = false;
     private boolean destroying = false; // For testing and sanity checking
+    private final Object stateMonitor;
     private final Object completionMonitor = new Object();
     private final Trace trace;
     /**
@@ -340,6 +341,13 @@ public final class MessageBusVisitorSession implements VisitorSession {
      * because it is decremented before the message is actually processed.
      */
     private int pendingMessageCount = 0;
+
+    /**
+     * We also have to explicitly keep track of how many messages we are processing
+     * locally, as these may be asynchronous. We cannot invoke the control handler's
+     * onDone() method until we have drained all such messages.
+     */
+    private int locallyProcessingCount = 0;
 
     public MessageBusVisitorSession(VisitorParameters visitorParameters,
                                     AsyncTaskExecutor taskExecutor,
@@ -366,6 +374,10 @@ public final class MessageBusVisitorSession implements VisitorSession {
         this.receiver = receiverFactory.createReceiver(createMessageHandler(), sessionName);
         this.taskExecutor = taskExecutor;
         this.progress = createVisitingProgress(params);
+        // Legacy APIs exposed the underlying progress token instance as the de-facto
+        // synchronization primitive, so this has been carried forward. Hide this historical
+        // baggage behind a more understandable abstraction.
+        this.stateMonitor = progress.getToken();
         this.statistics = new VisitorStatistics();
         this.state = new StateDescription(State.NOT_STARTED);
         this.clock = clock;
@@ -401,7 +413,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
     }
 
     public void start() {
-        synchronized (progress.getToken()) {
+        synchronized (stateMonitor) {
             this.startTimeNanos = clock.monotonicNanoTime();
             if (progress.getIterator().isDone()) {
                 log.log(Level.FINE, () -> sessionName + ": progress token indicates " +
@@ -496,7 +508,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
                         "': failed to submit reply task to executor service! " +
                         "Session cannot reliably continue; terminating it early.", e);
 
-                synchronized (progress.getToken()) {
+                synchronized (stateMonitor) {
                     transitionTo(new StateDescription(State.FAILED, "Failed to submit reply task to executor service: " + e.getMessage()));
                     if (!done) {
                         markSessionCompleted();
@@ -665,9 +677,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
         }
 
         public void run() {
-            // Must sync around token as legacy API exposes it to handlers
-            // and they expect to be able to sync around it.
-            synchronized (progress.getToken()) {
+            synchronized (stateMonitor) {
                 try {
                     scheduledSendCreateVisitors = false;
                     if (done) {
@@ -774,7 +784,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
 
         @Override
         public void run() {
-            synchronized (progress.getToken()) {
+            synchronized (stateMonitor) {
                 // Decrement pending replies inside same lock as sender task to ensure that if the sender
                 // observes a non-zero number of reply tasks, it's guaranteed that this actually means a
                 // task _will_ be run later at some point.
@@ -837,7 +847,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
         String fullMsg = formatIdentifyingVisitorErrorString(errorDesc);
         log.log(Level.SEVERE, fullMsg, e);
         int errorCode;
-        synchronized (progress.getToken()) {
+        synchronized (stateMonitor) {
             if (!params.skipBucketsOnFatalErrors()) {
                 errorCode = ErrorCode.APP_FATAL_ERROR;
                 transitionTo(new StateDescription(State.FAILED, errorDesc));
@@ -882,11 +892,11 @@ public final class MessageBusVisitorSession implements VisitorSession {
             if (!msg.getErrorMessage().isEmpty()) {
                 params.getControlHandler().onVisitorError(msg.getErrorMessage());
             }
-            synchronized (progress.getToken()) {
-                // NOTE: control handlers shall sync on token themselves if
-                // they want to access it, but recursive locking is OK and by
+            synchronized (stateMonitor) {
+                // NOTE: control handlers shall sync on token themselves (aka. `stateMonitor`)
+                // if they want to access it, but recursive locking is OK and by
                 // always locking we make screwing it up harder.
-                if (!isDone()) {
+                if (state.getState() == State.WORKING) {
                     params.getControlHandler().onProgress(progress.getToken());
                 } else {
                     reply.addError(new Error(ErrorCode.APP_FATAL_ERROR, "Visitor has been shut down"));
@@ -909,12 +919,47 @@ public final class MessageBusVisitorSession implements VisitorSession {
             receiver.reply(reply);
             return;
         }
+        AckToken token = null;
+        synchronized (stateMonitor) {
+            // Prevent any further data callbacks if we have transitioned away from a working state.
+            // Additionally, track that we have an in-flight message being processed so that we
+            // do not trigger the visitor completion logic while there's work still being done.
+            // Together these form a logical barrier that ensures no callbacks will be received _after_
+            // onDone has been called.
+            // The processing count tracking is reversed when ACKing the message on the session.
+            // Ensuring 1-1 callback -> ACKing is the caller's responsibility.
+            if (state.getState() == State.WORKING) {
+                ++locallyProcessingCount;
+                token = new AckToken(reply);
+            }
+        }
         try {
-            params.getLocalDataHandler().onMessage(msg, new AckToken(reply));
+            if (token != null) {
+                params.getLocalDataHandler().onMessage(msg, token);
+            } else {
+                // Local processing counter _not_ incremented
+                reply.addError(new Error(ErrorCode.APP_FATAL_ERROR, "Visitor has been shut down"));
+                receiver.reply(reply);
+            }
         } catch (Exception e) {
             handleMessageProcessingException(reply, e, "DocumentMessage");
+            synchronized (stateMonitor) {
+                decrementLocallyProcessingCounter();
+            }
             // Immediately reply since we cannot count on AckToken being registered
             receiver.reply(reply);
+        }
+    }
+
+    // Precondition: main state lock must be held
+    private void decrementLocallyProcessingCounter() {
+        assert(locallyProcessingCount > 0);
+        --locallyProcessingCount;
+        // Visitor continuation and completion is edge-triggered (primarily from replies
+        // being received), so if there are no other events that can trigger a completion,
+        // we have to do this explicitly.
+        if (locallyProcessingCount == 0 && pendingMessageCount == 0) {
+            continueVisiting();
         }
     }
 
@@ -995,18 +1040,30 @@ public final class MessageBusVisitorSession implements VisitorSession {
     }
 
     /**
-     * A session is considered completed if one or more of the following holds true:
-     *   - All buckets have been visited (i.e. no active or pending visitors).
-     *   - Visiting has failed fatally (or has been aborted) AND there are no
-     *     active visitors remaining. 'Active' here means that we're waiting
-     *     for a reply.
-     *   - We have received sufficient number of documents (set via visitor
-     *     parameters) from the buckets already visited AND there are no
-     *     active visitors remaining.
+     * A session is considered completed iff
+     * <p>
+     * <em>All</em> the following holds true:
+     * <ul>
+     *   <li>We have no outbound requests pending towards the content cluster,
+     *       i.e. we're waiting for replies.</li>
+     *   <li>We have no inbound requests from the content nodes that we have
+     *       yet to acknowledge, i.e. we are async processing a put/remove from
+     *       the content cluster.</li>
+     * </ul>
+     * </p><p>
+     * <em>And</em> if <em>one or more</em> of the following holds true:
+     * <ul>
+     *   <li>All buckets have been visited (i.e. no active or pending visitors).</li>
+     *   <li>Visiting has failed fatally (or has been aborted).</li>
+     *   <li>We have received sufficient number of documents (set via visitor
+     *       parameters) from the buckets already visited <em>and</em> there
+     *       are no active visitors remaining.</li>
+     * </ul>
+     * </p>
      * @return true if visiting has completed, false otherwise
      */
     private boolean visitingCompleted() {
-        return (pendingMessageCount == 0)
+        return (pendingMessageCount == 0 && locallyProcessingCount == 0)
                 && (progress.getIterator().isDone()
                     || state.failed()
                     || enoughHitsReceived());
@@ -1116,7 +1173,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
 
     @Override
     public boolean isDone() {
-        synchronized (progress.getToken()) {
+        synchronized (stateMonitor) {
             return done;
         }
     }
@@ -1142,13 +1199,16 @@ public final class MessageBusVisitorSession implements VisitorSession {
             log.log(Level.FINE, "Visitor session " + sessionName +
                     ": Sending ack " + token.ackObject);
         }
+        synchronized (stateMonitor) {
+            decrementLocallyProcessingCounter();
+        }
         // No locking here; replying should be thread safe in itself
         receiver.reply((Reply)token.ackObject);
     }
 
     @Override
     public void abort() {
-        synchronized (progress.getToken()) {
+        synchronized (stateMonitor) {
             transitionTo(new StateDescription(State.ABORTED, "Visitor aborted by user"));
         }
     }
@@ -1183,7 +1243,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
     public void destroy() {
         log.log(Level.FINE, () -> sessionName + ": synchronous destroy() called");
         try {
-            synchronized (progress.getToken()) {
+            synchronized (stateMonitor) {
                 synchronized (completionMonitor) {
                     // If we are destroying the session before it has completed (e.g. because
                     // waitUntilDone timed out or an interactive visiting was interrupted)
@@ -1196,7 +1256,7 @@ public final class MessageBusVisitorSession implements VisitorSession {
             synchronized (completionMonitor) {
                 assert(!destroying) : "Attempted to destroy VisitorSession more than once";
                 destroying = true;
-                while (!done) {
+                while (!done) { // FIXME covered by token lock, not completion monitor...!
                     completionMonitor.wait();
                 }
             }

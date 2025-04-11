@@ -80,7 +80,7 @@ public:
 
     std::unique_ptr<queryeval::SearchIterator> createLeafSearch(const fef::TermFieldMatchDataArray &tfmda) const override;
 
-    std::unique_ptr<queryeval::SearchIterator> createFilterSearch(FilterConstraint constraint) const override;
+    std::unique_ptr<queryeval::SearchIterator> createFilterSearchImpl(FilterConstraint constraint) const override;
     std::unique_ptr<queryeval::MatchingElementsSearch> create_matching_elements_search(const MatchingElementsFields &fields) const override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override {
         LeafBlueprint::visitMembers(visitor);

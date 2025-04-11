@@ -26,7 +26,7 @@ Timer::getTimestamp() const noexcept {
     return std::chrono::system_clock::now();
 }
 
-LogTarget *Logger::_target = 0;
+LogTarget *Logger::_target = nullptr;
 int        Logger::_numInstances = 0;
 bool Logger::fakePid = false;
 char Logger::_prefix[64] = { '\0' };
@@ -34,7 +34,7 @@ const char Logger::_hexdigit[17] = "0123456789abcdef";
 char Logger::_controlName[1024] = { '\0' };
 char Logger::_hostname[1024] = { '\0'};
 char Logger::_serviceName[1024] = {'\0' };
-ControlFile *Logger::_controlFile = 0;
+ControlFile *Logger::_controlFile = nullptr;
 
 namespace {
 

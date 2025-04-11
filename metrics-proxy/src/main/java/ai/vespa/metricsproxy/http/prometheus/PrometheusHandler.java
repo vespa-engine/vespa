@@ -37,6 +37,8 @@ public class PrometheusHandler extends HttpHandlerBase {
 
     private final ValuesFetcher valuesFetcher;
     private final NodeMetricGatherer nodeMetricGatherer;
+    private final ApplicationDimensions applicationDimensions;
+    private final NodeDimensions nodeDimensions;
 
     @Inject
     public PrometheusHandler(Executor executor,
@@ -48,6 +50,8 @@ public class PrometheusHandler extends HttpHandlerBase {
         super(executor);
         valuesFetcher = new ValuesFetcher(metricsManager, vespaServices, metricsConsumers);
         this.nodeMetricGatherer = new NodeMetricGatherer(metricsManager, applicationDimensions, nodeDimensions);
+        this.applicationDimensions = applicationDimensions;
+        this.nodeDimensions = nodeDimensions;
     }
 
     @Override
@@ -61,7 +65,7 @@ public class PrometheusHandler extends HttpHandlerBase {
         try {
             List<MetricsPacket> metrics =  new ArrayList<>(valuesFetcher.fetch(consumer));
             metrics.addAll(nodeMetricGatherer.gatherMetrics());
-            return new PrometheusResponse(OK, toPrometheusModel(metrics));
+            return new PrometheusResponse(OK, toPrometheusModel(metrics, applicationDimensions, nodeDimensions));
         } catch (Exception e) {
             log.log(Level.WARNING, "Got exception when rendering metrics:", e);
             return new TextResponse(INTERNAL_SERVER_ERROR, e.getMessage());

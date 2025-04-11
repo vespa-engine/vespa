@@ -47,8 +47,8 @@ TEST_F(NnsClosenessTest, require_that_blueprint_can_be_created_from_factory)
 {
     BlueprintFactoryFixture f;
     Blueprint::SP bp = f.factory.createBlueprint("closeness");
-    EXPECT_TRUE(bp.get() != 0);
-    EXPECT_TRUE(dynamic_cast<ClosenessBlueprint*>(bp.get()) != 0);
+    EXPECT_TRUE(bp.get() != nullptr);
+    EXPECT_TRUE(dynamic_cast<ClosenessBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST_F(NnsClosenessTest, require_that_no_features_are_dumped)

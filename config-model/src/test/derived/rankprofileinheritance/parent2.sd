@@ -20,6 +20,11 @@ schema parent2 {
       attribute(field2)
     }
 
+    weakand {
+      stopword-limit: 0.125
+      adjust-target: 0.75
+      allow-drop-all: on
+    }
   }
 
 }

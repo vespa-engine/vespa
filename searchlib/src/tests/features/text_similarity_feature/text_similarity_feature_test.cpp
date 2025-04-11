@@ -103,8 +103,8 @@ TEST(TextSimilarityFeatureTest, require_that_blueprint_can_be_created_from_facto
 {
     BlueprintFactoryFixture f;
     Blueprint::SP bp = f.factory.createBlueprint("textSimilarity");
-    EXPECT_TRUE(bp.get() != 0);
-    EXPECT_TRUE(dynamic_cast<TextSimilarityBlueprint*>(bp.get()) != 0);
+    EXPECT_TRUE(bp.get() != nullptr);
+    EXPECT_TRUE(dynamic_cast<TextSimilarityBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST(TextSimilarityFeatureTest, require_that_appropriate_features_are_dumped)

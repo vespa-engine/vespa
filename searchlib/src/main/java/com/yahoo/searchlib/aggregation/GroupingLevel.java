@@ -11,6 +11,7 @@ public class GroupingLevel extends Identifiable {
 
     // The global class identifier shared with C++.
     public static final int classId = registerClass(0x4000 + 93, GroupingLevel.class, GroupingLevel::new);
+    public static final int classIdV2 = registerClass(0x4000 + 169, GroupingLevel.class, () -> new GroupingLevel().setV2());
 
     // The maximum number of groups allowed at this level.
     private long maxGroups = -1;
@@ -20,6 +21,12 @@ public class GroupingLevel extends Identifiable {
 
     // The classifier expression; the result of this is the group key.
     private ExpressionNode classify = null;
+
+    // The filter expression
+    private ExpressionNode filter = null; // XXX change to new node type when we get it
+    private boolean v2 = false;
+    GroupingLevel setV2() { v2 = true; return this; }
+    boolean hasFilter() { return filter != null; }
 
     // The prototype of the groups to create for each class.
     private Group collect = new Group();
@@ -96,7 +103,7 @@ public class GroupingLevel extends Identifiable {
 
     @Override
     protected int onGetClassId() {
-        return classId;
+        return v2 ? classIdV2 : classId;
     }
 
     @Override
@@ -104,6 +111,9 @@ public class GroupingLevel extends Identifiable {
         buf.putLong(null, maxGroups);
         buf.putLong(null, precision);
         serializeOptional(buf, classify);
+        if (v2) {
+            serializeOptional(buf, filter);
+        }
         collect.serializeWithId(buf);
     }
 
@@ -112,6 +122,9 @@ public class GroupingLevel extends Identifiable {
         maxGroups = buf.getLong(null);
         precision = buf.getLong(null);
         classify = (ExpressionNode)deserializeOptional(buf);
+        if (v2) {
+            filter = (ExpressionNode)deserializeOptional(buf);
+        }
         collect.deserializeWithId(buf);
     }
 

@@ -342,6 +342,27 @@ type protonTrace struct {
 	path *slime.Path
 }
 
+func (p protonTrace) globalFilterPerf() *topNPerf {
+	var maxTime float64
+	maxPerf := slime.Invalid
+	slime.Select(p.root, hasTag("global_filter_profiling"), func(p *slime.Path, v slime.Value) {
+		myTime := v.Field("total_time_ms").AsDouble()
+		if myTime > maxTime {
+			maxTime = myTime
+			maxPerf = v
+		}
+	})
+	perf := newTopNPerf()
+	eachSample(maxPerf, func(sample slime.Value) {
+		myTime := sample.Field("total_time_ms").AsDouble()
+		if selfTime := sample.Field("self_time_ms"); selfTime.Valid() {
+			myTime = selfTime.AsDouble()
+		}
+		perf.addSample(sample.Field("name").AsString(), sample.Field("count").AsLong(), myTime)
+	})
+	return perf
+}
+
 func (p protonTrace) findThreadTraces() []threadTrace {
 	var traces []threadTrace
 	slime.Select(p.root, hasTag("query_execution"), func(p *slime.Path, v slime.Value) {

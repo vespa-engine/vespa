@@ -38,7 +38,7 @@ bool WordCharTokenizer::init(const std::string &text)
   bool  need_punct=false, added_punct=false;
 
   while(*tmp) {
-    tok=NULL;
+    tok=nullptr;
     while((tok=tmp,*tmp) &&
           (ch=Unicode::getUTF8Char(tmp),
            _punctuation==PUNCTUATION_WHITESPACEONLY?Unicode::isSpaceChar(ch):!Unicode::isWordChar(ch))){

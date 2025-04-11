@@ -165,13 +165,13 @@ public:
         return _search_context->createIterator(tfmda[0], strict());
     }
 
-    SearchIterator::UP createSearch(fef::MatchData &md) const override {
+    SearchIterator::UP createSearchImpl(fef::MatchData &md) const override {
         const State &state = getState();
         assert(state.numFields() == 1);
         return _search_context->createIterator(state.field(0).resolve(md), strict());
     }
 
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         (void) constraint; // We provide an iterator with exact results, so no need to take constraint into consideration.
         auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
         wrapper->wrap(createLeafSearch(wrapper->tfmda()));
@@ -309,7 +309,7 @@ public:
             return std::make_unique<LocationPreFilterIterator<false, Parent>>(std::move(children));
         }
     }
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
 
@@ -375,7 +375,7 @@ public:
         }
         return FastS_AllocLocationIterator(_attribute.getNumDocs(), strict(), _location);
     }
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override {
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override {
         return create_default_filter(constraint);
     }
     void visitMembers(vespalib::ObjectVisitor& visitor) const override {
@@ -518,7 +518,7 @@ public:
                                                               _scoresAdjustFrequency, get_docid_limit()),
                                                         _weights, _terms, _attr, strict(), readonly_scores_heap);
     }
-    std::unique_ptr<SearchIterator> createFilterSearch(FilterConstraint constraint) const override;
+    std::unique_ptr<SearchIterator> createFilterSearchImpl(FilterConstraint constraint) const override;
     bool always_needs_unpack() const override { return true; }
     void set_matching_phase(MatchingPhase matching_phase) noexcept override;
 };
@@ -526,7 +526,7 @@ public:
 DirectWandBlueprint::~DirectWandBlueprint() = default;
 
 std::unique_ptr<SearchIterator>
-DirectWandBlueprint::createFilterSearch(FilterConstraint constraint) const
+DirectWandBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     if (constraint == Blueprint::FilterConstraint::UPPER_BOUND) {
         std::vector<DocidWithWeightIterator> iterators;

@@ -20,6 +20,7 @@ import org.logstash.common.io.DeadLetterQueueWriter;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Duration;
@@ -31,46 +32,110 @@ import java.util.concurrent.CompletableFuture;
 public class VespaFeed implements Output {
     private static final Logger logger = LogManager.getLogger(VespaFeed.class);
 
+    /***********************
+     * Detect schema mode settings
+     ***********************/
+    // detect schema mode. This will not send documents to Vespa, but will generate an application package
+    public static final PluginConfigSpec<Boolean> QUICK_START =
+            PluginConfigSpec.booleanSetting("detect_schema", false);
+
+    // Other options in this section are ignored/irrelevant if QUICK_START is false
+
+    // save the generated application package in this directory
+    public static final PluginConfigSpec<String> APPLICATION_PACKAGE_DIR =
+            PluginConfigSpec.stringSetting("application_package_dir", System.getProperty("java.io.tmpdir") + File.separator + "vespa_app");
+    // should we deploy the application after generating it?
+    public static final PluginConfigSpec<Boolean> DEPLOY_PACKAGE =
+            PluginConfigSpec.booleanSetting("deploy_package", true);
+    // when? What do we consider idle time in terms of empty pipeline batches?
+    public static final PluginConfigSpec<Long> IDLE_BATCHES =
+            PluginConfigSpec.numSetting("idle_batches", 10);
+    // where to deploy on local installs. Defaults to the same host as the vespa_url, with port 19071
+    public static final PluginConfigSpec<URI> CONFIG_SERVER =
+            PluginConfigSpec.uriSetting("config_server", null);
+    // whether to generate mTLS certificates
+    // if we're using Vespa Cloud, the default is "true", otherwise "false"
+    public static final PluginConfigSpec<Boolean> GENERATE_MTLS_CERTIFICATES =
+            PluginConfigSpec.booleanSetting("generate_mtls_certificates", false);
+    // common name for the mTLS certificates
+    public static final PluginConfigSpec<String> CERTIFICATE_COMMON_NAME =
+            PluginConfigSpec.stringSetting("certificate_common_name", "cloud.vespa.logstash");
+    // validity days for the mTLS certificates
+    public static final PluginConfigSpec<Long> CERTIFICATE_VALIDITY_DAYS =
+            PluginConfigSpec.numSetting("certificate_validity_days", 30);
+    // custom type mappings file
+    public static final PluginConfigSpec<String> TYPE_MAPPINGS_FILE =
+    PluginConfigSpec.stringSetting("type_mappings_file", null);
+    // custom type conflict resolution file
+    public static final PluginConfigSpec<String> TYPE_CONFLICT_RESOLUTION_FILE =
+            PluginConfigSpec.stringSetting("type_conflict_resolution_file", null);
+    
+    // Vespa Cloud deployment options
+    public static final PluginConfigSpec<String> VESPA_CLOUD_TENANT = 
+            PluginConfigSpec.stringSetting("vespa_cloud_tenant", null);
+    public static final PluginConfigSpec<String> VESPA_CLOUD_APPLICATION = 
+            PluginConfigSpec.stringSetting("vespa_cloud_application", null);
+    public static final PluginConfigSpec<String> VESPA_CLOUD_INSTANCE = 
+            PluginConfigSpec.stringSetting("vespa_cloud_instance", "default");
+    
+    /***********************
+     * Vespa API settings
+     ***********************/
     public static final PluginConfigSpec<URI> VESPA_URL =
             PluginConfigSpec.uriSetting("vespa_url", "http://localhost:8080");
-    public static final PluginConfigSpec<String> NAMESPACE =
-            PluginConfigSpec.requiredStringSetting("namespace");
     // if namespace is set to %{field_name} or %{[field_name]}, it's dynamic
+    // irrelevant/ignored for if QUICK_START is true
+    public static final PluginConfigSpec<String> NAMESPACE =
+            PluginConfigSpec.stringSetting("namespace", null);
     // if remove_namespace is true, the namespace is removed from the document
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> REMOVE_NAMESPACE =
             PluginConfigSpec.booleanSetting("remove_namespace", false);
     public static final PluginConfigSpec<String> DOCUMENT_TYPE =
-            PluginConfigSpec.requiredStringSetting("document_type");
+            PluginConfigSpec.stringSetting("document_type", "doctype");
     // if remove_document_type is true, the document type is removed from the document (assuming it's dynamic)
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> REMOVE_DOCUMENT_TYPE =
             PluginConfigSpec.booleanSetting("remove_document_type", false);
     // field from the event to use as doc ID
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<String> ID_FIELD =
             PluginConfigSpec.stringSetting("id_field", "id");
     // if remove_id is true, the id field is removed from the document
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> REMOVE_ID =
             PluginConfigSpec.booleanSetting("remove_id", false);
 
     // client certificate and key
+    // defaults to the application package dir under
+    // security/clients.pem and data-plane-private-key.pem
     public static final PluginConfigSpec<String> CLIENT_CERT =
             PluginConfigSpec.stringSetting("client_cert", null);
     public static final PluginConfigSpec<String> CLIENT_KEY =
             PluginConfigSpec.stringSetting("client_key", null);
     
     // authentication token (for Vespa Cloud)
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<String> AUTH_TOKEN =
             PluginConfigSpec.stringSetting("auth_token", null);
 
     // put, update or remove
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<String> OPERATION =
             PluginConfigSpec.stringSetting("operation", "put");
     // if remove_operation is true, the operation field is removed from the document (assuming it's dynamic)
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> REMOVE_OPERATION =
             PluginConfigSpec.booleanSetting("remove_operation", false);
     // whether to add create=true to the put/update request
+    // ignored/irrelevant for if QUICK_START is true
     public static final PluginConfigSpec<Boolean> CREATE =
             PluginConfigSpec.booleanSetting("create", false);
 
+    /***********************
+     * Feed client settings
+     (ignored/irrelevant for if QUICK_START is true)
+     ***********************/
     // max HTTP/2 connections per endpoint. We only have 1
     public static final PluginConfigSpec<Long> MAX_CONNECTIONS =
             PluginConfigSpec.numSetting("max_connections", 1);
@@ -95,6 +160,7 @@ public class VespaFeed implements Output {
     
     /***********
      * Dead Letter Queue settings
+     (ignored/irrelevant for if QUICK_START is true)
      ***********/
     // enable dead letter queue. This overrides the global setting in logstash.yml
     public static final PluginConfigSpec<Boolean> ENABLE_DLQ =
@@ -112,29 +178,98 @@ public class VespaFeed implements Output {
     public static final PluginConfigSpec<Long> FLUSH_INTERVAL =
             PluginConfigSpec.numSetting("flush_interval", 5000);
     
-    
+    /***********************
+     * Config options END
+     ***********************/
+
     private FeedClient client;
     private final String id;
-    private final String namespace;
-    private final boolean dynamicNamespace;
-    private final boolean removeNamespace;
-    private final String documentType;
-    private final boolean dynamicDocumentType;
-    private final boolean removeDocumentType;
-    private final String operation;
-    private final boolean dynamicOperation;
-    private final boolean create;
-    private final String idField;
-    private final boolean removeId; 
-    private final long operationTimeout;
+    // this signals that the plugin is stopping
     private volatile boolean stopped = false;
-    ObjectMapper objectMapper;
-    private final boolean removeOperation;
+    
+    ObjectMapper objectMapper = ObjectMappers.JSON_MAPPER;
     private DeadLetterQueueWriter dlqWriter;
-
+    private VespaQuickStarter quickStarter;
+    private final QuickStartConfig quickStartConfig;
+    private final FeedConfig feedConfig;
 
     public VespaFeed(final String id, final Configuration config, final Context context) {
         this.id = id;
+        this.feedConfig = initFeedConfig(config);
+        this.quickStartConfig = initQuickStartConfig(config);
+        initializeClient(config, false, null);
+    }
+
+    // Constructor for testing with a mock client
+    protected VespaFeed(String id, Configuration config, Context context, FeedClient testClient) {
+        this.id = id;
+        this.feedConfig = initFeedConfig(config);
+        this.quickStartConfig = initQuickStartConfig(config);
+        initializeClient(config, testClient == null, testClient);
+    }
+
+    // Constructor for testing that skips client initialization
+    public VespaFeed(final String id, final Configuration config, final Context context, boolean skipClientInit) {
+        this.id = id;
+        this.feedConfig = initFeedConfig(config);
+        this.quickStartConfig = initQuickStartConfig(config);
+        initializeClient(config, skipClientInit, null);
+    }
+
+    // Initialize feed configuration
+    private FeedConfig initFeedConfig(Configuration config) {
+        return new FeedConfig(
+            config.get(NAMESPACE),
+            config.get(REMOVE_NAMESPACE),
+            config.get(DOCUMENT_TYPE),
+            config.get(REMOVE_DOCUMENT_TYPE),
+            config.get(OPERATION),
+            config.get(CREATE),
+            config.get(ID_FIELD),
+            config.get(REMOVE_ID),
+            config.get(OPERATION_TIMEOUT),
+            config.get(REMOVE_OPERATION),
+            config.get(CLIENT_CERT),
+            config.get(CLIENT_KEY),
+            config.get(APPLICATION_PACKAGE_DIR)
+        );
+    }
+
+    // Initialize quick start configuration
+    private QuickStartConfig initQuickStartConfig(Configuration config) {
+        if (config.get(QUICK_START)) {
+            return new QuickStartConfig(
+                config.get(DEPLOY_PACKAGE),
+                config.get(GENERATE_MTLS_CERTIFICATES),
+                feedConfig.getClientCert(),
+                feedConfig.getClientKey(),
+                config.get(CONFIG_SERVER),
+                config.get(VESPA_URL),
+                feedConfig.getDocumentType(),
+                feedConfig.isDynamicDocumentType(),
+                config.get(IDLE_BATCHES).longValue(),
+                config.get(APPLICATION_PACKAGE_DIR),
+                config.get(TYPE_MAPPINGS_FILE),
+                config.get(TYPE_CONFLICT_RESOLUTION_FILE),
+                config.get(MAX_RETRIES),
+                config.get(GRACE_PERIOD),
+                config.get(VESPA_CLOUD_TENANT),
+                config.get(VESPA_CLOUD_APPLICATION),
+                config.get(VESPA_CLOUD_INSTANCE),
+                config.get(CERTIFICATE_COMMON_NAME),
+                config.get(CERTIFICATE_VALIDITY_DAYS)
+            );
+        }
+        return null;
+    }
+
+    // Private initialization method to handle client creation
+    private void initializeClient(Configuration config, boolean skipClientInit, FeedClient testClient) {
+        if (quickStartConfig != null) {
+            quickStarter = new VespaQuickStarter(quickStartConfig);
+            return;
+        }
+        
         if (config.get(ENABLE_DLQ)) {
             try {
                 Path dlqPath = Paths.get(config.get(DLQ_PATH));
@@ -144,36 +279,24 @@ public class VespaFeed implements Output {
                                 Duration.ofMillis(config.get(FLUSH_INTERVAL).longValue()))
                             .build();
             } catch (IOException e) {
-                logger.error("Failed to create DLQ writer: ", e);
+                logger.error("Failed to create Dead Letter Queue writer: ", e);
                 dlqWriter = null;
             }
-        } else {
-            dlqWriter = null;
         }
 
-        // if the namespace matches %{field_name} or %{[field_name]}, it's dynamic
-        DynamicOption configOption = new DynamicOption(config.get(NAMESPACE));
-        dynamicNamespace = configOption.isDynamic();
-        namespace = configOption.getParsedConfigValue();
-        removeNamespace = config.get(REMOVE_NAMESPACE);
-        // same with document type
-        configOption = new DynamicOption(config.get(DOCUMENT_TYPE));
-        dynamicDocumentType = configOption.isDynamic();
-        documentType = configOption.getParsedConfigValue();
-        removeDocumentType = config.get(REMOVE_DOCUMENT_TYPE);
-        // and operation
-        configOption = new DynamicOption(config.get(OPERATION));
-        dynamicOperation = configOption.isDynamic();
-        operation = configOption.getParsedConfigValue();
-        create = config.get(CREATE);
-        validateOperationAndCreate();
+        // If we have a test client, use it
+        if (testClient != null) {
+            this.client = testClient;
+            return;
+        }
+        
+        // Skip client initialization for testing if requested
+        if (skipClientInit) {
+            return;
+        }
 
-        operationTimeout = config.get(OPERATION_TIMEOUT);
-
-        idField = config.get(ID_FIELD);
-        removeId = config.get(REMOVE_ID);
-        this.removeOperation = config.get(REMOVE_OPERATION);
-        FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
+        try {
+            FeedClientBuilder builder = FeedClientBuilder.create(config.get(VESPA_URL))
                     .setConnectionsPerEndpoint(config.get(MAX_CONNECTIONS).intValue())
                     .setMaxStreamPerConnection(config.get(MAX_STREAMS).intValue())
                     .setRetryStrategy(
@@ -197,46 +320,37 @@ public class VespaFeed implements Output {
                             )
                     );
 
-        // set client certificate and key (or auth token) if they are provided
-        builder = addAuthOptionsToBuilder(config, builder);
+            // set client certificate and key (or auth token) if they are provided
+            builder = addAuthOptionsToBuilder(config, builder, 
+                        feedConfig.getClientCert(), feedConfig.getClientKey());
 
-        // now we should have the client
-        client = builder.build();
-
-        // for JSON serialization
-        objectMapper = ObjectMappers.JSON_MAPPER;
-    }
-
-    // Constructor for testing
-    protected VespaFeed(String id, Configuration config, Context context, FeedClient testClient) {
-        this(id, config, context);
-        if (testClient != null) {
-            this.client = testClient;
+            // now we should have the client
+            client = builder.build();
+        } catch (Exception e) {
+            String errorMessage = "Failed to create Vespa feed client: " + e.getMessage();
+            logger.error(errorMessage, e);
+            throw new IllegalArgumentException(errorMessage, e);
         }
     }
 
-    public void validateOperationAndCreate() {
-        if (!dynamicOperation) {
-            if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
-                throw new IllegalArgumentException("Operation must be put, update or remove");
-            }
-            if (operation.equals("remove") && create) {
-                throw new IllegalArgumentException("Operation remove cannot have create=true");
-            }
-        }
-    }
-
-    protected static FeedClientBuilder addAuthOptionsToBuilder(Configuration config, FeedClientBuilder builder) {
-        String clientCert = config.get(CLIENT_CERT);
+    protected static FeedClientBuilder addAuthOptionsToBuilder(Configuration config, FeedClientBuilder builder,
+                                                String clientCert, String clientKey) {
         Path clientCertPath = null;
-        if (clientCert != null) {
-            clientCertPath = Paths.get(clientCert);
-        }
-
-        String clientKey = config.get(CLIENT_KEY);
         Path clientKeyPath = null;
-        if (clientKey != null) {
-            clientKeyPath = Paths.get(clientKey);
+        
+        if (clientCert != null && clientKey != null) {
+            // Check if certificate files exist
+            Path certPath = Paths.get(clientCert);
+            Path keyPath = Paths.get(clientKey);
+            
+            if (Files.exists(certPath) && Files.exists(keyPath)) {
+                clientCertPath = certPath;
+                clientKeyPath = keyPath;
+                logger.info("Using mTLS certificates for authentication - cert: {}, key: {}", clientCert, clientKey);
+            } else {
+                logger.warn("Certificate files not found, not using mTLS: cert: {} (exists: {}), key: {} (exists: {})", 
+                    clientCert, Files.exists(certPath), clientKey, Files.exists(keyPath));
+            }
         }
 
         if (clientCertPath != null && clientKeyPath != null) {
@@ -246,16 +360,22 @@ public class VespaFeed implements Output {
 
         String authToken = config.get(AUTH_TOKEN);
         if (authToken != null) {
+            logger.info("Using auth token for authentication");
             builder.addRequestHeader("Authorization", "Bearer " + authToken);
             return builder;
         }
         
-        logger.warn("Client certificate + key combination not provided. Auth token not provided, either. Using insecure connection.");
+        logger.warn("Client certificate + key combination not found. Auth token not provided, either. Using insecure connection.");
         return builder;
     }
 
     @Override
     public void output(final Collection<Event> events) {
+        if (quickStarter != null) {
+            quickStarter.run(events);
+            return;
+        }
+
         // track async requests (promises) and their corresponding events here
         Map<CompletableFuture<Result>, Event> promiseToEventMap = new HashMap<>();
 
@@ -302,47 +422,47 @@ public class VespaFeed implements Output {
     protected CompletableFuture<Result> asyncFeed(Event event) throws JsonProcessingException {
         // try to get the doc ID from the event, otherwise generate a UUID
         String docIdStr;
-        Object docIdObj = event.getField(idField);
+        Object docIdObj = event.getField(feedConfig.getIdField());
         if (docIdObj == null) {
             docIdStr = UUID.randomUUID().toString();
         } else {
             docIdStr = docIdObj.toString();
             // Remove the ID field if configured to do so
-            if (removeId) {
-                event.remove(idField);
+            if (feedConfig.isRemoveId()) {
+                event.remove(feedConfig.getIdField());
             }
         }
 
         // if the namespace is dynamic, we need to resolve it
-        String namespace = this.namespace;
-        if (dynamicNamespace) {
-            namespace = getDynamicField(event, this.namespace);
-            if (removeNamespace) {
-                event.remove(this.namespace);
+        String namespace = feedConfig.getNamespace();
+        if (feedConfig.isDynamicNamespace()) {
+            namespace = getDynamicField(event, feedConfig.getNamespace());
+            if (feedConfig.isRemoveNamespace()) {
+                event.remove(feedConfig.getNamespace());
             }
         }
 
         // similar logic for the document type
-        String documentType = this.documentType;
-        if (dynamicDocumentType) {
-            documentType = getDynamicField(event, this.documentType);
-            if (removeDocumentType) {
-                event.remove(this.documentType);
+        String documentType = feedConfig.getDocumentType();
+        if (feedConfig.isDynamicDocumentType()) {
+            documentType = getDynamicField(event, feedConfig.getDocumentType());
+            if (feedConfig.isRemoveDocumentType()) {
+                event.remove(feedConfig.getDocumentType());
             }
         }
 
         // and the operation
-        String operation = this.operation;
-        if (dynamicOperation) {
-            operation = getDynamicField(event, this.operation);
+        String operation = feedConfig.getOperation();
+        if (feedConfig.isDynamicOperation()) {
+            operation = getDynamicField(event, feedConfig.getOperation());
             if (!operation.equals("put") && !operation.equals("update") && !operation.equals("remove")) {
                 String errorMessage = String.format("Invalid operation (must be put, update or remove): {}", operation);
                 logger.error(errorMessage);
                 writeToDlq(event, errorMessage);
                 return null;
             }
-            if (removeOperation) {
-                event.remove(this.operation);
+            if (feedConfig.isRemoveOperation()) {
+                event.remove(feedConfig.getOperation());
             }
         }
         // add create=true, if applicable
@@ -375,9 +495,9 @@ public class VespaFeed implements Output {
      */
     public OperationParameters addCreateIfApplicable(String operation, String docId) {
         OperationParameters operationParameters = OperationParameters.empty()
-                .timeout(Duration.ofSeconds(operationTimeout));
+                .timeout(Duration.ofSeconds(feedConfig.getOperationTimeout()));
 
-        if (create) {
+        if (feedConfig.isCreate()) {
             if (operation.equals("put") || operation.equals("update")) {
                 return operationParameters.createIfNonExistent(true);
             } else {
@@ -411,58 +531,43 @@ public class VespaFeed implements Output {
 
     @Override
     public void stop() {
+        // this will tell the main loop to stop... looping :)
         stopped = true;
-        client.close();
+       
+        // close the client, if we're in standard mode
+        if (client != null) {
+            client.close();
+        }
+
+        if (quickStarter != null) {
+            // In quick start mode, deploy the application package if configured to do so
+            if (quickStartConfig != null && quickStartConfig.isDeployPackage()) {
+                quickStarter.deployer.deployApplicationPackage();
+            }
+        }
     }
 
     @Override
     public void awaitStop() throws InterruptedException {
-        // nothing to do here
+        // do nothing
     }
 
     @Override
     public Collection<PluginConfigSpec<?>> configSchema() {
-        return List.of(VESPA_URL, CLIENT_CERT, CLIENT_KEY, OPERATION, CREATE,
-                NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID, REMOVE_OPERATION,
-                MAX_CONNECTIONS, MAX_STREAMS, MAX_RETRIES, OPERATION_TIMEOUT, GRACE_PERIOD, DOOM_PERIOD,
-                ENABLE_DLQ, DLQ_PATH, MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, AUTH_TOKEN);
+        return List.of(
+            QUICK_START, DEPLOY_PACKAGE, CONFIG_SERVER, APPLICATION_PACKAGE_DIR, IDLE_BATCHES, TYPE_MAPPINGS_FILE,
+            TYPE_CONFLICT_RESOLUTION_FILE, GENERATE_MTLS_CERTIFICATES, CLIENT_CERT, CLIENT_KEY, VESPA_URL,
+            NAMESPACE, REMOVE_NAMESPACE, DOCUMENT_TYPE, REMOVE_DOCUMENT_TYPE, ID_FIELD, REMOVE_ID,
+            AUTH_TOKEN, OPERATION, REMOVE_OPERATION, CREATE, MAX_CONNECTIONS, MAX_STREAMS,
+            OPERATION_TIMEOUT, MAX_RETRIES, GRACE_PERIOD, DOOM_PERIOD, ENABLE_DLQ, DLQ_PATH,
+            MAX_QUEUE_SIZE, MAX_SEGMENT_SIZE, FLUSH_INTERVAL, VESPA_CLOUD_TENANT, VESPA_CLOUD_APPLICATION,
+            VESPA_CLOUD_INSTANCE
+        );
     }
 
     @Override
     public String getId() {
         return id;
-    }
-
-    public boolean isDynamicNamespace() {
-        return dynamicNamespace;
-    }
-
-    public String getNamespace() {
-        return namespace;
-    }
-
-    public boolean isDynamicDocumentType() {
-        return dynamicDocumentType;
-    }
-
-    public String getDocumentType() {
-        return documentType;
-    }
-
-    public String getOperation() {
-        return operation;
-    }
-
-    public boolean isCreate() {
-        return create;
-    }
-
-    public boolean isDynamicOperation() {
-        return dynamicOperation;
-    }
-
-    public long getOperationTimeout() {
-        return operationTimeout;
     }
 
     protected void writeToDlq(Event event, String errorMessage) {
@@ -482,5 +587,9 @@ public class VespaFeed implements Output {
     // for testing DLQ functionality
     protected void setDlqWriter(DeadLetterQueueWriter writer) {
         this.dlqWriter = writer;
+    }
+
+    protected FeedConfig getFeedConfig() {
+        return this.feedConfig;
     }
 }

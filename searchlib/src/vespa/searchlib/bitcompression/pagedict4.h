@@ -488,7 +488,7 @@ public:
     using OverflowVector = std::vector<OverflowRef>;
     OverflowVector _overflows;
 
-    PageDict4SSReader(ComprBuffer &cb,
+    PageDict4SSReader(const ComprBuffer &cb,
                       uint32_t ssFileHeaderSize,
                       uint64_t ssFileBitLen,
                       uint32_t spFileHeaderSize,

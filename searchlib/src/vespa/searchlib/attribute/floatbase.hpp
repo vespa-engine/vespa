@@ -57,27 +57,12 @@ FloatingPointAttributeTemplate<T>::is_sortable() const noexcept
 }
 
 template<typename T>
-long
-FloatingPointAttributeTemplate<T>::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
-    T origValue(get(doc));
-    return vespalib::serializeForSort< vespalib::convertForSort<T, true> >(origValue, serTo, available);
-}
-
-template<typename T>
-long
-FloatingPointAttributeTemplate<T>::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter *) const {
-    T origValue(get(doc));
-    return vespalib::serializeForSort< vespalib::convertForSort<T, false> >(origValue, serTo, available);
-}
-
-template<typename T>
 std::unique_ptr<attribute::ISortBlobWriter>
-FloatingPointAttributeTemplate<T>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const {
-    if (ascending) {
-        return std::make_unique<attribute::SingleNumericSortBlobWriter<FloatingPointAttributeTemplate<T>, true>>(*this);
-    } else {
-        return std::make_unique<attribute::SingleNumericSortBlobWriter<FloatingPointAttributeTemplate<T>, false>>(*this);
-    }
+FloatingPointAttributeTemplate<T>::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
+                                                         common::sortspec::MissingPolicy policy,
+                                                         std::string_view missing_value) const
+{
+    return make_single_numeric_sort_blob_writer<FloatingPointAttributeTemplate<T>>(*this, ascending, policy, missing_value);
 }
 
 }

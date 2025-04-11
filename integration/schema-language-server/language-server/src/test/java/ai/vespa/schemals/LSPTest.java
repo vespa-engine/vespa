@@ -29,6 +29,7 @@ import ai.vespa.schemals.schemadocument.resolvers.SymbolReferenceResolver;
 import ai.vespa.schemals.testutils.TestLogger;
 import ai.vespa.schemals.testutils.TestSchemaDiagnosticsHandler;
 import ai.vespa.schemals.testutils.TestSchemaMessageHandler;
+import ai.vespa.schemals.testutils.TestSchemaProgressHandler;
 
 /**
  * LSPTest
@@ -55,10 +56,11 @@ public class LSPTest {
         String fileURI = file.toURI().toString();
         String fileContent = IOUtils.readFile(file);
         TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
+        TestSchemaProgressHandler progressHandler = new TestSchemaProgressHandler();
         ClientLogger logger = new TestLogger(messageHandler);
         SchemaIndex schemaIndex = new SchemaIndex(logger);
         TestSchemaDiagnosticsHandler diagnosticsHandler = new TestSchemaDiagnosticsHandler(new ArrayList<>());
-        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler);
+        SchemaDocumentScheduler scheduler = new SchemaDocumentScheduler(logger, diagnosticsHandler, schemaIndex, messageHandler, progressHandler);
 
         scheduler.openDocument(new TextDocumentItem(fileURI, "vespaSchema", 0, fileContent));
 

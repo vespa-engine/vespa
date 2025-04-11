@@ -237,8 +237,14 @@ Matcher::match(const SearchRequest &request, vespalib::ThreadBundle &threadBundl
     bool isDoomExplicit = false;
     { // we want to measure full set-up and tear-down time as part of
       // collateral time
-        GroupingContext groupingContext(metaStore.getValidLids(), _now_ref, request.getTimeOfDoom(),
-                                        request.groupSpec.data(), request.groupSpec.size());
+        GroupingContext groupingContext(metaStore.getValidLids(), _now_ref, request.getTimeOfDoom());
+        try {
+            groupingContext.deserialize(request.groupSpec.data(), request.groupSpec.size());
+        } catch (const vespalib::IllegalArgumentException& e) {
+            vespalib::Issue::report("Matcher::match failed to deserialize grouping context: %s", e.message());
+            LOG(error, "Failed to deserialize grouping context: %s", e.message());
+            return reply;
+        }
         SessionId sessionId(request.sessionId.data(), request.sessionId.size());
         bool shouldCacheSearchSession = false;
         bool shouldCacheGroupingSession = false;

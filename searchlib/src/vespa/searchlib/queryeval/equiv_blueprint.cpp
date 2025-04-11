@@ -99,7 +99,7 @@ EquivBlueprint::createLeafSearch(const fef::TermFieldMatchDataArray &outputs) co
 }
 
 SearchIterator::UP
-EquivBlueprint::createFilterSearch(FilterConstraint constraint) const
+EquivBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_or_filter(_terms, strict(), constraint);
 }

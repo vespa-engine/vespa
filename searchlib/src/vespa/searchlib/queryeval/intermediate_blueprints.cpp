@@ -7,6 +7,7 @@
 #include "orsearch.h"
 #include "nearsearch.h"
 #include "ranksearch.h"
+#include "leaf_blueprints.h"
 #include "sourceblendersearch.h"
 #include "termwise_blueprint_helper.h"
 #include "isourceselector.h"
@@ -201,7 +202,7 @@ AndNotBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 }
 
 SearchIterator::UP
-AndNotBlueprint::createFilterSearch(FilterConstraint constraint) const
+AndNotBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_andnot_filter(get_children(), strict(), constraint);
 }
@@ -302,7 +303,7 @@ AndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 }
 
 SearchIterator::UP
-AndBlueprint::createFilterSearch(FilterConstraint constraint) const
+AndBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_and_filter(get_children(), strict(), constraint);
 }
@@ -397,7 +398,7 @@ OrBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 }
 
 SearchIterator::UP
-OrBlueprint::createFilterSearch(FilterConstraint constraint) const
+OrBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_or_filter(get_children(), strict(), constraint);
 }
@@ -449,12 +450,12 @@ WeakAndBlueprint::calculate_flow_stats(uint32_t docid_limit) const {
 Blueprint::HitEstimate
 WeakAndBlueprint::combine(const std::vector<HitEstimate> &data) const
 {
-    HitEstimate childEst = max(data);
-    HitEstimate myEst(_n, false);
-    if (childEst < myEst) {
-        return childEst;
+    auto or_est = sat_sum(data, get_docid_limit());
+    if (or_est.estHits < _n) {
+        return or_est;
     }
-    return myEst;
+    // use average of target hits and OR estimate
+    return {(_n + or_est.estHits + 1) / 2, false};
 }
 
 FieldSpecBaseList
@@ -483,7 +484,7 @@ WeakAndBlueprint::optimize_self(OptimizePass pass)
         while (!drop.empty()) {
             uint32_t idx = drop.back();
             drop.pop_back();
-            if (idx != min_est_idx) {
+            if (idx != min_est_idx || _stop_word_strategy.allow_drop_all()) {
                 removeChild(idx);
                 _weights.erase(_weights.begin() + idx);
             }
@@ -494,6 +495,9 @@ WeakAndBlueprint::optimize_self(OptimizePass pass)
 Blueprint::UP
 WeakAndBlueprint::get_replacement()
 {
+    if (childCnt() == 0) {
+        return std::make_unique<EmptyBlueprint>();
+    }
     if (childCnt() == 1) {
         return removeChild(0);
     }
@@ -531,7 +535,7 @@ WeakAndBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 }
 
 SearchIterator::UP
-WeakAndBlueprint::createFilterSearch(FilterConstraint constraint) const
+WeakAndBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_atmost_or_filter(get_children(), strict(), constraint);
 }
@@ -597,10 +601,10 @@ NearBlueprint::sort(Children &children, InFlow in_flow) const
 }
 
 SearchIterator::UP
-NearBlueprint::createSearch(fef::MatchData &md) const
+NearBlueprint::createSearchImpl(fef::MatchData &md) const
 {
     need_normal_features_for_children(*this, md);
-    return IntermediateBlueprint::createSearch(md);
+    return IntermediateBlueprint::createSearchImpl(md);
 }
 
 SearchIterator::UP
@@ -618,7 +622,7 @@ NearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 }
 
 SearchIterator::UP
-NearBlueprint::createFilterSearch(FilterConstraint constraint) const
+NearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_atmost_and_filter(get_children(), strict(), constraint);
 }
@@ -658,10 +662,10 @@ ONearBlueprint::sort(Children &, InFlow) const
 }
 
 SearchIterator::UP
-ONearBlueprint::createSearch(fef::MatchData &md) const
+ONearBlueprint::createSearchImpl(fef::MatchData &md) const
 {
     need_normal_features_for_children(*this, md);
-    return IntermediateBlueprint::createSearch(md);
+    return IntermediateBlueprint::createSearchImpl(md);
 }
 
 SearchIterator::UP
@@ -681,7 +685,7 @@ ONearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 }
 
 SearchIterator::UP
-ONearBlueprint::createFilterSearch(FilterConstraint constraint) const
+ONearBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_atmost_and_filter(get_children(), strict(), constraint);
 }
@@ -769,7 +773,7 @@ RankBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
 }
 
 SearchIterator::UP
-RankBlueprint::createFilterSearch(FilterConstraint constraint) const
+RankBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_first_child_filter(get_children(), constraint);
 }
@@ -839,7 +843,7 @@ SourceBlenderBlueprint::createIntermediateSearch(MultiSearch::Children sub_searc
 }
 
 SearchIterator::UP
-SourceBlenderBlueprint::createFilterSearch(FilterConstraint constraint) const
+SourceBlenderBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     return create_atmost_or_filter(get_children(), strict(), constraint);
 }

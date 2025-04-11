@@ -48,7 +48,7 @@ TermDistanceExecutor::TermDistanceExecutor(const IQueryEnvironment & env,
 
 bool TermDistanceExecutor::valid() const
 {
-    return ((_termA.termData() != 0) && (_termB.termData() != 0) &&
+    return ((_termA.termData() != nullptr) && (_termB.termData() != nullptr) &&
             (_termA.fieldHandle() != IllegalHandle) && (_termB.fieldHandle() != IllegalHandle));
 }
 

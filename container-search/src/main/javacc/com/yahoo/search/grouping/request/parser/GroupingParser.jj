@@ -114,6 +114,7 @@ TOKEN :
     <DOCIDNSSPECIFIC: "docidnsspecific"> |
     <EACH: "each"> |
     <EXP: "exp"> |
+    <FILTER: "filter"> |
     <FIXEDWIDTH: "fixedwidth"> |
     <FLOOR: "floor"> |
     <GROUP: "group"> |
@@ -137,6 +138,7 @@ TOKEN :
     <POW: "pow"> |
     <PRECISION: "precision"> |
     <PREDEFINED: "predefined"> |
+    <REGEX: "regex"> |
     <RELEVANCE: "relevance"> |
     <REVERSE: "reverse"> |
     <SIN: "sin"> |
@@ -251,6 +253,7 @@ GroupingOperation eachOperation(GroupingOperation parent) :
 
 void operationBody(GroupingOperation parent) :
 {
+    FilterExpression filterExp = null;
     ConstantValue<?> maxOperand = null;
     String str;
     Number num;
@@ -262,6 +265,7 @@ void operationBody(GroupingOperation parent) :
     ( ( <ACCURACY>  lbrace() num = number()                               rbrace() { parent.setAccuracy(num.doubleValue()); } ) |
       ( <ALIAS>     lbrace() str = identifier() comma() exp = exp(parent) rbrace() { parent.putAlias(str, exp); }             ) |
       ( <HINT>      lbrace() str = identifier()                           rbrace() { parent.addHint(str); }                   ) |
+      ( <FILTER>    lbrace() filterExp = filterExp(parent)                rbrace() { parent.setFilterBy(filterExp); }         ) |
       ( <MAX>       lbrace() ( maxOperand = infinitePositiveValue() | maxOperand = constantValue() ) rbrace()
       {
             if (maxOperand instanceof InfiniteValue) {
@@ -307,6 +311,15 @@ GroupingExpression exp(GroupingOperation grp) :
     ( [ add() | sub()                         { neg = true; } ]
       exp = expAlias(grp)                     { if (neg) { exp = resolveNegation(exp); } }
       [ <AS> lbrace() str = string() rbrace() { exp.setLabel(str); } ] )
+    { return exp; }
+}
+
+FilterExpression filterExp(GroupingOperation grp) :
+{
+    FilterExpression exp;
+}
+{
+    exp = regexPredicate(grp)
     { return exp; }
 }
 
@@ -924,6 +937,16 @@ XorBitFunction xorBitFunction(GroupingOperation grp) :
     { return new XorBitFunction(exp, num.intValue()); }
 }
 
+RegexPredicate regexPredicate(GroupingOperation grp) :
+{
+    String pattern;
+    GroupingExpression exp;
+}
+{
+    <REGEX> lbrace() pattern = string() comma() exp = exp(grp) rbrace()
+    { return new RegexPredicate(pattern, exp); }
+}
+
 void bucket(GroupingOperation grp, BucketResolver resolver) :
 {
     ConstantValue from, to = null;
@@ -1020,6 +1043,7 @@ String identifier() :
         <DOCIDNSSPECIFIC> |
         <EACH> |
         <EXP> |
+        <FILTER> |
         <FIXEDWIDTH> |
         <FLOOR> |
         <GROUP> |
@@ -1044,6 +1068,7 @@ String identifier() :
         <POW> |
         <PRECISION> |
         <PREDEFINED> |
+        <REGEX> |
         <RELEVANCE> |
         <REVERSE> |
         <SIN> |

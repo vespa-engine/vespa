@@ -101,6 +101,9 @@ public class QueryProperties extends Properties {
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCHING, Matching.WEAKAND, WeakAnd.ADJUST_TARGET),
                 GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getAdjustTarget(),
                                (query, value) -> query.getRanking().getMatching().getWeakAnd().setAdjustTarget(asDouble(value, 1.0))));
+        map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCHING, Matching.WEAKAND, WeakAnd.ALLOW_DROP_ALL),
+                GetterSetter.of(query -> query.getRanking().getMatching().getWeakAnd().getAllowDropAll(),
+                        (query, value) -> query.getRanking().getMatching().getWeakAnd().setAllowDropAll(asBoolean(value, false))));
 
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.ATTRIBUTE), GetterSetter.of(query -> query.getRanking().getMatchPhase().getAttribute(), (query, value) -> query.getRanking().getMatchPhase().setAttribute(asString(value, null))));
         map.put(CompoundName.fromComponents(Ranking.RANKING, Ranking.MATCH_PHASE, MatchPhase.ASCENDING), GetterSetter.of(query -> query.getRanking().getMatchPhase().getAscending(), (query, value) -> query.getRanking().getMatchPhase().setAscending(asBoolean(value, false))));

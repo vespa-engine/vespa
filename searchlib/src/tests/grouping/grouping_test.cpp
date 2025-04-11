@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/attribute/extendableattributes.h>
@@ -13,6 +12,8 @@
 #include <vespa/searchlib/expression/fixedwidthbucketfunctionnode.h>
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -176,11 +177,9 @@ testAggregation(AggregationContext &ctx, const Grouping &request, const Group &e
     tmp.cleanupAttributeReferences();
     CheckAttributeReferences attrCheck;
     tmp.select(attrCheck, attrCheck);
-    EXPECT_EQUAL(attrCheck._numrefs, 0);
-    bool ok = EXPECT_EQUAL(tmp.getRoot().asString(), expect.asString());
-    if (!ok) {
-        std::cerr << tmp.getRoot().asString() << std::endl << expect.asString() << std::endl;
-    }
+    EXPECT_EQ(attrCheck._numrefs, 0);
+    bool ok = true;
+    EXPECT_EQ(tmp.getRoot().asString(), expect.asString()) << (ok = false, "");
     return ok;
 }
 
@@ -199,8 +198,10 @@ prepareAggr(const AggregationResult & aggr, ExpressionNode::UP expr, const Resul
 }
 
 void
-testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir, const ResultNode & fr, const ResultNode & sr)
+testAggregationSimpleSum(AggregationContext & ctx, const AggregationResult & aggr, const ResultNode & ir,
+                         const ResultNode & fr, const ResultNode & sr, const std::string& label)
 {
+    SCOPED_TRACE(label);
     ExpressionNode::CP clone(aggr);
     Grouping request;
     request.setRoot(Group().addResult(prepareAggr(aggr, MU<AttributeNode>("int")))
@@ -229,7 +230,9 @@ testMerge(const Grouping &a, const Grouping &b, const Group &expect)
     tmp.merge(tmpB);
     tmp.postMerge();
     tmp.sortById();
-    return EXPECT_EQUAL(tmp.getRoot().asString(), expect.asString());
+    bool retval = true;
+    EXPECT_EQ(tmp.getRoot().asString(), expect.asString()) << (retval = false, "");
+    return retval;
 }
 
 /**
@@ -241,10 +244,8 @@ testPrune(const Grouping &a, const Grouping &b, const Group &expect)
 {
     Grouping tmp = a; // create local copy
     tmp.prune(b);
-    bool ok = EXPECT_EQUAL(tmp.getRoot().asString(), expect.asString());
-    if (!ok) {
-        std::cerr << tmp.getRoot().asString() << std::endl << expect.asString() << std::endl;
-    }
+    bool ok = true;
+    EXPECT_EQ(tmp.getRoot().asString(), expect.asString()) << (ok = false, "");
     return ok;
 }
 
@@ -257,10 +258,8 @@ testPartialMerge(const Grouping &a, const Grouping &b, const Group &expect)
 {
     Grouping tmp = a; // create local copy
     tmp.mergePartial(b);
-    bool ok = EXPECT_EQUAL(tmp.getRoot().asString(), expect.asString());
-    if (!ok) {
-        std::cerr << tmp.getRoot().asString() << std::endl << expect.asString() << std::endl;
-    }
+    bool ok = true;
+    EXPECT_EQ(tmp.getRoot().asString(), expect.asString()) << (ok = false, "");
     return ok;
 }
 
@@ -277,7 +276,9 @@ testMerge(const Grouping &a, const Grouping &b, const Grouping &c, const Group &
     tmp.merge(tmpC);
     tmp.postMerge();
     tmp.sortById();
-    return EXPECT_EQUAL(tmp.getRoot().asString(), expect.asString());
+    bool ok = true;
+    EXPECT_EQ(tmp.getRoot().asString(), expect.asString()) << (ok = false, "");
+    return ok;
 }
 
 void
@@ -354,8 +355,11 @@ checkHits(const Grouping &g, uint32_t first, uint32_t last, uint32_t cnt)
     CountFS4Hits pop;
     Grouping tmp = g;
     tmp.setFirstLevel(first).setLastLevel(last).select(pop, pop);
-    return EXPECT_EQUAL(pop.getHitCount(), cnt);
+    bool ok = true;
+    EXPECT_EQ(pop.getHitCount(), cnt) << (ok = false, "");
+    return ok;
 }
+
 bool
 checkBucket(const NumericResultNode &width, const NumericResultNode &value, const BucketResultNode &bucket)
 {
@@ -366,7 +370,8 @@ checkBucket(const NumericResultNode &width, const NumericResultNode &value, cons
     }  else if (value.getClass().inherits(FloatResultNode::classId)) {
         ctx.add(FloatAttrBuilder("attr").add(value.getFloat()).sp());
     } else {
-        return EXPECT_TRUE(false);
+        ADD_FAILURE() << "value not inherited from integer or float result node, is " << value.getClass().name();
+        return false;
     }
     std::unique_ptr<FixedWidthBucketFunctionNode> fixed = MU<FixedWidthBucketFunctionNode>(MU<AttributeNode>("attr"));
     fixed->setWidth(width);
@@ -376,16 +381,16 @@ checkBucket(const NumericResultNode &width, const NumericResultNode &value, cons
 }
 }
 
-TEST("Control size of objects") {
-    EXPECT_EQUAL(64u, sizeof(Group));
-    EXPECT_EQUAL(40u, sizeof(Group::Value));
+TEST(GroupingTest, Control_size_of_objects) {
+    EXPECT_EQ(64u, sizeof(Group));
+    EXPECT_EQ(40u, sizeof(Group::Value));
 }
 
 /**
  * Test collecting the sum of the values from a single attribute
  * vector directly into the root node. Consider this a smoke test.
  **/
-TEST("testAggregationSimple")
+TEST(GroupingTest, testAggregationSimple)
 {
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
@@ -393,9 +398,9 @@ TEST("testAggregationSimple")
     ctx.add(FloatAttrBuilder("float").add(3).add(7).add(15).sp());
     ctx.add(StringAttrBuilder("string").add("3").add("7").add("15").sp());
 
-    TEST_DO(testAggregationSimpleSum(ctx, SumAggregationResult(), Int64ResultNode(25), FloatResultNode(25), StringResultNode("25")));
-    TEST_DO(testAggregationSimpleSum(ctx, MinAggregationResult(), Int64ResultNode(3), FloatResultNode(3), StringResultNode("15")));
-    TEST_DO(testAggregationSimpleSum(ctx, MaxAggregationResult(), Int64ResultNode(15), FloatResultNode(15), StringResultNode("7")));
+    testAggregationSimpleSum(ctx, SumAggregationResult(), Int64ResultNode(25), FloatResultNode(25), StringResultNode("25"), "sum");
+    testAggregationSimpleSum(ctx, MinAggregationResult(), Int64ResultNode(3), FloatResultNode(3), StringResultNode("15"), "min");
+    testAggregationSimpleSum(ctx, MaxAggregationResult(), Int64ResultNode(15), FloatResultNode(15), StringResultNode("7"), "max");
 }
 
 /**
@@ -403,7 +408,7 @@ TEST("testAggregationSimple")
  * the appropriate levels, as indicated by the firstLevel and
  * lastLevel parameters.
  **/
-TEST("testAggregationLevels")
+TEST(GroupingTest, testAggregationLevels)
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr0").add(10).add(10).sp());
@@ -520,7 +525,7 @@ TEST("testAggregationLevels")
  * Verify that the aggregation step does not create more groups than
  * indicated by the maxgroups parameter.
  **/
-TEST("testAggregationMaxGroups")
+TEST(GroupingTest, testAggregationMaxGroups)
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr").add(5).add(10).add(15).sp());
@@ -565,7 +570,7 @@ TEST("testAggregationMaxGroups")
     }
 }
 
-TEST("Verify that groups are sorted by group id")
+TEST(GroupingTest, Verify_that_groups_are_sorted_by_group_id)
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr").add(10).add(25).add(35).add(5).add(20).add(15).add(30).sp());
@@ -586,7 +591,7 @@ TEST("Verify that groups are sorted by group id")
     EXPECT_TRUE(testAggregation(ctx, request, expect));
 }
 
-TEST("Verify that groups are tagged with the appropriate rank value")
+TEST(GroupingTest, Verify_that_groups_are_tagged_with_the_appropriate_rank_value)
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr")
@@ -608,7 +613,7 @@ TEST("Verify that groups are tagged with the appropriate rank value")
     EXPECT_TRUE(testAggregation(ctx, request, expect));
 }
 
-TEST("testAggregationGroupCapping")
+TEST(GroupingTest, testAggregationGroupCapping)
 {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr")
@@ -724,7 +729,7 @@ TEST("testAggregationGroupCapping")
  * that was collected directly into the root node. Consider this a
  * smoke test.
  **/
-TEST("testMergeSimpleSum")
+TEST(GroupingTest, testMergeSimpleSum)
 {
     Grouping a  = Grouping()
                   .setRoot(Group()
@@ -749,7 +754,7 @@ TEST("testMergeSimpleSum")
     EXPECT_TRUE(testMerge(a, b, expect));
 }
 
-TEST("Verify that frozen levels are not touched during merge.")
+TEST(GroupingTest, Verify_that_frozen_levels_are_not_touched_during_merge)
 {
     Grouping request;
     request.addLevel(createGL(MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
@@ -928,7 +933,7 @@ TEST("Verify that frozen levels are not touched during merge.")
  * maxGroups, that the remaining groups are the highest ranked ones,
  * and that they are sorted by group id.
  **/
-TEST("testMergeGroups")
+TEST(GroupingTest, testMergeGroups)
 {
     Grouping request;
     request.addLevel(createGL(MU<AttributeNode>("attr")));
@@ -989,7 +994,7 @@ TEST("testMergeGroups")
  * Merge two relatively complex tree structures and verify that the
  * end result is as expected.
  **/
-TEST("testMergeTrees")
+TEST(GroupingTest, testMergeTrees)
 {
     Grouping request;
     request.addLevel(createGL(3, MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
@@ -1253,7 +1258,7 @@ TEST("testMergeTrees")
     EXPECT_TRUE(testMerge(request.unchain().setRoot(b), request.unchain().setRoot(a), expect));
 }
 
-TEST("testPruneComplex")
+TEST(GroupingTest, testPruneComplex)
 {
     { // First level
         Group baseTree = Group()
@@ -1392,7 +1397,7 @@ TEST("testPruneComplex")
  * merged. The last level should not contain any children groups, and only empty
  * results.
  **/
-TEST("testPartialMerging")
+TEST(GroupingTest, testPartialMerging)
 {
     Grouping baseRequest;
     baseRequest.addLevel(createGL(MU<AttributeNode>("c1"), MU<AttributeNode>("s1")))
@@ -1553,7 +1558,7 @@ TEST("testPartialMerging")
     }
 }
 
-TEST("Test that pruning a simple grouping tree works.")
+TEST(GroupingTest, Test_that_pruning_a_simple_grouping_tree_works)
 {
     {
         Grouping request;
@@ -1572,7 +1577,7 @@ TEST("Test that pruning a simple grouping tree works.")
     }
 }
 
-TEST("Test that simple counting works as long as we use an expression that we init, calculate and ignore.")
+TEST(GroupingTest, Test_that_simple_counting_works_as_long_as_we_use_an_expression_that_we_init_calculate_and_ignore)
 {
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
@@ -1612,7 +1617,7 @@ TEST("Test that simple counting works as long as we use an expression that we in
  * Test that simple counting works as long as we use an expression
  * that we init, calculate and ignore.
  **/
-TEST("testCount")
+TEST(GroupingTest, testCount)
 {
     AggregationContext ctx;
     ctx.result().add(0).add(1).add(2);
@@ -1627,7 +1632,7 @@ TEST("testCount")
     EXPECT_TRUE(testAggregation(ctx, request, expect));
 }
 
-TEST("testFS4HitCollection")
+TEST(GroupingTest, testFS4HitCollection)
 {
     { // aggregation
         AggregationContext ctx;
@@ -1742,7 +1747,7 @@ TEST("testFS4HitCollection")
     }
 }
 
-TEST("testFixedWidthBuckets")
+TEST(GroupingTest, testFixedWidthBuckets)
 {
     using Int = Int64ResultNode;
     using Float = FloatResultNode;
@@ -1798,16 +1803,16 @@ TEST("testFixedWidthBuckets")
     }
 }
 
-TEST("testThatNanIsConverted")
+TEST(GroupingTest, testThatNanIsConverted)
 {
     Group g;
     double myNan = std::sqrt(-1);
     g.setRank(myNan);
     // Must have been changed for this to work.
-    ASSERT_EQUAL(g.getRank(), g.getRank());
+    ASSERT_EQ(g.getRank(), g.getRank());
 }
 
-TEST("testAttributeMapLookup")
+TEST(GroupingTest, testAttributeMapLookup)
 {
     AggregationContext ctx;
     ctx.result().add(0).add(1);
@@ -1828,7 +1833,7 @@ TEST("testAttributeMapLookup")
     testAggregationSimple(ctx, MaxAggregationResult(), Int64ResultNode(100), "smap{attribute(key2)}.weight");
 }
 
-TEST("test that non-attributes are converted to document field nodes") {
+TEST(GroupingTest, test_that_non_attributes_are_converted_to_document_field_nodes) {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr").sp());
 
@@ -1844,7 +1849,7 @@ TEST("test that non-attributes are converted to document field nodes") {
     EXPECT_TRUE(nonAttrRequest.getRoot().getAggregationResult(0).getExpression()->inherits(DocumentFieldNode::classId));
 }
 
-TEST("test that attributes can be unconditionally converted to document field nodes") {
+TEST(GroupingTest, test_that_attributes_can_be_unconditionally_converted_to_document_field_nodes) {
     AggregationContext ctx;
     ctx.add(IntAttrBuilder("attr").sp());
 
@@ -1855,4 +1860,28 @@ TEST("test that attributes can be unconditionally converted to document field no
     EXPECT_TRUE(attrRequest.getRoot().getAggregationResult(0).getExpression()->inherits(DocumentFieldNode::classId));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+TEST(GroupingTest, test_bad_grouping)
+{
+    Grouping baseRequest;
+    /*
+     * The children ids of a group must be strictly increasing. A group violating this invariant
+     * is considered bad. Currently, Group::onSerialize() and Group::onDeserialize() validates the id order.
+     */
+    baseRequest.setRoot(Group().addChild(Group().setId(FloatBucketResultNode(0.2, 0.3)))
+        .addChild(Group().setId(FloatBucketResultNode(0.2, 0.3))));
+    vespalib::nbostream os;
+    vespalib::NBOSerializer nos(os);
+    try {
+        baseRequest.serialize(nos);
+        FAIL() << "Exception not thrown";
+    } catch (const vespalib::IllegalArgumentException& e) {
+        EXPECT_EQ("Group::Value::validate_id_order: Expected "
+                  R"({"child[1].id":{"[type]":"search::expression::FloatBucketResultNode","from":0.2,"to":0.3}})"
+                  " > "
+                  R"({"child[0].id":{"[type]":"search::expression::FloatBucketResultNode","from":0.2,"to":0.3}})"
+                  ", 2 children",
+                  e.getMessage());
+    }
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()

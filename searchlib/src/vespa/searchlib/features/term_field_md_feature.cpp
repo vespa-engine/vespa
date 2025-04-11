@@ -18,9 +18,9 @@ TermFieldMdExecutor::TermFieldMdExecutor(const fef::IQueryEnvironment &env, uint
 {
     for (uint32_t i = 0; i < env.getNumTerms(); ++i) {
         const fef::ITermData *td = env.getTerm(i);
-        assert(td != 0);
+        assert(td != nullptr);
         const fef::ITermFieldData *tfd = td->lookupField(fieldId);
-        if (tfd != 0) {
+        if (tfd != nullptr) {
             assert(tfd->getHandle() != fef::IllegalHandle);
             _terms.push_back(std::make_pair(tfd->getHandle(), td->getWeight()));
         }
@@ -70,7 +70,7 @@ TermFieldMdExecutor::handle_bind_match_data(const MatchData &md)
 
 TermFieldMdBlueprint::TermFieldMdBlueprint() :
     Blueprint("termFieldMd"),
-    _field(0)
+    _field(nullptr)
 {
 }
 
@@ -91,7 +91,7 @@ TermFieldMdBlueprint::setup(const IIndexEnvironment &,
                             const ParameterList & params)
 {
     _field = params[0].asField();
-    assert(_field != 0);
+    assert(_field != nullptr);
 
     describeOutput("score", "The term field match score");
     describeOutput("terms", "The number of ranked terms searching this field");

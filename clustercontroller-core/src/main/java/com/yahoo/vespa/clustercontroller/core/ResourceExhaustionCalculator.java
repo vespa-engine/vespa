@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 /**
  * Given a mapping of (opaque) resource names and their exclusive limits,
- * this class acts as an utility to easily enumerate all the resources that
+ * this class acts as a utility to easily enumerate all the resources that
  * a given node (or set of nodes) have exhausted.
  *
  * In order to support hysteresis, optionally takes in the _current_ feed
@@ -113,14 +113,14 @@ public class ResourceExhaustionCalculator {
             // To enable hysteresis on feed un-block we adjust the effective limit iff the particular
             // <node, resource> tuple was blocked in the previous state.
             boolean wasBlocked = previouslyBlockedNodeResources.contains(NodeAndResourceType.of(nodeInfo.getNodeIndex(), usage.getKey()));
-            double effectiveLimit = wasBlocked ? Math.max(configuredLimit - feedBlockNoiseLevel, 0.0)
-                                               : configuredLimit;
-            if (usage.getValue().getUsage() > effectiveLimit) {
+            NodeResourceExhaustion.Limit limit = new NodeResourceExhaustion.Limit(configuredLimit, feedBlockNoiseLevel, wasBlocked);
+            if (usage.getValue().getUsage() > limit.effectiveLimit()) {
                 if (exceedingLimit == null) {
                     exceedingLimit = new LinkedHashSet<>();
                 }
+
                 exceedingLimit.add(new NodeResourceExhaustion(nodeInfo.getNode(), usage.getKey(), usage.getValue(),
-                                                              effectiveLimit, nodeInfo.getRpcAddress()));
+                                                              limit, nodeInfo.getRpcAddress()));
             }
         }
         return (exceedingLimit != null) ? exceedingLimit : Set.of();

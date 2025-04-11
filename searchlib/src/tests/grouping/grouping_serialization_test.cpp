@@ -8,7 +8,8 @@
 #include <vespa/searchlib/expression/getymumchecksumfunctionnode.h>
 #include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/document/base/documentid.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <fstream>
 #include <vespa/log/log.h>
 LOG_SETUP("grouping_serialization_test");
@@ -47,6 +48,7 @@ struct Fixture {
                               std::ofstream::binary);
         }
     }
+    ~Fixture();
 
     void checkObject(const Identifiable &obj) {
         if (WRITE_FILES) {
@@ -71,20 +73,20 @@ struct Fixture {
         }
         Identifiable::UP newObj = Identifiable::create(stream);
 
-        if (!EXPECT_TRUE(newObj.get() != 0)) {
-            LOG(error, "object of class '%s' resulted in empty echo", obj.getClass().name());
-            return;
-        }
-        if (EXPECT_EQUAL(obj.asString(), newObj->asString())
-            && EXPECT_TRUE(newObj->cmp(obj) == 0)
-            && EXPECT_TRUE(obj.cmp(*newObj) == 0))
-        {
+        ASSERT_NE(nullptr, newObj.get()) << "object of class '" << obj.getClass().name() << "' resulted in empty echo";
+        bool ok = true;
+        EXPECT_EQ(obj.asString(), newObj->asString()) << (ok = false, "");
+        EXPECT_EQ(0, newObj->cmp(obj)) << (ok = false, "");
+        EXPECT_EQ(0, obj.cmp(*newObj)) << (ok = false, "");
+        if (ok) {
             LOG(debug, "object of class '%s' passed echo test : %s", obj.getClass().name(), newObj->asString().c_str());
         } else {
-            LOG(error, "object of class '%s' FAILED echo test", obj.getClass().name());
+            ADD_FAILURE() << "object of class '" << obj.getClass().name() << "' FAILED echo test";
         }
     }
 };
+
+Fixture::~Fixture() = default;
 
 //-----------------------------------------------------------------------------
 
@@ -97,7 +99,8 @@ createDummyExpression() {
 
 //-----------------------------------------------------------------------------
 
-TEST_F("testResultTypes", Fixture("testResultTypes")) {
+TEST(GroupingSerializationTest, testResultTypes) {
+    Fixture f("testResultTypes");
     f.checkObject(Int64ResultNode(7));
     f.checkObject(FloatResultNode(7.3));
     f.checkObject(StringResultNode("7.3"));
@@ -140,7 +143,8 @@ TEST_F("testResultTypes", Fixture("testResultTypes")) {
     f.checkObject(rv);
 }
 
-TEST_F("testSpecialNodes", Fixture("testSpecialNodes")) {
+TEST(GroupingSerializationTest, testSpecialNodes) {
+    Fixture f("testSpecialNodes");
     f.checkObject(AttributeNode("testattribute"));
     f.checkObject(DocumentFieldNode("testdocumentfield"));
     {
@@ -149,7 +153,8 @@ TEST_F("testSpecialNodes", Fixture("testSpecialNodes")) {
     }
 }
 
-TEST_F("testFunctionNodes", Fixture("testFunctionNodes")) {
+TEST(GroupingSerializationTest, testFunctionNodes) {
+    Fixture f("testFunctionNodes");
     f.checkObject(AddFunctionNode()
                 .addArg(MU<ConstantNode>(MU<Int64ResultNode>(7)))
                 .addArg(MU<ConstantNode>(MU<Int64ResultNode>(8)))
@@ -206,7 +211,8 @@ TEST_F("testFunctionNodes", Fixture("testFunctionNodes")) {
                                       3.3, false));
 }
 
-TEST_F("testAggregatorResults", Fixture("testAggregatorResults")) {
+TEST(GroupingSerializationTest, testAggregatorResults) {
+    Fixture f("testAggregatorResults");
     f.checkObject(SumAggregationResult()
                 .setExpression(MU<AttributeNode>("attributeA"))
                 .setResult(Int64ResultNode(7)));
@@ -235,30 +241,31 @@ TEST_F("testAggregatorResults", Fixture("testAggregatorResults")) {
     f.checkObject(stddev);
 }
 
-TEST("testHitList") {
+TEST(GroupingSerializationTest, testHitList) {
     search::aggregation::HitList h;
     uint32_t maxHits = 5;
     h.addHit(FS4Hit{1, 17.0}, maxHits);
     h.addHit(FS4Hit{2, 11.0}, maxHits);
     h.addHit(FS4Hit{3, 42.0}, maxHits);
     h.addHit(FS4Hit{4, 12.0}, maxHits);
-    EXPECT_EQUAL(4u, h.size());
+    EXPECT_EQ(4u, h.size());
     h.addHit(FS4Hit{5, 21.0}, maxHits);
-    EXPECT_EQUAL(5u, h.size());
+    EXPECT_EQ(5u, h.size());
     h.addHit(FS4Hit{6, 23.0}, maxHits); // removes 11
     h.addHit(FS4Hit{7, 16.0}, maxHits); // removes 12
     h.addHit(FS4Hit{8, 17.0}, maxHits); // removes 16
     h.addHit(FS4Hit{9, 17.0}, maxHits); // not better than 17
-    EXPECT_EQUAL(5u, h.size());
-    EXPECT_EQUAL(1u, static_cast<const FS4Hit &>(h.front()).getDocId());
-    EXPECT_EQUAL(17.0, h.front().getRank());
+    EXPECT_EQ(5u, h.size());
+    EXPECT_EQ(1u, static_cast<const FS4Hit &>(h.front()).getDocId());
+    EXPECT_EQ(17.0, h.front().getRank());
     h.sort();
-    EXPECT_EQUAL(5u, h.size());
-    EXPECT_EQUAL(42.0, h.front().getRank());
-    EXPECT_EQUAL(3u, static_cast<const FS4Hit &>(h.front()).getDocId());
+    EXPECT_EQ(5u, h.size());
+    EXPECT_EQ(42.0, h.front().getRank());
+    EXPECT_EQ(3u, static_cast<const FS4Hit &>(h.front()).getDocId());
 }
 
-TEST_F("testHitCollection", Fixture("testHitCollection")) {
+TEST(GroupingSerializationTest, testHitCollection) {
+    Fixture f("testHitCollection");
     f.checkObject(FS4Hit());
     f.checkObject(FS4Hit(0, 50.0).setGlobalId(getGlobalId(100)));
     f.checkObject(VdsHit());
@@ -298,14 +305,16 @@ createAggr(ExpressionNode::UP e) {
     return aggr;
 }
 
-TEST_F("testGroupingLevel", Fixture("testGroupingLevel")) {
+TEST(GroupingSerializationTest, testGroupingLevel) {
+    Fixture f("testGroupingLevel");
     f.checkObject(GroupingLevel()
                 .setMaxGroups(100)
                 .setExpression(createDummyExpression())
                 .addAggregationResult(createAggr<SumAggregationResult>(createDummyExpression())));
 }
 
-TEST_F("testGroup", Fixture("testGroup")) {
+TEST(GroupingSerializationTest, testGroup) {
+    Fixture f("testGroup");
     f.checkObject(Group());
     f.checkObject(Group().setId(Int64ResultNode(50))
                 .setRank(RawRank(10)));
@@ -348,7 +357,9 @@ createLargeLevel() {
                     , 64).clone())));
     return l;
 }
-TEST_F("testGrouping", Fixture("testGrouping")) {
+
+TEST(GroupingSerializationTest, testGrouping) {
+    Fixture f("testGrouping");
 
     f.checkObject(Grouping());
     f.checkObject(Grouping().addLevel(createDummyLevel(100, 1))
@@ -358,4 +369,4 @@ TEST_F("testGrouping", Fixture("testGrouping")) {
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

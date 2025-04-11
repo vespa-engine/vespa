@@ -3,13 +3,15 @@
 
 #include "multinumericattribute.h"
 #include "attributevector.hpp"
-#include "multinumericattributesaver.h"
-#include "multi_numeric_search_context.h"
-#include "numeric_sort_blob_writer.h"
 #include "load_utils.h"
+#include "multi_numeric_search_context.h"
+#include "multinumericattributesaver.h"
+#include "numeric_sort_blob_writer.h"
 #include "primitivereader.h"
+#include "string_to_number.h"
 #include "valuemodifier.h"
 #include <vespa/searchcommon/attribute/config.h>
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/util/fileutil.h>
 
@@ -197,53 +199,35 @@ template <typename MultiValueMappingT, typename T, bool ascending>
 class MultiNumericSortBlobWriter : public attribute::ISortBlobWriter {
 private:
     const MultiValueMappingT& _mv_mapping;
+    attribute::NumericSortBlobWriter<T, ascending> _writer;
 public:
-    MultiNumericSortBlobWriter(const MultiValueMappingT& mv_mapping) : _mv_mapping(mv_mapping) {}
-    long write(uint32_t docid, void* buf, long available) const override {
-        attribute::NumericSortBlobWriter<T, ascending> writer;
+    MultiNumericSortBlobWriter(const MultiValueMappingT &mv_mapping, common::sortspec::MissingPolicy policy,
+                               T missing_value)
+        : _mv_mapping(mv_mapping),
+          _writer(policy, missing_value, true)
+    {
+    }
+    long write(uint32_t docid, void* buf, long available) override {
+        _writer.reset();
         auto indices = _mv_mapping.get(docid);
         for (auto& v : indices) {
-            writer.candidate(multivalue::get_value(v));
+            _writer.candidate(multivalue::get_value(v));
         }
-        return writer.write(buf, available);
+        return _writer.write(buf, available);
     }
 };
 
 template <typename B, typename M>
-template <bool asc>
-long
-MultiValueNumericAttribute<B, M>::on_serialize_for_sort(DocId doc, void* serTo, long available) const
-{
-    attribute::NumericSortBlobWriter<T, asc> writer;
-    auto indices = this->_mvMapping.get(doc);
-    for (auto& v : indices) {
-        writer.candidate(multivalue::get_value(v));
-    }
-    return writer.write(serTo, available);
-}
-
-template <typename B, typename M>
-long
-MultiValueNumericAttribute<B, M>::onSerializeForAscendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    return on_serialize_for_sort<true>(doc, serTo, available);
-}
-
-template <typename B, typename M>
-long
-MultiValueNumericAttribute<B, M>::onSerializeForDescendingSort(DocId doc, void* serTo, long available, const common::BlobConverter*) const
-{
-    return on_serialize_for_sort<false>(doc, serTo, available);
-}
-
-template <typename B, typename M>
 std::unique_ptr<attribute::ISortBlobWriter>
-MultiValueNumericAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*) const
+MultiValueNumericAttribute<B, M>::make_sort_blob_writer(bool ascending, const common::BlobConverter*,
+                                                        common::sortspec::MissingPolicy policy,
+                                                        std::string_view missing_value) const
 {
+    T missing_num = string_to_number<T>(missing_value);
     if (ascending) {
-        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, true>>(this->_mvMapping);
+        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, true>>(this->_mvMapping, policy, missing_num);
     } else {
-        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, false>>(this->_mvMapping);
+        return std::make_unique<MultiNumericSortBlobWriter<MultiValueMapping, T, false>>(this->_mvMapping, policy, missing_num);
     }
 }
 

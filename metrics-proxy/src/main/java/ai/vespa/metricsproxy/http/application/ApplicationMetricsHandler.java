@@ -5,6 +5,8 @@ package ai.vespa.metricsproxy.http.application;
 import ai.vespa.metricsproxy.core.MetricsConsumers;
 import ai.vespa.metricsproxy.http.MetricsJsonResponse;
 import ai.vespa.metricsproxy.http.PrometheusResponse;
+import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensions;
+import ai.vespa.metricsproxy.metric.dimensions.NodeDimensions;
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.DimensionId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
@@ -12,7 +14,6 @@ import ai.vespa.metricsproxy.metric.model.json.GenericJsonModel;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.handler.metrics.ErrorResponse;
 import com.yahoo.container.handler.metrics.HttpHandlerBase;
-import com.yahoo.container.handler.metrics.JsonResponse;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 
@@ -42,14 +43,20 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
 
     private final ApplicationMetricsRetriever metricsRetriever;
     private final MetricsConsumers metricsConsumers;
+    private final ApplicationDimensions applicationDimensions;
+    private final NodeDimensions nodeDimensions;
 
     @Inject
     public ApplicationMetricsHandler(Executor executor,
                                      ApplicationMetricsRetriever metricsRetriever,
-                                     MetricsConsumers metricsConsumers) {
+                                     MetricsConsumers metricsConsumers,
+                                     ApplicationDimensions applicationDimensions,
+                                     NodeDimensions nodeDimensions) {
         super(executor);
         this.metricsRetriever = metricsRetriever;
         this.metricsConsumers = metricsConsumers;
+        this.applicationDimensions = applicationDimensions;
+        this.nodeDimensions = nodeDimensions;
         metricsRetriever.startPollAndWait();
     }
 
@@ -88,7 +95,7 @@ public class ApplicationMetricsHandler extends HttpHandlerBase {
                         .map(builder -> builder.putDimension(DimensionId.toDimensionId("hostname"), element.hostname))
                         .map(MetricsPacket.Builder::build))
                 .toList();
-        return new PrometheusResponse(200, toPrometheusModel(metricsForAllNodes));
+        return new PrometheusResponse(200, toPrometheusModel(metricsForAllNodes, applicationDimensions, nodeDimensions));
     }
 
 }

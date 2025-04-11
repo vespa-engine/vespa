@@ -54,7 +54,7 @@ VBench::VBench(const vespalib::Slime &cfg)
     vespalib::slime::Inspector &analyzers = cfg.get()["analyze"];
     for (size_t i = analyzers.children(); i-- > 0; ) {
         Analyzer::UP obj = _factory.createAnalyzer(analyzers[i], *_analyzers.back());
-        if (obj.get() != 0) {
+        if (obj.get() != nullptr) {
             _analyzers.push_back(Analyzer::UP(obj.release()));
         }
     }
@@ -72,12 +72,12 @@ VBench::VBench(const vespalib::Slime &cfg)
                                      ? ((Handler<Request>&)*_scheduler)
                                      : ((Handler<Request>&)*inputChain->taggers.back());
             Tagger::UP obj = _factory.createTagger(taggers[j], next);
-            if (obj.get() != 0) {
+            if (obj.get() != nullptr) {
                 inputChain->taggers.push_back(Tagger::UP(obj.release()));
             }
         }
         inputChain->generator = _factory.createGenerator(generator, *inputChain->taggers.back());
-        if (inputChain->generator.get() != 0) {
+        if (inputChain->generator.get() != nullptr) {
             _inputs.push_back(std::move(inputChain));
         }
     }

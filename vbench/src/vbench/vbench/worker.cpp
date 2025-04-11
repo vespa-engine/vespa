@@ -12,7 +12,7 @@ Worker::run()
 {
     for (;;) {
         Request::UP request = _provider.provide();
-        if (request.get() == 0) {
+        if (request.get() == nullptr) {
             break;
         }
         request->startTime(_timer.sample());

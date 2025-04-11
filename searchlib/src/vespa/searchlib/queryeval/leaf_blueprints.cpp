@@ -23,7 +23,7 @@ EmptyBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &) c
 }
 
 SearchIterator::UP
-EmptyBlueprint::createFilterSearch(FilterConstraint /* constraint */) const
+EmptyBlueprint::createFilterSearchImpl(FilterConstraint /* constraint */) const
 {
     return std::make_unique<EmptySearch>();
 }
@@ -46,7 +46,7 @@ AlwaysTrueBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray
 }
 
 SearchIterator::UP
-AlwaysTrueBlueprint::createFilterSearch(FilterConstraint /* constraint */) const
+AlwaysTrueBlueprint::createFilterSearchImpl(FilterConstraint /* constraint */) const
 {
     return std::make_unique<FullSearch>();
 }
@@ -73,7 +73,7 @@ SimpleBlueprint::createLeafSearch(const search::fef::TermFieldMatchDataArray &) 
 }
 
 SearchIterator::UP
-SimpleBlueprint::createFilterSearch(FilterConstraint constraint) const
+SimpleBlueprint::createFilterSearchImpl(FilterConstraint constraint) const
 {
     auto search = std::make_unique<SimpleSearch>(_result, strict());
     search->tag(_tag +

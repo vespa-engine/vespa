@@ -103,7 +103,7 @@ public class IndexedSearchCluster extends SearchCluster {
         return switch (summaryDecodeType.toLowerCase()) {
             case "eager" -> DispatchConfig.SummaryDecodePolicy.EAGER;
             case "ondemand","on-demand" -> DispatchConfig.SummaryDecodePolicy.Enum.ONDEMAND;
-            default -> DispatchConfig.SummaryDecodePolicy.Enum.EAGER;
+            default -> DispatchConfig.SummaryDecodePolicy.Enum.ONDEMAND;
         };
     }
 

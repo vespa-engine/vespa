@@ -42,7 +42,7 @@ public:
 
     std::unique_ptr<SameElementSearch> create_same_element_search(search::fef::TermFieldMatchData& tfmd) const;
     SearchIteratorUP createLeafSearch(const search::fef::TermFieldMatchDataArray &tfmda) const override;
-    SearchIteratorUP createFilterSearch(FilterConstraint constraint) const override;
+    SearchIteratorUP createFilterSearchImpl(FilterConstraint constraint) const override;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     const std::vector<Blueprint::UP> &terms() const { return _terms; }
     const std::string &field_name() const { return _field_name; }

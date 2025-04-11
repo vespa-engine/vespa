@@ -26,8 +26,8 @@ TEST(NnsDistanceTest, require_that_blueprint_can_be_created_from_factory)
 {
     BlueprintFactoryFixture f;
     Blueprint::SP bp = f.factory.createBlueprint("distance");
-    EXPECT_TRUE(bp.get() != 0);
-    EXPECT_TRUE(dynamic_cast<DistanceBlueprint*>(bp.get()) != 0);
+    EXPECT_TRUE(bp.get() != nullptr);
+    EXPECT_TRUE(dynamic_cast<DistanceBlueprint*>(bp.get()) != nullptr);
 }
 
 TEST(NnsDistanceTest, require_that_no_features_are_dumped)

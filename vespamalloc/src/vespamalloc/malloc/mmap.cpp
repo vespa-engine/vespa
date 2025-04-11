@@ -25,7 +25,7 @@ static size_t getLogLimit()
     if (LogLimit == static_cast<size_t>(-2l)) {
         const char * s = getenv("VESPA_MMAP_BIGBLOCK_LOGLIMIT");
         if (s) {
-            LogLimit = strtoul(s, NULL, 0);
+            LogLimit = strtoul(s, nullptr, 0);
         } else {
             LogLimit = -1l;
         }
@@ -45,10 +45,10 @@ static bool isFromVespaMalloc(const void * addr)
 
 void * local_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
 {
-    static mmap_function real_func = NULL;
-    if (real_func == NULL) {
+    static mmap_function real_func = nullptr;
+    if (real_func == nullptr) {
         real_func = (mmap_function) dlsym (RTLD_NEXT, "mmap");
-        if (real_func == NULL) {
+        if (real_func == nullptr) {
             fprintf (stderr, "Could not find the mmap function!\n");
             abort();
         }
@@ -61,10 +61,10 @@ void * local_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t 
 
 void * local_mmap64(void *addr, size_t length, int prot, int flags, int fd, off64_t offset)
 {
-    static mmap64_function real_func = NULL;
-    if (real_func == NULL) {
+    static mmap64_function real_func = nullptr;
+    if (real_func == nullptr) {
         real_func = (mmap64_function) dlsym (RTLD_NEXT, "mmap64");
-        if (real_func == NULL) {
+        if (real_func == nullptr) {
             fprintf (stderr, "Could not find the mmap64 function!\n");
             abort();
         }
@@ -77,10 +77,10 @@ void * local_mmap64(void *addr, size_t length, int prot, int flags, int fd, off6
 
 int local_munmap(void *addr, size_t length)
 {
-    static munmap_function real_func = NULL;
-    if (real_func == NULL) {
+    static munmap_function real_func = nullptr;
+    if (real_func == nullptr) {
         real_func = (munmap_function) dlsym (RTLD_NEXT, "munmap");
-        if (real_func == NULL) {
+        if (real_func == nullptr) {
             fprintf (stderr, "Could not find the munmap function!\n");
             abort();
         }

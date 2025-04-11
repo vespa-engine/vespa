@@ -19,9 +19,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.OptionalDouble;
-import java.util.OptionalInt;
-import java.util.OptionalLong;
 import java.util.TimeZone;
 
 /**
@@ -74,10 +71,6 @@ public class GroupingQueryParser extends Searcher {
         request.setRootOperation(operation);
         request.setTimeZone(getTimeZone(query.properties().getString(PARAM_TIMEZONE, "utc")));
         request.continuations().addAll(continuations);
-        intProperty(query, PARAM_DEFAULT_MAX_GROUPS).ifPresent(request::setDefaultMaxGroups);
-        intProperty(query, PARAM_DEFAULT_MAX_HITS).ifPresent(request::setDefaultMaxHits);
-        longProperty(query, GROUPING_GLOBAL_MAX_GROUPS).ifPresent(request::setGlobalMaxGroups);
-        doubleProperty(query, PARAM_DEFAULT_PRECISION_FACTOR).ifPresent(request::setDefaultPrecisionFactor);
     }
 
     private List<Continuation> getContinuations(String param) {
@@ -103,21 +96,6 @@ public class GroupingQueryParser extends Searcher {
             cache.put(name, timeZone);
         }
         return timeZone;
-    }
-
-    private static OptionalInt intProperty(Query q, CompoundName name) {
-        Integer val = q.properties().getInteger(name);
-        return val != null ? OptionalInt.of(val) : OptionalInt.empty();
-    }
-
-    private static OptionalLong longProperty(Query q, CompoundName name) {
-        Long val = q.properties().getLong(name);
-        return val != null ? OptionalLong.of(val) : OptionalLong.empty();
-    }
-
-    private static OptionalDouble doubleProperty(Query q, CompoundName name) {
-        Double val = q.properties().getDouble(name);
-        return val != null ? OptionalDouble.of(val) : OptionalDouble.empty();
     }
 
     private static class ZoneCache extends LinkedHashMap<String, TimeZone> {

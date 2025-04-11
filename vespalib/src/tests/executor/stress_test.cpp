@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
     }
     Test test;
     uint32_t threads     = atoi(argv[1]);
-    double   ms_per_task = locale::c::strtod(argv[2], 0);
+    double   ms_per_task = locale::c::strtod(argv[2], nullptr);
     uint32_t tasks       = atoi(argv[3]);
     fprintf(stderr, "threads    : %u\n", threads);
     fprintf(stderr, "ms per task: %g\n", ms_per_task);
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
                 Executor::Task::UP res
                     = executor.execute(Executor::Task::UP(
                                                new SyncTask(gate, latch)));
-                REQUIRE(res.get() == 0);
+                REQUIRE(res.get() == nullptr);
             }
             latch.await();
             gate.countDown();

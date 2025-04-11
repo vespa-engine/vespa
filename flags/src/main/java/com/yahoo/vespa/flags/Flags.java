@@ -54,16 +54,8 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
-    public static final UnboundBooleanFlag UPGRADE_WIREGUARD = defineFeatureFlag(
-            "upgrade-wireguard", false,
-            List.of("hakonhall"), "2025-02-04",
-            "2025-04-04", // TODO: Remove flag once all machine images have been built after 2025-02-13
-            "Whether to upgrade vespa-wireguard-go to latest",
-            "Takes effect on start of host-admin.",
-            HOSTNAME);
-
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
-            "summary-decode-policy", "eager",
+            "summary-decode-policy", "on-demand",
             List.of("hmusum"), "2023-03-30", "2025-05-01",
             "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
             "Takes effect at redeployment (requires restart)",
@@ -276,15 +268,6 @@ public class Flags {
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment", INSTANCE_ID);
 
-    public static final UnboundBooleanFlag SYMMETRIC_PUT_AND_ACTIVATE_REPLICA_SELECTION = defineFeatureFlag(
-            "symmetric-put-and-activate-replica-selection", true,
-            List.of("vekterli"), "2024-05-23", "2025-06-01",
-            "Iff true there will be an 1-1 symmetry between the replicas chosen as feed targets " +
-            "for Put operations and the replica selection logic for bucket activation. If false, " +
-            "legacy feed behavior is used.",
-            "Takes effect immediately",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
             List.of("arnej"), "2023-07-26", "2025-12-31",
@@ -369,6 +352,14 @@ public class Flags {
             "Whether legacy CA should be copied from host to container",
             "Takes effect on container startup",
             TENANT_ID, INSTANCE_ID);
+
+    public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
+            "defer-os-upgrade", false,
+            List.of("olaa"), "2025-04-09", "2025-06-01",
+            "Whether OS upgrade should be deferred",
+            "Takes effect immediately",
+            CLOUD_ACCOUNT
+    );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

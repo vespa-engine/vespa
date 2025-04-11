@@ -1300,8 +1300,8 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void verify_summary_decoding_controlled_by_properties() {
-        verifySummaryDecodeType(null, DispatchConfig.SummaryDecodePolicy.EAGER);
-        verifySummaryDecodeType("illegal-config", DispatchConfig.SummaryDecodePolicy.EAGER);
+        verifySummaryDecodeType(null, DispatchConfig.SummaryDecodePolicy.ONDEMAND);
+        verifySummaryDecodeType("illegal-config", DispatchConfig.SummaryDecodePolicy.ONDEMAND);
         verifySummaryDecodeType("eager", DispatchConfig.SummaryDecodePolicy.EAGER);
         verifySummaryDecodeType("ondemand", DispatchConfig.SummaryDecodePolicy.ONDEMAND);
         verifySummaryDecodeType("on-demand", DispatchConfig.SummaryDecodePolicy.ONDEMAND);

@@ -323,7 +323,7 @@ FieldMerger::open_field_writer()
         field_length_info = _readers.back()->get_field_length_info();
     }
     SchemaUtil::IndexIterator index(_fusion_out_index.get_schema(), _id);
-    if (!_writer->open(64, 262144, _fusion_out_index.get_dynamic_k_pos_index_format(),
+    if (!_writer->open(64, 262144, 0, _fusion_out_index.get_dynamic_k_pos_index_format(),
                        index.use_interleaved_features(), index.getSchema(),
                        index.getIndex(),
                        field_length_info,

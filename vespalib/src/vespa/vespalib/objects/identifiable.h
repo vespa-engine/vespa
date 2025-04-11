@@ -333,6 +333,7 @@ public:
      * @return The nbostream after serialization.
      */
     Serializer & serialize(Serializer & os) const;
+
     /**
      * This will deserialize the object by calling the virtual onDeserialize.
      * It is symetric with serialize.
@@ -340,6 +341,7 @@ public:
      * @return The nbostream after deserialization.
      */
     Deserializer & deserialize(Deserializer & is);
+
     /**
      * This will read the first 4 bytes containing the classid. It will then create the
      * correct object based on that class, and then call deserialize with the rest.
@@ -420,4 +422,3 @@ private:
 };
 
 }
-

@@ -107,10 +107,10 @@ SortBenchmark::TestBody()
         type = _argv[1];
     }
     if (_argc > 2) {
-        count = strtol(_argv[2], NULL, 0);
+        count = strtol(_argv[2], nullptr, 0);
     }
     if (_argc > 3) {
-        payLoad = strtol(_argv[3], NULL, 0);
+        payLoad = strtol(_argv[3], nullptr, 0);
     }
      steady_time start(steady_clock::now());
     if (payLoad < 8) {

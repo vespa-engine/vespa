@@ -208,9 +208,6 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.extractLocations(_queryEnv.locations());
         trace.addEvent(5, "Build query execution plan");
         _query.reserveHandles(_requestContext, searchContext, _mdl);
-        if (trace.getLevel() >= 6) { // will dump blueprint later
-            _query.enumerate_blueprint_nodes();
-        }
         trace.addEvent(5, "Optimize query execution plan");
         bool sort_by_cost = SortBlueprintsByCost::check(_queryEnv.getProperties(), rankSetup.sort_blueprints_by_cost());
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
@@ -222,6 +219,9 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
             _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
                                         _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost);
+        }
+        if (trace.getLevel() >= 6) { // will dump blueprint later
+            _query.enumerate_blueprint_nodes();
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
@@ -354,6 +354,7 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
     auto fuzzy_matching_algorithm = FuzzyAlgorithm::lookup(rank_properties, rank_setup.get_fuzzy_matching_algorithm());
     double weakand_stop_word_adjust_limit = WeakAndStopWordAdjustLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_adjust_limit());
     double weakand_stop_word_drop_limit = WeakAndStopWordDropLimit::lookup(rank_properties, rank_setup.get_weakand_stop_word_drop_limit());
+    bool weakand_allow_drop_all = WeakAndAllowDropAll::lookup(rank_properties, rank_setup.get_weakand_allow_drop_all());
     auto filter_threshold = FilterThreshold::lookup(rank_properties);
 
     // Note that we count the reserved docid 0 as active.
@@ -365,7 +366,8 @@ MatchToolsFactory::extract_create_blueprint_params(const RankSetup& rank_setup, 
             target_hits_max_adjustment_factor,
             fuzzy_matching_algorithm,
             StopWordStrategy(weakand_stop_word_adjust_limit,
-                             weakand_stop_word_drop_limit, docid_limit),
+                             weakand_stop_word_drop_limit, docid_limit,
+                             weakand_allow_drop_all),
             filter_threshold};
 }
 

@@ -157,15 +157,15 @@ struct MyItem {
     MyItem(int v, int &r) noexcept : value(v), ref(&r) {}
     MyItem(const MyItem &) noexcept = delete;
     MyItem &operator=(const MyItem &) noexcept = delete;
-    MyItem(MyItem &&rhs) noexcept : value(rhs.value), ref(rhs.ref) { rhs.ref = 0; }
+    MyItem(MyItem &&rhs) noexcept : value(rhs.value), ref(rhs.ref) { rhs.ref = nullptr; }
     MyItem &operator=(MyItem &&rhs) noexcept {
         value = rhs.value;
         ref = rhs.ref;
-        rhs.ref = 0;
+        rhs.ref = nullptr;
         return *this;
     }
     ~MyItem() {
-        if (ref != 0) {
+        if (ref != nullptr) {
             ++(*ref);
         }
     }

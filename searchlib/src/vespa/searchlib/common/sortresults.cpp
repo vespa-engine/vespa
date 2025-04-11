@@ -2,7 +2,9 @@
 
 #include "sortresults.h"
 #include "sort.h"
+#include <vespa/searchcommon/attribute/i_sort_blob_writer.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
+#include <vespa/searchlib/attribute/make_sort_blob_writer.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/issue.h>
 
@@ -16,6 +18,7 @@ using search::common::SortSpec;
 using search::common::FieldSortSpec;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
+using search::attribute::make_sort_blob_writer;
 using vespalib::alloc::Alloc;
 using namespace vespalib;
 
@@ -162,11 +165,10 @@ FastS_DefaultResultSorter FastS_DefaultResultSorter::_instance;
 //-----------------------------------------------------------------------------
 
 FastS_SortSpec::VectorRef::VectorRef(uint32_t type, const search::attribute::IAttributeVector* vector,
-                                     const search::common::BlobConverter* converter) noexcept
+                                     std::unique_ptr<search::attribute::ISortBlobWriter> writer) noexcept
     : _type(type),
       _vector(vector),
-      _converter(converter),
-      _writer((_vector != nullptr) ? _vector->make_sort_blob_writer(has_ascending_sort_order(), converter) : nullptr)
+      _writer(std::move(writer))
 {
 }
 
@@ -180,12 +182,12 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort
     const IAttributeVector * vector(nullptr);
 
     if ((field_sort_spec._field.size() == 6) && (field_sort_spec._field == "[rank]")) {
-        type = (field_sort_spec._ascending) ? ASC_RANK : DESC_RANK;
+        type = (field_sort_spec.is_ascending()) ? ASC_RANK : DESC_RANK;
     } else if ((field_sort_spec._field.size() == 7) && (field_sort_spec._field == "[docid]")) {
-        type = (field_sort_spec._ascending) ? ASC_DOCID : DESC_DOCID;
+        type = (field_sort_spec.is_ascending()) ? ASC_DOCID : DESC_DOCID;
         vector = vecMan.getAttribute(_documentmetastore);
     } else {
-        type = (field_sort_spec._ascending) ? ASC_VECTOR : DESC_VECTOR;
+        type = (field_sort_spec.is_ascending()) ? ASC_VECTOR : DESC_VECTOR;
         vector = vecMan.getAttribute(field_sort_spec._field);
         if ( !vector) {
             Issue::report("sort spec: Attribute vector '%s' is not valid. Skipped in sorting", field_sort_spec._field.c_str());
@@ -197,10 +199,15 @@ FastS_SortSpec::Add(IAttributeContext & vecMan, const FieldSortSpec & field_sort
         }
     }
 
-    LOG(spam, "SortSpec: adding vector (%s)'%s'",
-        (field_sort_spec._ascending) ? "+" : "-", field_sort_spec._field.c_str());
+    auto sort_blob_writer = make_sort_blob_writer(vector, field_sort_spec);
+    if (vector != nullptr && !sort_blob_writer) {
+        return false;
+    }
 
-    _vectors.push_back(VectorRef(type, vector, field_sort_spec._converter.get()));
+    LOG(spam, "SortSpec: adding vector (%s)'%s'",
+        (field_sort_spec.is_ascending()) ? "+" : "-", field_sort_spec._field.c_str());
+
+    _vectors.emplace_back(type, vector, std::move(sort_blob_writer));
 
     return true;
 }

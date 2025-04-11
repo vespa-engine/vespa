@@ -223,7 +223,7 @@ verifyResult(const FakeResult &expect,
     fields.add(field);
 
     auto result = index.createBlueprint(requestContext, fields, term);
-    bool valid_result = result.get() != 0;
+    bool valid_result = result.get() != nullptr;
     EXPECT_TRUE(valid_result);
     if (!valid_result) {
         return false;
@@ -234,7 +234,7 @@ verifyResult(const FakeResult &expect,
     result->basic_plan(true, 100);
     result->fetchPostings(search::queryeval::ExecuteInfo::FULL);
     SearchIterator::UP search = result->createSearch(*match_data);
-    bool valid_search = search.get() != 0;
+    bool valid_search = search.get() != nullptr;
     EXPECT_TRUE(valid_search);
     if (!valid_search) {
         return false;

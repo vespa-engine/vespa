@@ -40,7 +40,7 @@ TEST(PtrHolderTest, test_empty)
     EXPECT_TRUE(hold.get().get() == NULL);
     EXPECT_TRUE(!hold.hasValue());
     EXPECT_TRUE(!hold.hasNewValue());
-    hold.set(NULL);
+    hold.set(nullptr);
     EXPECT_TRUE(!hold.hasValue());
     EXPECT_TRUE(!hold.hasNewValue());
 }

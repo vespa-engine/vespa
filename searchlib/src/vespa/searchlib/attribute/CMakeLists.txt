@@ -77,6 +77,7 @@ vespa_add_library(searchlib_attribute OBJECT
     loadedenumvalue.cpp
     loadednumericvalue.cpp
     loadedvalue.cpp
+    make_sort_blob_writer.cpp
     multi_enum_search_context.cpp
     multi_numeric_enum_search_context.cpp
     multi_numeric_flag_search_context.cpp
@@ -150,6 +151,7 @@ vespa_add_library(searchlib_attribute OBJECT
     string_search_context.cpp
     string_search_helper.cpp
     string_sort_blob_writer.cpp
+    string_to_number.cpp
     stringbase.cpp
     valuemodifier.cpp
     DEPENDS

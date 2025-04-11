@@ -50,6 +50,12 @@ private:
      */
     uint32_t _endid;
 
+    /**
+     * if non-zero, this value refers to the blueprint node used to
+     * create this iterator.
+     **/
+    uint32_t _id;
+
     void and_hits_into_strict(BitVector &result, uint32_t begin_id);
     void and_hits_into_non_strict(BitVector &result, uint32_t begin_id);
 protected:
@@ -77,6 +83,10 @@ protected:
     void setAtEnd() noexcept { _docid = search::endDocId; }
 
 public:
+    void set_id(uint32_t value) noexcept { _id = value; }
+    uint32_t id() const noexcept { return _id; }
+    virtual std::string make_id_ref_str() const;
+
     using Trinary=vespalib::Trinary;
     // doSeek and doUnpack are called by templated classes, so making
     // them public to avoid complicated friend requests. Note that if
@@ -184,7 +194,7 @@ public:
     /**
      * The constructor sets the current document id to @ref beginId.
      **/
-    SearchIterator() noexcept : _docid(0), _endid(0) { }
+    SearchIterator() noexcept : _docid(0), _endid(0), _id(0) { }
     SearchIterator(const SearchIterator &) = delete;
     SearchIterator &operator=(const SearchIterator &) = delete;
 

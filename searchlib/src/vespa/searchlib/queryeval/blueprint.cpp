@@ -35,6 +35,7 @@ void maybe_eliminate_self(Blueprint* &self, Blueprint::UP replacement) {
         self = replacement.release();
         self->setParent(discard->getParent());
         self->setSourceId(discard->getSourceId());
+        self->setDocIdLimit(discard->get_docid_limit());
         discard->setParent(nullptr);
     }
     // replace with empty blueprint if empty, skip if already empty blueprint
@@ -661,7 +662,7 @@ IntermediateBlueprint::set_global_filter(const GlobalFilter &global_filter, doub
 }
 
 SearchIterator::UP
-IntermediateBlueprint::createSearch(fef::MatchData &md) const
+IntermediateBlueprint::createSearchImpl(fef::MatchData &md) const
 {
     MultiSearch::Children subSearches;
     subSearches.reserve(_children.size());
@@ -818,7 +819,7 @@ LeafBlueprint::set_matching_phase(MatchingPhase) noexcept
 }
 
 SearchIterator::UP
-LeafBlueprint::createSearch(fef::MatchData &md) const
+LeafBlueprint::createSearchImpl(fef::MatchData &md) const
 {
     const State &state = getState();
     fef::TermFieldMatchDataArray tfmda;

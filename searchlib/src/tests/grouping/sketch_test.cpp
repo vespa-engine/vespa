@@ -5,8 +5,7 @@
 #include <vespa/vespalib/objects/nboserializer.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("sketch_test");
@@ -18,10 +17,10 @@ using vespalib::make_string;
 
 namespace {
 
-TEST("require that normal sketch is initialized") {
+TEST(SketchTest, require_that_normal_sketch_is_initialized) {
     NormalSketch<> sketch;
     for (size_t i = 0; i < sketch.BUCKET_COUNT; ++i) {
-        EXPECT_EQUAL(0, sketch.bucket[i]);
+        EXPECT_EQ(0, sketch.bucket[i]);
     }
 }
 
@@ -32,19 +31,19 @@ void checkBucketValue(NormalSketch &sketch, size_t bucket, uint32_t value) {
 //TODO Remove when compiler bug has been fixed...
 #pragma GCC diagnostic ignored "-Warray-bounds"
 #endif
-    EXPECT_EQUAL(value, static_cast<size_t>(sketch.bucket[bucket]));
+    EXPECT_EQ(value, static_cast<size_t>(sketch.bucket[bucket]));
 }
 
 template <int BucketBits, typename HashT>
 void checkCountPrefixZeros() {
-    TEST_STATE(make_string("BucketBits: %d, HashBits: %d",
-                           BucketBits, int(sizeof(HashT) * 8)).c_str());
+    SCOPED_TRACE(make_string("BucketBits: %d, HashBits: %d",
+                           BucketBits, int(sizeof(HashT) * 8)));
     NormalSketch<BucketBits, HashT> sketch;
     const uint32_t prefix_bits = sizeof(HashT) * 8 - BucketBits;
     const uint32_t hash_width = sizeof(HashT) * 8;
     for (size_t i = 0; i < prefix_bits ; ++i) {
         int increase = sketch.aggregate(HashT(1) << (hash_width - 1 - i));
-        EXPECT_EQUAL(1, increase);  // bucket increases by 1 for each call
+        EXPECT_EQ(1, increase);  // bucket increases by 1 for each call
         checkBucketValue(sketch, 0, i + 1);
     }
     sketch.aggregate(0);
@@ -56,24 +55,24 @@ void checkCountPrefixZeros() {
     checkBucketValue(sketch, HashT(1) << (BucketBits - 1), prefix_bits + 1);
 }
 
-TEST("require that prefix zeros are counted.") {
+TEST(SketchTest, require_that_prefix_zeros_are_counted) {
     checkCountPrefixZeros<10, uint32_t>();
     checkCountPrefixZeros<12, uint32_t>();
     checkCountPrefixZeros<10, uint64_t>();
     checkCountPrefixZeros<12, uint64_t>();
 }
 
-TEST("require that aggregate returns bucket increase") {
+TEST(SketchTest, require_that_aggregate_returns_bucket_increase) {
     NormalSketch<> sketch;
     int increase = sketch.aggregate(-1);
-    EXPECT_EQUAL(1, increase);
+    EXPECT_EQ(1, increase);
     increase = sketch.aggregate(1023);
-    EXPECT_EQUAL(22, increase);
+    EXPECT_EQ(22, increase);
     increase = sketch.aggregate(0);
-    EXPECT_EQUAL(23, increase);
+    EXPECT_EQ(23, increase);
 }
 
-TEST("require that instances can be merged.") {
+TEST(SketchTest, require_that_instances_can_be_merged) {
     NormalSketch<> sketch;
     sketch.aggregate(0);
     NormalSketch<> sketch2;
@@ -83,7 +82,7 @@ TEST("require that instances can be merged.") {
     checkBucketValue(sketch, 1023, 1);
 }
 
-TEST("require that different sketch type instances can be merged.") {
+TEST(SketchTest, require_that_different_sketch_type_instances_can_be_merged) {
     NormalSketch<> sketch;
     sketch.aggregate(0);
     SparseSketch<> sketch2;
@@ -93,7 +92,7 @@ TEST("require that different sketch type instances can be merged.") {
     checkBucketValue(sketch, 1023, 1);
 }
 
-TEST("require that normal sketch can be (de)serialized") {
+TEST(SketchTest, require_that_normal_sketch_can_be_serialized_and_deserialized) {
     NormalSketch<> sketch;
     for (size_t i = 0; i < sketch.BUCKET_COUNT; ++i) {
         sketch.aggregate(i | (1 << ((i % sketch.bucketBits) +
@@ -102,19 +101,19 @@ TEST("require that normal sketch can be (de)serialized") {
     nbostream stream;
     NBOSerializer serializer(stream);
     sketch.serialize(serializer);
-    EXPECT_EQUAL(31u, stream.size());
+    EXPECT_EQ(31u, stream.size());
     uint32_t val;
     stream >> val;
     EXPECT_TRUE(sketch.BUCKET_COUNT == val);
     stream >> val;
-    EXPECT_EQUAL(23u, val);
+    EXPECT_EQ(23u, val);
     stream.adjustReadPos(-2 * sizeof(uint32_t));
     NormalSketch<> sketch2;
     sketch2.deserialize(serializer);
-    EXPECT_EQUAL(sketch, sketch2);
+    EXPECT_EQ(sketch, sketch2);
 }
 
-TEST("require that uncompressed data in normal sketch can be deserialized") {
+TEST(SketchTest, require_that_uncompressed_data_in_normal_sketch_can_be_deserialized) {
     NormalSketch<> sketch;
     nbostream stream;
     NBOSerializer serializer(stream);
@@ -129,10 +128,10 @@ TEST("require that uncompressed data in normal sketch can be deserialized") {
     }
     NormalSketch<> sketch2;
     sketch2.deserialize(serializer);
-    EXPECT_EQUAL(sketch, sketch2);
+    EXPECT_EQ(sketch, sketch2);
 }
 
-TEST("require that sparse sketch can be (de)serialized") {
+TEST(SketchTest, require_that_sparse_sketch_can_be_serialized_and_deserialized) {
     SparseSketch<> sketch;
     const uint32_t hash_count = 10;
     for (size_t hash = 0; hash < hash_count; ++hash) {
@@ -141,16 +140,16 @@ TEST("require that sparse sketch can be (de)serialized") {
     nbostream stream;
     NBOSerializer serializer(stream);
     sketch.serialize(serializer);
-    EXPECT_EQUAL(4 * hash_count + 4u, stream.size());
+    EXPECT_EQ(4 * hash_count + 4u, stream.size());
     uint32_t val;
     stream >> val;
-    EXPECT_EQUAL(hash_count, val);
+    EXPECT_EQ(hash_count, val);
     stream.adjustReadPos(-1 * sizeof(uint32_t));
     SparseSketch<> sketch2;
     sketch2.deserialize(serializer);
-    EXPECT_EQUAL(sketch, sketch2);
+    EXPECT_EQ(sketch, sketch2);
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
