@@ -27,10 +27,14 @@ public class DynamicOption {
         }
     }
 
+    // for "field_name" we return "field_name"
+    // for "%{field_name}" we return "field_name"
+    // for "%{[field_name]}" we return "field_name"
     public String getParsedConfigValue() {
         return parsedConfigValue;
     }
 
+    // is the the value in %{...} format?
     public boolean isDynamic() {
         return isDynamic;
     }
