@@ -26,9 +26,6 @@ public class YQLCompletion {
     public static ArrayList<CompletionItem> getCompletionItems(EventCompletionContext context, PrintStream errorLogger) {
         ArrayList<CompletionItem> ret = new ArrayList<CompletionItem>();
 
-        context.logger.info("Root tree:");
-        YQLUtils.printTree(context.logger, context.document.getRootYQLNode());
-
         for (CompletionProvider provider : providers) {
             try {
                 ret.addAll(provider.getCompletionItems(context));

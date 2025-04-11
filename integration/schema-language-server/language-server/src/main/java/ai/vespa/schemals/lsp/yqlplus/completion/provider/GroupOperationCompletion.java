@@ -148,9 +148,6 @@ public class GroupOperationCompletion implements CompletionProvider {
             return ret;
         }
 
-        context.logger.info("GROUPING Completion:");
-        YQLUtils.printTree(context.logger, last);
-
         Optional<Node> operationBody = finOperationBody(last);
 
         if (operationBody.isEmpty()) {
@@ -159,12 +156,6 @@ public class GroupOperationCompletion implements CompletionProvider {
 
         List<Node> operationNodes = getBodyElements(operationBody.get());
         Optional<Integer> indexOfCursor = getPreviosNode(context.position, operationNodes);
-
-        context.logger.info("CURSOR INDEX: " + indexOfCursor);
-        for (Node n : operationNodes) {
-            context.logger.info(n);
-        }
-        context.logger.info("---");
 
         // Cursor is inside a token
         if (indexOfCursor.isEmpty()) {

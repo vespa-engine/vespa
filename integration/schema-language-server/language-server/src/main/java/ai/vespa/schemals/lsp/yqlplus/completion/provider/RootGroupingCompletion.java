@@ -60,7 +60,6 @@ public class RootGroupingCompletion implements CompletionProvider {
 
         Node possibleRBraceNode = node.getParent();
         Node possibleRequestNode = node.getParent(5);
-        YQLUtils.printTree(context.logger, possibleRequestNode);
         if (
             possibleRBraceNode != null &&
             possibleRBraceNode.isASTInstance(rbraceElm.class) &&

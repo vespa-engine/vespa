@@ -8,7 +8,6 @@ import java.util.Optional;
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 
-import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventCompletionContext;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
@@ -109,9 +108,6 @@ public class RootCompletion implements CompletionProvider {
         if (node.getLanguageType() == LanguageType.CUSTOM && node.getText() == "|") {
             return ret;
         }
-
-        context.logger.info("YQL comp:");
-        YQLUtils.printTree(context.logger, node);
 
         if (node.isASTInstance(YQLNode.class)) {
             ret.add(CompletionUtils.constructSnippet("select", "select ${1:*} from $2 where $0"));
