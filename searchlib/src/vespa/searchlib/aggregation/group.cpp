@@ -3,9 +3,12 @@
 #include "group.h"
 #include "grouping.h"
 #include <vespa/searchlib/expression/aggregationrefnode.h>
-
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/objects/object2slime.h>
 #include <vespa/vespalib/objects/visit.hpp>
 #include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <cassert>
 
 namespace search::aggregation {
@@ -168,7 +171,7 @@ Group::updateRank(RawRank r)
 
 Serializer &
 Group::onSerialize(Serializer & os) const {
-    _aggr.assertIdOrder();
+    _aggr.validate_id_order();
     os << _id << _rank;
     _aggr.serialize(os);
     return os;
@@ -178,7 +181,7 @@ Deserializer &
 Group::onDeserialize(Deserializer & is) {
     is >> _id >> _rank;
     _aggr.deserialize(is);
-    _aggr.assertIdOrder();
+    _aggr.validate_id_order();
     return is;
 }
 
@@ -521,11 +524,37 @@ Group::Value::needResort() const
     return resort;
 }
 
+namespace {
+
+std::string child_id_as_string(size_t i, Group* group) {
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+    vespalib::slime::Cursor & cursor = inserter.insertObject();
+    vespalib::Object2Slime dumper(cursor);
+    std::string name = "child[" + std::to_string(i) + "].id";
+    const expression::ResultNode* id = nullptr;
+    if (group != nullptr && group->hasId()) {
+        id = &group->getId();
+    }
+    visit(dumper, name, id);
+    vespalib::SimpleBuffer buf;
+    vespalib::slime::JsonFormat::encode(slime, buf, true);
+    return buf.get().make_string();
+}
+
+}
+
 void
-Group::Value::assertIdOrder() const {
+Group::Value::validate_id_order() const {
     if (getChildrenSize() > 1) {
         for (size_t i(1), m(getChildrenSize()); i < m; i++) {
-            assert(_children[i]->cmpId(*_children[i-1]) > 0);
+            if (!(_children[i]->cmpId(*_children[i-1]) > 0)) {
+                auto msg = vespalib::make_string("Group::Value::validate_id_order: Expected %s > %s, %u children",
+                    child_id_as_string(i, _children[i]).c_str(),
+                    child_id_as_string(i - 1, _children[i - 1]).c_str(),
+                    getChildrenSize());
+                throw vespalib::IllegalArgumentException(msg);
+            }
         }
     }
 }
@@ -596,9 +625,9 @@ Group::Value::deserialize(Deserializer & is) {
     _children = new ChildP[std::max(4ul, 2ul << vespalib::Optimized::msbIdx(count))];
     setChildrenSize(count);
     for(uint32_t i(0); i < count; i++) {
-        auto group(new Group);
+        auto group = std::make_unique<Group>();
         is >> *group;
-        _children[i] = group;
+        _children[i] = group.release();
     }
     is >> _tag;
     return is;

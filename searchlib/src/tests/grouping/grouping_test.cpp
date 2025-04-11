@@ -13,6 +13,7 @@
 #include <vespa/searchlib/test/make_attribute_map_lookup_node.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <algorithm>
 #include <cmath>
 #include <iostream>
@@ -1857,6 +1858,30 @@ TEST(GroupingTest, test_that_attributes_can_be_unconditionally_converted_to_docu
     aggregation::Attribute2DocumentAccessor attr2DocumentAccessor;
     attrRequest.select(attr2DocumentAccessor, attr2DocumentAccessor);
     EXPECT_TRUE(attrRequest.getRoot().getAggregationResult(0).getExpression()->inherits(DocumentFieldNode::classId));
+}
+
+TEST(GroupingTest, test_bad_grouping)
+{
+    Grouping baseRequest;
+    /*
+     * The children ids of a group must be strictly increasing. A group violating this invariant
+     * is considered bad. Currently, Group::onSerialize() and Group::onDeserialize() validates the id order.
+     */
+    baseRequest.setRoot(Group().addChild(Group().setId(FloatBucketResultNode(0.2, 0.3)))
+        .addChild(Group().setId(FloatBucketResultNode(0.2, 0.3))));
+    vespalib::nbostream os;
+    vespalib::NBOSerializer nos(os);
+    try {
+        baseRequest.serialize(nos);
+        FAIL() << "Exception not thrown";
+    } catch (const vespalib::IllegalArgumentException& e) {
+        EXPECT_EQ("Group::Value::validate_id_order: Expected "
+                  R"({"child[1].id":{"[type]":"search::expression::FloatBucketResultNode","from":0.2,"to":0.3}})"
+                  " > "
+                  R"({"child[0].id":{"[type]":"search::expression::FloatBucketResultNode","from":0.2,"to":0.3}})"
+                  ", 2 children",
+                  e.getMessage());
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

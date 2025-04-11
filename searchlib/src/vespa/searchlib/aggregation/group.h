@@ -81,7 +81,7 @@ public:
         void mergeCollectors(const Value & rhs);
         void execute();
         bool needResort() const;
-        void assertIdOrder() const;
+        void validate_id_order() const;
         void visitMembers(vespalib::ObjectVisitor &visitor) const;
         vespalib::Serializer & serialize(vespalib::Serializer & os) const;
         vespalib::Deserializer & deserialize(vespalib::Deserializer & is);
