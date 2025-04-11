@@ -573,10 +573,13 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     }
 
     private void updateMasterClusterSyncMetrics() {
-        var stats = stateVersionTracker.getAggregatedClusterStats().getAggregatedStats();
-        if (stats.hasUpdatesFromAllDistributors()) {
-            GlobalBucketSyncStatsCalculator.clusterBucketsOutOfSyncRatio(stats.getGlobalStats())
+        var stats = stateVersionTracker.getAggregatedClusterStats();
+        var aggrStats = stats.getAggregatedStats();
+        if (aggrStats.hasUpdatesFromAllDistributors()) {
+            GlobalBucketSyncStatsCalculator.clusterBucketsOutOfSyncRatio(aggrStats.getGlobalStats())
                     .ifPresent(metricUpdater::updateClusterBucketsOutOfSyncRatio);
+            metricUpdater.updateClusterDocumentMetrics(
+                    stats.getAggregatedDocumentCountTotal(), stats.getAggregatedBytesTotal());
         }
     }
 

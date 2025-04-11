@@ -124,7 +124,11 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
     }
 
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats stripe_bucket_spaces_stats() {
-        return _stripe->getBucketSpacesStats();
+        return _stripe->per_node_bucket_spaces_stats();
+    }
+
+    BucketSpacesStatsProvider::GlobalStats stripe_global_stats() {
+        return _stripe->global_stats();
     }
 
     bool stripe_handle_message(const std::shared_ptr<api::StorageMessage>& msg) {
@@ -773,7 +777,7 @@ TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats)
     setup_stripe(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
     addNodesToBucketDB(document::BucketId(16, 2), "0=1/1/1/t/a");
-    addNodesToBucketDB(document::BucketId(16, 3), "0=2/2/2/t/a");
+    addNodesToBucketDB(document::BucketId(16, 3), "0=2/2/3/t/a");
 
     tickDistributorNTimes(5); // 1/3rds into second round through database
 
@@ -787,6 +791,9 @@ TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats)
 
     assert_invalid_stats_for_all_spaces(stats, 0);
     assert_invalid_stats_for_all_spaces(stats, 2);
+
+    const auto g_stats = stripe_global_stats();
+    EXPECT_FALSE(g_stats.valid());
 }
 
 TEST_F(DistributorStripeTest, stale_reads_config_is_propagated_to_external_operation_handler)

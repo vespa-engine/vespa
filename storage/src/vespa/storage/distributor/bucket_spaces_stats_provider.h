@@ -10,10 +10,42 @@
 namespace storage::distributor {
 
 /**
+ * Distributor-global statistics across bucket spaces and content nodes.
+ */
+class CrossBucketSpaceStats {
+    bool     _valid;
+    uint64_t _documents_total;
+    uint64_t _bytes_total;
+public:
+    constexpr CrossBucketSpaceStats() noexcept
+        : _valid(false),
+          _documents_total(0),
+          _bytes_total(0)
+    {}
+    constexpr CrossBucketSpaceStats(uint64_t documents_total, uint64_t bytes_total) noexcept
+        : _valid(true),
+          _documents_total(documents_total),
+          _bytes_total(bytes_total)
+    {}
+
+    [[nodiscard]] static CrossBucketSpaceStats make_invalid() { return {}; }
+    [[nodiscard]] static CrossBucketSpaceStats make_empty_but_valid() { return {0, 0}; }
+
+    [[nodiscard]] bool valid() const noexcept { return _valid; }
+    [[nodiscard]] uint64_t documents_total() const noexcept { return _documents_total; }
+    [[nodiscard]] uint64_t bytes_total() const noexcept { return _bytes_total; }
+    bool operator==(const CrossBucketSpaceStats&) const noexcept = default;
+    void merge(const CrossBucketSpaceStats& rhs) noexcept {
+        _valid = _valid && rhs._valid;
+        _documents_total += rhs._documents_total;
+        _bytes_total += rhs._bytes_total;
+    }
+};
+
+/**
  * Statistics for a single bucket space on a content node.
  */
 class BucketSpaceStats {
-private:
     bool   _valid;
     size_t _bucketsTotal;
     size_t _bucketsPending;
@@ -35,11 +67,7 @@ public:
     size_t bucketsTotal() const noexcept { return _bucketsTotal; }
     size_t bucketsPending() const noexcept { return _bucketsPending; }
 
-    bool operator==(const BucketSpaceStats& rhs) const noexcept {
-        return (_valid == rhs._valid) &&
-                (_bucketsTotal == rhs._bucketsTotal) &&
-                (_bucketsPending == rhs._bucketsPending);
-    }
+    bool operator==(const BucketSpaceStats& rhs) const noexcept;
 
     void merge(const BucketSpaceStats& rhs) noexcept {
         _valid = _valid && rhs._valid;
@@ -59,9 +87,11 @@ public:
     using BucketSpacesStats = std::map<std::string, BucketSpaceStats>;
     // Mapping from content node index to statistics for all bucket spaces on that node.
     using PerNodeBucketSpacesStats = std::unordered_map<uint16_t, BucketSpacesStats>;
+    using GlobalStats = CrossBucketSpaceStats; // TODO or expose directly?
 
     virtual ~BucketSpacesStatsProvider() = default;
-    virtual PerNodeBucketSpacesStats getBucketSpacesStats() const = 0;
+    [[nodiscard]] virtual PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const = 0;
+    [[nodiscard]] virtual GlobalStats global_stats() const = 0;
 };
 
 void merge_bucket_spaces_stats(BucketSpacesStatsProvider::BucketSpacesStats& dest,

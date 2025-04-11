@@ -125,6 +125,11 @@ public class MetricUpdater {
         metricReporter.set("cluster-buckets-out-of-sync-ratio", ratio);
     }
 
+    public void updateClusterDocumentMetrics(long docsTotal, long bytesTotal) {
+        metricReporter.set("document-count-total", docsTotal);
+        metricReporter.set("bytes-total", bytesTotal);
+    }
+
     public void addTickTime(long millis, boolean didWork) {
         if (didWork) {
             metricReporter.set("busy-tick-time-ms", millis);

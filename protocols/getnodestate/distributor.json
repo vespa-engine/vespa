@@ -1,5 +1,7 @@
 {
     "distributor": {
+        "document-count-total": 1337,
+        "bytes-total": 456789,
         "storage-nodes": [
             {
                 "node-index": 0,

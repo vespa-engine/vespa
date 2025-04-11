@@ -13,9 +13,15 @@ import java.util.List;
  */
 public class Distributor {
 
+    @JsonProperty("document-count-total")
+    private Long documentCountTotal = null;
+    @JsonProperty("bytes-total")
+    private Long bytesTotal = null;
     @JsonProperty("storage-nodes")
     private List<StorageNode> storageNodes = new ArrayList<>();
 
+    public Long documentCountTotalOrNull() { return documentCountTotal; }
+    public Long bytesTotalOrNull() { return bytesTotal; }
     public List<StorageNode> getStorageNodes() { return storageNodes; }
 
 }
