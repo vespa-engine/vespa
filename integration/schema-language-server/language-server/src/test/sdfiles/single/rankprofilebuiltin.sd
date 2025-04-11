@@ -1,0 +1,13 @@
+schema rankprofilebuiltin {
+    document rankprofilebuiltin {
+    }
+
+    # There exists exactly two builtin rank profiles
+
+    rank-profile foo inherits unranked {
+        
+    }
+
+    rank-profile bar inherits default {
+    }
+}
