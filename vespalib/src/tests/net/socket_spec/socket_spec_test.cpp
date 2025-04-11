@@ -1,132 +1,147 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <iomanip>
+#include <ostream>
 
 using namespace vespalib;
 
-void verify(const SocketSpec &spec, bool valid,
-            const std::string &path, const std::string &name,
-            const std::string &host, const std::string &host_with_fallback,
-            int port)
+namespace vespalib {
+
+void PrintTo(const SocketSpec& spec, std::ostream* os) {
+    *os << std::boolalpha << "{valid=" << spec.valid() << ", path=" << std::quoted(spec.path()) <<
+        ", name= " << std::quoted(spec.name()) << ", host=" << std::quoted(spec.host()) <<
+        ", host_with_fallback=" << std::quoted(spec.host_with_fallback()) << ", port=" << spec.port() << "}";
+}
+
+}
+
+bool verify(const SocketSpec &spec, bool valid, const std::string &path, const std::string &name,
+            const std::string &host, const std::string &host_with_fallback, int port)
 {
-    EXPECT_EQUAL(spec.valid(), valid);
-    EXPECT_EQUAL(spec.path(), path);
-    EXPECT_EQUAL(spec.name(), name);
-    EXPECT_EQUAL(spec.host(), host);
-    EXPECT_EQUAL(spec.host_with_fallback(), host_with_fallback);
-    EXPECT_EQUAL(spec.port(), port);
+    bool retval = true;
+    EXPECT_EQ(spec.valid(), valid) << (retval = false, "");
+    EXPECT_EQ(spec.path(), path) << (retval = false, "");
+    EXPECT_EQ(spec.name(), name) << (retval = false, "");
+    EXPECT_EQ(spec.host(), host) << (retval = false, "");
+    EXPECT_EQ(spec.host_with_fallback(), host_with_fallback) << (retval = false, "");
+    EXPECT_EQ(spec.port(), port) << (retval = false, "");
+    return retval;;
 }
 
-void verify_path(const SocketSpec &spec, const std::string &path) {
-    TEST_DO(verify(spec, true, path, "", "", "", -1));
+bool has_only_path(const SocketSpec& spec, const std::string& path) {
+    return verify(spec, true, path, "", "", "", -1);
 }
 
-void verify_name(const SocketSpec &spec, const std::string &name) {
-    TEST_DO(verify(spec, true, "", name, "", "", -1));
+bool has_only_name(const SocketSpec& spec, const std::string& name) {
+    return verify(spec, true, "", name, "", "", -1);
 }
 
-void verify_host_port(const SocketSpec &spec, const std::string &host, int port) {
-    TEST_DO(verify(spec, true, "", "", host, host, port));
+bool has_only_host_port(const SocketSpec &spec, const std::string &host, int port) {
+    return verify(spec, true, "", "", host, host, port);
 }
 
-void verify_port(const SocketSpec &spec, int port) {
-    TEST_DO(verify(spec, true, "", "", "", "localhost", port));
+bool has_only_port(const SocketSpec &spec, int port) {
+    return verify(spec, true, "", "", "", "localhost", port);
 }
 
-void verify_invalid(const SocketSpec &spec) {
-    TEST_DO(verify(spec, false, "", "", "", "", -1));
+bool is_invalid(const SocketSpec &spec) {
+    return verify(spec, false, "", "", "", "", -1);
 }
 
-void verify_spec(const std::string &str, const std::string &expect) {
-    std::string actual = SocketSpec(str).spec();
-    EXPECT_EQUAL(actual, expect);
-}
-
-void verify_spec(const std::string &str) {
-    TEST_DO(verify_spec(str, str));
-}
+struct HasSpec {
+    bool operator()(const std::string &str, const std::string &expected) const {
+        bool retval = true;
+        EXPECT_EQ(SocketSpec(str).spec(), expected) << (retval = false, "");
+        return retval;
+    }
+    bool operator()(const std::string& str) const {
+        return operator()(str, str);
+    }
+} has_spec;
 
 //-----------------------------------------------------------------------------
 
-TEST("require that socket spec can be created directly from path") {
-    TEST_DO(verify_path(SocketSpec::from_path("my_path"), "my_path"));
+TEST(SocketSpecTest, require_that_socket_spec_can_be_created_directly_from_path) {
+    EXPECT_PRED2(has_only_path, SocketSpec::from_path("my_path"), "my_path");
 }
 
-TEST("require that socket spec can be created directly from name") {
-    TEST_DO(verify_name(SocketSpec::from_name("my_name"), "my_name"));
+TEST(SocketSpecTest, require_that_socket_spec_can_be_created_directly_from_name) {
+    EXPECT_PRED2(has_only_name, SocketSpec::from_name("my_name"), "my_name");
 }
 
-TEST("require that socket spec can be created directly from host and port") {
-    TEST_DO(verify_host_port(SocketSpec::from_host_port("my_host", 123), "my_host", 123));
+TEST(SocketSpecTest, require_that_socket_spec_can_be_created_directly_from_host_and_port) {
+    EXPECT_PRED3(has_only_host_port, SocketSpec::from_host_port("my_host", 123), "my_host", 123);
 }
 
-TEST("require that socket spec can be created directly from port only") {
-    TEST_DO(verify_port(SocketSpec::from_port(123), 123));
+TEST(SocketSpecTest, require_that_socket_spec_can_be_created_directly_from_port_only) {
+    EXPECT_PRED2(has_only_port, SocketSpec::from_port(123), 123);
 }
 
-TEST("require that socket spec parsing works as expected") {
-    TEST_DO(verify_invalid(SocketSpec("")));
-    TEST_DO(verify_invalid(SocketSpec("bogus")));
-    TEST_DO(verify_path(SocketSpec("ipc/file:my_path"), "my_path"));
-    TEST_DO(verify_invalid(SocketSpec("ipc/file:")));
-    TEST_DO(verify_name(SocketSpec("ipc/name:my_name"), "my_name"));
-    TEST_DO(verify_invalid(SocketSpec("ipc/name:")));
-    TEST_DO(verify_host_port(SocketSpec("tcp/my_host:123"), "my_host", 123));
-    TEST_DO(verify_port(SocketSpec("tcp/123"), 123));
-    TEST_DO(verify_port(SocketSpec("tcp/0"), 0));
-    TEST_DO(verify_invalid(SocketSpec("tcp/:123")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/:0")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/host:xyz")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/xyz")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/host:-123")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/-123")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/host:")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/")));
-    TEST_DO(verify_host_port(SocketSpec("tcp/[my:host]:123"), "my:host", 123));
-    TEST_DO(verify_invalid(SocketSpec("tcp/[]:123")));
-    TEST_DO(verify_host_port(SocketSpec("tcp/[:123"), "[", 123));
-    TEST_DO(verify_host_port(SocketSpec("tcp/]:123"), "]", 123));
-    TEST_DO(verify_host_port(SocketSpec("tcp/my:host:123"), "my:host", 123));
+TEST(SocketSpecTest, require_that_socket_spec_parsing_works_as_expected) {
+    EXPECT_PRED1(is_invalid, SocketSpec(""));
+    EXPECT_PRED1(is_invalid, SocketSpec("bogus"));
+    EXPECT_PRED2(has_only_path, SocketSpec("ipc/file:my_path"), "my_path");
+    EXPECT_PRED1(is_invalid, SocketSpec("ipc/file:"));
+    EXPECT_PRED2(has_only_name, SocketSpec("ipc/name:my_name"), "my_name");
+    EXPECT_PRED1(is_invalid, SocketSpec("ipc/name:"));
+    EXPECT_PRED3(has_only_host_port, SocketSpec("tcp/my_host:123"), "my_host", 123);
+    EXPECT_PRED2(has_only_port, SocketSpec("tcp/123"), 123);
+    EXPECT_PRED2(has_only_port, SocketSpec("tcp/0"), 0);
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/:123"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/:0"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/host:xyz"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/xyz"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/host:-123"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/-123"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/host:"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/"));
+    EXPECT_PRED3(has_only_host_port, SocketSpec("tcp/[my:host]:123"), "my:host", 123);
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/[]:123"));
+    EXPECT_PRED3(has_only_host_port, SocketSpec("tcp/[:123"), "[", 123);
+    EXPECT_PRED3(has_only_host_port, SocketSpec("tcp/]:123"), "]", 123);
+    EXPECT_PRED3(has_only_host_port, SocketSpec("tcp/my:host:123"), "my:host", 123);
 }
 
-TEST("require that socket spec to string transform works as expected") {
-    TEST_DO(verify_spec("invalid"));
-    TEST_DO(verify_spec("bogus", "invalid"));
-    TEST_DO(verify_spec("ipc/file:my_path"));
-    TEST_DO(verify_spec("ipc/name:my_name"));
-    TEST_DO(verify_spec("tcp/123"));
-    TEST_DO(verify_spec("tcp/0"));
-    TEST_DO(verify_spec("tcp/host:123"));
-    TEST_DO(verify_spec("tcp/[my:host]:123"));
-    TEST_DO(verify_spec("tcp/[host]:123", "tcp/host:123"));
+TEST(SocketSpecTest, require_that_socket_spec_to_string_transform_works_as_expected) {
+    EXPECT_PRED1(has_spec, "invalid");
+    EXPECT_PRED2(has_spec, "bogus", "invalid");
+    EXPECT_PRED1(has_spec, "ipc/file:my_path");
+    EXPECT_PRED1(has_spec, "ipc/name:my_name");
+    EXPECT_PRED1(has_spec, "tcp/123");
+    EXPECT_PRED1(has_spec, "tcp/0");
+    EXPECT_PRED1(has_spec, "tcp/host:123");
+    EXPECT_PRED1(has_spec, "tcp/[my:host]:123");
+    EXPECT_PRED2(has_spec, "tcp/[host]:123", "tcp/host:123");
 }
 
-TEST("require that port-only spec resolves to wildcard server address") {
+TEST(SocketSpecTest, require_that_port_only_spec_resolves_to_wildcard_server_address) {
     EXPECT_TRUE(SocketSpec("tcp/123").server_address().is_wildcard());
 }
 
-TEST("require that port-only spec resolves to non-wildcard client address") {
+TEST(SocketSpecTest, require_that_port_only_spec_resolves_to_non_wildcard_client_address) {
     EXPECT_TRUE(!SocketSpec("tcp/123").client_address().is_wildcard());
 }
 
-TEST("require that replace_host makes new spec with replaced host") {
+TEST(SocketSpecTest, require_that_replace_host_makes_new_spec_with_replaced_host) {
     SocketSpec old_spec("tcp/host:123");
     const SocketSpec &const_spec = old_spec;
     SocketSpec new_spec = const_spec.replace_host("foo");
-    TEST_DO(verify_host_port(old_spec, "host", 123));
-    TEST_DO(verify_host_port(new_spec, "foo", 123));
+    EXPECT_PRED3(has_only_host_port, old_spec, "host", 123);
+    EXPECT_PRED3(has_only_host_port, new_spec, "foo", 123);
 }
 
-TEST("require that replace_host gives invalid spec when used with less than 2 host names") {
-    TEST_DO(verify_invalid(SocketSpec("bogus").replace_host("foo")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/123").replace_host("foo")));
-    TEST_DO(verify_invalid(SocketSpec("tcp/host:123").replace_host("")));
-    TEST_DO(verify_invalid(SocketSpec("ipc/file:my_socket").replace_host("foo")));
-    TEST_DO(verify_invalid(SocketSpec("ipc/name:my_socket").replace_host("foo")));
+TEST(SocketSpecTest, require_that_replace_host_gives_invalid_spec_when_used_with_less_than_2_host_names) {
+    EXPECT_PRED1(is_invalid, SocketSpec("bogus").replace_host("foo"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/123").replace_host("foo"));
+    EXPECT_PRED1(is_invalid, SocketSpec("tcp/host:123").replace_host(""));
+    EXPECT_PRED1(is_invalid, SocketSpec("ipc/file:my_socket").replace_host("foo"));
+    EXPECT_PRED1(is_invalid, SocketSpec("ipc/name:my_socket").replace_host("foo"));
 }
 
-TEST("require that invalid socket spec is not valid") {
+TEST(SocketSpecTest, require_that_invalid_socket_spec_is_not_valid) {
     EXPECT_FALSE(SocketSpec::invalid.valid());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
