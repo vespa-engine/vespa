@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/countcompression.h>
@@ -9,6 +8,7 @@
 #include <vespa/searchlib/test/diskindex/pagedict4_mem_writer.h>
 #include <vespa/searchlib/test/diskindex/pagedict4_mem_seq_reader.h>
 #include <vespa/searchlib/index/postinglistcounts.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("pagedict4_hugeword_cornercase_test");
@@ -165,24 +165,23 @@ void testPageSizedCounts()
         counts.clear();
         r.readCounts(word, checkWordNum, counts);
         if (wordNum < 6) {
-            EXPECT_EQUAL(checkWordNum, wordNum);
+            EXPECT_EQ(checkWordNum, wordNum);
             if (wordNum == 3) {
                 EXPECT_TRUE(counts == largeCounts);
             } else {
                 EXPECT_TRUE(counts == baseCounts);
             }
         } else {
-            EXPECT_GREATER(checkWordNum, 100u);
+            EXPECT_GT(checkWordNum, 100u);
         }
     }
 }
 
 
 
-TEST("require that counts exactly filling dictionary page works")
+TEST(PageDict4HugewordCornercaseTest, require_that_counts_exactly_filling_dictionary_page_works)
 {
     testPageSizedCounts();
 }
 
-
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
