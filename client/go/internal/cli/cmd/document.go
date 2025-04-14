@@ -69,11 +69,11 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 	if err != nil {
 		return err
 	}
-	id := ""
 	if len(args) == 0 && data == "" {
 		return fmt.Errorf("Must provide either a file name or use the --data parameter")
 	}
 
+	var id string
 	var filename string
 	if data == "" {
 		filename = args[0]
@@ -86,11 +86,12 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 	}
 
 	var r io.ReadCloser
-	if data != "" {
+	switch {
+	case data != "":
 		r = io.NopCloser(strings.NewReader(data))
-	} else if filename == "-" {
+	case filename == "-":
 		r = io.NopCloser(cli.Stdin)
-	} else {
+	default:
 		f, err := os.Open(filename)
 		if err != nil {
 			return err
@@ -98,14 +99,18 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 		defer f.Close()
 		r = f
 	}
+
 	doc, err := document.NewDecoder(r).Decode()
-	if errors.Is(err, document.ErrMissingId) {
-		if id == "" {
-			return fmt.Errorf("no document id given neither as argument or as a 'put', 'update' or 'remove' key in the JSON file")
+	if err != nil {
+		if errors.Is(err, document.ErrMissingId) {
+			if id == "" {
+				return fmt.Errorf("no document id given neither as argument or as a 'put', 'update' or 'remove' key in the JSON file")
+			}
+		} else {
+			return err
 		}
-	} else if err != nil {
-		return err
 	}
+
 	if id != "" {
 		docId, err := document.ParseId(id)
 		if err != nil {
@@ -113,15 +118,18 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 		}
 		doc.Id = docId
 	}
+
 	if op > -1 {
 		if id == "" && op != doc.Operation {
 			return fmt.Errorf("wanted document operation is %s, but JSON file specifies %s", op, doc.Operation)
 		}
 		doc.Operation = op
 	}
+
 	if doc.Body != nil {
 		service.CurlWriter.InputFile = filename
 	}
+
 	result := client.Send(doc)
 	return printResult(cli, operationResult(false, doc, service, result), false)
 }
