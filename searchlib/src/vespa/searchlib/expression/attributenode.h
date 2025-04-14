@@ -55,9 +55,9 @@ public:
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;
     }
     const std::string & getAttributeName() const noexcept { return _attributeName; }
-
+    [[nodiscard]] bool hasMultiValue() const noexcept { return _hasMultiValue; }
     void enableEnumOptimization(bool enable) noexcept { _useEnumOptimization = enable; }
-public:
+
     class Handler
     {
     public:
@@ -84,7 +84,6 @@ private:
 protected:
     void setHasMultiValue(bool has) noexcept { _hasMultiValue = has; }
     [[nodiscard]] bool useEnumOptimization() const noexcept { return _useEnumOptimization; }
-    [[nodiscard]] bool hasMultiValue() const noexcept { return _hasMultiValue; }
 
     void setScratchResult(std::unique_ptr<AttributeResult> result) noexcept {
         _scratchResult = std::move(result);
