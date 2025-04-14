@@ -30,7 +30,6 @@ vespa_define_module(
     src/vespa/searchlib/fef
     src/vespa/searchlib/fef/test
     src/vespa/searchlib/fef/test/plugin
-    src/vespa/searchlib/grouping
     src/vespa/searchlib/index
     src/vespa/searchlib/memoryindex
     src/vespa/searchlib/parsequery
@@ -179,7 +178,6 @@ vespa_define_module(
     src/tests/fileheadertk
     src/tests/forcelink
     src/tests/grouping
-    src/tests/groupingengine
     src/tests/hitcollector
     src/tests/index/field_length_calculator
     src/tests/indexmetainfo
