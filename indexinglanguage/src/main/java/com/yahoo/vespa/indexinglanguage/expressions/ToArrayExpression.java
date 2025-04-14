@@ -27,7 +27,7 @@ public final class ToArrayExpression extends Expression {
         if (outputType instanceof AnyDataType)
             return AnyDataType.instance;
         else
-            throw new VerificationException(this, "Produces an array,  but " + outputType + " is required");
+            throw new VerificationException(this, "Produces an array,  but " + outputType.getName() + " is required");
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
