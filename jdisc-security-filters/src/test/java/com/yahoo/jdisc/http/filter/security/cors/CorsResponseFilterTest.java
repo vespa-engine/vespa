@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.DEFAULT_ACCESS_CONTROL_HEADERS;
 import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -31,7 +31,7 @@ public class CorsResponseFilterTest {
     @Test
     void any_request_yields_access_control_headers_in_response() {
         Map<String, String> headers = doFilterRequest(newResponseFilter(), "http://any.origin");
-        ACCESS_CONTROL_HEADERS.keySet().forEach(
+        DEFAULT_ACCESS_CONTROL_HEADERS.keySet().forEach(
                 header -> assertFalse(headers.get(header).isEmpty(), "Empty header: " + header));
     }
 
