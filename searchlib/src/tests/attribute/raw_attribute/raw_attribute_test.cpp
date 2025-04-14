@@ -7,7 +7,9 @@
 #include <vespa/searchlib/attribute/empty_search_context.h>
 #include <vespa/searchlib/attribute/single_raw_attribute.h>
 #include <vespa/searchlib/query/query_term_simple.h>
+#include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/issue.h>
 #include <filesystem>
 #include <memory>
@@ -21,12 +23,54 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::EmptySearchContext;
+using search::attribute::ISortBlobWriter;
 using search::attribute::SearchContextParams;
 using search::attribute::SingleRawAttribute;
 using search::common::sortspec::MissingPolicy;
+using vespalib::Base64;
+using vespalib::IllegalArgumentException;
 using vespalib::Issue;
 
 using namespace std::literals;
+
+namespace {
+
+using SortData = std::vector<unsigned char>;
+
+SortData
+serialized_raw(std::optional<unsigned char> prefix, std::span<const char> value, bool asc)
+{
+    SortData s;
+    s.reserve(value.size() + 5);
+    if (prefix.has_value()) {
+        // Cannot use emplace_back() here due to bogus gcc 14 warning.
+        s.resize(1);
+        s[0] = prefix.value();
+    }
+    unsigned char xor_value = asc ? 0 : 255;
+    for (unsigned char c : value) {
+        if (c >= 0xfe) {
+            s.emplace_back(0xff ^ xor_value);
+            s.emplace_back(c ^ xor_value);
+        } else {
+            s.emplace_back((c + 1) ^ xor_value);
+        }
+    }
+    s.emplace_back(0 ^ xor_value);
+    return s;
+}
+
+SortData
+sort_data(ISortBlobWriter& writer, uint32_t lid) {
+    SortData s;
+    auto result = writer.write(lid, s.data(), s.size());
+    while (result < 0) {
+        s.emplace_back(0);
+        result = writer.write(lid, s.data(), s.size());
+    }
+    assert(result == (long)s.size());
+    return s;
+}
 
 std::vector<char> empty;
 std::string hello("hello");
@@ -52,6 +96,8 @@ struct MyIssueHandler : Issue::Handler {
         list.push_back(issue.message());
     }
 };
+
+}
 
 class RawAttributeTest : public ::testing::Test
 {
@@ -135,6 +181,42 @@ TEST_F(RawAttributeTest, implements_serialize_for_sort) {
     _raw->set_raw(1, raw_long_hello);
     EXPECT_EQ(-1, asc_writer->write(1, buf, sizeof(buf)));
     EXPECT_EQ(-1, desc_writer->write(1, buf, sizeof(buf)));
+    _raw->set_raw(3, raw_hello);
+    _raw->set_raw(4, escapes);
+    asc_writer = _attr->make_sort_blob_writer(true, nullptr, MissingPolicy::FIRST, std::string_view());
+    desc_writer = _attr->make_sort_blob_writer(false, nullptr, MissingPolicy::FIRST, std::string_view());
+    EXPECT_EQ(SortData{0}, sort_data(*asc_writer, 2));
+    EXPECT_EQ(SortData{0}, sort_data(*desc_writer, 2));
+    EXPECT_EQ(serialized_raw(1, raw_hello, true), sort_data(*asc_writer, 3));
+    EXPECT_EQ(serialized_raw(1, raw_hello, false), sort_data(*desc_writer, 3));
+    EXPECT_EQ(serialized_raw(1, escapes, true), sort_data(*asc_writer, 4));
+    EXPECT_EQ(serialized_raw(1, escapes, false), sort_data(*desc_writer, 4));
+    asc_writer = _attr->make_sort_blob_writer(true, nullptr, MissingPolicy::LAST, std::string_view());
+    desc_writer = _attr->make_sort_blob_writer(false, nullptr, MissingPolicy::LAST, std::string_view());
+    EXPECT_EQ(SortData{1}, sort_data(*asc_writer, 2));
+    EXPECT_EQ(SortData{1}, sort_data(*desc_writer, 2));
+    EXPECT_EQ(serialized_raw(0, raw_hello, true), sort_data(*asc_writer, 3));
+    EXPECT_EQ(serialized_raw(0, raw_hello, false), sort_data(*desc_writer, 3));
+    EXPECT_EQ(serialized_raw(0, escapes, true), sort_data(*asc_writer, 4));
+    EXPECT_EQ(serialized_raw(0, escapes, false), sort_data(*desc_writer, 4));
+    std::string plan_b("Plan B");
+    auto encoded_plan_b = Base64::encode(plan_b.data(), plan_b.size());
+    std::span<const char> plan_b_raw(plan_b.data(), plan_b.size());
+    asc_writer = _attr->make_sort_blob_writer(true, nullptr, MissingPolicy::AS, encoded_plan_b);
+    desc_writer = _attr->make_sort_blob_writer(false, nullptr, MissingPolicy::AS, encoded_plan_b);
+    EXPECT_EQ(serialized_raw(std::nullopt, plan_b_raw, true), sort_data(*asc_writer, 2));
+    EXPECT_EQ(serialized_raw(std::nullopt, plan_b_raw, false), sort_data(*desc_writer, 2));
+    EXPECT_EQ(serialized_raw(std::nullopt, raw_hello, true), sort_data(*asc_writer, 3));
+    EXPECT_EQ(serialized_raw(std::nullopt, raw_hello, false), sort_data(*desc_writer, 3));
+    EXPECT_EQ(serialized_raw(std::nullopt, escapes, true), sort_data(*asc_writer, 4));
+    EXPECT_EQ(serialized_raw(std::nullopt, escapes, false), sort_data(*desc_writer, 4));
+    std::string bad_base64("AB@FG");
+    try {
+        asc_writer = _attr->make_sort_blob_writer(true, nullptr, MissingPolicy::AS, bad_base64);
+        FAIL() << "Expected exeption on bad base64 encoded value";
+    } catch (const IllegalArgumentException& e) {
+        EXPECT_EQ("Failed converting string 'AB@FG' to a raw value: Illegal base64 character 64 found.", e.getMessage());
+    }
 }
 
 TEST_F(RawAttributeTest, save_and_load)

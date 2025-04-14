@@ -131,7 +131,7 @@ Base64::decode(const char* inBuffer, int inLen, char* outBuffer, int outLen)
         } else if (curchar == -1) {
             // Other illegal characters will generate failure
             throw IllegalArgumentException(make_string("Illegal base64 character %u found.",
-                                                       (unsigned int) *thischar), VESPA_STRLOC);
+                                                       (unsigned int) *(thischar - 1)), VESPA_STRLOC);
         } else {
 
             // Four bytes from input (eqals three bytes in output)
