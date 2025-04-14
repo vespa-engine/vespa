@@ -513,4 +513,45 @@ public class ScriptTestCase {
         expression.resolve(adapter);
     }
 
+    // for_each is nested in a block. Will happen if the schema contains "indexing: { summary | index }"
+    @Test
+    public void testNestedScript() {
+        String script = """
+                        {
+                        clear_state | guard { input array_1 | { for_each { tokenize normalize stem:"BEST" } | summary array_1 | index array_1; }; }
+                        }
+                        """;
+
+        var tester = new ScriptTester();
+        var expression = tester.scriptFrom(script);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        var myArray = new Array<StringFieldValue>(DataType.getArray(DataType.STRING));
+        adapter.createField(new Field("array_1", myArray.getDataType()));
+        adapter.setValue("myArray", myArray);
+        expression.resolve(adapter);
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+    }
+
+    @Test
+    public void testNestedMultiStatementScript() {
+        String script = """
+                        {
+                        clear_state | guard { input array_1 | { "en" | set_language; for_each { tokenize normalize stem:"BEST" } | summary array_1 | index array_1; }; }
+                        }
+                        """;
+
+        var tester = new ScriptTester();
+        var expression = tester.scriptFrom(script);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        var myArray = new Array<StringFieldValue>(DataType.getArray(DataType.STRING));
+        adapter.createField(new Field("array_1", myArray.getDataType()));
+        adapter.setValue("myArray", myArray);
+        expression.resolve(adapter);
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+    }
+
 }

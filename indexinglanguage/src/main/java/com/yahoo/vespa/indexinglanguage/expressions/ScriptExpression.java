@@ -69,8 +69,9 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
     public DataType setOutputType(DataType outputType, TypeContext context) {
         super.setOutputType(outputType, context);
         DataType currentInput = null;
-        for (var expression : expressions())
-            currentInput = expression.setOutputType(outputType, context);
+        // The output of the last statement is used
+        if (! expressions().isEmpty())
+            currentInput = expressions().get(expressions().size() - 1).setOutputType(outputType, context);
         return currentInput != null ? currentInput : getInputType(context);
     }
 

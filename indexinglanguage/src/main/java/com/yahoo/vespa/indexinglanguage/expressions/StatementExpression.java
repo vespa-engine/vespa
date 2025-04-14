@@ -61,15 +61,17 @@ public final class StatementExpression extends ExpressionList<Expression> {
     @Override
     public DataType setInputType(DataType input, TypeContext context) {
         super.setInputType(input, context);
+        var outputType = resolveForwards(context);
         resolveBackwards(context);
-        return resolveForwards(context);
+        return outputType;
     }
 
     @Override
     public DataType setOutputType(DataType output, TypeContext context) {
         super.setOutputType(output, context);
+        var inputType = resolveBackwards(context);
         resolveForwards(context);
-        return resolveBackwards(context);
+        return inputType;
     }
 
     // Result input and output types:
