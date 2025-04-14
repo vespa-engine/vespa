@@ -354,16 +354,20 @@ public class Dispatcher extends AbstractComponent {
      * If there is a single group blocking feed, we want to reject it.
      * If multiple groups are blocking feed we should use them anyway as we may not have remaining
      * capacity otherwise. Same if there are no other groups.
+     * If one of the groups is blocking feed and the others do not have coverage, we should not reject it.
      *
      * @return a modifiable set containing the single group to reject, or null otherwise
      */
-    private static Set<Integer> rejectGroupBlockingFeed(Collection<Group> groups) {
+    static Set<Integer> rejectGroupBlockingFeed(Collection<Group> groups) {
         if (groups.size() == 1) return null;
+
         List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).toList();
         if (groupsRejectingFeed.size() != 1) return null;
-        Set<Integer> rejected = new HashSet<>();
-        rejected.add(groupsRejectingFeed.get(0).id());
-        return rejected;
+
+        long withoutCoverage = groups.stream().filter(group -> !group.hasSufficientCoverage()).count();
+        if ((groups.size() - withoutCoverage) == 1) return null;
+
+        return new HashSet<>(Set.of(groupsRejectingFeed.get(0).id()));
     }
 
 }

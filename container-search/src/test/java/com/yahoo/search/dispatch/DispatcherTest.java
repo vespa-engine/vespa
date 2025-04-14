@@ -12,6 +12,7 @@ import com.yahoo.search.dispatch.rpc.Client.NodeConnection;
 import com.yahoo.search.dispatch.rpc.Client.ResponseReceiver;
 import com.yahoo.search.dispatch.rpc.RpcConnectionPool;
 import com.yahoo.search.dispatch.searchcluster.AvailabilityPolicy;
+import com.yahoo.search.dispatch.searchcluster.Group;
 import com.yahoo.search.dispatch.searchcluster.MockSearchCluster;
 import com.yahoo.search.dispatch.searchcluster.Node;
 import com.yahoo.search.dispatch.searchcluster.PingFactory;
@@ -47,6 +48,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -173,6 +175,42 @@ public class DispatcherTest {
                 (dispatcher.getSearchInvoker(new Query(), null).distributionKey().get()).longValue(),
                 "Blocking group is used when there is no alternative");
         dispatcher.deconstruct();
+    }
+
+    @Test
+    void testRejectGroupBlockingFeed() {
+        SearchCluster cluster = new MockSearchCluster("1", 2, 1);
+        // Note: these tests check return value from rejectGroupBlockingFeed() only
+
+        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+
+        // If one group is feed blocked, reject it
+        cluster.groupList().groups().forEach(group -> group.setHasSufficientCoverage(true));
+        cluster.group(0).nodes().get(0).setBlockingWrites(true);
+        cluster.groupList().groups().forEach(Group::aggregateNodeValues);
+        assertEquals(Set.of(0), Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+
+        // If one group is feed blocked and the other is unavailable, don't reject the group with feed blocked
+        cluster.group(0).nodes().get(0).setBlockingWrites(true);
+        cluster.group(1).setHasSufficientCoverage(false);
+        cluster.groupList().groups().forEach(Group::aggregateNodeValues);
+        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+
+        // If both groups are feed blocked, don't reject any group
+        cluster.group(0).nodes().get(0).setBlockingWrites(true);
+        cluster.group(1).nodes().get(0).setBlockingWrites(true);
+        cluster.groupList().groups().forEach(Group::aggregateNodeValues);
+        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+
+        // 3 groups. If one group is feed blocked and the two others have insufficient coverage,
+        // don't reject the group
+        cluster = new MockSearchCluster("1", 3, 1);
+        cluster.group(0).setHasSufficientCoverage(true);
+        cluster.group(0).nodes().get(0).setBlockingWrites(true);
+        cluster.group(1).setHasSufficientCoverage(false);
+        cluster.group(2).setHasSufficientCoverage(false);
+        cluster.groupList().groups().forEach(Group::aggregateNodeValues);
+        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
     }
 
     @Test

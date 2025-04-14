@@ -58,7 +58,7 @@ public class Group {
         return hasSufficientCoverage;
     }
 
-    void setHasSufficientCoverage(boolean sufficientCoverage) {
+    public void setHasSufficientCoverage(boolean sufficientCoverage) {
         hasSufficientCoverage = sufficientCoverage;
     }
 
