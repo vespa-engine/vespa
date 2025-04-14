@@ -140,7 +140,7 @@ struct ResolveCurrentIndex : vespalib::ObjectOperation, vespalib::ObjectPredicat
             // before being ignored here to avoid looking at their
             // children.
             auto &attr = static_cast<AttributeNode &>(obj);
-            if (attr.getCurrentIndex() == nullptr) {
+            if (attr.getCurrentIndex() == nullptr && attr.hasMultiValue()) {
                 attr.setCurrentIndex(setup.resolve(attr.getAttributeName()));
             }
         }
@@ -297,15 +297,6 @@ Grouping::sortById()
 void
 Grouping::configureStaticStuff(const ConfigureStaticParams & params)
 {
-    if (params._enableNestedMultivalueGrouping) {
-        CurrentIndexSetup setup;
-        ResolveCurrentIndex resolver(setup);
-        size_t end = std::min(size_t(_lastLevel + 1), _levels.size());
-        for (size_t i = _firstLevel; i < end; ++i) {
-            _levels[i].wire_current_index(setup, resolver, resolver);
-        }
-    }
-
     if (params._attrCtx != nullptr) {
         AttributeNode::Configure confAttr(*params._attrCtx);
         select(confAttr, confAttr);
@@ -315,6 +306,16 @@ Grouping::configureStaticStuff(const ConfigureStaticParams & params)
         DocumentAccessorNode::Configure confDoc(*params._docType);
         select(confDoc, confDoc);
     }
+
+    if (params._enableNestedMultivalueGrouping) {
+        CurrentIndexSetup setup;
+        ResolveCurrentIndex resolver(setup);
+        size_t end = std::min(size_t(_lastLevel + 1), _levels.size());
+        for (size_t i = _firstLevel; i < end; ++i) {
+            _levels[i].wire_current_index(setup, resolver, resolver);
+        }
+    }
+
     ExpressionTree::Configure treeConf;
     select(treeConf, treeConf);
 
