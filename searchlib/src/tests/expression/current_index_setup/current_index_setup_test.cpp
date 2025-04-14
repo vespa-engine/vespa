@@ -33,11 +33,26 @@ TEST(CurrentIndexSetupTest, unbound_struct_usage_can_be_captured) {
         EXPECT_EQ(setup.resolve("foo.a"), &foo_idx);
         EXPECT_EQ(setup.resolve("bar.a"), nullptr);
         EXPECT_EQ(setup.resolve("bar.b"), nullptr);
-        EXPECT_EQ(setup.resolve("plain"), nullptr);
     }
     EXPECT_EQ(setup.resolve("baz.a"), nullptr);
     EXPECT_TRUE(usage.has_single_unbound_struct());
     EXPECT_EQ(usage.get_unbound_struct_name(), "bar");
+}
+
+TEST(CurrentIndexSetupTest, unbound_plain_can_be_captured) {
+    CurrentIndexSetup setup;
+    CurrentIndexSetup::Usage usage;
+    CurrentIndex foo_idx;
+    setup.bind("foo", foo_idx);
+    EXPECT_FALSE(usage.has_single_unbound_struct());
+    {
+        CurrentIndexSetup::Usage::Bind capture_guard(setup, usage);
+        EXPECT_EQ(setup.resolve("foo.a"), &foo_idx);
+        EXPECT_EQ(setup.resolve("plain"), nullptr);
+    }
+    EXPECT_EQ(setup.resolve("baz.a"), nullptr);
+    EXPECT_TRUE(usage.has_single_unbound_struct());
+    EXPECT_EQ(usage.get_unbound_struct_name(), "plain");
 }
 
 TEST(CurrentIndexSetupTest, multi_unbound_struct_conflict_can_be_captured) {

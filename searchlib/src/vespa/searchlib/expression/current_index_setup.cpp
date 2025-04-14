@@ -49,10 +49,7 @@ const CurrentIndex *
 CurrentIndexSetup::resolve(std::string_view field_name) const
 {
     size_t pos = field_name.rfind('.');
-    if (pos > field_name.size()) {
-        return nullptr;
-    }
-    auto struct_name = field_name.substr(0, pos);
+    auto struct_name = (pos > field_name.size()) ? field_name : field_name.substr(0, pos);
     auto entry = _bound.find(struct_name);
     if (entry == _bound.end()) {
         if (_usage != nullptr) {
