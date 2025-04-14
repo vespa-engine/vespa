@@ -100,7 +100,7 @@ ProfiledIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 std::unique_ptr<SearchIterator>
 ProfiledIterator::profile(Profiler &profiler, std::unique_ptr<SearchIterator> node)
 {
-    node->transform_children([&](auto child, size_t){
+    node->transform_children([&](auto child){
                                  return profile(profiler, std::move(child));
                              });
     return create(profiler, std::move(node), ctor_tag{});

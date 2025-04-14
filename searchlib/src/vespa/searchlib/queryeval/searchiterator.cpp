@@ -129,20 +129,8 @@ SearchIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 void
-SearchIterator::transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)>)
+SearchIterator::transform_children(std::function<SearchIterator::UP(SearchIterator::UP)>)
 {
-}
-
-size_t
-SearchIterator::TransformChildrenHelper::index_of(search::queryeval::SearchIterator &next) {
-    size_t idx = _idx++;
-    for (auto *ptr: _list) {
-        idx = ptr->remap_index(idx);
-    }
-    if (auto *mbv = next.as_multi_bit_vector_base()) {
-        _list.push_back(mbv);
-    }
-    return idx;
 }
 
 } // search::queryeval

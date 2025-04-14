@@ -55,12 +55,10 @@ MultiSearch::initRange(uint32_t beginid, uint32_t endid)
 }
 
 void
-MultiSearch::transform_children(std::function<SearchIterator::UP(SearchIterator::UP, size_t)> f)
+MultiSearch::transform_children(std::function<SearchIterator::UP(SearchIterator::UP)> f)
 {
-    SearchIterator::TransformChildrenHelper helper;
     for (auto &child: _children) {
-        size_t idx = helper.index_of(*child);
-        child = f(std::move(child), idx);
+        child = f(std::move(child));
     }
 }
 
