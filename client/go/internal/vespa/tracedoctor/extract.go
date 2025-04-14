@@ -5,6 +5,7 @@ package tracedoctor
 import (
 	"fmt"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
+	"regexp"
 	"sort"
 	"strings"
 )
@@ -158,6 +159,19 @@ func parseNumList(str string, pos int, sep byte) []int {
 		res = append(res, num)
 	}
 	return res
+}
+
+// 'std::vector<custom::Bar>::push_back' -> 'vector<Bar>::push_back'
+func stripNameSpacesKeepSuffix(input string) string {
+	lastIdx := strings.LastIndex(input, "::")
+	if lastIdx == -1 {
+		return input
+	}
+	prefix := input[:lastIdx]
+	suffix := input[lastIdx:]
+	re := regexp.MustCompile(`\b[a-z_][a-zA-Z0-9_]*::|\(anonymous namespace\)::`)
+	stripped := re.ReplaceAllString(prefix, "")
+	return stripped + suffix
 }
 
 type perfSample struct {
@@ -399,15 +413,18 @@ func (p protonTrace) globalFilterPerf() *topNPerf {
 	var maxTime float64
 	maxPerf := slime.Invalid
 	slime.Select(p.source, hasTag("global_filter_profiling"), func(p *slime.Path, v slime.Value) {
-		myTime := v.Field("total_time_ms").AsDouble()
-		if myTime > maxTime {
+		if myTime := v.Field("total_time_ms").AsDouble(); myTime > maxTime {
 			maxTime = myTime
 			maxPerf = v
 		}
 	})
 	perf := newTopNPerf()
 	eachSample(maxPerf, func(sample perfSample) {
-		perf.addSample(sample.name(), sample.count(), sample.selfTimeMs())
+		name := sample.name()
+		if sample.isEnumSample() {
+			name = stripNameSpacesKeepSuffix(name)
+		}
+		perf.addSample(name, sample.count(), sample.selfTimeMs())
 	})
 	return perf
 }

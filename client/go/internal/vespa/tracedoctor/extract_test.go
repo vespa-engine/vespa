@@ -213,3 +213,21 @@ func TestApplyMultiSample(t *testing.T) {
 	assert.Equal(t, []float64{0, 0, 25, 30, 5}, totals)
 	assert.Equal(t, []float64{0, 0, 5, 6, 1}, selfs)
 }
+
+func TestStripNameSpacesKeepSuffix(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected string
+	}{
+		{"std::vector<custom::Bar>::push_back", "vector<Bar>::push_back"},
+		{"my::ns::Type::method", "Type::method"},
+		{"Type::func", "Type::func"},
+		{"a::b::c::D::E::f", "D::E::f"},
+		{"std::map<std::string, foo::Bar>::insert", "map<string, Bar>::insert"},
+		{"search::attribute::MultiTermHashFilter<search::queryeval::(anonymous namespace)::IntegerHashFilterWrapper<true> >::doSeek", "MultiTermHashFilter<IntegerHashFilterWrapper<true> >::doSeek"},
+		{"Unqualified", "Unqualified"},
+	}
+	for _, tt := range tests {
+		assert.Equal(t, tt.expected, stripNameSpacesKeepSuffix(tt.input))
+	}
+}
