@@ -3,6 +3,7 @@
 
 #include "group.h"
 #include <vespa/searchlib/expression/currentindex.h>
+#include <vespa/searchlib/expression/regex_predicate_node.h>
 
 namespace search::expression { class CurrentIndexSetup; }
 
@@ -24,6 +25,7 @@ private:
     using ExpressionTree = expression::ExpressionTree;
     using CurrentIndex = expression::CurrentIndex;
     using CurrentIndexSetup = expression::CurrentIndexSetup;
+    using Filter = vespalib::IdentifiablePtr<expression::RegexPredicateNode>;
     class Grouper {
     public:
         virtual ~Grouper() = default;
@@ -57,9 +59,10 @@ private:
     };
     class MultiValueGrouper : public SingleValueGrouper {
     public:
-        MultiValueGrouper(CurrentIndex * currentIndex, const Grouping * grouping, uint32_t level) noexcept
+        MultiValueGrouper(CurrentIndex& currentIndex, Filter &filter, const Grouping * grouping, uint32_t level) noexcept
             : SingleValueGrouper(grouping, level),
-              _currentIndex(currentIndex)
+              _currentIndex(currentIndex),
+              _filter(filter)
         { }
         MultiValueGrouper(const MultiValueGrouper &) = default; //TODO Try to remove
         MultiValueGrouper & operator=(const MultiValueGrouper &) = delete;
@@ -73,7 +76,8 @@ private:
             groupDoc(g, result, doc, rank);
         }
         MultiValueGrouper * clone() const override { return new MultiValueGrouper(*this); }
-        CurrentIndex *_currentIndex;
+        CurrentIndex &_currentIndex;
+        Filter &_filter;
     };
     int64_t        _maxGroups;
     int64_t        _precision;
@@ -81,7 +85,7 @@ private:
     bool           _frozen;
     CurrentIndex   _currentIndex;
     ExpressionTree _classify;
-    ExpressionTree _filter;
+    Filter         _filter;
     Group          _collect;
 
     vespalib::CloneablePtr<Grouper>    _grouper;

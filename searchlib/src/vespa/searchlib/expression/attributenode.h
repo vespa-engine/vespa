@@ -49,8 +49,8 @@ public:
     AttributeNode & operator = (const AttributeNode & attribute);
     ~AttributeNode() override;
     void setDocId(DocId docId);
-    const CurrentIndex *getCurrentIndex() { return _index; }
-    void setCurrentIndex(const CurrentIndex * index) { _index = index; }
+    const CurrentIndex *getCurrentIndex() { return _currentIndex; }
+    void setCurrentIndex(const CurrentIndex * index) { _currentIndex = index; }
     const attribute::IAttributeVector *getAttribute() const {
         return _scratchResult ? _scratchResult->getAttribute() : nullptr;
     }
@@ -75,7 +75,7 @@ private:
     void onPrepare(bool preserveAccurateTypes) final;
 
     std::unique_ptr<AttributeResult>  _scratchResult;
-    const CurrentIndex               *_index;
+    const CurrentIndex               *_currentIndex;
     std::unique_ptr<ResultNodeVector> _keepAliveForIndexLookups;
     bool                              _hasMultiValue;
     bool                              _useEnumOptimization;
