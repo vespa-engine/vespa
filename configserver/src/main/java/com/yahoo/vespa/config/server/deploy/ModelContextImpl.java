@@ -184,7 +184,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean forwardIssuesAsErrors;
         private final boolean useV8GeoPositions;
         private final List<String> ignoredHttpUserAgents;
-        private final String logFileCompressionAlgorithm;
         private final int mbus_network_threads;
         private final int mbus_java_num_targets;
         private final int mbus_java_events_before_wakeup;
@@ -231,7 +230,6 @@ public class ModelContextImpl implements ModelContext {
             this.forwardIssuesAsErrors = PermanentFlags.FORWARD_ISSUES_AS_ERRORS.bindTo(source).with(appId).with(version).value();
             this.useV8GeoPositions = Flags.USE_V8_GEO_POSITIONS.bindTo(source).with(appId).with(version).value();
             this.ignoredHttpUserAgents = PermanentFlags.IGNORED_HTTP_USER_AGENTS.bindTo(source).with(appId).with(version).value();
-            this.logFileCompressionAlgorithm = Flags.LOG_FILE_COMPRESSION_ALGORITHM.bindTo(source).with(appId).with(version).value();
             this.mbus_java_num_targets = Flags.MBUS_JAVA_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
             this.mbus_java_events_before_wakeup = Flags.MBUS_JAVA_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
             this.mbus_cpp_num_targets = Flags.MBUS_CPP_NUM_TARGETS.bindTo(source).with(appId).with(version).value();
@@ -287,13 +285,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public int mbusCppEventsBeforeWakeup() { return mbus_cpp_events_before_wakeup; }
         @Override public int rpcNumTargets() { return rpc_num_targets; }
         @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
-        @Override public String logFileCompressionAlgorithm(String defVal) {
-            var fflag = this.logFileCompressionAlgorithm;
-            if (fflag != null && ! fflag.isEmpty()) {
-                return fflag;
-            }
-            return defVal;
-        }
         @Override public int contentLayerMetadataFeatureLevel() { return contentLayerMetadataFeatureLevel; }
         @Override public String unknownConfigDefinition() { return unknownConfigDefinition; }
         @Override public int searchHandlerThreadpool() { return searchHandlerThreadpool; }
