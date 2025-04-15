@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
 #include <cinttypes>
+#include <unistd.h>
 #include <vector>
 
 #include <vespa/log/log.h>
