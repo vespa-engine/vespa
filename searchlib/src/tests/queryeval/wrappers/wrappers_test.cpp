@@ -91,7 +91,8 @@ TEST_F(WrapperTest, filter_wrapper)
     tfmda.add(&match);
     _data.unpackedDocId = 0;
     auto search = std::make_unique<FilterWrapper>(1);
-search->wrap(std::make_unique<DummyItr>(_data, search->tfmda()[0]));
+    search->wrap(std::make_unique<DummyItr>(_data, search->tfmda()[0]));
+    EXPECT_TRUE(search->getClassName().find("DummyItr") != std::string::npos);
     search->initFullRange();
     EXPECT_EQ(_data.unpackedDocId, 0u);
     EXPECT_TRUE(!search->seek(1u));

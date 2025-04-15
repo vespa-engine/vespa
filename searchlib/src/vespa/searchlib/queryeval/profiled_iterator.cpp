@@ -25,8 +25,8 @@ struct TaskGuard {
     ~TaskGuard() { profiler.complete(); }
 };
 
-std::string name_of(const auto &obj) {
-    return vespalib::getClassName(obj);
+std::string name_of(const SearchIterator &search) {
+    return search.getClassName();
 }
 
 std::unique_ptr<SearchIterator> create(Profiler &profiler,
