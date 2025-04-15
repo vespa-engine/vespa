@@ -4,6 +4,7 @@ vespa_add_executable(vespalib_process_memory_stats_test_app TEST
     process_memory_stats_test.cpp
     DEPENDS
     vespalib
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_process_memory_stats_test_app COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/process_memory_stats_test.sh
                DEPENDS vespalib_process_memory_stats_test_app)

@@ -36,7 +36,6 @@ struct ResourceUsageMetrics : metrics::MetricSet
     metrics::DoubleValueMetric memory;
     DetailedResourceMetrics disk_usage;
     DetailedResourceMetrics memory_usage;
-    metrics::LongValueMetric memoryMappings;
     metrics::LongValueMetric openFileDescriptors;
     metrics::LongValueMetric feedingBlocked;
     metrics::LongValueMetric mallocArena;

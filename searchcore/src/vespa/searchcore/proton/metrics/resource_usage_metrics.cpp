@@ -39,7 +39,6 @@ ResourceUsageMetrics::ResourceUsageMetrics(metrics::MetricSet *parent)
       memory("memory", {}, "The relative amount of memory used by this content node (transient usage not included, value in the range [0, 1]). Same value as reported to the cluster controller", this),
       disk_usage("disk", this),
       memory_usage("memory", this),
-      memoryMappings("memory_mappings", {}, "The number of mapped memory areas", this),
       openFileDescriptors("open_file_descriptors", {}, "The number of open files", this),
       feedingBlocked("feeding_blocked", {}, "Whether feeding is blocked due to resource limits being reached (value is either 0 or 1)", this),
       mallocArena("malloc_arena", {}, "Size of malloc arena", this),

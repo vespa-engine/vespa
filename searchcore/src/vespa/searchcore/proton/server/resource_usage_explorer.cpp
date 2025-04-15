@@ -20,9 +20,8 @@ convertDiskStatsToSlime(const vespalib::HwInfo &hwInfo, uint64_t diskUsedSizeByt
 void
 convertMemoryStatsToSlime(const vespalib::ProcessMemoryStats &stats, Cursor &object)
 {
-    object.setLong("mappedVirt", stats.getMappedVirt());
+    object.setLong("virt", stats.getVirt());
     object.setLong("mappedRss", stats.getMappedRss());
-    object.setLong("anonymousVirt", stats.getAnonymousVirt());
     object.setLong("anonymousRss", stats.getAnonymousRss());
 }
 
