@@ -11,7 +11,7 @@
 #include <vespa/searchlib/attribute/string_to_number.h>
 #include <vespa/searchlib/common/sortresults.h>
 #include <vespa/searchlib/uca/ucaconverter.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <type_traits>
 #include <cinttypes>
@@ -29,7 +29,7 @@ using search::attribute::Config;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 
-class MultilevelSortTest {
+class MultilevelSortTest : public ::testing::Test {
 public:
     enum AttrType {
         INT8,
@@ -193,7 +193,7 @@ MultilevelSortTest::compare(AttributeVector *vector, AttrType type, uint32_t a, 
         }
         return 1;
     } else {
-        ASSERT_TRUE(false);
+        assert(false);
         return 0;
     }
 }
@@ -381,13 +381,12 @@ void MultilevelSortTest::testSort()
 
 }
 
-TEST("require that all sort methods behave the same")
+TEST_F(MultilevelSortTest, require_that_all_sort_methods_behave_the_same)
 {
-    MultilevelSortTest test;
-    test.testSort();
+    testSort();
 }
 
-TEST("test that [docid] translates to [lid][paritionid]") {
+TEST(SortTest, test_that_docid_translates_to_lid_paritionid) {
     search::uca::UcaConverterFactory ucaFactory;
     FastS_SortSpec asc("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
@@ -400,24 +399,24 @@ TEST("test that [docid] translates to [lid][paritionid]") {
     constexpr uint8_t FIRST_DESC[6] = {255,255,255,255-91,255,255-7};
     constexpr uint8_t SECOND_DESC[6] = {255,255,255,255-3,255,255-7};
     auto sr1 = asc.getSortRef(0);
-    EXPECT_EQUAL(6u, sr1.second);
-    EXPECT_EQUAL(0, memcmp(FIRST_ASC, sr1.first, 6));
+    EXPECT_EQ(6u, sr1.second);
+    EXPECT_EQ(0, memcmp(FIRST_ASC, sr1.first, 6));
     auto sr2 = asc.getSortRef(1);
-    EXPECT_EQUAL(6u, sr2.second);
-    EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 6));
+    EXPECT_EQ(6u, sr2.second);
+    EXPECT_EQ(0, memcmp(SECOND_ASC, sr2.first, 6));
 
     FastS_SortSpec desc("no-metastore", 7, vespalib::Doom::never(), ucaFactory);
     desc.Init("-[docid]", ac);
     desc.initWithoutSorting(hits, 2);
     sr1 = desc.getSortRef(0);
-    EXPECT_EQUAL(6u, sr1.second);
-    EXPECT_EQUAL(0, memcmp(FIRST_DESC, sr1.first, 6));
+    EXPECT_EQ(6u, sr1.second);
+    EXPECT_EQ(0, memcmp(FIRST_DESC, sr1.first, 6));
     sr2 = desc.getSortRef(1);
-    EXPECT_EQUAL(6u, sr2.second);
-    EXPECT_EQUAL(0, memcmp(SECOND_DESC, sr2.first, 6));
+    EXPECT_EQ(6u, sr2.second);
+    EXPECT_EQ(0, memcmp(SECOND_DESC, sr2.first, 6));
 }
 
-TEST("test that [docid] uses attribute when one exists") {
+TEST(SortTest, test_that_docid_uses_attribute_when_one_exists) {
     search::uca::UcaConverterFactory ucaFactory;
     FastS_SortSpec asc("metastore", 7, vespalib::Doom::never(), ucaFactory);
     RankedHit hits[2] = {RankedHit(91, 0.0), RankedHit(3, 2.0)};
@@ -439,61 +438,61 @@ TEST("test that [docid] uses attribute when one exists") {
     constexpr uint8_t FIRST_DESC[8] = {0x7f,0xff,0xff,0xff,0xff,0xff,0xff,0xff - 91};
     constexpr uint8_t SECOND_DESC[8] = {0x7f,0xff,0xff,0xff,0xff,0xff,0xff,0xff - 3};
     auto sr1 = asc.getSortRef(0);
-    EXPECT_EQUAL(8u, sr1.second);
-    EXPECT_EQUAL(0, memcmp(FIRST_ASC, sr1.first, 8));
+    EXPECT_EQ(8u, sr1.second);
+    EXPECT_EQ(0, memcmp(FIRST_ASC, sr1.first, 8));
     auto sr2 = asc.getSortRef(1);
-    EXPECT_EQUAL(8u, sr2.second);
-    EXPECT_EQUAL(0, memcmp(SECOND_ASC, sr2.first, 8));
+    EXPECT_EQ(8u, sr2.second);
+    EXPECT_EQ(0, memcmp(SECOND_ASC, sr2.first, 8));
 
     FastS_SortSpec desc("metastore", 7, vespalib::Doom::never(), ucaFactory);
     desc.Init("-[docid]", ac);
     desc.initWithoutSorting(hits, 2);
     sr1 = desc.getSortRef(0);
-    EXPECT_EQUAL(8u, sr1.second);
-    EXPECT_EQUAL(0, memcmp(FIRST_DESC, sr1.first, 8));
+    EXPECT_EQ(8u, sr1.second);
+    EXPECT_EQ(0, memcmp(FIRST_DESC, sr1.first, 8));
     sr2 = desc.getSortRef(1);
-    EXPECT_EQUAL(8u, sr2.second);
-    EXPECT_EQUAL(0, memcmp(SECOND_DESC, sr2.first, 8));
+    EXPECT_EQ(8u, sr2.second);
+    EXPECT_EQ(0, memcmp(SECOND_DESC, sr2.first, 8));
 }
 
 using search::string_to_number;
 
-TEST("string to number for missing value in sort spec") {
-    EXPECT_EQUAL((int8_t)0, string_to_number<int8_t>(""));
-    EXPECT_EQUAL((int16_t)0, string_to_number<int16_t>(""));
-    EXPECT_EQUAL((int32_t)0, string_to_number<int32_t>(""));
-    EXPECT_EQUAL((int64_t)0, string_to_number<int64_t>(""));
-    EXPECT_EQUAL((float)0.0, string_to_number<float>(""));
-    EXPECT_EQUAL((double)0.0, string_to_number<double>(""));
+TEST(SortTest, string_to_number_for_missing_value_in_sort_spec) {
+    EXPECT_EQ((int8_t)0, string_to_number<int8_t>(""));
+    EXPECT_EQ((int16_t)0, string_to_number<int16_t>(""));
+    EXPECT_EQ((int32_t)0, string_to_number<int32_t>(""));
+    EXPECT_EQ((int64_t)0, string_to_number<int64_t>(""));
+    EXPECT_EQ((float)0.0, string_to_number<float>(""));
+    EXPECT_EQ((double)0.0, string_to_number<double>(""));
 
-    EXPECT_EQUAL(std::numeric_limits<int8_t>::max(), string_to_number<int8_t>("127"));
-    EXPECT_EQUAL(std::numeric_limits<int16_t>::max(), string_to_number<int16_t>("32767"));
-    EXPECT_EQUAL(std::numeric_limits<int32_t>::max(), string_to_number<int32_t>("2147483647"));
-    EXPECT_EQUAL((int64_t)(std::numeric_limits<int32_t>::max())+1, string_to_number<int64_t>("2147483648"));
-    EXPECT_EQUAL((float)37.4, string_to_number<float>("37.4"));
-    EXPECT_EQUAL((double)37.4, string_to_number<double>("37.4"));
+    EXPECT_EQ(std::numeric_limits<int8_t>::max(), string_to_number<int8_t>("127"));
+    EXPECT_EQ(std::numeric_limits<int16_t>::max(), string_to_number<int16_t>("32767"));
+    EXPECT_EQ(std::numeric_limits<int32_t>::max(), string_to_number<int32_t>("2147483647"));
+    EXPECT_EQ((int64_t)(std::numeric_limits<int32_t>::max())+1, string_to_number<int64_t>("2147483648"));
+    EXPECT_EQ((float)37.4, string_to_number<float>("37.4"));
+    EXPECT_EQ((double)37.4, string_to_number<double>("37.4"));
 
-    EXPECT_EQUAL(std::numeric_limits<int8_t>::min(), string_to_number<int8_t>("-128"));
-    EXPECT_EQUAL(std::numeric_limits<int16_t>::min(), string_to_number<int16_t>("-32768"));
-    EXPECT_EQUAL(std::numeric_limits<int32_t>::min(), string_to_number<int32_t>("-2147483648"));
-    EXPECT_EQUAL((int64_t)(std::numeric_limits<int32_t>::min())-1, string_to_number<int64_t>("-2147483649"));
-    EXPECT_EQUAL((float)-37.4, string_to_number<float>("-37.4"));
-    EXPECT_EQUAL((double)-37.4, string_to_number<double>("-37.4"));
+    EXPECT_EQ(std::numeric_limits<int8_t>::min(), string_to_number<int8_t>("-128"));
+    EXPECT_EQ(std::numeric_limits<int16_t>::min(), string_to_number<int16_t>("-32768"));
+    EXPECT_EQ(std::numeric_limits<int32_t>::min(), string_to_number<int32_t>("-2147483648"));
+    EXPECT_EQ((int64_t)(std::numeric_limits<int32_t>::min())-1, string_to_number<int64_t>("-2147483649"));
+    EXPECT_EQ((float)-37.4, string_to_number<float>("-37.4"));
+    EXPECT_EQ((double)-37.4, string_to_number<double>("-37.4"));
 }
 
 void verify_make_sort_blob_writer_throws(BasicType b_type, CollectionType c_type, bool fast_search) {
     Config cfg(b_type, c_type);
     cfg.setFastSearch(fast_search);
     auto attr = AttributeFactory::createAttribute("my_attr", cfg);
-    EXPECT_EXCEPTION(attr->make_sort_blob_writer(true, nullptr, search::common::sortspec::MissingPolicy::AS, "illegal"),
-                     vespalib::IllegalArgumentException, "Failed converting string 'illegal' to a number")
+    EXPECT_THROW(attr->make_sort_blob_writer(true, nullptr, search::common::sortspec::MissingPolicy::AS, "illegal"),
+                     vespalib::IllegalArgumentException);
 }
 
-TEST("make_sort_blob_writer() throws when missing value is illegal") {
+TEST(SortTest, make_sort_blob_writer_throws_when_missing_value_is_illegal) {
     verify_make_sort_blob_writer_throws(BasicType::INT64, CollectionType::ARRAY, false);
     verify_make_sort_blob_writer_throws(BasicType::INT64, CollectionType::ARRAY, true);
     verify_make_sort_blob_writer_throws(BasicType::FLOAT, CollectionType::ARRAY, false);
     verify_make_sort_blob_writer_throws(BasicType::FLOAT, CollectionType::ARRAY, true);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
