@@ -213,15 +213,15 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         double hitRate = std::min(1.0, double(maxNumHits)/double(searchContext.getDocIdLimit()));
         auto in_flow = InFlow(is_search, hitRate);
         _query.optimize(in_flow, sort_by_cost);
+        if (trace.getLevel() >= 6) { // will dump blueprint later
+            _query.enumerate_blueprint_nodes();
+        }
         trace.addEvent(4, "Perform dictionary lookups and posting lists initialization");
         _query.fetchPostings(ExecuteInfo::create(in_flow.rate(), _requestContext.getDoom(), thread_bundle));
         if (is_search) {
             _query.handle_global_filter(_requestContext, searchContext.getDocIdLimit(),
                                         _create_blueprint_params.global_filter_lower_limit,
                                         _create_blueprint_params.global_filter_upper_limit, trace, sort_by_cost);
-        }
-        if (trace.getLevel() >= 6) { // will dump blueprint later
-            _query.enumerate_blueprint_nodes();
         }
         _query.freeze();
         trace.addEvent(5, "Prepare shared state for multi-threaded rank executors");
