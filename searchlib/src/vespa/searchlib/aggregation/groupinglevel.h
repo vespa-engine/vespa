@@ -25,7 +25,8 @@ private:
     using ExpressionTree = expression::ExpressionTree;
     using CurrentIndex = expression::CurrentIndex;
     using CurrentIndexSetup = expression::CurrentIndexSetup;
-    using Filter = vespalib::IdentifiablePtr<expression::RegexPredicateNode>;
+    using Filter = expression::FilterPredicateNode;
+    using FilterPtr = vespalib::IdentifiablePtr<Filter>;
     class Grouper {
     public:
         virtual ~Grouper() = default;
@@ -85,8 +86,16 @@ private:
     bool           _frozen;
     CurrentIndex   _currentIndex;
     ExpressionTree _classify;
-    Filter         _filter;
+    FilterPtr      _filter;
     Group          _collect;
+
+    Filter& getActiveFilter() {
+        if (_filter.get()) {
+            return *_filter;
+        } else {
+            return expression::TruePredicateNode::instance;
+        }
+    }
 
     vespalib::CloneablePtr<Grouper>    _grouper;
 public:

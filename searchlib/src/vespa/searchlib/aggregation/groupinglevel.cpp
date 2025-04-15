@@ -121,7 +121,7 @@ GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result,
     for (size_t i(0), m(rv.size()); i < m; i++) {
         const ResultNode & sr(rv.get(i));
         _currentIndex.set(i);
-        if (_filter.get() == nullptr || _filter->allow(doc, rank)) {
+        if (_filter.allow(doc, rank)) {
             SingleValueGrouper::groupDoc(g, sr, doc, rank);
         }
     }
@@ -150,7 +150,7 @@ GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOrdered
     _isOrdered = isOrdered_;
     _frozen = level < grouping->getFirstLevel();
     if (_classify.getResult()->inherits(ResultNodeVector::classId)) {
-        _grouper.reset(new MultiValueGrouper(_currentIndex, _filter, grouping, level));
+        _grouper.reset(new MultiValueGrouper(_currentIndex, getActiveFilter(), grouping, level));
     } else {
         _grouper.reset(new SingleValueGrouper(grouping, level));
     }

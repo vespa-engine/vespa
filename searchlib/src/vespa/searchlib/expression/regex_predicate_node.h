@@ -2,13 +2,14 @@
 #pragma once
 
 #include "expressiontree.h"
+#include "filter_predicate_node.h"
 #include <vespa/vespalib/regex/regex.h>
 
 namespace search::expression {
 
 /**
  **/
-class RegexPredicateNode : public vespalib::Identifiable {
+class RegexPredicateNode : public FilterPredicateNode {
 private:
     struct RE {
         std::string pattern;
@@ -29,14 +30,14 @@ private:
 public:
     RegexPredicateNode() noexcept;
     ~RegexPredicateNode();
-    RegexPredicateNode* clone() { return new RegexPredicateNode(*this); }
+    RegexPredicateNode* clone() const override { return new RegexPredicateNode(*this); }
 
-    bool valid() const { return _argument.getRoot(); }
+    //bool valid() const override { return _argument.getRoot(); }
 
     DECLARE_IDENTIFIABLE_NS2(search, expression, RegexPredicateNode);
     DECLARE_NBO_SERIALIZE;
-    bool allow(DocId docId, HitRank rank);
-    bool allow(const document::Document &, HitRank) { return true; }
+    bool allow(DocId docId, HitRank rank) override;
+    // bool allow(const document::Document &, HitRank) { return true; }
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate& predicate,
                        vespalib::ObjectOperation& operation) override;

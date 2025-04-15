@@ -8,7 +8,7 @@ using vespalib::Deserializer;
 using vespalib::Regex;
 using vespalib::Serializer;
 
-IMPLEMENT_IDENTIFIABLE_NS2(search, expression, RegexPredicateNode, vespalib::Identifiable);
+IMPLEMENT_IDENTIFIABLE_NS2(search, expression, RegexPredicateNode, FilterPredicateNode);
 
 void RegexPredicateNode::RE::compile() {
     regex = Regex::from_pattern(pattern, Regex::Options::None);
