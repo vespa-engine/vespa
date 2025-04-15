@@ -2,13 +2,13 @@
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace search;
 using namespace vespalib::slime::convenience;
 
-TEST("use slime with rawbuf") {
+TEST(SlimeOutputTest, use_slime_with_rawbuf) {
     RawBuf buffer(4_Ki);
     Slime src;
     Slime dst;
@@ -17,11 +17,11 @@ TEST("use slime with rawbuf") {
         c.setLong("foo", 5);
         c.setString("bar", "text");
     }
-    EXPECT_NOT_EQUAL(src, dst);
+    EXPECT_NE(src, dst);
     SlimeOutputRawBufAdapter adapter(buffer);
     vespalib::slime::BinaryFormat::encode(src, adapter);
     vespalib::slime::BinaryFormat::decode(Memory(buffer.GetDrainPos(), buffer.GetUsedLen()), dst);
-    EXPECT_EQUAL(src, dst);
+    EXPECT_EQ(src, dst);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
