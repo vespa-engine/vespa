@@ -19,7 +19,7 @@ struct DiskMemUsageFilterTest : public ::testing::Test
     DiskMemUsageFilterTest()
         : _filter(HwInfo(HwInfo::Disk(100, false, false), HwInfo::Memory(1000), HwInfo::Cpu(0)))
     {
-        _filter.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 299, 300, 42), 20);
+        _filter.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(297, 298, 300), 20);
     }
 
     void testWrite(const std::string &exp) {
@@ -42,7 +42,7 @@ struct DiskMemUsageFilterTest : public ::testing::Test
 
     void triggerMemoryLimit()
     {
-        _filter.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 899, 900, 43), _filter.getDiskUsedSize());
+        _filter.set_resource_usage(TransientResourceUsage(), vespalib::ProcessMemoryStats(897, 898, 900), _filter.getDiskUsedSize());
     }
 };
 
@@ -53,9 +53,9 @@ TEST_F(DiskMemUsageFilterTest, default_filter_allows_write)
 
 TEST_F(DiskMemUsageFilterTest, stats_are_wired_through)
 {
-    EXPECT_EQ(42u, _filter.getMemoryStats().getMappingsCount());
+    EXPECT_EQ(297u, _filter.getMemoryStats().getVirt());
     triggerMemoryLimit();
-    EXPECT_EQ(43u, _filter.getMemoryStats().getMappingsCount());
+    EXPECT_EQ(897u, _filter.getMemoryStats().getVirt());
 }
 
 void
@@ -96,8 +96,8 @@ TEST_F(DiskMemUsageFilterTest, memory_limit_can_be_reached)
               "action: \"add more content nodes\", "
               "reason: \"memory used (0.9) > memory limit (0.8)\", "
               "stats: { "
-              "mapped: { virt: 897, rss: 898}, "
-              "anonymous: { virt: 899, rss: 900}, "
+              "virt: 897, "
+              "rss: { mapped: 898, anonymous: 900}, "
               "physicalMemory: 1000, memoryUsed: 0.9, memoryLimit: 0.8}}");
     assertResourceUsage(0.9, 0.8, 1.125, _filter.usageState().memoryState());
 }
@@ -111,8 +111,8 @@ TEST_F(DiskMemUsageFilterTest, both_disk_limit_and_memory_limit_can_be_reached)
               "action: \"add more content nodes\", "
               "reason: \"memory used (0.9) > memory limit (0.8)\", "
               "stats: { "
-              "mapped: { virt: 897, rss: 898}, "
-              "anonymous: { virt: 899, rss: 900}, "
+              "virt: 897, "
+              "rss: { mapped: 898, anonymous: 900}, "
               "physicalMemory: 1000, memoryUsed: 0.9, memoryLimit: 0.8}}, "
               "diskLimitReached: { "
               "action: \"add more content nodes\", "
