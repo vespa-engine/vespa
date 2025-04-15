@@ -59,4 +59,4 @@ warmuptime double default=0.1
 
 ## Specifies how summary data are decoded
 ## Eager will build java objects immediately, while ONDEMAND will do so when it is needed
-summaryDecodePolicy enum {EAGER, ONDEMAND} default=EAGER
+summaryDecodePolicy enum {EAGER, ONDEMAND} default=ONDEMAND
