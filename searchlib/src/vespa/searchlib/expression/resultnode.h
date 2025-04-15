@@ -121,4 +121,17 @@ public:
     virtual const BucketResultNode& getNullBucket() const;
 };
 
+class HoldString : public std::string_view {
+public:
+    HoldString(const ResultNode &rv, size_t idx = 0)
+      : std::string_view(toStringView(rv.getString(idx, bRef())))
+    {}
+private:
+    vespalib::BufferRef bRef() { return {buf, sizeof(buf)}; }
+    static std::string_view toStringView(vespalib::ConstBufferRef cbr) {
+        return std::string_view(cbr.c_str(), cbr.size());
+    }
+    char buf[32];
+};
+
 }

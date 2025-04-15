@@ -23,19 +23,16 @@ bool RegexPredicateNode::allow(DocId docId, HitRank rank) {
         if (result->inherits(ResultNodeVector::classId)) {
             const auto * rv = static_cast<const ResultNodeVector *>(result);
             for (size_t i = 0; i < rv->size(); i++) {
-                const ResultNode& sr(rv->get(i));
-                char buf[32];
-                auto tmp = sr.getString({buf, sizeof(buf)});
-                isMatch = _re.regex.full_match({tmp.c_str(), tmp.size()});
+                HoldString tmp(*rv, i);
+                isMatch = _re.regex.full_match(tmp);
                 fprintf(stderr, "RegexPredicateNode check[%zd] match '%s' [%zd]\n",
-                        i, tmp.c_str(), tmp.size());
+                        i, tmp.data(), tmp.size());
                 if (isMatch) break;
             }
         } else {
-            char buf[32];
-            auto tmp = result->getString({buf, sizeof(buf)});
-            isMatch = _re.regex.full_match({tmp.c_str(), tmp.size()});
-            fprintf(stderr, "RegexPredicateNode check match '%s' [%zd]\n", tmp.c_str(), tmp.size());
+            HoldString tmp(*result);
+            isMatch = _re.regex.full_match(tmp);
+            fprintf(stderr, "RegexPredicateNode check match '%s' [%zd]\n", tmp.data(), tmp.size());
         }
 
     }
