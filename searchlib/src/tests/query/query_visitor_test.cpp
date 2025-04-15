@@ -7,7 +7,7 @@
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("query_visitor_test");
@@ -63,7 +63,7 @@ void checkVisit(T *node) {
     ASSERT_TRUE(visitor.isVisited<T>());
 }
 
-TEST("requireThatAllNodesCanBeVisited") {
+TEST(QueryVisitorTest, requireThatAllNodesCanBeVisited) {
     checkVisit<And>(new SimpleAnd);
     checkVisit<AndNot>(new SimpleAndNot);
     checkVisit<Near>(new SimpleNear(0));
@@ -94,4 +94,4 @@ TEST("requireThatAllNodesCanBeVisited") {
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
