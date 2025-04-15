@@ -61,6 +61,9 @@ public:
     Trinary is_strict() const override {
         return _wrapped_search->is_strict();
     }
+    std::string getClassName() const override {
+        return _wrapped_search->getClassName();
+    }
 };
 
 } // namespace
