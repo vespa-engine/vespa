@@ -34,7 +34,7 @@ public:
 
     ProcessMemoryStats();
     /**
-     * Sample memory stats for the current process based on reading the file /proc/self/smaps.
+     * Sample memory stats for the current process based on reading the file /proc/self/statm.
      *
      * Samples are taken until two consecutive memory stats are similar given the size epsilon.
      * This ensures a somewhat consistent memory stats snapshot.

@@ -152,19 +152,19 @@ ProcessMemoryStats::parseStatm(asciistream &statm)
 {
     ProcessMemoryStats ret;
     try {
-        // the first three values in smaps are size, resident, and shared
+        // the first three values in statm are size, resident, and shared
         // the values in statm are measured in numbers of pages
         uint64_t size, resident, shared;
         statm >> size >> resident >> shared;
 
-        // we only get the total program size via smaps (no distinction between anonymous and non-anonymous)
-        // VmSize (in status) = size (in smaps)
+        // we only get the total program size via statm (no distinction between anonymous and non-anonymous)
+        // VmSize (in status) = size (in statm)
         ret._virt = size * PAGE_SIZE;
 
-        // RssAnon (in status) = resident - shared (in smaps)
+        // RssAnon (in status) = resident - shared (in statm)
         ret._anonymous_rss = (resident - shared) * PAGE_SIZE;
 
-        // RssFile + RssShmem (in status) = shared (in smaps)
+        // RssFile + RssShmem (in status) = shared (in statm)
         ret._mapped_rss = shared * PAGE_SIZE;
 
     } catch (const IllegalArgumentException& e) {
