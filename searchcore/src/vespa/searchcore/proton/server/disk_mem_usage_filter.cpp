@@ -20,8 +20,9 @@ makeMemoryStatsMessage(std::ostream &os,
                        uint64_t physicalMemory)
 {
     os << "stats: { ";
-    os << "mapped: { virt: " << memoryStats.getMappedVirt() << ", rss: " << memoryStats.getMappedRss() << "}, ";
-    os << "anonymous: { virt: " << memoryStats.getAnonymousVirt() << ", rss: " << memoryStats.getAnonymousRss() << "}, ";
+    os << "virt: " << memoryStats.getVirt() << ", ";
+    os << "rss: { mapped: " << memoryStats.getMappedRss() << ", ";
+    os << "anonymous: " << memoryStats.getAnonymousRss() << "}, ";
     os << "physicalMemory: " << physicalMemory << ", ";
     os << "memoryUsed: " << memoryUsed << ", ";
     os << "memoryLimit: " << memoryLimit << "}";
