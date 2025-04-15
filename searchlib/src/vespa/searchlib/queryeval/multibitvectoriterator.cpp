@@ -213,6 +213,30 @@ MultiBitVectorIteratorBase::MultiBitVectorIteratorBase(Children children) :
 
 MultiBitVectorIteratorBase::~MultiBitVectorIteratorBase() = default;
 
+std::string
+MultiBitVectorIteratorBase::make_id_ref_str() const
+{
+    bool first = true;
+    std::string res;
+    res.push_back('[');
+    auto add = [&](int id) {
+                   if (id > 0) {
+                       if (first) {
+                           first = false;
+                       } else {
+                           res.push_back(',');
+                       }
+                       res.append(std::to_string(id));
+                   }
+               };
+    add(id());
+    for (const auto &child: getChildren()) {
+        add(child->id());
+    }
+    res.push_back(']');
+    return res;
+}
+
 void
 MultiBitVectorIteratorBase::initRange(uint32_t beginId, uint32_t endId)
 {
@@ -234,7 +258,7 @@ SearchIterator::UP
 MultiBitVectorIteratorBase::optimize(SearchIterator::UP parentIt)
 {
     if (parentIt->isSourceBlender()) {
-        parentIt->transform_children([](auto child, size_t){
+        parentIt->transform_children([](auto child){
                                          return optimize(std::move(child));
                                      });
     } else if (parentIt->isMultiSearch()) {
@@ -250,7 +274,6 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
     if (canOptimize(parent)) {
         MultiSearch::Children stolen;
         std::vector<size_t> _unpackIndex;
-        std::vector<size_t> stolen_indexes;
         bool strict(false);
         size_t insertPosition(0);
         for (size_t it(firstStealable(parent)); it != parent.getChildren().size(); ) {
@@ -265,7 +288,6 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
                 if ( ! strict && (bit->is_strict() == Trinary::True)) {
                     strict = true;
                 }
-                stolen_indexes.push_back(stolen.size() + it);
                 stolen.push_back(std::move(bit));
             } else {
                 it++;
@@ -296,9 +318,9 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
             nextM.addUnpackIndex(index);
         }
         if (parent.getChildren().empty()) {
+            next->set_id(parent.id());
             return next;
         } else {
-            nextM.set_stolen_indexes(std::move(stolen_indexes));
             parent.insert(insertPosition, std::move(next));
         }
     }
@@ -306,20 +328,7 @@ MultiBitVectorIteratorBase::optimizeMultiSearch(SearchIterator::UP parentIt)
     for (auto & search : toOptimize) {
         search = optimize(std::move(search));
     }
-
     return parentIt;
-}
-
-size_t
-MultiBitVectorIteratorBase::remap_index(size_t index) {
-    for (size_t i = 1; i < _stolen_indexes.size(); ++i) {
-        if (_stolen_indexes[i] <= index) {
-            ++index;
-        } else {
-            break;
-        }
-    }
-    return index;
 }
 
 }

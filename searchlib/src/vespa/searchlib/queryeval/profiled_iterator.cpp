@@ -26,25 +26,22 @@ struct TaskGuard {
 };
 
 std::string name_of(const auto &obj) {
-    auto name = vespalib::getClassName(obj);
-    auto end = name.find("<");
-    auto ns = name.rfind("::", end);
-    size_t begin = (ns > name.size()) ? 0 : ns + 2;
-    return name.substr(begin, end - begin);
+    return vespalib::getClassName(obj);
 }
 
 std::unique_ptr<SearchIterator> create(Profiler &profiler,
-                                       const std::string &path,
                                        std::unique_ptr<SearchIterator> search,
                                        auto ctor_token)
 {
-    std::string prefix = fmt("%s%s/", path.c_str(), name_of(*search).c_str());
+    std::string prefix = fmt("%s%s", search->make_id_ref_str().c_str(), name_of(*search).c_str());
     return std::make_unique<ProfiledIterator>(profiler, std::move(search),
-                                              profiler.resolve(prefix + "init"),
-                                              profiler.resolve(prefix + "seek"),
-                                              profiler.resolve(prefix + "unpack"),
-                                              profiler.resolve(prefix + "termwise"),
-                                              ctor_token);    
+                                              profiler.resolve(prefix + "::initRange"),
+                                              profiler.resolve(prefix + "::doSeek"),
+                                              profiler.resolve(prefix + "::doUnpack"),
+                                              profiler.resolve(prefix + "::get_hits"),
+                                              profiler.resolve(prefix + "::or_hits_into"),
+                                              profiler.resolve(prefix + "::and_hits_into"),
+                                              ctor_token);
 }
 
 }
@@ -52,7 +49,7 @@ std::unique_ptr<SearchIterator> create(Profiler &profiler,
 void
 ProfiledIterator::initRange(uint32_t begin_id, uint32_t end_id)
 {
-    TaskGuard guard(_profiler, _init_tag);
+    TaskGuard guard(_profiler, _initRange_tag);
     SearchIterator::initRange(begin_id, end_id);
     _search->initRange(begin_id, end_id);
     setDocId(_search->getDocId());
@@ -61,7 +58,7 @@ ProfiledIterator::initRange(uint32_t begin_id, uint32_t end_id)
 void
 ProfiledIterator::doSeek(uint32_t docid)
 {
-    TaskGuard guard(_profiler, _seek_tag);
+    TaskGuard guard(_profiler, _doSeek_tag);
     _search->doSeek(docid);
     setDocId(_search->getDocId());
 }
@@ -69,28 +66,28 @@ ProfiledIterator::doSeek(uint32_t docid)
 void
 ProfiledIterator::doUnpack(uint32_t docid)
 {
-    TaskGuard guard(_profiler, _unpack_tag);
+    TaskGuard guard(_profiler, _doUnpack_tag);
     _search->doUnpack(docid);
 }
 
 std::unique_ptr<BitVector>
 ProfiledIterator::get_hits(uint32_t begin_id)
 {
-    TaskGuard guard(_profiler, _termwise_tag);
+    TaskGuard guard(_profiler, _get_hits_tag);
     return _search->get_hits(begin_id);
 }
 
 void
 ProfiledIterator::or_hits_into(BitVector &result, uint32_t begin_id)
 {
-    TaskGuard guard(_profiler, _termwise_tag);
+    TaskGuard guard(_profiler, _or_hits_into_tag);
     _search->or_hits_into(result, begin_id);
 }
 
 void
 ProfiledIterator::and_hits_into(BitVector &result, uint32_t begin_id)
 {
-    TaskGuard guard(_profiler, _termwise_tag);
+    TaskGuard guard(_profiler, _and_hits_into_tag);
     _search->and_hits_into(result, begin_id);
 }
 
@@ -101,12 +98,12 @@ ProfiledIterator::visitMembers(vespalib::ObjectVisitor &visitor) const
 }
 
 std::unique_ptr<SearchIterator>
-ProfiledIterator::profile(Profiler &profiler, std::unique_ptr<SearchIterator> node, const std::string &path)
+ProfiledIterator::profile(Profiler &profiler, std::unique_ptr<SearchIterator> node)
 {
-    node->transform_children([&](auto child, size_t i){
-                                 return profile(profiler, std::move(child), fmt("%s%zu/", path.c_str(), i));
+    node->transform_children([&](auto child){
+                                 return profile(profiler, std::move(child));
                              });
-    return create(profiler, path, std::move(node), ctor_tag{});
+    return create(profiler, std::move(node), ctor_tag{});
 }
 
 }

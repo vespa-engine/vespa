@@ -689,36 +689,35 @@ TEST_F(MultiBitVectorIteratorTest, test_iterator_conformance)
     }
 }
 
-TEST(MultiBitVectorTest, test_transform_children_numbering) {
+TEST(MultiBitVectorTest, test_id_ref_str) {
     TermFieldMatchData tfmd;
     auto bv = BitVector::create(1000);
-    auto vec = [&](){ return BitVectorIterator::create(bv.get(), tfmd, false, false); };
+    auto vec = [&](int id){
+                   auto res = BitVectorIterator::create(bv.get(), tfmd, false, false);
+                   res->set_id(id);
+                   return res;
+               };
     MultiSearch::Children list;
-    list.push_back(AndSearch::create({vec(), vec()}, false)); // 0->0
-    list.emplace_back(new EmptySearch());                                 // 1->1
-    list.push_back(vec());                                                  // 2->2
-    list.emplace_back(new EmptySearch());                                 // 3->3
-    list.push_back(vec());                                                  // 4->X
-    list.push_back(OrSearch::create({vec(), vec()}, false));  // 5->4
-    list.emplace_back(new EmptySearch());                                 // 6->5
-    list.push_back(vec());                                                  // 7->X
-    list.push_back(vec());                                                  // 8->X
-    list.emplace_back(new EmptySearch());                                 // 9->6
-    std::vector<size_t> expect = {0,1,2,3,5,6,9}; // 2 replaced, 4,7,8 removed
-    std::set<size_t> mbv = {0, 2, 4}; // which are multi-bit-vector iterators (new order)
-    auto search = MultiBitVectorIteratorBase::optimize(AndSearch::create(std::move(list), false));
-    EXPECT_TRUE(search->as_multi_bit_vector_base() == nullptr);
-    // fprintf(stdout, "%s\n", search->asString().c_str());
-    size_t new_idx = 0;
-    auto transform = [&](std::unique_ptr<SearchIterator> s, size_t old_idx){
-        SCOPED_TRACE("checking entry: " + std::to_string(old_idx) + " -> " + std::to_string(new_idx));
-        EXPECT_EQ(mbv.contains(new_idx), s->as_multi_bit_vector_base() != nullptr);
-        EXPECT_EQ(old_idx, expect[new_idx]);
-        ++new_idx;
-        return s;
-    };
-    search->transform_children(transform);
-    EXPECT_EQ(new_idx, expect.size());
+    list.push_back(AndSearch::create({vec(3), vec(5)}, false));
+    list.back()->set_id(7);
+    list.push_back(vec(2));
+    list.push_back(std::make_unique<EmptySearch>());
+    list.back()->set_id(8);
+    list.push_back(vec(4));
+    list.push_back(vec(6));
+    SearchIterator::UP search = AndSearch::create(std::move(list), false);
+    search->set_id(10);
+    search = MultiBitVectorIteratorBase::optimize(std::move(search));
+    std::vector<SearchIterator*> refs;
+    search->transform_children([&refs](SearchIterator::UP s)->SearchIterator::UP{
+                                   refs.push_back(s.get());
+                                   return s;
+                               });
+    EXPECT_EQ(search->make_id_ref_str(), "[10]");
+    ASSERT_EQ(refs.size(), 3);
+    EXPECT_EQ(refs[0]->make_id_ref_str(), "[7,3,5]");
+    EXPECT_EQ(refs[1]->make_id_ref_str(), "[2,4,6]");
+    EXPECT_EQ(refs[2]->make_id_ref_str(), "[8]");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
