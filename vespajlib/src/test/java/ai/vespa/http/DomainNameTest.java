@@ -35,14 +35,17 @@ class DomainNameTest {
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("a".repeat(64)));
 
         assertLeafAndDomain("foo", "foo", null);
+        assertLeafAndDomain("foo.", "foo", null);
         assertLeafAndDomain("foo.com", "foo", "com");
+        assertLeafAndDomain("foo.com.", "foo", "com.");
         assertLeafAndDomain("foo.bar.baz.com", "foo", "bar.baz.com");
+        assertLeafAndDomain("foo.bar.baz.com.", "foo", "bar.baz.com.");
     }
 
     private void assertLeafAndDomain(String dns, String leaf, String domainOrNull) {
         DomainName dnsDomainName = DomainName.of(dns);
         assertEquals(leaf, dnsDomainName.leafLabel());
-        assertEquals(Optional.ofNullable(domainOrNull), dnsDomainName.domain().map(DomainName::value));
+        assertEquals(Optional.ofNullable(domainOrNull), dnsDomainName.parent().map(DomainName::value));
     }
 
 }

@@ -38,9 +38,11 @@ public class DomainName extends PatternedStringWrapper<DomainName> {
         return offset == -1 ? value() : value().substring(0, offset);
     }
 
-    public Optional<DomainName> domain() {
+    public Optional<DomainName> parent() {
         int offset = value().indexOf('.');
-        return offset == -1 ? Optional.empty() : Optional.of(DomainName.of(value().substring(offset + 1)));
+        if (offset == -1 || offset == value().length() - 1)
+            return Optional.empty();
+        return Optional.of(DomainName.of(value().substring(offset + 1)));
     }
 
 }
