@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_resolver_test_app TEST
     resolver_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::GTest
 )
 vespa_add_test(NAME searchlib_resolver_test_app COMMAND searchlib_resolver_test_app)
