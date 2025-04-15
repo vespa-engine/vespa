@@ -3,6 +3,8 @@ package ai.vespa.http;
 
 import org.junit.jupiter.api.Test;
 
+import java.util.Optional;
+
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -32,9 +34,15 @@ class DomainNameTest {
         assertThrows(IllegalArgumentException.class, () -> DomainName.of(("." + "a".repeat(32)).repeat(8).substring(1, 257)));
         assertThrows(IllegalArgumentException.class, () -> DomainName.of("a".repeat(64)));
 
-        assertEquals("foo", DomainName.of("foo").leafLabel());
-        assertEquals("foo", DomainName.of("foo.com").leafLabel());
-        assertEquals("foo", DomainName.of("foo.bar.baz.com").leafLabel());
+        assertLeafAndDomain("foo", "foo", null);
+        assertLeafAndDomain("foo.com", "foo", "com");
+        assertLeafAndDomain("foo.bar.baz.com", "foo", "bar.baz.com");
+    }
+
+    private void assertLeafAndDomain(String dns, String leaf, String domainOrNull) {
+        DomainName dnsDomainName = DomainName.of(dns);
+        assertEquals(leaf, dnsDomainName.leafLabel());
+        assertEquals(Optional.ofNullable(domainOrNull), dnsDomainName.domain().map(DomainName::value));
     }
 
 }
