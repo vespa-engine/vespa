@@ -70,66 +70,57 @@ struct MySources {
 MySources my_sources({{1,3},{3,3},{5,3},
                       {2,5},{4,5},{6,5}});
 
-int id_seq = 0;
-void reset_id() { id_seq = 0; }
-SearchIterator::UP with_id(SearchIterator::UP search) {
-    search->set_id(++id_seq);
+SearchIterator::UP with_id(SearchIterator::UP search, int enum_id) {
+    search->set_id(enum_id);
     return search;
 }
 
-SearchIterator::UP T(std::vector<uint32_t> hits) {
-    return with_id(std::make_unique<SimpleSearch>(SimpleResult(hits), true));
+SearchIterator::UP T(std::vector<uint32_t> hits, int enum_id) {
+    return with_id(std::make_unique<SimpleSearch>(SimpleResult(hits), true), enum_id);
 }
 
-SearchIterator::UP t(std::vector<uint32_t> hits) {
-    return with_id(std::make_unique<SimpleSearch>(SimpleResult(hits), false));
+SearchIterator::UP t(std::vector<uint32_t> hits, int enum_id) {
+    return with_id(std::make_unique<SimpleSearch>(SimpleResult(hits), false), enum_id);
 }
 
-SearchIterator::UP OR(SearchIterator::UP s1, SearchIterator::UP s2) {
+SearchIterator::UP OR(SearchIterator::UP s1, SearchIterator::UP s2, int enum_id) {
     bool strict = is_true(s1->is_strict(), s2->is_strict());
-    return with_id(OrSearch::create({std::move(s1), std::move(s2)}, strict));
+    return with_id(OrSearch::create({std::move(s1), std::move(s2)}, strict), enum_id);
 }
 
-SearchIterator::UP AND(SearchIterator::UP s1, SearchIterator::UP s2) {
+SearchIterator::UP AND(SearchIterator::UP s1, SearchIterator::UP s2, int enum_id) {
     bool strict = is_true(s1->is_strict());
-    return with_id(AndSearch::create({std::move(s1), std::move(s2)}, strict));
+    return with_id(AndSearch::create({std::move(s1), std::move(s2)}, strict), enum_id);
 }
 
 SearchIterator::UP blend(SearchIterator::UP s1, uint32_t id1,
-                         SearchIterator::UP s2, uint32_t id2)
+                         SearchIterator::UP s2, uint32_t id2, int enum_id)
 {
     bool strict = is_true(s1->is_strict(), s2->is_strict());
     SourceBlenderSearch::Children list;
     list.emplace_back(s1.release(), id1);
     list.emplace_back(s2.release(), id2);
-    return with_id(SourceBlenderSearch::create(my_sources.selector.createIterator(), list, strict));
-}
-
-SearchIterator::UP create_term(std::vector<uint32_t> hits) {
-    reset_id();
-    return T(hits);
+    return with_id(SourceBlenderSearch::create(my_sources.selector.createIterator(), list, strict), enum_id);
 }
 
 SearchIterator::UP create_iterator_tree() {
-    reset_id();
-    return AND(OR(T({4,6,8}),
-                  T({5,7,9})),
-               blend(t({1,3,5,7,9}), 3,
-                     t({2,4,6,8}), 5));
+    return AND(OR(T({4,6,8}, 3),
+                  T({5,7,9}, 4), 2),
+               blend(t({1,3,5,7,9}, 6), 3,
+                     t({2,4,6,8}, 7), 5, 5), 1);
 }
 
 SearchIterator::UP create_weak_and() {
-    reset_id();
     struct DummyHeap : WeakAndHeap {
         void adjust(score_t *, score_t *) override {}
         DummyHeap() : WeakAndHeap(100) {}
     };
     static DummyHeap dummy_heap;
     WeakAndSearch::Terms terms;
-    terms.emplace_back(T({1,2,3}).release(), 100, 3);
-    terms.emplace_back(T({5,6}).release(), 200, 2);
-    terms.emplace_back(T({8}).release(), 300, 1);
-    return with_id(WeakAndSearch::create(terms, wand::MatchParams(dummy_heap), wand::Bm25TermFrequencyScorer(num_docs), 100, true, true));
+    terms.emplace_back(T({1,2,3}, 2).release(), 100, 3);
+    terms.emplace_back(T({5,6}, 3).release(), 200, 2);
+    terms.emplace_back(T({8}, 4).release(), 300, 1);
+    return with_id(WeakAndSearch::create(terms, wand::MatchParams(dummy_heap), wand::Bm25TermFrequencyScorer(num_docs), 100, true, true), 1);
 }
 
 void collect(std::map<std::string,size_t> &counts, const auto &node) {
@@ -196,7 +187,7 @@ void verify_operation(ExecutionProfiler &profiler, std::map<std::string,size_t> 
 TEST(ProfiledIteratorTest, init_seek_unpack_termwise_is_profiled) {
     ExecutionProfiler profiler(64);
     std::map<std::string,size_t> seen;
-    auto root = ProfiledIterator::profile(profiler, create_term({1,2,3}));
+    auto root = ProfiledIterator::profile(profiler, T({1,2,3}, 1));
     root->initRange(1,4);
     verify_operation(profiler, seen, "[1]SimpleSearch::initRange");
     root->seek(2);
@@ -229,13 +220,13 @@ TEST(ProfiledIteratorTest, iterator_tree_can_be_profiled) {
     fprintf(stderr, "%s", slime.toString().c_str());
     auto counts = collect_counts(slime.get());
     print_counts(counts);
-    EXPECT_EQ(counts["[7]AndSearchStrict::initRange"], 2);
-    EXPECT_EQ(counts["[3]StrictHeapOrSearch::initRange"], 2);
-    EXPECT_EQ(counts["[1]SimpleSearch::initRange"], 2);
-    EXPECT_EQ(counts["[2]SimpleSearch::initRange"], 2);
-    EXPECT_EQ(counts["[6]SourceBlenderSearchNonStrict::initRange"], 2);
+    EXPECT_EQ(counts["[1]AndSearchStrict::initRange"], 2);
+    EXPECT_EQ(counts["[2]StrictHeapOrSearch::initRange"], 2);
+    EXPECT_EQ(counts["[3]SimpleSearch::initRange"], 2);
     EXPECT_EQ(counts["[4]SimpleSearch::initRange"], 2);
-    EXPECT_EQ(counts["[5]SimpleSearch::initRange"], 2);
+    EXPECT_EQ(counts["[5]SourceBlenderSearchNonStrict::initRange"], 2);
+    EXPECT_EQ(counts["[6]SimpleSearch::initRange"], 2);
+    EXPECT_EQ(counts["[7]SimpleSearch::initRange"], 2);
 }
 
 TEST(ProfiledIteratorTest, weak_and_can_be_profiled) {
@@ -249,14 +240,14 @@ TEST(ProfiledIteratorTest, weak_and_can_be_profiled) {
     fprintf(stderr, "%s", slime.toString().c_str());
     auto counts = collect_counts(slime.get());
     print_counts(counts);
-    EXPECT_EQ(counts["[4]WeakAndSearchLR::initRange"], 1);
-    EXPECT_EQ(counts["[1]SimpleSearch::initRange"], 1);
+    EXPECT_EQ(counts["[1]WeakAndSearchLR::initRange"], 1);
     EXPECT_EQ(counts["[2]SimpleSearch::initRange"], 1);
     EXPECT_EQ(counts["[3]SimpleSearch::initRange"], 1);
-    EXPECT_EQ(counts["[4]WeakAndSearchLR::doSeek"], 7);
-    EXPECT_EQ(counts["[1]SimpleSearch::doSeek"], 4);
-    EXPECT_EQ(counts["[2]SimpleSearch::doSeek"], 3);
-    EXPECT_EQ(counts["[3]SimpleSearch::doSeek"], 2);
+    EXPECT_EQ(counts["[4]SimpleSearch::initRange"], 1);
+    EXPECT_EQ(counts["[1]WeakAndSearchLR::doSeek"], 7);
+    EXPECT_EQ(counts["[2]SimpleSearch::doSeek"], 4);
+    EXPECT_EQ(counts["[3]SimpleSearch::doSeek"], 3);
+    EXPECT_EQ(counts["[4]SimpleSearch::doSeek"], 2);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
