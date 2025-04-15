@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "regex_predicate_node.h"
 #include "resultnode.h"
+#include "resultvector.h"
 
 namespace search::expression {
 
@@ -15,14 +16,28 @@ void RegexPredicateNode::RE::compile() {
 }
 
 bool RegexPredicateNode::allow(DocId docId, HitRank rank) {
-    bool isMatch = true;
+    bool isMatch = false;
     if (_argument.getRoot()) {
         _argument.execute(docId, rank);
         const ResultNode* result = _argument.getResult();
-        char buf[32];
-        auto tmp = result->getString({buf, sizeof(buf)});
-        isMatch = _re.regex.full_match({tmp.c_str(), tmp.size()});
-        fprintf(stderr, "RegexPredicateNode check match '%s' [%zd]\n", tmp.c_str(), tmp.size());
+        if (result->inherits(ResultNodeVector::classId)) {
+            const auto * rv = static_cast<const ResultNodeVector *>(result);
+            for (size_t i = 0; i < rv->size(); i++) {
+                const ResultNode& sr(rv->get(i));
+                char buf[32];
+                auto tmp = sr.getString({buf, sizeof(buf)});
+                isMatch = _re.regex.full_match({tmp.c_str(), tmp.size()});
+                fprintf(stderr, "RegexPredicateNode check[%zd] match '%s' [%zd]\n",
+                        i, tmp.c_str(), tmp.size());
+                if (isMatch) break;
+            }
+        } else {
+            char buf[32];
+            auto tmp = result->getString({buf, sizeof(buf)});
+            isMatch = _re.regex.full_match({tmp.c_str(), tmp.size()});
+            fprintf(stderr, "RegexPredicateNode check match '%s' [%zd]\n", tmp.c_str(), tmp.size());
+        }
+
     }
     return isMatch;
 }

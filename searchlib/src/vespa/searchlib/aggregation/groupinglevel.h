@@ -46,8 +46,12 @@ private:
     };
     class SingleValueGrouper : public Grouper {
     public:
-        SingleValueGrouper(const Grouping * grouping, uint32_t level) noexcept : Grouper(grouping, level) { }
+        SingleValueGrouper(Filter &filter, const Grouping * grouping, uint32_t level) noexcept
+          : Grouper(grouping, level),
+            _filter(filter)
+        { }
     protected:
+        Filter &_filter;
         template<typename Doc>
         void groupDoc(Group & group, const ResultNode & result, const Doc & doc, HitRank rank) const;
         void group(Group & g, const ResultNode & result, DocId doc, HitRank rank) const override {
@@ -61,9 +65,8 @@ private:
     class MultiValueGrouper : public SingleValueGrouper {
     public:
         MultiValueGrouper(CurrentIndex& currentIndex, Filter &filter, const Grouping * grouping, uint32_t level) noexcept
-            : SingleValueGrouper(grouping, level),
-              _currentIndex(currentIndex),
-              _filter(filter)
+            : SingleValueGrouper(filter, grouping, level),
+              _currentIndex(currentIndex)
         { }
         MultiValueGrouper(const MultiValueGrouper &) = default; //TODO Try to remove
         MultiValueGrouper & operator=(const MultiValueGrouper &) = delete;
@@ -78,7 +81,6 @@ private:
         }
         MultiValueGrouper * clone() const override { return new MultiValueGrouper(*this); }
         CurrentIndex &_currentIndex;
-        Filter &_filter;
     };
     int64_t        _maxGroups;
     int64_t        _precision;

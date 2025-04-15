@@ -107,9 +107,11 @@ template<typename Doc>
 void
 GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
-    Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
-    if ((next != nullptr) && doNext()) { // do next level ?
-        next->aggregate(*_grouping, _level + 1, doc, rank);
+    if (_filter.allow(doc, rank)) {
+        Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
+        if ((next != nullptr) && doNext()) { // do next level ?
+            next->aggregate(*_grouping, _level + 1, doc, rank);
+        }
     }
 }
 
@@ -121,9 +123,7 @@ GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result,
     for (size_t i(0), m(rv.size()); i < m; i++) {
         const ResultNode & sr(rv.get(i));
         _currentIndex.set(i);
-        if (_filter.allow(doc, rank)) {
-            SingleValueGrouper::groupDoc(g, sr, doc, rank);
-        }
+        SingleValueGrouper::groupDoc(g, sr, doc, rank);
     }
 }
 
@@ -152,7 +152,7 @@ GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOrdered
     if (_classify.getResult()->inherits(ResultNodeVector::classId)) {
         _grouper.reset(new MultiValueGrouper(_currentIndex, getActiveFilter(), grouping, level));
     } else {
-        _grouper.reset(new SingleValueGrouper(grouping, level));
+        _grouper.reset(new SingleValueGrouper(getActiveFilter(), grouping, level));
     }
 }
 
