@@ -7,7 +7,7 @@
 namespace search::expression {
 
 void
-CurrentIndexSetup::Usage::notify_unbound_struct_usage(std::string_view name)
+CurrentIndexSetup::Usage::notify_unbound_name_usage(std::string_view name)
 {
     _unbound.insert(std::string(name));
 }
@@ -20,9 +20,9 @@ CurrentIndexSetup::Usage::Usage()
 CurrentIndexSetup::Usage::~Usage() = default;
 
 std::string_view
-CurrentIndexSetup::Usage::get_unbound_struct_name() const
+CurrentIndexSetup::Usage::get_unbound_name() const
 {
-    assert(has_single_unbound_struct());
+    assert(has_single_unbound_name());
     return *_unbound.begin();
 }
 
@@ -53,7 +53,7 @@ CurrentIndexSetup::resolve(std::string_view field_name) const
     auto entry = _bound.find(struct_name);
     if (entry == _bound.end()) {
         if (_usage != nullptr) {
-            _usage->notify_unbound_struct_usage(struct_name);
+            _usage->notify_unbound_name_usage(struct_name);
         }
         return nullptr;
     }

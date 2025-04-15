@@ -135,8 +135,8 @@ GroupingLevel::wire_current_index(CurrentIndexSetup &setup, const vespalib::Obje
         CurrentIndexSetup::Usage::Bind capture_guard(setup, usage);
         _classify.select(resolve_pred, resolve_op);
     }
-    if (usage.has_single_unbound_struct()) {
-        setup.bind(usage.get_unbound_struct_name(), _currentIndex);
+    if (usage.has_single_unbound_name()) {
+        setup.bind(usage.get_unbound_name(), _currentIndex);
     }
     if (_filter.get()) {
         _filter->select(resolve_pred, resolve_op);
