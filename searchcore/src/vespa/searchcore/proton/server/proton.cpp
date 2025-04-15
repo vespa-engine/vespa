@@ -844,7 +844,6 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.memory_usage.total_util.set(dm_metrics.total_memory_utilization());
         metrics.resourceUsage.memory_usage.transient.set(dm_metrics.transient_memory_usage());
 
-        metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
 #ifdef __linux__
