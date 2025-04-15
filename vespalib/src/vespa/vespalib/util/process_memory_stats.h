@@ -4,7 +4,6 @@
 
 #include <cstdint>
 #include <string>
-#include <functional>
 
 namespace vespalib {
 
