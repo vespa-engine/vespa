@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -9,53 +9,49 @@
 using namespace search;
 using namespace vespalib;
 
-bool writeHeader(const FileHeader &header, const std::string &fileName) {
+void writeHeader(const FileHeader &header, const std::string &fileName) {
     FastOS_File file;
-    if (!EXPECT_TRUE(file.OpenWriteOnlyTruncate(fileName.c_str()))) {
-        return false;
-    }
-    if (!EXPECT_EQUAL(header.getSize(), header.writeFile(file))) {
-        return false;
-    }
-    return true;
+    ASSERT_TRUE(file.OpenWriteOnlyTruncate(fileName.c_str()));
+    ASSERT_EQ(header.getSize(), header.writeFile(file));
 }
 
 std::string readFile(const std::string &fileName) {
     FastOS_File file;
-    ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
+    bool success = file.OpenReadOnly(fileName.c_str());
+    assert(success);
 
     char buf[4_Ki];
     uint32_t len = file.Read(buf, sizeof(buf));
-    EXPECT_LESS(len, sizeof(buf)); // make sure we got everything
+    EXPECT_LT(len, sizeof(buf)); // make sure we got everything
 
     std::string str(buf, len);
     return str;
 }
 
-TEST("testError") {
+TEST(VespaFileheaderInspectTest, testError) {
     EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect notfound.dat") != 0);
 }
 
-TEST("testEscape") {
+TEST(VespaFileheaderInspectTest, testEscape) {
     FileHeader header;
     header.putTag(FileHeader::Tag("fanart", "\fa\na\r\t"));
-    ASSERT_TRUE(writeHeader(header, "fileheader.dat"));
+    writeHeader(header, "fileheader.dat");
     EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect -q fileheader.dat > out") == 0);
-    EXPECT_EQUAL("fanart;string;\\fa\\na\\r\\t\n", readFile("out"));
+    EXPECT_EQ("fanart;string;\\fa\\na\\r\\t\n", readFile("out"));
 }
 
-TEST("testDelimiter") {
+TEST(VespaFileheaderInspectTest, testDelimiter) {
     FileHeader header;
     header.putTag(FileHeader::Tag("string", "string"));
-    ASSERT_TRUE(writeHeader(header, "fileheader.dat"));
+    writeHeader(header, "fileheader.dat");
     EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect -d i -q fileheader.dat > out") == 0);
-    EXPECT_EQUAL("str\\ingistr\\ingistr\\ing\n", readFile("out"));
+    EXPECT_EQ("str\\ingistr\\ingistr\\ing\n", readFile("out"));
 }
 
-TEST("testQuiet") {
+TEST(VespaFileheaderInspectTest, testQuiet) {
     FileHeader header;
     FileHeaderTk::addVersionTags(header);
-    ASSERT_TRUE(writeHeader(header, "fileheader.dat"));
+    writeHeader(header, "fileheader.dat");
     EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect -q fileheader.dat > out") == 0);
     std::string str = readFile("out");
     EXPECT_TRUE(!str.empty());
@@ -70,10 +66,10 @@ TEST("testQuiet") {
     }
 }
 
-TEST("testVerbose") {
+TEST(VespaFileheaderInspectTest, testVerbose) {
     FileHeader header;
     FileHeaderTk::addVersionTags(header);
-    ASSERT_TRUE(writeHeader(header, "fileheader.dat"));
+    writeHeader(header, "fileheader.dat");
     EXPECT_TRUE(system("../../apps/vespa-fileheader-inspect/vespa-fileheader-inspect fileheader.dat > out") == 0);
     std::string str = readFile("out");
     EXPECT_TRUE(!str.empty());
@@ -87,4 +83,4 @@ TEST("testVerbose") {
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
