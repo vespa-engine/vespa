@@ -17,115 +17,6 @@ namespace vespalib {
 
 size_t ProcessMemoryStats::PAGE_SIZE = sysconf(_SC_PAGESIZE);
 
-namespace {
-
-#ifdef __linux__
-/*
- * Check if line specifies an address range.
- *
- * address           perms offset  dev   inode   pathname
- *
- * 00400000-00420000 r-xp 00000000 fd:04 16545041                           /usr/bin/less
- */
-
-bool
-isRange(std::string_view line) {
-    for (char c : line) {
-        if (c == ' ') {
-            return true;
-        }
-        if (c == ':') {
-            return false;
-        }
-    }
-    return false;
-}
-
-
-/*
- * Check if address range is anonymous, e.g. not mapped from file.
- * inode number is 0 in that case.
- *
- * address           perms offset  dev   inode   pathname
- *
- * 00400000-00420000 r-xp 00000000 fd:04 16545041                           /usr/bin/less
- * 00625000-00628000 rw-p 00000000 00:00 0
- *
- * The range starting at 00400000 is not anonymous.
- * The range starting at 00625000 is anonymous.
- */
-
-bool
-isAnonymous(std::string_view line) {
-    int delims = 0;
-    for (char c : line) {
-        if (delims >= 4) {
-            return (c == '0');
-        }
-        if (c == ' ') {
-            ++delims;
-        }
-    }
-    return true;
-}
-
-
-/*
- * Lines not containing an address range contains a header and a
- * value, e.g.
- *
- * Size:                128 kB
- * Rss:                  96 kB
- * Anonymous:             0 kB
- *
- * The lines with header Anonymous are ignored, thus anonymous pages
- * caused by mmap() of a file with MAP_PRIVATE flags are counted as
- * mapped pages.
- */
-
-std::string_view
-getLineHeader(std::string_view line)
-{
-    return line.substr(0, line.find(':'));
-}
-#endif
-
-}
-
-ProcessMemoryStats
-ProcessMemoryStats::createStatsFromSmaps()
-{
-    ProcessMemoryStats ret;
-#ifdef __linux__
-    asciistream smaps = asciistream::createFromDevice("/proc/self/smaps");
-    bool anonymous = true;
-    uint64_t lineVal = 0;
-    while (!smaps.eof()) {
-        std::string backedLine = smaps.getline();
-        std::string_view line(backedLine);
-        if (isRange(line)) {
-            anonymous = isAnonymous(line);
-        } else if (!line.empty()) {
-            std::string_view lineHeader = getLineHeader(line);
-            if (lineHeader == "Size") {
-                asciistream is(line.substr(lineHeader.size() + 1));
-                is >> lineVal;
-                ret._virt += lineVal * 1024;
-            } else if (lineHeader == "Rss") {
-                asciistream is(line.substr(lineHeader.size() + 1));
-                is >> lineVal;
-                if (anonymous) {
-                    ret._anonymous_rss += lineVal * 1024;
-                } else {
-                    ret._mapped_rss += lineVal * 1024;
-                }
-            }
-        }
-    }
-#endif
-    return ret;
-}
-
 /*
  * The statm line looks like this:
  * size resident shared text lib data dt
@@ -174,15 +65,6 @@ ProcessMemoryStats::parseStatm(asciistream &statm)
     return ret;
 }
 
-ProcessMemoryStats ProcessMemoryStats::sample(SamplingStrategy strategy) {
-    switch (strategy) {
-    case SMAPS:
-        return createStatsFromSmaps();
-    default:
-        return createStatsFromStatm();
-    }
-}
-
 ProcessMemoryStats::ProcessMemoryStats()
     : _virt(0),
       _mapped_rss(0),
@@ -229,14 +111,14 @@ ProcessMemoryStats::toString() const
 }
 
 ProcessMemoryStats
-ProcessMemoryStats::create(double epsilon, SamplingStrategy strategy)
+ProcessMemoryStats::create(double epsilon)
 {
     constexpr size_t NUM_TRIES = 3;
     std::vector<ProcessMemoryStats> samples;
     samples.reserve(NUM_TRIES + 1);
-    samples.push_back(sample(strategy));
+    samples.push_back(createStatsFromStatm());
     for (size_t i = 0; i < NUM_TRIES; ++i) {
-        samples.push_back(sample(strategy));
+        samples.push_back(createStatsFromStatm());
         if (samples.back().similarTo(*(samples.rbegin()+1), epsilon)) {
             return samples.back();
         }

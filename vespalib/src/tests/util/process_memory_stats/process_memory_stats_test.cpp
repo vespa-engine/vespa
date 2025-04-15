@@ -33,78 +33,54 @@ std::string toString(const ProcessMemoryStats &stats)
 
 TEST(ProcessMemoryStatsTest, simple_stats)
 {
-    auto lambda = [](ProcessMemoryStats::SamplingStrategy strategy) {
-        ProcessMemoryStats stats(ProcessMemoryStats::create(SIZE_EPSILON, strategy));
-        std::cout << toString(stats) << std::endl;
-        EXPECT_LT(0u, stats.getVirt());
-        EXPECT_LT(0u, stats.getMappedRss());
-        EXPECT_LT(0u, stats.getAnonymousRss());
-    };
-
-    std::cout << "smaps" << std::endl;
-    lambda(ProcessMemoryStats::SamplingStrategy::SMAPS);
-
-    std::cout << "statm" << std::endl;
-    lambda(ProcessMemoryStats::SamplingStrategy::STATM);
+    ProcessMemoryStats stats(ProcessMemoryStats::create(SIZE_EPSILON));
+    std::cout << toString(stats) << std::endl;
+    EXPECT_LT(0u, stats.getVirt());
+    EXPECT_LT(0u, stats.getMappedRss());
+    EXPECT_LT(0u, stats.getAnonymousRss());
 }
 
 TEST(ProcessMemoryStatsTest, grow_anonymous_memory)
 {
-    auto lambda = [](ProcessMemoryStats::SamplingStrategy strategy) {
-        ProcessMemoryStats stats1(ProcessMemoryStats::create(SIZE_EPSILON, strategy));
-        std::cout << toString(stats1) << std::endl;
-        size_t mapLen = 64_Ki;
-        void *mapAddr = mmap(nullptr, mapLen, PROT_READ | PROT_WRITE,
-                             MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-        EXPECT_NE(reinterpret_cast<void *>(-1), mapAddr);
-        ProcessMemoryStats stats2(ProcessMemoryStats::create(SIZE_EPSILON, strategy));
-        std::cout << toString(stats2) << std::endl;
-        EXPECT_LE(stats1.getVirt() + mapLen,
-                  stats2.getVirt());
-        memset(mapAddr, 1, mapLen);
-        ProcessMemoryStats stats3(ProcessMemoryStats::create(SIZE_EPSILON, strategy));
-        std::cout << toString(stats3) << std::endl;
-        // Cannot check that resident grows if swap is enabled and system loaded
-        munmap(mapAddr, mapLen);
-    };
-
-    std::cout << "smaps" << std::endl;
-    lambda(ProcessMemoryStats::SamplingStrategy::SMAPS);
-
-    std::cout << "statm" << std::endl;
-    lambda(ProcessMemoryStats::SamplingStrategy::STATM);
+    ProcessMemoryStats stats1(ProcessMemoryStats::create(SIZE_EPSILON));
+    std::cout << toString(stats1) << std::endl;
+    size_t mapLen = 64_Ki;
+    void *mapAddr = mmap(nullptr, mapLen, PROT_READ | PROT_WRITE,
+                         MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    EXPECT_NE(reinterpret_cast<void *>(-1), mapAddr);
+    ProcessMemoryStats stats2(ProcessMemoryStats::create(SIZE_EPSILON));
+    std::cout << toString(stats2) << std::endl;
+    EXPECT_LE(stats1.getVirt() + mapLen,
+              stats2.getVirt());
+    memset(mapAddr, 1, mapLen);
+    ProcessMemoryStats stats3(ProcessMemoryStats::create(SIZE_EPSILON));
+    std::cout << toString(stats3) << std::endl;
+    // Cannot check that resident grows if swap is enabled and system loaded
+    munmap(mapAddr, mapLen);
 }
 
 TEST(ProcessMemoryStatsTest, grow_mapped_memory)
 {
-    auto lambda = [](ProcessMemoryStats::SamplingStrategy strategy) {
-        std::ofstream of("mapfile");
-        size_t mapLen = 64_Ki;
-        std::vector<char> buf(mapLen, 4);
-        of.write(&buf[0], buf.size());
-        of.close();
-        int mapfileFileDescriptor = open("mapfile", O_RDONLY, 0666);
-        EXPECT_LE(0, mapfileFileDescriptor);
-        ProcessMemoryStats stats1(ProcessMemoryStats::create(SIZE_EPSILON, strategy));
-        std::cout << toString(stats1) << std::endl;
-        void *mapAddr = mmap(nullptr, mapLen, PROT_READ, MAP_SHARED,
-                             mapfileFileDescriptor, 0);
-        EXPECT_NE(reinterpret_cast<void *>(-1), mapAddr);
-        ProcessMemoryStats stats2(ProcessMemoryStats::create(SIZE_EPSILON, strategy));
-        std::cout << toString(stats2) << std::endl;
-        EXPECT_LE(stats1.getVirt() + mapLen, stats2.getVirt());
-        EXPECT_EQ(0, memcmp(mapAddr, &buf[0], mapLen));
-        ProcessMemoryStats stats3(ProcessMemoryStats::create(SIZE_EPSILON, strategy));
-        std::cout << toString(stats3) << std::endl;
-        // Cannot check that resident grows if swap is enabled and system loaded
-        munmap(mapAddr, mapLen);
-    };
-
-    std::cout << "smaps" << std::endl;
-    lambda(ProcessMemoryStats::SamplingStrategy::SMAPS);
-
-    std::cout << "statm" << std::endl;
-    lambda(ProcessMemoryStats::SamplingStrategy::STATM);
+    std::ofstream of("mapfile");
+    size_t mapLen = 64_Ki;
+    std::vector<char> buf(mapLen, 4);
+    of.write(&buf[0], buf.size());
+    of.close();
+    int mapfileFileDescriptor = open("mapfile", O_RDONLY, 0666);
+    EXPECT_LE(0, mapfileFileDescriptor);
+    ProcessMemoryStats stats1(ProcessMemoryStats::create(SIZE_EPSILON));
+    std::cout << toString(stats1) << std::endl;
+    void *mapAddr = mmap(nullptr, mapLen, PROT_READ, MAP_SHARED,
+                         mapfileFileDescriptor, 0);
+    EXPECT_NE(reinterpret_cast<void *>(-1), mapAddr);
+    ProcessMemoryStats stats2(ProcessMemoryStats::create(SIZE_EPSILON));
+    std::cout << toString(stats2) << std::endl;
+    EXPECT_LE(stats1.getVirt() + mapLen, stats2.getVirt());
+    EXPECT_EQ(0, memcmp(mapAddr, &buf[0], mapLen));
+    ProcessMemoryStats stats3(ProcessMemoryStats::create(SIZE_EPSILON));
+    std::cout << toString(stats3) << std::endl;
+    // Cannot check that resident grows if swap is enabled and system loaded
+    munmap(mapAddr, mapLen);
 }
 
 TEST(ProcessMemoryStatsTest, order_samples)
