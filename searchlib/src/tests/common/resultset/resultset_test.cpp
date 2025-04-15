@@ -6,7 +6,7 @@ LOG_SETUP("resultset_test");
 
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/resultset.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/arraysize.h>
 
 using namespace search;
@@ -18,7 +18,7 @@ void addHit(ResultSet &set, unsigned int doc_id, double rank) {
     set.push_back(RankedHit(doc_id, rank));
 }
 
-TEST("require that mergeWithOverflow works") {
+TEST(ResultSetTest, require_that_mergeWithOverflow_works) {
     ResultSet set1;
     set1.allocArray(10);
     addHit(set1, 2, 4.2);
@@ -29,11 +29,11 @@ TEST("require that mergeWithOverflow works") {
     bit_vector->setBit(7);
     bit_vector->invalidateCachedCount();
     set1.setBitOverflow(std::move(bit_vector));
-    EXPECT_EQUAL(3u, set1.getNumHits());
+    EXPECT_EQ(3u, set1.getNumHits());
     set1.mergeWithBitOverflow();
-    EXPECT_EQUAL(3u, set1.getNumHits());
+    EXPECT_EQ(3u, set1.getNumHits());
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

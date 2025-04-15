@@ -3,7 +3,7 @@
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/sanitizers.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <sys/resource.h>
@@ -27,7 +27,7 @@ namespace {
 
 // NOTE: This test explicitly sets thread stack size and will fail due to
 // a stack overflow if the stack usage increases.
-TEST("testveryLongQueryResultingInBug6850778") {
+TEST(StreamingQueryTest, testveryLongQueryResultingInBug6850778) {
     uint32_t NUMITEMS=20000;
 #if defined(VESPA_USE_THREAD_SANITIZER) || defined(VESPA_USE_ADDRESS_SANITIZER)
     NUMITEMS = 10000;
@@ -51,7 +51,7 @@ TEST("testveryLongQueryResultingInBug6850778") {
     QueryTermList terms;
     QueryNodeRefList phrases;
     q.getLeaves(terms);
-    ASSERT_EQUAL(NUMITEMS + 2, terms.size());
+    ASSERT_EQ(NUMITEMS + 2, terms.size());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
