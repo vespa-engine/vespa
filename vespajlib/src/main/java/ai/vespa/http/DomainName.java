@@ -3,6 +3,7 @@ package ai.vespa.http;
 
 import ai.vespa.validation.PatternedStringWrapper;
 
+import java.util.Optional;
 import java.util.regex.Pattern;
 
 import static ai.vespa.validation.Validation.requireLength;
@@ -35,6 +36,13 @@ public class DomainName extends PatternedStringWrapper<DomainName> {
     public String leafLabel() {
         int offset = value().indexOf('.');
         return offset == -1 ? value() : value().substring(0, offset);
+    }
+
+    public Optional<DomainName> parent() {
+        int offset = value().indexOf('.');
+        if (offset == -1 || offset == value().length() - 1)
+            return Optional.empty();
+        return Optional.of(DomainName.of(value().substring(offset + 1)));
     }
 
 }
