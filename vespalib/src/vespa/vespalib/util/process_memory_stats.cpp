@@ -1,16 +1,14 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "process_memory_stats.h"
+#include "exceptions.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <algorithm>
-#include <vector>
-#include <cinttypes>
 #include <vespa/vespalib/util/size_literals.h>
+#include <algorithm>
+#include <cinttypes>
+#include <vector>
 
 #include <vespa/log/log.h>
-
-#include "exceptions.h"
-
 LOG_SETUP(".vespalib.util.process_memory_stats");
 
 namespace vespalib {
