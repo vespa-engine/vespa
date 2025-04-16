@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/hash_set.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <limits>
+#include <ostream>
 
 using vespalib::nbostream;
 using vespalib::asciistream;

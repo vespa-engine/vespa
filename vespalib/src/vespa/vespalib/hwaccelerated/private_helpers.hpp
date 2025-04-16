@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/config.h>
+#include <bit>
 #include <cstring>
 
 namespace vespalib::hwaccelerated::helper {

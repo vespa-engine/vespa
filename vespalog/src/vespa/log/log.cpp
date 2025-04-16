@@ -16,6 +16,7 @@ LOG_SETUP_INDIRECT(".log", "$Id$");
 #include <cstdarg>
 #include <cstring>
 #include <cinttypes>
+#include <pthread.h>
 #include <unistd.h>
 #include <sys/time.h>
 
