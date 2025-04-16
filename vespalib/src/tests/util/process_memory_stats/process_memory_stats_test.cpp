@@ -4,34 +4,44 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <iostream>
+#include <filesystem>
 #include <fstream>
-#include <sys/mman.h>
+#include <iostream>
 #include <fcntl.h>
+#include <sys/mman.h>
 
 using namespace vespalib;
 
-namespace {
-
-constexpr double SIZE_EPSILON = 0.01;
-
-std::string toString(const ProcessMemoryStats &stats)
+class ProcessMemoryStatsTest : public ::testing::Test
 {
-    std::ostringstream os;
-    os << "Virtual("
-       << stats.getVirt() <<
-       "), Rss("
-       << stats.getMappedRss() + stats.getAnonymousRss() <<
-       "), MappedRss("
-       << stats.getMappedRss() <<
-       "), AnonymousRss("
-       << stats.getAnonymousRss() << ")";
-    return os.str();
-}
+protected:
+    static void SetUpTestSuite() {
+        std::filesystem::remove("mapfile");
+    }
 
-}
+    static void TearDownTestSuite() {
+        std::filesystem::remove("mapfile");
+    }
 
-TEST(ProcessMemoryStatsTest, simple_stats)
+    static constexpr double SIZE_EPSILON = 0.01;
+
+    static std::string toString(const ProcessMemoryStats &stats)
+    {
+        std::ostringstream os;
+        os << "Virtual("
+           << stats.getVirt() <<
+           "), Rss("
+           << stats.getMappedRss() + stats.getAnonymousRss() <<
+           "), MappedRss("
+           << stats.getMappedRss() <<
+           "), AnonymousRss("
+           << stats.getAnonymousRss() << ")";
+        return os.str();
+    }
+
+};
+
+TEST_F(ProcessMemoryStatsTest, simple_stats)
 {
     ProcessMemoryStats stats(ProcessMemoryStats::create(SIZE_EPSILON));
     std::cout << toString(stats) << std::endl;
@@ -40,7 +50,7 @@ TEST(ProcessMemoryStatsTest, simple_stats)
     EXPECT_LT(0u, stats.getAnonymousRss());
 }
 
-TEST(ProcessMemoryStatsTest, grow_anonymous_memory)
+TEST_F(ProcessMemoryStatsTest, grow_anonymous_memory)
 {
     ProcessMemoryStats stats1(ProcessMemoryStats::create(SIZE_EPSILON));
     std::cout << toString(stats1) << std::endl;
@@ -59,7 +69,7 @@ TEST(ProcessMemoryStatsTest, grow_anonymous_memory)
     munmap(mapAddr, mapLen);
 }
 
-TEST(ProcessMemoryStatsTest, grow_mapped_memory)
+TEST_F(ProcessMemoryStatsTest, grow_mapped_memory)
 {
     std::ofstream of("mapfile");
     size_t mapLen = 64_Ki;
@@ -83,7 +93,7 @@ TEST(ProcessMemoryStatsTest, grow_mapped_memory)
     munmap(mapAddr, mapLen);
 }
 
-TEST(ProcessMemoryStatsTest, order_samples)
+TEST_F(ProcessMemoryStatsTest, order_samples)
 {
     ProcessMemoryStats a(0,0,7);
     ProcessMemoryStats b(0,0,8);
@@ -91,7 +101,7 @@ TEST(ProcessMemoryStatsTest, order_samples)
     EXPECT_FALSE(b < a);
 }
 
-TEST(ProcessMemoryStatsTest, parse_statm)
+TEST_F(ProcessMemoryStatsTest, parse_statm)
 {
     // size resident shared text lib data dt
     std::string statm = "3332000 1917762 8060 1 0 2960491 0";
