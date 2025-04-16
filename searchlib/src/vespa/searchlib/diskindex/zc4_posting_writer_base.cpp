@@ -5,6 +5,7 @@
 #include <vespa/searchlib/index/postinglistcounts.h>
 #include <vespa/searchlib/index/postinglistparams.h>
 #include <cassert>
+#include <limits>
 
 using search::index::PostingListCounts;
 using search::index::PostingListParams;
