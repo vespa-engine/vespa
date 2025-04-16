@@ -4,6 +4,6 @@ vespa_add_executable(logd_watcher_test_app TEST
     watcher_test.cpp
     DEPENDS
     logd
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME logd_watcher_test_app COMMAND logd_watcher_test_app)

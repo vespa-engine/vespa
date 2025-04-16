@@ -5,6 +5,6 @@ vespa_add_executable(searchlib_multi_term_or_filter_search_test_app TEST
     DEPENDS
     vespa_searchlib
     searchlib_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_multi_term_or_filter_search_test_app COMMAND searchlib_multi_term_or_filter_search_test_app)

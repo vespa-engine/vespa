@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_queryeval_global_filter_test_app TEST
     global_filter_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_queryeval_global_filter_test_app COMMAND searchlib_queryeval_global_filter_test_app)

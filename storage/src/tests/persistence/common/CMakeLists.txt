@@ -4,7 +4,7 @@ vespa_add_library(storage_testpersistence_common TEST
     filestortestfixture.cpp
     persistenceproviderwrapper.cpp
     DEPENDS
-    GTest::GTest
+    GTest::gtest
     vespa_persistence
     storage_testcommon
 )

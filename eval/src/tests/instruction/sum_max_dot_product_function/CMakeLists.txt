@@ -4,6 +4,6 @@ vespa_add_executable(eval_sum_max_dot_product_function_test_app TEST
     sum_max_dot_product_function_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_sum_max_dot_product_function_test_app COMMAND eval_sum_max_dot_product_function_test_app)

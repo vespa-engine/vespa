@@ -10,6 +10,6 @@ vespa_add_executable(searchlib_iterator_benchmark_test_app TEST
     DEPENDS
     vespa_searchlib
     searchlib_test
-    GTest::GTest
+    GTest::gtest
 )
 # Note: this should not be executed as a unit test, so the vespa_add_test() command is not specified.

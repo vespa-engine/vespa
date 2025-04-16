@@ -4,6 +4,6 @@ vespa_add_executable(eval_cell_type_space_test_app TEST
     cell_type_space_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_cell_type_space_test_app COMMAND eval_cell_type_space_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(eval_sparse_full_overlap_join_function_test_app TEST
     sparse_full_overlap_join_function_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_sparse_full_overlap_join_function_test_app COMMAND eval_sparse_full_overlap_join_function_test_app)

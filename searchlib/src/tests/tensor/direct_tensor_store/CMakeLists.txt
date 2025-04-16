@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_direct_tensor_store_test_app TEST
     direct_tensor_store_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_direct_tensor_store_test_app COMMAND searchlib_direct_tensor_store_test_app)

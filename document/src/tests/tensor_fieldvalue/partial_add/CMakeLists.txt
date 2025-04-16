@@ -4,6 +4,6 @@ vespa_add_executable(document_partial_add_test_app TEST
     partial_add_test.cpp
     DEPENDS
     vespa_document
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME document_partial_add_test_app COMMAND document_partial_add_test_app)

@@ -37,7 +37,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     DEPENDS
     vespalib
     onnxruntime
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test( NAME vespalib_util_gtest_runner_test_app COMMAND vespalib_util_gtest_runner_test_app)

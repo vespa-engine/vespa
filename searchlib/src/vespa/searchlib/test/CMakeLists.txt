@@ -23,7 +23,7 @@ vespa_add_library(searchlib_test
     vespa_searchlib
     searchlib_searchlib_test_features
     searchlib_searchlib_test_memoryindex
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_library(searchlib_test_gtest_migration OBJECT

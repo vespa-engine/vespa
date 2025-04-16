@@ -46,7 +46,7 @@ vespa_add_executable(vespalib_replace_variable_test_app TEST
     replace_variable_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_replace_variable_test_app COMMAND vespalib_replace_variable_test_app)
 vespa_add_executable(vespalib_lrucache_test_app TEST
@@ -54,7 +54,7 @@ vespa_add_executable(vespalib_lrucache_test_app TEST
     lrucache.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_lrucache_test_app COMMAND vespalib_lrucache_test_app)
 vespa_add_executable(vespalib_cache_test_app TEST

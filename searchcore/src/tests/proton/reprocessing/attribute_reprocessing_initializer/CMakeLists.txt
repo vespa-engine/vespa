@@ -7,6 +7,6 @@ vespa_add_executable(searchcore_attribute_reprocessing_initializer_test_app TEST
     searchcore_attribute
     searchcore_pcommon
     searchcore_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_attribute_reprocessing_initializer_test_app COMMAND searchcore_attribute_reprocessing_initializer_test_app)

@@ -6,6 +6,6 @@ vespa_add_executable(searchcore_memoryflush_test_app TEST
     searchcore_server
     searchcore_flushengine
     searchcore_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_memoryflush_test_app COMMAND searchcore_memoryflush_test_app)

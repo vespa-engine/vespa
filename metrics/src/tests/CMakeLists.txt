@@ -14,7 +14,7 @@ vespa_add_executable(metrics_gtest_runner_app TEST
     gtest_runner.cpp
     DEPENDS
     vespa_metrics
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test(

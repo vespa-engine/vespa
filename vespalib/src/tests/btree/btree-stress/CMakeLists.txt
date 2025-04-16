@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_btree_stress_test_app
     btree_stress_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_btree_stress_test_app NO_VALGRIND COMMAND vespalib_btree_stress_test_app --smoke-test)

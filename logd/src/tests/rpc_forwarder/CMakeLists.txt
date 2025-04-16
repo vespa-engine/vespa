@@ -4,6 +4,6 @@ vespa_add_executable(logd_rpc_forwarder_test_app TEST
     rpc_forwarder_test.cpp
     DEPENDS
     logd
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME logd_rpc_forwarder_test_app COMMAND logd_rpc_forwarder_test_app)

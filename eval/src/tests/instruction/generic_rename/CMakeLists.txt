@@ -4,6 +4,6 @@ vespa_add_executable(eval_generic_rename_test_app TEST
     generic_rename_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_generic_rename_test_app COMMAND eval_generic_rename_test_app)

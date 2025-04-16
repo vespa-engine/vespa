@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_resultset_test_app TEST
     resultset_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_resultset_test_app COMMAND searchlib_resultset_test_app)

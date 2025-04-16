@@ -4,6 +4,6 @@ vespa_add_executable(eval_onnx_wrapper_test_app TEST
     onnx_wrapper_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_onnx_wrapper_test_app COMMAND eval_onnx_wrapper_test_app)

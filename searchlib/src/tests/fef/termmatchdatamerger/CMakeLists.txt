@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_termmatchdatamerger_test_app TEST
     termmatchdatamerger_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_termmatchdatamerger_test_app COMMAND searchlib_termmatchdatamerger_test_app)

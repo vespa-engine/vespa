@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_dynamic_array_buffer_type_test_app TEST
     dynamic_array_buffer_type_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_dynamic_array_buffer_type_test_app COMMAND vespalib_dynamic_array_buffer_type_test_app)

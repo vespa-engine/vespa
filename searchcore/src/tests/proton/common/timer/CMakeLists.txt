@@ -4,6 +4,6 @@ vespa_add_executable(searchcore_common_timer_test_app TEST
     timer_test.cpp
     DEPENDS
     searchcore_pcommon
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_common_timer_test_app COMMAND searchcore_common_timer_test_app)

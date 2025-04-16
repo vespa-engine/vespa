@@ -8,7 +8,7 @@ vespa_add_executable(storageframework_gtest_runner_app TEST
     DEPENDS
     storageframework_testclock
     storageframework_testthread
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test(

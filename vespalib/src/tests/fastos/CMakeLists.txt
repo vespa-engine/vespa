@@ -4,6 +4,6 @@ vespa_add_executable(fastos_file_test_app TEST
     file_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME fastos_file_test_app COMMAND fastos_file_test_app)

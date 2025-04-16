@@ -4,7 +4,7 @@ vespa_add_executable(vespalib_fuzzy_matcher_test_app TEST
         fuzzy_matcher_test.cpp
         DEPENDS
         vespalib
-        GTest::GTest
+        GTest::gtest
         )
 vespa_add_test(NAME vespalib_fuzzy_matcher_test_app COMMAND vespalib_fuzzy_matcher_test_app)
 
@@ -13,7 +13,7 @@ vespa_add_executable(vespalib_levenshtein_distance_test_app TEST
         levenshtein_distance_test.cpp
         DEPENDS
         vespalib
-        GTest::GTest
+        GTest::gtest
         )
 vespa_add_test(NAME vespalib_levenshtein_distance_test_app COMMAND vespalib_levenshtein_distance_test_app)
 
@@ -22,6 +22,6 @@ vespa_add_executable(vespalib_levenshtein_dfa_test_app TEST
     levenshtein_dfa_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_levenshtein_dfa_test_app COMMAND vespalib_levenshtein_dfa_test_app)

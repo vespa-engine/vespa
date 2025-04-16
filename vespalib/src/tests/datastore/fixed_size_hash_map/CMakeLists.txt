@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_fixed_size_hash_map_test_app
     fixed_size_hash_map_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_fixed_size_hash_map_test_app COMMAND vespalib_fixed_size_hash_map_test_app)

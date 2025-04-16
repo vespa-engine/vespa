@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_unwind_message_test_app TEST
     unwind_message_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_unwind_message_test_app COMMAND vespalib_unwind_message_test_app)

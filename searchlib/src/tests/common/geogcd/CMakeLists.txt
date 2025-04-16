@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_geo_gcd_test_app TEST
     geo_gcd_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_geo_gcd_test_app COMMAND searchlib_geo_gcd_test_app)

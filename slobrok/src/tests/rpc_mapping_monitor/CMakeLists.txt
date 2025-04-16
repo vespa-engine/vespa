@@ -4,6 +4,6 @@ vespa_add_executable(slobrok_rpc_mapping_monitor_test_app TEST
     rpc_mapping_monitor_test.cpp
     DEPENDS
     vespa_slobrok_slobrokserver
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME slobrok_rpc_mapping_monitor_test_app COMMAND slobrok_rpc_mapping_monitor_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(eval_simple_join_count_test_app TEST
     simple_join_count_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_simple_join_count_test_app COMMAND eval_simple_join_count_test_app)

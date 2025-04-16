@@ -4,7 +4,7 @@ vespa_add_executable(searchlib_engine_proto_converter_test_app TEST
     proto_converter_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_engine_proto_converter_test_app COMMAND searchlib_engine_proto_converter_test_app)
 if(Protobuf_VERSION VERSION_LESS_EQUAL 3.12.4)

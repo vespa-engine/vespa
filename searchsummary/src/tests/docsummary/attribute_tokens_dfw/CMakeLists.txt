@@ -5,6 +5,6 @@ vespa_add_executable(searchsummary_attribute_tokens_dfw_test_app TEST
     DEPENDS
     vespa_searchsummary
     searchsummary_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchsummary_attribute_tokens_dfw_test_app COMMAND searchsummary_attribute_tokens_dfw_test_app)

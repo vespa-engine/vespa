@@ -14,7 +14,7 @@ vespa_add_executable(storage_hostreporter_gtest_runner_app TEST
     DEPENDS
     vespa_storage
     storage_testhostreporter
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test(

@@ -19,7 +19,7 @@ vespa_add_executable(storage_persistence_gtest_runner_app TEST
     DEPENDS
     vespa_storage
     storage_testpersistence_common
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test(

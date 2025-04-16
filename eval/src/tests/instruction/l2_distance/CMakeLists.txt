@@ -5,6 +5,6 @@ vespa_add_executable(eval_l2_distance_test_app TEST
     l2_distance_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_l2_distance_test_app COMMAND eval_l2_distance_test_app)

@@ -8,6 +8,6 @@ vespa_add_executable(searchcore_documentmetastore_test_app TEST
     searchcore_bucketdb
     searchcore_attribute
     searchcore_feedoperation
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_documentmetastore_test_app COMMAND searchcore_documentmetastore_test_app)

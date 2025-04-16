@@ -4,6 +4,6 @@ vespa_add_executable(eval_universal_dot_product_test_app TEST
     universal_dot_product_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_universal_dot_product_test_app COMMAND eval_universal_dot_product_test_app)

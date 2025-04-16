@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_enum_attribute_compaction_test_app TEST
     enum_attribute_compaction_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_enum_attribute_compaction_test_app COMMAND searchlib_enum_attribute_compaction_test_app COST 100)

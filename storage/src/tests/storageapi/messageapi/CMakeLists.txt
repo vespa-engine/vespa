@@ -4,5 +4,5 @@ vespa_add_library(storageapi_testmessageapi
     storage_message_address_test.cpp
     DEPENDS
     vespa_storage
-    GTest::GTest
+    GTest::gtest
 )

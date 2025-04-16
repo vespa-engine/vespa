@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_schema_builder_test_app TEST
     schema_builder_test.cpp
     DEPENDS
     searchlib_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_schema_builder_test_app COMMAND searchlib_schema_builder_test_app)

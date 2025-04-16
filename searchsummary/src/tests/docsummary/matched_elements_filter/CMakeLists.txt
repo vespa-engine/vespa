@@ -4,6 +4,6 @@ vespa_add_executable(searchsummary_matched_elements_filter_test_app TEST
     matched_elements_filter_test.cpp
     DEPENDS
     vespa_searchsummary
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchsummary_matched_elements_filter_test_app COMMAND searchsummary_matched_elements_filter_test_app)

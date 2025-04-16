@@ -4,6 +4,6 @@ vespa_add_executable(eval_inline_operation_test_app TEST
     inline_operation_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_inline_operation_test_app COMMAND eval_inline_operation_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(searchcore_attribute_usage_stats_test_app TEST
     attribute_usage_stats_test.cpp
     DEPENDS
     searchcore_attribute
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_attribute_usage_stats_test_app COMMAND searchcore_attribute_usage_stats_test_app)

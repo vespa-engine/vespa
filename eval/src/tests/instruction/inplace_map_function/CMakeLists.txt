@@ -4,6 +4,6 @@ vespa_add_executable(eval_inplace_map_function_test_app TEST
     inplace_map_function_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_inplace_map_function_test_app COMMAND eval_inplace_map_function_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_process_test_app TEST
     process_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_process_test_app COMMAND vespalib_process_test_app COST 30)

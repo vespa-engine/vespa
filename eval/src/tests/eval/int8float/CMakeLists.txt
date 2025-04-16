@@ -4,6 +4,6 @@ vespa_add_executable(eval_int8float_test_app TEST
     int8float_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_int8float_test_app COMMAND eval_int8float_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(searchcorespi_disk_indexes_test_app
     disk_indexes_test.cpp
     DEPENDS
     searchcorespi
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcorespi_disk_indexes_test_app COMMAND searchcorespi_disk_indexes_test_app)

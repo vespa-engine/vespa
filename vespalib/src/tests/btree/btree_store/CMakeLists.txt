@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_btree_store_test_app TEST
     btree_store_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_btree_store_test_app COMMAND vespalib_btree_store_test_app COST 30)

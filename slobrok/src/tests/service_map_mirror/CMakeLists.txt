@@ -4,6 +4,6 @@ vespa_add_executable(slobrok_service_map_mirror_test_app TEST
     service_map_mirror_test.cpp
     DEPENDS
     vespa_slobrok_slobrokserver
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME slobrok_service_map_mirror_test_app COMMAND slobrok_service_map_mirror_test_app)

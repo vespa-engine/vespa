@@ -5,6 +5,6 @@ vespa_add_executable(fbench_authority_test_app TEST
     DEPENDS
     fbench_util
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME fbench_authority_test_app COMMAND fbench_authority_test_app)

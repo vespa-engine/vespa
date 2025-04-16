@@ -4,6 +4,6 @@ vespa_add_executable(streamingvisitors_rank_processor_test_app TEST
     rank_processor_test.cpp
     DEPENDS
     vespa_streamingvisitors
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME streamingvisitors_rank_processor_test_app COMMAND streamingvisitors_rank_processor_test_app)

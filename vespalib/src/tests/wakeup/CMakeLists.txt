@@ -4,5 +4,5 @@ vespa_add_executable(vespalib_wakeup_bench_app TEST
     wakeup_bench.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
