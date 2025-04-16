@@ -197,7 +197,9 @@ switch_sort_order(SortData value)
     std::span<const unsigned char> src(value.data() + 1, value.size() - 1);
     SortData s;
     s.reserve(src.size() + 1);
-    s.emplace_back(value[0]);
+    // Cannot use emplace_back() here due to bogus gcc 15 warning.
+    s.resize(1);
+    s[0] = value[0];
     for (auto c : src) {
         s.emplace_back(c ^ 255);
     }
