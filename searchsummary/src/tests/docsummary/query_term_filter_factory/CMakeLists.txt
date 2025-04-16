@@ -4,6 +4,6 @@ vespa_add_executable(searchsummary_query_term_filter_factory_test_app TEST
     query_term_filter_factory_test.cpp
     DEPENDS
     vespa_searchsummary
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchsummary_query_term_filter_factory_test_app COMMAND searchsummary_query_term_filter_factory_test_app)

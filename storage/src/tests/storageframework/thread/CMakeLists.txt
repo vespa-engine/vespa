@@ -5,5 +5,5 @@ vespa_add_library(storageframework_testthread
     taskthreadtest.cpp
     DEPENDS
     vespa_storage
-    GTest::GTest
+    GTest::gtest
 )

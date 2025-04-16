@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_posting_store_test_app TEST
     posting_store_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_posting_store_test_app COMMAND searchlib_posting_store_test_app COST 30)

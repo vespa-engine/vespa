@@ -4,6 +4,6 @@ vespa_add_executable(streamingvisitors_query_term_filter_factory_test_app TEST
     query_term_filter_factory_test.cpp
     DEPENDS
     vespa_streamingvisitors
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME streamingvisitors_query_term_filter_factory_test_app COMMAND streamingvisitors_query_term_filter_factory_test_app)

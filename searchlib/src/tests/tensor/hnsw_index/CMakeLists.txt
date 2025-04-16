@@ -5,7 +5,7 @@ vespa_add_executable(searchlib_hnsw_index_test_app TEST
     DEPENDS
     searchlib_test
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_hnsw_index_test_app COMMAND searchlib_hnsw_index_test_app)
 
@@ -14,5 +14,5 @@ vespa_add_executable(mt_stress_hnsw_app TEST
     stress_hnsw_mt.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )

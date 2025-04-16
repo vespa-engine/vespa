@@ -5,6 +5,6 @@ vespa_add_executable(searchcore_attribute_transient_memory_calculator_test_app T
     DEPENDS
     searchcore_attribute
     searchcore_pcommon
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_attribute_transient_memory_calculator_test_app COMMAND searchcore_attribute_transient_memory_calculator_test_app)

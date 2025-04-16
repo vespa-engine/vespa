@@ -4,6 +4,6 @@ vespa_add_executable(searchcommon_schema_test_app TEST
     schema_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcommon_schema_test_app NO_VALGRIND COMMAND searchcommon_schema_test_app)

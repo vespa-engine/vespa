@@ -5,6 +5,6 @@ vespa_add_executable(searchcore_disk_mem_usage_sampler_test_app TEST
     DEPENDS
     searchcore_test
     searchcore_server
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_disk_mem_usage_sampler_test_app COMMAND searchcore_disk_mem_usage_sampler_test_app)

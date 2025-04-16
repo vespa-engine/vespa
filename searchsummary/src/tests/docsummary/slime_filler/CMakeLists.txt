@@ -4,6 +4,6 @@ vespa_add_executable(searchsummary_slime_filler_test_app TEST
     slime_filler_test.cpp
     DEPENDS
     vespa_searchsummary
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchsummary_slime_filler_test_app COMMAND searchsummary_slime_filler_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(eval_unpack_bits_function_test_app TEST
     unpack_bits_function_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_unpack_bits_function_test_app COMMAND eval_unpack_bits_function_test_app)

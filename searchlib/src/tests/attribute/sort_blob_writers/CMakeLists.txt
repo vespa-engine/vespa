@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_sort_blob_writers_test_app TEST
     sort_blob_writers_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_sort_blob_writers_test_app COMMAND searchlib_sort_blob_writers_test_app)

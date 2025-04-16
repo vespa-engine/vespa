@@ -4,6 +4,6 @@ vespa_add_executable(eval_index_lookup_table_test_app TEST
     index_lookup_table_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_index_lookup_table_test_app COMMAND eval_index_lookup_table_test_app)

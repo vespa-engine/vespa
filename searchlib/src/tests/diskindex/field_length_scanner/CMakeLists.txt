@@ -5,6 +5,6 @@ vespa_add_executable(searchlib_field_length_scanner_test_app TEST
     DEPENDS
     vespa_searchlib
     searchlib_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_field_length_scanner_test_app COMMAND searchlib_field_length_scanner_test_app)

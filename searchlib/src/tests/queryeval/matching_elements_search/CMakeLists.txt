@@ -6,6 +6,6 @@ vespa_add_executable(searchlib_matching_elements_search_test_app TEST
     DEPENDS
     vespa_searchlib
     searchlib_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_matching_elements_search_test_app COMMAND searchlib_matching_elements_search_test_app)

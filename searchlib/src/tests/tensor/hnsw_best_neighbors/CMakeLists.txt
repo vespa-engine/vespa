@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_hnsw_best_neighbors_test_app TEST
     hnsw_best_neighbors_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_hnsw_best_neighbors_test_app COMMAND searchlib_hnsw_best_neighbors_test_app)

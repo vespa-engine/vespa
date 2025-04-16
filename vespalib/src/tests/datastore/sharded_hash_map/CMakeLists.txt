@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_sharded_hash_map_test_app
     sharded_hash_map_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_sharded_hash_map_test_app COMMAND vespalib_sharded_hash_map_test_app)

@@ -5,5 +5,5 @@ vespa_add_library(vdslib_testdistribution
     grouptest.cpp
     DEPENDS
     vespa_vdslib
-    GTest::GTest
+    GTest::gtest
 )

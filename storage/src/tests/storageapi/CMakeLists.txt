@@ -8,7 +8,7 @@ vespa_add_executable(storageapi_gtest_runner_app TEST
     storageapi_testmbusprot
     storageapi_testmessageapi
     vespa_storage
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test(

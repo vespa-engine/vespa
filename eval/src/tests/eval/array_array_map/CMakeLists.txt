@@ -5,6 +5,6 @@ vespa_add_executable(eval_array_array_map_test_app TEST
     array_array_map_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_array_array_map_test_app COMMAND eval_array_array_map_test_app)

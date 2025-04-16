@@ -4,7 +4,7 @@ vespa_add_executable(searchcore_lid_state_vector_test_app TEST
     lid_state_vector_test.cpp
     DEPENDS
     searchcore_documentmetastore
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_lid_state_vector_test_app COMMAND searchcore_lid_state_vector_test_app)
 

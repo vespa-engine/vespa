@@ -4,6 +4,6 @@ vespa_add_executable(streamingvisitors_hitcollector_test_app TEST
     hitcollector_test.cpp
     DEPENDS
     vespa_streamingvisitors
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME streamingvisitors_hitcollector_test_app COMMAND streamingvisitors_hitcollector_test_app)

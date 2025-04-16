@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_waiting_for_test_app TEST
     waiting_for_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_waiting_for_test_app COMMAND vespalib_waiting_for_test_app)

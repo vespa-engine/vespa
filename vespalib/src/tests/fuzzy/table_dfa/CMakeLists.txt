@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_fuzzy_table_dfa_test_app TEST
         table_dfa_test.cpp
         DEPENDS
         vespalib
-        GTest::GTest
+        GTest::gtest
         )
 vespa_add_test(NAME vespalib_fuzzy_table_dfa_test_app COMMAND vespalib_fuzzy_table_dfa_test_app)

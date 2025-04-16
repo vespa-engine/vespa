@@ -4,6 +4,6 @@ vespa_add_executable(searchcore_operation_rate_tracker_test_app TEST
     operation_rate_tracker_test.cpp
     DEPENDS
     searchcore_pcommon
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_operation_rate_tracker_test_app COMMAND searchcore_operation_rate_tracker_test_app)

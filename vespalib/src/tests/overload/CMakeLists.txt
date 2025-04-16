@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_overload_test_app TEST
     overload_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_overload_test_app COMMAND vespalib_overload_test_app)

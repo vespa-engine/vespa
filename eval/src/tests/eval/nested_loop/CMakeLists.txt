@@ -4,7 +4,7 @@ vespa_add_executable(eval_nested_loop_test_app TEST
     nested_loop_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_nested_loop_test_app COMMAND eval_nested_loop_test_app)
 vespa_add_executable(eval_nested_loop_bench_app TEST
@@ -12,5 +12,5 @@ vespa_add_executable(eval_nested_loop_bench_app TEST
     nested_loop_bench.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )

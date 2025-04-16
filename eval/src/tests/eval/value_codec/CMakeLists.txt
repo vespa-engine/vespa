@@ -5,6 +5,6 @@ vespa_add_executable(eval_value_codec_test_app TEST
     value_codec_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_value_codec_test_app COMMAND eval_value_codec_test_app)

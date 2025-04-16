@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_extendattribute_test_app TEST
     extendattribute_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_extendattribute_test_app COMMAND searchlib_extendattribute_test_app)

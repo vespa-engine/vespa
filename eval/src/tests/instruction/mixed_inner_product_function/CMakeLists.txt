@@ -4,6 +4,6 @@ vespa_add_executable(eval_mixed_inner_product_function_test_app TEST
     mixed_inner_product_function_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_mixed_inner_product_function_test_app COMMAND eval_mixed_inner_product_function_test_app)

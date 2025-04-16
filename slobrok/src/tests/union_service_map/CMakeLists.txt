@@ -4,6 +4,6 @@ vespa_add_executable(slobrok_union_service_map_test_app TEST
     union_service_map_test.cpp
     DEPENDS
     vespa_slobrok_slobrokserver
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME slobrok_union_service_map_test_app COMMAND slobrok_union_service_map_test_app)

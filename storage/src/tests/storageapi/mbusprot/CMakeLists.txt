@@ -4,5 +4,5 @@ vespa_add_library(storageapi_testmbusprot
     storageprotocoltest.cpp
     DEPENDS
     vespa_storage
-    GTest::GTest
+    GTest::gtest
 )

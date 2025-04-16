@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_slime_output_raw_buf_adapter_test_app TEST
     slime_output_raw_buf_adapter_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_slime_output_raw_buf_adapter_test_app COMMAND searchlib_slime_output_raw_buf_adapter_test_app)

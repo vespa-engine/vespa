@@ -6,5 +6,5 @@ vespa_add_library(vdslib_containertest
     documentsummarytest.cpp
     DEPENDS
     vespa_vdslib
-    GTest::GTest
+    GTest::gtest
 )

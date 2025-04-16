@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_execution_profiler_test_app TEST
     execution_profiler_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_execution_profiler_test_app COMMAND vespalib_execution_profiler_test_app)

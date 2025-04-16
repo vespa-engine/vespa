@@ -16,7 +16,7 @@ vespa_add_executable(vespalib_signalhandler_test_app TEST
     DEPENDS
     vespalib
     vespalib_signalhandler_test_my_shared_library
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_signalhandler_test_app NO_VALGRIND COMMAND vespalib_signalhandler_test_app)
 vespa_add_executable(vespalib_victim_app

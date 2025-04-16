@@ -4,6 +4,6 @@ vespa_add_executable(searchcore_alloc_config_test_app TEST
     alloc_config_test.cpp
     DEPENDS
     searchcore_pcommon
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_alloc_config_test_app COMMAND searchcore_alloc_config_test_app)

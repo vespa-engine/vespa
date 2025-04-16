@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_string_field_builder_test_app TEST
     string_field_builder_test.cpp
     DEPENDS
     searchlib_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_string_field_builder_test_app COMMAND searchlib_string_field_builder_test_app)

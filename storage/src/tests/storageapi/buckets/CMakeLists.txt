@@ -4,5 +4,5 @@ vespa_add_library(storageapi_testbuckets
     bucketinfotest.cpp
     DEPENDS
     vespa_storage
-    GTest::GTest
+    GTest::gtest
 )

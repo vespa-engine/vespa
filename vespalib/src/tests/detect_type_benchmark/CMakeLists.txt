@@ -4,5 +4,5 @@ vespa_add_executable(vespalib_detect_type_benchmark_app TEST
     detect_type_benchmark.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )

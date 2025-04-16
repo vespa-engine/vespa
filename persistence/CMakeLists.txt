@@ -13,7 +13,7 @@ vespa_define_module(
     src/vespa/persistence/spi
 
     TEST_DEPENDS
-    GTest::GTest
+    GTest::gtest
 
     TESTS
     src/tests

@@ -5,6 +5,6 @@ vespa_add_executable(searchcore_shared_threading_service_test_app TEST
     DEPENDS
     searchcore_test
     searchcore_server
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_shared_threading_service_test_app COMMAND searchcore_shared_threading_service_test_app)

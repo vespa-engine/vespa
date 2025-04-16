@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_tensor_buffer_operations_test_app TEST
     tensor_buffer_operations_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_tensor_buffer_operations_test_app COMMAND searchlib_tensor_buffer_operations_test_app)

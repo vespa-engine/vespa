@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_visit_ranges_test_app TEST
     visit_ranges_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_visit_ranges_test_app COMMAND vespalib_visit_ranges_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_rw_spin_lock_test_app TEST
     rw_spin_lock_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_rw_spin_lock_test_app NO_VALGRIND COMMAND vespalib_rw_spin_lock_test_app)

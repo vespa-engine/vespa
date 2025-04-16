@@ -2,7 +2,7 @@
 # @author Vegard Sjonfjell
 # @author Eirik Nygaard
 # @author Arnstein Ressem
-cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.20 FATAL_ERROR)
 
 include(functions.cmake)
 list(APPEND CMAKE_MODULE_PATH

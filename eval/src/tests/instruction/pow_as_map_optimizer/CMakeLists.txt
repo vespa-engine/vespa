@@ -4,6 +4,6 @@ vespa_add_executable(eval_pow_as_map_optimizer_test_app TEST
     pow_as_map_optimizer_test.cpp
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_pow_as_map_optimizer_test_app COMMAND eval_pow_as_map_optimizer_test_app)

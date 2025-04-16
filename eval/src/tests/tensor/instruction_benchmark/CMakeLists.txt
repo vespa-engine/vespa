@@ -6,6 +6,6 @@ vespa_add_executable(vespa-tensor-instructions-benchmark TEST
     INSTALL bin
     DEPENDS
     vespaeval
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME eval_tensor_instruction_test COMMAND vespa-tensor-instructions-benchmark --smoke-test)

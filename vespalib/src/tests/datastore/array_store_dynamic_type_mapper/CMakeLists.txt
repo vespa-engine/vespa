@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_array_store_dynamic_type_mapper_test_app TEST
     array_store_dynamic_type_mapper_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_array_store_dynamic_type_mapper_test_app COMMAND vespalib_array_store_dynamic_type_mapper_test_app)

@@ -4,6 +4,6 @@ vespa_add_executable(searchlib_queryeval_profiled_iterator_test_app TEST
     profiled_iterator_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_queryeval_profiled_iterator_test_app COMMAND searchlib_queryeval_profiled_iterator_test_app)

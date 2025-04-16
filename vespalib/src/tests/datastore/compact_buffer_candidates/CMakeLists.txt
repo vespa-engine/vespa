@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_compact_buffer_candidates_test_app TEST
     compact_buffer_candidates_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_compact_buffer_candidates_test_app COMMAND vespalib_compact_buffer_candidates_test_app)

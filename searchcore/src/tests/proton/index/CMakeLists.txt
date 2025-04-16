@@ -8,7 +8,7 @@ vespa_add_executable(searchcore_indexmanager_test_app TEST
     searchcore_index
     searchcore_flushengine
     searchcore_pcommon
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test(NAME searchcore_indexmanager_test_app
@@ -44,7 +44,7 @@ vespa_add_executable(searchcore_indexcollection_test_app TEST
     indexcollection_test.cpp
     DEPENDS
     searchcore_index
-    GTest::GTest
+    GTest::gtest
 )
 
 vespa_add_test(NAME searchcore_indexcollection_test_app

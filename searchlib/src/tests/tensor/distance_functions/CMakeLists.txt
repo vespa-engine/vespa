@@ -4,7 +4,7 @@ vespa_add_executable(searchlib_distance_functions_test_app TEST
     distance_functions_test.cpp
     DEPENDS
     vespa_searchlib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_distance_functions_test_app COMMAND searchlib_distance_functions_test_app)
 

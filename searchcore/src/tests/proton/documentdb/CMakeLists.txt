@@ -50,6 +50,6 @@ vespa_add_executable(searchcore_proton_documentdb_gtest_test_app TEST
     searchcore_server
     searchcore_feedoperation
     searchcore_test
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME searchcore_proton_documentdb_gtest_test_app COMMAND searchcore_proton_documentdb_gtest_test_app)

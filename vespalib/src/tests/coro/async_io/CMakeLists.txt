@@ -4,6 +4,6 @@ vespa_add_executable(vespalib_async_io_test_app TEST
     async_io_test.cpp
     DEPENDS
     vespalib
-    GTest::GTest
+    GTest::gtest
 )
 vespa_add_test(NAME vespalib_async_io_test_app COMMAND vespalib_async_io_test_app)
