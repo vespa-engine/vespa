@@ -4,7 +4,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/util/process_memory_stats.h>
 #include <vespa/vespalib/util/size_literals.h>
-#include <cstdio>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <fcntl.h>
@@ -15,12 +15,12 @@ using namespace vespalib;
 class ProcessMemoryStatsTest : public ::testing::Test
 {
 protected:
-    void SetUp() override {
-        std::remove("mapfile");
+    static void SetUpTestSuite() {
+        std::filesystem::remove("mapfile");
     }
 
-    void TearDown() override {
-        std::remove("mapfile");
+    static void TearDownTestSuite() {
+        std::filesystem::remove("mapfile");
     }
 
     static constexpr double SIZE_EPSILON = 0.01;
