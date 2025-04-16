@@ -24,7 +24,7 @@ type defaultClient struct {
 	client *http.Client
 }
 
-func (c *defaultClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
+func (c *defaultClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, err error) {
 	if c.client.Timeout != timeout { // Set wanted timeout
 		c.client.Timeout = timeout
 	}

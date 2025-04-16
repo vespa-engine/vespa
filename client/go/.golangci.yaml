@@ -1,0 +1,25 @@
+linters:
+  enable:
+    - asciicheck # Simple linter to check that your code does not contain non-ASCII identifiers.
+    - bidichk # Checks for dangerous unicode character sequences.
+    - copyloopvar # Finds exporting pointers for loop variables.
+    - dupword # Finds duplicated words.
+    - errname # Finds errors that have not been named.
+    - errorlint # Error linting
+    - gci # Gci control golang package import order and make it always deterministic. # Not yet working for go 1.18
+    - godot # Check if comments end in a period
+    - gofmt # Basic Golang formatter.
+    - gofumpt # Gofumpt is a stricter gofmt.
+    - misspell # Finds commonly misspelled English words in comments.
+    - musttag # Finds missing or incorrect tags.
+    - nakedret # Finds naked returns.
+    - nilerr # Finds errors that are checked for nil.
+    - predeclared # Finds shadowed predeclared identifiers.
+    - stylecheck # Finds code that does not follow go styleguide.
+    - unconvert # Finds unnecessary type conversions.
+    - unused # Finds unused variables, constants, functions and types.
+    - usestdlibvars # Finds variables that can be replaced with their equivalents from the standard library.
+    - rowserrcheck # checks whether Err of rows is checked successfully.
+    - sqlclosecheck # Checks that sql.Rows and sql.Stmt are closed.
+    - wastedassign # Finds unused assignments.
+    - whitespace # Finds leading and trailing whitespace.
