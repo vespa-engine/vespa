@@ -121,4 +121,26 @@ public:
     virtual const BucketResultNode& getNullBucket() const;
 };
 
+class HoldString {
+public:
+    HoldString(const ResultNode &rv, size_t idx = 0) {
+        _res = rv.getString(idx, {_num_buf, sizeof(_num_buf)});
+    }
+    HoldString(HoldString &&) = delete;
+    HoldString(const HoldString &) = delete;
+    HoldString& operator=(HoldString &&) = delete;
+    HoldString& operator=(const HoldString &) = delete;
+    const char *data() const noexcept { return _res.c_str(); }
+    size_t size() const noexcept { return _res.size(); }
+    operator vespalib::ConstBufferRef() const noexcept {
+        return _res;
+    }
+    operator std::string_view() const noexcept {
+        return {data(), size()};
+    }
+private:
+    vespalib::ConstBufferRef _res;
+    char _num_buf[32]; // for numbers converted to string
+};
+
 }

@@ -105,7 +105,7 @@ createMulti() {
 AttributeNode::AttributeNode() :
     FunctionNode(),
     _scratchResult(std::make_unique<AttributeResult>()),
-    _index(nullptr),
+    _currentIndex(nullptr),
     _keepAliveForIndexLookups(),
     _hasMultiValue(false),
     _useEnumOptimization(false),
@@ -119,7 +119,7 @@ AttributeNode::~AttributeNode() = default;
 AttributeNode::AttributeNode(std::string_view name)
     : FunctionNode(),
       _scratchResult(std::make_unique<AttributeResult>()),
-      _index(nullptr),
+      _currentIndex(nullptr),
       _keepAliveForIndexLookups(),
       _hasMultiValue(false),
       _useEnumOptimization(false),
@@ -131,7 +131,7 @@ AttributeNode::AttributeNode(std::string_view name)
 AttributeNode::AttributeNode(const IAttributeVector & attribute)
     : FunctionNode(),
       _scratchResult(createResult(&attribute)),
-      _index(nullptr),
+      _currentIndex(nullptr),
       _keepAliveForIndexLookups(),
       _hasMultiValue(attribute.hasMultiValue()),
       _useEnumOptimization(false),
@@ -143,7 +143,7 @@ AttributeNode::AttributeNode(const IAttributeVector & attribute)
 AttributeNode::AttributeNode(const AttributeNode & attribute)
     : FunctionNode(attribute),
       _scratchResult(attribute._scratchResult->clone()),
-      _index(nullptr),
+      _currentIndex(nullptr),
       _keepAliveForIndexLookups(),
       _hasMultiValue(attribute._hasMultiValue),
       _useEnumOptimization(attribute._useEnumOptimization),
@@ -248,7 +248,7 @@ AttributeNode::onPrepare(bool preserveAccurateTypes)
     if (attribute != nullptr) {
         auto[result, handler] = createResultHandler(preserveAccurateTypes, *attribute);
         _handler = std::move(handler);
-        if (_index == nullptr) {
+        if (_currentIndex == nullptr) {
             setResultType(std::move(result));
         } else {
             assert(_hasMultiValue);
@@ -323,9 +323,9 @@ AttributeNode::onExecute() const
             _handler->handle(*_scratchResult);
             _needExecute = false;
         }
-        if ((_index != nullptr) && !_keepAliveForIndexLookups->empty()) {
+        if ((_currentIndex != nullptr) && !_keepAliveForIndexLookups->empty()) {
             assert(_hasMultiValue);
-            size_t idx = std::min(size_t(_index->get()), _keepAliveForIndexLookups->size() - 1);
+            size_t idx = std::min(size_t(_currentIndex->get()), _keepAliveForIndexLookups->size() - 1);
             updateResult().set(_keepAliveForIndexLookups->get(idx));
         }
     } else {

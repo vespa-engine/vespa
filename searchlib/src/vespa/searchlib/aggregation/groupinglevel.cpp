@@ -48,7 +48,7 @@ GroupingLevel::onDeserialize(Deserializer & is)
 
 Serializer &
 GroupingLevel::serializeVariant(Serializer & os, bool allowV2) const {
-    if (allowV2 && _filter.getRoot()) {
+    if (allowV2 && _filter.get()) {
         uint32_t cid = CID_search_aggregation_GroupingLevelV2;
         return os << cid << _maxGroups << _precision << _classify << _filter << _collect;
     } else {
@@ -82,6 +82,9 @@ void
 GroupingLevel::selectMembers(const vespalib::ObjectPredicate & predicate, vespalib::ObjectOperation & operation)
 {
     _classify.select(predicate, operation);
+    if (_filter.get()) {
+        _filter->select(predicate, operation);
+    }
     _collect.select(predicate, operation);
 }
 
@@ -104,9 +107,11 @@ template<typename Doc>
 void
 GroupingLevel::SingleValueGrouper::groupDoc(Group & g, const ResultNode & result, const Doc & doc, HitRank rank) const
 {
-    Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
-    if ((next != nullptr) && doNext()) { // do next level ?
-        next->aggregate(*_grouping, _level + 1, doc, rank);
+    if (_filter.allow(doc, rank)) {
+        Group * next = g.groupSingle(result, rank, _grouping->getLevels()[_level]);
+        if ((next != nullptr) && doNext()) { // do next level ?
+            next->aggregate(*_grouping, _level + 1, doc, rank);
+        }
     }
 }
 
@@ -117,7 +122,7 @@ GroupingLevel::MultiValueGrouper::groupDoc(Group & g, const ResultNode & result,
     const ResultNodeVector & rv(static_cast<const ResultNodeVector &>(result));
     for (size_t i(0), m(rv.size()); i < m; i++) {
         const ResultNode & sr(rv.get(i));
-        _currentIndex->set(i);
+        _currentIndex.set(i);
         SingleValueGrouper::groupDoc(g, sr, doc, rank);
     }
 }
@@ -130,8 +135,11 @@ GroupingLevel::wire_current_index(CurrentIndexSetup &setup, const vespalib::Obje
         CurrentIndexSetup::Usage::Bind capture_guard(setup, usage);
         _classify.select(resolve_pred, resolve_op);
     }
-    if (usage.has_single_unbound_struct()) {
-        setup.bind(usage.get_unbound_struct_name(), _currentIndex);
+    if (usage.has_single_unbound_name()) {
+        setup.bind(usage.get_unbound_name(), _currentIndex);
+    }
+    if (_filter.get()) {
+        _filter->select(resolve_pred, resolve_op);
     }
     _collect.select(resolve_pred, resolve_op);
 }
@@ -142,9 +150,9 @@ GroupingLevel::prepare(const Grouping * grouping, uint32_t level, bool isOrdered
     _isOrdered = isOrdered_;
     _frozen = level < grouping->getFirstLevel();
     if (_classify.getResult()->inherits(ResultNodeVector::classId)) {
-       _grouper.reset(new MultiValueGrouper(&_currentIndex, grouping, level));
+        _grouper.reset(new MultiValueGrouper(_currentIndex, getActiveFilter(), grouping, level));
     } else {
-       _grouper.reset(new SingleValueGrouper(grouping, level));
+        _grouper.reset(new SingleValueGrouper(getActiveFilter(), grouping, level));
     }
 }
 

@@ -16,14 +16,14 @@ public:
     private:
         friend class CurrentIndexSetup;
         vespalib::hash_set<std::string> _unbound;
-        void notify_unbound_struct_usage(std::string_view name);
+        void notify_unbound_name_usage(std::string_view name);
     public:
         Usage();
         ~Usage();
-        [[nodiscard]] bool has_single_unbound_struct() const noexcept {
+        [[nodiscard]] bool has_single_unbound_name() const noexcept {
             return (_unbound.size() == 1);
         }
-        std::string_view get_unbound_struct_name() const;
+        std::string_view get_unbound_name() const;
         class Bind {
         private:
             CurrentIndexSetup &_setup;
