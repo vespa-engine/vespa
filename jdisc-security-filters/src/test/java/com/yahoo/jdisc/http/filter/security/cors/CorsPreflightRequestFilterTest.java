@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
-import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
+import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.DEFAULT_ACCESS_CONTROL_HEADERS;
 import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -32,7 +32,7 @@ public class CorsPreflightRequestFilterTest {
     @Test
     void any_options_request_yields_access_control_headers_in_response() {
         HeaderFields headers = doFilterRequest(newRequestFilter(), "http://any.origin");
-        ACCESS_CONTROL_HEADERS.keySet().forEach(
+        DEFAULT_ACCESS_CONTROL_HEADERS.keySet().forEach(
                 header -> assertFalse(headers.getFirst(header).isEmpty(), "Empty header: " + header));
     }
 
