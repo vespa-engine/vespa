@@ -1,3 +1,9 @@
+## 1.0.0
+- adds detect_schema support
+
+## 0.8.0
+- adds token authentication support
+
 ## 0.7.0
 - adds dead letter queue support
 
