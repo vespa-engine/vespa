@@ -56,9 +56,9 @@ func (tp *topNPerf) topN(n int) []topNPerfEntry {
 
 func (tp *topNPerf) render(out *output) {
 	sortedEntries := tp.topN(len(tp.entries))
-	tab := newTable("count", "self_ms", "component")
+	tab := newTable().str("count").str("self_ms").str("component").commit().line()
 	for _, entry := range sortedEntries {
-		tab.addRow(fmt.Sprintf("%d", entry.count), fmt.Sprintf("%.3f", entry.selfTimeMs), entry.name)
+		tab.str(fmt.Sprintf("%d", entry.count)).str(fmt.Sprintf("%.3f", entry.selfTimeMs)).str(entry.name).commit()
 	}
 	tab.render(out)
 }

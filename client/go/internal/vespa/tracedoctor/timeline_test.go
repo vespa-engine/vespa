@@ -68,10 +68,10 @@ func TestTimelineRender(t *testing.T) {
 	tl.render(out)
 
 	var expected bytes.Buffer
-	tab := newTable("timestamp", "event")
-	tab.addRow("1.230 ms", "Start event")
-	tab.addRow("", "This is a comment")
-	tab.addRow("45.670 ms", "End event")
+	tab := newTable().str("timestamp").str("event").commit().line()
+	tab.str("1.230 ms").str("Start event").commit()
+	tab.str("").str("This is a comment").commit()
+	tab.str("45.670 ms").str("End event").commit()
 	tab.render(&output{out: &expected})
 
 	assert.Equal(t, expected.String(), actual.String(), "Rendered output does not match expected")

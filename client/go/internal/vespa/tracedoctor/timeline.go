@@ -41,13 +41,14 @@ func (t *timeline) addComment(what string) {
 }
 
 func (t *timeline) render(out *output) {
-	tab := newTable("timestamp", "event")
+	tab := newTable().str("timestamp").str("event").commit().line()
 	for _, entry := range t.list {
 		if entry.when < 0.0 {
-			tab.addRow("", entry.what)
+			tab.str("")
 		} else {
-			tab.addRow(fmt.Sprintf("%.3f ms", entry.when), entry.what)
+			tab.str(fmt.Sprintf("%.3f ms", entry.when))
 		}
+		tab.str(entry.what).commit()
 	}
 	tab.render(out)
 }
