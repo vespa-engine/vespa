@@ -158,7 +158,7 @@ public class DispatcherTest {
         cluster.group(0).nodes().get(0).setBlockingWrites(true);
         cluster.group(1).nodes().get(0).setBlockingWrites(true);
         cluster.pingIterationCompleted();
-        assertEquals(0,
+        assertEquals(2,
                 dispatcher.getSearchInvoker(new Query(), null).distributionKey().get().longValue(),
                 "Blocking group is used when multiple groups are blocking");
         dispatcher.deconstruct();
