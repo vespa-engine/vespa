@@ -39,4 +39,8 @@ public interface SearchGroups {
 
     boolean isPartialGroupCoverageSufficient(boolean currentCoverageSufficient, Collection<Node> nodes);
 
+    boolean hasBetterCoverageThan(long groupDocumentCount, long documentCount);
+
+    long maxDocumentCount();
+
 }

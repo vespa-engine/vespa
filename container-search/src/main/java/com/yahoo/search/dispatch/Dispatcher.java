@@ -321,7 +321,7 @@ public class Dispatcher extends AbstractComponent {
         int covered = cluster.groupsWithSufficientCoverage();
         int groups = cluster.groupList().size();
         int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
-        Set<Integer> rejected = rejectGroupBlockingFeed(cluster.groupList().groups());
+        Set<Integer> rejected = rejectGroupBlockingFeed(cluster.groupList());
         for (int i = 0; i < max; i++) {
             Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
             if (groupInCluster.isEmpty()) break; // No groups available
@@ -350,24 +350,21 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /**
-     * We want to avoid groups blocking feed because their data may be out of date.
-     * If there is a single group blocking feed, we want to reject it.
-     * If multiple groups are blocking feed we should use them anyway as we may not have remaining
-     * capacity otherwise. Same if there are no other groups.
-     * If one of the groups is blocking feed and the others do not have coverage, we should not reject it.
+     * We want to avoid using groups blocking feed because their data may be out of date.
+     * Reject groups that are feed blocked and have fewer documents than max documents in any group.
      *
      * @return a modifiable set containing the single group to reject, or null otherwise
      */
-    static Set<Integer> rejectGroupBlockingFeed(Collection<Group> groups) {
+    static Set<Integer> rejectGroupBlockingFeed(SearchGroups groups) {
         if (groups.size() == 1) return null;
 
-        List<Group> groupsRejectingFeed = groups.stream().filter(Group::isBlockingWrites).toList();
-        if (groupsRejectingFeed.size() != 1) return null;
-
-        long withoutCoverage = groups.stream().filter(group -> !group.hasSufficientCoverage()).count();
-        if ((groups.size() - withoutCoverage) == 1) return null;
-
-        return new HashSet<>(Set.of(groupsRejectingFeed.get(0).id()));
+        long maxDocuments = groups.maxDocumentCount();
+        var groupsRejectingFeed = groups.groups().stream()
+                                        .filter(Group::isBlockingWrites)
+                                        .filter(group -> ! groups.hasBetterCoverageThan(group.activeDocuments(), maxDocuments))
+                                        .map(Group::id)
+                                        .toList();
+        return (groupsRejectingFeed.isEmpty() ? null : new HashSet<>(groupsRejectingFeed));
     }
 
 }

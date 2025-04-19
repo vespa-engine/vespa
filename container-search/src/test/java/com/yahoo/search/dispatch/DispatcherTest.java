@@ -182,35 +182,52 @@ public class DispatcherTest {
         SearchCluster cluster = new MockSearchCluster("1", 2, 1);
         // Note: these tests check return value from rejectGroupBlockingFeed() only
 
-        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+        // If no groups are feed blocked, don't reject any group
+        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList()));
 
         // If one group is feed blocked, reject it
         cluster.groupList().groups().forEach(group -> group.setHasSufficientCoverage(true));
         cluster.group(0).nodes().get(0).setBlockingWrites(true);
         cluster.groupList().groups().forEach(Group::aggregateNodeValues);
-        assertEquals(Set.of(0), Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+        assertEquals(Set.of(0), Dispatcher.rejectGroupBlockingFeed(cluster.groupList()));
 
         // If one group is feed blocked and the other is unavailable, don't reject the group with feed blocked
+        // if it has enough active documents (same as max for all groups)
         cluster.group(0).nodes().get(0).setBlockingWrites(true);
+        cluster.group(0).nodes().get(0).setActiveDocuments(10);
         cluster.group(1).setHasSufficientCoverage(false);
         cluster.groupList().groups().forEach(Group::aggregateNodeValues);
-        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList()));
 
-        // If both groups are feed blocked, don't reject any group
+        // If one group is feed blocked and the other is unavailable, do reject the group with feed blocked
+        // if it does not have enough active documents (i.e. less than max for all groups)
         cluster.group(0).nodes().get(0).setBlockingWrites(true);
-        cluster.group(1).nodes().get(0).setBlockingWrites(true);
+        cluster.group(0).nodes().get(0).setActiveDocuments(10); // fewer active docs than max
+        cluster.group(1).setHasSufficientCoverage(false);
+        cluster.group(1).nodes().get(0).setActiveDocuments(20);
         cluster.groupList().groups().forEach(Group::aggregateNodeValues);
-        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+        assertEquals(Set.of(0), Dispatcher.rejectGroupBlockingFeed(cluster.groupList()));
+
+        // If both groups are feed blocked, reject the one with too few active documents
+        cluster.group(0).nodes().get(0).setBlockingWrites(true);
+        cluster.group(0).nodes().get(0).setActiveDocuments(10); // fewer active docs than max
+        cluster.group(1).nodes().get(0).setBlockingWrites(true);
+        cluster.group(1).nodes().get(0).setActiveDocuments(20);
+        cluster.groupList().groups().forEach(Group::aggregateNodeValues);
+        assertEquals(Set.of(0), Dispatcher.rejectGroupBlockingFeed(cluster.groupList()));
 
         // 3 groups. If one group is feed blocked and the two others have insufficient coverage,
-        // don't reject the group
+        // don't reject the group if it has enough active documents (same as max for all groups)
         cluster = new MockSearchCluster("1", 3, 1);
         cluster.group(0).setHasSufficientCoverage(true);
         cluster.group(0).nodes().get(0).setBlockingWrites(true);
+        cluster.group(0).nodes().get(0).setActiveDocuments(10);
         cluster.group(1).setHasSufficientCoverage(false);
+        cluster.group(1).nodes().get(0).setActiveDocuments(10);
         cluster.group(2).setHasSufficientCoverage(false);
+        cluster.group(2).nodes().get(0).setActiveDocuments(10);
         cluster.groupList().groups().forEach(Group::aggregateNodeValues);
-        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList().groups()));
+        assertNull(Dispatcher.rejectGroupBlockingFeed(cluster.groupList()));
     }
 
     @Test
@@ -318,8 +335,8 @@ public class DispatcherTest {
         // We need to wait for the cluster to have at least one group, lest dispatch will fail below.
         reconfiguration.get();
         assertNotEquals(cleanupThreadId.get(), Thread.currentThread().getId());
-        assertEquals(1, cluster.group(0).workingNodes());
-        assertEquals(1, cluster.group(1).workingNodes());
+        assertEquals(1, cluster.group(0).workingNodesCount());
+        assertEquals(1, cluster.group(1).workingNodesCount());
 
         Node node0 = cluster.group(0).nodes().get(0); // Node0 will be replaced.
         Node node1 = cluster.group(1).nodes().get(0); // Node1 will be retained.
@@ -354,7 +371,7 @@ public class DispatcherTest {
         pingPhasers.get(1).arriveAndAwaitAdvance();
 
         // Cluster has not yet updated its group reference.
-        assertEquals(1, cluster.group(0).workingNodes()); // Node0 is still working.
+        assertEquals(1, cluster.group(0).workingNodesCount()); // Node0 is still working.
         assertSame(node0, cluster.group(0).nodes().get(0));
 
         doPing.set(true);
