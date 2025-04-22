@@ -13,9 +13,13 @@ import java.util.List;
  */
 public class Distributor {
 
+    @JsonProperty("global-stats")
+    private DistributorGlobalStats globalStats = DistributorGlobalStats.EMPTY;
     @JsonProperty("storage-nodes")
     private List<StorageNode> storageNodes = new ArrayList<>();
 
+    public Long documentCountTotalOrNull() { return globalStats.storedDocumentCount(); }
+    public Long bytesTotalOrNull() { return globalStats.storedDocumentBytes(); }
     public List<StorageNode> getStorageNodes() { return storageNodes; }
 
 }

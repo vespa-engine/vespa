@@ -29,6 +29,7 @@ public class MetricUpdater {
     public MetricUpdater(MetricReporter metricReporter, Timer timer, int controllerIndex, String clusterName) {
         this.metricReporter = new ComponentMetricReporter(metricReporter, "cluster-controller.");
         this.metricReporter.addDimension("controller-index", String.valueOf(controllerIndex));
+        this.metricReporter.addDimension("cluster", clusterName);
         this.metricReporter.addDimension("clusterid", clusterName);
         this.timer = timer;
     }
@@ -53,8 +54,6 @@ public class MetricUpdater {
     public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state,
                                           ResourceUsageStats resourceUsage, Instant lastStateBroadcastTimePoint) {
         Map<String, String> dimensions = new HashMap<>();
-        dimensions.put("cluster", cluster.getName());
-        dimensions.put("clusterid", cluster.getName());
         Instant now = timer.getCurrentWallClockTime();
         // NodeInfo::getClusterStateVersionBundleAcknowledged() returns -1 if the node has not yet ACKed a
         // cluster state version. Check for this version explicitly if we've yet to publish a state. This
@@ -123,6 +122,11 @@ public class MetricUpdater {
 
     public void updateClusterBucketsOutOfSyncRatio(double ratio) {
         metricReporter.set("cluster-buckets-out-of-sync-ratio", ratio);
+    }
+
+    public void updateClusterDocumentMetrics(long docsTotal, long bytesTotal) {
+        metricReporter.set("stored-document-count", docsTotal);
+        metricReporter.set("stored-document-bytes", bytesTotal);
     }
 
     public void addTickTime(long millis, boolean didWork) {

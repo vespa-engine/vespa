@@ -5,6 +5,7 @@ import com.yahoo.vespa.clustercontroller.core.*;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Class used to create a StorageNodeStatsContainer from HostInfo.
@@ -20,7 +21,9 @@ public class StorageNodeStatsBridge {
         for (StorageNode storageNode : distributor.getStorageNodes()) {
             mapToNodeStats.put(storageNode.getIndex(), new ContentNodeStats(storageNode));
         }
-        return new ContentClusterStats(mapToNodeStats);
+        long docsTotal  = Optional.ofNullable(distributor.documentCountTotalOrNull()).orElse(0L);
+        long bytesTotal = Optional.ofNullable(distributor.bytesTotalOrNull()).orElse(0L);
+        return new ContentClusterStats(docsTotal, bytesTotal, mapToNodeStats);
     }
 
 }

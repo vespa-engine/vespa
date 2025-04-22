@@ -72,6 +72,10 @@
         "version": "5.32.76"
     },
     "distributor": {
+        "global-stats": {
+            "stored-document-count": 123456,
+            "stored-document-bytes": 789012345
+        },
         "storage-nodes": [
             {
                 "node-index": 0,

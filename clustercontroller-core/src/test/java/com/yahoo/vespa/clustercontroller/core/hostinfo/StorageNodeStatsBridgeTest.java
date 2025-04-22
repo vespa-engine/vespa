@@ -14,6 +14,7 @@ import java.util.Iterator;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
@@ -34,6 +35,8 @@ public class StorageNodeStatsBridgeTest {
         HostInfo hostInfo = HostInfo.createHostInfo(data);
 
         ContentClusterStats clusterStats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
+        assertEquals(123456, clusterStats.getDocumentCountTotal());
+        assertEquals(789012345, clusterStats.getBytesTotal());
         Iterator<ContentNodeStats> itr = clusterStats.iterator();
         { // content node 0
             ContentNodeStats stats = itr.next();

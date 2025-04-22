@@ -219,4 +219,14 @@ public class MetricReporterTest {
         f.advanceTimeAndVerifyMetrics(Duration.ofMillis(10001), 0, 0);
     }
 
+    @Test
+    void metrics_are_emitted_for_cluster_document_stats() {
+        Fixture f = new Fixture();
+        f.metricUpdater.updateClusterDocumentMetrics(12345, 6789000);
+
+        // Metric dimensions are set indirectly via the metric updater's default context
+        verify(f.mockReporter).set(eq("cluster-controller.stored-document-count"), eq(12345L), any());
+        verify(f.mockReporter).set(eq("cluster-controller.stored-document-bytes"), eq(6789000L), any());
+    }
+
 }
