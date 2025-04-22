@@ -311,7 +311,6 @@ public class SearchCluster implements NodeManager<Node> {
                 if (pong.activeDocuments().isPresent()) {
                     node.setActiveDocuments(pong.activeDocuments().get());
                     node.setTargetActiveDocuments(pong.targetActiveDocuments().get());
-                    node.setBlockingWrites(pong.isBlockingWrites());
                 }
                 clusterMonitor.responded(node);
             }

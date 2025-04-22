@@ -26,7 +26,6 @@ public class Group {
     private volatile boolean hasFullCoverage = true;
     private volatile long activeDocuments = 0;
     private volatile long targetActiveDocuments = 0;
-    private volatile boolean isBlockingWrites = false;
     private volatile boolean isBalanced = true;
 
     public Group(int id, List<Node> nodes) {
@@ -74,7 +73,6 @@ public class Group {
         long activeDocs = calculateActiveDocs(workingNodes);
         activeDocuments = activeDocs;
         targetActiveDocuments = workingNodes.stream().mapToLong(Node::getTargetActiveDocuments).sum();
-        isBlockingWrites = nodes.stream().anyMatch(Node::isBlockingWrites);
         int numWorkingNodes = workingNodes.size();
         if (numWorkingNodes > 0) {
             long average = activeDocs / numWorkingNodes;
@@ -104,9 +102,6 @@ public class Group {
 
     /** Returns the target active documents on this group. If unknown, 0 is returned. */
     long targetActiveDocuments() { return targetActiveDocuments; }
-
-    /** Returns whether any node in this group is currently blocking write operations */
-    public boolean isBlockingWrites() { return isBlockingWrites; }
 
     /** Returns whether the nodes in the group have about the same number of documents */
     public boolean isBalanced() { return isBalanced; }
