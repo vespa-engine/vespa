@@ -272,7 +272,7 @@ public class SearchCluster implements NodeManager<Node> {
                 log.info("Cluster " + clusterId + ": " + group + " has full coverage. " +
                          "Active documents: " + group.activeDocuments() + "/" + medianDocuments + ", " +
                          "Target active documents: " + group.targetActiveDocuments() + ", " +
-                         "working nodes: " + group.workingNodes() + "/" + group.nodes().size());
+                         "working nodes: " + group.workingNodesCount() + "/" + group.nodes().size());
             } else {
                 StringBuilder unresponsive = new StringBuilder();
                 for (var node : group.nodes()) {
@@ -282,7 +282,7 @@ public class SearchCluster implements NodeManager<Node> {
                 String message = "Cluster " + clusterId + ": " + group + " has reduced coverage: " +
                                  "Active documents: " + group.activeDocuments() + "/" + maxDocuments + ", " +
                                  "Target active documents: " + group.targetActiveDocuments() + ", " +
-                                 "working nodes: " + group.workingNodes() + "/" + group.nodes().size() +
+                                 "working nodes: " + group.workingNodesCount() + "/" + group.nodes().size() +
                                  ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive);
                 if (nonWorkingNodeCount() == 1) // That is normal
                     log.info(message);

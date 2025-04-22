@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.dispatch.searchcluster;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -58,18 +57,21 @@ public class Group {
         return hasSufficientCoverage;
     }
 
-    void setHasSufficientCoverage(boolean sufficientCoverage) {
+    public void setHasSufficientCoverage(boolean sufficientCoverage) {
         hasSufficientCoverage = sufficientCoverage;
     }
 
-    public int workingNodes() {
-        return (int) nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).count();
+    public List<Node> workingNodes() {
+        return nodes.stream().filter(node -> node.isWorking() == Boolean.TRUE).toList();
+    }
+
+    public int workingNodesCount() {
+        return workingNodes().size();
     }
 
     public void aggregateNodeValues() {
-        List<Node> workingNodes = new ArrayList<>(nodes);
-        workingNodes.removeIf(node -> node.isWorking() != Boolean.TRUE);
-        long activeDocs = workingNodes.stream().mapToLong(Node::getActiveDocuments).sum();
+        List<Node> workingNodes = workingNodes();
+        long activeDocs = calculateActiveDocs(workingNodes);
         activeDocuments = activeDocs;
         targetActiveDocuments = workingNodes.stream().mapToLong(Node::getTargetActiveDocuments).sum();
         isBlockingWrites = nodes.stream().anyMatch(Node::isBlockingWrites);
@@ -91,8 +93,14 @@ public class Group {
         }
     }
 
+    private static long calculateActiveDocs(List<Node> workingNodes) {
+        return workingNodes.stream()
+                           .mapToLong(Node::getActiveDocuments)
+                           .sum();
+    }
+
     /** Returns the active documents on this group. If unknown, 0 is returned. */
-    long activeDocuments() { return activeDocuments; }
+    public long activeDocuments() { return activeDocuments; }
 
     /** Returns the target active documents on this group. If unknown, 0 is returned. */
     long targetActiveDocuments() { return targetActiveDocuments; }

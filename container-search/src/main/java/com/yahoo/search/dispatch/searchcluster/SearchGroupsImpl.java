@@ -40,23 +40,24 @@ public class SearchGroupsImpl implements SearchGroups {
             if (availabilityPolicy.prioritizeAvailability()) {
                 // To take a group *out of* rotation, require that it has less active documents than the median.
                 // This avoids scenarios where incorrect accounting in a single group takes all other groups offline.
-                double documentCoverage = 100.0 * (double) groupDocumentCount / medianDocumentCount;
-                return documentCoverage >= availabilityPolicy.minActiveDocsPercentage();
+                return hasBetterCoverageThan(groupDocumentCount, medianDocumentCount);
             }
             else {
                 // Only serve from groups that have the maximal coverage, prioritizing 100% coverage over availability
                 // when there is a conflict.
-                double documentCoverage = 100.0 * (double) groupDocumentCount / maxDocumentCount;
-                return documentCoverage >= availabilityPolicy.minActiveDocsPercentage();
-
+                return hasBetterCoverageThan(groupDocumentCount, maxDocumentCount);
             }
         }
         else {
             // to put a group *in* rotation, require that it has as many documents as the largest group,
             // to avoid taking groups in too early when the majority of the groups have just been added.
-            double documentCoverage = 100.0 * (double) groupDocumentCount / maxDocumentCount;
-            return documentCoverage >= availabilityPolicy.minActiveDocsPercentage();
+            return hasBetterCoverageThan(groupDocumentCount, maxDocumentCount);
         }
+    }
+
+    public boolean hasBetterCoverageThan(long groupDocumentCount, long documentCount) {
+        double documentCoverage = 100.0 * (double) groupDocumentCount / documentCount;
+        return documentCoverage >= availabilityPolicy.minActiveDocsPercentage();
     }
 
     public long medianDocumentCount() {
