@@ -105,7 +105,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}, comment = "Select summary decode type") default String summaryDecodePolicy() { return "on-demand"; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 2; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 10; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int persistenceThreadMaxFeedOpBatchSize() { return 1; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
