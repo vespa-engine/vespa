@@ -43,6 +43,15 @@ RegexPredicateNode::RegexPredicateNode() noexcept : _re(), _argument() {}
 
 RegexPredicateNode::~RegexPredicateNode() = default;
 
+RegexPredicateNode::RegexPredicateNode(std::string regex, ExpressionNode::UP input)
+  : _re(),
+    _argument(std::move(input))
+{
+    _re.pattern = regex;
+    _re.compile();
+}
+
+
 Serializer& RegexPredicateNode::onSerialize(Serializer& os) const { return os << _re.pattern << _argument; }
 
 Deserializer& RegexPredicateNode::onDeserialize(Deserializer& is) {
