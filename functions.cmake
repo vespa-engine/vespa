@@ -477,6 +477,11 @@ function(vespa_add_test)
     endif()
 endfunction()
 
+function(vespa_add_test_executable TARGET)
+    vespa_add_executable(${TARGET} ${ARGN})
+    vespa_add_test(NAME ${TARGET} COMMAND ${TARGET})
+endfunction()
+
 function(vespa_install_script)
     if(ARGC GREATER 2)
         install(FILES ${ARGV0} RENAME ${ARGV1} PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE DESTINATION ${ARGV2})
