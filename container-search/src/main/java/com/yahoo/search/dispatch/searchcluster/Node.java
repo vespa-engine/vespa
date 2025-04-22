@@ -24,7 +24,6 @@ public class Node {
     private volatile long targetActiveDocuments = 0;
     private volatile boolean statusIsKnown = false;
     private volatile boolean working = true;
-    private volatile boolean isBlockingWrites = false;
 
     public Node(String clusterName, int key, String hostname, int group) {
         this.clusterName = clusterName;
@@ -84,10 +83,6 @@ public class Node {
     /** Returns the active documents on this node. If unknown, 0 is returned. */
     long getActiveDocuments() { return activeDocuments; }
     long getTargetActiveDocuments() { return targetActiveDocuments; }
-
-    public void setBlockingWrites(boolean isBlockingWrites) { this.isBlockingWrites = isBlockingWrites; }
-
-    boolean isBlockingWrites() { return isBlockingWrites; }
 
     @Override
     public int hashCode() { return Objects.hash(hostname, key, group); }

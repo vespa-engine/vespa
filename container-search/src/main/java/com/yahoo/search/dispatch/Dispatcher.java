@@ -317,11 +317,10 @@ public class Dispatcher extends AbstractComponent {
                                                       maxHitsPerNode)
                                  .orElseThrow(() -> new IllegalStateException("Could not dispatch directly to " + node));
         }
-
         int covered = cluster.groupsWithSufficientCoverage();
         int groups = cluster.groupList().size();
         int max = Integer.min(Integer.min(covered + 1, groups), MAX_GROUP_SELECTION_ATTEMPTS);
-        Set<Integer> rejected = rejectGroupBlockingFeed(cluster.groupList());
+        Set<Integer> rejected = new HashSet<>();
         for (int i = 0; i < max; i++) {
             Optional<Group> groupInCluster = loadBalancer.takeGroup(rejected);
             if (groupInCluster.isEmpty()) break; // No groups available
@@ -340,31 +339,10 @@ public class Dispatcher extends AbstractComponent {
                 return invoker.get();
             } else {
                 loadBalancer.releaseGroup(group, false, RequestDuration.of(Duration.ZERO));
-                if (rejected == null) {
-                    rejected = new HashSet<>();
-                }
                 rejected.add(group.id());
             }
         }
         throw new IllegalStateException("No suitable groups to dispatch query. Rejected: " + rejected);
-    }
-
-    /**
-     * We want to avoid using groups blocking feed because their data may be out of date.
-     * Reject groups that are feed blocked and have fewer documents than max documents in any group.
-     *
-     * @return a modifiable set containing the single group to reject, or null otherwise
-     */
-    static Set<Integer> rejectGroupBlockingFeed(SearchGroups groups) {
-        if (groups.size() == 1) return null;
-
-        long maxDocuments = groups.maxDocumentCount();
-        var groupsRejectingFeed = groups.groups().stream()
-                                        .filter(Group::isBlockingWrites)
-                                        .filter(group -> ! groups.hasBetterCoverageThan(group.activeDocuments(), maxDocuments))
-                                        .map(Group::id)
-                                        .toList();
-        return (groupsRejectingFeed.isEmpty() ? null : new HashSet<>(groupsRejectingFeed));
     }
 
 }
