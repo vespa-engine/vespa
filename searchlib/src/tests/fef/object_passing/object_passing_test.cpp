@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/features/valuefeature.h>
 #include <vespa/searchlib/fef/blueprintfactory.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
@@ -57,7 +57,7 @@ struct ProxyBlueprint : Blueprint {
         return Blueprint::UP(new ProxyBlueprint(name, accept_input, object_output));
     }
     bool setup(const IIndexEnvironment &, const std::vector<std::string> &params) override {
-        ASSERT_EQUAL(1u, params.size());
+        assert(params.size() == 1);
         if (auto input = defineInput(params[0], accept_input)) {
             object_input = input.value().is_object();
             describeOutput("value", "the value", object_output ? FeatureType::object(ValueType::double_type()) : FeatureType::number());
@@ -71,11 +71,11 @@ struct ProxyBlueprint : Blueprint {
     }
 };
 
-struct Fixture {
+struct ObjectPassingTest : public ::testing::Test {
     BlueprintFactory factory;
     IndexEnvironment indexEnv;
 
-    explicit Fixture() {
+    explicit ObjectPassingTest() {
         factory.addPrototype(std::make_shared<ValueBlueprint>());
         factory.addPrototype(std::make_shared<UnboxBlueprint>());
         factory.addPrototype(std::make_shared<ProxyBlueprint>("do_box",      Blueprint::AcceptInput::NUMBER, true));
@@ -87,7 +87,8 @@ struct Fixture {
     double eval(const std::string &feature) {
         BlueprintResolver::SP resolver(new BlueprintResolver(factory, indexEnv));
         resolver->addSeed(feature);
-        ASSERT_TRUE(resolver->compile());
+        bool retval = resolver->compile();
+        assert(retval);
         MatchDataLayout mdl;
         MatchData::UP md = mdl.createMatchData();
         QueryEnvironment queryEnv(&indexEnv);
@@ -95,7 +96,7 @@ struct Fixture {
         RankProgram program(resolver);
         program.setup(*md, queryEnv, overrides);        
         auto result = program.get_seeds();
-        EXPECT_EQUAL(1u, result.num_features());
+        EXPECT_EQ(1u, result.num_features());
         EXPECT_TRUE(!result.is_object(0)); // verifies auto-unboxing
         return result.resolve(0).as_number(1);
     }
@@ -106,34 +107,34 @@ struct Fixture {
     }
 };
 
-TEST_F("require that values can be boxed and unboxed", Fixture()) {
-    EXPECT_EQUAL(3.0, f1.eval("do_box(value(3))"));
-    EXPECT_EQUAL(0.0, f1.eval("do_box(value(3)).was_object"));
-    EXPECT_EQUAL(3.0, f1.eval("do_unbox(do_box(value(3)))"));
-    EXPECT_EQUAL(1.0, f1.eval("maybe_unbox(do_box(value(3))).was_object"));
-    EXPECT_EQUAL(3.0, f1.eval("do_box(do_unbox(do_box(value(3))))"));
-    EXPECT_EQUAL(0.0, f1.eval("do_box(do_unbox(do_box(value(3)))).was_object"));
+TEST_F(ObjectPassingTest, require_that_values_can_be_boxed_and_unboxed) {
+    EXPECT_EQ(3.0, eval("do_box(value(3))"));
+    EXPECT_EQ(0.0, eval("do_box(value(3)).was_object"));
+    EXPECT_EQ(3.0, eval("do_unbox(do_box(value(3)))"));
+    EXPECT_EQ(1.0, eval("maybe_unbox(do_box(value(3))).was_object"));
+    EXPECT_EQ(3.0, eval("do_box(do_unbox(do_box(value(3))))"));
+    EXPECT_EQ(0.0, eval("do_box(do_unbox(do_box(value(3)))).was_object"));
 }
 
-TEST_F("require that output features may be either objects or numbers", Fixture()) {
-    EXPECT_TRUE(f1.verify("value(3)"));
-    EXPECT_TRUE(f1.verify("do_box(value(3))"));
+TEST_F(ObjectPassingTest, require_that_output_features_may_be_either_objects_or_numbers) {
+    EXPECT_TRUE(verify("value(3)"));
+    EXPECT_TRUE(verify("do_box(value(3))"));
 }
 
-TEST_F("require that feature input/output types must be compatible", Fixture()) {
-    EXPECT_TRUE(!f1.verify("do_unbox(value(3))"));
-    EXPECT_TRUE(f1.verify("maybe_unbox(value(3))"));
-    EXPECT_TRUE(f1.verify("do_unbox(do_box(value(3)))"));
-    EXPECT_TRUE(!f1.verify("do_unbox(do_box(do_box(value(3))))"));
-    EXPECT_TRUE(f1.verify("do_unbox(maybe_box(do_box(value(3))))"));
-    EXPECT_TRUE(f1.verify("do_unbox(do_box(do_unbox(do_box(value(3)))))"));
+TEST_F(ObjectPassingTest, require_that_feature_input_output_types_must_be_compatible) {
+    EXPECT_TRUE(!verify("do_unbox(value(3))"));
+    EXPECT_TRUE(verify("maybe_unbox(value(3))"));
+    EXPECT_TRUE(verify("do_unbox(do_box(value(3)))"));
+    EXPECT_TRUE(!verify("do_unbox(do_box(do_box(value(3))))"));
+    EXPECT_TRUE(verify("do_unbox(maybe_box(do_box(value(3))))"));
+    EXPECT_TRUE(verify("do_unbox(do_box(do_unbox(do_box(value(3)))))"));
 }
 
-TEST_F("require that 'unbox' feature works for both numbers and objects", Fixture()) {
-    EXPECT_EQUAL(3.0, f1.eval("unbox(value(3))"));
-    EXPECT_EQUAL(3.0, f1.eval("unbox(do_box(value(3)))"));
-    EXPECT_EQUAL(0.0, f1.eval("maybe_unbox(unbox(do_box(value(3)))).was_object"));
-    EXPECT_EQUAL(0.0, f1.eval("maybe_unbox(unbox(value(3))).was_object"));
+TEST_F(ObjectPassingTest, require_that_unbox_feature_works_for_both_numbers_and_objects) {
+    EXPECT_EQ(3.0, eval("unbox(value(3))"));
+    EXPECT_EQ(3.0, eval("unbox(do_box(value(3)))"));
+    EXPECT_EQ(0.0, eval("maybe_unbox(unbox(do_box(value(3)))).was_object"));
+    EXPECT_EQ(0.0, eval("maybe_unbox(unbox(value(3))).was_object"));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

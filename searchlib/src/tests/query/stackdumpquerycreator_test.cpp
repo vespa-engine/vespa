@@ -5,7 +5,7 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/util/rawbuf.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("stackdumpquerycreator_test");
@@ -36,7 +36,7 @@ void appendNumTerm(RawBuf &buf, const string &term_string) {
     appendString(buf, term_string);
 }
 
-TEST("requireThatTooLargeNumTermIsTreatedAsFloat") {
+TEST(StackDumpQueryCreatorTest, requireThatTooLargeNumTermIsTreatedAsFloat) {
     const string term_string("99999999999999999999999999999999999");
     RawBuf buf(1024);
     appendNumTerm(buf, term_string);
@@ -46,10 +46,10 @@ TEST("requireThatTooLargeNumTermIsTreatedAsFloat") {
     ASSERT_TRUE(node.get());
     auto *term = dynamic_cast<NumberTerm *>(node.get());
     ASSERT_TRUE(term);
-    EXPECT_EQUAL(term_string, term->getTerm());
+    EXPECT_EQ(term_string, term->getTerm());
 }
 
-TEST("requireThatTooLargeFloatNumTermIsTreatedAsFloat") {
+TEST(StackDumpQueryCreatorTest, requireThatTooLargeFloatNumTermIsTreatedAsFloat) {
     const string term_string = "1" + string(310, '0') + ".20";
     RawBuf buf(1024);
     appendNumTerm(buf, term_string);
@@ -61,10 +61,10 @@ TEST("requireThatTooLargeFloatNumTermIsTreatedAsFloat") {
     ASSERT_TRUE(node.get());
     auto *term = dynamic_cast<NumberTerm *>(node.get());
     ASSERT_TRUE(term);
-    EXPECT_EQUAL(term_string, term->getTerm());
+    EXPECT_EQ(term_string, term->getTerm());
 }
 
-TEST("require that PredicateQueryItem stack dump item can be read") {
+TEST(StackDumpQueryCreatorTest, require_that_PredicateQueryItem_stack_dump_item_can_be_read) {
     RawBuf buf(1024);
     uint8_t typefield = ParseItem::ITEM_PREDICATE_QUERY;
     buf.append(typefield);
@@ -94,15 +94,15 @@ TEST("require that PredicateQueryItem stack dump item can be read") {
     auto *p = dynamic_cast<PredicateQuery *>(node.get());
     ASSERT_TRUE(p);
     const PredicateQueryTerm &term = *p->getTerm();
-    ASSERT_EQUAL(2u, term.getFeatures().size());
-    ASSERT_EQUAL(2u, term.getRangeFeatures().size());
-    ASSERT_EQUAL("value1", term.getFeatures()[0].getValue());
-    ASSERT_EQUAL(0xffffffffffffffffUL,
+    ASSERT_EQ(2u, term.getFeatures().size());
+    ASSERT_EQ(2u, term.getRangeFeatures().size());
+    ASSERT_EQ("value1", term.getFeatures()[0].getValue());
+    ASSERT_EQ(0xffffffffffffffffUL,
                  term.getFeatures()[0].getSubQueryBitmap());
-    ASSERT_EQUAL("key2", term.getFeatures()[1].getKey());
-    ASSERT_EQUAL(42u, term.getRangeFeatures()[0].getValue());
+    ASSERT_EQ("key2", term.getFeatures()[1].getKey());
+    ASSERT_EQ(42u, term.getRangeFeatures()[0].getValue());
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
