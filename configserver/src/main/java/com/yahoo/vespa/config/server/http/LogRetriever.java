@@ -7,12 +7,10 @@ import com.yahoo.container.jdisc.EmptyResponse;
 import com.yahoo.container.jdisc.HttpResponse;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.core5.http.ConnectionRequestTimeoutException;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.net.ConnectException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
@@ -37,21 +35,17 @@ public class LogRetriever {
         HttpGet get = new HttpGet(logServerUri.asURI());
         try {
             return new ProxyResponse(httpClient.execute(get));
-        } catch (ConnectionRequestTimeoutException | ConnectException e) {
-            return new GatewayTimeoutResponse(504);
         } catch (IOException e) {
             if (deployTime.isPresent() && Instant.now().isBefore(deployTime.get().plus(Duration.ofMinutes(5))))
                 return new EmptyResponse();
 
-            throw new RuntimeException("Failed to get logs from " + logServerUri, e);
+            return new GatewayTimeoutResponse(504);
         }
     }
 
     private static class GatewayTimeoutResponse extends HttpResponse {
 
         public GatewayTimeoutResponse(int status) { super(status); }
-
-        public GatewayTimeoutResponse() { this(504); }
 
         @Override
         public void render(OutputStream outputStream) {
