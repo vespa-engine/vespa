@@ -11,7 +11,7 @@
 #include <ostream>
 #include <tuple>
 
-using TestHit = std::tuple<uint32_t, uint32_t, int32_t, uint32_t>;
+using TestHit = std::tuple<uint32_t, uint32_t, int32_t, uint32_t, uint32_t>;
 
 using search::query::QueryBuilder;
 using search::query::Node;
@@ -90,7 +90,8 @@ NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHi
         auto& hitsv = hitsvv[idx];
         auto& term = terms[idx];
         for (auto& hit : hitsv) {
-            term->add(std::get<0>(hit), std::get<1>(hit), std::get<2>(hit), std::get<3>(hit));
+            auto hl_idx = term->add(std::get<0>(hit), std::get<1>(hit), std::get<2>(hit), std::get<4>(hit));
+            term->set_element_length(hl_idx, std::get<3>(hit));
         }
     }
     return q->getRoot().evaluate();
@@ -103,79 +104,79 @@ TEST_P(NearTest, test_empty_near)
 
 TEST_P(NearTest, test_near_success)
 {
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 0} },
-                                    { { 0, 0, 10, 2} },
-                                    { { 0, 0, 10, 4} } }));
+    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 0} },
+                                    { { 0, 0, 10, 6, 2} },
+                                    { { 0, 0, 10, 6, 4} } }));
 }
 
 TEST_P(NearTest, test_near_fail_distance_exceeded_first_term)
 {
-    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 0} },
-                                     { { 0, 0, 10, 2} },
-                                     { { 0, 0, 10, 5} } }));
+    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 6, 0} },
+                                     { { 0, 0, 10, 6, 2} },
+                                     { { 0, 0, 10, 6, 5} } }));
 }
 
 TEST_P(NearTest, test_near_fail_distance_exceeded_second_term)
 {
-    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 2} },
-                                     { { 0, 0, 10, 0} },
-                                     { { 0, 0, 10, 5} } }));
+    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 6, 2} },
+                                     { { 0, 0, 10, 6, 0} },
+                                     { { 0, 0, 10, 6, 5} } }));
 }
 
 TEST_P(NearTest, test_near_fail_element)
 {
-    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 0} },
-                                     { { 0, 0, 10, 2} },
-                                     { { 0, 1, 10, 4} } }));
+    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 6, 0} },
+                                     { { 0, 0, 10, 6, 2} },
+                                     { { 0, 1, 10, 6, 4} } }));
 }
 
 TEST_P(NearTest, test_near_fail_field)
 {
-    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 0} },
-                                     { { 0, 0, 10, 2} },
-                                     { { 1, 0, 10, 4} } }));
+    EXPECT_FALSE(evaluate_query(4, { { { 0, 0, 10, 6, 0} },
+                                     { { 0, 0, 10, 6, 2} },
+                                     { { 1, 0, 10, 6, 4} } }));
 }
 
 TEST_P(NearTest, test_near_success_after_step_first_term)
 {
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 0}, { 0, 0, 10, 2} },
-                                    { { 0, 0, 10, 3} },
-                                    { { 0, 0, 10, 5} } }));
+    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 0}, { 0, 0, 10, 6, 2} },
+                                    { { 0, 0, 10, 6, 3} },
+                                    { { 0, 0, 10, 6, 5} } }));
 }
 
 TEST_P(NearTest, test_near_success_after_step_second_term)
 {
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 2} },
-                                    { { 0, 0, 10, 0}, {0, 0, 10, 3} },
-                                    { { 0, 0, 10, 5} } }));
+    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 2} },
+                                    { { 0, 0, 10, 6, 0}, {0, 0, 10, 6, 3} },
+                                    { { 0, 0, 10, 6, 5} } }));
 }
 
 TEST_P(NearTest, test_near_success_in_second_element)
 {
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 0}, { 0, 1, 10, 0} },
-                                    { { 0, 0, 10, 2}, { 0, 1, 10, 2} },
-                                    { { 0, 0, 10, 5}, { 0, 1, 10, 4} } }));
+    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 0}, { 0, 1, 10, 6, 0} },
+                                    { { 0, 0, 10, 6, 2}, { 0, 1, 10, 6, 2} },
+                                    { { 0, 0, 10, 6, 5}, { 0, 1, 10, 6, 4} } }));
 }
 
 TEST_P(NearTest, test_near_success_in_second_field)
 {
-    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 0}, { 1, 0, 10, 0} },
-                                    { { 0, 0, 10, 2}, { 1, 0, 10, 2} },
-                                    { { 0, 0, 10, 5}, { 1, 0, 10, 4} } }));
+    EXPECT_TRUE(evaluate_query(4, { { { 0, 0, 10, 6, 0}, { 1, 0, 10, 6, 0} },
+                                    { { 0, 0, 10, 6, 2}, { 1, 0, 10, 6, 2} },
+                                    { { 0, 0, 10, 6, 5}, { 1, 0, 10, 6, 4} } }));
 }
 
 TEST_P(NearTest, test_order_might_matter)
 {
-    EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, { { { 0, 0, 10, 2} },
-                                                         { { 0, 0, 10, 0} },
-                                                         { { 0, 0, 10, 4} } }));
+    EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, { { { 0, 0, 10, 6, 2} },
+                                                         { { 0, 0, 10, 6, 0} },
+                                                         { { 0, 0, 10, 6, 4} } }));
 }
 
 TEST_P(NearTest, test_overlap_might_matter)
 {
-    EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, { { { 0, 0, 10, 0} },
-                                                         { { 0, 0, 10, 0} },
-                                                         { { 0, 0, 10, 4} } }));
+    EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, { { { 0, 0, 10, 6, 0} },
+                                                         { { 0, 0, 10, 6, 0} },
+                                                         { { 0, 0, 10, 6, 4} } }));
 }
 
 auto test_values = ::testing::Values(TestParam(false), TestParam(true));

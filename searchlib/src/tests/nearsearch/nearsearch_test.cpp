@@ -9,9 +9,9 @@ LOG_SETUP("nearsearch_test");
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <set>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -19,35 +19,43 @@ LOG_SETUP("nearsearch_test");
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-class UIntList : public std::set<uint32_t> {
+class ElementPositions {
+    uint32_t _id;
+    uint32_t _len;
+    std::vector<uint32_t> _pos;
 public:
-    UIntList &add(uint32_t i) {
-        std::set<uint32_t>::insert(i);
-        return *this;
+    ElementPositions(uint32_t id, uint32_t len, const std::vector<uint32_t>& pos)
+        : _id(id),
+          _len(len),
+          _pos(pos)
+    {
     }
+    uint32_t get_id() const noexcept { return _id; }
+    uint32_t get_len() const noexcept { return _len; }
+    const std::vector<uint32_t>& get_pos() const noexcept { return _pos; }
 };
 
 class MyTerm {
 private:
-    std::set<uint32_t> _docs;
-    std::set<uint32_t> _data;
+    std::vector<uint32_t> _docs;
+    std::vector<ElementPositions> _epos;
 
 public:
-    MyTerm(const std::set<uint32_t> &doc, const std::set<uint32_t> &pos);
+    MyTerm(const std::vector<uint32_t>& doc, const std::vector<ElementPositions>& epos);
     ~MyTerm();
 
     search::queryeval::Blueprint::UP
     make_blueprint(uint32_t fieldId, search::fef::TermFieldHandle handle) const
     {
         search::queryeval::FakeResult result;
-        for (std::set<uint32_t>::const_iterator doc = _docs.begin();
-             doc != _docs.end(); ++doc)
-        {
-            result.doc(*doc);
-            for (std::set<uint32_t>::const_iterator pos = _data.begin();
-                 pos != _data.end(); ++pos)
-            {
-                result.pos(*pos);
+        for (auto docid : _docs) {
+            result.doc(docid);
+            for (auto& epos : _epos) {
+                result.elem(epos.get_id());
+                result.len(epos.get_len());
+                for (auto pos : epos.get_pos()) {
+                    result.pos(pos);
+                }
             }
         }
         return search::queryeval::Blueprint::UP(
@@ -57,10 +65,11 @@ public:
     }
 };
 
-MyTerm::MyTerm(const std::set<uint32_t> &doc, const std::set<uint32_t> &pos)
+MyTerm::MyTerm(const std::vector<uint32_t>& doc, const std::vector<ElementPositions>& epos)
     : _docs(doc),
-      _data(pos)
+      _epos(epos)
 {}
+
 MyTerm::~MyTerm() = default;
 
 class MyQuery {
@@ -131,16 +140,14 @@ NearSearchTest::~NearSearchTest() = default;
 
 TEST_F(NearSearchTest, basic_near)
 {
-    MyTerm foo(UIntList().add(69),
-               UIntList().add(6).add(11));
+    MyTerm foo({69}, {{0, 100, {6, 11}}});
     for (uint32_t i = 0; i <= 1; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo), 69, "near 1");
         testNearSearch(MyQuery(true,  i).addTerm(foo), 69, "onear 1");
     }
 
-    MyTerm bar(UIntList().add(68).add(69).add(70),
-               UIntList().add(7).add(10));
+    MyTerm bar({68, 69, 70}, {{0, 100, {7, 10}}});
     testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(bar), 0, "near 2");
     testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(bar), 0, "onear 2");
     for (uint32_t i = 1; i <= 2; ++i) {
@@ -149,8 +156,7 @@ TEST_F(NearSearchTest, basic_near)
         testNearSearch(MyQuery(true,  i).addTerm(foo).addTerm(bar), 69, "onear 3");
     }
 
-    MyTerm baz(UIntList().add(69).add(70).add(71),
-               UIntList().add(8).add(9));
+    MyTerm baz({69, 70, 71}, {{0, 100, {8, 9}}});
     for (uint32_t i = 0; i <= 1; ++i) {
         SCOPED_TRACE(vespalib::make_string("i = %u", i));
         testNearSearch(MyQuery(false, i).addTerm(foo).addTerm(bar).addTerm(baz), 0, "near 10");
@@ -183,11 +189,17 @@ TEST_F(NearSearchTest, basic_near)
     }
 }
 
+TEST_F(NearSearchTest, element_boundary)
+{
+    MyTerm foo({69}, {{0, 5, {0}}});
+    MyTerm bar({69, 70, 71}, {{1, 5, {1}}});
+    testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar), 0, "near 1");
+    testNearSearch(MyQuery(true, 20).addTerm(foo).addTerm(bar), 0, "onear 1");
+}
 
 TEST_F(NearSearchTest, repeated_terms)
 {
-    MyTerm foo(UIntList().add(69),
-               UIntList().add(1).add(2).add(3));
+    MyTerm foo({69},{{0, 100, {1, 2, 3}}});
     testNearSearch(MyQuery(false, 0).addTerm(foo).addTerm(foo), 69, "near 50");
     testNearSearch(MyQuery(true,  0).addTerm(foo).addTerm(foo), 0, "onear 50");
     for (uint32_t i = 1; i <= 2; ++i) {
