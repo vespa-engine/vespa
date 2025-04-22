@@ -44,14 +44,14 @@
   DECLARE_IDENTIFIABLE_STATIC_BASE_COMMON(cclass) \
   virtual const vespalib::Identifiable::RuntimeClass & getClass() const;
 
-#define DECLARE_IDENTIFIABLE_BASE(cclass, classid) \
-  public:                                          \
-   enum { classId=classid };                       \
+#define DECLARE_IDENTIFIABLE_BASE(cclass, myclassid) \
+  public:                                            \
+    static constexpr uint32_t classId = myclassid;   \
   DECLARE_IDENTIFIABLE_BASE_COMMON(cclass)
 
-#define DECLARE_IDENTIFIABLE_BASE_ROOT(cclass, classid) \
-  public:                                          \
-   enum { classId=classid };                       \
+#define DECLARE_IDENTIFIABLE_BASE_ROOT(cclass, myclassid) \
+  public:                                                 \
+    static constexpr uint32_t classId = myclassid;        \
   DECLARE_IDENTIFIABLE_BASE_COMMON_ROOT(cclass)
 
 #define DECLARE_IDENTIFIABLE_ABSTRACT(cclass)               DECLARE_IDENTIFIABLE_BASE(cclass, IDENTIFIABLE_CLASSID(cclass))

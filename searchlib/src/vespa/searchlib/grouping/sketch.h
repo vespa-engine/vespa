@@ -23,7 +23,7 @@ template <int BucketBits, typename HashT> struct NormalSketch;
  */
 template <int BucketBits, typename HashT>
 struct Sketch {
-    enum { bucketBits = BucketBits };
+    static constexpr uint32_t bucketBits = BucketBits;
     using hash_type = HashT;
     using SketchType = Sketch<BucketBits, HashT>;
     using UP = std::unique_ptr<SketchType>;
@@ -67,7 +67,7 @@ uint8_t countPrefixZeros(T t) {
 template <int BucketBits = 10, typename HashT = uint32_t>
 struct SparseSketch : Sketch<BucketBits, HashT> {
     using typename Sketch<BucketBits, HashT>::SketchType;
-    enum { classId = IDENTIFIABLE_CLASSID_NS(search, SparseSketch) };
+    static constexpr uint32_t classId = IDENTIFIABLE_CLASSID_NS(search, SparseSketch);
 
     struct IdentityHash {
         size_t operator()(HashT hash) const noexcept { return hash; }
@@ -129,7 +129,7 @@ struct NormalSketch : Sketch<BucketBits, HashT> {
     using Sketch<BucketBits, HashT>::BUCKET_COUNT;
     using Sketch<BucketBits, HashT>::BUCKET_MASK;
     using UP = std::unique_ptr<NormalSketch>;
-    enum { classId = IDENTIFIABLE_CLASSID_NS(search, NormalSketch) };
+    static constexpr uint32_t classId = IDENTIFIABLE_CLASSID_NS(search, NormalSketch);
 
     uint8_t bucket[BUCKET_COUNT];
 
