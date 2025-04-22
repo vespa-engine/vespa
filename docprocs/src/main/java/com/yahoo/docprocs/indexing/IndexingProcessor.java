@@ -51,6 +51,8 @@ public class IndexingProcessor extends DocumentProcessor {
     private class ExpressionSelector extends FieldValuesFactory.SelectExpression {
         @Override
         public Expression selectExpression(DocumentType documentType, String fieldName) {
+            System.out.println("Getting script for document type '" + documentType.getName() + "' field '" + fieldName + "'");
+            System.out.println(" --> " + scriptManager.getScript(documentType, fieldName));
             return scriptManager.getScript(documentType, fieldName).getExpression();
         }
     }
