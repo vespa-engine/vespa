@@ -89,7 +89,11 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
     }
 
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats distributor_bucket_spaces_stats() {
-        return _distributor->getBucketSpacesStats();
+        return _distributor->per_node_bucket_spaces_stats();
+    }
+
+    DistributorGlobalStats distributor_global_stats() {
+        return _distributor->distributor_global_stats();
     }
 
     MinReplicaMap distributor_min_replica_stats() {
@@ -291,10 +295,6 @@ TEST_F(TopLevelDistributorTest, tick_aggregates_status_requests_from_all_stripes
 
 TEST_F(TopLevelDistributorTest, metric_update_hook_updates_pending_maintenance_metrics) {
     setup_distributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
-    // To ensure we count all operations, not just those fitting within the pending window.
-    auto cfg = current_distributor_config();
-    reconfigure(cfg);
-
     // 1 bucket must be merged, 1 must be split, 1 should be activated.
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 1), "0=2/2/2/t/a,1=1/1/1");
     add_nodes_to_stripe_bucket_db(document::BucketId(16, 2), "0=100/10000000/200000/t/a,1=100/10000000/200000/t");
@@ -528,6 +528,25 @@ TEST_F(TopLevelDistributorTest, entering_recovery_mode_resets_bucket_space_and_m
     // we've completed a full DB scan and updated the stats. Until that point in time we
     // have to assume we _do_ have replicas with an unknown replication factor.
     assert_min_replica_stats_zeroed(min_replica_stats, 2);
+
+    const auto g_stats = distributor_global_stats();
+    EXPECT_FALSE(g_stats.valid());
+}
+
+TEST_F(TopLevelDistributorTest, global_stats_are_set_after_db_iteration_rounds) {
+    setup_distributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
+    // Add buckets across multiple stripes
+    // TODO Ensure that we count the largest replica if inconsistent (requires removing usage of `trusted`-flag)
+    add_nodes_to_stripe_bucket_db(document::BucketId(16, 1), "0=2/2/2/t/a,1=1/1/1");
+    add_nodes_to_stripe_bucket_db(document::BucketId(16, 2), "0=100/1000/200000/t/a,1=100/1000/200000/t");
+    add_nodes_to_stripe_bucket_db(document::BucketId(16, 3), "0=200/300/400/t,1=200/300/400/t");
+    // Go many full scanner rounds to check that metrics are set, not added to existing.
+    tick_distributor_and_stripes_n_times(50);
+
+    const auto g_stats = distributor_global_stats();
+    ASSERT_TRUE(g_stats.valid());
+    EXPECT_EQ(g_stats.documents_total(), 1302);
+    EXPECT_EQ(g_stats.bytes_total(), 200402);
 }
 
 TEST_F(TopLevelDistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_replies) {

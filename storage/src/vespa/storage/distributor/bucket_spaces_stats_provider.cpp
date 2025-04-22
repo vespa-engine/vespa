@@ -11,6 +11,8 @@ operator<<(std::ostream& out, const BucketSpaceStats& stats)
     return out;
 }
 
+bool BucketSpaceStats::operator==(const BucketSpaceStats& rhs) const noexcept = default;
+
 void
 merge_bucket_spaces_stats(BucketSpacesStatsProvider::BucketSpacesStats& dest,
                           const BucketSpacesStatsProvider::BucketSpacesStats& src)

@@ -80,9 +80,16 @@ void
 DistributorHostInfoReporter::report(vespalib::JsonStream& output)
 {
     auto minReplica = _minReplicaProvider.getMinReplica();
-    auto bucketSpacesStats = _bucketSpacesStatsProvider.getBucketSpacesStats();
+    auto bucketSpacesStats = _bucketSpacesStatsProvider.per_node_bucket_spaces_stats();
+    auto global_stats = _bucketSpacesStatsProvider.distributor_global_stats();
 
     output << "distributor" << Object();
+    if (global_stats.valid()) {
+        output << "global-stats" << Object()
+               << "stored-document-count" << global_stats.documents_total()
+               << "stored-document-bytes" << global_stats.bytes_total()
+               << End();
+    }
     {
         output << "storage-nodes" << Array();
         outputStorageNodes(output, minReplica, bucketSpacesStats);

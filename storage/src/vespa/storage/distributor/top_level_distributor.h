@@ -149,7 +149,8 @@ private:
      */
     MinReplicaMap getMinReplica() const override;
 
-    PerNodeBucketSpacesStats getBucketSpacesStats() const override;
+    PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const override;
+    DistributorGlobalStats distributor_global_stats() const override;
 
     /**
      * Atomically publish internal metrics to external ideal state metrics.

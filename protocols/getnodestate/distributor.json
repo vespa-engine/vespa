@@ -1,5 +1,9 @@
 {
     "distributor": {
+        "global-stats": {
+            "stored-document-count": 1337,
+            "stored-document-bytes": 456789
+        },
         "storage-nodes": [
             {
                 "node-index": 0,

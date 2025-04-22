@@ -393,11 +393,21 @@ TopLevelDistributor::getMinReplica() const
 }
 
 BucketSpacesStatsProvider::PerNodeBucketSpacesStats
-TopLevelDistributor::getBucketSpacesStats() const
+TopLevelDistributor::per_node_bucket_spaces_stats() const
 {
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats result;
     for (const auto& stripe : _stripes) {
-        merge_per_node_bucket_spaces_stats(result, stripe->getBucketSpacesStats());
+        merge_per_node_bucket_spaces_stats(result, stripe->per_node_bucket_spaces_stats());
+    }
+    return result;
+}
+
+DistributorGlobalStats
+TopLevelDistributor::distributor_global_stats() const
+{
+    auto result = DistributorGlobalStats::make_empty_but_valid();
+    for (const auto& stripe : _stripes) {
+        result.merge(stripe->distributor_global_stats());
     }
     return result;
 }

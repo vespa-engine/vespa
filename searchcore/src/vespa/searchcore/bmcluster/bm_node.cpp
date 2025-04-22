@@ -735,7 +735,7 @@ MyBmNode::merge_node_stats(std::vector<BmNodeStats>& node_stats, storage::lib::C
         {
             std::lock_guard<std::mutex> guard(_lock);
             if (_bucket_spaces_stats_provider) {
-                per_node_bucket_spaces_stats = _bucket_spaces_stats_provider->getBucketSpacesStats();
+                per_node_bucket_spaces_stats = _bucket_spaces_stats_provider->per_node_bucket_spaces_stats();
             }
         }
         if (per_node_bucket_spaces_stats.has_value()) {
