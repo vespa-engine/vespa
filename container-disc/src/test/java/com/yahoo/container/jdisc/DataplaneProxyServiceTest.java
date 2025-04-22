@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import ai.vespa.cloud.Cloud;
+import ai.vespa.cloud.SystemInfo;
 import com.google.common.jimfs.Jimfs;
 import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
@@ -11,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -152,6 +155,32 @@ public class DataplaneProxyServiceTest {
         thread.join();
 
         verify(mockProxyCommands, times(1)).stop(any());
+    }
+
+    @Test
+    public void usesAzureTemplateWhenCloudIsAzure() throws Exception {
+        SystemInfo systemInfo = Mockito.mock(SystemInfo.class);
+        Cloud cloud = Mockito.mock(Cloud.class);
+        when(cloud.name()).thenReturn("azure");
+        when(systemInfo.cloud()).thenReturn(cloud);
+        DataplaneProxyService dataplaneProxyService = new DataplaneProxyService(systemInfo);
+        Field f = DataplaneProxyService.class.getDeclaredField("configTemplate");
+        f.setAccessible(true);
+        Path template = (Path)f.get(dataplaneProxyService);
+        assertTrue(template.endsWith("conf/nginx/nginx.conf.template.azure"), "Should pick the Azure‐specific template");
+    }
+
+    @Test
+    public void usesDefaultTemplateWhenCloudIsNotAzure() throws Exception {
+        SystemInfo systemInfo = Mockito.mock(SystemInfo.class);
+        Cloud cloud = Mockito.mock(Cloud.class);
+        when(cloud.name()).thenReturn("aws");
+        when(systemInfo.cloud()).thenReturn(cloud);
+        DataplaneProxyService dataplaneProxyService = new DataplaneProxyService(systemInfo);
+        Field f = DataplaneProxyService.class.getDeclaredField("configTemplate");
+        f.setAccessible(true);
+        Path template = (Path)f.get(dataplaneProxyService);
+        assertTrue(template.endsWith("conf/nginx/nginx.conf.template"), "Should fall back to the default template");
     }
 
     private DataplaneProxyService dataplaneProxyService(DataplaneProxyService.ProxyCommands proxyCommands) throws IOException {

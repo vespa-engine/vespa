@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import ai.vespa.cloud.SystemInfo;
 import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
@@ -28,7 +29,8 @@ public final class DataplaneProxyService extends AbstractComponent {
     private static final Logger logger = Logger.getLogger(DataplaneProxyService.class.getName());
     private static final String PREFIX = "/opt/vespa";
 
-    private final Path configTemplate;
+    private static final String CLOUD_AZURE = "azure";
+
     private final Path serverCertificateFile;
     private final Path serverKeyFile;
     private final Path nginxConf;
@@ -44,9 +46,18 @@ public final class DataplaneProxyService extends AbstractComponent {
     private DataplaneProxyConfig cfg;
     private Path proxyCredentialsCert;
     private Path proxyCredentialsKey;
-
+    private Path configTemplate;
 
     @Inject
+    public DataplaneProxyService(SystemInfo systemInfo) {
+        this(Paths.get(PREFIX), new NginxProxyCommands(), 1);
+
+        // if we're in Azure, switch template to the Azure variant
+        if (CLOUD_AZURE.equalsIgnoreCase(systemInfo.cloud().name())) {
+            this.configTemplate = root.resolve("conf/nginx/nginx.conf.template.azure");
+        }
+    }
+
     public DataplaneProxyService() {
         this(Paths.get(PREFIX), new NginxProxyCommands(), 1);
     }
