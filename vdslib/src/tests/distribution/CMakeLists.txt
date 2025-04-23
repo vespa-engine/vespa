@@ -2,6 +2,7 @@
 vespa_add_library(vdslib_testdistribution
     SOURCES
     distributiontest.cpp
+    global_bucket_space_distribution_converter_test.cpp
     grouptest.cpp
     DEPENDS
     vespa_vdslib
