@@ -28,9 +28,11 @@ public final class DataplaneProxyService extends AbstractComponent {
 
     private static final Logger logger = Logger.getLogger(DataplaneProxyService.class.getName());
     private static final String PREFIX = "/opt/vespa";
-
     private static final String CLOUD_AZURE = "azure";
 
+    private final boolean useAzureProxy;
+
+    private final Path configTemplate;
     private final Path serverCertificateFile;
     private final Path serverKeyFile;
     private final Path nginxConf;
@@ -46,25 +48,24 @@ public final class DataplaneProxyService extends AbstractComponent {
     private DataplaneProxyConfig cfg;
     private Path proxyCredentialsCert;
     private Path proxyCredentialsKey;
-    private Path configTemplate;
 
     @Inject
     public DataplaneProxyService(SystemInfo systemInfo) {
-        this(Paths.get(PREFIX), new NginxProxyCommands(), 1);
-
-        // if we're in Azure, switch template to the Azure variant
-        if (CLOUD_AZURE.equalsIgnoreCase(systemInfo.cloud().name())) {
-            this.configTemplate = root.resolve("conf/nginx/nginx.conf.template.azure");
-        }
+        this(Paths.get(PREFIX), new NginxProxyCommands(), 1, CLOUD_AZURE.equalsIgnoreCase(systemInfo.cloud().name()));
     }
 
     public DataplaneProxyService() {
-        this(Paths.get(PREFIX), new NginxProxyCommands(), 1);
+        this(Paths.get(PREFIX), new NginxProxyCommands(), 1, false);
     }
     
     DataplaneProxyService(Path root, ProxyCommands proxyCommands, int reloadPeriodMinutes) {
+        this(root, proxyCommands, reloadPeriodMinutes, false);
+    }
+
+    private DataplaneProxyService(Path root, ProxyCommands proxyCommands, int reloadPeriodMinutes, boolean useAzureProxy) {
         this.root = root;
         this.proxyCommands = proxyCommands;
+        this.useAzureProxy = useAzureProxy;
         changeState(NginxState.INITIALIZING);
         wantedState = NginxState.RUNNING;
         configTemplate = root.resolve("conf/nginx/nginx.conf.template");
@@ -119,7 +120,8 @@ public final class DataplaneProxyService extends AbstractComponent {
                                                    config.mtlsPort(),
                                                    config.tokenPort(),
                                                    config.tokenEndpoints(),
-                                                   root));
+                                                   root,
+                                                   useAzureProxy));
                 if (configChanged) {
                     logger.log(Level.INFO, "Configuring data plane proxy service. Token endpoints: [%s]"
                             .formatted(String.join(", ", config.tokenEndpoints())));
@@ -212,10 +214,22 @@ public final class DataplaneProxyService extends AbstractComponent {
             int vespaMtlsPort,
             int vespaTokenPort,
             List<String> tokenEndpoints,
-            Path root) {
+            Path root,
+            boolean useAzureProxy) {
 
         try {
             String nginxTemplate = Files.readString(configTemplate);
+
+            String remoteExpr      = useAzureProxy ? "$remote_addr" : "$proxy_protocol_addr - $remote_addr";
+            String proxySuffix     = useAzureProxy ? "" : "proxy_protocol";
+            String proxyOn         = useAzureProxy ? "" : "proxy_protocol on;";
+            String proxySetHeaders = useAzureProxy ? "proxy_set_header X-Forwarded-For $http_x_forwarded_for;\n proxy_set_header X-Forwarded-Port $server_port;\n proxy_set_header X-Real-IP $remote_addr;" : "proxy_set_header X-Forwarded-For $proxy_protocol_addr;\n proxy_set_header X-Forwarded-Port $proxy_protocol_port;";
+
+            nginxTemplate = replace(nginxTemplate, "remote_addr_expr", remoteExpr);
+            nginxTemplate = replace(nginxTemplate, "proxy_protocol_suffix", proxySuffix);
+            nginxTemplate = replace(nginxTemplate, "proxy_protocol_on", proxyOn);
+            nginxTemplate = replace(nginxTemplate, "proxy_set_headers", proxySetHeaders);
+
             nginxTemplate = replace(nginxTemplate, "client_cert", clientCert.toString());
             nginxTemplate = replace(nginxTemplate, "client_key", clientKey.toString());
             nginxTemplate = replace(nginxTemplate, "server_cert", serverCert.toString());
@@ -236,7 +250,8 @@ public final class DataplaneProxyService extends AbstractComponent {
     }
 
     private static String replace(String template, String key, String value) {
-        return template.replaceAll("\\$\\{%s\\}".formatted(key), value);
+        // we want a plain literal replace of "${key}" → value, even if value contains '$'
+        return template.replace("${" + key + "}", value);
     }
 
     // Used for testing
