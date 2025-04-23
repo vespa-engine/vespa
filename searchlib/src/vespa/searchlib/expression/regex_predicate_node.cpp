@@ -25,14 +25,11 @@ bool RegexPredicateNode::allow(DocId docId, HitRank rank) {
             for (size_t i = 0; i < rv->size(); i++) {
                 HoldString tmp(*rv, i);
                 isMatch = _re.regex.full_match(tmp);
-                fprintf(stderr, "RegexPredicateNode check[%zd] match '%s' [%zd]\n",
-                        i, tmp.data(), tmp.size());
                 if (isMatch) break;
             }
         } else {
             HoldString tmp(*result);
             isMatch = _re.regex.full_match(tmp);
-            fprintf(stderr, "RegexPredicateNode check match '%s' [%zd]\n", tmp.data(), tmp.size());
         }
 
     }
@@ -58,7 +55,6 @@ Deserializer& RegexPredicateNode::onDeserialize(Deserializer& is) {
     is >> _re.pattern;
     _re.compile();
     is >> _argument;
-    fprintf(stderr, "RegexPredicateNode pattern='%s' arg=%p\n", _re.pattern.c_str(), _argument.getRoot());
     return is;
 }
 
