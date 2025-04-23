@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchcommon/attribute/config.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
 using search::attribute::Config;
@@ -26,10 +26,11 @@ struct Fixture
     { }
 };
 
-TEST_F("test default attribute config", Fixture)
+TEST(AttributeConfigTest, test_default_attribute_config)
 {
-    EXPECT_EQUAL(BasicType::Type::NONE, f._config.basicType().type());
-    EXPECT_EQUAL(CollectionType::Type::SINGLE,
+    Fixture f;
+    EXPECT_EQ(BasicType::Type::NONE, f._config.basicType().type());
+    EXPECT_EQ(CollectionType::Type::SINGLE,
                  f._config.collectionType().type());
     EXPECT_TRUE(!f._config.fastSearch());
     EXPECT_TRUE(!f._config.getIsFilter());
@@ -37,11 +38,11 @@ TEST_F("test default attribute config", Fixture)
     EXPECT_TRUE(f._config.tensorType().is_error());
 }
 
-TEST_F("test integer weightedset attribute config",
-       Fixture(BasicType::Type::INT32, CollectionType::Type::WSET))
+TEST(AttributeConfigTest, test_integer_weightedset_attribute_config)
 {
-    EXPECT_EQUAL(BasicType::Type::INT32, f._config.basicType().type());
-    EXPECT_EQUAL(CollectionType::Type::WSET, f._config.collectionType().type());
+    Fixture f(BasicType::Type::INT32, CollectionType::Type::WSET);
+    EXPECT_EQ(BasicType::Type::INT32, f._config.basicType().type());
+    EXPECT_EQ(CollectionType::Type::WSET, f._config.collectionType().type());
     EXPECT_TRUE(!f._config.fastSearch());
     EXPECT_TRUE(!f._config.getIsFilter());
     EXPECT_TRUE(!f._config.fastAccess());
@@ -49,7 +50,7 @@ TEST_F("test integer weightedset attribute config",
 }
 
 
-TEST("test operator== on attribute config")
+TEST(AttributeConfigTest, test_operator_equals_on_attribute_config)
 {
     Config cfg1(BasicType::Type::INT32, CollectionType::Type::WSET);
     Config cfg2(BasicType::Type::INT32, CollectionType::Type::ARRAY);
@@ -61,7 +62,7 @@ TEST("test operator== on attribute config")
 }
 
 
-TEST("test operator== on attribute config for tensor type")
+TEST(AttributeConfigTest, test_operator_equals_on_attribute_config_for_tensor_type)
 {
     Config cfg1(BasicType::Type::TENSOR);
     Config cfg2(BasicType::Type::TENSOR);
@@ -76,8 +77,8 @@ TEST("test operator== on attribute config for tensor type")
 
     cfg1.setTensorType(dense_x);
     cfg3.setTensorType(dense_x);
-    EXPECT_EQUAL(dense_x, cfg1.tensorType());
-    EXPECT_EQUAL(dense_x, cfg3.tensorType());
+    EXPECT_EQ(dense_x, cfg1.tensorType());
+    EXPECT_EQ(dense_x, cfg3.tensorType());
     EXPECT_TRUE(!cfg1.tensorType().is_error());
     EXPECT_TRUE(cfg2.tensorType().is_error());
     EXPECT_TRUE(!cfg3.tensorType().is_error());
@@ -87,39 +88,39 @@ TEST("test operator== on attribute config for tensor type")
     EXPECT_TRUE(cfg1 == cfg3);
 
     cfg3.setTensorType(sparse_x);
-    EXPECT_EQUAL(sparse_x, cfg3.tensorType());
+    EXPECT_EQ(sparse_x, cfg3.tensorType());
     EXPECT_TRUE(!cfg3.tensorType().is_error());
     EXPECT_TRUE(cfg1 != cfg3);
 }
 
-TEST("Test GrowStrategy consistency") {
+TEST(AttributeConfigTest, Test_GrowStrategy_consistency) {
     GrowStrategy g(1024, 0.5, 17, 3, 0.4f);
-    EXPECT_EQUAL(1024u, g.getInitialCapacity());
-    EXPECT_EQUAL(0.5, g.getGrowFactor());
-    EXPECT_EQUAL(17u, g.getGrowDelta());
-    EXPECT_EQUAL(3u, g.getMinimumCapacity());
-    EXPECT_EQUAL(0.4f, g.getMultiValueAllocGrowFactor());
+    EXPECT_EQ(1024u, g.getInitialCapacity());
+    EXPECT_EQ(0.5, g.getGrowFactor());
+    EXPECT_EQ(17u, g.getGrowDelta());
+    EXPECT_EQ(3u, g.getMinimumCapacity());
+    EXPECT_EQ(0.4f, g.getMultiValueAllocGrowFactor());
 }
 
-TEST("DictionaryConfig") {
+TEST(AttributeConfigTest, DictionaryConfig) {
     using Type = DictionaryConfig::Type;
     using Match = DictionaryConfig::Match;
-    EXPECT_EQUAL(Type::BTREE, DictionaryConfig().getType());
-    EXPECT_EQUAL(Match::UNCASED, DictionaryConfig().getMatch());
+    EXPECT_EQ(Type::BTREE, DictionaryConfig().getType());
+    EXPECT_EQ(Match::UNCASED, DictionaryConfig().getMatch());
 
-    EXPECT_EQUAL(Type::BTREE, DictionaryConfig(Type::BTREE).getType());
-    EXPECT_EQUAL(Match::UNCASED, DictionaryConfig(Type::BTREE).getMatch());
-    EXPECT_EQUAL(Match::UNCASED, DictionaryConfig(Type::BTREE, Match::UNCASED).getMatch());
-    EXPECT_EQUAL(Match::CASED, DictionaryConfig(Type::BTREE, Match::CASED).getMatch());
+    EXPECT_EQ(Type::BTREE, DictionaryConfig(Type::BTREE).getType());
+    EXPECT_EQ(Match::UNCASED, DictionaryConfig(Type::BTREE).getMatch());
+    EXPECT_EQ(Match::UNCASED, DictionaryConfig(Type::BTREE, Match::UNCASED).getMatch());
+    EXPECT_EQ(Match::CASED, DictionaryConfig(Type::BTREE, Match::CASED).getMatch());
 
-    EXPECT_EQUAL(Type::HASH, DictionaryConfig(Type::HASH).getType());
-    EXPECT_EQUAL(Type::BTREE_AND_HASH, DictionaryConfig(Type::BTREE_AND_HASH).getType());
+    EXPECT_EQ(Type::HASH, DictionaryConfig(Type::HASH).getType());
+    EXPECT_EQ(Type::BTREE_AND_HASH, DictionaryConfig(Type::BTREE_AND_HASH).getType());
 
-    EXPECT_EQUAL(DictionaryConfig(Type::BTREE), DictionaryConfig(Type::BTREE));
-    EXPECT_EQUAL(DictionaryConfig(Type::HASH), DictionaryConfig(Type::HASH));
-    EXPECT_EQUAL(DictionaryConfig(Type::BTREE_AND_HASH), DictionaryConfig(Type::BTREE_AND_HASH));
-    EXPECT_NOT_EQUAL(DictionaryConfig(Type::HASH), DictionaryConfig(Type::BTREE));
-    EXPECT_NOT_EQUAL(DictionaryConfig(Type::BTREE), DictionaryConfig(Type::HASH));
+    EXPECT_EQ(DictionaryConfig(Type::BTREE), DictionaryConfig(Type::BTREE));
+    EXPECT_EQ(DictionaryConfig(Type::HASH), DictionaryConfig(Type::HASH));
+    EXPECT_EQ(DictionaryConfig(Type::BTREE_AND_HASH), DictionaryConfig(Type::BTREE_AND_HASH));
+    EXPECT_NE(DictionaryConfig(Type::HASH), DictionaryConfig(Type::BTREE));
+    EXPECT_NE(DictionaryConfig(Type::BTREE), DictionaryConfig(Type::HASH));
     EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) ==
                 Config().set_dictionary_config(DictionaryConfig(Type::HASH)));
     EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) ==
@@ -131,4 +132,4 @@ TEST("DictionaryConfig") {
 }
 
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
