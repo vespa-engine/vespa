@@ -48,19 +48,19 @@ public class FieldValuesFactory {
         DocumentType docType = update.getDocumentType();
         DocumentId docId = update.getId();
         Document complete = new Document(docType, update.getId());
-        for (FieldPathUpdate fieldUpdate : update) {
+        for (FieldPathUpdate fieldUpd : update) {
             try {
-                if (FieldPathUpdateHelper.isComplete(fieldUpdate)) {
+                if (FieldPathUpdateHelper.isComplete(fieldUpd)) {
                     // A 'complete' field path update is basically a regular top-level field update
                     // in wolf's clothing. Convert it to a regular field update to be friendlier
                     // towards the search core backend.
-                    FieldPathUpdateHelper.applyUpdate(fieldUpdate, complete);
+                    FieldPathUpdateHelper.applyUpdate(fieldUpd, complete);
                 } else {
-                    ret.add(new IdentityFieldPathUpdateFieldValues(fieldUpdate, newDocumentAdapter(complete, true)));
+                    ret.add(new IdentityFieldPathUpdateFieldValues(fieldUpd, newDocumentAdapter(complete, true)));
                 }
             } catch (NullPointerException e) {
-                throw new IllegalArgumentException("Exception during handling of update '" + fieldUpdate +
-                                                   "' to field '" + fieldUpdate.getFieldPath() + "'", e);
+                throw new IllegalArgumentException("Exception during handling of update '" + fieldUpd +
+                                                   "' to field '" + fieldUpd.getFieldPath() + "'", e);
             }
         }
         for (FieldUpdate fieldUpdate : update.fieldUpdates()) {
