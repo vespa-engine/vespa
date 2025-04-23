@@ -33,6 +33,7 @@ public abstract class FieldUpdateHelper {
     /** Returns true if this update completely replaces the value of the field, false otherwise. */
     public static boolean isComplete(Field field, ValueUpdate update) {
         if (update instanceof AssignValueUpdate) return true;
+        if (update instanceof ClearValueUpdate) return true;
         if (!(update instanceof MapValueUpdate)) return false;
 
         DataType fieldType = field.getDataType();
