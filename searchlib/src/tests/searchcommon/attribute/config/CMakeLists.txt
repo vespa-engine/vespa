@@ -4,5 +4,6 @@ vespa_add_executable(searchcommon_attribute_config_test_app TEST
     attribute_config_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchcommon_attribute_config_test_app NO_VALGRIND COMMAND searchcommon_attribute_config_test_app)
