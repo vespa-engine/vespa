@@ -12,5 +12,6 @@ vespa_add_executable(searchlib_translog_chunks_test_app TEST
     chunks_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_translog_chunks_test_app COMMAND searchlib_translog_chunks_test_app)

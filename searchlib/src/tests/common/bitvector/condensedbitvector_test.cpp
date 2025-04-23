@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/common/condensedbitvectors.h>
 #include <vespa/searchlib/common/bitvectorcache.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -12,17 +12,17 @@ using search::BitVectorCache;
 using search::PopulateInterface;
 using vespalib::GenerationHolder;
 
-TEST("Verify state after init")
+TEST(CondensedBitvectorTest, verify_state_after_init)
 {
     GenerationHolder genHolder;
     CondensedBitVector::UP cbv(CondensedBitVector::create(8, genHolder));
-    EXPECT_EQUAL(32u, cbv->getKeyCapacity());
-    EXPECT_EQUAL(8u, cbv->getCapacity());
-    EXPECT_EQUAL(8u, cbv->getSize());
+    EXPECT_EQ(32u, cbv->getKeyCapacity());
+    EXPECT_EQ(8u, cbv->getCapacity());
+    EXPECT_EQ(8u, cbv->getSize());
 }
 
 
-TEST("Verify set/get")
+TEST(CondensedBitvectorTest, verify_set_get)
 {
     GenerationHolder genHolder;
     CondensedBitVector::UP cbv(CondensedBitVector::create(8, genHolder));
@@ -46,7 +46,7 @@ TEST("Verify set/get")
             sum += cbv->get(i,j) ? 1 : 0;
         }
     }
-    EXPECT_EQUAL(1u, sum);
+    EXPECT_EQ(1u, sum);
 }
 
 namespace {
@@ -95,7 +95,7 @@ create(uint32_t numDocs, uint32_t numKeys, uint32_t seed) {
 
 }
 
-TEST("Test repopulation of bitvector cache") {
+TEST(CondensedBitvectorTest, test_repopulation_of_bitvector_cache) {
     GenerationHolder genHolder;
     BitVectorCache cache(genHolder);
     constexpr uint32_t numDocs = 100;
@@ -106,7 +106,7 @@ TEST("Test repopulation of bitvector cache") {
     cache.requirePopulation();
     cache.populate(numDocs, Populater(create(numDocs, 1, 1)));
     auto keySet = cache.lookupCachedSet({{0,5}, {1,10}});
-    EXPECT_EQUAL(1u, keySet.size());
+    EXPECT_EQ(1u, keySet.size());
     EXPECT_TRUE(keySet.contains(0));
     cache.computeCountVector(keySet, countVector);
 
@@ -119,7 +119,7 @@ TEST("Test repopulation of bitvector cache") {
         cache.requirePopulation();
         cache.populate(numDocs, Populater(create(numDocs, i, i)));
         keySet = cache.lookupCachedSet(keys);
-        EXPECT_EQUAL(keys.size(), keySet.size());
+        EXPECT_EQ(keys.size(), keySet.size());
         cache.computeCountVector(keySet, countVector);
     }
 
@@ -130,10 +130,10 @@ TEST("Test repopulation of bitvector cache") {
     uint8_t prev_7 = countVector[7];
     cache.set(1, 7, true);
     cache.computeCountVector(keySet, countVector);
-    EXPECT_EQUAL(prev_7 + 1, countVector[7]);
+    EXPECT_EQ(prev_7 + 1, countVector[7]);
     cache.set(1, 7, false);
     cache.computeCountVector(keySet, countVector);
-    EXPECT_EQUAL(prev_7, countVector[7]);
+    EXPECT_EQ(prev_7, countVector[7]);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

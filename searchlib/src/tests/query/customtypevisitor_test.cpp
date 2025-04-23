@@ -5,7 +5,7 @@
 #include <vespa/searchlib/query/tree/intermediatenodes.h>
 #include <vespa/searchlib/query/tree/string_term_vector.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("customtypevisitor_test");
@@ -135,7 +135,7 @@ void requireThatNodeIsVisited() {
     ASSERT_TRUE(visitor.isVisited<T>());
 }
 
-TEST("customtypevisitor_test") {
+TEST(CustomTypeVisitorTest, all_query_nodes_are_visited) {
 
     requireThatNodeIsVisited<MyAnd>();
     requireThatNodeIsVisited<MyAndNot>();
@@ -164,4 +164,4 @@ TEST("customtypevisitor_test") {
 }
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
