@@ -12,7 +12,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/simple_thread_bundle.h>
 #include <algorithm>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace search;
@@ -104,15 +104,15 @@ scan(uint32_t count, uint32_t offset, uint32_t size, vespalib::Rand48 &rnd)
     for (auto lid : lids) {
         bv->setBit(lid);
     }
-    EXPECT_EQUAL(bv->getFirstTrueBit(), bv->getNextTrueBit(bv->getStartIndex()));
+    EXPECT_EQ(bv->getFirstTrueBit(), bv->getNextTrueBit(bv->getStartIndex()));
     uint32_t prevLid = bv->getStartIndex();
     for (auto lid : lids) {
-        EXPECT_EQUAL(lid, bv->getNextTrueBit(prevLid + 1));
-        EXPECT_EQUAL(prevLid, bv->getPrevTrueBit(lid - 1));
+        EXPECT_EQ(lid, bv->getNextTrueBit(prevLid + 1));
+        EXPECT_EQ(prevLid, bv->getPrevTrueBit(lid - 1));
         prevLid = lid;
     }
     EXPECT_TRUE(bv->getNextTrueBit(prevLid + 1) >= end);
-    EXPECT_EQUAL(prevLid, bv->getPrevTrueBit(end - 1));
+    EXPECT_EQ(prevLid, bv->getPrevTrueBit(end - 1));
 }
 
 void
@@ -135,11 +135,13 @@ scanWithOffset(uint32_t offset)
 bool
 assertBV(const std::string & exp, const BitVector & act)
 {
-    bool res1 = EXPECT_EQUAL(exp, toString(act));
+    EXPECT_EQ(exp, toString(act));
+    bool res1 = (exp == toString(act));
     search::fef::TermFieldMatchData f;
     queryeval::SearchIterator::UP it(BitVectorIterator::create(&act, f, true));
     auto & b(dynamic_cast<BitVectorIterator &>(*it));
-    bool res2 = EXPECT_EQUAL(exp, toString(b));
+    EXPECT_EQ(exp, toString(b));
+    bool res2 = (exp == toString(b));
     return res1 && res2;
 }
 
@@ -265,22 +267,22 @@ testNot(uint32_t offset)
     EXPECT_TRUE(assertBV(fill(A, offset), *v1));
 }
 
-TEST("requireThatSequentialOperationsOnPartialWorks")
+TEST(BitvectorTest, requireThatSequentialOperationsOnPartialWorks)
 {
     PartialBitVector p1(717,919);
 
     EXPECT_FALSE(p1.hasTrueBits());
-    EXPECT_EQUAL(0u, p1.countTrueBits());
+    EXPECT_EQ(0u, p1.countTrueBits());
     p1.setBit(719);
-    EXPECT_EQUAL(0u, p1.countTrueBits());
+    EXPECT_EQ(0u, p1.countTrueBits());
     p1.invalidateCachedCount();
     EXPECT_TRUE(p1.hasTrueBits());
-    EXPECT_EQUAL(1u, p1.countTrueBits());
+    EXPECT_EQ(1u, p1.countTrueBits());
     p1.setBitAndMaintainCount(718);
     p1.setBitAndMaintainCount(739);
     p1.setBitAndMaintainCount(871);
     p1.setBitAndMaintainCount(903);
-    EXPECT_EQUAL(5u, p1.countTrueBits());
+    EXPECT_EQ(5u, p1.countTrueBits());
     EXPECT_TRUE(assertBV("[718,719,739,871,903]", p1));
 
     PartialBitVector p2(717,919);
@@ -295,21 +297,21 @@ TEST("requireThatSequentialOperationsOnPartialWorks")
 
     AllocatedBitVector full(1000);
     full.setInterval(0, 1000);
-    EXPECT_EQUAL(5u, p2.countTrueBits());
+    EXPECT_EQ(5u, p2.countTrueBits());
     p2.orWith(full);
-    EXPECT_EQUAL(202u, p2.countTrueBits());
+    EXPECT_EQ(202u, p2.countTrueBits());
 
     AllocatedBitVector before(100);
     before.setInterval(0, 100);
     p2.orWith(before);
-    EXPECT_EQUAL(202u, p2.countTrueBits());
+    EXPECT_EQ(202u, p2.countTrueBits());
 
     PartialBitVector after(1000, 1100);
     after.setInterval(1000, 1100);
-    EXPECT_EQUAL(202u, p2.countTrueBits());
+    EXPECT_EQ(202u, p2.countTrueBits());
 }
 
-TEST("requireThatInitRangeStaysWithinBounds") {
+TEST(BitvectorTest, requireThatInitRangeStaysWithinBounds) {
     AllocatedBitVector v1(128);
     search::fef::TermFieldMatchData f;
     queryeval::SearchIterator::UP it(BitVectorIterator::create(&v1, f, true));
@@ -344,7 +346,7 @@ verifyThatLongerWithShorterWorksAsZeroPadded(uint32_t offset, uint32_t sz1, uint
     BitVector::UP bLarger = createEveryNthBitSet(3, 0, offset + sz2);
     BitVector::UP bEmpty = createEveryNthBitSet(3, 0, 0);
     bLarger->clearInterval(offset + sz1, offset + sz2);
-    EXPECT_EQUAL(bSmall->countTrueBits(), bLarger->countTrueBits());
+    EXPECT_EQ(bSmall->countTrueBits(), bLarger->countTrueBits());
 
     BitVector::UP aLarger2 = BitVector::create(*aLarger, aLarger->getStartIndex(), aLarger->size());
     BitVector::UP aLarger3 = BitVector::create(*aLarger, aLarger->getStartIndex(), aLarger->size());
@@ -362,21 +364,21 @@ verifyNonOverlappingWorksAsZeroPadded(bool clear, Func func) {
     constexpr size_t CNT = 34;
     BitVector::UP left = createEveryNthBitSet(3, 1000, 100);
     BitVector::UP right = createEveryNthBitSet(3, 2000, 100);
-    EXPECT_EQUAL(CNT, left->countTrueBits());
-    EXPECT_EQUAL(CNT, right->countTrueBits());
+    EXPECT_EQ(CNT, left->countTrueBits());
+    EXPECT_EQ(CNT, right->countTrueBits());
     func(*left, *right);
-    EXPECT_EQUAL(clear ? 0 : CNT, left->countTrueBits());
-    EXPECT_EQUAL(CNT, right->countTrueBits());
+    EXPECT_EQ(clear ? 0 : CNT, left->countTrueBits());
+    EXPECT_EQ(CNT, right->countTrueBits());
     left = createEveryNthBitSet(3, 1000, 100);
     right = createEveryNthBitSet(3, 2000, 100);
-    EXPECT_EQUAL(CNT, left->countTrueBits());
-    EXPECT_EQUAL(CNT, right->countTrueBits());
+    EXPECT_EQ(CNT, left->countTrueBits());
+    EXPECT_EQ(CNT, right->countTrueBits());
     func(*right, *left);
-    EXPECT_EQUAL(CNT, left->countTrueBits());
-    EXPECT_EQUAL(clear ? 0 : CNT, right->countTrueBits());
+    EXPECT_EQ(CNT, left->countTrueBits());
+    EXPECT_EQ(clear ? 0 : CNT, right->countTrueBits());
 }
 
-TEST("requireThatAndWorks") {
+TEST(BitvectorTest, requireThatAndWorks) {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAnd(offset);
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
@@ -385,7 +387,7 @@ TEST("requireThatAndWorks") {
     verifyNonOverlappingWorksAsZeroPadded(true, [](BitVector & a, const BitVector & b) { a.andWith(b); });
 }
 
-TEST("requireThatOrWorks") {
+TEST(BitvectorTest, requireThatOrWorks) {
     for (uint32_t offset(0); offset < 100; offset++) {
         testOr(offset);
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
@@ -395,7 +397,7 @@ TEST("requireThatOrWorks") {
 }
 
 
-TEST("requireThatAndNotWorks") {
+TEST(BitvectorTest, requireThatAndNotWorks) {
     for (uint32_t offset(0); offset < 100; offset++) {
         testAndNot(offset);
         verifyThatLongerWithShorterWorksAsZeroPadded(offset, offset+256, offset+256 + offset + 3,
@@ -404,25 +406,25 @@ TEST("requireThatAndNotWorks") {
     verifyNonOverlappingWorksAsZeroPadded(false, [](BitVector & a, const BitVector & b) { a.andNotWith(b); });
 }
 
-TEST("test that empty bitvectors does not crash") {
+TEST(BitvectorTest, test_that_empty_bitvectors_does_not_crash) {
     BitVector::UP empty = BitVector::create(0);
-    EXPECT_EQUAL(0u, empty->countTrueBits());
-    EXPECT_EQUAL(0u, empty->countInterval(0, 100));
+    EXPECT_EQ(0u, empty->countTrueBits());
+    EXPECT_EQ(0u, empty->countInterval(0, 100));
     empty->setInterval(0,17);
-    EXPECT_EQUAL(0u, empty->countInterval(0, 100));
+    EXPECT_EQ(0u, empty->countInterval(0, 100));
     empty->clearInterval(0,17);
-    EXPECT_EQUAL(0u, empty->countInterval(0, 100));
+    EXPECT_EQ(0u, empty->countInterval(0, 100));
     empty->notSelf();
-    EXPECT_EQUAL(0u, empty->countInterval(0, 100));
+    EXPECT_EQ(0u, empty->countInterval(0, 100));
 }
 
-TEST("requireThatNotWorks") {
+TEST(BitvectorTest, requireThatNotWorks) {
     for (uint32_t offset(0); offset < 100; offset++) {
         testNot(offset);
     }
 }
 
-TEST("requireThatClearWorks")
+TEST(BitvectorTest, requireThatClearWorks)
 {
     AllocatedBitVector v1(128);
 
@@ -436,60 +438,60 @@ TEST("requireThatClearWorks")
     EXPECT_TRUE(assertBV("[]", v1));
 }
 
-TEST("requireThatForEachWorks") {
+TEST(BitvectorTest, requireThatForEachWorks) {
     AllocatedBitVector v1(128);
 
     v1.setBit(7);
     v1.setBit(39);
     v1.setBit(71);
     v1.setBit(103);
-    EXPECT_EQUAL(128u, v1.size());
+    EXPECT_EQ(128u, v1.size());
 
     size_t sum(0);
     v1.foreach_truebit([&](uint32_t key) { sum += key; });
-    EXPECT_EQUAL(220u, sum);
+    EXPECT_EQ(220u, sum);
 
     sum = 0;
     v1.foreach_truebit([&](uint32_t key) { sum += key; }, 7);
-    EXPECT_EQUAL(220u, sum);
+    EXPECT_EQ(220u, sum);
 
     sum = 0;
     v1.foreach_truebit([&](uint32_t key) { sum += key; }, 6, 7);
-    EXPECT_EQUAL(0u, sum);
+    EXPECT_EQ(0u, sum);
     sum = 0;
     v1.foreach_truebit([&](uint32_t key) { sum += key; }, 7, 8);
-    EXPECT_EQUAL(7u, sum);
+    EXPECT_EQ(7u, sum);
     sum = 0;
     v1.foreach_truebit([&](uint32_t key) { sum += key; }, 8, 9);
-    EXPECT_EQUAL(0u, sum);
+    EXPECT_EQ(0u, sum);
 
     sum = 0;
     v1.foreach_truebit([&](uint32_t key) { sum += key; }, 8);
-    EXPECT_EQUAL(213u, sum);
+    EXPECT_EQ(213u, sum);
 
     sum = 0;
     v1.foreach_falsebit([&](uint32_t key) { sum += key; }, 5, 6);
-    EXPECT_EQUAL(5u, sum);
+    EXPECT_EQ(5u, sum);
 
     sum = 0;
     v1.foreach_falsebit([&](uint32_t key) { sum += key; }, 5, 7);
-    EXPECT_EQUAL(11u, sum);
+    EXPECT_EQ(11u, sum);
 
     sum = 0;
     v1.foreach_falsebit([&](uint32_t key) { sum += key; }, 5, 8);
-    EXPECT_EQUAL(11u, sum);
+    EXPECT_EQ(11u, sum);
 
     sum = 0;
     v1.foreach_falsebit([&](uint32_t key) { sum += key; }, 5, 9);
-    EXPECT_EQUAL(19u, sum);
+    EXPECT_EQ(19u, sum);
 
     sum = 0;
     v1.foreach_falsebit([&](uint32_t key) { sum += key; }, 6);
-    EXPECT_EQUAL(size_t((((6+127)*(127-6 + 1)) >> 1) - 220), sum);
+    EXPECT_EQ(size_t((((6+127)*(127-6 + 1)) >> 1) - 220), sum);
 }
 
 
-TEST("requireThatSetWorks")
+TEST(BitvectorTest, requireThatSetWorks)
 {
     AllocatedBitVector v1(128);
 
@@ -499,49 +501,49 @@ TEST("requireThatSetWorks")
     v1.setBit(103);
     EXPECT_TRUE(assertBV("[7,39,71,103]", v1));
     v1.invalidateCachedCount();
-    EXPECT_EQUAL(4u, v1.countTrueBits());
+    EXPECT_EQ(4u, v1.countTrueBits());
 
     v1.setBit(80);
-    EXPECT_EQUAL(4u, v1.countTrueBits());
+    EXPECT_EQ(4u, v1.countTrueBits());
     v1.invalidateCachedCount();
-    EXPECT_EQUAL(5u, v1.countTrueBits());
+    EXPECT_EQ(5u, v1.countTrueBits());
     EXPECT_TRUE(assertBV("[7,39,71,80,103]", v1));
 
     v1.clearBit(35);
-    EXPECT_EQUAL(5u, v1.countTrueBits());
+    EXPECT_EQ(5u, v1.countTrueBits());
     v1.invalidateCachedCount();
-    EXPECT_EQUAL(5u, v1.countTrueBits());
+    EXPECT_EQ(5u, v1.countTrueBits());
     EXPECT_TRUE(assertBV("[7,39,71,80,103]", v1));
     v1.clearBit(71);
-    EXPECT_EQUAL(5u, v1.countTrueBits());
+    EXPECT_EQ(5u, v1.countTrueBits());
     v1.invalidateCachedCount();
-    EXPECT_EQUAL(4u, v1.countTrueBits());
+    EXPECT_EQ(4u, v1.countTrueBits());
     EXPECT_TRUE(assertBV("[7,39,80,103]", v1));
 
     v1.setBitAndMaintainCount(39);
-    EXPECT_EQUAL(4u, v1.countTrueBits());
+    EXPECT_EQ(4u, v1.countTrueBits());
     EXPECT_TRUE(assertBV("[7,39,80,103]", v1));
     v1.setBitAndMaintainCount(57);
-    EXPECT_EQUAL(5u, v1.countTrueBits());
+    EXPECT_EQ(5u, v1.countTrueBits());
     EXPECT_TRUE(assertBV("[7,39,57,80,103]", v1));
 }
 
-TEST("test BitWord::startBits/endBits") {
-    EXPECT_EQUAL(BitWord::startBits(0),  0x00ul);
-    EXPECT_EQUAL(BitWord::startBits(1),  0x01ul);
-    EXPECT_EQUAL(BitWord::startBits(2),  0x03ul);
-    EXPECT_EQUAL(BitWord::startBits(61), 0x1ffffffffffffffful);
-    EXPECT_EQUAL(BitWord::startBits(62), 0x3ffffffffffffffful);
-    EXPECT_EQUAL(BitWord::startBits(63), 0x7ffffffffffffffful);
-    EXPECT_EQUAL(BitWord::endBits(0),  0xfffffffffffffffeul);
-    EXPECT_EQUAL(BitWord::endBits(1),  0xfffffffffffffffcul);
-    EXPECT_EQUAL(BitWord::endBits(2),  0xfffffffffffffff8ul);
-    EXPECT_EQUAL(BitWord::endBits(61), 0xc000000000000000ul);
-    EXPECT_EQUAL(BitWord::endBits(62), 0x8000000000000000ul);
-    EXPECT_EQUAL(BitWord::endBits(63), 0x0000000000000000ul);
+TEST(BitvectorTest, test_BitWord_startBits_endBits) {
+    EXPECT_EQ(BitWord::startBits(0),  0x00ul);
+    EXPECT_EQ(BitWord::startBits(1),  0x01ul);
+    EXPECT_EQ(BitWord::startBits(2),  0x03ul);
+    EXPECT_EQ(BitWord::startBits(61), 0x1ffffffffffffffful);
+    EXPECT_EQ(BitWord::startBits(62), 0x3ffffffffffffffful);
+    EXPECT_EQ(BitWord::startBits(63), 0x7ffffffffffffffful);
+    EXPECT_EQ(BitWord::endBits(0),  0xfffffffffffffffeul);
+    EXPECT_EQ(BitWord::endBits(1),  0xfffffffffffffffcul);
+    EXPECT_EQ(BitWord::endBits(2),  0xfffffffffffffff8ul);
+    EXPECT_EQ(BitWord::endBits(61), 0xc000000000000000ul);
+    EXPECT_EQ(BitWord::endBits(62), 0x8000000000000000ul);
+    EXPECT_EQ(BitWord::endBits(63), 0x0000000000000000ul);
 }
 
-TEST("requireThatClearIntervalWorks")
+TEST(BitvectorTest, requireThatClearIntervalWorks)
 {
     AllocatedBitVector v1(1200);
     
@@ -568,20 +570,20 @@ TEST("requireThatClearIntervalWorks")
 
             v.clear();
             v.notSelf();
-            EXPECT_EQUAL(400u, v.countTrueBits());
+            EXPECT_EQ(400u, v.countTrueBits());
 
             v.clearInterval(offset, offset+intervalLength);
             EXPECT_FALSE(v.testBit(offset));
             EXPECT_TRUE(v.testBit(offset-1));
             EXPECT_FALSE(v.testBit(offset+intervalLength-1));
             EXPECT_TRUE(v.testBit(offset+intervalLength));
-            EXPECT_EQUAL(400 - intervalLength, v.countTrueBits());
+            EXPECT_EQ(400 - intervalLength, v.countTrueBits());
         }
     }
 }
 
 
-TEST("requireThatSetIntervalWorks")
+TEST(BitvectorTest, requireThatSetIntervalWorks)
 {
     AllocatedBitVector v1(1200);
     
@@ -598,152 +600,152 @@ TEST("requireThatSetIntervalWorks")
     EXPECT_TRUE(assertBV("[7,39,40,41,42,43,44,45,71,103,200,500]", v1));
     EXPECT_TRUE(v1.hasTrueBits());
     v1.invalidateCachedCount();
-    EXPECT_EQUAL(12u, v1.countTrueBits());
-    EXPECT_EQUAL(12u, v1.countInterval(1, 1199));
-    EXPECT_EQUAL(12u, myCountInterval(v1, 1, 1199));
+    EXPECT_EQ(12u, v1.countTrueBits());
+    EXPECT_EQ(12u, v1.countInterval(1, 1199));
+    EXPECT_EQ(12u, myCountInterval(v1, 1, 1199));
     
     v1.setInterval(40, 200);
-    EXPECT_EQUAL(164u, v1.countInterval(1, 1199));
-    EXPECT_EQUAL(164u, myCountInterval(v1, 1, 1199));
-    EXPECT_EQUAL(163u, v1.countInterval(1, 201));
-    EXPECT_EQUAL(162u, v1.countInterval(1, 200));
-    EXPECT_EQUAL(163u, v1.countInterval(7, 201));
-    EXPECT_EQUAL(162u, v1.countInterval(8, 201));
-    EXPECT_EQUAL(161u, v1.countInterval(8, 200));
+    EXPECT_EQ(164u, v1.countInterval(1, 1199));
+    EXPECT_EQ(164u, myCountInterval(v1, 1, 1199));
+    EXPECT_EQ(163u, v1.countInterval(1, 201));
+    EXPECT_EQ(162u, v1.countInterval(1, 200));
+    EXPECT_EQ(163u, v1.countInterval(7, 201));
+    EXPECT_EQ(162u, v1.countInterval(8, 201));
+    EXPECT_EQ(161u, v1.countInterval(8, 200));
     v1.clearInterval(72, 174);
-    EXPECT_EQUAL(62u, v1.countInterval(1, 1199));
-    EXPECT_EQUAL(62u, myCountInterval(v1, 1, 1199));
-    EXPECT_EQUAL(61u, v1.countInterval(1, 201));
-    EXPECT_EQUAL(60u, v1.countInterval(1, 200));
-    EXPECT_EQUAL(61u, v1.countInterval(7, 201));
-    EXPECT_EQUAL(60u, v1.countInterval(8, 201));
-    EXPECT_EQUAL(59u, v1.countInterval(8, 200));
-    EXPECT_EQUAL(51u, v1.countInterval(8, 192));
-    EXPECT_EQUAL(50u, v1.countInterval(8, 191));
+    EXPECT_EQ(62u, v1.countInterval(1, 1199));
+    EXPECT_EQ(62u, myCountInterval(v1, 1, 1199));
+    EXPECT_EQ(61u, v1.countInterval(1, 201));
+    EXPECT_EQ(60u, v1.countInterval(1, 200));
+    EXPECT_EQ(61u, v1.countInterval(7, 201));
+    EXPECT_EQ(60u, v1.countInterval(8, 201));
+    EXPECT_EQ(59u, v1.countInterval(8, 200));
+    EXPECT_EQ(51u, v1.countInterval(8, 192));
+    EXPECT_EQ(50u, v1.countInterval(8, 191));
 
-    EXPECT_EQUAL(1u, v1.countInterval(1, 20));
-    EXPECT_EQUAL(1u, v1.countInterval(7, 20));
-    EXPECT_EQUAL(0u, v1.countInterval(8, 20));
-    EXPECT_EQUAL(1u, v1.countInterval(1, 8));
-    EXPECT_EQUAL(0u, v1.countInterval(1, 7));
+    EXPECT_EQ(1u, v1.countInterval(1, 20));
+    EXPECT_EQ(1u, v1.countInterval(7, 20));
+    EXPECT_EQ(0u, v1.countInterval(8, 20));
+    EXPECT_EQ(1u, v1.countInterval(1, 8));
+    EXPECT_EQ(0u, v1.countInterval(1, 7));
 }
 
-TEST("requireThatScanWorks")
+TEST(BitvectorTest, requireThatScanWorks)
 {
     scanWithOffset(0);
     scanWithOffset(19876);
 }
 
-TEST("requireThatGrowWorks")
+TEST(BitvectorTest, requireThatGrowWorks)
 {
     vespalib::GenerationHolder g;
     GrowableBitVector v(200, 200, g);
-    EXPECT_EQUAL(0u, v.writer().countTrueBits());
+    EXPECT_EQ(0u, v.writer().countTrueBits());
     
     v.writer().setBitAndMaintainCount(7);
     v.writer().setBitAndMaintainCount(39);
     v.writer().setBitAndMaintainCount(71);
     v.writer().setBitAndMaintainCount(103);
-    EXPECT_EQUAL(4u, v.writer().countTrueBits());
+    EXPECT_EQ(4u, v.writer().countTrueBits());
 
-    EXPECT_EQUAL(200u, v.reader().size());
-    EXPECT_EQUAL(2047u, v.writer().capacity());
+    EXPECT_EQ(200u, v.reader().size());
+    EXPECT_EQ(2047u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
-    EXPECT_EQUAL(4u, v.writer().countTrueBits());
+    EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_TRUE(v.reserve(2048u));
-    EXPECT_EQUAL(200u, v.reader().size()); 
-    EXPECT_EQUAL(4095u, v.writer().capacity());
+    EXPECT_EQ(200u, v.reader().size()); 
+    EXPECT_EQ(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
-    EXPECT_EQUAL(4u, v.writer().countTrueBits());
+    EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.extend(202));
-    EXPECT_EQUAL(202u, v.reader().size()); 
-    EXPECT_EQUAL(4095u, v.writer().capacity());
+    EXPECT_EQ(202u, v.reader().size()); 
+    EXPECT_EQ(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
-    EXPECT_EQUAL(4u, v.writer().countTrueBits());
+    EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.shrink(200));
-    EXPECT_EQUAL(200u, v.reader().size()); 
-    EXPECT_EQUAL(4095u, v.writer().capacity());
+    EXPECT_EQ(200u, v.reader().size()); 
+    EXPECT_EQ(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
-    EXPECT_EQUAL(4u, v.writer().countTrueBits());
+    EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.reserve(4095u));
-    EXPECT_EQUAL(200u, v.reader().size()); 
-    EXPECT_EQUAL(4095u, v.writer().capacity());
+    EXPECT_EQ(200u, v.reader().size()); 
+    EXPECT_EQ(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
-    EXPECT_EQUAL(4u, v.writer().countTrueBits());
+    EXPECT_EQ(4u, v.writer().countTrueBits());
     EXPECT_FALSE(v.shrink(202));
-    EXPECT_EQUAL(202u, v.reader().size()); 
-    EXPECT_EQUAL(4095u, v.writer().capacity());
+    EXPECT_EQ(202u, v.reader().size()); 
+    EXPECT_EQ(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71,103]", v.reader()));
-    EXPECT_EQUAL(4u, v.writer().countTrueBits());
+    EXPECT_EQ(4u, v.writer().countTrueBits());
 
     EXPECT_FALSE(v.shrink(100));
-    EXPECT_EQUAL(100u, v.reader().size()); 
-    EXPECT_EQUAL(4095u, v.writer().capacity());
+    EXPECT_EQ(100u, v.reader().size()); 
+    EXPECT_EQ(4095u, v.writer().capacity());
     EXPECT_TRUE(assertBV("[7,39,71]", v.reader()));
-    EXPECT_EQUAL(3u, v.writer().countTrueBits());
+    EXPECT_EQ(3u, v.writer().countTrueBits());
 
     v.writer().invalidateCachedCount();
     EXPECT_TRUE(v.reserve(5100u));
-    EXPECT_EQUAL(100u, v.reader().size());
-    EXPECT_EQUAL(6143u, v.writer().capacity());
-    EXPECT_EQUAL(3u, v.writer().countTrueBits());
+    EXPECT_EQ(100u, v.reader().size());
+    EXPECT_EQ(6143u, v.writer().capacity());
+    EXPECT_EQ(3u, v.writer().countTrueBits());
 
     g.assign_generation(1);
     g.reclaim(2);
 }
 
-TEST("require that growable bit vectors keeps memory allocator")
+TEST(BitvectorTest, require_that_growable_bit_vectors_keeps_memory_allocator)
 {
     AllocStats stats;
     auto memory_allocator = std::make_unique<MemoryAllocatorObserver>(stats);
     Alloc init_alloc = Alloc::alloc_with_allocator(memory_allocator.get());
     vespalib::GenerationHolder g;
     GrowableBitVector v(200, 200, g, &init_alloc);
-    EXPECT_EQUAL(AllocStats(1, 0), stats);
+    EXPECT_EQ(AllocStats(1, 0), stats);
     v.writer().resize(1); // DO NOT TRY THIS AT HOME
-    EXPECT_EQUAL(AllocStats(2, 1), stats);
+    EXPECT_EQ(AllocStats(2, 1), stats);
     v.reserve(2048);
-    EXPECT_EQUAL(AllocStats(3, 1), stats);
+    EXPECT_EQ(AllocStats(3, 1), stats);
     v.extend(5000);
-    EXPECT_EQUAL(AllocStats(4, 1), stats);
+    EXPECT_EQ(AllocStats(4, 1), stats);
     v.shrink(200);
-    EXPECT_EQUAL(AllocStats(4, 1), stats);
+    EXPECT_EQ(AllocStats(4, 1), stats);
     v.writer().resize(1); // DO NOT TRY THIS AT HOME
-    EXPECT_EQUAL(AllocStats(5, 2), stats);
+    EXPECT_EQ(AllocStats(5, 2), stats);
     g.assign_generation(1);
     g.reclaim(2);
 }
 
-TEST("require that creating partial nonoverlapping vector is cleared") {
+TEST(BitvectorTest, require_that_creating_partial_nonoverlapping_vector_is_cleared) {
     AllocatedBitVector org(1000);
     org.setInterval(org.getStartIndex(), org.size());
-    EXPECT_EQUAL(1000u, org.countTrueBits());
+    EXPECT_EQ(1000u, org.countTrueBits());
 
     BitVector::UP after = BitVector::create(org, 2000, 3000);
-    EXPECT_EQUAL(2000u, after->getStartIndex());
-    EXPECT_EQUAL(3000u, after->size());
-    EXPECT_EQUAL(0u, after->countTrueBits());
+    EXPECT_EQ(2000u, after->getStartIndex());
+    EXPECT_EQ(3000u, after->size());
+    EXPECT_EQ(0u, after->countTrueBits());
 
     BitVector::UP before = BitVector::create(*after, 0, 1000);
-    EXPECT_EQUAL(0u, before->getStartIndex());
-    EXPECT_EQUAL(1000u, before->size());
-    EXPECT_EQUAL(0u, before->countTrueBits());
+    EXPECT_EQ(0u, before->getStartIndex());
+    EXPECT_EQ(1000u, before->size());
+    EXPECT_EQ(0u, before->countTrueBits());
 }
 
-TEST("require that creating partial overlapping vector is properly copied") {
+TEST(BitvectorTest, require_that_creating_partial_overlapping_vector_is_properly_copied) {
     AllocatedBitVector org(1000);
     org.setInterval(org.getStartIndex(), org.size());
-    EXPECT_EQUAL(1000u, org.countTrueBits());
+    EXPECT_EQ(1000u, org.countTrueBits());
 
     BitVector::UP after = BitVector::create(org, 900, 1100);
-    EXPECT_EQUAL(900u, after->getStartIndex());
-    EXPECT_EQUAL(1100u, after->size());
-    EXPECT_EQUAL(100u, after->countTrueBits());
+    EXPECT_EQ(900u, after->getStartIndex());
+    EXPECT_EQ(1100u, after->size());
+    EXPECT_EQ(100u, after->countTrueBits());
 
     BitVector::UP before = BitVector::create(*after, 0, 1000);
-    EXPECT_EQUAL(0u, before->getStartIndex());
-    EXPECT_EQUAL(1000u, before->size());
-    EXPECT_EQUAL(100u, before->countTrueBits());
+    EXPECT_EQ(0u, before->getStartIndex());
+    EXPECT_EQ(1000u, before->size());
+    EXPECT_EQ(100u, before->countTrueBits());
 }
 
 void fill(BitVector & bv) {
@@ -787,7 +789,7 @@ void verifyParallellOr(vespalib::ThreadBundle & thread_bundle, uint32_t numVecto
     EXPECT_TRUE(*serial == *parallell);
 }
 
-TEST("Require that parallell OR computes same result as serial") {
+TEST(BitvectorTest, Require_that_parallell_OR_computes_same_result_as_serial) {
     srand(7);
     for (uint32_t numThreads : {1, 3, 7}) {
         vespalib::SimpleThreadBundle thread_bundle(numThreads);
@@ -815,7 +817,7 @@ bool check_full_term_field_match_data_reset_on_unpack(bool strict, bool full_res
 
 }
 
-TEST("reset term field match data on unpack")
+TEST(BitvectorTest, reset_term_field_match_data_on_unpack)
 {
     EXPECT_FALSE(check_full_term_field_match_data_reset_on_unpack(false, false));
     EXPECT_FALSE(check_full_term_field_match_data_reset_on_unpack(true, false));
@@ -823,4 +825,4 @@ TEST("reset term field match data on unpack")
     EXPECT_TRUE(check_full_term_field_match_data_reset_on_unpack(true, true));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
