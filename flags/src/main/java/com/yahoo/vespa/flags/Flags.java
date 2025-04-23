@@ -309,7 +309,7 @@ public class Flags {
             "Takes effect on restart of OCI containers");
 
     public static final UnboundIntFlag DOCUMENT_V1_QUEUE_SIZE = defineIntFlag(
-            "document-v1-queue-size", -1,
+            "document-v1-queue-size", 0,
             List.of("bjorncs"), "2025-01-14", "2025-12-01",
             "Size of the document v1 queue. Use -1 for default as determined by 'document-operation-executor.def'",
             "Takes effect at redeployment",
