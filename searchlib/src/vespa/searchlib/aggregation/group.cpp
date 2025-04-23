@@ -623,11 +623,11 @@ Group::Value::deserialize(Deserializer & is) {
     destruct(_children, getAllChildrenSize());
     _childInfo._allChildren = 0;
     _children = new ChildP[std::max(4ul, 2ul << vespalib::Optimized::msbIdx(count))];
-    setChildrenSize(count);
-    for(uint32_t i(0); i < count; i++) {
+    for (uint32_t i(0); i < count; i++) {
         auto group = std::make_unique<Group>();
         is >> *group;
         _children[i] = group.release();
+        setChildrenSize(i + 1);
     }
     is >> _tag;
     return is;
