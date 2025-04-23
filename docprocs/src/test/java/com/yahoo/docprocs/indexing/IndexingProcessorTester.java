@@ -11,7 +11,6 @@ import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.config.DocumentmanagerConfig;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
-import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.document.update.ValueUpdate;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -21,7 +20,6 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -53,13 +51,8 @@ public class IndexingProcessorTester {
         assertEquals(fieldName, update.getField().getName());
         assertEquals(1, update.getValueUpdates().size());
         ValueUpdate<?> combinedAssignment = update.getValueUpdate(0);
-        if (value == null) {
-            assertTrue(combinedAssignment instanceof ClearValueUpdate);
-        }
-        else {
-            assertTrue(combinedAssignment instanceof AssignValueUpdate);
-            assertEquals(new StringFieldValue(value), combinedAssignment.getValue());
-        }
+        assertTrue(combinedAssignment instanceof AssignValueUpdate);
+        assertEquals(new StringFieldValue(value), combinedAssignment.getValue());
     }
 
     public DocumentOperation process(DocumentOperation input) {

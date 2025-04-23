@@ -247,7 +247,7 @@ public abstract class ValueUpdate<T extends FieldValue> {
     }
 
     /**
-     * Creates a new value update that clears the field from the document.
+     * Creates a new value update that clears the field fromthe document.
      *
      * @return a ValueUpdate specifying the removal
      */

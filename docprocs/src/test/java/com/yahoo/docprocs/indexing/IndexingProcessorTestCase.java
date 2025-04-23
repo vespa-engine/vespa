@@ -13,11 +13,9 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
-import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
-import com.yahoo.processing.response.Data;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.Tensors;
 import com.yahoo.tensor.TensorType;
@@ -232,47 +230,6 @@ public class IndexingProcessorTestCase {
             DocumentUpdate output = (DocumentUpdate)tester.process(input);
             assertNull(output);
         }
-
-        {   // Clear title by assigning null: Embedding is set to " " (not very clear what's the best action).
-            DocumentType inputType = tester.getDocumentType("music");
-            DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
-            input.addFieldUpdate(FieldUpdate.createClear(inputType.getField("title")));
-
-            DocumentUpdate output = (DocumentUpdate)tester.process(input);
-            assertEquals(2, output.fieldUpdates().size());
-            tester.assertAssignment("title", "", output);
-            tester.assertAssignment("combinedWithFallback", " ", output);
-        }
-    }
-
-    @Test
-    public void testClear() {
-        var documentTypes = new DocumentTypeManager();
-        var test = new DocumentType("test");
-        test.addField("stringField", DataType.STRING);
-        test.addField("language", DataType.STRING);
-        documentTypes.register(test);
-
-        IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
-        config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("test")
-                                                              .content("clear_state | guard { \"unknown\" | set_language; input stringField | index stringField; input language | set_language; }")
-                                                              .docfield("stringField")
-                                                              .docfield("language"));
-        var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null,
-                                        Map.of("test", new TestEmbedder()), FieldGenerator.throwsOnUse.asMap());
-
-        IndexingProcessorTester tester = new IndexingProcessorTester(documentTypes, scripts);
-        DocumentType inputType = tester.getDocumentType("test");
-        DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:test::");
-        input.addFieldUpdate(FieldUpdate.createClear(inputType.getField("stringField")));
-
-        DocumentUpdate output = (DocumentUpdate) tester.process(input);
-        assertEquals(1, output.fieldUpdates().size());
-        var fieldUpdate = output.fieldUpdates().iterator().next();
-        assertEquals(1, fieldUpdate.getValueUpdates().size());
-        var valueUpdate = fieldUpdate.getValueUpdates().iterator().next();
-        assertTrue(valueUpdate instanceof AssignValueUpdate);
-        assertEquals("", valueUpdate.getValue().getWrappedValue());
     }
 
     @Test

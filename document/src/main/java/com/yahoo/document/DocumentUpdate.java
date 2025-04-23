@@ -111,8 +111,8 @@ public class DocumentUpdate extends DocumentOperation implements Iterable<FieldP
 
     private void verifyType(Document doc) {
         if (!documentType.equals(doc.getDataType())) {
-            throw new IllegalArgumentException("Document " + doc.getId() + " with type " + doc.getDataType() +
-                                               " must have same type as update, which is type " + documentType);
+            throw new IllegalArgumentException(
+                    "Document " + doc.getId() + " with type " + doc.getDataType() + " must have same type as update, which is type " + documentType);
         }
     }
     /**

@@ -57,8 +57,11 @@ public class ScriptManager {
 
     public DocumentScript getScript(DocumentType inputType, String inputFieldName) {
         Map<String, DocumentScript> fieldScripts = getScripts(inputType);
-        if (fieldScripts == null) return null;
-        return fieldScripts.get(inputFieldName);
+        if (fieldScripts != null) {
+            DocumentScript script = fieldScripts.get(inputFieldName);
+            if (script != null) return script;
+        }
+        return null;
     }
 
     /**
