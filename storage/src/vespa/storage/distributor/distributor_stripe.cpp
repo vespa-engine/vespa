@@ -449,6 +449,7 @@ DistributorStripe::invalidate_internal_db_dependent_stats()
     {
         std::lock_guard guard(_metricLock);
         invalidate_bucket_spaces_stats(guard);
+        _global_stats = DistributorGlobalStats::make_invalid();
         invalidate_min_replica_stats(guard);
     }
 }
@@ -661,10 +662,17 @@ DistributorStripe::getMinReplica() const
 }
 
 BucketSpacesStatsProvider::PerNodeBucketSpacesStats
-DistributorStripe::getBucketSpacesStats() const
+DistributorStripe::per_node_bucket_spaces_stats() const
 {
     std::lock_guard guard(_metricLock);
     return _bucketSpacesStats;
+}
+
+DistributorGlobalStats
+DistributorStripe::distributor_global_stats() const
+{
+    std::lock_guard guard(_metricLock);
+    return _global_stats;
 }
 
 SimpleMaintenanceScanner::PendingMaintenanceStats
@@ -750,6 +758,7 @@ DistributorStripe::updateInternalMetricsForCompletedScan()
         _must_send_updated_host_info = true;
     }
     _bucketSpacesStats = std::move(new_space_stats);
+    _global_stats = DistributorGlobalStats(_bucketDbStats._docCount, _bucketDbStats._byteCount);
     maybe_update_bucket_db_memory_usage_stats();
 }
 

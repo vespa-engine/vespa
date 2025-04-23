@@ -223,7 +223,8 @@ private:
      */
     MinReplicaMap getMinReplica() const override;
 
-    PerNodeBucketSpacesStats getBucketSpacesStats() const override;
+    PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const override;
+    DistributorGlobalStats distributor_global_stats() const override;
 
     SimpleMaintenanceScanner::PendingMaintenanceStats pending_maintenance_stats() const;
 
@@ -369,6 +370,7 @@ private:
      */
     SimpleMaintenanceScanner::PendingMaintenanceStats _maintenanceStats;
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats _bucketSpacesStats;
+    DistributorGlobalStats _global_stats;
     BucketDBMetricUpdater::Stats _bucketDbStats;
     std::unique_ptr<OwnershipTransferSafeTimePointCalculator> _ownershipSafeTimeCalc;
     std::chrono::steady_clock::duration _db_memory_sample_interval;

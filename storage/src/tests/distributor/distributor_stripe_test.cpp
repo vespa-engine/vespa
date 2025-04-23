@@ -124,7 +124,11 @@ struct DistributorStripeTest : Test, DistributorStripeTestUtil {
     }
 
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats stripe_bucket_spaces_stats() {
-        return _stripe->getBucketSpacesStats();
+        return _stripe->per_node_bucket_spaces_stats();
+    }
+
+    DistributorGlobalStats stripe_distributor_global_stats() {
+        return _stripe->distributor_global_stats();
     }
 
     bool stripe_handle_message(const std::shared_ptr<api::StorageMessage>& msg) {
@@ -787,6 +791,9 @@ TEST_F(DistributorStripeTest, entering_recovery_mode_resets_bucket_space_stats)
 
     assert_invalid_stats_for_all_spaces(stats, 0);
     assert_invalid_stats_for_all_spaces(stats, 2);
+
+    const auto g_stats = stripe_distributor_global_stats();
+    EXPECT_FALSE(g_stats.valid());
 }
 
 TEST_F(DistributorStripeTest, stale_reads_config_is_propagated_to_external_operation_handler)

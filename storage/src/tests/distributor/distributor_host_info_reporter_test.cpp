@@ -32,8 +32,7 @@ using ms = std::chrono::milliseconds;
 namespace {
 
 // My kingdom for GoogleMock!
-struct MockedMinReplicaProvider : MinReplicaProvider
-{
+struct MockedMinReplicaProvider : MinReplicaProvider {
     MinReplicaStats minReplica;
 
     ~MockedMinReplicaProvider() override;
@@ -44,13 +43,16 @@ struct MockedMinReplicaProvider : MinReplicaProvider
 
 MockedMinReplicaProvider::~MockedMinReplicaProvider() = default;
 
-
 struct MockedBucketSpacesStatsProvider : public BucketSpacesStatsProvider {
-    PerNodeBucketSpacesStats stats;
+    PerNodeBucketSpacesStats _stats;
+    DistributorGlobalStats _global_stats;
 
     ~MockedBucketSpacesStatsProvider() override;
-    PerNodeBucketSpacesStats getBucketSpacesStats() const override {
-        return stats;
+    PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const override {
+        return _stats;
+    }
+    DistributorGlobalStats distributor_global_stats() const override {
+        return _global_stats;
     }
 };
 
@@ -88,6 +90,22 @@ getBucketSpaceStats(const vespalib::Slime& root, uint16_t nodeIndex, const std::
     throw std::runtime_error("No bucket space found with name " + bucketSpaceName);
 }
 
+std::optional<int64_t> document_count_total_from(const vespalib::Slime& root) {
+    auto& node = root["distributor"]["global-stats"]["stored-document-count"];
+    if (!node.valid()) {
+        return std::nullopt;
+    }
+    return node.asLong();
+}
+
+std::optional<int64_t> bytes_total_from(const vespalib::Slime& root) {
+    auto& node = root["distributor"]["global-stats"]["stored-document-bytes"];
+    if (!node.valid()) {
+        return std::nullopt;
+    }
+    return node.asLong();
+}
+
 }
 
 void
@@ -122,6 +140,12 @@ struct Fixture {
           reporter(minReplicaProvider, bucketSpacesStatsProvider)
     {}
     ~Fixture() = default;
+
+    [[nodiscard]] vespalib::Slime to_slime() {
+        vespalib::Slime root;
+        util::reporterToSlime(reporter, root);
+        return root;
+    }
 };
 
 TEST_F(DistributorHostInfoReporterTest, min_replica_stats_are_reported) {
@@ -132,9 +156,7 @@ TEST_F(DistributorHostInfoReporterTest, min_replica_stats_are_reported) {
     minReplica[5] = 9;
     f.minReplicaProvider.minReplica = minReplica;
 
-    vespalib::Slime root;
-    util::reporterToSlime(f.reporter, root);
-
+    auto root = f.to_slime();
     EXPECT_EQ(2, getMinReplica(root, 0));
     EXPECT_EQ(9, getMinReplica(root, 5));
 }
@@ -169,9 +191,10 @@ TEST_F(DistributorHostInfoReporterTest, generate_example_json) {
 
     PerNodeBucketSpacesStats stats;
     stats[0]["default"] = BucketSpaceStats(11, 3);
-    stats[0]["global"] = BucketSpaceStats(13, 5);
+    stats[0]["global"]  = BucketSpaceStats(13, 5);
     stats[5]["default"] = BucketSpaceStats();
-    f.bucketSpacesStatsProvider.stats = stats;
+    f.bucketSpacesStatsProvider._stats = stats;
+    f.bucketSpacesStatsProvider._global_stats = DistributorGlobalStats(1337, 456789);
 
     vespalib::asciistream json;
     vespalib::JsonStream stream(json, true);
@@ -201,16 +224,16 @@ TEST_F(DistributorHostInfoReporterTest, bucket_spaces_stats_are_reported) {
     Fixture f;
     PerNodeBucketSpacesStats stats;
     stats[1]["default"] = BucketSpaceStats(11, 3);
-    stats[1]["global"] = BucketSpaceStats(13, 5);
+    stats[1]["global"]  = BucketSpaceStats(13, 5);
     stats[2]["default"] = BucketSpaceStats(17, 7);
-    stats[2]["global"] = BucketSpaceStats();
+    stats[2]["global"]  = BucketSpaceStats();
     stats[3]["default"] = BucketSpaceStats(19, 11);
-    f.bucketSpacesStatsProvider.stats = stats;
+    f.bucketSpacesStatsProvider._stats = stats;
 
     vespalib::Slime root;
     util::reporterToSlime(f.reporter, root);
     verifyBucketSpaceStats(root, 1, "default", 11, 3);
-    verifyBucketSpaceStats(root, 1, "global", 13, 5);
+    verifyBucketSpaceStats(root, 1, "global",  13, 5);
     verifyBucketSpaceStats(root, 2, "default", 17, 7);
     verifyBucketSpaceStats(root, 2, "global");
     verifyBucketSpaceStats(root, 3, "default", 19, 11);
@@ -222,17 +245,33 @@ TEST_F(DistributorHostInfoReporterTest, bucket_spaces_stats_are_reported) {
     }
 }
 
+TEST_F(DistributorHostInfoReporterTest, global_stats_are_reported_when_present) {
+    Fixture f;
+    {
+        auto root = f.to_slime();
+        // No global stats present
+        EXPECT_EQ(document_count_total_from(root), std::nullopt);
+        EXPECT_EQ(bytes_total_from(root), std::nullopt);
+    }
+    f.bucketSpacesStatsProvider._global_stats = DistributorGlobalStats(12345, 567890);
+    {
+        auto root = f.to_slime();
+        EXPECT_EQ(document_count_total_from(root), 12345);
+        EXPECT_EQ(bytes_total_from(root), 567890);
+    }
+}
+
 TEST_F(DistributorHostInfoReporterTest, merge_per_node_bucket_spaces_stats) {
 
     PerNodeBucketSpacesStats stats_a;
     stats_a[3]["default"] = BucketSpaceStats(3, 2);
-    stats_a[3]["global"] = BucketSpaceStats(5, 4);
+    stats_a[3]["global"]  = BucketSpaceStats(5, 4);
     stats_a[5]["default"] = BucketSpaceStats(7, 6);
-    stats_a[5]["global"] = BucketSpaceStats(9, 8);
+    stats_a[5]["global"]  = BucketSpaceStats(9, 8);
 
     PerNodeBucketSpacesStats stats_b;
     stats_b[5]["default"] = BucketSpaceStats(11, 10);
-    stats_b[5]["global"] = BucketSpaceStats(13, 12);
+    stats_b[5]["global"]  = BucketSpaceStats(13, 12);
     stats_b[7]["default"] = BucketSpaceStats(15, 14);
 
     PerNodeBucketSpacesStats result;
@@ -241,9 +280,9 @@ TEST_F(DistributorHostInfoReporterTest, merge_per_node_bucket_spaces_stats) {
 
     PerNodeBucketSpacesStats exp;
     exp[3]["default"] = BucketSpaceStats(3, 2);
-    exp[3]["global"] = BucketSpaceStats(5, 4);
+    exp[3]["global"]  = BucketSpaceStats(5, 4);
     exp[5]["default"] = BucketSpaceStats(7+11, 6+10);
-    exp[5]["global"] = BucketSpaceStats(9+13, 8+12);
+    exp[5]["global"]  = BucketSpaceStats(9+13, 8+12);
     exp[7]["default"] = BucketSpaceStats(15, 14);
 
     EXPECT_EQ(exp, result);

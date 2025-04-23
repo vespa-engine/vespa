@@ -173,4 +173,25 @@ public class ClusterStatsAggregatorTest {
                 .add("global", 15 + 17, 6 + 8));
     }
 
+    @Test
+    void aggregator_tracks_total_document_count_and_byte_size_across_distributors() {
+        Fixture f = new Fixture(distributorNodes(0, 1), contentNodes(0));
+        f.update(0, new ContentClusterStatsBuilder().add(0, "default").withDocumentCountTotal(100).withBytesTotal(2000));
+        assertFalse(f.hasUpdatesFromAllDistributors());
+        f.update(1, new ContentClusterStatsBuilder().add(0, "default").withDocumentCountTotal(200).withBytesTotal(3000));
+        assertTrue(f.hasUpdatesFromAllDistributors());
+
+        assertEquals(300, f.aggregator.getAggregatedDocumentCountTotal());
+        assertEquals(5000, f.aggregator.getAggregatedBytesTotal());
+
+        f.update(0, new ContentClusterStatsBuilder().add(0, "default").withDocumentCountTotal(150).withBytesTotal(2020));
+        assertTrue(f.hasUpdatesFromAllDistributors());
+        assertEquals(350, f.aggregator.getAggregatedDocumentCountTotal());
+        assertEquals(5020, f.aggregator.getAggregatedBytesTotal());
+
+        f.update(1, new ContentClusterStatsBuilder().add(0, "default").withDocumentCountTotal(210).withBytesTotal(2900));
+        assertEquals(360, f.aggregator.getAggregatedDocumentCountTotal());
+        assertEquals(4920, f.aggregator.getAggregatedBytesTotal());
+    }
+
 }

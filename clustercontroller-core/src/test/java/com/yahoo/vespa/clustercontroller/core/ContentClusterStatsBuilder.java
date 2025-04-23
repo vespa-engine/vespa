@@ -11,6 +11,9 @@ public class ContentClusterStatsBuilder {
 
     private final Map<Integer, ContentNodeStatsBuilder> stats = new HashMap<>();
 
+    private long documentCountTotal = 0;
+    private long bytesTotal = 0;
+
     public ContentClusterStatsBuilder add(int nodeIndex, String bucketSpace, long bucketsTotal, long bucketsPending) {
         return add(nodeIndex, bucketSpace, ContentNodeStats.BucketSpaceStats.of(bucketsTotal, bucketsPending));
     }
@@ -38,10 +41,20 @@ public class ContentClusterStatsBuilder {
         return this;
     }
 
+    public ContentClusterStatsBuilder withDocumentCountTotal(long docCount) {
+        this.documentCountTotal = docCount;
+        return this;
+    }
+
+    public ContentClusterStatsBuilder withBytesTotal(long bytesTotal) {
+        this.bytesTotal = bytesTotal;
+        return this;
+    }
+
     ContentClusterStats build() {
         Map<Integer, ContentNodeStats> nodeToStatsMap = new HashMap<>();
         stats.forEach((nodeIndex, nodeStatsBuilder) ->
                 nodeToStatsMap.put(nodeIndex, nodeStatsBuilder.build()));
-        return new ContentClusterStats(nodeToStatsMap);
+        return new ContentClusterStats(documentCountTotal, bytesTotal, nodeToStatsMap);
     }
 }

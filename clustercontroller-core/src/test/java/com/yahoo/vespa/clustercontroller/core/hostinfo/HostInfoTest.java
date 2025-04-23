@@ -29,6 +29,8 @@ public class HostInfoTest {
     void testEmptyJson() {
         HostInfo hostInfo = HostInfo.createHostInfo("{}");
         assertNull(hostInfo.getVtag().getVersionOrNull());
+        assertNull(hostInfo.getDistributor().documentCountTotalOrNull());
+        assertNull(hostInfo.getDistributor().bytesTotalOrNull());
         assertTrue(hostInfo.getDistributor().getStorageNodes().isEmpty());
         assertTrue(hostInfo.getContentNode().getResourceUsage().isEmpty());
         assertTrue(hostInfo.getMetrics().getMetrics().isEmpty());
@@ -69,6 +71,7 @@ public class HostInfoTest {
         assertEquals(Optional.ofNullable(resourceUsage.get("disk")).map(ResourceUsage::getUsage).orElse(0.0), 0.6, 0.00001);
         assertEquals(Optional.ofNullable(resourceUsage.get("disk")).map(ResourceUsage::getName).orElse("missing"), "a cool disk");
         assertNull(resourceUsage.get("flux-capacitor"));
+        assertEquals(123456, hostInfo.getDistributor().documentCountTotalOrNull());
     }
 
     @Test
@@ -109,5 +112,7 @@ public class HostInfoTest {
         assertTrue(storageNodeByIndex.containsKey(5));
         assertEquals(5, storageNodeByIndex.get(5).getIndex().intValue());
         assertEquals(9, storageNodeByIndex.get(5).getMinCurrentReplicationFactorOrNull().intValue());
+
+        assertEquals(1337, hostInfo.getDistributor().documentCountTotalOrNull());
     }
 }

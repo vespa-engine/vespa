@@ -42,6 +42,9 @@ public class ClusterStatsAggregator {
     // get a O(1) view of all merges pending in the cluster.
     private final ContentNodeStats globallyAggregatedNodeStats = new ContentNodeStats(-1);
 
+    private long documentCountTotal = 0;
+    private long bytesTotal = 0;
+
     ClusterStatsAggregator(Set<Integer> distributors, Set<Integer> storageNodes) {
         this.distributors = distributors;
         nonUpdatedDistributors = new HashSet<>(distributors);
@@ -79,6 +82,14 @@ public class ClusterStatsAggregator {
         return result;
     }
 
+    public long getAggregatedDocumentCountTotal() {
+        return documentCountTotal;
+    }
+
+    public long getAggregatedBytesTotal() {
+        return bytesTotal;
+    }
+
     MergePendingChecker createMergePendingChecker(double minMergeCompletionRatio) {
         return new AggregatedStatsMergePendingChecker(getAggregatedStats(), minMergeCompletionRatio);
     }
@@ -96,6 +107,13 @@ public class ClusterStatsAggregator {
 
     private void addStatsFromDistributor(int distributorIndex, ContentClusterStats clusterStats) {
         ContentClusterStats prevClusterStats = distributorToStats.put(distributorIndex, clusterStats);
+
+        if (prevClusterStats != null) {
+            documentCountTotal -= prevClusterStats.getDocumentCountTotal();
+            bytesTotal -= prevClusterStats.getBytesTotal();
+        }
+        documentCountTotal += clusterStats.getDocumentCountTotal();
+        bytesTotal += clusterStats.getBytesTotal();
 
         for (ContentNodeStats contentNode : aggregatedStats) {
             Integer nodeIndex = contentNode.getNodeIndex();
