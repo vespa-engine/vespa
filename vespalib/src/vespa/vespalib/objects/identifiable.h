@@ -147,26 +147,17 @@ class ObjectOperation;
 
 class Identifiable {
  protected:
-    struct  RuntimeInfo {
+    struct RuntimeInfo {
         const char              * _name;
         const char              * _info;
         unsigned                  _id;
         Identifiable         * (* _factory)();
         const std::type_info & (* _typeId)();
         bool                   (* _tryCast)(const Identifiable *);
-      const RuntimeInfo       * _base;
+        const RuntimeInfo       * _base;
     };
 public:
     using UP = std::unique_ptr<Identifiable>;
-    class ILoader
-    {
-    public:
-        virtual ~ILoader() = default;
-        virtual bool hasClass(unsigned classId) const = 0;
-        virtual bool hasClass(const char * className) const = 0;
-        virtual void loadClass(unsigned classId) = 0;
-        virtual void loadClass(const char * className) = 0;
-    };
     struct RuntimeClass {
     public:
         RuntimeClass(RuntimeInfo * info);
@@ -254,11 +245,6 @@ public:
      * @return object describing the class.
      */
     static const RuntimeClass * classFromName(const char * name);
-    /**
-     * Here you can provide an optional classloader.
-     */
-    static void registerClassLoader(ILoader & loader) { _classLoader = &loader; }
-    static void clearClassLoader() { _classLoader = NULL; }
 
     /**
      * Create a human-readable representation of this object. This
@@ -417,8 +403,6 @@ private:
     virtual int onCmp(const Identifiable& b) const;
     virtual Serializer & onSerialize(Serializer & os) const;
     virtual Deserializer & onDeserialize(Deserializer & is);
-
-    static ILoader  * _classLoader;
 };
 
 }

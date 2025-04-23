@@ -97,8 +97,6 @@ Register * _register = nullptr;
 
 }
 
-Identifiable::ILoader  * Identifiable::_classLoader = nullptr;
-
 IMPLEMENT_IDENTIFIABLE(Identifiable, Identifiable);
 
 const Identifiable::RuntimeClass *
@@ -201,15 +199,6 @@ Identifiable::create(Deserializer & is)
     is.get(cid);
     UP obj;
     const Identifiable::RuntimeClass *rtc = Identifiable::classFromId(cid);
-    if (rtc == nullptr) {
-        if ((_classLoader != nullptr) && _classLoader->hasClass(cid)) {
-            _classLoader->loadClass(cid);
-            rtc = Identifiable::classFromId(cid);
-            if (rtc == nullptr) {
-                throw std::runtime_error(make_string("Failed loading class for Identifiable with classId %d(%0x)", cid, cid));
-            }
-        }
-    }
     if (rtc != nullptr) {
         obj.reset(rtc->create());
         if (obj.get()) {
