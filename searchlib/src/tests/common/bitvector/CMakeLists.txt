@@ -18,5 +18,6 @@ vespa_add_executable(searchlib_condensedbitvector_test_app TEST
     condensedbitvector_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_condensedbitvector_test_app COMMAND searchlib_condensedbitvector_test_app)
