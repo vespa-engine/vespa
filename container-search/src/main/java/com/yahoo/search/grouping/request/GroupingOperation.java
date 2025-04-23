@@ -50,6 +50,28 @@ public abstract class GroupingOperation extends GroupingNode {
         super(image, label);
     }
 
+    /** @deprecated pass a FilterExpression (which can be null) */
+    @Deprecated // TODO: Remove on Vespa 9
+    protected GroupingOperation(GroupingOperation parentOfCopy,
+                                String image,
+                                String label,
+                                List<GroupingExpression> orderBy,
+                                List<GroupingExpression> outputs,
+                                List<GroupingOperation> children,
+                                Map<String, GroupingExpression> aliases,
+                                Set<String> hints,
+                                GroupingExpression groupBy,
+                                String where,
+                                boolean forceSinglePass,
+                                double accuracy,
+                                int precision,
+                                int level,
+                                int max) {
+        this(parentOfCopy, image, label, orderBy, outputs, children, aliases, hints, groupBy, null, where,
+             forceSinglePass, accuracy, precision, level, max);
+    }
+
+
     protected GroupingOperation(GroupingOperation parentOfCopy,
                                 String image,
                                 String label,
