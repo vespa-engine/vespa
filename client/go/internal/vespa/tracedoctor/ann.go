@@ -12,21 +12,21 @@ type annNode struct {
 }
 
 func (n annNode) makeRows(tab *table) {
-	tab.addRow("attribute tensor", n.root.Field("attribute_tensor").AsString())
-	tab.addRow("query tensor", n.root.Field("query_tensor").AsString())
-	tab.addRow("target hits", fmt.Sprintf("%d", n.root.Field("target_hits").AsLong()))
+	tab.str("attribute tensor").str(n.root.Field("attribute_tensor").AsString()).commit()
+	tab.str("query tensor").str(n.root.Field("query_tensor").AsString()).commit()
+	tab.str("target hits").str(fmt.Sprintf("%d", n.root.Field("target_hits").AsLong())).commit()
 	if n.root.Field("adjusted_target_hits").AsLong() > n.root.Field("target_hits").AsLong() {
-		tab.addRow("adjusted target hits", fmt.Sprintf("%d", n.root.Field("adjusted_target_hits").AsLong()))
+		tab.str("adjusted target hits").str(fmt.Sprintf("%d", n.root.Field("adjusted_target_hits").AsLong())).commit()
 	}
-	tab.addRow("explore additional hits", fmt.Sprintf("%d", n.root.Field("explore_additional_hits").AsLong()))
-	tab.addRow("algorithm", n.root.Field("algorithm").AsString())
+	tab.str("explore additional hits").str(fmt.Sprintf("%d", n.root.Field("explore_additional_hits").AsLong())).commit()
+	tab.str("algorithm").str(n.root.Field("algorithm").AsString()).commit()
 	if calculated := n.root.Field("global_filter").Field("calculated"); calculated.Valid() && !calculated.AsBool() {
-		tab.addRow("global filter", "not calculated")
+		tab.str("global filter").str("not calculated").commit()
 	} else if hit_ratio := n.root.Field("global_filter").Field("hit_ratio"); hit_ratio.Valid() {
-		tab.addRow("global filter", fmt.Sprintf("%.3f hit ratio", hit_ratio.AsDouble()))
+		tab.str("global filter").str(fmt.Sprintf("%.3f hit ratio", hit_ratio.AsDouble())).commit()
 	}
 	if top_k_hits := n.root.Field("top_k_hits"); top_k_hits.Valid() {
-		tab.addRow("found hits", fmt.Sprintf("%d", top_k_hits.AsLong()))
+		tab.str("found hits").str(fmt.Sprintf("%d", top_k_hits.AsLong())).commit()
 	}
 }
 
@@ -60,10 +60,10 @@ func (p *annProbe) impact() float64 {
 
 func (p *annProbe) render(out *output) {
 	out.fmt("ann query details (total setup time was %.3f ms)\n", p.annTime)
-	tab := newTable("property", "details")
+	tab := newTable().str("property").str("details").commit().line()
 	for i, node := range p.nodes {
 		if i > 0 {
-			tab.addLine()
+			tab.line()
 		}
 		node.makeRows(tab)
 	}

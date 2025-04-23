@@ -51,11 +51,12 @@ func (q *queryNode) desc() string {
 var treePad = [][]string{{"", ""}, {"├── ", "│   "}, {"└── ", "    "}}
 
 func (q *queryNode) makeTable(tab *table, prefix string, pad int) {
-	seeks := fmt.Sprintf("%d", q.seeks)
-	totalTimeMs := fmt.Sprintf("%.3f", q.totalTimeMs)
-	selfTimeMs := fmt.Sprintf("%.3f", q.selfTimeMs)
-	query := fmt.Sprintf(" %s%s%s ", prefix, treePad[pad][0], q.desc())
-	tab.addRow(seeks, totalTimeMs, selfTimeMs, q.strict, query)
+	tab.str(fmt.Sprintf("%d", q.seeks))
+	tab.str(fmt.Sprintf("%.3f", q.totalTimeMs))
+	tab.str(fmt.Sprintf("%.3f", q.selfTimeMs))
+	tab.str(q.strict)
+	tab.str(fmt.Sprintf(" %s%s%s ", prefix, treePad[pad][0], q.desc()))
+	tab.commit()
 	childPrefix := prefix + treePad[pad][1]
 	for i, child := range q.children {
 		if i+1 < len(q.children) {
@@ -67,7 +68,7 @@ func (q *queryNode) makeTable(tab *table, prefix string, pad int) {
 }
 
 func (q *queryTree) render(output *output) {
-	tab := newTable("seeks", "total_ms", "self_ms", "step", "query tree")
+	tab := newTable().str("seeks").str("total_ms").str("self_ms").str("step").str("query tree").commit().line()
 	q.root.makeTable(tab, "", 0)
 	tab.render(output)
 }
@@ -367,17 +368,17 @@ type threadSummary struct {
 }
 
 func renderThreadSummaries(out *output, threads ...*threadSummary) {
-	headers := []string{"task"}
+	tab := newTable().str("task")
 	for _, thread := range threads {
-		headers = append(headers, fmt.Sprintf("thread #%d", thread.id))
+		tab.str(fmt.Sprintf("thread #%d", thread.id))
 	}
-	tab := newTable(headers...)
+	tab.commit().line()
 	addRow := func(task string, get func(thread *threadSummary) float64) {
-		cells := []string{task}
+		tab.str(task)
 		for _, thread := range threads {
-			cells = append(cells, fmt.Sprintf("%.3f ms", get(thread)))
+			tab.str(fmt.Sprintf("%.3f ms", get(thread)))
 		}
-		tab.addRow(cells...)
+		tab.commit()
 	}
 	addRow("matching", func(thread *threadSummary) float64 { return thread.matchMs })
 	addRow("first phase", func(thread *threadSummary) float64 { return thread.firstPhaseMs })
@@ -505,17 +506,17 @@ type protonSummary struct {
 }
 
 func renderProtonSummaries(out *output, nodes ...*protonSummary) {
-	headers := []string{"task"}
+	tab := newTable().str("task")
 	for _, node := range nodes {
-		headers = append(headers, node.name)
+		tab.str(node.name)
 	}
-	tab := newTable(headers...)
+	tab.commit().line()
 	addRow := func(task string, get func(node *protonSummary) float64) {
-		cells := []string{task}
+		tab.str(task)
 		for _, node := range nodes {
-			cells = append(cells, fmt.Sprintf("%.3f ms", get(node)))
+			tab.str(fmt.Sprintf("%.3f ms", get(node)))
 		}
-		tab.addRow(cells...)
+		tab.commit()
 	}
 	addRow("global filter", func(node *protonSummary) float64 { return node.filterMs })
 	addRow("ann setup", func(node *protonSummary) float64 { return node.annMs })

@@ -19,10 +19,10 @@ func (t *timing) render(out *output) {
 	if t == nil {
 		return
 	}
-	tab := newTable("total", fmt.Sprintf("%.3f ms", t.totalMs))
-	tab.addRow("query", fmt.Sprintf("%.3f ms", t.queryMs))
-	tab.addRow("summary", fmt.Sprintf("%.3f ms", t.summaryMs))
-	tab.addRow("other", fmt.Sprintf("%.3f ms", t.totalMs-t.queryMs-t.summaryMs))
+	tab := newTable().str("total").str(fmt.Sprintf("%.3f ms", t.totalMs)).commit().line()
+	tab.str("query").str(fmt.Sprintf("%.3f ms", t.queryMs)).commit()
+	tab.str("summary").str(fmt.Sprintf("%.3f ms", t.summaryMs)).commit()
+	tab.str("other").str(fmt.Sprintf("%.3f ms", t.totalMs-t.queryMs-t.summaryMs)).commit()
 	tab.render(out)
 }
 
@@ -149,13 +149,13 @@ type searchMeta struct {
 }
 
 func (s searchMeta) render(out *output) {
-	tab := newTable("search", "nodes", "back-end time", "document type")
+	tab := newTable().str("search").str("nodes").str("back-end time").str("document type").commit().line()
 	for _, group := range s.groups {
-		groupID := group.id
-		nodes := len(group.traces)
-		docType := group.documentType()
-		duration := group.durationMs()
-		tab.addRow(fmt.Sprintf("%d", groupID), fmt.Sprintf("%d", nodes), fmt.Sprintf("%.3f ms", duration), docType)
+		tab.str(fmt.Sprintf("%d", group.id))
+		tab.str(fmt.Sprintf("%d", len(group.traces)))
+		tab.str(fmt.Sprintf("%.3f ms", group.durationMs()))
+		tab.str(group.documentType())
+		tab.commit()
 	}
 	tab.render(out)
 }
