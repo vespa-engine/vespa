@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
-import ai.vespa.cloud.Cloud;
-import ai.vespa.cloud.SystemInfo;
 import com.google.common.jimfs.Jimfs;
 import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
@@ -13,12 +11,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -158,29 +156,70 @@ public class DataplaneProxyServiceTest {
     }
 
     @Test
-    public void usesAzureTemplateWhenCloudIsAzure() throws Exception {
-        SystemInfo systemInfo = Mockito.mock(SystemInfo.class);
-        Cloud cloud = Mockito.mock(Cloud.class);
-        when(cloud.name()).thenReturn("azure");
-        when(systemInfo.cloud()).thenReturn(cloud);
-        DataplaneProxyService dataplaneProxyService = new DataplaneProxyService(systemInfo);
-        Field f = DataplaneProxyService.class.getDeclaredField("configTemplate");
-        f.setAccessible(true);
-        Path template = (Path)f.get(dataplaneProxyService);
-        assertTrue(template.endsWith("conf/nginx/nginx.conf.template.azure"), "Should pick the Azure‐specific template");
+    public void azureProxyConfigUsesAzureSettings() throws IOException {
+        FileSystem fs = Jimfs.newFileSystem();
+        Path templatePath = fs.getPath("/opt/vespa/conf/nginx/nginx.conf.template");
+        Files.createDirectories(templatePath.getParent());
+        String template =
+                """
+                        remote_expr:${remote_addr_expr}
+                        proxy_suffix:${proxy_protocol_suffix}
+                        proxy_on:${proxy_protocol_on}
+                        proxy_headers:${proxy_set_headers}
+                        client_cert:${client_cert}
+                        client_key:${client_key}
+                        server_cert:${server_cert}
+                        server_key:${server_key}
+                        mtls_port:${vespa_mtls_port}
+                        token_port:${vespa_token_port}
+                        prefix:${prefix}
+                        tokens:
+                        ${vespa_token_endpoints}
+                        """;
+        Files.writeString(templatePath, template);
+
+        Path clientCert = fs.getPath("/c.pem");
+        Path clientKey  = fs.getPath("/k.pem");
+        Path serverCert = fs.getPath("/s.pem");
+        Path serverKey  = fs.getPath("/t.pem");
+        Files.createFile(clientCert);
+        Files.createFile(clientKey);
+        Files.createFile(serverCert);
+        Files.createFile(serverKey);
+
+        String out = DataplaneProxyService.nginxConfig(templatePath, clientCert, clientKey, serverCert, serverKey, 1111, 2222, List.of("one", "two"), fs.getPath("/opt/vespa"), true);
+
+        assertTrue(out.contains("remote_expr:$remote_addr"), "Should use $remote_addr when on Azure");
+        assertTrue(out.contains("proxy_suffix:"), "Suffix must be empty on Azure");
+        assertTrue(out.contains("proxy_on:"), "proxy_protocol on; must be removed on Azure");
+        assertTrue(out.contains("proxy_headers:proxy_set_header X-Forwarded-For $http_x_forwarded_for;"), "Should set Azure-specific X-Forwarded-For header");
+        assertTrue(out.contains("one vespatoken;"), "Should map first endpoint");
+        assertTrue(out.contains("two vespatoken;"), "Should map second endpoint");
     }
 
     @Test
-    public void usesDefaultTemplateWhenCloudIsNotAzure() throws Exception {
-        SystemInfo systemInfo = Mockito.mock(SystemInfo.class);
-        Cloud cloud = Mockito.mock(Cloud.class);
-        when(cloud.name()).thenReturn("aws");
-        when(systemInfo.cloud()).thenReturn(cloud);
-        DataplaneProxyService dataplaneProxyService = new DataplaneProxyService(systemInfo);
-        Field f = DataplaneProxyService.class.getDeclaredField("configTemplate");
-        f.setAccessible(true);
-        Path template = (Path)f.get(dataplaneProxyService);
-        assertTrue(template.endsWith("conf/nginx/nginx.conf.template"), "Should fall back to the default template");
+    public void defaultProxyConfigUsesProxyProtocol() throws IOException {
+        FileSystem fs = Jimfs.newFileSystem();
+        Path templatePath = fs.getPath("/opt/vespa/conf/nginx/nginx.conf.template");
+        Files.createDirectories(templatePath.getParent());
+        String template =
+                """
+                        remote_expr:${remote_addr_expr}
+                        proxy_suffix:${proxy_protocol_suffix}
+                        proxy_on:${proxy_protocol_on}
+                        proxy_headers:${proxy_set_headers}
+                        """;
+        Files.writeString(templatePath, template);
+
+        Path dummy = fs.getPath("/dummy.pem");
+        Files.createFile(dummy);
+
+        String out = DataplaneProxyService.nginxConfig(templatePath, dummy, dummy, dummy, dummy, 1, 2, List.of("e"), fs.getPath("/pfx"), false);
+
+        assertTrue(out.contains("remote_expr:$proxy_protocol_addr - $remote_addr"), "Should include proxy_protocol_addr when not on Azure");
+        assertTrue(out.contains("proxy_suffix:proxy_protocol"), "Should add 'proxy_protocol' suffix when not on Azure");
+        assertTrue(out.contains("proxy_on:proxy_protocol on;"), "Should enable proxy_protocol on when not on Azure");
+        assertTrue(out.contains("proxy_headers:proxy_set_header X-Forwarded-For $proxy_protocol_addr;"), "Should set proxy_protocol-based X-Forwarded-For header");
     }
 
     private DataplaneProxyService dataplaneProxyService(DataplaneProxyService.ProxyCommands proxyCommands) throws IOException {
