@@ -32,7 +32,8 @@ public:
     ~RegexPredicateNode();
     RegexPredicateNode* clone() const override { return new RegexPredicateNode(*this); }
 
-    //bool valid() const override { return _argument.getRoot(); }
+    // for unit testing::
+    RegexPredicateNode(std::string regex, ExpressionNode::UP input);
 
     DECLARE_IDENTIFIABLE_NS2(search, expression, RegexPredicateNode);
     DECLARE_NBO_SERIALIZE;
