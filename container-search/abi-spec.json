@@ -3107,6 +3107,7 @@
     ],
     "methods" : [
       "protected void <init>(java.lang.String, java.lang.String)",
+      "protected void <init>(com.yahoo.search.grouping.request.GroupingOperation, java.lang.String, java.lang.String, java.util.List, java.util.List, java.util.List, java.util.Map, java.util.Set, com.yahoo.search.grouping.request.GroupingExpression, java.lang.String, boolean, double, int, int, int)",
       "protected void <init>(com.yahoo.search.grouping.request.GroupingOperation, java.lang.String, java.lang.String, java.util.List, java.util.List, java.util.List, java.util.Map, java.util.Set, com.yahoo.search.grouping.request.GroupingExpression, com.yahoo.search.grouping.request.FilterExpression, java.lang.String, boolean, double, int, int, int)",
       "public abstract com.yahoo.search.grouping.request.GroupingOperation copy(com.yahoo.search.grouping.request.GroupingOperation)",
       "public com.yahoo.search.grouping.request.GroupingOperation putAlias(java.lang.String, com.yahoo.search.grouping.request.GroupingExpression)",
