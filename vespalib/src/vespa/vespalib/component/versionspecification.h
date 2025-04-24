@@ -117,7 +117,7 @@ public:
      * @brief Returns the string representation of this version specification as major.minor.micro,
      * or major.minor.micro.qualifier if a non-empty qualifier was specified.
      */
-    const string & toString() const { return _stringValue; }
+    const string & toFullString() const { return _stringValue; }
 
     /**
      * @brief Compares this <code>VersionSpecification</code> to another.

@@ -158,7 +158,7 @@ TEST("testEmpty")
     VersionSpecification evs;
 
     EXPECT_EQUAL("", ev.toFullString());
-    EXPECT_EQUAL("*.*.*", evs.toString());
+    EXPECT_EQUAL("*.*.*", evs.toFullString());
 
     EXPECT_TRUE(ev == Version(0,0,0,""));
 
@@ -191,7 +191,7 @@ TEST("testSimple")
     EXPECT_EQUAL(2, vs.getSpecifiedMinor());
     EXPECT_EQUAL(3, vs.getSpecifiedMicro());
 
-    EXPECT_EQUAL("1.2.3.qualifier", vs.toString());
+    EXPECT_EQUAL("1.2.3.qualifier", vs.toFullString());
 
     // test cross-class function
     EXPECT_TRUE(vs.matches(v));
