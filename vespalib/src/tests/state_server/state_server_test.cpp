@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/net/http/simple_health_producer.h>
@@ -12,6 +13,7 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/process/process.h>
 #include <sys/stat.h>
+#include <sstream>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/test_master.hpp>
 
@@ -24,6 +26,7 @@ std::string short_root_path = "/state/v1";
 std::string metrics_path = "/state/v1/metrics";
 std::string health_path = "/state/v1/health";
 std::string config_path = "/state/v1/config";
+std::string version_path = "/state/v1/version";
 
 std::string total_metrics_path = "/metrics/total";
 
@@ -298,6 +301,7 @@ TEST_FFFF("require that state api responds to the expected paths",
     EXPECT_TRUE(!get_json(f4, host_tag, health_path, empty_params).empty());
     EXPECT_TRUE(!get_json(f4, host_tag, metrics_path, empty_params).empty());
     EXPECT_TRUE(!get_json(f4, host_tag, config_path, empty_params).empty());
+    EXPECT_TRUE(!get_json(f4, host_tag, version_path, empty_params).empty());
     EXPECT_TRUE(!get_json(f4, host_tag, total_metrics_path, empty_params).empty());
     EXPECT_TRUE(get_json(f4, host_tag, unknown_path, empty_params).empty());
     EXPECT_TRUE(get_json(f4, host_tag, unknown_state_path, empty_params).empty());
@@ -384,6 +388,16 @@ TEST_FFFF("require that config resource works as expected",
     f3.removeConfig("bar");
     EXPECT_EQUAL("{\"config\":{\"generation\":4,\"foo\":{\"generation\":4}}}",
                  get_json(f4, host_tag, config_path, empty_params));
+}
+
+TEST_FFFF("require that version resource works as expected",
+          SimpleHealthProducer(), SimpleMetricsProducer(), SimpleComponentConfigProducer(),
+          StateApi(f1, f2, f3))
+{
+    std::ostringstream os;
+    os << "{\"version\":\"" << vespalib::Vtag::currentVersion.toString() << "\"}";
+    EXPECT_EQUAL(os.str(),
+                 get_json(f4, host_tag, version_path, empty_params));
 }
 
 TEST_FFFF("require that state api also can return total metric",
