@@ -60,6 +60,7 @@ vespa_add_executable(searchcore_querynodes_test_app TEST
     SOURCES
     querynodes_test.cpp
     DEPENDS
+    searchlib_queryeval_test
     searchcore_matching
     GTest::gtest
 )

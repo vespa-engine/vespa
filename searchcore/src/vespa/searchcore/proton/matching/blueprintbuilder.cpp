@@ -141,8 +141,12 @@ protected:
     void visit(ProtonWeakAnd &n)     override { buildWeakAnd(n); }
     void visit(ProtonEquiv &n)       override { buildEquiv(n); }
     void visit(ProtonRank &n)        override { buildIntermediate(new RankBlueprint(), n); }
-    void visit(ProtonNear &n)        override { buildIntermediate(new NearBlueprint(n.getDistance()), n); }
-    void visit(ProtonONear &n)       override { buildIntermediate(new ONearBlueprint(n.getDistance()), n); }
+    void visit(ProtonNear &n)        override {
+        buildIntermediate(new NearBlueprint(n.getDistance(), _requestContext.get_element_gap_inspector()), n);
+    }
+    void visit(ProtonONear &n)       override {
+        buildIntermediate(new ONearBlueprint(n.getDistance(), _requestContext.get_element_gap_inspector()), n);
+    }
     void visit(ProtonSameElement &n) override { buildSameElement(n); }
 
     void visit(ProtonWeightedSetTerm &n) override { buildTerm(n); }

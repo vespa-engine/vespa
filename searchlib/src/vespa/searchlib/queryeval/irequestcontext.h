@@ -15,6 +15,7 @@ namespace vespalib {
 namespace search::queryeval {
 
 struct CreateBlueprintParams;
+class IElementGapInspector;
 
 /**
  * Provides a context that follows the life of a query.
@@ -51,6 +52,8 @@ public:
     virtual const CreateBlueprintParams& get_create_blueprint_params() const = 0;
 
     virtual const MetaStoreReadGuardSP * getMetaStoreReadGuard() const = 0;
+
+    virtual const IElementGapInspector& get_element_gap_inspector() const noexcept = 0;
 };
 
 }

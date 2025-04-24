@@ -4,8 +4,11 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include "andsearch.h"
+#include <optional>
 
 namespace search::queryeval {
+
+class IElementGapInspector;
 
 /**
  * The near search base implements the common logic of the near and o-near search.
@@ -23,13 +26,15 @@ protected:
     {
     private:
         uint32_t                _window;
+        std::optional<uint32_t> _element_gap;
         TermFieldMatchDataArray _inputs;
     protected:
         uint32_t window() const { return _window; }
         const TermFieldMatchDataArray &inputs() const { return _inputs; }
     public:
-        MatcherBase(uint32_t win, uint32_t fieldId, const TermFieldMatchDataArray &in)
+        MatcherBase(uint32_t win, std::optional<uint32_t> element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
             : _window(win),
+              _element_gap(element_gap),
               _inputs()
         {
             for (size_t i = 0; i < in.size(); ++i) {
@@ -88,8 +93,8 @@ class NearSearch : public NearSearchBase
 private:
     struct Matcher : public NearSearchBase::MatcherBase
     {
-        Matcher(uint32_t win, uint32_t fieldId, const TermFieldMatchDataArray &in)
-            : MatcherBase(win, fieldId, in) {}
+        Matcher(uint32_t win, std::optional<uint32_t> element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
+            : MatcherBase(win, element_gap, fieldId, in) {}
         bool match(uint32_t docId);
     };
 
@@ -103,11 +108,13 @@ public:
      * @param terms  The iterators for all child terms.
      * @param data   The term match data objects for all child terms.
      * @param window The size of the window in which all terms must occur.
+     * @param element_gap_inspector An inspector that retrieves the element gap for a given field.
      * @param strict Whether or not to skip to next matching document if seek fails.
      */
     NearSearch(Children terms,
                const TermFieldMatchDataArray &data,
                uint32_t window,
+               const IElementGapInspector& element_gap_inspector,
                bool strict = true);
 };
 
@@ -120,8 +127,8 @@ class ONearSearch : public NearSearchBase
 private:
     struct Matcher : public NearSearchBase::MatcherBase
     {
-        Matcher(uint32_t win, uint32_t fieldId, const TermFieldMatchDataArray &in)
-            : MatcherBase(win, fieldId, in) {}
+        Matcher(uint32_t win, std::optional<uint32_t> element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
+            : MatcherBase(win, element_gap, fieldId, in) {}
         bool match(uint32_t docId);
     };
 
@@ -135,11 +142,13 @@ public:
      * @param terms  The iterators for all child terms.
      * @param data   The term match data objects for all child terms.
      * @param window The size of the window in which all terms must occur.
+     * @param element_gap_inspector An inspector that retrieves the element gap for a given field.
      * @param strict Whether or not to skip to next matching document if seek fails.
      */
     ONearSearch(Children terms,
                 const TermFieldMatchDataArray &data,
                 uint32_t window,
+                const IElementGapInspector& element_gap_inspector,
                 bool strict = true);
 
 };

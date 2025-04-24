@@ -28,4 +28,16 @@ FakeRequestContext::get_create_blueprint_params() const
     return _create_blueprint_params;
 }
 
+const IElementGapInspector&
+FakeRequestContext::get_element_gap_inspector() const noexcept
+{
+    return *this;
+}
+
+std::optional<uint32_t>
+FakeRequestContext::get_element_gap(uint32_t) const noexcept
+{
+    return std::nullopt;
+}
+
 }

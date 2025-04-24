@@ -19,6 +19,7 @@ vespa_add_executable(searchlib_intermediate_blueprints_test_app TEST
     SOURCES
     intermediate_blueprints_test.cpp
     DEPENDS
+    searchlib_queryeval_test
     vespa_searchlib
     searchlib_test
 )

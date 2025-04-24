@@ -6,6 +6,7 @@
 #include <vespa/searchlib/queryeval/andnotsearch.h>
 #include <vespa/searchlib/queryeval/andsearch.h>
 #include <vespa/searchlib/queryeval/booleanmatchiteratorwrapper.h>
+#include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/nearsearch.h>
 #include <vespa/searchlib/queryeval/orsearch.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
@@ -16,6 +17,7 @@
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/isourceselector.h>
+#include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/searchlib/query/query_term_simple.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
 #include <vespa/searchcommon/common/growstrategy.h>
@@ -32,6 +34,7 @@ using search::attribute::SearchContextParams;
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataArray;
+using search::queryeval::test::MockElementGapInspector;
 using search::test::InitRangeVerifier;
 
 //-----------------------------------------------------------------------------
@@ -81,6 +84,8 @@ ISourceSelector::SourceStore ISourceSelectorDummy::_sourceStoreDummy("foo");
 std::unique_ptr<sourceselector::Iterator> selector() {
     return ISourceSelectorDummy::makeDummyIterator();
 }
+
+MockElementGapInspector mock_element_gap_inspector(std::nullopt);
 
 //-----------------------------------------------------------------------------
 
@@ -632,8 +637,8 @@ TEST(QueryEvalTest, test_dump)
                 AndNotSearch::create(search2("+", "-"), true),
                 AndSearch::create(search2("and_a", "and_b"), true),
                 new BooleanMatchIteratorWrapper(SearchIterator::UP(simple("wrapped")), TermFieldMatchDataArray()),
-                new NearSearch(search2("near_a", "near_b"), TermFieldMatchDataArray(), 5u, true),
-                new ONearSearch(search2("onear_a", "onear_b"), TermFieldMatchDataArray(), 10, true),
+                new NearSearch(search2("near_a", "near_b"), TermFieldMatchDataArray(), 5, mock_element_gap_inspector, true),
+                new ONearSearch(search2("onear_a", "onear_b"), TermFieldMatchDataArray(), 10, mock_element_gap_inspector, true),
                 OrSearch::create(search2("or_a", "or_b"), false),
                 RankSearch::create(search2("rank_a", "rank_b"),false),
                 SourceBlenderSearch::create(selector(), Collect<SBChild, SourceBlenderSearch::Children>()

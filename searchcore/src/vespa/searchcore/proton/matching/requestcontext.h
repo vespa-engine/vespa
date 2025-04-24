@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchlib/queryeval/create_blueprint_params.h>
+#include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/irequestcontext.h>
 #include <vespa/vespalib/util/doom.h>
 
@@ -16,6 +17,7 @@ class IQueryEnvironment;
 namespace proton {
 
 class RequestContext : public search::queryeval::IRequestContext,
+                       public search::queryeval::IElementGapInspector,
                        public search::attribute::IAttributeExecutor
 {
 public:
@@ -45,6 +47,10 @@ public:
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override {
         return _metaStoreReadGuard;
     }
+
+    const search::queryeval::IElementGapInspector& get_element_gap_inspector() const noexcept override;
+
+    std::optional<uint32_t> get_element_gap(uint32_t field_id) const noexcept override;
 
 private:
     const Doom                                    _doom;

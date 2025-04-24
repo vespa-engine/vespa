@@ -11,6 +11,7 @@
 #include <vespa/searchlib/queryeval/multisearch.h>
 #include <vespa/searchlib/queryeval/wand/weak_and_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/searchlib/test/diskindex/testdiskindex.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
@@ -30,6 +31,7 @@ using namespace search::queryeval;
 using namespace search::query;
 using search::fef::MatchData;
 using search::queryeval::Blueprint;
+using search::queryeval::test::MockElementGapInspector;
 using search::BitVector;
 using BlueprintVector = std::vector<std::unique_ptr<Blueprint>>;
 using vespalib::Slime;
@@ -41,6 +43,7 @@ using Path = std::vector<std::variant<size_t,std::string_view>>;
 
 std::string strict_equiv_name = "search::queryeval::EquivImpl<true, search::queryeval::StrictHeapOrSearch<search::queryeval::NoUnpack, vespalib::LeftArrayHeap, unsigned char> >";
 const std::string strict_bitvector_iterator_class_name = "search::BitVectorIteratorTT<search::BitVectorIteratorStrictT<false>, false>";
+MockElementGapInspector mock_element_gap_inspector(std::nullopt);
 
 struct InvalidSelector : ISourceSelector {
     InvalidSelector() : ISourceSelector(Source()) {}
@@ -304,7 +307,7 @@ TEST(IntermediateBlueprintsTest, test_Or_Blueprint) {
 }
 
 TEST(IntermediateBlueprintsTest, test_Near_Blueprint) {
-    NearBlueprint b(7);
+    NearBlueprint b(7, mock_element_gap_inspector);
     { // combine
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQ(true, b.combine(est).empty);
@@ -323,21 +326,21 @@ TEST(IntermediateBlueprintsTest, test_Near_Blueprint) {
         EXPECT_EQ(0u, b.combine(est).estHits);
     }
     {
-        NearBlueprint a(7);
+        NearBlueprint a(7, mock_element_gap_inspector);
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQ(0u, a.exposeFields().size());
     }
-    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7), false,
+    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7, mock_element_gap_inspector), false,
                                     createLeafs({40, 10, 30, 20}), {1, 3, 2, 0},
                                     {false, false, false, false});
-    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7), true,
+    check_sort_order_and_strictness(std::make_unique<NearBlueprint>(7, mock_element_gap_inspector), true,
                                     createLeafs({40, 10, 30, 20}), {1, 3, 2, 0},
                                     {true, false, false, false});
     // createSearch tested by iterator unit test
 }
 
 TEST(IntermediateBlueprintsTest, test_ONear_Blueprint) {
-    ONearBlueprint b(8);
+    ONearBlueprint b(8, mock_element_gap_inspector);
     { // combine
         std::vector<Blueprint::HitEstimate> est;
         EXPECT_EQ(true, b.combine(est).empty);
@@ -356,14 +359,14 @@ TEST(IntermediateBlueprintsTest, test_ONear_Blueprint) {
         EXPECT_EQ(0u, b.combine(est).estHits);
     }
     {
-        ONearBlueprint a(8);
+        ONearBlueprint a(8, mock_element_gap_inspector);
         a.addChild(ap(MyLeafSpec(10).addField(1, 1).create()));
         EXPECT_EQ(0u, a.exposeFields().size());
     }
-    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7), false,
+    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7, mock_element_gap_inspector), false,
                                     createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
                                     {false, false, false, false});
-    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7), true,
+    check_sort_order_and_strictness(std::make_unique<ONearBlueprint>(7, mock_element_gap_inspector), true,
                                     createLeafs({20, 10, 40, 30}), {0, 1, 2, 3},
                                     {true, false, false, false});
     // createSearch tested by iterator unit test
@@ -803,8 +806,8 @@ struct make {
     static make RANK() { return make(std::make_unique<RankBlueprint>()); }
     static make ANDNOT() { return make(std::make_unique<AndNotBlueprint>()); }
     static make SB(ISourceSelector &selector) { return make(std::make_unique<SourceBlenderBlueprint>(selector)); }
-    static make NEAR(uint32_t window) { return make(std::make_unique<NearBlueprint>(window)); }
-    static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window)); }
+    static make NEAR(uint32_t window) { return make(std::make_unique<NearBlueprint>(window, mock_element_gap_inspector)); }
+    static make ONEAR(uint32_t window) { return make(std::make_unique<ONearBlueprint>(window, mock_element_gap_inspector)); }
     static make WEAKAND(uint32_t n) { return make(std::make_unique<WeakAndBlueprint>(n)); }
     static make WEAKAND_ADJUST(double limit) {
         return make(std::make_unique<WeakAndBlueprint>(100, wand::StopWordStrategy(-limit, 1.0, 0, false), true));

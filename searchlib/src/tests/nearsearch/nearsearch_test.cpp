@@ -1,17 +1,23 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("nearsearch_test");
 
-#include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/nearsearch.h>
+//#include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/searchable.h>
+#include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
 #include <vespa/searchlib/queryeval/leaf_blueprints.h>
+#include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vector>
+
+#include <vespa/log/log.h>
+LOG_SETUP("nearsearch_test");
+
+using search::queryeval::IElementGapInspector;
+using search::queryeval::test::MockElementGapInspector;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -77,6 +83,7 @@ private:
     std::vector<MyTerm*> _terms;
     bool                 _ordered;
     uint32_t             _window;
+    MockElementGapInspector _element_gap_inspector;
 
 public:
     MyQuery(bool ordered, uint32_t window);
@@ -102,14 +109,17 @@ public:
     uint32_t getWindow() const {
         return _window;
     }
+    const IElementGapInspector& get_element_gap_inspector() const noexcept { return _element_gap_inspector; }
 };
 
 MyQuery::MyQuery(bool ordered, uint32_t window)
     : _terms(),
       _ordered(ordered),
-      _window(window)
+      _window(window),
+      _element_gap_inspector(std::nullopt)
 {}
-MyQuery::~MyQuery() {}
+
+MyQuery::~MyQuery() = default;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -226,9 +236,9 @@ NearSearchTest::testNearSearch(MyQuery &query, uint32_t matchId, const std::stri
     SCOPED_TRACE(vespalib::make_string("%s - %u", label.c_str(), matchId));
     search::queryeval::IntermediateBlueprint *near_b = nullptr;
     if (query.isOrdered()) {
-        near_b = new search::queryeval::ONearBlueprint(query.getWindow());
+        near_b = new search::queryeval::ONearBlueprint(query.getWindow(), query.get_element_gap_inspector());
     } else {
-        near_b = new search::queryeval::NearBlueprint(query.getWindow());
+        near_b = new search::queryeval::NearBlueprint(query.getWindow(), query.get_element_gap_inspector());
     }
     search::queryeval::Blueprint::UP bp(near_b);
     search::fef::MatchDataLayout layout;

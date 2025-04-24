@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/simpleresult.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/full_search.h>
@@ -13,6 +14,7 @@
 #include <vespa/searchlib/queryeval/dot_product_blueprint.h>
 #include <vespa/searchlib/queryeval/same_element_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
+#include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/vespalib/util/trinary.h>
 #include <vespa/vespalib/util/require.h>
@@ -27,6 +29,7 @@ using namespace search::queryeval;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
 using search::fef::TermFieldMatchDataArray;
+using search::queryeval::test::MockElementGapInspector;
 using vespalib::Trinary;
 
 using Constraint = Blueprint::FilterConstraint;
@@ -122,6 +125,8 @@ struct NullSelector : ISourceSelector {
     void compactLidSpace(uint32_t) override { abort(); }
     std::unique_ptr<sourceselector::Iterator> createIterator() const override { abort(); }
 };
+
+MockElementGapInspector mock_element_gap_inspector(std::nullopt);
 
 // make a simple result containing the given documents
 SimpleResult make_result(const std::vector<uint32_t> &docs) {
@@ -538,8 +543,8 @@ TEST(FilterSearchTest, simple_and) {
     verify(Combine<AndFlow>(Blueprint::create_and_filter, child_list), expected);
     verify(Make<AndBlueprint>(child_list), expected);
     verify(Combine<AndFlow>(Blueprint::create_atmost_and_filter, child_list), expected, Expect::empty());
-    verify(Make<NearBlueprint>(child_list, 3), expected, Expect::empty());
-    verify(Make<ONearBlueprint>(child_list, 3), expected, Expect::empty());
+    verify(Make<NearBlueprint>(child_list, 3, mock_element_gap_inspector), expected, Expect::empty());
+    verify(Make<ONearBlueprint>(child_list, 3, mock_element_gap_inspector), expected, Expect::empty());
     verify(Make<SameElementAdapter>(child_list), expected, Expect::empty());
 }
 
