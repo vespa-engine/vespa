@@ -310,7 +310,8 @@ TEST_FFFF("require that top-level urls are generated correctly",
     EXPECT_EQUAL("{\"resources\":["
                  "{\"url\":\"http://HOST/state/v1/health\"},"
                  "{\"url\":\"http://HOST/state/v1/metrics\"},"
-                 "{\"url\":\"http://HOST/state/v1/config\"}]}",
+                 "{\"url\":\"http://HOST/state/v1/config\"},"
+                 "{\"url\":\"http://HOST/state/v1/version\"}]}",
                  get_json(f4, host_tag, root_path, empty_params));
     EXPECT_EQUAL(get_json(f4, host_tag, root_path, empty_params),
                  get_json(f4, host_tag, short_root_path, empty_params));
@@ -325,6 +326,7 @@ TEST_FFFF("require that top-level resource list can be extended",
                  "{\"url\":\"http://HOST/state/v1/health\"},"
                  "{\"url\":\"http://HOST/state/v1/metrics\"},"
                  "{\"url\":\"http://HOST/state/v1/config\"},"
+                 "{\"url\":\"http://HOST/state/v1/version\"},"
                  "{\"url\":\"http://HOST/state/v1/custom\"}]}",
                  get_json(f4, host_tag, root_path, empty_params));
 }
