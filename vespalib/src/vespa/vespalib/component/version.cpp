@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "version.h"
+#include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cctype>
@@ -90,37 +91,23 @@ Version::Version(const string & versionString)
       _qualifier(),
       _stringValue(versionString)
 {
-    if ( ! versionString.empty()) {
-        std::string_view r(versionString.c_str(), versionString.size());
-        std::string_view::size_type dot(r.find('.'));
-        std::string_view majorS(r.substr(0, dot)); 
+    if (!versionString.empty()) {
+        StringTokenizer components(versionString, ".", ""); // Split on dot
 
-        if ( !majorS.empty()) {
-            _major = parseInteger(majorS);
-            if (dot == std::string_view::npos) return;
-            r = r.substr(dot + 1);
-            dot = r.find('.');
-            std::string_view minorS(r.substr(0, dot)); 
-            if ( !minorS.empty()) {
-                _minor = parseInteger(minorS);
-
-                if (dot == std::string_view::npos) return;
-                r = r.substr(dot + 1);
-                dot = r.find('.');
-                std::string_view microS(r.substr(0, dot)); 
-                if ( ! microS.empty()) {
-                    _micro = parseInteger(microS);
-
-                    if (dot == std::string_view::npos) return;
-                    r = r.substr(dot + 1);
-                    dot = r.find('.');
-                    if (dot == std::string_view::npos) {
-                        _qualifier = r; 
-                    } else {
-                        throw IllegalArgumentException("too many dot-separated components in version string '" + versionString + "'");
-                    }
-                }
-            }
+        if (components.size() > 0) {
+            _major = parseInteger(components[0]);
+        }
+        if (components.size() > 1) {
+            _minor = parseInteger(components[1]);
+        }
+        if (components.size() > 2) {
+            _micro = parseInteger(components[2]);
+        }
+        if (components.size() > 3) {
+            _qualifier = components[3];
+        }
+        if (components.size() > 4) {
+            throw IllegalArgumentException("too many dot-separated components in version string");
         }
     }
     verifySanity();
