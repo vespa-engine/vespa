@@ -390,7 +390,7 @@ TEST_FFFF("require that config resource works as expected",
                  get_json(f4, host_tag, config_path, empty_params));
 }
 
-TEST_FFFF("require that version resource works as expected",
+TEST_FFFF("version resource yields current version number",
           SimpleHealthProducer(), SimpleMetricsProducer(), SimpleComponentConfigProducer(),
           StateApi(f1, f2, f3))
 {
