@@ -110,6 +110,10 @@ public:
         return _window;
     }
     const IElementGapInspector& get_element_gap_inspector() const noexcept { return _element_gap_inspector; }
+    MyQuery& set_element_gap(std::optional<uint32_t> element_gap) {
+        _element_gap_inspector = MockElementGapInspector(element_gap);
+        return *this;
+    }
 };
 
 MyQuery::MyQuery(bool ordered, uint32_t window)
@@ -205,6 +209,12 @@ TEST_F(NearSearchTest, element_boundary)
     MyTerm bar({69, 70, 71}, {{1, 5, {1}}});
     testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar), 0, "near 1");
     testNearSearch(MyQuery(true, 20).addTerm(foo).addTerm(bar), 0, "onear 1");
+    testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar).set_element_gap(0), 69, "near 1");
+    testNearSearch(MyQuery(true, 20).addTerm(foo).addTerm(bar).set_element_gap(0), 69, "onear 1");
+    testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar).set_element_gap(14), 69, "near 2");
+    testNearSearch(MyQuery(true, 20).addTerm(foo).addTerm(bar).set_element_gap(14), 69, "onear 2");
+    testNearSearch(MyQuery(false, 20).addTerm(foo).addTerm(bar).set_element_gap(15), 0, "near 3");
+    testNearSearch(MyQuery(true, 20).addTerm(foo).addTerm(bar).set_element_gap(15), 0, "onear 3");
 }
 
 TEST_F(NearSearchTest, repeated_terms)
