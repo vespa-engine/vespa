@@ -15,25 +15,34 @@ void RegexPredicateNode::RE::compile() {
     regex = Regex::from_pattern(pattern, Regex::Options::None);
 }
 
+bool RegexPredicateNode::check(const ResultNode* result) const {
+    if (result->inherits(ResultNodeVector::classId)) {
+        const auto * rv = static_cast<const ResultNodeVector *>(result);
+        for (size_t i = 0; i < rv->size(); i++) {
+            HoldString tmp(*rv, i);
+            if (_re.regex.full_match(tmp)) return true;
+        }
+        return false;
+    } else {
+        HoldString tmp(*result);
+        return _re.regex.full_match(tmp);
+    }
+}
+
+bool RegexPredicateNode::allow(const document::Document & doc, HitRank rank) {
+    if (_argument.getRoot()) {
+        _argument.execute(doc, rank);
+        return check(_argument.getResult());
+    }
+    return false;
+}
+
 bool RegexPredicateNode::allow(DocId docId, HitRank rank) {
-    bool isMatch = false;
     if (_argument.getRoot()) {
         _argument.execute(docId, rank);
-        const ResultNode* result = _argument.getResult();
-        if (result->inherits(ResultNodeVector::classId)) {
-            const auto * rv = static_cast<const ResultNodeVector *>(result);
-            for (size_t i = 0; i < rv->size(); i++) {
-                HoldString tmp(*rv, i);
-                isMatch = _re.regex.full_match(tmp);
-                if (isMatch) break;
-            }
-        } else {
-            HoldString tmp(*result);
-            isMatch = _re.regex.full_match(tmp);
-        }
-
+        return check(_argument.getResult());
     }
-    return isMatch;
+    return false;
 }
 
 RegexPredicateNode::RegexPredicateNode() noexcept : _re(), _argument() {}

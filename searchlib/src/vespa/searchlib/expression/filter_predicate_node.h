@@ -15,7 +15,7 @@ public:
     virtual FilterPredicateNode * clone() const = 0;
     //virtual bool valid() const = 0;
     virtual bool allow(DocId docId, HitRank rank) = 0;
-    bool allow(const document::Document &, HitRank) { return true; }
+    virtual bool allow(const document::Document &, HitRank) = 0;
 };
 
 class TruePredicateNode : public FilterPredicateNode {
@@ -24,6 +24,7 @@ public:
     TruePredicateNode * clone() const override { return new TruePredicateNode(); }
     //bool valid() const override { return true; }
     bool allow(DocId, HitRank) override { return true; }
+    bool allow(const document::Document &, HitRank) override { return true; }
     static TruePredicateNode instance;
 };
 

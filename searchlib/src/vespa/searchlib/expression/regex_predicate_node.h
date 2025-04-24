@@ -27,6 +27,7 @@ private:
     RE _re;
     ExpressionTree _argument;
 
+    bool check(const ResultNode* result) const;
 public:
     RegexPredicateNode() noexcept;
     ~RegexPredicateNode();
@@ -38,7 +39,7 @@ public:
     DECLARE_IDENTIFIABLE_NS2(search, expression, RegexPredicateNode);
     DECLARE_NBO_SERIALIZE;
     bool allow(DocId docId, HitRank rank) override;
-    // bool allow(const document::Document &, HitRank) { return true; }
+    bool allow(const document::Document &, HitRank) override;
     void visitMembers(vespalib::ObjectVisitor& visitor) const override;
     void selectMembers(const vespalib::ObjectPredicate& predicate,
                        vespalib::ObjectOperation& operation) override;
