@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "state_api.h"
+#include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/net/connection_auth_context.h>
 #include <vespa/vespalib/net/tls/capability.h>
 #include <vespa/vespalib/util/jsonwriter.h>
@@ -81,7 +82,7 @@ std::string respond_root(const JsonHandlerRepo &repo, const std::string &host) {
     json.beginObject();
     json.appendKey("resources");
     json.beginArray();
-    for (auto path: {"/state/v1/health", "/state/v1/metrics", "/state/v1/config"}) {
+    for (auto path: {"/state/v1/health", "/state/v1/metrics", "/state/v1/config", "/state/v1/version"}) {
         render_link(json, host, path);
     }
     for (const std::string &path: repo.get_root_resources()) {
@@ -154,6 +155,17 @@ std::string respond_config(ComponentConfigProducer &componentConfigProducer) {
     return json.str();
 }
 
+std::string respond_version() {
+    JSONStringer json;
+    json.beginObject();
+
+    json.appendKey("version");
+    json.appendString(vespalib::Vtag::currentVersion.toString());
+
+    json.endObject();
+    return json.str();
+}
+
 JsonGetHandler::Response cap_checked(const net::ConnectionAuthContext &auth_ctx,
                                      CapabilitySet required_caps,
                                      std::function<std::string()> fn)
@@ -207,6 +219,10 @@ StateApi::get(const std::string &host,
     } else if (path == "/state/v1/config") {
         return cap_checked(auth_ctx, Capability::content_state_api(), [&] {
             return respond_config(_componentConfigProducer);
+        });
+    } else if (path == "/state/v1/version") {
+        return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] {
+            return respond_version();
         });
     } else if (path == "/metrics/total") {
         return cap_check_and_respond_metrics(auth_ctx, params, "", [&](auto& consumer, auto format) {
