@@ -64,6 +64,7 @@ public:
     std::string getClassName() const override {
         return _wrapped_search->getClassName();
     }
+    void visitMembers(vespalib::ObjectVisitor &visitor) const override;
 };
 
 } // namespace
