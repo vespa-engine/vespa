@@ -341,7 +341,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag COPY_LEGACY_CA = defineFeatureFlag(
             "copy-legacy-ca", true,
-            List.of("olaa"), "2025-03-27", "2025-04-30",
+            List.of("olaa"), "2025-03-27", "2025-06-01",
             "Whether legacy CA should be copied from host to container",
             "Takes effect on container startup",
             TENANT_ID, INSTANCE_ID);
