@@ -8,11 +8,11 @@
 ./searchsummary/* @geirst
 ./indexinglanguage/* @geirst
 ./storage/* @vekterli
-./cloud-tenant-cd/* @mortent @bjorncs
+./cloud-tenant-cd/* @bjorncs
 ./config/* @hmusum @arnej27959
 ./application/* @gjoranv @bjorncs
 ./dist/* @esolitos
-./cloud-tenant-base/* @mortent @bjorncs
+./cloud-tenant-base/* @bjorncs
 ./vespa-application-maven-plugin/* @gjoranv
 ./configserver/* @hmusum
 ./documentapi/* @vekterli
@@ -56,7 +56,7 @@
 ./docproc/* @bratseth
 ./logforwarder/* @arnej27959
 ./configdefinitions/* @hmusum
-./jdisc-cloud-aws/* @mortent @oyving
+./jdisc-cloud-aws/* @oyving
 ./bundle-plugin-test/* @gjoranv
 ./container-search-and-docproc/* @gjoranv
 ./zookeeper-command-line-client/* @hmusum
@@ -103,8 +103,8 @@
 ./vespalog/* @arnej27959
 ./fat-model-dependencies/* @gjoranv @hmusum
 ./container-messagebus/* @bjorncs @gjoranv @havardpe
-./cloud-tenant-base-dependencies-enforcer/* @bjorncs @mortent
-./tenant-cd-commons/* @bjorncs @mortent
+./cloud-tenant-base-dependencies-enforcer/* @bjorncs
+./tenant-cd-commons/* @bjorncs
 ./vdslib/* @vekterli
 ./model-integration/* @bratseth @bjorncs @arnej27959 @glebashnik
 ./jdisc_core_test/* @gjoranv @bjorncs
@@ -140,7 +140,7 @@
 ./container-documentapi/* @gjoranv
 ./jdisc-security-filters/* @bjorncs
 ./storageserver/* @vekterli
-./hosted-tenant-base/* @mortent @bjorncs
+./hosted-tenant-base/* @bjorncs
 ./vespaclient-java/* @bjorncs
 ./predicate-search-core/* @bjorncs
 ./vespa-dependencies-enforcer/* @bjorncs
