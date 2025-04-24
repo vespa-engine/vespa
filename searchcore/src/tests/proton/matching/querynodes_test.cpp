@@ -29,6 +29,7 @@
 #include <vespa/searchlib/queryeval/sourceblendersearch.h>
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
+#include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using search::fef::FieldInfo;
@@ -62,6 +63,7 @@ using search::queryeval::SearchIterator;
 using search::queryeval::Searchable;
 using search::queryeval::SimplePhraseSearch;
 using search::queryeval::SourceBlenderSearch;
+using search::queryeval::test::MockElementGapInspector;
 using std::string;
 using std::vector;
 using namespace proton::matching;
@@ -91,6 +93,7 @@ const string attribute[] = { "attribute1", "attribute2" };
 const string source_tag[] = { "Source 1", "Source 2" };
 const string attribute_tag = "Attribute source";
 const uint32_t distance = 13;
+MockElementGapInspector mock_element_gap_inspector(std::nullopt);
 
 template <class SearchType>
 class Create {
@@ -266,7 +269,7 @@ SearchIterator *getNearParent(SearchIterator *a, SearchIterator *b) {
     // two terms searching in (two index fields + two attribute fields)
     data.add(&tmd).add(&tmd).add(&tmd).add(&tmd)
         .add(&tmd).add(&tmd).add(&tmd).add(&tmd);
-    return new NearType(std::move(children), data, distance, true);
+    return new NearType(std::move(children), data, distance, mock_element_gap_inspector, true);
 }
 
 template <typename SearchType>

@@ -4,6 +4,7 @@
 
 #include "irequestcontext.h"
 #include "create_blueprint_params.h"
+#include "i_element_gap_inspector.h"
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/fast_value.h>
@@ -17,7 +18,8 @@
 namespace vespalib { class TestClock; }
 namespace search::queryeval {
 
-class FakeRequestContext : public IRequestContext
+class FakeRequestContext : public IRequestContext,
+                           public IElementGapInspector
 {
 public:
     FakeRequestContext();
@@ -52,6 +54,8 @@ public:
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
 
     CreateBlueprintParams& get_create_blueprint_params() { return _create_blueprint_params; }
+    const IElementGapInspector& get_element_gap_inspector() const noexcept override;
+    std::optional<uint32_t> get_element_gap(uint32_t field_id) const noexcept override;
 private:
     std::unique_ptr<vespalib::TestClock> _clock;
     const vespalib::Doom _doom;

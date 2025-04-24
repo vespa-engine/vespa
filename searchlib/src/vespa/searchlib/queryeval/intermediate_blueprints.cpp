@@ -618,7 +618,7 @@ NearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
             tfmda.add(cs.field(j).resolve(md));
         }
     }
-    return std::make_unique<NearSearch>(std::move(sub_searches), tfmda, _window, strict());
+    return std::make_unique<NearSearch>(std::move(sub_searches), tfmda, _window, _element_gap_inspector, strict());
 }
 
 SearchIterator::UP
@@ -681,7 +681,7 @@ ONearBlueprint::createIntermediateSearch(MultiSearch::Children sub_searches,
     }
     // could sort sub_searches here
     // but then strictness inheritance would also need to be fixed
-    return std::make_unique<ONearSearch>(std::move(sub_searches), tfmda, _window, strict());
+    return std::make_unique<ONearSearch>(std::move(sub_searches), tfmda, _window, _element_gap_inspector, strict());
 }
 
 SearchIterator::UP

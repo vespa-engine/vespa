@@ -5,6 +5,7 @@
 #include <vespa/searchlib/fef/matchdatalayout.h>
 #include <vespa/searchlib/query/tree/termnodes.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
+#include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -25,13 +26,14 @@ using search::query::Node;
 using search::queryeval::Blueprint;
 using search::queryeval::ISourceSelector;
 using search::queryeval::SearchIterator;
+using search::queryeval::IElementGapInspector;
 using search::queryeval::IRequestContext;
 using search::queryeval::FieldSpec;
 using search::queryeval::FieldSpecList;
 using TermMap = vespalib::hash_set<std::string>;
 
 namespace {
-class WarmupRequestContext : public IRequestContext {
+class WarmupRequestContext : public IRequestContext, public IElementGapInspector {
     using IAttributeVector = search::attribute::IAttributeVector;
     using CreateBlueprintParams = search::queryeval::CreateBlueprintParams;
 public:
@@ -44,6 +46,8 @@ public:
     const vespalib::eval::Value* get_query_tensor(const std::string&) const override;
     const CreateBlueprintParams& get_create_blueprint_params() const override { return _params; }
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
+    const IElementGapInspector& get_element_gap_inspector() const noexcept override { return *this; }
+    std::optional<uint32_t> get_element_gap(uint32_t) const noexcept override { return std::nullopt; }
 private:
     const CreateBlueprintParams _params;
 };

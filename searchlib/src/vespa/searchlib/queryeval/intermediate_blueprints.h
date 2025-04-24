@@ -9,6 +9,7 @@
 
 namespace search::queryeval {
 
+class IElementGapInspector;
 class ISourceSelector;
 
 //-----------------------------------------------------------------------------
@@ -128,7 +129,8 @@ public:
 class NearBlueprint : public IntermediateBlueprint
 {
 private:
-    uint32_t _window;
+    uint32_t                    _window;
+    const IElementGapInspector& _element_gap_inspector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
@@ -142,7 +144,10 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 
-    explicit NearBlueprint(uint32_t window) noexcept : _window(window) {}
+    explicit NearBlueprint(uint32_t window, const IElementGapInspector& element_gap_inspector) noexcept
+        : _window(window),
+          _element_gap_inspector(element_gap_inspector)
+    {}
 };
 
 //-----------------------------------------------------------------------------
@@ -150,7 +155,8 @@ public:
 class ONearBlueprint  : public IntermediateBlueprint
 {
 private:
-    uint32_t _window;
+    uint32_t                    _window;
+    const IElementGapInspector& _element_gap_inspector;
 
     AnyFlow my_flow(InFlow in_flow) const override;
 public:
@@ -164,7 +170,10 @@ public:
                              fef::MatchData &md) const override;
     SearchIterator::UP createFilterSearchImpl(FilterConstraint constraint) const override;
 
-    explicit ONearBlueprint(uint32_t window) noexcept : _window(window) {}
+    explicit ONearBlueprint(uint32_t window, const IElementGapInspector& element_gap_inspector) noexcept
+        : _window(window),
+          _element_gap_inspector(element_gap_inspector)
+    {}
 };
 
 //-----------------------------------------------------------------------------

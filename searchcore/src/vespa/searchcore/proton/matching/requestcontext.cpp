@@ -66,4 +66,15 @@ RequestContext::get_query_tensor(const std::string& tensor_name) const
     }
 }
 
+const search::queryeval::IElementGapInspector&
+RequestContext::get_element_gap_inspector() const noexcept
+{
+    return *this;
+}
+
+std::optional<uint32_t>
+RequestContext::get_element_gap(uint32_t) const noexcept {
+    return std::nullopt;
+}
+
 }

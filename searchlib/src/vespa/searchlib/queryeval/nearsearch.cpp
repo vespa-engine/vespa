@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "nearsearch.h"
+#include "i_element_gap_inspector.h"
 #include <vespa/vespalib/objects/visit.h>
 #include <vespa/vespalib/util/priority_queue.h>
 #include <limits>
@@ -7,6 +8,8 @@
 
 #include <vespa/log/log.h>
 LOG_SETUP(".nearsearch");
+
+using search::queryeval::IElementGapInspector;
 
 namespace search::queryeval {
 
@@ -16,14 +19,15 @@ using search::fef::TermFieldMatchDataArray;
 using search::fef::TermFieldMatchDataPositionKey;
 
 template<typename T>
-void setup_fields(uint32_t window, std::vector<T> &matchers, const TermFieldMatchDataArray &in, uint32_t terms) {
+void setup_fields(uint32_t window, const IElementGapInspector& element_gap_inspector,
+                  std::vector<T> &matchers, const TermFieldMatchDataArray &in, uint32_t terms) {
     std::map<uint32_t,uint32_t> fields;
     for (size_t i = 0; i < in.size(); ++i) {
         ++fields[in[i]->getFieldId()];
     }
     for (auto [field, cnt]: fields) {
         if (cnt == terms) {
-            matchers.push_back(T(window, field, in));
+            matchers.push_back(T(window, element_gap_inspector.get_element_gap(field), field, in));
         }
     }
 }
@@ -124,11 +128,12 @@ NearSearchBase::doSeek(uint32_t docId)
 NearSearch::NearSearch(Children terms,
                        const TermFieldMatchDataArray &data,
                        uint32_t window,
+                       const IElementGapInspector& element_gap_inspector,
                        bool strict)
     : NearSearchBase(std::move(terms), data, window, strict),
       _matchers()
 {
-    setup_fields(window, _matchers, data, getChildren().size());
+    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size());
 }
 
 namespace {
@@ -225,11 +230,12 @@ NearSearch::match(uint32_t docId)
 ONearSearch::ONearSearch(Children terms,
                          const TermFieldMatchDataArray &data,
                          uint32_t window,
+                         const IElementGapInspector& element_gap_inspector,
                          bool strict)
     : NearSearchBase(std::move(terms), data, window, strict),
       _matchers()
 {
-    setup_fields(window, _matchers, data, getChildren().size());
+    setup_fields(window, element_gap_inspector, _matchers, data, getChildren().size());
 }
 
 bool
