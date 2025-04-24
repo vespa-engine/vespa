@@ -47,7 +47,7 @@ private:
                                                                  std::vector<std::unique_ptr<queryeval::SearchIterator>>&& bitvectors,
                                                                  bool strict) const;
 
-    template <bool filter_search>
+    template <bool filter_search, bool allow_hash_filter>
     std::unique_ptr<queryeval::SearchIterator> create_search_helper(const fef::TermFieldMatchDataArray& tfmda,
                                                                     bool strict) const;
 

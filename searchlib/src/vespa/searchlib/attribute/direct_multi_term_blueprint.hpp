@@ -127,7 +127,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::combine_iterators(std::u
 }
 
 template <typename PostingStoreType, typename SearchType>
-template <bool filter_search>
+template <bool filter_search, bool allow_hash_filter>
 std::unique_ptr<queryeval::SearchIterator>
 DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(const fef::TermFieldMatchDataArray& tfmda,
                                                                              bool strict) const
@@ -138,7 +138,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::create_search_helper(con
     auto& tfmd = *tfmda[0];
     bool field_is_filter = getState().fields()[0].isFilter();
     if constexpr (SearchType::supports_hash_filter) {
-        if (use_hash_filter(strict)) {
+        if (allow_hash_filter && use_hash_filter(strict)) {
             return SearchType::create_hash_filter(tfmd, (filter_search || field_is_filter),
                                                   _weights, _terms,
                                                   _iattr, _attr, _dictionary_snapshot);
@@ -169,7 +169,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::createLeafSearch(const f
 {
     assert(tfmda.size() == 1);
     assert(getState().numFields() == 1);
-    return create_search_helper<SearchType::filter_search>(tfmda, strict());
+    return create_search_helper<SearchType::filter_search, true>(tfmda, strict());
 }
 
 template <typename PostingStoreType, typename SearchType>
@@ -178,7 +178,7 @@ DirectMultiTermBlueprint<PostingStoreType, SearchType>::createFilterSearchImpl(F
 {
     assert(getState().numFields() == 1);
     auto wrapper = std::make_unique<FilterWrapper>(getState().numFields());
-    wrapper->wrap(create_search_helper<true>(wrapper->tfmda(), strict()));
+    wrapper->wrap(create_search_helper<true, false>(wrapper->tfmda(), strict()));
     return wrapper;
 }
 

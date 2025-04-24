@@ -20,6 +20,8 @@ using namespace search::attribute;
 using namespace search::queryeval;
 using namespace search;
 using testing::StartsWith;
+using testing::HasSubstr;
+using testing::Not;
 
 using LookupKey = IDirectPostingStore::LookupKey;
 
@@ -267,6 +269,10 @@ public:
         blueprint->basic_plan(strict, doc_id_limit);
         return blueprint->createLeafSearch(tfmda);
     }
+    std::unique_ptr<SearchIterator> create_filter(bool strict = true) {
+        blueprint->basic_plan(strict, doc_id_limit);
+        return blueprint->createFilterSearch(Blueprint::FilterConstraint::UPPER_BOUND);
+    }
     std::string resolve_iterator_with_unpack() const {
         if (in_operator) {
             return iterator_unpack_docid;
@@ -409,6 +415,11 @@ TEST_P(DirectMultiTermBlueprintTest, hash_filter_used_for_non_strict_iterator_wi
     auto itr = create_leaf_search(false);
     EXPECT_THAT(itr->asString(), StartsWith("search::attribute::MultiTermHashFilter"));
     expect_hits({10, 30, 31}, *itr);
+    // filter should not use MultiTermHashFilter
+    auto filter = create_filter(false);
+    EXPECT_THAT(filter->asString(), HasSubstr("wrapped_as_filter"));
+    EXPECT_THAT(filter->asString(), Not(HasSubstr("MultiTermHashFilter")));
+    expect_hits({10, 30, 31}, *filter);
 }
 
 TEST_P(DirectMultiTermBlueprintTest, btree_iterators_used_for_non_strict_iterator_with_9_or_less_terms)
@@ -434,6 +445,11 @@ TEST_P(DirectMultiTermBlueprintTest, hash_filter_with_string_folding_used_for_no
     auto itr = create_leaf_search(false);
     EXPECT_THAT(itr->asString(), StartsWith("search::attribute::MultiTermHashFilter"));
     expect_hits({30, 31, 40, 41}, *itr);
+    // filter should not use MultiTermHashFilter
+    auto filter = create_filter(false);
+    EXPECT_THAT(filter->asString(), HasSubstr("wrapped_as_filter"));
+    EXPECT_THAT(filter->asString(), Not(HasSubstr("MultiTermHashFilter")));
+    expect_hits({30, 31, 40, 41}, *filter);
 }
 
 TEST_P(DirectMultiTermBlueprintTest, supports_more_than_64k_btree_iterators) {
