@@ -11,7 +11,7 @@
 ./cloud-tenant-cd/* @mortent @bjorncs
 ./config/* @hmusum @arnej27959
 ./application/* @gjoranv @bjorncs
-./dist/* @aressem
+./dist/* @esolitos
 ./cloud-tenant-base/* @mortent @bjorncs
 ./vespa-application-maven-plugin/* @gjoranv
 ./configserver/* @hmusum
