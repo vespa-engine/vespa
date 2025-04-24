@@ -16,6 +16,7 @@ namespace search::queryeval {
 namespace {
 
 using search::fef::TermFieldMatchDataArray;
+using search::fef::TermFieldMatchDataPosition;
 using search::fef::TermFieldMatchDataPositionKey;
 
 template<typename T>
@@ -29,6 +30,16 @@ void setup_fields(uint32_t window, const IElementGapInspector& element_gap_inspe
         if (cnt == terms) {
             matchers.push_back(T(window, element_gap_inspector.get_element_gap(field), field, in));
         }
+    }
+}
+
+TermFieldMatchDataPositionKey
+calc_window_end_pos(const TermFieldMatchDataPosition& pos, uint32_t window, std::optional<uint32_t> element_gap)
+{
+    if (!element_gap.has_value() || pos.getElementLen() + element_gap.value() > pos.getPosition() + window) {
+        return { pos.getElementId(), pos.getPosition() + window };
+    } else {
+        return { pos.getElementId() + 1, pos.getPosition() + window - pos.getElementLen() - element_gap.value() };
     }
 }
 
@@ -153,8 +164,15 @@ struct PosIter {
 struct Iterators
 {
     vespalib::PriorityQueue<PosIter> _queue;
-    TermFieldMatchDataPositionKey _maxOcc;
+    TermFieldMatchDataPositionKey    _maxOcc;
+    std::optional<uint32_t>          _element_gap;
 
+    Iterators(std::optional<uint32_t> element_gap)
+        : _queue(),
+          _maxOcc(),
+          _element_gap(element_gap)
+    {
+    }
     void update(TermFieldMatchDataPositionKey occ)
     {
         if (_queue.size() == 1 || _maxOcc < occ) { _maxOcc = occ; }
@@ -173,8 +191,7 @@ struct Iterators
     bool match(uint32_t window) {
         for (;;) {
             PosIter &front = _queue.front();
-            TermFieldMatchDataPositionKey lastAllowed = *front.curPos;
-            lastAllowed.setPosition(front.curPos->getPosition() + window);
+            auto lastAllowed = calc_window_end_pos(*front.curPos, window, _element_gap);
 
             if (!(lastAllowed < _maxOcc)) {
                 return true;
@@ -184,8 +201,7 @@ struct Iterators
                 if (front.curPos == front.endPos) {
                     return false;
                 }
-                lastAllowed = *front.curPos;
-                lastAllowed.setPosition(front.curPos->getPosition() + window);
+                lastAllowed = calc_window_end_pos(*front.curPos, window, _element_gap);
             } while (lastAllowed < _maxOcc);
 
             update(*front.curPos);
@@ -199,7 +215,7 @@ struct Iterators
 bool
 NearSearch::Matcher::match(uint32_t docId)
 {
-    Iterators pos;
+    Iterators pos(get_element_gap());
     for (uint32_t i = 0, len = inputs().size(); i < len; ++i) {
         const search::fef::TermFieldMatchData *term = inputs()[i];
         if (term->getDocId() != docId || term->begin() == term->end()) {
@@ -263,15 +279,14 @@ ONearSearch::Matcher::match(uint32_t docId)
     // Look for match for every occurrence of the first term.
     for ( ; pos[0] != inputs()[0]->end(); ++pos[0]) {
         TermFieldMatchDataPositionKey firstTermPos = *pos[0];
-        lastAllowed = firstTermPos;
-        lastAllowed.setPosition(firstTermPos.getPosition() + remain);
+        lastAllowed = calc_window_end_pos(*pos[0], remain, get_element_gap());
         if (lastAllowed < curTermPos) {
             // if we already know that we must seek onwards:
             continue;
         }
         prevTermPos = firstTermPos;
-        LOG(spam, "Looking for match in window [%d, %d].",
-            firstTermPos.getPosition(), lastAllowed.getPosition());
+        LOG(spam, "Looking for match in window [%d:%d, %d:%d].",
+            firstTermPos.getElementId(), firstTermPos.getPosition(), lastAllowed.getElementId(), lastAllowed.getPosition());
         for (uint32_t i = 1; i < numTerms; ++i) {
             LOG(spam, "Forwarding iterator for term %d beyond %d.", i, prevTermPos.getPosition());
             while (pos[i] != inputs()[i]->end() && !(prevTermPos < *pos[i])) {

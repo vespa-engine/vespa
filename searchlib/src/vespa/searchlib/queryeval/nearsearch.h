@@ -29,7 +29,8 @@ protected:
         std::optional<uint32_t> _element_gap;
         TermFieldMatchDataArray _inputs;
     protected:
-        uint32_t window() const { return _window; }
+        uint32_t window() const noexcept { return _window; }
+        std::optional<uint32_t> get_element_gap() const noexcept { return _element_gap; }
         const TermFieldMatchDataArray &inputs() const { return _inputs; }
     public:
         MatcherBase(uint32_t win, std::optional<uint32_t> element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
