@@ -3,8 +3,8 @@ package com.yahoo.search.grouping.request;
 
 import com.yahoo.api.annotations.Beta;
 
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import com.google.re2j.Pattern;
+import com.google.re2j.PatternSyntaxException;
 
 /**
  * Represents a filter expression that matches a value from the evaluated expression against a regex.
@@ -26,7 +26,6 @@ public class RegexPredicate extends FilterExpression {
 
     private static void validateRegex(String pattern) {
         try {
-            // The assumption is that Java's Pattern is roughly similar to the re2 engine used on the search nodes.
             Pattern.compile(pattern);
         } catch (PatternSyntaxException e) {
             throw new IllegalArgumentException("Invalid regex pattern: %s (%s)".formatted(pattern, e.getMessage()), e);
