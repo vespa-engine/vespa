@@ -13,7 +13,10 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test for content DistributorCluster.
@@ -25,6 +28,8 @@ public class DistributorTest {
             List<String> searchDefs = ApplicationPackageUtils.generateSchemas("music", "movies", "bunnies");
             MockRoot root = ContentClusterUtils.createMockRoot(searchDefs);
             return ContentClusterUtils.createCluster(xml, root);
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -36,7 +41,6 @@ public class DistributorTest {
 
     @Test
     void testBasics() {
-
         StorServerConfig.Builder builder = new StorServerConfig.Builder();
         parse("<content id=\"foofighters\"><documents/>\n" +
                 "  <redundancy>3</redundancy>" +
@@ -338,6 +342,51 @@ public class DistributorTest {
         StorDistributormanagerConfig config = clusterXmlToConfig(
                 generateXmlForDocTypes(DocType.streaming("music")));
         assertTrue(config.disable_bucket_activation());
+    }
+
+    @Test
+    void testMaxDocumentSize() {
+        var services = """
+                      <content id="foo">
+                        <redundancy>1</redundancy>
+                        <documents/>
+                        <group>
+                           <node distribution-key="0" hostalias="mockhost"/>
+                        </group>
+                      </content>
+                      """;
+        assertEquals(-1, parseAndGetConfig(services).max_document_operation_message_size_bytes());
+
+        assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024M")).max_document_operation_message_size_bytes());
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> parseAndGetConfig(createServices("3G")).max_document_operation_message_size_bytes(),
+                     "Invalid max-document-size value '3G': Value must be between 1 Mib and 2048 MiB");
+
+        assertThrows(IllegalArgumentException.class,
+                     () -> parseAndGetConfig(createServices("1k")).max_document_operation_message_size_bytes(),
+                     "Invalid max-document-size value '1k': Value must be between 1 Mib and 2048 MiB");
+    }
+
+    private String createServices(String maxDocumentSize) {
+        return """
+                      <content id="foo">
+                        <redundancy>1</redundancy>
+                        <documents/>
+                        <group>
+                           <node distribution-key="0" hostalias="mockhost"/>
+                        </group>
+                        <tuning>
+                          <max-document-size>%s</max-document-size>
+                        </tuning>
+                      </content>
+                      """.formatted(maxDocumentSize);
+    }
+
+    private StorDistributormanagerConfig parseAndGetConfig(String servicesXml) {
+        var builder = new StorDistributormanagerConfig.Builder();
+        parse(servicesXml).getConfig(builder);
+        return builder.build();
     }
 
 }
