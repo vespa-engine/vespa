@@ -20,7 +20,7 @@ import java.util.Objects;
 public class CustomerRpmServiceList {
 
     @JsonProperty("services")
-    List<CustomerRpmService> services;
+    private final List<CustomerRpmService> services;
 
     @JsonCreator
     public CustomerRpmServiceList(@JsonProperty("services") List<CustomerRpmService> services) {

@@ -11,6 +11,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class CustomerRpmServiceTest {
 
@@ -20,10 +21,12 @@ public class CustomerRpmServiceTest {
                 {
                     "services": [
                         {
+                            "unit": "example1",
                             "url": "https://some.website.com/rpm1",
                             "memoryLimitMb": 200.0
                         },
                         {
+                            "unit": "example2",
                             "url": "https://some.website.com/rpm2",
                             "memoryLimitMb": 300.0,
                             "cpuLimitNanoSeconds": 100.0
@@ -38,31 +41,33 @@ public class CustomerRpmServiceTest {
         Optional<CustomerRpmService> service1 = serviceList.services().stream()
                 .filter(r -> r.url().equals("https://some.website.com/rpm1"))
                 .findFirst();
+        assertEquals("example1", service1.get().unit());
         assertEquals(200.0, service1.get().memoryLimitMb());
 
         Optional<CustomerRpmService> service2 = serviceList.services().stream()
                 .filter(r -> r.url().equals("https://some.website.com/rpm2"))
                 .findFirst();
+        assertEquals("example2", service2.get().unit());
         assertEquals(300.0, service2.get().memoryLimitMb());
         assertEquals(Optional.of(100.0), service2.get().cpuLimitNanoSeconds());
 
         // Empty variant
         CustomerRpmServiceList empty = Jackson.mapper().readValue("{\"services\": []}", CustomerRpmServiceList.class);
-        assertEquals(true, empty.services().isEmpty());
+        assertTrue(empty.services().isEmpty());
 
         // Ignore other fields
         CustomerRpmServiceList ignoredFields = Jackson.mapper().readValue("{\"services\": [], \"someOtherField\": 123 }", CustomerRpmServiceList.class);
-        assertEquals(true, empty.services().isEmpty());
+        assertTrue(empty.services().isEmpty());
 
         // Invalid service configuration
-        var invalidJson = "{\"services\": [ { \"badUrlField\": \"no_thanks\" }]}";
+        var invalidJson = "{\"services\": [{ \"badUrlField\": \"no_thanks\" }]}";
         assertThrows(JsonProcessingException.class, () -> Jackson.mapper().readValue(invalidJson, CustomerRpmServiceList.class));
     }
 
     @Test
     void customer_rpm_services_serialize() throws JsonProcessingException {
-        CustomerRpmService service1 = new CustomerRpmService("https://some.website.com/rpm1", 123.4, null);
-        CustomerRpmService service2 = new CustomerRpmService("https://some.website.com/rpm2", 567.8, 100.0);
+        CustomerRpmService service1 = new CustomerRpmService("foo", "https://some.website.com/rpm1", 123.4, null);
+        CustomerRpmService service2 = new CustomerRpmService("bar", "https://some.website.com/rpm2", 567.8, 100.0);
         CustomerRpmServiceList serviceList = new CustomerRpmServiceList(List.of(service1, service2));
         var mapper = Jackson.mapper();
         String serialized = mapper.writeValueAsString(serviceList);
