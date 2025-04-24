@@ -84,7 +84,17 @@ public:
         uint8_t hasObject;
         is.get(hasObject);
         if (hasObject) {
-            this->reset(static_cast<T *>(Identifiable::create(is).release()));
+            auto up = Identifiable::create(is);
+            if (up->inherits(T::classId)) {
+                this->reset(static_cast<T *>(up.release()));
+            } else {
+                fprintf(stderr, "ERROR: tried to deserialize %s (%x) but got %s (%x)\n",
+                        Identifiable::classFromId(T::classId)->name(),
+                        T::classId,
+                        up->getClass().name(),
+                        up->getClass().id());
+                throw std::bad_cast();
+            }
         }
         return is;
     }
