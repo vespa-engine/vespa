@@ -317,7 +317,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag INCREMENTAL_USAGE_CALCULATION = defineFeatureFlag(
             "incremental-usage-calculation", false,
-            List.of("evgiz"), "2025-02-27", "2025-05-01",
+            List.of("evgiz"), "2025-02-27", "2025-09-01",
             "Use new incremental usage calculation for node snapshots",
             "Takes effect at controller startup");
 
