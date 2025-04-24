@@ -157,7 +157,7 @@ TEST("testEmpty")
     Version ev;
     VersionSpecification evs;
 
-    EXPECT_EQUAL("", ev.toString());
+    EXPECT_EQUAL("", ev.toFullString());
     EXPECT_EQUAL("*.*.*", evs.toString());
 
     EXPECT_TRUE(ev == Version(0,0,0,""));
@@ -177,7 +177,7 @@ TEST("testSimple")
     EXPECT_EQUAL(3, v.getMicro());
     EXPECT_EQUAL("qualifier", v.getQualifier());
 
-    EXPECT_EQUAL("1.2.3.qualifier", v.toString());
+    EXPECT_EQUAL("1.2.3.qualifier", v.toFullString());
 
     // test VersionSpecification:
 

@@ -112,7 +112,7 @@ testVersionedSend(TestData &data,
                          const vespalib::Version &dstVersion)
 {
     LOG(info, "Sending from %s through %s to %s.",
-        srcVersion.toString().c_str(), itrVersion.toString().c_str(), dstVersion.toString().c_str());
+        srcVersion.toFullString().c_str(), itrVersion.toFullString().c_str(), dstVersion.toFullString().c_str());
     data._srcServer.net.setVersion(srcVersion);
     data._itrServer.net.setVersion(itrVersion);
     data._dstServer.net.setVersion(dstVersion);
@@ -127,14 +127,14 @@ testVersionedSend(TestData &data,
         return false;
     }
     LOG(info, "Message version %s serialized at source.",
-        data._srcProtocol->getLastVersion().toString().c_str());
+        data._srcProtocol->getLastVersion().toFullString().c_str());
     vespalib::Version minVersion = std::min(srcVersion, itrVersion);
     if (!EXPECT_TRUE(minVersion == data._srcProtocol->getLastVersion())) {
         return false;
     }
 
     LOG(info, "Message version %s reached intermediate.",
-        data._itrProtocol->getLastVersion().toString().c_str());
+        data._itrProtocol->getLastVersion().toFullString().c_str());
     if (!EXPECT_TRUE(minVersion == data._itrProtocol->getLastVersion())) {
         return false;
     }
@@ -144,14 +144,14 @@ testVersionedSend(TestData &data,
         return false;
     }
     LOG(info, "Message version %s serialized at intermediate.",
-        data._itrProtocol->getLastVersion().toString().c_str());
+        data._itrProtocol->getLastVersion().toFullString().c_str());
     minVersion = std::min(itrVersion, dstVersion);
     if (!EXPECT_TRUE(minVersion == data._itrProtocol->getLastVersion())) {
         return false;
     }
 
     LOG(info, "Message version %s reached destination.",
-        data._dstProtocol->getLastVersion().toString().c_str());
+        data._dstProtocol->getLastVersion().toFullString().c_str());
     if (!EXPECT_TRUE(minVersion == data._dstProtocol->getLastVersion())) {
         return false;
     }
@@ -163,13 +163,13 @@ testVersionedSend(TestData &data,
         return false;
     }
     LOG(info, "Reply version %s serialized at destination.",
-        data._dstProtocol->getLastVersion().toString().c_str());
+        data._dstProtocol->getLastVersion().toFullString().c_str());
     if (!EXPECT_TRUE(minVersion == data._dstProtocol->getLastVersion())) {
         return false;
     }
 
     LOG(info, "Reply version %s reached intermediate.",
-        data._itrProtocol->getLastVersion().toString().c_str());
+        data._itrProtocol->getLastVersion().toFullString().c_str());
     if (!EXPECT_TRUE(minVersion == data._itrProtocol->getLastVersion())) {
         return false;
     }
@@ -179,14 +179,14 @@ testVersionedSend(TestData &data,
         return false;
     }
     LOG(info, "Reply version %s serialized at intermediate.",
-        data._dstProtocol->getLastVersion().toString().c_str());
+        data._dstProtocol->getLastVersion().toFullString().c_str());
     minVersion = std::min(srcVersion, itrVersion);
     if (!EXPECT_TRUE(minVersion == data._itrProtocol->getLastVersion())) {
         return false;
     }
 
     LOG(info, "Reply version %s reached source.",
-        data._srcProtocol->getLastVersion().toString().c_str());
+        data._srcProtocol->getLastVersion().toFullString().c_str());
     if (!EXPECT_TRUE(minVersion == data._srcProtocol->getLastVersion())) {
         return false;
     }

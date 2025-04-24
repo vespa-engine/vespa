@@ -32,7 +32,7 @@ getNumAsserts(const char *key)
 std::string
 getAssertLogFileName(const char *key)
 {
-    std::string relative = make_string("var/db/vespa/tmp/%s.%s.assert", key, Vtag::currentVersion.toString().c_str());
+    std::string relative = make_string("var/db/vespa/tmp/%s.%s.assert", key, Vtag::currentVersion.toFullString().c_str());
     return vespa::Defaults::underVespaHome(relative.c_str());
 }
 

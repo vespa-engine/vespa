@@ -222,7 +222,7 @@ StatusWebServer::handlePage(const framework::HttpUrlPath& urlpath, vespalib::Por
         //  The index page only leaks the Vespa version and node type (inferred by reporter set).
         IndexPageReporter indexRep;
         indexRep << "<p><b>Binary version of Vespa:</b> "
-                 << vespalib::Vtag::currentVersion.toString()
+                 << vespalib::Vtag::currentVersion.toFullString()
                  << "</p>\n";
         {
             for (const framework::StatusReporter * reporter : _reporterMap.getStatusReporters()) {

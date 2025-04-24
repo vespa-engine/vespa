@@ -52,7 +52,7 @@ namespace vespalib {
 // If not present, it will print the byte values of the presumed memory area
 // (which will be overrun for some reason, causing Valgrind to scream at us).
 void PrintTo(const vespalib::Version& v, std::ostream* os) {
-    *os << v.toString();
+    *os << v.toFullString();
 }
 
 }

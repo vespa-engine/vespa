@@ -65,13 +65,13 @@ RoutableRepository::decode(const vespalib::Version &version, mbus::BlobRef data)
     IRoutableFactory::SP factory = getFactory(version, type);
     if (!factory) {
         LOG(error, "No routable factory found for routable type %d (version %s).",
-            type, version.toString().c_str());
+            type, version.toFullString().c_str());
         return {};
     }
     mbus::Routable::UP ret = factory->decode(in);
     if (!ret) {
         LOG(error, "Routable factory failed to deserialize routable of type %d (version %s).",
-            type, version.toString().c_str());
+            type, version.toFullString().c_str());
         return {};
     }
     return ret;
@@ -85,14 +85,14 @@ RoutableRepository::encode(const vespalib::Version &version, const mbus::Routabl
     IRoutableFactory::SP factory = getFactory(version, type);
     if (!factory) {
         LOG(error, "No routable factory found for routable type %d (version %s).",
-            type, version.toString().c_str());
+            type, version.toFullString().c_str());
         return mbus::Blob(0);
     }
     vespalib::GrowableByteBuffer out;
     out.putInt(obj.getType());
     if (!factory->encode(obj, out)) {
         LOG(error, "Routable factory failed to serialize routable of type %d (version %s).",
-            type, version.toString().c_str());
+            type, version.toFullString().c_str());
         return mbus::Blob(0);
     }
     mbus::Blob ret(out.position());

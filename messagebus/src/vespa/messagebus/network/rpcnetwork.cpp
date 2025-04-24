@@ -177,7 +177,7 @@ RPCNetwork::attach(INetworkOwner &owner)
 void
 RPCNetwork::invoke(FRT_RPCRequest *req)
 {
-    req->GetReturn()->AddString(getVersion().toString().c_str());
+    req->GetReturn()->AddString(getVersion().toFullString().c_str());
 }
 
 const string
@@ -364,7 +364,7 @@ RPCNetwork::send(RPCNetwork::SendContext &ctx)
         RPCSendAdapter *adapter = getSendAdapter(ctx._version);
         if (adapter == nullptr) {
             replyError(ctx, ErrorCode::INCOMPATIBLE_VERSION,
-                       make_string("Can not send to version '%s' recipient.", ctx._version.toString().c_str()));
+                       make_string("Can not send to version '%s' recipient.", ctx._version.toFullString().c_str()));
         } else if (timeRemaining == 0ms) {
             replyError(ctx, ErrorCode::TIMEOUT, "Aborting transmission because zero time remains.");
         } else if (payload.size() == 0) {
