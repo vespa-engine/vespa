@@ -12,7 +12,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 public class BinaryUnit {
 
     // The pattern must match the one given in the schema
-    private static final Pattern pattern = Pattern.compile("(\\d+(\\.\\d*)?)\\s*([kmgKMG])?([bB])?");
+    private static final Pattern pattern = Pattern.compile("(\\d+(\\.\\d*)?)\\s*([kmgKMG])?(i)?([bB])?");
 
     public static double valueOf(String valueString) {
         Matcher matcher = pattern.matcher(valueString);
@@ -29,13 +29,13 @@ public class BinaryUnit {
     }
 
     private static double unitToValue(char unit) {
-           char[] units = {'k', 'm', 'g'};
-           for (int i = 0; i < units.length; ++i) {
-               if (units[i] == unit) {
-                   return Math.pow(2, 10*(i+1));
-               }
-           }
+        char[] units = {'k', 'm', 'g'};
+        for (int i = 0; i < units.length; ++i) {
+            if (units[i] == unit) {
+                return Math.pow(2, 10 * (i + 1));
+            }
+        }
 
-           throw new IllegalArgumentException("No such unit: '" + unit + "'");
+        throw new IllegalArgumentException("No such unit: '" + unit + "'");
     }
 }

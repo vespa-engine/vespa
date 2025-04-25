@@ -357,6 +357,7 @@ public class DistributorTest {
                       """;
         assertEquals(-1, parseAndGetConfig(services).max_document_operation_message_size_bytes());
 
+        assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024MiB")).max_document_operation_message_size_bytes());
         assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024M")).max_document_operation_message_size_bytes());
         assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024Mb")).max_document_operation_message_size_bytes());
 
