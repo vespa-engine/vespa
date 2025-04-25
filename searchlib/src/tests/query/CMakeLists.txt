@@ -28,6 +28,7 @@ vespa_add_executable(searchlib_querybuilder_test_app TEST
     querybuilder_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_querybuilder_test_app COMMAND searchlib_querybuilder_test_app)
 vespa_add_executable(searchlib_stackdumpquerycreator_test_app TEST

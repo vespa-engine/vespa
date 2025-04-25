@@ -2,7 +2,7 @@
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/searchlib/test/directory_handler.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/document/util/bytebuffer.h>
@@ -32,7 +32,7 @@ namespace {
 
 bool createDomainTest(TransLogClient & tls, const std::string & name, size_t preExistingDomains=0);
 std::unique_ptr<Session> openDomainTest(TransLogClient & tls, const std::string & name);
-bool fillDomainTest(Session * s1, const std::string & name);
+void fillDomainTest(Session * s1, const std::string & name);
 void fillDomainTest(Session * s1, size_t numPackets, size_t numEntries);
 void fillDomainTest(Session * s1, size_t numPackets, size_t numEntries, size_t entrySize);
 uint32_t countFiles(const std::string& dir);
@@ -186,8 +186,8 @@ CallBackUpdate::receive(const Packet & packet)
                     assert(false);
                     return RPC::ERROR;
                 }
-                ASSERT_TRUE(is.state() == nbostream::ok);
-                ASSERT_TRUE(is.empty());
+                assert(is.state() == nbostream::ok);
+                assert(is.empty());
                 _packetMap[e.serial()] = ser;
             } else {
                 LOG(warning, "Packet::Entry(%" PRId64 ", %s) is not a Identifiable", e.serial(), cl->name());
@@ -265,15 +265,14 @@ createDomainTest(TransLogClient & tls, const std::string & name, size_t preExist
     bool retval(true);
     std::vector<std::string> dir;
     tls.listDomains(dir);
-    EXPECT_EQUAL (dir.size(), preExistingDomains);
+    EXPECT_EQ(dir.size(), preExistingDomains);
     auto s1 = tls.open(name);
-    ASSERT_FALSE (s1);
+    assert(!s1);
     retval = tls.create(name);
-    ASSERT_TRUE (retval);
+    assert(retval);
     dir.clear();
     tls.listDomains(dir);
-    EXPECT_EQUAL (dir.size(), preExistingDomains+1);
-//    ASSERT_TRUE (dir[0] == name);
+    EXPECT_EQ(dir.size(), preExistingDomains+1);
     return retval;
 }
 
@@ -281,14 +280,13 @@ std::unique_ptr<Session>
 openDomainTest(TransLogClient & tls, const std::string & name)
 {
     auto s1 = tls.open(name);
-    ASSERT_TRUE (s1);
+    assert(s1);
     return s1;
 }
 
-bool
+void
 fillDomainTest(Session * s1, const std::string & name)
 {
-    bool retval(true);
     Packet::Entry e1(1, 1, vespalib::ConstBufferRef("Content in buffer A", 20));
     Packet::Entry e2(2, 2, vespalib::ConstBufferRef("Content in buffer B", 20));
     Packet::Entry e3(3, 1, vespalib::ConstBufferRef("Content in buffer C", 20));
@@ -298,31 +296,30 @@ fillDomainTest(Session * s1, const std::string & name)
     Packet b(DEFAULT_PACKET_SIZE);
     b.add(e2);
     b.add(e3);
-    EXPECT_EXCEPTION(b.add(e1), std::runtime_error, "");
-    ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())));
-    ASSERT_TRUE (s1->commit(vespalib::ConstBufferRef(b.getHandle().data(), b.getHandle().size())));
-    EXPECT_EXCEPTION(s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())),
-                     std::runtime_error,
-                     "commit failed with code -2. server says: Exception during commit on " + name + " : Incoming serial number(1) must be bigger than the last one (3).");
-    EXPECT_EQUAL(a.size(), 1u);
-    EXPECT_EQUAL(a.range().from(), 1u);
-    EXPECT_EQUAL(a.range().to(), 1u);
-    EXPECT_EQUAL(b.size(), 2u);
-    EXPECT_EQUAL(b.range().from(), 2u);
-    EXPECT_EQUAL(b.range().to(), 3u);
+    EXPECT_THROW(b.add(e1), std::runtime_error);
+    bool commit_res = s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size()));
+    assert(commit_res);
+    commit_res = s1->commit(vespalib::ConstBufferRef(b.getHandle().data(), b.getHandle().size()));
+    assert(commit_res);
+    VESPA_EXPECT_EXCEPTION(s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())), std::runtime_error,
+                           "commit failed with code -2. server says: Exception during commit on " + name + " : Incoming serial number(1) must be bigger than the last one (3).");
+    EXPECT_EQ(a.size(), 1u);
+    EXPECT_EQ(a.range().from(), 1u);
+    EXPECT_EQ(a.range().to(), 1u);
+    EXPECT_EQ(b.size(), 2u);
+    EXPECT_EQ(b.range().from(), 2u);
+    EXPECT_EQ(b.range().to(), 3u);
     a.merge(b);
-    EXPECT_EQUAL(a.size(), 3u);
-    EXPECT_EQUAL(a.range().from(), 1u);
-    EXPECT_EQUAL(a.range().to(), 3u);
+    EXPECT_EQ(a.size(), 3u);
+    EXPECT_EQ(a.range().from(), 1u);
+    EXPECT_EQ(a.range().to(), 3u);
 
     Packet::Entry e;
     vespalib::nbostream h(a.getHandle().data(), a.getHandle().size());
     e.deserialize(h);
     e.deserialize(h);
     e.deserialize(h);
-    EXPECT_EQUAL(h.size(), 0u);
-
-    return retval;
+    EXPECT_EQ(h.size(), 0u);
 }
 
 void
@@ -409,9 +406,9 @@ checkFilledDomainTest(Session &s1, size_t numEntries)
     SerialNum b(0), e(0);
     size_t c(0);
     EXPECT_TRUE(s1.status(b, e, c));
-    EXPECT_EQUAL(b, 1u);
-    EXPECT_EQUAL(e, numEntries);
-    EXPECT_EQUAL(c, numEntries);
+    EXPECT_EQ(b, 1u);
+    EXPECT_EQ(e, numEntries);
+    EXPECT_EQ(c, numEntries);
 }
 
 bool
@@ -422,24 +419,26 @@ visitDomainTest(TransLogClient & tls, Session * s1, const std::string & name)
     SerialNum b(0), e(0);
     size_t c(0);
     EXPECT_TRUE(s1->status(b, e, c));
-    EXPECT_EQUAL(b, 1u);
-    EXPECT_EQUAL(e, 3u);
-    EXPECT_EQUAL(c, 3u);
+    EXPECT_EQ(b, 1u);
+    EXPECT_EQ(e, 3u);
+    EXPECT_EQ(c, 3u);
 
     CallBackTest ca;
     auto visitor = tls.createVisitor(name, ca);
-    ASSERT_TRUE(visitor);
+    assert(visitor);
     EXPECT_TRUE( visitor->visit(0, 1) );
-    ASSERT_TRUE( ca.wait_for_eof() );
+    bool eof_result = ca.wait_for_eof();
+    assert(eof_result);
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ca.hasSerial(1) );
     EXPECT_TRUE( ! ca.hasSerial(2) );
     ca.clear();
 
     visitor = tls.createVisitor(name, ca);
-    ASSERT_TRUE(visitor.get());
+    assert(visitor.get());
     EXPECT_TRUE( visitor->visit(1, 2) );
-    ASSERT_TRUE( ca.wait_for_eof() );
+    eof_result = ca.wait_for_eof();
+    assert(eof_result);
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ! ca.hasSerial(1) );
     EXPECT_TRUE( ca.hasSerial(2) );
@@ -449,7 +448,8 @@ visitDomainTest(TransLogClient & tls, Session * s1, const std::string & name)
     visitor = tls.createVisitor(name, ca);
     EXPECT_TRUE(visitor.get());
     EXPECT_TRUE( visitor->visit(0, 3) );
-    ASSERT_TRUE( ca.wait_for_eof() );
+    eof_result = ca.wait_for_eof();
+    assert(eof_result);
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( ca.hasSerial(1) );
     EXPECT_TRUE( ca.hasSerial(2) );
@@ -457,9 +457,10 @@ visitDomainTest(TransLogClient & tls, Session * s1, const std::string & name)
     ca.clear();
 
     visitor = tls.createVisitor(name, ca);
-    ASSERT_TRUE(visitor.get());
+    assert(visitor.get());
     EXPECT_TRUE( visitor->visit(2, 3) );
-    ASSERT_TRUE( ca.wait_for_eof() );
+    eof_result = ca.wait_for_eof();
+    assert(eof_result);
     EXPECT_TRUE( ! ca.hasSerial(0) );
     EXPECT_TRUE( !ca.hasSerial(1) );
     EXPECT_TRUE( !ca.hasSerial(2) );
@@ -525,11 +526,11 @@ testVisitOverGeneratedDomain(const std::string & testDir) {
     createDomainTest(tls, name);
     auto s1 = openDomainTest(tls, name);
     fillDomainTest(s1.get(), name);
-    EXPECT_EQUAL(0.0, getMaxSessionRunTime(tlss.tls, "test1"));
+    EXPECT_EQ(0.0, getMaxSessionRunTime(tlss.tls, "test1"));
     visitDomainTest(tls, s1.get(), name);
     double maxSessionRunTime = getMaxSessionRunTime(tlss.tls, "test1");
     LOG(info, "testVisitOverGeneratedDomain(): maxSessionRunTime=%f", maxSessionRunTime);
-    EXPECT_GREATER(maxSessionRunTime, 0.0);
+    EXPECT_GT(maxSessionRunTime, 0.0);
 }
 
 void
@@ -570,7 +571,7 @@ partialUpdateTest(const std::string & testDir) {
     ASSERT_TRUE(visitor);
     ASSERT_TRUE( visitor->visit(5, 7) );
     ASSERT_TRUE( ca.wait_for_eof() );
-    ASSERT_EQUAL(1u, ca.map().size());
+    ASSERT_EQ(1u, ca.map().size());
     ASSERT_TRUE( ca.hasSerial(7) );
 
     CallBackUpdate ca1;
@@ -598,7 +599,7 @@ partialUpdateTest(const std::string & testDir) {
 
 }
 
-TEST("testVisitAndUpdates") {
+TEST(TransactionLogClientTest, testVisitAndUpdates) {
     test::DirectoryHandler testDir("test7");
     testVisitOverGeneratedDomain(testDir.getDir());
     testVisitOverPreExistingDomain(testDir.getDir());
@@ -606,7 +607,7 @@ TEST("testVisitAndUpdates") {
 }
 
 
-TEST("testCrcVersions") {
+TEST(TransactionLogClientTest, testCrcVersions) {
     test::DirectoryHandler testDir("test13");
     try {
         createAndFillDomain(testDir.getDir(),"ccitt_crc32", Encoding(Encoding::Crc::ccitt_crc32, Encoding::Compression::none), 0);
@@ -619,7 +620,7 @@ TEST("testCrcVersions") {
     verifyDomain(testDir.getDir(), "xxh64");
 }
 
-TEST("testRemove") {
+TEST(TransactionLogClientTest, testRemove) {
     test::DirectoryHandler testDir("testremove");
     DummyFileHeaderContext fileHeaderContext;
     TLS tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
@@ -639,28 +640,31 @@ void
 assertVisitStats(TransLogClient &tls, const std::string &domain,
                  SerialNum visitStart, SerialNum visitEnd,
                  SerialNum expFirstSerial, SerialNum expLastSerial,
-                 uint64_t expCount, uint64_t expInOrder)
+                 uint64_t expCount, uint64_t expInOrder,
+                 std::string_view label)
 {
+    SCOPED_TRACE(label);
     CallBackStatsTest ca;
     auto visitor = tls.createVisitor(domain, ca);
     ASSERT_TRUE(visitor);
     ASSERT_TRUE( visitor->visit(visitStart, visitEnd) );
     ASSERT_TRUE(ca.wait_for_eof());
-    EXPECT_EQUAL(expFirstSerial, ca._firstSerial);
-    EXPECT_EQUAL(expLastSerial, ca._lastSerial);
-    EXPECT_EQUAL(expCount, ca._count);
-    EXPECT_EQUAL(expInOrder, ca._inOrder);
+    EXPECT_EQ(expFirstSerial, ca._firstSerial);
+    EXPECT_EQ(expLastSerial, ca._lastSerial);
+    EXPECT_EQ(expCount, ca._count);
+    EXPECT_EQ(expInOrder, ca._inOrder);
 }
 
 void
-assertStatus(Session &s, SerialNum expFirstSerial, SerialNum expLastSerial, uint64_t expCount)
+assertStatus(Session &s, SerialNum expFirstSerial, SerialNum expLastSerial, uint64_t expCount, std::string_view label)
 {
+    SCOPED_TRACE(label);
     SerialNum b(0), e(0);
     size_t c(0);
     EXPECT_TRUE(s.status(b, e, c));
-    EXPECT_EQUAL(expFirstSerial, b);
-    EXPECT_EQUAL(expLastSerial, e);
-    EXPECT_EQUAL(expCount, c);
+    EXPECT_EQ(expFirstSerial, b);
+    EXPECT_EQ(expLastSerial, e);
+    EXPECT_EQ(expCount, c);
 }
 
 }
@@ -683,16 +687,16 @@ testSendingAlotOfDataSync(const std::string & testDir) {
         SerialNum b(0), e(0);
         size_t c(0);
         EXPECT_TRUE(s1->status(b, e, c));
-        EXPECT_EQUAL(b, 1u);
-        EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(b, 1u);
+        EXPECT_EQ(e, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
         auto visitor = tls.createVisitor("many", ca);
         ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         ASSERT_TRUE( ca.wait_for_eof() );
-        EXPECT_EQUAL(ca._count, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(ca._value, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._count, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._value, TOTAL_NUM_ENTRIES);
     }
     {
         DummyFileHeaderContext fileHeaderContext;
@@ -703,16 +707,16 @@ testSendingAlotOfDataSync(const std::string & testDir) {
         SerialNum b(0), e(0);
         size_t c(0);
         EXPECT_TRUE(s1->status(b, e, c));
-        EXPECT_EQUAL(b, 1u);
-        EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(b, 1u);
+        EXPECT_EQ(e, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
         auto visitor = tls.createVisitor(MANY, ca);
         ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         ASSERT_TRUE( ca.wait_for_eof() );
-        EXPECT_EQUAL(ca._count, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(ca._value, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._count, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._value, TOTAL_NUM_ENTRIES);
     }
     {
         DummyFileHeaderContext fileHeaderContext;
@@ -723,16 +727,16 @@ testSendingAlotOfDataSync(const std::string & testDir) {
         SerialNum b(0), e(0);
         size_t c(0);
         EXPECT_TRUE(s1->status(b, e, c));
-        EXPECT_EQUAL(b, 1u);
-        EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(b, 1u);
+        EXPECT_EQ(e, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
         auto visitor = tls.createVisitor(MANY, ca);
         ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         ASSERT_TRUE( ca.wait_for_eof() );
-        EXPECT_EQUAL(ca._count, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(ca._value, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._count, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._value, TOTAL_NUM_ENTRIES);
     }
 }
 
@@ -752,15 +756,15 @@ void testSendingAlotOfDataAsync(const std::string & testDir) {
         size_t c(0);
         EXPECT_TRUE(s1->status(b, e, c));
 
-        EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(e, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
         auto visitor = tls.createVisitor(MANY, ca);
         ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         ASSERT_TRUE( ca.wait_for_eof() );
-        EXPECT_EQUAL(ca._count, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(ca._value, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._count, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._value, TOTAL_NUM_ENTRIES);
     }
     {
         DummyFileHeaderContext fileHeaderContext;
@@ -771,27 +775,27 @@ void testSendingAlotOfDataAsync(const std::string & testDir) {
         SerialNum b(0), e(0);
         size_t c(0);
         EXPECT_TRUE(s1->status(b, e, c));
-        EXPECT_EQUAL(b, 1u);
-        EXPECT_EQUAL(e, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(c, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(b, 1u);
+        EXPECT_EQ(e, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(c, TOTAL_NUM_ENTRIES);
         CallBackManyTest ca(2);
         auto visitor = tls.createVisitor(MANY, ca);
         ASSERT_TRUE(visitor);
         ASSERT_TRUE( visitor->visit(2, TOTAL_NUM_ENTRIES) );
         ASSERT_TRUE( ca.wait_for_eof() );
-        EXPECT_EQUAL(ca._count, TOTAL_NUM_ENTRIES);
-        EXPECT_EQUAL(ca._value, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._count, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(ca._value, TOTAL_NUM_ENTRIES);
     }
 }
 
-TEST("test sending a lot of data both sync and async") {
+TEST(TransactionLogClientTest, test_sending_a_lot_of_data_both_sync_and_async) {
     test::DirectoryHandler testDir("test8");
     testSendingAlotOfDataSync(testDir.getDir());
     testSendingAlotOfDataAsync(testDir.getDir());
 }
 
 
-TEST("testErase") {
+TEST(TransactionLogClientTest, testErase) {
     const unsigned int NUM_PACKETS = 1000;
     const unsigned int NUM_ENTRIES = 100;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
@@ -813,9 +817,9 @@ TEST("testErase") {
         auto s1 = openDomainTest(tls, "erase");
 
         // Before erase
-        TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
+        assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
                                  3, TOTAL_NUM_ENTRIES,
-                                 TOTAL_NUM_ENTRIES -2, TOTAL_NUM_ENTRIES - 3));
+                                 TOTAL_NUM_ENTRIES -2, TOTAL_NUM_ENTRIES - 3, "erase-0");
         DomainStats domainStats = tlss.tls.getDomainStats();
         DomainInfo domainInfo = domainStats["erase"];
         size_t numParts = domainInfo.parts.size();
@@ -829,66 +833,66 @@ TEST("testErase") {
                 (uint64_t) part.range.from(), (uint64_t) part.range.to(),
                 part.numEntries, part.byteSize);
         }
-        ASSERT_LESS_EQUAL(2u, numParts);
+        ASSERT_LE(2u, numParts);
         // Erase everything before second to last domainpart file
         SerialNum eraseSerial = domainInfo.parts[numParts - 2].range.from();
         s1->erase(eraseSerial);
-        TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
+        assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
                                  eraseSerial, TOTAL_NUM_ENTRIES,
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
-                                 TOTAL_NUM_ENTRIES - eraseSerial));
-        TEST_DO(assertStatus(*s1, eraseSerial, TOTAL_NUM_ENTRIES,
+                                 TOTAL_NUM_ENTRIES - eraseSerial, "erase-1");
+        assertStatus(*s1, eraseSerial, TOTAL_NUM_ENTRIES,
                              domainInfo.parts[numParts - 2].numEntries +
-                             domainInfo.parts[numParts - 1].numEntries));
+                             domainInfo.parts[numParts - 1].numEntries, "erase-1");
         // No apparent effect of erasing just first entry in 2nd to last part
         s1->erase(eraseSerial + 1);
-        TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
+        assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
                                  eraseSerial, TOTAL_NUM_ENTRIES,
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
-                                 TOTAL_NUM_ENTRIES - eraseSerial));
-        TEST_DO(assertStatus(*s1, eraseSerial + 1, TOTAL_NUM_ENTRIES,
+                                 TOTAL_NUM_ENTRIES - eraseSerial, "erase-2");
+        assertStatus(*s1, eraseSerial + 1, TOTAL_NUM_ENTRIES,
                              domainInfo.parts[numParts - 2].numEntries +
-                             domainInfo.parts[numParts - 1].numEntries));
+                             domainInfo.parts[numParts - 1].numEntries, "erase-2");
         // No apparent effect of erasing almost all of 2nd to last part
         SerialNum eraseSerial2 = domainInfo.parts[numParts - 2].range.to();
         s1->erase(eraseSerial2);
-        TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
+        assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
                                  eraseSerial, TOTAL_NUM_ENTRIES,
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
-                                 TOTAL_NUM_ENTRIES - eraseSerial));
-        TEST_DO(assertStatus(*s1, eraseSerial2, TOTAL_NUM_ENTRIES,
+                                 TOTAL_NUM_ENTRIES - eraseSerial, "erase-3");
+        assertStatus(*s1, eraseSerial2, TOTAL_NUM_ENTRIES,
                              domainInfo.parts[numParts - 2].numEntries +
-                             domainInfo.parts[numParts - 1].numEntries));
+                             domainInfo.parts[numParts - 1].numEntries, "erase-3");
         // Erase everything before last domainpart file
         eraseSerial = domainInfo.parts[numParts - 1].range.from();
         s1->erase(eraseSerial);
-        TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
+        assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
                                  eraseSerial, TOTAL_NUM_ENTRIES,
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
-                                 TOTAL_NUM_ENTRIES - eraseSerial));
-        TEST_DO(assertStatus(*s1, eraseSerial, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 1].numEntries));
+                                 TOTAL_NUM_ENTRIES - eraseSerial, "erase-4");
+        assertStatus(*s1, eraseSerial, TOTAL_NUM_ENTRIES,
+                             domainInfo.parts[numParts - 1].numEntries, "erase-4");
         // No apparent effect of erasing just first entry in last part
         s1->erase(eraseSerial + 1);
-        TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
+        assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
                                  eraseSerial, TOTAL_NUM_ENTRIES,
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
-                                 TOTAL_NUM_ENTRIES - eraseSerial));
-        TEST_DO(assertStatus(*s1, eraseSerial + 1, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 1].numEntries));
+                                 TOTAL_NUM_ENTRIES - eraseSerial, "erase-5");
+        assertStatus(*s1, eraseSerial + 1, TOTAL_NUM_ENTRIES,
+                             domainInfo.parts[numParts - 1].numEntries, "erase-5");
         // No apparent effect of erasing almost all of last part
         eraseSerial2 = domainInfo.parts[numParts - 1].range.to();
         s1->erase(eraseSerial2);
-        TEST_DO(assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
+        assertVisitStats(tls, "erase", 2, TOTAL_NUM_ENTRIES,
                                  eraseSerial, TOTAL_NUM_ENTRIES,
                                  TOTAL_NUM_ENTRIES + 1 - eraseSerial,
-                                 TOTAL_NUM_ENTRIES - eraseSerial));
-        TEST_DO(assertStatus(*s1, eraseSerial2, TOTAL_NUM_ENTRIES,
-                             domainInfo.parts[numParts - 1].numEntries));
+                                 TOTAL_NUM_ENTRIES - eraseSerial, "erase-6");
+        assertStatus(*s1, eraseSerial2, TOTAL_NUM_ENTRIES,
+                             domainInfo.parts[numParts - 1].numEntries, "erase-6");
     }
 }
 
-TEST("testSync") {
+TEST(TransactionLogClientTest, testSync) {
     const unsigned int NUM_PACKETS = 3;
     const unsigned int NUM_ENTRIES = 4;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
@@ -905,10 +909,10 @@ TEST("testSync") {
     SerialNum syncedTo(0);
 
     EXPECT_TRUE(s1->sync(2, syncedTo));
-    EXPECT_EQUAL(syncedTo, TOTAL_NUM_ENTRIES);
+    EXPECT_EQ(syncedTo, TOTAL_NUM_ENTRIES);
 }
 
-TEST("test truncate on version mismatch") {
+TEST(TransactionLogClientTest, test_truncate_on_version_mismatch) {
     const unsigned int NUM_PACKETS = 3;
     const unsigned int NUM_ENTRIES = 4;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
@@ -928,7 +932,7 @@ TEST("test truncate on version mismatch") {
         SerialNum syncedTo(0);
 
         EXPECT_TRUE(s1->sync(2, syncedTo));
-        EXPECT_EQUAL(syncedTo, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(syncedTo, TOTAL_NUM_ENTRIES);
     }
     FastOS_File f((testDir.getDir() + "/sync/sync-0000000000000000").c_str());
     EXPECT_TRUE(f.OpenWriteOnlyExisting());
@@ -936,7 +940,7 @@ TEST("test truncate on version mismatch") {
    
     char tmp[100];
     memset(tmp, 0, sizeof(tmp));
-    EXPECT_EQUAL(static_cast<ssize_t>(sizeof(tmp)), f.Write2(tmp, sizeof(tmp)));
+    EXPECT_EQ(static_cast<ssize_t>(sizeof(tmp)), f.Write2(tmp, sizeof(tmp)));
     EXPECT_TRUE(f.Close());
     {
         TLS tlss(testDir.getDir(), 18377, ".", fileHeaderContext, createDomainConfig(0x10000));
@@ -945,13 +949,13 @@ TEST("test truncate on version mismatch") {
         uint64_t from(0), to(0);
         size_t count(0);
         EXPECT_TRUE(s1->status(from, to, count));
-        ASSERT_EQUAL(fromOld, from);
-        ASSERT_EQUAL(toOld, to);
-        ASSERT_EQUAL(countOld, count);
+        ASSERT_EQ(fromOld, from);
+        ASSERT_EQ(toOld, to);
+        ASSERT_EQ(countOld, count);
     }
 }
 
-TEST("test truncation after short read") {
+TEST(TransactionLogClientTest, test_truncation_after_short_read) {
     const unsigned int NUM_PACKETS = 17;
     const unsigned int NUM_ENTRIES = 1;
     const unsigned int TOTAL_NUM_ENTRIES = NUM_PACKETS * NUM_ENTRIES;
@@ -975,16 +979,16 @@ TEST("test truncation after short read") {
         SerialNum syncedTo(0);
         
         EXPECT_TRUE(s1->sync(TOTAL_NUM_ENTRIES, syncedTo));
-        EXPECT_EQUAL(syncedTo, TOTAL_NUM_ENTRIES);
+        EXPECT_EQ(syncedTo, TOTAL_NUM_ENTRIES);
     }
-    EXPECT_EQUAL(2u, countFiles(dir));
+    EXPECT_EQ(2u, countFiles(dir));
     {
         TLS tlss(topdir.getDir(), 18377, ".", fileHeaderContext, domainConfig);
         TransLogClient tls(tlss.transport, tlsspec);
         auto s1 = openDomainTest(tls, domain);
         checkFilledDomainTest(*s1, TOTAL_NUM_ENTRIES);
     }
-    EXPECT_EQUAL(2u, countFiles(dir));
+    EXPECT_EQ(2u, countFiles(dir));
     {
         std::string filename(dir + "/truncate-0000000000000017");
         FastOS_File trfile(filename.c_str());
@@ -997,7 +1001,7 @@ TEST("test truncation after short read") {
         auto s1 = openDomainTest(tls, domain);
         checkFilledDomainTest(*s1, TOTAL_NUM_ENTRIES - 1);
     }
-    EXPECT_EQUAL(2u, countFiles(dir));
+    EXPECT_EQ(2u, countFiles(dir));
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

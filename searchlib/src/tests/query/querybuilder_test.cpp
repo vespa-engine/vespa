@@ -9,7 +9,7 @@
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/query/query_term_simple.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("querybuilder_test");
@@ -121,44 +121,55 @@ Node::UP createQueryTree() {
         builder.addFuzzyTerm(str[5], view[5], id[5], weight[5], 3, 1, false);
     }
     Node::UP node = builder.build();
-    ASSERT_TRUE(node.get());
+    assert(node.get());
     return node;
 }
 
 template <class TermType>
 bool compareTerms(const TermType &expected, const TermType &actual) {
-    return EXPECT_TRUE(expected == actual);
+    bool retval = (expected == actual);
+    EXPECT_TRUE(retval);
+    return retval;
 }
 template <typename T>
 bool compareTerms(const std::unique_ptr<T> &expected,
                   const std::unique_ptr<T> &actual) {
-    return EXPECT_TRUE(*expected == *actual);
+    bool retval = (*expected == *actual);
+    EXPECT_TRUE(retval);
+    return retval;
 }
 
 template <class Term>
 bool checkTerm(const Term *term, const typename Term::Type &t, const string &f,
                int32_t i, Weight w, bool ranked = true,
                bool use_position_data = true) {
-    if (!EXPECT_TRUE(term != nullptr)) {
+    EXPECT_TRUE(term != nullptr);
+    if (term == nullptr) {
         return false;
     }
     bool result = true;
-    if (!EXPECT_TRUE(compareTerms(t, term->getTerm()))) {
+    EXPECT_TRUE(compareTerms(t, term->getTerm()));
+    if (!compareTerms(t, term->getTerm())) {
         result = false;
     }
-    if (!EXPECT_EQUAL(f, term->getView())) {
+    EXPECT_EQ(f, term->getView());
+    if (f != term->getView()) {
         result = false;
     }
-    if (!EXPECT_EQUAL(i, term->getId())) {
+    EXPECT_EQ(i, term->getId());
+    if (i != term->getId()) {
         result = false;
     }
-    if (!EXPECT_EQUAL(w.percent(), term->getWeight().percent())) {
+    EXPECT_EQ(w.percent(), term->getWeight().percent());
+    if (w.percent() != term->getWeight().percent()) {
         result = false;
     }
-    if (!EXPECT_EQUAL(ranked, term->isRanked())) {
+    EXPECT_EQ(ranked, term->isRanked());
+    if (ranked != term->isRanked()) {
         result = false;
     }
-    if (!EXPECT_EQUAL(use_position_data, term->usePositionData())) {
+    EXPECT_EQ(use_position_data, term->usePositionData());
+    if (use_position_data != term->usePositionData()) {
         result = false;
     }
     return result;
@@ -169,7 +180,7 @@ NodeType*
 as_node(Node* node)
 {
     auto* result = dynamic_cast<NodeType*>(node);
-    ASSERT_TRUE(result != nullptr);
+    assert(result != nullptr);
     return result;
 }
 
@@ -198,36 +209,36 @@ void checkQueryTreeTypes(Node *node) {
     using FalseNode = typename NodeTypes::FalseQueryNode;
     using FuzzyTerm = typename NodeTypes::FuzzyTerm;
 
-    ASSERT_TRUE(node);
+    assert(node);
     auto* and_node = as_node<And>(node);
-    EXPECT_EQUAL(13u, and_node->getChildren().size());
+    EXPECT_EQ(13u, and_node->getChildren().size());
 
     auto* rank = as_node<Rank>(and_node->getChildren()[0]);
-    EXPECT_EQUAL(2u, rank->getChildren().size());
+    EXPECT_EQ(2u, rank->getChildren().size());
 
     auto* near = as_node<Near>(rank->getChildren()[0]);
-    EXPECT_EQUAL(2u, near->getChildren().size());
-    EXPECT_EQUAL(distance, near->getDistance());
+    EXPECT_EQ(2u, near->getChildren().size());
+    EXPECT_EQ(distance, near->getDistance());
     auto* string_term = as_node<StringTerm>(near->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[0], view[0], id[0], weight[0]));
     auto* substring_term = as_node<SubstringTerm>(near->getChildren()[1]);
     EXPECT_TRUE(checkTerm(substring_term, str[1], view[1], id[1], weight[1]));
 
     auto* onear = as_node<ONear>(rank->getChildren()[1]);
-    EXPECT_EQUAL(2u, onear->getChildren().size());
-    EXPECT_EQUAL(distance, onear->getDistance());
+    EXPECT_EQ(2u, onear->getChildren().size());
+    EXPECT_EQ(distance, onear->getDistance());
     auto* suffix_term = as_node<SuffixTerm>(onear->getChildren()[0]);
     EXPECT_TRUE(checkTerm(suffix_term, str[2], view[2], id[2], weight[2]));
     auto* prefix_term = as_node<PrefixTerm>(onear->getChildren()[1]);
     EXPECT_TRUE(checkTerm(prefix_term, str[3], view[3], id[3], weight[3]));
 
     auto* or_node = as_node<Or>(and_node->getChildren()[1]);
-    EXPECT_EQUAL(3u, or_node->getChildren().size());
+    EXPECT_EQ(3u, or_node->getChildren().size());
 
     auto* phrase = as_node<Phrase>(or_node->getChildren()[0]);
     EXPECT_TRUE(phrase->isRanked());
-    EXPECT_EQUAL(weight[4].percent(), phrase->getWeight().percent());
-    EXPECT_EQUAL(3u, phrase->getChildren().size());
+    EXPECT_EQ(weight[4].percent(), phrase->getWeight().percent());
+    EXPECT_EQ(3u, phrase->getChildren().size());
     string_term = as_node<StringTerm>(phrase->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[4], view[4], id[4], weight[4]));
     string_term = as_node<StringTerm>(phrase->getChildren()[1]);
@@ -237,15 +248,15 @@ void checkQueryTreeTypes(Node *node) {
 
     phrase = as_node<Phrase>(or_node->getChildren()[1]);
     EXPECT_TRUE(!phrase->isRanked());
-    EXPECT_EQUAL(weight[4].percent(), phrase->getWeight().percent());
-    EXPECT_EQUAL(2u, phrase->getChildren().size());
+    EXPECT_EQ(weight[4].percent(), phrase->getWeight().percent());
+    EXPECT_EQ(2u, phrase->getChildren().size());
     string_term = as_node<StringTerm>(phrase->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[4], view[4], id[4], weight[4]));
     string_term = as_node<StringTerm>(phrase->getChildren()[1]);
     EXPECT_TRUE(checkTerm(string_term, str[5], view[5], id[5], weight[4]));
 
     auto* and_not = as_node<AndNot>(or_node->getChildren()[2]);
-    EXPECT_EQUAL(2u, and_not->getChildren().size());
+    EXPECT_EQ(2u, and_not->getChildren().size());
     auto* integer_term = as_node<NumberTerm>(and_not->getChildren()[0]);
     EXPECT_TRUE(checkTerm(integer_term, int1, view[7], id[7], weight[7]));
     auto* float_term = as_node<NumberTerm>(and_not->getChildren()[1]);
@@ -258,8 +269,8 @@ void checkQueryTreeTypes(Node *node) {
     EXPECT_TRUE(checkTerm(loc_term, location, view[10], id[10], weight[10]));
 
     auto* wand = as_node<WeakAnd>(and_node->getChildren()[4]);
-    EXPECT_EQUAL(123u, wand->getTargetNumHits());
-    EXPECT_EQUAL(2u, wand->getChildren().size());
+    EXPECT_EQ(123u, wand->getTargetNumHits());
+    EXPECT_EQ(2u, wand->getChildren().size());
     string_term = as_node<StringTerm>(wand->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[4], view[4], id[4], weight[4]));
     string_term = as_node<StringTerm>(wand->getChildren()[1]);
@@ -270,31 +281,31 @@ void checkQueryTreeTypes(Node *node) {
     EXPECT_TRUE(checkTerm(predicateQuery, getPredicateQueryTerm(), view[3], id[3], weight[3]));
 
     auto* dotProduct = as_node<DotProduct>(and_node->getChildren()[6]);
-    EXPECT_EQUAL(3u, dotProduct->getNumTerms());
+    EXPECT_EQ(3u, dotProduct->getNumTerms());
 
     {
         const auto &w1 = dotProduct->getAsString(0);
-        EXPECT_EQUAL(w1.first, str[3]);
+        EXPECT_EQ(w1.first, str[3]);
         EXPECT_TRUE(w1.second == weight[3]);
         const auto &w2 = dotProduct->getAsString(1);
-        EXPECT_EQUAL(w2.first, str[4]);
+        EXPECT_EQ(w2.first, str[4]);
         EXPECT_TRUE(w2.second == weight[4]);
         const auto &w3 = dotProduct->getAsString(2);
-        EXPECT_EQUAL(w3.first, str[5]);
+        EXPECT_EQ(w3.first, str[5]);
         EXPECT_TRUE(w3.second == weight[5]);
     }
 
     auto* wandTerm = as_node<WandTerm>(and_node->getChildren()[7]);
-    EXPECT_EQUAL(57u, wandTerm->getTargetNumHits());
-    EXPECT_EQUAL(67, wandTerm->getScoreThreshold());
-    EXPECT_EQUAL(77.7, wandTerm->getThresholdBoostFactor());
-    EXPECT_EQUAL(2u, wandTerm->getNumTerms());
+    EXPECT_EQ(57u, wandTerm->getTargetNumHits());
+    EXPECT_EQ(67, wandTerm->getScoreThreshold());
+    EXPECT_EQ(77.7, wandTerm->getThresholdBoostFactor());
+    EXPECT_EQ(2u, wandTerm->getNumTerms());
     {
         const auto &w1 = wandTerm->getAsString(0);
-        EXPECT_EQUAL(w1.first, str[1]);
+        EXPECT_EQ(w1.first, str[1]);
         EXPECT_TRUE(w1.second == weight[1]);
         const auto &w2 = wandTerm->getAsString(1);
-        EXPECT_EQUAL(w2.first, str[2]);
+        EXPECT_EQ(w2.first, str[2]);
         EXPECT_TRUE(w2.second == weight[2]);
     }
 
@@ -302,8 +313,8 @@ void checkQueryTreeTypes(Node *node) {
     EXPECT_TRUE(checkTerm(regexp_term, str[5], view[5], id[5], weight[5]));
 
     auto* same = as_node<SameElement>(and_node->getChildren()[9]);
-    EXPECT_EQUAL(view[4], same->getView());
-    EXPECT_EQUAL(3u, same->getChildren().size());
+    EXPECT_EQ(view[4], same->getView());
+    EXPECT_EQ(3u, same->getChildren().size());
     string_term = as_node<StringTerm>(same->getChildren()[0]);
     EXPECT_TRUE(checkTerm(string_term, str[4], view[4], id[4], weight[5]));
     string_term = as_node<StringTerm>(same->getChildren()[1]);
@@ -312,14 +323,14 @@ void checkQueryTreeTypes(Node *node) {
     EXPECT_TRUE(checkTerm(string_term, str[6], view[6], id[6], weight[7]));
 
     auto* nearest_neighbor = as_node<NearestNeighborTerm>(and_node->getChildren()[10]);
-    EXPECT_EQUAL("query_tensor", nearest_neighbor->get_query_tensor_name());
-    EXPECT_EQUAL("doc_tensor", nearest_neighbor->getView());
-    EXPECT_EQUAL(id[3], nearest_neighbor->getId());
-    EXPECT_EQUAL(weight[5].percent(), nearest_neighbor->getWeight().percent());
-    EXPECT_EQUAL(7u, nearest_neighbor->get_target_num_hits());
+    EXPECT_EQ("query_tensor", nearest_neighbor->get_query_tensor_name());
+    EXPECT_EQ("doc_tensor", nearest_neighbor->getView());
+    EXPECT_EQ(id[3], nearest_neighbor->getId());
+    EXPECT_EQ(weight[5].percent(), nearest_neighbor->getWeight().percent());
+    EXPECT_EQ(7u, nearest_neighbor->get_target_num_hits());
 
     and_not = as_node<AndNot>(and_node->getChildren()[11]);
-    EXPECT_EQUAL(2u, and_not->getChildren().size());
+    EXPECT_EQ(2u, and_not->getChildren().size());
     auto* true_node = as_node<TrueNode>(and_not->getChildren()[0]);
     auto* false_node = as_node<FalseNode>(and_not->getChildren()[1]);
     EXPECT_TRUE(true_node);
@@ -327,8 +338,8 @@ void checkQueryTreeTypes(Node *node) {
 
     auto* fuzzy_term = as_node<FuzzyTerm>(and_node->getChildren()[12]);
     EXPECT_TRUE(checkTerm(fuzzy_term, str[5], view[5], id[5], weight[5]));
-    EXPECT_EQUAL(3u, fuzzy_term->max_edit_distance());
-    EXPECT_EQUAL(1u, fuzzy_term->prefix_lock_length());
+    EXPECT_EQ(3u, fuzzy_term->max_edit_distance());
+    EXPECT_EQ(1u, fuzzy_term->prefix_lock_length());
 }
 
 struct AbstractTypes {
@@ -360,14 +371,14 @@ struct AbstractTypes {
 
 // Builds a tree with simplequery and checks that the results have the
 // correct abstract types.
-TEST("require that Query Trees Can Be Built") {
+TEST(QueryBuilderTest, require_that_Query_Trees_Can_Be_Built) {
     Node::UP node = createQueryTree<SimpleQueryNodeTypes>();
     checkQueryTreeTypes<AbstractTypes>(node.get());
 }
 
 // Builds a tree with simplequery and checks that the results have the
 // correct concrete types.
-TEST("require that Simple Query Trees Can Be Built") {
+TEST(QueryBuilderTest, require_that_Simple_Query_Trees_Can_Be_Built) {
     Node::UP node = createQueryTree<SimpleQueryNodeTypes>();
     checkQueryTreeTypes<SimpleQueryNodeTypes>(node.get());
 }
@@ -496,22 +507,22 @@ struct MyQueryNodeTypes {
     using InTerm = MyInTerm;
 };
 
-TEST("require that Custom Query Trees Can Be Built") {
+TEST(QueryBuilderTest, require_that_Custom_Query_Trees_Can_Be_Built) {
     Node::UP node = createQueryTree<MyQueryNodeTypes>();
     checkQueryTreeTypes<MyQueryNodeTypes>(node.get());
 }
 
-TEST("require that Invalid Trees Cannot Be Built") {
+TEST(QueryBuilderTest, require_that_Invalid_Trees_Cannot_Be_Built) {
     // Incomplete tree.
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(1);
     ASSERT_TRUE(!builder.build().get());
-    EXPECT_EQUAL("QueryBuilderBase::build: QueryBuilder got invalid node structure. _nodes are not empty.", builder.error());
+    EXPECT_EQ("QueryBuilderBase::build: QueryBuilder got invalid node structure. _nodes are not empty.", builder.error());
 
     // Adding a node after build() and before reset() is a no-op.
     builder.addStringTerm(str[0], view[0], id[0], weight[0]);
     ASSERT_TRUE(!builder.build().get());
-    EXPECT_EQUAL("QueryBuilderBase::build: QueryBuilder got invalid node structure. _nodes are not empty.", builder.error());
+    EXPECT_EQ("QueryBuilderBase::build: QueryBuilder got invalid node structure. _nodes are not empty.", builder.error());
 
     builder.reset();
     EXPECT_TRUE(builder.error().empty());
@@ -521,19 +532,19 @@ TEST("require that Invalid Trees Cannot Be Built") {
     builder.addStringTerm(str[0], view[0], id[0], weight[0]);
     builder.addStringTerm(str[1], view[1], id[1], weight[1]);
     ASSERT_TRUE(!builder.build().get());
-    EXPECT_EQUAL("QueryBuilderBase::addCompleteNode: QueryBuilder got invalid node structure."
+    EXPECT_EQ("QueryBuilderBase::addCompleteNode: QueryBuilder got invalid node structure."
                  " Incomming node is 'search::query::SimpleStringTerm', while root is non-null('search::query::SimpleAnd')",
                  builder.error());
 
     // Adding an intermediate node after build() is also a no-op.
     builder.addAnd(1);
     ASSERT_TRUE(!builder.build().get());
-    EXPECT_EQUAL("QueryBuilderBase::addCompleteNode: QueryBuilder got invalid node structure."
+    EXPECT_EQ("QueryBuilderBase::addCompleteNode: QueryBuilder got invalid node structure."
                  " Incomming node is 'search::query::SimpleStringTerm', while root is non-null('search::query::SimpleAnd')",
                  builder.error());
 }
 
-TEST("require that Rank Can Be Turned Off") {
+TEST(QueryBuilderTest, require_that_Rank_Can_Be_Turned_Off) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(3);
     builder.addStringTerm(str[0], view[0], id[0], weight[0]);
@@ -562,7 +573,7 @@ TEST("require that Rank Can Be Turned Off") {
     EXPECT_TRUE(!phrase->isRanked());
 }
 
-TEST("require that Using Position Data Can Be Turned Off") {
+TEST(QueryBuilderTest, require_that_Using_Position_Data_Can_Be_Turned_Off) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(2);
     builder.addStringTerm(str[0], view[0], id[0], weight[0]).setPositionData(false);
@@ -583,19 +594,19 @@ TEST("require that Using Position Data Can Be Turned Off") {
     EXPECT_TRUE(!phrase->usePositionData());
 }
 
-TEST("require that Weight Override Works Across Multiple Levels") {
+TEST(QueryBuilderTest, require_that_Weight_Override_Works_Across_Multiple_Levels) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addPhrase(2, view[0], id[0], weight[0]);
 
     SimpleStringTerm &string_term_1 = builder.addStringTerm(str[1], view[1], id[1], weight[1]);
-    EXPECT_EQUAL(weight[0].percent(), string_term_1.getWeight().percent());
+    EXPECT_EQ(weight[0].percent(), string_term_1.getWeight().percent());
 
     builder.addAnd(2);
     SimpleStringTerm &string_term_2 = builder.addStringTerm(str[2], view[2], id[2], weight[2]);
-    EXPECT_EQUAL(weight[0].percent(), string_term_2.getWeight().percent());
+    EXPECT_EQ(weight[0].percent(), string_term_2.getWeight().percent());
 }
 
-TEST("require that Query Tree Creator Can Replicate Queries") {
+TEST(QueryBuilderTest, require_that_Query_Tree_Creator_Can_Replicate_Queries) {
     Node::UP node = createQueryTree<SimpleQueryNodeTypes>();
     Node::UP new_node = QueryTreeCreator<MyQueryNodeTypes>::replicate(*node);
 
@@ -603,7 +614,7 @@ TEST("require that Query Tree Creator Can Replicate Queries") {
     checkQueryTreeTypes<MyQueryNodeTypes>(new_node.get());
 }
 
-TEST("require that Query Tree Creator Can Create Queries From Stack") {
+TEST(QueryBuilderTest, require_that_Query_Tree_Creator_Can_Create_Queries_From_Stack) {
     Node::UP node = createQueryTree<MyQueryNodeTypes>();
     string stackDump = StackDumpCreator::create(*node);
 
@@ -613,7 +624,7 @@ TEST("require that Query Tree Creator Can Create Queries From Stack") {
     checkQueryTreeTypes<SimpleQueryNodeTypes>(new_node.get());
 }
 
-TEST("require that All Range Syntaxes Work") {
+TEST(QueryBuilderTest, require_that_All_Range_Syntaxes_Work) {
 
     Range range0("[2,42.1]");
     Range range1(">10");
@@ -632,7 +643,7 @@ TEST("require that All Range Syntaxes Work") {
     Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     And *and_node = dynamic_cast<And *>(new_node.get());
     ASSERT_TRUE(and_node);
-    EXPECT_EQUAL(3u, and_node->getChildren().size());
+    EXPECT_EQ(3u, and_node->getChildren().size());
 
     auto range_term = dynamic_cast<RangeTerm *>(and_node->getChildren()[0]);
     ASSERT_TRUE(range_term);
@@ -647,7 +658,7 @@ TEST("require that All Range Syntaxes Work") {
     EXPECT_TRUE(range2 == range_term->getTerm());
 }
 
-TEST("fuzzy node can be created") {
+TEST(QueryBuilderTest, fuzzy_node_can_be_created) {
     for (bool prefix_match : {false, true}) {
         QueryBuilder<SimpleQueryNodeTypes> builder;
         builder.addFuzzyTerm("term", "view", 0, Weight(0), 3, 1, prefix_match);
@@ -658,20 +669,20 @@ TEST("fuzzy node can be created") {
             SimpleQueryStackDumpIterator iterator(stackDump);
             Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
             auto *fuzzy_node = as_node<FuzzyTerm>(new_node.get());
-            EXPECT_EQUAL(3u, fuzzy_node->max_edit_distance());
-            EXPECT_EQUAL(1u, fuzzy_node->prefix_lock_length());
-            EXPECT_EQUAL(prefix_match, fuzzy_node->prefix_match());
+            EXPECT_EQ(3u, fuzzy_node->max_edit_distance());
+            EXPECT_EQ(1u, fuzzy_node->prefix_lock_length());
+            EXPECT_EQ(prefix_match, fuzzy_node->prefix_match());
         }
         {
             search::QueryTermSimple::UP queryTermSimple = search::QueryTermDecoder::decodeTerm(stackDump);
-            EXPECT_EQUAL(3u, queryTermSimple->fuzzy_max_edit_distance());
-            EXPECT_EQUAL(1u, queryTermSimple->fuzzy_prefix_lock_length());
-            EXPECT_EQUAL(prefix_match, queryTermSimple->fuzzy_prefix_match());
+            EXPECT_EQ(3u, queryTermSimple->fuzzy_max_edit_distance());
+            EXPECT_EQ(1u, queryTermSimple->fuzzy_prefix_lock_length());
+            EXPECT_EQ(prefix_match, queryTermSimple->fuzzy_prefix_match());
         }
     }
 }
 
-TEST("require that empty intermediate node can be added") {
+TEST(QueryBuilderTest, require_that_empty_intermediate_node_can_be_added) {
     QueryBuilder<SimpleQueryNodeTypes> builder;
     builder.addAnd(0);
     Node::UP node = builder.build();
@@ -683,14 +694,14 @@ TEST("require that empty intermediate node can be added") {
     Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     And *and_node = dynamic_cast<And *>(new_node.get());
     ASSERT_TRUE(and_node);
-    EXPECT_EQUAL(0u, and_node->getChildren().size());
+    EXPECT_EQ(0u, and_node->getChildren().size());
 }
 
-TEST("control size of SimpleQueryStackDumpIterator") {
-    EXPECT_EQUAL(128u, sizeof(SimpleQueryStackDumpIterator));
+TEST(QueryBuilderTest, control_size_of_SimpleQueryStackDumpIterator) {
+    EXPECT_EQ(128u, sizeof(SimpleQueryStackDumpIterator));
 }
 
-TEST("test query parsing error") {
+TEST(QueryBuilderTest, test_query_parsing_error) {
     const char * STACK =
          "\001\002\001\003\000\005\002\004\001\034F\001\002\004term\004\004term\002dx\004\004term\002ifD\002\004term\001xD\003\004term\002dxE\004\004term\001\060F\005\002\004term"
          "\004\004term\006radius\004\004term\002ifD\006\004term\001xD\a\004term\004sizeE\b\004term\001\060D\t\004term\001xF\n\002\004term\004\004term\002dx\004\004term\002ifD\v\004term"
@@ -733,30 +744,30 @@ public:
     void accept(QueryVisitor & ) override { }
 };
 
-TEST("initial state of MultiTerm") {
+TEST(QueryBuilderTest, initial_state_of_MultiTerm) {
     SimpleMultiTerm mt(7);
-    EXPECT_EQUAL(7u, mt.getNumTerms());
+    EXPECT_EQ(7u, mt.getNumTerms());
     EXPECT_TRUE(MultiTerm::Type::UNKNOWN == mt.getType());
 }
 
 void
 verify_multiterm_get(const MultiTerm & mt) {
-    EXPECT_EQUAL(7u, mt.getNumTerms());
+    EXPECT_EQ(7u, mt.getNumTerms());
     for (int64_t i(0); i < mt.getNumTerms(); i++) {
         auto v = mt.getAsInteger(i);
-        EXPECT_EQUAL(v.first, i-3);
-        EXPECT_EQUAL(v.second.percent(), i-4);
+        EXPECT_EQ(v.first, i-3);
+        EXPECT_EQ(v.second.percent(), i-4);
     }
     for (int64_t i(0); i < mt.getNumTerms(); i++) {
         auto v = mt.getAsString(i);
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
-        EXPECT_EQUAL(v.first, std::string_view(buf, res.ptr - buf));
-        EXPECT_EQUAL(v.second.percent(), i-4);
+        EXPECT_EQ(v.first, std::string_view(buf, res.ptr - buf));
+        EXPECT_EQ(v.second.percent(), i-4);
     }
 }
 
-TEST("add and get of integer MultiTerm") {
+TEST(QueryBuilderTest, add_and_get_of_integer_MultiTerm) {
     SimpleMultiTerm mt(7);
     for (int64_t i(0); i < mt.getNumTerms(); i++) {
         mt.addTerm(i-3, Weight(i-4));
@@ -765,7 +776,7 @@ TEST("add and get of integer MultiTerm") {
     verify_multiterm_get(mt);
 }
 
-TEST("add and get of string MultiTerm") {
+TEST(QueryBuilderTest, add_and_get_of_string_MultiTerm) {
     SimpleMultiTerm mt(7);
     for (int64_t i(0); i < mt.getNumTerms(); i++) {
         char buf[24];
@@ -776,7 +787,7 @@ TEST("add and get of string MultiTerm") {
     verify_multiterm_get(mt);
 }
 
-TEST("first string then integer MultiTerm") {
+TEST(QueryBuilderTest, first_string_then_integer_MultiTerm) {
     SimpleMultiTerm mt(7);
     mt.addTerm("-3", Weight(-4));
     for (int64_t i(1); i < mt.getNumTerms(); i++) {
@@ -786,7 +797,7 @@ TEST("first string then integer MultiTerm") {
     verify_multiterm_get(mt);
 }
 
-TEST("first integer then string MultiTerm") {
+TEST(QueryBuilderTest, first_integer_then_string_MultiTerm) {
     SimpleMultiTerm mt(7);
     mt.addTerm(-3, Weight(-4));
     EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
@@ -821,13 +832,13 @@ template <typename TermType>
 void
 verify_subterms(InTerm& in_term, const std::vector<TermType>& values)
 {
-    EXPECT_EQUAL(values.size(), in_term.getNumTerms());
+    EXPECT_EQ(values.size(), in_term.getNumTerms());
     uint32_t i = 0;
     for (auto term : values) {
         if constexpr (std::is_same_v<TermType, int64_t>) {
-            EXPECT_EQUAL(term, in_term.getAsInteger(i).first);
+            EXPECT_EQ(term, in_term.getAsInteger(i).first);
         } else {
-            EXPECT_EQUAL(term, in_term.getAsString(i).first);
+            EXPECT_EQ(term, in_term.getAsString(i).first);
         }
         ++i;
     }
@@ -857,16 +868,16 @@ test_in_node(const std::vector<TermType>& values)
 
 }
 
-TEST("require that in_term with strings can be created")
+TEST(QueryBuilderTest, require_that_in_term_with_strings_can_be_created)
 {
     test_in_node(in_strings);
 }
 
-TEST("require that in_term with integers can be created")
+TEST(QueryBuilderTest, require_that_in_term_with_integers_can_be_created)
 {
     test_in_node(in_integers);
 }
 
 }  // namespace
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
