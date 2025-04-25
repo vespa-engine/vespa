@@ -125,7 +125,7 @@ RPCSend::send(RoutingNode &recipient, const vespalib::Version &version,
     if (ctx->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         ctx->getTrace().trace(TraceLevel::SEND_RECEIVE,
                               make_string("Sending message (version %s) from %s to '%s' with %.2f seconds timeout.",
-                                          version.toFullString().c_str(), _clientIdent.c_str(),
+                                          version.toString().c_str(), _clientIdent.c_str(),
                                           address.getServiceName().c_str(), vespalib::to_s(ctx->getTimeout())));
     }
 
@@ -228,7 +228,7 @@ RPCSend::doHandleReply(Reply::UP reply) {
     const IProtocol * protocol = _net->getOwner().getProtocol(reply->getProtocol());
     ReplyContext::UP ctx(static_cast<ReplyContext*>(reply->getContext().value.PTR));
     FRT_RPCRequest &req = ctx->getRequest();
-    string version = ctx->getVersion().toFullString();
+    string version = ctx->getVersion().toString();
     if (reply->getTrace().shouldTrace(TraceLevel::SEND_RECEIVE)) {
         reply->getTrace().trace(TraceLevel::SEND_RECEIVE, make_string("Sending reply (version %s) from %s.",
                                                                       version.c_str(), _serverIdent.c_str()));

@@ -120,7 +120,7 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     Slime slime;
     Cursor & root = slime.setObject();
 
-    root.setString(VERSION_F, version.toFullString());
+    root.setString(VERSION_F, version.toString());
     root.setString(ROUTE_F, route.toString());
     root.setString(SESSION_F, address.getSessionName());
     root.setBool(USERETRY_F, msg.getRetryEnabled());
