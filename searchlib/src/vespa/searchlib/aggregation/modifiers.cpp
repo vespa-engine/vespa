@@ -16,7 +16,7 @@ namespace search::aggregation {
 bool
 AttributeNodeReplacer::check(const vespalib::Identifiable &obj) const
 {
-    return obj.getClass().inherits(GroupingLevel::classId) || obj.getClass().inherits(AggregationResult::classId) || obj.getClass().inherits(MultiArgFunctionNode::classId);
+    return obj.getClass().inherits(ExpressionTree::classId) || obj.getClass().inherits(AggregationResult::classId) || obj.getClass().inherits(MultiArgFunctionNode::classId);
 }
 
 void
@@ -35,10 +35,9 @@ AttributeNodeReplacer::replaceRecurse(ExpressionNode * exp, std::function<void(E
 void
 AttributeNodeReplacer::execute(vespalib::Identifiable &obj)
 {
-    if (obj.getClass().inherits(GroupingLevel::classId)) {
-        auto & g(static_cast<GroupingLevel &>(obj));
-        replaceRecurse(g.getExpression().getRoot(), [&g](ExpressionNodeUP replacement) { g.setExpression(std::move(replacement)); });
-        g.groupPrototype().select(*this, *this);
+    if (obj.getClass().inherits(ExpressionTree::classId)) {
+        auto & g(static_cast<ExpressionTree &>(obj));
+        replaceRecurse(g.getRoot(), [&g](ExpressionNodeUP replacement) noexcept { g.changeRoot(std::move(replacement)); });
     } else if(obj.getClass().inherits(AggregationResult::classId)) {
         auto & a(static_cast<AggregationResult &>(obj));
         replaceRecurse(a.getExpression(), [&a](ExpressionNodeUP replacement) { a.setExpression(std::move(replacement)); });
