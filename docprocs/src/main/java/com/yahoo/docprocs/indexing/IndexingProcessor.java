@@ -51,6 +51,9 @@ public class IndexingProcessor extends DocumentProcessor {
     private class ExpressionSelector extends FieldValuesFactory.SelectExpression {
         @Override
         public Expression selectExpression(DocumentType documentType, String fieldName) {
+            DocumentScript script = scriptManager.getScript(documentType, fieldName);
+            if (script == null)
+                throw new IllegalArgumentException("No indexing statement taking only '" + fieldName + "' as input");
             return scriptManager.getScript(documentType, fieldName).getExpression();
         }
     }

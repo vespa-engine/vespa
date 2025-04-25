@@ -17,6 +17,7 @@ public class SimpleDocumentFieldValues implements DocumentFieldValues {
     private final Document input;
     private final Document output;
 
+    /** Creates an instance with empty output */
     public SimpleDocumentFieldValues(Document input) {
         this(input, new Document(input.getDataType(), input.getId()));
     }
@@ -72,6 +73,11 @@ public class SimpleDocumentFieldValues implements DocumentFieldValues {
         }
         output.setFieldValue(field, fieldValue);
         return this;
+    }
+
+    @Override
+    public String toString() {
+        return "document field values: " + output + " with " + output.getFieldCount() + " fields";
     }
 
 }

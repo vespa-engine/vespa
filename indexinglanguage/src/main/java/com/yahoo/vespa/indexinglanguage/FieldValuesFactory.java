@@ -37,10 +37,7 @@ public class FieldValuesFactory {
     }
 
     public static DocumentFieldValues newDocumentAdapter(Document doc, boolean isUpdate) {
-        if (isUpdate) {
-            return new SimpleDocumentFieldValues(doc);
-        }
-        return new SimpleDocumentFieldValues(doc, doc);
+        return isUpdate ? new SimpleDocumentFieldValues(doc) : new SimpleDocumentFieldValues(doc, doc);
     }
 
     public List<UpdateFieldValues> asFieldValues(DocumentUpdate update) {
@@ -50,7 +47,7 @@ public class FieldValuesFactory {
         Document complete = new Document(docType, update.getId());
         for (FieldPathUpdate fieldUpdate : update) {
             try {
-                if (FieldPathUpdateHelper.isComplete(fieldUpdate)) {
+                if (FieldPathUpdateHelper.isFieldValues(fieldUpdate)) {
                     // A 'complete' field path update is basically a regular top-level field update
                     // in wolf's clothing. Convert it to a regular field update to be friendlier
                     // towards the search core backend.
@@ -67,7 +64,7 @@ public class FieldValuesFactory {
             Field field = fieldUpdate.getField();
             for (ValueUpdate valueUpdate : fieldUpdate.getValueUpdates()) {
                 try {
-                    if (FieldUpdateHelper.isComplete(field, valueUpdate)) {
+                    if (FieldUpdateHelper.isFieldValues(field, valueUpdate)) {
                         FieldUpdateHelper.applyUpdate(field, valueUpdate, complete);
                     } else {
                         Document partial = FieldUpdateHelper.newPartialDocument(docType, docId, field, valueUpdate);
@@ -75,9 +72,8 @@ public class FieldValuesFactory {
                                                                          newDocumentAdapter(partial, true),
                                                                          valueUpdate));
                     }
-                } catch (NullPointerException e) {
-                    throw new IllegalArgumentException("Exception during handling of update '" + valueUpdate +
-                                                       "' to field '" + field + "'", e);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalArgumentException("Could not execute update '" + valueUpdate + "' to " + field, e);
                 }
             }
         }
