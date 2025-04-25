@@ -65,7 +65,7 @@ public class ContentClusterUtils {
                                 root.getDeployState().featureFlags());
         Document doc = XML.getDocument(clusterXml);
         ConfigModelContext context = ConfigModelContext.create(applicationType, root.getDeployState(),
-                                                               null,null, root, null);
+                                                               null, null, root, null);
 
         return new ContentCluster.Builder(admin).build(List.of(), context, doc.getDocumentElement());
     }

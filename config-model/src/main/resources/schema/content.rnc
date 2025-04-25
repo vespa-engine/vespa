@@ -23,6 +23,10 @@ BucketSplitting = element bucket-splitting {
     attribute minimum-bits { xsd:nonNegativeInteger }?
 }
 
+MaxDocumentSize = element max-document-size {
+    xsd:string
+}
+
 MergeTuning = element merges {
     attribute max-per-node { xsd:nonNegativeInteger }? &
     attribute max-queue-size { xsd:nonNegativeInteger }? &
@@ -97,6 +101,7 @@ ClusterTuning = element tuning {
    DispatchTuning? &
    DistributionType? &
    BucketSplitting? &
+   MaxDocumentSize? &
    MergeTuning? &
    VisitorTuning? &
    ClusterControllerTuning? &

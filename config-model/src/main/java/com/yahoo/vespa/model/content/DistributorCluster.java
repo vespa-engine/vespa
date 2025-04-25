@@ -10,6 +10,7 @@ import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.metrics.MetricsmanagerConfig;
+import com.yahoo.vespa.model.builder.xml.dom.BinaryUnit;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
@@ -101,7 +102,7 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             int maxInhibitedGroups = featureFlags.maxActivationInhibitedOutOfSyncGroups();
             int contentLayerMetadataFeatureLevel = featureFlags.contentLayerMetadataFeatureLevel();
             boolean symmetricPutAndActivateReplicaSelection = featureFlags.symmetricPutAndActivateReplicaSelection();
-            int maxDocumentOperationSizeMib = featureFlags.maxDistributorDocumentOperationSizeMib();
+            int maxDocumentOperationSizeMib = maxDocumentSizeInMib(featureFlags.maxDistributorDocumentOperationSizeMib(), clusterElement);
 
             return new DistributorCluster(parent,
                     new BucketSplitting.Builder().build(new ModelElement(producerSpec)), gc,
@@ -172,4 +173,25 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
     public String getClusterName() {
         return parent.getName();
     }
+
+    private static int maxDocumentSizeInMib(int featureFlagValue, ModelElement clusterElement) {
+        var tuning = clusterElement.child("tuning");
+        if (tuning == null) return featureFlagValue;
+        var maxSize = tuning.child("max-document-size");
+        if (maxSize == null) return featureFlagValue;
+
+        var configuredValue = maxSize.asString();
+        int maxDocumentSize = featureFlagValue;
+        if (configuredValue != null && ! configuredValue.isEmpty()) {
+            // The value has units, but the config expects it in MiB, extract the value and convert
+            double value = BinaryUnit.valueOf(configuredValue) / 1024 / 1024;
+            if (value < 1.0)
+                throw new IllegalArgumentException("Invalid max-document-size value '" + configuredValue + "': Value must be between 1 MiB and 2048 MiB");
+            maxDocumentSize = (int) value;
+            if (maxDocumentSize > 2048)
+                throw new IllegalArgumentException("Invalid max-document-size value '" + configuredValue + "': Value must be between 1 MiB and 2048 MiB");
+        }
+        return maxDocumentSize;
+    }
+
 }
