@@ -186,10 +186,10 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             // The value has units, but the config expects it in MiB, extract the value and convert
             double value = BinaryUnit.valueOf(configuredValue) / 1024 / 1024;
             if (value < 1.0)
-                throw new IllegalArgumentException("Invalid max-document-size value '" + configuredValue + "': Value must be between 1 Mib and 2048 MiB");
+                throw new IllegalArgumentException("Invalid max-document-size value '" + configuredValue + "': Value must be between 1 MiB and 2048 MiB");
             maxDocumentSize = (int) value;
             if (maxDocumentSize > 2048)
-                throw new IllegalArgumentException("Invalid max-document-size value '" + configuredValue + "': Value must be between 1 Mib and 2048 MiB");
+                throw new IllegalArgumentException("Invalid max-document-size value '" + configuredValue + "': Value must be between 1 MiB and 2048 MiB");
         }
         return maxDocumentSize;
     }
