@@ -159,7 +159,7 @@ TEST("testEmpty")
 
     EXPECT_EQUAL("", ev.toAbbreviatedString());
     EXPECT_EQUAL("0.0.0", ev.toString());
-    EXPECT_EQUAL("*.*.*", evs.toFullString());
+    EXPECT_EQUAL("*.*.*", evs.toString());
 
     EXPECT_TRUE(ev == Version(0,0,0,""));
 
@@ -192,7 +192,7 @@ TEST("testSimple")
     EXPECT_EQUAL(2, vs.getSpecifiedMinor());
     EXPECT_EQUAL(3, vs.getSpecifiedMicro());
 
-    EXPECT_EQUAL("1.2.3.qualifier", vs.toFullString());
+    EXPECT_EQUAL("1.2.3.qualifier", vs.toString());
 
     // test cross-class function
     EXPECT_TRUE(vs.matches(v));
@@ -261,14 +261,14 @@ TEST("testZeros")
     // test VersionSpecification:
 
     VersionSpecification vs000(0, 0, 0, "");
-    EXPECT_EQUAL("0.0.0", vs000.toFullString());
+    EXPECT_EQUAL("0.0.0", vs000.toString());
     VersionSpecification vs000s("0.0.0");
-    EXPECT_EQUAL("0.0.0", vs000s.toFullString());
+    EXPECT_EQUAL("0.0.0", vs000s.toString());
 
     VersionSpecification vs000q(0, 0, 0, "qualifier");
-    EXPECT_EQUAL("0.0.0.qualifier", vs000q.toFullString());
+    EXPECT_EQUAL("0.0.0.qualifier", vs000q.toString());
     VersionSpecification vs000qs("0.0.0.qualifier");
-    EXPECT_EQUAL("0.0.0.qualifier", vs000qs.toFullString());
+    EXPECT_EQUAL("0.0.0.qualifier", vs000qs.toString());
 }
 
 TEST_MAIN()
