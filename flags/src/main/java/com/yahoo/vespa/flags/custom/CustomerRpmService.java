@@ -33,11 +33,11 @@ public class CustomerRpmService {
     private final String url;
 
     /**
-     * Memory limit in megabytes (MB) for the service unit.
+     * Memory limit in mebibytes (MiB) for the service unit.
      * This limit will be enforced by the host operating system.
      */
-    @JsonProperty(value = "memoryMB", required = true)
-    private final double memoryLimitMb;
+    @JsonProperty(value = "memory", required = true)
+    private final double memoryLimitMib;
 
     /**
      * Optional CPU limit for the service unit in fraction of cores, e.g
@@ -51,12 +51,12 @@ public class CustomerRpmService {
     public CustomerRpmService(
         @JsonProperty(value = "unit", required = true) String unit,
         @JsonProperty(value = "url", required = true) String url,
-        @JsonProperty(value = "memoryMB", required = true) double memoryLimitMb,
+        @JsonProperty(value = "memory", required = true) double memoryLimitMib,
         @JsonProperty("cpu") Double cpuLimitCores
     ) {
         this.unit = Objects.requireNonNull(unit);
         this.url = Objects.requireNonNull(url);
-        this.memoryLimitMb = memoryLimitMb;
+        this.memoryLimitMib = memoryLimitMib;
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
     }
 
@@ -68,8 +68,8 @@ public class CustomerRpmService {
         return url;
     }
 
-    public double memoryLimitMb() {
-        return memoryLimitMb;
+    public double memoryLimitMib() {
+        return memoryLimitMib;
     }
 
     public Optional<Double> cpuLimitCores() {
@@ -84,13 +84,13 @@ public class CustomerRpmService {
         return
             unit.equals(other.unit) &&
             url.equals(other.url) &&
-            memoryLimitMb == other.memoryLimitMb &&
+            memoryLimitMib == other.memoryLimitMib &&
             cpuLimitCores().equals(other.cpuLimitCores());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unit, url, memoryLimitMb, cpuLimitCores);
+        return Objects.hash(unit, url, memoryLimitMib, cpuLimitCores);
     }
 
 }

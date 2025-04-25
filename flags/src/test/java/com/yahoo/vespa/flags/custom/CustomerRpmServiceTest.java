@@ -23,12 +23,12 @@ public class CustomerRpmServiceTest {
                         {
                             "unit": "example1",
                             "url": "https://some.website.com/rpm1",
-                            "memoryMB": 200.0
+                            "memory": 200.0
                         },
                         {
                             "unit": "example2",
                             "url": "https://some.website.com/rpm2",
-                            "memoryMB": 300.0,
+                            "memory": 300.0,
                             "cpu": 1.0
                         }
                    ]
@@ -42,13 +42,13 @@ public class CustomerRpmServiceTest {
                 .filter(r -> r.url().equals("https://some.website.com/rpm1"))
                 .findFirst();
         assertEquals("example1", service1.get().unitName());
-        assertEquals(200.0, service1.get().memoryLimitMb());
+        assertEquals(200.0, service1.get().memoryLimitMib());
 
         Optional<CustomerRpmService> service2 = serviceList.services().stream()
                 .filter(r -> r.url().equals("https://some.website.com/rpm2"))
                 .findFirst();
         assertEquals("example2", service2.get().unitName());
-        assertEquals(300.0, service2.get().memoryLimitMb());
+        assertEquals(300.0, service2.get().memoryLimitMib());
         assertEquals(Optional.of(1.0), service2.get().cpuLimitCores());
 
         // Empty variant
@@ -64,7 +64,7 @@ public class CustomerRpmServiceTest {
         assertThrows(JsonProcessingException.class, () -> Jackson.mapper().readValue(invalidJson, CustomerRpmServiceList.class));
 
         // Negative CPU treated as no limit
-        var negCpuJson = "{\"services\": [{ \"url\": \"test\", \"unit\": \"test\", \"memoryMB\": 100.0, \"cpu\": -1.0 }]}";
+        var negCpuJson = "{\"services\": [{ \"url\": \"test\", \"unit\": \"test\", \"memory\": 100.0, \"cpu\": -1.0 }]}";
         CustomerRpmService negCpu = Jackson.mapper().readValue(negCpuJson, CustomerRpmServiceList.class).services().get(0);
         assertEquals(Optional.empty(), negCpu.cpuLimitCores());
         assertThrows(JsonProcessingException.class, () -> Jackson.mapper().readValue(invalidJson, CustomerRpmServiceList.class));
