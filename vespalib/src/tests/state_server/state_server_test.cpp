@@ -395,7 +395,7 @@ TEST_FFFF("version resource yields current version number",
           StateApi(f1, f2, f3))
 {
     std::ostringstream os;
-    os << "{\"version\":\"" << vespalib::Vtag::currentVersion.toFullString() << "\"}";
+    os << "{\"version\":\"" << vespalib::Vtag::currentVersion.toString() << "\"}";
     EXPECT_EQUAL(os.str(),
                  get_json(f4, host_tag, version_path, empty_params));
 }
