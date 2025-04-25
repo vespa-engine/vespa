@@ -23,13 +23,13 @@ public class CustomerRpmServiceTest {
                         {
                             "unit": "example1",
                             "url": "https://some.website.com/rpm1",
-                            "memoryLimitMb": 200.0
+                            "memoryMb": 200.0
                         },
                         {
                             "unit": "example2",
                             "url": "https://some.website.com/rpm2",
-                            "memoryLimitMb": 300.0,
-                            "cpuLimitNanoSeconds": 100.0
+                            "memoryMb": 300.0,
+                            "cpu": 1.0
                         }
                    ]
                 }
@@ -41,15 +41,15 @@ public class CustomerRpmServiceTest {
         Optional<CustomerRpmService> service1 = serviceList.services().stream()
                 .filter(r -> r.url().equals("https://some.website.com/rpm1"))
                 .findFirst();
-        assertEquals("example1", service1.get().unit());
+        assertEquals("example1", service1.get().unitName());
         assertEquals(200.0, service1.get().memoryLimitMb());
 
         Optional<CustomerRpmService> service2 = serviceList.services().stream()
                 .filter(r -> r.url().equals("https://some.website.com/rpm2"))
                 .findFirst();
-        assertEquals("example2", service2.get().unit());
+        assertEquals("example2", service2.get().unitName());
         assertEquals(300.0, service2.get().memoryLimitMb());
-        assertEquals(Optional.of(100.0), service2.get().cpuLimitNanoSeconds());
+        assertEquals(Optional.of(1.0), service2.get().cpuLimitCores());
 
         // Empty variant
         CustomerRpmServiceList empty = Jackson.mapper().readValue("{\"services\": []}", CustomerRpmServiceList.class);
@@ -62,12 +62,18 @@ public class CustomerRpmServiceTest {
         // Invalid service configuration
         var invalidJson = "{\"services\": [{ \"badUrlField\": \"no_thanks\" }]}";
         assertThrows(JsonProcessingException.class, () -> Jackson.mapper().readValue(invalidJson, CustomerRpmServiceList.class));
+
+        // Negative CPU treated as no limit
+        var negCpuJson = "{\"services\": [{ \"url\": \"test\", \"unit\": \"test\", \"memoryMb\": 100.0, \"cpu\": -1.0 }]}";
+        CustomerRpmService negCpu = Jackson.mapper().readValue(negCpuJson, CustomerRpmServiceList.class).services().get(0);
+        assertEquals(Optional.empty(), negCpu.cpuLimitCores());
+        assertThrows(JsonProcessingException.class, () -> Jackson.mapper().readValue(invalidJson, CustomerRpmServiceList.class));
     }
 
     @Test
     void customer_rpm_services_serialize() throws JsonProcessingException {
         CustomerRpmService service1 = new CustomerRpmService("foo", "https://some.website.com/rpm1", 123.4, null);
-        CustomerRpmService service2 = new CustomerRpmService("bar", "https://some.website.com/rpm2", 567.8, 100.0);
+        CustomerRpmService service2 = new CustomerRpmService("bar", "https://some.website.com/rpm2", 567.8, 1.0);
         CustomerRpmServiceList serviceList = new CustomerRpmServiceList(List.of(service1, service2));
         var mapper = Jackson.mapper();
         String serialized = mapper.writeValueAsString(serviceList);

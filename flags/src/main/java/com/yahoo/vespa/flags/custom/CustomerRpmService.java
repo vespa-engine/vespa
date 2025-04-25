@@ -34,32 +34,33 @@ public class CustomerRpmService {
 
     /**
      * Memory limit in megabytes (MB) for the service unit.
-     * This limit is enforced by the operating system via the systemd cgroup.
+     * This limit will be enforced by the host operating system.
      */
-    @JsonProperty(value = "memoryLimitMb", required = true)
+    @JsonProperty(value = "memoryMb", required = true)
     private final double memoryLimitMb;
 
     /**
-     * Optional CPU usage limit in nanoseconds for the service unit.
-     * Controlled by systemd's cgroup configuration. Null indicates no limit.
+     * Optional CPU limit for the service unit in fraction of cores, e.g
+     * 0.5 is 50% of one core, 2.0 is 100% of 2 cores. This limit will
+     * be enforced by the host operating system. Null indicates no hard limit.
      */
-    @JsonProperty("cpuLimitNanoSeconds")
-    private final Double cpuLimitNanoSeconds;
+    @JsonProperty("cpu")
+    private final Double cpuLimitCores;
 
     @JsonCreator
     public CustomerRpmService(
         @JsonProperty(value = "unit", required = true) String unit,
         @JsonProperty(value = "url", required = true) String url,
-        @JsonProperty(value = "memoryLimitMb", required = true) double memoryLimitMb,
-        @JsonProperty("cpuLimitNanoSeconds") Double cpuLimitNanoSeconds
+        @JsonProperty(value = "memoryMb", required = true) double memoryLimitMb,
+        @JsonProperty("cpu") Double cpuLimitCores
     ) {
         this.unit = Objects.requireNonNull(unit);
         this.url = Objects.requireNonNull(url);
         this.memoryLimitMb = memoryLimitMb;
-        this.cpuLimitNanoSeconds = cpuLimitNanoSeconds;
+        this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
     }
 
-    public String unit() {
+    public String unitName() {
         return unit;
     }
 
@@ -71,8 +72,8 @@ public class CustomerRpmService {
         return memoryLimitMb;
     }
 
-    public Optional<Double> cpuLimitNanoSeconds() {
-        return Optional.ofNullable(cpuLimitNanoSeconds);
+    public Optional<Double> cpuLimitCores() {
+        return Optional.ofNullable(cpuLimitCores);
     }
 
     @Override
@@ -84,12 +85,12 @@ public class CustomerRpmService {
             unit.equals(other.unit) &&
             url.equals(other.url) &&
             memoryLimitMb == other.memoryLimitMb &&
-            cpuLimitNanoSeconds().equals(other.cpuLimitNanoSeconds());
+            cpuLimitCores().equals(other.cpuLimitCores());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unit, url, memoryLimitMb, cpuLimitNanoSeconds);
+        return Objects.hash(unit, url, memoryLimitMb, cpuLimitCores);
     }
 
 }
