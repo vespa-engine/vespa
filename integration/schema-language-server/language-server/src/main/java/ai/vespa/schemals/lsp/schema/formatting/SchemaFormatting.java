@@ -9,10 +9,10 @@ import org.eclipse.lsp4j.Position;
 import org.eclipse.lsp4j.Range;
 import org.eclipse.lsp4j.TextEdit;
 
-import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.context.EventFormattingContext;
 import ai.vespa.schemals.context.EventRangeFormattingContext;
-import ai.vespa.schemals.parser.Token.TokenType;
+import ai.vespa.schemals.lsp.schema.formatting.FormattingUtils.FormatPositionInformation;
+import ai.vespa.schemals.lsp.schema.formatting.FormattingUtils.LineRange;
 import ai.vespa.schemals.parser.ast.LBRACE;
 import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.RBRACE;
@@ -26,19 +26,6 @@ import ai.vespa.schemals.tree.SchemaNode;
 import ai.vespa.schemals.tree.Node.LanguageType;
 
 public class SchemaFormatting {
-    private record LineRange(
-        int firstLine,
-        int lastLine
-    ) {}
-
-    private record FormatPositionInformation(
-            // One unit of indent is one tab or "tabSize" spaces.
-            int indentLevel, 
-            // Indicates if the current node starts a new line during traversal.
-            boolean nodeStartsLine,
-            Optional<LineRange> formatRange
-        ) {}
-
     /*
      * Compute text edits that will prettify the document.
      */
@@ -69,14 +56,15 @@ public class SchemaFormatting {
         LineRange range = new LineRange(context.getRange().getStart().getLine(), context.getRange().getEnd().getLine());
         List<Node> nodesInRange = new ArrayList<>();
         FormattingOptions options = context.getOptions();
-        findNodesInLineRange(root, range, nodesInRange);
+        FormattingUtils.findNodesInLineRange(root, range, nodesInRange);
         List<TextEdit> edits = new ArrayList<>();
 
         for (Node node : nodesInRange) {
-            Node containing = getFirstLbraceAncestor(node);
+            Node containing = FormattingUtils.getFirstLbraceAncestor(node);
             int indentLevel = 0;
             if (containing != null) {
-                indentLevel = computeNodeIndentLevel(containing, options) + 1;
+                indentLevel = FormattingUtils.computeNodeIndentLevel(containing, options);
+                if (!node.isASTInstance(openLbrace.class))indentLevel++;
             }
             formatTraverse(edits, node, new FormatPositionInformation(indentLevel, true, Optional.of(range)), options);
         }
@@ -84,54 +72,11 @@ public class SchemaFormatting {
         return edits;
     }
 
-    private static int computeNodeIndentLevel(Node containing, FormattingOptions options) {
-        int startCharacter = containing.getRange().getStart().getCharacter();
-        if (options.isInsertSpaces()) {
-            // return ceil
-            return (startCharacter + options.getTabSize() - 1) / options.getTabSize();
-        }
-        // assume its already indented using tabs
-        return startCharacter;
-    }
-
-    /*
-     * Returns kind of a minimal covering set of nodes for the given (line)range,
-     * i.e. it never includes two nodes with an ancestor relationship in the result.
-     */
-    private static void findNodesInLineRange(Node node, LineRange range, List<Node> result) {
-        int nodeFirstLine = node.getRange().getStart().getLine();
-        if (nodeFirstLine > range.lastLine()) return;
-        if (nodeFirstLine >= range.firstLine()) {
-            result.add(node);
-            return;
-        }
-
-        for (Node child : node) {
-            findNodesInLineRange(child, range, result);
-        }
-    }
-
-    private static Node getFirstLbraceAncestor(Node node) {
-        for (Node parent = node.getParent(); parent != null; parent = parent.getParent()) {
-            if (getNodeLbraceIndex(parent) != -1) return parent;
-        }
-        return null;
-    }
-
-    private static int getNodeLbraceIndex(Node node) {
-        for (int i = 0; i < node.size(); ++i) {
-            if (node.get(i).isASTInstance(openLbrace.class)) {
-                return i;
-            }
-        }
-        return -1;
-    }
-
 
     private static void formatTraverse(
         List<TextEdit> edits, 
         Node node, 
-        FormatPositionInformation info, 
+        FormattingUtils.FormatPositionInformation info, 
         FormattingOptions options) 
     {
         if (!node.isSchemaNode()) {
@@ -146,7 +91,6 @@ public class SchemaFormatting {
             if (info.formatRange().get().lastLine() < nodeFirstLine || nodeLastLine < info.formatRange().get().firstLine()) return;
         }
 
-
         // Don't apply formatting on NL
         if (node.isASTInstance(NL.class)) return;
 
@@ -155,7 +99,7 @@ public class SchemaFormatting {
         else
             formatLineMiddleNodePosition(edits, node);
 
-        int lbraceIndex = getNodeLbraceIndex(node);
+        int lbraceIndex = FormattingUtils.getNodeLbraceIndex(node);
         if (lbraceIndex != -1)
             formatLbracePosition(edits, node.get(lbraceIndex));
 
@@ -163,7 +107,7 @@ public class SchemaFormatting {
         for (int i = 0; i < node.size(); ++i) {
             Node child = node.get(i);
 
-            int indentLevel = info.indentLevel;
+            int indentLevel = info.indentLevel();
             boolean childStartsNewLine = lbraceIndex != -1 && i > lbraceIndex;
             if (childStartsNewLine)++indentLevel;
 
@@ -193,12 +137,12 @@ public class SchemaFormatting {
      */
     private static void formatLineStartNodePosition(List<TextEdit> edits, Node node, FormatPositionInformation info, FormattingOptions options) {
         if (node.isASTInstance(Root.class)) return; // pseudo-element that should not be formatted
-        if (isEOF(node)) return;
+        if (FormattingUtils.isEOF(node)) return;
 
-        int indentLevel = info.indentLevel;
+        int indentLevel = info.indentLevel();
         if (node.isASTInstance(RBRACE.class))--indentLevel;
 
-        String indentationString = createIndentationString(indentLevel, options);
+        String indentationString = FormattingUtils.createIndentationString(indentLevel, options);
 
         // Insert a new line + indent if node is not on its own line
         if (node.getPreviousSibling() != null) {
@@ -240,7 +184,7 @@ public class SchemaFormatting {
 
         String insertText = "";
 
-        if (shouldHaveSpaceBetween(prev, node))
+        if (FormattingUtils.shouldHaveSpaceBetween(prev, node))
             insertText = " ";
 
         Range range = new Range(prev.getRange().getEnd(), node.getRange().getStart());
@@ -259,26 +203,6 @@ public class SchemaFormatting {
             range,
             insertText
         ));
-    }
-
-    private static boolean shouldHaveSpaceBetween(Node left, Node right) {
-        String leftText = left.getLastLeafDescendant().getText();
-        String rightText = right.getText();
-        if (leftText.isEmpty() || rightText.isEmpty()) return false;
-
-        int leftLast   = leftText.codePointAt(leftText.length() - 1);
-        int rightFirst = rightText.codePointAt(0);
-        if (Character.isLetterOrDigit(rightFirst) && Character.isLetterOrDigit(leftLast)) return true;
-        if (rightFirst == '.' || rightFirst == ':') return false;
-        if (leftLast == ':' || leftLast == ',' || leftLast == ')') return true;
-        return false;
-    }
-
-    private static boolean isEOF(Node node) {
-        if (node == null) return false;
-        if (node.getSchemaNode() == null) return false;
-        if (node.getSchemaNode().getOriginalSchemaNode() == null) return false;
-        return node.getSchemaNode().getOriginalSchemaNode().getType() == TokenType.EOF;
     }
 
     /*
@@ -300,17 +224,6 @@ public class SchemaFormatting {
             nodeBeforeLbrace.getRange().getEnd(), 
             LBRACENode.getRange().getStart()
         ), " "));
-    }
-
-    /*
-     * Gives a string of either tabs or spaces, depending on options
-     */
-    private static String createIndentationString(int indentLevel, FormattingOptions options) {
-        if (indentLevel == 0) return "";
-        if (options.isInsertSpaces()) {
-            return new String(new char[indentLevel * options.getTabSize()]).replace("\0", " ");
-        }
-        return new String(new char[indentLevel]).replace("\0", "\t");
     }
 
     /*
