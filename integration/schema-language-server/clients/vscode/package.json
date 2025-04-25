@@ -85,7 +85,8 @@
     "copy-images": "cp ../../resources/* ./images",
     "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/ && npm run lemminx-install",
     "lemminx-install": "mkdir -p server && cp ../../lemminx-vespa/target/lemminx-vespa-jar-with-dependencies.jar ./server/",
-    "publish": "npm run compile && node out/publish.js"
+    "changenotes": "echo \"## What's New\" | cat ./README.md.in - ../../resources/CHANGENOTES.txt > README.md",
+    "publish": "npm run compile && npm run changenotes && node out/publish.js"
   },
   "devDependencies": {
     "@types/hasbin": "^1.2.2",
