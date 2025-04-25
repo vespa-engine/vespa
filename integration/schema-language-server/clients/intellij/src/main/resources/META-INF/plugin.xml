@@ -32,10 +32,6 @@
 The plugin requires <a href="https://docs.vespa.ai/en/vespa-cli.html">Vespa CLI</a> to be installed to be able to run Vespa Queries from <code>.yql</code> files.
 
   ]]></description>
-  <change-notes><![CDATA[
-<h2>Simple support for YQL</h2>
-The plugin now supports syntax highlighting of <code>.yql</code> files, in addition to run the queries directly from the editor.
-]]></change-notes>
   <depends>com.intellij.modules.platform</depends>
   <depends>com.redhat.devtools.lsp4ij</depends>
   <extensions defaultExtensionNs="com.redhat.devtools.lsp4ij">
