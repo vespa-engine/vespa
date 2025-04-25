@@ -502,15 +502,15 @@ TOKEN :
 | < DISTANCE_METRIC: "distance-metric" >
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
-| < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* >
 | < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* ("\n")? >
+| < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* >
 | < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* ("\n")? >
+| < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* >
 | < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
@@ -549,9 +549,9 @@ TOKEN :
 | < URI_PATH: <HTTP> <COLON> ("//")? (["a"-"z","A"-"Z","0"-"9","_","-", "/", ".",":"])+ >
 | < LESSTHAN: "<" >
 | < GREATERTHAN: ">" >
+| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
+| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
 | < VARIABLE: "$" <IDENTIFIER> >
-| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
-| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* ("\n")? >
 ;
 
 
@@ -708,7 +708,7 @@ ParsedDocument namedDocument() :
 
     ( <DOCUMENT> name = identifierStr() (<NL>)* { document = new ParsedDocument(name); }
       [ inheritsDocument(document) (<NL>)* ]
-      <LBRACE> (<NL>)* (documentBodyElm(document) | <NL>)* <RBRACE> )
+      openLbrace() (documentBodyElm(document) | <NL>)* <RBRACE> )
     {
         return document;
     }
@@ -2345,7 +2345,7 @@ void inputsElm(ParsedRankProfile profile) :
     List<Reference> seenInputs = new ArrayList<>();
 }
 
-    <INPUTS> <LBRACE> (<NL>)*
+    <INPUTS> openLbrace()
     (
         reference = inputElm(profile) { seenInputs.add(reference); }
         (<NL> { seenInputs.add(null); })*
@@ -2781,7 +2781,7 @@ void constantsElm(ParsedSchema schema, ParsedRankProfile profile) :
     String name;
 }
 
-    <CONSTANTS> <LBRACE> (<NL>)*
+    <CONSTANTS> openLbrace()
     ( constantElm(schema, profile) (<NL>)* )*
     <RBRACE>
 ;
@@ -2843,7 +2843,7 @@ void constantTensor(ParsedRankProfile profile, Reference name) :
     TensorType type = null;
 }
 
-    <LBRACE> (<NL>)*
+    openLbrace
       (( tensorString = tensorValuePrefixedByValue() |
          type = tensorTypeWithPrefix(constantTensorErrorMessage(profile.name(), name)) ) (<NL>)* )* <RBRACE>
     { profile.add(new RankProfile.Constant(name, type != null ? Tensor.from(type, tensorString) : Tensor.from(tensorString)));

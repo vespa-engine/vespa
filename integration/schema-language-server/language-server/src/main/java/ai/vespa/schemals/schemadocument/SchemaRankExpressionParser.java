@@ -330,7 +330,7 @@ public class SchemaRankExpressionParser {
             Position endPos = node.getRange().getEnd();
             Range range = new Range(startPos, endPos);
             newChildren.add(tokenFromRawText(context, node, TokenType.RBRACE, "}", range));
-        } else {
+        } else if (metaData.expressionOffset().getLine() > 0) { // only simulate newline if there actually is a newline.
             Position startPos = new Position(node.getRange().getEnd().getLine(), node.getRange().getEnd().getCharacter());
             Position endPos   = new Position(node.getRange().getEnd().getLine(), node.getRange().getEnd().getCharacter() + 1);
             Range range = new Range(startPos, endPos);
