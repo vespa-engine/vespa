@@ -15,7 +15,7 @@ Version::Version(int major, int minor, int micro, const string & qualifier)
       _micro(micro),
       _qualifier(qualifier),
       _stringValue(),
-      _fullStringValue()
+      _abbreviatedStringValue()
 {
     initialize();
 }
@@ -37,7 +37,7 @@ Version::initialize()
     } else if (_major > 0) {
         buf << _major;
     }
-    _stringValue = buf.view();
+    _abbreviatedStringValue = buf.view();
 
     buf.clear();
     if (_qualifier != "") {
@@ -45,7 +45,7 @@ Version::initialize()
     } else {
         buf << _major << "." << _minor << "." << _micro;
     }
-    _fullStringValue = buf.view();
+    _stringValue = buf.view();
 
     if ((_major < 0) || (_minor < 0) || (_micro < 0) || !_qualifier.empty()) {
         verifySanity();
@@ -100,7 +100,7 @@ Version::Version(const string & versionString)
       _micro(0),
       _qualifier(),
       _stringValue(),
-      _fullStringValue()
+      _abbreviatedStringValue()
 {
     if (!versionString.empty()) {
         StringTokenizer components(versionString, ".", ""); // Split on dot

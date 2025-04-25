@@ -160,7 +160,7 @@ std::string respond_version() {
     json.beginObject();
 
     json.appendKey("version");
-    json.appendString(vespalib::Vtag::currentVersion.toFullString());
+    json.appendString(vespalib::Vtag::currentVersion.toString());
 
     json.endObject();
     return json.str();

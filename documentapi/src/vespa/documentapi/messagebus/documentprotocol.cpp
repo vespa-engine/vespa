@@ -157,7 +157,7 @@ DocumentProtocol::encode(const vespalib::Version &version, const mbus::Routable 
         document::StringUtil::printAsHex(message, blob.data(), blob.size());
         LOG(spam, "Encoded message of protocol %s type %u using version %s serialization:\n%s",
             routable.getProtocol().c_str(), routable.getType(),
-            version.toString().c_str(), message.str().c_str());
+            version.toAbbreviatedString().c_str(), message.str().c_str());
     }
     return blob;
 }

@@ -11,7 +11,7 @@ using End = vespalib::JsonStream::End;
 }
 void VersionReporter::report(vespalib::JsonStream& jsonreport) {
     jsonreport << "vtag" << Object()
-               << "version" << vespalib::Vtag::currentVersion.toFullString()
+               << "version" << vespalib::Vtag::currentVersion.toString()
                << End();
 }
 

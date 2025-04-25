@@ -12,6 +12,6 @@ int main(int, char **)
     printf("nice version:\n\t");
     vespalib::Vtag::printVersionNice();
     printf("\n");
-    printf("currentVersion object: %s\n", vespalib::Vtag::currentVersion.toFullString().c_str());
+    printf("currentVersion object: %s\n", vespalib::Vtag::currentVersion.toString().c_str());
     return 0;
 }

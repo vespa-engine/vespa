@@ -50,8 +50,8 @@ encodeMessage(const ProtocolSerialization & serializer,
             "%s serialization as version is %s:\n%s",
             routable.getProtocol().c_str(),
             message.getInternalMessage()->getType().toString().c_str(),
-            serializerVersion.toFullString().c_str(),
-            actualVersion.toFullString().c_str(),
+            serializerVersion.toString().c_str(),
+            actualVersion.toString().c_str(),
             messageStream.str().c_str());
     }
 
@@ -71,8 +71,8 @@ StorageProtocol::encode(const vespalib::Version& version,
             LOGBP(error,
                   "Cannot encode message on version %s."
                   "Minimum version is %s. Cannot serialize %s.",
-                  version.toFullString().c_str(),
-                  version7_0.toFullString().c_str(),
+                  version.toString().c_str(),
+                  version7_0.toString().c_str(),
                   message.getInternalMessage()->toString().c_str());
 
             return mbus::Blob(0);
@@ -80,7 +80,7 @@ StorageProtocol::encode(const vespalib::Version& version,
         return encodeMessage(_serializer7_0, routable, message, version7_0, version);
     } catch (std::exception & e) {
         LOGBP(warning, "Failed to encode %s storage protocol message %s: %s",
-              version.toFullString().c_str(),
+              version.toString().c_str(),
               message.getInternalMessage()->toString().c_str(),
               e.what());
     }
@@ -103,8 +103,8 @@ decodeMessage(const ProtocolSerialization & serializer,
             "Decoding %s of version %s "
             "using %s decoder from:\n%s",
             type.toString().c_str(),
-            actualVersion.toFullString().c_str(),
-            serializerVersion.toFullString().c_str(),
+            actualVersion.toString().c_str(),
+            serializerVersion.toString().c_str(),
             messageStream.str().c_str());
     }
 
@@ -132,14 +132,14 @@ StorageProtocol::decode(const vespalib::Version & version,
         if (version < version7_0) {
             LOGBP(error,
                   "Cannot decode message on version %s. Minimum version is %s.",
-                  version.toFullString().c_str(),
-                  version7_0.toFullString().c_str());
+                  version.toString().c_str(),
+                  version7_0.toString().c_str());
             return mbus::Routable::UP();
         }
         return decodeMessage(_serializer7_0, data, type, version7_0, version);
     } catch (std::exception & e) {
         std::ostringstream ost;
-        ost << "Failed to decode " << version.toFullString() << " messagebus "
+        ost << "Failed to decode " << version.toString() << " messagebus "
             << "storage protocol message: " << e.what() << "\n";
         document::StringUtil::printAsHex(ost, data.data(), data.size());
         LOGBP(warning, "%s", ost.str().c_str());

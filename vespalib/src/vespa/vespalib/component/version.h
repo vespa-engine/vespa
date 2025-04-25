@@ -34,7 +34,7 @@ private:
     int _micro;
     string _qualifier;
     string _stringValue;
-    string _fullStringValue;
+    string _abbreviatedStringValue;
 
     /**
      * Must be called on construction after the component values are set.
@@ -103,13 +103,13 @@ public:
      * omitting the remaining parts after reaching the first unspecified component.
      * Unspecified version component is equivalent to 0 (or the empty string for qualifier).
      */
-    const string & toString() const { return _stringValue; }
+    const string & toAbbreviatedString() const { return _abbreviatedStringValue; }
 
     /**
      * @brief Returns the string representation of this version identifier as major.minor.micro,
      * or major.minor.micro.qualifier if a non-empty qualifier was specified.
      */
-    const string & toFullString() const { return _fullStringValue; }
+    const string & toString() const { return _stringValue; }
 
     /**
      * @brief Compares this Version object to another.

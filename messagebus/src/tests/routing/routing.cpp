@@ -629,7 +629,7 @@ RoutingTest::testTrace(TestData &data, const std::vector<string> &expected)
 bool
 RoutingTest::testTrace(const std::vector<string> &expected, const Trace &trace)
 {
-    const string& version = vespalib::Vtag::currentVersion.toFullString();
+    const string& version = vespalib::Vtag::currentVersion.toString();
     string actual = trace.toString();
     size_t pos = 0;
     for (uint32_t i = 0; i < expected.size(); ++i) {

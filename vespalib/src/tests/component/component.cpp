@@ -157,8 +157,8 @@ TEST("testEmpty")
     Version ev;
     VersionSpecification evs;
 
-    EXPECT_EQUAL("", ev.toString());
-    EXPECT_EQUAL("0.0.0", ev.toFullString());
+    EXPECT_EQUAL("", ev.toAbbreviatedString());
+    EXPECT_EQUAL("0.0.0", ev.toString());
     EXPECT_EQUAL("*.*.*", evs.toFullString());
 
     EXPECT_TRUE(ev == Version(0,0,0,""));
@@ -178,7 +178,7 @@ TEST("testSimple")
     EXPECT_EQUAL(3, v.getMicro());
     EXPECT_EQUAL("qualifier", v.getQualifier());
 
-    EXPECT_EQUAL("1.2.3.qualifier", v.toFullString());
+    EXPECT_EQUAL("1.2.3.qualifier", v.toString());
 
     // test VersionSpecification:
 
@@ -203,60 +203,60 @@ TEST("testZeros")
     // test Version:
 
     Version v000(0, 0, 0, "");
-    EXPECT_EQUAL("", v000.toString());
-    EXPECT_EQUAL("0.0.0", v000.toFullString());
+    EXPECT_EQUAL("", v000.toAbbreviatedString());
+    EXPECT_EQUAL("0.0.0", v000.toString());
     Version v000s("");
-    EXPECT_EQUAL("", v000s.toString());
-    EXPECT_EQUAL("0.0.0", v000s.toFullString());
+    EXPECT_EQUAL("", v000s.toAbbreviatedString());
+    EXPECT_EQUAL("0.0.0", v000s.toString());
 
     Version v100(1, 0, 0, "");
-    EXPECT_EQUAL("1", v100.toString());
-    EXPECT_EQUAL("1.0.0", v100.toFullString());
+    EXPECT_EQUAL("1", v100.toAbbreviatedString());
+    EXPECT_EQUAL("1.0.0", v100.toString());
     Version v100s("1");
-    EXPECT_EQUAL("1", v100s.toString());
-    EXPECT_EQUAL("1.0.0", v100s.toFullString());
+    EXPECT_EQUAL("1", v100s.toAbbreviatedString());
+    EXPECT_EQUAL("1.0.0", v100s.toString());
 
     Version v110(1, 1, 0, "");
-    EXPECT_EQUAL("1.1", v110.toString());
-    EXPECT_EQUAL("1.1.0", v110.toFullString());
+    EXPECT_EQUAL("1.1", v110.toAbbreviatedString());
+    EXPECT_EQUAL("1.1.0", v110.toString());
     Version v110s("1.1");
-    EXPECT_EQUAL("1.1", v110s.toString());
-    EXPECT_EQUAL("1.1.0", v110.toFullString());
+    EXPECT_EQUAL("1.1", v110s.toAbbreviatedString());
+    EXPECT_EQUAL("1.1.0", v110.toString());
 
     Version v111(1, 1, 1, "");
+    EXPECT_EQUAL("1.1.1", v111.toAbbreviatedString());
     EXPECT_EQUAL("1.1.1", v111.toString());
-    EXPECT_EQUAL("1.1.1", v111.toFullString());
     Version v111s("1.1.1");
+    EXPECT_EQUAL("1.1.1", v111s.toAbbreviatedString());
     EXPECT_EQUAL("1.1.1", v111s.toString());
-    EXPECT_EQUAL("1.1.1", v111s.toFullString());
 
     Version v000q(0, 0, 0, "qualifier");
+    EXPECT_EQUAL("0.0.0.qualifier", v000q.toAbbreviatedString());
     EXPECT_EQUAL("0.0.0.qualifier", v000q.toString());
-    EXPECT_EQUAL("0.0.0.qualifier", v000q.toFullString());
     Version v000qs("0.0.0.qualifier");
+    EXPECT_EQUAL("0.0.0.qualifier", v000qs.toAbbreviatedString());
     EXPECT_EQUAL("0.0.0.qualifier", v000qs.toString());
-    EXPECT_EQUAL("0.0.0.qualifier", v000qs.toFullString());
 
     Version v100q(1, 0, 0, "qualifier");
+    EXPECT_EQUAL("1.0.0.qualifier", v100q.toAbbreviatedString());
     EXPECT_EQUAL("1.0.0.qualifier", v100q.toString());
-    EXPECT_EQUAL("1.0.0.qualifier", v100q.toFullString());
     Version v100qs("1.0.0.qualifier");
+    EXPECT_EQUAL("1.0.0.qualifier", v100qs.toAbbreviatedString());
     EXPECT_EQUAL("1.0.0.qualifier", v100qs.toString());
-    EXPECT_EQUAL("1.0.0.qualifier", v100qs.toFullString());
 
     Version v110q(1, 1, 0, "qualifier");
+    EXPECT_EQUAL("1.1.0.qualifier", v110q.toAbbreviatedString());
     EXPECT_EQUAL("1.1.0.qualifier", v110q.toString());
-    EXPECT_EQUAL("1.1.0.qualifier", v110q.toFullString());
     Version v110qs("1.1.0.qualifier");
+    EXPECT_EQUAL("1.1.0.qualifier", v110qs.toAbbreviatedString());
     EXPECT_EQUAL("1.1.0.qualifier", v110qs.toString());
-    EXPECT_EQUAL("1.1.0.qualifier", v110qs.toFullString());
 
     Version v111q(1, 1, 1, "qualifier");
+    EXPECT_EQUAL("1.1.1.qualifier", v111q.toAbbreviatedString());
     EXPECT_EQUAL("1.1.1.qualifier", v111q.toString());
-    EXPECT_EQUAL("1.1.1.qualifier", v111q.toFullString());
     Version v111qs("1.1.1.qualifier");
+    EXPECT_EQUAL("1.1.1.qualifier", v111qs.toAbbreviatedString());
     EXPECT_EQUAL("1.1.1.qualifier", v111qs.toString());
-    EXPECT_EQUAL("1.1.1.qualifier", v111qs.toFullString());
 
     // test VersionSpecification:
 
