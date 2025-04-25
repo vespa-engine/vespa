@@ -6,6 +6,7 @@ import org.eclipse.lsp4j.CodeActionParams;
 import org.eclipse.lsp4j.CodeLensParams;
 import org.eclipse.lsp4j.CompletionParams;
 import org.eclipse.lsp4j.DocumentFormattingParams;
+import org.eclipse.lsp4j.DocumentRangeFormattingParams;
 import org.eclipse.lsp4j.DocumentSymbolParams;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 import org.eclipse.lsp4j.SemanticTokensParams;
@@ -86,7 +87,24 @@ public class EventContextCreator {
     }
 
     public EventFormattingContext createContext(DocumentFormattingParams params) throws InvalidContextException {
-        return new EventFormattingContext(scheduler, schemaIndex, messageHandler, params.getTextDocument(), params.getOptions());
+        return new EventFormattingContext(
+            scheduler, 
+            schemaIndex, 
+            messageHandler, 
+            params.getTextDocument(), 
+            params.getOptions()
+        );
+    }
+
+    public EventRangeFormattingContext createContext(DocumentRangeFormattingParams params) throws InvalidContextException {
+        return new EventRangeFormattingContext(
+            scheduler, 
+            schemaIndex, 
+            messageHandler, 
+            params.getTextDocument(), 
+            params.getOptions(), 
+            params.getRange()
+        );
     }
 
 }

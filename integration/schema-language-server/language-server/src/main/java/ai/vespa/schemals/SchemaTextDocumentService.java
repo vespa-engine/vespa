@@ -60,6 +60,7 @@ import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
 import ai.vespa.schemals.context.EventFormattingContext;
+import ai.vespa.schemals.context.EventRangeFormattingContext;
 import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.common.completion.CommonCompletion;
@@ -211,8 +212,15 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<List<? extends TextEdit>> rangeFormatting(DocumentRangeFormattingParams documentRangeFormattingParams) {
-        return null;
+    public CompletableFuture<List<? extends TextEdit>> rangeFormatting(DocumentRangeFormattingParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            try {
+                EventRangeFormattingContext context = eventContextCreator.createContext(params);
+                return SchemaFormatting.computeRangeFormattingEdits(context);
+            } catch (InvalidContextException ignore) {
+            }
+            return List.of();
+        });
     }
 
     @Override
