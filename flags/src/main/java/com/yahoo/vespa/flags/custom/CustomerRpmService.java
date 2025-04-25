@@ -36,7 +36,7 @@ public class CustomerRpmService {
      * Memory limit in megabytes (MB) for the service unit.
      * This limit will be enforced by the host operating system.
      */
-    @JsonProperty(value = "memoryMb", required = true)
+    @JsonProperty(value = "memoryMB", required = true)
     private final double memoryLimitMb;
 
     /**
@@ -51,7 +51,7 @@ public class CustomerRpmService {
     public CustomerRpmService(
         @JsonProperty(value = "unit", required = true) String unit,
         @JsonProperty(value = "url", required = true) String url,
-        @JsonProperty(value = "memoryMb", required = true) double memoryLimitMb,
+        @JsonProperty(value = "memoryMB", required = true) double memoryLimitMb,
         @JsonProperty("cpu") Double cpuLimitCores
     ) {
         this.unit = Objects.requireNonNull(unit);

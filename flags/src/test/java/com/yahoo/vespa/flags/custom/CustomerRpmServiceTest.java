@@ -23,12 +23,12 @@ public class CustomerRpmServiceTest {
                         {
                             "unit": "example1",
                             "url": "https://some.website.com/rpm1",
-                            "memoryMb": 200.0
+                            "memoryMB": 200.0
                         },
                         {
                             "unit": "example2",
                             "url": "https://some.website.com/rpm2",
-                            "memoryMb": 300.0,
+                            "memoryMB": 300.0,
                             "cpu": 1.0
                         }
                    ]
@@ -64,7 +64,7 @@ public class CustomerRpmServiceTest {
         assertThrows(JsonProcessingException.class, () -> Jackson.mapper().readValue(invalidJson, CustomerRpmServiceList.class));
 
         // Negative CPU treated as no limit
-        var negCpuJson = "{\"services\": [{ \"url\": \"test\", \"unit\": \"test\", \"memoryMb\": 100.0, \"cpu\": -1.0 }]}";
+        var negCpuJson = "{\"services\": [{ \"url\": \"test\", \"unit\": \"test\", \"memoryMB\": 100.0, \"cpu\": -1.0 }]}";
         CustomerRpmService negCpu = Jackson.mapper().readValue(negCpuJson, CustomerRpmServiceList.class).services().get(0);
         assertEquals(Optional.empty(), negCpu.cpuLimitCores());
         assertThrows(JsonProcessingException.class, () -> Jackson.mapper().readValue(invalidJson, CustomerRpmServiceList.class));
