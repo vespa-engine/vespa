@@ -219,6 +219,17 @@
     ],
     "fields" : [ ]
   },
+  "ai.vespa.llm.clients.NvidiaTriton" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>()"
+    ],
+    "fields" : [ ]
+  },
   "ai.vespa.llm.clients.OnnxEncoderDecoder$DecoderOptions$SearchMethod" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],

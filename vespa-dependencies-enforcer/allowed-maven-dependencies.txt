@@ -19,6 +19,7 @@ com.fasterxml.jackson.datatype:jackson-datatype-jsr310:${jackson2.vespa.version}
 com.fasterxml.jackson.module:jackson-module-kotlin:${jackson2.vespa.version}
 com.fasterxml.woodstox:woodstox-core:${woodstox.vespa.version}
 com.github.luben:zstd-jni:${luben.zstd.vespa.version}
+com.google.api.grpc:proto-google-common-protos:2.51.0
 com.google.code.findbugs:jsr305:${findbugs.vespa.version}
 com.google.code.gson:gson:${gson.vespa.version}
 com.google.errorprone:error_prone_annotations:${error-prone-annotations.vespa.version}
@@ -80,6 +81,14 @@ de.kherud:llama:${kherud.llama.vespa.version}
 io.airlift:aircompressor:${aircompressor.vespa.version}
 io.airlift:airline:${airline.vespa.version}
 io.dropwizard.metrics:metrics-core:${dropwizard.metrics.vespa.version}
+io.grpc:grpc-api:${grpc.vespa.version}
+io.grpc:grpc-context:${grpc.vespa.version}
+io.grpc:grpc-core:${grpc.vespa.version}
+io.grpc:grpc-netty-shaded:${grpc.vespa.version}
+io.grpc:grpc-protobuf-lite:${grpc.vespa.version}
+io.grpc:grpc-protobuf:${grpc.vespa.version}
+io.grpc:grpc-stub:${grpc.vespa.version}
+io.grpc:grpc-util:${grpc.vespa.version}
 io.jsonwebtoken:jjwt-api:${java-jjwt.vespa.version}
 io.jsonwebtoken:jjwt-impl:${java-jjwt.vespa.version}
 io.jsonwebtoken:jjwt-jackson:${java-jjwt.vespa.version}
@@ -104,6 +113,7 @@ io.netty:netty-transport-classes-epoll:${netty.vespa.version}
 io.netty:netty-transport-native-epoll:${netty.vespa.version}:linux-x86_64
 io.netty:netty-transport-native-unix-common:${netty.vespa.version}
 io.netty:netty-transport:${netty.vespa.version}
+io.perfmark:perfmark-api:0.27.0
 io.prometheus:simpleclient:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_common:${prometheus.client.vespa.version}
 io.prometheus:simpleclient_tracer_common:${prometheus.client.vespa.version}
@@ -112,6 +122,7 @@ io.prometheus:simpleclient_tracer_otel_agent:${prometheus.client.vespa.version}
 isorelax:isorelax:20030108
 jakarta.inject:jakarta.inject-api:${jakarta.inject.vespa.version}
 javax.activation:javax.activation-api:${javax.activation-api.vespa.version}
+javax.annotation:javax.annotation-api:1.3.2
 javax.inject:javax.inject:${javax.inject.vespa.version}
 javax.servlet:javax.servlet-api:${javax.servlet-api.vespa.version}
 javax.ws.rs:javax.ws.rs-api:${javax.ws.rs-api.vespa.version}
