@@ -14,7 +14,8 @@ Version::Version(int major, int minor, int micro, const string & qualifier)
       _minor(minor),
       _micro(micro),
       _qualifier(qualifier),
-      _stringValue()
+      _stringValue(),
+      _fullStringValue()
 {
     initialize();
 }
@@ -37,6 +38,15 @@ Version::initialize()
         buf << _major;
     }
     _stringValue = buf.view();
+
+    buf.clear();
+    if (_qualifier != "") {
+        buf << _major << "." << _minor << "." << _micro << "." << _qualifier;
+    } else {
+        buf << _major << "." << _minor << "." << _micro;
+    }
+    _fullStringValue = buf.view();
+
     if ((_major < 0) || (_minor < 0) || (_micro < 0) || !_qualifier.empty()) {
         verifySanity();
     }
@@ -89,7 +99,8 @@ Version::Version(const string & versionString)
       _minor(0),
       _micro(0),
       _qualifier(),
-      _stringValue(versionString)
+      _stringValue(),
+      _fullStringValue()
 {
     if (!versionString.empty()) {
         StringTokenizer components(versionString, ".", ""); // Split on dot
@@ -110,7 +121,7 @@ Version::Version(const string & versionString)
             throw IllegalArgumentException("too many dot-separated components in version string");
         }
     }
-    verifySanity();
+    initialize();
 }
 
 bool
