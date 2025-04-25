@@ -32,7 +32,7 @@ namespace {
 
 bool createDomainTest(TransLogClient & tls, const std::string & name, size_t preExistingDomains=0);
 std::unique_ptr<Session> openDomainTest(TransLogClient & tls, const std::string & name);
-bool fillDomainTest(Session * s1, const std::string & name);
+void fillDomainTest(Session * s1, const std::string & name);
 void fillDomainTest(Session * s1, size_t numPackets, size_t numEntries);
 void fillDomainTest(Session * s1, size_t numPackets, size_t numEntries, size_t entrySize);
 uint32_t countFiles(const std::string& dir);
@@ -284,10 +284,9 @@ openDomainTest(TransLogClient & tls, const std::string & name)
     return s1;
 }
 
-bool
+void
 fillDomainTest(Session * s1, const std::string & name)
 {
-    bool retval(true);
     Packet::Entry e1(1, 1, vespalib::ConstBufferRef("Content in buffer A", 20));
     Packet::Entry e2(2, 2, vespalib::ConstBufferRef("Content in buffer B", 20));
     Packet::Entry e3(3, 1, vespalib::ConstBufferRef("Content in buffer C", 20));
@@ -302,12 +301,8 @@ fillDomainTest(Session * s1, const std::string & name)
     assert(commit_res);
     commit_res = s1->commit(vespalib::ConstBufferRef(b.getHandle().data(), b.getHandle().size()));
     assert(commit_res);
-    try {
-        s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size()));
-        EXPECT_TRUE(false);
-    } catch (const std::runtime_error& e) {
-        EXPECT_EQ("commit failed with code -2. server says: Exception during commit on " + name + " : Incoming serial number(1) must be bigger than the last one (3).", e.what());
-    }
+    VESPA_EXPECT_EXCEPTION(s1->commit(vespalib::ConstBufferRef(a.getHandle().data(), a.getHandle().size())), std::runtime_error,
+                           "commit failed with code -2. server says: Exception during commit on " + name + " : Incoming serial number(1) must be bigger than the last one (3).");
     EXPECT_EQ(a.size(), 1u);
     EXPECT_EQ(a.range().from(), 1u);
     EXPECT_EQ(a.range().to(), 1u);
@@ -325,8 +320,6 @@ fillDomainTest(Session * s1, const std::string & name)
     e.deserialize(h);
     e.deserialize(h);
     EXPECT_EQ(h.size(), 0u);
-
-    return retval;
 }
 
 void
