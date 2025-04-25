@@ -157,7 +157,8 @@ TEST("testEmpty")
     Version ev;
     VersionSpecification evs;
 
-    EXPECT_EQUAL("", ev.toFullString());
+    EXPECT_EQUAL("", ev.toString());
+    EXPECT_EQUAL("0.0.0", ev.toFullString());
     EXPECT_EQUAL("*.*.*", evs.toFullString());
 
     EXPECT_TRUE(ev == Version(0,0,0,""));
