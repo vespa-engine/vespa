@@ -23,6 +23,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SchemaParser;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
+import ai.vespa.schemals.parser.ast.indexingOperationElm;
 import ai.vespa.schemals.parser.ParseException;
 import ai.vespa.schemals.parser.Node;
 
@@ -255,9 +256,12 @@ public class SchemaDocument implements DocumentManager {
 
     private static void traverseCST(SchemaNode node, ParseContext context, List<Diagnostic> diagnostics) {
         if (node.containsOtherLanguageData(LanguageType.INDEXING)) {
-            SchemaNode indexingNode = parseIndexingScript(node, context, diagnostics);
-            if (indexingNode != null) {
-                node.addChild(indexingNode);
+            if (node.get(node.size() - 1).isASTInstance(indexingOperationElm.class)) {
+                node.removeChild(node.size() - 1);
+            }
+            SchemaNode indexingRoot = parseIndexingScript(node, context, diagnostics);
+            if (indexingRoot != null) {
+                node.addChild(indexingRoot);
             }
         }
 

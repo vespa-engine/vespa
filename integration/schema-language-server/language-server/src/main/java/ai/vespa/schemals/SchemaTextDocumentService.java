@@ -59,12 +59,14 @@ import ai.vespa.schemals.common.ClientLogger;
 import ai.vespa.schemals.common.FileUtils;
 import ai.vespa.schemals.context.EventContextCreator;
 import ai.vespa.schemals.context.EventDocumentContext;
+import ai.vespa.schemals.context.EventFormattingContext;
 import ai.vespa.schemals.context.InvalidContextException;
 import ai.vespa.schemals.index.SchemaIndex;
 import ai.vespa.schemals.lsp.common.completion.CommonCompletion;
 import ai.vespa.schemals.lsp.schema.codeaction.SchemaCodeAction;
 import ai.vespa.schemals.lsp.schema.definition.SchemaDefinition;
 import ai.vespa.schemals.lsp.schema.documentsymbols.SchemaDocumentSymbols;
+import ai.vespa.schemals.lsp.schema.formatting.SchemaFormatting;
 import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
 import ai.vespa.schemals.lsp.schema.references.SchemaReferences;
 import ai.vespa.schemals.lsp.schema.rename.SchemaPrepareRename;
@@ -197,8 +199,15 @@ public class SchemaTextDocumentService implements TextDocumentService {
     }
 
     @Override
-    public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams documentFormattingParams) {
-        return null;
+    public CompletableFuture<List<? extends TextEdit>> formatting(DocumentFormattingParams params) {
+        return CompletableFutures.computeAsync((cancelChecker) -> {
+            try {
+                EventFormattingContext context = eventContextCreator.createContext(params);
+                return SchemaFormatting.computeFormattingEdits(context);
+            } catch (InvalidContextException ignore) {
+            }
+            return List.of();
+        });
     }
 
     @Override

@@ -97,6 +97,10 @@ public class CSTUtils {
         );
     }
 
+    public static boolean rangeIsEmpty(Range range) {
+        return !positionLT(range.getStart(), range.getEnd());
+    }
+
     /* Returns the last non-dirty node before the supplied position */
     public static Node getLastCleanNode(Node node, Position pos) {
         if (node == null) return null;

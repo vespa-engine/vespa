@@ -25,6 +25,7 @@ import ai.vespa.schemals.parser.Token.TokenType;
 import ai.vespa.schemals.parser.ast.EXPRESSION_SL;
 import ai.vespa.schemals.parser.ast.IDENTIFIER_WITH_DASH;
 import ai.vespa.schemals.parser.ast.MATCHFEATURES_SL;
+import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.RANKFEATURES_SL;
 import ai.vespa.schemals.parser.ast.SUMMARYFEATURES_SL;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
@@ -84,6 +85,7 @@ public class SchemaRankExpressionParser {
         put(TokenType.SUMMARYFEATURES_SL, SUMMARYFEATURES_SL.class);
         put(TokenType.MATCHFEATURES_SL, MATCHFEATURES_SL.class);
         put(TokenType.RANKFEATURES_SL, RANKFEATURES_SL.class);
+        put(TokenType.NL, NL.class);
     }};
 
     private static record ExpressionMetaData(
@@ -328,6 +330,11 @@ public class SchemaRankExpressionParser {
             Position endPos = node.getRange().getEnd();
             Range range = new Range(startPos, endPos);
             newChildren.add(tokenFromRawText(context, node, TokenType.RBRACE, "}", range));
+        } else if (metaData.expressionOffset().getLine() > 0) { // only simulate newline if there actually is a newline.
+            Position startPos = new Position(node.getRange().getEnd().getLine(), node.getRange().getEnd().getCharacter());
+            Position endPos   = new Position(node.getRange().getEnd().getLine(), node.getRange().getEnd().getCharacter() + 1);
+            Range range = new Range(startPos, endPos);
+            newChildren.add(tokenFromRawText(context, node, TokenType.NL, "\n", range));
         }
 
         node.clearChildren();
