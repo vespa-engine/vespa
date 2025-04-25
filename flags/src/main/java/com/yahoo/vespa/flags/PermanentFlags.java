@@ -2,6 +2,7 @@
 package com.yahoo.vespa.flags;
 
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
+import com.yahoo.vespa.flags.custom.CustomerRpmServiceList;
 import com.yahoo.vespa.flags.custom.RoleList;
 import com.yahoo.vespa.flags.custom.SharedHost;
 
@@ -174,6 +175,12 @@ public class PermanentFlags {
             "Whether (external) deployments should set verbose flag (will mean more logging in practice). " +
                     "Will only be used if flag in request is false (which is the default)",
             "Takes effect at next deployment");
+
+    public static final UnboundJacksonFlag<CustomerRpmServiceList> CUSTOMER_RPM_SERVICES = defineJacksonFlag(
+            "customer-rpm-services", CustomerRpmServiceList.empty(), CustomerRpmServiceList.class,
+            "Specifies customer rpm services to run on enclave hosts.",
+            "Takes effect on next host admin tick.",
+            TENANT_ID);
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
