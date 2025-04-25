@@ -13,13 +13,6 @@ repositories {
   mavenCentral()
 
   mavenLocal()
-  maven {
-    url = uri("file://${System.getProperty("user.home")}/.m2/repository")
-    metadataSources {
-      mavenPom()
-      artifact()
-    }
-  }
 
   maven {
     url = uri("https://repo.eclipse.org/content/repositories/lemminx")
@@ -29,6 +22,13 @@ repositories {
     }
   }
 
+  maven {
+    url = uri("file://${System.getProperty("user.home")}/.m2/repository")
+    metadataSources {
+      mavenPom()
+      artifact()
+    }
+  }
 
   intellijPlatform {
     defaultRepositories()
