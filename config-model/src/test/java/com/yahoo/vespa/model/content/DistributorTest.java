@@ -358,14 +358,15 @@ public class DistributorTest {
         assertEquals(-1, parseAndGetConfig(services).max_document_operation_message_size_bytes());
 
         assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024M")).max_document_operation_message_size_bytes());
+        assertEquals(1024 * 1024 * 1024, parseAndGetConfig(createServices("1024Mb")).max_document_operation_message_size_bytes());
 
         assertThrows(IllegalArgumentException.class,
-                     () -> parseAndGetConfig(createServices("3G")).max_document_operation_message_size_bytes(),
-                     "Invalid max-document-size value '3G': Value must be between 1 Mib and 2048 MiB");
+                     () -> parseAndGetConfig(createServices("3gb")).max_document_operation_message_size_bytes(),
+                     "Invalid max-document-size value '3gb': Value must be between 1 Mib and 2048 MiB");
 
         assertThrows(IllegalArgumentException.class,
-                     () -> parseAndGetConfig(createServices("1k")).max_document_operation_message_size_bytes(),
-                     "Invalid max-document-size value '1k': Value must be between 1 Mib and 2048 MiB");
+                     () -> parseAndGetConfig(createServices("1kb")).max_document_operation_message_size_bytes(),
+                     "Invalid max-document-size value '1kb': Value must be between 1 Mib and 2048 MiB");
     }
 
     private String createServices(String maxDocumentSize) {
