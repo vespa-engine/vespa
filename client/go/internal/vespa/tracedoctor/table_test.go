@@ -4,6 +4,7 @@ package tracedoctor
 
 import (
 	"bytes"
+	"github.com/mattn/go-runewidth"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -125,4 +126,10 @@ func TestRenderTableWithWideCharacters(t *testing.T) {
 		"│  1 │  1 │  1 │\n" +
 		"└────┴────┴────┘\n"
 	assert.Equal(t, expected, buf.String())
+}
+
+func TestSizeOfUnprintableCharacters(t *testing.T) {
+	for c := rune(0); c < 0x20; c++ {
+		assert.Equal(t, 0, runewidth.RuneWidth(c))
+	}
 }
