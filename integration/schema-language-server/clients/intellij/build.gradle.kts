@@ -6,18 +6,11 @@ plugins {
 
 group = "ai.vespa.schemals"
 version = File("VERSION").inputStream().readBytes().toString(Charsets.UTF_8).trim()
+val changeNotesTxt = File("../../resources/CHANGENOTES.txt").inputStream().readBytes().toString(Charsets.UTF_8)
 val JAVA_VERSION = "17"
 
 repositories {
   mavenCentral()
-
-  maven {
-    url = uri("https://repo.eclipse.org/content/repositories/lemminx")
-    metadataSources {
-      mavenPom()
-      artifact()
-    }
-  }
 
   mavenLocal()
   maven {
@@ -27,6 +20,15 @@ repositories {
       artifact()
     }
   }
+
+  maven {
+    url = uri("https://repo.eclipse.org/content/repositories/lemminx")
+    metadataSources {
+      mavenPom()
+      artifact()
+    }
+  }
+
 
   intellijPlatform {
     defaultRepositories()
@@ -101,6 +103,19 @@ tasks {
   patchPluginXml {
     sinceBuild.set("232")
     untilBuild.set(provider { null })
+
+    // Split changeNotesTxt into lines and wrap each line in <li></li>
+    changeNotes.set(
+      buildString {
+        append("<ul>")
+        changeNotesTxt
+          .lineSequence()
+          .filter { it.isNotBlank() }
+          .map { it.trim().removePrefix("-").trim() }
+          .forEach { append("<li>$it</li>") }
+        append("</ul>")
+      }
+    )
   }
 
   signPlugin {

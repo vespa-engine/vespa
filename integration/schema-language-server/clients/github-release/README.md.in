@@ -51,8 +51,3 @@ lspconfig.schemals.setup{
 
 ### Manual Installation
 If you don't want to use lspconfig you can refer to the [LSP documentation for Neovim](https://neovim.io/doc/user/lsp.html) for manually registering the server.
-## What's New
-- Added support for formatting Schema files and selections.
-- Added progress indication when indexing large workspaces.
-- Added basic support for completion in YQL files.
-- Minor bug fixes.

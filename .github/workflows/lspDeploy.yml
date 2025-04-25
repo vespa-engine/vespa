@@ -80,6 +80,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          echo "## What's New" | cat ./clients/github-release/README.md.in - ./resources/CHANGENOTES.txt > ./clients/github-release/README.md
           gh release create lsp-v${{ steps.retrieve_version.outputs.VERSION }} \
             --notes-file ./clients/github-release/README.md \
             --latest=false \
