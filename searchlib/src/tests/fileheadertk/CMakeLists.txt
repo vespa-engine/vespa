@@ -4,5 +4,6 @@ vespa_add_executable(searchlib_fileheadertk_test_app TEST
     fileheadertk_test.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_fileheadertk_test_app COMMAND searchlib_fileheadertk_test_app)
