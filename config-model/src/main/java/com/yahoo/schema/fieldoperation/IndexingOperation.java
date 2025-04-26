@@ -2,6 +2,7 @@
 package com.yahoo.schema.fieldoperation;
 
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -35,14 +36,17 @@ public class IndexingOperation implements FieldOperation {
 
     /** Creates an indexing operation which will use the simple linguistics implementation suitable for testing */
     public static IndexingOperation fromStream(SimpleCharStream input, boolean multiLine) throws ParseException {
-        return fromStream(input, multiLine, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), 
-                FieldGenerator.throwsOnUse.asMap());
+        return fromStream(input, multiLine, new SimpleLinguistics(),
+                          Chunker.throwsOnUse.asMap(), Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
     }
 
-    public static IndexingOperation fromStream(
-            SimpleCharStream input, boolean multiLine, Linguistics linguistics, Map<String, Embedder> embedders, 
-            Map<String, FieldGenerator> generators) throws ParseException {
-        ScriptParserContext config = new ScriptParserContext(linguistics, embedders, generators);
+    public static IndexingOperation fromStream(SimpleCharStream input,
+                                               boolean multiLine,
+                                               Linguistics linguistics,
+                                               Map<String, Chunker> chunkers,
+                                               Map<String, Embedder> embedders,
+                                               Map<String, FieldGenerator> generators) throws ParseException {
+        ScriptParserContext config = new ScriptParserContext(linguistics, chunkers, embedders, generators);
         config.setInputStream(input);
         ScriptExpression exp;
         try {

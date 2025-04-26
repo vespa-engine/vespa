@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -97,8 +98,10 @@ public class ScriptParserTestCase {
     }
 
     private static ScriptParserContext newContext(String input) {
-        return new ScriptParserContext(
-                new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap()
+        return new ScriptParserContext(new SimpleLinguistics(),
+                                       Chunker.throwsOnUse.asMap(),
+                                       Embedder.throwsOnUse.asMap(),
+                                       FieldGenerator.throwsOnUse.asMap()
         ).setInputStream(new IndexingInput(input));
     }
 

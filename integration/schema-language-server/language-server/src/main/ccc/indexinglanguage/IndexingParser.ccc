@@ -32,6 +32,7 @@ INJECT IndexingParser:
     import com.yahoo.text.StringUtilities;
     import com.yahoo.vespa.indexinglanguage.expressions.*;
     import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
+    import com.yahoo.language.process.Chunker;
     import com.yahoo.language.process.Embedder;
     import com.yahoo.language.process.FieldGenerator;
     import com.yahoo.language.Linguistics;
@@ -43,6 +44,7 @@ INJECT IndexingParser:
  */
     private String defaultFieldName;
     private Linguistics linguistics;
+    private Map<String, Chunker> chunkers;
     private Map<String, Embedder> embedders;
     private Map<String, FieldGenerator> generators;    
     private AnnotatorConfig globalAnnotatorConfig;
@@ -58,7 +60,9 @@ INJECT IndexingParser:
     public IndexingParser(PrintStream logger, String inputSource, CharSequence content) {
         this(inputSource, content);
         this.logger = logger;
+        this.chunkers = new HashMap<String, Chunker>();
         this.embedders = new HashMap<String, Embedder>();
+        this.generators = new HashMap<String, FieldGenerator>();
     }
 
     public IndexingParser setDefaultFieldName(String fieldName) {
@@ -78,6 +82,11 @@ INJECT IndexingParser:
     
     public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
         this.generators = generators;
+        return this;
+    }
+
+    public IndexingParser setChunkers(Map<String, Chunker> chunkers) {
+        this.chunkers = chunkers;
         return this;
     }
 
@@ -185,15 +194,16 @@ TOKEN :
     <BUSY_WAIT: "busy_wait"> |
     <CASE: "case"> |
     <CASE_DEFAULT: "default"> |
+    <CHUNK: "chunk"> |
     <CLEAR_STATE: "clear_state"> |
     <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
     <ECHO: "echo"> |
     <ELSE: "else"> |
     <EMBED: "embed"> |
-    <GENERATE: "generate"> |
     <EXACT: "exact"> |
     <FLATTEN: "flatten"> |
     <FOR_EACH: "for_each"> |
+    <GENERATE: "generate"> |
     <GET_FIELD: "get_field"> |
     <GET_VAR: "get_var"> |
     <GUARD: "guard"> |
@@ -344,6 +354,7 @@ Expression value() :
       val = base64EncodeExp()       |
       val = binarizeExp()           |
       val = busy_waitExp()          |
+      val = chunkExp()              |
       val = clearStateExp()         |
       val = echoExp()               |
       val = embedExp()              |
@@ -437,6 +448,22 @@ Expression busy_waitExp() : { }
     { return new BusyWaitExpression(); }
 ;
 
+Expression chunkExp() :
+{
+    String chunkerId = "";
+    String chunkerArgument;
+    List<String> chunkerArguments = new ArrayList<String>();
+}
+
+    (
+      <EMBED> [ SCAN((identifierStr)+) => (chunkerId = identifierStr()) ]
+      ( SCAN((identifierStr)+) => (chunkerArgument = identifierStr()) { chunkerArguments.add(chunkerArgument); } )*
+    )
+    {
+        return new ChunkExpression(chunkers, chunkerId, chunkerArguments);
+    }
+;
+
 Expression clearStateExp() : { }
  
     ( <CLEAR_STATE> )
@@ -461,8 +488,7 @@ Expression embedExp() :
       ( SCAN((identifierStr)+) => (embedderArgument = identifierStr()) { embedderArguments.add(embedderArgument); } )*
     )
     {
-        // return new EmbedExpression(embedders, embedderId, embedderArguments);
-        return null;
+        return new EmbedExpression(linguistics, embedders, embedderId, embedderArguments);
     }
 ;
 
@@ -896,6 +922,7 @@ String identifierStr() :
         <BUSY_WAIT>              |
         <CASE>                   |
         <CASE_DEFAULT>           |
+        <CHUNK>                  |
         <CLEAR_STATE>            |
         <CREATE_IF_NON_EXISTENT> |
         <ECHO>                   |

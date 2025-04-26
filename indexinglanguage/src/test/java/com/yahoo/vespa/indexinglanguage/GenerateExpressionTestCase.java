@@ -27,6 +27,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class GenerateExpressionTestCase {
+
     @Test
     public void testParsing() {
         Map<String, FieldGenerator> generators = FieldGenerator.throwsOnUse.asMap();
@@ -35,7 +36,7 @@ public class GenerateExpressionTestCase {
 
     public Expression expressionFrom(Map<String, FieldGenerator> generators, String string) {
         try {
-            return Expression.fromString(string, new SimpleLinguistics(), Map.of(), generators);
+            return Expression.fromString(string, new SimpleLinguistics(), Map.of(), Map.of(), generators);
         }
         catch (ParseException e) {
             throw new RuntimeException(e);

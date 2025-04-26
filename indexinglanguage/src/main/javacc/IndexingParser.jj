@@ -29,11 +29,12 @@ import java.util.LinkedHashMap;
 
 import com.yahoo.collections.Pair;
 import com.yahoo.document.datatypes.*;
-import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
+import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.Linguistics;
 
 /**
@@ -43,6 +44,7 @@ public class IndexingParser {
 
     private String defaultFieldName;
     private Linguistics linguistics;
+    private Map<String, Chunker> chunkers;
     private Map<String, Embedder> embedders;
     private Map<String, FieldGenerator> generators;
     private AnnotatorConfig globalAnnotatorConfig = new AnnotatorConfig();
@@ -68,6 +70,11 @@ public class IndexingParser {
 
     public IndexingParser setGenerators(Map<String, FieldGenerator> generators) {
         this.generators = generators;
+        return this;
+    }
+
+    public IndexingParser setChunkers(Map<String, Chunker> chunkers) {
+        this.chunkers = chunkers;
         return this;
     }
 
@@ -160,6 +167,7 @@ TOKEN :
     <BUSY_WAIT: "busy_wait"> |
     <CASE: "case"> |
     <CASE_DEFAULT: "default"> |
+    <CHUNK: "chunk"> |
     <CLEAR_STATE: "clear_state"> |
     <CREATE_IF_NON_EXISTENT: "create_if_non_existent"> |
     <ECHO: "echo"> |
@@ -313,6 +321,7 @@ Expression value() :
       val = base64EncodeExp()       |
       val = binarizeExp()           |
       val = busy_waitExp()          |
+      val = chunkExp()              |
       val = clearStateExp()         |
       val = echoExp()               |
       val = embedExp()              |
@@ -396,6 +405,20 @@ Expression busy_waitExp() : { }
 {
     ( <BUSY_WAIT> )
     { return new BusyWaitExpression(); }
+}
+
+Expression chunkExp() :
+{
+    String chunkerId = "";
+    String chunkerArgument;
+    List<String> chunkerArguments = new ArrayList<String>();
+}
+{
+    (
+      <CHUNK> [ LOOKAHEAD(2) chunkerId = identifier() ]
+      ( LOOKAHEAD(2) chunkerArgument = identifier() { chunkerArguments.add(chunkerArgument); } )*
+    )
+    { return new ChunkExpression(chunkers, chunkerId, chunkerArguments); }
 }
 
 Expression clearStateExp() : { }
@@ -862,6 +885,7 @@ String identifier() :
         <BUSY_WAIT>              |
         <CASE>                   |
         <CASE_DEFAULT>           |
+        <CHUNK>                  |
         <CLEAR_STATE>            |
         <CREATE_IF_NON_EXISTENT> |
         <ECHO>                   |

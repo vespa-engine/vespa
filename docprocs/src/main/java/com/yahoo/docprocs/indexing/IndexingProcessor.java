@@ -21,8 +21,10 @@ import com.yahoo.document.serialization.DocumentSerializer;
 import com.yahoo.document.serialization.DocumentSerializerFactory;
 import com.yahoo.io.GrowableByteBuffer;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
+import com.yahoo.language.provider.DefaultChunkerProvider;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.language.provider.DefaultGeneratorProvider;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -59,12 +61,14 @@ public class IndexingProcessor extends DocumentProcessor {
     public IndexingProcessor(DocumentTypeManager documentTypeManager,
                              IlscriptsConfig ilscriptsConfig,
                              Linguistics linguistics,
+                             ComponentRegistry<Chunker> chunkers,
                              ComponentRegistry<Embedder> embedders,
                              ComponentRegistry<FieldGenerator> generators) {
         this(documentTypeManager,
              new ScriptManager(documentTypeManager,
                                ilscriptsConfig,
                                linguistics,
+                               toMap(chunkers, DefaultChunkerProvider.class),
                                toMap(embedders, DefaultEmbedderProvider.class),
                                toMap(generators, DefaultGeneratorProvider.class)
                 )

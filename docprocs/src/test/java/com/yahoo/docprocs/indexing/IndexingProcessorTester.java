@@ -72,6 +72,7 @@ public class IndexingProcessorTester {
                                      ConfigGetter.getConfig(IlscriptsConfig.class, configId),
                                      new SimpleLinguistics(),
                                      new ComponentRegistry<>(),
+                                     new ComponentRegistry<>(),
                                      new ComponentRegistry<>());
     }
 

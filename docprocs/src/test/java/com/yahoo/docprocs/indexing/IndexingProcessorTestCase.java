@@ -2,6 +2,7 @@
 package com.yahoo.docprocs.indexing;
 
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentOperation;
@@ -14,6 +15,7 @@ import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.tensor.Tensor;
@@ -252,8 +254,10 @@ public class IndexingProcessorTestCase {
         config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("test")
                                                               .content("input myText | embed | binarize | pack_bits | attribute embedding")
                                                               .docfield("myText"));
-        var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null, 
-                Map.of("test", new TestEmbedder()), FieldGenerator.throwsOnUse.asMap());
+        var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null,
+                                        Chunker.throwsOnUse.asMap(),
+                                        Map.of("test", new TestEmbedder()),
+                                        FieldGenerator.throwsOnUse.asMap());
         
         assertNotNull(scripts.getScript(documentTypes.getDocumentType("test")));
 

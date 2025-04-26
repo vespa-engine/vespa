@@ -12,6 +12,7 @@ import com.yahoo.document.WeightedSetDataType;
 import com.yahoo.documentmodel.OwnedTemporaryType;
 import com.yahoo.documentmodel.TemporaryUnknownType;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -400,13 +401,16 @@ public class SDField extends Field implements ImmutableSDField {
 
     /** Parse an indexing expression which will use the simple linguistics implementation suitable for testing */
     public void parseIndexingScript(String schemaName, String script) {
-        parseIndexingScript(schemaName, script, new SimpleLinguistics(), Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
+        parseIndexingScript(schemaName, script, new SimpleLinguistics(),
+                            Chunker.throwsOnUse.asMap(), Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
     }
 
-    public void parseIndexingScript(String schemaName, String script, Linguistics linguistics, 
-                                    Map<String, Embedder> embedders, Map<String, FieldGenerator> generators) {
+    public void parseIndexingScript(String schemaName, String script, Linguistics linguistics,
+                                    Map<String, Chunker> chunkers,
+                                    Map<String, Embedder> embedders,
+                                    Map<String, FieldGenerator> generators) {
         try {
-            ScriptParserContext config = new ScriptParserContext(linguistics, embedders, generators);
+            ScriptParserContext config = new ScriptParserContext(linguistics, chunkers, embedders, generators);
             config.setInputStream(new IndexingInput(script));
             setIndexingScript(schemaName, ScriptExpression.newInstance(config));
         } catch (ParseException e) {
