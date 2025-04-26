@@ -141,8 +141,8 @@ public abstract class AbstractParser implements CustomParser {
         return parse(queryToParse, filterToParse, parsingLanguage, indexFacts, defaultIndex, null);
     }
 
-    private Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
-                       IndexFacts.Session indexFacts, String defaultIndex, Parsable parsable) {
+    Item parse(String queryToParse, String filterToParse, Language parsingLanguage,
+               IndexFacts.Session indexFacts, String defaultIndex, Parsable parsable) {
         if (queryToParse == null) return null;
 
         if (defaultIndex != null)
