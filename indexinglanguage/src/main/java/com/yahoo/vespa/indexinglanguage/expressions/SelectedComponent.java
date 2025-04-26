@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -55,16 +56,29 @@ public class SelectedComponent<TYPE> {
         return sb.toString();
     }
 
-    @Override
-    public String toString() {
-        return "selected " + component;
-    }
-
     private String validComponents(Map<String, TYPE> components) {
         List<String> componentIds = new ArrayList<>();
         components.forEach((key, value) -> componentIds.add(key));
         componentIds.sort(null);
         return String.join(", ", componentIds);
+    }
+
+    @Override
+    public String toString() {
+        return "selected " + component;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if ( ! (o instanceof SelectedComponent<?> other)) return false;
+        if ( ! this.component.equals(other.component)) return false;
+        if ( ! this.arguments.equals(other.arguments)) return false;
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(SelectedComponent.class, component, arguments);
     }
 
 }

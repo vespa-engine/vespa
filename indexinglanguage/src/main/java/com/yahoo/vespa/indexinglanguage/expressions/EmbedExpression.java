@@ -17,6 +17,7 @@ import com.yahoo.tensor.TensorType;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 
 /**
@@ -244,11 +245,12 @@ public class EmbedExpression extends Expression  {
     }
 
     @Override
-    public int hashCode() { return EmbedExpression.class.hashCode(); }
+    public int hashCode() { return Objects.hash(EmbedExpression.class, embedder); }
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof EmbedExpression;
+        if ( ! (o instanceof EmbedExpression other)) return false;
+        if ( ! other.embedder.equals(this.embedder)) return false;
+        return true;
     }
-
 }

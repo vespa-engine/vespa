@@ -14,6 +14,7 @@ import com.yahoo.language.process.FieldGenerator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Indexing language expression for generating field values with LLMs and custom components.
@@ -107,17 +108,12 @@ public class GenerateExpression extends Expression {
     }
 
     @Override
-    public int hashCode() { return GenerateExpression.class.hashCode(); }
+    public int hashCode() { return Objects.hash(GenerateExpression.class, generator); }
 
     @Override
     public boolean equals(Object o) {
-        return o instanceof GenerateExpression;
-    }
-
-    private static String validGenerators(Map<String, FieldGenerator> generators) {
-        List<String> generatorIds = new ArrayList<>();
-        generators.forEach((key, value) -> generatorIds.add(key));
-        generatorIds.sort(null);
-        return String.join(", ", generatorIds);
+        if ( ! (o instanceof GenerateExpression other)) return false;
+        if ( ! other.generator.equals(this.generator)) return false;
+        return true;
     }
 }
