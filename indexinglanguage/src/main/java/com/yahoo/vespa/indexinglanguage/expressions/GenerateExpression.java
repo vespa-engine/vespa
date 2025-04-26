@@ -8,6 +8,7 @@ import com.yahoo.document.Field;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 
 import java.util.ArrayList;
@@ -22,9 +23,7 @@ import java.util.Map;
 public class GenerateExpression extends Expression {
 
     private final Linguistics linguistics;
-    private final FieldGenerator generator;
-    private final String generatorId;
-    private final List<String> generatorArguments;
+    private final SelectedComponent<FieldGenerator> generator;
 
     /** The destination the generated value will be written to in the form [schema name].[field name] */
     private String destination;
@@ -37,28 +36,8 @@ public class GenerateExpression extends Expression {
                               String generatorId,
                               List<String> generatorArguments) {
         this.linguistics = linguistics;
-        this.generatorId = generatorId;
-        this.generatorArguments = List.copyOf(generatorArguments);
-
-        boolean generatorIdProvided = generatorId != null && !generatorId.isEmpty();
-
-        if (generators.isEmpty()) {
-            throw new IllegalStateException("No generators provided");  // should never happen
-        }
-        else if (generators.size() == 1 && ! generatorIdProvided) {
-            this.generator = generators.entrySet().stream().findFirst().get().getValue();
-        }
-        else if (generators.size() > 1 && ! generatorIdProvided) {
-            this.generator = new FieldGenerator.FailingFieldGenerator(
-                    "Multiple generators are provided but no generator id is given. " +
-                    "Valid generators are " + validGenerators(generators));
-        }
-        else if ( ! generators.containsKey(generatorId)) {
-            this.generator = new FieldGenerator.FailingFieldGenerator("Can't find generator '" + generatorId + "'. " +
-                    "Valid generators are " + validGenerators(generators));
-        } else  {
-            this.generator = generators.get(generatorId);
-        }
+        this.generator = new SelectedComponent<>("generator", generators, generatorId, generatorArguments,
+                                                 FieldGenerator.FailingFieldGenerator::new);
     }
 
     @Override
@@ -117,21 +96,14 @@ public class GenerateExpression extends Expression {
     private FieldValue generate(Prompt prompt, ExecutionContext context) {
         var generatorContext =  new FieldGenerator.Context(destination, targetType, context.getCache())
                 .setLanguage(context.resolveLanguage(linguistics))
-                .setComponentId(generatorId);
+                .setComponentId(generator.id());
 
-        return generator.generate(prompt, generatorContext);
+        return generator.component().generate(prompt, generatorContext);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("generate");
-        
-        if (this.generatorId != null && !this.generatorId.isEmpty())
-            sb.append(" ").append(this.generatorId);
-        
-        generatorArguments.forEach(arg -> sb.append(" ").append(arg));
-        return sb.toString();
+        return "generate" + generator.argumentsString();
     }
 
     @Override

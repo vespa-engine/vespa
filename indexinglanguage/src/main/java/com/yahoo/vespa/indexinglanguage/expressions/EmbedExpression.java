@@ -14,7 +14,6 @@ import com.yahoo.language.process.Embedder;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,36 +27,15 @@ import java.util.Map;
 public class EmbedExpression extends Expression  {
 
     private final Linguistics linguistics;
-    private final Embedder embedder;
-    private final String embedderId;
-    private final List<String> embedderArguments;
+    private final SelectedComponent<Embedder> embedder;
 
     /** The destination the embedding will be written to on the form [schema name].[field name] */
     private String destination;
 
     public EmbedExpression(Linguistics linguistics, Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
         this.linguistics = linguistics;
-        this.embedderId = embedderId;
-        this.embedderArguments = List.copyOf(embedderArguments);
-
-        boolean embedderIdProvided = embedderId != null && !embedderId.isEmpty();
-
-        if (embedders.isEmpty()) {
-            throw new IllegalStateException("No embedders provided");  // should never happen
-        }
-        else if (embedders.size() == 1 && ! embedderIdProvided) {
-            this.embedder = embedders.entrySet().stream().findFirst().get().getValue();
-        }
-        else if (embedders.size() > 1 && ! embedderIdProvided) {
-            this.embedder = new Embedder.FailingEmbedder("Multiple embedders are provided but no embedder id is given. " +
-                                                         "Valid embedders are " + validEmbedders(embedders));
-        }
-        else if ( ! embedders.containsKey(embedderId)) {
-            this.embedder = new Embedder.FailingEmbedder("Can't find embedder '" + embedderId + "'. " +
-                                                         "Valid embedders are " + validEmbedders(embedders));
-        } else  {
-            this.embedder = embedders.get(embedderId);
-        }
+        embedder = new SelectedComponent<>("embedder", embedders, embedderId, embedderArguments,
+                                           Embedder.FailingEmbedder::new);
     }
 
     @Override
@@ -88,23 +66,23 @@ public class EmbedExpression extends Expression  {
                 invalid("The embedding target field must either be a dense 1d tensor, a mapped 1d tensor, a mapped 2d tensor, " +
                         "an array of dense 1d tensors, or a mixed 2d or 3d tensor");
             if (outputTensor.rank() == 2 && outputTensor.mappedSubtype().rank() == 2) {
-                if (embedderArguments.size() != 1)
+                if (embedder.arguments().size() != 1)
                     invalid("When the embedding target field is a 2d mapped tensor " +
                             "the name of the tensor dimension that corresponds to the input array elements must " +
                             "be given as a second argument to embed, e.g: ... | embed splade paragraph | ...");
-                if ( ! outputTensor.mappedSubtype().dimensionNames().contains(embedderArguments.get(0))) {
-                    invalid("The dimension '" + embedderArguments.get(0) + "' given to embed " +
+                if ( ! outputTensor.mappedSubtype().dimensionNames().contains(embedder.arguments().get(0))) {
+                    invalid("The dimension '" + embedder.arguments().get(0) + "' given to embed " +
                             "is not a sparse dimension of the target type " + outputTensor);
 
                 }
             }
             if (outputTensor.rank() == 3) {
-                if (embedderArguments.size() != 1)
+                if (embedder.arguments().size() != 1)
                     invalid("When the embedding target field is a 3d tensor " +
                             "the name of the tensor dimension that corresponds to the input array elements must " +
                             "be given as a second argument to embed, e.g: ... | embed colbert paragraph | ...");
-                if ( ! outputTensor.mappedSubtype().dimensionNames().contains(embedderArguments.get(0)))
-                    invalid("The dimension '" + embedderArguments.get(0) + "' given to embed " +
+                if ( ! outputTensor.mappedSubtype().dimensionNames().contains(embedder.arguments().get(0)))
+                    invalid("The dimension '" + embedder.arguments().get(0) + "' given to embed " +
                             "is not a sparse dimension of the target type " + outputTensor);
             }
         }
@@ -189,7 +167,7 @@ public class EmbedExpression extends Expression  {
     private void embedArrayValueToRank3Tensor(Array<StringFieldValue> input,
                                               Tensor.Builder builder,
                                               ExecutionContext context) {
-        String outerMappedDimension = embedderArguments.get(0);
+        String outerMappedDimension = embedder.arguments().get(0);
         String innerMappedDimension = builder.type().mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
         String indexedDimension = builder.type().indexedSubtype().dimensions().get(0).name();
         long indexedDimensionSize = builder.type().indexedSubtype().dimensions().get(0).size().get();
@@ -212,7 +190,7 @@ public class EmbedExpression extends Expression  {
     private void embedArrayValueToRank2MappedTensor(Array<StringFieldValue> input,
                                               Tensor.Builder builder,
                                               ExecutionContext context) {
-        String outerMappedDimension = embedderArguments.get(0);
+        String outerMappedDimension = embedder.arguments().get(0);
         String innerMappedDimension = getOutputTensorType().mappedSubtype().dimensionNames().stream().filter(d -> !d.equals(outerMappedDimension)).findFirst().get();
 
         var innerType = new TensorType.Builder(getOutputTensorType().valueType()).mapped(innerMappedDimension).build();
@@ -231,10 +209,10 @@ public class EmbedExpression extends Expression  {
     }
 
     private Tensor embed(String input, TensorType targetType, ExecutionContext context) {
-        return embedder.embed(input,
-                              new Embedder.Context(destination, context.getCache()).setLanguage(context.resolveLanguage(linguistics))
-                                                                                   .setEmbedderId(embedderId),
-                              targetType);
+        return embedder.component().embed(input,
+                                          new Embedder.Context(destination, context.getCache()).setLanguage(context.resolveLanguage(linguistics))
+                                                                                               .setEmbedderId(embedder.id()),
+                                          targetType);
     }
 
     private TensorType getOutputTensorType() {
@@ -262,12 +240,7 @@ public class EmbedExpression extends Expression  {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("embed");
-        if (this.embedderId != null && !this.embedderId.isEmpty())
-            sb.append(" ").append(this.embedderId);
-        embedderArguments.forEach(arg -> sb.append(" ").append(arg));
-        return sb.toString();
+        return "embed" + embedder.argumentsString();
     }
 
     @Override
@@ -276,13 +249,6 @@ public class EmbedExpression extends Expression  {
     @Override
     public boolean equals(Object o) {
         return o instanceof EmbedExpression;
-    }
-
-    private static String validEmbedders(Map<String, Embedder> embedders) {
-        List<String> embedderIds = new ArrayList<>();
-        embedders.forEach((key, value) -> embedderIds.add(key));
-        embedderIds.sort(null);
-        return String.join(", ", embedderIds);
     }
 
 }
