@@ -518,7 +518,7 @@
       "public int getStart()",
       "public int getCodePointCount()",
       "public java.lang.String extractFrom(java.lang.String)",
-      "public java.lang.String extractFrom(com.yahoo.language.process.GramSplitter$UnicodeString)",
+      "public java.lang.String extractFrom(com.yahoo.text.UnicodeString)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],

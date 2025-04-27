@@ -3375,6 +3375,27 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.text.UnicodeString" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(java.lang.String)",
+      "public com.yahoo.text.UnicodeString substring(int, int)",
+      "public int skip(int, int)",
+      "public int nextIndex(int)",
+      "public int nextCodePoint(int)",
+      "public int length()",
+      "public int codePointCount()",
+      "public int codePointAt(int)",
+      "public java.lang.String toString()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.text.Utf8" : {
     "superClass" : "java.lang.Object",
     "interfaces" : [ ],

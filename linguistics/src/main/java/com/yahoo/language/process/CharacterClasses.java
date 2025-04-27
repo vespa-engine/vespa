@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.process;
 
-import java.util.Set;
-
 /**
  * Determines the class of a given character. Use this rather than java.lang.Character.
  *
