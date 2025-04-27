@@ -242,13 +242,9 @@ public abstract class Expression extends Selectable {
 
     /** Creates an expression with simple lingustics for testing */
     public static Expression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+        return fromString(expression, new SimpleLinguistics(), Map.of(), Embedder.throwsOnUse.asMap(), Map.of());
     }
 
-    public static Expression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, Map.of(), embedders, Map.of()).setInputStream(new IndexingInput(expression)));
-    }
-    
     public static Expression fromString(String expression,
                                         Linguistics linguistics,
                                         Map<String, Chunker> chunkers,

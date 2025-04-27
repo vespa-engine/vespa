@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
+import ai.vespa.language.chunker.SentenceChunker;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
@@ -552,6 +553,31 @@ public class ScriptTestCase {
         expression.resolve(adapter);
         ExecutionContext context = new ExecutionContext(adapter);
         expression.execute(context);
+    }
+
+    @Test
+    public void testChunking() {
+        String script = "{ input myText | chunk | summary myChunks | index myChunks }";
+
+        var tester = new ScriptTester();
+        tester.chunkers.put("ignoredId", new SentenceChunker());
+        var expression = tester.scriptFrom(script);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myText", DataType.STRING));
+        adapter.createField(new Field("myChunks", DataType.getArray(DataType.STRING)));
+
+        expression.resolve(adapter);
+
+        adapter.setValue("myText", new StringFieldValue("Sentence 1. Sentence 2"));
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        var chunks = context.getFieldValue("myChunks");
+        assertTrue(chunks instanceof Array);
+        var array = (Array<?>)chunks;
+        assertEquals(2, array.size());
+        assertEquals("Sentence 1.", array.get(0).getWrappedValue());
+        assertEquals(" Sentence 2", array.get(1).getWrappedValue());
     }
 
 }

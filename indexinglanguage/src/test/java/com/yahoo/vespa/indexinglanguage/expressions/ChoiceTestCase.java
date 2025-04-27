@@ -13,6 +13,8 @@ import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
+import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -90,7 +92,7 @@ public class ChoiceTestCase {
     }
 
     private static Expression parse(String s) throws ParseException {
-        return Expression.fromString(s, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+        return Expression.fromString(s, new SimpleLinguistics(), Map.of(), Embedder.throwsOnUse.asMap(), Map.of());
     }
 
 }

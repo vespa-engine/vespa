@@ -7,6 +7,7 @@ import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import org.junit.Test;
 
+import java.util.Map;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -95,12 +96,12 @@ public class ExpressionTestCase {
 
     private static void assertExpression(Class expectedClass, String str, Optional<String> expStr) throws ParseException {
         Linguistics linguistics = new SimpleLinguistics();
-        Expression foo = Expression.fromString(str, linguistics, Embedder.throwsOnUse.asMap());
+        Expression foo = Expression.fromString(str, linguistics, Map.of(), Embedder.throwsOnUse.asMap(), Map.of());
         assertEquals(expectedClass, foo.getClass());
         if (expStr.isPresent()) {
             assertEquals(expStr.get(), foo.toString());
         }
-        Expression bar = Expression.fromString(foo.toString(), linguistics, Embedder.throwsOnUse.asMap());
+        Expression bar = Expression.fromString(foo.toString(), linguistics, Map.of(), Embedder.throwsOnUse.asMap(), Map.of());
         assertEquals(foo.hashCode(), bar.hashCode());
         assertEquals(foo, bar);
     }

@@ -98,7 +98,7 @@ public class EmbeddingScriptTester {
 
     public Expression expressionFrom(String string) {
         try {
-            return Expression.fromString(string, new SimpleLinguistics(), embedders);
+            return Expression.fromString(string, new SimpleLinguistics(), Map.of(), embedders, Map.of());
         }
         catch (ParseException e) {
             throw new IllegalArgumentException(e);
