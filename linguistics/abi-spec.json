@@ -326,7 +326,8 @@
       "public boolean isDigit(int)",
       "public boolean isLatinDigit(int)",
       "public boolean isLatin(int)",
-      "public boolean isLetterOrDigit(int)"
+      "public boolean isLetterOrDigit(int)",
+      "public boolean isSentenceEnd(int)"
     ],
     "fields" : [ ]
   },

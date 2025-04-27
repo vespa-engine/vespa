@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.process;
 
+import java.util.Set;
+
 /**
  * Determines the class of a given character. Use this rather than java.lang.Character.
  *
@@ -28,16 +30,12 @@ public class CharacterClasses {
                type == java.lang.Character.ENCLOSING_MARK;
     }
 
-    /**
-     * Returns true if the character is in the class "other symbol" - emojis etc.
-     */
+    /** Returns true if the character is in the class "other symbol" - emojis etc. */
     public boolean isSymbol(int c) {
         return Character.getType(c) == Character.OTHER_SYMBOL;
     }
 
-    /**
-     * Returns true for code points which should be considered digits - same as java.lang.Character.isDigit
-     */
+    /** Returns true for code points which should be considered digits - same as java.lang.Character.isDigit. */
     public boolean isDigit(int c) {
         return Character.isDigit(c);
     }
@@ -52,11 +50,16 @@ public class CharacterClasses {
         return Character.UnicodeBlock.of(c).equals(Character.UnicodeBlock.BASIC_LATIN);
     }
 
-    /**
-     * Convenience, returns isLetter(c) || isDigit(c)
-     */
+    /** Convenience, returns isLetter(c) || isDigit(c) */
     public boolean isLetterOrDigit(int c) {
         return isLetter(c) || isDigit(c);
+    }
+
+    /** Returns whether the given character is of a type used to mark the end of a sentence. */
+    public boolean isSentenceEnd(int c) {
+        return (c == '\u002E' || c == '\u0021' || c == '\u003F' || c == '\u203D' || c == '\u1362' || c == '\u0964' ||
+                c == '\u0965' || c == '\u2E2E' || c == '\u061F' || c == '\uFF01' || c == '\uFF1F' || c == '\uFF61' ||
+                c == '\u3002');
     }
 
 }
