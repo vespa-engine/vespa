@@ -371,6 +371,7 @@
     "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
+      "public boolean isReversible()",
       "public java.util.List chunk(java.lang.String, com.yahoo.language.process.Chunker$Context)"
     ],
     "fields" : [ ]
@@ -384,6 +385,7 @@
       "abstract"
     ],
     "methods" : [
+      "public abstract boolean isReversible()",
       "public java.util.Map asMap()",
       "public java.util.Map asMap(java.lang.String)",
       "public abstract java.util.List chunk(java.lang.String, com.yahoo.language.process.Chunker$Context)"

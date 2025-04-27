@@ -16,6 +16,9 @@ import java.util.List;
 public class SentenceChunker implements Chunker {
 
     @Override
+    public boolean isReversible() { return true; }
+
+    @Override
     public List<Chunk> chunk(String inputText, Context context) {
         var text = new UnicodeString(inputText);
         var characters = new CharacterClasses();
