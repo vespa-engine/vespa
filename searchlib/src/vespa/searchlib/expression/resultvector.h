@@ -43,7 +43,7 @@ public:
     virtual ResultNode & flattenMax(ResultNode & r) const { return r; }
     virtual ResultNode & flattenMin(ResultNode & r) const { return r; }
     virtual ResultNode & flattenAnd(ResultNode & r) const { return r; }
-    virtual ResultNode &  flattenOr(ResultNode & r) const { return r; }
+    virtual ResultNode & flattenOr(ResultNode & r) const { return r; }
     virtual ResultNode & flattenXor(ResultNode & r) const { return r; }
     virtual ResultNode & flattenSumOfSquared(ResultNode & r) const { return r; }
     virtual void min(const ResultNode & b) { (void) b; }
