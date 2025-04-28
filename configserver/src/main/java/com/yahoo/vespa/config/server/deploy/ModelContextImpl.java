@@ -34,12 +34,14 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
+import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.io.File;
 import java.net.URI;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
@@ -209,6 +211,7 @@ public class ModelContextImpl implements ModelContext {
         private final int documentV1QueueSize;
         private final int maxContentNodeMaintenanceOpConcurrency;
         private final int maxDistributorDocumentOperationSizeMib;
+        private final Sidecars sidecarsForTest;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -255,6 +258,7 @@ public class ModelContextImpl implements ModelContext {
             this.documentV1QueueSize = Flags.DOCUMENT_V1_QUEUE_SIZE.bindTo(source).with(appId).with(version).value();
             this.maxContentNodeMaintenanceOpConcurrency = Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
+            this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -301,6 +305,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int documentV1QueueSize() { return documentV1QueueSize; }
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
         @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
+        @Override public Object sidecarsForTest() { return sidecarsForTest; }
     }
 
     public static class Properties implements ModelContext.Properties {
