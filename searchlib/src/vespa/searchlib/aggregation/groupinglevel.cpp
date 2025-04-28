@@ -75,6 +75,9 @@ GroupingLevel::visitMembers(vespalib::ObjectVisitor &visitor) const
     visit(visitor, "maxGroups", _maxGroups);
     visit(visitor, "precision", _precision);
     visit(visitor, "classify",  _classify);
+    if (_filter.get()) {
+        visit(visitor, "filter",  *_filter);
+    }
     visit(visitor, "collect",   _collect);
 }
 
