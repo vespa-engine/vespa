@@ -68,6 +68,9 @@ public:
         return true;
     }
     HitIterator& operator++() { ++_cur; return *this; }
+
+    // Note: this operator assumes that both iterators are still valid.
+    bool operator<(const HitIterator& rhs) const noexcept { return _cur->key() < rhs->key(); }
 };
 
 }

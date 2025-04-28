@@ -42,14 +42,16 @@ std::ostream& operator<<(std::ostream& os, const TestParam& param)
 
 }
 class NearTest : public ::testing::TestWithParam<TestParam> {
-public:
+protected:
+    std::optional<std::optional<uint32_t>> _element_gap_setting;
     NearTest();
-    ~NearTest();
+    ~NearTest() override;
     bool evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>> &hitsvv);
 };
 
 NearTest::NearTest()
-    : ::testing::TestWithParam<TestParam>()
+    : ::testing::TestWithParam<TestParam>(),
+      _element_gap_setting()
 {
 }
 
@@ -76,9 +78,15 @@ NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHi
     if (GetParam().ordered()) {
         auto& top = dynamic_cast<ONearQueryNode&>(q->getRoot());
         EXPECT_EQ(hitsvv.size(), top.size());
+        if (_element_gap_setting.has_value()) {
+            top.set_element_gap(_element_gap_setting.value());
+        }
     } else {
         auto& top = dynamic_cast<NearQueryNode&>(q->getRoot());
         EXPECT_EQ(hitsvv.size(), top.size());
+        if (_element_gap_setting.has_value()) {
+            top.set_element_gap(_element_gap_setting.value());
+        }
     }
     QueryTermList terms;
     q->getLeaves(terms);
@@ -177,6 +185,19 @@ TEST_P(NearTest, test_overlap_might_matter)
     EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, { { { 0, 0, 10, 6, 0} },
                                                          { { 0, 0, 10, 6, 0} },
                                                          { { 0, 0, 10, 6, 4} } }));
+}
+
+TEST_P(NearTest, element_boundary)
+{
+    std::vector<std::vector<TestHit>> hitsvv({ { { 0, 0, 10, 5, 0} },
+                                               { { 0, 1, 10, 5, 1 } } });
+    EXPECT_FALSE(evaluate_query(20, hitsvv));
+    _element_gap_setting.emplace(0);
+    EXPECT_TRUE(evaluate_query(20, hitsvv));
+    _element_gap_setting.emplace(14);
+    EXPECT_TRUE(evaluate_query(20, hitsvv));
+    _element_gap_setting.emplace(15);
+    EXPECT_FALSE(evaluate_query(20, hitsvv));
 }
 
 auto test_values = ::testing::Values(TestParam(false), TestParam(true));
