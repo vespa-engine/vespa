@@ -368,7 +368,9 @@ public class IndexingProcessorTestCase {
                                                                   .docfield("stringField")
                                                                   .docfield("language"));
             var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null,
-                                            Map.of("test", new TestEmbedder()), FieldGenerator.throwsOnUse.asMap());
+                                            Chunker.throwsOnUse.asMap(),
+                                            Map.of("test", new TestEmbedder()),
+                                            FieldGenerator.throwsOnUse.asMap());
 
             nestedTester = new IndexingProcessorTester(documentTypes, scripts);
             inputType = nestedTester.getDocumentType("test");
