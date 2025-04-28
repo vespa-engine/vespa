@@ -115,12 +115,14 @@ TEST_F(DocumentApiConverterTest, put) {
     documentapi::PutDocumentMessage putmsg(doc);
     putmsg.setTimestamp(1234);
     putmsg.setCondition(my_condition);
+    putmsg.setApproxSize(13371337);
 
     auto cmd = toStorageAPI<api::PutCommand>(putmsg);
     EXPECT_EQ(defaultBucket, cmd->getBucket());
     ASSERT_EQ(cmd->getDocument().get(), doc.get());
     EXPECT_EQ(cmd->getCondition(), my_condition);
     EXPECT_FALSE(cmd->get_create_if_non_existent());
+    EXPECT_EQ(cmd->getApproxByteSize(), 13371337);
 
     std::unique_ptr<mbus::Reply> reply = putmsg.createReply();
     ASSERT_TRUE(reply.get());
@@ -132,6 +134,7 @@ TEST_F(DocumentApiConverterTest, put) {
     EXPECT_EQ(mbusPut->getTimestamp(), 1234);
     EXPECT_EQ(mbusPut->getCondition(), my_condition);
     EXPECT_FALSE(mbusPut->get_create_if_non_existent());
+    EXPECT_EQ(mbusPut->getApproxSize(), 13371337);
 }
 
 TEST_F(DocumentApiConverterTest, put_with_create) {
@@ -167,6 +170,7 @@ TEST_F(DocumentApiConverterTest, update) {
         updateMsg.setOldTimestamp(1234);
         updateMsg.setNewTimestamp(5678);
         updateMsg.setCondition(my_condition);
+        updateMsg.setApproxSize(13371337);
         EXPECT_FALSE(updateMsg.has_cached_create_if_missing());
         EXPECT_EQ(updateMsg.create_if_missing(), create_if_missing);
 
@@ -178,6 +182,7 @@ TEST_F(DocumentApiConverterTest, update) {
         EXPECT_EQ(my_condition, updateCmd->getCondition());
         EXPECT_FALSE(updateCmd->has_cached_create_if_missing());
         EXPECT_EQ(updateCmd->create_if_missing(), create_if_missing);
+        EXPECT_EQ(updateCmd->getApproxByteSize(), 13371337);
 
         auto mbusReply = updateMsg.createReply();
         ASSERT_TRUE(mbusReply.get());
@@ -189,6 +194,7 @@ TEST_F(DocumentApiConverterTest, update) {
         EXPECT_EQ(api::Timestamp(5678), mbusUpdate->getNewTimestamp());
         EXPECT_EQ(my_condition, mbusUpdate->getCondition());
         EXPECT_EQ(mbusUpdate->create_if_missing(), create_if_missing);
+        EXPECT_EQ(mbusUpdate->getApproxSize(), 13371337);
 
         // Cached value of create_if_missing should override underlying update's value
         updateCmd->set_cached_create_if_missing(!create_if_missing);
