@@ -12,6 +12,11 @@
 
 namespace vespalib {
 
+template<typename To, typename From>
+inline std::unique_ptr<To> static_cast_unique(std::unique_ptr<From> src) {
+    return std::unique_ptr<To>(static_cast<To *>(src.release()));
+}
+
 inline void *memcpy_safe(void *dest, const void *src, size_t n) noexcept {
     if (n == 0) [[unlikely]] {
         return dest;
@@ -350,4 +355,3 @@ private:
 };
 
 }
-
