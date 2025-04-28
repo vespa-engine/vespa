@@ -6,6 +6,9 @@
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <cassert>
 
+#include <vespa/log/log.h>
+LOG_SETUP(".searchlib.expression.attributenode");
+
 namespace search::expression {
 
 using namespace vespalib;
@@ -323,10 +326,20 @@ AttributeNode::onExecute() const
             _handler->handle(*_scratchResult);
             _needExecute = false;
         }
-        if ((_currentIndex != nullptr) && !_keepAliveForIndexLookups->empty()) {
+        if (_currentIndex != nullptr) {
+            assert(_keepAliveForIndexLookups);
             assert(_hasMultiValue);
-            size_t idx = std::min(size_t(_currentIndex->get()), _keepAliveForIndexLookups->size() - 1);
-            updateResult().set(_keepAliveForIndexLookups->get(idx));
+            size_t idx = _currentIndex->get();
+            if (idx < _keepAliveForIndexLookups->size()) [[likely]] {
+                updateResult().set(_keepAliveForIndexLookups->get(idx));
+            } else if (_keepAliveForIndexLookups->size() == 0) {
+                LOG(debug, "%s lookup %zd in [] -> NIL", _attributeName.c_str(), idx);
+                updateResult().set(*_keepAliveForIndexLookups->createBaseType());
+            } else {
+                // XXX accessing outside array boundary returns last element
+                idx = _keepAliveForIndexLookups->size() - 1;
+                updateResult().set(_keepAliveForIndexLookups->get(idx));
+            }
         }
     } else {
         updateResult().set(*_scratchResult);
@@ -369,7 +382,6 @@ Deserializer &
 AttributeNode::onDeserialize(Deserializer & is)
 {
     FunctionNode::onDeserialize(is);
-
     return is >> _attributeName;
 }
 
