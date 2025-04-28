@@ -465,6 +465,33 @@ void FilterThreshold::set_for_field(Properties& props, const std::string& field_
     props.add(NAME + "." + field_name, threshold);
 }
 
+const std::string ElementGap::NAME("vespa.matching.element_gap");
+
+std::optional<search::fef::ElementGap>
+ElementGap::lookup_for_field(const Properties& props, const std::string& field_name) {
+    auto property = props.lookup(NAME, field_name);
+    if (!property.found()) {
+        return std::nullopt;
+    }
+    auto &value = property.get();
+    if (value == "infinity") {
+        return search::fef::ElementGap(std::nullopt);
+    }
+    uint32_t ivalue(0);
+    const auto &valS = property.get();
+    const char *start = valS.c_str();
+    const char *end = start + valS.size();
+    while ((start != end) && std::isspace(static_cast<unsigned char>(start[0]))) { start++; }
+    std::from_chars(start, end, ivalue);
+    return search::fef::ElementGap(ivalue);
+}
+
+void
+ElementGap::set_for_field(Properties& props, const std::string& field_name, const std::string& element_gap)
+{
+    props.add(NAME + "." + field_name, element_gap);
+}
+
 const std::string TargetHitsMaxAdjustmentFactor::NAME("vespa.matching.nns.target_hits_max_adjustment_factor");
 
 const double TargetHitsMaxAdjustmentFactor::DEFAULT_VALUE(20.0);

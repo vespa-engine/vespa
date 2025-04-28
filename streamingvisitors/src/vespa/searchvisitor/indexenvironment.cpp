@@ -77,7 +77,11 @@ IndexEnvironment::fixup_fields()
     for (auto& field : _fields) {
         if (indexproperties::IsFilterField::check(_properties, field.name())) {
             field.setFilter(true);
-	}
+        }
+        auto element_gap_setting = indexproperties::matching::ElementGap::lookup_for_field(_properties, field.name());
+        if (element_gap_setting.has_value()) {
+            field.set_element_gap(element_gap_setting.value());
+        }
     }
 }
 

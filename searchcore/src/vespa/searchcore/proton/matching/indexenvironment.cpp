@@ -66,6 +66,10 @@ IndexEnvironment::extractFields(const search::index::Schema &schema)
         } else if (filter_threshold.has_value()) {
             fieldInfo.set_filter_threshold(search::fef::FilterThreshold(filter_threshold.value()));
         }
+        auto element_gap_setting = indexproperties::matching::ElementGap::lookup_for_field(_properties, field.getName());
+        if (element_gap_setting.has_value()) {
+            fieldInfo.set_element_gap(element_gap_setting.value());
+        }
         auto itr = _fieldNames.find(field.getName());
         if (itr != _fieldNames.end()) { // override the attribute field
             FieldInfo shadow_field(fieldInfo.type(), fieldInfo.collection(), fieldInfo.name(), itr->second);

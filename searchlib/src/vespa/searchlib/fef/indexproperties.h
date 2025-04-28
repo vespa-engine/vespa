@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "element_gap.h"
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/fuzzy/fuzzy_matching_algorithm.h>
 #include <cstdint>
@@ -375,6 +376,15 @@ namespace matching {
         static std::optional<double> lookup_for_field(const Properties& props, const std::string& field_name);
         static void set(Properties& props, const std::string& threshold);
         static void set_for_field(Properties& props, const std::string& field_name, const std::string& threshold);
+    };
+
+    /*
+     * Property to extract the element gap settings for a field.
+     */
+    struct ElementGap {
+        static const std::string NAME;
+        static std::optional<search::fef::ElementGap> lookup_for_field(const Properties& props, const std::string& field_name);
+        static void set_for_field(Properties& props, const std::string& field_name, const std::string& element_gap);
     };
 
     /**
