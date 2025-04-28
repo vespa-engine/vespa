@@ -6,6 +6,7 @@
 #include <vespa/searchlib/expression/enumresultnode.h>
 #include <vespa/searchlib/expression/resultvector.h>
 #include <vespa/searchlib/expression/attributenode.h>
+#include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/current_index_setup.h>
 #include <vespa/searchlib/expression/documentaccessornode.h>
 #include <vespa/searchlib/attribute/stringbase.h>
@@ -144,9 +145,16 @@ struct ResolveCurrentIndex : vespalib::ObjectOperation, vespalib::ObjectPredicat
                 attr.setCurrentIndex(setup.resolve(attr.getAttributeName()));
             }
         }
+        if (obj.getClass().equal(DocumentFieldNode::classId)) {
+            auto &docField = static_cast<DocumentFieldNode &>(obj);
+            if (docField.getCurrentIndex() == nullptr && docField.hasMultiValue()) {
+                docField.setCurrentIndex(setup.resolve(docField.getFieldName()));
+            }
+        }
     }
     bool check(const vespalib::Identifiable &obj) const override {
-        return obj.inherits(AttributeNode::classId);
+        return obj.inherits(AttributeNode::classId)
+                || obj.inherits(DocumentFieldNode::classId);
     }
 };
 
@@ -311,9 +319,10 @@ Grouping::configureStaticStuff(const ConfigureStaticParams & params)
         CurrentIndexSetup setup;
         ResolveCurrentIndex resolver(setup);
         size_t end = std::min(size_t(_lastLevel + 1), _levels.size());
-        for (size_t i = _firstLevel; i < end; ++i) {
+        for (size_t i = 0; i < end; ++i) {
             _levels[i].wire_current_index(setup, resolver, resolver);
         }
+        selectGroups(resolver, resolver, _root, 0, _lastLevel, 0);
     }
 
     ExpressionTree::Configure treeConf;
