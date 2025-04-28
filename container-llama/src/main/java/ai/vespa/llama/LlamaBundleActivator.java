@@ -28,11 +28,9 @@ public class LlamaBundleActivator implements BundleActivator {
         }
         if (checkFilenames(
                     "/dev/nvidia0",
-                    "/opt/vespa-deps/lib64/cuda/libllama.so",
                     "/opt/vespa-deps/lib64/cuda/libjllama.so")) {
             System.setProperty(PATH_PROPNAME, "/opt/vespa-deps/lib64/cuda");
         } else if (checkFilenames(
-                    "/opt/vespa-deps/lib64/libllama.so",
                     "/opt/vespa-deps/lib64/libjllama.so")) {
             System.setProperty(PATH_PROPNAME, "/opt/vespa-deps/lib64");
         } else {
