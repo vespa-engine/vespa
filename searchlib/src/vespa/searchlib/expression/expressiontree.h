@@ -28,10 +28,10 @@ struct ConfigureStaticParams {
     {}
     ConfigureStaticParams (const attribute::IAttributeContext * attrCtx,
                            const document::DocumentType * docType,
-                           bool enableNesteddMultivalueGrouping)
+                           bool enableNestedMultivalueGrouping)
         : _attrCtx(attrCtx),
           _docType(docType),
-          _enableNestedMultivalueGrouping(enableNesteddMultivalueGrouping)
+          _enableNestedMultivalueGrouping(enableNestedMultivalueGrouping)
     { }
     const attribute::IAttributeContext * _attrCtx;
     const document::DocumentType * _docType;
