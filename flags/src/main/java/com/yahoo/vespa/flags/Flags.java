@@ -354,6 +354,14 @@ public class Flags {
             CLOUD_ACCOUNT
     );
 
+    public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
+            "create-tenant-roles", true,
+            List.of("oyving"), "2025-04-28", "2025-06-01",
+            "Whether to create tenant specific roles",
+            "Takes effect immediately",
+            TENANT_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
