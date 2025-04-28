@@ -26,7 +26,8 @@ func TestParseId(t *testing.T) {
 		out  Id
 		fail bool
 	}{
-		{"id:ns:type::user",
+		{
+			"id:ns:type::user",
 			Id{
 				Namespace:    "ns",
 				Type:         "type",
@@ -34,7 +35,8 @@ func TestParseId(t *testing.T) {
 			},
 			false,
 		},
-		{"id:ns:type:n=123:user",
+		{
+			"id:ns:type:n=123:user",
 			Id{
 				Namespace:    "ns",
 				Type:         "type",
@@ -43,7 +45,8 @@ func TestParseId(t *testing.T) {
 			},
 			false,
 		},
-		{"id:ns:type:g=foo:user",
+		{
+			"id:ns:type:g=foo:user",
 			Id{
 				Namespace:    "ns",
 				Type:         "type",
@@ -52,7 +55,8 @@ func TestParseId(t *testing.T) {
 			},
 			false,
 		},
-		{"id:ns:type::user::specific",
+		{
+			"id:ns:type::user::specific",
 			Id{
 				Namespace:    "ns",
 				Type:         "type",
@@ -60,7 +64,8 @@ func TestParseId(t *testing.T) {
 			},
 			false,
 		},
-		{"id:ns:type:::",
+		{
+			"id:ns:type:::",
 			Id{
 				Namespace:    "ns",
 				Type:         "type",
@@ -68,7 +73,8 @@ func TestParseId(t *testing.T) {
 			},
 			false,
 		},
-		{"id:ns:type::n=user-specific",
+		{
+			"id:ns:type::n=user-specific",
 			Id{
 				Namespace:    "ns",
 				Type:         "type",
@@ -76,7 +82,8 @@ func TestParseId(t *testing.T) {
 			},
 			false,
 		},
-		{"id:ns:type::g=user-specific",
+		{
+			"id:ns:type::g=user-specific",
 			Id{
 				Namespace:    "ns",
 				Type:         "type",
@@ -138,7 +145,8 @@ func feedInput(jsonl bool) string {
 		`
 {
   "remove": "id:ns:type::doc5"
-}`}
+}`,
+	}
 	if jsonl {
 		return strings.Join(operations, "\n")
 	}
@@ -206,7 +214,7 @@ func TestDocumentDecoderInvalid(t *testing.T) {
 		t.Errorf("unexpected error: %s", err)
 	}
 	_, err = dec.Decode()
-	wantErr := "invalid operation at byte offset 110: jsontext: invalid character '\\n' within string (expecting non-control character)"
+	wantErr := "invalid operation at byte offset 110: jsontext: invalid character '\\n' in string (expecting non-control character) within \"/fields/foo\" after offset 120"
 	if err.Error() != wantErr {
 		t.Errorf("want error %q, got %q", wantErr, err.Error())
 	}
