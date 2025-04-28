@@ -29,8 +29,8 @@ DocumentFieldNode::DocumentFieldNode(const DocumentFieldNode & rhs) :
     DocumentAccessorNode(rhs),
     _fieldPath(),
     _value(rhs._value),
-    _fieldName(rhs._fieldName),
-    _doc(nullptr)
+    _keepAliveForIndexLookups(),
+    _fieldName(rhs._fieldName)
 {
 }
 
@@ -41,8 +41,11 @@ DocumentFieldNode::operator = (const DocumentFieldNode & rhs)
         DocumentAccessorNode::operator=(rhs);
         _fieldPath.clear();
         _value = rhs._value;
+        _keepAliveForIndexLookups.reset();
         _fieldName = rhs._fieldName;
         _doc = nullptr;
+        _currentIndex = rhs._currentIndex;
+        _needExecute = false;
     }
     return *this;
 }
@@ -125,10 +128,18 @@ DocumentFieldNode::onPrepare(bool preserveAccurateTypes)
         const document::FieldPathEntry & endOfPath(_fieldPath.back());
         if (endOfPath.getFieldValueToSetPtr() != nullptr) {
             const FieldValue& fv = endOfPath.getFieldValueToSet();
-            _value.reset(deduceResultNode(_fieldName, fv, preserveAccurateTypes, nestedMultiValue).release());
-            if (_value->inherits(ResultNodeVector::classId)) {
-                _handler = std::make_unique<MultiHandler>(static_cast<ResultNodeVector &>(*_value));
+            auto res = deduceResultNode(_fieldName, fv, preserveAccurateTypes, nestedMultiValue);
+            if (res->inherits(ResultNodeVector::classId)) {
+                auto rnv_ptr = vespalib::static_cast_unique<ResultNodeVector>(std::move(res));
+                _handler = std::make_unique<MultiHandler>(*rnv_ptr);
+                if (_currentIndex != nullptr) {
+                    _value = rnv_ptr->createBaseType();
+                    _keepAliveForIndexLookups = std::move(rnv_ptr);
+                } else {
+                    _value = std::move(rnv_ptr);
+                }
             } else {
+                _value = std::move(res);
                 _handler = std::make_unique<SingleHandler>(*_value);
             }
         } else {
@@ -150,6 +161,18 @@ DocumentFieldNode::onDocType(const DocumentType & docType)
     if (_fieldPath.empty()) {
         throw std::runtime_error(make_string("Field %s could not be located in documenttype %s", _fieldName.c_str(), docType.getName().c_str()));
     }
+}
+
+bool DocumentFieldNode::hasMultiValue() const {
+    for (const auto & entry : _fieldPath) {
+        if (entry->getDataType().isArray()) return true;
+        if (entry->getDataType().isMap()) return true;
+    }
+    return false;
+}
+
+void DocumentFieldNode::setCurrentIndex(const CurrentIndex * index) {
+    _currentIndex = index;
 }
 
 class FieldValue2ResultNode : public ResultNode
@@ -194,12 +217,29 @@ void DocumentFieldNode::onDoc(const Document & doc)
 {
     _doc = & doc;
     _handler->reset();
+    _needExecute = true;
 }
 
 bool
 DocumentFieldNode::onExecute() const
 {
-    _doc->iterateNested(_fieldPath.getFullRange(), *_handler);
+    if (_needExecute) {
+        _doc->iterateNested(_fieldPath.getFullRange(), *_handler);
+        _needExecute = false;
+    }
+    if (_currentIndex && _keepAliveForIndexLookups) {
+        size_t idx = _currentIndex->get();
+        if (idx < _keepAliveForIndexLookups->size()) [[likely]] {
+            _value->set(_keepAliveForIndexLookups->get(idx));
+        } else if (_keepAliveForIndexLookups->size() == 0) {
+            LOG(debug, "%s lookup %zd in [] -> NIL", _fieldName.c_str(), idx);
+            _value = _keepAliveForIndexLookups->createBaseType();
+        } else {
+            // XXX accessing outside array boundary returns last element
+            idx = _keepAliveForIndexLookups->size() - 1;
+            _value->set(_keepAliveForIndexLookups->get(idx));
+        }
+    }
     return true;
 }
 
