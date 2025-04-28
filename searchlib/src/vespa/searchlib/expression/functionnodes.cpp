@@ -424,8 +424,8 @@ bool
 StrLenFunctionNode::onExecute() const
 {
     getArg().execute();
-    char buf[32];
-    static_cast<Int64ResultNode &> (updateResult()).set(getArg().getResult()->getString(BufferRef(buf, sizeof(buf))).size());
+    HoldString tmp(*getArg().getResult());
+    static_cast<Int64ResultNode &> (updateResult()).set(tmp.size());
     return true;
 }
 
@@ -439,8 +439,8 @@ bool
 NormalizeSubjectFunctionNode::onExecute() const
 {
     getArg().execute();
-    char buf[32];
-    ConstBufferRef tmp(getArg().getResult()->getString(BufferRef(buf, sizeof(buf))));
+    HoldString str(*getArg().getResult());
+    std::string_view tmp = str;
 
     int pos = 0;
     if (tmp.size() >= 4) {
@@ -454,7 +454,7 @@ NormalizeSubjectFunctionNode::onExecute() const
             }
         }
     }
-    static_cast<StringResultNode &> (updateResult()).set(std::string_view(tmp.c_str() + pos, tmp.size() - pos));
+    static_cast<StringResultNode &> (updateResult()).set(tmp.substr(pos));
     return true;
 }
 
@@ -585,6 +585,7 @@ FunctionNode::onSerialize(Serializer & os) const
 {
     return os << _tmpResult;
 }
+
 Deserializer &
 FunctionNode::onDeserialize(Deserializer & is)
 {

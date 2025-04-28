@@ -102,9 +102,8 @@ private:
         { }
         void handle(const ResultNode & arg) override;
         void handleFirst(const ResultNode & arg) override {
-            char buf[32];
-            vespalib::ConstBufferRef b = arg.getString(vespalib::BufferRef(buf, sizeof(buf)));
-            _result.set(std::string_view(b.c_str(), b.size()));
+            HoldString b(arg);
+            _result.set(b);
         }
     protected:
         StringResultNode & _result;
@@ -118,8 +117,7 @@ private:
         { }
         void handle(const ResultNode & arg) override;
         void handleFirst(const ResultNode & arg) override {
-            char buf[32];
-            vespalib::ConstBufferRef b = arg.getString(vespalib::BufferRef(buf, sizeof(buf)));
+            HoldString b(arg);
             _result.setBuffer(b.data(), b.size());
         }
     protected:
