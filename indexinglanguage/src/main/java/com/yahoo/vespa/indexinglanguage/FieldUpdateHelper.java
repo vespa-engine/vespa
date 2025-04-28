@@ -30,8 +30,8 @@ import com.yahoo.document.update.ValueUpdate;
 @SuppressWarnings("rawtypes")
 public abstract class FieldUpdateHelper {
 
-    /** Returns true if this update completely replaces the value of the field, false otherwise. */
-    public static boolean isComplete(Field field, ValueUpdate update) {
+    /** Returns true if this update can be represented as a set of document field values. */
+    public static boolean isFieldValues(Field field, ValueUpdate update) {
         if (update instanceof AssignValueUpdate) return true;
         if (!(update instanceof MapValueUpdate)) return false;
 
@@ -41,7 +41,7 @@ public abstract class FieldUpdateHelper {
         field = ((StructuredDataType)fieldType).getField(String.valueOf(update.getValue()));
         if (field == null) return false;
 
-        return isComplete(field, ((MapValueUpdate)update).getUpdate());
+        return isFieldValues(field, ((MapValueUpdate)update).getUpdate());
     }
 
     public static void applyUpdate(Field field, ValueUpdate update, Document doc) {

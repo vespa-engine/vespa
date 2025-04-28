@@ -13,13 +13,17 @@ import com.yahoo.document.PositionDataType;
 import com.yahoo.document.TensorDataType;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.update.AssignValueUpdate;
+import com.yahoo.document.update.ClearValueUpdate;
 import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
+import com.yahoo.processing.response.Data;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.Tensors;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
+import com.yahoo.yolean.Exceptions;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -30,6 +34,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Simon Thoresen Hult
@@ -230,6 +235,80 @@ public class IndexingProcessorTestCase {
             DocumentUpdate output = (DocumentUpdate)tester.process(input);
             assertNull(output);
         }
+
+        {   // Clear title by assigning null: Embedding is kept (not very clear what's the best action).
+            DocumentType inputType = tester.getDocumentType("music");
+            DocumentUpdate input = new DocumentUpdate(inputType, "id:ns:music::");
+            input.addFieldUpdate(FieldUpdate.createClear(inputType.getField("title")));
+
+            DocumentUpdate output = (DocumentUpdate)tester.process(input);
+            assertEquals(1, output.fieldUpdates().size());
+            tester.assertAssignment("title", null, output);
+        }
+    }
+
+    /** Test sending clear of 1 field only, when needing 2 */
+    @Test
+    public void testPartialUpdateWithMultipleFieldsClear() {
+        try {
+            var tester = new PartialUpdateTester();
+
+            DocumentUpdate input = new DocumentUpdate(tester.inputType, "id:ns:test::");
+            input.addFieldUpdate(FieldUpdate.createClear(tester.inputType.getField("stringField")));
+
+            DocumentUpdate output = tester.process(input);
+            assertEquals(1, output.fieldUpdates().size());
+            var fieldUpdate = output.fieldUpdates().iterator().next();
+            assertEquals(1, fieldUpdate.getValueUpdates().size());
+            var valueUpdate = fieldUpdate.getValueUpdates().iterator().next();
+            assertTrue(valueUpdate instanceof AssignValueUpdate);
+            assertEquals("", valueUpdate.getValue().getWrappedValue());
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("Could not execute update 'clear' to field 'stringField' of type string: " +
+                         "No indexing statement taking only 'stringField' as input",
+                         Exceptions.toMessageString(e));
+        }
+    }
+
+    /** Test sending clear plus setting the other */
+    @Test
+    @Ignore // TODO: This should be supported
+    public void testPartialUpdateWithMultipleFieldsClearAndAssign() {
+        var tester = new PartialUpdateTester();
+
+        DocumentUpdate input = new DocumentUpdate(tester.inputType, "id:ns:test::");
+        input.addFieldUpdate(FieldUpdate.createClear(tester.inputType.getField("stringField")));
+        input.addFieldUpdate(FieldUpdate.createAssign(tester.inputType.getField("language"), new StringFieldValue("en")));
+
+        DocumentUpdate output = tester.process(input);
+        assertEquals(1, output.fieldUpdates().size());
+        var fieldUpdate = output.fieldUpdates().iterator().next();
+        assertEquals(1, fieldUpdate.getValueUpdates().size());
+        var valueUpdate = fieldUpdate.getValueUpdates().iterator().next();
+        assertTrue(valueUpdate instanceof AssignValueUpdate);
+        assertEquals("", valueUpdate.getValue().getWrappedValue());
+    }
+
+    /**
+     * Test sending assign of 1 field only, when needing 2.
+     * TODO Vespa 9: This is allowed, but shouldn't be.
+     */
+    @Test
+    public void testPartialUpdateWithMultipleFieldsAssign() {
+        var tester = new PartialUpdateTester();
+
+        DocumentUpdate input = new DocumentUpdate(tester.inputType, "id:ns:test::");
+        input.addFieldUpdate(FieldUpdate.createAssign(tester.inputType.getField("stringField"), new StringFieldValue("newValue")));
+
+        DocumentUpdate output = tester.process(input);
+        assertEquals(1, output.fieldUpdates().size());
+        var fieldUpdate = output.fieldUpdates().iterator().next();
+        assertEquals(1, fieldUpdate.getValueUpdates().size());
+        var valueUpdate = fieldUpdate.getValueUpdates().iterator().next();
+        assertTrue(valueUpdate instanceof AssignValueUpdate);
+        assertEquals("newValue", valueUpdate.getValue().getWrappedValue());
     }
 
     @Test
@@ -265,6 +344,36 @@ public class IndexingProcessorTestCase {
         AssignValueUpdate valueUpdate = (AssignValueUpdate)embeddingUpdate.getValueUpdate(0);
         assertEquals(Tensor.from("tensor<int8>(x[16]):[-110, 73, 36, -110, 73, 36, -110, 73, 36, -110, 73, 36, -110, 73, 36, -110]"),
                                  valueUpdate.getValue().getWrappedValue());
+    }
+
+    static class PartialUpdateTester {
+
+        IndexingProcessorTester nestedTester;
+        DocumentType inputType;
+
+        PartialUpdateTester() {
+            var documentTypes = new DocumentTypeManager();
+            var test = new DocumentType("test");
+            test.addField("stringField", DataType.STRING);
+            test.addField("language", DataType.STRING);
+            documentTypes.register(test);
+
+            IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
+            config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("test")
+                                                                  .content("clear_state | guard { \"unknown\" | set_language; input stringField | index stringField; input language | set_language; }")
+                                                                  .docfield("stringField")
+                                                                  .docfield("language"));
+            var scripts = new ScriptManager(documentTypes, new IlscriptsConfig(config), null,
+                                            Map.of("test", new TestEmbedder()), FieldGenerator.throwsOnUse.asMap());
+
+            nestedTester = new IndexingProcessorTester(documentTypes, scripts);
+            inputType = nestedTester.getDocumentType("test");
+        }
+
+        DocumentUpdate process(DocumentOperation input) {
+            return (DocumentUpdate)nestedTester.process(input);
+        }
+
     }
 
     /** An ebedder which also does its own quantization, similar to HuggingFaceEmbedder. */

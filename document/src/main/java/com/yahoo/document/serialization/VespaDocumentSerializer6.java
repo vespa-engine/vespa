@@ -70,7 +70,7 @@ import static com.yahoo.text.Utf8.calculateBytePositions;
  * Class used for serializing documents on the Vespa 6.x document format.
  *
  * @author baldersheim
- **/
+ */
 @Deprecated(forRemoval = true)
 public class VespaDocumentSerializer6 extends BufferSerializer implements DocumentSerializer {
 
@@ -692,7 +692,7 @@ public class VespaDocumentSerializer6 extends BufferSerializer implements Docume
 
     @Override
     public void write(RemoveValueUpdate update, DataType superType) {
-        writeValue(this, ((CollectionDataType)superType).getNestedType(), update.getValue());
+        writeValue(this, superType.getNestedType(), update.getValue());
     }
 
     @Override
