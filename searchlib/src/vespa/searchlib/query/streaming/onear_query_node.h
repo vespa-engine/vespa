@@ -13,7 +13,9 @@ namespace search::streaming {
 class ONearQueryNode : public NearQueryNode
 {
 public:
-    ONearQueryNode() noexcept : NearQueryNode("ONEAR") { }
+    explicit ONearQueryNode(const search::queryeval::IElementGapInspector& element_gap_inspector) noexcept
+        : NearQueryNode("ONEAR", element_gap_inspector)
+    { }
     bool evaluate() const override;
 };
 

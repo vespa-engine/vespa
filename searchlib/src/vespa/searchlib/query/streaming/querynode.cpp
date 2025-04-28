@@ -52,7 +52,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
     case ParseItem::ITEM_ONEAR:
     case ParseItem::ITEM_RANK:
     {
-        qn = QueryConnector::create(type);
+        qn = QueryConnector::create(type, factory);
         if (qn) {
             auto * qc = dynamic_cast<QueryConnector *> (qn.get());
             auto * nqn = dynamic_cast<NearQueryNode *> (qc);
