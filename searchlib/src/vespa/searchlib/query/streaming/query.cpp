@@ -88,15 +88,15 @@ QueryConnector::width() const
 }
 
 std::unique_ptr<QueryConnector>
-QueryConnector::create(ParseItem::ItemType type)
+QueryConnector::create(ParseItem::ItemType type, const QueryNodeResultFactory& factory)
 {
     switch (type) {
         case search::ParseItem::ITEM_AND:          return std::make_unique<AndQueryNode>();
         case search::ParseItem::ITEM_OR:
         case search::ParseItem::ITEM_WEAK_AND:     return std::make_unique<OrQueryNode>();
         case search::ParseItem::ITEM_NOT:          return std::make_unique<AndNotQueryNode>();
-        case search::ParseItem::ITEM_NEAR:         return std::make_unique<NearQueryNode>();
-        case search::ParseItem::ITEM_ONEAR:        return std::make_unique<ONearQueryNode>();
+        case search::ParseItem::ITEM_NEAR:         return std::make_unique<NearQueryNode>(factory.get_element_gap_inspector());
+        case search::ParseItem::ITEM_ONEAR:        return std::make_unique<ONearQueryNode>(factory.get_element_gap_inspector());
         case search::ParseItem::ITEM_RANK:         return std::make_unique<RankWithQueryNode>();
         default: return nullptr;
     }

@@ -4,6 +4,8 @@
 #include <vespa/searchlib/query/query_normalization.h>
 #include <memory>
 
+namespace search::queryeval { class IElementGapInspector; }
+
 namespace search::streaming {
 
 /**
@@ -30,6 +32,7 @@ public:
         return Normalizing::NONE;
     }
     virtual std::unique_ptr<QueryNodeResultBase> create() const { return {}; }
+    virtual const search::queryeval::IElementGapInspector& get_element_gap_inspector() const noexcept;
 };
 }
 
