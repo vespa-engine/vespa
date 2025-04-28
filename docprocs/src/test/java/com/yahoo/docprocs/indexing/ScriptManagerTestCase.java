@@ -3,6 +3,7 @@ package com.yahoo.docprocs.indexing;
 
 import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -28,7 +29,10 @@ public class ScriptManagerTestCase {
         IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
         config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("newssummary")
                                                               .content("input title | index title"));
-        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null, Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null,
+                                                    Chunker.throwsOnUse.asMap(),
+                                                    Embedder.throwsOnUse.asMap(),
+                                                    FieldGenerator.throwsOnUse.asMap());
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle")));
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
@@ -42,7 +46,10 @@ public class ScriptManagerTestCase {
         IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
         config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("newsarticle")
                                                               .content("input title | index title"));
-        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null, Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null,
+                                                    Chunker.throwsOnUse.asMap(),
+                                                    Embedder.throwsOnUse.asMap(),
+                                                    FieldGenerator.throwsOnUse.asMap());
         assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newssummary")));
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
@@ -50,14 +57,20 @@ public class ScriptManagerTestCase {
     @Test
     public void requireThatEmptyConfigurationDoesNotThrow() {
         var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
-        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null, Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null,
+                                                    Chunker.throwsOnUse.asMap(),
+                                                    Embedder.throwsOnUse.asMap(),
+                                                    FieldGenerator.throwsOnUse.asMap());
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
 
     @Test
     public void requireThatUnknownDocumentTypeReturnsNull() {
         var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
-        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null, Embedder.throwsOnUse.asMap(), FieldGenerator.throwsOnUse.asMap());
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(new IlscriptsConfig.Builder()), null,
+                                                    Chunker.throwsOnUse.asMap(),
+                                                    Embedder.throwsOnUse.asMap(),
+                                                    FieldGenerator.throwsOnUse.asMap());
         for (Iterator<DocumentType> it = typeMgr.documentTypeIterator(); it.hasNext(); ) {
             assertNull(scriptMgr.getScript(it.next()));
         }

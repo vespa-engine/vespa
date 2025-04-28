@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.vespa.indexinglanguage.linguistics.AnnotatorConfig;
@@ -17,13 +18,18 @@ public class ScriptParserContext {
 
     private AnnotatorConfig annotatorConfig = new AnnotatorConfig();
     private Linguistics linguistics;
+    private final Map<String, Chunker> chunkers;
     private final Map<String, Embedder> embedders;
     private final Map<String, FieldGenerator> generators;
     private String defaultFieldName = null;
     private CharStream inputStream = null;
 
-    public ScriptParserContext(Linguistics linguistics, Map<String, Embedder> embedders, Map<String, FieldGenerator> generators) {
+    public ScriptParserContext(Linguistics linguistics,
+                               Map<String, Chunker> chunkers,
+                               Map<String, Embedder> embedders,
+                               Map<String, FieldGenerator> generators) {
         this.linguistics = linguistics;
+        this.chunkers = chunkers;
         this.embedders = embedders;
         this.generators = generators;
     }
@@ -46,11 +52,16 @@ public class ScriptParserContext {
         return this;
     }
 
+    public Map<String, Chunker> getChunkers() {
+        return Collections.unmodifiableMap(chunkers);
+    }
+
     public Map<String, Embedder> getEmbedders() {
         return Collections.unmodifiableMap(embedders);
     }
     
-    public Map<String, FieldGenerator> getGenerators() { return Collections.unmodifiableMap(generators);
+    public Map<String, FieldGenerator> getGenerators() {
+        return Collections.unmodifiableMap(generators);
     }
 
     public String getDefaultFieldName() {

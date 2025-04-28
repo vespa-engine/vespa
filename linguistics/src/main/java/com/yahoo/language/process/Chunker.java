@@ -21,6 +21,9 @@ public interface Chunker {
     /** An instance of this which throws IllegalStateException if attempted used */
     Chunker throwsOnUse = new FailingChunker();
 
+    /** Returns true if concatenating all the chunks returned by this will always yield exactly the original text. */
+    boolean isReversible();
+
     /** Returns this chunker instance as a map with the default chunked name */
     default Map<String, Chunker> asMap() {
         return asMap(defaultChunkerId);
@@ -74,6 +77,9 @@ public interface Chunker {
         public FailingChunker(String message) {
             this.message = message;
         }
+
+        @Override
+        public boolean isReversible() { return false; }
 
         @Override
         public List<Chunk> chunk(String text, Context context) {

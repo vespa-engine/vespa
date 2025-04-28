@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -122,17 +123,15 @@ public final class ScriptExpression extends ExpressionList<StatementExpression> 
 
     /** Creates an expression with simple linguistics for testing */
     public static ScriptExpression fromString(String expression) throws ParseException {
-        return fromString(expression, new SimpleLinguistics(), Embedder.throwsOnUse.asMap());
+        return fromString(expression, new SimpleLinguistics(), Map.of(), Embedder.throwsOnUse.asMap(), Map.of());
     }
 
-    public static ScriptExpression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, embedders, Map.of()).setInputStream(new IndexingInput(expression)));
-    }
-
-    public static Expression fromString(
-            String expression, Linguistics linguistics, Map<String, Embedder> embedders, 
-            Map<String, FieldGenerator> generators) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
+    public static ScriptExpression fromString(String expression,
+                                              Linguistics linguistics,
+                                              Map<String, Chunker> chunkers,
+                                              Map<String, Embedder> embedders,
+                                              Map<String, FieldGenerator> generators) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, chunkers, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 
     public static ScriptExpression newInstance(ScriptParserContext config) throws ParseException {

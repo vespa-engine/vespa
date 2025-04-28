@@ -326,7 +326,8 @@
       "public boolean isDigit(int)",
       "public boolean isLatinDigit(int)",
       "public boolean isLatin(int)",
-      "public boolean isLetterOrDigit(int)"
+      "public boolean isLetterOrDigit(int)",
+      "public boolean isSentenceEnd(int)"
     ],
     "fields" : [ ]
   },
@@ -370,6 +371,7 @@
     "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
+      "public boolean isReversible()",
       "public java.util.List chunk(java.lang.String, com.yahoo.language.process.Chunker$Context)"
     ],
     "fields" : [ ]
@@ -383,6 +385,7 @@
       "abstract"
     ],
     "methods" : [
+      "public abstract boolean isReversible()",
       "public java.util.Map asMap()",
       "public java.util.Map asMap(java.lang.String)",
       "public abstract java.util.List chunk(java.lang.String, com.yahoo.language.process.Chunker$Context)"
@@ -517,7 +520,7 @@
       "public int getStart()",
       "public int getCodePointCount()",
       "public java.lang.String extractFrom(java.lang.String)",
-      "public java.lang.String extractFrom(com.yahoo.language.process.GramSplitter$UnicodeString)",
+      "public java.lang.String extractFrom(com.yahoo.text.UnicodeString)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()"
     ],

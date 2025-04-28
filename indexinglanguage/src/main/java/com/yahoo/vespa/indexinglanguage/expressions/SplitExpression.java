@@ -42,10 +42,8 @@ public final class SplitExpression extends Expression {
         String input = String.valueOf(context.getCurrentValue());
         Array<StringFieldValue> output = new Array<>(DataType.getArray(DataType.STRING));
         if (!input.isEmpty()) {
-            String[] splits = splitPattern.split(input);
-            for (String split : splits) {
+            for (String split : splitPattern.split(input))
                 output.add(new StringFieldValue(split));
-            }
         }
         context.setCurrentValue(output);
     }

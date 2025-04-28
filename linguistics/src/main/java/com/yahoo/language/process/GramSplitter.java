@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.process;
 
+import com.yahoo.text.UnicodeString;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,7 +91,7 @@ public class GramSplitter {
         private Gram findNext() {
             // Skip to next indexable character
             while (i < input.length() && !isIndexable(input.codePointAt(i))) {
-                i = input.next(i);
+                i = input.nextIndex(i);
                 isFirstAfterSeparator = true;
             }
             if (i >= input.length()) return null; // no indexable characters
@@ -101,14 +102,14 @@ public class GramSplitter {
             gram = new UnicodeString(gram.toString().substring(0, tokenEnd));
             if (gram.codePointCount() == n) { // normal case: got a full length gram
                 Gram g = new Gram(i, gram.codePointCount());
-                i = input.next(i);
+                i = input.nextIndex(i);
                 isFirstAfterSeparator = false;
                 return g;
             }
             else { // gram is too short due either to being a symbol, being followed by a non-word separator, or end of string
                 if (isFirstAfterSeparator || ( gram.codePointCount() == 1 && characterClasses.isSymbol(gram.codePointAt(0)))) { // make a gram anyway
                     Gram g = new Gram(i, gram.codePointCount());
-                    i = input.next(i);
+                    i = input.nextIndex(i);
                     isFirstAfterSeparator = false;
                     return g;
                 } else { // skip to next
@@ -128,10 +129,10 @@ public class GramSplitter {
         /** Given a string s starting by an indexable character, return the position where that token should end. */
         private int tokenEnd(UnicodeString s) {
             if (characterClasses.isSymbol(s.codePointAt(0)))
-                return s.next(0); // symbols have length 1
+                return s.nextIndex(0); // symbols have length 1
 
             int i = 0;
-            for (; i < s.length(); i = s.next(i)) {
+            for (; i < s.length(); i = s.nextIndex(i)) {
                 if ( ! characterClasses.isLetterOrDigit(s.codePointAt(i)))
                     return i;
             }
@@ -202,58 +203,6 @@ public class GramSplitter {
             result = 31 * result + codePointCount;
             return result;
         }
-
-    }
-
-    /**
-     * A string wrapper with some convenience methods for dealing with UTF-16 surrogate pairs
-     * (a crime against humanity for which we'll be negatively impacted for at least the next million years).
-     */
-    private static class UnicodeString {
-
-        private final String s;
-
-        public UnicodeString(String s) {
-            this.s = s;
-        }
-
-        /** Substring in code point space */
-        public UnicodeString substring(int start, int codePoints) {
-            int cps = codePoints * 2 <= s.length() - start ? codePoints
-                                                           : Math.min(codePoints, s.codePointCount(start, s.length()));
-            return new UnicodeString(s.substring(start, s.offsetByCodePoints(start, cps)));
-        }
-
-        /** Returns the position count code points after start (which may be past the end of the string) */
-        public int skip(int codePointCount, int start) {
-            int index = start;
-            for (int i = 0; i < codePointCount; i++) {
-                index = next(index);
-                if (index > s.length()) break;
-            }
-            return index;
-        }
-
-        /** Returns the index of the next code point after start (which may be past the end of the string) */
-        public int next(int index) {
-            int next = index + 1;
-            if (next < s.length() && Character.isLowSurrogate(s.charAt(next)))
-                next++;
-            return next;
-        }
-
-        /** Returns the number of positions (not code points) in this */
-        public int length() { return s.length(); }
-
-        /** Returns the number of code points in this */
-        public int codePointCount() { return s.codePointCount(0, s.length()); }
-
-        public int codePointAt(int index) {
-            return s.codePointAt(index);
-        }
-
-        @Override
-        public String toString() { return s; }
 
     }
 

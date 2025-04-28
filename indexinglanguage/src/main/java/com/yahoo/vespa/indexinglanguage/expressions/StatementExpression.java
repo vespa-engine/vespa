@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
 import com.yahoo.language.simple.SimpleLinguistics;
@@ -138,13 +139,15 @@ public final class StatementExpression extends ExpressionList<Expression> {
     }
 
     public static StatementExpression fromString(String expression, Linguistics linguistics, Map<String, Embedder> embedders) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, embedders, Map.of()).setInputStream(new IndexingInput(expression)));
+        return newInstance(new ScriptParserContext(linguistics, Map.of(), embedders, Map.of()).setInputStream(new IndexingInput(expression)));
     }
 
-    public static StatementExpression fromString(
-            String expression, Linguistics linguistics, Map<String, Embedder> embedders, 
-            Map<String, FieldGenerator> generators) throws ParseException {
-        return newInstance(new ScriptParserContext(linguistics, embedders, generators).setInputStream(new IndexingInput(expression)));
+    public static StatementExpression fromString(String expression,
+                                                 Linguistics linguistics,
+                                                 Map<String, Chunker> chunkers,
+                                                 Map<String, Embedder> embedders,
+                                                 Map<String, FieldGenerator> generators) throws ParseException {
+        return newInstance(new ScriptParserContext(linguistics, chunkers, embedders, generators).setInputStream(new IndexingInput(expression)));
     }
 
     public static StatementExpression newInstance(ScriptParserContext config) throws ParseException {
