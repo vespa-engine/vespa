@@ -6,6 +6,7 @@ import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.StructDataType;
 import com.yahoo.document.WeightedSetDataType;
@@ -18,6 +19,8 @@ import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.UriFieldValue;
 import com.yahoo.document.datatypes.WeightedSet;
+import com.yahoo.document.update.ClearValueUpdate;
+import com.yahoo.document.update.FieldUpdate;
 import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
@@ -28,6 +31,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
 import org.junit.Test;
+
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -578,6 +583,39 @@ public class ScriptTestCase {
         assertEquals(2, array.size());
         assertEquals("Sentence 1.", array.get(0).getWrappedValue());
         assertEquals(" Sentence 2", array.get(1).getWrappedValue());
+    }
+
+    @Test
+    public void testClearValueUpdate() {
+        String script = """
+                        {
+                        clear_state | guard { input string1 | tokenize normalize stem:"BEST" | summary string1 | index string1; }
+                        }
+                        """;
+
+        var tester = new ScriptTester();
+        var expression = tester.scriptFrom(script);
+
+        DocumentType docType = new DocumentType("my_type");
+        Field field1 = new Field("string1", DataType.STRING);
+        Field field2 = new Field("string2", DataType.STRING);
+        Field field3 = new Field("string3", DataType.STRING);
+        docType.addField(field1);
+        docType.addField(field2);
+        docType.addField(field3);
+
+        DocumentUpdate update = new DocumentUpdate(docType, "id:foo:my_type::1");
+        update.addFieldUpdate(FieldUpdate.createClear(field1));
+
+        FieldValuesFactory factory = new FieldValuesFactory();
+        List<UpdateFieldValues> updates = factory.asFieldValues(update);
+
+        expression.resolve(update);
+        for (var fieldValueUpdate : updates)
+            expression.execute(fieldValueUpdate);
+
+        var update1 = updates.get(0).getOutput().getFieldUpdate("string1").getValueUpdate(0);
+        assertTrue(update1 instanceof ClearValueUpdate);
     }
 
 }

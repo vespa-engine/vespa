@@ -38,33 +38,31 @@ import java.util.Map;
 @SuppressWarnings("rawtypes")
 public class FieldUpdateFieldValues implements UpdateFieldValues {
 
-    private final DocumentFieldValues adapter;
+    private final DocumentFieldValues values;
     private final Builder builder;
     private final Expression optimizedExpression;
 
-    private FieldUpdateFieldValues(Expression optimizedExpression, DocumentFieldValues adapter, Builder builder) {
-        this.adapter = adapter;
+    private FieldUpdateFieldValues(Expression optimizedExpression, DocumentFieldValues values, Builder builder) {
+        this.values = values;
         this.builder = builder;
         this.optimizedExpression = optimizedExpression;
     }
 
     @Override
     public DocumentUpdate getOutput() {
-        Document doc = adapter.getUpdatableOutput();
-        DocumentUpdate upd = new DocumentUpdate(doc.getDataType(), doc.getId());
+        Document doc = values.getUpdatableOutput();
+        DocumentUpdate update = new DocumentUpdate(doc.getDataType(), doc.getId());
         for (Iterator<Map.Entry<Field, FieldValue>> it = doc.iterator(); it.hasNext();) {
             Map.Entry<Field, FieldValue> entry = it.next();
             Field field = entry.getKey();
-            if (field.getName().equals("sddocname")) {
-                continue;
-            }
-            FieldUpdate fieldUpd = FieldUpdate.create(field);
-            fieldUpd.addValueUpdates(builder.build(entry.getValue()));
-            if (!fieldUpd.isEmpty()) {
-                upd.addFieldUpdate(fieldUpd);
+            if (field.getName().equals("sddocname")) continue;
+            FieldUpdate fieldUpdate = FieldUpdate.create(field);
+            fieldUpdate.addValueUpdates(builder.build(entry.getValue()));
+            if (!fieldUpdate.isEmpty()) {
+                update.addFieldUpdate(fieldUpdate);
             }
         }
-        return upd.isEmpty() ? null : upd;
+        return update.isEmpty() ? null : update;
     }
 
     @Override
@@ -74,19 +72,24 @@ public class FieldUpdateFieldValues implements UpdateFieldValues {
 
     @Override
     public DataType getFieldType(String fieldName, Expression exp) {
-        return adapter.getFieldType(fieldName, exp);
+        return values.getFieldType(fieldName, exp);
     }
 
     @Override
     public FieldValue getInputValue(String fieldName) {
-        return adapter.getInputValue(fieldName);
+        return values.getInputValue(fieldName);
     }
     @Override
-    public FieldValue getInputValue(FieldPath fieldPath) { return adapter.getInputValue(fieldPath); }
+    public FieldValue getInputValue(FieldPath fieldPath) { return values.getInputValue(fieldPath); }
 
     @Override
     public FieldValues setOutputValue(String fieldName, FieldValue fieldValue, Expression exp) {
-        return adapter.setOutputValue(fieldName, fieldValue, exp);
+        return values.setOutputValue(fieldName, fieldValue, exp);
+    }
+
+    @Override
+    public String toString() {
+        return "field update values: " + values;
     }
 
     public static FieldUpdateFieldValues fromPartialUpdate(DocumentFieldValues documentFieldValues, ValueUpdate valueUpdate) {
@@ -119,53 +122,53 @@ public class FieldUpdateFieldValues implements UpdateFieldValues {
         }
 
         @SuppressWarnings({ "unchecked" })
-        List<ValueUpdate> createValueUpdates(FieldValue val, ValueUpdate upd) {
-            List<ValueUpdate> lst = new ArrayList<>();
-            if (upd instanceof ClearValueUpdate) {
-                lst.add(new ClearValueUpdate());
-            } else if (upd instanceof AssignValueUpdate) {
-                lst.add(new AssignValueUpdate(val));
-            } else if (upd instanceof AddValueUpdate) {
-                if (val instanceof Array) {
-                    lst.addAll(createAddValueUpdateForArray((Array)val, ((AddValueUpdate)upd).getWeight()));
-                } else if (val instanceof WeightedSet) {
-                    lst.addAll(createAddValueUpdateForWset((WeightedSet)val));
+        List<ValueUpdate> createValueUpdates(FieldValue value, ValueUpdate update) {
+            List<ValueUpdate> valueUpdates = new ArrayList<>();
+            if (update instanceof ClearValueUpdate) {
+                valueUpdates.add(new ClearValueUpdate());
+            } else if (update instanceof AssignValueUpdate) {
+                valueUpdates.add(new AssignValueUpdate(value));
+            } else if (update instanceof AddValueUpdate) {
+                if (value instanceof Array) {
+                    valueUpdates.addAll(createAddValueUpdateForArray((Array)value, ((AddValueUpdate)update).getWeight()));
+                } else if (value instanceof WeightedSet) {
+                    valueUpdates.addAll(createAddValueUpdateForWset((WeightedSet)value));
                 } else {
                     // do nothing
                 }
-            } else if (upd instanceof ArithmeticValueUpdate) {
-                lst.add(upd); // leave arithmetics alone
-            } else if (upd instanceof RemoveValueUpdate) {
-                if (val instanceof Array) {
-                    lst.addAll(createRemoveValueUpdateForEachElement(((Array)val).fieldValueIterator()));
-                } else if (val instanceof WeightedSet) {
-                    lst.addAll(createRemoveValueUpdateForEachElement(((WeightedSet)val).fieldValueIterator()));
+            } else if (update instanceof ArithmeticValueUpdate) {
+                valueUpdates.add(update); // leave arithmetics alone
+            } else if (update instanceof RemoveValueUpdate) {
+                if (value instanceof Array) {
+                    valueUpdates.addAll(createRemoveValueUpdateForEachElement(((Array)value).fieldValueIterator()));
+                } else if (value instanceof WeightedSet) {
+                    valueUpdates.addAll(createRemoveValueUpdateForEachElement(((WeightedSet)value).fieldValueIterator()));
                 } else {
                     // do nothing
                 }
-            } else if (upd instanceof MapValueUpdate) {
-                if (val instanceof Array) {
-                    lst.addAll(createMapValueUpdatesForArray((Array)val, (MapValueUpdate)upd));
-                } else if (val instanceof MapFieldValue) {
-                    throw new UnsupportedOperationException("Can not map into a " + val.getClass().getName());
-                } else if (val instanceof StructuredFieldValue) {
-                    lst.addAll(createMapValueUpdatesForStruct((StructuredFieldValue)val, (MapValueUpdate)upd));
-                } else if (val instanceof WeightedSet) {
-                    lst.addAll(createMapValueUpdatesForWset((WeightedSet)val, (MapValueUpdate)upd));
+            } else if (update instanceof MapValueUpdate) {
+                if (value instanceof Array) {
+                    valueUpdates.addAll(createMapValueUpdatesForArray((Array)value, (MapValueUpdate)update));
+                } else if (value instanceof MapFieldValue) {
+                    throw new UnsupportedOperationException("Can not map into a " + value.getClass().getName());
+                } else if (value instanceof StructuredFieldValue) {
+                    valueUpdates.addAll(createMapValueUpdatesForStruct((StructuredFieldValue)value, (MapValueUpdate)update));
+                } else if (value instanceof WeightedSet) {
+                    valueUpdates.addAll(createMapValueUpdatesForWset((WeightedSet)value, (MapValueUpdate)update));
                 } else {
                     // do nothing
                 }
-            } else if (upd instanceof TensorModifyUpdate) {
-                lst.add(upd);
-            } else if (upd instanceof TensorAddUpdate) {
-                lst.add(upd);
-            } else if (upd instanceof TensorRemoveUpdate) {
-                lst.add(upd);
+            } else if (update instanceof TensorModifyUpdate) {
+                valueUpdates.add(update);
+            } else if (update instanceof TensorAddUpdate) {
+                valueUpdates.add(update);
+            } else if (update instanceof TensorRemoveUpdate) {
+                valueUpdates.add(update);
             } else {
-                throw new UnsupportedOperationException(
-                        "Value update type " + upd.getClass().getName() + " not supported");
+                throw new UnsupportedOperationException("Value update type " +
+                                                        update.getClass().getName() + " not supported");
             }
-            return lst;
+            return valueUpdates;
         }
 
         @SuppressWarnings({ "unchecked" })
@@ -244,8 +247,8 @@ public class FieldUpdateFieldValues implements UpdateFieldValues {
         }
 
         @Override
-        List<ValueUpdate> createValueUpdates(FieldValue val, ValueUpdate upd) {
-            return super.createValueUpdates(val, nullAssign);
+        List<ValueUpdate> createValueUpdates(FieldValue value, ValueUpdate upd) {
+            return super.createValueUpdates(value, nullAssign);
         }
     }
 

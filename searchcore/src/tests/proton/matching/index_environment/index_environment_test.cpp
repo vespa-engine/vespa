@@ -288,4 +288,19 @@ TEST(IndexEnvironmentTest, is_filter_and_filter_threshold_settings_are_extracted
     EXPECT_FLOAT_EQ(0.1, c->get_filter_threshold().threshold());
 }
 
+TEST(IndexEnvironmentTest, element_gap_is_populated)
+{
+    Properties p;
+    {
+        using ElementGap = search::fef::indexproperties::matching::ElementGap;
+        ElementGap::set_for_field(p, "a", "infinity");
+        ElementGap::set_for_field(p, "b", "42");
+    }
+    using ElementGap = search::fef::ElementGap;
+    Fixture f(schema_with_index_fields(), p);
+    EXPECT_EQ(ElementGap(std::nullopt), f.env.getFieldByName("a")->get_element_gap());
+    EXPECT_EQ(ElementGap(42), f.env.getFieldByName("b")->get_element_gap());
+    EXPECT_EQ(ElementGap(std::nullopt), f.env.getFieldByName("c")->get_element_gap());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

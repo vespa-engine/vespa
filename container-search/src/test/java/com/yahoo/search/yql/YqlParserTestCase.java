@@ -471,11 +471,11 @@ public class YqlParserTestCase {
     @Test
     void testStemming() {
         assertTrue(getRootWord("select foo from bar where baz contains " +
-                "([ {stem: false} ]\"colors\")").isStemmed());
+                               "([ {stem: false} ]\"colors\")").isStemmed());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                "([ {stem: true} ]\"colors\")").isStemmed());
+                                "([ {stem: true} ]\"colors\")").isStemmed());
         assertFalse(getRootWord("select foo from bar where baz contains " +
-                "\"colors\"").isStemmed());
+                                "\"colors\"").isStemmed());
     }
 
     @Test
@@ -501,6 +501,28 @@ public class YqlParserTestCase {
         assertTrue(root instanceof WordItem);
         assertTrue(root instanceof ExactStringItem);
         assertEquals("yoni jo dima", ((WordItem) root).getWord());
+    }
+
+    @Test
+    void testLinguisticsMode() {
+        // Default for comparison
+        Item root = parse("select foo from bar where userInput(\"yoni jo dima\")").getRoot();
+        assertTrue(root instanceof WeakAndItem);
+        assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
+        for (Item child : ((WeakAndItem)root).items()) {
+            assertTrue(child instanceof WordItem);
+            WordItem childWord = (WordItem)child;
+            assertFalse(childWord.isStemmed());
+        }
+
+        root = parse("select foo from bar where {grammar:\"linguistics\"}userInput(\"yoni jo dima\")").getRoot();
+        assertTrue(root instanceof WeakAndItem);
+        assertEquals("WEAKAND(100) default:yoni default:jo default:dima", root.toString());
+        for (Item child : ((WeakAndItem)root).items()) {
+            assertTrue(child instanceof WordItem);
+            WordItem childWord = (WordItem)child;
+            assertTrue(childWord.isStemmed());
+        }
     }
 
     @Test

@@ -82,12 +82,12 @@ public:
 private:
     void setFillValue(const DataType & dataType);
     Type                                _type;
-    std::string                    _name;
+    std::string                         _name;
     Field                               _field;
     const DataType                    * _dataType;
     uint32_t                            _lookupIndex;
     std::unique_ptr<FieldValue>         _lookupKey;
-    std::string                    _variableName;
+    std::string                         _variableName;
     mutable std::unique_ptr<FieldValue> _fillInVal;
 };
 

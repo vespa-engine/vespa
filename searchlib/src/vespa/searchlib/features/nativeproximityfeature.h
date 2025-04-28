@@ -55,8 +55,7 @@ public:
         uint32_t fieldId;
         TermPairVector pairs;
         feature_t divisor;
-        std::optional<uint32_t> _element_gap;
-        FieldSetup(uint32_t fid) : fieldId(fid), pairs(), divisor(0), _element_gap() {}
+        FieldSetup(uint32_t fid) : fieldId(fid), pairs(), divisor(0) {}
     };
 private:
     const NativeProximityParams&  _params;

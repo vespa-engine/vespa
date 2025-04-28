@@ -44,6 +44,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
         auto to = std::make_unique<api::PutCommand>(bucket, from.stealDocument(), from.getTimestamp());
         to->setCondition(from.getCondition());
         to->set_create_if_non_existent(from.get_create_if_non_existent());
+        to->setApproxByteSize(from.getApproxSize());
         toMsg = std::move(to);
         break;
     }
@@ -54,6 +55,7 @@ DocumentApiConverter::toStorageAPI(documentapi::DocumentMessage& fromMsg)
         auto to = std::make_unique<api::UpdateCommand>(bucket, from.stealDocumentUpdate(), from.getNewTimestamp());
         to->setOldTimestamp(from.getOldTimestamp());
         to->setCondition(from.getCondition());
+        to->setApproxByteSize(from.getApproxSize());
         if (from.has_cached_create_if_missing()) {
             to->set_cached_create_if_missing(from.create_if_missing());
         }
@@ -210,6 +212,7 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
         to->setTimestamp(from.getTimestamp());
         to->setCondition(from.getCondition());
         to->set_create_if_non_existent(from.get_create_if_non_existent());
+        to->setApproxSize(from.getApproxByteSize());
         toMsg = std::move(to);
         break;
     }
@@ -223,6 +226,7 @@ DocumentApiConverter::toDocumentAPI(api::StorageCommand& fromMsg)
         if (from.has_cached_create_if_missing()) {
             to->set_cached_create_if_missing(from.create_if_missing());
         }
+        to->setApproxSize(from.getApproxByteSize());
         toMsg = std::move(to);
         break;
     }

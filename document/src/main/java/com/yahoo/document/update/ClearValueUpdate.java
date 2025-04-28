@@ -6,8 +6,9 @@ import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.serialization.DocumentUpdateWriter;
 
 /**
- * <p>Value update that represents clearing a field. Clearing a field mean removing it.</p>
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * A value update that removes the current value of the field.
+ *
+ * @author Einar M R Rosenvinge
  */
 public class ClearValueUpdate extends ValueUpdate {
 

@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/searchlib/query/tree/simplequery.h>
 #include <vespa/searchlib/query/tree/stackdumpcreator.h>
+#include <vespa/searchlib/queryeval/test/mock_element_gap_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <ostream>
@@ -18,6 +19,7 @@ using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
 using search::query::StackDumpCreator;
 using search::query::Weight;
+using search::queryeval::test::MockElementGapInspector;
 using search::streaming::NearQueryNode;
 using search::streaming::ONearQueryNode;
 using search::streaming::Query;
@@ -41,15 +43,41 @@ std::ostream& operator<<(std::ostream& os, const TestParam& param)
     return os;
 
 }
-class NearTest : public ::testing::TestWithParam<TestParam> {
+
+class MyQueryNodeResultFactory : public QueryNodeResultFactory
+{
+    MockElementGapInspector _mock_element_gap_inspector;
 public:
+    MyQueryNodeResultFactory(std::optional<uint32_t> element_gap);
+    ~MyQueryNodeResultFactory() override;
+    const search::queryeval::IElementGapInspector& get_element_gap_inspector() const noexcept override;
+};
+
+MyQueryNodeResultFactory::MyQueryNodeResultFactory(std::optional<uint32_t> element_gap)
+    : QueryNodeResultFactory(),
+      _mock_element_gap_inspector(element_gap)
+{
+}
+
+MyQueryNodeResultFactory::~MyQueryNodeResultFactory() = default;
+
+const search::queryeval::IElementGapInspector&
+MyQueryNodeResultFactory::get_element_gap_inspector() const noexcept
+{
+    return _mock_element_gap_inspector;
+}
+
+class NearTest : public ::testing::TestWithParam<TestParam> {
+protected:
+    std::optional<std::optional<uint32_t>> _element_gap_setting;
     NearTest();
-    ~NearTest();
+    ~NearTest() override;
     bool evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>> &hitsvv);
 };
 
 NearTest::NearTest()
-    : ::testing::TestWithParam<TestParam>()
+    : ::testing::TestWithParam<TestParam>(),
+      _element_gap_setting()
 {
 }
 
@@ -71,7 +99,7 @@ NearTest::evaluate_query(uint32_t distance, const std::vector<std::vector<TestHi
     }
     auto node = builder.build();
     std::string stackDump = StackDumpCreator::create(*node);
-    QueryNodeResultFactory empty;
+    MyQueryNodeResultFactory empty(_element_gap_setting.value_or(std::nullopt));
     auto q = std::make_unique<Query>(empty, stackDump);
     if (GetParam().ordered()) {
         auto& top = dynamic_cast<ONearQueryNode&>(q->getRoot());
@@ -177,6 +205,19 @@ TEST_P(NearTest, test_overlap_might_matter)
     EXPECT_EQ(!GetParam().ordered(), evaluate_query(4, { { { 0, 0, 10, 6, 0} },
                                                          { { 0, 0, 10, 6, 0} },
                                                          { { 0, 0, 10, 6, 4} } }));
+}
+
+TEST_P(NearTest, element_boundary)
+{
+    std::vector<std::vector<TestHit>> hitsvv({ { { 0, 0, 10, 5, 0} },
+                                               { { 0, 1, 10, 5, 1 } } });
+    EXPECT_FALSE(evaluate_query(20, hitsvv));
+    _element_gap_setting.emplace(0);
+    EXPECT_TRUE(evaluate_query(20, hitsvv));
+    _element_gap_setting.emplace(14);
+    EXPECT_TRUE(evaluate_query(20, hitsvv));
+    _element_gap_setting.emplace(15);
+    EXPECT_FALSE(evaluate_query(20, hitsvv));
 }
 
 auto test_values = ::testing::Values(TestParam(false), TestParam(true));

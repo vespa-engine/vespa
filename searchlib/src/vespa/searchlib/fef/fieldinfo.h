@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "element_gap.h"
 #include "fieldtype.h"
 #include "filter_threshold.h"
 #include <vespa/searchcommon/common/datatype.h>
@@ -29,6 +30,7 @@ private:
     string          _name;
     uint32_t        _id;
     FilterThreshold _threshold;
+    ElementGap      _element_gap;
     bool            _hasAttribute;
 
 public:
@@ -107,8 +109,10 @@ public:
      **/
     bool isFilter() const { return _threshold.is_filter(); }
 
-    void set_filter_threshold(FilterThreshold threshold) { _threshold = threshold; }
-    FilterThreshold get_filter_threshold() const { return _threshold; }
+    void set_filter_threshold(FilterThreshold threshold) noexcept { _threshold = threshold; }
+    FilterThreshold get_filter_threshold() const noexcept { return _threshold; }
+    void set_element_gap(ElementGap element_gap) noexcept { _element_gap = element_gap; }
+    ElementGap get_element_gap() const noexcept { return _element_gap; }
 };
 
 }

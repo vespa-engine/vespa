@@ -836,17 +836,42 @@ void ProtocolSerialization7::onEncode(GBBuf& buf, const api::MergeBucketReply& m
     encode_bucket_response<protobuf::MergeBucketResponse>(buf, msg, no_op_encode);
 }
 
+namespace {
+
+// Since we only build the Vespa code with sanitizer instrumentation and _not_ its dependencies,
+// there may be instrumentation asymmetries across library boundaries that trigger false
+// positives. Repeated primitive fields in Protobuf appear to be one such case, causing failures
+// from the `container-overflow` check. Consequently, keep the deserialization of such fields in
+// their own methods where instrumentation can be explictly disabled with a fine granularity.
+//
+// Note that repeated _message_ fields (our common case) do not appear to trigger this false positive.
+//
+// See:
+//  - https://github.com/protocolbuffers/protobuf/issues/13115
+//    ("repeated-field: AddressSanitizer: container-overflow")
+//  - https://github.com/google/sanitizers/wiki/AddressSanitizerContainerOverflow#false-positives
+#if defined(__has_feature)
+#if __has_feature(address_sanitizer)
+__attribute__((no_sanitize("address"), noinline))
+#endif
+#endif
+std::vector<uint16_t> get_merge_chain(const ::google::protobuf::RepeatedField<uint32_t>& src) {
+    std::vector<uint16_t> chain;
+    chain.reserve(src.size());
+    for (uint32_t node : src) {
+        chain.emplace_back(static_cast<uint16_t>(node));
+    }
+    return chain;
+}
+
+}
+
 api::StorageCommand::UP ProtocolSerialization7::onDecodeMergeBucketCommand(BBuf& buf) const {
     return decode_bucket_request<protobuf::MergeBucketRequest>(buf, [&](auto& req, auto& bucket) {
         auto nodes = get_merge_nodes(req.nodes());
         auto cmd = std::make_unique<api::MergeBucketCommand>(bucket, std::move(nodes), req.max_timestamp());
         cmd->setClusterStateVersion(req.cluster_state_version());
-        std::vector<uint16_t> chain;
-        chain.reserve(req.node_chain_size());
-        for (uint16_t node : req.node_chain()) {
-            chain.emplace_back(node);
-        }
-        cmd->setChain(std::move(chain));
+        cmd->setChain(get_merge_chain(req.node_chain()));
         cmd->set_use_unordered_forwarding(req.unordered_forwarding());
         cmd->set_estimated_memory_footprint(req.estimated_memory_footprint());
         return cmd;

@@ -24,7 +24,7 @@ public:
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     void setIndex(std::string index) override { _index = std::move(index); }
     const std::string & getIndex() const override { return _index; }
-    static std::unique_ptr<QueryConnector> create(ParseItem::ItemType type);
+    static std::unique_ptr<QueryConnector> create(ParseItem::ItemType type, const QueryNodeResultFactory& factory);
     virtual bool isFlattenable(ParseItem::ItemType type) const { (void) type; return false; }
     const QueryNodeList & getChildren() const { return _children; }
     virtual void addChild(QueryNode::UP child);
