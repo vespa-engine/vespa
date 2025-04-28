@@ -660,4 +660,15 @@ TEST(PropertiesTest, per_field_filter_threshold_setting)
     EXPECT_EQ(std::optional<double>(0.4), matching::FilterThreshold::lookup_for_field(p, "foo"));
 }
 
+TEST(PropertiesTest, element_gap)
+{
+    Properties p;
+    EXPECT_EQ(std::optional<ElementGap>(std::nullopt), matching::ElementGap::lookup_for_field(p, "foo"));
+    matching::ElementGap::set_for_field(p, "foo", "infinity");
+    EXPECT_EQ(std::optional<ElementGap>(ElementGap(std::nullopt)), matching::ElementGap::lookup_for_field(p, "foo"));
+    p.clear();
+    matching::ElementGap::set_for_field(p, "foo", "3");
+    EXPECT_EQ(std::optional<ElementGap>(ElementGap(3)), matching::ElementGap::lookup_for_field(p, "foo"));
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

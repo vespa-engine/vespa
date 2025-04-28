@@ -12,6 +12,7 @@ FieldInfo::FieldInfo(FieldType type_in, CollectionType collection_in,
       _name(name_in),
       _id(id_in),
       _threshold(false),
+      _element_gap(),
       _hasAttribute(type_in == FieldType::ATTRIBUTE)
 {
 }
