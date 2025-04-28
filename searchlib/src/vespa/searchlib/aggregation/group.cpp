@@ -111,7 +111,8 @@ Group::Value::groupSingle(const ResultNode & selectResult, HitRank rank, const G
             childMap.insert(getChildrenSize() - 1);
         }
     } else {
-        group = _children[(*found)];
+        uint32_t idx = *found;
+        group = _children[idx];
         if ( ! level.isFrozen()) {
             group->updateRank(rank);
         }
@@ -332,9 +333,10 @@ Group::Value::preAggregate()
     assert(_childInfo._childMap == nullptr);
     _childInfo._childMap = new GroupHash(getChildrenSize()*2, GroupHasher(&_children), GroupEqual(&_children));
     GroupHash & childMap = *_childInfo._childMap;
-    for (ChildP *it(_children), *mt(_children + getChildrenSize()); it != mt; ++it) {
-        (*it)->preAggregate();
-        childMap.insert(it - _children);
+    size_t i = 0;
+    for (ChildP cp : iterateChildren()) {
+        cp->preAggregate();
+        childMap.insert(i++);
     }
 }
 
@@ -343,8 +345,8 @@ Group::Value::postAggregate()
 {
     delete _childInfo._childMap;
     _childInfo._childMap = nullptr;
-    for (ChildP *it(_children), *mt(_children + getChildrenSize()); it != mt; ++it) {
-        (*it)->postAggregate();
+    for (ChildP cp : iterateChildren()) {
+        cp->postAggregate();
     }
 }
 
@@ -362,8 +364,8 @@ void
 Group::Value::sortById()
 {
     std::sort(_children, _children + getChildrenSize(), SortByGroupId());
-    for (ChildP *it(_children), *mt(_children + getChildrenSize()); it != mt; ++it) {
-        (*it)->sortById();
+    for (ChildP cp : iterateChildren()) {
+        cp->sortById();
     }
 }
 
@@ -383,9 +385,9 @@ Group::Value::execute() {
 
 void
 Group::Value::mergeLevel(const Group & protoType, const Value & b) {
-    for (ChildP *it(b._children), *mt(b._children + b.getChildrenSize()); it != mt; ++it) {
+    for (ChildP cp : b.iterateChildren()) {
         auto g(new Group(protoType));
-        g->partialCopy(**it);
+        g->partialCopy(*cp);
         addChild(g);
     }
 }
@@ -396,10 +398,12 @@ Group::Value::merge(const std::vector<GroupingLevel> &levels,
 {
     auto z = new ChildP[getChildrenSize() + b.getChildrenSize()];
     size_t kept(0);
-    ChildP * px = _children;
-    ChildP * ex = _children + getChildrenSize();
-    ChildP * py = b._children;
-    ChildP * ey = b._children + b.getChildrenSize();
+    auto mine = iterateChildren();
+    auto others = b.iterateChildren();
+    ChildP * px = mine.begin();
+    ChildP * ex = mine.end();
+    ChildP * py = others.begin();
+    ChildP * ey = others.end();
     while (px != ex && py != ey) {
         int c = (*px)->cmpId(**py);
         if (c == 0) {
@@ -429,17 +433,19 @@ Group::Value::merge(const std::vector<GroupingLevel> &levels,
     std::swap(_children, z);
     destruct(z, getAllChildrenSize());
     setChildrenSize(kept);
-    _childInfo._allChildren = 0;
+    setAllChildrenSize(0);
 }
 
 void
 Group::Value::prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel) {
     auto keep = new ChildP[b.getChildrenSize()];
     size_t kept(0);
-    ChildP * px = _children;
-    ChildP * ex = _children + getAllChildrenSize();
-    const ChildP * py = b._children;
-    const ChildP * ey = b._children + b.getChildrenSize();
+    auto mine = iterateAllChildren();
+    auto others = b.iterateChildren();
+    ChildP * px = mine.begin();
+    ChildP * ex = mine.end();
+    const ChildP * py = others.begin();
+    const ChildP * ey = others.end();
     // Assumes that both lists are ordered by group id
     while (py != ey && px != ex) {
         if ((*py)->cmpId(**px) > 0) {
@@ -457,17 +463,19 @@ Group::Value::prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel) 
     std::swap(_children, keep);
     destruct(keep, getAllChildrenSize());
     setChildrenSize(kept);
-    _childInfo._allChildren = 0;
+    setAllChildrenSize(0);
 }
 
 void
 Group::Value::mergePartial(const GroupingLevelList &levels, uint32_t firstLevel, uint32_t lastLevel,
                            uint32_t currentLevel, const Value & b)
 {
-    ChildP * px = _children;
-    ChildP * ex = _children + getChildrenSize();
-    const ChildP * py = b._children;
-    const ChildP * ey = b._children + b.getChildrenSize();
+    auto mine = iterateChildren();
+    auto others = b.iterateChildren();
+    ChildP * px = mine.begin();
+    ChildP * ex = mine.end();
+    const ChildP * py = others.begin();
+    const ChildP * ey = others.end();
     // Assumes that both lists are ordered by group id
     while (py != ey && px != ex) {
         if ((*py)->cmpId(**px) > 0) {
@@ -496,21 +504,21 @@ Group::Value::postMerge(const std::vector<GroupingLevel> &levels, uint32_t first
     if (!hasNext) { // we have reached the bottom of the tree
         return;
     }
-    for (ChildP *it(_children), *mt(_children + getChildrenSize()); it != mt; ++it) {
-        (*it)->executeOrderBy();
+    for (ChildP cp : iterateChildren()) {
+        cp->executeOrderBy();
     }
     int64_t maxGroups = levels[currentLevel].getPrecision();
-    for (size_t i(getChildrenSize()); i < _childInfo._allChildren; i++) {
+    for (size_t i(getChildrenSize()); i < getAllChildrenSize(); i++) {
         destruct(_children[i]);
         reset(_children[i]);
     }
-    _childInfo._allChildren = getChildrenSize();
+    setAllChildrenSize(getChildrenSize());
     if (getChildrenSize() > (uint64_t)maxGroups) { // prune groups
         std::sort(_children, _children + getChildrenSize(), SortByGroupRank());
         setChildrenSize(maxGroups);
     }
-    for (ChildP *it(_children), *mt(_children + getChildrenSize()); it != mt; ++it) {
-        (*it)->postMerge(levels, firstLevel, currentLevel + 1);
+    for (ChildP cp : iterateChildren()) {
+        cp->postMerge(levels, firstLevel, currentLevel + 1);
     }
 }
 
@@ -621,7 +629,7 @@ Group::Value::deserialize(Deserializer & is) {
     setupAggregationReferences();
     is >> count;
     destruct(_children, getAllChildrenSize());
-    _childInfo._allChildren = 0;
+    setAllChildrenSize(0);
     _children = new ChildP[std::max(4ul, 2ul << vespalib::Optimized::msbIdx(count))];
     for (uint32_t i(0); i < count; i++) {
         auto group = std::make_unique<Group>();
@@ -702,8 +710,8 @@ Group::Value::Value(const Value & rhs) :
     if (  rhs.getChildrenSize() > 0 ) {
         _children = new ChildP[std::max(4ul, 2ul << vespalib::Optimized::msbIdx(rhs.getChildrenSize()))];
         size_t i(0);
-        for (const ChildP *it(rhs._children), *mt(rhs._children + rhs.getChildrenSize()); it != mt; ++it, i++) {
-            _children[i] = new Group(**it);
+        for (const ChildP cp : rhs.iterateChildren()) {
+            _children[i++] = new Group(*cp);
         }
     }
 }
@@ -721,7 +729,7 @@ Group::Value::Value(Value && rhs) noexcept :
 
     rhs.setChildrenSize(0);
     rhs._aggregationResults = nullptr;
-    rhs._childInfo._allChildren = 0;
+    rhs.setAllChildrenSize(0);
     rhs._children = nullptr;
 }
 
@@ -737,7 +745,7 @@ Group::Value::operator =(Value && rhs) noexcept {
 
     rhs.setChildrenSize(0);
     rhs._aggregationResults = nullptr;
-    rhs._childInfo._allChildren = 0;
+    rhs.setAllChildrenSize(0);
     rhs._children = nullptr;
     return *this;
 }
@@ -753,7 +761,7 @@ Group::Value::~Value() noexcept
 {
     destruct(_children, getAllChildrenSize());
     setChildrenSize(0);
-    _childInfo._allChildren = 0;
+    setAllChildrenSize(0);
     delete [] _aggregationResults;
 }
 
