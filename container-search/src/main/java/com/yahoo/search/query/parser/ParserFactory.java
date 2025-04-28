@@ -38,6 +38,7 @@ public final class ParserFactory {
             case SELECT -> new SelectParser(environment);
             case WEAKAND -> new AllParser(environment, true);
             case TOKENIZE -> new TokenizeParser(environment);
+            case LINGUISTICS -> new LinguisticsParser(environment);
         };
     }
 
