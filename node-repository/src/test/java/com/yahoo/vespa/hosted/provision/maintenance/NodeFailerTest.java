@@ -13,6 +13,7 @@ import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.backup.Snapshot;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Report;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -733,6 +734,27 @@ public class NodeFailerTest {
         node = tester.nodeRepository.nodes().node(downHost).get();
         assertTrue(node.history().isDown());
         assertEquals(Node.State.failed, node.state());
+    }
+
+    @Test
+    public void nodes_with_busy_snapshotting_are_not_failed() {
+        NodeFailTester tester = NodeFailTester.withTwoApplications();
+        String downNode = tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app2).stateful().asList().get(1).hostname();
+        tester.nodeRepository.orchestrator().setNodeStatus(new HostName(downNode), HostStatus.ALLOWED_TO_BE_DOWN);
+        tester.serviceMonitor.setHostDown(downNode);
+        tester.runMaintainers();
+
+        // Busy snapshotting -> will not fail
+        tester.nodeRepository.snapshots().create(downNode, tester.clock.instant());
+        tester.clock.advance(Duration.ofMinutes(270));
+        tester.runMaintainers();
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(downNode).get().state());
+
+        // No busy snapshots -> will fail
+        Snapshot snapshot = tester.nodeRepository.snapshots().read(downNode).get(0);
+        tester.nodeRepository.snapshots().remove(snapshot.id(), downNode, true);
+        tester.runMaintainers();
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(downNode).get().state());
     }
 
     private void addServiceInstances(List<ServiceInstance> list, ServiceStatus status, int num) {
