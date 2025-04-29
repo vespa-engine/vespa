@@ -2779,9 +2779,9 @@ void fieldRankItem(ParsedRankProfile profile, String field) :
     ElementGap elementGap;
 }
     (   <FILTER_THRESHOLD> <COLON> filterThreshold = floatValue()
-        { profile.addFieldRankFilterThreshold(field, filterThreshold); } |
-        <ELEMENT_GAP> <COLON> elementGap = elementGapValue()
-        { profile.addFieldRankElementGap(field, elementGap); } )
+            { profile.addFieldRankFilterThreshold(field, filterThreshold); }
+    |   <ELEMENT_GAP> <COLON> elementGap = elementGapValue()
+            { profile.addFieldRankElementGap(field, elementGap); } )
 ;
 
 ElementGap elementGapValue() :
@@ -2789,8 +2789,8 @@ ElementGap elementGapValue() :
     int gap;
     ElementGap elementGap;
 }
-    (   gap = integerElm() { elementGap = ElementGap.of(gap); } |
-        <INFINITY> { elementGap = ElementGap.empty(); }
+    (   gap = integerElm() { elementGap = ElementGap.of(gap); }
+    |   <INFINITY> { elementGap = ElementGap.empty(); }
     )
     {
         return elementGap;
