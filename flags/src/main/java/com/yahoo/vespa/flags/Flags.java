@@ -3,6 +3,7 @@ package com.yahoo.vespa.flags;
 
 import com.yahoo.component.Vtag;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.custom.Sidecars;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -352,6 +353,14 @@ public class Flags {
             "Whether OS upgrade should be deferred",
             "Takes effect immediately",
             CLOUD_ACCOUNT
+    );
+    
+    public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
+            "sidecars-for-test", Sidecars.createDisabled(), Sidecars.class,
+            List.of("glebashnik"), "2025-04-25", "2025-06-01",
+            "Specifies configuration for sidecars to testing provisioning",
+            "Takes effect at redeployment",
+            APPLICATION
     );
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
