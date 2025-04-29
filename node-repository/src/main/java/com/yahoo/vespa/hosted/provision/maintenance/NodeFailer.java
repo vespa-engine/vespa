@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.backup.Snapshot;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -55,6 +56,9 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     /** Metric that indicates whether throttling is active where 1 means active and 0 means inactive */
     static final String throttlingActiveMetric = "nodeFailThrottling";
+
+    /** An extended grace period for nodes with busy snapshots */
+    private static final Duration BUSY_SNAPSHOT_GRACE_PERIOD = Duration.ofHours(5);
 
     private final Deployer deployer;
     private final Duration downTimeLimit;
@@ -165,6 +169,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
         if (applicationSuspended(node)) return Optional.empty();
         if (affectedByMaintenance(node)) return Optional.empty();
+        if (busySnapshotting(node, downSince)) return Optional.empty();
 
         return Optional.of(downSince);
     }
@@ -191,6 +196,23 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                                               return now > startTime && now < endTime;
                                           })
                    ).orElse(false);
+    }
+
+    /** Is the node undergoing backup/restoration? */
+    private boolean busySnapshotting(Node node, Instant downSince) {
+        if (!node.history().isSuspended()) return false;
+
+        var snapshots = nodeRepository().snapshots().read(node.hostname());
+        if (snapshots.isEmpty()) return false;
+
+        var latestSnapshot = snapshots.get(snapshots.size() - 1);
+        var busySnapshot = latestSnapshot.state().busy();
+        var recentlyChanged = latestSnapshot.idle(clock().instant())
+                .minus(suspendedDownTimeLimit)
+                .isNegative(); // Also allow nodes where created/restored is a recent event
+
+        var isSnapshotting = busySnapshot || recentlyChanged;
+        return isSnapshotting && clock().instant().isBefore(downSince.plus(BUSY_SNAPSHOT_GRACE_PERIOD));
     }
 
     /** Is the node and all active children suspended? */
