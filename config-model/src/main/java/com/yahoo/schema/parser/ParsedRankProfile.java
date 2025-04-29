@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.schema.parser;
 
+import com.yahoo.schema.ElementGap;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.RankProfile;
 import com.yahoo.schema.RankProfile.MatchPhaseSettings;
@@ -57,6 +58,7 @@ public class ParsedRankProfile extends ParsedBlock {
     private final List<String> inherited = new ArrayList<>();
     private final Map<String, Boolean> fieldsRankFilter = new LinkedHashMap<>();
     private final Map<String, Double> fieldsRankFilterThreshold = new LinkedHashMap<>();
+    private final Map<String, ElementGap> fieldsRankElementGap = new LinkedHashMap<>();
     private final Map<String, Integer> fieldsRankWeight = new LinkedHashMap<>();
     private final Map<String, ParsedRankFunction> functions = new LinkedHashMap<>();
     private final Map<String, String> fieldsRankType = new LinkedHashMap<>();
@@ -99,6 +101,7 @@ public class ParsedRankProfile extends ParsedBlock {
 
     Map<String, Boolean> getFieldsWithRankFilter() { return Collections.unmodifiableMap(fieldsRankFilter); }
     Map<String, Double> getFieldsWithRankFilterThreshold() { return Collections.unmodifiableMap(fieldsRankFilterThreshold); }
+    Map<String, ElementGap> getFieldsWithElementGap() { return Collections.unmodifiableMap(fieldsRankElementGap); }
     Map<String, Integer> getFieldsWithRankWeight() { return Collections.unmodifiableMap(fieldsRankWeight); }
     Map<String, String> getFieldsWithRankType() { return Collections.unmodifiableMap(fieldsRankType); }
     Map<String, List<String>> getRankProperties() { return Collections.unmodifiableMap(rankProperties); }
@@ -150,6 +153,10 @@ public class ParsedRankProfile extends ParsedBlock {
         verifyThat(!fieldsRankFilterThreshold.containsKey(field), "already has rank filter-threshold for field", field);
         verifyThat(filterThreshold >= 0.0 && filterThreshold <= 1.0, "must be a value in range [0, 1]", field);
         fieldsRankFilterThreshold.put(field, filterThreshold);
+    }
+
+    public void addFieldRankElementGap(String field, ElementGap elementGap) {
+        fieldsRankElementGap.put(field, elementGap);
     }
 
     public void addFieldRankType(String field, String type) {

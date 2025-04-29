@@ -7,6 +7,7 @@ import com.yahoo.compress.Compressor;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.searchlib.ranking.features.FeatureNames;
+import com.yahoo.schema.ElementGap;
 import com.yahoo.schema.OnnxModel;
 import com.yahoo.schema.LargeRankingExpressions;
 import com.yahoo.schema.RankingExpressionBody;
@@ -187,6 +188,7 @@ public class RawRankProfile {
         private final Map<Reference, RankProfile.Input> inputs;
         private final Set<String> filterFields = new java.util.LinkedHashSet<>();
         private final Map<String, Double> explicitFieldRankFilterThresholds = new LinkedHashMap<>();
+        private final Map<String, ElementGap> explicitFieldRankElementGaps = new LinkedHashMap<>();
         private final String rankprofileName;
 
         private RankingExpression firstPhaseRanking;
@@ -257,6 +259,7 @@ public class RawRankProfile {
 
             deriveRankTypeSetting(compiled, attributeFields);
             deriveFilterFields(compiled);
+            deriveElementGaps(compiled);
             deriveWeightProperties(compiled);
         }
 
@@ -276,6 +279,10 @@ public class RawRankProfile {
         private void deriveFilterFields(RankProfile rp) {
             filterFields.addAll(rp.allFilterFields());
             explicitFieldRankFilterThresholds.putAll(rp.explicitFieldRankFilterThresholds());
+        }
+
+        private void deriveElementGaps(RankProfile rp) {
+            explicitFieldRankElementGaps.putAll(rp.explicitFieldRankElementGaps());
         }
 
         private void derivePropertiesAndFeaturesFromFunctions(Map<String, RankProfile.RankingExpressionFunction> functions,
@@ -505,6 +512,9 @@ public class RawRankProfile {
             }
             for (var fieldAndThreshold : explicitFieldRankFilterThresholds.entrySet()) {
                 properties.add(new Pair<>("vespa.matching.filter_threshold.%s".formatted(fieldAndThreshold.getKey()), String.valueOf(fieldAndThreshold.getValue())));
+            }
+            for (var fieldAndElementGap : explicitFieldRankElementGaps.entrySet()) {
+                properties.add(new Pair<>("vespa.matching.element_gap.%s".formatted(fieldAndElementGap.getKey()), fieldAndElementGap.getValue().toString()));
             }
             if (matchPhaseSettings != null) {
                 properties.add(new Pair<>("vespa.matchphase.degradation.attribute", matchPhaseSettings.getAttribute()));
