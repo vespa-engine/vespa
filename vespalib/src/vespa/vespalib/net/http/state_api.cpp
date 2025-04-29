@@ -77,14 +77,17 @@ void render_link(JSONStringer &json, const std::string &host, const std::string 
     json.endObject();
 }
 
-std::string respond_root(const JsonHandlerRepo &repo, const std::string &host) {
+std::string respond_root(const JsonHandlerRepo &repo, const std::string &host, bool limitEndpoints) {
     JSONStringer json;
     json.beginObject();
     json.appendKey("resources");
     json.beginArray();
-    for (auto path: {"/state/v1/health", "/state/v1/metrics", "/state/v1/config", "/state/v1/version"}) {
-        render_link(json, host, path);
+    if (!limitEndpoints) {
+        for (auto path: {"/state/v1/health", "/state/v1/metrics", "/state/v1/config"}) {
+            render_link(json, host, path);
+        }
     }
+    render_link(json, host, "/state/v1/version");
     for (const std::string &path: repo.get_root_resources()) {
         render_link(json, host, path);
     }
@@ -197,60 +200,66 @@ StateApi::get(const std::string &host,
 {
     if (path == "/state/v1/" || path == "/state/v1") {
         return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
-            return respond_root(_handler_repo, host);
-        });
-    } else if (path == "/state/v1/health") {
-        return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
-            return respond_health(_healthProducer);
-        });
-    } else if (path == "/state/v1/metrics") {
-        // Using a 'statereporter' consumer by default removes many uninteresting per-thread
-        // metrics but retains their aggregates (side note: per-thread metrics are NOT included
-        // in Prometheus metrics regardless of the specified consumer).
-        return cap_check_and_respond_metrics(auth_ctx, params, "statereporter", [&](auto& consumer, auto format) {
-            if (format == MetricsProducer::ExpositionFormat::Prometheus) {
-                auto metrics_text = _metricsProducer.getMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
-                return JsonGetHandler::Response::make_ok_with_content_type(std::move(metrics_text), prometheus_content_type());
-            } else {
-                auto json = respond_json_metrics(consumer, _healthProducer, _metricsProducer);
-                return JsonGetHandler::Response::make_ok_with_json(std::move(json));
-            }
-        });
-    } else if (path == "/state/v1/config") {
-        return cap_checked(auth_ctx, Capability::content_state_api(), [&] {
-            return respond_config(_componentConfigProducer);
+            return respond_root(_handler_repo, host, _limitEndpoints);
         });
     } else if (path == "/state/v1/version") {
         return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] {
             return respond_version();
         });
-    } else if (path == "/metrics/total") {
-        return cap_check_and_respond_metrics(auth_ctx, params, "", [&](auto& consumer, auto format) {
-            if (format == MetricsProducer::ExpositionFormat::Prometheus) {
-                auto metrics_text = _metricsProducer.getTotalMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
-                return JsonGetHandler::Response::make_ok_with_content_type(std::move(metrics_text), prometheus_content_type());
-            } else {
-                auto json = _metricsProducer.getTotalMetrics(consumer, vespalib::MetricsProducer::ExpositionFormat::JSON);
-                return JsonGetHandler::Response::make_ok_with_json(std::move(json));
-            }
-        });
-    } else {
-        // Assume this is for the nested state v1 stuff; may delegate capability check to handler later if desired.
-        if (!auth_ctx.capabilities().contains(Capability::content_state_api())) {
-            return Response::make_failure(403, "Forbidden");
+    } else if (!_limitEndpoints) {
+        if (path == "/state/v1/health") {
+            return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] { // TODO consider http_unclassified
+                return respond_health(_healthProducer);
+            });
+        } else if (path == "/state/v1/metrics") {
+            // Using a 'statereporter' consumer by default removes many uninteresting per-thread
+            // metrics but retains their aggregates (side note: per-thread metrics are NOT included
+            // in Prometheus metrics regardless of the specified consumer).
+            return cap_check_and_respond_metrics(auth_ctx, params, "statereporter", [&](auto& consumer, auto format) {
+                if (format == MetricsProducer::ExpositionFormat::Prometheus) {
+                    auto metrics_text = _metricsProducer.getMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
+                    return JsonGetHandler::Response::make_ok_with_content_type(std::move(metrics_text), prometheus_content_type());
+                } else {
+                    auto json = respond_json_metrics(consumer, _healthProducer, _metricsProducer);
+                    return JsonGetHandler::Response::make_ok_with_json(std::move(json));
+                }
+            });
+        } else if (path == "/state/v1/config") {
+            return cap_checked(auth_ctx, Capability::content_state_api(), [&] {
+                return respond_config(_componentConfigProducer);
+            });
+        } else if (path == "/metrics/total") {
+            return cap_check_and_respond_metrics(auth_ctx, params, "", [&](auto& consumer, auto format) {
+                if (format == MetricsProducer::ExpositionFormat::Prometheus) {
+                    auto metrics_text = _metricsProducer.getTotalMetrics(consumer, MetricsProducer::ExpositionFormat::Prometheus);
+                    return JsonGetHandler::Response::make_ok_with_content_type(std::move(metrics_text), prometheus_content_type());
+                } else {
+                    auto json = _metricsProducer.getTotalMetrics(consumer, vespalib::MetricsProducer::ExpositionFormat::JSON);
+                    return JsonGetHandler::Response::make_ok_with_json(std::move(json));
+                }
+            });
         }
-        return _handler_repo.get(host, path, params, auth_ctx);
     }
+
+    // None of the endpoints matched or _limitEndpoints is set: check additional endpoints
+
+    // Assume this is for the nested state v1 stuff; may delegate capability check to handler later if desired.
+    if (!auth_ctx.capabilities().contains(Capability::content_state_api())) {
+        return Response::make_failure(403, "Forbidden");
+    }
+    return _handler_repo.get(host, path, params, auth_ctx);
 }
 
 //-----------------------------------------------------------------------------
 
 StateApi::StateApi(const HealthProducer &hp,
                    MetricsProducer &mp,
-                   ComponentConfigProducer &ccp)
+                   ComponentConfigProducer &ccp,
+                   bool limitEndpoints)
     : _healthProducer(hp),
       _metricsProducer(mp),
-      _componentConfigProducer(ccp)
+      _componentConfigProducer(ccp),
+      _limitEndpoints(limitEndpoints)
 {
 }
 
