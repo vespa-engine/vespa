@@ -16,7 +16,7 @@ public final class ElementGap {
     public static ElementGap of(int gap) { return new ElementGap(gap); }
     public static ElementGap empty() { return new ElementGap(null); }
     public OptionalInt get() { return isFinite() ? OptionalInt.of(gap) : OptionalInt.empty(); }
-    public final boolean isFinite() { return gap != null; }
+    public boolean isFinite() { return gap != null; }
 
     @Override
     public String toString() { return isFinite() ? String.valueOf(gap) : "infinity"; }
