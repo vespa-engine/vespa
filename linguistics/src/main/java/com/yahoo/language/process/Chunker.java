@@ -86,6 +86,16 @@ public interface Chunker {
             throw new IllegalStateException(message);
         }
 
+        @Override
+        public boolean equals(Object other) {
+            return other.getClass().getName().equals(this.getClass().getName()); // Equal across Vespa versions
+        }
+
+        @Override
+        public int hashCode() {
+            return getClass().getName().hashCode();
+        }
+
     }
 
 }
