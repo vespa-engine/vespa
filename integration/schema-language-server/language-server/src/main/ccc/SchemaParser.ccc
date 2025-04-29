@@ -16,6 +16,7 @@ INJECT SchemaParser:
 
     import com.yahoo.schema.DistributableResource;
     import com.yahoo.searchlib.ranking.features.FeatureNames;
+    import com.yahoo.schema.ElementGap;
     import com.yahoo.schema.OnnxModel;
     import com.yahoo.schema.RankProfile.DiversitySettings;
     import com.yahoo.schema.RankProfile.MatchPhaseSettings;
@@ -360,6 +361,8 @@ TOKEN :
 | < INDEXING: "indexing" >
 | < SUMMARY_TO: "summary-to" >
 | < DOCUMENT_SUMMARY: "document-summary" >
+| < ELEMENT_GAP: "element-gap" >
+| < INFINITY: "infinity" >
 | < RANK_TYPE: "rank-type" >
 | < WEIGHT: "weight" >
 | < TYPE: "type" >
@@ -2762,15 +2765,36 @@ void fieldRankType(ParsedRankProfile profile) :
 void fieldRankFilter(ParsedRankProfile profile) :
 {
     String name;
-    double filterThreshold;
 }
 
     <RANK> name = identifierStr()
     ( ( <COLON> <FILTER> ) { profile.addFieldRankFilter(name, true); }
-    | ( openLbrace() <FILTER_THRESHOLD> <COLON> filterThreshold = floatValue()
-        { profile.addFieldRankFilterThreshold(name, filterThreshold); }
-        ( <NL> )* <RBRACE> )
+    | ( openLbrace() ( fieldRankItem(profile, name) ( <NL> )* )* <RBRACE> )
     )
+;
+
+void fieldRankItem(ParsedRankProfile profile, String field) :
+{
+    double filterThreshold;
+    ElementGap elementGap;
+}
+    (   <FILTER_THRESHOLD> <COLON> filterThreshold = floatValue()
+        { profile.addFieldRankFilterThreshold(field, filterThreshold); } |
+        <ELEMENT_GAP> <COLON> elementGap = elementGapValue()
+        { profile.addFieldRankElementGap(field, elementGap); } )
+;
+
+ElementGap elementGapValue() :
+{
+    int gap;
+    ElementGap elementGap;
+}
+    (   gap = integerElm() { elementGap = ElementGap.of(gap); } |
+        <INFINITY> { elementGap = ElementGap.empty(); }
+    )
+    {
+        return elementGap;
+    }
 ;
 
 /**
@@ -3093,6 +3117,7 @@ String identifierWithDashStr :
     | <DENSE_POSTING_LIST_THRESHOLD>
     | <DISTANCE_METRIC>
     | <DOCUMENT_SUMMARY>
+    | <ELEMENT_GAP>
     | <ENABLE_BIT_VECTORS>
     | <ENABLE_BM25>
     | <ENABLE_ONLY_BIT_VECTOR>
@@ -3205,6 +3230,7 @@ String identifierStr :
       | <IMPORT>
       | <INDEX>
       | <INDEXING>
+      | <INFINITY>
       | <INHERITS>
       | <INLINE>
       | <INPUTS>

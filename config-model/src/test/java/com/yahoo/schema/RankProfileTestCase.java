@@ -8,6 +8,7 @@ import com.yahoo.config.model.application.provider.MockFileRegistry;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
+import com.yahoo.schema.ElementGap;
 import com.yahoo.schema.derived.DerivedConfiguration;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -654,6 +655,55 @@ rank-profile feature_logging {
             assertEquals(String.valueOf(expValue), findProperty(rawRankProfile.configProperties(), expPropertyName).get());
         } else {
             assertTrue(func.apply(rankProfile).isEmpty());
+            assertFalse(findProperty(rawRankProfile.configProperties(), expPropertyName).isPresent());
+        }
+    }
+
+    @Test
+    void field_specific_element_gap_is_configurable() throws ParseException {
+        var rps = """
+                  search test {
+                    document test {
+                      field f1 type string {
+                        indexing: index
+                      }
+                      field f2 type string {
+                        indexing: index
+                      }
+                      field f3 type string {
+                        indexing: index
+                      }
+                    }
+                    rank-profile my_profile {
+                      rank f1 {
+                        element-gap: 10
+                      }
+                      rank f2 {
+                        element-gap: infinity
+                      }
+                    }
+                  }
+                  """;
+        var rp = createRankProfile(rps);
+
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(),
+                (myRp) -> Optional.ofNullable(myRp.explicitFieldRankElementGaps().get("f1")),
+                ElementGap.of(10), "vespa.matching.element_gap.f1");
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(),
+                (myRp) -> Optional.ofNullable(myRp.explicitFieldRankElementGaps().get("f2")),
+                ElementGap.empty(), "vespa.matching.element_gap.f2");
+        verifyRankProfileSetting(rp.getFirst(), rp.getSecond(),
+                (myRp) -> Optional.ofNullable(myRp.explicitFieldRankElementGaps().get("f3")),
+                (ElementGap)null, "vespa.matching.element_gap.f3");
+    }
+
+    private void verifyRankProfileSetting(RankProfile rankProfile, RawRankProfile rawRankProfile, Function<RankProfile, Optional<ElementGap>> func,
+                                          ElementGap expValue, String expPropertyName) {
+        if (expValue != null) {
+            assertEquals(expValue, func.apply(rankProfile).get());
+            assertEquals(expValue.toString(), findProperty(rawRankProfile.configProperties(), expPropertyName).get());
+        } else {
+            assertFalse(func.apply(rankProfile).isPresent());
             assertFalse(findProperty(rawRankProfile.configProperties(), expPropertyName).isPresent());
         }
     }

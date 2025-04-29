@@ -97,6 +97,7 @@ public class ParsedRankingConverter {
                                                 ((fieldName, isFilter) -> profile.addRankSetting(fieldName, RankProfile.RankSetting.Type.PREFERBITVECTOR, isFilter));
 
         profile.setExplicitFieldRankFilterThresholds(parsed.getFieldsWithRankFilterThreshold());
+        profile.setExplicitFieldRankElementGaps(parsed.getFieldsWithElementGap());
 
         parsed.getFieldsWithRankWeight().forEach
                                                 ((fieldName, weight) -> profile.addRankSetting(fieldName, RankProfile.RankSetting.Type.WEIGHT, weight));

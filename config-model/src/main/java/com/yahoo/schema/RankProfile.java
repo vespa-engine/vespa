@@ -11,6 +11,7 @@ import com.yahoo.search.query.profile.QueryProfileRegistry;
 import com.yahoo.search.query.profile.types.FieldDescription;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 import com.yahoo.search.query.ranking.Diversity;
+import com.yahoo.schema.ElementGap;
 import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.schema.document.SDDocumentType;
@@ -143,6 +144,8 @@ public class RankProfile implements Cloneable {
 
     // Field-level `rank my_field { filter-threshold: ... }` that overrides the profile-level `filter-threshold` (if any)
     private Map<String, Double> explicitFieldRankFilterThresholds = new LinkedHashMap<>();
+
+    private Map<String, ElementGap> explicitFieldRankElementGaps = new LinkedHashMap<>();
 
     private final RankProfileRegistry rankProfileRegistry;
 
@@ -1043,6 +1046,12 @@ public class RankProfile implements Cloneable {
     public Map<String, Double> explicitFieldRankFilterThresholds() {
         return explicitFieldRankFilterThresholds;
     }
+
+    public void setExplicitFieldRankElementGaps(Map<String, ElementGap> fieldElementGaps) {
+        explicitFieldRankElementGaps = new LinkedHashMap<>(fieldElementGaps);
+    }
+
+    public Map<String, ElementGap> explicitFieldRankElementGaps() { return explicitFieldRankElementGaps; }
 
     private ExpressionFunction parseRankingExpression(String name, List<String> arguments, String expression) throws ParseException {
         if (expression.trim().isEmpty())
