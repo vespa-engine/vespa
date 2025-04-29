@@ -146,8 +146,6 @@ Group::mergePartial(const GroupingLevelList &levels, uint32_t firstLevel, uint32
 
     if (!frozen) {
         _aggr.mergeCollectors(b._aggr);
-        _aggr.execute();
-
         // At this level, we must create a copy of the other nodes children.
         if (currentLevel >= lastLevel) {
             _aggr.mergeLevel(levels[currentLevel].getGroupPrototype(), b._aggr);
@@ -373,13 +371,6 @@ void
 Group::Value::mergeCollectors(const Value &rhs) {
     for(size_t i(0), m(getAggrSize()); i < m; i++) {
         getAggr(i)->merge(rhs.getAggr(i));
-    }
-}
-
-void
-Group::Value::execute() {
-    for (size_t i(0), m(getExprSize()); i < m; i++) {
-        expr(i).execute();
     }
 }
 

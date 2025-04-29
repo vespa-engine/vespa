@@ -85,7 +85,6 @@ public:
         void executeOrderBy();
         void sortById();
         void mergeCollectors(const Value & rhs);
-        void execute();
         bool needResort() const;
         void validate_id_order() const;
         void visitMembers(vespalib::ObjectVisitor &visitor) const;
