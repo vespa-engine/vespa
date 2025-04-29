@@ -8,7 +8,7 @@
 namespace search::fef {
 
 /*
- * The gap between positions in adjacent elements in multi-value fiels.
+ * The gap between positions in adjacent elements in multi-value fields.
  */
 using ElementGap = std::optional<uint32_t>;
 
