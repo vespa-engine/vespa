@@ -14,6 +14,7 @@
 
 using TestHit = std::tuple<uint32_t, uint32_t, int32_t, uint32_t, uint32_t>;
 
+using search::fef::ElementGap;
 using search::query::QueryBuilder;
 using search::query::Node;
 using search::query::SimpleQueryNodeTypes;
@@ -48,12 +49,12 @@ class MyQueryNodeResultFactory : public QueryNodeResultFactory
 {
     MockElementGapInspector _mock_element_gap_inspector;
 public:
-    MyQueryNodeResultFactory(std::optional<uint32_t> element_gap);
+    MyQueryNodeResultFactory(ElementGap element_gap);
     ~MyQueryNodeResultFactory() override;
     const search::queryeval::IElementGapInspector& get_element_gap_inspector() const noexcept override;
 };
 
-MyQueryNodeResultFactory::MyQueryNodeResultFactory(std::optional<uint32_t> element_gap)
+MyQueryNodeResultFactory::MyQueryNodeResultFactory(ElementGap element_gap)
     : QueryNodeResultFactory(),
       _mock_element_gap_inspector(element_gap)
 {
@@ -69,7 +70,7 @@ MyQueryNodeResultFactory::get_element_gap_inspector() const noexcept
 
 class NearTest : public ::testing::TestWithParam<TestParam> {
 protected:
-    std::optional<std::optional<uint32_t>> _element_gap_setting;
+    std::optional<ElementGap> _element_gap_setting;
     NearTest();
     ~NearTest() override;
     bool evaluate_query(uint32_t distance, const std::vector<std::vector<TestHit>> &hitsvv);

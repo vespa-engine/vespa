@@ -26,14 +26,14 @@ protected:
     {
     private:
         uint32_t                _window;
-        std::optional<uint32_t> _element_gap;
+        search::fef::ElementGap _element_gap;
         TermFieldMatchDataArray _inputs;
     protected:
         uint32_t window() const noexcept { return _window; }
-        std::optional<uint32_t> get_element_gap() const noexcept { return _element_gap; }
+        search::fef::ElementGap get_element_gap() const noexcept { return _element_gap; }
         const TermFieldMatchDataArray &inputs() const { return _inputs; }
     public:
-        MatcherBase(uint32_t win, std::optional<uint32_t> element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
+        MatcherBase(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
             : _window(win),
               _element_gap(element_gap),
               _inputs()
@@ -94,7 +94,7 @@ class NearSearch : public NearSearchBase
 private:
     struct Matcher : public NearSearchBase::MatcherBase
     {
-        Matcher(uint32_t win, std::optional<uint32_t> element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
+        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
             : MatcherBase(win, element_gap, fieldId, in) {}
         bool match(uint32_t docId);
     };
@@ -128,7 +128,7 @@ class ONearSearch : public NearSearchBase
 private:
     struct Matcher : public NearSearchBase::MatcherBase
     {
-        Matcher(uint32_t win, std::optional<uint32_t> element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
+        Matcher(uint32_t win, search::fef::ElementGap element_gap, uint32_t fieldId, const TermFieldMatchDataArray &in)
             : MatcherBase(win, element_gap, fieldId, in) {}
         bool match(uint32_t docId);
     };

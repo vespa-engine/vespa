@@ -15,7 +15,7 @@ class NearQueryNode : public AndQueryNode
     uint32_t                   _distance;
     const search::queryeval::IElementGapInspector& _element_gap_inspector;
 protected:
-    std::optional<uint32_t> get_element_gap(uint32_t field_id) const {
+    search::fef::ElementGap get_element_gap(uint32_t field_id) const {
         return _element_gap_inspector.get_element_gap(field_id);
     }
     HitKey calc_window_end_pos(const Hit &hit) const {

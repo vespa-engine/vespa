@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/queryeval/nearsearch.h>
-//#include <vespa/searchlib/common/resultset.h>
 #include <vespa/searchlib/queryeval/searchable.h>
 #include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/searchlib/queryeval/intermediate_blueprints.h>
@@ -16,6 +15,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("nearsearch_test");
 
+using search::fef::ElementGap;
 using search::queryeval::IElementGapInspector;
 using search::queryeval::test::MockElementGapInspector;
 
@@ -110,7 +110,7 @@ public:
         return _window;
     }
     const IElementGapInspector& get_element_gap_inspector() const noexcept { return _element_gap_inspector; }
-    MyQuery& set_element_gap(std::optional<uint32_t> element_gap) {
+    MyQuery& set_element_gap(ElementGap element_gap) {
         _element_gap_inspector = MockElementGapInspector(element_gap);
         return *this;
     }

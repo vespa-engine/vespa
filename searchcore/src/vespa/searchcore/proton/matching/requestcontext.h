@@ -50,7 +50,7 @@ public:
 
     const search::queryeval::IElementGapInspector& get_element_gap_inspector() const noexcept override;
 
-    std::optional<uint32_t> get_element_gap(uint32_t field_id) const noexcept override;
+    search::fef::ElementGap get_element_gap(uint32_t field_id) const noexcept override;
 
 private:
     const Doom                                    _doom;
