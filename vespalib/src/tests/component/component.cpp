@@ -157,7 +157,8 @@ TEST("testEmpty")
     Version ev;
     VersionSpecification evs;
 
-    EXPECT_EQUAL("", ev.toString());
+    EXPECT_EQUAL("", ev.toAbbreviatedString());
+    EXPECT_EQUAL("0.0.0", ev.toString());
     EXPECT_EQUAL("*.*.*", evs.toString());
 
     EXPECT_TRUE(ev == Version(0,0,0,""));
@@ -195,6 +196,78 @@ TEST("testSimple")
 
     // test cross-class function
     EXPECT_TRUE(vs.matches(v));
+}
+
+TEST("Version toAbbreviatedString() truncates trailing zeroed components while toString() does not")
+{
+    Version v000(0, 0, 0, "");
+    EXPECT_EQUAL("", v000.toAbbreviatedString());
+    EXPECT_EQUAL("0.0.0", v000.toString());
+    Version v000s("");
+    EXPECT_EQUAL("", v000s.toAbbreviatedString());
+    EXPECT_EQUAL("0.0.0", v000s.toString());
+
+    Version v100(1, 0, 0, "");
+    EXPECT_EQUAL("1", v100.toAbbreviatedString());
+    EXPECT_EQUAL("1.0.0", v100.toString());
+    Version v100s("1");
+    EXPECT_EQUAL("1", v100s.toAbbreviatedString());
+    EXPECT_EQUAL("1.0.0", v100s.toString());
+
+    Version v110(1, 2, 0, "");
+    EXPECT_EQUAL("1.2", v110.toAbbreviatedString());
+    EXPECT_EQUAL("1.2.0", v110.toString());
+    Version v110s("1.2");
+    EXPECT_EQUAL("1.2", v110s.toAbbreviatedString());
+    EXPECT_EQUAL("1.2.0", v110.toString());
+
+    Version v111(1, 2, 3, "");
+    EXPECT_EQUAL("1.2.3", v111.toAbbreviatedString());
+    EXPECT_EQUAL("1.2.3", v111.toString());
+    Version v111s("1.2.3");
+    EXPECT_EQUAL("1.2.3", v111s.toAbbreviatedString());
+    EXPECT_EQUAL("1.2.3", v111s.toString());
+
+    Version v000q(0, 0, 0, "qualifier");
+    EXPECT_EQUAL("0.0.0.qualifier", v000q.toAbbreviatedString());
+    EXPECT_EQUAL("0.0.0.qualifier", v000q.toString());
+    Version v000qs("0.0.0.qualifier");
+    EXPECT_EQUAL("0.0.0.qualifier", v000qs.toAbbreviatedString());
+    EXPECT_EQUAL("0.0.0.qualifier", v000qs.toString());
+
+    Version v100q(1, 0, 0, "qualifier");
+    EXPECT_EQUAL("1.0.0.qualifier", v100q.toAbbreviatedString());
+    EXPECT_EQUAL("1.0.0.qualifier", v100q.toString());
+    Version v100qs("1.0.0.qualifier");
+    EXPECT_EQUAL("1.0.0.qualifier", v100qs.toAbbreviatedString());
+    EXPECT_EQUAL("1.0.0.qualifier", v100qs.toString());
+
+    Version v110q(1, 2, 0, "qualifier");
+    EXPECT_EQUAL("1.2.0.qualifier", v110q.toAbbreviatedString());
+    EXPECT_EQUAL("1.2.0.qualifier", v110q.toString());
+    Version v110qs("1.2.0.qualifier");
+    EXPECT_EQUAL("1.2.0.qualifier", v110qs.toAbbreviatedString());
+    EXPECT_EQUAL("1.2.0.qualifier", v110qs.toString());
+
+    Version v111q(1, 2, 3, "qualifier");
+    EXPECT_EQUAL("1.2.3.qualifier", v111q.toAbbreviatedString());
+    EXPECT_EQUAL("1.2.3.qualifier", v111q.toString());
+    Version v111qs("1.2.3.qualifier");
+    EXPECT_EQUAL("1.2.3.qualifier", v111qs.toAbbreviatedString());
+    EXPECT_EQUAL("1.2.3.qualifier", v111qs.toString());
+}
+
+TEST("VersionSpecification toString() does not truncate trailing zeroed components")
+{
+    VersionSpecification vs000(0, 0, 0, "");
+    EXPECT_EQUAL("0.0.0", vs000.toString());
+    VersionSpecification vs000s("0.0.0");
+    EXPECT_EQUAL("0.0.0", vs000s.toString());
+
+    VersionSpecification vs000q(0, 0, 0, "qualifier");
+    EXPECT_EQUAL("0.0.0.qualifier", vs000q.toString());
+    VersionSpecification vs000qs("0.0.0.qualifier");
+    EXPECT_EQUAL("0.0.0.qualifier", vs000qs.toString());
 }
 
 TEST_MAIN()

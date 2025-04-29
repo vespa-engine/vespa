@@ -60,7 +60,7 @@ uint32_t
 MessageFixture::serialize(const std::string& filename, const mbus::Routable& routable, Tamper tamper)
 {
     const vespalib::Version version = tested_protocol_version();
-    const auto path = path_to_file(version.toString() + "-cpp-" + filename + ".dat");
+    const auto path = path_to_file(version.toAbbreviatedString() + "-cpp-" + filename + ".dat");
     LOG(info, "Serializing to '%s'...", path.c_str());
 
     mbus::Blob blob = tamper(_protocol.encode(version, routable));
@@ -86,7 +86,7 @@ mbus::Routable::UP
 MessageFixture::deserialize(const std::string& filename, uint32_t classId, uint32_t lang)
 {
     const vespalib::Version version = tested_protocol_version();
-    const auto path = path_to_file(version.toString() + (lang == LANG_JAVA ? "-java" : "-cpp") + "-" + filename + ".dat");
+    const auto path = path_to_file(version.toAbbreviatedString() + (lang == LANG_JAVA ? "-java" : "-cpp") + "-" + filename + ".dat");
     LOG(info, "Deserializing from '%s'...", path.c_str());
 
     mbus::Blob blob = read_file(path);
