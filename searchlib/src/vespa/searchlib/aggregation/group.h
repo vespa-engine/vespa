@@ -147,11 +147,11 @@ public:
             }
             return size;
         }
+        void clearAllChildrenSize() {
+            _childInfo._shiftedReallyAll = 0;
+        }
         void setAllChildrenSize(size_t value) {
-            if (value != 0) {
-                value = (value << 3) | 5;
-            }
-            _childInfo._shiftedReallyAll = value;
+            _childInfo._shiftedReallyAll = (value << 3) | 5;
         }
         void setOrderBy(uint32_t i, int32_t v) noexcept {
             if (v < 0) {

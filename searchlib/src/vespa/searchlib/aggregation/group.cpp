@@ -433,7 +433,7 @@ Group::Value::merge(const std::vector<GroupingLevel> &levels,
     std::swap(_children, z);
     destruct(z, getAllChildrenSize());
     setChildrenSize(kept);
-    setAllChildrenSize(0);
+    clearAllChildrenSize();
 }
 
 void
@@ -463,7 +463,7 @@ Group::Value::prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel) 
     std::swap(_children, keep);
     destruct(keep, getAllChildrenSize());
     setChildrenSize(kept);
-    setAllChildrenSize(0);
+    clearAllChildrenSize();
 }
 
 void
@@ -629,7 +629,7 @@ Group::Value::deserialize(Deserializer & is) {
     setupAggregationReferences();
     is >> count;
     destruct(_children, getAllChildrenSize());
-    setAllChildrenSize(0);
+    clearAllChildrenSize();
     _children = new ChildP[std::max(4ul, 2ul << vespalib::Optimized::msbIdx(count))];
     for (uint32_t i(0); i < count; i++) {
         auto group = std::make_unique<Group>();
@@ -729,7 +729,7 @@ Group::Value::Value(Value && rhs) noexcept :
 
     rhs.setChildrenSize(0);
     rhs._aggregationResults = nullptr;
-    rhs.setAllChildrenSize(0);
+    rhs.clearAllChildrenSize();
     rhs._children = nullptr;
 }
 
@@ -745,7 +745,7 @@ Group::Value::operator =(Value && rhs) noexcept {
 
     rhs.setChildrenSize(0);
     rhs._aggregationResults = nullptr;
-    rhs.setAllChildrenSize(0);
+    rhs.clearAllChildrenSize();
     rhs._children = nullptr;
     return *this;
 }
@@ -761,7 +761,7 @@ Group::Value::~Value() noexcept
 {
     destruct(_children, getAllChildrenSize());
     setChildrenSize(0);
-    setAllChildrenSize(0);
+    clearAllChildrenSize();
     delete [] _aggregationResults;
 }
 
