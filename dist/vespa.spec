@@ -56,6 +56,8 @@
 %global _vespa_java_version 17
 %endif
 
+%define go_version 1.24.2
+
 Name:           vespa
 Version:        _VESPA_VERSION_
 Release:        1%{?dist}
@@ -305,6 +307,12 @@ source %{_rhmaven35_enable} || true
 %if 0%{?_rhgit227_enable:1}
 source %{_rhgit227_enable} || true
 %endif
+
+# Use new go version
+PATH=$HOME/go/bin:$PATH
+go install golang.org/dl/go%{go_version}@latest
+go%{go_version} download
+PATH=$HOME/sdk/go%{go_version}/bin/:$PATH
 
 %if 0%{?_java_home:1}
 export JAVA_HOME=%{?_java_home}
