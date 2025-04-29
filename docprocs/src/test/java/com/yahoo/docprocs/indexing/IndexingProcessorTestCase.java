@@ -382,7 +382,7 @@ public class IndexingProcessorTestCase {
 
     }
 
-    /** An ebedder which also does its own quantization, similar to HuggingFaceEmbedder. */
+    /** An embedder which also does its own quantization, similar to HuggingFaceEmbedder. */
     static class TestEmbedder extends AbstractComponent implements Embedder {
 
         @Override

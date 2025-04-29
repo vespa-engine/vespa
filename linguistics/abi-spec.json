@@ -372,7 +372,9 @@
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public boolean isReversible()",
-      "public java.util.List chunk(java.lang.String, com.yahoo.language.process.Chunker$Context)"
+      "public java.util.List chunk(java.lang.String, com.yahoo.language.process.Chunker$Context)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -423,7 +425,9 @@
       "public void <init>()",
       "public void <init>(java.lang.String)",
       "public java.util.List embed(java.lang.String, com.yahoo.language.process.Embedder$Context)",
-      "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)"
+      "public com.yahoo.tensor.Tensor embed(java.lang.String, com.yahoo.language.process.Embedder$Context, com.yahoo.tensor.TensorType)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },
@@ -486,7 +490,9 @@
     "methods" : [
       "public void <init>()",
       "public void <init>(java.lang.String)",
-      "public com.yahoo.document.datatypes.FieldValue generate(ai.vespa.llm.completion.Prompt, com.yahoo.language.process.FieldGenerator$Context)"
+      "public com.yahoo.document.datatypes.FieldValue generate(ai.vespa.llm.completion.Prompt, com.yahoo.language.process.FieldGenerator$Context)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()"
     ],
     "fields" : [ ]
   },

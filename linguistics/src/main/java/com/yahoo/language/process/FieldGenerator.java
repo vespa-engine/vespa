@@ -72,6 +72,17 @@ public interface FieldGenerator {
         public FieldValue generate(Prompt prompt, Context context) {
             throw new IllegalStateException(message);
         }
+
+        @Override
+        public boolean equals(Object other) {
+            return other.getClass().getName().equals(this.getClass().getName()); // Equal across Vespa versions
+        }
+
+        @Override
+        public int hashCode() {
+            return getClass().getName().hashCode();
+        }
+
     }
     
 }

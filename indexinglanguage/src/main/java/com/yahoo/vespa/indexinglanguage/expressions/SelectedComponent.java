@@ -71,14 +71,14 @@ public class SelectedComponent<TYPE> {
     @Override
     public boolean equals(Object o) {
         if ( ! (o instanceof SelectedComponent<?> other)) return false;
-        if ( ! this.component.equals(other.component)) return false;
-        if ( ! this.arguments.equals(other.arguments)) return false;
+        if ( ! Objects.equals(this.id, other.id)) return false;
+        if ( ! Objects.equals(this.arguments, other.arguments)) return false;
         return true;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(SelectedComponent.class, component, arguments);
+        return Objects.hash(SelectedComponent.class, id, arguments);
     }
 
 }
