@@ -85,7 +85,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private static final TenantName HOSTED_VESPA = TenantName.from("hosted-vespa");
 
-    public static final int defaultHeapSizePercentageOfAvailableMemory = 85;
+    public static final int defaultHeapSizePercentageOfAvailableMemory = 80;
     public static final int heapSizePercentageOfTotalAvailableMemoryWhenCombinedCluster = 24;
 
     private final Set<FileReference> applicationBundles = new LinkedHashSet<>();
