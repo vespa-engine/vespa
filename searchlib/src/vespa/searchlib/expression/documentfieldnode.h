@@ -2,6 +2,7 @@
 #pragma once
 
 #include "documentaccessornode.h"
+#include "currentindex.h"
 #include "resultnode.h"
 #include "resultvector.h"
 #include <vespa/document/fieldvalue/iteratorhandler.h>
@@ -32,14 +33,15 @@ public:
     DECLARE_NBO_SERIALIZE;
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
     DECLARE_EXPRESSIONNODE(DocumentFieldNode);
-    DocumentFieldNode() : _fieldPath(), _value(), _fieldName(), _doc(nullptr) { }
+    DocumentFieldNode() : _fieldPath(), _value(), _keepAliveForIndexLookups(), _fieldName() { }
     ~DocumentFieldNode() override;
-    DocumentFieldNode(std::string_view name) : _fieldPath(), _value(), _fieldName(name), _doc(nullptr) { }
+    DocumentFieldNode(std::string_view name) : _fieldPath(), _value(), _keepAliveForIndexLookups(), _fieldName(name) { }
     DocumentFieldNode(const DocumentFieldNode & rhs);
     DocumentFieldNode & operator = (const DocumentFieldNode & rhs);
     DocumentFieldNode(DocumentFieldNode && rhs) noexcept = default;
     DocumentFieldNode & operator = (DocumentFieldNode && rhs) noexcept = default;
     const std::string & getFieldName() const override { return _fieldName; }
+    bool hasMultiValue() const;
 public:
     class Handler : public document::fieldvalue::IteratorHandler {
     public:
@@ -48,6 +50,8 @@ public:
         void onCollectionStart(const Content & c) override;
         void onStructStart(const Content & c) override;
     };
+    const CurrentIndex *getCurrentIndex() { return _currentIndex; }
+    void setCurrentIndex(const CurrentIndex * index);
 private:
     class SingleHandler : public Handler {
     public:
@@ -75,10 +79,12 @@ private:
 protected:
     document::FieldPath                _fieldPath;
     mutable ResultNode::CP             _value;
+    mutable ResultNodeVector::UP       _keepAliveForIndexLookups;
     mutable std::unique_ptr<Handler>   _handler;
-    std::string                   _fieldName;
-    const document::Document         * _doc;
-
+    mutable bool                       _needExecute = false;
+    std::string                        _fieldName;
+    const document::Document         * _doc = nullptr;
+    const CurrentIndex               * _currentIndex = nullptr;
 };
 
 }
