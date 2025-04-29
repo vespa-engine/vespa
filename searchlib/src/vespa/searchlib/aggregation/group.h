@@ -38,6 +38,12 @@ public:
     using UP = std::unique_ptr<Group>;
     using ChildP = Group *;
     using GroupList = ChildP *;
+    struct ChildrenIteratorHelper {
+        ChildP * const start;
+        ChildP * const stop;
+        ChildP * begin() const { return start; }
+        ChildP * end() const { return stop; }
+    };
     struct GroupEqual {
         GroupEqual(const GroupList * v) : _v(v) { }
         bool operator()(uint32_t a, uint32_t b) { return (*_v)[a]->getId().cmpFast((*_v)[b]->getId()) == 0; }
@@ -106,6 +112,13 @@ public:
             return (v & 0x8) ? -(v&0x7) : v;
         }
 
+        ChildrenIteratorHelper iterateChildren() const {
+            return ChildrenIteratorHelper(_children, _children + _childrenLength);
+        }
+        ChildrenIteratorHelper iterateAllChildren() const {
+            return ChildrenIteratorHelper(_children, _children + getAllChildrenSize());
+        }
+
         const AggregationResult & getAggregationResult(size_t i) const noexcept { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
         AggregationResult & getAggregationResult(size_t i) noexcept { return static_cast<AggregationResult &>(*_aggregationResults[i]); }
         const Group & getChild(size_t i) const noexcept { return *_children[i]; }
@@ -126,7 +139,20 @@ public:
         const ExpressionNode::CP & getExprCP(size_t i) const noexcept { return _aggregationResults[getExpr(i)]; }
         ExpressionNode & expr(size_t i)  noexcept { return *_aggregationResults[getExpr(i)]; }
         const ExpressionNode & expr(size_t i)  const noexcept { return *_aggregationResults[getExpr(i)]; }
-        size_t getAllChildrenSize() const noexcept { return std::max(static_cast<size_t>(getChildrenSize()), _childInfo._allChildren); }
+        size_t getAllChildrenSize() const noexcept {
+            size_t size = getChildrenSize();
+            if ((_childInfo._shiftedReallyAll & 7) == 5) {
+                size_t all = _childInfo._shiftedReallyAll >> 3;
+                return std::max(size, all);
+            }
+            return size;
+        }
+        void clearAllChildrenSize() {
+            _childInfo._shiftedReallyAll = 0;
+        }
+        void setAllChildrenSize(size_t value) {
+            _childInfo._shiftedReallyAll = (value << 3) | 5;
+        }
         void setOrderBy(uint32_t i, int32_t v) noexcept {
             if (v < 0) {
                 v = -v;
@@ -144,7 +170,7 @@ public:
         ChildP          *_children;             // the sub-groups of this group. Great care must be taken to ensure proper destruct.
         union ChildInfo {
             GroupHash *_childMap;               // child map used during aggregation
-            size_t     _allChildren;            // Keep real number of children.
+            size_t     _shiftedReallyAll;       // Keep real number of children.
         }                _childInfo;
         uint32_t         _childrenLength;
         uint32_t         _tag;                  // Opaque tag used to identify the group by the client.
