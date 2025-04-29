@@ -220,9 +220,8 @@ StringResultNode::onDeserialize(Deserializer & is)
 void
 RawResultNode::add(const ResultNode & b)
 {
-    char buf[32];
-    ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    const uint8_t *raw = static_cast<const uint8_t *>(s.data());
+    HoldString s(b);
+    const uint8_t *raw = reinterpret_cast<const uint8_t *>(s.data());
 
     size_t i(0);
     for (; i < _value.size() && i < s.size(); i++) {
@@ -265,9 +264,8 @@ RawResultNode::negate()
 void
 StringResultNode::add(const ResultNode & b)
 {
-    char buf[32];
-    ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    std::string_view bs(s.c_str(), s.size());
+    HoldString s(b);
+    std::string_view bs = s;
     size_t i(0);
     for (; i < _value.length() && i < bs.length(); i++) {
         _value[i] += bs[i];
@@ -281,9 +279,8 @@ StringResultNode::add(const ResultNode & b)
 void
 StringResultNode::min(const ResultNode & b)
 {
-    char buf[32];
-    ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    std::string_view bs(s.c_str(), s.size());
+    HoldString s(b);
+    std::string_view bs = s;
     if (_value > bs) {
         _value = bs;
     }
@@ -292,9 +289,8 @@ StringResultNode::min(const ResultNode & b)
 void
 StringResultNode::max(const ResultNode & b)
 {
-    char buf[32];
-    ConstBufferRef s(b.getString(BufferRef(buf, sizeof(buf))));
-    std::string_view bs(s.c_str(), s.size());
+    HoldString s(b);
+    std::string_view bs = s;
     if (_value < bs) {
         _value = bs;
     }
@@ -323,16 +319,14 @@ StringResultNode::onGetString(size_t index, ResultNode::BufferRef ) const {
 void
 StringResultNode::set(const ResultNode & rhs)
 {
-    char buf[32];
-    ConstBufferRef b(rhs.getString(BufferRef(buf, sizeof(buf))));
-    _value.assign(b.c_str(), b.size());
+    HoldString b(rhs);
+    _value.assign(b.data(), b.size());
 }
 
 StringResultNode & StringResultNode::append(const ResultNode & rhs)
 {
-    char buf[32];
-    ConstBufferRef b(rhs.getString(BufferRef(buf, sizeof(buf))));
-    _value.append(b.c_str(), b.size());
+    HoldString b(rhs);
+    _value.append(b.data(), b.size());
     return *this;
 }
 
@@ -430,8 +424,7 @@ RawResultNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 void
 RawResultNode::set(const ResultNode & rhs)
 {
-    char buf[32];
-    ConstBufferRef b(rhs.getString(BufferRef(buf, sizeof(buf))));
+    HoldString b(rhs);
     setBuffer(b.data(), b.size());
 }
 void
