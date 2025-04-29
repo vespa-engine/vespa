@@ -8,6 +8,7 @@
 #include "health_adapter.h"
 #include "i_proton_configurer_owner.h"
 #include "idocumentdbowner.h"
+#include "initialization_handler.h"
 #include "memory_flush_config_updater.h"
 #include "proton_config_fetcher.h"
 #include "proton_configurer.h"
@@ -114,6 +115,9 @@ private:
     RPCHooks::UP                           _rpcHooks;
     HealthAdapter                          _healthAdapter;
     vespalib::GenericStateHandler          _genericStateHandler;
+    InitializationHandler                  _initializationHandler;
+    vespalib::JsonHandlerRepo::Token::UP   _initializationBindToken;
+    vespalib::JsonHandlerRepo::Token::UP   _initializationRootToken;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentBindToken;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentRootToken;
     std::unique_ptr<vespalib::StateServer> _stateServer;

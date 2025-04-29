@@ -7,8 +7,9 @@ namespace vespalib {
 StateServer::StateServer(int port,
                          const HealthProducer &hp,
                          MetricsProducer &mp,
-                         ComponentConfigProducer &ccp)
-    : _api(hp, mp, ccp),
+                         ComponentConfigProducer &ccp,
+                         bool limitEndpoints)
+    : _api(hp, mp, ccp, limitEndpoints),
       _server(port),
       _tokens()
 {

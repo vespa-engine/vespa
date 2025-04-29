@@ -25,10 +25,11 @@ private:
 
 public:
     using UP = std::unique_ptr<StateServer>;
-    StateServer(int port, const HealthProducer &hp, MetricsProducer &mp, ComponentConfigProducer &ccp);
+    StateServer(int port, const HealthProducer &hp, MetricsProducer &mp, ComponentConfigProducer &ccp, bool limitEndpoints = false);
     ~StateServer();
     int getListenPort() { return _server.port(); }
     JsonHandlerRepo &repo() { return _api.repo(); }
+    void setLimitEndpoints(bool limitEndpoints) { _api.setLimitEndpoints(limitEndpoints); }
 };
 
 } // namespace vespalib
