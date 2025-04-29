@@ -33,13 +33,13 @@ benchmarkEuclideanDistance(const hwaccelerated::IAccelerated & accel, size_t sz,
 }
 
 void
-benchMarkEuclidianDistance(const hwaccelerated::IAccelerated & accelrator, size_t sz, size_t count) {
+benchMarkEuclidianDistance(const hwaccelerated::IAccelerated & accelerator, size_t sz, size_t count) {
     printf("double : ");
-    benchmarkEuclideanDistance<double>(accelrator, sz, count);
+    benchmarkEuclideanDistance<double>(accelerator, sz, count);
     printf("float  : ");
-    benchmarkEuclideanDistance<float>(accelrator, sz, count);
+    benchmarkEuclideanDistance<float>(accelerator, sz, count);
     printf("int8_t : ");
-    benchmarkEuclideanDistance<int8_t>(accelrator, sz, count);
+    benchmarkEuclideanDistance<int8_t>(accelerator, sz, count);
 }
 
 int main(int argc, char *argv[]) {
@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     }
     printf("%s %d %d\n", argv[0], length, count);
     printf("Squared Euclidian Distance - Generic\n");
-    benchMarkEuclidianDistance(hwaccelerated::GenericAccelrator(), length, count);
+    benchMarkEuclidianDistance(hwaccelerated::GenericAccelerator(), length, count);
     printf("Squared Euclidian Distance - Optimized for this cpu\n");
     benchMarkEuclidianDistance(hwaccelerated::IAccelerated::getAccelerator(), length, count);
     return 0;

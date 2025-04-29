@@ -40,8 +40,8 @@ void my_generic_cell_cast_op<BFloat16, float>(State &state, uint64_t param_in) {
     const Value &a = state.peek(0);
     auto input_cells = a.cells().typify<BFloat16>();
     auto output_cells = state.stash.create_uninitialized_array<float>(input_cells.size());
-    static const IAccelerated & accelrator = IAccelerated::getAccelerator();
-    accelrator.convert_bfloat16_to_float(reinterpret_cast<const uint16_t *>(input_cells.data()),
+    static const IAccelerated & accelerator = IAccelerated::getAccelerator();
+    accelerator.convert_bfloat16_to_float(reinterpret_cast<const uint16_t *>(input_cells.data()),
                                          output_cells.data(), output_cells.size());
     Value &result_ref = state.stash.create<ValueView>(res_type, a.index(), TypedCells(output_cells));
     state.pop_push(result_ref);

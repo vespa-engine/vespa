@@ -34,16 +34,16 @@ void verifyEuclideanDistance(const hwaccelerated::IAccelerated & accel, size_t t
 }
 
 void
-verifyEuclideanDistance(const hwaccelerated::IAccelerated & accelrator, size_t testLength) {
-    verifyEuclideanDistance<int8_t, double>(accelrator, testLength, 0.0);
-    verifyEuclideanDistance<float, double>(accelrator, testLength, 0.0001); // Small deviation requiring EXPECT_APPROX
-    verifyEuclideanDistance<double, double>(accelrator, testLength, 0.0);
+verifyEuclideanDistance(const hwaccelerated::IAccelerated & accelerator, size_t testLength) {
+    verifyEuclideanDistance<int8_t, double>(accelerator, testLength, 0.0);
+    verifyEuclideanDistance<float, double>(accelerator, testLength, 0.0001); // Small deviation requiring EXPECT_APPROX
+    verifyEuclideanDistance<double, double>(accelerator, testLength, 0.0);
 }
 
 TEST("test euclidean distance") {
-    hwaccelerated::GenericAccelrator genericAccelrator;
+    hwaccelerated::GenericAccelerator genericAccelerator;
     constexpr size_t TEST_LENGTH = 140000; // must be longer than 64k
-    TEST_DO(verifyEuclideanDistance(hwaccelerated::GenericAccelrator(), TEST_LENGTH));
+    TEST_DO(verifyEuclideanDistance(hwaccelerated::GenericAccelerator(), TEST_LENGTH));
     TEST_DO(verifyEuclideanDistance(hwaccelerated::IAccelerated::getAccelerator(), TEST_LENGTH));
 }
 
