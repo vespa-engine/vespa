@@ -276,6 +276,12 @@ Group::Value::setOrderBySize(uint32_t v) {
     _packedLength = (_packedLength & ~0xf00000) | (v << 20);
 }
 
+void Group::Value::allocChildrenVector(size_t sz) {
+    if (sz < 4) sz = 4;
+    sz = std::bit_ceil(sz);
+    _children = new ChildP[sz];
+}
+
 template <typename Doc>
 void Group::Value::collect(const Doc & doc, HitRank rank)
 {
@@ -306,14 +312,14 @@ Group::Value::addChild(Group * child)
 {
     const size_t sz(getChildrenSize());
     if (_children == nullptr) {
-        _children = new ChildP[4];
-    } else if ((sz >=4) && vespalib::Optimized::msbIdx(sz) == vespalib::Optimized::lsbIdx(sz)) {
-        auto n = new ChildP[sz*2];
-        for (size_t i(0), m(getChildrenSize()); i < m; i++) {
-            n[i] = _children[i];
+        allocChildrenVector(sz + 1);
+    } else if (std::has_single_bit(sz) && (sz >= 4)) {
+        auto old = _children;
+        allocChildrenVector(sz + 1);
+        for (size_t i = 0; i < sz; i++) {
+            _children[i] = old[i];
         }
-        delete [] _children;
-        _children = n;
+        delete [] old;
     }
     _children[sz] = child;
     setChildrenSize(sz + 1);
@@ -630,7 +636,7 @@ Group::Value::deserialize(Deserializer & is) {
     is >> count;
     destruct(_children, getAllChildrenSize());
     clearAllChildrenSize();
-    _children = new ChildP[std::max(4ul, 2ul << vespalib::Optimized::msbIdx(count))];
+    allocChildrenVector(count);
     for (uint32_t i(0); i < count; i++) {
         auto group = std::make_unique<Group>();
         is >> *group;
@@ -708,8 +714,9 @@ Group::Value::Value(const Value & rhs) :
     }
 
     if (  rhs.getChildrenSize() > 0 ) {
-        _children = new ChildP[std::max(4ul, 2ul << vespalib::Optimized::msbIdx(rhs.getChildrenSize()))];
-        size_t i(0);
+        size_t sz = rhs.getChildrenSize();
+        allocChildrenVector(sz);
+        size_t i = 0;
         for (const ChildP cp : rhs.iterateChildren()) {
             _children[i++] = new Group(*cp);
         }

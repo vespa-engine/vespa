@@ -153,6 +153,7 @@ public:
         void setAllChildrenSize(size_t value) {
             _childInfo._shiftedReallyAll = (value << 3) | 5;
         }
+        void allocChildrenVector(size_t sz);
         void setOrderBy(uint32_t i, int32_t v) noexcept {
             if (v < 0) {
                 v = -v;
