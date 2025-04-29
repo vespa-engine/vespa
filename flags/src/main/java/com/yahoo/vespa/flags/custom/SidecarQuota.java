@@ -1,6 +1,7 @@
 package com.yahoo.vespa.flags.custom;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,17 +25,17 @@ public class SidecarQuota {
         this.gpu = gpu;
     }
     
-    @JsonProperty("cpus")
+    @JsonGetter("cpus")
     public Double getCpus() {
         return cpus;
     }
 
-    @JsonProperty("memory")
+    @JsonGetter("memory")
     public String getMemory() {
         return memory;
     }
 
-    @JsonProperty("gpu")
+    @JsonGetter("gpu")
     public String getGpu() {
         return gpu;
     }

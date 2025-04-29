@@ -13,7 +13,8 @@ public class SidecarsTest {
     void testWithAllValue() throws IOException {
         verifySerialization(new Sidecars(List.of(
                 new Sidecar(
-                        new SidecarImage("nvcr.io/nvidia/tritonserver:25.03-py3"), 
+                        "triton",
+                        new SidecarImage("nginx:alpine"), 
                         new SidecarQuota(1.0, "8Gb", "all")))));
     }
 
@@ -21,7 +22,8 @@ public class SidecarsTest {
     void testWithNulls() throws IOException {
         verifySerialization(new Sidecars(List.of(
                 new Sidecar(
-                        new SidecarImage("nvcr.io/nvidia/tritonserver:25.03-py3"),
+                        "triton",
+                        new SidecarImage("nginx:alpine"),
                         new SidecarQuota(null, "8Gb", null)))));
     }
 

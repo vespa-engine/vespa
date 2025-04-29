@@ -1,6 +1,7 @@
 package com.yahoo.vespa.flags.custom;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -15,7 +16,7 @@ public class SidecarImage {
         this.reference = reference;
     }
     
-    @JsonProperty("reference")
+    @JsonGetter("reference")
     public String getReference() {
         return reference;
     }

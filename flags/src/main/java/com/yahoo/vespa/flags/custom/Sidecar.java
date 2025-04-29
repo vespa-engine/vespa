@@ -1,6 +1,7 @@
 package com.yahoo.vespa.flags.custom;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -14,23 +15,31 @@ import java.util.Objects;
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Sidecar {
+    private final String name;
     private final SidecarImage image;
     private final SidecarQuota quota;
 
     @JsonCreator
     public Sidecar(
+            @JsonProperty("name") String name,
             @JsonProperty("image") SidecarImage image,
             @JsonProperty("quota") SidecarQuota quota) {
+        this.name = name;
         this.image = image;
         this.quota = quota;
     }
 
-    @JsonProperty("image")
+    @JsonGetter("name")
+    public String getName() {
+        return name;
+    }
+    
+    @JsonGetter("image")
     public SidecarImage getImage() {
         return image;
     }
 
-    @JsonProperty("quota")
+    @JsonGetter("quota")
     public SidecarQuota getQuota() {
         return quota;
     }
