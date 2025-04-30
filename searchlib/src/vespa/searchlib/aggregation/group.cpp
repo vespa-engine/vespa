@@ -531,11 +531,11 @@ Group::Value::postMerge(const std::vector<GroupingLevel> &levels, uint32_t first
 bool
 Group::Value::needResort() const
 {
-    bool resort(needFullRank());
-    for (const ChildP *it(_children), *mt(_children + getChildrenSize()); !resort && (it != mt); ++it) {
-        resort = (*it)->needResort();
+    if (needFullRank()) return true;
+    for (ChildP cp : iterateChildren()) {
+        if (cp->needResort()) return true;
     }
-    return resort;
+    return false;
 }
 
 namespace {
