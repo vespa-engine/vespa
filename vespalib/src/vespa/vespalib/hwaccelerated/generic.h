@@ -9,7 +9,7 @@ namespace vespalib::hwaccelerated {
 /**
  * Generic cpu agnostic implementation.
  */
-class GenericAccelrator : public IAccelerated
+class GenericAccelerator : public IAccelerated
 {
 public:
     float dotProduct(const float * a, const float * b, size_t sz) const noexcept override;

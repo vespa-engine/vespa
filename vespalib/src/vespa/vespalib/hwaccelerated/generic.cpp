@@ -87,59 +87,59 @@ bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) 
 }
 
 float
-GenericAccelrator::dotProduct(const float * a, const float * b, size_t sz) const noexcept
+GenericAccelerator::dotProduct(const float * a, const float * b, size_t sz) const noexcept
 {
     return cblas_sdot(sz, a, 1, b, 1);
 }
 
 double
-GenericAccelrator::dotProduct(const double * a, const double * b, size_t sz) const noexcept
+GenericAccelerator::dotProduct(const double * a, const double * b, size_t sz) const noexcept
 {
     return cblas_ddot(sz, a, 1, b, 1);
 }
 
 int64_t
-GenericAccelrator::dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept
+GenericAccelerator::dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept
 {
     return helper::multiplyAdd(a, b, sz);
 }
 
 int64_t
-GenericAccelrator::dotProduct(const int16_t * a, const int16_t * b, size_t sz) const noexcept
+GenericAccelerator::dotProduct(const int16_t * a, const int16_t * b, size_t sz) const noexcept
 {
     return multiplyAdd<int64_t, int16_t, 8>(a, b, sz);
 }
 int64_t
-GenericAccelrator::dotProduct(const int32_t * a, const int32_t * b, size_t sz) const noexcept
+GenericAccelerator::dotProduct(const int32_t * a, const int32_t * b, size_t sz) const noexcept
 {
     return multiplyAdd<int64_t, int32_t, 8>(a, b, sz);
 }
 
 long long
-GenericAccelrator::dotProduct(const int64_t * a, const int64_t * b, size_t sz) const noexcept
+GenericAccelerator::dotProduct(const int64_t * a, const int64_t * b, size_t sz) const noexcept
 {
     return multiplyAdd<long long, int64_t, 8>(a, b, sz);
 }
 
 void
-GenericAccelrator::orBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
+GenericAccelerator::orBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
 {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a | b; }, aOrg, bOrg, bytes);
 }
 
 void
-GenericAccelrator::andBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept 
+GenericAccelerator::andBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
 {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a & b; }, aOrg, bOrg, bytes);
 }
 void
-GenericAccelrator::andNotBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept 
+GenericAccelerator::andNotBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
 {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a & ~b; }, aOrg, bOrg, bytes);
 }
 
 void
-GenericAccelrator::notBit(void * aOrg, size_t bytes) const noexcept
+GenericAccelerator::notBit(void * aOrg, size_t bytes) const noexcept
 {
     auto a(static_cast<uint64_t *>(aOrg));
     const size_t sz(bytes/sizeof(uint64_t));
@@ -153,37 +153,37 @@ GenericAccelrator::notBit(void * aOrg, size_t bytes) const noexcept
 }
 
 void
-GenericAccelrator::convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept {
+GenericAccelerator::convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept {
     helper::convert_bfloat16_to_float(src, dest, sz);
 }
 
 size_t
-GenericAccelrator::populationCount(const uint64_t *a, size_t sz) const noexcept {
+GenericAccelerator::populationCount(const uint64_t *a, size_t sz) const noexcept {
     return helper::populationCount(a, sz);
 }
 
 double
-GenericAccelrator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept {
+GenericAccelerator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept {
     return helper::squaredEuclideanDistance(a, b, sz);
 }
 
 double
-GenericAccelrator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
+GenericAccelerator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
     return squaredEuclideanDistanceT<float, 16>(a, b, sz);
 }
 
 double
-GenericAccelrator::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
+GenericAccelerator::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
     return squaredEuclideanDistanceT<double, 16>(a, b, sz);
 }
 
 void
-GenericAccelrator::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+GenericAccelerator::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
     helper::andChunks<16, 8>(offset, src, dest);
 }
 
 void
-GenericAccelrator::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+GenericAccelerator::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
     helper::orChunks<16, 8>(offset, src, dest);
 }
 
