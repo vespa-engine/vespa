@@ -53,7 +53,7 @@ public class PermanentFlags {
             INSTANCE_ID);
 
     public static final UnboundIntFlag HEAP_SIZE_PERCENTAGE = defineIntFlag(
-            "heap-size-percentage", 70,
+            "heap-size-percentage", 69,
             "Sets default jvm heap size percentage",
             "Takes effect at redeployment",
             INSTANCE_ID);
