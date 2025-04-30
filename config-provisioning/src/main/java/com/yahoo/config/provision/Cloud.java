@@ -68,6 +68,7 @@ public class Cloud {
     }
 
     /** Returns whether load balancers use proxy protocol v1 or not (e.g. use source NAT). */
+    // TODO: Remove once config model versions of May 2025 are no longer in use
     public boolean useProxyProtocol() {
         return !name.equals(CloudName.AZURE);
     }
