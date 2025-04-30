@@ -27,6 +27,7 @@
 #include <vespa/searchlib/attribute/extendableattributes.h>
 #include <vespa/searchlib/common/sortspec.h>
 #include <vespa/searchlib/common/unique_issues.h>
+#include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <vespa/storage/visiting/visitor.h>
 #include <vespa/document/fieldvalue/fieldvalues.h>
 #include <vespa/documentapi/messagebus/messages/queryresultmessage.h>
@@ -440,6 +441,15 @@ private:
         size_t             _numHitsAggregators;
     };
 
+    class ElementGapInspector : public search::queryeval::IElementGapInspector {
+        const search::fef::IIndexEnvironment* _index_env;
+    public:
+        ElementGapInspector() noexcept;
+        ~ElementGapInspector() override;
+        void set_index_env(const search::fef::IIndexEnvironment& index_env) noexcept { _index_env = &index_env; }
+        search::fef::ElementGap get_element_gap(uint32_t field_id) const noexcept override;
+    };
+
     void init(const vdslib::Parameters & params);
     std::shared_ptr<const SearchEnvironmentSnapshot> _env;
     vdslib::Parameters                      _params;
@@ -474,6 +484,7 @@ private:
     RankController                          _rankController;
     vsm::StringFieldIdTMapT                 _fieldsUnion;
     search::UniqueIssues                    _unique_issues;
+    ElementGapInspector                     _element_gap_inspector;
 
     void setupAttributeVector(const vsm::FieldPath &fieldPath);
     bool is_text_matching(std::string_view index) const noexcept override;

@@ -3,6 +3,8 @@
 #include "fake_requestcontext.h"
 #include <vespa/vespalib/util/testclock.h>
 
+using search::fef::ElementGap;
+
 namespace search::queryeval {
 
 FakeRequestContext::FakeRequestContext()
@@ -34,7 +36,7 @@ FakeRequestContext::get_element_gap_inspector() const noexcept
     return *this;
 }
 
-std::optional<uint32_t>
+ElementGap
 FakeRequestContext::get_element_gap(uint32_t) const noexcept
 {
     return std::nullopt;

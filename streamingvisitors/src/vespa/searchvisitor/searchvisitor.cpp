@@ -47,6 +47,7 @@ using search::aggregation::HitsAggregationResult;
 using search::attribute::IAttributeVector;
 using search::attribute::make_sort_blob_writer;
 using search::expression::ConfigureStaticParams;
+using search::fef::ElementGap;
 using search::streaming::Query;
 using search::Normalizing;
 using search::streaming::QueryTermList;
@@ -346,7 +347,8 @@ SearchVisitor::SearchVisitor(StorageComponent& component,
       _shouldFillRankAttribute(false),
       _syntheticFieldsController(),
       _rankController(),
-      _unique_issues()
+      _unique_issues(),
+      _element_gap_inspector()
 {
     LOG(debug, "Created SearchVisitor");
 }
@@ -538,6 +540,7 @@ SearchVisitor::init(const Parameters & params)
 
             _rankController.setRankManagerSnapshot(_env->get_rank_manager_snapshot());
             _rankController.setupRankProcessors(_query, location, wantedSummaryCount, ! _sortList.empty(), _attrMan, _attributeFields);
+            _element_gap_inspector.set_index_env(_rankController.getRankProcessor()->get_query_env().getIndexEnvironment());
 
             // This depends on _fieldPathMap (from setupScratchDocument),
             // and IQueryEnvironment (from setupRankProcessors).
@@ -1364,6 +1367,25 @@ SearchVisitor::generate_errors()
     errors.reserve(num_issues);
     _unique_issues.for_each_message([&](const std::string &issue) { errors.emplace_back(issue); });
     _queryResult->getSearchResult().set_errors(std::move(errors));
+}
+
+SearchVisitor::ElementGapInspector::ElementGapInspector() noexcept
+: _index_env(nullptr)
+{
+}
+
+SearchVisitor::ElementGapInspector::~ElementGapInspector() = default;
+
+ElementGap
+SearchVisitor::ElementGapInspector::get_element_gap(uint32_t field_id) const noexcept
+{
+    if (_index_env != nullptr) {
+        auto field = _index_env->getField(field_id);
+        if (field != nullptr) {
+            return field->get_element_gap();
+        }
+    }
+    return std::nullopt;
 }
 
 }
