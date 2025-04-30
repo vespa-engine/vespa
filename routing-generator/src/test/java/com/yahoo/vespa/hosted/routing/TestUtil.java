@@ -12,7 +12,7 @@ import java.nio.file.Paths;
 import java.util.List;
 
 /**
- * @author mpolden
+ * @author Martin Polden
  */
 public class TestUtil {
 

@@ -11,7 +11,7 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author oyving
- * @author mpolden
+ * @author Martin Polden
  */
 public class NginxHealthClientTest {
 

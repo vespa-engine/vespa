@@ -18,7 +18,7 @@ import java.util.Map;
 import static org.junit.Assert.assertEquals;
 
 /**
- * @author mpolden
+ * @author Martin Polden
  */
 public class RoutingTableTest {
 

@@ -7,7 +7,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * @author mortent
+ * @author Morten Tokle
  */
 public class RoutingStatusMock implements RoutingStatus {
 

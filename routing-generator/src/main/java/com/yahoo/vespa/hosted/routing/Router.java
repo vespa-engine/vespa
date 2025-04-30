@@ -5,7 +5,7 @@ package com.yahoo.vespa.hosted.routing;
  * A {@link Router} (e.g. a reverse proxy) consumes a {@link RoutingTable} by
  * translating it to the router's own format and loading it.
  *
- * @author mpolden
+ * @author Martin Polden
  */
 public interface Router {
 

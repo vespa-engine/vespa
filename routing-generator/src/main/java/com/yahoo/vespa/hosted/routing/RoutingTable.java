@@ -31,7 +31,7 @@ import static com.yahoo.cloud.config.LbServicesConfig.Tenants.Applications.Endpo
  *
  * This is immutable.
  *
- * @author mpolden
+ * @author Martin Polden
  */
 public class RoutingTable {
 
@@ -59,11 +59,6 @@ public class RoutingTable {
         Map<Endpoint, Target> copy = new TreeMap<>(table);
         copy.keySet().removeIf(endpoint -> !endpoint.routingMethod().equals(method));
         return new RoutingTable(copy, generation);
-    }
-
-    /** Returns the Vespa config generation this is based on */
-    public long generation() {
-        return generation;
     }
 
     @Override
@@ -184,10 +179,6 @@ public class RoutingTable {
 
         public Optional<InstanceName> instance() {
             return instance;
-        }
-
-        public ZoneId zone() {
-            return zone;
         }
 
         public ClusterSpec.Id cluster() {
