@@ -4,8 +4,8 @@
 
 #include "nativerankfeature.h"
 #include "termdistancecalculator.h"
+#include <vespa/searchlib/fef/element_gap.h>
 #include <map>
-#include <optional>
 
 namespace search::features {
 
@@ -21,7 +21,7 @@ struct NativeProximityParam : public NativeParamBase
     const fef::Table * proximityTable;
     const fef::Table * revProximityTable;
     feature_t proximityImportance;
-    std::optional<uint32_t> _element_gap;
+    search::fef::ElementGap _element_gap;
 };
 
 class NativeProximityParams : public NativeRankParamsBase<NativeProximityParam>

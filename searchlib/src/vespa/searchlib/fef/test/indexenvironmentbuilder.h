@@ -41,6 +41,21 @@ public:
                                       const FieldInfo::DataType &dataType,
                                       const std::string &name);
 
+    /**
+     * Add a field to the index environment with specified data type.
+     *
+     * @param type        The type of field to add.
+     * @param coll        Collection type
+     * @param dataType    Collection base data type
+     * @param element_gap optional element gap setting
+     * @param name        The name of the field.
+     */
+    IndexEnvironmentBuilder &addField(const FieldType &type,
+                                      const FieldInfo::CollectionType &coll,
+                                      const FieldInfo::DataType &dataType,
+                                      std::optional<search::fef::ElementGap> element_gap,
+                                      const std::string &name);
+
     /** Returns a reference to the index environment of this. */
     IndexEnvironment &getIndexEnv() { return _env; }
 
