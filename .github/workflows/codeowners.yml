@@ -3,7 +3,7 @@ name: Sync CODEOWNERS
 on:
   pull_request:
     branches: [ "master" ]
-    paths: [ "**/OWNERS" ]
+    paths: [ "**/OWNERS", ".github/CODEOWNERS" ]
 
 permissions:
   contents: write
