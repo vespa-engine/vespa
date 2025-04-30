@@ -107,7 +107,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -1146,6 +1145,7 @@ public final class DocumentV1ApiHandler extends AbstractRequestHandler {
                     case CONDITION_FAILED -> jsonResponse.commit(Response.Status.PRECONDITION_FAILED);
                     case INSUFFICIENT_STORAGE -> jsonResponse.commit(Response.Status.INSUFFICIENT_STORAGE);
                     case TIMEOUT -> jsonResponse.commit(Response.Status.GATEWAY_TIMEOUT);
+                    case REJECTED -> jsonResponse.commit(Response.Status.BAD_REQUEST);
                     case ERROR -> {
                         log.log(FINE, () -> "Exception performing document operation: " + response.getTextMessage());
                         jsonResponse.commit(Status.INTERNAL_SERVER_ERROR);
