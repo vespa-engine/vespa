@@ -52,6 +52,7 @@ import static com.yahoo.documentapi.Response.Outcome.CONDITION_FAILED;
 import static com.yahoo.documentapi.Response.Outcome.ERROR;
 import static com.yahoo.documentapi.Response.Outcome.INSUFFICIENT_STORAGE;
 import static com.yahoo.documentapi.Response.Outcome.NOT_FOUND;
+import static com.yahoo.documentapi.Response.Outcome.REJECTED;
 import static com.yahoo.documentapi.Response.Outcome.SUCCESS;
 import static com.yahoo.documentapi.Response.Outcome.TIMEOUT;
 
@@ -274,17 +275,23 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
     }
 
     private static Response.Outcome toOutcome(Reply reply) {
-        if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_NO_SPACE))
+        if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_NO_SPACE)) {
             return INSUFFICIENT_STORAGE;
-        if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED))
+        }
+        if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_TEST_AND_SET_CONDITION_FAILED)) {
             return CONDITION_FAILED;
+        }
         if (   reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
             || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound()
             || reply.getErrorCodes().contains(DocumentProtocol.ERROR_DOCUMENT_NOT_FOUND)) {
             return NOT_FOUND;
         }
-        if (reply.getErrorCodes().contains(ErrorCode.TIMEOUT))
+        if (reply.getErrorCodes().contains(DocumentProtocol.ERROR_REJECTED)) {
+            return REJECTED;
+        }
+        if (reply.getErrorCodes().contains(ErrorCode.TIMEOUT)) {
             return TIMEOUT;
+        }
         return ERROR;
     }
 

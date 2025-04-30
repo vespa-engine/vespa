@@ -117,6 +117,13 @@ public class Response {
         /** The operation timed out before it reached its destination. */
         TIMEOUT,
 
+        /**
+         * The operation was explicitly rejected by the backend.
+         * Some possible causes are a malformed payload or the operation exceeding
+         * configured maximum size limits. See the error message for details.
+         */
+        REJECTED,
+
         /** The operation failed for some unknown reason. */
         ERROR
 
