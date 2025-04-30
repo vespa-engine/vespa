@@ -5,8 +5,8 @@
 ./zookeeper-client-common/* @bjorncs
 ./messagebus_test/* @hmusum
 ./socket_test/* @gjoranv
-./searchsummary/* @geirst
-./indexinglanguage/* @geirst
+./searchsummary/* @toregge
+./indexinglanguage/* @glebashnik
 ./storage/* @vekterli
 ./cloud-tenant-cd/* @bjorncs
 ./config/* @hmusum @arnej27959
@@ -26,7 +26,7 @@
 ./vbench/* @havardpe
 ./config-model-api/* @hmusum
 ./standalone-container/* @gjoranv
-./vespaclient-core/* @freva
+./vespaclient-core/* @bjorncs
 ./clustercontroller-utils/* @vekterli @hakonhall
 ./metrics-proxy/* @gjoranv
 ./config-proxy/* @hmusum @arnej27959
@@ -35,23 +35,23 @@
 ./config-lib/* @gjoranv
 ./lowercasing_test/* @bjorncs
 ./vespa-3party-bundles/* @gjoranv
-./node-repository/* @mpolden @hakonhall @freva
+./node-repository/* @hakonhall
 ./config-class-plugin/* @hmusum
-./searchcore/src/vespa/searchcore/proton/reprocessing/* @geirst @toregge
-./searchcore/src/vespa/searchcore/proton/persistenceengine/* @geirst
-./searchcore/src/vespa/searchcore/proton/documentmetastore/* @geirst @toregge
-./searchcore/src/vespa/searchcore/proton/summaryengine/* @geirst
+./searchcore/src/vespa/searchcore/proton/reprocessing/* @toregge
+./searchcore/src/vespa/searchcore/proton/persistenceengine/* @vekterli
+./searchcore/src/vespa/searchcore/proton/documentmetastore/* @toregge
+./searchcore/src/vespa/searchcore/proton/summaryengine/* @toregge
 ./searchcore/src/vespa/searchcore/proton/matching/* @havardpe
-./searchcore/src/vespa/searchcore/proton/test/* @geirst
-./searchcore/src/vespa/searchcore/proton/server/* @geirst @toregge
-./searchcore/src/vespa/searchcore/proton/feedoperation/* @geirst
+./searchcore/src/vespa/searchcore/proton/test/* @toregge
+./searchcore/src/vespa/searchcore/proton/server/* @toregge
+./searchcore/src/vespa/searchcore/proton/feedoperation/* @vekterli
 ./searchcore/src/vespa/searchcore/proton/matchengine/* @havardpe
 ./searchcore/src/vespa/searchcore/proton/flushengine/* @tegge
 ./searchcore/src/vespa/searchcore/proton/index/* @toregge
-./searchcore/src/vespa/searchcore/proton/attribute/* @geirst
-./searchcore/src/vespa/searchcore/proton/docsummary/* @geirst
+./searchcore/src/vespa/searchcore/proton/attribute/* @toregge
+./searchcore/src/vespa/searchcore/proton/docsummary/* @toregge
 ./searchcore/src/vespa/searchcore/grouping/* @havardpe
-./searchcore/* @geirst @toregge @havardpe
+./searchcore/* @toregge @havardpe
 ./http-client/* @hmusum
 ./docproc/* @bratseth
 ./logforwarder/* @arnej27959
@@ -63,7 +63,7 @@
 ./http-utils/* @bjorncs
 ./document/* @vekterli
 ./configserver-flags/* @hakonhall
-./vespaclient/* @freva
+./vespaclient/* @hmusum
 ./vespa-athenz/* @bjorncs
 ./documentapi-dependencies/* @gjoranv
 ./searchlib/src/main/* @bratseth @bjorncs @glebashnik
@@ -83,20 +83,20 @@
 ./searchlib/src/vespa/searchlib/aggregation/* @havardpe
 ./searchlib/src/vespa/searchlib/test/* @toregge
 ./searchlib/src/vespa/searchlib/expression/* @havardpe
-./searchlib/src/vespa/searchlib/memoryindex/* @toregge @geirst
+./searchlib/src/vespa/searchlib/memoryindex/* @toregge
 ./searchlib/src/vespa/searchlib/grouping/* @bjorncs @havardpe
 ./searchlib/src/vespa/searchlib/engine/* @havardpe
 ./searchlib/src/vespa/searchlib/index/* @toregge
-./searchlib/src/vespa/searchlib/attribute/* @toregge @geirst
-./searchlib/* @havardpe @toregge @geirst
+./searchlib/src/vespa/searchlib/attribute/* @toregge
+./searchlib/* @havardpe @toregge
 ./bundle-plugin/* @gjoranv
 ./linguistics-components/* @bratseth @arnej27959
 ./configd/* @arnej27959
-./fsa/* @geirst
+./fsa/* @hmusum
 ./vespabase/* @hmusum @arnej27959
 ./vespa-feed-client/* @bjorncs
 ./component/* @gjoranv
-./streamingvisitors/* @geirst
+./streamingvisitors/* @vekterli
 ./configutil/* @hmusum
 ./config-model/* @hmusum @gjoranv
 ./provided-dependencies/* @gjoranv
@@ -119,12 +119,12 @@
 ./predicate-search/* @bjorncs
 ./defaults/* @arnej27959
 ./* @bratseth
-./docprocs/* @geirst
+./docprocs/* @arnej27959 @glebashnik
 ./vespa-3party-jars/* @bjorncs
 ./clustercontroller-apps/* @vekterli @hakonhall
 ./clustercontroller-core/* @vekterli @hakonhall @hmusum
 ./protocols/* @hakonhall
-./routing-generator/* @mpolden @tokle
+./routing-generator/* @oyving
 ./container-core/* @arnej27959 @bjorncs @gjoranv
 ./container-disc/* @gjoranv
 ./persistence/* @vekterli
@@ -155,15 +155,15 @@
 ./service-monitor/* @hakonhall
 ./vespa-feed-client-cli/* @bjorncs
 ./model-evaluation/* @bratseth @arnej27959 @bjorncs @glebashnik
-./vespaclient-container-plugin/* @freva
+./vespaclient-container-plugin/* @bjorncs @vekterli
 ./hosted-api/* @hmusum
 ./container-test/* @gjoranv
 ./vespajlib/* @arnej27959
 ./zookeeper-server/* @hmusum
 ./vespa-documentgen-plugin/* @kraune
-./documentgen-test/* @freva
+./documentgen-test/* @arnej27959
 ./container-dev/* @gjoranv
-./vespalib/src/vespa/vespalib/btree/* @toregge @geirst
+./vespalib/src/vespa/vespalib/btree/* @toregge
 ./vespalib/* @havardpe @arnej27959
 ./container/* @gjoranv
 ./security-utils/* @bjorncs
