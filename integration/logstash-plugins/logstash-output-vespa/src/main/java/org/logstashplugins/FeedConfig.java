@@ -74,15 +74,19 @@ public class FeedConfig {
 
     private void setClientCertAndKey(String clientCert, String clientKey, String applicationPackageDir) {
         // Set default paths to application package dir. This is where we'd generate them by default (if the user chooses to generate them)
-        if (applicationPackageDir != null) {
+        if (applicationPackageDir != null) { //this check is only needed for testing
             if (clientCert == null) {
                 this.clientCert = Paths.get(applicationPackageDir, "security", "clients.pem").toString();
                 logger.info("No client_cert specified, using default path: {}", this.clientCert);
+            } else {
+                this.clientCert = Paths.get(clientCert).toString();
             }
             
             if (clientKey == null) {
                 this.clientKey = Paths.get(applicationPackageDir, "data-plane-private-key.pem").toString();
                 logger.info("No client_key specified, using default path: {}", this.clientKey);
+            } else {
+                this.clientKey = Paths.get(clientKey).toString();
             }
         }
     }
