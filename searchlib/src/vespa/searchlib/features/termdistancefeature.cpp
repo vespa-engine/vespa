@@ -12,28 +12,6 @@ using namespace search::fef;
 
 namespace search::features {
 
-namespace {
-
-std::optional<uint32_t> get_element_gap(const IIndexEnvironment& env, const std::string& base_name,
-    const ParameterList& params) {
-    FeatureNameBuilder builder;
-    builder.baseName(base_name);
-    for (auto& param : params) {
-        builder.parameter(param.getValue());
-    }
-    auto property = env.getProperties().lookup(builder.buildName(), "elementGap");
-    if (!property.found()) {
-        return std::nullopt;
-    }
-    auto& value = property.get();
-    if (value == "infinity") {
-        return std::nullopt;
-    }
-    return util::strToNum<uint32_t>(value);
-}
-
-}
-
 TermDistanceExecutor::TermDistanceExecutor(const IQueryEnvironment & env,
                                            const TermDistanceParams & params) :
     FeatureExecutor(),
@@ -88,13 +66,13 @@ TermDistanceBlueprint::createInstance() const
 }
 
 bool
-TermDistanceBlueprint::setup(const IIndexEnvironment &env,
+TermDistanceBlueprint::setup(const IIndexEnvironment &,
                              const ParameterList & params)
 {
     _params.fieldId = params[0].asField()->id();
     _params.termX = params[1].asInteger();
     _params.termY = params[2].asInteger();
-    _params.element_gap = get_element_gap(env, getBaseName(), params);
+    _params.element_gap = params[0].asField()->get_element_gap();
 
     describeOutput("forward",             "the min distance between term X and term Y in the field");
     describeOutput("forwardTermPosition", "the position of term X for the forward distance");

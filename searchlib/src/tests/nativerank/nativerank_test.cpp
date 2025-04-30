@@ -23,6 +23,7 @@ LOG_SETUP("nativerank_test");
 using namespace search::fef;
 using namespace search::fef::test;
 using CollectionType = FieldInfo::CollectionType;
+using DataType = FieldInfo::DataType;
 
 const double EPS = 10e-4;
 
@@ -56,7 +57,7 @@ protected:
     bool assertNativeProximity(feature_t score, const std::string & query, const std::string & field,
                                const Properties & props = Properties(), uint32_t docId = 1);
     bool assertNativeProximity(feature_t score, const std::string & query, const std::vector<std::string> & field,
-                               const Properties & props, uint32_t docId = 1);
+                               const Properties & props, std::optional<ElementGap>, uint32_t docId = 1);
     bool assertNativeRank(feature_t score, feature_t fieldMatchWeight, feature_t attributeMatchWeight, feature_t proximityWeight);
 };
 
@@ -670,15 +671,21 @@ TEST_F(NativeRankTest, test_native_proximity)
 
         //  Distance between adjacent elements is not calculated when element gap is not set.
         using SV = std::vector<std::string>;
-        EXPECT_TRUE(assertNativeProximity(0, "a b", SV{"a x", "x b"}, p));
-        p.clear().add("nativeProximity.elementGap.foo", "infinity");
-        EXPECT_TRUE(assertNativeProximity(0, "a b", SV{"a i", "i b"}, p));
+        EXPECT_TRUE(assertNativeProximity(0, "a b", SV{"a x", "x b"}, p, std::nullopt));
+        p.clear();
+        EXPECT_TRUE(assertNativeProximity(0, "a b", SV{"a i", "i b"}, p, ElementGap(std::nullopt)));
+        p.add("nativeProximity.elementGap.foo", "infinity");
+        EXPECT_TRUE(assertNativeProximity(0, "a b", SV{"a i", "i b"}, p, std::nullopt));
         //  Distance between adjacent elements is calculated when element gap is set. Distance 3 + 1 => score 2
-        p.clear().add("nativeProximity.elementGap.foo", "1");
-        EXPECT_TRUE(assertNativeProximity(2, "a b", SV{"a y", "y b"}, p));
+        p.clear();
+        EXPECT_TRUE(assertNativeProximity(2, "a b", SV{"a y", "y b"}, p, ElementGap(1)));
+        p.add("nativeProximity.elementGap.foo", "1");
+        EXPECT_TRUE(assertNativeProximity(2, "a b", SV{"a y", "y b"}, p, std::nullopt));
         //  Distance 3 + 0 => score 3
-        p.clear().add("nativeProximity.elementGap.foo", "0");
-        EXPECT_TRUE(assertNativeProximity(3, "a b", SV{"a z", "z b"}, p));
+        p.clear();
+        EXPECT_TRUE(assertNativeProximity(3, "a b", SV{"a z", "z b"}, p, ElementGap(0)));
+        p.add("nativeProximity.elementGap.foo", "0");
+        EXPECT_TRUE(assertNativeProximity(3, "a b", SV{"a z", "z b"}, p, std::nullopt));
     }
 }
 
@@ -691,7 +698,7 @@ NativeRankTest::assertNativeProximity(feature_t score,
 {
     std::vector<std::string> mv_field;
     mv_field.emplace_back(field);
-    return assertNativeProximity(score, query, mv_field, props, docId);
+    return assertNativeProximity(score, query, mv_field, props, std::nullopt, docId);
 }
 
 bool
@@ -699,13 +706,21 @@ NativeRankTest::assertNativeProximity(feature_t score,
                                       const std::string & query,
                                       const std::vector<std::string> & field,
                                       const Properties & props,
+                                      std::optional<ElementGap> element_gap,
                                       uint32_t docId)
 {
     std::ostringstream os;
     os << "assertNativeProximity(" << score << ", " << std::quoted(query) << ", " << testing::PrintToString(field) << ")";
+    if (element_gap.has_value()) {
+        if (element_gap.value().has_value()) {
+            os << ", element_gap=" << element_gap.value().value();
+        } else {
+            os << ", element_gap=infinity";
+        }
+    }
     auto property = props.lookup("nativeProximity.elementGap.foo");
     if (property.found()) {
-        os << ", element_gap=" << property.get();
+        os << ", legacy_element_gap=" << property.get();
     }
     SCOPED_TRACE(os.str());
     LOG(info, "%s", os.str().c_str());
@@ -714,7 +729,7 @@ NativeRankTest::assertNativeProximity(feature_t score,
     std::string feature = "nativeProximity";
     FtFeatureTest ft(_factory, feature);
 
-    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, "foo");
+    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, DataType::STRING, element_gap, "foo");
     ft.getIndexEnv().getTableManager().addFactory(ITableFactory::SP(new FunctionTableFactory(6)));
     ft.getIndexEnv().getProperties().add("nativeProximity.proximityTable", "linear(-2,10)");
     ft.getIndexEnv().getProperties().add("nativeProximity.reverseProximityTable", "linear(-2,10)");
