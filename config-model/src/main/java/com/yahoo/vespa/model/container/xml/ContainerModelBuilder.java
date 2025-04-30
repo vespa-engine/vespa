@@ -645,7 +645,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // If the deployment contains certificate/private key reference, setup TLS port
         var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state))
-                .proxyProtocol(state.zone().cloud().name() != CloudName.AZURE || enableTokenSupport(state))
+                .proxyProtocol(state.zone().cloud().useProxyProtocol() || enableTokenSupport(state))
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl())
                 .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
