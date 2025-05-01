@@ -132,7 +132,7 @@
 ./hosted-zone-api/* @bjorncs
 ./logserver/* @arnej27959
 ./vespa-maven-plugin/* @hmusum
-./client/go/* @mpolden
+./client/go/* @evgiz @arnej27959
 ./vespa-testrunner-components/* @hmusum
 ./linguistics/* @bratseth @arnej27959
 ./fbench/* @havardpe
