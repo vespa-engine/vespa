@@ -37,8 +37,8 @@ import java.util.stream.Collectors;
 /**
  * Report Nginx metrics periodically.
  *
- * @author mortent
- * @author mpolden
+ * @author Morten Tokle
+ * @author Martin Polden
  */
 public final class NginxMetricsReporter extends AbstractComponent implements Runnable {
 

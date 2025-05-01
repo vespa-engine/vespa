@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Converts a {@link RoutingTable} to Nginx's own config format.
  *
- * @author mpolden
+ * @author Martin Polden
  */
 class NginxConfig {
 

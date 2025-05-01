@@ -38,7 +38,7 @@ import java.util.stream.Collectors;
  *
  * @author oyving
  * @author andreer
- * @author mpolden
+ * @author Martin Polden
  */
 public class RoutingStatusClient extends AbstractComponent implements RoutingStatus {
 

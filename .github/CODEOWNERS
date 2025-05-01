@@ -124,7 +124,7 @@
 ./clustercontroller-apps/* @vekterli @hakonhall
 ./clustercontroller-core/* @vekterli @hakonhall @hmusum
 ./protocols/* @hakonhall
-./routing-generator/* @mpolden @tokle
+./routing-generator/* @oyving
 ./container-core/* @arnej27959 @bjorncs @gjoranv
 ./container-disc/* @gjoranv
 ./persistence/* @vekterli

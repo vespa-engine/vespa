@@ -33,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @author mpolden
+ * @author Martin Polden
  */
 public class NginxTest {
 

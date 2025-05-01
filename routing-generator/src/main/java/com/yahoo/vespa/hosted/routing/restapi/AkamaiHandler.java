@@ -27,7 +27,7 @@ import java.util.function.Supplier;
  * endpoint.
  *
  * @author oyving
- * @author mpolden
+ * @author Martin Polden
  * @author Torbjorn Smorgrav
  * @author Wacek Kusnierczyk
  */

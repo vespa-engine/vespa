@@ -11,7 +11,7 @@ import java.time.format.DateTimeFormatter;
 /**
  * File system paths used by Nginx.
  *
- * @author mpolden
+ * @author Martin Polden
  */
 enum NginxPath {
 
