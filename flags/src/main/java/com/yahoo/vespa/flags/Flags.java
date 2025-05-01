@@ -50,14 +50,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2025-05-01",
+            List.of("hakonhall"), "2025-03-19", "2025-06-01",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
             "summary-decode-policy", "on-demand",
-            List.of("hmusum"), "2023-03-30", "2025-05-01",
+            List.of("hmusum"), "2023-03-30", "2025-06-01",
             "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
             "Takes effect at redeployment (requires restart)",
             INSTANCE_ID);
@@ -72,72 +72,72 @@ public class Flags {
 
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
-            List.of("hmusum"), "2020-12-02", "2025-05-01",
+            List.of("hmusum"), "2020-12-02", "2025-12-01",
             "Selects type of sequenced executor used for mbus responses, valid values are LATENCY, ADAPTIVE, THROUGHPUT",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag RESPONSE_NUM_THREADS = defineIntFlag(
             "response-num-threads", 2,
-            List.of("hmusum"), "2020-12-02", "2025-05-01",
+            List.of("hmusum"), "2020-12-02", "2025-12-01",
             "Number of threads used for mbus responses, default is 2, negative number = numcores/4",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", true,
-            List.of("hmusum"), "2020-12-02", "2025-05-01",
+            List.of("hmusum"), "2020-12-02", "2025-12-01",
             "Optionally deliver async messages in own thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_JAVA_NUM_TARGETS = defineIntFlag(
             "mbus-java-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2025-05-01",
+            List.of("hmusum"), "2022-07-05", "2025-12-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_NUM_TARGETS = defineIntFlag(
             "mbus-cpp-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2025-05-01",
+            List.of("hmusum"), "2022-07-05", "2025-12-01",
             "Number of rpc targets per service",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_NUM_TARGETS = defineIntFlag(
             "rpc-num-targets", 2,
-            List.of("hmusum"), "2022-07-05", "2025-05-01",
+            List.of("hmusum"), "2022-07-05", "2025-12-01",
             "Number of rpc targets per content node",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-java-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2025-05-01",
+            List.of("hmusum"), "2022-07-05", "2025-12-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-cpp-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2025-05-01",
+            List.of("hmusum"), "2022-07-05", "2025-12-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "rpc-events-before-wakeup", 1,
-            List.of("hmusum"), "2022-07-05", "2025-05-01",
+            List.of("hmusum"), "2022-07-05", "2025-12-01",
             "Number write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MBUS_NUM_NETWORK_THREADS = defineIntFlag(
             "mbus-num-network-threads", 1,
-            List.of("hmusum"), "2022-07-01", "2025-05-01",
+            List.of("hmusum"), "2022-07-01", "2025-12-01",
             "Number of threads used for mbus network",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
             "max-activation-inhibited-out-of-sync-groups", 0,
-            List.of("vekterli"), "2021-02-19", "2025-06-01",
+            List.of("vekterli"), "2021-02-19", "2025-12-01",
             "Allows replicas in up to N content groups to not be activated " +
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
@@ -145,14 +145,14 @@ public class Flags {
 
     public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
             "min-node-ratio-per-group", 0.0,
-            List.of("vekterli"), "2021-07-16", "2025-06-01",
+            List.of("vekterli"), "2021-07-16", "2025-12-01",
             "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
-            List.of("arnej"), "2021-11-15", "2025-05-01",
+            List.of("arnej"), "2021-11-15", "2025-12-01",
             "Use Vespa 8 types and formats for geographical positions",
             "Takes effect at redeployment",
             INSTANCE_ID);
@@ -181,26 +181,26 @@ public class Flags {
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2025-05-01",
+            List.of("hmusum"), "2023-12-15", "2025-06-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2025-05-01",
+            List.of("hmusum"), "2023-05-16", "2025-06-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundBooleanFlag WRITE_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "write-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2025-05-01",
+            List.of("hmusum"), "2023-07-19", "2025-12-01",
             "Whether to write config server session data in one blob or as individual paths",
             "Takes effect immediately");
 
     public static final UnboundBooleanFlag READ_CONFIG_SERVER_SESSION_DATA_AS_ONE_BLOB = defineFeatureFlag(
             "read-config-server-session-data-as-blob", false,
-            List.of("hmusum"), "2023-07-19", "2025-05-01",
+            List.of("hmusum"), "2023-07-19", "2025-12-01",
             "Whether to read config server session data from session data blob or from individual paths",
             "Takes effect immediately");
 
@@ -227,7 +227,7 @@ public class Flags {
 
     public static final UnboundIntFlag CONTENT_LAYER_METADATA_FEATURE_LEVEL = defineIntFlag(
             "content-layer-metadata-feature-level", 1,
-            List.of("vekterli"), "2022-09-12", "2025-06-01",
+            List.of("vekterli"), "2022-09-12", "2025-12-01",
             "Value semantics: 0) legacy behavior, 1) operation cancellation, 2) operation " +
             "cancellation and ephemeral content node sequence numbers for bucket replicas",
             "Takes effect at redeployment",
@@ -249,7 +249,7 @@ public class Flags {
 
     public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
             "persistence-thread-max-feed-op-batch-size", 64,
-            List.of("vekterli"), "2024-04-12", "2025-06-01",
+            List.of("vekterli"), "2024-04-12", "2025-12-01",
             "Maximum number of enqueued feed operations (put/update/remove) bound "+
             "towards the same bucket that can be async dispatched as part of the " +
             "same write-locked batch by a persistence thread.",
@@ -284,7 +284,7 @@ public class Flags {
 
     public static final UnboundLongFlag ZOOKEEPER_PRE_ALLOC_SIZE_KIB = defineLongFlag(
             "zookeeper-pre-alloc-size", 65536,
-            List.of("hmusum"), "2024-11-11", "2025-05-01",
+            List.of("hmusum"), "2024-11-11", "2025-12-01",
             "Setting for zookeeper.preAllocSize flag in KiB, can be reduced from default value "
             + "e.g. when running tests to avoid writing a large, sparse, mostly unused file",
             "Takes effect on restart of Docker container");
@@ -305,7 +305,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
             "use-legacy-trust-store", true,
-            List.of("marlon"), "2024-12-05", "2025-05-01",
+            List.of("marlon"), "2024-12-05", "2025-06-01",
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
 
