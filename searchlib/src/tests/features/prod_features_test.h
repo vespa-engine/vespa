@@ -77,8 +77,9 @@ protected:
     bool assertTermDistance(const search::features::TermDistanceCalculator::Result & exp, const std::string & query,
                             const std::string & field, uint32_t docId = 1);
     bool assertTermDistance(const search::features::TermDistanceCalculator::Result & exp, const std::string & query,
-                        const std::vector<std::string> & field, uint32_t docId, std::optional<std::string> element_gap,
-                        std::optional<uint32_t> phrase_length);
+                            const std::vector<std::string> &field, uint32_t docId,
+                            std::optional<search::fef::ElementGap> element_gap,
+                            std::optional<uint32_t> phrase_length);
     bool assertMatches(uint32_t output, const std::string & query, const std::string & field,
                        const std::string & feature = "matches(foo)", uint32_t docId = 1);
 

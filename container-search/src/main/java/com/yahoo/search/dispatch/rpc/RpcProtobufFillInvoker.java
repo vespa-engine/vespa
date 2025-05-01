@@ -284,7 +284,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         var query = result.getQuery();
         double absoluteRetryLimit = query.properties().getInteger(Dispatcher.docsumRetryLimit, 10);
         double retryLimitFactor = query.properties().getDouble(Dispatcher.docsumRetryFactor, 0.5);
-        double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numHitsToFill);
+        double retryLimit = Math.min(absoluteRetryLimit, retryLimitFactor * numHitsToFill + 1);
         if (numSkipped < retryLimit) {
             result.getQuery().trace(false, 1, "Retry summary fetching for " + numSkipped + " empty docsums (of " + numHitsToFill + " hits)");
             ListMap<Integer, FastHit> retryMap = new ListMap<>();

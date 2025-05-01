@@ -15,6 +15,7 @@ namespace search::queryeval {
 
 namespace {
 
+using search::fef::ElementGap;
 using search::fef::TermFieldMatchDataArray;
 using search::fef::TermFieldMatchDataPosition;
 using search::fef::TermFieldMatchDataPositionKey;
@@ -34,7 +35,7 @@ void setup_fields(uint32_t window, const IElementGapInspector& element_gap_inspe
 }
 
 TermFieldMatchDataPositionKey
-calc_window_end_pos(const TermFieldMatchDataPosition& pos, uint32_t window, std::optional<uint32_t> element_gap)
+calc_window_end_pos(const TermFieldMatchDataPosition& pos, uint32_t window, ElementGap element_gap)
 {
     if (!element_gap.has_value() || pos.getElementLen() + element_gap.value() > pos.getPosition() + window) {
         return { pos.getElementId(), pos.getPosition() + window };
@@ -165,9 +166,9 @@ struct Iterators
 {
     vespalib::PriorityQueue<PosIter> _queue;
     TermFieldMatchDataPositionKey    _maxOcc;
-    std::optional<uint32_t>          _element_gap;
+    ElementGap                       _element_gap;
 
-    Iterators(std::optional<uint32_t> element_gap)
+    Iterators(ElementGap element_gap)
         : _queue(),
           _maxOcc(),
           _element_gap(element_gap)

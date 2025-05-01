@@ -45,11 +45,11 @@ struct BitVector::OrParts : vespalib::Runnable
           _byte_size((size + 7)/8)
     {}
     void run() override {
-        const auto & accelrator = IAccelerated::getAccelerator();
+        const auto & accelerator = IAccelerated::getAccelerator();
         BitVector * master = _vectors[0];
         Word * destination = master->getWordIndex(_offset);
         for (uint32_t i(1); i < _vectors.size(); i++) {
-            accelrator.orBit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
+            accelerator.orBit(destination, _vectors[i]->getWordIndex(_offset), _byte_size);
         }
     }
     std::span<BitVector* const> _vectors;

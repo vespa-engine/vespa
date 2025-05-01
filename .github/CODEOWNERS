@@ -74,11 +74,11 @@
 ./searchlib/src/vespa/searchlib/fef/* @havardpe
 ./searchlib/src/vespa/searchlib/diskindex/* @toregge
 ./searchlib/src/vespa/searchlib/query/tree/* @havardpe
-./searchlib/src/vespa/searchlib/query/* @arnej
+./searchlib/src/vespa/searchlib/query/* @arnej27959
 ./searchlib/src/vespa/searchlib/queryeval/* @havardpe
 ./searchlib/src/vespa/searchlib/bitcompression/* @toregge
 ./searchlib/src/vespa/searchlib/predicate/* @bjorncs
-./searchlib/src/vespa/searchlib/parsequery/* @arnej
+./searchlib/src/vespa/searchlib/parsequery/* @arnej27959
 ./searchlib/src/vespa/searchlib/transactionlog/* @tegge
 ./searchlib/src/vespa/searchlib/aggregation/* @havardpe
 ./searchlib/src/vespa/searchlib/test/* @toregge
@@ -132,7 +132,7 @@
 ./hosted-zone-api/* @bjorncs
 ./logserver/* @arnej27959
 ./vespa-maven-plugin/* @hmusum
-./client/go/* @mpolden
+./client/go/* @evgiz @arnej27959
 ./vespa-testrunner-components/* @hmusum
 ./linguistics/* @bratseth @arnej27959
 ./fbench/* @havardpe
@@ -160,7 +160,7 @@
 ./container-test/* @gjoranv
 ./vespajlib/* @arnej27959
 ./zookeeper-server/* @hmusum
-./vespa-documentgen-plugin/* @kraune
+./vespa-documentgen-plugin/* @kkraune
 ./documentgen-test/* @arnej27959
 ./container-dev/* @gjoranv
 ./vespalib/src/vespa/vespalib/btree/* @toregge

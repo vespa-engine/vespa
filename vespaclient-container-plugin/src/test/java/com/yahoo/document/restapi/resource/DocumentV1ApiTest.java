@@ -1012,6 +1012,26 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(412, response.getStatus());
 
+        // REJECTED is a 400
+        access.session.expect((id, parameters) -> {
+            parameters.responseHandler().get().handleResponse(new Response(0, "backend not configured for danseband", Response.Outcome.REJECTED));
+            return new Result();
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/group/a/three?create=true", PUT,
+                """
+                {
+                  "fields": {
+                    "artist": { "assign": "Ole Ivars" }
+                  }
+                }""");
+        assertSameJson("""
+                {
+                  "pathId": "/document/v1/space/music/group/a/three",
+                  "id": "id:space:music:g=a:three",
+                  "message": "backend not configured for danseband"
+                }""", response.readAll());
+        assertEquals(400, response.getStatus());
+
         // OPTIONS gets options
         access.session.expect((__, ___) -> { throw new AssertionError("Not supposed to happen"); });
         response = driver.sendRequest("https://localhost/document/v1/space/music/docid/one", OPTIONS);

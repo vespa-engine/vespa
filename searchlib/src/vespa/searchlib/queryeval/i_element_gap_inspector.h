@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include <cstdint>
-#include <optional>
+#include <vespa/searchlib/fef/element_gap.h>
 
 namespace search::queryeval {
 
@@ -15,7 +14,7 @@ namespace search::queryeval {
  */
 class IElementGapInspector {
 public:
-    virtual std::optional<uint32_t> get_element_gap(uint32_t field_id) const noexcept = 0;
+    virtual search::fef::ElementGap get_element_gap(uint32_t field_id) const noexcept = 0;
     virtual ~IElementGapInspector() = default;
 };
 

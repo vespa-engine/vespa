@@ -9,7 +9,7 @@ namespace vespalib::hwaccelerated {
 /**
  * Avx-512 implementation.
  */
-class Avx2Accelrator : public GenericAccelrator
+class Avx2Accelerator : public GenericAccelerator
 {
 public:
     size_t populationCount(const uint64_t *a, size_t sz) const noexcept override;
