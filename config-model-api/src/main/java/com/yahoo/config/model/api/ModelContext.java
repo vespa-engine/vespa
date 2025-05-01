@@ -97,7 +97,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.75; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitLowWatermarkDifference() { return 0.0; }
-        @ModelFeatureFlag(owners = {"vekterli"}) default double minNodeRatioPerGroup() { return 0.0; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.516") default double minNodeRatioPerGroup() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }

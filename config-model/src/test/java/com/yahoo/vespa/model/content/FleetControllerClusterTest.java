@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class FleetControllerClusterTest {
 
@@ -132,24 +131,6 @@ public class FleetControllerClusterTest {
                                "  </resource-limits>",
                                "</tuning>" +
                                        "</content>"));
-    }
-
-    @Test
-    // TODO: Keeping test for now to verify that setting is true while doing feature flag changes, can be removed after 8.472
-    void test_distribution_config_from_cluster_controller() {
-        assertTrue(getConfigForBasicCluster(new TestProperties()).include_distribution_config_in_cluster_state_bundle());
-    }
-
-    @Test
-    void feature_flag_controls_min_node_ratio_per_group() {
-        verifyFeatureFlagControlsMinNodeRatioPerGroup(0.0, new TestProperties());
-        verifyFeatureFlagControlsMinNodeRatioPerGroup(0.3,
-                new TestProperties().setMinNodeRatioPerGroup(0.3));
-    }
-
-    private void verifyFeatureFlagControlsMinNodeRatioPerGroup(double expRatio, TestProperties props) {
-        var config = getConfigForBasicCluster(props);
-        assertEquals(expRatio, config.min_node_ratio_per_group(), DELTA);
     }
 
     private FleetcontrollerConfig getConfigForBasicCluster(TestProperties props) {

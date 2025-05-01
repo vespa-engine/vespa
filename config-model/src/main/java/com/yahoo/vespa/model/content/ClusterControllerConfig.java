@@ -36,7 +36,7 @@ public class ClusterControllerConfig extends AnyConfigProducer implements Fleetc
             ModelElement tuning = clusterElement.child("tuning");
             ModelElement clusterControllerTuning = null;
 
-            Optional<Double> minNodeRatioPerGroup = Optional.of(deployState.featureFlags().minNodeRatioPerGroup());
+            Optional<Double> minNodeRatioPerGroup = Optional.empty();
             Optional<Integer> bucketSplittingMinimumBits = Optional.empty();
             if (tuning != null) {
                 minNodeRatioPerGroup = Optional.ofNullable(tuning.childAsDouble("min-node-ratio-per-group"));
