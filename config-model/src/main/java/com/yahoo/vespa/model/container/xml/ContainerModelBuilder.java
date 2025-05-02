@@ -25,6 +25,7 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
