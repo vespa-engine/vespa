@@ -445,11 +445,11 @@ Group::Value::prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel) 
     auto keep = new ChildP[b.getChildrenSize()];
     size_t kept(0);
     auto mine = iterateAllChildren();
-    auto others = b.iterateChildren();
+    auto others = b.iterateConstChildren();
     auto px = mine.begin();
-    auto py = others.cbegin();
+    auto py = others.begin();
     // Assumes that both lists are ordered by group id
-    while (py != others.cend() && px != mine.end()) {
+    while (py != others.end() && px != mine.end()) {
         if ((*py)->cmpId(**px) > 0) {
             px++;
         } else if ((*py)->cmpId(**px) == 0) {
@@ -473,11 +473,11 @@ Group::Value::mergePartial(const GroupingLevelList &levels, uint32_t firstLevel,
                            uint32_t currentLevel, const Value & b)
 {
     auto mine = iterateChildren();
-    auto others = b.iterateChildren();
+    auto others = b.iterateConstChildren();
     auto px = mine.begin();
-    auto py = others.cbegin();
+    auto py = others.begin();
     // Assumes that both lists are ordered by group id
-    while (py != others.cend() && px != mine.end()) {
+    while (py != others.end() && px != mine.end()) {
         if ((*py)->cmpId(**px) > 0) {
             px++;
         } else if ((*py)->cmpId(**px) == 0) {
