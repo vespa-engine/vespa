@@ -90,9 +90,9 @@ case $COMMAND in
     # Note: The apiUrl is hardcoded to vespaai/cloud. This must be changed if we want to use this for other github repos.
     $CURL -H "Authorization: Bearer $TOKEN" -d "{
         \"startSeconds\": $START_SECONDS,
-        \"apiUrl\": $GITHUB_API_URL,
-        \"pipelineName\": $WORKFLOW_NAME,
-        \"jobName\": $JOB_NAME,
+        \"apiUrl\": \"$GITHUB_API_URL\",
+        \"pipelineName\": \"$WORKFLOW_NAME\",
+        \"jobName\": \"$JOB_NAME\",
         \"buildId\": $JOB_ID,
         \"webUrl\": \"$WEB_URL\",
         \"status\": \"$STATUS\"
