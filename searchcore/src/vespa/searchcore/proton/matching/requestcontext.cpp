@@ -11,6 +11,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.matching.requestcontext");
 
+using search::fef::ElementGap;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::Issue;
 
@@ -72,8 +73,12 @@ RequestContext::get_element_gap_inspector() const noexcept
     return *this;
 }
 
-std::optional<uint32_t>
-RequestContext::get_element_gap(uint32_t) const noexcept {
+ElementGap
+RequestContext::get_element_gap(uint32_t field_id) const noexcept {
+    auto field = _query_env.getIndexEnvironment().getField(field_id);
+    if (field != nullptr) {
+        return field->get_element_gap();
+    }
     return std::nullopt;
 }
 

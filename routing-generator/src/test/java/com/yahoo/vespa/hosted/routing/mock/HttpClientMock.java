@@ -21,7 +21,7 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * @author mpolden
+ * @author Martin Polden
  */
 @SuppressWarnings("deprecation") // Deprecations in third-party interface
 public class HttpClientMock extends CloseableHttpClient {

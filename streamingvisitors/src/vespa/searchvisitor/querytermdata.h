@@ -25,7 +25,12 @@ class QueryTermDataFactory final : public search::streaming::QueryNodeResultFact
 public:
     using Normalizing = search::Normalizing;
     using QueryNormalization = search::QueryNormalization;
-    QueryTermDataFactory(const  QueryNormalization * normalization) noexcept : _normalization(normalization) {}
+    QueryTermDataFactory(const  QueryNormalization * normalization,
+                         const search::queryeval::IElementGapInspector* element_gap_inspector) noexcept
+        : _normalization(normalization),
+          _element_gap_inspector(element_gap_inspector)
+    {}
+    ~QueryTermDataFactory() override;
     std::unique_ptr<search::streaming::QueryNodeResultBase> create() const override {
         return std::make_unique<QueryTermData>();
     }
@@ -35,8 +40,10 @@ public:
     bool allow_float_terms_rewrite(std::string_view index ) const noexcept override {
         return _normalization && _normalization->is_text_matching(index);
     }
+    const search::queryeval::IElementGapInspector& get_element_gap_inspector() const noexcept override;
 private:
     const QueryNormalization * _normalization;
+    const search::queryeval::IElementGapInspector* _element_gap_inspector;
 };
 
 

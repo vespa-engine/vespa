@@ -13,7 +13,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author mpolden
+ * @author Martin Polden
  */
 public class RoutingStatusClientTest {
 

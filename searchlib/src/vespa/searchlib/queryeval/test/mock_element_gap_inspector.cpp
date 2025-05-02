@@ -2,9 +2,11 @@
 
 #include "mock_element_gap_inspector.h"
 
+using search::fef::ElementGap;
+
 namespace search::queryeval::test {
 
-MockElementGapInspector::MockElementGapInspector(std::optional<uint32_t> element_gap)
+MockElementGapInspector::MockElementGapInspector(ElementGap element_gap)
     : IElementGapInspector(),
       _element_gap(element_gap)
 {
@@ -12,7 +14,7 @@ MockElementGapInspector::MockElementGapInspector(std::optional<uint32_t> element
 
 MockElementGapInspector::~MockElementGapInspector() = default;
 
-std::optional<uint32_t>
+ElementGap
 MockElementGapInspector::get_element_gap(uint32_t) const noexcept
 {
     return _element_gap;

@@ -3,6 +3,7 @@
 #include <vespa/searchlib/queryeval/i_element_gap_inspector.h>
 #include <ostream>
 
+using search::fef::ElementGap;
 using search::queryeval::IElementGapInspector;
 
 namespace search::streaming {
@@ -13,14 +14,14 @@ class NoElementGapInspector : public IElementGapInspector {
 public:
     NoElementGapInspector();
     ~NoElementGapInspector() override;
-    std::optional<uint32_t> get_element_gap(uint32_t field_id) const noexcept override;
+    ElementGap get_element_gap(uint32_t field_id) const noexcept override;
 };
 
 NoElementGapInspector::NoElementGapInspector() = default;
 
 NoElementGapInspector::~NoElementGapInspector() = default;
 
-std::optional<uint32_t>
+ElementGap
 NoElementGapInspector::get_element_gap(uint32_t) const noexcept
 {
     return std::nullopt;

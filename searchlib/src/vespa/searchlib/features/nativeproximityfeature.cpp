@@ -16,10 +16,14 @@ namespace search::features {
 
 namespace {
 
-std::optional<uint32_t> get_element_gap(const IIndexEnvironment &env, const std::string &base_name,
-                                        const std::string &field_name) {
+ElementGap get_element_gap(const IIndexEnvironment &env, const std::string &base_name,
+                           const std::string &field_name) {
     auto property = env.getProperties().lookup(base_name, "elementGap", field_name);
     if (!property.found()) {
+        auto field = env.getFieldByName(field_name);
+        if (field != nullptr) {
+            return field->get_element_gap();
+        }
         return std::nullopt;
     }
     auto& value = property.get();

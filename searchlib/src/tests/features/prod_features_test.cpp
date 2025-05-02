@@ -2196,16 +2196,16 @@ TEST_F(ProdFeaturesTest, test_term_distance)
         EXPECT_TRUE(assertTermDistance(Result(3, 0, 1, 5), "a b", {"a b y y y b a b y"}, 1, std::nullopt, 3));
         // Distance between positions in adjacent elements is not calculated when element gap is not set.
         EXPECT_TRUE(assertTermDistance(Result(), "a b", {"a x", "x b x"}, 1, std::nullopt, std::nullopt));
-        EXPECT_TRUE(assertTermDistance(Result(), "a b", {"a i", "i b i"}, 1, "infinity", std::nullopt));
+        EXPECT_TRUE(assertTermDistance(Result(), "a b", {"a i", "i b i"}, 1, ElementGap(std::nullopt), std::nullopt));
         // Distance between positions in adjacent elements is calculated when element gap is set.
-        EXPECT_TRUE(assertTermDistance(Result(103, 0, UV, UV), "a b", {"a y", "x b y"}, 1, "100", std::nullopt));
-        EXPECT_TRUE(assertTermDistance(Result(UV, UV, 103, 0), "a b", {"b x", "x a x"}, 1, "100", std::nullopt));
+        EXPECT_TRUE(assertTermDistance(Result(103, 0, UV, UV), "a b", {"a y", "x b y"}, 1, ElementGap(100), std::nullopt));
+        EXPECT_TRUE(assertTermDistance(Result(UV, UV, 103, 0), "a b", {"b x", "x a x"}, 1, ElementGap(100), std::nullopt));
         // Best forward distance is within first element, no best reverse distance
-        EXPECT_TRUE(assertTermDistance(Result(3, 0, UV, UV), "a b", {"a x x b", "x b"}, 1, "0", std::nullopt));
+        EXPECT_TRUE(assertTermDistance(Result(3, 0, UV, UV), "a b", {"a x x b", "x b"}, 1, ElementGap(0), std::nullopt));
         // Best forward distance is spanning elements, best reverse distance is within first element
-        EXPECT_TRUE(assertTermDistance(Result(2, 4, 1, 3), "a b", {"a x x b a", "x b"}, 1, "0", std::nullopt));
+        EXPECT_TRUE(assertTermDistance(Result(2, 4, 1, 3), "a b", {"a x x b a", "x b"}, 1, ElementGap(0), std::nullopt));
         // Best forward distance is within second element, best reverse distance is spanning elements
-        EXPECT_TRUE(assertTermDistance(Result(1, 3, 1, 3), "a b", {"a x x b", "a x b a b"}, 1, "0", std::nullopt));
+        EXPECT_TRUE(assertTermDistance(Result(1, 3, 1, 3), "a b", {"a x x b", "a x b a b"}, 1, ElementGap(0), std::nullopt));
     }
 }
 
@@ -2225,13 +2225,17 @@ Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
                          const std::string & query,
                          const std::vector<std::string> & field,
                          uint32_t docId,
-                         std::optional<std::string> element_gap,
+                         std::optional<ElementGap> element_gap,
                          std::optional<uint32_t> phrase_length)
 {
     std::ostringstream os;
     os << "assertTermDistance(" << std::quoted(query) << ", " << testing::PrintToString(field) << ")";
     if (element_gap.has_value()) {
-        os << ", element_gap=" << element_gap.value();
+        if (element_gap.value().has_value()) {
+            os << ", element_gap=" << element_gap.value().value();
+        } else {
+            os << ", element_gap=infinity";
+        }
     }
     if (phrase_length.has_value()) {
         os << ", phrase_length=" << phrase_length.value();
@@ -2242,10 +2246,7 @@ Test::assertTermDistance(const TermDistanceCalculator::Result & exp,
     std::string feature = "termDistance(foo,0,1)";
     FtFeatureTest ft(_factory, feature);
 
-    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, "foo");
-    if (element_gap.has_value()) {
-        ft.getIndexEnv().getProperties().add(feature + ".elementGap", element_gap.value());
-    }
+    ft.getIndexEnv().getBuilder().addField(FieldType::INDEX, CollectionType::ARRAY, DataType::STRING, element_gap, "foo");
     FtIndex index;
     index.field("foo");
     for (auto& elem : field) {

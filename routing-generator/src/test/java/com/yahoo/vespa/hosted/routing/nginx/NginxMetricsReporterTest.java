@@ -29,8 +29,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 /**
- * @author mortent
- * @author mpolden
+ * @author Morten Tokle
+ * @author Martin Polden
  */
 public class NginxMetricsReporterTest {
 

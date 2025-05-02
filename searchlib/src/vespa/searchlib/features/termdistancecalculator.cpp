@@ -4,6 +4,7 @@
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/itermdata.h>
 
+using search::fef::ElementGap;
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;
 
@@ -12,7 +13,7 @@ namespace search::features {
 const uint32_t TermDistanceCalculator::UNDEFINED_VALUE(1000000);
 
 void
-TermDistanceCalculator::run(const QueryTerm &termX, const QueryTerm &termY, std::optional<uint32_t> element_gap,
+TermDistanceCalculator::run(const QueryTerm &termX, const QueryTerm &termY, ElementGap element_gap,
                             const MatchData & match, uint32_t docId, Result & r)
 {
     const TermFieldMatchData *tmdX = match.resolveTermField(termX.fieldHandle());
@@ -27,7 +28,7 @@ TermDistanceCalculator::run(const QueryTerm &termX, const QueryTerm &termY, std:
 void
 TermDistanceCalculator::findBest(const TermFieldMatchData *tmdX,
                                  const TermFieldMatchData *tmdY,
-                                 std::optional<uint32_t> element_gap,
+                                 ElementGap element_gap,
                                  uint32_t numTermsX,
                                  uint32_t & bestDist,
                                  uint32_t & bestPos)

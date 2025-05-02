@@ -31,7 +31,7 @@ import java.util.logging.Logger;
 /**
  * This loads a {@link RoutingTable} into a running Nginx process.
  *
- * @author mpolden
+ * @author Martin Polden
  */
 public class Nginx implements Router {
 

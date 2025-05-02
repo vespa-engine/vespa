@@ -248,7 +248,6 @@ vespa_define_module(
     src/tests/test/string_field_builder
     src/tests/transactionlog
     src/tests/transactionlogstress
-    src/tests/true
     src/tests/url
     src/tests/util
     src/tests/util/bufferwriter

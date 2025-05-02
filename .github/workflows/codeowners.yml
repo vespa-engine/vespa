@@ -1,0 +1,16 @@
+name: Sync CODEOWNERS
+
+on:
+  pull_request:
+    branches: [ "master" ]
+    paths:
+      - "**/OWNERS"
+      - ".github/CODEOWNERS"
+      - ".github/workflows/codeowners.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  codeowners:
+    uses: vespa-engine/gh-actions/.github/workflows/sync-codeowners.yml@main

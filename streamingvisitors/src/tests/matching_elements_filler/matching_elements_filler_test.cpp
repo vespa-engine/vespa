@@ -95,7 +95,7 @@ BoundTerm::~BoundTerm() = default;
 
 Query make_query(std::unique_ptr<search::query::Node> root) {
     std::string stack_dump = StackDumpCreator::create(*root);
-    QueryTermDataFactory factory(nullptr);
+    QueryTermDataFactory factory(nullptr, nullptr);
     Query query(factory, stack_dump);
     return query;
 }

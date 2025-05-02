@@ -18,6 +18,7 @@ LOG_SETUP(".searchcorespi.index.warmupindexcollection");
 namespace searchcorespi {
 
 using index::IDiskIndex;
+using search::fef::ElementGap;
 using search::fef::MatchDataLayout;
 using search::fef::MatchData;
 using search::index::FieldLengthInfo;
@@ -47,7 +48,7 @@ public:
     const CreateBlueprintParams& get_create_blueprint_params() const override { return _params; }
     const MetaStoreReadGuardSP * getMetaStoreReadGuard() const override { return nullptr; }
     const IElementGapInspector& get_element_gap_inspector() const noexcept override { return *this; }
-    std::optional<uint32_t> get_element_gap(uint32_t) const noexcept override { return std::nullopt; }
+    ElementGap get_element_gap(uint32_t) const noexcept override { return std::nullopt; }
 private:
     const CreateBlueprintParams _params;
 };

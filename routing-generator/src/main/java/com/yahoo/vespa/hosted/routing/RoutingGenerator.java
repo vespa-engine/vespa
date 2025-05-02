@@ -42,7 +42,7 @@ import java.util.logging.Logger;
  * {@link RoutingTable}, which is loaded into a {@link Router}.
  *
  * @author oyving
- * @author mpolden
+ * @author Martin Polden
  */
 public final class RoutingGenerator extends AbstractComponent {
 

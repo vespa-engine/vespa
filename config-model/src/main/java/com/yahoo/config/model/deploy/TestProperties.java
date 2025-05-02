@@ -14,7 +14,6 @@ import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 
 import java.net.URI;
@@ -37,7 +36,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private ApplicationId applicationId = ApplicationId.defaultId();
     private List<ConfigServerSpec> configServerSpecs = List.of();
     private boolean hostedVespa = false;
-    private Zone zone = Zone.defaultZone();
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
@@ -59,7 +57,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
     private double resourceLimitLowWatermarkDifference = 0.0;
-    private double minNodeRatioPerGroup = 0.0;
     private int maxUnCommittedMemory = 123456;
     private String searchMmapAdvise = "SEQUENTIAL";
     private boolean useV8GeoPositions = true;
@@ -90,7 +87,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public AthenzDomain tenantSecretDomain() { return null; }
     @Override public String athenzDnsSuffix() { return null; }
     @Override public boolean hostedVespa() { return hostedVespa; }
-    @Override public Zone zone() { return zone; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
     @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) { return jvmGCOptions; }
     @Override public boolean isBootstrap() { return false; }
@@ -113,7 +109,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double resourceLimitDisk() { return resourceLimitDisk; }
     @Override public double resourceLimitMemory() { return resourceLimitMemory; }
     @Override public double resourceLimitLowWatermarkDifference() { return resourceLimitLowWatermarkDifference; }
-    @Override public double minNodeRatioPerGroup() { return minNodeRatioPerGroup; }
     @Override public int maxUnCommittedMemory() { return maxUnCommittedMemory; }
     @Override public String searchMmapAdvise() { return searchMmapAdvise; }
     @Override public boolean useV8GeoPositions() { return useV8GeoPositions; }
@@ -219,11 +214,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
         return this;
     }
 
-    public TestProperties setZone(Zone zone) {
-        this.zone = zone;
-        return this;
-    }
-
     public TestProperties setAthenzDomain(AthenzDomain domain) {
         this.athenzDomain = domain;
         return this;
@@ -271,11 +261,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setResourceLimitLowWatermarkDifference(double value) {
         this.resourceLimitLowWatermarkDifference = value;
-        return this;
-    }
-
-    public TestProperties setMinNodeRatioPerGroup(double value) {
-        this.minNodeRatioPerGroup = value;
         return this;
     }
 

@@ -406,11 +406,9 @@ Group::Value::merge(const std::vector<GroupingLevel> &levels,
     size_t kept(0);
     auto mine = iterateChildren();
     auto others = b.iterateChildren();
-    ChildP * px = mine.begin();
-    ChildP * ex = mine.end();
-    ChildP * py = others.begin();
-    ChildP * ey = others.end();
-    while (px != ex && py != ey) {
+    auto px = mine.begin();
+    auto py = others.begin();
+    while (px != mine.end() && py != others.end()) {
         int c = (*px)->cmpId(**py);
         if (c == 0) {
             (*px)->merge(levels, firstLevel, currentLevel + 1, **py);
@@ -428,11 +426,11 @@ Group::Value::merge(const std::vector<GroupingLevel> &levels,
             ++py;
         }
     }
-    for (; px != ex; ++px) {
+    for (; px != mine.end(); ++px) {
         z[kept++] = *px;
         reset(*px);
     }
-    for (; py != ey; ++py) {
+    for (; py != others.end(); ++py) {
         z[kept++] = *py;
         reset(*py);
     }
@@ -448,12 +446,10 @@ Group::Value::prune(const Value & b, uint32_t lastLevel, uint32_t currentLevel) 
     size_t kept(0);
     auto mine = iterateAllChildren();
     auto others = b.iterateChildren();
-    ChildP * px = mine.begin();
-    ChildP * ex = mine.end();
-    const ChildP * py = others.begin();
-    const ChildP * ey = others.end();
+    auto px = mine.begin();
+    auto py = others.cbegin();
     // Assumes that both lists are ordered by group id
-    while (py != ey && px != ex) {
+    while (py != others.cend() && px != mine.end()) {
         if ((*py)->cmpId(**px) > 0) {
             px++;
         } else if ((*py)->cmpId(**px) == 0) {
@@ -478,12 +474,10 @@ Group::Value::mergePartial(const GroupingLevelList &levels, uint32_t firstLevel,
 {
     auto mine = iterateChildren();
     auto others = b.iterateChildren();
-    ChildP * px = mine.begin();
-    ChildP * ex = mine.end();
-    const ChildP * py = others.begin();
-    const ChildP * ey = others.end();
+    auto px = mine.begin();
+    auto py = others.cbegin();
     // Assumes that both lists are ordered by group id
-    while (py != ey && px != ex) {
+    while (py != others.cend() && px != mine.end()) {
         if ((*py)->cmpId(**px) > 0) {
             px++;
         } else if ((*py)->cmpId(**px) == 0) {
@@ -531,11 +525,11 @@ Group::Value::postMerge(const std::vector<GroupingLevel> &levels, uint32_t first
 bool
 Group::Value::needResort() const
 {
-    bool resort(needFullRank());
-    for (const ChildP *it(_children), *mt(_children + getChildrenSize()); !resort && (it != mt); ++it) {
-        resort = (*it)->needResort();
+    if (needFullRank()) return true;
+    for (ChildP cp : iterateChildren()) {
+        if (cp->needResort()) return true;
     }
-    return resort;
+    return false;
 }
 
 namespace {

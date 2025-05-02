@@ -7,7 +7,7 @@ import com.yahoo.vespa.hosted.routing.status.ServerGroup;
 import java.util.List;
 
 /**
- * @author mpolden
+ * @author Martin Polden
  */
 public class HealthStatusMock implements HealthStatus {
 

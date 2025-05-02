@@ -21,13 +21,13 @@ IAccelerated::UP create_accelerator() {
 #ifdef __x86_64__
     __builtin_cpu_init();
     if (__builtin_cpu_supports("avx512f")) {
-        return std::make_unique<Avx512Accelrator>();
+        return std::make_unique<Avx512Accelerator>();
     }
     if (__builtin_cpu_supports("avx2")) {
-        return std::make_unique<Avx2Accelrator>();
+        return std::make_unique<Avx2Accelerator>();
     }
 #endif
-    return std::make_unique<GenericAccelrator>();
+    return std::make_unique<GenericAccelerator>();
 }
 
 template<typename T>
@@ -54,7 +54,7 @@ verifyDotproduct(const IAccelerated & accel)
         }
         T hwComputedSum(accel.dotProduct(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
-            fprintf(stderr, "Accelrator is not computing dotproduct correctly.\n");
+            fprintf(stderr, "Accelerator is not computing dotproduct correctly.\n");
             LOG_ABORT("should not be reached");
         }
     }
@@ -74,7 +74,7 @@ verifyEuclideanDistance(const IAccelerated & accel) {
         }
         T hwComputedSum(accel.squaredEuclideanDistance(&a[j], &b[j], testLength - j));
         if (sum != hwComputedSum) {
-            fprintf(stderr, "Accelrator is not computing euclidean distance correctly.\n");
+            fprintf(stderr, "Accelerator is not computing euclidean distance correctly.\n");
             LOG_ABORT("should not be reached");
         }
     }
@@ -93,7 +93,7 @@ verifyPopulationCount(const IAccelerated & accel)
     constexpr size_t expected = 32 + 0 + 1 + 48 + 32 + 1 + 64;
     size_t hwComputedPopulationCount = accel.populationCount(words, VESPA_NELEMS(words));
     if (hwComputedPopulationCount != expected) {
-        fprintf(stderr, "Accelrator is not computing populationCount correctly.Expected %zu, computed %zu\n", expected, hwComputedPopulationCount);
+        fprintf(stderr, "Accelerator is not computing populationCount correctly.Expected %zu, computed %zu\n", expected, hwComputedPopulationCount);
         LOG_ABORT("should not be reached");
     }
 }
@@ -230,7 +230,7 @@ private:
 
 RuntimeVerificator::RuntimeVerificator()
 {
-    verify(GenericAccelrator());
+    verify(GenericAccelerator());
     verify(*create_accelerator());
 }
 
@@ -239,9 +239,9 @@ RuntimeVerificator::RuntimeVerificator()
 const IAccelerated &
 IAccelerated::getAccelerator()
 {
-    static RuntimeVerificator verifyAccelrator_once;
-    static IAccelerated::UP accelrator = create_accelerator();
-    return *accelrator;
+    static RuntimeVerificator verifyAccelerator_once;
+    static IAccelerated::UP accelerator = create_accelerator();
+    return *accelerator;
 }
 
 }

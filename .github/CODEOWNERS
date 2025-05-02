@@ -8,11 +8,11 @@
 ./searchsummary/* @toregge
 ./indexinglanguage/* @glebashnik
 ./storage/* @vekterli
-./cloud-tenant-cd/* @mortent @bjorncs
+./cloud-tenant-cd/* @bjorncs
 ./config/* @hmusum @arnej27959
 ./application/* @gjoranv @bjorncs
-./dist/* @aressem
-./cloud-tenant-base/* @mortent @bjorncs
+./dist/* @esolitos
+./cloud-tenant-base/* @bjorncs
 ./vespa-application-maven-plugin/* @gjoranv
 ./configserver/* @hmusum
 ./documentapi/* @vekterli
@@ -56,7 +56,7 @@
 ./docproc/* @bratseth
 ./logforwarder/* @arnej27959
 ./configdefinitions/* @hmusum
-./jdisc-cloud-aws/* @mortent @oyving
+./jdisc-cloud-aws/* @oyving
 ./bundle-plugin-test/* @gjoranv
 ./container-search-and-docproc/* @gjoranv
 ./zookeeper-command-line-client/* @hmusum
@@ -74,11 +74,11 @@
 ./searchlib/src/vespa/searchlib/fef/* @havardpe
 ./searchlib/src/vespa/searchlib/diskindex/* @toregge
 ./searchlib/src/vespa/searchlib/query/tree/* @havardpe
-./searchlib/src/vespa/searchlib/query/* @arnej
+./searchlib/src/vespa/searchlib/query/* @arnej27959
 ./searchlib/src/vespa/searchlib/queryeval/* @havardpe
 ./searchlib/src/vespa/searchlib/bitcompression/* @toregge
 ./searchlib/src/vespa/searchlib/predicate/* @bjorncs
-./searchlib/src/vespa/searchlib/parsequery/* @arnej
+./searchlib/src/vespa/searchlib/parsequery/* @arnej27959
 ./searchlib/src/vespa/searchlib/transactionlog/* @tegge
 ./searchlib/src/vespa/searchlib/aggregation/* @havardpe
 ./searchlib/src/vespa/searchlib/test/* @toregge
@@ -103,8 +103,8 @@
 ./vespalog/* @arnej27959
 ./fat-model-dependencies/* @gjoranv @hmusum
 ./container-messagebus/* @bjorncs @gjoranv @havardpe
-./cloud-tenant-base-dependencies-enforcer/* @bjorncs @mortent
-./tenant-cd-commons/* @bjorncs @mortent
+./cloud-tenant-base-dependencies-enforcer/* @bjorncs
+./tenant-cd-commons/* @bjorncs
 ./vdslib/* @vekterli
 ./model-integration/* @bratseth @bjorncs @arnej27959 @glebashnik
 ./jdisc_core_test/* @gjoranv @bjorncs
@@ -124,7 +124,7 @@
 ./clustercontroller-apps/* @vekterli @hakonhall
 ./clustercontroller-core/* @vekterli @hakonhall @hmusum
 ./protocols/* @hakonhall
-./routing-generator/* @mpolden @tokle
+./routing-generator/* @oyving
 ./container-core/* @arnej27959 @bjorncs @gjoranv
 ./container-disc/* @gjoranv
 ./persistence/* @vekterli
@@ -132,7 +132,7 @@
 ./hosted-zone-api/* @bjorncs
 ./logserver/* @arnej27959
 ./vespa-maven-plugin/* @hmusum
-./client/go/* @mpolden
+./client/go/* @evgiz @arnej27959
 ./vespa-testrunner-components/* @hmusum
 ./linguistics/* @bratseth @arnej27959
 ./fbench/* @havardpe
@@ -140,7 +140,7 @@
 ./container-documentapi/* @gjoranv
 ./jdisc-security-filters/* @bjorncs
 ./storageserver/* @vekterli
-./hosted-tenant-base/* @mortent @bjorncs
+./hosted-tenant-base/* @bjorncs
 ./vespaclient-java/* @bjorncs
 ./predicate-search-core/* @bjorncs
 ./vespa-dependencies-enforcer/* @bjorncs
@@ -160,7 +160,7 @@
 ./container-test/* @gjoranv
 ./vespajlib/* @arnej27959
 ./zookeeper-server/* @hmusum
-./vespa-documentgen-plugin/* @kraune
+./vespa-documentgen-plugin/* @kkraune
 ./documentgen-test/* @arnej27959
 ./container-dev/* @gjoranv
 ./vespalib/src/vespa/vespalib/btree/* @toregge

@@ -9,7 +9,7 @@ import java.util.stream.Collectors;
 /**
  * A group of servers behind a router/reverse proxy.
  *
- * @author mpolden
+ * @author Martin Polden
  */
 public class ServerGroup {
 
@@ -38,21 +38,15 @@ public class ServerGroup {
     public static class Server {
 
         private final String upstreamName;
-        private final String hostport;
         private final boolean up;
 
         public Server(String upstreamName, String hostport, boolean up) {
             this.upstreamName = upstreamName;
-            this.hostport = hostport;
             this.up = up;
         }
 
         public String upstreamName() {
             return upstreamName;
-        }
-
-        public String hostport() {
-            return hostport;
         }
 
         public boolean up() {

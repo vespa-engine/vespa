@@ -5,6 +5,7 @@
 #include "aggregationresult.h"
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <span>
 #include <vector>
 
 namespace search::aggregation {
@@ -38,12 +39,7 @@ public:
     using UP = std::unique_ptr<Group>;
     using ChildP = Group *;
     using GroupList = ChildP *;
-    struct ChildrenIteratorHelper {
-        ChildP * const start;
-        ChildP * const stop;
-        ChildP * begin() const { return start; }
-        ChildP * end() const { return stop; }
-    };
+    using ChildrenIteratorHelper = std::span<ChildP>;
     struct GroupEqual {
         GroupEqual(const GroupList * v) : _v(v) { }
         bool operator()(uint32_t a, uint32_t b) { return (*_v)[a]->getId().cmpFast((*_v)[b]->getId()) == 0; }

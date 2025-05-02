@@ -2,6 +2,7 @@
 
 #include "onear_query_node.h"
 #include "hit_iterator_pack.h"
+#include <span>
 
 namespace search::streaming {
 

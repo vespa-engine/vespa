@@ -9,7 +9,7 @@ namespace vespalib::hwaccelerated {
 /**
  * Avx-512 implementation.
  */
-class Avx512Accelrator : public Avx2Accelrator
+class Avx512Accelerator : public Avx2Accelerator
 {
 public:
     float dotProduct(const float * a, const float * b, size_t sz) const noexcept override;

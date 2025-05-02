@@ -30,7 +30,7 @@ import java.util.Objects;
  * Client for the Nginx upstream health status page served at /health-status.
  *
  * @author oyving
- * @author mpolden
+ * @author Martin Polden
  */
 public class NginxHealthClient extends AbstractComponent implements HealthStatus {
 

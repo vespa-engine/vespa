@@ -14,7 +14,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * @author mpolden
+ * @author Martin Polden
  */
 public class RoutingGeneratorTest {
 
