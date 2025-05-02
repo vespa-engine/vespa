@@ -25,7 +25,6 @@ import com.yahoo.config.model.producer.TreeConfigProducer;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.AthenzService;
 import com.yahoo.config.provision.Capacity;
-import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
@@ -644,7 +643,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // If the deployment contains certificate/private key reference, setup TLS port
         var builder = HostedSslConnectorFactory.builder(serverName, getMtlsDataplanePort(state))
-                .proxyProtocol(state.zone().cloud().useProxyProtocol())
+                .proxyProtocol(state.zone().cloud().useProxyProtocol() || enableTokenSupport(state))
                 .tlsCiphersOverride(state.getProperties().tlsCiphersOverride())
                 .endpointConnectionTtl(state.getProperties().endpointConnectionTtl())
                 .requestPrefixForLoggingContent(state.getProperties().requestPrefixForLoggingContent())
