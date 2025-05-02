@@ -84,7 +84,7 @@ case $COMMAND in
     STATUS=$7
     if [[ -z $START_SECONDS ]] || [[ -z $GITHUB_API_URL ]] ||  [[ -z $WORKFLOW_NAME ]] || \
        [[ -z $JOB_NAME ]] || [[ -z $JOB_ID ]] || [[ -z $WEB_URL ]] || [[ -z $STATUS ]]; then
-      echo "Usage: $0 $COMMAND <start seconds> <pipeline id> <job id> <status>"
+      echo "Usage: $0 $COMMAND <start seconds> <github api url> <workflow name> <job name> <job id> <web url> <status>"
       exit 1
     fi
     # Note: The apiUrl is hardcoded to vespaai/cloud. This must be changed if we want to use this for other github repos.
