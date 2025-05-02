@@ -8,8 +8,6 @@
 
 using namespace search::expression;
 
-const std::string field_name("f");
-
 struct Fixture {
     std::unique_ptr<StringResultNode> _input;
     std::unique_ptr<FilterPredicateNode> _node;
