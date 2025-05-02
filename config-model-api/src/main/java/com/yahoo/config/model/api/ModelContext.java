@@ -135,7 +135,7 @@ public interface ModelContext {
         AthenzDomain tenantSecretDomain();
         String athenzDnsSuffix();
         boolean hostedVespa();
-        Zone zone();
+        default Zone zone() { return Zone.defaultZone(); } // TODO: remove when not used by config models anymore (8.516)
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();

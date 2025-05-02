@@ -47,7 +47,7 @@ public class QuotaValidator implements Validator {
 
     private void validateBudget(BigDecimal budget, Context context,
                                 CapacityPolicies capacityPolicies) {
-        var zone = context.deployState().getProperties().zone();
+        var zone = context.deployState().zone();
         var application = context.model().applicationPackage().getApplicationId();
 
         var maxSpend = 0.0;
