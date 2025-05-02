@@ -5,6 +5,7 @@
 #include "aggregationresult.h"
 #include <vespa/searchlib/common/hitrank.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <span>
 #include <vector>
 
 namespace search::aggregation {
