@@ -39,6 +39,7 @@ public:
     using ChildP = Group *;
     using GroupList = ChildP *;
     using ChildrenIteratorHelper = std::span<ChildP>;
+    using ConstChildrenIteratorHelper = std::span<const Group* const>;
     struct GroupEqual {
         GroupEqual(const GroupList * v) : _v(v) { }
         bool operator()(uint32_t a, uint32_t b) { return (*_v)[a]->getId().cmpFast((*_v)[b]->getId()) == 0; }
@@ -112,6 +113,9 @@ public:
         }
         ChildrenIteratorHelper iterateAllChildren() const {
             return ChildrenIteratorHelper(_children, _children + getAllChildrenSize());
+        }
+        ConstChildrenIteratorHelper iterateConstChildren() const {
+            return ConstChildrenIteratorHelper(_children, _children + _childrenLength);
         }
 
         const AggregationResult & getAggregationResult(size_t i) const noexcept { return static_cast<const AggregationResult &>(*_aggregationResults[i]); }
