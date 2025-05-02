@@ -509,14 +509,6 @@ public class PermanentFlags {
             CERTIFICATE_PROVIDER
     );
 
-    public static final UnboundBooleanFlag ENCLAVE_WITHOUT_WIREGUARD = defineFeatureFlag(
-            "enclave-without-wireguard", false,
-            "Do not use wireguard for inclave. This should only be set for a single legacy account, " +
-            "and removed once that account is no longer in use with us",
-            "Affects generated terraform code, and ip allocation on host provisioning",
-            CLOUD_ACCOUNT
-    );
-
     public static final UnboundStringFlag REFRESH_IDENTITY_BOUNDARY = defineStringFlag(
             "refresh-identity-after", "",
             "Refresh the identity document and certificates issued before this timestamp. Timestamp in ISO8601 format",
