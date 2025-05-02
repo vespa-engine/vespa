@@ -42,7 +42,7 @@ protected:
 
 RankProcessorTest::RankProcessorTest()
     : testing::Test(),
-      _factory(nullptr),
+      _factory(nullptr, nullptr),
       _query(),
       _query_wrapper()
 {

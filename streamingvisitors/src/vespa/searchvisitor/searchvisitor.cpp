@@ -520,7 +520,7 @@ SearchVisitor::init(const Parameters & params)
             // Add extra elements to mapping from field name to field id
             _fieldSearchSpecMap.buildFromConfig(additionalFields);
 
-            QueryTermDataFactory addOnFactory(this);
+            QueryTermDataFactory addOnFactory(this, &_element_gap_inspector);
             _query = Query(addOnFactory, std::string_view(queryBlob.data(), queryBlob.size()));
             _searchBuffer->reserve(0x10000);
 
