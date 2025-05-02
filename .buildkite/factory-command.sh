@@ -87,7 +87,6 @@ case $COMMAND in
       echo "Usage: $0 $COMMAND <start seconds> <github api url> <workflow name> <job name> <job id> <web url> <status>"
       exit 1
     fi
-    # Note: The apiUrl is hardcoded to vespaai/cloud. This must be changed if we want to use this for other github repos.
     $CURL -H "Authorization: Bearer $TOKEN" -d "{
         \"startSeconds\": $START_SECONDS,
         \"apiUrl\": \"$GITHUB_API_URL\",
