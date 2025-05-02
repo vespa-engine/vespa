@@ -200,6 +200,15 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     /** Is the node undergoing backup/restoration? */
     private boolean busySnapshotting(Node node, Instant downSince) {
+        if (node.type().isHost()) {
+            // Check if any children are busy snapshotting
+            try (var lock = nodeRepository().nodes().lockAndGetRecursively(node.hostname(), Optional.empty())) {
+                return lock.children().stream()
+                        .anyMatch(child -> busySnapshotting(child.node(), downSince));
+            }
+        }
+
+
         if (!node.history().isSuspended()) return false;
 
         var snapshots = nodeRepository().snapshots().read(node.hostname());
