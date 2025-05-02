@@ -31,7 +31,10 @@ set(RUN_BENCHMARKS FALSE CACHE BOOL "If TRUE, benchmarks are run together with t
 set(AUTORUN_UNIT_TESTS FALSE CACHE BOOL "If TRUE, tests will be run immediately after linking the test executable")
 
 # Warnings
+include(CheckCXXCompilerFlag)
+
 set(C_WARN_OPTS "-Wuninitialized -Werror -Wall -W -Wchar-subscripts -Wcomment -Wformat -Wparentheses -Wreturn-type -Wswitch -Wtrigraphs -Wunused -Wshadow -Wpointer-arith -Wcast-qual -Wcast-align -Wwrite-strings")
+
 if (VESPA_USE_SANITIZER OR VESPA_DISABLE_INLINE_WARNINGS)
     # Instrumenting code changes binary size, which triggers inlining warnings that
     # don't happen during normal, non-instrumented compilation.
@@ -88,6 +91,11 @@ if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang" OR "${CMAKE_CXX_COMPILER_ID}" ST
 else()
   set(CXX_SPECIFIC_WARN_OPTS "-Wnoexcept -Wsuggest-override -Wnon-virtual-dtor -Wformat-security -Wmismatched-tags")
   set(VESPA_GCC_LIB "gcc")
+endif()
+
+check_cxx_compiler_flag(-Wpsabi CXX_HAS_PSABI_WARNING)
+if (CXX_HAS_PSABI_WARNING)
+  set(CXX_SPECIFIC_WARN_OPTS "${CXX_SPECIFIC_WARN_OPTS} -Wno-psabi")
 endif()
 
 # Detect uring shared library.
