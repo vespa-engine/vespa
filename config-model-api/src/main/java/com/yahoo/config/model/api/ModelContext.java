@@ -121,6 +121,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxContentNodeMaintenanceOpConcurrency() { return -1; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxDistributorDocumentOperationSizeMib() { return -1; }
         @ModelFeatureFlag(owners = {"glebashnik"}) default Object sidecarsForTest() { return null; }
+        @ModelFeatureFlag(owners = {"bjorncs"}) default boolean useTriton() { return false; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */

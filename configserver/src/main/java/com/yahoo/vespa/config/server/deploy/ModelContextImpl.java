@@ -210,6 +210,7 @@ public class ModelContextImpl implements ModelContext {
         private final int maxContentNodeMaintenanceOpConcurrency;
         private final int maxDistributorDocumentOperationSizeMib;
         private final Sidecars sidecarsForTest;
+        private final boolean useTriton;
 
         public FeatureFlags(FlagSource source, ApplicationId appId, Version version) {
             this.useNonPublicEndpointForTest = Flags.USE_NON_PUBLIC_ENDPOINT_FOR_TEST.bindTo(source).with(appId).with(version).value();
@@ -256,6 +257,7 @@ public class ModelContextImpl implements ModelContext {
             this.maxContentNodeMaintenanceOpConcurrency = Flags.MAX_CONTENT_NODE_MAINTENANCE_OP_CONCURRENCY.bindTo(source).with(appId).with(version).value();
             this.maxDistributorDocumentOperationSizeMib = Flags.MAX_DISTRIBUTOR_DOCUMENT_OPERATION_SIZE_MIB.bindTo(source).with(appId).with(version).value();
             this.sidecarsForTest = Flags.SIDECARS_FOR_TEST.bindTo(source).with(appId).with(version).value();
+            this.useTriton = Flags.USE_TRITON.bindTo(source).with(appId).with(version).value();
         }
 
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
@@ -302,6 +304,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public int maxContentNodeMaintenanceOpConcurrency() { return maxContentNodeMaintenanceOpConcurrency; }
         @Override public int maxDistributorDocumentOperationSizeMib() { return maxDistributorDocumentOperationSizeMib; }
         @Override public Object sidecarsForTest() { return sidecarsForTest; }
+        @Override public boolean useTriton() { return useTriton; }
     }
 
     public static class Properties implements ModelContext.Properties {

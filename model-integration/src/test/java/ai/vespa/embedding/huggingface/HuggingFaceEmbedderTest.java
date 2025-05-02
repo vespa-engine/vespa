@@ -182,7 +182,7 @@ public class HuggingFaceEmbedderTest {
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.transformerGpuDevice(-1);
-        return new HuggingFaceEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return new HuggingFaceEmbedder(OnnxRuntime.testRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
 
     private static HuggingFaceEmbedder getNormalizedEmbedder() {
@@ -194,7 +194,7 @@ public class HuggingFaceEmbedderTest {
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.transformerGpuDevice(-1);
         builder.normalize(true);
-        return new HuggingFaceEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return new HuggingFaceEmbedder(OnnxRuntime.testRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
 
     private static HuggingFaceEmbedder getNormalizePrefixdEmbedder() {
@@ -208,7 +208,7 @@ public class HuggingFaceEmbedderTest {
         builder.normalize(true);
         builder.prependQuery("Represent this text:");
         builder.prependDocument("This is a document:");
-        return new HuggingFaceEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return new HuggingFaceEmbedder(OnnxRuntime.testRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
 
     public static Tensor expandBitTensor(Tensor packed) {

@@ -26,12 +26,12 @@ import static org.junit.Assume.assumeTrue;
 /**
  * @author lesters
  */
-public class OnnxEvaluatorTest {
+public class EmbeddedOnnxEvaluatorTest {
 
     @Test
     public void testSimpleModel() {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/simple/simple.onnx");
 
         // Input types
@@ -57,7 +57,7 @@ public class OnnxEvaluatorTest {
     @Test
     public void testBatchDimension() {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/pytorch/one_layer.onnx");
 
         // Input types
@@ -77,7 +77,7 @@ public class OnnxEvaluatorTest {
     @Test
     public void testMatMul() {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         String expected = "tensor<float>(d0[2],d1[4]):[38,44,50,56,83,98,113,128]";
         String input1 = "tensor<float>(d0[2],d1[3]):[1,2,3,4,5,6]";
         String input2 = "tensor<float>(d0[3],d1[4]):[1,2,3,4,5,6,7,8,9,10,11,12]";
@@ -87,7 +87,7 @@ public class OnnxEvaluatorTest {
     @Test
     public void testTypes() {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         assertEvaluate(runtime, "add_double.onnx", "tensor(d0[1]):[3]", "tensor(d0[1]):[1]", "tensor(d0[1]):[2]");
         assertEvaluate(runtime, "add_float.onnx", "tensor<float>(d0[1]):[3]", "tensor<float>(d0[1]):[1]", "tensor<float>(d0[1]):[2]");
         assertEvaluate(runtime, "add_float16.onnx", "tensor<float>(d0[1]):[3]", "tensor<float>(d0[1]):[1]", "tensor<float>(d0[1]):[2]");
@@ -103,7 +103,7 @@ public class OnnxEvaluatorTest {
     @Test
     public void testNotIdentifiers() {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         OnnxEvaluator evaluator = runtime.evaluatorOf("src/test/models/onnx/badnames.onnx");
         var inputInfo = evaluator.getInputInfo();
         var outputInfo = evaluator.getOutputInfo();
@@ -171,7 +171,7 @@ public class OnnxEvaluatorTest {
     @Test
     public void testLoadModelFromBytes() throws IOException {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         var model = Files.readAllBytes(Paths.get("src/test/models/onnx/simple/simple.onnx"));
         var evaluator = runtime.evaluatorOf(model);
         assertEquals(3, evaluator.getInputs().size());
@@ -182,10 +182,10 @@ public class OnnxEvaluatorTest {
     @Test
     public void testLoggingMessages() throws IOException {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        Logger logger = Logger.getLogger(OnnxEvaluator.class.getName());
+        Logger logger = Logger.getLogger(EmbeddedOnnxEvaluator.class.getName());
         CustomLogHandler logHandler = new CustomLogHandler();
         logger.addHandler(logHandler);
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         var model = Files.readAllBytes(Paths.get("src/test/models/onnx/simple/simple.onnx"));
         OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
         options.setGpuDevice(0);

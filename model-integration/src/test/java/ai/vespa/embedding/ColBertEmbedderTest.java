@@ -291,7 +291,7 @@ public class ColBertEmbedderTest {
         builder.tokenizerPath(ModelReference.valueOf(vocabPath));
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.transformerGpuDevice(-1);
-        return new ColBertEmbedder(new OnnxRuntime(), runtime, builder.build());
+        return new ColBertEmbedder(OnnxRuntime.testRuntime(), runtime, builder.build());
     }
 
     private static ColBertEmbedder getMultiLingualEmbedder(Embedder.Runtime runtime) {
@@ -310,7 +310,7 @@ public class ColBertEmbedderTest {
         builder.queryTokenId(3);
         builder.documentTokenId(4);
 
-        return new ColBertEmbedder(new OnnxRuntime(), Embedder.Runtime.testInstance(), builder.build());
+        return new ColBertEmbedder(OnnxRuntime.testRuntime(), Embedder.Runtime.testInstance(), builder.build());
     }
 
     private static class CountingRuntime implements Embedder.Runtime {

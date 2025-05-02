@@ -1,0 +1,5 @@
+# Copyright Vespa.ai. Licensed under the Apache License, Version 2.0 (the "License");
+package=ai.vespa.llm.clients
+
+## Endpoint of Nvidia Triton Inference Server
+target string default="localhost:8001"

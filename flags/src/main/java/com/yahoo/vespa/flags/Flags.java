@@ -371,6 +371,13 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundBooleanFlag USE_TRITON = defineFeatureFlag(
+            "use-triton", false,
+            List.of("bjorncs"), "2025-04-30", "2026-01-04",
+            "Whether to use Triton as ONNX runtime",
+            "Takes effect at redeployment"
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

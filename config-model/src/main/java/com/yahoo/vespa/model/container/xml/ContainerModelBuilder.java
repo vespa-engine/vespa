@@ -226,7 +226,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addAccessLogs(deployState, cluster, spec);
         addNodes(cluster, spec, context);
 
-        addModelEvaluationRuntime(cluster);
+        addModelEvaluationRuntime(deployState, cluster);
         addModelEvaluation(spec, cluster, context); // NOTE: Must be done after addNodes
 
         addServerProviders(deployState, spec, cluster);
@@ -870,7 +870,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return (child != null) ? Integer.parseInt(child.getTextContent()) : defaultValue;
     }
 
-    protected void addModelEvaluationRuntime(ApplicationContainerCluster cluster) {
+    protected void addModelEvaluationRuntime(DeployState deployState, ApplicationContainerCluster cluster) {
         /* These bundles are added to all application container clusters, even if they haven't
          * declared 'model-evaluation' in services.xml, because there are many public API packages
          * in the model-evaluation bundle that could be used by customer code. */
@@ -878,8 +878,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         cluster.addPlatformBundle(ContainerModelEvaluation.MODEL_INTEGRATION_BUNDLE_FILE);
         cluster.addPlatformBundle(ContainerModelEvaluation.ONNXRUNTIME_BUNDLE_FILE);
         /* The ONNX runtime is always available for injection to any component */
-        cluster.addSimpleComponent(
-                ContainerModelEvaluation.ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
+        if (deployState.featureFlags().useTriton()) {
+            cluster.addSimpleComponent(
+                    ContainerModelEvaluation.TRITON_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
+        } else {
+            cluster.addSimpleComponent(
+                    ContainerModelEvaluation.EMBEDDED_ONNX_RUNTIME_CLASS, null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);
+        }
         /* Add runtime providing utilities such as metrics to embedder implementations */
         cluster.addSimpleComponent(
                 "ai.vespa.embedding.EmbedderRuntime", null, ContainerModelEvaluation.INTEGRATION_BUNDLE_NAME);

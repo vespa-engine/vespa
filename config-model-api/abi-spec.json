@@ -1341,7 +1341,8 @@
       "public int documentV1QueueSize()",
       "public int maxContentNodeMaintenanceOpConcurrency()",
       "public int maxDistributorDocumentOperationSizeMib()",
-      "public java.lang.Object sidecarsForTest()"
+      "public java.lang.Object sidecarsForTest()",
+      "public boolean useTriton()"
     ],
     "fields" : [ ]
   },

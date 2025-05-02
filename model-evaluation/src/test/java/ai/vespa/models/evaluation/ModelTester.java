@@ -52,7 +52,7 @@ public class ModelTester {
         }
         var fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
 
-        return new RankProfilesConfigImporter(fileAcquirer, new OnnxRuntime())
+        return new RankProfilesConfigImporter(fileAcquirer, OnnxRuntime.testRuntime())
                        .importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
