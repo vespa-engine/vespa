@@ -220,15 +220,8 @@ public final class DataplaneProxyService extends AbstractComponent {
         try {
             String nginxTemplate = Files.readString(configTemplate);
 
-            String remoteExpr      = useAzureProxy ? "$remote_addr" : "$proxy_protocol_addr - $remote_addr";
-            String proxySuffix     = useAzureProxy ? "" : "proxy_protocol";
-            String proxyOn         = useAzureProxy ? "" : "proxy_protocol on;";
-            String proxySetHeaders = useAzureProxy ? "proxy_set_header X-Forwarded-For $http_x_forwarded_for;\n proxy_set_header X-Forwarded-Port $server_port;\n proxy_set_header X-Real-IP $remote_addr;" : "proxy_set_header X-Forwarded-For $proxy_protocol_addr;\n proxy_set_header X-Forwarded-Port $proxy_protocol_port;";
-
-            nginxTemplate = replace(nginxTemplate, "remote_addr_expr", remoteExpr);
+            String proxySuffix = useAzureProxy ? "" : "proxy_protocol";
             nginxTemplate = replace(nginxTemplate, "proxy_protocol_suffix", proxySuffix);
-            nginxTemplate = replace(nginxTemplate, "proxy_protocol_on", proxyOn);
-            nginxTemplate = replace(nginxTemplate, "proxy_set_headers", proxySetHeaders);
 
             nginxTemplate = replace(nginxTemplate, "client_cert", clientCert.toString());
             nginxTemplate = replace(nginxTemplate, "client_key", clientKey.toString());
