@@ -347,6 +347,7 @@
       "public void <init>()",
       "public void <init>(ai.vespa.llm.clients.TritonConfig)",
       "public ai.vespa.llm.clients.TritonConfig$Builder target(java.lang.String)",
+      "public ai.vespa.llm.clients.TritonConfig$Builder modelRepositoryPath(java.lang.String)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -384,7 +385,8 @@
       "public static java.lang.String getDefName()",
       "public static java.lang.String getDefNamespace()",
       "public void <init>(ai.vespa.llm.clients.TritonConfig$Builder)",
-      "public java.lang.String target()"
+      "public java.lang.String target()",
+      "public java.lang.String modelRepositoryPath()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",

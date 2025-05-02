@@ -42,8 +42,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     /** Copies the model file to the model repository and returns the model id */
-    private static String copyFileToRepositoryAndGetModelId(String externalModelPath) {
-        var modelRepository = Defaults.getDefaults().underVespaHome("var/triton/model-repository");
+    private String copyFileToRepositoryAndGetModelId(String externalModelPath) {
+        var modelRepository = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
         var modelName = externalModelPath.substring(externalModelPath.lastIndexOf('/') + 1);
         modelName = modelName.substring(0, modelName.lastIndexOf('.'));
 

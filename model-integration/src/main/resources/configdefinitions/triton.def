@@ -3,3 +3,7 @@ package=ai.vespa.llm.clients
 
 ## Endpoint of Nvidia Triton Inference Server
 target string default="localhost:8001"
+
+## Model repository path where ONNX models are copied to.
+## Relative paths will be resolved relative to $VESPA_HOME.
+modelRepositoryPath string default="var/triton/model-repository"
