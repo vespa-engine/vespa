@@ -61,7 +61,7 @@ public class ChunkExpression extends Expression  {
         String input = String.valueOf(context.getCurrentValue());
         Array<StringFieldValue> output = new Array<>(DataType.getArray(DataType.STRING));
         if (!input.isEmpty()) {
-            var chunkContext = new Chunker.Context(destination, context.getCache());
+            var chunkContext = new Chunker.Context(destination, chunker.arguments(), context.getCache());
             for (Chunker.Chunk chunk : chunker.component().chunk(input, chunkContext)) {
                 output.add(new StringFieldValue(chunk.text()));
             }

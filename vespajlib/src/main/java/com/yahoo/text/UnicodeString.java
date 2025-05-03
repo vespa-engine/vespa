@@ -33,7 +33,7 @@ public class UnicodeString {
         return index;
     }
 
-    /** Returns the index of the next code point after start (which may be past the end of the string) */
+    /** Returns the index of the next code point after the given index (which may be past the end of the string) */
     public int nextIndex(int index) {
         int next = index + 1;
         if (next < s.length() && Character.isLowSurrogate(s.charAt(next)))
@@ -41,11 +41,12 @@ public class UnicodeString {
         return next;
     }
 
-    /** Returns the index of the next code point after start, or \u0000 if the index is at the last code point */
+    /**
+     * Returns the code point at the next position after the given index,
+     * or \u0000 if the index is at the last code point
+     */
     public int nextCodePoint(int index) {
-        int next = index + 1;
-        if (next < s.length() && Character.isLowSurrogate(s.charAt(next)))
-            next++;
+        int next = nextIndex(index);
         return next >= s.length() ? '\u0000' : s.codePointAt(next);
     }
 

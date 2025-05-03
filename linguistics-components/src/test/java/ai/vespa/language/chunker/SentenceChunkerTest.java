@@ -43,15 +43,8 @@ public class SentenceChunkerTest {
     }
 
     private void assertChunks(String text, String ... expectedChunks) {
-        var chunker = new SentenceChunker();
-        var context = new Chunker.Context("test");
-        List<Chunker.Chunk> chunks = chunker.chunk(text, context);
-        assertEquals("Unexpected number of chunks. Actual chunks:\n" +
-                     chunks.stream().map(Chunker.Chunk::text).collect(Collectors.joining("\n")),
-                     expectedChunks.length, chunks.size());
-        for (int i = 0; i < expectedChunks.length; i++) {
-            assertEquals("Chunk " + i, expectedChunks[i], chunks.get(i).text());
-        }
+        var tester = new ChunkerTester(new SentenceChunker());
+        tester.assertChunks(text, expectedChunks);
     }
 
 }

@@ -53,13 +53,18 @@ public interface Chunker {
 
     class Context extends InvocationContext<Context> {
 
+        private final List<String> arguments;
+
         public Context(String destination) {
-            this(destination, LazyMap.newHashMap());
+            this(destination, List.of(), LazyMap.newHashMap());
         }
 
-        public Context(String destination, Map<Object, Object> cache) {
+        public Context(String destination, List<String> arguments, Map<Object, Object> cache) {
             super(destination, cache);
+            this.arguments = List.copyOf(arguments);
         }
+
+        public List<String> arguments() { return arguments; }
 
     }
 
