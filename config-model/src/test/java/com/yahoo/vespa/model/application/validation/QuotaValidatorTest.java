@@ -27,17 +27,15 @@ public class QuotaValidatorTest {
 
     @Test
     void test_deploy_under_quota() {
-        var zone = publicZone;
-        var tester = new ValidationTester(8, false, new TestProperties().setHostedVespa(true).setQuota(quota), zone);
-        tester.deploy(null, getServices(4), zone, null, CONTAINER_CLUSTER);
+        var tester = new ValidationTester(8, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
+        tester.deploy(null, getServices(4), Environment.prod, null, CONTAINER_CLUSTER);
     }
 
     @Test
     void test_deploy_above_quota_clustersize() {
-        var zone = publicZone;
-        var tester = new ValidationTester(14, false, new TestProperties().setHostedVespa(true).setQuota(quota), zone);
+        var tester = new ValidationTester(14, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
-            tester.deploy(null, getServices(11), zone, null, CONTAINER_CLUSTER);
+            tester.deploy(null, getServices(11), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
             assertEquals("Clusters testCluster exceeded max cluster size of 10", e.getMessage());
@@ -46,10 +44,9 @@ public class QuotaValidatorTest {
 
     @Test
     void test_deploy_above_quota_budget() {
-        var zone = publicZone;
-        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota), zone);
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
-            tester.deploy(null, getServices(10), zone, null, CONTAINER_CLUSTER);
+            tester.deploy(null, getServices(10), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
             assertEquals("The resources used cost $1.63 but your remaining quota is $1.25: Contact support to upgrade your plan.", e.getMessage());
@@ -58,17 +55,15 @@ public class QuotaValidatorTest {
 
     @Test
     void test_deploy_within_quota_budget_because_in_dev() {
-        var zone = devZone;
-        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota), zone);
-        tester.deploy(null, getServices(10), zone, null, CONTAINER_CLUSTER);
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(devZone));
+        tester.deploy(null, getServices(10), Environment.dev, null, CONTAINER_CLUSTER);
     }
 
     @Test
     void test_deploy_above_quota_budget_in_publiccd() {
-        var zone = publicCdZone;
-        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota.withBudget(BigDecimal.ONE)), zone);
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota.withBudget(BigDecimal.ONE)).setZone(publicCdZone));
         try {
-            tester.deploy(null, getServices(10), zone, null, CONTAINER_CLUSTER);
+            tester.deploy(null, getServices(10), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
             assertEquals("publiccd: The resources used cost $1.63 but your remaining quota is $1.00: Contact support to upgrade your plan.", e.getMessage());
@@ -77,10 +72,9 @@ public class QuotaValidatorTest {
 
     @Test
     void test_deploy_max_resources_above_quota() {
-        var zone = publicCdZone;
-        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota), zone);
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicCdZone));
         try {
-            tester.deploy(null, getServices(10), zone, null, CONTAINER_CLUSTER);
+            tester.deploy(null, getServices(10), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
             assertEquals("publiccd: The resources used cost $1.63 but your remaining quota is $1.25: Contact support to upgrade your plan.", e.getMessage());
@@ -90,13 +84,12 @@ public class QuotaValidatorTest {
 
     @Test
     void test_deploy_above_quota_budget_in_dev() {
-        var zone = devZone;
         var quota = Quota.unlimited().withBudget(BigDecimal.valueOf(0.01));
-        var tester = new ValidationTester(5, false, new TestProperties().setHostedVespa(true).setQuota(quota), zone);
+        var tester = new ValidationTester(5, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(devZone));
 
         // There is downscaling to 1 node per cluster in dev
         try {
-            tester.deploy(null, getServices(2, false), zone, null, CONTAINER_CLUSTER);
+            tester.deploy(null, getServices(2, false), Environment.dev, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
             assertEquals("The resources used cost $0.16 but your remaining quota is $0.01: Contact support to upgrade your plan.", e.getMessage());
@@ -104,7 +97,7 @@ public class QuotaValidatorTest {
 
         // Override so that we will get 2 nodes in content cluster
         try {
-            tester.deploy(null, getServices(2, true), zone, null, CONTAINER_CLUSTER);
+            tester.deploy(null, getServices(2, true), Environment.dev, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
             assertEquals("The resources used cost $0.33 but your remaining quota is $0.01: Contact support to upgrade your plan.", e.getMessage());
@@ -113,11 +106,10 @@ public class QuotaValidatorTest {
 
     @Test
     void test_deploy_with_negative_budget() {
-        var zone = publicZone;
         var quota = Quota.unlimited().withBudget(BigDecimal.valueOf(-1));
-        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota), zone);
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
-            tester.deploy(null, getServices(10), zone, null, CONTAINER_CLUSTER);
+            tester.deploy(null, getServices(10), Environment.prod, null, CONTAINER_CLUSTER);
             fail();
         } catch (RuntimeException e) {
             assertEquals("The resources used cost $-.-- but your remaining quota is $--.--: Please free up some capacity.",

@@ -5,9 +5,6 @@ import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
@@ -20,17 +17,14 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class RedundancyOnFirstDeploymentValidatorTest {
 
-    private static final Zone zone = Zone.defaultZone();
-
     private final ValidationTester tester = new ValidationTester(7, false,
                                                                  new TestProperties().setFirstTimeDeployment(true)
-                                                                                     .setHostedVespa(true),
-                                                                 zone);
+                                                                                     .setHostedVespa(true));
 
     @Test
     void testRedundancyOnFirstDeploymentValidation() {
         try {
-            tester.deploy(null, getServices(1), zone, null, "contentClusterId.indexing");
+            tester.deploy(null, getServices(1), Environment.prod, null, "contentClusterId.indexing");
             fail("Expected exception due to redundancy 1");
         }
         catch (IllegalArgumentException expected) {
@@ -44,7 +38,7 @@ public class RedundancyOnFirstDeploymentValidatorTest {
 
     @Test
     void testOverridingRedundancyOnFirstDeploymentValidation() {
-        tester.deploy(null, getServices(1), zone, redundancyOneOverride, "contentClusterId.indexing"); // Allowed due to override
+        tester.deploy(null, getServices(1), Environment.prod, redundancyOneOverride, "contentClusterId.indexing"); // Allowed due to override
     }
 
     private static String getServices(int redundancy) {
