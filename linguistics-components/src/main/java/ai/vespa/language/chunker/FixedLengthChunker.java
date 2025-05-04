@@ -1,5 +1,6 @@
 package ai.vespa.language.chunker;
 
+import com.yahoo.language.Language;
 import com.yahoo.language.process.CharacterClasses;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.text.UnicodeString;
@@ -22,6 +23,12 @@ public class FixedLengthChunker implements Chunker {
     @Override
     public List<Chunk> chunk(String inputText, Context context) {
         int chunkLength = context.arguments().isEmpty() ? defaultChunkLength : asInteger(context.arguments().get(0));
+        boolean isCjk = context.getLanguage().isCjk();
+        return context.computeCachedValueIfAbsent(new CacheKey(this, inputText, chunkLength, isCjk),
+                                                  () -> computeChunks(inputText, chunkLength, isCjk));
+    }
+
+    private List<Chunk> computeChunks(String inputText, int chunkLength, boolean isCjk) {
         var text = new UnicodeString(inputText);
         List<Chunk> chunks = new ArrayList<>();
         var currentChunk = new StringBuilder();
@@ -29,8 +36,7 @@ public class FixedLengthChunker implements Chunker {
         for (int i = 0; i < text.length();) {
             int currentChar = text.codePointAt(i);
             currentChunk.appendCodePoint(currentChar);
-            if (++currentLength >= chunkLength
-                && (context.getLanguage().isCjk() || !characters.isLetterOrDigit(currentChar))) {
+            if (++currentLength >= chunkLength && (isCjk || !characters.isLetterOrDigit(currentChar))) {
                 chunks.add(new Chunk(currentChunk.toString()));
                 currentChunk.setLength(0);
                 currentLength = 0;
@@ -51,5 +57,7 @@ public class FixedLengthChunker implements Chunker {
                                                "the fixed-length chunker, got '" + s + "'");
         }
     }
+
+    private record CacheKey(FixedLengthChunker chunker, String inputText, int chunkLength, boolean isCjk) {}
 
 }

@@ -211,7 +211,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         if (targetUnpackagedDimensions > outputDimensions) {
             throw new IllegalArgumentException("Cannot pack " + outputDimensions + " into " + targetDimensions + " int8's");
         }
-        //perform pooling and normalizing using float version before binary quantization
+        // pool and normalize using float version before binary quantization
         TensorType poolingType = new TensorType.Builder(TensorType.Value.FLOAT).
                                          indexed(targetType.indexedSubtype().dimensions().get(0).name(), targetUnpackagedDimensions)
                                          .build();

@@ -4,7 +4,9 @@ package ai.vespa.language.chunker;
 import com.yahoo.language.process.Chunker;
 import org.junit.Test;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -37,6 +39,7 @@ public class FixedLengthChunkerTest {
     private void assertChunks(String text, String ... expectedChunks) {
         var tester = new ChunkerTester(new FixedLengthChunker());
         tester.assertChunks(text, List.of("6"), expectedChunks);
+        assertEquals(1, tester.cache.size());
     }
 
 }

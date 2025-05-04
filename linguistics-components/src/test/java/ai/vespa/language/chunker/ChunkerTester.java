@@ -2,6 +2,7 @@ package ai.vespa.language.chunker;
 
 import com.yahoo.language.process.Chunker;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -15,6 +16,8 @@ public class ChunkerTester {
 
     private final Chunker chunker;
 
+    Map<Object, Object> cache = new HashMap<>();
+
     public ChunkerTester(Chunker chunker) {
         this.chunker = chunker;
     }
@@ -23,8 +26,8 @@ public class ChunkerTester {
         assertChunks(text, List.of(), expectedChunks);
     }
 
-    public void assertChunks(String text, List<String> arguments, String ... expectedChunks) {
-        var context = new Chunker.Context("test", arguments, Map.of());
+    public List<Chunker.Chunk> assertChunks(String text, List<String> arguments, String ... expectedChunks) {
+        var context = new Chunker.Context("test", arguments, cache);
         List<Chunker.Chunk> chunks = chunker.chunk(text, context);
         assertEquals("Unexpected number of chunks. Actual chunks:\n" +
                      chunks.stream().map(Chunker.Chunk::text).collect(Collectors.joining("\n")),
@@ -32,6 +35,7 @@ public class ChunkerTester {
         for (int i = 0; i < expectedChunks.length; i++) {
             assertEquals("Chunk " + i, expectedChunks[i], chunks.get(i).text());
         }
+        return chunks;
     }
 
 }
