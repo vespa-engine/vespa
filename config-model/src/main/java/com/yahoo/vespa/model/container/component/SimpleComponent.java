@@ -7,7 +7,7 @@ import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
 
 /**
- * A component that uses the class name as id, and resides in the container-disc bundle.
+ * A component that resides in the container-disc bundle.
  *
  * @author gjoranv
  */
@@ -19,6 +19,10 @@ public class SimpleComponent extends Component<AnyConfigProducer, ComponentModel
 
     public SimpleComponent(String className) {
         this(new ComponentModel(BundleInstantiationSpecification.fromStrings(className, null, null)));
+    }
+
+    public SimpleComponent(String id, String className) {
+        this(new ComponentModel(BundleInstantiationSpecification.fromStrings(id, className, null)));
     }
 
 }

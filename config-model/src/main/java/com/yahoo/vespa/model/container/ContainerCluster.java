@@ -306,6 +306,10 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addComponent(new SimpleComponent(className));
     }
 
+    protected void addSimpleComponent(String id, String className) {
+        addComponent(new SimpleComponent(id, className));
+    }
+
     public void prepare(DeployState deployState) {
         applicationMetaData = deployState.getApplicationPackage().getMetaData();
         doPrepare(deployState);

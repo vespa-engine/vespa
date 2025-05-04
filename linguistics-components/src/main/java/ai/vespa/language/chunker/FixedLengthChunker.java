@@ -1,6 +1,5 @@
 package ai.vespa.language.chunker;
 
-import com.yahoo.language.Language;
 import com.yahoo.language.process.CharacterClasses;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.text.UnicodeString;
