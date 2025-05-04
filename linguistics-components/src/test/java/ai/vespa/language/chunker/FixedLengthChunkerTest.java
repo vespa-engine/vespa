@@ -20,7 +20,8 @@ public class FixedLengthChunkerTest {
         assertChunks("first", "first");
         assertChunks("first ", "first ");
         assertChunks("first second", "first ", "second");
-        assertChunks("first second.", "first ", "second", ".");
+        assertChunks("first second.", "first ", "second.");
+        assertChunks("firstsecond. third....", "firstsecond.", " third.", "...");
     }
 
     @Test
@@ -28,8 +29,9 @@ public class FixedLengthChunkerTest {
         String s = "\uD800\uDC00"; // A surrogate pair representing a code point in the "letter" class
         assertChunks(s + s + s + s + s, s + s + s + s + s);
         assertChunks(s + s + s + s + s + s, s + s + s + s + s + s);
-        assertChunks(s + s + s + s + s + s + s, s + s + s + s + s + s, s);
-        assertChunks(s + s + s + s + s + s + "a" + s, s + s + s + s + s + s, "a" + s);
+        assertChunks(s + s + s + s + s + s + s, s + s + s + s + s + s + s);
+        assertChunks(s + s + s + s + s + s + "." + s, s + s + s + s + s + s + ".", s);
+        assertChunks(s + s + s + s + s + s + "a" + s, s + s + s + s + s + s + "a" + s);
     }
 
     private void assertChunks(String text, String ... expectedChunks) {

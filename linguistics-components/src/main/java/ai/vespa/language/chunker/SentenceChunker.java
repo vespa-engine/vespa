@@ -15,10 +15,11 @@ import java.util.List;
  */
 public class SentenceChunker implements Chunker {
 
+    private final CharacterClasses characters = new CharacterClasses();
+
     @Override
     public List<Chunk> chunk(String inputText, Context context) {
         var text = new UnicodeString(inputText);
-        var characters = new CharacterClasses();
         List<Chunk> chunks = new ArrayList<>();
         var currentChunk = new StringBuilder();
         boolean currentHasContent = false;

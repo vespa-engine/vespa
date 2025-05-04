@@ -1,5 +1,6 @@
 package ai.vespa.language.chunker;
 
+import com.yahoo.language.process.CharacterClasses;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.text.UnicodeString;
 
@@ -7,13 +8,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A chunker which splits a text into chunks of a fixed character length.
+ * A chunker which splits a text into chunks at the first word break after a given target chunk length
+ * (or precisely at that length, for CJK languages).
  *
  * @author bratseth
  */
 public class FixedLengthChunker implements Chunker {
 
-    private final int defaultChunkLength = 500;
+    private static final int defaultChunkLength = 500;
+
+    private final CharacterClasses characters = new CharacterClasses();
 
     @Override
     public List<Chunk> chunk(String inputText, Context context) {
@@ -23,8 +27,10 @@ public class FixedLengthChunker implements Chunker {
         var currentChunk = new StringBuilder();
         int currentLength = 0;
         for (int i = 0; i < text.length();) {
-            currentChunk.appendCodePoint(text.codePointAt(i));
-            if (++currentLength == chunkLength) {
+            int currentChar = text.codePointAt(i);
+            currentChunk.appendCodePoint(currentChar);
+            if (++currentLength >= chunkLength
+                && (context.getLanguage().isCjk() || !characters.isLetterOrDigit(currentChar))) {
                 chunks.add(new Chunk(currentChunk.toString()));
                 currentChunk.setLength(0);
                 currentLength = 0;
