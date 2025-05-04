@@ -164,7 +164,7 @@ enable_operation_cancellation bool default=false
 ## the most preferred replica for feed will be the most preferred bucket for activation.
 ## This helps ensure that new versions of documents are routed to replicas that are most
 ## likely to reflect these changes as part of visible search results.
-symmetric_put_and_activate_replica_selection bool default=false
+symmetric_put_and_activate_replica_selection bool default=true
 
 ## Iff set to a value > 0, will enforce a size check on Put and Update operations arriving
 ## at the distributor, where over-sized messages will be explicitly rejected with a
