@@ -35,8 +35,8 @@ public class ChunkExpression extends Expression  {
 
     public ChunkExpression(Map<String, Chunker> chunkers, String chunkerId,
                            List<String> chunkerArguments) {
-        chunker = new SelectedComponent<>("chunker", chunkers, chunkerId, chunkerArguments,
-                                          Chunker.FailingChunker::new);
+        chunker = new SelectedComponent<>("chunker", chunkers, chunkerId, false,
+                                          chunkerArguments, Chunker.FailingChunker::new);
     }
 
     @Override

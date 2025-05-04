@@ -17,8 +17,8 @@ public class SelectedComponent<TYPE> {
     private final TYPE component;
     private final List<String> arguments;
 
-    public SelectedComponent(String name, Map<String, TYPE> components, String selectedId, List<String> arguments,
-                             Function<String, TYPE> failingComponentFactory) {
+    public SelectedComponent(String name, Map<String, TYPE> components, String selectedId, boolean noIdIsAllowed,
+                             List<String> arguments, Function<String, TYPE> failingComponentFactory) {
         this.id = selectedId;
         this.arguments = List.copyOf(arguments);
 
@@ -26,6 +26,10 @@ public class SelectedComponent<TYPE> {
 
         if (components.isEmpty()) {
             throw new IllegalStateException("No " + name + "s provided");  // should never happen
+        }
+        else if (! selectedIdProvided && ! noIdIsAllowed) {
+            throw new IllegalArgumentException("A " + name + " id must be specified. "+
+                                            "Valid " + name + "s are " + validComponents(components));
         }
         else if (components.size() == 1 && ! selectedIdProvided) {
             this.component = components.entrySet().stream().findFirst().get().getValue();

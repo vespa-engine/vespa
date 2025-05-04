@@ -30,6 +30,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.StatementExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.TypeContext;
 import com.yahoo.vespa.indexinglanguage.expressions.VerificationException;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
+import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
 import java.util.List;
@@ -562,10 +563,10 @@ public class ScriptTestCase {
 
     @Test
     public void testChunking() {
-        String script = "{ input myText | chunk | summary myChunks | index myChunks }";
+        String script = "{ input myText | chunk chunkerId | summary myChunks | index myChunks }";
 
         var tester = new ScriptTester();
-        tester.chunkers.put("ignoredId", new SentenceChunker());
+        tester.chunkers.put("chunkerId", new SentenceChunker());
         var expression = tester.scriptFrom(script);
 
         SimpleTestAdapter adapter = new SimpleTestAdapter();
@@ -583,6 +584,20 @@ public class ScriptTestCase {
         assertEquals(2, array.size());
         assertEquals("Sentence 1.", array.get(0).getWrappedValue());
         assertEquals(" Sentence 2", array.get(1).getWrappedValue());
+    }
+
+    @Test
+    public void testInvalidChunking() {
+        try {
+            String script = "{ input myText | chunk | summary myChunks | index myChunks }";
+            var tester = new ScriptTester();
+            tester.chunkers.put("chunkerId", new SentenceChunker());
+            tester.scriptFrom(script);
+            fail("Expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("A chunker id must be specified. Valid chunkers are chunkerId",
+                         Exceptions.toMessageString(e));
+        }
     }
 
     @Test
