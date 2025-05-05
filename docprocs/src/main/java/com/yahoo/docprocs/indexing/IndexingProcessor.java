@@ -70,7 +70,7 @@ public class IndexingProcessor extends DocumentProcessor {
              new ScriptManager(documentTypeManager,
                                ilscriptsConfig,
                                linguistics,
-                               toMap(chunkers, null),
+                               toMap(chunkers, null), // No failing default since we add pure Java default components
                                toMap(embedders, DefaultEmbedderProvider.class),
                                toMap(generators, DefaultGeneratorProvider.class)
                 )
