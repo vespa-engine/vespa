@@ -29,6 +29,8 @@ public class HnswValidator implements Validator {
 
     // Prerequisite: content cluster has searchable copies > 1
     private static void validateCluster(Context context, ContentCluster cluster) {
+        if ( ! cluster.getSearch().hasSearchCluster()) return;
+
         for (var schema : cluster.getSearch()
                                  .getSearchCluster()
                                  .schemas()

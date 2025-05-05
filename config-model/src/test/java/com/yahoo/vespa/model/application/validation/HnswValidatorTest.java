@@ -9,6 +9,7 @@ import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.content.utils.ContentClusterBuilder;
+import com.yahoo.vespa.model.content.utils.DocType;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -51,6 +52,13 @@ public class HnswValidatorTest {
     void does_not_warn_when_1_searchable_copy_and_2_groups() {
         var logger = new TestLogger();
         createModelAndValidate(logger, flat(), 1);
+        assertEquals("", logger.message.toString());
+    }
+
+    @Test
+    void works_when_store_only() {
+        var logger = new TestLogger();
+        createModelAndValidate(logger, flat(), 2, List.of(DocType.create("test", "store-only")));
         assertEquals("", logger.message.toString());
     }
 
@@ -99,8 +107,12 @@ public class HnswValidatorTest {
     }
 
     private static void createModelAndValidate(DeployLogger logger, String groupXml, int redundancyAndSearchableCopies) {
+        createModelAndValidate(logger, groupXml, redundancyAndSearchableCopies, List.of(DocType.create("test", "index")));
+    }
+
+    private static void createModelAndValidate(DeployLogger logger, String groupXml, int redundancyAndSearchableCopies, List<DocType> docTypes) {
         var builder = new ContentClusterBuilder()
-                .docTypes("test")
+                .docTypes(docTypes)
                 .redundancy(redundancyAndSearchableCopies)
                 .searchableCopies(redundancyAndSearchableCopies)
                 .groupXml(groupXml);
