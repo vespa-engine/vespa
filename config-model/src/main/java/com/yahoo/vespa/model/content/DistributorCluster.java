@@ -36,7 +36,6 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
     private final boolean hasIndexedDocumentType;
     private final int maxActivationInhibitedOutOfSyncGroups;
     private final int contentLayerMetadataFeatureLevel;
-    private final boolean symmetricPutAndActivateReplicaSelection;
     private final int maxDocumentOperationSizeMib;
 
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<DistributorCluster> {
@@ -101,7 +100,6 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
             var featureFlags = deployState.getProperties().featureFlags();
             int maxInhibitedGroups = featureFlags.maxActivationInhibitedOutOfSyncGroups();
             int contentLayerMetadataFeatureLevel = featureFlags.contentLayerMetadataFeatureLevel();
-            boolean symmetricPutAndActivateReplicaSelection = featureFlags.symmetricPutAndActivateReplicaSelection();
             int maxDocumentOperationSizeMib = maxDocumentSizeInMib(featureFlags.maxDistributorDocumentOperationSizeMib(), clusterElement);
 
             return new DistributorCluster(parent,
@@ -109,7 +107,6 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
                     hasIndexedDocumentType,
                     maxInhibitedGroups,
                     contentLayerMetadataFeatureLevel,
-                    symmetricPutAndActivateReplicaSelection,
                     maxDocumentOperationSizeMib);
         }
     }
@@ -118,7 +115,6 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
                                GcOptions gc, boolean hasIndexedDocumentType,
                                int maxActivationInhibitedOutOfSyncGroups,
                                int contentLayerMetadataFeatureLevel,
-                               boolean symmetricPutAndActivateReplicaSelection,
                                int maxDocumentOperationSizeMib)
     {
         super(parent, "distributor");
@@ -128,7 +124,6 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         this.hasIndexedDocumentType = hasIndexedDocumentType;
         this.maxActivationInhibitedOutOfSyncGroups = maxActivationInhibitedOutOfSyncGroups;
         this.contentLayerMetadataFeatureLevel = contentLayerMetadataFeatureLevel;
-        this.symmetricPutAndActivateReplicaSelection = symmetricPutAndActivateReplicaSelection;
         this.maxDocumentOperationSizeMib = maxDocumentOperationSizeMib;
     }
 
@@ -144,7 +139,9 @@ public class DistributorCluster extends TreeConfigProducer<Distributor> implemen
         if (contentLayerMetadataFeatureLevel > 0) {
             builder.enable_operation_cancellation(true);
         }
-        builder.symmetric_put_and_activate_replica_selection(symmetricPutAndActivateReplicaSelection);
+        // TODO: Unnecessary, remove after config definition default value is changed to true
+        builder.symmetric_put_and_activate_replica_selection(true);
+
         if (maxDocumentOperationSizeMib > 0 && maxDocumentOperationSizeMib < 2048) {
             builder.max_document_operation_message_size_bytes(maxDocumentOperationSizeMib * 1024 * 1024);
         }
