@@ -356,7 +356,8 @@
     ],
     "methods" : [
       "public void <init>(java.lang.String)",
-      "public void <init>(java.lang.String, java.util.Map)"
+      "public void <init>(java.lang.String, java.util.List, java.util.Map)",
+      "public java.util.List arguments()"
     ],
     "fields" : [ ]
   },

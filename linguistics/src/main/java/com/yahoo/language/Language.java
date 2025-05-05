@@ -517,16 +517,10 @@ public enum Language {
      * @return True if this is a CJK language.
      */
     public boolean isCjk() {
-        switch (this) {
-            case CHINESE_SIMPLIFIED:
-            case CHINESE_TRADITIONAL:
-            case JAPANESE:
-            case KOREAN:
-            case THAI:
-                return true;
-            default:
-                return false;
-        }
+        return switch (this) {
+            case CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, JAPANESE, KOREAN, THAI -> true;
+            default -> false;
+        };
     }
 
     /**

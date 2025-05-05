@@ -35,7 +35,7 @@ public class EmbedExpression extends Expression  {
 
     public EmbedExpression(Linguistics linguistics, Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
         this.linguistics = linguistics;
-        embedder = new SelectedComponent<>("embedder", embedders, embedderId, embedderArguments,
+        embedder = new SelectedComponent<>("embedder", embedders, embedderId, true, embedderArguments,
                                            Embedder.FailingEmbedder::new);
     }
 
