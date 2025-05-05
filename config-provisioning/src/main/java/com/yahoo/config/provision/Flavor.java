@@ -32,7 +32,7 @@ public class Flavor {
     /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
         this(flavorConfig.name(),
-             new NodeResources(flavorConfig.minCpuCores() * flavorConfig.cpuSpeedup(),
+             new NodeResources(overcommitVcpuOnBareMetal(flavorConfig.minCpuCores(), flavorConfig.cpuSpeedup(), flavorConfig.environment()),
                                flavorConfig.minMainMemoryAvailableGb(),
                                flavorConfig.minDiskAvailableGb(),
                                flavorConfig.bandwidth() / 1000,
@@ -68,6 +68,16 @@ public class Flavor {
         this.type = Objects.requireNonNull(type, "Type cannot be null");
         this.configured = configured;
         this.cost = cost;
+    }
+
+    /**
+     * With (legacy) bare metal nodes we adjust for performance improvements on newer generations by
+     * adding scaling up vcpu, leading to overcommiting on these nodes.
+     * This does not make sense on public clouds - where "type" is not bare metal -
+     * and where such gains should be passed to customers.
+     */
+    private static double overcommitVcpuOnBareMetal(double vcpus, double cpuSpeedup, String environment) {
+        return Type.valueOf(environment) == Type.BARE_METAL ? vcpus * cpuSpeedup : vcpus;
     }
 
     public Flavor with(FlavorOverrides flavorOverrides) {
