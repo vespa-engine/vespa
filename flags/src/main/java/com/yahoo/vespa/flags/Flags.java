@@ -371,6 +371,14 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
+            "delete-tenant-roles", true,
+            List.of("andreer"), "2025-05-05", "2025-06-01",
+            "Whether to delete tenant specific roles",
+            "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
+            TENANT_ID
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
