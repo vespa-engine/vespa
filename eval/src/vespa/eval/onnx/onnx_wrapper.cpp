@@ -17,12 +17,27 @@ LOG_SETUP(".eval.onnx_wrapper");
 
 using vespalib::make_string_short::fmt;
 
+namespace vespalib {
+
+struct Float16 : public Ort::Float16_t {
+    Float16() : Ort::Float16_t() {}
+    Float16(float v) : Ort::Float16_t(v) {}
+    Float16(double v) : Ort::Float16_t(float(v)) {}
+    explicit operator double() const noexcept { return ToFloat(); }
+    explicit operator BFloat16() const noexcept { return ToFloat(); }
+    explicit operator vespalib::eval::Int8Float() const noexcept { return ToFloat(); }
+};
+
+} // namespace vespalib
+
 // as documented in onnxruntime_cxx_api.h :
 namespace Ort {
 template <>
 struct TypeToTensorType<vespalib::BFloat16> { static constexpr ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_BFLOAT16; };
 template <>
 struct TypeToTensorType<vespalib::eval::Int8Float> { static constexpr ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8; };
+template <>
+struct TypeToTensorType<vespalib::Float16> { static constexpr ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16; };
 }
 
 namespace vespalib::eval {
@@ -41,6 +56,7 @@ struct TypifyOnnxElementType {
         case Onnx::ElementType::UINT16:   return f(Result<uint16_t>());
         case Onnx::ElementType::UINT32:   return f(Result<uint32_t>());
         case Onnx::ElementType::UINT64:   return f(Result<uint64_t>());
+        case Onnx::ElementType::FLOAT16:  return f(Result<Float16>());
         case Onnx::ElementType::BFLOAT16: return f(Result<BFloat16>());
         case Onnx::ElementType::FLOAT:    return f(Result<float>());
         case Onnx::ElementType::DOUBLE:   return f(Result<double>());
@@ -148,6 +164,7 @@ Onnx::ElementType make_element_type(ONNXTensorElementDataType element_type) {
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT16:   return Onnx::ElementType::UINT16;
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT32:   return Onnx::ElementType::UINT32;
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT64:   return Onnx::ElementType::UINT64;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16:  return Onnx::ElementType::FLOAT16;
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_BFLOAT16: return Onnx::ElementType::BFLOAT16;
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT:    return Onnx::ElementType::FLOAT;
     case ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE:   return Onnx::ElementType::DOUBLE;
@@ -334,6 +351,7 @@ Onnx::WirePlanner::best_cell_type(Onnx::ElementType type)
     case Onnx::ElementType::UINT8:    [[fallthrough]];
     case Onnx::ElementType::INT16:    [[fallthrough]];
     case Onnx::ElementType::UINT16:   [[fallthrough]];
+    case Onnx::ElementType::FLOAT16:  [[fallthrough]];
     case Onnx::ElementType::FLOAT:    return CellType::FLOAT;
     case Onnx::ElementType::INT32:    [[fallthrough]];
     case Onnx::ElementType::INT64:    [[fallthrough]];
