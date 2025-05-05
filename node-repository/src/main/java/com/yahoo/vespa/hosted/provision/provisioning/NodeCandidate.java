@@ -192,8 +192,8 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         if (hostPriority != 0) return hostPriority;
 
         // Prefer node with the cheapest flavor
-        if (this.flavor().performanceAdjustedCost() < other.flavor().performanceAdjustedCost()) return -1;
-        if (other.flavor().performanceAdjustedCost() < this.flavor().performanceAdjustedCost()) return 1;
+        if (this.flavor().cost() < other.flavor().cost()) return -1;
+        if (other.flavor().cost() < this.flavor().cost()) return 1;
 
         // Prefer node where host is in more desirable state
         int thisHostStatePri = this.parent.map(host -> HOST_STATE_PRIORITY.indexOf(host.state())).orElse(-2);

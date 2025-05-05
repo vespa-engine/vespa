@@ -22,7 +22,6 @@ public class Flavor {
     private final boolean configured;
     private final String name;
     private final int cost;
-    private final double cpuSpeedup;
     private final Type type;
 
     /** The hardware resources of this flavor */
@@ -44,8 +43,7 @@ public class Flavor {
              Optional.empty(),
              Type.valueOf(flavorConfig.environment()),
              true,
-             flavorConfig.cost(),
-             flavorConfig.cpuSpeedup());
+             flavorConfig.cost());
     }
 
     /** Creates a *node* flavor from a node resources spec */
@@ -64,22 +62,12 @@ public class Flavor {
                   Type type,
                   boolean configured,
                   int cost) {
-        this(name, resources, flavorOverrides, type, configured, cost, 1.0);
-    }
-    public Flavor(String name,
-                  NodeResources resources,
-                  Optional<FlavorOverrides> flavorOverrides,
-                  Type type,
-                  boolean configured,
-                  int cost,
-                  double cpuSpeedup) {
         this.name = Objects.requireNonNull(name, "Name cannot be null");
         this.resources = Objects.requireNonNull(resources, "Resources cannot be null");
         this.flavorOverrides = Objects.requireNonNull(flavorOverrides, "Flavor overrides cannot be null");
         this.type = Objects.requireNonNull(type, "Type cannot be null");
         this.configured = configured;
         this.cost = cost;
-        this.cpuSpeedup = cpuSpeedup;
     }
 
     /**
@@ -120,12 +108,6 @@ public class Flavor {
      * @return monthly cost in USD
      */
     public int cost() { return cost; }
-
-    /** Returns cost adjusted for cpu speedup, suitable for comparing performance per dollar. */
-    public double performanceAdjustedCost() {
-        if (type == Type.BARE_METAL) return cost; // Speedup is reflected in vcpu instead
-        return cost / cpuSpeedup;
-    }
 
     /**
      * True if this is a configured flavor used for hosts,
