@@ -17,14 +17,18 @@ LOG_SETUP(".eval.onnx_wrapper");
 
 using vespalib::make_string_short::fmt;
 
-struct OnnxFp16 : public Ort::Float16_t {
-    OnnxFp16() : Ort::Float16_t() {}
-    OnnxFp16(float v) : Ort::Float16_t(v) {}
-    OnnxFp16(double v) : Ort::Float16_t(float(v)) {}
+namespace vespalib {
+
+struct Float16 : public Ort::Float16_t {
+    Float16() : Ort::Float16_t() {}
+    Float16(float v) : Ort::Float16_t(v) {}
+    Float16(double v) : Ort::Float16_t(float(v)) {}
     explicit operator double() const noexcept { return ToFloat(); }
-    explicit operator vespalib::BFloat16() const noexcept { return ToFloat(); }
+    explicit operator BFloat16() const noexcept { return ToFloat(); }
     explicit operator vespalib::eval::Int8Float() const noexcept { return ToFloat(); }
 };
+
+} // namespace vespalib
 
 // as documented in onnxruntime_cxx_api.h :
 namespace Ort {
@@ -33,7 +37,7 @@ struct TypeToTensorType<vespalib::BFloat16> { static constexpr ONNXTensorElement
 template <>
 struct TypeToTensorType<vespalib::eval::Int8Float> { static constexpr ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8; };
 template <>
-struct TypeToTensorType<OnnxFp16> { static constexpr ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16; };
+struct TypeToTensorType<vespalib::Float16> { static constexpr ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT16; };
 }
 
 namespace vespalib::eval {
@@ -52,7 +56,7 @@ struct TypifyOnnxElementType {
         case Onnx::ElementType::UINT16:   return f(Result<uint16_t>());
         case Onnx::ElementType::UINT32:   return f(Result<uint32_t>());
         case Onnx::ElementType::UINT64:   return f(Result<uint64_t>());
-        case Onnx::ElementType::FLOAT16:  return f(Result<OnnxFp16>());
+        case Onnx::ElementType::FLOAT16:  return f(Result<Float16>());
         case Onnx::ElementType::BFLOAT16: return f(Result<BFloat16>());
         case Onnx::ElementType::FLOAT:    return f(Result<float>());
         case Onnx::ElementType::DOUBLE:   return f(Result<double>());
