@@ -8,8 +8,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A chunker which splits a text into chunks at the first word break after a given target chunk length
- * (or precisely at that length, for CJK languages).
+ * A chunker which splits a text into chunks at the first non-word/letter character after a given target chunk length
+ * measured in codepoints (or precisely at that length, for CJK languages).
  *
  * @author bratseth
  */
