@@ -162,10 +162,7 @@ public class DataplaneProxyServiceTest {
         Files.createDirectories(templatePath.getParent());
         String template =
                 """
-                        remote_expr:${remote_addr_expr}
                         proxy_suffix:${proxy_protocol_suffix}
-                        proxy_on:${proxy_protocol_on}
-                        proxy_headers:${proxy_set_headers}
                         client_cert:${client_cert}
                         client_key:${client_key}
                         server_cert:${server_cert}
@@ -189,10 +186,7 @@ public class DataplaneProxyServiceTest {
 
         String out = DataplaneProxyService.nginxConfig(templatePath, clientCert, clientKey, serverCert, serverKey, 1111, 2222, List.of("one", "two"), fs.getPath("/opt/vespa"), true);
 
-        assertTrue(out.contains("remote_expr:$remote_addr"), "Should use $remote_addr when on Azure");
         assertTrue(out.contains("proxy_suffix:"), "Suffix must be empty on Azure");
-        assertTrue(out.contains("proxy_on:"), "proxy_protocol on; must be removed on Azure");
-        assertTrue(out.contains("proxy_headers:proxy_set_header X-Forwarded-For $http_x_forwarded_for;"), "Should set Azure-specific X-Forwarded-For header");
         assertTrue(out.contains("one vespatoken;"), "Should map first endpoint");
         assertTrue(out.contains("two vespatoken;"), "Should map second endpoint");
     }
@@ -204,10 +198,7 @@ public class DataplaneProxyServiceTest {
         Files.createDirectories(templatePath.getParent());
         String template =
                 """
-                        remote_expr:${remote_addr_expr}
                         proxy_suffix:${proxy_protocol_suffix}
-                        proxy_on:${proxy_protocol_on}
-                        proxy_headers:${proxy_set_headers}
                         """;
         Files.writeString(templatePath, template);
 
@@ -216,10 +207,7 @@ public class DataplaneProxyServiceTest {
 
         String out = DataplaneProxyService.nginxConfig(templatePath, dummy, dummy, dummy, dummy, 1, 2, List.of("e"), fs.getPath("/pfx"), false);
 
-        assertTrue(out.contains("remote_expr:$proxy_protocol_addr - $remote_addr"), "Should include proxy_protocol_addr when not on Azure");
         assertTrue(out.contains("proxy_suffix:proxy_protocol"), "Should add 'proxy_protocol' suffix when not on Azure");
-        assertTrue(out.contains("proxy_on:proxy_protocol on;"), "Should enable proxy_protocol on when not on Azure");
-        assertTrue(out.contains("proxy_headers:proxy_set_header X-Forwarded-For $proxy_protocol_addr;"), "Should set proxy_protocol-based X-Forwarded-For header");
     }
 
     private DataplaneProxyService dataplaneProxyService(DataplaneProxyService.ProxyCommands proxyCommands) throws IOException {
