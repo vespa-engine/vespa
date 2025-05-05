@@ -421,9 +421,6 @@ public class ModelContextImpl implements ModelContext {
         public boolean hostedVespa() { return hostedVespa; }
 
         @Override
-        public Zone zone() { return zone; }
-
-        @Override
         public Set<ContainerEndpoint> endpoints() { return endpoints; }
 
         @Override
