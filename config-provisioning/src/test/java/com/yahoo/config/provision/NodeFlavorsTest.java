@@ -26,16 +26,29 @@ public class NodeFlavorsTest {
             FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
             flavorBuilder.minCpuCores(10);
             flavorBuilder.cpuSpeedup(1.3);
-            flavorBuilder.name("banana").cost(3);
+            flavorBuilder.name("bare-metal-banana").cost(3);
+            flavorBuilder.environment("BARE_METAL");
+            flavorBuilderList.add(flavorBuilder);
+        }
+        {
+            FlavorsConfig.Flavor.Builder flavorBuilder = new FlavorsConfig.Flavor.Builder();
+            flavorBuilder.minCpuCores(10);
+            flavorBuilder.cpuSpeedup(1.3);
+            flavorBuilder.name("docker-banana").cost(3);
+            flavorBuilder.environment("DOCKER_CONTAINER");
             flavorBuilderList.add(flavorBuilder);
         }
         builder.flavor(flavorBuilderList);
         FlavorsConfig config = new FlavorsConfig(builder);
         NodeFlavors nodeFlavors = new NodeFlavors(config);
-        Flavor banana = nodeFlavors.getFlavor("banana").get();
-        assertEquals(3, banana.cost());
-        assertEquals(13, banana.resources().vcpu(), delta);
-        assertEquals(13, banana.resources().vcpu(), delta, "10 * 1.3");
+
+        Flavor bareMetalBanana = nodeFlavors.getFlavor("bare-metal-banana").get();
+        assertEquals(3, bareMetalBanana.cost());
+        assertEquals(13, bareMetalBanana.resources().vcpu(), delta, "Bare metal is adjusted by cpu speed: 10 * 1.3");
+
+        Flavor dockerBanana = nodeFlavors.getFlavor("docker-banana").get();
+        assertEquals(3, dockerBanana.cost());
+        assertEquals(10, dockerBanana.resources().vcpu(), delta, "Docker containers are not adjusted by cpu speed");
     }
 
 }
