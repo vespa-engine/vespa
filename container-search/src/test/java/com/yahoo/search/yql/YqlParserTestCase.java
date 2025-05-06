@@ -522,6 +522,7 @@ public class YqlParserTestCase {
             assertTrue(child instanceof WordItem);
             WordItem childWord = (WordItem)child;
             assertTrue(childWord.isStemmed());
+            assertFalse(childWord.isNormalizable());
         }
     }
 

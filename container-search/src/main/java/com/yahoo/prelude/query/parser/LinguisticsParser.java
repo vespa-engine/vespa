@@ -59,6 +59,7 @@ public final class LinguisticsParser extends AbstractParser {
         else {
             WordItem word = new WordItem(token.getTokenString());
             word.setStemmed(true); // Disable downstream stemming
+            word.setNormalizable(false); // Disable downstream normaliing
             item = word;
         }
         item.setIndexName(defaultIndex);
