@@ -93,4 +93,9 @@ public class CustomerRpmService {
         return Objects.hash(unit, url, memoryLimitMib, cpuLimitCores);
     }
 
+    @Override
+    public String toString() {
+        return "{ unit='%s', url='%s' }".formatted(unitName(), url());
+    }
+
 }
