@@ -38,9 +38,11 @@ case $COMMAND in
     "$FACTORY_API/builds"
     ;;
   create-release)
+    SYSTEM_NAME=$1
+    if [[ -z $SYSTEM_NAME ]]; then SYSTEM_NAME="opensource"; fi
     $CURL -H "Authorization: Bearer $TOKEN" -d "{
         \"startSeconds\": $(date +%s),
-        \"systemName\": \"opensource\"
+        \"systemName\": \"$SYSTEM_NAME\"
     }" \
     "$FACTORY_API/releases"
     ;;
