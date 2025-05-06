@@ -206,14 +206,20 @@ public class LoadBalancerProvisioner {
         try {
             if (loadBalancer.isPresent() && ! inAccount(cloudAccount, loadBalancer.get())) {
                 newLoadBalancer = loadBalancer.get().with(State.removable, nodeRepository.clock().instant());
-                throw new LoadBalancerServiceException("Could not (re)configure " + id + " due to change in cloud account. The operation will be retried on next deployment");
+                throw new LoadBalancerServiceException("Could not (re)configure " + id + " due to change in cloud account." +
+                                                               " Current load balancer cloud account: " + cloudAccount(newLoadBalancer) +
+                                                               ", requested cloud account: " + cloudAccount +
+                                                               ". The operation will be retried on next deployment");
             }
             if (loadBalancer.isPresent() && ! hasCorrectVisibility(loadBalancer.get(), zoneEndpoint)) {
                 newLoadBalancer = loadBalancer.get().with(State.removable, nodeRepository.clock().instant());
-                throw new LoadBalancerServiceException("Could not (re)configure " + id + " due to change in load balancer visibility. The operation will be retried on next deployment");
+                throw new LoadBalancerServiceException("Could not (re)configure " + id + " due to change in load balancer visibility." +
+                                                               " Current load balancer settings: " + settings(newLoadBalancer) +
+                                                               ", zone endpoint settings: " + zoneEndpoint +
+                                                               ". The operation will be retried on next deployment");
             }
             try {
-                newLoadBalancer = loadBalancer.orElseGet(() -> createNewLoadBalancer(id, zoneEndpoint, requested));      // Determine id-seed.
+                newLoadBalancer = loadBalancer.orElseGet(() -> createNewLoadBalancer(id, zoneEndpoint, requested)); // Determine id-seed.
                 newLoadBalancer = newLoadBalancer.with(provisionInstance(newLoadBalancer, zoneEndpoint, requested)); // Update instance.
             } catch (LoadBalancerServiceException e) {
                 log.log(Level.WARNING, "Failed to provision load balancer", e);
@@ -227,6 +233,14 @@ public class LoadBalancerProvisioner {
     private static boolean hasCorrectVisibility(LoadBalancer newLoadBalancer, ZoneEndpoint zoneEndpoint) {
         return newLoadBalancer.instance().isEmpty() ||
                newLoadBalancer.instance().get().settings().isPublicEndpoint() == zoneEndpoint.isPublicEndpoint();
+    }
+
+    private static String settings(LoadBalancer newLoadBalancer) {
+        return newLoadBalancer.instance().map(l -> l.settings().toString()).orElse("none");
+    }
+
+    private static String cloudAccount(LoadBalancer newLoadBalancer) {
+        return newLoadBalancer.instance().map(l -> l.cloudAccount().toString()).orElse("none");
     }
 
     /** Creates a new load balancer, with an instance if one is taken from the pool, or without otherwise. */
