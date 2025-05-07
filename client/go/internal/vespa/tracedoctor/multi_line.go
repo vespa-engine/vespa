@@ -2,6 +2,24 @@ package tracedoctor
 
 import "github.com/mattn/go-runewidth"
 
+// Split the given text into lines with rendering size w
+//
+// uses dynamic programming to minimize the error function:
+// - too short lines: padding^2
+// - too long lines: infinity
+// - last line: padding is free
+//
+// Splits on space or after comma. Will strip any spaces around each split.
+// If there are no splits within w rendering positions a split will be forced
+// after the character contributing to the rendering size becoming w or more.
+// If the last character in a non-splittable overflowing sequence is an emoji
+// or cjk double width character we will end up with lines wider than requested.
+// This is typically gracefully handled by the text rendering and layout engine
+// taking the actual size into account.
+//
+// A very simplified version of the Knuth-Plass line breaking algorithm:
+// https://en.wikipedia.org/wiki/Knuth%E2%80%93Plass_line-breaking_algorithm
+
 func splitText(text string, w int) []string {
 	type split struct {
 		bytePos int
