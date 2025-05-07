@@ -435,25 +435,6 @@ public class DynamicAllocationTest {
     }
 
     @Test
-    public void switching_from_legacy_flavor_syntax_to_resources_does_not_cause_reallocation() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
-        tester.makeReadyNodes(2, new Flavor(new NodeResources(5, 20, 1400, 3)), NodeType.host, 10, true);
-        tester.activateTenantHosts();
-
-        ApplicationId application = ProvisioningTester.applicationId();
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("1").build();
-
-        List<HostSpec> hosts1 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(2, 1, NodeResources.fromLegacyName("d-2-8-500")), false, true));
-        tester.activate(application, hosts1);
-
-        NodeResources resources = new NodeResources(1.5, 8, 500, 0.3);
-        List<HostSpec> hosts2 = tester.prepare(application, cluster, Capacity.from(new ClusterResources(2, 1, resources)));
-        tester.activate(application, hosts2);
-
-        assertEquals(hosts1, hosts2);
-    }
-
-    @Test
     public void prefer_exclusive_network_switch() {
         // Hosts are provisioned, without switch information
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();

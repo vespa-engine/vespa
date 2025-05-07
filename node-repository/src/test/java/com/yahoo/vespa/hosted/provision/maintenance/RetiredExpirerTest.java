@@ -238,7 +238,7 @@ public class RetiredExpirerTest {
         String ipv4 = "127.0.1.4";
         nameResolver.addRecord(retiredNode.hostname(), ipv4);
         Node node = Node.create(retiredNode.hostname(), IP.Config.ofEmptyPool(ipv4), retiredNode.hostname(),
-                                tester.asFlavor("default", NodeType.config), NodeType.config).build();
+                                tester.asFlavor("default"), NodeType.config).build();
         var nodes = List.of(node);
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
