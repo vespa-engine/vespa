@@ -305,16 +305,9 @@ public class NodesSpecification {
 
     private static Pair<NodeResources, NodeResources> nodeResources(ModelElement nodesElement) {
         ModelElement resources = nodesElement.child("resources");
-        if (resources != null) {
-            return nodeResourcesFromResourcesElement(resources);
-        }
-        else if (nodesElement.stringAttribute("flavor") != null) { // legacy fallback
-            var flavorResources = NodeResources.fromLegacyName(nodesElement.stringAttribute("flavor"));
-            return new Pair<>(flavorResources, flavorResources);
-        }
-        else {
-            return new Pair<>(NodeResources.unspecified(), NodeResources.unspecified());
-        }
+        return resources == null
+                ? new Pair<>(NodeResources.unspecified(), NodeResources.unspecified())
+                : nodeResourcesFromResourcesElement(resources);
     }
 
     private static Pair<NodeResources, NodeResources> nodeResourcesFromResourcesElement(ModelElement element) {

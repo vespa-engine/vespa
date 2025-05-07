@@ -542,6 +542,7 @@ public class NodeResources {
      *
      * @throws IllegalArgumentException if the given string cannot be parsed as a serial form of this
      */
+    // TODO: Remove this when oldest config model in use is 8.518
     public static NodeResources fromLegacyName(String name) {
         if ( ! name.startsWith("d-"))
             throw new IllegalArgumentException("A node specification string must start by 'd-' but was '" + name + "'");

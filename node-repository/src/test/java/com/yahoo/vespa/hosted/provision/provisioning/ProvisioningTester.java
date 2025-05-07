@@ -412,7 +412,7 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type) {
-        return makeReadyNodes(n, asFlavor(flavor, type), Optional.empty(), type, 0);
+        return makeReadyNodes(n, asFlavor(flavor), Optional.empty(), type, 0);
     }
     public List<Node> makeReadyNodes(int n, NodeResources resources, NodeType type) {
         return makeReadyNodes(n, new Flavor(resources), Optional.empty(), type, 0);
@@ -429,7 +429,7 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeProvisionedNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
-        return makeProvisionedNodes(n, asFlavor(flavor, type), Optional.empty(), type, ipAddressPoolSize, dualStack);
+        return makeProvisionedNodes(n, asFlavor(flavor), Optional.empty(), type, ipAddressPoolSize, dualStack);
     }
     public List<Node> makeProvisionedNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         return makeProvisionedNodes(n, (index) -> "host-" + index + ".yahoo.com", flavor, reservedTo, type, ipAddressPoolSize, dualStack);
@@ -519,14 +519,14 @@ public class ProvisioningTester {
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
-        return makeReadyNodes(n, asFlavor(flavor, type), Optional.empty(), type, ipAddressPoolSize);
+        return makeReadyNodes(n, asFlavor(flavor), Optional.empty(), type, ipAddressPoolSize);
     }
     public List<Node> makeReadyNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize) {
         return makeReadyNodes(n, flavor, reservedTo, type, ipAddressPoolSize, false);
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
-        return makeReadyNodes(n, asFlavor(flavor, type), type, ipAddressPoolSize, dualStack);
+        return makeReadyNodes(n, asFlavor(flavor), type, ipAddressPoolSize, dualStack);
     }
     public List<Node> makeReadyNodes(int n, Flavor flavor, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         return makeReadyNodes(n, flavor, Optional.empty(), type, ipAddressPoolSize, dualStack);
@@ -538,16 +538,9 @@ public class ProvisioningTester {
         return move(Node.State.ready, nodes);
     }
 
-    public Flavor asFlavor(String flavorString, NodeType type) {
-        Optional<Flavor> flavor = nodeFlavors.getFlavor(flavorString);
-        if (flavor.isEmpty()) {
-            // TODO: Remove the need for this by always adding hosts with a given capacity
-            if (type == NodeType.tenant) // Tenant nodes can have any (docker) flavor
-                flavor = Optional.of(new Flavor(NodeResources.fromLegacyName(flavorString)));
-            else
-                throw new IllegalArgumentException("No flavor '" + flavorString + "'");
-        }
-        return flavor.get();
+    public Flavor asFlavor(String flavorString) {
+        return nodeFlavors.getFlavor(flavorString)
+                          .orElseThrow(() -> new IllegalArgumentException("No flavor '" + flavorString + "'"));
     }
 
     /** Create one or more child nodes on a single host starting with index 1 */
