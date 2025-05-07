@@ -2,6 +2,7 @@
 package com.yahoo.search;
 
 import com.yahoo.component.ComponentId;
+import com.yahoo.prelude.fastsearch.PartialSummaryHandler;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Response;
 import com.yahoo.search.searchchain.Execution;
@@ -156,7 +157,7 @@ public abstract class Searcher extends Processor {
      */
     public final void ensureFilled(Result result, String summaryClass, Execution execution) {
         if (summaryClass == null)
-            summaryClass = result.getQuery().getPresentation().getSummary();
+            summaryClass = PartialSummaryHandler.resolveSummaryClass(result);
 
         if ( ! result.isFilled(summaryClass)) {
             fill(result, summaryClass, execution);

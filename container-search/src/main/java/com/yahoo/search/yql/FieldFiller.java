@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.yahoo.component.chain.dependencies.After;
-import static com.yahoo.prelude.fastsearch.VespaBackend.SORTABLE_ATTRIBUTES_SUMMARY_CLASS;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -25,32 +24,11 @@ import com.yahoo.search.searchchain.Execution;
 @After(MinimalQueryInserter.EXTERNAL_YQL)
 public class FieldFiller extends Searcher {
 
-    private final Set<String> intersectionOfAttributes;
     private final SchemaInfo schemaInfo;
     public static final CompoundName FIELD_FILLER_DISABLE = CompoundName.from("FieldFiller.disable");
 
     public FieldFiller(SchemaInfo schemaInfo) {
         this.schemaInfo = schemaInfo;
-
-        intersectionOfAttributes = new HashSet<>();
-        boolean first = true;
-        for (Schema schema : schemaInfo.schemas().values()) {
-            for (DocumentSummary summary : schema.documentSummaries().values()) {
-                Set<String> attributes;
-                if (SORTABLE_ATTRIBUTES_SUMMARY_CLASS.equals(summary.name())) {
-                    attributes = new HashSet<>(summary.fields().size());
-                    for (DocumentSummary.Field f : summary.fields().values()) {
-                        attributes.add(f.name());
-                    }
-                    if (first) {
-                        first = false;
-                        intersectionOfAttributes.addAll(attributes);
-                    } else {
-                        intersectionOfAttributes.retainAll(attributes);
-                    }
-                }
-            }
-        }
     }
 
     @Override
@@ -60,28 +38,27 @@ public class FieldFiller extends Searcher {
 
     @Override
     public void fill(Result result, String summaryClass, Execution execution) {
+        // always fill as requested first:
+        execution.fill(result, summaryClass);
+        if (summaryClass == null) {
+            // would fill all needed fields already
+            return;
+        }
         Set<String> summaryFields = result.getQuery().getPresentation().getSummaryFields();
         if (summaryFields.isEmpty() || result.getQuery().properties().getBoolean(FIELD_FILLER_DISABLE)) {
             // no special handling:
-            execution.fill(result, summaryClass);
             return;
         }
-        if (summaryClass != null) {
-            // always fill requested class:
-            execution.fill(result, summaryClass);
-            if (hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
-                // no more was needed:
-                return;
-            }
+        if (! summaryClass.equals(result.getQuery().getPresentation().getSummary())) {
+            // some special (programmatic) fill, top-level SearchHandler will call fill again later
+            return;
         }
-        // we need more:
-        if (intersectionOfAttributes.containsAll(summaryFields)) {
-            // only attributes needed:
-            execution.fill(result, SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
-        } else {
-            // fetch all summary fields:
-            execution.fill(result, null);
+        if (hasAll(summaryFields, summaryClass, result.getQuery().getModel().getRestrict())) {
+            // no more was needed:
+            return;
         }
+        // fetch the requested set (using the class with all fields, confusingly named "default")
+        execution.fill(result, "default");
     }
 
     private boolean hasAll(Set<String> requested, String summaryName, Set<String> restrict) {

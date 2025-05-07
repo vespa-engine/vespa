@@ -76,8 +76,7 @@ public class FieldFilterTestCase {
         execution.fill(result);
         assertEquals(2, result.getConcreteHitCount());
         assertEquals(Set.of(FIELD_B), result.hits().get(0).fieldKeys());
-        assertEquals(Set.of(FIELD_B, "matchfeatures", "rankfeatures", "summaryfeatures"),
-                     result.hits().get(1).fieldKeys());
+        assertEquals(Set.of(FIELD_B), result.hits().get(1).fieldKeys());
     }
 
     @Test

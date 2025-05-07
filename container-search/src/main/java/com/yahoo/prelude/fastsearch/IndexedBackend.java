@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.fastsearch;
 
+import com.yahoo.prelude.fastsearch.PartialSummaryHandler;
 import com.yahoo.prelude.querytransform.QueryRewrite;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -103,7 +104,7 @@ public class IndexedBackend extends VespaBackend {
         if (result.isFilled(summaryClass)) return;
 
         Query query = result.getQuery();
-        traceQuery(getName(), DispatchPhase.FILL, query, query.getOffset(), query.getHits(), 1, quotedSummaryClass(summaryClass));
+        traceQuery(getName(), DispatchPhase.FILL, query, query.getOffset(), query.getHits(), 1, quotedSummaryClass(query, summaryClass));
 
         try (FillInvoker invoker = getFillInvoker(result)) {
             invoker.fill(result, summaryClass);
@@ -140,8 +141,10 @@ public class IndexedBackend extends VespaBackend {
         return dispatcher.getFillInvoker(result, this);
     }
 
-    private static Optional<String> quotedSummaryClass(String summaryClass) {
-        return Optional.of(summaryClass == null ? "[null]" : "'" + summaryClass + "'");
+    private static Optional<String> quotedSummaryClass(Query q, String summaryClass) {
+        return Optional.of(PartialSummaryHandler
+                           .quotedSummaryClassName(summaryClass,
+                                                   q.getPresentation().getSummaryFields()));
     }
 
     public String toString() {

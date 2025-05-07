@@ -91,10 +91,10 @@ public class SearchHandler extends LoggingRequestHandler {
     private static final String fallbackSearchChain = "vespa";
 
     private final CompiledQueryProfileRegistry queryProfileRegistry;
-    
+
     /** If present, responses from this will set the HTTP response header with this key to the host name of this */
     private final Optional<String> hostResponseHeaderKey;
-    
+
     private final String selfHostname = HostName.getLocalhost();
     private final Map<String, Embedder> embedders;
     private final ExecutionFactory executionFactory;
@@ -348,6 +348,7 @@ public class SearchHandler extends LoggingRequestHandler {
         Result result = execution.search(query);
 
         ensureQuerySet(result, query);
+        // TODO: consider fill(result, "[presentation]") instead
         execution.fill(result, result.getQuery().getPresentation().getSummary());
 
         traceExecutionTimes(query, result);
@@ -553,5 +554,3 @@ public class SearchHandler extends LoggingRequestHandler {
     }
 
 }
-
-

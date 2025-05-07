@@ -11,6 +11,7 @@ import com.yahoo.data.access.slime.SlimeAdapter;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
+import com.yahoo.prelude.fastsearch.PartialSummaryHandler;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.dispatch.Dispatcher;
@@ -24,6 +25,7 @@ import com.yahoo.slime.BinaryView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -48,6 +50,8 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     private final DocumentDatabase documentDb;
     private final RpcConnectionPool resourcePool;
     private boolean summaryNeedsQuery;
+    private final PartialSummaryHandler partialSummaryHandler;
+
     private final String serverId;
     private final CompressPayload compressor;
     private final DecodePolicy decodePolicy;
@@ -72,10 +76,12 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         this.summaryNeedsQuery = summaryNeedsQuery;
         this.compressor = compressor;
         this.decodePolicy = decodePolicy;
+        this.partialSummaryHandler = new PartialSummaryHandler(documentDb);
     }
 
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
+        partialSummaryHandler.wantToFill(result, summaryClass);
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
         int queueSize = Math.max(hitsByNode.size(), resourcePool.knownNodeIds().size());
         responses = new LinkedBlockingQueue<>(queueSize);
@@ -95,8 +101,10 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     receive(Client.ResponseOrError.fromTimeoutError("Timed out prior to sending docsum request to " + nodeId), hits));
             return;
         }
+        String askForSummary = partialSummaryHandler.askForSummary();
+        Set<String> onlyFields = partialSummaryHandler.askForFields();
         var builder = ProtobufSerialization.createDocsumRequestBuilder(
-                result.getQuery(), serverId, summaryClass, result.getQuery().getPresentation().getSummaryFields(), summaryNeedsQuery, timeout.request());
+                result.getQuery(), serverId, askForSummary, onlyFields, summaryNeedsQuery, timeout.request());
         hitsByNode.forEach((nodeId, hits) -> {
             var payload = ProtobufSerialization.serializeDocsumRequest(builder, hits);
             sendDocsumsRequest(nodeId, hits, payload, result, timeout.client());
@@ -193,11 +201,11 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             Result result,
             ResponseAndHits responseAndHits,
             String summaryClass,
-            boolean ignoreErrors)
+            boolean isRetry)
     {
         var responseOrError = responseAndHits.response();
         if (responseOrError.error().isPresent()) {
-            if (hasReportedError || ignoreErrors) {
+            if (hasReportedError || isRetry) {
                 return List.of();
             }
             String error = responseOrError.error().get();
@@ -207,7 +215,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         } else {
             Client.ProtobufResponse response = responseOrError.response().get();
             byte[] responseBytes = compressor.decompress(response);
-            return fill(result, responseAndHits.hits(), summaryClass, responseBytes, ignoreErrors);
+            return fill(result, responseAndHits.hits(), summaryClass, responseBytes, isRetry);
         }
         return List.of();
     }
@@ -225,13 +233,13 @@ public class RpcProtobufFillInvoker extends FillInvoker {
         }
     }
 
-    private List<FastHit> fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload, boolean ignoreErrors) {
+    private List<FastHit> fill(Result result, List<FastHit> hits, String summaryClass, byte[] payload, boolean isRetry) {
         try {
             var protobuf = SearchProtocol.DocsumReply.parseFrom(payload);
             var root = (decodePolicy == DecodePolicy.ONDEMAND)
                     ? BinaryView.inspect(protobuf.getSlimeSummaries().toByteArray())
                     : BinaryFormat.decode(protobuf.getSlimeSummaries().toByteArray()).get();
-            if (! ignoreErrors) {
+            if (! isRetry) {
                 var errors = root.field("errors");
                 boolean hasErrors = errors.valid() && (errors.entries() > 0);
                 if (hasErrors) {
@@ -247,18 +255,19 @@ public class RpcProtobufFillInvoker extends FillInvoker {
             for (int i = 0; i < hits.size(); i++) {
                 Inspector summary = summaries.entry(i).field("docsum");
                 FastHit hit = hits.get(i);
-                if (summary.valid() && ! hit.isFilled(summaryClass)) {
+                boolean needFill = isRetry ? partialSummaryHandler.needFill(hit) : true;
+                if (summary.valid() && needFill) {
                     hit.setField(Hit.SDDOCNAME_FIELD, documentDb.schema().name());
-                    hit.addSummary(documentDb.getDocsumDefinitionSet().getDocsum(summaryClass), summary);
-                    hit.setFilled(summaryClass);
+                    hit.addSummary(partialSummaryHandler.effectiveDocsumDef(), summary);
+                    partialSummaryHandler.markFilled(hit);
                     ++numOkFilledHits;
-                } else {
+                } else if (needFill) {
                     skippedHits.add(hit);
                 }
             }
             return skippedHits;
         } catch (InvalidProtocolBufferException ex) {
-            if (! ignoreErrors) {
+            if (! isRetry) {
                 log.log(Level.WARNING, "Invalid response to docsum request", ex);
                 result.hits().addError(ErrorMessage.createInternalServerError("Invalid response to docsum request from backend"));
             }
@@ -313,7 +322,7 @@ public class RpcProtobufFillInvoker extends FillInvoker {
                     processOneResponse(result, responseAndHits, summaryClass, true);
                     outstandingResponses--;
                 }
-                skippedHits.removeIf(hit -> hit.isFilled(summaryClass));
+                skippedHits.removeIf(hit -> !partialSummaryHandler.needFill(hit));
             }
         } else {
             result.getQuery().trace(false, 1, "Summary fetching got " + numSkipped + " empty docsums (of " + numHitsToFill + " hits), no retry");

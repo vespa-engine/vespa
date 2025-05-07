@@ -54,7 +54,9 @@ public class FieldFilter extends Searcher {
                 var field = fields.next();
                 if ( ! result.getQuery().getPresentation().getSummaryFields().contains(field.getKey()) &&
                      ! syntheticFields.contains(field.getKey()))
+                {
                     fields.remove();
+                }
             }
         }
     }
