@@ -10,8 +10,9 @@ import (
 )
 
 type inspectProfileOptions struct {
-	profileFile      string
-	selectMedianNode bool
+	profileFile         string
+	selectMedianNode    bool
+	showDispatchedQuery bool
 }
 
 func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
@@ -27,6 +28,9 @@ func inspectProfile(cli *CLI, opts *inspectProfileOptions) error {
 	context := tracedoctor.NewContext(root)
 	if opts.selectMedianNode {
 		context.SelectMedianNode()
+	}
+	if opts.showDispatchedQuery {
+		context.ShowDispatchedQuery()
 	}
 	return context.Analyze(cli.Stdout)
 }
@@ -45,7 +49,8 @@ func newInspectProfileCmd(cli *CLI) *cobra.Command {
 	}
 
 	cmd.Flags().StringVarP(&opts.profileFile, "profile-file", "f", "vespa_query_profile_result.json", "Name of the profile file to inspect")
-	cmd.Flags().BoolVar(&opts.selectMedianNode, "median-node", false, "Select median node for analysis (default is worst)")
+	cmd.Flags().BoolVar(&opts.selectMedianNode, "select-median-node", false, "Select median node for analysis (default is worst)")
+	cmd.Flags().BoolVar(&opts.showDispatchedQuery, "show-dispatched-query", false, "Show query sent to search nodes")
 	return cmd
 }
 

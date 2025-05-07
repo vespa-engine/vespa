@@ -561,6 +561,28 @@ func (p protonTraceGroup) documentType() string {
 	return ""
 }
 
+func (p protonTraceGroup) extractDispatchedQuery(root slime.Value) string {
+	var list []string
+	pattern := " search to dispatch: "
+	if len(p.traces) > 0 {
+		myPath := p.traces[0].path.Clone().Trim(3)
+		start := myPath.Apply(root.Field("trace"))
+		lookFor := func(path *slime.Path, value slime.Value) bool {
+			return path.At(-1).WouldSelectField("message") &&
+				strings.Contains(value.AsString(), pattern)
+		}
+		slime.Select(start, lookFor, func(path *slime.Path, value slime.Value) {
+			if idx := strings.Index(value.AsString(), pattern); idx >= 0 {
+				list = append(list, value.AsString()[idx+len(pattern):])
+			}
+		})
+	}
+	if len(list) == 1 {
+		return list[0]
+	}
+	return ""
+}
+
 func groupProtonTraces(traces []protonTrace) []protonTraceGroup {
 	groupMap := make(map[string]*protonTraceGroup)
 	for _, trace := range traces {
