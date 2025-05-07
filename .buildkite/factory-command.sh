@@ -68,10 +68,12 @@ case $COMMAND in
     ;;
   update-released-time)
     VERSION=$1
-    if [[ -z $VERSION ]]; then echo "Usage: $0 $COMMAND <version>"; exit 1; fi
+    SYSTEM_NAME=$2
+    if [[ -z $SYSTEM_NAME ]]; then SYSTEM_NAME="opensource"; fi
+    if [[ -z $VERSION ]]; then echo "Usage: $0 $COMMAND <version> [<systemName>]"; exit 1; fi
     $CURL -H "Authorization: Bearer $TOKEN" -d "{
         \"releasedSeconds\": $(date +%s),
-        \"systemName\": \"opensource\"
+        \"systemName\": \"${SYSTEM_NAME}\"
     }" \
     "$FACTORY_API/releases/$VERSION"
     ;;
