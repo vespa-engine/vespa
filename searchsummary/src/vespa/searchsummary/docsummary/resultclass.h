@@ -7,6 +7,8 @@
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <string>
 
+namespace search { class MatchingElementsFields; }
+
 namespace search::docsummary {
 
 /**
@@ -47,6 +49,7 @@ private:
     // As default, summary features are always included.
     bool                       _omit_summary_features;
     size_t                     _num_field_writer_states;
+    std::shared_ptr<MatchingElementsFields> _matching_elements_fields;
 
 public:
     using UP = std::unique_ptr<ResultClass>;
@@ -129,6 +132,7 @@ public:
     }
 
     size_t get_num_field_writer_states() const noexcept { return _num_field_writer_states; }
+    const std::shared_ptr<MatchingElementsFields>& get_matching_elements_fields() const noexcept { return _matching_elements_fields; }
 };
 
 }

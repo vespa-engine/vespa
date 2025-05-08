@@ -5,7 +5,6 @@
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
 #include <vespa/config-summary.h>
-#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <atomic>
@@ -125,7 +124,7 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             break;
         }
         resClass->set_omit_summary_features(cfg_class.omitsummaryfeatures);
-        auto matching_elems_fields = std::make_shared<MatchingElementsFields>();
+        auto matching_elems_fields = resClass->get_matching_elements_fields();
         for (const auto & field : cfg_class.fields) {
             const char *fieldname = field.name.c_str();
             std::string command = field.command;

@@ -20,13 +20,11 @@ namespace search::docsummary {
 class MatchedElementsFilterDFW : public DocsumFieldWriter {
 private:
     std::string _input_field_name;
-    std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
 
     const std::vector<uint32_t>& get_matching_elements(uint32_t docid, GetDocsumsState& state) const;
 
 public:
-    MatchedElementsFilterDFW(const std::string& input_field_name,
-                             std::shared_ptr<MatchingElementsFields> matching_elems_fields);
+    MatchedElementsFilterDFW(const std::string& input_field_name);
     static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields);
     static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name,

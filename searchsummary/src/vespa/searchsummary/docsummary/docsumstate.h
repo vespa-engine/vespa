@@ -73,6 +73,7 @@ private:
 public:
     // DocsumFieldWriterState instances are owned by _stash
     std::vector<DocsumFieldWriterState*> _fieldWriterStates;
+    std::shared_ptr<const MatchingElementsFields> _matching_elements_fields;
 
     // used by AbsDistanceDFW
     std::vector<search::common::GeoLocationSpec> _parsedLocations;
@@ -93,7 +94,7 @@ public:
     explicit GetDocsumsState(GetDocsumsStateCallback &callback);
     ~GetDocsumsState();
 
-    const MatchingElements &get_matching_elements(const MatchingElementsFields &matching_elems_fields);
+    const MatchingElements &get_matching_elements();
     vespalib::Stash& get_stash() noexcept { return _stash; }
     const QueryNormalization * query_normalization() const { return _normalization; }
     void query_normalization(const QueryNormalization * normalization) { _normalization = normalization; }
