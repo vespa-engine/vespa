@@ -18,12 +18,12 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 /**
  * @author bjorncs
  */
-class OnnxRuntimeTest {
+class EmbeddedOnnxRuntimeTest {
 
     @Test
     void reuses_sessions_while_active() {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        OnnxRuntime runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         String model1 = "src/test/models/onnx/simple/simple.onnx";
         var evaluator1 = runtime.evaluatorOf(model1);
         var evaluator2 = runtime.evaluatorOf(model1);
@@ -54,7 +54,7 @@ class OnnxRuntimeTest {
     @Test
     void loads_model_from_byte_array() throws IOException {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         byte[] bytes = Files.readAllBytes(Paths.get("src/test/models/onnx/simple/simple.onnx"));
         var evaluator1 = runtime.evaluatorOf(bytes);
         var evaluator2 = runtime.evaluatorOf(bytes);
@@ -70,7 +70,7 @@ class OnnxRuntimeTest {
     @Test
     void loading_same_model_from_bytes_and_file_resolve_to_same_instance() throws IOException {
         assumeTrue(OnnxRuntime.isRuntimeAvailable());
-        var runtime = new OnnxRuntime();
+        var runtime = new EmbeddedOnnxRuntime();
         String modelPath = "src/test/models/onnx/simple/simple.onnx";
         byte[] bytes = Files.readAllBytes(Paths.get(modelPath));
         try (var evaluator1 = runtime.evaluatorOf(bytes);
@@ -83,12 +83,11 @@ class OnnxRuntimeTest {
     private static void assertClosed(OnnxEvaluator evaluator) { assertTrue(isClosed(evaluator), "Session is not closed"); }
     private static void assertNotClosed(OnnxEvaluator evaluator) { assertFalse(isClosed(evaluator), "Session is closed"); }
     private static void assertSameSession(OnnxEvaluator evaluator1, OnnxEvaluator evaluator2) {
-        assertSame(evaluator1.ortSession(), evaluator2.ortSession());
+        assertSame(((EmbeddedOnnxEvaluator)evaluator1).ortSession(), ((EmbeddedOnnxEvaluator)evaluator2).ortSession());
     }
     private static void assertNotSameSession(OnnxEvaluator evaluator1, OnnxEvaluator evaluator2) {
-        assertNotSame(evaluator1.ortSession(), evaluator2.ortSession());
+        assertNotSame(((EmbeddedOnnxEvaluator)evaluator1).ortSession(), ((EmbeddedOnnxEvaluator)evaluator2).ortSession());
     }
-
     private static boolean isClosed(OnnxEvaluator evaluator) {
         try {
             evaluator.getInputs();

@@ -36,14 +36,16 @@ public class ModelsEvaluator extends AbstractComponent {
         this(new RankProfilesConfigImporter(fileAcquirer, onnx), config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
+    // For testing only
     public ModelsEvaluator(RankProfilesConfig config,
                            RankingConstantsConfig constantsConfig,
                            RankingExpressionsConfig expressionsConfig,
                            OnnxModelsConfig onnxModelsConfig,
                            FileAcquirer fileAcquirer) {
-        this(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer, new OnnxRuntime(onnxModelsConfig));
+        this(config, constantsConfig, expressionsConfig, onnxModelsConfig, fileAcquirer, OnnxRuntime.testInstance());
     }
 
+    // For testing only
     public ModelsEvaluator(RankProfilesConfigImporter importer,
                            RankProfilesConfig config,
                            RankingConstantsConfig constantsConfig,
@@ -52,6 +54,7 @@ public class ModelsEvaluator extends AbstractComponent {
         this(importer.importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig));
     }
 
+    // For testing only
     public ModelsEvaluator(Map<String, Model> models) {
         this.models = Collections.unmodifiableMap(models);
     }

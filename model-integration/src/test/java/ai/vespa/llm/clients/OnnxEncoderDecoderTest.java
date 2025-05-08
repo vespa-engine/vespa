@@ -35,7 +35,7 @@ public class OnnxEncoderDecoderTest {
     }
 
     private static OnnxEncoderDecoder newGenerator(OnnxEncoderDecoderConfig cfg) {
-        return new OnnxEncoderDecoder(new OnnxRuntime(), cfg);
+        return new OnnxEncoderDecoder(OnnxRuntime.testInstance(), cfg);
     }
 
 }

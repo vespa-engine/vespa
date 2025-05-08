@@ -4,7 +4,6 @@ package ai.vespa.models.evaluation;
 import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.config.subscription.ConfigGetter;
 import com.yahoo.filedistribution.fileacquirer.MockFileAcquirer;
-import com.yahoo.path.Path;
 import com.yahoo.searchlib.rankingexpression.ExpressionFunction;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
 import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
@@ -52,7 +51,7 @@ public class ModelTester {
         }
         var fileAcquirer = MockFileAcquirer.returnFiles(fileMap);
 
-        return new RankProfilesConfigImporter(fileAcquirer, new OnnxRuntime())
+        return new RankProfilesConfigImporter(fileAcquirer, OnnxRuntime.testInstance())
                        .importFrom(config, constantsConfig, expressionsConfig, onnxModelsConfig);
     }
 
