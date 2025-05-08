@@ -1,8 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucket_spaces_stats_provider.h"
+#include "content_node_stats_provider.h"
 #include "distributor_host_info_reporter.h"
 #include "min_replica_provider.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
+#include <chrono>
 #include <set>
 
 namespace storage::distributor {
@@ -13,11 +16,22 @@ using Object = vespalib::JsonStream::Object;
 using Array = vespalib::JsonStream::Array;
 using End = vespalib::JsonStream::End;
 
+namespace {
+// TODO factor out as own separately testable stats derivation class
+constexpr std::chrono::duration content_node_stats_sample_window = 60s;
+}
+
 DistributorHostInfoReporter::DistributorHostInfoReporter(
         MinReplicaProvider& minReplicaProvider,
-        BucketSpacesStatsProvider& bucketSpacesStatsProvider)
+        BucketSpacesStatsProvider& bucketSpacesStatsProvider,
+        ContentNodeStatsProvider& content_node_stats_provider)
     : _minReplicaProvider(minReplicaProvider),
-      _bucketSpacesStatsProvider(bucketSpacesStatsProvider)
+      _bucketSpacesStatsProvider(bucketSpacesStatsProvider),
+      _content_node_stats_provider(content_node_stats_provider),
+      _prev_node_stats_full(),
+      _node_stats_delta(),
+      _last_stat_sample_time(),
+      _stat_mutex()
 {
 }
 
@@ -39,10 +53,34 @@ writeBucketSpacesStats(vespalib::JsonStream& stream,
     }
 }
 
+void write_single_error_stat_if_nonzero(vespalib::JsonStream& stream, std::string_view err_name, uint64_t err_counter) {
+    if (err_counter == 0) {
+        return;
+    }
+    stream << err_name << err_counter;
+}
+
+void write_content_node_stats(vespalib::JsonStream& stream, const ContentNodeMessageStats& stats) {
+    stream << "response-stats" << Object();
+    constexpr double delta_s = std::chrono::duration<double>(content_node_stats_sample_window).count();
+    stream << "sample-window-sec" << delta_s // allows rate to be computed TODO don't include?
+           << "total-count"       << stats.sum_received(); // allows ratio to be computed per error category
+    write_single_error_stat_if_nonzero(stream, "network-errors",    stats.recv_network_error);
+    write_single_error_stat_if_nonzero(stream, "clock-skew-errors", stats.recv_clock_skew_error);
+    write_single_error_stat_if_nonzero(stream, "other-errors",      stats.recv_other_error);
+    stream << End();
+}
+
+[[nodiscard]] bool should_include_stats(const ContentNodeMessageStats& stats) noexcept {
+    // TODO consider an error rate (ratio?) threshold for inclusion
+    return stats.recv_network_error > 0;
+}
+
 void
 outputStorageNodes(vespalib::JsonStream& output,
-                   const MinReplicaMap & minReplica,
-                   const PerNodeBucketSpacesStats& bucketSpacesStats)
+                   const MinReplicaMap& minReplica,
+                   const PerNodeBucketSpacesStats& bucketSpacesStats,
+                   const ContentNodeMessageStatsTracker::NodeStats& node_stats)
 {
     std::set<uint16_t> nodes;
     for (const auto& element : minReplica) {
@@ -50,6 +88,14 @@ outputStorageNodes(vespalib::JsonStream& output,
     }
     for (const auto& element : bucketSpacesStats) {
         nodes.insert(element.first);
+    }
+    for (const auto& element : node_stats.per_node) {
+        // For now, only care about including the entry if there's at least one
+        // network-related error. Can trivially relax this later once the cluster
+        // controller starts looking at other data points.
+        if (should_include_stats(element.second)) {
+            nodes.insert(element.first);
+        }
     }
     
     for (uint16_t node : nodes) {
@@ -61,6 +107,11 @@ outputStorageNodes(vespalib::JsonStream& output,
             if (minReplicaIt != minReplica.end()) {
                 output << "min-current-replication-factor"
                        << minReplicaIt->second;
+            }
+
+            auto stats_it = node_stats.per_node.find(node);
+            if (stats_it != node_stats.per_node.end() && should_include_stats(stats_it->second)) {
+                write_content_node_stats(output, stats_it->second);
             }
 
             auto bucketSpacesStatsIt = bucketSpacesStats.find(node);
@@ -82,6 +133,7 @@ DistributorHostInfoReporter::report(vespalib::JsonStream& output)
     auto minReplica = _minReplicaProvider.getMinReplica();
     auto bucketSpacesStats = _bucketSpacesStatsProvider.per_node_bucket_spaces_stats();
     auto global_stats = _bucketSpacesStatsProvider.distributor_global_stats();
+    auto node_stats = thread_safe_node_stats_delta();
 
     output << "distributor" << Object();
     if (global_stats.valid()) {
@@ -92,10 +144,29 @@ DistributorHostInfoReporter::report(vespalib::JsonStream& output)
     }
     {
         output << "storage-nodes" << Array();
-        outputStorageNodes(output, minReplica, bucketSpacesStats);
+        outputStorageNodes(output, minReplica, bucketSpacesStats, node_stats);
         output << End();
     }
     output << End();
+}
+
+ContentNodeMessageStatsTracker::NodeStats
+DistributorHostInfoReporter::thread_safe_node_stats_delta() const
+{
+    std::lock_guard lock(_stat_mutex);
+    return _node_stats_delta;
+}
+
+void
+DistributorHostInfoReporter::on_periodic_callback(std::chrono::steady_clock::time_point steady_now)
+{
+    std::lock_guard lock(_stat_mutex);
+    if (steady_now - _last_stat_sample_time >= content_node_stats_sample_window) {
+        auto stats_now = _content_node_stats_provider.content_node_stats();
+        _node_stats_delta = stats_now.subtracted(_prev_node_stats_full); // TODO sparse_subtracted?
+        _prev_node_stats_full = std::move(stats_now);
+        _last_stat_sample_time = steady_now;
+    }
 }
 
 }

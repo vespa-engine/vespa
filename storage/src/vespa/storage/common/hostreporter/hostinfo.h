@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/jsonstream.h>
-
 #include "versionreporter.h"
+#include <vespa/vespalib/util/jsonstream.h>
 
 namespace storage {
 
@@ -16,10 +15,12 @@ class HostInfo {
 public:
     HostInfo();
     ~HostInfo();
-    void printReport(vespalib::JsonStream& report);
 
+    void printReport(vespalib::JsonStream& report);
     // Does not take ownership.
     void registerReporter(HostReporter* reporter);
+
+    void invoke_periodic_callbacks(std::chrono::steady_clock::time_point now_steady);
 
 private:
     std::vector<HostReporter*> customReporters;

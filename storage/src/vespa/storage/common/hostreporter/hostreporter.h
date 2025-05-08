@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/jsonstream.h>
+#include <chrono>
 
 namespace storage {
 /**
@@ -10,8 +11,10 @@ namespace storage {
  */
 class HostReporter {
 public:
-	virtual void report(vespalib::JsonStream& jsonreport) = 0;
 	virtual ~HostReporter() = default;
+
+	virtual void report(vespalib::JsonStream& jsonreport) = 0;
+	virtual void on_periodic_callback(std::chrono::steady_clock::time_point) { /*no-op by default*/ }
 };
 }
 

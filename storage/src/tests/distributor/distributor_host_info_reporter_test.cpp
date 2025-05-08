@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/storage/distributor/bucket_spaces_stats_provider.h>
+#include <vespa/storage/distributor/content_node_stats_provider.h>
 #include <vespa/storage/distributor/distributor_host_info_reporter.h>
 #include <vespa/storage/distributor/min_replica_provider.h>
 #include <tests/common/hostreporter/util.h>
@@ -58,6 +59,16 @@ struct MockedBucketSpacesStatsProvider : public BucketSpacesStatsProvider {
 
 MockedBucketSpacesStatsProvider::~MockedBucketSpacesStatsProvider() = default;
 
+struct MockedContentNodeStatsProvider : ContentNodeStatsProvider {
+    ContentNodeMessageStatsTracker::NodeStats _stats;
+
+    ~MockedContentNodeStatsProvider() override = default;
+
+    ContentNodeMessageStatsTracker::NodeStats content_node_stats() const override {
+        return _stats;
+    }
+};
+
 const vespalib::slime::Inspector&
 getNode(const vespalib::Slime& root, uint16_t nodeIndex)
 {
@@ -106,6 +117,22 @@ std::optional<int64_t> bytes_total_from(const vespalib::Slime& root) {
     return node.asLong();
 }
 
+struct ExpectedResponseStats {
+    uint64_t responses = 0;
+    uint64_t errors = 0; // <= responses
+};
+
+void verify_node_response_stats(const vespalib::Slime& root, uint16_t node_index, std::optional<ExpectedResponseStats> expected) {
+    auto& inspector = getNode(root, node_index);
+    if (!expected) {
+        ASSERT_FALSE(inspector["response-stats"].valid());
+        return;
+    }
+    auto& stats = inspector["response-stats"];
+    ASSERT_EQ(stats["total-count"].asLong(),    expected->responses);
+    ASSERT_EQ(stats["network-errors"].asLong(), expected->errors);
+}
+
 }
 
 void
@@ -133,13 +160,14 @@ DistributorHostInfoReporterTest::verifyBucketSpaceStats(const vespalib::Slime& r
 struct Fixture {
     MockedMinReplicaProvider minReplicaProvider;
     MockedBucketSpacesStatsProvider bucketSpacesStatsProvider;
+    MockedContentNodeStatsProvider content_node_stats_provider;
     DistributorHostInfoReporter reporter;
     Fixture()
         : minReplicaProvider(),
           bucketSpacesStatsProvider(),
-          reporter(minReplicaProvider, bucketSpacesStatsProvider)
+          reporter(minReplicaProvider, bucketSpacesStatsProvider, content_node_stats_provider)
     {}
-    ~Fixture() = default;
+    ~Fixture();
 
     [[nodiscard]] vespalib::Slime to_slime() {
         vespalib::Slime root;
@@ -147,6 +175,8 @@ struct Fixture {
         return root;
     }
 };
+
+Fixture::~Fixture() = default;
 
 TEST_F(DistributorHostInfoReporterTest, min_replica_stats_are_reported) {
     Fixture f;
@@ -259,6 +289,68 @@ TEST_F(DistributorHostInfoReporterTest, global_stats_are_reported_when_present) 
         EXPECT_EQ(document_count_total_from(root), 12345);
         EXPECT_EQ(bytes_total_from(root), 567890);
     }
+}
+
+TEST_F(DistributorHostInfoReporterTest, per_content_node_response_stats_report_stable_60s_deltas) {
+    Fixture f;
+    // Prime some unrelated information for the content node reporting so that they're
+    // always present independent of the error stats
+    MinReplicaStats minReplica;
+    minReplica[0] = 123;
+    minReplica[3] = 456;
+    f.minReplicaProvider.minReplica = minReplica;
+
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s)); // Start tracking time
+    auto root = f.to_slime();
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, std::nullopt));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, std::nullopt));
+
+    // TODO make this stuff easier to express....
+    //                                                                          counted as responses
+    //                                                                            |-------------|
+    f.content_node_stats_provider._stats.per_node[0] = ContentNodeMessageStats(15,  1,  2, 3,  4,  5);
+    f.content_node_stats_provider._stats.per_node[3] = ContentNodeMessageStats(60, 10, 20, 8, 11, 12);
+    //                                                                                  ^-- net errors
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s*2));
+
+    root = f.to_slime();
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{1+2+3+4, 2}));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, ExpectedResponseStats{10+20+8+11, 20}));
+
+    // Timer callbacks within the current window does not update deltas
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s*2 + 59s));
+    root = f.to_slime();
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{1+2+3+4, 2}));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, ExpectedResponseStats{10+20+8+11, 20}));
+
+    f.content_node_stats_provider._stats.per_node[0] = ContentNodeMessageStats(20,  6,  5, 3,  4,  5);
+    f.content_node_stats_provider._stats.per_node[3] = ContentNodeMessageStats(90, 35, 30, 8, 11, 12);
+
+    // A new time window _does_ update deltas
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s*3));
+    root = f.to_slime();
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, ExpectedResponseStats{(6+5+3+4) - (1+2+3+4), 5-2}));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, ExpectedResponseStats{(35+30+8+11) - (10+20+8+11), 30-20}));
+}
+
+TEST_F(DistributorHostInfoReporterTest, per_content_node_response_stats_are_only_reported_when_present) {
+    Fixture f;
+    // Prime some unrelated information for the content node reporting so that they're
+    // always present independent of the error stats
+    // TODO dedupe
+    MinReplicaStats minReplica;
+    minReplica[0] = 123;
+    minReplica[3] = 456;
+    f.minReplicaProvider.minReplica = minReplica;
+
+    // Stats are present, but without any errors. Nothing to report
+    f.content_node_stats_provider._stats.per_node[0] = ContentNodeMessageStats(20, 10, 0, 0, 0, 0);
+    f.content_node_stats_provider._stats.per_node[3] = ContentNodeMessageStats(30, 30, 0, 0, 0, 0);
+    f.reporter.on_periodic_callback(std::chrono::steady_clock::time_point(60s));
+
+    auto root = f.to_slime();
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 0, std::nullopt));
+    EXPECT_NO_FATAL_FAILURE(verify_node_response_stats(root, 3, std::nullopt));
 }
 
 TEST_F(DistributorHostInfoReporterTest, merge_per_node_bucket_spaces_stats) {

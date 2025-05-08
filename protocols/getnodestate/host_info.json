@@ -100,6 +100,10 @@
             {
                 "node-index": 1,
                 "min-current-replication-factor": 2,
+                "response-stats": {
+                    "total-count": 10000,
+                    "network-errors": 2500
+                },
                 "bucket-spaces": [
                     {
                         "name": "default"
