@@ -56,13 +56,18 @@ func (out *output) fmt(format string, args ...interface{}) {
 }
 
 type Context struct {
-	root             slime.Value
-	timing           *timing
-	selectMedianNode bool
+	root                slime.Value
+	timing              *timing
+	selectMedianNode    bool
+	showDispatchedQuery bool
 }
 
 func (ctx *Context) SelectMedianNode() {
 	ctx.selectMedianNode = true
+}
+
+func (ctx *Context) ShowDispatchedQuery() {
+	ctx.showDispatchedQuery = true
 }
 
 func NewContext(root slime.Value) *Context {
@@ -160,6 +165,18 @@ func (s searchMeta) render(out *output) {
 	tab.render(out)
 }
 
+func (ctx *Context) maybeShowDispatchedQuery(group protonTraceGroup, out *output) {
+	if ctx.showDispatchedQuery {
+		if query := group.extractDispatchedQuery(ctx.root); query != "" {
+			out.fmt("dispatched query (requested by user)\n")
+			buf := renderCell(&cellFrame{cell: makeMultiLineTextCell(query, 100)})
+			buf.render(out)
+		} else {
+			out.fmt("dispatched query requested by user but not found\n")
+		}
+	}
+}
+
 func (ctx *Context) Analyze(stdout io.Writer) error {
 	out := &output{out: stdout}
 	ctx.timing.render(out)
@@ -169,6 +186,7 @@ func (ctx *Context) Analyze(stdout io.Writer) error {
 		searchMeta{groups}.render(out)
 		idx := selectSlowestGroup(groups)
 		out.fmt("looking into search #%d\n", idx)
+		ctx.maybeShowDispatchedQuery(groups[idx], out)
 		worst, median := selectSlowestNode(groups[idx].traces)
 		out.fmt("slowest node was: %s: %.3f ms\n", worst.desc(), worst.durationMs())
 		if median != worst {
