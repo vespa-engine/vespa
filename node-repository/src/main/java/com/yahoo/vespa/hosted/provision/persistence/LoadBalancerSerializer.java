@@ -56,7 +56,6 @@ public class LoadBalancerSerializer {
     private static final String realsField = "reals";
     private static final String ipAddressField = "ipAddress";
     private static final String portField = "port";
-    private static final String serviceIdField = "serviceId";
     private static final String serviceIdsField = "serviceIds";
     private static final String cloudAccountField = "cloudAccount";
     private static final String settingsField = "settings";
@@ -93,9 +92,6 @@ public class LoadBalancerSerializer {
         loadBalancer.instance()
                     .map(LoadBalancerInstance::settings)
                     .ifPresent(settings -> toSlime(root.setObject(settingsField), settings));
-        loadBalancer.instance()
-                    .flatMap(LoadBalancerInstance::serviceId)
-                    .ifPresent(serviceId -> root.setString(serviceIdField, serviceId.value())); // TODO: remove after winter vacation '23
         loadBalancer.instance().stream()
                     .map(LoadBalancerInstance::serviceIds).flatMap(List::stream)
                     .map(PrivateServiceId::value)
