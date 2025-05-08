@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.PrivateServiceId;
 import com.yahoo.vespa.hosted.provision.lb.Real;
-import com.yahoo.vespa.hosted.provision.provisioning.LoadBalancerProvisioner;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -29,7 +28,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 /**
  * Serializer for load balancers.
@@ -58,7 +56,6 @@ public class LoadBalancerSerializer {
     private static final String realsField = "reals";
     private static final String ipAddressField = "ipAddress";
     private static final String portField = "port";
-    private static final String serviceIdField = "serviceId";
     private static final String serviceIdsField = "serviceIds";
     private static final String cloudAccountField = "cloudAccount";
     private static final String settingsField = "settings";
@@ -95,9 +92,6 @@ public class LoadBalancerSerializer {
         loadBalancer.instance()
                     .map(LoadBalancerInstance::settings)
                     .ifPresent(settings -> toSlime(root.setObject(settingsField), settings));
-        loadBalancer.instance()
-                    .flatMap(LoadBalancerInstance::serviceId)
-                    .ifPresent(serviceId -> root.setString(serviceIdField, serviceId.value())); // TODO: remove after winter vacation '23
         loadBalancer.instance().stream()
                     .map(LoadBalancerInstance::serviceIds).flatMap(List::stream)
                     .map(PrivateServiceId::value)
@@ -121,7 +115,6 @@ public class LoadBalancerSerializer {
             reals.add(new Real(DomainName.of(realObject.field(hostnameField).asString()),
                                realObject.field(ipAddressField).asString(),
                                (int) realObject.field(portField).asLong()));
-
         });
 
         Set<Integer> ports = new LinkedHashSet<>();
@@ -136,10 +129,8 @@ public class LoadBalancerSerializer {
         Optional<String> ip6Address = SlimeUtils.optionalString(object.field(lbIp6AddressField));
         Optional<DnsZone> dnsZone = optionalString(object.field(dnsZoneField), DnsZone::new);
         ZoneEndpoint settings = zoneEndpoint(object.field(settingsField));
-        Optional<PrivateServiceId> serviceId = optionalString(object.field(serviceIdField), PrivateServiceId::of);
         List<PrivateServiceId> serviceIds = new ArrayList<>();
         object.field(serviceIdsField).traverse((ArrayTraverser) (__, serviceIdObject) -> serviceIds.add(PrivateServiceId.of(serviceIdObject.asString())));
-        if (serviceIds.isEmpty()) serviceId.ifPresent(serviceIds::add); // TODO: remove after winter vacation '23
         CloudAccount cloudAccount = optionalString(object.field(cloudAccountField), CloudAccount::from).orElse(CloudAccount.empty);
         Optional<LoadBalancerInstance> instance = hostname.isEmpty() && ip4Address.isEmpty() && ip6Address.isEmpty()
                                                   ? Optional.empty()

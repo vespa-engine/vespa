@@ -291,14 +291,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2025-05-07",
+            List.of("eirik"), "2024-11-07", "2025-06-01",
             "Enforce SSO login for an email domain",
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
     public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
             "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2025-05-07",
+            List.of("eirik"), "2024-11-07", "2025-06-01",
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
@@ -376,6 +376,14 @@ public class Flags {
             List.of("bjorncs"), "2025-04-30", "2026-01-04",
             "Whether to use Triton as ONNX runtime",
             "Takes effect at redeployment"
+    );
+
+    public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
+            "delete-tenant-roles", false,
+            List.of("andreer"), "2025-05-05", "2025-06-01",
+            "Whether to delete tenant specific roles",
+            "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
+            TENANT_ID
     );
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */

@@ -37,8 +37,8 @@ public class GenerateExpression extends Expression {
                               String generatorId,
                               List<String> generatorArguments) {
         this.linguistics = linguistics;
-        this.generator = new SelectedComponent<>("generator", generators, generatorId, generatorArguments,
-                                                 FieldGenerator.FailingFieldGenerator::new);
+        this.generator = new SelectedComponent<>("generator", generators, generatorId, true,
+                                                 generatorArguments, FieldGenerator.FailingFieldGenerator::new);
     }
 
     @Override

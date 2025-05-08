@@ -24,7 +24,6 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.language.process.FieldGenerator;
-import com.yahoo.language.provider.DefaultChunkerProvider;
 import com.yahoo.language.provider.DefaultEmbedderProvider;
 import com.yahoo.language.provider.DefaultGeneratorProvider;
 import com.yahoo.vespa.configdefinition.IlscriptsConfig;
@@ -71,7 +70,7 @@ public class IndexingProcessor extends DocumentProcessor {
              new ScriptManager(documentTypeManager,
                                ilscriptsConfig,
                                linguistics,
-                               toMap(chunkers, DefaultChunkerProvider.class),
+                               toMap(chunkers, null), // No failing default since we add pure Java default components
                                toMap(embedders, DefaultEmbedderProvider.class),
                                toMap(generators, DefaultGeneratorProvider.class)
                 )
@@ -156,7 +155,7 @@ public class IndexingProcessor extends DocumentProcessor {
     private static <T> Map<String, T> toMap(ComponentRegistry<T> registry, Class<?> defaultProviderClass) {
         var map = registry.allComponentsById().entrySet().stream()
                 .collect(Collectors.toMap(e -> e.getKey().stringValue(), Map.Entry::getValue));
-        if (map.size() > 1) {
+        if (map.size() > 1 && defaultProviderClass != null) {
             map.remove(defaultProviderClass.getName());
             // Ideally, this should be handled by dependency injection, however for now this workaround is necessary.
         }

@@ -9,10 +9,15 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AnyConfigProducer;
 import com.yahoo.config.model.producer.TreeConfigProducer;
+import com.yahoo.config.provision.CloudAccount;
 import com.yahoo.config.provision.ClusterInfo;
+import com.yahoo.config.provision.ClusterInfo.Builder;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.model.VespaModel;
 
+import java.time.Duration;
 import java.util.Comparator;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
@@ -81,7 +86,7 @@ public final class ConfigModelContext {
             .ifPresent(builder::hostTTL);
         spec.instance(properties().applicationId().instance())
             .flatMap(instance -> instance.bcp().groups().stream()
-                                         .filter(group -> group.memberRegions().contains(deployState.zone().region()))
+                                         .filter(group -> group.memberRegions().contains(properties().zone().region()))
                                          .map(Group::deadline)
                                          .min(Comparator.naturalOrder()))
             .ifPresent(builder::bcpDeadline);

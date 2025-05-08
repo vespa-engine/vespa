@@ -113,7 +113,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
-        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.505") default boolean symmetricPutAndActivateReplicaSelection() { return true; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.517") default boolean symmetricPutAndActivateReplicaSelection() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
@@ -136,7 +136,7 @@ public interface ModelContext {
         AthenzDomain tenantSecretDomain();
         String athenzDnsSuffix();
         boolean hostedVespa();
-        default Zone zone() { return Zone.defaultZone(); } // TODO: remove when not used by config models anymore (8.516)
+        Zone zone();
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();

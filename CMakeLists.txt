@@ -54,6 +54,7 @@ find_package(GTest REQUIRED)
 find_package(Protobuf REQUIRED CONFIG)
 
 include(build_settings.cmake)
+include(cxx_settings.cmake)
 
 # Enable CTest unit testing
 enable_testing()
@@ -83,6 +84,7 @@ vespa_configure_exported_configversion()
 install(FILES
   functions.cmake
   build_settings.cmake
+  cxx_settings.cmake
   default_build_settings.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/vespaConfig.cmake
   ${CMAKE_CURRENT_BINARY_DIR}/vespaConfigVersion.cmake

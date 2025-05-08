@@ -22,6 +22,7 @@ public class Flavor {
     private final boolean configured;
     private final String name;
     private final int cost;
+    private final double cpuSpeedup;
     private final Type type;
 
     /** The hardware resources of this flavor */
@@ -32,7 +33,7 @@ public class Flavor {
     /** Creates a *host* flavor from configuration */
     public Flavor(FlavorsConfig.Flavor flavorConfig) {
         this(flavorConfig.name(),
-             new NodeResources(flavorConfig.minCpuCores() * flavorConfig.cpuSpeedup(),
+             new NodeResources(overcommitVcpuOnBareMetal(flavorConfig.minCpuCores(), flavorConfig.cpuSpeedup(), flavorConfig.environment()),
                                flavorConfig.minMainMemoryAvailableGb(),
                                flavorConfig.minDiskAvailableGb(),
                                flavorConfig.bandwidth() / 1000,
@@ -43,7 +44,8 @@ public class Flavor {
              Optional.empty(),
              Type.valueOf(flavorConfig.environment()),
              true,
-             flavorConfig.cost());
+             flavorConfig.cost(),
+             flavorConfig.cpuSpeedup());
     }
 
     /** Creates a *node* flavor from a node resources spec */
@@ -62,12 +64,32 @@ public class Flavor {
                   Type type,
                   boolean configured,
                   int cost) {
+        this(name, resources, flavorOverrides, type, configured, cost, 1.0);
+    }
+    public Flavor(String name,
+                  NodeResources resources,
+                  Optional<FlavorOverrides> flavorOverrides,
+                  Type type,
+                  boolean configured,
+                  int cost,
+                  double cpuSpeedup) {
         this.name = Objects.requireNonNull(name, "Name cannot be null");
         this.resources = Objects.requireNonNull(resources, "Resources cannot be null");
         this.flavorOverrides = Objects.requireNonNull(flavorOverrides, "Flavor overrides cannot be null");
         this.type = Objects.requireNonNull(type, "Type cannot be null");
         this.configured = configured;
         this.cost = cost;
+        this.cpuSpeedup = cpuSpeedup;
+    }
+
+    /**
+     * With (legacy) bare metal nodes we adjust for performance improvements on newer generations by
+     * adding scaling up vcpu, leading to overcommiting on these nodes.
+     * This does not make sense on public clouds - where "type" is not bare metal -
+     * and where such gains should be passed to customers.
+     */
+    private static double overcommitVcpuOnBareMetal(double vcpus, double cpuSpeedup, String environment) {
+        return Type.valueOf(environment) == Type.BARE_METAL ? vcpus * cpuSpeedup : vcpus;
     }
 
     public Flavor with(FlavorOverrides flavorOverrides) {
@@ -98,6 +120,12 @@ public class Flavor {
      * @return monthly cost in USD
      */
     public int cost() { return cost; }
+
+    /** Returns cost adjusted for cpu speedup, suitable for comparing performance per dollar. */
+    public double performanceAdjustedCost() {
+        if (type == Type.BARE_METAL) return cost; // Speedup is reflected in vcpu instead
+        return cost / cpuSpeedup;
+    }
 
     /**
      * True if this is a configured flavor used for hosts,

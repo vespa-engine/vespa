@@ -35,8 +35,8 @@ public class ChunkExpression extends Expression  {
 
     public ChunkExpression(Map<String, Chunker> chunkers, String chunkerId,
                            List<String> chunkerArguments) {
-        chunker = new SelectedComponent<>("chunker", chunkers, chunkerId, chunkerArguments,
-                                          Chunker.FailingChunker::new);
+        chunker = new SelectedComponent<>("chunker", chunkers, chunkerId, false,
+                                          chunkerArguments, Chunker.FailingChunker::new);
     }
 
     @Override
@@ -61,7 +61,7 @@ public class ChunkExpression extends Expression  {
         String input = String.valueOf(context.getCurrentValue());
         Array<StringFieldValue> output = new Array<>(DataType.getArray(DataType.STRING));
         if (!input.isEmpty()) {
-            var chunkContext = new Chunker.Context(destination, context.getCache());
+            var chunkContext = new Chunker.Context(destination, chunker.arguments(), context.getCache());
             for (Chunker.Chunk chunk : chunker.component().chunk(input, chunkContext)) {
                 output.add(new StringFieldValue(chunk.text()));
             }

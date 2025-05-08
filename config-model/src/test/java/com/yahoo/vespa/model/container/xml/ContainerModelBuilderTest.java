@@ -341,8 +341,8 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 .applicationPackage(applicationPackage)
                 .endpoints(Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
                 .properties(new TestProperties().setMultitenant(true)
-                                                .setHostedVespa(true))
-                .zone(new Zone(environment, RegionName.from(region)))
+                                                .setHostedVespa(true)
+                                                .setZone(new Zone(environment, RegionName.from(region))))
                 .build());
         assertEquals(2, model.hostSystem().getHosts().size());
         assertEquals(1, provisioner.provisionedClusters().size());

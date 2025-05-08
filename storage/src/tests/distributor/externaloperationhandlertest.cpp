@@ -489,7 +489,8 @@ void ExternalOperationHandlerTest::do_test_second_command_rejected_due_to_oversi
     Operation::SP generated;
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_not_rejected(std::move(cmd1), generated));
     ASSERT_NO_FATAL_FAILURE(start_operation_verify_rejected(std::move(cmd2)));
-    EXPECT_EQ("ReturnCode(REJECTED, Message size (1001 bytes) exceeds maximum configured limit (1000 bytes))",
+    EXPECT_EQ("ReturnCode(REJECTED, Message size (1001 bytes) exceeds maximum configured limit (1000 bytes), "
+	      "see https://docs.vespa.ai/en/reference/services-content.html#max-document-size for how to configure)",
               _sender.reply(0)->getResult().toString());
 }
 

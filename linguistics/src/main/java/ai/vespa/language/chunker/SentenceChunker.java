@@ -15,13 +15,15 @@ import java.util.List;
  */
 public class SentenceChunker implements Chunker {
 
-    @Override
-    public boolean isReversible() { return true; }
+    private final CharacterClasses characters = new CharacterClasses();
 
     @Override
     public List<Chunk> chunk(String inputText, Context context) {
+        return context.computeCachedValueIfAbsent(new CacheKey(this, inputText), () -> computeChunks(inputText));
+    }
+
+    private List<Chunk> computeChunks(String inputText) {
         var text = new UnicodeString(inputText);
-        var characters = new CharacterClasses();
         List<Chunk> chunks = new ArrayList<>();
         var currentChunk = new StringBuilder();
         boolean currentHasContent = false;
@@ -42,5 +44,7 @@ public class SentenceChunker implements Chunker {
             chunks.add(new Chunk(currentChunk.toString()));
         return chunks;
     }
+
+    private record CacheKey(SentenceChunker chunker, String inputText) {};
 
 }

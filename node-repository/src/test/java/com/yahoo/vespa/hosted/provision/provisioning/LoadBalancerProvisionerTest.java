@@ -410,7 +410,10 @@ public class LoadBalancerProvisionerTest {
 
         // Next deployment has only a private endpoint
         ZoneEndpoint settings = new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "alice"), new AllowedUrn(AccessType.gcpServiceConnect, "bob")));
-        assertEquals("Could not (re)configure load balancer tenant1:application1:default:c1 due to change in load balancer visibility. The operation will be retried on next deployment",
+        assertEquals("Could not (re)configure load balancer tenant1:application1:default:c1 due to change in load balancer visibility." +
+                             " Current load balancer settings: ZoneEndpoint{isPublicEndpoint=true, isPrivateEndpoint=false, allowedUrns=[]}," +
+                             " zone endpoint settings: ZoneEndpoint{isPublicEndpoint=false, isPrivateEndpoint=true, allowedUrns=['alice' through 'aws-private-link', 'bob' through 'gcp-service-connect']}." +
+                             " The operation will be retried on next deployment",
                      assertThrows(LoadBalancerServiceException.class,
                                   () -> prepare(app1, capacity, clusterRequest(container, ClusterSpec.Id.from("c1"), Optional.empty(), settings)))
                              .getMessage());

@@ -19,7 +19,6 @@ import static com.yahoo.vespa.model.container.xml.ModelIdResolver.SIGNIFICANCE_M
  * A registry for significance models.
  *
  * @author MariusArhaug
- *
  */
 public class SignificanceModelRegistry extends SimpleComponent implements SignificanceConfig.Producer {
 
@@ -66,4 +65,3 @@ public class SignificanceModelRegistry extends SimpleComponent implements Signif
 
     }
 }
-

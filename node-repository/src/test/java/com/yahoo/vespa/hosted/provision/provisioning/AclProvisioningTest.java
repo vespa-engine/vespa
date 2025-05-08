@@ -40,7 +40,7 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_allocated_node() {
-        NodeList configServers = tester.makeConfigServers(3, "d-1-4-10", Version.fromString("6.123.456"));
+        NodeList configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, new NodeResources(1, 4, 10, 1));

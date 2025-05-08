@@ -76,6 +76,45 @@ public class FeedConfigTest {
         assertEquals("Client key should default to data-plane-private-key.pem in app dir", 
                     expectedKeyPath, config.getClientKey());
     }
+
+    @Test
+    public void testProvidedClientCertificatePaths() {
+        // Test that provided paths are preserved
+        String appDir = "/path/to/app";
+        String providedCertPath = "/custom/path/cert.pem";
+        String providedKeyPath = "/custom/path/key.pem";
+        
+        FeedConfig config = new FeedConfig(
+            "test-namespace", false, "test-doc-type", false, 
+            "put", false, "id", false, 180, false, 
+            providedCertPath, providedKeyPath, appDir
+        );
+        
+        assertEquals("Client cert should use provided path", 
+                    providedCertPath, config.getClientCert());
+        assertEquals("Client key should use provided path", 
+                    providedKeyPath, config.getClientKey());
+    }
+
+    @Test
+    public void testMixedClientCertificatePaths() {
+        // Test mixed case where one path is provided and one uses default
+        String appDir = "/path/to/app";
+        String providedCertPath = "/custom/path/cert.pem";
+        
+        FeedConfig config = new FeedConfig(
+            "test-namespace", false, "test-doc-type", false, 
+            "put", false, "id", false, 180, false, 
+            providedCertPath, null, appDir
+        );
+        
+        String expectedKeyPath = Paths.get(appDir, "data-plane-private-key.pem").toString();
+        
+        assertEquals("Client cert should use provided path", 
+                    providedCertPath, config.getClientCert());
+        assertEquals("Client key should use default path", 
+                    expectedKeyPath, config.getClientKey());
+    }
     
     @Test
     public void testNamespaceDefaultsToDocumentType() {

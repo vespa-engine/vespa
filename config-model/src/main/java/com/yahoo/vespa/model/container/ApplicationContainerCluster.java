@@ -128,6 +128,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                                                                .map(HostSpec::hostname)
                                                                .collect(Collectors.toCollection(() -> new LinkedHashSet<>())));
 
+        addSimpleComponent("fixed-length", "ai.vespa.language.chunker.FixedLengthChunker");
+        addSimpleComponent("sentence",     "ai.vespa.language.chunker.SentenceChunker");
         addSimpleComponent("com.yahoo.language.provider.DefaultLinguisticsProvider");
         addSimpleComponent("com.yahoo.language.provider.DefaultEmbedderProvider");
         addSimpleComponent("com.yahoo.language.provider.DefaultGeneratorProvider");

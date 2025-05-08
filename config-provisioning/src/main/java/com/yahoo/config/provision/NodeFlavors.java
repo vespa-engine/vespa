@@ -11,7 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * All the flavors configured in this zone (i.e this should be called HostFlavors).
@@ -39,18 +38,13 @@ public class NodeFlavors {
         return new ArrayList<>(configuredFlavors.values());
     }
 
-    /** Returns a flavor by name, or empty if there is no flavor with this name and it cannot be created on the fly. */
+    /** Returns a flavor by name, or empty if there is no flavor with this name. */
     public Optional<Flavor> getFlavor(String name) {
-        if (configuredFlavors.containsKey(name))
-            return Optional.of(configuredFlavors.get(name));
-
-        NodeResources nodeResources = NodeResources.fromLegacyName(name);
-        return Optional.of(new Flavor(nodeResources));
+        return Optional.ofNullable(configuredFlavors.get(name));
     }
 
     /**
-     * Returns the flavor with the given name or throws an IllegalArgumentException if it does not exist
-     * and cannot be created on the fly.
+     * Returns the flavor with the given name or throws an IllegalArgumentException if it does not exist.
      */
     public Flavor getFlavorOrThrow(String flavorName) {
         return getFlavor(flavorName).orElseThrow(() -> new IllegalArgumentException("Unknown flavor '" + flavorName + "'"));

@@ -1189,7 +1189,7 @@ public class NodesV2ApiTest {
     private static String asDockerNodeJson(String hostname, NodeType nodeType, String parentHostname, String... ipAddress) {
         return "{\"hostname\":\"" + hostname + "\", \"parentHostname\":\"" + parentHostname + "\"," +
                createIpAddresses(ipAddress) +
-               "\"id\":\"" + hostname + "\",\"flavor\":\"d-1-1-100\"" +
+               "\"id\":\"" + hostname + "\",\"resources\":{\"vcpu\": 1.0, \"memoryGb\": 1.0, \"diskGb\": 100.0, \"bandwidthGbps\": 0.3, \"architecture\": \"any\"}" +
                (nodeType != NodeType.tenant ? ",\"type\":\"" + nodeType +  "\"" : "") +
                "}";
     }
