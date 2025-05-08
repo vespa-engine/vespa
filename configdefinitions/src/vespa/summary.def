@@ -14,3 +14,5 @@ classes[].fields[].name string
 classes[].fields[].command string default=""
 # The name of the source field used by the command.
 classes[].fields[].source string default=""
+classes[].fields[].elements.select enum { ALL, BY_MATCH, BY_SUMMARY_FEATURE } default=ALL
+classes[].fields[].elements.summary_feature string default=""
