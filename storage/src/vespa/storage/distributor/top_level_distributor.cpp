@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 //
 #include "blockingoperationstarter.h"
+#include "content_node_message_stats_tracker.h"
 #include "top_level_bucket_db_updater.h"
 #include "top_level_distributor.h"
 #include "distributor_bucket_space.h"
@@ -12,6 +13,7 @@
 #include "multi_threaded_stripe_access_guard.h"
 #include "operation_sequencer.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
+#include "stats_tracking_sender.h"
 #include "throttlingoperationstarter.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storage/common/bucket_stripe_utils.h>
@@ -65,6 +67,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
       _component(*this, compReg, "distributor"),
       _ideal_state_component(compReg, "Ideal state manager"),
       _total_config(_component.total_distributor_config_sp()),
+      _stats_tracking_sender(std::make_unique<StatsTrackingSender>(*this)),
       _bucket_db_updater(),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucket_db_status_delegate(),
@@ -79,7 +82,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
       _maintenance_safe_time_delay(1s),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
       _metricUpdateHook(*this),
-      _hostInfoReporter(*this, *this),
+      _hostInfoReporter(*this, *this, *this),
       _distribution(),
       _next_distribution(),
       _current_internal_config_generation(_component.internal_config_generation())
@@ -94,7 +97,7 @@ TopLevelDistributor::TopLevelDistributor(DistributorComponentRegister& compReg,
         num_distributor_stripes, _n_stripe_bits);
     _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(_stripe_pool);
     _bucket_db_updater = std::make_unique<TopLevelBucketDBUpdater>(_component, _component,
-                                                                   *this, *this,
+                                                                   *this, *_stats_tracking_sender, *this,
                                                                    _component.getDistribution(),
                                                                    *_stripe_accessor,
                                                                    this);
@@ -412,6 +415,16 @@ TopLevelDistributor::distributor_global_stats() const
     return result;
 }
 
+ContentNodeMessageStatsTracker::NodeStats
+TopLevelDistributor::content_node_stats() const
+{
+    auto stats = _stats_tracking_sender->node_stats(); // start with our own top-level stats
+    for (const auto& stripe : _stripes) {
+        stats.merge(stripe->content_node_stats());
+    }
+    return stats;
+}
+
 void
 TopLevelDistributor::propagateInternalScanMetricsToExternal()
 {
@@ -442,6 +455,12 @@ void
 TopLevelDistributor::process_fetched_external_messages()
 {
     for (auto& msg : _fetched_messages) {
+        if (msg->getType().isReply()) {
+            const auto& as_reply = static_cast<const api::StorageReply&>(*msg);
+            _stats_tracking_sender->observe_incoming_response_result(
+                    as_reply.getAddress()->getIndex(), as_reply.getType().getId(),
+                    as_reply.getResult().getResult());
+        }
         MBUS_TRACE(msg->getTrace(), 9, "Distributor: Processing message in main thread");
         if (!msg->callHandler(*_bucket_db_updater, msg)) {
             MBUS_TRACE(msg->getTrace(), 9, "Distributor: Not handling it. Sending further down");

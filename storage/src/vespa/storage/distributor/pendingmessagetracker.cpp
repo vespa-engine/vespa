@@ -2,6 +2,7 @@
 #include "pendingmessagetracker.h"
 #include <vespa/storageframework/generic/clock/clock.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <map>
 
@@ -17,6 +18,7 @@ PendingMessageTracker::PendingMessageTracker(framework::ComponentRegister& cr, u
       _nodeInfo(_component.getClock()),
       _nodeBusyDuration(60s),
       _deferred_read_tasks(),
+      _node_message_stats_tracker(),
       _trackTime(false),
       _lock()
 {
@@ -94,6 +96,7 @@ PendingMessageTracker::clearMessagesForNode(uint16_t node)
         // For simplicity, we use a metaphorical sledgehammer and abort deferred tasks for
         // _all_ buckets touched by messages towards a cleared node.
         get_and_erase_deferred_tasks_for_bucket(entry.bucket, tasks_to_abort);
+        _node_message_stats_tracker.stats_for(entry.nodeIdx).observe_cancelled();
     }
     idx.erase(std::begin(range), std::end(range));
 
@@ -137,11 +140,12 @@ PendingMessageTracker::insert(const std::shared_ptr<api::StorageMessage>& msg)
             // We will not start tracking time until we have been asked for html at least once.
             // Time tracking is only used for presenting pending messages for debugging.
             TimePoint now = (_trackTime.load(std::memory_order_relaxed)) ? currentTime() : TimePoint();
+            const uint16_t node_index = msg->getAddress()->getIndex();
             std::lock_guard guard(_lock);
-            _messages.emplace(now, msg->getType().getId(), msg->getPriority(), msg->getMsgId(),
-                              bucket, msg->getAddress()->getIndex());
+            _messages.emplace(now, msg->getType().getId(), msg->getPriority(), msg->getMsgId(), bucket, node_index);
 
-            _nodeInfo.incPending(msg->getAddress()->getIndex());
+            _nodeInfo.incPending(node_index);
+            _node_message_stats_tracker.stats_for(node_index).observe_outgoing_request();
         }
 
         LOG(debug, "Sending message %s with id %" PRIu64 " to %s",
@@ -161,16 +165,17 @@ PendingMessageTracker::reply(const api::StorageReply& r)
     auto iter = msgs.find(msgId);
     if (iter != msgs.end()) {
         bucket = iter->bucket;
-        _nodeInfo.decPending(r.getAddress()->getIndex());
+        const uint16_t node_index = r.getAddress()->getIndex();
+        _nodeInfo.decPending(node_index);
         api::ReturnCode::Result code = r.getResult().getResult();
+        _node_message_stats_tracker.stats_for(node_index).observe_incoming_response_result(r.getType().getId(), code);
         if (code == api::ReturnCode::BUSY || code == api::ReturnCode::TIMEOUT) {
-            _nodeInfo.setBusy(r.getAddress()->getIndex(), _nodeBusyDuration);
+            _nodeInfo.setBusy(node_index, _nodeBusyDuration);
         }
         msgs.erase(msgId);
         auto deferred_tasks = get_deferred_ops_if_bucket_writes_drained(bucket);
         // Deferred tasks may try to send messages, which in turn will invoke the PendingMessageTracker.
         // To avoid deadlocking, we run the tasks outside the lock.
-        // TODO remove locking entirely... Only exists for status pages!
         guard.unlock();
         // We expect this to be "effectively noexcept", i.e. any tasks throwing an
         // exception will end up nuking the distributor process from the unwind.
@@ -181,6 +186,12 @@ PendingMessageTracker::reply(const api::StorageReply& r)
     }
 
     return bucket;
+}
+
+ContentNodeMessageStatsTracker::NodeStats
+PendingMessageTracker::content_node_stats() const {
+    std::lock_guard lock(_lock);
+    return _node_message_stats_tracker.node_stats();
 }
 
 namespace {

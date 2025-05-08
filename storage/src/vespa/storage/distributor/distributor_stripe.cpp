@@ -675,6 +675,13 @@ DistributorStripe::distributor_global_stats() const
     return _global_stats;
 }
 
+ContentNodeMessageStatsTracker::NodeStats
+DistributorStripe::content_node_stats() const
+{
+    // Thread safety is ensured by PendingMessageTracker
+    return _pendingMessageTracker.content_node_stats();
+}
+
 SimpleMaintenanceScanner::PendingMaintenanceStats
 DistributorStripe::pending_maintenance_stats() const {
     std::lock_guard guard(_metricLock);

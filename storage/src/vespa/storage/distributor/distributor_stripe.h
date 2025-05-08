@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bucket_spaces_stats_provider.h"
+#include "content_node_stats_provider.h"
 #include "distributor_host_info_reporter.h"
 #include "distributor_stripe_interface.h"
 #include "externaloperationhandler.h"
@@ -58,6 +59,7 @@ class DistributorStripe final
     : public DistributorStripeInterface,
       public MinReplicaProvider,
       public BucketSpacesStatsProvider,
+      public ContentNodeStatsProvider,
       public NonTrackingMessageSender,
       public TickableStripe
 {
@@ -225,6 +227,7 @@ private:
 
     PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const override;
     DistributorGlobalStats distributor_global_stats() const override;
+    ContentNodeMessageStatsTracker::NodeStats content_node_stats() const override;;
 
     SimpleMaintenanceScanner::PendingMaintenanceStats pending_maintenance_stats() const;
 

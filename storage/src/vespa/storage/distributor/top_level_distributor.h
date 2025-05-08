@@ -4,6 +4,7 @@
 
 #include "bucket_spaces_stats_provider.h"
 #include "cluster_state_bundle_activation_listener.h"
+#include "content_node_stats_provider.h"
 #include "top_level_bucket_db_updater.h"
 #include "distributor_component.h"
 #include "distributor_host_info_reporter.h"
@@ -51,6 +52,7 @@ class StripeAccessor;
 class OperationSequencer;
 class OwnershipTransferSafeTimePointCalculator;
 class SimpleMaintenanceScanner;
+class StatsTrackingSender;
 class ThrottlingOperationStarter;
 
 class TopLevelDistributor final
@@ -61,6 +63,7 @@ class TopLevelDistributor final
       public framework::TickingThread,
       public MinReplicaProvider,
       public BucketSpacesStatsProvider,
+      public ContentNodeStatsProvider,
       public StripeHostInfoNotifier,
       public ClusterStateBundleActivationListener
 {
@@ -151,6 +154,7 @@ private:
 
     PerNodeBucketSpacesStats per_node_bucket_spaces_stats() const override;
     DistributorGlobalStats distributor_global_stats() const override;
+    ContentNodeMessageStatsTracker::NodeStats content_node_stats() const override;
 
     /**
      * Atomically publish internal metrics to external ideal state metrics.
@@ -206,6 +210,7 @@ private:
     distributor::DistributorComponent    _component;
     storage::DistributorComponent        _ideal_state_component;
     std::shared_ptr<const DistributorConfiguration> _total_config;
+    std::unique_ptr<StatsTrackingSender> _stats_tracking_sender;
     std::unique_ptr<TopLevelBucketDBUpdater>     _bucket_db_updater;
     StatusReporterDelegate               _distributorStatusDelegate;
     std::unique_ptr<StatusReporterDelegate> _bucket_db_status_delegate;

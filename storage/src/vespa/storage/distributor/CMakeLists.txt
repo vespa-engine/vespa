@@ -12,6 +12,8 @@ vespa_add_library(storage_distributor OBJECT
     bucketlistmerger.cpp
     cancelled_replicas_pruner.cpp
     clusterinformation.cpp
+    content_node_message_stats.cpp
+    content_node_message_stats_tracker.cpp
     crypto_uuid_generator.cpp
     distributor_bucket_space.cpp
     distributor_bucket_space_repo.cpp
@@ -49,6 +51,7 @@ vespa_add_library(storage_distributor OBJECT
     sentmessagemap.cpp
     statechecker.cpp
     statecheckers.cpp
+    stats_tracking_sender.cpp
     statusreporterdelegate.cpp
     stripe_bucket_db_updater.cpp
     throttlingoperationstarter.cpp

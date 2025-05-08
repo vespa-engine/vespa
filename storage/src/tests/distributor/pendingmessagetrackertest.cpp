@@ -12,6 +12,7 @@
 #include <vespa/storageframework/defaultimplementation/clock/fakeclock.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <functional>
@@ -685,6 +686,20 @@ TEST_F(PendingMessageTrackerTest, can_enumerate_all_message_ids_for_ops_to_match
     // Global space has only 1 entry
     EXPECT_THAT(f.enumerate_msg_ids(bucket_eq_fn(Bucket(global_space, bucket_id_a))),
                 ElementsAre(global_msg->getMsgId()));
+}
+
+TEST_F(PendingMessageTrackerTest, message_stats_are_updated_on_send_and_receive) {
+    Fixture f;
+    auto cmd = f.sendPut(RequestBuilder().toNode(0));
+    auto stats = f.tracker().content_node_stats();
+    ASSERT_TRUE(stats.per_node.contains(0));
+    EXPECT_EQ(stats.per_node[0].sent, 1);
+    EXPECT_EQ(stats.per_node[0].sum_received(), 0);
+    f.sendPutReply(*cmd, RequestBuilder(), api::ReturnCode(api::ReturnCode::OK));
+    stats = f.tracker().content_node_stats();
+    ASSERT_TRUE(stats.per_node.contains(0));
+    EXPECT_EQ(stats.per_node[0].recv_ok, 1);
+    EXPECT_EQ(stats.per_node[0].sum_received(), 1);
 }
 
 }
