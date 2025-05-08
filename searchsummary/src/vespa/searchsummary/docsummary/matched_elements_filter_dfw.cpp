@@ -30,13 +30,11 @@ namespace search::docsummary {
 const std::vector<uint32_t>&
 MatchedElementsFilterDFW::get_matching_elements(uint32_t docid, GetDocsumsState& state) const
 {
-    return state.get_matching_elements(*_matching_elems_fields).get_matching_elements(docid, _input_field_name);
+    return state.get_matching_elements().get_matching_elements(docid, _input_field_name);
 }
 
-MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_field_name,
-                                                   std::shared_ptr<MatchingElementsFields> matching_elems_fields)
-    : _input_field_name(input_field_name),
-      _matching_elems_fields(std::move(matching_elems_fields))
+MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_field_name)
+    : _input_field_name(input_field_name)
 {
 }
 
@@ -45,7 +43,7 @@ MatchedElementsFilterDFW::create(const std::string& input_field_name,
                                  std::shared_ptr<MatchingElementsFields> matching_elems_fields)
 {
     matching_elems_fields->add_field(input_field_name);
-    return std::make_unique<MatchedElementsFilterDFW>(input_field_name, std::move(matching_elems_fields));
+    return std::make_unique<MatchedElementsFilterDFW>(input_field_name);
 }
 
 std::unique_ptr<DocsumFieldWriter>
@@ -59,7 +57,7 @@ MatchedElementsFilterDFW::create(const std::string& input_field_name,
         return {};
     }
     resolver.apply_to(*matching_elems_fields);
-    return std::make_unique<MatchedElementsFilterDFW>(input_field_name, std::move(matching_elems_fields));
+    return std::make_unique<MatchedElementsFilterDFW>(input_field_name);
 }
 
 MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;

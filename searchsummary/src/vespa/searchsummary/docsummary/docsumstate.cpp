@@ -44,6 +44,7 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _stash(),
       _normalization(nullptr),
       _fieldWriterStates(),
+      _matching_elements_fields(),
       _parsedLocations(),
       _summaryFeatures(nullptr),
       _omit_summary_features(false),
@@ -56,10 +57,10 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
 GetDocsumsState::~GetDocsumsState() = default;
 
 const MatchingElements &
-GetDocsumsState::get_matching_elements(const MatchingElementsFields &matching_elems_fields)
+GetDocsumsState::get_matching_elements()
 {
     if (!_matching_elements) {
-        _matching_elements = _callback.fill_matching_elements(matching_elems_fields);
+        _matching_elements = _callback.fill_matching_elements(*_matching_elements_fields);
     }
     return *_matching_elements;
 }

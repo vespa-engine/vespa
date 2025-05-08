@@ -3,6 +3,7 @@
 #include "resultclass.h"
 #include "docsum_field_writer.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/searchlib/common/matching_elements_fields.h>
 
 namespace search::docsummary {
 
@@ -12,8 +13,11 @@ ResultClass::ResultClass(const char *name)
       _nameMap(),
       _dynInfo(),
       _omit_summary_features(false),
-      _num_field_writer_states(0)
-{ }
+      _num_field_writer_states(0),
+      _matching_elements_fields()
+{
+    _matching_elements_fields = std::make_shared<MatchingElementsFields>();
+}
 
 
 ResultClass::~ResultClass() = default;
