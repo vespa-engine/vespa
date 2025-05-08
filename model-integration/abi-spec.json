@@ -219,57 +219,6 @@
     ],
     "fields" : [ ]
   },
-  "ai.vespa.llm.clients.NvidiaTriton$ModelMetadata" : {
-    "superClass" : "java.lang.Record",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public",
-      "final",
-      "record"
-    ],
-    "methods" : [
-      "public void <init>(java.util.Map, java.util.Map)",
-      "public final java.lang.String toString()",
-      "public final int hashCode()",
-      "public final boolean equals(java.lang.Object)",
-      "public java.util.Map inputs()",
-      "public java.util.Map outputs()"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.clients.NvidiaTriton$TritonException" : {
-    "superClass" : "java.lang.RuntimeException",
-    "interfaces" : [ ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(java.lang.Throwable)",
-      "public void <init>(java.lang.String)",
-      "public void <init>(java.lang.String, java.lang.Throwable)"
-    ],
-    "fields" : [ ]
-  },
-  "ai.vespa.llm.clients.NvidiaTriton" : {
-    "superClass" : "java.lang.Object",
-    "interfaces" : [
-      "java.lang.AutoCloseable"
-    ],
-    "attributes" : [
-      "public"
-    ],
-    "methods" : [
-      "public void <init>(ai.vespa.llm.clients.TritonConfig)",
-      "public ai.vespa.llm.clients.NvidiaTriton$ModelMetadata getModelMetadata(java.lang.String)",
-      "public void loadModel(java.lang.String)",
-      "public void unloadModel(java.lang.String)",
-      "public java.util.Map evaluate(java.lang.String, java.util.Map)",
-      "public com.yahoo.tensor.Tensor evaluate(java.lang.String, java.util.Map, java.lang.String)",
-      "public java.util.Map evaluate(java.lang.String, java.util.Map, java.util.Set)",
-      "public void close()"
-    ],
-    "fields" : [ ]
-  },
   "ai.vespa.llm.clients.OnnxEncoderDecoder$DecoderOptions$SearchMethod" : {
     "superClass" : "java.lang.Enum",
     "interfaces" : [ ],

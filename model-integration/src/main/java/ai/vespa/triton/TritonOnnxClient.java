@@ -1,7 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.llm.clients;
+package ai.vespa.triton;
 
 import ai.onnxruntime.platform.Fp16Conversions;
+import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
 import com.google.protobuf.ByteString;
 import com.yahoo.api.annotations.Beta;
@@ -19,7 +20,6 @@ import io.grpc.stub.AbstractStub;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.sql.SQLOutput;
 import java.util.function.Function;
 import java.util.Collection;
 import java.util.HashMap;
@@ -37,9 +37,9 @@ import static java.util.concurrent.TimeUnit.*;
  * @author bjorncs
  */
 @Beta
-public class NvidiaTriton implements AutoCloseable {
+public class TritonOnnxClient implements AutoCloseable {
 
-    private static final Logger log = Logger.getLogger(NvidiaTriton.class.getName());
+    private static final Logger log = Logger.getLogger(TritonOnnxClient.class.getName());
 
     private final GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub grpcStub;
 
@@ -50,7 +50,7 @@ public class NvidiaTriton implements AutoCloseable {
     }
 
     @Inject
-    public NvidiaTriton(TritonConfig config) {
+    public TritonOnnxClient(TritonConfig config) {
         var ch = ManagedChannelBuilder.forTarget(config.target())
                 .usePlaintext()
                 .build();

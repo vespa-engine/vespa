@@ -2,6 +2,8 @@
 
 package ai.vespa.modelintegration.evaluator;
 
+import ai.vespa.triton.TritonOnnxRuntime;
+
 import java.util.logging.Logger;
 
 /**
@@ -11,7 +13,7 @@ import java.util.logging.Logger;
  */
 public interface OnnxRuntime {
 
-    static OnnxRuntime testRuntime() {
+    static OnnxRuntime testInstance() {
         var log = Logger.getLogger(OnnxRuntime.class.getName());
         if (Boolean.getBoolean("VESPA_USE_TRITON")) {
             log.info("Using Triton ONNX runtime for testing");

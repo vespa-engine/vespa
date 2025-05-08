@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package ai.vespa.modelintegration.evaluator;
+package ai.vespa.triton;
 
-import ai.vespa.llm.clients.NvidiaTriton;
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import ai.vespa.llm.clients.TritonConfig;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
@@ -10,23 +10,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * An ONNX evaluator that uses {@link ai.vespa.llm.clients.NvidiaTriton} to evaluate the model.
+ * An ONNX evaluator that uses {@link TritonOnnxClient} to evaluate the model.
  *
  * @author bjorncs
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
 
-    private final NvidiaTriton triton;
+    private final TritonOnnxClient triton;
     private final String modelName;
-    private final NvidiaTriton.ModelMetadata modelMetadata;
+    private final TritonOnnxClient.ModelMetadata modelMetadata;
 
     TritonOnnxEvaluator(TritonConfig config, String modelName) {
         this.modelName = modelName;
-        this.triton = new NvidiaTriton(config);
+        this.triton = new TritonOnnxClient(config);
         try {
             this.triton.loadModel(modelName);
             this.modelMetadata = triton.getModelMetadata(modelName);
-        } catch (NvidiaTriton.TritonException e) {
+        } catch (TritonOnnxClient.TritonException e) {
             throw new RuntimeException("Failed to load model: " + modelName, e);
         }
     }
@@ -35,7 +35,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     public Tensor evaluate(Map<String, Tensor> inputs, String output) {
         try {
             return triton.evaluate(modelName, inputs, output);
-        } catch (NvidiaTriton.TritonException e) {
+        } catch (TritonOnnxClient.TritonException e) {
             throw new RuntimeException("Failed to evaluate model: " + modelName, e);
         }
     }
@@ -44,7 +44,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     public Map<String, Tensor> evaluate(Map<String, Tensor> inputs) {
         try {
             return triton.evaluate(modelName, inputs);
-        } catch (NvidiaTriton.TritonException e) {
+        } catch (TritonOnnxClient.TritonException e) {
             throw new RuntimeException("Failed to evaluate model: " + modelName, e);
         }
     }

@@ -85,7 +85,7 @@ public class SpladeEmbedderTest {
         builder.transformerModel(ModelReference.valueOf(modelPath));
         builder.termScoreThreshold(scoreThreshold);
         builder.transformerGpuDevice(-1);
-        return  new SpladeEmbedder(OnnxRuntime.testRuntime(), Embedder.Runtime.testInstance(), builder.build(), useCustomReduce);
+        return  new SpladeEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), builder.build(), useCustomReduce);
     }
 
 }

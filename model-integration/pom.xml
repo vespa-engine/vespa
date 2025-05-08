@@ -371,10 +371,6 @@
         <artifactId>maven-compiler-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>com.github.os72</groupId>
-        <artifactId>protoc-jar-maven-plugin</artifactId>
-      </plugin>
-      <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>abi-check-plugin</artifactId>
       </plugin>
@@ -383,6 +379,7 @@
         <artifactId>tulipcc-maven-plugin</artifactId>
       </plugin>
       <plugin>
+        <!-- Schemas in src/main/proto -->
         <groupId>org.xolstice.maven.plugins</groupId>
         <artifactId>protobuf-maven-plugin</artifactId>
         <version>0.6.1</version>

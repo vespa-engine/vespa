@@ -1,5 +1,6 @@
 package ai.vespa.llm.clients;
 
+import ai.vespa.triton.TritonOnnxClient;
 import com.yahoo.tensor.Tensor;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
@@ -9,11 +10,11 @@ import java.util.Map;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Disabled("Requires Nvidia Triton running on localhost:8001")
-class NvidiaTritonTest {
+class TritonOnnxClientTest {
 
     @Test
     void loads_model_and_does_inference() {
-        try (var nvidiaTriton = new NvidiaTriton(
+        try (var nvidiaTriton = new TritonOnnxClient(
                 new TritonConfig.Builder()
                         .target("localhost:8001")
                         .build())) {

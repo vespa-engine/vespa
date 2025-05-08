@@ -71,7 +71,7 @@ public class BertBaseEmbedderTest {
     }
 
     private static BertBaseEmbedder newBertBaseEmbedder(BertBaseEmbedderConfig cfg) {
-        return new BertBaseEmbedder(OnnxRuntime.testRuntime(), Embedder.Runtime.testInstance(), cfg);
+        return new BertBaseEmbedder(OnnxRuntime.testInstance(), Embedder.Runtime.testInstance(), cfg);
     }
 
 }

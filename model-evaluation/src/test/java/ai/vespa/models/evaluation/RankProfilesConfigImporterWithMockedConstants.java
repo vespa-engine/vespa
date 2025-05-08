@@ -25,7 +25,7 @@ public class RankProfilesConfigImporterWithMockedConstants extends RankProfilesC
     private final Path constantsPath;
 
     public RankProfilesConfigImporterWithMockedConstants(Path constantsPath, FileAcquirer fileAcquirer) {
-        super(fileAcquirer, OnnxRuntime.testRuntime());
+        super(fileAcquirer, OnnxRuntime.testInstance());
         this.constantsPath = constantsPath;
     }
 
