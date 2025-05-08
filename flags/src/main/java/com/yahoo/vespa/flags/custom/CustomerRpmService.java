@@ -20,17 +20,10 @@ import java.util.Optional;
 public class CustomerRpmService {
 
     /**
-     * The identifier or name of the service unit, typically used in systemd,
-     * for instance {@code my-service.service}.
+     * The identifier or name of the systemd service unit
      */
     @JsonProperty(value = "unit", required = true)
     private final String unit;
-
-    /**
-     * The download URL of the RPM package associated with the service unit.
-     */
-    @JsonProperty(value = "url", required = true)
-    private final String url;
 
     /**
      * Memory limit in mebibytes (MiB) for the service unit.
@@ -50,22 +43,16 @@ public class CustomerRpmService {
     @JsonCreator
     public CustomerRpmService(
         @JsonProperty(value = "unit", required = true) String unit,
-        @JsonProperty(value = "url", required = true) String url,
         @JsonProperty(value = "memory", required = true) double memoryLimitMib,
         @JsonProperty("cpu") Double cpuLimitCores
     ) {
         this.unit = Objects.requireNonNull(unit);
-        this.url = Objects.requireNonNull(url);
         this.memoryLimitMib = memoryLimitMib;
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
     }
 
     public String unitName() {
         return unit;
-    }
-
-    public String url() {
-        return url;
     }
 
     public double memoryLimitMib() {
@@ -83,14 +70,19 @@ public class CustomerRpmService {
         CustomerRpmService other = (CustomerRpmService) o;
         return
             unit.equals(other.unit) &&
-            url.equals(other.url) &&
             memoryLimitMib == other.memoryLimitMib &&
             cpuLimitCores().equals(other.cpuLimitCores());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unit, url, memoryLimitMib, cpuLimitCores);
+        return Objects.hash(unit, memoryLimitMib, cpuLimitCores);
+    }
+
+    @Override
+    public String toString() {
+        return "{ unit: %s, memory: %s MiB, cpu: %s }"
+                .formatted(unitName(), memoryLimitMib(), cpuLimitCores().map("%sT"::formatted).orElse("unlimited"));
     }
 
 }
