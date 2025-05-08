@@ -26,6 +26,13 @@ public class CustomerRpmService {
     private final String unit;
 
     /**
+     * Optional override for yum package name in cases where
+     * the package name and service unit name are different
+     */
+    @JsonProperty(value = "package")
+    private final String packageName;
+
+    /**
      * Memory limit in mebibytes (MiB) for the service unit.
      * This limit will be enforced by the host operating system.
      */
@@ -43,16 +50,22 @@ public class CustomerRpmService {
     @JsonCreator
     public CustomerRpmService(
         @JsonProperty(value = "unit", required = true) String unit,
+        @JsonProperty(value = "package") String packageName,
         @JsonProperty(value = "memory", required = true) double memoryLimitMib,
         @JsonProperty("cpu") Double cpuLimitCores
     ) {
         this.unit = Objects.requireNonNull(unit);
+        this.packageName = packageName;
         this.memoryLimitMib = memoryLimitMib;
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
     }
 
     public String unitName() {
         return unit;
+    }
+
+    public String packageName() {
+        return packageName == null ? unitName() : packageName;
     }
 
     public double memoryLimitMib() {
@@ -71,18 +84,20 @@ public class CustomerRpmService {
         return
             unit.equals(other.unit) &&
             memoryLimitMib == other.memoryLimitMib &&
+            packageName().equals(other.packageName()) &&
             cpuLimitCores().equals(other.cpuLimitCores());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unit, memoryLimitMib, cpuLimitCores);
+        return Objects.hash(unitName(), packageName(), memoryLimitMib(), cpuLimitCores());
     }
 
     @Override
     public String toString() {
-        return "{ unit: %s, memory: %s MiB, cpu: %s }"
-                .formatted(unitName(), memoryLimitMib(), cpuLimitCores().map(Object::toString).orElse("unlimited"));
+        return "{ unit: %s, package: %s, memory: %s MiB, cpu: %s }"
+                .formatted(unitName(), packageName(), memoryLimitMib(),
+                        cpuLimitCores().map(Object::toString).orElse("unlimited"));
     }
 
 }
