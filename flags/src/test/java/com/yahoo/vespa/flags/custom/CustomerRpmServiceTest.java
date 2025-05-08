@@ -58,7 +58,7 @@ public class CustomerRpmServiceTest {
                 .filter(r -> r.unitName().equals("example3"))
                 .findFirst();
         assertEquals("package3", service3.get().packageName());
-        assertEquals(300.0, service2.get().memoryLimitMib());
+        assertEquals(400.0, service3.get().memoryLimitMib());
 
         // Empty variant
         CustomerRpmServiceList empty = Jackson.mapper().readValue("{\"services\": []}", CustomerRpmServiceList.class);
