@@ -130,13 +130,13 @@ StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const std::string &
                                                              const StructFieldsResolver& fields_resolver,
                                                              bool filter_elements,
                                                              std::shared_ptr<MatchingElementsFields> matching_elems_fields)
-    : AttributeCombinerDFW(fieldName, filter_elements, std::move(matching_elems_fields)),
+    : AttributeCombinerDFW(fieldName, filter_elements),
       _keyAttributeName(fields_resolver.get_map_key_attribute()),
       _valueFields(fields_resolver.get_map_value_fields()),
       _valueAttributeNames(fields_resolver.get_map_value_attributes())
 {
-    if (filter_elements && _matching_elems_fields && !_matching_elems_fields->has_field(fieldName)) {
-        fields_resolver.apply_to(*_matching_elems_fields);
+    if (filter_elements && matching_elems_fields && !matching_elems_fields->has_field(fieldName)) {
+        fields_resolver.apply_to(*matching_elems_fields);
     }
 }
 

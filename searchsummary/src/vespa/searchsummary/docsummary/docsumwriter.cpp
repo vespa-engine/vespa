@@ -104,6 +104,7 @@ DynamicDocsumWriter::initState(const IAttributeManager & attrMan, GetDocsumsStat
     size_t num_entries = result_class->getNumEntries();
     state._attributes.resize(num_entries);
     state._fieldWriterStates.resize(result_class->get_num_field_writer_states());
+    state._matching_elements_fields = result_class->get_matching_elements_fields().get();
     for (size_t i(0); i < num_entries; i++) {
         const DocsumFieldWriter *fw = result_class->getEntry(i)->writer();
         if (fw) {

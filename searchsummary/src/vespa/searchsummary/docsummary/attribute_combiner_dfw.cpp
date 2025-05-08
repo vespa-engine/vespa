@@ -16,13 +16,11 @@ using search::attribute::IAttributeContext;
 
 namespace search::docsummary {
 
-AttributeCombinerDFW::AttributeCombinerDFW(const std::string &fieldName, bool filter_elements,
-                                           std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+AttributeCombinerDFW::AttributeCombinerDFW(const std::string &fieldName, bool filter_elements)
     : SimpleDFW(),
       _stateIndex(0),
       _filter_elements(filter_elements),
-      _fieldName(fieldName),
-      _matching_elems_fields(std::move(matching_elems_fields))
+      _fieldName(fieldName)
 {
 }
 
@@ -55,7 +53,7 @@ AttributeCombinerDFW::insertField(uint32_t docid, GetDocsumsState& state, vespal
     if (!fieldWriterState) {
         const MatchingElements *matching_elements = nullptr;
         if (_filter_elements) {
-            matching_elements = &state.get_matching_elements(*_matching_elems_fields);
+            matching_elements = &state.get_matching_elements();
         }
         fieldWriterState = allocFieldWriterState(*state._attrCtx, state.get_stash(), matching_elements);
     }

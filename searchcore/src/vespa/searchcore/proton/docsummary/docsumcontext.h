@@ -53,7 +53,7 @@ public:
     // Implements GetDocsumsStateCallback
     void fillSummaryFeatures(search::docsummary::GetDocsumsState& state) override;
     void fillRankFeatures(search::docsummary::GetDocsumsState& state) override;
-    std::unique_ptr<search::MatchingElements> fill_matching_elements(const search::MatchingElementsFields &fields) override;
+    void fill_matching_elements(search::docsummary::GetDocsumsState& state) override;
     bool is_text_matching(std::string_view index) const noexcept override;
     Normalizing normalizing_mode(std::string_view index) const noexcept override;
 };

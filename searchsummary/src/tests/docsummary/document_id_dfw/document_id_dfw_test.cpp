@@ -56,7 +56,7 @@ make_doc_type_repo()
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
     void fillSummaryFeatures(GetDocsumsState&) override {}
     void fillRankFeatures(GetDocsumsState&) override {}
-    std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
+    void fill_matching_elements(GetDocsumsState&) override { abort(); }
 };
 
 class DocumentIdDFWTest : public ::testing::Test

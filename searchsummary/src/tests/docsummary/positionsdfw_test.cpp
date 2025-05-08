@@ -79,7 +79,7 @@ public:
 struct MyGetDocsumsStateCallback : GetDocsumsStateCallback {
     void fillSummaryFeatures(GetDocsumsState&) override {}
     void fillRankFeatures(GetDocsumsState&) override {}
-    std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields &) override { abort(); }
+    void fill_matching_elements(GetDocsumsState&) override { abort(); }
 };
 
 template <typename AttrType>

@@ -39,13 +39,12 @@ void GetDocsumsStateCallback::fillRankFeatures(GetDocsumsState& state)
     }
 }
 
-std::unique_ptr<MatchingElements>
-GetDocsumsStateCallback::fill_matching_elements(const search::MatchingElementsFields& fields)
+void
+GetDocsumsStateCallback::fill_matching_elements(GetDocsumsState& state)
 {
     if (_matching_elements_filler) {
-        return _matching_elements_filler->fill_matching_elements(fields);
+        state._matching_elements = _matching_elements_filler->fill_matching_elements(*state._matching_elements_fields);
     }
-    return std::make_unique<MatchingElements>();
 }
 
 void

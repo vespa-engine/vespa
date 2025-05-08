@@ -138,13 +138,12 @@ DocsumContext::fillRankFeatures(search::docsummary::GetDocsumsState& state)
     state._rankFeatures = _matcher->getRankFeatures(_request, _searchCtx, _attrCtx, _sessionMgr);
 }
 
-std::unique_ptr<MatchingElements>
-DocsumContext::fill_matching_elements(const MatchingElementsFields &fields)
+void
+DocsumContext::fill_matching_elements(search::docsummary::GetDocsumsState& state)
 {
     if (_matcher) {
-        return _matcher->get_matching_elements(_request, _searchCtx, _attrCtx, _sessionMgr, fields);
+        state._matching_elements = _matcher->get_matching_elements(_request, _searchCtx, _attrCtx, _sessionMgr, *state._matching_elements_fields);
     }
-    return std::make_unique<MatchingElements>();
 }
 
 bool DocsumContext::is_text_matching(std::string_view) const noexcept {

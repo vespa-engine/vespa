@@ -28,9 +28,7 @@ protected:
     uint32_t _stateIndex;
     const bool _filter_elements;
     std::string _fieldName;
-    std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
-    AttributeCombinerDFW(const std::string &fieldName, bool filter_elements,
-                         std::shared_ptr<MatchingElementsFields> matching_elems_fields);
+    AttributeCombinerDFW(const std::string &fieldName, bool filter_elements);
 protected:
     virtual DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext &context, vespalib::Stash& stash, const MatchingElements* matching_elements) const = 0;
 public:

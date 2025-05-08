@@ -113,13 +113,13 @@ ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const std::string &fieldNam
                                                      const StructFieldsResolver& fields_resolver,
                                                      bool filter_elements,
                                                      std::shared_ptr<MatchingElementsFields> matching_elems_fields)
-    : AttributeCombinerDFW(fieldName, filter_elements, std::move(matching_elems_fields)),
+    : AttributeCombinerDFW(fieldName, filter_elements),
       _fields(fields_resolver.get_array_fields()),
       _attributeNames(fields_resolver.get_array_attributes()),
       _is_map_of_scalar(fields_resolver.is_map_of_scalar())
 {
-    if (filter_elements && _matching_elems_fields && !_matching_elems_fields->has_field(fieldName)) {
-        fields_resolver.apply_to(*_matching_elems_fields);
+    if (filter_elements && matching_elems_fields && !matching_elems_fields->has_field(fieldName)) {
+        fields_resolver.apply_to(*matching_elems_fields);
     }
 }
 

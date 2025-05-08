@@ -192,10 +192,10 @@ public:
     ~StateCallback() override;
     void fillSummaryFeatures(GetDocsumsState&) override {}
     void fillRankFeatures(GetDocsumsState&) override {}
-    std::unique_ptr<MatchingElements> fill_matching_elements(const MatchingElementsFields&) override {
+    void fill_matching_elements(GetDocsumsState& state) override {
         auto result = std::make_unique<MatchingElements>();
         result->add_matching_elements(doc_id, _field_name, _matching_elements);
-        return result;
+        state._matching_elements = std::move(result);
     }
 };
 

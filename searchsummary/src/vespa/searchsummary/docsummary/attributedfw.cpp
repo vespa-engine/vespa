@@ -237,17 +237,15 @@ class MultiAttrDFW : public AttrDFW {
 private:
     bool _filter_elements;
     uint32_t _state_index; // index into _fieldWriterStates in GetDocsumsState
-    std::shared_ptr<MatchingElementsFields> _matching_elems_fields;
 
 public:
     MultiAttrDFW(const std::string& attr_name, bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
         : AttrDFW(attr_name),
           _filter_elements(filter_elements),
-          _state_index(0),
-          _matching_elems_fields(std::move(matching_elems_fields))
+          _state_index(0)
     {
-        if (filter_elements && _matching_elems_fields) {
-            _matching_elems_fields->add_field(attr_name);
+        if (filter_elements && matching_elems_fields) {
+            matching_elems_fields->add_field(attr_name);
         }
     }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
@@ -305,7 +303,7 @@ MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib::slim
     if (!field_writer_state) {
         const MatchingElements *matching_elements = nullptr;
         if (_filter_elements) {
-            matching_elements = &state.get_matching_elements(*_matching_elems_fields);
+            matching_elements = &state.get_matching_elements();
         }
         const auto& attr = get_attribute(state);
         field_writer_state = make_field_writer_state(getAttributeName(), attr, state.get_stash(), matching_elements);

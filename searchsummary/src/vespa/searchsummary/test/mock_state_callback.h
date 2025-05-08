@@ -18,8 +18,8 @@ public:
     ~MockStateCallback() override { }
     void fillSummaryFeatures(GetDocsumsState&) override { }
     void fillRankFeatures(GetDocsumsState&) override { }
-    std::unique_ptr<MatchingElements> fill_matching_elements(const search::MatchingElementsFields&) override {
-        return std::make_unique<MatchingElements>(_matching_elems);
+    void fill_matching_elements(GetDocsumsState& state) override {
+        state._matching_elements = std::make_unique<MatchingElements>(_matching_elems);
     }
 
     void add_matching_elements(uint32_t docid, const std::string& field_name,
