@@ -23,7 +23,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 public class HnswValidatorTest {
 
-    private static final String message = "Cluster 'mycluster' has searchable copies > 1 and fields with hnsw index. This will use a lot of resources, consider using searchable-copies=1";
+    private static final String message =
+            "Cluster 'mycluster' has searchable copies > 1 and fields with hnsw index: " +
+            "fields f1 in schema test. This will use a lot of resources, consider using searchable-copies=1";
 
     @Test
     void warns_when_2_searchable_copies_and_flat_setup() {
@@ -44,7 +46,8 @@ public class HnswValidatorTest {
     void warns_when_2_searchable_copies_and_2_groups() {
         var logger = new TestLogger();
         createModelAndValidate(logger, twoGroups(), 4);
-        assertEquals("Cluster 'mycluster' has searchable copies > 1 and fields with hnsw index. This will use a lot of resources, consider using searchable-copies=1",
+        assertEquals("Cluster 'mycluster' has searchable copies > 1 and fields with hnsw index: fields f1 in schema test." +
+                     " This will use a lot of resources, consider using searchable-copies=1",
                      logger.message.toString());
     }
 

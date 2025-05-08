@@ -2,14 +2,17 @@
 package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.schema.derived.SchemaInfo;
-import com.yahoo.schema.document.Attribute;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.model.application.validation.Validation.Context;
+import com.yahoo.vespa.model.content.ContentSearchCluster;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
 
+import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import static java.util.logging.Level.INFO;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -24,35 +27,46 @@ public class HnswValidator implements Validator {
         var clusters = clustersWithMoreThanOneSearchableCopy(context);
         if (clusters.isEmpty()) return;
 
-        clusters.forEach(contentCluster -> validateCluster(context, contentCluster));
+        clusters.forEach(contentCluster -> validateCluster(context, contentCluster.getSearch()));
     }
 
     // Prerequisite: content cluster has searchable copies > 1
-    private static void validateCluster(Context context, ContentCluster cluster) {
-        if ( ! cluster.getSearch().hasSearchCluster()) return;
+    private static void validateCluster(Context context, ContentSearchCluster cluster) {
+        if ( ! cluster.hasSearchCluster()) return;
 
-        for (var schema : cluster.getSearch()
-                                 .getSearchCluster()
-                                 .schemas()
-                                 .values()) {
-            if (warnAboutSearchableCopies(schema)) {
-                var message = ("Cluster '%s' has searchable copies > 1 and fields with hnsw index." +
-                        " This will use a lot of resources, consider using searchable-copies=1%s")
-                        .formatted(cluster.getName(),
-                                   cluster.getSearch()
-                                          .usesHierarchicDistribution()
-                                           ? ""
-                                           : " and going to a grouped setup, see https://docs.vespa.ai/en/elasticity.html#grouped-distribution");
-                context.deployState().getDeployLogger().logApplicationPackage(WARNING, message);
-            }
-        }
+        List<String> fields = cluster.getSearchCluster()
+                                     .schemas()
+                                     .values()
+                                     .stream()
+                                     .map(HnswValidator::fieldsWithHnswIndex)
+                                     .filter(Optional::isPresent)
+                                     .map(Optional::get)
+                                     .toList();
+        if (fields.isEmpty()) return;
+
+        var message = ("Cluster '%s' has searchable copies > 1 and fields with hnsw index:" +
+                " %s." +
+                " This will use a lot of resources, consider using searchable-copies=1%s")
+                .formatted(cluster.getClusterName(),
+                           String.join(", ", fields),
+                           cluster.usesHierarchicDistribution()
+                                   ? ""
+                                   : " and going to a grouped setup, see https://docs.vespa.ai/en/elasticity.html#grouped-distribution");
+        context.deployState()
+               .getDeployLogger()
+               .logApplicationPackage(INFO, message);
     }
 
-    private static boolean warnAboutSearchableCopies(SchemaInfo schema) {
-        return schema.fullSchema()
-                     .allFields()
-                     .mapToLong(field -> hnswAttributes(field).size())
-                     .sum() > 0;
+    private static Optional<String> fieldsWithHnswIndex(SchemaInfo schema) {
+        var fields = schema.fullSchema()
+                           .allFields()
+                           .filter(HnswValidator::hasHnswIndex)
+                           .map(ImmutableSDField::getName)
+                           .sorted()
+                           .toList();
+        if (fields.isEmpty()) return Optional.empty();
+
+        return Optional.of("fields %s in schema %s".formatted(String.join(", ", fields), schema.name()));
     }
 
     private static Set<ContentCluster> clustersWithMoreThanOneSearchableCopy(Context context) {
@@ -64,10 +78,9 @@ public class HnswValidator implements Validator {
                       .collect(Collectors.toSet());
     }
 
-    private static Set<Attribute> hnswAttributes(ImmutableSDField field) {
+    private static boolean hasHnswIndex(ImmutableSDField field) {
         return field.getAttributes().values().stream()
-                .filter(a -> a.hnswIndexParams().isPresent())
-                .collect(Collectors.toSet());
+                .anyMatch(a -> a.hnswIndexParams().isPresent());
     }
 
 }
