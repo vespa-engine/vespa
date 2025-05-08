@@ -22,7 +22,7 @@ public class CustomerRpmService {
     /**
      * The identifier or name of the systemd service unit
      */
-    @JsonProperty(value = "unit", required = true)
+    @JsonProperty(value = "unit")
     private final String unit;
 
     /**
@@ -36,8 +36,8 @@ public class CustomerRpmService {
      * Memory limit in mebibytes (MiB) for the service unit.
      * This limit will be enforced by the host operating system.
      */
-    @JsonProperty(value = "memory", required = true)
-    private final double memoryLimitMib;
+    @JsonProperty(value = "memory")
+    private final Double memoryLimitMib;
 
     /**
      * Optional CPU limit for the service unit in fraction of cores, e.g
@@ -49,14 +49,14 @@ public class CustomerRpmService {
 
     @JsonCreator
     public CustomerRpmService(
-        @JsonProperty(value = "unit", required = true) String unit,
+        @JsonProperty(value = "unit") String unit,
         @JsonProperty(value = "package") String packageName,
-        @JsonProperty(value = "memory", required = true) double memoryLimitMib,
+        @JsonProperty(value = "memory") Double memoryLimitMib,
         @JsonProperty("cpu") Double cpuLimitCores
     ) {
         this.unit = Objects.requireNonNull(unit);
         this.packageName = packageName;
-        this.memoryLimitMib = memoryLimitMib;
+        this.memoryLimitMib = Objects.requireNonNull(memoryLimitMib);
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
     }
 
@@ -83,7 +83,7 @@ public class CustomerRpmService {
         CustomerRpmService other = (CustomerRpmService) o;
         return
             unit.equals(other.unit) &&
-            memoryLimitMib == other.memoryLimitMib &&
+            memoryLimitMib.equals(other.memoryLimitMib) &&
             packageName().equals(other.packageName()) &&
             cpuLimitCores().equals(other.cpuLimitCores());
     }
