@@ -82,7 +82,7 @@ public class CustomerRpmService {
     @Override
     public String toString() {
         return "{ unit: %s, memory: %s MiB, cpu: %s }"
-                .formatted(unitName(), memoryLimitMib(), cpuLimitCores().map("%sT"::formatted).orElse("unlimited"));
+                .formatted(unitName(), memoryLimitMib(), cpuLimitCores().map(Object::toString).orElse("unlimited"));
     }
 
 }
