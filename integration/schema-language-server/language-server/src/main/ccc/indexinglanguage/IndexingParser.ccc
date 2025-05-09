@@ -524,7 +524,7 @@ Expression generateExp() :
       <GENERATE> [ SCAN((identifierStr)+) => (generatorId = identifierStr()) ] arguments = arguments()
     )
     {
-        return new GenerateExpression(linguistics, generators, generatorId, generatorArguments);
+        return new GenerateExpression(linguistics, generators, generatorId, arguments);
     }
 ;
 
@@ -912,10 +912,10 @@ List<String> arguments() :
     NumericFieldValue numericArgument;
     List<String> arguments = new ArrayList<String>();
 }
-    (SCAN(
-        argument = identifier() { arguments.add(argument); } |
-        numericArgument = numericValue() { arguments.add(numericArgument.getNumber().toString()); }
-    ))*
+    (
+        (SCAN(argument = identifierStr() { arguments.add(argument); } |
+              numericArgument = numericValue() { arguments.add(numericArgument.getNumber().toString()); }))*
+    )
     { return arguments; }
 ;
 
