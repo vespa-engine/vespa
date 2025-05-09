@@ -103,7 +103,8 @@ public class FixedKeywordBodies {
 
     // rank with identifier and openlbrace inside a rank-profile has a separate production rule called fieldRankFilter
     public static FixedKeywordBody RANK_IN_PROFILE = new FixedKeywordBody("rank", TokenType.RANK, fieldRankFilter.class, List.of(
-        CompletionUtils.constructSnippet("filter-threshold", "filter-threshold: ")
+        CompletionUtils.constructSnippet("filter-threshold", "filter-threshold: "),
+        CompletionUtils.constructSnippet("element-gap", "element-gap: ")
     ));
 
     public static FixedKeywordBody STRICT = new FixedKeywordBody("strict", TokenType.STRICT, strictElm.class, List.of(
