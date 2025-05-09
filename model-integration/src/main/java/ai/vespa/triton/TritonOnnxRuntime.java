@@ -23,6 +23,7 @@ import java.nio.file.StandardCopyOption;
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
 
     private final TritonConfig config;
+    private final TritonOnnxClient client;
 
     // Test constructor
     public TritonOnnxRuntime() {
@@ -32,16 +33,22 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     @Inject
     public TritonOnnxRuntime(TritonConfig config) {
         this.config = config;
+        this.client = new TritonOnnxClient(config);
     }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath) {
-        return new TritonOnnxEvaluator(config, copyFileToRepositoryAndGetModelId(modelPath));
+        return new TritonOnnxEvaluator(client, copyFileToRepositoryAndGetModelId(modelPath));
     }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
         return evaluatorOf(modelPath); // TODO: pass options
+    }
+
+    @Override
+    public void deconstruct() {
+        client.close();
     }
 
     /** Copies the model file to the model repository and returns the model id */

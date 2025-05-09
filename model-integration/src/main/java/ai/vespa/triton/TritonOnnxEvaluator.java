@@ -2,7 +2,6 @@
 package ai.vespa.triton;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
-import ai.vespa.llm.clients.TritonConfig;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -20,9 +19,9 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final String modelName;
     private final TritonOnnxClient.ModelMetadata modelMetadata;
 
-    TritonOnnxEvaluator(TritonConfig config, String modelName) {
+    TritonOnnxEvaluator(TritonOnnxClient client, String modelName) {
         this.modelName = modelName;
-        this.triton = new TritonOnnxClient(config);
+        this.triton = client;
         try {
             this.triton.loadModel(modelName);
             this.modelMetadata = triton.getModelMetadata(modelName);
@@ -75,12 +74,5 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
         return modelMetadata.outputs();
     }
 
-    @Override
-    public void close() {
-        try {
-            triton.close();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to close Triton client", e);
-        }
-    }
+    @Override public void close() {}
 }
