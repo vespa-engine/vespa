@@ -22,6 +22,8 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode.PARALLEL;
+import static ai.onnxruntime.OrtSession.SessionOptions.ExecutionMode.SEQUENTIAL;
 import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
@@ -119,13 +121,25 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         if (!isRuntimeAvailable()) return false;
         try {
             // Expensive way of checking if runtime is available as it incurs the cost of loading the model if successful
-            defaultFactory.create(modelPath, new OnnxEvaluatorOptions().getOptions(false));
+            defaultFactory.create(modelPath, getOptions(OnnxEvaluatorOptions.createDefault(), false));
             return true;
         } catch (OrtException e) {
             return e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE;
         } catch (UnsatisfiedLinkError | RuntimeException | NoClassDefFoundError e) {
             return false;
         }
+    }
+
+    private static OrtSession.SessionOptions getOptions(OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
+        var sessionOpts = new OrtSession.SessionOptions();
+        sessionOpts.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
+        var execMode = vespaOpts.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? PARALLEL : SEQUENTIAL;
+        sessionOpts.setExecutionMode(execMode);
+        sessionOpts.setInterOpNumThreads(execMode == PARALLEL ? vespaOpts.interOpThreads() : 1);
+        sessionOpts.setIntraOpNumThreads(vespaOpts.intraOpThreads());
+        sessionOpts.setCPUArenaAllocator(false);
+        if (loadCuda) sessionOpts.addCUDA(vespaOpts.gpuDeviceNumber());
+        return sessionOpts;
     }
 
     static boolean isCudaError(OrtException e) {
@@ -145,7 +159,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
             }
         }
 
-        var opts = options.getOptions(loadCuda);
+        var opts = getOptions(options, loadCuda);
         // Note: identical models loaded simultaneously will result in duplicate session instances
         var session = model.path().isPresent() ? factory.create(model.path().get(), opts) : factory.create(model.data().get(), opts);
         log.fine(() -> "Created new session (%s)".formatted(System.identityHashCode(session)));
@@ -179,9 +193,10 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
     private OnnxEvaluatorOptions overrideOptions(OnnxEvaluatorOptions opts) {
         // Set GPU device required if GPU requested and GPUs are available on system
         if (gpusAvailable > 0 && opts.requestingGpu() && !opts.gpuDeviceRequired()) {
-            var copy = opts.copy();
-            copy.setGpuDevice(opts.gpuDeviceNumber(), true);
-            return copy;
+            // Create a new instance with updated gpuDeviceRequired value using the builder
+            return new OnnxEvaluatorOptions.Builder(opts)
+                    .setGpuDevice(opts.gpuDeviceNumber(), true)
+                    .build();
         }
         return opts;
     }
