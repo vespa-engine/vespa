@@ -16,6 +16,7 @@ import com.yahoo.schema.document.SDDocumentType;
 import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.document.Sorting;
 import com.yahoo.schema.document.annotation.SDAnnotationType;
+import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
@@ -241,6 +242,9 @@ public class ConvertParsedFields {
 
     static void convertSummaryFieldSettings(SummaryField summary, ParsedSummaryField parsed) {
         var transform = SummaryTransform.NONE;
+        if (parsed.getMatchedElementsOnly()) {
+            summary.setElementsSelector(SummaryElementsSelector.selectByMatch());
+        }
         if (parsed.getMatchedElementsOnly()) {
             transform = SummaryTransform.MATCHED_ELEMENTS_FILTER;
         } else if (parsed.getDynamic()) {

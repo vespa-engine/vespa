@@ -18,6 +18,7 @@ import com.yahoo.document.datatypes.Raw;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.document.datatypes.Struct;
 import com.yahoo.document.datatypes.TensorFieldValue;
+import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
 /**
@@ -31,6 +32,7 @@ public class SummaryClassField {
     private final Type type;
     private final String command;
     private final String source;
+    private final SummaryElementsSelector elementsSelector;
 
     /** The summary field type enumeration */
     public enum Type {
@@ -69,9 +71,10 @@ public class SummaryClassField {
         }
     }
 
-    public SummaryClassField(String name, DataType type, SummaryTransform transform, String source, boolean rawAsBase64) {
+    public SummaryClassField(String name, DataType type, SummaryElementsSelector elementsSelector, SummaryTransform transform, String source, boolean rawAsBase64) {
         this.name = name;
         this.type = convertDataType(type, transform, rawAsBase64);
+        this.elementsSelector = elementsSelector;
         this.command = SummaryClass.getCommand(transform);
         this.source = source;
     }
@@ -83,6 +86,8 @@ public class SummaryClassField {
     public String getCommand() { return command; }
 
     public String getSource() { return source; }
+
+    public SummaryElementsSelector getElementsSelector() { return elementsSelector; }
 
     /** Converts to the right summary field type from a field datatype and a transform*/
     public static Type convertDataType(DataType fieldType, SummaryTransform transform, boolean rawAsBase64) {

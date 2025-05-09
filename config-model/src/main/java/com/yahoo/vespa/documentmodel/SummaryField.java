@@ -4,6 +4,7 @@ package com.yahoo.vespa.documentmodel;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.vespa.objects.FieldBase;
+import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 
 import java.io.Serializable;
 import java.util.Collection;
@@ -51,6 +52,7 @@ public class SummaryField extends FieldBase implements Cloneable {
 
     }
 
+    private SummaryElementsSelector elementsSelector = SummaryElementsSelector.selectAll();
     /** The transform to perform on the stored source */
     private SummaryTransform transform;
 
@@ -113,6 +115,14 @@ public class SummaryField extends FieldBase implements Cloneable {
 
     public DataType getDataType() {
         return dataType;
+    }
+
+    public void setElementsSelector(SummaryElementsSelector selector) {
+        elementsSelector = selector;
+    }
+
+    public SummaryElementsSelector getElementsSelector() {
+        return elementsSelector;
     }
 
     public void setTransform(SummaryTransform transform) {
