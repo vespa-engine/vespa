@@ -1064,7 +1064,7 @@ SearchVisitor::setupGrouping(const std::vector<char> & groupingBlob)
         grouping.select(attr2Doc, attr2Doc);
         LOG(debug, "Grouping # %ld with id(%d)", i, grouping.getId());
         try {
-            ConfigureStaticParams stuff(_attrCtx.get(), &_docTypeMapping.getCurrentDocumentType(), false);
+            ConfigureStaticParams stuff(_attrCtx.get(), &_docTypeMapping.getCurrentDocumentType(), true);
             grouping.configureStaticStuff(stuff);
             HitsResultPreparator preparator(_summaryGenerator);
             grouping.select(preparator, preparator);
