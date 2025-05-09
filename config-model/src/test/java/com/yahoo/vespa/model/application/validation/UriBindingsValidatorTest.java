@@ -32,7 +32,7 @@ public class UriBindingsValidatorTest {
     Zone publicCdZone = new Zone(SystemName.PublicCd, Environment.prod, RegionName.defaultName());
 
     @Test
-    void fails_on_user_handler_binding_with_port() throws IOException, SAXException {
+    void fails_on_user_handler_binding_with_port() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             runUriBindingValidator(true, createServicesXmlWithHandler("http://*:4443/my-handler"));
         });
@@ -51,7 +51,7 @@ public class UriBindingsValidatorTest {
     }
 
     @Test
-    void fails_on_user_handler_binding_with_hostname() throws IOException, SAXException {
+    void fails_on_user_handler_binding_with_hostname() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             runUriBindingValidator(true, createServicesXmlWithHandler("http://myhostname/my-handler"));
         });
@@ -59,7 +59,7 @@ public class UriBindingsValidatorTest {
     }
 
     @Test
-    void fails_on_user_handler_binding_with_non_http_scheme() throws IOException, SAXException {
+    void fails_on_user_handler_binding_with_non_http_scheme() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             runUriBindingValidator(true, createServicesXmlWithHandler("ftp://*/my-handler"));
         });
@@ -67,7 +67,7 @@ public class UriBindingsValidatorTest {
     }
 
     @Test
-    void fails_on_invalid_filter_binding() throws IOException, SAXException {
+    void fails_on_invalid_filter_binding() {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             runUriBindingValidator(true, createServicesXmlWithRequestFilterChain("https://*:4443/my-request-filer-chain"));
         });
@@ -79,6 +79,7 @@ public class UriBindingsValidatorTest {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*/my-handler"));
     }
 
+    @Test
     void allows_user_binding_with_wildcard_port() throws IOException, SAXException {
         runUriBindingValidator(true, createServicesXmlWithHandler("http://*:*/my-handler"));
     }
@@ -89,20 +90,22 @@ public class UriBindingsValidatorTest {
     }
 
     private void runUriBindingValidator(boolean isHosted, String servicesXml) throws IOException, SAXException {
-        runUriBindingValidator(new TestProperties().setZone(publicCdZone).setHostedVespa(isHosted), servicesXml, (__, message) -> {});
-    }
-    private void runUriBindingValidator(boolean isHosted, String servicesXml, Zone zone, DeployLogger deployLogger) throws IOException, SAXException {
-        runUriBindingValidator(new TestProperties().setZone(zone).setHostedVespa(isHosted), servicesXml, deployLogger);
+        runUriBindingValidator(new TestProperties().setHostedVespa(isHosted), servicesXml, publicCdZone, (__, message) -> {});
     }
 
-    private void runUriBindingValidator(TestProperties testProperties, String servicesXml, DeployLogger deployLogger) throws IOException, SAXException {
+    private void runUriBindingValidator(boolean isHosted, String servicesXml, Zone zone, DeployLogger deployLogger) throws IOException, SAXException {
+        runUriBindingValidator(new TestProperties().setHostedVespa(isHosted), servicesXml, zone, deployLogger);
+    }
+
+    private void runUriBindingValidator(TestProperties testProperties, String servicesXml,
+                                        Zone zone, DeployLogger deployLogger) throws IOException, SAXException {
         ApplicationPackage app = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .build();
         DeployState deployState = new DeployState.Builder()
                 .applicationPackage(app)
                 .deployLogger(deployLogger)
-                .zone(testProperties.zone())
+                .zone(zone)
                 .properties(testProperties)
                 .endpoints(Set.of(new ContainerEndpoint("default", ApplicationClusterEndpoint.Scope.zone, List.of("default.example.com"))))
                 .build();
