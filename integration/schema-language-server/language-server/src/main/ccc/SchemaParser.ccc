@@ -182,7 +182,7 @@ INJECT SchemaParser:
         int endSplit = lastConsumedToken.getEndOffset();
         inputString = inputString.substring(startSplit, endSplit);
 
-        return new SubLanguageData(inputString.trim(), leadingStripped);
+        return new SubLanguageData(inputString, leadingStripped);
     }
 }
 
@@ -250,8 +250,9 @@ INJECT onnxModelInput:
 {
     private SubLanguageData inputSourceExpression = null;
 
-    public boolean hasExpression() { return inputSourceExpression != null; }
-    public SubLanguageData getInputSourceExpression() { return inputSourceExpression; }
+    public String getInputSourceExpression() { 
+        return inputSourceExpression == null ? "" : inputSourceExpression.content(); 
+    }
 
     public void setInputSourceExpression(SubLanguageData data) {
         this.inputSourceExpression = data;
@@ -1977,7 +1978,7 @@ String onnxModelIOName() :
 
 // This production replaces the big regex from before:
 //   < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
-void onnxModelInput(OnnxModel onnxModel) :
+Node onnxModelInput(OnnxModel onnxModel) :
 {
     String name = null;
     Token inputToken = null;
@@ -1987,11 +1988,12 @@ void onnxModelInput(OnnxModel onnxModel) :
         SubLanguageData sourceData = consumeRankingExpression();
         String source = sourceData.content();
         try {
-            onnxModel.addInputNameMapping(name, source);
+            onnxModel.addInputNameMapping(name, source.trim());
             thisProduction.setInputSourceExpression(sourceData);
         } catch (IllegalArgumentException ex) {
             inputToken.addIllegalArgumentException(ex);
         }
+        return thisProduction;
     }
 ;
 
@@ -2020,6 +2022,7 @@ void onnxModelItem(OnnxModel onnxModel) :
 {
     String path = null;
     int num;
+    Node inputNode = null;
 }
 
     (
@@ -2079,7 +2082,14 @@ void onnxModelItem(OnnxModel onnxModel) :
                 }
             } 
         ) 
-        | onnxModelInput(onnxModel) 
+        | (inputNode = onnxModelInput(onnxModel)) 
+            {
+                // Make sure endOffset is correct and will propagate upwards.
+                // onnxModelInput consumes a ranking expression, but does not create a 
+                // node in the tree. Therefore we need to set endOffset manually.
+                int subContentLength = ((onnxModelInput)(inputNode)).getInputSourceExpression().length();
+                inputNode.setEndOffset(inputNode.getEndOffset() + subContentLength);
+            }
         | onnxModelOutput(onnxModel)
     )
 ;
