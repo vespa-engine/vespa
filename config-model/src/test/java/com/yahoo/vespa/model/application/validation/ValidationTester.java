@@ -48,25 +48,25 @@ public class ValidationTester {
     }
 
     /** Creates a validation tester with number of nodes available and the given test properties */
-    public ValidationTester(int nodeCount, boolean sharedHosts, TestProperties properties, Zone zone) {
-        this(new InMemoryProvisioner(nodeCount, sharedHosts), properties, zone);
+    public ValidationTester(int nodeCount, boolean sharedHosts, TestProperties properties) {
+        this(new InMemoryProvisioner(nodeCount, sharedHosts), properties);
     }
 
     /** Creates a validation tester with a given host provisioner */
     public ValidationTester(InMemoryProvisioner hostProvisioner) {
-        this(hostProvisioner, new TestProperties().setHostedVespa(true), Zone.defaultZone());
+        this(hostProvisioner, new TestProperties().setHostedVespa(true));
     }
 
     /** Creates a validation tester with a number of nodes available */
     public ValidationTester(int nodeCount) {
-        this(new InMemoryProvisioner(nodeCount, false), new TestProperties().setHostedVespa(true), Zone.defaultZone());
+        this(new InMemoryProvisioner(nodeCount, false), new TestProperties().setHostedVespa(true));
     }
 
     /** Creates a validation tester with a given host provisioner */
-    public ValidationTester(InMemoryProvisioner hostProvisioner, TestProperties testProperties, Zone zone) {
+    public ValidationTester(InMemoryProvisioner hostProvisioner, TestProperties testProperties) {
         this.hostProvisioner = hostProvisioner;
         this.properties = testProperties;
-        hostProvisioner.setEnvironment(zone.environment());
+        hostProvisioner.setEnvironment(testProperties.zone().environment());
     }
 
     /**
@@ -74,14 +74,14 @@ public class ValidationTester {
      *
      * @param previousModel the previous model, or null if no previous
      * @param services the services file content
-     * @param zone the zone this deploys to
+     * @param environment the environment this deploys to
      * @param validationOverrides the validation overrides file content, or null if none
      * @param containerCluster container cluster(s) which are declared in services
      * @return the new model and any change actions
      */
     public Pair<VespaModel, List<ConfigChangeAction>> deploy(VespaModel previousModel,
                                                              String services,
-                                                             Zone zone,
+                                                             Environment environment,
                                                              String validationOverrides,
                                                              String... containerCluster) {
         Instant now = LocalDate.parse("2000-01-01", DateTimeFormatter.ISO_DATE).atStartOfDay().atZone(ZoneOffset.UTC).toInstant();
@@ -98,7 +98,9 @@ public class ValidationTester {
                                                                                                List.of(name + ".example.com")))
                                                             .collect(Collectors.toSet());
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
-                                                             .zone(zone)
+                                                             .zone(new Zone(SystemName.defaultSystem(),
+                                                                            environment,
+                                                                            RegionName.defaultName()))
                                                              .endpoints(containerEndpoints)
                                                              .applicationPackage(newApp)
                                                              .properties(properties)
