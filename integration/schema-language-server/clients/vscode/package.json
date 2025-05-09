@@ -82,7 +82,7 @@
     "lint": "eslint src --ext ts",
     "test": "vscode-test",
     "check-types": "tsc --noEmit",
-    "copy-images": "cp ../../resources/* ./images",
+    "copy-images": "cp ../../resources/*.gif ./images",
     "langserver-install": "mkdir -p server && cp ../../language-server/target/schema-language-server-jar-with-dependencies.jar ./server/ && npm run lemminx-install",
     "lemminx-install": "mkdir -p server && cp ../../lemminx-vespa/target/lemminx-vespa-jar-with-dependencies.jar ./server/",
     "changenotes": "echo \"## What's New\" | cat ./README.md.in - ../../resources/CHANGENOTES.txt > README.md",
