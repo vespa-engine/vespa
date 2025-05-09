@@ -291,7 +291,7 @@ public class SchemaDocument implements DocumentManager {
         try {
             traverseCST(CST, context, errors);
         } catch(Exception ex) {
-            context.logger().error(ex.getMessage());
+            context.logger().error(ex);
         }
         return new ParseResult(errors, Optional.of(CST));
     }
