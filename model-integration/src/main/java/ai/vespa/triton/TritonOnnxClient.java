@@ -180,7 +180,7 @@ public class TritonOnnxClient implements AutoCloseable {
                 buffer = ByteBuffer.allocate(size * 4).order(ByteOrder.LITTLE_ENDIAN);
                 var floatBuffer = buffer.asFloatBuffer();
                 for (int i = 0; i < size; i++) {
-                    floatBuffer.put((float) vespaTensor.get(i));
+                    floatBuffer.put(vespaTensor.getFloat(i));
                 }
             }
             case "FP64" -> {
@@ -221,14 +221,14 @@ public class TritonOnnxClient implements AutoCloseable {
                 buffer = ByteBuffer.allocate(size * 2).order(ByteOrder.LITTLE_ENDIAN);
                 var shortBuffer = buffer.asShortBuffer();
                 for (int i = 0; i < size; i++) {
-                    shortBuffer.put(Fp16Conversions.floatToBf16((float) vespaTensor.get(i)));
+                    shortBuffer.put(Fp16Conversions.floatToBf16(vespaTensor.getFloat(i)));
                 }
             }
             case "FP16" -> {
                 buffer = ByteBuffer.allocate(size * 2).order(ByteOrder.LITTLE_ENDIAN);
                 var shortBuffer = buffer.asShortBuffer();
                 for (int i = 0; i < size; i++) {
-                    shortBuffer.put(Fp16Conversions.floatToFp16((float) vespaTensor.get(i)));
+                    shortBuffer.put(Fp16Conversions.floatToFp16(vespaTensor.getFloat(i)));
                 }
             }
             default -> throw new TritonException("Unsupported tensor datatype from Triton: " + dataType);
