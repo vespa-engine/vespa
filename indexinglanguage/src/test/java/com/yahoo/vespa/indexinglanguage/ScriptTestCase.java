@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.indexinglanguage;
 
+import ai.vespa.language.chunker.FixedLengthChunker;
 import ai.vespa.language.chunker.SentenceChunker;
 import com.yahoo.document.ArrayDataType;
 import com.yahoo.document.DataType;
@@ -598,6 +599,30 @@ public class ScriptTestCase {
             assertEquals("A chunker id must be specified. Valid chunkers are chunkerId",
                          Exceptions.toMessageString(e));
         }
+    }
+
+    @Test
+    public void testChunkWithArguments() {
+        String script = "{ input myText | chunk fixed-length 4 | summary myChunks | index myChunks }";
+        var tester = new ScriptTester();
+        tester.chunkers.put("fixed-length", new FixedLengthChunker());
+        var expression = tester.scriptFrom(script);
+
+        SimpleTestAdapter adapter = new SimpleTestAdapter();
+        adapter.createField(new Field("myText", DataType.STRING));
+        adapter.createField(new Field("myChunks", DataType.getArray(DataType.STRING)));
+
+        expression.resolve(adapter);
+
+        adapter.setValue("myText", new StringFieldValue("Hello world!"));
+        ExecutionContext context = new ExecutionContext(adapter);
+        expression.execute(context);
+        var chunks = context.getFieldValue("myChunks");
+        assertTrue(chunks instanceof Array);
+        var array = (Array<?>)chunks;
+        assertEquals(2, array.size());
+        assertEquals("Hello ", array.get(0).getWrappedValue());
+        assertEquals("world!", array.get(1).getWrappedValue());
     }
 
     @Test
