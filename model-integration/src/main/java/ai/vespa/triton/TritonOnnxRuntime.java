@@ -38,7 +38,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath) {
-        return new TritonOnnxEvaluator(client, copyFileToRepositoryAndGetModelId(modelPath));
+        var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        if (isExplicitControlMode) copyModelToRepository(modelPath);
+        return new TritonOnnxEvaluator(client, modelName(modelPath), isExplicitControlMode);
     }
 
     @Override
@@ -51,13 +53,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         client.close();
     }
 
-    /** Copies the model file to the model repository and returns the model id */
-    private String copyFileToRepositoryAndGetModelId(String externalModelPath) {
+    /** Copies the model file to the model repository */
+    private void copyModelToRepository(String externalModelPath) {
         var modelRepository = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
-        var modelName = externalModelPath.substring(externalModelPath.lastIndexOf('/') + 1);
-        modelName = modelName.substring(0, modelName.lastIndexOf('.'));
-
-        var repositoryModelRoot = Paths.get(modelRepository, modelName, "1");
+        var repositoryModelRoot = Paths.get(modelRepository, modelName(externalModelPath), "1");
         var repositoryModelFile = repositoryModelRoot.resolve("model.onnx");
         try {
             Files.createDirectories(repositoryModelRoot);
@@ -65,7 +64,12 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }
-        return modelName;
     }
 
+    // Hackish name to deduce model name from path.
+    // It should ideally include a suffix based on the model's hash/timestamp/file size to avoid conflicts
+    private static String modelName(String modelPath) {
+        var name = modelPath.substring(modelPath.lastIndexOf('/') + 1);
+        return name.substring(0, name.lastIndexOf('.'));
+    }
 }

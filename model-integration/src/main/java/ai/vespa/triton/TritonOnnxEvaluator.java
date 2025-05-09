@@ -18,12 +18,14 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final TritonOnnxClient triton;
     private final String modelName;
     private final TritonOnnxClient.ModelMetadata modelMetadata;
+    private final boolean isExplicitControlMode;
 
-    TritonOnnxEvaluator(TritonOnnxClient client, String modelName) {
+    TritonOnnxEvaluator(TritonOnnxClient client, String modelName, boolean isExplicitControlMode) {
         this.modelName = modelName;
         this.triton = client;
+        this.isExplicitControlMode = isExplicitControlMode;
         try {
-            this.triton.loadModel(modelName);
+            if (isExplicitControlMode) triton.loadModel(modelName);
             this.modelMetadata = triton.getModelMetadata(modelName);
         } catch (TritonOnnxClient.TritonException e) {
             throw new RuntimeException("Failed to load model: " + modelName, e);
@@ -74,5 +76,9 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
         return modelMetadata.outputs();
     }
 
-    @Override public void close() {}
+    @Override
+    public void close() {
+        // Note: This is not safe if evaluator instances shares the same underlying Triton model.
+        if (isExplicitControlMode) triton.unloadModel(modelName);
+    }
 }
