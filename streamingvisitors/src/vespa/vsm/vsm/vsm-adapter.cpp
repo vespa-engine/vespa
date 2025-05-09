@@ -85,8 +85,7 @@ DocsumTools::set_writer(std::unique_ptr<DynamicDocsumWriter> writer)
 bool
 DocsumTools::obtainFieldNames(const FastS_VsmsummaryHandle &cfg)
 {
-    uint32_t defaultSummaryId = getResultConfig()->lookupResultClassId(cfg->outputclass);
-    _resultClass = getResultConfig()->lookupResultClass(defaultSummaryId);
+    _resultClass = getResultConfig()->lookupResultClass(cfg->outputclass);
     if (_resultClass != nullptr) {
         for (uint32_t i = 0; i < _resultClass->getNumEntries(); ++i) {
             const ResConfigEntry * entry = _resultClass->getEntry(i);

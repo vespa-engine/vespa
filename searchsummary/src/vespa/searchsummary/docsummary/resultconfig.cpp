@@ -50,7 +50,7 @@ ResultConfig::addResultClass(const char *name, uint32_t classID)
 {
     ResultClass *ret = nullptr;
 
-    if (classID != noClassID() && (_classLookup.find(classID) == _classLookup.end())) {
+    if (classID != noClassID && (_classLookup.find(classID) == _classLookup.end())) {
         auto rc = std::make_unique<ResultClass>(name);
         ret = rc.get();
         _classLookup[classID] = std::move(rc);
@@ -79,7 +79,7 @@ uint32_t
 ResultConfig::lookupResultClassId(std::string_view name) const
 {
     auto found = _nameLookup.find(name);
-    return (found != _nameLookup.end()) ? found->second : ((name.empty() || (name == "default")) ? _defaultSummaryId : noClassID());
+    return (found != _nameLookup.end()) ? found->second : ((name.empty() || (name == "default")) ? _defaultSummaryId : noClassID);
 }
 
 
@@ -106,6 +106,7 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
     _defaultSummaryId = cfg.defaultsummaryid;
     global_useV8geoPositions = cfg.usev8geopositions;
 
+    ResultClass *unionOfAll = addResultClass("[all]", 0x12345678);
     for (uint32_t i = 0; rc && i < cfg.classes.size(); i++) {
         const auto& cfg_class = cfg.classes[i];
         if (cfg_class.name.empty()) {
@@ -129,24 +130,30 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             const char *fieldname = field.name.c_str();
             std::string command = field.command;
             std::string source_name = field.source;
-            LOG(debug, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), fieldname);
-            std::unique_ptr<DocsumFieldWriter> docsum_field_writer;
-            if (!command.empty()) {
-                try {
-                    docsum_field_writer = docsum_field_writer_factory.create_docsum_field_writer(fieldname,
-                                                                                                 command,
-                                                                                                 source_name,
-                                                                                                 matching_elems_fields);
-                } catch (const vespalib::IllegalArgumentException& ex) {
-                    LOG(error, "Exception during setup of summary result class '%s': field='%s', command='%s', source='%s': %s",
-                        cfg_class.name.c_str(), fieldname, command.c_str(), source_name.c_str(), ex.getMessage().c_str());
-                    break;
+            LOG(info, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), fieldname);
+            auto factory = [&]() -> std::unique_ptr<DocsumFieldWriter> {
+                if (! command.empty()) {
+                    try {
+                        return docsum_field_writer_factory
+                                .create_docsum_field_writer(fieldname,
+                                                            command,
+                                                            source_name,
+                                                            matching_elems_fields);
+                    } catch (const vespalib::IllegalArgumentException& ex) {
+                        LOG(error, "Exception during setup of summary result class '%s': field='%s', command='%s', source='%s': %s",
+                            cfg_class.name.c_str(), fieldname, command.c_str(), source_name.c_str(), ex.getMessage().c_str());
+                        rc = false;
+                    }
                 }
-            }
-            rc = resClass->addConfigEntry(fieldname, std::move(docsum_field_writer));
-            if (!rc) {
+                return {};
+            };
+            if (! resClass->addConfigEntry(fieldname, factory())) {
                 LOG(error, "%s %s.fields: duplicate name '%s'", configId, cfg_class.name.c_str(), fieldname);
+                rc = false;
                 break;
+            }
+            if (unionOfAll->getIndexFromName(fieldname) < 0) {
+                unionOfAll->addConfigEntry(fieldname, factory());
             }
         }
     }

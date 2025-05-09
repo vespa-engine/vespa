@@ -23,9 +23,7 @@ DynamicDocsumWriter::resolveClassInfo(std::string_view class_name,
                                       const vespalib::hash_set<std::string>& fields) const
 {
     DynamicDocsumWriter::ResolveClassInfo result;
-    auto id = _resultConfig->lookupResultClassId(class_name);
-
-    const auto* res_class = (id != ResultConfig::noClassID()) ? _resultConfig->lookupResultClass(id) : nullptr;
+    const auto* res_class = _resultConfig->lookupResultClass(class_name);
     if (res_class == nullptr) {
         Issue::report("Illegal docsum class requested: %s, using empty docsum for documents",
                       std::string(class_name).c_str());
