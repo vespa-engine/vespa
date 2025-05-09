@@ -296,15 +296,6 @@ public class TritonOnnxClient implements AutoCloseable {
         return builder.build();
     }
 
-    private static String toTritonDataType(TensorType t) {
-        return switch (t.valueType()) {
-            case FLOAT -> "FP32";
-            case DOUBLE -> "FP64";
-            case INT8 -> "INT8";
-            case BFLOAT16 -> "BF16";
-        };
-    }
-
     /** Converts {@link TensorType} using mapping rule similar to TensorConverter */
     private static Map<String, TensorType> toTensorTypes(Collection<GrpcService.ModelMetadataResponse.TensorMetadata> list) {
         return list.stream()
