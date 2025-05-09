@@ -586,7 +586,6 @@ TOKEN :
 | < GREATERTHAN: ">" >
 | < INPUT: "input" >
 | < OUTPUT: "output" >
-| < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
 | < VARIABLE: "$" <IDENTIFIER> >
 ;
 
@@ -1965,7 +1964,7 @@ OnnxModel onnxModel() :
     { return onnxModel; }
 ;
 
-String onnxModelInputName() :
+String onnxModelIOName() :
 { }
     (<IDENTIFIER>) {
         return lastConsumedToken.toString();
@@ -1983,7 +1982,7 @@ void onnxModelInput(OnnxModel onnxModel) :
     String name = null;
     Token inputToken = null;
 }
-    ( (inputToken = <INPUT>) (name = onnxModelInputName()) <COLON> ) 
+    ( (inputToken = <INPUT>) (name = onnxModelIOName()) <COLON> ) 
     {
         SubLanguageData sourceData = consumeRankingExpression();
         String source = sourceData.content();
@@ -1995,6 +1994,22 @@ void onnxModelInput(OnnxModel onnxModel) :
         }
     }
 ;
+
+// This production replaces the regex:
+//   < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
+// Only allowing identifierStr after the colon should be fine, as this rule is checked
+// by the call to addOutputNameMapping anyways..
+void onnxModelOutput(OnnxModel onnxModel) :
+{
+    String name = null;
+    String as = null;
+}
+    ( (<OUTPUT>) (name = onnxModelIOName()) <COLON> (as = identifierStr()) )
+    {
+        onnxModel.addOutputNameMapping(name, as);
+    }
+;
+
 
 /**
  * Consumes an onnx-model block.
@@ -2008,20 +2023,64 @@ void onnxModelItem(OnnxModel onnxModel) :
 }
 
     (
-        (path = fileItem()) { onnxModel.setFileName(path); } |
-        (path = uriItem()) { onnxModel.setUri(path); } |
-        <GPU_DEVICE> <COLON> num = integerElm() { onnxModel.setGpuDevice(num, false); } |
-        <INTRAOP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessIntraOpThreads(num); } |
-        <INTEROP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessInterOpThreads(num); } |
-        <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
-                                  | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
-        onnxModelInput(onnxModel) | 
-        (<ONNX_OUTPUT_SL>) {
-            String name = lastConsumedToken.toString().substring(6, lastConsumedToken.toString().lastIndexOf(":")).trim();
-            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
-            String as = lastConsumedToken.toString().substring(lastConsumedToken.toString().lastIndexOf(":") + 1).trim();
-            onnxModel.addOutputNameMapping(name, as);
-        }
+        (path = fileItem()) 
+            {
+                try {
+                    onnxModel.setFileName(path);
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            } 
+        | (path = uriItem()) 
+            {
+                try {
+                    onnxModel.setUri(path);
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            } 
+        | <GPU_DEVICE> <COLON> num = integerElm() 
+            {
+                try {
+                    onnxModel.setGpuDevice(num, false);
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            } 
+        | <INTRAOP_THREADS> <COLON> num = integerElm() 
+            {
+                try {
+                    onnxModel.setStatelessIntraOpThreads(num);
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            } 
+        | <INTEROP_THREADS> <COLON> num = integerElm() 
+            {
+                try {
+                    onnxModel.setStatelessInterOpThreads(num);
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            } 
+        | <EXECUTION_MODE> <COLON> (
+            <PARALLEL> {
+                try {
+                    onnxModel.setStatelessExecutionMode("parallel");
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            } 
+            | <SEQUENTIAL> {
+                try {
+                    onnxModel.setStatelessExecutionMode("sequential");
+                } catch (IllegalArgumentException ex) {
+                    lastConsumedToken.addIllegalArgumentException(ex);
+                }
+            } 
+        ) 
+        | onnxModelInput(onnxModel) 
+        | onnxModelOutput(onnxModel)
     )
 ;
 

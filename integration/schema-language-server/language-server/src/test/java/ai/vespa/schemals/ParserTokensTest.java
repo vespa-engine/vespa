@@ -42,7 +42,7 @@ public class ParserTokensTest {
         "SINGLE_LINE_COMMENT", // not a regular token
         "COMMENT", // not a regular token
         "ONNX_INPUT_SL", // implemented differently in our parser
-        "ONNX_INPUT_ML", // implemented differently in our parser
+        "ONNX_OUTPUT_SL", // implemented differently in our parser
         // Below are anonymous tokens, only there to help defining ranking expression rules. CongoCC ignores their names.
         // Schema:
         "BRACE_SL_LEVEL_1",
