@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.application.validation.change;
 
 import com.yahoo.config.application.api.ValidationId;
 import com.yahoo.config.application.api.ValidationOverrides;
-import com.yahoo.config.provision.Zone;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import com.yahoo.yolean.Exceptions;
@@ -17,15 +17,13 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class ContentClusterRemovalValidatorTest {
 
-    private static final Zone zone = Zone.defaultZone();
-
     private final ValidationTester tester = new ValidationTester(8);
 
     @Test
     void testContentRemovalValidation() {
-        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), zone, null, "contentClusterId.indexing").getFirst();
+        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null, "contentClusterId.indexing").getFirst();
         try {
-            tester.deploy(previous, getServices("newContentClusterId"), zone, null, "newContentClusterId.indexing");
+            tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, null, "newContentClusterId.indexing");
             fail("Expected exception due to content cluster id change");
         }
         catch (IllegalArgumentException expected) {
@@ -37,8 +35,8 @@ public class ContentClusterRemovalValidatorTest {
 
     @Test
     void testOverridingContentRemovalValidation() {
-        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), zone, null, "contentClusterId.indexing").getFirst();
-        var result = tester.deploy(previous, getServices("newContentClusterId"), zone, removalOverride, "newContentClusterId.indexing"); // Allowed due to override
+        VespaModel previous = tester.deploy(null, getServices("contentClusterId"), Environment.prod, null, "contentClusterId.indexing").getFirst();
+        var result = tester.deploy(previous, getServices("newContentClusterId"), Environment.prod, removalOverride, "newContentClusterId.indexing"); // Allowed due to override
         assertEquals(result.getFirst().getContainerClusters().values().stream()
                            .flatMap(cluster -> cluster.getContainers().stream())
                            .map(container -> container.getServiceInfo())
