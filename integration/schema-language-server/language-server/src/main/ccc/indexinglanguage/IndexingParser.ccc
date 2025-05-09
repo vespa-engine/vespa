@@ -456,11 +456,12 @@ Expression chunkExp() :
 }
 
     (
-      <EMBED> [ SCAN((identifierStr)+) => (chunkerId = identifierStr()) ]
+      <CHUNK> [ SCAN((identifierStr)+) => (chunkerId = identifierStr()) ]
       ( SCAN((identifierStr)+) => (chunkerArgument = identifierStr()) { chunkerArguments.add(chunkerArgument); } )*
     )
     {
-        return new ChunkExpression(chunkers, chunkerId, chunkerArguments);
+        //return new ChunkExpression(chunkers, chunkerId, chunkerArguments);
+        return null;
     }
 ;
 
@@ -488,7 +489,8 @@ Expression embedExp() :
       ( SCAN((identifierStr)+) => (embedderArgument = identifierStr()) { embedderArguments.add(embedderArgument); } )*
     )
     {
-        return new EmbedExpression(linguistics, embedders, embedderId, embedderArguments);
+        //return new EmbedExpression(linguistics, embedders, embedderId, embedderArguments);
+        return null;
     }
 ;
 
