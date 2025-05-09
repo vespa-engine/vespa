@@ -274,7 +274,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
             try {
                 scheduler.updateFile(fileURI, contentChanges.get(i).getText());
             } catch(Exception e) {
-                logger.error("Updateing file " + fileURI + " failed with error: " + ClientLogger.errorToString(e));
+                logger.error("Updating file " + fileURI + " failed with error: " + ClientLogger.errorToString(e));
             }
         }
     }
