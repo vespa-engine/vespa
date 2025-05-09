@@ -21,6 +21,7 @@ import org.eclipse.lsp4j.CodeAction;
 import org.eclipse.lsp4j.InitializeParams;
 
 import ai.vespa.lemminx.command.SchemaLSCommands;
+import ai.vespa.lemminx.index.ServiceDocument;
 import ai.vespa.lemminx.participants.CodeActionParticipant;
 import ai.vespa.lemminx.participants.CompletionParticipant;
 import ai.vespa.lemminx.participants.DefinitionParticipant;
@@ -42,10 +43,11 @@ public class VespaExtension implements IXMLExtension {
     Path serverPath;
 
     @Override
-	public void doSave(ISaveContext context) { }
+    public void doSave(ISaveContext context) {
+    }
 
-	@Override
-	public void start(InitializeParams params, XMLExtensionsRegistry registry) {
+    @Override
+    public void start(InitializeParams params, XMLExtensionsRegistry registry) {
         try {
             serverPath = Paths.get(new File(
                 VespaExtension.class.getProtectionDomain()
@@ -66,10 +68,12 @@ public class VespaExtension implements IXMLExtension {
 
         SchemaLSCommands.init(registry.getCommandService());
 
+        ServiceDocument serviceDocument = new ServiceDocument();
+
         hoverParticipant             = new HoverParticipant(serverPath);
         uriResolverExtension         = new ServicesURIResolverExtension(serverPath);
         definitionParticipant        = new DefinitionParticipant();
-        documentLifecycleParticipant = new DocumentLifecycleParticipant(registry.getCommandService());
+        documentLifecycleParticipant = new DocumentLifecycleParticipant(registry.getCommandService(), serviceDocument);
         diagnosticsParticipant       = new DiagnosticsParticipant(uriResolverExtension);
         codeActionParticipant        = new CodeActionParticipant();
         completionParticipant        = new CompletionParticipant();
@@ -84,10 +88,10 @@ public class VespaExtension implements IXMLExtension {
         registry.registerCompletionParticipant(completionParticipant);
 
         logger.info("Vespa LemminX extension activated");
-	}
+    }
 
-	@Override
-	public void stop(XMLExtensionsRegistry registry) {
+    @Override
+    public void stop(XMLExtensionsRegistry registry) {
         if (uriResolverExtension != null) 
             registry.getResolverExtensionManager().unregisterResolver(uriResolverExtension);
         if (hoverParticipant != null)
@@ -102,7 +106,7 @@ public class VespaExtension implements IXMLExtension {
             registry.unregisterCodeActionParticipant(codeActionParticipant);
         if (completionParticipant != null)
             registry.unregisterCompletionParticipant(completionParticipant);
-	}
+    }
 
     /*
      * Returns true if we manage this document

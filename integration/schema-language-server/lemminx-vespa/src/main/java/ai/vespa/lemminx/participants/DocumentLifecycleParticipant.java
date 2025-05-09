@@ -10,13 +10,16 @@ import org.eclipse.lsp4j.ExecuteCommandParams;
 
 import ai.vespa.lemminx.VespaExtension;
 import ai.vespa.lemminx.command.SchemaLSCommands;
+import ai.vespa.lemminx.index.ServiceDocument;
 
 public class DocumentLifecycleParticipant implements IDocumentLifecycleParticipant {
     private static final Logger logger = Logger.getLogger(DocumentLifecycleParticipant.class.getName());
     private IXMLCommandService commandService;
+    private ServiceDocument serviceDocument;
 
-    public DocumentLifecycleParticipant(IXMLCommandService commandService) {
+    public DocumentLifecycleParticipant(IXMLCommandService commandService, ServiceDocument serviceDocument) {
         this.commandService = commandService;
+        this.serviceDocument = serviceDocument;
     }
 
     @Override
@@ -35,6 +38,7 @@ public class DocumentLifecycleParticipant implements IDocumentLifecycleParticipa
 
     @Override
     public void didChange(DOMDocument document) {
+        serviceDocument.didChange(document);
     }
 
     @Override

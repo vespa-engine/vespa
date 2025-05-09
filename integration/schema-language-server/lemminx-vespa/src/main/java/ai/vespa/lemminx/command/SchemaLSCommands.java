@@ -88,4 +88,10 @@ public class SchemaLSCommands {
             return List.of();
         }
     }
+
+    public void sendComponentIds(String componentIds) {
+        commandService.executeClientCommand(
+            new ExecuteCommandParams("vespaSchemaLS.commands.schema.componentIds", List.of(componentIds))
+        );
+    }
 }
