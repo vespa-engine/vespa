@@ -155,6 +155,7 @@ public class Symbol {
         MAP_KEY,
         MAP_VALUE,
         ONNX_MODEL,
+        ONNX_MODEL_OUTPUT,
         PARAMETER,
         PROPERTY,
         QUERY_INPUT,
