@@ -8,6 +8,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.processing.DynamicSummaryTransformUtils;
 import com.yahoo.vespa.config.search.SummaryConfig;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
+import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 
@@ -60,7 +61,7 @@ public class SummaryClass extends Derived {
     /** MUST be called after all other fields are added */
     private void deriveImplicitFields(DocumentSummary summary, Map<String, SummaryClassField> fields) {
         if (summary.getName().equals("default")) {
-            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryTransform.DOCUMENT_ID, "", fields);
+            addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryElementsSelector.selectAll(), SummaryTransform.DOCUMENT_ID, "", fields);
         }
     }
 
@@ -69,12 +70,13 @@ public class SummaryClass extends Derived {
             if (!accessingDiskSummary && schema.isAccessingDiskSummary(summaryField)) {
                 accessingDiskSummary = true;
             }
-            addField(summaryField.getName(), summaryField.getDataType(), summaryField.getTransform(),
+            addField(summaryField.getName(), summaryField.getDataType(), summaryField.getElementsSelector(), summaryField.getTransform(),
                     getSource(summaryField, schema), fields);
         }
     }
 
     private void addField(String name, DataType type,
+                          SummaryElementsSelector elementsSelector,
                           SummaryTransform transform,
                           String source,
                           Map<String, SummaryClassField> fields) {
@@ -85,7 +87,7 @@ public class SummaryClass extends Derived {
                                                                   ". " + "Declared as type " + sf.getType() + " and " + type);
             }
         } else {
-            fields.put(name, new SummaryClassField(name, type, transform, source, rawAsBase64));
+            fields.put(name, new SummaryClassField(name, type, elementsSelector, transform, source, rawAsBase64));
         }
     }
 
@@ -114,7 +116,8 @@ public class SummaryClass extends Derived {
             classBuilder.fields(new SummaryConfig.Classes.Fields.Builder().
                     name(field.getName()).
                     command(field.getCommand()).
-                    source(field.getSource()));
+                    source(field.getSource()).
+                    elements(convertElementsSelector(field.getElementsSelector())));
         }
         return classBuilder;
     }
@@ -163,6 +166,17 @@ public class SummaryClass extends Derived {
         } else {
             return "";
         }
+    }
+
+    static SummaryConfig.Classes.Fields.Elements.Builder convertElementsSelector(SummaryElementsSelector elementsSelector) {
+        var builder = new SummaryConfig.Classes.Fields.Elements.Builder();
+        switch (elementsSelector.getSelect()) {
+            case ALL -> builder.select(SummaryConfig.Classes.Fields.Elements.Select.ALL);
+            case BY_MATCH -> builder.select(SummaryConfig.Classes.Fields.Elements.Select.BY_MATCH);
+            case BY_SUMMARY_FEATURE -> builder.select(SummaryConfig.Classes.Fields.Elements.Select.BY_SUMMARY_FEATURE);
+        }
+        builder.summary_feature(elementsSelector.getSummaryFeature());
+        return builder;
     }
 
     /**

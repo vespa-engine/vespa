@@ -262,6 +262,20 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         assertFalse(SummaryTransform.DOCUMENT_ID.isInMemory());
     }
 
+    @Test
+    void matched_elements_only_sets_selement_selector() throws ParseException {
+        var schema = buildSchema("field foo type array<string> { indexing: attribute | summary }",
+                joinLines("document-summary bar {",
+                        "    summary baz {",
+                        "        source: foo ",
+                        "        matched-elements-only",
+                        "     }",
+                        "    from-disk",
+                        "}"));
+        assertElementSelect(schema, "baz", SummaryConfig.Classes.Fields.Elements.Select.Enum.BY_MATCH, "", "bar");
+        assert(!schema.getSummary("default").getSummaryFields().containsKey("baz"));
+    }
+
     private void assertOverride(String fieldContent, String expFieldName, String expCommand) throws ParseException {
         assertOverride(buildSchema(fieldContent, ""), expFieldName, expCommand, expFieldName);
     }
@@ -277,6 +291,15 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         assertEquals(expFieldName, field.name());
         assertEquals(expCommand, field.command());
         assertEquals(expSource, field.source());
+    }
+
+    private void assertElementSelect(Schema schema, String expFieldName, SummaryConfig.Classes.Fields.Elements.Select.Enum expSelect, String expSummaryFeature, String summaryClass) throws ParseException {
+        var summary = new SummaryClass(schema, schema.getSummary(summaryClass), new BaseDeployLogger());
+        var cfg = new SummaryConfig.Classes(summary.getSummaryClassConfig());
+        var field = cfg.fields(0);
+        assertEquals(expFieldName, field.name());
+        assertEquals(expSelect, field.elements().select());
+        assertEquals(expSummaryFeature, field.elements().summary_feature());
     }
 
     private Schema buildSchema(String field, String documentSummary) throws ParseException {
