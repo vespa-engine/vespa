@@ -1,0 +1,35 @@
+schema onnxmodelinput {
+    document onnxmodelinput {
+        field foo type int {
+            indexing: attribute
+        }
+
+        field PHI type float {
+            indexing: index
+        }
+
+        field str type string { }
+    }
+
+    rank-profile profile {
+        constants {
+            PI: 3.14
+        }
+
+        onnx-model supergoodmodel {
+            input "foo_input_layer": attribute(foo) # OK
+            input "pi_input_layer": constant(PI) # OK
+            input "dummy_input_layer": attribute(noexist) # error
+            input "i_think_its_const": constant(PHI)      # error
+            input "cool_expression_input": nativeAttributeMatch(name) + attribute(foo) # error
+            input "preprocessed_layer": onnx_model_preprocessing # OK
+
+            uri: http://onnx.com/onnx # Not currently supported
+            file: files/models/model.onnx # OK
+        }
+
+        function onnx_model_preprocessing() {
+            expression: attribute(foo) * bm25(str)
+        }
+    }
+}

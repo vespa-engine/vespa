@@ -313,7 +313,8 @@ public class SchemaParserTest {
 
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
-            new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2)
+            new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2),
+            new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 4)
         };
 
         return Arrays.stream(tests)
