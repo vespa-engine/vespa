@@ -18,6 +18,7 @@ import ai.vespa.schemals.parser.ast.hnswIndex;
 import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.matchSettingsElm;
 import ai.vespa.schemals.parser.ast.normalizingElm;
+import ai.vespa.schemals.parser.ast.onnxModelItem;
 import ai.vespa.schemals.parser.ast.rankElm;
 import ai.vespa.schemals.parser.ast.rankTypeElm;
 import ai.vespa.schemals.parser.ast.sortingElm;
@@ -216,5 +217,10 @@ public class FixedKeywordBodies {
     public static FixedKeywordBody WEAKAND = new FixedKeywordBody("weakand", TokenType.WEAKAND, weakandElm.class, List.of(
         CompletionUtils.constructSnippet("stopword-limit", "stopword-limit: "),
         CompletionUtils.constructSnippet("adjust-target", "adjust-target: ")
+    ));
+
+    public static FixedKeywordBody EXECUTION_MODE = new FixedKeywordBody("execution-mode", TokenType.EXECUTION_MODE, onnxModelItem.class, List.of(
+        CompletionUtils.constructBasic("parallel"),
+        CompletionUtils.constructBasic("sequential")
     ));
 }
