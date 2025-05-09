@@ -29,10 +29,11 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
+import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.jdisc.DataplaneProxyService;
 import com.yahoo.container.logging.AccessLog;
@@ -1034,17 +1035,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private ZoneEndpoint zoneEndpoint(ConfigModelContext context, ClusterSpec.Id cluster) {
-        var zoneEndpoints = context
+        return context
                 .getApplicationPackage()
                 .getDeploymentSpec()
                 .zoneEndpoint(context.properties().applicationId().instance(),
                               context.properties().zone(),
                               cluster,
                               context.featureFlags().useNonPublicEndpointForTest());
-        if (context.getDeployState().zone().system() == SystemName.PublicCd)
-            log.log(Level.INFO, "Zone endpoints from properties: " + context.properties().endpoints() +
-                    ", zone endpoints from deployment spec: " + zoneEndpoints);
-        return zoneEndpoints;
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
