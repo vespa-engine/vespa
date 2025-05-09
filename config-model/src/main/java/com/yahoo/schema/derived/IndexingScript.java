@@ -160,12 +160,7 @@ public final class IndexingScript extends Derived {
                 expression = expression.convertChildren(new DropTokenize());
                 expression = expression.convertChildren(new DropZcurve());
             }
-            if (modifiesSelf(expression) && ! setsLanguage(expression)) {
-                later.add(expression);
-            } else {
-                ilscriptBuilder.content(expression.toString());
-            }
-
+            ilscriptBuilder.content(expression.toString());
             FieldScanVisitor fieldFetcher = new FieldScanVisitor();
             fieldFetcher.visit(expression);
             touchedFields.addAll(fieldFetcher.touchedFields());
