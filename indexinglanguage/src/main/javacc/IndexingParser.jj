@@ -410,15 +410,11 @@ Expression busy_waitExp() : { }
 Expression chunkExp() :
 {
     String chunkerId = "";
-    String chunkerArgument;
-    List<String> chunkerArguments = new ArrayList<String>();
+    List<String> arguments = new ArrayList<String>();
 }
 {
-    (
-      <CHUNK> [ LOOKAHEAD(2) chunkerId = identifier() ]
-      ( LOOKAHEAD(2) chunkerArgument = identifier() { chunkerArguments.add(chunkerArgument); } )*
-    )
-    { return new ChunkExpression(chunkers, chunkerId, chunkerArguments); }
+    <CHUNK> [ LOOKAHEAD(2) chunkerId = identifier() ] arguments = arguments()
+    { return new ChunkExpression(chunkers, chunkerId, arguments); }
 }
 
 Expression clearStateExp() : { }
@@ -436,29 +432,21 @@ Expression echoExp() : { }
 Expression embedExp() :
 {
     String embedderId = "";
-    String embedderArgument;
-    List<String> embedderArguments = new ArrayList<String>();
+    List<String> arguments = new ArrayList<String>();
 }
 {
-    (
-      <EMBED> [ LOOKAHEAD(2) embedderId = identifier() ]
-      ( LOOKAHEAD(2) embedderArgument = identifier() { embedderArguments.add(embedderArgument); } )*
-    )
-    { return new EmbedExpression(linguistics, embedders, embedderId, embedderArguments); }
+    <EMBED> [ LOOKAHEAD(2) embedderId = identifier() ] arguments = arguments()
+    { return new EmbedExpression(linguistics, embedders, embedderId, arguments); }
 }
 
 Expression generateExp() :
 {
     String generatorId = "";
-    String generatorArgument;
-    List<String> generatorArguments = new ArrayList<String>();
+    List<String> arguments = new ArrayList<String>();
 }
 {
-    (
-      <GENERATE> [ LOOKAHEAD(2) generatorId = identifier() ]
-      ( LOOKAHEAD(2) generatorArgument = identifier() { generatorArguments.add(generatorArgument); } )*
-    )
-    { return new GenerateExpression(linguistics, generators, generatorId, generatorArguments); }
+    <GENERATE> [ LOOKAHEAD(2) generatorId = identifier() ] arguments = arguments()
+    { return new GenerateExpression(linguistics, generators, generatorId, arguments); }
 }
 
 Expression exactExp() :
@@ -870,6 +858,21 @@ Expression executionValueExp() : { }
 {
     ( <UNDERSCORE> )
     { return new ExecutionValueExpression(); }
+}
+
+/** A possibly empty list of arguments that can be strings or numbers. */
+List<String> arguments() :
+{
+    String argument;
+    NumericFieldValue numericArgument;
+    List<String> arguments = new ArrayList<String>();
+}
+{
+      ( LOOKAHEAD(2)
+          argument = identifier() { arguments.add(argument); } |
+          numericArgument = numericValue() { arguments.add(numericArgument.getNumber().toString()); }
+      )*
+      { return arguments; }
 }
 
 String identifier() :

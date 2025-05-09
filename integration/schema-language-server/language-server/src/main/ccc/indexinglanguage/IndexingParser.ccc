@@ -451,16 +451,14 @@ Expression busy_waitExp() : { }
 Expression chunkExp() :
 {
     String chunkerId = "";
-    String chunkerArgument;
-    List<String> chunkerArguments = new ArrayList<String>();
+    List<String> arguments = new ArrayList<String>();
 }
 
     (
-      <CHUNK> [ SCAN((identifierStr)+) => (chunkerId = identifierStr()) ]
-      ( SCAN((identifierStr)+) => (chunkerArgument = identifierStr()) { chunkerArguments.add(chunkerArgument); } )*
+      <CHUNK> [ SCAN((identifierStr)+) => (chunkerId = identifierStr()) ] arguments = arguments()
     )
     {
-        //return new ChunkExpression(chunkers, chunkerId, chunkerArguments);
+        // return new ChunkExpression(chunkers, chunkerId, arguments);
         return null;
     }
 ;
@@ -480,16 +478,14 @@ Expression echoExp() : { }
 Expression embedExp() :
 {
     String embedderId = "";
-    String embedderArgument;
-    List<String> embedderArguments = new ArrayList<String>();
+    List<String> arguments = new ArrayList<String>();
 }
  
     (
-      <EMBED> [ SCAN((identifierStr)+) => (embedderId = identifierStr()) ]
-      ( SCAN((identifierStr)+) => (embedderArgument = identifierStr()) { embedderArguments.add(embedderArgument); } )*
+      <EMBED> [ SCAN((identifierStr)+) => (embedderId = identifierStr()) ] arguments = arguments()
     )
     {
-        //return new EmbedExpression(linguistics, embedders, embedderId, embedderArguments);
+        // return new EmbedExpression(linguistics, embedders, embedderId, arguments);
         return null;
     }
 ;
@@ -521,13 +517,11 @@ Expression forEachExp() :
 Expression generateExp() :
 {
     String generatorId = "";
-    String generatorArgument;
-    List<String> generatorArguments = new ArrayList<String>();
+    List<String> arguments = new ArrayList<String>();
 }
 
     (
-      <GENERATE> [ SCAN((identifierStr)+) => (generatorId = identifierStr()) ]
-      ( SCAN((identifierStr)+) => (generatorArgument = identifierStr()) { generatorArguments.add(generatorArgument); } )*
+      <GENERATE> [ SCAN((identifierStr)+) => (generatorId = identifierStr()) ] arguments = arguments()
     )
     {
         return new GenerateExpression(linguistics, generators, generatorId, generatorArguments);
@@ -909,6 +903,20 @@ Expression executionValueExp() : { }
  
     ( <UNDERSCORE> )
     { return new ExecutionValueExpression(); }
+;
+
+/** A possibly empty list of arguments that can be strings or numbers. */
+List<String> arguments() :
+{
+    String argument;
+    NumericFieldValue numericArgument;
+    List<String> arguments = new ArrayList<String>();
+}
+    SCAN(
+        argument = identifier() { arguments.add(argument); } |
+        numericArgument = numericValue() { arguments.add(numericArgument.getNumber().toString()); }
+    )*
+    { return arguments; }
 ;
 
 String identifierStr() :
