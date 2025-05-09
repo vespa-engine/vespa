@@ -88,8 +88,9 @@ public class YqlFieldAndSourceTestCase {
         Result result = execution.search(query);
         execution.fill(result);
         assertEquals(1, result.getConcreteHitCount());
-        assertTrue(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
+        assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
         assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+        assertTrue(result.hits().get(0).isFilled("[f:" + FIELD1 + "]"));
     }
 
     @Test
@@ -100,7 +101,10 @@ public class YqlFieldAndSourceTestCase {
         assertEquals(1, result.getConcreteHitCount());
         assertTrue(result.hits().get(0).isFilled(THIRD_OPTION));
         assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
-        assertTrue(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+        assertFalse(result.hits().get(0).isFilled("[f:" + FIELD2 + "]"));
+        execution.fill(result);
+        assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
+        assertTrue(result.hits().get(0).isFilled("[f:" + FIELD2 + "]"));
     }
 
     @Test
@@ -111,7 +115,8 @@ public class YqlFieldAndSourceTestCase {
         assertEquals(1, result.getConcreteHitCount());
         assertFalse(result.hits().get(0).isFilled(THIRD_OPTION));
         assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
-        assertTrue(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+        assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+        assertTrue(result.hits().get(0).isFilled("[f:" + FIELD2 + "]"));
     }
 
     @Test
@@ -121,8 +126,9 @@ public class YqlFieldAndSourceTestCase {
         execution.fill(result, null);
         assertEquals(1, result.getConcreteHitCount());
         assertFalse(result.hits().get(0).isFilled(THIRD_OPTION));
-        assertTrue(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
+        assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
         assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+        assertTrue(result.hits().get(0).isFilled("[f:" + FIELD3 + "]"));
     }
 
     @Test
@@ -143,8 +149,12 @@ public class YqlFieldAndSourceTestCase {
         execution.fill(result, THIRD_OPTION);
         assertEquals(1, result.getConcreteHitCount());
         assertTrue(result.hits().get(0).isFilled(THIRD_OPTION));
-        assertTrue(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
+        assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
         assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+        execution.fill(result, "default");
+        assertFalse(result.hits().get(0).isFilled(DEFAULT_SUMMARY_CLASS));
+        assertFalse(result.hits().get(0).isFilled(SORTABLE_ATTRIBUTES_SUMMARY_CLASS));
+        assertTrue(result.hits().get(0).isFilled("[f:" + FIELD1 + "]"));
     }
 
 }

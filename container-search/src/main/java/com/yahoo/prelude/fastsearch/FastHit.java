@@ -561,10 +561,13 @@ public class FastHit extends Hit {
          * or a summary added later in this hit
          */
         private boolean shadowed(String name) {
-            if (hit.hasField(name)) return true;
+            if (hit.hasField(name)) {
+                return true;
+            }
             for (int i = 0; i < hit.summaries.size() - index; i++) {
-                if (hit.summaries.get(i).type.fields().containsKey(name))
+                if (hit.summaries.get(i).type.fields().containsKey(name)) {
                     return true;
+                }
             }
             return false;
         }

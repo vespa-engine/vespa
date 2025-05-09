@@ -12,11 +12,11 @@ class GetDocsumArgs
 {
 private:
     using FieldSet = vespalib::hash_set<std::string>;
-    std::string   _resultClassName;
+    std::string        _resultClassName;
     bool               _dumpFeatures;
     bool               _locations_possible;
     std::vector<char>  _stackDump;
-    std::string   _location;
+    std::string        _location;
     vespalib::duration _timeout;
     fef::Properties    _highlightTerms;
     FieldSet           _fields;

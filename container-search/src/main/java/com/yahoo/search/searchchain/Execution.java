@@ -8,6 +8,7 @@ import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.language.process.SpecialTokenRegistry;
+import com.yahoo.prelude.fastsearch.PartialSummaryHandler;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
@@ -519,7 +520,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      * instead of "foo".
      *
      * @deprecated use fill(Result, String)
-     * 
+     *
      * @param result the result to fill
      */
     @Deprecated  // TODO Remove on Vespa 9.
@@ -540,11 +541,13 @@ public class Execution extends com.yahoo.processing.execution.Execution {
      * @param result the result to fill
      */
     public void fill(Result result) {
-        fill(result, result.getQuery().getPresentation().getSummary());
+        fill(result, PartialSummaryHandler.resolveSummaryClass(result));
     }
 
     /** Calls fill on the next searcher in this chain. If there is no next, nothing is done. */
     public void fill(Result result, String summaryClass) {
+        if (summaryClass == null)
+            summaryClass = PartialSummaryHandler.resolveSummaryClass(result);
         timer.sampleFill(nextIndex(), context.getDetailedDiagnostics());
         Searcher current = (Searcher)next(); // TODO: Allow but skip processors which are not searchers
         if (current == null) return;

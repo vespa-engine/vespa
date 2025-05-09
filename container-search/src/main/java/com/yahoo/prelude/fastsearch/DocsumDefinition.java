@@ -5,6 +5,7 @@ import com.yahoo.data.access.Inspector;
 import com.yahoo.search.schema.DocumentSummary;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +31,18 @@ public class DocsumDefinition {
                                      .map(field -> DocsumField.create(field.name(), field.type().asString()))
                                      .collect(Collectors.toUnmodifiableMap(DocsumField::getName, field -> field));
     }
+
+    // make a partial copy
+    DocsumDefinition(String name, DocsumDefinition all, Set<String> keepFields) {
+        this.name = name;
+        this.dynamic = all.dynamic;
+        this.fields = all.fields().entrySet()
+                .stream()
+                .filter(entry -> keepFields.contains(entry.getKey()))
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+
 
     public String name() { return name; }
     public Map<String, DocsumField> fields() { return fields; }
