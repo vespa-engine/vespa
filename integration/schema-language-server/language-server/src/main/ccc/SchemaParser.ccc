@@ -3446,7 +3446,20 @@ Boolean bool() :
 /** Consumes an integer token and returns its numeric value. */
 int integerElm() : { }
 
-    <INTEGER> { return Integer.parseInt(lastConsumedToken.toString()); }
+    <INTEGER> { 
+        try { 
+            return Integer.parseInt(lastConsumedToken.toString()); 
+        } catch (NumberFormatException ex) {
+            lastConsumedToken.addIllegalArgumentException(
+                new IllegalArgumentException(
+                    "Expected an integer literal, got \"" 
+                    + lastConsumedToken.toString().trim()
+                    + "\""
+                )
+            );
+            return 0;
+        }
+    }
 ;
 
 /** Consumes a long or integer token and returns its numeric value. */
