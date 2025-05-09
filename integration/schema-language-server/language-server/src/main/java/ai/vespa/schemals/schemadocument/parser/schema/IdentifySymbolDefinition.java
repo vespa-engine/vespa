@@ -34,6 +34,7 @@ import ai.vespa.schemals.parser.ast.identifierWithDashStr;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.ast.namedDocument;
+import ai.vespa.schemals.parser.ast.onnxModelOutput;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldDefinition;
 import ai.vespa.schemals.parser.ast.tensorTypeElm;
@@ -178,7 +179,7 @@ public class IdentifySymbolDefinition extends Identifier<SchemaNode> {
 
         // Prevent inheritance from being marked as a definition
         // <keyword> <DEFINITION> inherits <NOT-DEFINITION>, <NOT-DEFINITION> ...
-        if (parent.indexOf(node) >= 3) {
+        if (!parent.isASTInstance(onnxModelOutput.class) && parent.indexOf(node) >= 3) {
             return true;
         }
 

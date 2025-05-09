@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import javax.annotation.processing.Completion;
+
 import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Hover;
 import org.eclipse.lsp4j.Position;
@@ -27,6 +29,7 @@ import ai.vespa.schemals.parser.ast.globalPhase;
 import ai.vespa.schemals.parser.ast.hnswIndex;
 import ai.vespa.schemals.parser.ast.indexInsideField;
 import ai.vespa.schemals.parser.ast.indexOutsideDoc;
+import ai.vespa.schemals.parser.ast.onnxModel;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.ast.rankProfile;
 import ai.vespa.schemals.parser.ast.rootSchema;
@@ -172,6 +175,17 @@ public class BodyKeywordCompletion implements CompletionProvider {
             CompletionUtils.constructSnippet("expression", "expression {\n\t$0\n}", "expression {}"),
             CompletionUtils.constructSnippet("keep-rank-count", "keep-rank-count: $0"),
             CompletionUtils.constructSnippet("rank-score-drop-limit", "rank-score-drop-limit: $0")
+        ));
+
+        put(onnxModel.class, List.of(
+            CompletionUtils.constructSnippet("input", "input \"$1\": $0"),
+            CompletionUtils.constructSnippet("output", "output \"$1\": $0"),
+            CompletionUtils.constructSnippet("gpu-device", "gpu-device: $0"),
+            CompletionUtils.constructSnippet("file", "file: $0"),
+            CompletionUtils.constructSnippetDeprecated("uri", "uri: $0", "Not supported yet"),
+            CompletionUtils.constructSnippet("intraop-threads", "intraop-threads: $0"),
+            CompletionUtils.constructSnippet("interop-threads", "interop-threads: $0"),
+            FixedKeywordBodies.EXECUTION_MODE.getColonSnippet()
         ));
 
         put(fieldSetElm.class, List.of(

@@ -123,6 +123,14 @@ class SchemaSemanticTokenConfig {
         add(TokenType.WEAKAND);
         add(TokenType.STOPWORD_LIMIT);
         add(TokenType.ADJUST_TARGET);
+        add(TokenType.INPUT);
+        add(TokenType.OUTPUT);
+        add(TokenType.GPU_DEVICE);
+        add(TokenType.FILE);
+        add(TokenType.INTRAOP_THREADS);
+        add(TokenType.INTEROP_THREADS);
+        add(TokenType.EXECUTION_MODE);
+        add(TokenType.URI);
 
         // maybe some of these should be something other than keyword
         add(TokenType.DISTANCE_METRIC);
@@ -141,13 +149,15 @@ class SchemaSemanticTokenConfig {
 
     // Other
     static final Map<TokenType, String> schemaTokenTypeLSPNameMap = new HashMap<TokenType, String>() {{
-        put(TokenType.DOUBLE, "number");
-        put(TokenType.INTEGER, "number");
-        put(TokenType.LONG, "number");
-        put(TokenType.INFINITY, "number");
-        put(TokenType.DOUBLEQUOTEDSTRING, "string");
-        put(TokenType.SINGLEQUOTEDSTRING, "string");
-        put(TokenType.QUERY, "function");
+        put(TokenType.DOUBLE, SemanticTokenTypes.Number);
+        put(TokenType.INTEGER, SemanticTokenTypes.Number);
+        put(TokenType.LONG, SemanticTokenTypes.Number);
+        put(TokenType.INFINITY, SemanticTokenTypes.Number);
+        put(TokenType.DOUBLEQUOTEDSTRING, SemanticTokenTypes.String);
+        put(TokenType.SINGLEQUOTEDSTRING, SemanticTokenTypes.String);
+        put(TokenType.QUERY, SemanticTokenTypes.Function);
+        put(TokenType.PARALLEL, SemanticTokenTypes.EnumMember);
+        put(TokenType.SEQUENTIAL, SemanticTokenTypes.EnumMember);
 
         // TODO: figure out boolean color
         put(TokenType.ON, SemanticTokenTypes.Type);

@@ -29,6 +29,7 @@ import ai.vespa.schemals.parser.ast.NL;
 import ai.vespa.schemals.parser.ast.RANKFEATURES_SL;
 import ai.vespa.schemals.parser.ast.SUMMARYFEATURES_SL;
 import ai.vespa.schemals.parser.ast.identifierWithDashStr;
+import ai.vespa.schemals.parser.ast.onnxModelInput;
 import ai.vespa.schemals.parser.rankingexpression.RankingExpressionParser;
 import ai.vespa.schemals.tree.CSTUtils;
 import ai.vespa.schemals.tree.SchemaNode;
@@ -65,6 +66,7 @@ public class SchemaRankExpressionParser {
         put(TokenType.MATCHFEATURES_ML_INHERITS, "match-features inherits");
         put(TokenType.RANKFEATURES_SL, "rank-features");
         put(TokenType.RANKFEATURES_ML, "rank-features");
+        put(TokenType.INPUT, "input");
     }};
 
     private static final HashMap<TokenType, TokenType> simplifyTokenTypeMap = new HashMap<TokenType, TokenType>() {{
@@ -78,6 +80,7 @@ public class SchemaRankExpressionParser {
         put(TokenType.MATCHFEATURES_ML_INHERITS, TokenType.MATCHFEATURES_SL);
         put(TokenType.RANKFEATURES_SL, TokenType.RANKFEATURES_SL);
         put(TokenType.RANKFEATURES_ML, TokenType.RANKFEATURES_SL);
+        put(TokenType.INPUT, TokenType.INPUT);
     }};
 
     private static final Map<TokenType, Class<? extends Node>> tokenTypeToASTClass = new HashMap<>() {{
@@ -244,8 +247,21 @@ public class SchemaRankExpressionParser {
         return parent;
     }
 
-    private static ArrayList<SchemaNode> findPreChildren(ParseContext context, ExpressionMetaData metaData, SchemaNode node) {
-        ArrayList<SchemaNode> children = new ArrayList<>();
+    // Handled differently from the other occurances of ranking expressions
+    // because we do not need to simulate any nodes.
+    private static List<SchemaNode> onnxModelInputPreChildren(SchemaNode node) {
+        List<SchemaNode> result = new ArrayList<>();
+        result.add(node.get(0).getSchemaNode()); // input
+        result.add(node.get(1).getSchemaNode()); // name
+        result.add(node.get(2).getSchemaNode()); // :
+        return result;
+    }
+
+    private static List<SchemaNode> findPreChildren(ParseContext context, ExpressionMetaData metaData, SchemaNode node) {
+
+        if (node.isASTInstance(onnxModelInput.class)) return onnxModelInputPreChildren(node);
+
+        List<SchemaNode> children = new ArrayList<>();
 
         TokenType nodeType = node.findFirstLeaf().getSchemaNode().getSchemaType();
         String firstTokenString = preTextMap.get(nodeType);

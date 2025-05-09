@@ -15,6 +15,8 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.SubLanguageData;
 import ai.vespa.schemals.parser.ast.indexingElm;
+import ai.vespa.schemals.parser.ast.onnxModel;
+import ai.vespa.schemals.parser.ast.onnxModelInput;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
@@ -177,7 +179,11 @@ public class SchemaNode extends Node {
             (language == LanguageType.INDEXING && originalSchemaNode instanceof indexingElm) ||
             (language == LanguageType.RANK_EXPRESSION && (
                 (originalSchemaNode instanceof featureListElm) ||
-                (originalSchemaNode instanceof expression)  
+                (originalSchemaNode instanceof expression) ||
+                (
+                  (originalSchemaNode instanceof onnxModelInput) 
+                  && !((onnxModelInput)originalSchemaNode).getInputSourceExpression().isEmpty()
+                )
             ))
         );
     }
@@ -185,7 +191,7 @@ public class SchemaNode extends Node {
     public boolean containsExpressionData() {
         if (this.language != LanguageType.SCHEMA) return false;
 
-        return (originalSchemaNode instanceof expression);
+        return (originalSchemaNode instanceof expression) || (originalSchemaNode instanceof onnxModelInput);
     }
 
     public SubLanguageData getILScript() {
@@ -200,10 +206,14 @@ public class SchemaNode extends Node {
         if (originalSchemaNode instanceof featureListElm) {
             featureListElm elmNode = (featureListElm)originalSchemaNode;
             return elmNode.getFeatureListString();
+        } else if (originalSchemaNode instanceof expression) {
+            expression expressionNode = (expression)originalSchemaNode;
+            return expressionNode.getExpressionString();
+        } else if (originalSchemaNode instanceof onnxModelInput) {
+            onnxModelInput onnxModelInputNode = (onnxModelInput)originalSchemaNode;
+            return onnxModelInputNode.getInputSourceExpression();
         }
-
-        expression expressionNode = (expression)originalSchemaNode;
-        return expressionNode.getExpressionString();
+        return null;
     }
 
     public boolean hasIndexingNode() {

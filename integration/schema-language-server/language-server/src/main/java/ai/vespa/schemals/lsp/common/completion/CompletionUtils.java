@@ -54,6 +54,12 @@ public class CompletionUtils {
         return item;
     }
 
+    public static CompletionItem constructSnippetDeprecated(String label, String snippet, String detail) {
+        CompletionItem item = constructSnippet(label, snippet, detail);
+        item.setTags(List.of(CompletionItemTag.Deprecated));
+        return item;
+    }
+
     public static CompletionItem withSortingPrefix(String prefix, CompletionItem item) {
         item.setSortText(prefix + item.getLabel());
         return item;
