@@ -117,7 +117,7 @@ public class SummaryClass extends Derived {
                     name(field.getName()).
                     command(field.getCommand()).
                     source(field.getSource()).
-                    elements(new SummaryConfig.Classes.Fields.Elements.Builder(convertElementsSelector(field.getElementsSelector()))));
+                    elements(convertElementsSelector(field.getElementsSelector())));
         }
         return classBuilder;
     }
@@ -168,7 +168,7 @@ public class SummaryClass extends Derived {
         }
     }
 
-    static SummaryConfig.Classes.Fields.Elements convertElementsSelector(SummaryElementsSelector elementsSelector) {
+    static SummaryConfig.Classes.Fields.Elements.Builder convertElementsSelector(SummaryElementsSelector elementsSelector) {
         var builder = new SummaryConfig.Classes.Fields.Elements.Builder();
         switch (elementsSelector.getSelect()) {
             case ALL -> builder.select(SummaryConfig.Classes.Fields.Elements.Select.ALL);
@@ -176,7 +176,7 @@ public class SummaryClass extends Derived {
             case BY_SUMMARY_FEATURE -> builder.select(SummaryConfig.Classes.Fields.Elements.Select.BY_SUMMARY_FEATURE);
         }
         builder.summary_feature(elementsSelector.getSummaryFeature());
-        return builder.build();
+        return builder;
     }
 
     /**
