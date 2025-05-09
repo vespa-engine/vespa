@@ -165,6 +165,25 @@ INJECT SchemaParser:
         return null;
     }
 
+    // Can be used in places where there is a ranking expression that 
+    // is not preceded by a "expression: " syntax.
+    private SubLanguageData consumeRankingExpression() {
+        TokenSource tokS = lastConsumedToken.getTokenSource();
+        String inputString = tokS.toString();
+        int startSplit = lastConsumedToken.getEndOffset();
+        int leadingStripped = startSplit - lastConsumedToken.getPrevious().getBeginOffset();
+
+        while (
+            nextTokenType() != TokenType.EOF && nextTokenType() != TokenType.NL
+        ) {
+            lastConsumedToken = nextToken(lastConsumedToken);
+        }
+
+        int endSplit = lastConsumedToken.getEndOffset();
+        inputString = inputString.substring(startSplit, endSplit);
+
+        return new SubLanguageData(inputString.trim(), leadingStripped);
+    }
 }
 
 INJECT SchemaParserLexer:
@@ -223,6 +242,19 @@ INJECT expression:
 
     public void setExpressionString(String expression) {
         this.expressionString = expression;
+    }
+}
+
+INJECT onnxModelInput:
+
+{
+    private SubLanguageData inputSourceExpression = null;
+
+    public boolean hasExpression() { return inputSourceExpression != null; }
+    public SubLanguageData getInputSourceExpression() { return inputSourceExpression; }
+
+    public void setInputSourceExpression(SubLanguageData data) {
+        this.inputSourceExpression = data;
     }
 }
 
@@ -311,7 +343,7 @@ INJECT Token :
     private IllegalArgumentException illegalArgumentException;
     public IllegalArgumentException getIllegalArguemntException() { return illegalArgumentException; }
 
-    void addIllegalArugmentException(IllegalArgumentException e) {
+    void addIllegalArgumentException(IllegalArgumentException e) {
         illegalArgumentException = e;
     }
 
@@ -518,10 +550,10 @@ TOKEN :
 | < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
 | < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
-| < #BRACE_SL_CONTENT: (~["{","}","\n"])+ >
 | < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" >
 | < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" >
 | < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
+| < #BRACE_SL_CONTENT: (~["{","}","\n"])+ >
 | < #BRACE_ML_CONTENT: (~["{","}"])+ >
 | < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
 | < RANK_PROPERTIES: "rank-properties" >
@@ -552,7 +584,8 @@ TOKEN :
 | < URI_PATH: <HTTP> <COLON> ("//")? (["a"-"z","A"-"Z","0"-"9","_","-", "/", ".",":"])+ >
 | < LESSTHAN: "<" >
 | < GREATERTHAN: ">" >
-| < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
+| < INPUT: "input" >
+| < OUTPUT: "output" >
 | < ONNX_OUTPUT_SL: "output" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
 | < VARIABLE: "$" <IDENTIFIER> >
 ;
@@ -695,7 +728,7 @@ void documentElm(ParsedSchema schema) :
         try {
             schema.addDocument(document);
         } catch (IllegalArgumentException e) {
-            beginToken.addIllegalArugmentException(e);
+            beginToken.addIllegalArgumentException(e);
         }
     }
 ;
@@ -790,7 +823,7 @@ void fieldInsideDoc(ParsedDocument document) :
             document.addField(field);
         } catch (IllegalArgumentException e) {
             // This exception is due to a duplicate name
-            beginToken.getNext().addIllegalArugmentException(e);
+            beginToken.getNext().addIllegalArgumentException(e);
         }
     }
 ;
@@ -1932,6 +1965,37 @@ OnnxModel onnxModel() :
     { return onnxModel; }
 ;
 
+String onnxModelInputName() :
+{ }
+    (<IDENTIFIER>) {
+        return lastConsumedToken.toString();
+    } |
+    (<DOUBLEQUOTEDSTRING>) {
+        String name = lastConsumedToken.toString();
+        return name.substring(1, name.length() - 1);
+    }
+;
+
+// This production replaces the big regex from before:
+//   < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
+void onnxModelInput(OnnxModel onnxModel) :
+{
+    String name = null;
+    Token inputToken = null;
+}
+    ( (inputToken = <INPUT>) (name = onnxModelInputName()) <COLON> ) 
+    {
+        SubLanguageData sourceData = consumeRankingExpression();
+        String source = sourceData.content();
+        try {
+            onnxModel.addInputNameMapping(name, source);
+            thisProduction.setInputSourceExpression(sourceData);
+        } catch (IllegalArgumentException ex) {
+            inputToken.addIllegalArgumentException(ex);
+        }
+    }
+;
+
 /**
  * Consumes an onnx-model block.
  *
@@ -1951,12 +2015,7 @@ void onnxModelItem(OnnxModel onnxModel) :
         <INTEROP_THREADS> <COLON> num = integerElm() { onnxModel.setStatelessInterOpThreads(num); } |
         <EXECUTION_MODE> <COLON> ( <PARALLEL> { onnxModel.setStatelessExecutionMode("parallel"); }
                                   | <SEQUENTIAL> { onnxModel.setStatelessExecutionMode("sequential"); } ) |
-        (<ONNX_INPUT_SL>) {
-            String name = lastConsumedToken.toString().substring(5, lastConsumedToken.toString().lastIndexOf(":")).trim();
-            if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
-            String source = lastConsumedToken.toString().substring(lastConsumedToken.toString().lastIndexOf(":") + 1).trim();
-            onnxModel.addInputNameMapping(name, source);
-        } |
+        onnxModelInput(onnxModel) | 
         (<ONNX_OUTPUT_SL>) {
             String name = lastConsumedToken.toString().substring(6, lastConsumedToken.toString().lastIndexOf(":")).trim();
             if (name.startsWith("\"")) { name = name.substring(1, name.length() - 1); }
@@ -2037,7 +2096,7 @@ void rankProfile(ParsedSchema schema) :
                 schema.addRankProfile(profile);
             } catch(IllegalArgumentException ex) {
                 if (identifierToken != null) {
-                    identifierToken.addIllegalArugmentException(ex);
+                    identifierToken.addIllegalArgumentException(ex);
                 }
             }
         }
@@ -3054,7 +3113,7 @@ TensorType tensorTypeElm(String errorMessage) :
             tensorType = TensorType.fromSpec(tensorTypeString);
         } catch (IllegalArgumentException e) {
             //throw new IllegalArgumentException(errorMessage + ": Illegal tensor type spec: " + e.getMessage());
-            lastConsumedToken.addIllegalArugmentException(e);
+            lastConsumedToken.addIllegalArgumentException(e);
             return TensorType.empty;
         }
         return tensorType;
