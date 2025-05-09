@@ -3361,6 +3361,7 @@ String identifierStr :
       | <INFINITY>
       | <INHERITS>
       | <INLINE>
+      | <INPUT>
       | <INPUTS>
       | <INTEGER>
       | <LITERAL>
@@ -3383,6 +3384,7 @@ String identifierStr :
       | <ON>
       | <OPERATION>
       | <ORDER>
+      | <OUTPUT>
       | <PAGED>
       | <PARALLEL>
       | <PREFIX>
