@@ -119,6 +119,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.ENABLE_BM25);
         add(TokenType.DENSE_POSTING_LIST_THRESHOLD);
         add(TokenType.FILTER_THRESHOLD);
+        add(TokenType.ELEMENT_GAP);
         add(TokenType.WEAKAND);
         add(TokenType.STOPWORD_LIMIT);
         add(TokenType.ADJUST_TARGET);
@@ -143,6 +144,7 @@ class SchemaSemanticTokenConfig {
         put(TokenType.DOUBLE, "number");
         put(TokenType.INTEGER, "number");
         put(TokenType.LONG, "number");
+        put(TokenType.INFINITY, "number");
         put(TokenType.DOUBLEQUOTEDSTRING, "string");
         put(TokenType.SINGLEQUOTEDSTRING, "string");
         put(TokenType.QUERY, "function");
@@ -269,6 +271,7 @@ class SchemaSemanticTokenConfig {
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_FLOAT);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_STRING);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.EMBED);
+        add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.CHUNK);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.HASH);
         add(ai.vespa.schemals.parser.indexinglanguage.Token.TokenType.TO_EPOCH_SECOND);
     }};

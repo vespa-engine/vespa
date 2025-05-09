@@ -5,9 +5,6 @@ import com.yahoo.config.application.api.ValidationOverrides.ValidationException;
 import com.yahoo.config.model.api.ConfigChangeAction;
 import com.yahoo.config.model.api.ConfigChangeReindexAction;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.application.validation.ValidationTester;
 import org.junit.jupiter.api.Test;
@@ -24,16 +21,13 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 public class IndexingModeChangeValidatorTest {
 
-    private final Zone zone = Zone.defaultZone();
-    private final Zone devZone = new Zone(SystemName.main, Environment.dev, RegionName.defaultName());
-
     @Test
     void testChangingIndexModeFromIndexedToStreamingWhenDisallowedButInDev() {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
-                tester.deploy(null, getServices("index"), devZone, "<validation-overrides />").getFirst();
-        List<ConfigChangeAction> actions = tester.deploy(oldModel, getServices("streaming"), devZone, "<calidation-overrides />").getSecond();
+                tester.deploy(null, getServices("index"), Environment.dev, "<validation-overrides />").getFirst();
+        List<ConfigChangeAction> actions = tester.deploy(oldModel, getServices("streaming"), Environment.dev, "<calidation-overrides />").getSecond();
         assertReindexingChange("Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'", actions);
     }
 
@@ -42,9 +36,9 @@ public class IndexingModeChangeValidatorTest {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
-                tester.deploy(null, getServices("index"), zone, "<validation-overrides />").getFirst();
+                tester.deploy(null, getServices("index"), Environment.prod, "<validation-overrides />").getFirst();
         try {
-            tester.deploy(oldModel, getServices("streaming"), zone, "<calidation-overrides />").getSecond();
+            tester.deploy(oldModel, getServices("streaming"), Environment.prod, "<calidation-overrides />").getSecond();
             fail("Should throw on disallowed config change action");
         }
         catch (ValidationException e) {
@@ -60,9 +54,9 @@ public class IndexingModeChangeValidatorTest {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
-                tester.deploy(null, getServices("index"), zone, validationOverrides).getFirst();
+                tester.deploy(null, getServices("index"), Environment.prod, validationOverrides).getFirst();
         List<ConfigChangeAction> changeActions =
-                tester.deploy(oldModel, getServices("streaming"), zone, validationOverrides).getSecond();
+                tester.deploy(oldModel, getServices("streaming"), Environment.prod, validationOverrides).getSecond();
 
         assertReindexingChange( // allowed=true due to validation override
                 "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'streaming'",
@@ -74,9 +68,9 @@ public class IndexingModeChangeValidatorTest {
         ValidationTester tester = new ValidationTester();
 
         VespaModel oldModel =
-                tester.deploy(null, getServices("index"), zone, validationOverrides).getFirst();
+                tester.deploy(null, getServices("index"), Environment.prod, validationOverrides).getFirst();
         List<ConfigChangeAction> changeActions =
-                tester.deploy(oldModel, getServices("store-only"), zone, validationOverrides).getSecond();
+                tester.deploy(oldModel, getServices("store-only"), Environment.prod, validationOverrides).getSecond();
 
         assertReindexingChange( // allowed=true due to validation override
                 "Document type 'music' in cluster 'default-content' changed indexing mode from 'indexed' to 'store-only'",

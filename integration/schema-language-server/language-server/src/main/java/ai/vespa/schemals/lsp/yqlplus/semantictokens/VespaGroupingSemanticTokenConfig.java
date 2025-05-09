@@ -78,6 +78,7 @@ class VespaGroupingSemanticToken {
         put(OUTPUT.class, operationBodyFunction);
         put(PRECISION.class, operationBodyFunction);
         put(WHERE.class, operationBodyFunction);
+        put(FILTER.class, operationBodyFunction);
 
         put(AS.class, SemanticTokenTypes.Keyword);
         put(AT.class, SemanticTokenTypes.Keyword);
@@ -120,6 +121,7 @@ class VespaGroupingSemanticToken {
         put(UCA.class, simpleExpressions);
         put(XOR.class, simpleExpressions);
         put(XORBIT.class, simpleExpressions);
+        put(REGEX.class, simpleExpressions);
 
         put(ZCURVE.class, SemanticTokenTypes.Class);
         put(X.class, SemanticTokenTypes.Method);

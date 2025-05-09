@@ -20,24 +20,24 @@ import java.util.Optional;
 public class CustomerRpmService {
 
     /**
-     * The identifier or name of the service unit, typically used in systemd,
-     * for instance {@code my-service.service}.
+     * The identifier or name of the systemd service unit
      */
-    @JsonProperty(value = "unit", required = true)
+    @JsonProperty(value = "unit")
     private final String unit;
 
     /**
-     * The download URL of the RPM package associated with the service unit.
+     * Optional override for yum package name in cases where
+     * the package name and service unit name are different
      */
-    @JsonProperty(value = "url", required = true)
-    private final String url;
+    @JsonProperty(value = "package")
+    private final String packageName;
 
     /**
      * Memory limit in mebibytes (MiB) for the service unit.
      * This limit will be enforced by the host operating system.
      */
-    @JsonProperty(value = "memory", required = true)
-    private final double memoryLimitMib;
+    @JsonProperty(value = "memory")
+    private final Double memoryLimitMib;
 
     /**
      * Optional CPU limit for the service unit in fraction of cores, e.g
@@ -49,14 +49,14 @@ public class CustomerRpmService {
 
     @JsonCreator
     public CustomerRpmService(
-        @JsonProperty(value = "unit", required = true) String unit,
-        @JsonProperty(value = "url", required = true) String url,
-        @JsonProperty(value = "memory", required = true) double memoryLimitMib,
+        @JsonProperty(value = "unit") String unit,
+        @JsonProperty(value = "package") String packageName,
+        @JsonProperty(value = "memory") Double memoryLimitMib,
         @JsonProperty("cpu") Double cpuLimitCores
     ) {
         this.unit = Objects.requireNonNull(unit);
-        this.url = Objects.requireNonNull(url);
-        this.memoryLimitMib = memoryLimitMib;
+        this.packageName = packageName;
+        this.memoryLimitMib = Objects.requireNonNull(memoryLimitMib);
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
     }
 
@@ -64,8 +64,8 @@ public class CustomerRpmService {
         return unit;
     }
 
-    public String url() {
-        return url;
+    public String packageName() {
+        return packageName == null ? unitName() : packageName;
     }
 
     public double memoryLimitMib() {
@@ -83,14 +83,21 @@ public class CustomerRpmService {
         CustomerRpmService other = (CustomerRpmService) o;
         return
             unit.equals(other.unit) &&
-            url.equals(other.url) &&
-            memoryLimitMib == other.memoryLimitMib &&
+            memoryLimitMib.equals(other.memoryLimitMib) &&
+            packageName().equals(other.packageName()) &&
             cpuLimitCores().equals(other.cpuLimitCores());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(unit, url, memoryLimitMib, cpuLimitCores);
+        return Objects.hash(unitName(), packageName(), memoryLimitMib(), cpuLimitCores());
+    }
+
+    @Override
+    public String toString() {
+        return "{ unit: %s, package: %s, memory: %s MiB, cpu: %s }"
+                .formatted(unitName(), packageName(), memoryLimitMib(),
+                        cpuLimitCores().map(Object::toString).orElse("unlimited"));
     }
 
 }
