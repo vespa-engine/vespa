@@ -912,10 +912,10 @@ List<String> arguments() :
     NumericFieldValue numericArgument;
     List<String> arguments = new ArrayList<String>();
 }
-    SCAN(
+    (SCAN(
         argument = identifier() { arguments.add(argument); } |
         numericArgument = numericValue() { arguments.add(numericArgument.getNumber().toString()); }
-    )*
+    ))*
     { return arguments; }
 ;
 
