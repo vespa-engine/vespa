@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.StringJoiner;
 import java.util.stream.Stream;
 
@@ -230,11 +229,6 @@ public final class DeploymentSpec {
     }
 
     Optional<Duration> hostTTL() { return hostTTL; }
-
-    // TODO: Used by models up to 8.502. Scheduled to be removed.
-    public ZoneEndpoint zoneEndpoint(InstanceName instance, ZoneId zone, ClusterSpec.Id cluster) {
-        return zoneEndpoint(instance, zone, cluster, false);
-    }
 
     // TODO: Used by models from 8.505.  Remove useNonPublicEndpointForTest argument once rolled out.
     public ZoneEndpoint zoneEndpoint(InstanceName instance, Zone zone, ClusterSpec.Id cluster, boolean useNonPublicEndpointForTest) {
