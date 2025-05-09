@@ -1,0 +1,23 @@
+schema embed {
+    document embed {
+        field title type string {
+            indexing: index | summary
+        }
+
+        field date type int {
+            indexing: summary | attribute
+        }
+
+        field body type string {
+            indexing: index | summary
+            index: enable-bm25
+        }
+    }
+
+    field embedding type tensor<float>(d0[50]) {
+        indexing: input body | embed embedder | attribute
+        attribute {
+            distance-metric: dotproduct
+        }
+    } 
+}

@@ -274,14 +274,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
             try {
                 scheduler.updateFile(fileURI, contentChanges.get(i).getText());
             } catch(Exception e) {
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-                PrintStream logger = new PrintStream(outputStream);
-
-                e.printStackTrace(logger);
-
-                schemaMessageHandler.logMessage(MessageType.Error, 
-                    "Updating file " + fileURI + " failed with error: " + outputStream.toString() 
-                );
+                logger.error("Updateing file " + fileURI + " failed with error: " + ClientLogger.errorToString(e));
             }
         }
     }
@@ -323,7 +316,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
             } catch (CancellationException ignore) {
                 // Ignore cancellation exception
             } catch (Exception e) {
-                logger.error(e.getMessage());;
+                logger.error(e);
             }
 
             return new SemanticTokens(new ArrayList<>());
@@ -347,7 +340,7 @@ public class SchemaTextDocumentService implements TextDocumentService {
             } catch (CancellationException ignore) {
                 // Ignore
             } catch (Exception e) {
-                logger.error(e.getMessage());
+                logger.error(e);
             }
 
             return null; 
