@@ -85,10 +85,12 @@ public:
     ~ResultConfig();
 
 
+private:
     /**
      * @return value denoting an undefined class id.
      **/
-    static uint32_t noClassID() { return static_cast<uint32_t>(-1); }
+    static constexpr uint32_t noClassID = -1;
+public:
 
     // whether last config seen wanted useV8geoPositions = true
     static bool wantedV8geoPositions();
@@ -122,6 +124,7 @@ public:
      */
     void set_default_result_class_id(uint32_t id);
 
+private:
     /**
      * Obtain result class from the result class id. This method is used
      * when unpacking docsum blobs.
@@ -131,14 +134,26 @@ public:
      **/
     const ResultClass *lookupResultClass(uint32_t classID) const;
 
-
     /**
      * Obtain result class id from the result class name.
+     * If the name is empty or "default", returns the configured default ID.
+     * If not found, returns NoClassId(-1) meaning not found.
      *
-     * @return result class id or configured default if empty or "default".
-     * @param name the name of the result class, NoClassId(-1) meaning undefined
+     * @return result class id,
+     * @param name the name of the result class
      **/
     uint32_t lookupResultClassId(std::string_view name) const;
+
+public:
+    /**
+     * Obtain result class from the result class name.
+     * @return result class with the given id or NULL if not found.
+     * @param name the name of the result class,
+     */
+    const ResultClass *lookupResultClass(std::string_view name) const {
+        uint32_t id = lookupResultClassId(name);
+        return lookupResultClass(id);
+    }
 
     /**
      * Read config that has been fetched from configserver.

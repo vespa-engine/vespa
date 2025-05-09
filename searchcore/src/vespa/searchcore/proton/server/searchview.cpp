@@ -102,7 +102,7 @@ std::unique_ptr<DocsumReply>
 SearchView::getDocsums(const DocsumRequest & req)
 {
     LOG(spam, "getDocsums(): resultClass(%s), numHits(%zu)", req.resultClassName.c_str(), req.hits.size());
-    if (_summarySetup->getResultConfig().lookupResultClassId(req.resultClassName.c_str()) == ResultConfig::noClassID()) {
+    if (_summarySetup->getResultConfig().lookupResultClass(req.resultClassName) == nullptr) {
         Issue::report("There is no summary class with name '%s' in the summary config. Returning empty document summary for %zu hit(s)",
                      req.resultClassName.c_str(), req.hits.size());
         return createEmptyReply(req);
