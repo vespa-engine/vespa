@@ -25,7 +25,7 @@ import com.yahoo.schema.document.TemporaryImportedFields;
 import com.yahoo.schema.document.annotation.SDAnnotationType;
 import com.yahoo.schema.document.annotation.TemporaryAnnotationReferenceDataType;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.documentmodel.FieldView;
+import com.yahoo.vespa.documentmodel.Fields;
 import com.yahoo.vespa.documentmodel.SchemaDef;
 import com.yahoo.vespa.documentmodel.SearchField;
 
@@ -182,7 +182,7 @@ public class DocumentModelBuilder {
             schemaDef.getViews().get(viewName).add(field);
         } else {
             if (!schemaDef.getFields().containsKey(viewName)) {
-                FieldView view = new FieldView(viewName);
+                Fields view = new Fields(viewName);
                 view.add(field);
                 schemaDef.add(view);
             }

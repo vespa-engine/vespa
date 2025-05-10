@@ -177,12 +177,12 @@ public class SummaryTestCase {
                     .toList();
             if (testValue.parent != null)
                 assertEquals(testValue.parent, testValue.summary.inherited().get(0),
-                             testValue.summary.getName() + " inherits " + testValue.parent.getName());
+                             testValue.summary.name() + " inherits " + testValue.parent.name());
             else
                 assertTrue(testValue.summary.inherited().isEmpty(),
-                           testValue.summary.getName() + " does not inherit anything");
+                           testValue.summary.name() + " does not inherit anything");
 
-            assertEquals(testValue.fields, actualFields, "Summary " + testValue.summary.getName() + " has expected fields");
+            assertEquals(testValue.fields, actualFields, "Summary " + testValue.summary.name() + " has expected fields");
         });
     }
 

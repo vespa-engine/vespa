@@ -28,7 +28,7 @@ public class SummaryConsistency extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (DocumentSummary summary : schema.getSummaries().values()) {
-            if (summary.getName().equals("default")) continue;
+            if (summary.name().equals("default")) continue;
 
             for (SummaryField summaryField : summary.getSummaryFields().values()) {
                 assertConsistency(summaryField, schema, validate);

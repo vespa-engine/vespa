@@ -36,7 +36,7 @@ public class AdjustSummaryTransforms extends Processor {
                 makeDocumentIdTransformIfAppropriate(summaryField);
                 makeAttributeTransformIfAppropriate(summaryField, schema);
                 makeAttributeCombinerTransformIfAppropriate(summaryField, schema);
-                makeAttributeTokensTransformIfAppropriate(summaryField, summary.getName(), schema);
+                makeAttributeTokensTransformIfAppropriate(summaryField, summary.name(), schema);
                 makeCopyTransformIfAppropriate(summaryField, schema);
             }
         }

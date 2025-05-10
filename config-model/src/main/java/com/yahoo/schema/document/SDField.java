@@ -582,7 +582,8 @@ public class SDField extends Field implements ImmutableSDField {
     }
 
     /**
-     * Defined indices on this field
+     * Defined indices on this field.
+     *
      * @return defined indices on this
      */
     @Override
@@ -695,9 +696,9 @@ public class SDField extends Field implements ImmutableSDField {
      * @return the summary field, or null if not present and create is false
      */
     public SummaryField getSummaryField(String name, boolean create) {
-        SummaryField summaryField=summaryFields.get(name);
-        if (summaryField==null && create) {
-            summaryField=new SummaryField(name, getDataType());
+        SummaryField summaryField = summaryFields.get(name);
+        if (summaryField == null && create) {
+            summaryField = new SummaryField(name, getDataType());
             addSummaryField(summaryField);
         }
         return summaryFields.get(name);

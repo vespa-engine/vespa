@@ -21,11 +21,14 @@ public class SchemaDef {
     /** These are the real backing document types. */
     private final DocumentTypeManager sources = new DocumentTypeManager();
 
-    /** Map of all search fields. */
+    /** All fields in this. */
     private final Map<String, SearchField> fields = new HashMap<>();
 
-    /** Map of all views that can be searched. */
-    private final Map<String, FieldView> views = new HashMap<>();
+    /**
+     * All index names. This includes any additional index names created by index blocks inside fields.
+     * TODO: That feature is deprecated and should be removed on Vespa 9.
+     */
+    private final Map<String, Fields> views = new HashMap<>();
 
     /// Map of all aliases <alias, realname>
     private final Map<String, String> aliases = new HashMap<>();
@@ -38,7 +41,7 @@ public class SchemaDef {
     public String getName() { return name; }
 
     public Map<String, SearchField> getFields() { return fields; }
-    public Map<String, FieldView> getViews() { return views; }
+    public Map<String, Fields> getViews() { return views; }
 
     /**
      * Adds a document that can be mapped to this schema.
@@ -59,22 +62,22 @@ public class SchemaDef {
     private void noFieldShadowing(String name) {
         if (fields.containsKey(name)) {
             throw new IllegalArgumentException("Schema '" + getName() + "' already contains the fields '" + fields +
-                    "'. You are trying to add '" + name + "'. Shadowing is not supported");
+                                               "'. You are trying to add '" + name + "'. Shadowing is not supported");
         }
     }
 
     private void noViewShadowing(String name) {
         if (views.containsKey(name)) {
             throw new IllegalArgumentException("Searchdef '" + getName() + "' already contains a view with name '" +
-                    name + "'. Shadowing is not supported.");
+                                               name + "'. Shadowing is not supported.");
         }
     }
 
     /**
      * Adds a search field to the schema.
      *
-     * @param field the field to add.
-     * @return this, for chaining.
+     * @param field the field to add
+     * @return this, for chaining
      */
     public SchemaDef add(SearchField field) {
         try {
@@ -93,9 +96,11 @@ public class SchemaDef {
         if (!fields.containsKey(aliased) && !views.containsKey(aliased)) {
             if (aliased.contains(".")) {
                 // TODO Here we should nest ourself down to something that really exists.
-                log.warning("Aliased item '" + aliased + "' not verifiable. Allowing it to be aliased to '" + alias + " for now. Validation will come when URL/Position is structified.");
+                log.warning("Aliased item '" + aliased + "' not verifiable. Allowing it to be aliased to '" +
+                            alias + " for now. Validation will come when URL/Position is structified.");
             } else {
-                throw new IllegalArgumentException("Searchdef '" + getName() + "' has nothing named '" + aliased + "'to alias to '" + alias + "'.");
+                throw new IllegalArgumentException("Searchdef '" + getName() + "' has nothing named '" +
+                                                   aliased + "'to alias to '" + alias + "'.");
             }
         }
         String oldAliased = aliases.get(alias);
@@ -114,12 +119,12 @@ public class SchemaDef {
         return this;
     }
 
-    public SchemaDef add(FieldView view) {
-        noViewShadowing(view.getName());
-        if (views.containsKey(view.getName())) {
-            views.get(view.getName()).add(view);
+    public SchemaDef add(Fields view) {
+        noViewShadowing(view.name());
+        if (views.containsKey(view.name())) {
+            views.get(view.name()).add(view);
         }
-        views.put(view.getName(), view);
+        views.put(view.name(), view);
         return this;
     }
 

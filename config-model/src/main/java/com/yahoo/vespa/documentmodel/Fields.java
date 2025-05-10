@@ -3,7 +3,6 @@ package com.yahoo.vespa.documentmodel;
 
 import com.yahoo.vespa.objects.FieldBase;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -11,30 +10,28 @@ import java.util.Map;
 /**
  * @author baldersheim
  */
-public class FieldView implements Serializable {
+public class Fields<FIELDTYPE extends FieldBase> {
 
     private final String name;
-    private final Map<String, FieldBase> fields = new LinkedHashMap<>();
+    private final Map<String, FIELDTYPE> fields = new LinkedHashMap<>();
 
-    /**
-     * Creates a view with a name
-     * @param name Name of the view.
-     */
-    public FieldView(String name) {
+    /** Creates a view with a name. */
+    public Fields(String name) {
         this.name = name;
     }
-    public String getName()              { return name; }
-    public Collection<FieldBase> getFields() { return fields.values(); }
-    public FieldBase get(String name)        { return fields.get(name); }
-    public void remove(String name)      { fields.remove(name); }
+
+    public String name()                  { return name; }
+    public Collection<FIELDTYPE> values() { return fields.values(); }
+    public FIELDTYPE get(String name)     { return fields.get(name); }
+    public void remove(String name)       { fields.remove(name); }
 
     /**
-     * This method will add a field to a view. All fields must come from the same document type. Not enforced here.
+     * Adds a field to this.
      *
-     * @param field the field to add.
-     * @return itself for chaining purposes.
+     * @param field the field to add
+     * @return this for chaining
      */
-    public FieldView add(FieldBase field) {
+    public Fields<FIELDTYPE> add(FIELDTYPE field) {
         if (fields.containsKey(field.getName())) {
             if ( ! fields.get(field.getName()).equals(field)) {
                 throw new IllegalArgumentException(
@@ -49,14 +46,16 @@ public class FieldView implements Serializable {
     }
 
     /**
-     * This method will join the two views.
-     * @param view The view to be joined in to this.
-     * @return Itself for chaining.
+     * Adds another set of fields to this.
+     *
+     * @param other the fields to be added to this
+     * @return this for chaining
      */
-    public FieldView add(FieldView view) {
-        for(var field : view.getFields()) {
+    public Fields<FIELDTYPE> add(Fields<FIELDTYPE> other) {
+        for(var field : other.values()) {
             add(field);
         }
         return this;
     }
+
 }

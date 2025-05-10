@@ -4,9 +4,7 @@ package com.yahoo.vespa.documentmodel;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Field;
 import com.yahoo.vespa.objects.FieldBase;
-import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
@@ -23,7 +21,7 @@ import static com.yahoo.text.Lowercase.toLowerCase;
 public class SummaryField extends FieldBase implements Cloneable {
 
     /** A source (field name). */
-    public static class Source implements Serializable {
+    public static class Source {
 
         private final String name;
         private boolean override = false;
@@ -96,11 +94,9 @@ public class SummaryField extends FieldBase implements Cloneable {
     }
 
     public static SummaryField createWithUnresolvedType(String name) {
-        /*
-         * Data type is not available during conversion of
-         * parsed schema to schema. Use a placeholder data type and tag the summary
-         * field as having an unresolved type.
-         */
+        // Data type is not available during conversion of
+        // parsed schema to schema. Use a placeholder data type and tag the summary
+        // field as having an unresolved type.
         var summaryField = new SummaryField(name, DataType.NONE);
         summaryField.unresolvedType = true;
         return summaryField;

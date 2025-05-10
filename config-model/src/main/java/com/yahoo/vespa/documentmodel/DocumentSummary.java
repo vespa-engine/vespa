@@ -17,7 +17,7 @@ import static java.util.logging.Level.WARNING;
  *
  * @author bratseth
  */
-public class DocumentSummary extends FieldView {
+public class DocumentSummary extends Fields<SummaryField> {
 
     private boolean fromDisk = false;
     private boolean omitSummaryFeatures = false;
@@ -51,13 +51,14 @@ public class DocumentSummary extends FieldView {
      * 
      * @param summaryField the summaryfield to add
      */
-    public void add(SummaryField summaryField) {
-        summaryField.addDestination(getName());
+    public DocumentSummary add(SummaryField summaryField) {
+        summaryField.addDestination(name());
         super.add(summaryField);
+        return this;
     }
 
     public SummaryField getSummaryField(String name) {
-        var field = (SummaryField)get(name);
+        var field = get(name);
         if (field != null) return field;
         if (inherited().isEmpty()) return null;
         for (var inheritedSummary : inherited()) {
@@ -69,13 +70,13 @@ public class DocumentSummary extends FieldView {
     }
 
     public Map<String, SummaryField> getSummaryFields() {
-        var allFields = new LinkedHashMap<String, SummaryField>(getFields().size());
+        var allFields = new LinkedHashMap<String, SummaryField>(values().size());
         for (var inheritedSummary : inherited()) {
             if (inheritedSummary == null) continue;
             allFields.putAll(inheritedSummary.getSummaryFields());
         }
-        for (var field : getFields())
-            allFields.put(field.getName(), (SummaryField) field);
+        for (var field : values())
+            allFields.put(field.getName(), field);
         return allFields;
     }
 
@@ -116,7 +117,7 @@ public class DocumentSummary extends FieldView {
 
     @Override
     public String toString() {
-        return "document-summary '" + getName() + "'";
+        return "document-summary '" + name() + "'";
     }
 
     public void validate(DeployLogger logger) {
@@ -124,9 +125,11 @@ public class DocumentSummary extends FieldView {
             var inheritedSummary = owner.getSummary(inheritedName);
             // TODO: Throw when no one is doing this anymore
             if (inheritedName.equals("default"))
-                logger.logApplicationPackage(WARNING, this + " inherits '" + inheritedName + "', which makes no sense. Remove this inheritance");
+                logger.logApplicationPackage(WARNING, this + " inherits '" + inheritedName +
+                                                      "', which makes no sense. Remove this inheritance");
             else if (inheritedSummary == null )
-                throw new IllegalArgumentException(this + " inherits '" + inheritedName + "', but this is not present in " + owner);
+                throw new IllegalArgumentException(this + " inherits '" + inheritedName +
+                                                   "', but this is not present in " + owner);
         }
     }
 

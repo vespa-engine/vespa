@@ -57,7 +57,7 @@ public class SummaryFieldsMustHaveValidSource extends Processor {
     private void verifySource(String source, SummaryField summaryField, DocumentSummary summary) {
         if ( ! isValid(source, summaryField, summary) ) {
             throw new IllegalArgumentException("For " + schema + ", document-summary '" +
-                                               summary.getName() + "'," + " summary field '" + summaryField.getName() +
+                                               summary.name() + "'," + " summary field '" + summaryField.getName() +
                                                "': there is no valid source '" + source + "'.");
         }
     }
