@@ -36,6 +36,7 @@ public class DocumentSummary {
     }
 
     public String name()                     { return name; }
+    public Schema owner()                    { return owner; }
     public Collection<SummaryField> values() { return fields.values(); }
     public SummaryField get(String name)     { return fields.get(name); }
     public void remove(String name)          { fields.remove(name); }

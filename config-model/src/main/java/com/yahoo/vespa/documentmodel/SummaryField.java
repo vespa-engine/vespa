@@ -263,7 +263,7 @@ public class SummaryField extends FieldBase implements Cloneable {
         return "summary field '" + getName() + "'";
     }
 
-    /** Returns a string which aids locating this field in the source search definition */
+    /** Returns a string which aids locating this field in the source schema */
     public String toLocateString() {
         return "summary " + getName() + " type " + toLowerCase(dataType.getName()) + " in " + getDestinationString();
     }

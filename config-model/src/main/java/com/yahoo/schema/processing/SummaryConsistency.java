@@ -55,8 +55,9 @@ public class SummaryConsistency extends Processor {
     }
 
     private void assertConsistentTypes(SummaryField existing, SummaryField seen) {
-        if (existing.getDataType() instanceof WeightedSetDataType && seen.getDataType() instanceof WeightedSetDataType &&
-            ((WeightedSetDataType)existing.getDataType()).getNestedType().equals(((WeightedSetDataType)seen.getDataType()).getNestedType()))
+        if (existing.getDataType() instanceof WeightedSetDataType &&
+            seen.getDataType() instanceof WeightedSetDataType &&
+            existing.getDataType().getNestedType().equals(seen.getDataType().getNestedType()))
             return; // Disregard create-if-nonexistent and create-if-zero distinction
         if ( ! compatibleTypes(seen.getDataType(), existing.getDataType()))
             throw new IllegalArgumentException(existing.toLocateString() + " is inconsistent with " + 
@@ -91,17 +92,17 @@ public class SummaryConsistency extends Processor {
             newField.setTransform(defaultField.getTransform());
         }
         else { // New field sets an explicit transform - must be the same
-            assertEqualTransform(defaultField,newField);
+            assertEqualTransform(defaultField, newField);
         }
     }
 
     private void assertEqualTransform(SummaryField field1, SummaryField field2) {
         if ( ! field2.getTransform().equals(field1.getTransform())) {
-            throw new IllegalArgumentException("Conflicting summary transforms. " + field2 + " is already defined as " +
-                                               field1 + ". A field with the same name " +
+            throw new IllegalArgumentException("Conflicting summary transforms. " + field2.toLocateString() +
+                                               " is already defined as " +
+                                               field1.toLocateString() + ". A field with the same name " +
                                                "can not have different transforms in different summary classes");
         }
     }
-
 
 }
