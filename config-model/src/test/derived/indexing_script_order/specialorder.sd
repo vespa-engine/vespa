@@ -1,0 +1,55 @@
+schema specialorder {
+
+  # note: this will not happen first, maybe it should?
+  field lang_outside_first type string {
+      indexing: "en" | set_language
+  }
+
+  document specialorder {
+    field a type string {
+      indexing: summary | index
+    }
+    field b type string {
+      indexing: "no" | set_language
+    }
+    field c type string {
+      indexing: summary | index
+    }
+    field d type string {
+      indexing: summary | index
+    }
+    field e type string {
+      indexing: set_language | summary
+    }
+    field f type string {
+      indexing: summary | index
+    }
+    field g type string {
+      indexing {
+        "fr" | set_language;
+        input g | summary | index
+      }
+    }
+    field h type string {
+      indexing: summary | index
+    }
+  }
+
+  field lang_outside_after type string {
+      indexing: "es" | set_language
+  }
+
+  # this will move to happen before "a" field, so will not get the "es" from above
+  field outside_using_a type string {
+      indexing: input a | index
+  }
+
+  field outside_using_b type string {
+      indexing: input b | index
+  }
+
+  field lang_outside_last type string {
+      indexing: "pl" | set_language
+  }
+
+}

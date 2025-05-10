@@ -222,11 +222,11 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertEquals("a", cfg.attribute().get(0).name());
         assertFalse(cfg.attribute().get(0).ismutable());
 
-        assertEquals("f", cfg.attribute().get(1).name());
-        assertFalse(cfg.attribute().get(1).ismutable());
+        assertEquals("m", cfg.attribute().get(1).name());
+        assertTrue(cfg.attribute().get(1).ismutable());
 
-        assertEquals("m", cfg.attribute().get(2).name());
-        assertTrue(cfg.attribute().get(2).ismutable());
+        assertEquals("f", cfg.attribute().get(2).name());
+        assertFalse(cfg.attribute().get(2).ismutable());
     }
 
     @Test
@@ -238,10 +238,10 @@ public class AttributeSettingsTestCase extends AbstractSchemaTestCase {
         assertEquals("a", cfg.attribute().get(0).name());
         assertEquals(13333, cfg.attribute().get(0).maxuncommittedmemory());
 
-        assertEquals("f", cfg.attribute().get(1).name());
+        assertEquals("m", cfg.attribute().get(1).name());
         assertEquals(13333, cfg.attribute().get(1).maxuncommittedmemory());
 
-        assertEquals("m", cfg.attribute().get(2).name());
+        assertEquals("f", cfg.attribute().get(2).name());
         assertEquals(13333, cfg.attribute().get(2).maxuncommittedmemory());
     }
 

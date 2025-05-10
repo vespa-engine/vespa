@@ -33,7 +33,7 @@ public class ConvertParsedFields {
 
     private final TypeResolver context;
     private final Map<String, SDDocumentType> structProxies;
-    
+
     ConvertParsedFields(TypeResolver context, Map<String, SDDocumentType> structProxies) {
         this.context = context;
         this.structProxies = structProxies;
@@ -295,7 +295,7 @@ public class ConvertParsedFields {
         var lowerBound = parsed.getLowerBound();
         var upperBound = parsed.getUpperBound();
         var densePostingListThreshold = parsed.getDensePostingListThreshold();
-        if (arity.isPresent() || 
+        if (arity.isPresent() ||
             lowerBound.isPresent() ||
             upperBound.isPresent() ||
             densePostingListThreshold.isPresent())

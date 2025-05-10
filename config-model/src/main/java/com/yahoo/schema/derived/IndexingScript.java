@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * An indexing language script derived from a schema. An indexing script contains a set of indexing
@@ -153,27 +154,78 @@ public final class IndexingScript extends Derived {
     }
 
     private void addContentInOrder(IlscriptsConfig.Ilscript.Builder ilscriptBuilder) {
-        ArrayList<Expression> later = new ArrayList<>();
+        List<Expression> ordered = orderExpressions(expressions);
         Set<String> touchedFields = new HashSet<>();
-        for (Expression expression : expressions) {
+        for (Expression expression : ordered) {
             if (isStreaming) {
                 expression = expression.convertChildren(new DropTokenize());
                 expression = expression.convertChildren(new DropZcurve());
             }
-            if (modifiesSelf(expression) && ! setsLanguage(expression)) {
-                later.add(expression);
-            } else {
-                ilscriptBuilder.content(expression.toString());
-            }
-
+            ilscriptBuilder.content(expression.toString());
             FieldScanVisitor fieldFetcher = new FieldScanVisitor();
             fieldFetcher.visit(expression);
             touchedFields.addAll(fieldFetcher.touchedFields());
         }
-        for (Expression exp : later) {
-            ilscriptBuilder.content(exp.toString());
-        }
         generateSyntheticStatementsForUntouchedFields(ilscriptBuilder, touchedFields);
+    }
+
+    private List<Expression> orderExpressions(List<Expression> expressions) {
+        List<Expression> result = new ArrayList<>();
+        List<ToProcess> toProcess = expressions.stream().map(ToProcess::new).collect(Collectors.toList());
+        for (var entry : toProcess) {
+            if (entry.done)
+                continue;
+            for (String modifyingField : entry.modifiesSelf) {
+                // NOTE: loops over same list for simplicity
+                for (var checkUsing : toProcess) {
+                    if (checkUsing.done || checkUsing == entry)
+                        continue;
+                    if (checkUsing.inputs.contains(modifyingField)) {
+                        result.add(checkUsing.getExpression());
+                    }
+                }
+            }
+            result.add(entry.getExpression());
+        }
+        return result;
+    }
+
+    private static class ToProcess {
+        boolean done = false;
+        final Set<String> inputs = new HashSet();
+        final Set<String> outputs = new HashSet();
+        final Set<String> modifiesSelf = new HashSet();
+        private Expression expr;
+
+        // should only be called once
+        Expression getExpression() {
+            done = true;
+            return expr;
+        }
+
+        ToProcess(Expression expr) {
+            this.expr = expr;
+            // analyze expression:
+            var visitor = new GetIOVisitor();
+            visitor.visit(expr);
+            for (String out : outputs) {
+                if (inputs.contains(out)) {
+                    modifiesSelf.add(out);
+                }
+            }
+        }
+
+        private class GetIOVisitor extends ExpressionVisitor {
+            @Override
+            protected void doVisit(Expression expression) {
+                if (expression instanceof InputExpression in) {
+                    inputs.add(in.getFieldName());
+                }
+                if (expression instanceof OutputExpression out) {
+                    outputs.add(out.getFieldName());
+                }
+            }
+        }
     }
 
     private void generateSyntheticStatementsForUntouchedFields(Builder ilscriptBuilder, Set<String> touchedFields) {

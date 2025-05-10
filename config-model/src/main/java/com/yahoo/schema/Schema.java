@@ -33,7 +33,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.stream.Stream;
 
@@ -424,17 +423,17 @@ public class Schema implements ImmutableSchema {
     }
 
     public Collection<SDField> allExtraFields() {
-        Map<String, SDField> extraFields = new TreeMap<>();
+        Map<String, SDField> extraFields = new LinkedHashMap<>();
         if (inherited.isPresent())
             requireInherited().allExtraFields().forEach(field -> extraFields.put(field.getName(), field));
-        for (Field field : documentType.fieldSet()) {
-            SDField sdField = (SDField) field;
-            if (sdField.isExtraField()) {
-                extraFields.put(sdField.getName(), sdField);
-            }
-        }
         for (SDField field : extraFieldList()) {
             extraFields.put(field.getName(), field);
+        }
+        for (Field field : documentType.fieldSet()) {
+            SDField sdField = (SDField) field;
+            if (sdField.isExtraField() && !extraFields.containsKey(sdField.getName())) {
+                extraFields.put(sdField.getName(), sdField);
+            }
         }
         return extraFields.values();
     }
