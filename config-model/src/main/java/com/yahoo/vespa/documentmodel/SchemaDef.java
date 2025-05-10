@@ -5,7 +5,9 @@ import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Logger;
 
 /**
@@ -28,9 +30,9 @@ public class SchemaDef {
      * All index names. This includes any additional index names created by index blocks inside fields.
      * TODO: That feature is deprecated and should be removed on Vespa 9.
      */
-    private final Map<String, Fields> views = new HashMap<>();
+    private final Set<String> indexNames = new HashSet<>();
 
-    /// Map of all aliases <alias, realname>
+    /** Map of all aliases <alias, realname> */
     private final Map<String, String> aliases = new HashMap<>();
 
     /** Creates a SearchDef with the given name. */
@@ -41,7 +43,7 @@ public class SchemaDef {
     public String getName() { return name; }
 
     public Map<String, SearchField> getFields() { return fields; }
-    public Map<String, Fields> getViews() { return views; }
+    public Set<String> getIndexNames() { return indexNames; }
 
     /**
      * Adds a document that can be mapped to this schema.
@@ -67,8 +69,8 @@ public class SchemaDef {
     }
 
     private void noViewShadowing(String name) {
-        if (views.containsKey(name)) {
-            throw new IllegalArgumentException("Searchdef '" + getName() + "' already contains a view with name '" +
+        if (indexNames.contains(name)) {
+            throw new IllegalArgumentException("Schema '" + getName() + "' already contains an index with name '" +
                                                name + "'. Shadowing is not supported.");
         }
     }
@@ -84,7 +86,7 @@ public class SchemaDef {
             noFieldShadowing(field.getName());
             fields.put(field.getName(), field);
         } catch (IllegalArgumentException e) {
-            if (views.containsKey(field.getName())) {
+            if (indexNames.contains(field.getName())) {
                  throw e;
             }
         }
@@ -93,25 +95,25 @@ public class SchemaDef {
 
     public SchemaDef addAlias(String alias, String aliased) {
         noShadowing(alias);
-        if (!fields.containsKey(aliased) && !views.containsKey(aliased)) {
+        if (!fields.containsKey(aliased) && !indexNames.contains(aliased)) {
             if (aliased.contains(".")) {
                 // TODO Here we should nest ourself down to something that really exists.
                 log.warning("Aliased item '" + aliased + "' not verifiable. Allowing it to be aliased to '" +
                             alias + " for now. Validation will come when URL/Position is structified.");
             } else {
-                throw new IllegalArgumentException("Searchdef '" + getName() + "' has nothing named '" +
+                throw new IllegalArgumentException("Schema '" + getName() + "' has nothing named '" +
                                                    aliased + "'to alias to '" + alias + "'.");
             }
         }
         String oldAliased = aliases.get(alias);
         if ((oldAliased != null)) {
             if (oldAliased.equals(aliased)) {
-                throw new IllegalArgumentException("Searchdef '" + getName() + "' already has the alias '" + alias +
-                        "' to '" + aliased + ". Why do you want to add it again.");
+                throw new IllegalArgumentException("Schema '" + getName() + "' already has the alias '" + alias +
+                                                   "' to '" + aliased + ". Why do you want to add it again.");
 
             } else {
-                throw new IllegalArgumentException("Searchdef '" + getName() + "' already has the alias '" + alias +
-                        "' to '" + oldAliased + ". Cannot change it to alias '" + aliased + "'.");
+                throw new IllegalArgumentException("Schema '" + getName() + "' already has the alias '" + alias +
+                                                   "' to '" + oldAliased + ". Cannot change it to alias '" + aliased + "'.");
             }
         } else {
             aliases.put(alias, aliased);
@@ -119,12 +121,9 @@ public class SchemaDef {
         return this;
     }
 
-    public SchemaDef add(Fields view) {
-        noViewShadowing(view.name());
-        if (views.containsKey(view.name())) {
-            views.get(view.name()).add(view);
-        }
-        views.put(view.name(), view);
+    public SchemaDef addIndexName(String indexName) {
+        noViewShadowing(indexName);
+        indexNames.add(indexName);
         return this;
     }
 
