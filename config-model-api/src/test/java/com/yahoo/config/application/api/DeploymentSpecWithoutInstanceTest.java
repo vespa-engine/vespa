@@ -650,15 +650,15 @@ public class DeploymentSpecWithoutInstanceTest {
 
         var zone = from(prod, RegionName.from("us-east"));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax")));
+                     spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax"), false));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), defaultId(), ClusterSpec.Id.from("bax")));
+                     spec.zoneEndpoint(InstanceName.from("default"), defaultId(), ClusterSpec.Id.from("bax"), false));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("bax")));
+                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("bax"), false));
 
         assertEquals(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "barn"),
                                                            new AllowedUrn(AccessType.gcpServiceConnect, "nine"))),
-                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("froz")));
+                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("froz"), false));
     }
 
     @Test
