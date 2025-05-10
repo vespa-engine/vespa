@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,7 +18,10 @@ import static java.util.logging.Level.WARNING;
  *
  * @author bratseth
  */
-public class DocumentSummary extends Fields<SummaryField> {
+public class DocumentSummary {
+
+    private final String name;
+    private final Map<String, SummaryField> fields = new LinkedHashMap<>();
 
     private boolean fromDisk = false;
     private boolean omitSummaryFeatures = false;
@@ -27,8 +31,49 @@ public class DocumentSummary extends Fields<SummaryField> {
 
     /** Creates a DocumentSummary with the given name. */
     public DocumentSummary(String name, Schema owner) {
-        super(name);
+        this.name = name;
         this.owner = owner;
+    }
+
+    public String name()                     { return name; }
+    public Collection<SummaryField> values() { return fields.values(); }
+    public SummaryField get(String name)     { return fields.get(name); }
+    public void remove(String name)          { fields.remove(name); }
+
+    /**
+     * Adds a field to this.
+     * The model is constrained to ensure that summary fields of the same name
+     * in different classes have the same summary transform, because this is
+     * what is supported by the backend currently.
+     *
+     * @param field the summary field to add
+     * @return this for chaining
+     */
+    public DocumentSummary add(SummaryField field) {
+        field.addDestination(name());
+        if (fields.containsKey(field.getName())) {
+            if ( ! fields.get(field.getName()).equals(field)) {
+                throw new IllegalArgumentException(
+                        "Summary '" + name + "' already contains a field with name '" +
+                        field.getName() + "' and definition : " +
+                        fields.get(field.getName()).toString() + ". Cannot add " + field.toString());
+            }
+        } else {
+            fields.put(field.getName(), field);
+        }
+        return this;
+    }
+
+    /**
+     * Adds another set of fields to this.
+     *
+     * @param other the fields to be added to this
+     * @return this for chaining
+     */
+    public DocumentSummary add(DocumentSummary other) {
+        for(var field : other.values())
+            add(field);
+        return this;
     }
 
     public void setFromDisk(boolean fromDisk) { this.fromDisk = fromDisk; }
@@ -42,19 +87,6 @@ public class DocumentSummary extends Fields<SummaryField> {
 
     public boolean omitSummaryFeatures() {
         return omitSummaryFeatures;
-    }
-
-    /**
-     * The model is constrained to ensure that summary fields of the same name
-     * in different classes have the same summary transform, because this is
-     * what is supported by the backend currently.
-     * 
-     * @param summaryField the summaryfield to add
-     */
-    public DocumentSummary add(SummaryField summaryField) {
-        summaryField.addDestination(name());
-        super.add(summaryField);
-        return this;
     }
 
     public SummaryField getSummaryField(String name) {
