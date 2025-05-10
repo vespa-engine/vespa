@@ -215,7 +215,7 @@ public class IndexingScriptRewriterTestCase extends AbstractSchemaTestCase {
     }
 
     private static SummaryField createSummaryField(SDField field, String name, boolean dynamic) {
-        SummaryField summaryField = new SummaryField(name, field.getDataType());
+        SummaryField summaryField = new SummaryField(name, field.getDataType(), field);
         if (dynamic) {
             summaryField.setTransform(SummaryTransform.DYNAMICTEASER);
         }

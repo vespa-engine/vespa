@@ -54,10 +54,7 @@ public class DocumentSummary {
         field.addDestination(name());
         if (fields.containsKey(field.getName())) {
             if ( ! fields.get(field.getName()).equals(field)) {
-                throw new IllegalArgumentException(
-                        "Summary '" + name + "' already contains a field with name '" +
-                        field.getName() + "' and definition : " +
-                        fields.get(field.getName()).toString() + ". Cannot add " + field.toString());
+                throw new IllegalArgumentException("Duplicate declaration of " + field + " in " + this);
             }
         } else {
             fields.put(field.getName(), field);
@@ -150,7 +147,7 @@ public class DocumentSummary {
 
     @Override
     public String toString() {
-        return "document-summary '" + name() + "'";
+        return "document-summary '" + name() + "' in " + owner;
     }
 
     public void validate(DeployLogger logger) {

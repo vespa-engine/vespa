@@ -698,7 +698,7 @@ public class SDField extends Field implements ImmutableSDField {
     public SummaryField getSummaryField(String name, boolean create) {
         SummaryField summaryField = summaryFields.get(name);
         if (summaryField == null && create) {
-            summaryField = new SummaryField(name, getDataType());
+            summaryField = new SummaryField(name, getDataType(), this);
             addSummaryField(summaryField);
         }
         return summaryFields.get(name);

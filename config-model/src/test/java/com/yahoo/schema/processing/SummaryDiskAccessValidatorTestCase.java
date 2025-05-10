@@ -33,7 +33,7 @@ public class SummaryDiskAccessValidatorTestCase {
         ApplicationBuilder.createFromString(sd, logger);
         assertEquals(1, logger.warnings.size());
         assertThat(logger.warnings.get(0),
-                containsString("In schema 'test', document-summary 'my_sum': " +
+                containsString("In document-summary 'my_sum' in schema 'test': " +
                         "Fields [str_map] references non-attribute fields: Using this summary will cause disk accesses"));
     }
 

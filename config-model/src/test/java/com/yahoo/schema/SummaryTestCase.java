@@ -62,7 +62,7 @@ public class SummaryTestCase {
         ApplicationBuilder.createFromString(sd, logger);
         assertEquals(1, logger.entries.size());
         assertEquals(Level.WARNING, logger.entries.get(0).level);
-        assertEquals("In schema 'disksummary', document-summary 'foobar': " +
+        assertEquals("In document-summary 'foobar' in schema 'disksummary': " +
                      "Fields [foo2] references non-attribute fields: " +
                      "Using this summary will cause disk accesses. " +
                      "Set 'from-disk' on this document-summary to silence this warning.",
@@ -234,8 +234,8 @@ public class SummaryTestCase {
             fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("document-summary 'test_summary' inherits 'nonesuch', but this is not present in schema 'test'",
-            e.getMessage());
+            assertEquals("document-summary 'test_summary' in schema 'test' inherits 'nonesuch', but this is not present in schema 'test'",
+            Exceptions.toMessageString(e));
         }
     }
 
@@ -271,8 +271,8 @@ public class SummaryTestCase {
             fail("Expected failure");
         }
         catch (IllegalArgumentException e) {
-            assertEquals("summary field1 type string in document-summary 'default' is inconsistent with " +
-                         "summary field1 type int in document-summary 'parent2': " +
+            assertEquals("summary 'field1' in field 'field1' is inconsistent with summary 'field1' " +
+                         "in document-summary 'parent2' in schema 'test': " +
                          "All declarations of the same summary field must have the same type",
                          Exceptions.toMessageString(e));
         }
