@@ -20,36 +20,6 @@ import static com.yahoo.text.Lowercase.toLowerCase;
  */
 public class SummaryField extends FieldBase implements Cloneable {
 
-    /** A source (field name). */
-    public static class Source {
-
-        private final String name;
-        private boolean override = false;
-        public Source(String name) {
-            this.name = name;
-        }
-        public String getName() { return name; }
-        public void setOverride(boolean override) { this.override = override; }
-        public boolean getOverride() { return override; }
-
-        @Override
-        public int hashCode() {
-            return name.hashCode() + Boolean.valueOf(override).hashCode();
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (!(obj instanceof Source other)) return false;
-            return name.equals(other.name) && override == other.override;
-        }
-
-        @Override
-        public String toString() {
-            return "source field '" + name + "'";
-        }
-
-    }
-
     private SummaryElementsSelector elementsSelector = SummaryElementsSelector.selectAll();
     /** The transform to perform on the stored source */
     private SummaryTransform transform;
@@ -336,6 +306,36 @@ public class SummaryField extends FieldBase implements Cloneable {
         public String toString() {
             return cmd;
         }
+    }
+
+    /** A source (field name). */
+    public static class Source {
+
+        private final String name;
+        private boolean override = false;
+        public Source(String name) {
+            this.name = name;
+        }
+        public String getName() { return name; }
+        public void setOverride(boolean override) { this.override = override; }
+        public boolean getOverride() { return override; }
+
+        @Override
+        public int hashCode() {
+            return name.hashCode() + Boolean.valueOf(override).hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (!(obj instanceof Source other)) return false;
+            return name.equals(other.name) && override == other.override;
+        }
+
+        @Override
+        public String toString() {
+            return "source field '" + name + "'";
+        }
+
     }
 
 }
