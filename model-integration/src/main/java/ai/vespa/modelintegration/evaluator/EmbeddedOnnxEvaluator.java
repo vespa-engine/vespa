@@ -139,7 +139,7 @@ class EmbeddedOnnxEvaluator implements OnnxEvaluator {
             OnnxEvaluatorOptions options,
             boolean tryCuda) {
         if (options == null) {
-            options = new OnnxEvaluatorOptions();
+            options = OnnxEvaluatorOptions.createDefault();
         }
         try {
             boolean loadCuda = tryCuda && options.requestingGpu();

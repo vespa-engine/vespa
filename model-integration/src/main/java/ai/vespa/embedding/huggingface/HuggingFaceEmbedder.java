@@ -68,11 +68,12 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
         }
         this.tokenizer = builder.build();
         poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
-        var onnxOpts = new OnnxEvaluatorOptions();
+        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
+                .setExecutionMode(config.transformerExecutionMode().toString())
+                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
         if (config.transformerGpuDevice() >= 0)
-            onnxOpts.setGpuDevice(config.transformerGpuDevice());
-        onnxOpts.setExecutionMode(config.transformerExecutionMode().toString());
-        onnxOpts.setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
+            optionsBuilder.setGpuDevice(config.transformerGpuDevice());
+        var onnxOpts = optionsBuilder.build();
         evaluator = onnx.evaluatorOf(config.transformerModel().toString(), onnxOpts);
         tokenTypeIdsName = detectTokenTypeIds(config, evaluator);
         validateModel();

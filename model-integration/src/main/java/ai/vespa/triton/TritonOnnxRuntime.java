@@ -23,6 +23,7 @@ import java.nio.file.StandardCopyOption;
 public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime {
 
     private final TritonConfig config;
+    private final TritonOnnxClient client;
 
     // Test constructor
     public TritonOnnxRuntime() {
@@ -32,11 +33,14 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     @Inject
     public TritonOnnxRuntime(TritonConfig config) {
         this.config = config;
+        this.client = new TritonOnnxClient(config);
     }
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath) {
-        return new TritonOnnxEvaluator(config, copyFileToRepositoryAndGetModelId(modelPath));
+        var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        if (isExplicitControlMode) copyModelToRepository(modelPath);
+        return new TritonOnnxEvaluator(client, modelName(modelPath), isExplicitControlMode);
     }
 
     @Override
@@ -44,13 +48,15 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         return evaluatorOf(modelPath); // TODO: pass options
     }
 
-    /** Copies the model file to the model repository and returns the model id */
-    private String copyFileToRepositoryAndGetModelId(String externalModelPath) {
-        var modelRepository = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
-        var modelName = externalModelPath.substring(externalModelPath.lastIndexOf('/') + 1);
-        modelName = modelName.substring(0, modelName.lastIndexOf('.'));
+    @Override
+    public void deconstruct() {
+        client.close();
+    }
 
-        var repositoryModelRoot = Paths.get(modelRepository, modelName, "1");
+    /** Copies the model file to the model repository */
+    private void copyModelToRepository(String externalModelPath) {
+        var modelRepository = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
+        var repositoryModelRoot = Paths.get(modelRepository, modelName(externalModelPath), "1");
         var repositoryModelFile = repositoryModelRoot.resolve("model.onnx");
         try {
             Files.createDirectories(repositoryModelRoot);
@@ -58,7 +64,12 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }
-        return modelName;
     }
 
+    // Hackish name to deduce model name from path.
+    // It should ideally include a suffix based on the model's hash/timestamp/file size to avoid conflicts
+    private static String modelName(String modelPath) {
+        var name = modelPath.substring(modelPath.lastIndexOf('/') + 1);
+        return name.substring(0, name.lastIndexOf('.'));
+    }
 }

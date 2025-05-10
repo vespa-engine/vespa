@@ -297,6 +297,7 @@
       "public void <init>(ai.vespa.llm.clients.TritonConfig)",
       "public ai.vespa.llm.clients.TritonConfig$Builder target(java.lang.String)",
       "public ai.vespa.llm.clients.TritonConfig$Builder modelRepositoryPath(java.lang.String)",
+      "public ai.vespa.llm.clients.TritonConfig$Builder modelControlMode(ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -306,6 +307,41 @@
       "public ai.vespa.llm.clients.TritonConfig build()"
     ],
     "fields" : [ ]
+  },
+  "ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum[] values()",
+      "public static ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum NONE",
+      "public static final enum ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum POLL",
+      "public static final enum ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum EXPLICIT"
+    ]
+  },
+  "ai.vespa.llm.clients.TritonConfig$ModelControlMode" : {
+    "superClass" : "com.yahoo.config.EnumNode",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final"
+    ],
+    "methods" : [
+      "public void <init>()",
+      "public void <init>(ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum)"
+    ],
+    "fields" : [
+      "public static final ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum NONE",
+      "public static final ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum POLL",
+      "public static final ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum EXPLICIT"
+    ]
   },
   "ai.vespa.llm.clients.TritonConfig$Producer" : {
     "superClass" : "java.lang.Object",
@@ -335,7 +371,8 @@
       "public static java.lang.String getDefNamespace()",
       "public void <init>(ai.vespa.llm.clients.TritonConfig$Builder)",
       "public java.lang.String target()",
-      "public java.lang.String modelRepositoryPath()"
+      "public java.lang.String modelRepositoryPath()",
+      "public ai.vespa.llm.clients.TritonConfig$ModelControlMode$Enum modelControlMode()"
     ],
     "fields" : [
       "public static final java.lang.String CONFIG_DEF_MD5",

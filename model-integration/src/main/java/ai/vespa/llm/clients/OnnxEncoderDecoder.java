@@ -64,9 +64,10 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
         encoderAttentionMaskName = config.encoderModelAttentionMaskName();
         encoderOutputName = config.encoderModelOutputName();
 
-        OnnxEvaluatorOptions encoderOptions = new OnnxEvaluatorOptions();
-        encoderOptions.setExecutionMode(config.encoderOnnxExecutionMode().toString());
-        encoderOptions.setThreads(config.encoderOnnxInterOpThreads(), config.encoderOnnxIntraOpThreads());
+        OnnxEvaluatorOptions encoderOptions = new OnnxEvaluatorOptions.Builder()
+                .setExecutionMode(config.encoderOnnxExecutionMode().toString())
+                .setThreads(config.encoderOnnxInterOpThreads(), config.encoderOnnxIntraOpThreads())
+                .build();
 
         encoder = onnx.evaluatorOf(config.encoderModel().toString(), encoderOptions);
 
@@ -76,9 +77,10 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
         decoderEncoderHiddenStateName = config.decoderModelEncoderHiddenStateName();
         decoderOutputName = config.decoderModelOutputName();
 
-        OnnxEvaluatorOptions decoderOptions = new OnnxEvaluatorOptions();
-        decoderOptions.setExecutionMode(config.decoderOnnxExecutionMode().toString());
-        decoderOptions.setThreads(config.decoderOnnxInterOpThreads(), config.decoderOnnxIntraOpThreads());
+        OnnxEvaluatorOptions decoderOptions = new OnnxEvaluatorOptions.Builder()
+                .setExecutionMode(config.decoderOnnxExecutionMode().toString())
+                .setThreads(config.decoderOnnxInterOpThreads(), config.decoderOnnxIntraOpThreads())
+                .build();
 
         decoder = onnx.evaluatorOf(config.decoderModel().toString(), decoderOptions);
 
@@ -245,7 +247,7 @@ public class OnnxEncoderDecoder extends AbstractComponent implements LanguageMod
     public CompletableFuture<Completion.FinishReason> completeAsync(Prompt prompt, InferenceParameters options, Consumer<Completion> consumer) {
         throw new UnsupportedOperationException("Asynchronous completion is not supported");
     }
-    
+
     public static class DecoderOptions {
 
         public enum SearchMethod {

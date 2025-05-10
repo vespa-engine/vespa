@@ -7,3 +7,6 @@ target string default="localhost:8001"
 ## Model repository path where ONNX models are copied to.
 ## Relative paths will be resolved relative to $VESPA_HOME.
 modelRepositoryPath string default="var/triton/model-repository"
+
+## Model control mode. Client will only issue model load/unload requests if mode is EXPLICIT.
+modelControlMode enum {NONE, POLL, EXPLICIT} default=EXPLICIT

@@ -57,10 +57,11 @@ public class BertBaseEmbedder extends AbstractComponent implements Embedder {
         outputName = config.transformerOutput();
         poolingStrategy = PoolingStrategy.fromString(config.poolingStrategy().toString());
 
-        OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
-        options.setExecutionMode(config.onnxExecutionMode().toString());
-        options.setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads());
-        if (config.onnxGpuDevice() >= 0) options.setGpuDevice(config.onnxGpuDevice());
+        OnnxEvaluatorOptions.Builder optionsBuilder = new OnnxEvaluatorOptions.Builder()
+                .setExecutionMode(config.onnxExecutionMode().toString())
+                .setThreads(config.onnxInterOpThreads(), config.onnxIntraOpThreads());
+        if (config.onnxGpuDevice() >= 0) optionsBuilder.setGpuDevice(config.onnxGpuDevice());
+        OnnxEvaluatorOptions options = optionsBuilder.build();
 
         tokenizer = new WordPieceEmbedder.Builder(config.tokenizerVocab().toString()).build();
         this.evaluator = onnx.evaluatorOf(config.transformerModel().toString(), options);
