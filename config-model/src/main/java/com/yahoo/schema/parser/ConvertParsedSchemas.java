@@ -252,8 +252,8 @@ public class ConvertParsedSchemas {
                 }
             }
             var summaryField = (dataType == null) ?
-                    SummaryField.createWithUnresolvedType(parsedField.name()) :
-                    new SummaryField(parsedField.name(), dataType);
+                    SummaryField.createWithUnresolvedType(parsedField.name(), docsum) :
+                    new SummaryField(parsedField.name(), dataType, docsum);
             // XXX does not belong here:
             summaryField.setVsmCommand(SummaryField.VsmCommand.FLATTENSPACE);
             ConvertParsedFields.convertSummaryFieldSettings(summaryField, parsedField);

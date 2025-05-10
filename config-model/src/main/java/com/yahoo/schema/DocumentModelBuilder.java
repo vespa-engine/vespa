@@ -25,7 +25,6 @@ import com.yahoo.schema.document.TemporaryImportedFields;
 import com.yahoo.schema.document.annotation.SDAnnotationType;
 import com.yahoo.schema.document.annotation.TemporaryAnnotationReferenceDataType;
 import com.yahoo.vespa.documentmodel.DocumentModel;
-import com.yahoo.vespa.documentmodel.FieldView;
 import com.yahoo.vespa.documentmodel.SchemaDef;
 import com.yahoo.vespa.documentmodel.SearchField;
 
@@ -160,9 +159,7 @@ public class DocumentModelBuilder {
                             field.getIndices().containsKey(field.getName()) && field.getIndices().get(field.getName()).getType().equals(Index.Type.VESPA),
                             field.getAttributes().containsKey(field.getName()));
         schemaDef.add(searchField);
-
-        // Add field to views
-        addToView(field.getIndices().keySet(), searchField, schemaDef);
+        addIndexNames(field.getIndices().keySet(), schemaDef);
     }
 
     private static void addAlias(SDField field, SchemaDef schemaDef) {
@@ -171,20 +168,10 @@ public class DocumentModelBuilder {
         }
     }
 
-    private static void addToView(Collection<String> views, Field field, SchemaDef schemaDef) {
-        for (String viewName : views) {
-            addToView(viewName, field, schemaDef);
-        }
-    }
-
-    private static void addToView(String viewName, Field field, SchemaDef schemaDef) {
-        if (schemaDef.getViews().containsKey(viewName)) {
-            schemaDef.getViews().get(viewName).add(field);
-        } else {
-            if (!schemaDef.getFields().containsKey(viewName)) {
-                FieldView view = new FieldView(viewName);
-                view.add(field);
-                schemaDef.add(view);
+    private static void addIndexNames(Collection<String> indexNames, SchemaDef schemaDef) {
+        for (String indexName : indexNames) {
+            if (!schemaDef.getIndexNames().contains(indexName) && !schemaDef.getFields().containsKey(indexName)) {
+                schemaDef.addIndexName(indexName);
             }
         }
     }

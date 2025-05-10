@@ -259,7 +259,7 @@ public class SchemaTestCase {
         assertTrue(child1.onnxModels().containsKey("child1_model"));
         assertNotNull(child1.getSummary("parent_summary1"));
         assertNotNull(child1.getSummary("child1_summary"));
-        assertEquals("parent_summary1", child1.getSummary("child1_summary").inherited().get(0).getName());
+        assertEquals("parent_summary1", child1.getSummary("child1_summary").inherited().get(0).name());
         assertTrue(child1.getSummaries().containsKey("parent_summary1"));
         assertTrue(child1.getSummaries().containsKey("child1_summary"));
         assertNotNull(child1.getSummaryField("pf1"));
@@ -296,8 +296,8 @@ public class SchemaTestCase {
         assertNotNull(child2.getSummary("parent_summary1"));
         assertNotNull(child2.getSummary("parent_summary2"));
         assertNotNull(child2.getSummary("child2_summary"));
-        assertEquals("parent_summary1", child2.getSummary("child2_summary").inherited().get(0).getName());
-        assertEquals("parent_summary2", child2.getSummary("child2_summary").inherited().get(1).getName());
+        assertEquals("parent_summary1", child2.getSummary("child2_summary").inherited().get(0).name());
+        assertEquals("parent_summary2", child2.getSummary("child2_summary").inherited().get(1).name());
         assertTrue(child2.getSummaries().containsKey("parent_summary1"));
         assertTrue(child2.getSummaries().containsKey("parent_summary2"));
         assertTrue(child2.getSummaries().containsKey("child2_summary"));

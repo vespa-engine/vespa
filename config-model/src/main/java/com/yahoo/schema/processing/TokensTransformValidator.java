@@ -33,13 +33,13 @@ public class TokensTransformValidator extends Processor {
                             var innerType = type.getPrimitiveType();
                             if (innerType != DataType.STRING) {
                                 throw new IllegalArgumentException("For schema '" + schema.getName() +
-                                        "', document-summary '" + summary.getName() +
-                                        "', summary field '" + summaryField.getName() +
-                                        "', source field '" + field.getName() +
-                                        "', source field type '" + type.getName() +
-                                        "': transform '" + SummaryTransform.TOKENS.getName() +
-                                        "' is only allowed for fields of type" +
-                                        " string, array<string> or weightedset<string>");
+                                                                   "', document-summary '" + summary.name() +
+                                                                   "', summary field '" + summaryField.getName() +
+                                                                   "', source field '" + field.getName() +
+                                                                   "', source field type '" + type.getName() +
+                                                                   "': transform '" + SummaryTransform.TOKENS.getName() +
+                                                                   "' is only allowed for fields of type" +
+                                                                   " string, array<string> or weightedset<string>");
                             }
                         }
                     }

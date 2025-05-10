@@ -24,14 +24,14 @@ public class ImplicitSummaryFields extends Processor {
     public void process(boolean validate, boolean documentsOnly) {
         for (DocumentSummary docsum : schema.getSummariesInThis().values()) {
             if ( ! docsum.inherited().isEmpty()) continue; // Implicit fields are added to inheriting summaries through their parent
-            addField(docsum, new SummaryField("rankfeatures", DataType.STRING, SummaryTransform.RANKFEATURES), validate);
-            addField(docsum, new SummaryField("summaryfeatures", DataType.STRING, SummaryTransform.SUMMARYFEATURES), validate);
+            addField(docsum, new SummaryField("rankfeatures", DataType.STRING, SummaryTransform.RANKFEATURES, docsum), validate);
+            addField(docsum, new SummaryField("summaryfeatures", DataType.STRING, SummaryTransform.SUMMARYFEATURES, docsum), validate);
         }
     }
 
     private void addField(DocumentSummary docsum, SummaryField field, boolean validate) {
         if (validate && docsum.getSummaryField(field.getName()) != null) {
-            throw new IllegalArgumentException("Summary class '" + docsum.getName() + "' uses reserved field name '" +
+            throw new IllegalArgumentException("Summary class '" + docsum.name() + "' uses reserved field name '" +
                                                field.getName() + "'.");
         }
         docsum.add(field);

@@ -201,7 +201,7 @@ public class AdjustPositionSummaryFieldsTestCase {
                 summary = new DocumentSummary(summaryName, childSchema);
                 childSchema.addSummary(summary);
             }
-            SummaryField summaryField = new SummaryField(fieldName, dataType);
+            SummaryField summaryField = new SummaryField(fieldName, dataType, summary);
             if (source != null) {
                 summaryField.addSource(source);
             }

@@ -29,7 +29,7 @@ public class Summaries extends Derived {
         List<SummaryClass> summaries = new ArrayList<>();
         summaries.add(new SummaryClass(schema, schema.getSummary("default"), deployLogger));
         for (DocumentSummary summary : schema.getSummaries().values()) {
-            if (!summary.getName().equals("default"))
+            if (!summary.name().equals("default"))
                 summaries.add(new SummaryClass(schema, summary, deployLogger));
         }
         this.summaries = List.copyOf(summaries);

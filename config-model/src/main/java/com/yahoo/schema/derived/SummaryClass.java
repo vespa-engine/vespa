@@ -45,7 +45,7 @@ public class SummaryClass extends Derived {
      * @param deployLogger a {@link DeployLogger}
      */
     public SummaryClass(Schema schema, DocumentSummary summary, DeployLogger deployLogger) {
-        super(summary.getName());
+        super(summary.name());
         this.deployLogger = deployLogger;
         this.rawAsBase64 = schema.isRawAsBase64();
         this.omitSummaryFeatures = summary.omitSummaryFeatures();
@@ -53,14 +53,14 @@ public class SummaryClass extends Derived {
         deriveFields(schema, summary, fields);
         deriveImplicitFields(summary, fields);
         this.fields = Collections.unmodifiableMap(fields);
-        this.id = deriveId(summary.getName(), fields);
+        this.id = deriveId(summary.name(), fields);
     }
 
     public int id() { return id; }
 
     /** MUST be called after all other fields are added */
     private void deriveImplicitFields(DocumentSummary summary, Map<String, SummaryClassField> fields) {
-        if (summary.getName().equals("default")) {
+        if (summary.name().equals("default")) {
             addField(SummaryClass.DOCUMENT_ID_FIELD, DataType.STRING, SummaryElementsSelector.selectAll(), SummaryTransform.DOCUMENT_ID, "", fields);
         }
     }

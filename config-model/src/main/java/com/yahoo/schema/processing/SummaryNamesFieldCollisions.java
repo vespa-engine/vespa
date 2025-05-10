@@ -30,7 +30,7 @@ public class SummaryNamesFieldCollisions extends Processor {
 
         Map<String, Pair<String, String>> fieldToClassAndSource = new HashMap<>();
         for (DocumentSummary summary : schema.getSummaries().values()) {
-            if ("default".equals(summary.getName())) continue;
+            if ("default".equals(summary.name())) continue;
             for (SummaryField summaryField : summary.getSummaryFields().values()) {
                 if (summaryField.isImplicit()) continue;
                 Pair<String, String> prevClassAndSource = fieldToClassAndSource.get(summaryField.getName());
@@ -38,10 +38,10 @@ public class SummaryNamesFieldCollisions extends Processor {
                     if (prevClassAndSource!=null) {
                         String prevClass = prevClassAndSource.getFirst();
                         String prevSource = prevClassAndSource.getSecond();
-                        if ( ! prevClass.equals(summary.getName())) {
+                        if ( ! prevClass.equals(summary.name())) {
                             if ( ! prevSource.equals(source.getName())) {
                                 throw new IllegalArgumentException("For " + schema +
-                                                                   ", document-summary '" + summary.getName() + "'," +
+                                                                   ", document-summary '" + summary.name() + "'," +
                                                                    " summary field '" + summaryField.getName() + "':" +
                                                                    " Can not use source '" + source.getName() +
                                                                    "' for this summary field, an equally named field in document-summary '" +
@@ -49,7 +49,7 @@ public class SummaryNamesFieldCollisions extends Processor {
                             }
                         }
                     } else {
-                        fieldToClassAndSource.put(summaryField.getName(), new Pair<>(summary.getName(), source.getName()));
+                        fieldToClassAndSource.put(summaryField.getName(), new Pair<>(summary.name(), source.getName()));
                     }
                 }
             }

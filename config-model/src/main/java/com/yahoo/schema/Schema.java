@@ -558,7 +558,7 @@ public class Schema implements ImmutableSchema {
 
     /** Adds an explicitly defined summary to this search definition */
     public void addSummary(DocumentSummary summary) {
-        summaries.put(summary.getName(), summary);
+        summaries.put(summary.name(), summary);
     }
 
     /**

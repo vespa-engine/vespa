@@ -266,7 +266,7 @@ public class ConvertParsedFields {
     }
 
     private void convertSummaryField(SDField field, ParsedSummaryField parsed, DataType type) {
-        var summary = new SummaryField(parsed.name(), type);
+        var summary = new SummaryField(parsed.name(), type, field);
         convertSummaryFieldSettings(summary, parsed);
         summary.addDestination("default");
         if (parsed.getSources().isEmpty()) {

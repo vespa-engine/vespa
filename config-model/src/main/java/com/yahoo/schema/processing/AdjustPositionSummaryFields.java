@@ -100,7 +100,7 @@ public class AdjustPositionSummaryFields extends Processor {
         SummaryField oldField = schema.getSummaryField(fieldName);
         if (oldField == null) {
             if (useV8GeoPositions) return;
-            SummaryField newField = new SummaryField(fieldName, dataType, transform);
+            SummaryField newField = new SummaryField(fieldName, dataType, transform, summary);
             newField.addSource(source);
             summary.add(newField);
             return;

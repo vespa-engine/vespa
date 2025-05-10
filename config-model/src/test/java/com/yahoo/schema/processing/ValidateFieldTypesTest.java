@@ -70,7 +70,7 @@ public class ValidateFieldTypesTest {
 
     private static DocumentSummary createDocumentSummary(String fieldName, DataType dataType, Schema schema) {
         DocumentSummary summary = new DocumentSummary("mysummary", schema);
-        summary.add(new SummaryField(fieldName, dataType));
+        summary.add(new SummaryField(fieldName, dataType, summary));
         return summary;
     }
 

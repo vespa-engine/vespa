@@ -2,6 +2,7 @@
 package com.yahoo.schema;
 
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,7 +31,9 @@ public class IncorrectSummaryTypesTestCase extends AbstractSchemaTestCase {
                             "}\n");
             fail("processing should have failed");
         } catch (RuntimeException e) {
-            assertEquals("summary somestring type string in document-summary 'default' is inconsistent with summary somestring type int in document-summary 'incorrect': All declarations of the same summary field must have the same type", e.getMessage());
+            assertEquals("summary 'somestring' in field 'somestring' is inconsistent with summary 'somestring' " +
+                         "in document-summary 'incorrect' in schema 'incorrectsummarytypes': " +
+                         "All declarations of the same summary field must have the same type", Exceptions.toMessageString(e));
         }
     }
 

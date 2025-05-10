@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.schema.Schema;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -17,7 +18,10 @@ import static java.util.logging.Level.WARNING;
  *
  * @author bratseth
  */
-public class DocumentSummary extends FieldView {
+public class DocumentSummary {
+
+    private final String name;
+    private final Map<String, SummaryField> fields = new LinkedHashMap<>();
 
     private boolean fromDisk = false;
     private boolean omitSummaryFeatures = false;
@@ -27,8 +31,47 @@ public class DocumentSummary extends FieldView {
 
     /** Creates a DocumentSummary with the given name. */
     public DocumentSummary(String name, Schema owner) {
-        super(name);
+        this.name = name;
         this.owner = owner;
+    }
+
+    public String name()                     { return name; }
+    public Schema owner()                    { return owner; }
+    public Collection<SummaryField> values() { return fields.values(); }
+    public SummaryField get(String name)     { return fields.get(name); }
+    public void remove(String name)          { fields.remove(name); }
+
+    /**
+     * Adds a field to this.
+     * The model is constrained to ensure that summary fields of the same name
+     * in different classes have the same summary transform, because this is
+     * what is supported by the backend currently.
+     *
+     * @param field the summary field to add
+     * @return this for chaining
+     */
+    public DocumentSummary add(SummaryField field) {
+        field.addDestination(name());
+        if (fields.containsKey(field.getName())) {
+            if ( ! fields.get(field.getName()).equals(field)) {
+                throw new IllegalArgumentException("Duplicate declaration of " + field + " in " + this);
+            }
+        } else {
+            fields.put(field.getName(), field);
+        }
+        return this;
+    }
+
+    /**
+     * Adds another set of fields to this.
+     *
+     * @param other the fields to be added to this
+     * @return this for chaining
+     */
+    public DocumentSummary add(DocumentSummary other) {
+        for(var field : other.values())
+            add(field);
+        return this;
     }
 
     public void setFromDisk(boolean fromDisk) { this.fromDisk = fromDisk; }
@@ -44,20 +87,8 @@ public class DocumentSummary extends FieldView {
         return omitSummaryFeatures;
     }
 
-    /**
-     * The model is constrained to ensure that summary fields of the same name
-     * in different classes have the same summary transform, because this is
-     * what is supported by the backend currently.
-     * 
-     * @param summaryField the summaryfield to add
-     */
-    public void add(SummaryField summaryField) {
-        summaryField.addDestination(getName());
-        super.add(summaryField);
-    }
-
     public SummaryField getSummaryField(String name) {
-        var field = (SummaryField)get(name);
+        var field = get(name);
         if (field != null) return field;
         if (inherited().isEmpty()) return null;
         for (var inheritedSummary : inherited()) {
@@ -69,13 +100,13 @@ public class DocumentSummary extends FieldView {
     }
 
     public Map<String, SummaryField> getSummaryFields() {
-        var allFields = new LinkedHashMap<String, SummaryField>(getFields().size());
+        var allFields = new LinkedHashMap<String, SummaryField>(values().size());
         for (var inheritedSummary : inherited()) {
             if (inheritedSummary == null) continue;
             allFields.putAll(inheritedSummary.getSummaryFields());
         }
-        for (var field : getFields())
-            allFields.put(field.getName(), (SummaryField) field);
+        for (var field : values())
+            allFields.put(field.getName(), field);
         return allFields;
     }
 
@@ -116,7 +147,7 @@ public class DocumentSummary extends FieldView {
 
     @Override
     public String toString() {
-        return "document-summary '" + getName() + "'";
+        return "document-summary '" + name() + "' in " + owner;
     }
 
     public void validate(DeployLogger logger) {
@@ -124,9 +155,11 @@ public class DocumentSummary extends FieldView {
             var inheritedSummary = owner.getSummary(inheritedName);
             // TODO: Throw when no one is doing this anymore
             if (inheritedName.equals("default"))
-                logger.logApplicationPackage(WARNING, this + " inherits '" + inheritedName + "', which makes no sense. Remove this inheritance");
+                logger.logApplicationPackage(WARNING, this + " inherits '" + inheritedName +
+                                                      "', which makes no sense. Remove this inheritance");
             else if (inheritedSummary == null )
-                throw new IllegalArgumentException(this + " inherits '" + inheritedName + "', but this is not present in " + owner);
+                throw new IllegalArgumentException(this + " inherits '" + inheritedName +
+                                                   "', but this is not present in " + owner);
         }
     }
 

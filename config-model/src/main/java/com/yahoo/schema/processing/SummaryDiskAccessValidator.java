@@ -52,8 +52,8 @@ public class SummaryDiskAccessValidator extends Processor {
                         implicitDiskFields.add(summaryField.getName());
                 }
                 if ( ! implicitDiskFields.isEmpty())
-                    deployLogger.logApplicationPackage(Level.WARNING, "In " + schema + ", " + summary +
-                                                                      ": Fields " + implicitDiskFields + " references " +
+                    deployLogger.logApplicationPackage(Level.WARNING, "In " + summary + ": " +
+                                                                      "Fields " + implicitDiskFields + " references " +
                                                                       "non-attribute fields: Using this " +
                                                                       "summary will cause disk accesses. " +
                                                                       "Set 'from-disk' on this document-summary to silence this warning.");
