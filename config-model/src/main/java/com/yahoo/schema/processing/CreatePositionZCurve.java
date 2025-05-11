@@ -126,7 +126,7 @@ public class CreatePositionZCurve extends Processor {
                                          SummaryTransform summaryTransform, Collection<String> summaryTo, boolean validate) {
         SummaryField summary = schema.getSummaryField(summaryName);
         if (summary == null) {
-            summary = new SummaryField(summaryName, summaryType, summaryTransform);
+            summary = new SummaryField(summaryName, summaryType, summaryTransform, field);
             summary.addDestination("default");
             summary.addDestinations(summaryTo);
             field.addSummaryField(summary);

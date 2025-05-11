@@ -54,7 +54,7 @@ public class ImplicitSummaries extends Processor {
         String fieldName = field.getName();
         SummaryField fieldSummaryField = field.getSummaryField(fieldName);
         if (fieldSummaryField == null && field.doesSummarying()) {
-            fieldSummaryField = new SummaryField(fieldName, field.getDataType());
+            fieldSummaryField = new SummaryField(fieldName, field.getDataType(), field);
             fieldSummaryField.setImplicit(true);
             addSummaryFieldSources(fieldSummaryField, field);
             fieldSummaryField.addDestination("default");
@@ -139,7 +139,7 @@ public class ImplicitSummaries extends Processor {
         }
 
         DocumentSummary summary = getOrCreateAttributePrefetchSummary(schema);
-        SummaryField attributeSummaryField = new SummaryField(attribute.getName(), attribute.getDataType());
+        SummaryField attributeSummaryField = new SummaryField(attribute.getName(), attribute.getDataType(), summary);
         attributeSummaryField.addSource(attribute.getName());
         attributeSummaryField.addDestination(SORTABLE_ATTRIBUTES_SUMMARY_CLASS);
         attributeSummaryField.setTransform(SummaryTransform.ATTRIBUTE);

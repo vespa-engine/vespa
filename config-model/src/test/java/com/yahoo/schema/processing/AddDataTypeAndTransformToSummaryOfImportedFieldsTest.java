@@ -68,7 +68,7 @@ public class AddDataTypeAndTransformToSummaryOfImportedFieldsTest {
 
     private static DocumentSummary createDocumentSummary(String fieldName, Schema schema) {
         DocumentSummary summary = new DocumentSummary("mysummary", schema);
-        summary.add(new SummaryField(fieldName, DataType.INT));
+        summary.add(new SummaryField(fieldName, DataType.INT, summary));
         return summary;
     }
 

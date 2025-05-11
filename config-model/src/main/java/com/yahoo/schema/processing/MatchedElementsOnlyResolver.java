@@ -88,7 +88,7 @@ public class MatchedElementsOnlyResolver extends Processor {
     }
 
     private String formatError(Schema schema, DocumentSummary summary, SummaryField field, String msg) {
-        return "For " + schema + ", document-summary '" + summary.getName()
+        return "For " + schema + ", document-summary '" + summary.name()
                + "', summary field '" + field.getName() + "': " + msg;
     }
 
