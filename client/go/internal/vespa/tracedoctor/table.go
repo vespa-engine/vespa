@@ -3,8 +3,9 @@
 package tracedoctor
 
 import (
-	"github.com/mattn/go-runewidth"
 	"strings"
+
+	"github.com/mattn/go-runewidth"
 )
 
 type edgeMask uint8

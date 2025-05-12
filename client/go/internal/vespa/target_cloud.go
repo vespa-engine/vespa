@@ -78,7 +78,8 @@ type logMessage struct {
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
 func CloudTarget(httpClient httputil.Client, apiAuth Authenticator, deploymentAuth Authenticator,
 	apiOptions APIOptions, deploymentOptions CloudDeploymentOptions,
-	logOptions LogOptions, retryInterval time.Duration) (Target, error) {
+	logOptions LogOptions, retryInterval time.Duration,
+) (Target, error) {
 	return &cloudTarget{
 		httpClient:        httpClient,
 		apiOptions:        apiOptions,
@@ -128,8 +129,8 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 		clusterTargets = make(map[string][]clusterTarget)
 		for cluster, url := range t.deploymentOptions.ClusterURLs {
 			clusterTargets[cluster] = []clusterTarget{
-				clusterTarget{URL: url, AuthMethod: "mtls"},
-				clusterTarget{URL: url, AuthMethod: "token"},
+				{URL: url, AuthMethod: "mtls"},
+				{URL: url, AuthMethod: "token"},
 			}
 		}
 	} else {
