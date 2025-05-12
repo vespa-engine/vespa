@@ -303,7 +303,7 @@ type PackageOptions struct {
 	// If true, a Maven-based Vespa application package is required to be compiled
 	Compiled bool
 
-	// If true, only consider the source directores of the application package
+	// If true, only consider the source directors of the application package
 	SourceOnly bool
 }
 
