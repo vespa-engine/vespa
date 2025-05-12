@@ -40,7 +40,13 @@ const (
 	AnyDeployment int64 = -2
 )
 
-var errAuth = errors.New("auth failed")
+type AuthError string
+
+func (e AuthError) Error() string {
+	return string(e)
+}
+
+var errAuth = AuthError("auth failed")
 
 var (
 	// ErrWaitTimeout is the error returned when waiting for something times out.
