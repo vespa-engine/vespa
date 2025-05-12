@@ -204,7 +204,11 @@ func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pk
 	}
 	if cli.isTerminal() {
 		cli.printWarning("Application package does not contain " + color.CyanString("security/clients.pem") + ", which is required for deployments to Vespa Cloud")
-		ok, err := cli.confirm("Do you want to copy the certificate of application "+color.GreenString(target.Deployment().Application.String())+" into this application package?", true)
+		if len(tlsOptions.CertificatePEM) == 0 {
+			return errHint(fmt.Errorf("no certificate exists for %s", target.Deployment().Application.String()), "Try (re)creating the certificate with 'vespa auth cert'")
+		}
+
+		ok, err := cli.confirm("Do you want to copy existing certificate of application "+color.GreenString(target.Deployment().Application.String())+" into this application package?", true)
 		if err != nil {
 			return err
 		}
