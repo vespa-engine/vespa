@@ -173,16 +173,16 @@ func (c *Client) methodAndURL(d Document, buf *bytes.Buffer) (string, string) {
 
 func (c *Client) leastBusyClient() *countingHTTPClient {
 	leastBusy := c.httpClients[0]
-	min := int64(math.MaxInt64)
+	minInflight := int64(math.MaxInt64)
 	next := c.sendCount.Add(1)
 	start := int(next) % len(c.httpClients)
 	for i := range c.httpClients {
 		j := (i + start) % len(c.httpClients)
 		client := c.httpClients[j]
 		inflight := client.inflight.Load()
-		if inflight < min {
+		if inflight < minInflight {
 			leastBusy = client
-			min = inflight
+			minInflight = inflight
 		}
 	}
 	leastBusy.inflight.Add(1)

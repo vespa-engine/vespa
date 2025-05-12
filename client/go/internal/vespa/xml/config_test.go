@@ -321,15 +321,15 @@ func assertReplace(t *testing.T, input, want, parentElement, element string, dat
 }
 
 func assertNodeCount(t *testing.T, input string, wantMin, wantMax int, wantErr bool) {
-	min, max, err := ParseNodeCount(input)
+	minNodeCount, maxNodeCount, err := ParseNodeCount(input)
 	if wantErr {
 		if err == nil {
 			t.Errorf("want error for input %q", input)
 		}
 		return
 	}
-	if min != wantMin || max != wantMax {
-		t.Errorf("got min = %d, max = %d, want min = %d, max = %d", min, max, wantMin, wantMax)
+	if minNodeCount != wantMin || maxNodeCount != wantMax {
+		t.Errorf("got min = %d, max = %d, want min = %d, max = %d", minNodeCount, maxNodeCount, wantMin, wantMax)
 	}
 }
 
