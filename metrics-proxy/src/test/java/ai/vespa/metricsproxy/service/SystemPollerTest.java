@@ -86,7 +86,7 @@ public class SystemPollerTest {
     public void testStatmParsing() throws IOException {
         long[] memusage = SystemPoller.getMemoryUsage(statm, 1);
         assertEquals(3332000L, memusage[0]);
-        assertEquals(1917762L, memusage[1]);
+        assertEquals(1909702, memusage[1]);
     }
 
     @Test

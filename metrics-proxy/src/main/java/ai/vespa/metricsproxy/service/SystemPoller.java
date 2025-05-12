@@ -135,11 +135,14 @@ public class SystemPoller {
     static long[] getMemoryUsage(String s, int pageSize) throws IOException{
         long[] size = new long[2];
         // statm line: "size rss shared text lib data dt"
+        // Note: From man proc_pid_statm man page: rss is the same as VmRSS in /proc/pid/status
+        // Note 2: From man proc_pid_status:  VmRSS  Resident set size.  Note that the value here is the sum of RssAnon, RssFile, and  RssShmem.
+        // So we need to subtract the shared memory from the resident set size to get what we want
         // all values are number of pages, return values from this method are values in bytes
         var statmPutputs = s.split(" ");
         size[memoryTypeVirtual] = Long.parseLong(statmPutputs[0]) * pageSize;
         // Returning rss, we don't consider shared memory here
-        size[memoryTypeResident] = Long.parseLong(statmPutputs[1]) * pageSize;
+        size[memoryTypeResident] = Long.parseLong(statmPutputs[1]) - Long.parseLong(statmPutputs[2]) * pageSize;
 
         return size;
     }
