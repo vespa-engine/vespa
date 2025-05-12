@@ -5,6 +5,7 @@ package osutil
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -24,7 +25,8 @@ const (
 )
 
 func analyzeError(err error) string {
-	exitErr, wasEe := err.(*exec.ExitError)
+	var exitErr *exec.ExitError
+	wasEe := errors.As(err, &exitErr)
 	if !wasEe {
 		return ""
 	}

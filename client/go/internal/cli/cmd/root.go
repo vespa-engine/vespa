@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -618,7 +619,8 @@ func (c *CLI) Run(args ...string) error {
 	c.cmd.SetArgs(args)
 	err := c.cmd.Execute()
 	if err != nil {
-		if cliErr, ok := err.(CLIError); ok {
+		var cliErr CLIError
+		if errors.As(err, &cliErr) {
 			if !cliErr.quiet {
 				if cliErr.warn {
 					c.printWarning(cliErr, cliErr.hints...)
