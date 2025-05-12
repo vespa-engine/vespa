@@ -38,7 +38,7 @@ func RunActivate(opts *Options, args []string) error {
 		fmt.Println("Timestamp: ", result.Deploy.Timestamp)
 		fmt.Println("Generation:", result.Application.Generation)
 	} else {
-		err = fmt.Errorf("Request failed. HTTP status code: %d\n%s", code, result.Message)
+		err = fmt.Errorf("request failed. HTTP status code: %d\n%s", code, result.Message)
 	}
 	return err
 }
