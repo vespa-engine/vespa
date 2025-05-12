@@ -8,9 +8,7 @@ import (
 	"strings"
 )
 
-var (
-	noSelector Selector = &selectSelf{}
-)
+var noSelector Selector = &selectSelf{}
 
 type Selector interface {
 	Select(value Value) Value

@@ -20,9 +20,7 @@ func reallySimpleHelp(cmd *cobra.Command, args []string) {
 }
 
 func NewDeployCmd() *cobra.Command {
-	var (
-		curOptions Options
-	)
+	var curOptions Options
 	if err := vespa.LoadDefaultEnv(); err != nil {
 		osutil.ExitErr(err)
 	}

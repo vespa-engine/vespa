@@ -70,7 +70,6 @@ This command runs a browser-based authentication flow for the Vespa Cloud contro
 				res, err = a.Authenticator.Wait(ctx, state)
 				return err
 			})
-
 			if err != nil {
 				switch err.Error() {
 				case "600":
