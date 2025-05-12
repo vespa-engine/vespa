@@ -1,0 +1,277 @@
+#!/usr/libexec/platform-python
+
+"""
+A command-line utility to safely edit JSON data stored in ZooKeeper.
+
+This script interacts with 'vespa-zkctl' to perform the following operations:
+1.  Gets base64 encoded data from a specified ZooKeeper path.
+2.  Decodes the data from base64 and then from UTF-8.
+3.  Checks if the decoded data is empty or not valid JSON. If so, it exits gracefully.
+4.  If the data is valid JSON, it pretty-prints it and opens it in a temporary file
+    using the system's default editor (or 'vi').
+5.  After editing, it reads the modified content and validates it as JSON.
+    -   If the edited content is not valid JSON, it informs the user and offers
+        an interactive prompt to retry editing or exit.
+    -   If no (non-whitespace) changes were made, it informs the user and exits.
+6.  If the JSON is valid and modified, it converts the JSON to a compact format,
+    encodes it back to base64, and uses 'vespa-zkctl' to set the new data back
+    into ZooKeeper.
+"""
+
+import json
+import sys
+import subprocess
+import argparse
+import base64
+import tempfile
+import os
+
+# The expected prefix on stdout from 'vespa-zkctl get'
+EXPECTED_ZK_PREFIX = """Connecting to localhost:2181
+Welcome to ZooKeeper!
+JLine support is disabled
+
+WATCHER::
+
+WatchedEvent state:SyncConnected type:None path:null zxid: -1"""
+
+
+def _run_zk_command(command, verbose=False):
+    """Helper function to run a vespa-zkctl command and handle common operations."""
+    try:
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False  # We check returncode manually
+        )
+
+        stdout_str = result.stdout.decode('utf-8') if result.stdout else ""
+        stderr_str = result.stderr.decode('utf-8') if result.stderr else ""
+
+        if verbose:
+            print("Command executed:", " ".join(command), file=sys.stderr)
+            print("Return Code:", result.returncode, file=sys.stderr)
+            print("STDOUT:", file=sys.stderr)
+            print(stdout_str, file=sys.stderr)
+            if stderr_str:
+                print("STDERR:", file=sys.stderr)
+                print(stderr_str, file=sys.stderr)
+
+        if result.returncode != 0:
+            raise RuntimeError(f"Command '{' '.join(command)}' failed with exit code {result.returncode}: {stderr_str.strip()}")
+
+        return stdout_str
+    except FileNotFoundError:
+        print(f"Error: The command '{command[0]}' was not found. Make sure it's in your PATH.", file=sys.stderr)
+        raise # Re-raise to be caught by the main try-except block
+
+
+def get_zk_base64(zk_path, verbose=False):
+    """Runs 'vespa-zkctl get -b <zk_path>', captures output, returns processed base64 data."""
+    command = ["vespa-zkctl", "get", "-b", zk_path]
+    stdout_str = _run_zk_command(command, verbose=verbose)
+
+    # Check for expected prefix in STDOUT specific to 'get'.
+    if not stdout_str.startswith(EXPECTED_ZK_PREFIX):
+        print(f"Error: STDOUT from 'get' did not start with the expected prefix. Got:\n{stdout_str[:len(EXPECTED_ZK_PREFIX)+20]}...", file=sys.stderr)
+        sys.exit(2)  # Use a different exit code for this specific error
+
+    # Prefix matched, process stdout
+    processed_stdout_data = stdout_str[len(EXPECTED_ZK_PREFIX):].strip()
+    return processed_stdout_data
+
+
+def set_zk_base64(zk_path, data_base64, verbose=False):
+    """Runs 'vespa-zkctl set -b <zk_path> <data_base64>' and handles output/errors."""
+    command = ["vespa-zkctl", "set", "-b", zk_path, data_base64]
+    _run_zk_command(command, verbose=verbose)
+
+
+def _get_initial_json_from_zk(zk_path, verbose):
+    """
+    Fetches data from ZK, decodes it, and attempts to parse it as JSON.
+    Handles cases like empty data or non-JSON data from ZK.
+
+    Returns:
+        A Python object (dict/list) if ZK data is valid JSON.
+        None if data is empty or not JSON (with appropriate messages printed).
+                 This signals a graceful exit.
+    Raises:
+        RuntimeError, FileNotFoundError if underlying zk_ctl commands fail.
+    """
+    if verbose:
+        print(f"Getting data from ZK path: {zk_path}", file=sys.stderr)
+
+    # 1. Get Base64 encoded data from ZK
+    processed_base64_data = get_zk_base64(zk_path, verbose=verbose) # Uses existing helper
+
+    if not processed_base64_data:
+        if verbose:
+            print(f"No data found at ZK path '{zk_path}' or data is empty after prefix removal. Exiting.", file=sys.stderr)
+        return None
+
+    # 2. Decode from Base64 and then from UTF-8
+    try:
+        decoded_data_str = base64.b64decode(processed_base64_data).decode('utf-8')
+    except (base64.binascii.Error, UnicodeDecodeError) as e:
+        print(f"Error: Data at '{zk_path}' could not be decoded (from base64 or utf-8). Error: {e}", file=sys.stderr)
+        print("Current data will not be modified.")
+        return None # Signal graceful exit
+
+    if not decoded_data_str.strip(): # Check if decoded string is effectively empty
+        if verbose:
+            print(f"Data at '{zk_path}' is empty after decoding. Exiting.", file=sys.stderr)
+        return None # Signal graceful exit
+
+    # 3. Parse JSON
+    try:
+        original_json_obj = json.loads(decoded_data_str)
+        if verbose:
+            print("Data from ZK is valid JSON. Preparing for editing.", file=sys.stderr)
+        return original_json_obj
+    except json.JSONDecodeError as e:
+        print(f"Data at '{zk_path}' is not valid JSON. Cannot edit. Error: {e}", file=sys.stderr)
+        print("Current non-JSON data will not be modified.")
+        return None # Signal graceful exit
+
+
+def _edit_json_interactively(original_json_obj, original_pretty_json, verbose):
+    """
+    Manages the interactive JSON editing process using a temporary file.
+    Creates a temp file, allows editing, validates, handles retries, and cleans up.
+
+    Args:
+        original_json_obj: The initial Python object (dict/list) from ZK.
+        original_pretty_json: The pretty-printed string form of original_json_obj.
+        verbose: Boolean flag for verbose output.
+
+    Returns:
+        A string containing the compact, modified JSON if changes were made and validated.
+        None if no changes were made, the editor failed, or the user exited without saving valid changes.
+             (sys.exit might be called internally for some exit paths).
+    """
+    temp_file_path = None
+    safe_to_delete_temp_file = True
+
+    try:
+        with tempfile.NamedTemporaryFile(mode='w+', delete=False, prefix='vespa-zkedit_', suffix='.json', encoding='utf-8') as tf:
+            tf.write(original_pretty_json)
+            temp_file_path = tf.name
+        if verbose:
+            print(f"Original JSON data written to temporary file: {temp_file_path}", file=sys.stderr)
+
+        while True: # Editing loop
+            print() # Separation before each editing attempt
+            editor = os.environ.get('EDITOR', 'vi')
+            if verbose:
+                print(f"Launching editor ('{editor}') for file: {temp_file_path}", file=sys.stderr)
+
+            try:
+                # Use subprocess.call as we just need to wait for editor to finish
+                subprocess.call([editor, temp_file_path])
+            except FileNotFoundError:
+                print(f"Error: Editor '{editor}' not found. Set EDITOR or ensure 'vi' is in PATH.", file=sys.stderr)
+                return None # Cannot edit, so no changes to save
+            except Exception as e:
+                print(f"Error launching editor '{editor}': {e}", file=sys.stderr)
+                return None # Cannot edit, so no changes to save
+
+            with open(temp_file_path, 'r', encoding='utf-8') as tf:
+                edited_content_str = tf.read()
+
+            try:
+                edited_json_obj_candidate = json.loads(edited_content_str)
+                edited_pretty_json_for_comparison = json.dumps(edited_json_obj_candidate, indent=4, sort_keys=True)
+
+                if edited_pretty_json_for_comparison == original_pretty_json:
+                    print("No changes detected in the JSON data. Exiting.")
+                    sys.exit(0) # Clean exit, no changes
+
+                if verbose:
+                    print("JSON data has been modified and is valid.", file=sys.stderr)
+
+                # Changes are valid and present
+                return json.dumps(edited_json_obj_candidate, separators=(',', ':'))
+
+            except json.JSONDecodeError as e:
+                print() # Separation for error messages
+                print(f"Error: Edited content is not valid JSON. Error: {e}", file=sys.stderr)
+                if temp_file_path:
+                    print(f"Your unsaved (invalid JSON) edits are in: {temp_file_path}", file=sys.stderr)
+
+                while True: # Retry prompt loop
+                    retry_choice = input("Retry editing? (Y/n): ").lower().strip()
+                    if retry_choice in ['yes', 'y', '']:
+                        if verbose:
+                            print(f"Re-opening editor for {temp_file_path}. Correct JSON syntax.", file=sys.stderr)
+                        break # Break retry prompt loop, continue editing loop
+                    elif retry_choice in ['no', 'n']:
+                        print("Exiting. Invalid edits preserved in temporary file.", file=sys.stderr)
+                        safe_to_delete_temp_file = False # Mark temp file to NOT be deleted
+                        sys.exit(1) # Exit script with error status
+                    else:
+                        print("Invalid input. Answer 'yes' (y) or 'no' (n).", file=sys.stderr)
+
+                if retry_choice in ['yes', 'y', '']:
+                    continue # Continue to next iteration of the editing loop
+                # Should not be reached if 'no'/'n' was chosen due to sys.exit(1)
+    finally:
+        if temp_file_path and safe_to_delete_temp_file:
+            os.unlink(temp_file_path)
+            if verbose:
+                print(f"Temporary file {temp_file_path} deleted.", file=sys.stderr)
+        elif temp_file_path and not safe_to_delete_temp_file:
+            if verbose:
+                print(f"Temporary file {temp_file_path} intentionally not deleted.", file=sys.stderr)
+    return None # Should only be reached if editor failed before first validation
+
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Get data from ZK. If JSON, allow editing and set it back in compact format. Data is handled as base64."
+    )
+    parser.add_argument("zookeeper_path", help="The ZooKeeper path to get from and set to.")
+    parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output to stderr.")
+
+    args = parser.parse_args()
+
+    try:
+        original_json_obj = _get_initial_json_from_zk(args.zookeeper_path, args.verbose)
+
+        if original_json_obj is None:
+            sys.exit(0) # Graceful exit, messages already printed
+
+        original_pretty_json = json.dumps(original_json_obj, indent=4, sort_keys=True)
+
+        compact_modified_json = _edit_json_interactively(original_json_obj, original_pretty_json, args.verbose)
+
+        if compact_modified_json is None:
+            # This means no changes were made, editor failed, or user exited without saving valid changes.
+            # Appropriate messages/exit codes handled within _edit_json_interactively or _get_initial_json_from_zk.
+            if args.verbose:
+                 print("No valid modifications to set in ZooKeeper or process was exited.", file=sys.stderr)
+            # sys.exit(0) or sys.exit(1) would have been called already in most cases
+            # If we reach here and compact_modified_json is None, it's likely due to editor launch fail
+            # where _edit_json_interactively returns None. A 0 exit seems appropriate if not already exited.
+            # However, to be safe and catch unexited paths:
+            if 'sys' in globals() and hasattr(sys, 'exitstatus') and sys.exitstatus is not None:
+                pass # Already exiting
+            else:
+                sys.exit(0) # Default clean exit if not already handled
+
+        # If we have compact_modified_json, proceed to update ZK
+        modified_base64_data = base64.b64encode(compact_modified_json.encode('utf-8')).decode('utf-8')
+
+        if args.verbose:
+            print(f"Setting modified and compacted JSON data to ZK path: {args.zookeeper_path}", file=sys.stderr)
+        set_zk_base64(args.zookeeper_path, modified_base64_data, verbose=args.verbose)
+
+        print(f"Successfully retrieved, edited, validated, and set JSON data for ZK path: {args.zookeeper_path}")
+        print(f"Final (modified) compact JSON set (first 100 chars): '{compact_modified_json[:100]}'...")
+
+    except (RuntimeError, FileNotFoundError) as e:
+        print(f"{e}", file=sys.stderr)
+        sys.exit(1)
+    # base64.binascii.Error and UnicodeDecodeError are handled by _get_initial_json_from_zk
+    # sys.exit(2) for prefix mismatch is handled within get_zk_base64.
