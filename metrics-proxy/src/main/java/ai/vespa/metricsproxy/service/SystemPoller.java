@@ -136,10 +136,12 @@ public class SystemPoller {
         long[] size = new long[2];
         // statm line: "size rss shared text lib data dt"
         // all values are number of pages, return values from this method are values in bytes
-        var statmPutputs = s.split(" ");
-        size[memoryTypeVirtual] = Long.parseLong(statmPutputs[0]) * pageSize;
-        // Returning rss, we don't consider shared memory here
-        size[memoryTypeResident] = Long.parseLong(statmPutputs[1]) * pageSize;
+        var statmOutputs = s.split(" ");
+        size[memoryTypeVirtual] = Long.parseLong(statmOutputs[0]) * pageSize;
+        // Note 1: From man proc_pid_statm man page: rss is the same as VmRSS in /proc/pid/status
+        // Note 2: From man proc_pid_status:  VmRSS  Resident set size.  Note that the value here is the sum of RssAnon, RssFile, and  RssShmem.
+        // Note 3: 'shared' is RssFile+RssShmem, so subtraction below gives us the same value as RssAnon
+        size[memoryTypeResident] = Long.parseLong(statmOutputs[1]) - Long.parseLong(statmOutputs[2]) * pageSize;
 
         return size;
     }
