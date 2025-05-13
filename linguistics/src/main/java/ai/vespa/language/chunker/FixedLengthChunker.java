@@ -24,27 +24,7 @@ public class FixedLengthChunker implements Chunker {
         int chunkLength = context.arguments().isEmpty() ? defaultChunkLength : asInteger(context.arguments().get(0));
         boolean isCjk = context.getLanguage().isCjk();
         return context.computeCachedValueIfAbsent(new CacheKey(this, inputText, chunkLength, isCjk),
-                                                  () -> computeChunks(inputText, chunkLength, isCjk));
-    }
-
-    private List<Chunk> computeChunks(String inputText, int chunkLength, boolean isCjk) {
-        var text = new UnicodeString(inputText);
-        List<Chunk> chunks = new ArrayList<>();
-        var currentChunk = new StringBuilder();
-        int currentLength = 0;
-        for (int i = 0; i < text.length();) {
-            int currentChar = text.codePointAt(i);
-            currentChunk.appendCodePoint(currentChar);
-            if (++currentLength >= chunkLength && (isCjk || !characters.isLetterOrDigit(currentChar))) {
-                chunks.add(new Chunk(currentChunk.toString()));
-                currentChunk.setLength(0);
-                currentLength = 0;
-            }
-            i = text.nextIndex(i);
-        }
-        if (currentLength > 0)
-            chunks.add(new Chunk(currentChunk.toString()));
-        return chunks;
+                                                  () -> new ChunkComputer(inputText, chunkLength, isCjk).chunk());
     }
 
     private int asInteger(String s) {
@@ -58,5 +38,55 @@ public class FixedLengthChunker implements Chunker {
     }
 
     private record CacheKey(FixedLengthChunker chunker, String inputText, int chunkLength, boolean isCjk) {}
+
+    /**
+     * Computer with the scope of chunking a single input text.
+     */
+    private class ChunkComputer {
+
+        final UnicodeString text;
+        final int chunkLength;
+        final boolean isCjk;
+
+        final List<Chunk> chunks = new ArrayList<>();
+        int index = 0;
+
+        public ChunkComputer(String text, int chunkLength, boolean isCjk) {
+            this.text = new UnicodeString(text);
+            this.chunkLength = chunkLength;
+            this.isCjk = isCjk;
+        }
+
+        List<Chunk> chunk() {
+            StringBuilder currentChunk = new StringBuilder();
+            int currentLength = 0;
+            while (index < text.length()) {
+                int currentChar = text.codePointAt(index);
+                currentChunk.appendCodePoint(currentChar);
+                if (++currentLength >= chunkLength && (isCjk || (!isLetter(index)))) {
+                    chunks.add(new Chunk(currentChunk.toString()));
+                    currentChunk.setLength(0);
+                    currentLength = 0;
+                }
+                index = nextIndex();
+            }
+            if (currentLength > 0)
+                chunks.add(new Chunk(currentChunk.toString()));
+            return chunks;
+        }
+
+        int charAt(int index) {
+            return text.codePointAt(index);
+        }
+
+        boolean isLetter(int index) {
+            return characters.isLetterOrDigit(charAt(index));
+        }
+
+        int nextIndex() {
+            return text.nextIndex(index);
+        }
+
+    }
 
 }
