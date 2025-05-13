@@ -84,9 +84,9 @@ public class SystemPollerTest {
 
     @Test
     public void testStatmParsing() throws IOException {
-        long[] memusage = SystemPoller.getMemoryUsage(statm, 1);
-        assertEquals(3332000L, memusage[0]);
-        assertEquals(1909702, memusage[1]);
+        long[] memusage = SystemPoller.getMemoryUsage(statm, 4096);
+        assertEquals(13647872000L, memusage[0]);
+        assertEquals(7822139392L, memusage[1]);
     }
 
     @Test
@@ -96,8 +96,7 @@ public class SystemPollerTest {
     }
 
     @Test
-    public
-    void testTotalJiffies() {
+    public void testTotalJiffies() {
         SystemPoller.JiffiesAndCpus first = SystemPoller.getTotalSystemJiffies(new BufferedReader(new StringReader(totalStats[0])));
         SystemPoller.JiffiesAndCpus second = SystemPoller.getTotalSystemJiffies(new BufferedReader(new StringReader(totalStats[1])));
         assertEquals(8, first.cpus);
