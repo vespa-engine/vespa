@@ -5,6 +5,7 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/xml"
+	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -318,7 +319,7 @@ func Replace(r io.Reader, parentName, name string, data interface{}) (string, er
 	done := false
 	for {
 		token, err := dec.Token()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		} else if err != nil {
 			return "", err
