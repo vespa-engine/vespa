@@ -10,6 +10,7 @@ import (
 
 type KnownState string
 
+// these are all the valid node states:
 const (
 	StateUp          KnownState = "up"
 	StateDown        KnownState = "down"

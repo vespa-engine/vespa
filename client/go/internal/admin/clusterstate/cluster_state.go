@@ -14,7 +14,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
-// common struct used various places in the clustercontroller REST api.
+// common struct used various places in the clustercontroller REST api:
 type StateAndReason struct {
 	State  string `json:"state"`
 	Reason string `json:"reason"`
@@ -29,7 +29,7 @@ func (s *StateAndReason) writeTo(buf *strings.Builder) {
 	}
 }
 
-// cluster state as returned by the clustercontroller REST api.
+// cluster state as returned by the clustercontroller REST api:
 type ClusterState struct {
 	State struct {
 		Generated StateAndReason `json:"generated"`
