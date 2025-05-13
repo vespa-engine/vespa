@@ -30,7 +30,7 @@ func analyzeError(err error) string {
 	if !wasEe {
 		return ""
 	}
-	status, wasWs := exitErr.Sys().(syscall.WaitStatus)
+	status, wasWs := exitErr.ProcessState.Sys().(syscall.WaitStatus)
 	if !wasWs {
 		return err.Error()
 	}

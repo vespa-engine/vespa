@@ -204,7 +204,7 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 		return err
 	}
 	if err = renameOrCopyTmpFile(zipFile, path); err != nil {
-		return fmt.Errorf("could neither rename nor copy %s to %s: %w", zipFile, path, err)
+		return fmt.Errorf("Could neither rename nor copy %s to %s: %w", zipFile, path, err)
 	}
 	return err
 }

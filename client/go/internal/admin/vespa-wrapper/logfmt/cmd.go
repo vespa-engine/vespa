@@ -22,7 +22,9 @@ func RunCmdLine() {
 }
 
 func NewLogfmtCmd() *cobra.Command {
-	curOptions := NewOptions()
+	var (
+		curOptions Options = NewOptions()
+	)
 	cmd := &cobra.Command{
 		Use:   "vespa-logfmt",
 		Short: "convert vespa.log to human-readable format",

@@ -11,7 +11,7 @@ import (
 )
 
 func (opts *Options) getOrSetHeapSize(prefix string, heapSize AmountOfMemory) AmountOfMemory {
-	var missing = true
+	var missing bool = true
 	for _, x := range opts.jvmArgs {
 		if strings.HasPrefix(x, prefix) {
 			x = strings.TrimPrefix(x, prefix)

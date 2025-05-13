@@ -90,7 +90,7 @@ func (cs *ClusterState) String() string {
 }
 
 func (model *VespaModelConfig) getClusterState(cluster string) (*ClusterState, *ClusterControllerSpec) {
-	errs := make([]string, 0)
+	errs := make([]string, 0, 0)
 	ccs := model.findClusterControllers()
 	if len(ccs) == 0 {
 		trace.Trace("No cluster controllers found in vespa model:", model)
