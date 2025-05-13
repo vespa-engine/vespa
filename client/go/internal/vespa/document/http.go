@@ -321,11 +321,11 @@ func resultWithErr(result Result, err error, elapsed time.Duration) Result {
 func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration, buf *bytes.Buffer, copyBody bool) Result {
 	result.HTTPStatus = resp.StatusCode
 	switch resp.StatusCode {
-	case http.StatusOK:
+	case 200:
 		result.Status = StatusSuccess
-	case http.StatusPreconditionFailed:
+	case 412:
 		result.Status = StatusConditionNotMet
-	case http.StatusBadGateway, http.StatusGatewayTimeout, http.StatusInsufficientStorage:
+	case 502, 504, 507:
 		result.Status = StatusVespaFailure
 	default:
 		result.Status = StatusTransportFailure

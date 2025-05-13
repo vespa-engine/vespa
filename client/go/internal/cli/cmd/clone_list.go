@@ -37,7 +37,7 @@ func listSampleAppsAt(url string, client httputil.Client) ([]string, error) {
 }
 
 func getRepositoryFiles(url string, client httputil.Client) ([]repositoryFile, error) {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, err
 	}

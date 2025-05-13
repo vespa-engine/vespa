@@ -32,7 +32,7 @@ func TestSignRequest(t *testing.T) {
 		KeyID:         "my-key",
 		PemPrivateKey: privateKey,
 	}
-	req, err := http.NewRequest(http.MethodPost, "https://example.com", strings.NewReader("body"))
+	req, err := http.NewRequest("POST", "https://example.com", strings.NewReader("body"))
 	if err != nil {
 		assert.Nil(t, err)
 	}

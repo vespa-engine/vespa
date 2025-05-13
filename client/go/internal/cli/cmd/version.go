@@ -63,7 +63,7 @@ func checkVersion(cli *CLI) error {
 }
 
 func latestRelease(cli *CLI) (release, error) {
-	req, err := http.NewRequest(http.MethodGet, "https://api.github.com/repos/vespa-engine/vespa/releases", nil)
+	req, err := http.NewRequest("GET", "https://api.github.com/repos/vespa-engine/vespa/releases", nil)
 	if err != nil {
 		return release{}, err
 	}
