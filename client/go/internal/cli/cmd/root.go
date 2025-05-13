@@ -147,7 +147,7 @@ Use it on Vespa instances running locally, remotely or in Vespa Cloud.
 To get started, see the following quick start guides:
 
 - Local Vespa instance: https://docs.vespa.ai/en/vespa-quick-start.html
-- Vespa Cloud: https://cloud.vespa.ai/en/getting-started
+- Vespa Cloud: https://docs.vespa.ai/en/cloud/getting-started.html
 
 The complete Vespa documentation is available at https://docs.vespa.ai.
 

@@ -24,7 +24,7 @@ removing the application. When run non-interactively, the command will refuse
 to remove the application unless the --force option is given.
 
 This command can only be used to remove non-production deployments, in Vespa
-Cloud. See https://cloud.vespa.ai/en/deleting-applications for how to remove
+Cloud. See https://docs.vespa.ai/en/cloud/deleting-applications.html for how to remove
 production deployments.
 
 For other systems, destroy the application by removing the
@@ -43,7 +43,7 @@ $ vespa destroy --force`,
 			description := target.Deployment().String()
 			env := target.Deployment().Zone.Environment
 			if env != "dev" && env != "perf" {
-				return errHint(fmt.Errorf("cannot remove production %s", description), "See https://cloud.vespa.ai/en/deleting-applications")
+				return errHint(fmt.Errorf("cannot remove production %s", description), "See https://docs.vespa.ai/en/cloud/deleting-applications.html")
 			}
 			ok := force
 			if !ok {
