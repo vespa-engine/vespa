@@ -220,9 +220,7 @@ func TestDocumentDecoderInvalid(t *testing.T) {
 	}
 
 	dec = NewDecoder(strings.NewReader(`{}`))
-	_, err = dec.Decode()
-	wantErr = "invalid operation at byte offset 2: no id specified"
-	if !errors.Is(err, ErrMissingId) {
+	if _, err = dec.Decode(); !errors.Is(err, ErrMissingId) {
 		t.Errorf("want error %q, got %q", ErrMissingId, err.Error())
 	}
 }
