@@ -11,9 +11,9 @@ func TestAdjustment(t *testing.T) {
 	lastAdj := 64
 	for i := range 4096 {
 		adj := adjustAvailableMemory(MegaBytesOfMemory(i)).ToMB()
-		assert.True(t, int(adj) >= lastAdj)
-		lastAdj = int(adj)
+		assert.True(t, adj >= lastAdj)
+		lastAdj = adj
 	}
 	adj := adjustAvailableMemory(MegaBytesOfMemory(30700)).ToMB()
-	assert.Equal(t, 30000, int(adj))
+	assert.Equal(t, 30000, adj)
 }
