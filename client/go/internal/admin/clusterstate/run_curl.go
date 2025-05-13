@@ -6,7 +6,6 @@ package clusterstate
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -64,8 +63,7 @@ func curlPost(url string, input []byte) (string, error) {
 	trace.Trace("running curl:", cmd.String())
 	err = cmd.Run(&out, os.Stderr)
 	if err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) {
+		if ee, ok := err.(*exec.ExitError); ok {
 			if ee.ProcessState.ExitCode() == 7 {
 				return "", fmt.Errorf("HTTP request to %s failed, could not connect", url)
 			}

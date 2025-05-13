@@ -234,7 +234,7 @@ func (d *Decoder) readBool() (bool, error) {
 
 func (d *Decoder) Decode() (Document, error) {
 	doc, err := d.decode()
-	if err != nil && !errors.Is(err, io.EOF) {
+	if err != nil && err != io.EOF {
 		return doc, fmt.Errorf("invalid operation at byte offset %d: %w", d.dec.InputOffset(), err)
 	}
 	return doc, err

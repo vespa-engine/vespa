@@ -166,7 +166,7 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	result := []Document{}
 	for {
 		doc, err := dec.Decode()
-		if errors.Is(err, io.EOF) {
+		if err == io.EOF {
 			break
 		}
 		if err != nil {
@@ -260,7 +260,7 @@ func TestGenerator(t *testing.T) {
 	var docs []Document
 	for {
 		doc, err := dec.Decode()
-		if errors.Is(err, io.EOF) {
+		if err == io.EOF {
 			break
 		} else if err != nil {
 			t.Fatal(err)
