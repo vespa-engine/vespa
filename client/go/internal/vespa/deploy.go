@@ -211,7 +211,7 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 
 func renameOrCopyTmpFile(srcPath, dstPath string) error {
 	if err := os.Rename(srcPath, dstPath); err == nil {
-		return nil
+		return err
 	}
 	src, err := os.Open(srcPath)
 	if err != nil {
