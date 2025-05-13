@@ -23,7 +23,10 @@ public:
     explicit TokensDFW(const std::string& input_field_name, bool exact_match, search::Normalizing normalize_mode);
     ~TokensDFW() override;
     bool isGenerated() const override;
-    void insertField(uint32_t docid, const search::docsummary::IDocsumStoreDocument* doc, search::docsummary::GetDocsumsState& state, vespalib::slime::Inserter& target) const override;
+    void insert_field(uint32_t docid, const search::docsummary::IDocsumStoreDocument* doc,
+                      search::docsummary::GetDocsumsState& state,
+                      const search::docsummary::SummaryElementsSelector& elements_selector,
+                      vespalib::slime::Inserter& target) const override;
 };
 
 }

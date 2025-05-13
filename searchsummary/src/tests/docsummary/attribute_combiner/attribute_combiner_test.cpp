@@ -7,6 +7,7 @@
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
 #include <vespa/searchsummary/docsummary/attribute_combiner_dfw.h>
+#include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/searchsummary/test/mock_attribute_manager.h>
 #include <vespa/searchsummary/test/mock_state_callback.h>
 #include <vespa/searchsummary/test/slime_value.h>
@@ -23,6 +24,7 @@ using search::docsummary::GetDocsumsState;
 using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::IDocsumEnvironment;
 using search::docsummary::DocsumFieldWriter;
+using search::docsummary::SummaryElementsSelector;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
 using search::docsummary::test::SlimeValue;
@@ -35,12 +37,18 @@ struct AttributeCombinerTest : public ::testing::Test
     std::unique_ptr<DocsumFieldWriter>  writer;
     MockStateCallback                   callback;
     GetDocsumsState                     state;
-    std::shared_ptr<search::MatchingElementsFields> _matching_elems_fields;
+    std::unique_ptr<SummaryElementsSelector> elements_selector;
 
     AttributeCombinerTest();
     ~AttributeCombinerTest() override;
     void set_field(const std::string &field_name, bool filter_elements);
     void assertWritten(const std::string &exp, uint32_t docId);
+    bool has_field(const std::string& field_name) const {
+        return elements_selector->matching_elements_fields().has_field(field_name);
+    }
+    const std::string& enclosing_field(const std::string& field_name) const {
+        return elements_selector->matching_elements_fields().enclosing_field(field_name);
+    }
 };
 
 AttributeCombinerTest::AttributeCombinerTest()
@@ -48,7 +56,7 @@ AttributeCombinerTest::AttributeCombinerTest()
       writer(),
       callback(),
       state(callback),
-      _matching_elems_fields()
+      elements_selector()
 {
     attrs.build_string_attribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
     attrs.build_int_attribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
@@ -78,10 +86,13 @@ AttributeCombinerTest::~AttributeCombinerTest() = default;
 void
 AttributeCombinerTest::set_field(const std::string &field_name, bool filter_elements)
 {
+
     if (filter_elements) {
-        _matching_elems_fields = std::make_shared<search::MatchingElementsFields>();
+        elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match());
+    } else {
+        elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
     }
-    writer = AttributeCombinerDFW::create(field_name, *state._attrCtx, filter_elements, _matching_elems_fields);
+    writer = AttributeCombinerDFW::create(field_name, *state._attrCtx, *elements_selector);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._fieldWriterStates.resize(1);
 }
@@ -91,7 +102,7 @@ AttributeCombinerTest::assertWritten(const std::string &exp_slime_as_json, uint3
 {
     vespalib::Slime act;
     vespalib::slime::SlimeInserter inserter(act);
-    writer->insertField(docId, nullptr, state, inserter);
+    writer->insert_field(docId, nullptr, state, *elements_selector, inserter);
 
     SlimeValue exp(exp_slime_as_json);
     EXPECT_EQ(exp.slime, act);
@@ -160,45 +171,45 @@ TEST_F(AttributeCombinerTest, require_that_attribute_combiner_dfw_generates_corr
 TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_filtered_array_of_struct)
 {
     set_field("array", true);
-    EXPECT_TRUE(_matching_elems_fields);
-    EXPECT_TRUE(_matching_elems_fields->has_field("array"));
-    EXPECT_TRUE(_matching_elems_fields->has_field("array.name"));
-    EXPECT_TRUE(_matching_elems_fields->has_field("array.val"));
-    EXPECT_FALSE(_matching_elems_fields->has_field("map"));
-    EXPECT_FALSE(_matching_elems_fields->has_field("smap"));
-    EXPECT_EQ("array.foo", _matching_elems_fields->enclosing_field("array.foo"));
-    EXPECT_EQ("array", _matching_elems_fields->enclosing_field("array.name"));
-    EXPECT_EQ("array", _matching_elems_fields->enclosing_field("array.val"));
-    EXPECT_EQ("array", _matching_elems_fields->enclosing_field("array.fval"));
+    ASSERT_TRUE(elements_selector);
+    EXPECT_TRUE(has_field("array"));
+    EXPECT_TRUE(has_field("array.name"));
+    EXPECT_TRUE(has_field("array.val"));
+    EXPECT_FALSE(has_field("map"));
+    EXPECT_FALSE(has_field("smap"));
+    EXPECT_EQ("array.foo", enclosing_field("array.foo"));
+    EXPECT_EQ("array", enclosing_field("array.name"));
+    EXPECT_EQ("array", enclosing_field("array.val"));
+    EXPECT_EQ("array", enclosing_field("array.fval"));
 }
 
 TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_filtered_map_of_struct)
 {
     set_field("smap", true);
-    EXPECT_TRUE(_matching_elems_fields);
-    EXPECT_FALSE(_matching_elems_fields->has_field("array"));
-    EXPECT_FALSE(_matching_elems_fields->has_field("map"));
-    EXPECT_TRUE(_matching_elems_fields->has_field("smap"));
-    EXPECT_TRUE(_matching_elems_fields->has_field("smap.key"));
-    EXPECT_EQ("smap.foo", _matching_elems_fields->enclosing_field("smap.foo"));
-    EXPECT_EQ("smap", _matching_elems_fields->enclosing_field("smap.key"));
-    EXPECT_EQ("smap", _matching_elems_fields->enclosing_field("smap.value.name"));
-    EXPECT_EQ("smap", _matching_elems_fields->enclosing_field("smap.value.val"));
-    EXPECT_EQ("smap", _matching_elems_fields->enclosing_field("smap.value.fval"));
+    EXPECT_TRUE(elements_selector);
+    EXPECT_FALSE(has_field("array"));
+    EXPECT_FALSE(has_field("map"));
+    EXPECT_TRUE(has_field("smap"));
+    EXPECT_TRUE(has_field("smap.key"));
+    EXPECT_EQ("smap.foo", enclosing_field("smap.foo"));
+    EXPECT_EQ("smap", enclosing_field("smap.key"));
+    EXPECT_EQ("smap", enclosing_field("smap.value.name"));
+    EXPECT_EQ("smap", enclosing_field("smap.value.val"));
+    EXPECT_EQ("smap", enclosing_field("smap.value.fval"));
 }
 
 TEST_F(AttributeCombinerTest, require_that_matching_elems_fields_is_setup_for_filtered_map_of_string)
 {
     set_field("map", true);
-    EXPECT_TRUE(_matching_elems_fields);
-    EXPECT_FALSE(_matching_elems_fields->has_field("array"));
-    EXPECT_TRUE(_matching_elems_fields->has_field("map"));
-    EXPECT_TRUE(_matching_elems_fields->has_field("map.key"));
-    EXPECT_TRUE(_matching_elems_fields->has_field("map.value"));
-    EXPECT_FALSE(_matching_elems_fields->has_field("smap"));
-    EXPECT_EQ("map.foo", _matching_elems_fields->enclosing_field("map.foo"));
-    EXPECT_EQ("map", _matching_elems_fields->enclosing_field("map.key"));
-    EXPECT_EQ("map", _matching_elems_fields->enclosing_field("map.value"));
+    EXPECT_TRUE(elements_selector);
+    EXPECT_FALSE(has_field("array"));
+    EXPECT_TRUE(has_field("map"));
+    EXPECT_TRUE(has_field("map.key"));
+    EXPECT_TRUE(has_field("map.value"));
+    EXPECT_FALSE(has_field("smap"));
+    EXPECT_EQ("map.foo", enclosing_field("map.foo"));
+    EXPECT_EQ("map", enclosing_field("map.key"));
+    EXPECT_EQ("map", enclosing_field("map.value"));
 }
 
 }

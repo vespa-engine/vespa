@@ -16,7 +16,9 @@ public:
     DocumentIdDFW();
     ~DocumentIdDFW() override;
     bool isGenerated() const override { return false; }
-    void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
+    void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                      const SummaryElementsSelector& elements_selector,
+                      vespalib::slime::Inserter &target) const override;
 };
 
 }

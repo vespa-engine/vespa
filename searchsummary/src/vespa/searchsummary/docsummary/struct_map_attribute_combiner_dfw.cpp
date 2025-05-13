@@ -4,6 +4,7 @@
 #include "docsum_field_writer_state.h"
 #include "struct_fields_resolver.h"
 #include "struct_map_attribute_combiner_dfw.h"
+#include "summary_elements_selector.h"
 #include <vespa/searchcommon/attribute/iattributecontext.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
@@ -128,15 +129,14 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 
 StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const std::string &fieldName,
                                                              const StructFieldsResolver& fields_resolver,
-                                                             bool filter_elements,
-                                                             std::shared_ptr<MatchingElementsFields> matching_elems_fields)
-    : AttributeCombinerDFW(fieldName, filter_elements),
+                                                             SummaryElementsSelector& elements_selector)
+    : AttributeCombinerDFW(fieldName, elements_selector.matched_elements_only()),
       _keyAttributeName(fields_resolver.get_map_key_attribute()),
       _valueFields(fields_resolver.get_map_value_fields()),
       _valueAttributeNames(fields_resolver.get_map_value_attributes())
 {
-    if (filter_elements && matching_elems_fields && !matching_elems_fields->has_field(fieldName)) {
-        fields_resolver.apply_to(*matching_elems_fields);
+    if (elements_selector.matched_elements_only()) {
+        fields_resolver.apply_to(elements_selector.matching_elements_fields());
     }
 }
 

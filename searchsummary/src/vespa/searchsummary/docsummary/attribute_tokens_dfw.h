@@ -24,7 +24,9 @@ public:
     ~AttributeTokensDFW() override;
     bool isGenerated() const override;
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, vespalib::slime::Inserter& target) const override;
+    void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                      const SummaryElementsSelector& elements_selector,
+                      vespalib::slime::Inserter& target) const override;
 };
 
 }

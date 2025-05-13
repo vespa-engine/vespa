@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchsummary/docsummary/attribute_tokens_dfw.h>
+#include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/searchsummary/test/mock_attribute_manager.h>
 #include <vespa/searchsummary/test/mock_state_callback.h>
 #include <vespa/searchsummary/test/slime_value.h>
@@ -13,6 +14,7 @@ using search::attribute::CollectionType;
 using search::docsummary::AttributeTokensDFW;
 using search::docsummary::GetDocsumsState;
 using search::docsummary::DocsumFieldWriter;
+using search::docsummary::SummaryElementsSelector;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
 using search::docsummary::test::SlimeValue;
@@ -23,7 +25,7 @@ protected:
     std::unique_ptr<DocsumFieldWriter> _writer;
     MockStateCallback _callback;
     GetDocsumsState _state;
-    std::shared_ptr<search::MatchingElementsFields> _matching_elems_fields;
+    SummaryElementsSelector _elements_selector;
     std::string _field_name;
 
 public:
@@ -32,7 +34,7 @@ public:
           _writer(),
           _callback(),
           _state(_callback),
-          _matching_elems_fields(),
+          _elements_selector(SummaryElementsSelector::select_all()),
           _field_name()
     {
         _attrs.build_string_attribute("array_str", { {"This", "is", "A TEST"}, {} });
@@ -58,7 +60,7 @@ public:
         vespalib::Slime act;
         vespalib::slime::SlimeInserter inserter(act);
         if (!_writer->isDefaultValue(docid, _state)) {
-            _writer->insertField(docid, nullptr, _state, inserter);
+            _writer->insert_field(docid, nullptr, _state, _elements_selector, inserter);
         }
 
         SlimeValue exp(exp_slime_as_json);

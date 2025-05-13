@@ -122,9 +122,9 @@ class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWrit
 {
 public:
     std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string&,
+                                                                  SummaryElementsSelector&,
                                                                   const std::string&,
-                                                                  const std::string&,
-                                                                  std::shared_ptr<search::MatchingElementsFields>) override {
+                                                                  const std::string&) override {
         return {};
     }
 

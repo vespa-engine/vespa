@@ -22,6 +22,7 @@
 #include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
 #include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
+#include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -205,7 +206,7 @@ class MatchedElementsFilterTest : public ::testing::Test {
 private:
     DocsumStore _doc_store;
     AttributeContext _attr_ctx;
-    std::shared_ptr<MatchingElementsFields> _fields;
+    SummaryElementsSelector _elements_selector;
 
     Slime run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
         auto writer = make_field_writer(input_field_name);
@@ -215,7 +216,7 @@ private:
         Slime slime;
         SlimeInserter inserter(slime);
 
-        writer->insertField(doc_id, doc.get(), state, inserter);
+        writer->insert_field(doc_id, doc.get(), state, _elements_selector, inserter);
         return slime;
     }
 
@@ -223,19 +224,19 @@ public:
     MatchedElementsFilterTest()
         : _doc_store(),
           _attr_ctx(),
-          _fields(std::make_shared<MatchingElementsFields>())
+          _elements_selector(SummaryElementsSelector::select_by_match())
     {
     }
     ~MatchedElementsFilterTest() override;
     std::unique_ptr<DocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
-        return MatchedElementsFilterDFW::create(input_field_name,_attr_ctx, _fields);
+        return MatchedElementsFilterDFW::create(input_field_name,_attr_ctx, _elements_selector);
     }
     void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {
         Slime act = run_filter_field_writer(input_field_name, matching_elements);
         SlimeValue exp(exp_slime_as_json);
         EXPECT_EQ(exp.slime, act);
     }
-    const MatchingElementsFields& fields() const { return *_fields; }
+    const MatchingElementsFields& fields() const { return _elements_selector.matching_elements_fields(); }
     void set_empty_values() { _doc_store.set_empty_values(); }
     void set_skip_set_values() { _doc_store.set_skip_set_values(); }
  };

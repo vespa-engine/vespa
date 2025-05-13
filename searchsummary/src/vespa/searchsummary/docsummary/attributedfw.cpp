@@ -5,6 +5,7 @@
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
 #include "empty_docsum_field_writer_state.h"
+#include "summary_elements_selector.h"
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/attribute/i_multi_value_attribute.h>
@@ -239,13 +240,13 @@ private:
     uint32_t _state_index; // index into _fieldWriterStates in GetDocsumsState
 
 public:
-    MultiAttrDFW(const std::string& attr_name, bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+    MultiAttrDFW(const std::string& attr_name, SummaryElementsSelector& elements_selector)
         : AttrDFW(attr_name),
-          _filter_elements(filter_elements),
+          _filter_elements(elements_selector.matched_elements_only()),
           _state_index(0)
     {
-        if (filter_elements && matching_elems_fields) {
-            matching_elems_fields->add_field(attr_name);
+        if (elements_selector.matched_elements_only()) {
+            elements_selector.matching_elements_fields().add_field(attr_name);
         }
     }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
@@ -312,7 +313,7 @@ MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib::slim
 }
 
 std::unique_ptr<DocsumFieldWriter>
-create_multi_writer(const IAttributeVector& attr, bool filter_elements, std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+create_multi_writer(const IAttributeVector& attr, SummaryElementsSelector& elements_selector)
 {
     auto type = attr.getBasicType();
     switch (type) {
@@ -323,7 +324,7 @@ create_multi_writer(const IAttributeVector& attr, bool filter_elements, std::sha
     case BasicType::INT64:
     case BasicType::FLOAT:
     case BasicType::DOUBLE:
-        return std::make_unique<MultiAttrDFW>(attr.getName(), filter_elements, std::move(matching_elems_fields));
+        return std::make_unique<MultiAttrDFW>(attr.getName(), elements_selector);
     default:
         // should not happen
         LOG(error, "Bad value for attribute type: %u", type);
@@ -336,8 +337,7 @@ create_multi_writer(const IAttributeVector& attr, bool filter_elements, std::sha
 std::unique_ptr<DocsumFieldWriter>
 AttributeDFWFactory::create(const IAttributeManager& attr_mgr,
                             const std::string& attr_name,
-                            bool filter_elements,
-                            std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+                            SummaryElementsSelector& elements_selector)
 {
     auto ctx = attr_mgr.createContext();
     const auto* attr = ctx->getAttribute(attr_name);
@@ -346,7 +346,7 @@ AttributeDFWFactory::create(const IAttributeManager& attr_mgr,
         return {};
     }
     if (attr->hasMultiValue()) {
-        return create_multi_writer(*attr, filter_elements, std::move(matching_elems_fields));
+        return create_multi_writer(*attr, elements_selector);
     } else {
         return std::make_unique<SingleAttrDFW>(attr->getName());
     }

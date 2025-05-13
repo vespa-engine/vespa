@@ -11,6 +11,7 @@
 #include <vespa/searchsummary/docsummary/document_id_dfw.h>
 #include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
+#include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <iostream>
@@ -31,6 +32,7 @@ using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::IDocsumStoreDocument;
 using search::docsummary::ResultClass;
 using search::docsummary::ResultConfig;
+using search::docsummary::SummaryElementsSelector;
 using vespalib::Slime;
 using vespalib::slime::Cursor;
 using vespalib::slime::ObjectInserter;
@@ -109,7 +111,7 @@ DocumentIdDFWTest::write(const IDocsumStoreDocument* doc)
     DocumentIdDFW writer;
     MyGetDocsumsStateCallback callback;
     GetDocsumsState state(callback);
-    writer.insertField(0, doc, state, field_inserter);
+    writer.insert_field(0, doc, state, SummaryElementsSelector::select_all(), field_inserter);
     return slime;
 }
 

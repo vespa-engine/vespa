@@ -47,11 +47,12 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
         vespalib::slime::Cursor & docsum = topInserter.insertObject();
         for (uint32_t i = 0; i < rci.res_class->getNumEntries(); ++i) {
             const ResConfigEntry *resCfg = rci.res_class->getEntry(i);
+            auto& elements_selector = resCfg->elements_selector();
             const DocsumFieldWriter *writer = resCfg->writer();
             if (state._args.need_field(resCfg->name()) && ! writer->isDefaultValue(docid, state)) {
                 const Memory field_name(resCfg->name().data(), resCfg->name().size());
                 ObjectInserter inserter(docsum, field_name);
-                writer->insertField(docid, nullptr, state, inserter);
+                writer->insert_field(docid, nullptr, state, elements_selector, inserter);
             }
         }
     } else {
@@ -67,12 +68,13 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
             if (!state._args.need_field(outCfg->name())) {
                 continue;
             }
+            auto& elements_selector = outCfg->elements_selector();
             const DocsumFieldWriter *writer = outCfg->writer();
             const Memory field_name(outCfg->name().data(), outCfg->name().size());
             ObjectInserter inserter(docsum, field_name);
             if (writer != nullptr) {
                 if (! writer->isDefaultValue(docid, state)) {
-                    writer->insertField(docid, doc.get(), state, inserter);
+                    writer->insert_field(docid, doc.get(), state, elements_selector, inserter);
                 }
             } else {
                 if (doc) {

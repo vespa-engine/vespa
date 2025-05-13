@@ -60,9 +60,9 @@ DocsumFieldWriterFactory::throw_missing_source(const std::string& command)
 
 std::unique_ptr<DocsumFieldWriter>
 DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
+                                                     SummaryElementsSelector& elements_selector,
                                                      const std::string& command,
-                                                     const std::string& source,
-                                                     std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+                                                     const std::string& source)
 {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     if (command == command::dynamic_teaser) {
@@ -121,14 +121,14 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         }
     } else if (command == command::attribute) {
         if (has_attribute_manager()) {
-            fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source);
+            fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source, elements_selector);
             // Missing attribute vector is allowed, so throw_if_nullptr() is NOT used.
         }
     } else if (command == command::attribute_combiner) {
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
             const std::string& source_field = source.empty() ? field_name : source;
-            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, false, std::shared_ptr<MatchingElementsFields>());
+            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, elements_selector);
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::matched_attribute_elements_filter) {
@@ -136,9 +136,9 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
             if (attr_ctx->getAttribute(source_field) != nullptr) {
-                fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source_field, true, matching_elems_fields);
+                fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source_field, elements_selector);
             } else {
-                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, true, matching_elems_fields);
+                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, elements_selector);
             }
             throw_if_nullptr(fieldWriter, command);
         }
@@ -146,7 +146,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         const std::string& source_field = source.empty() ? field_name : source;
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
-            fieldWriter = MatchedElementsFilterDFW::create(source_field, *attr_ctx, matching_elems_fields);
+            fieldWriter = MatchedElementsFilterDFW::create(source_field, *attr_ctx, elements_selector);
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::documentid) {
