@@ -39,7 +39,7 @@ func (opts *Options) CurMaxHeapSize(fallback AmountOfMemory) AmountOfMemory {
 
 func (opts *Options) AddDefaultHeapSizeArgs(minHeapSize, maxHeapSize AmountOfMemory) {
 	trace.Trace("AddDefaultHeapSizeArgs", minHeapSize, "/", maxHeapSize)
-	opts.CurMinHeapSize(minHeapSize)
+	minHeapSize = opts.CurMinHeapSize(minHeapSize)
 	maxHeapSize = opts.CurMaxHeapSize(maxHeapSize)
 	opts.MaybeAddHugepages(maxHeapSize)
 }
