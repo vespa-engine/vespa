@@ -197,6 +197,21 @@ func assertStreamingQuery(t *testing.T, expectedOutput, body string, args ...str
 	assert.Equal(t, expectedOutput, stdout.String())
 }
 
+func assertStreamingQueryErr(t *testing.T, expectedOut, expectedErr, body string, args ...string) {
+	t.Helper()
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 200, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "text/event-stream")
+	response.Body = []byte(body)
+	client.NextResponse(response)
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.NotNil(t, cli.Run(append(args, "-t", "http://127.0.0.1:8080", "query", "select something")...))
+	assert.Equal(t, expectedErr, stderr.String())
+	assert.Equal(t, expectedOut, stdout.String())
+}
+
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {
 	client := &mock.HTTPClient{}
 	client.NextResponseString(200, "{\"query\":\"result\"}")
