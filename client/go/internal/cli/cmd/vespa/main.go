@@ -24,7 +24,7 @@ func main() {
 		fatal(1, err)
 	}
 	if err := cli.Run(); err != nil {
-		if cliErr, ok := err.(cmd.CLIError); ok {
+		if cliErr, ok := err.(cmd.ErrCLI); ok {
 			fatal(cliErr.Status, nil)
 		} else {
 			fatal(1, nil)
