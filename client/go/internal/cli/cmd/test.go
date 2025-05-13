@@ -56,7 +56,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 				for _, test := range failed {
 					fmt.Fprintln(cli.Stdout, test)
 				}
-				return ErrCLI{Status: 3, error: fmt.Errorf("tests failed"), quiet: true}
+				return CLIError{Status: 3, error: fmt.Errorf("tests failed"), quiet: true}
 			} else {
 				plural := "s"
 				if count == 1 {

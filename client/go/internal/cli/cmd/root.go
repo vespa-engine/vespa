@@ -68,9 +68,9 @@ type CLI struct {
 	ztsFactory        ztsFactory
 }
 
-// ErrCLI is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
+// CLIError is an error returned to the user. It wraps an exit status, a regular error and optional hints for resolving
 // the error.
-type ErrCLI struct {
+type CLIError struct {
 	Status int
 	warn   bool
 	quiet  bool
@@ -93,7 +93,9 @@ type targetType struct {
 }
 
 // errHint creates a new CLI error, with optional hints that will be printed after the error
-func errHint(err error, hints ...string) ErrCLI { return ErrCLI{Status: 1, hints: hints, error: err} }
+func errHint(err error, hints ...string) CLIError {
+	return CLIError{Status: 1, hints: hints, error: err}
+}
 
 type executor interface {
 	LookPath(name string) (string, error)
@@ -621,7 +623,7 @@ func (c *CLI) Run(args ...string) error {
 	c.cmd.SetArgs(args)
 	err := c.cmd.Execute()
 	if err != nil {
-		if cliErr, ok := err.(ErrCLI); ok {
+		if cliErr, ok := err.(CLIError); ok {
 			if !cliErr.quiet {
 				if cliErr.warn {
 					c.printWarning(cliErr, cliErr.hints...)
