@@ -131,13 +131,13 @@ public class CapacityPolicies {
         }
 
         if (clusterSpec.type() == ClusterSpec.Type.content) {
-            // When changing defaults here update cloud.vespa.ai/en/reference/services
+            // When changing defaults here update https://docs.vespa.ai/en/reference/services.html#resources
             return zone.cloud().dynamicProvisioning()
                    ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2, 16, 300, 0.3)))
                    : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));
         }
         else {
-            // When changing defaults here update cloud.vespa.ai/en/reference/services
+            // When changing defaults here update https://docs.vespa.ai/en/reference/services.html#resources
             return zone.cloud().dynamicProvisioning()
                    ? versioned(clusterSpec, Map.of(new Version(0), new NodeResources(2.0, 8, 50, 0.3)))
                    : versioned(clusterSpec, Map.of(new Version(0), new NodeResources(1.5, 8, 50, 0.3)));

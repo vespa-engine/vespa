@@ -38,7 +38,7 @@ public class UrlConfigValidator implements Validator {
                 context.illegal(message + ". This is only supported in public systems");
             else if ( ! isExclusive)
                 context.illegal(message + ". Nodes in the cluster need to be 'exclusive'," +
-                                " see https://cloud.vespa.ai/en/reference/services#nodes");
+                                " see https://docs.vespa.ai/en/reference/services.html#nodes");
         }
     }
 

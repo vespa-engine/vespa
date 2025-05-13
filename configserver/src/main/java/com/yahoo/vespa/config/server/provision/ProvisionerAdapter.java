@@ -39,7 +39,7 @@ public class ProvisionerAdapter implements HostProvisioner {
         // by the content of the nodes tag in services
         throw new IllegalArgumentException("Clusters in hosted environments must have a <nodes count='N'> tag " +
                                                 "matching all zones, and having no <node> subtags, " +
-                                                "see https://cloud.vespa.ai/en/reference/services");
+                                                "see https://docs.vespa.ai/en/reference/services.html");
     }
 
     @Override

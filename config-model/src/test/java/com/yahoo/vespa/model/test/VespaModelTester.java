@@ -250,7 +250,7 @@ public class VespaModelTester {
         @Override
         public HostSpec allocateHost(String alias) {
             throw new UnsupportedOperationException("Allocating hosts using <node> tags is not supported in hosted environments, " +
-                                                    "use <nodes count='N'> instead, see https://cloud.vespa.ai/en/reference/services");
+                                                    "use <nodes count='N'> instead, see https://docs.vespa.ai/en/reference/services.html#nodes");
         }
 
         @Override
