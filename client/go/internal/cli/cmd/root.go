@@ -570,7 +570,7 @@ func (c *CLI) createCloudTarget(targetType string, opts targetOptions, customURL
 	return vespa.CloudTarget(c.httpClient, apiAuth, deploymentAuth, apiOptions, deploymentOptions, logOptions, c.retryInterval)
 }
 
-// system returns the appropiate system for the target configured in this CLI.
+// system returns the appropriate system for the target configured in this CLI.
 func (c *CLI) system(targetType string) (vespa.System, error) {
 	name := c.Environment["VESPA_CLI_CLOUD_SYSTEM"]
 	if name != "" {

@@ -15,7 +15,7 @@ type Throttler interface {
 	Sent()
 	// Success notifies the throttler that document operation succeeded.
 	Success()
-	// Throttled notifies the throttler that a throttling event occured while count documents were in-flight.
+	// Throttled notifies the throttler that a throttling event occurred while count documents were in-flight.
 	Throttled(count int64)
 	// TargetInflight returns the ideal number of documents to have in-flight now.
 	TargetInflight() int64
