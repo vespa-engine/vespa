@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.llm.generation;
 
+import ai.vespa.language.chunker.SentenceChunker;
 import ai.vespa.llm.InferenceParameters;
 import ai.vespa.llm.LanguageModel;
 import ai.vespa.llm.completion.Prompt;
@@ -8,14 +9,17 @@ import ai.vespa.llm.completion.StringPrompt;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
+import com.yahoo.language.process.Chunker;
 import com.yahoo.language.process.FieldGenerator;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -24,7 +28,9 @@ import java.util.logging.Logger;
  * @author glebashnik
  */
 public class LanguageModelFieldGenerator extends AbstractComponent implements FieldGenerator {
+
     private static final Logger logger = Logger.getLogger(LanguageModelFieldGenerator.class.getName());
+
     private final LanguageModel languageModel;
 
     private final LanguageModelFieldGeneratorConfig config;
@@ -63,11 +69,16 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
     
     @Override
     public FieldValue generate(Prompt prompt, Context context) {
+        return context.computeCachedValueIfAbsent(new CacheKey(this, prompt, context.getDestination(), context.getTargetType()),
+                                                  () -> computeGeneration(prompt, context.getDestination(), context.getTargetType()));
+    }
+
+    private FieldValue computeGeneration(Prompt prompt, String destination, DataType targetType) {
         var options = new HashMap<String, String>();
         String jsonSchema = null;
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
-            jsonSchema = FieldGeneratorUtils.generateJsonSchemaForField(context.getDestination(), context.getTargetType());
+            jsonSchema = FieldGeneratorUtils.generateJsonSchemaForField(destination, targetType);
             options.put(InferenceParameters.OPTION_JSON_SCHEMA, jsonSchema);
         }
         
@@ -79,8 +90,7 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         
         if (config.responseFormatType() == LanguageModelFieldGeneratorConfig.ResponseFormatType.JSON) {
             try {
-                generatedFieldValue = FieldGeneratorUtils.parseJsonFieldValue(
-                        generatedText, context.getDestination(), context.getTargetType());
+                generatedFieldValue = FieldGeneratorUtils.parseJsonFieldValue(generatedText, destination, targetType);
             } catch (IllegalArgumentException e) {
                 generatedFieldValue = switch (config.invalidResponseFormatPolicy()) {
                     case DISCARD -> null;
@@ -97,4 +107,7 @@ public class LanguageModelFieldGenerator extends AbstractComponent implements Fi
         
         return generatedFieldValue;
     }
+
+    private record CacheKey(LanguageModelFieldGenerator generator, Prompt prompt, String destination, DataType targetType) {}
+
 }
