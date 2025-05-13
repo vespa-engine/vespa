@@ -352,6 +352,6 @@ func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result R
 	}
 	result.Latency = elapsed
 	result.BytesSent = int64(sentBytes)
-	result.BytesRecv = int64(written)
+	result.BytesRecv = written
 	return result
 }

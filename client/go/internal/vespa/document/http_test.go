@@ -82,7 +82,7 @@ func TestClientSend(t *testing.T) {
 	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
-		Timeout: time.Duration(5 * time.Second),
+		Timeout: 5 * time.Second,
 	}, []httputil.Client{&httpClient})
 	clock := manualClock{t: time.Now(), tick: time.Second}
 	client.now = clock.now
@@ -163,7 +163,7 @@ func TestClientGet(t *testing.T) {
 	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
-		Timeout: time.Duration(5 * time.Second),
+		Timeout: 5 * time.Second,
 	}, []httputil.Client{&httpClient})
 	clock := manualClock{t: time.Now(), tick: time.Second}
 	client.now = clock.now
@@ -206,7 +206,7 @@ func TestClientSendCompressed(t *testing.T) {
 	httpClient := &mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
-		Timeout: time.Duration(5 * time.Second),
+		Timeout: 5 * time.Second,
 	}, []httputil.Client{httpClient})
 
 	bigBody := fmt.Sprintf(`{"fields": {"foo": "%s"}}`, strings.Repeat("s", 512+1))
@@ -343,7 +343,7 @@ func benchmarkClientSend(b *testing.B, compression Compression, document Documen
 	client, _ := NewClient(ClientOptions{
 		Compression: compression,
 		BaseURL:     "https://example.com:1337",
-		Timeout:     time.Duration(5 * time.Second),
+		Timeout:     5 * time.Second,
 	}, []httputil.Client{&httpClient})
 	b.ResetTimer() // ignore setup
 	for n := 0; n < b.N; n++ {

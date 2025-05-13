@@ -83,7 +83,7 @@ func (v *Options) String() string {
 	}
 	if v.NodeIndex >= 0 {
 		buf.WriteString(" node-index=")
-		buf.WriteString(strconv.Itoa(int(v.NodeIndex)))
+		buf.WriteString(strconv.Itoa(v.NodeIndex))
 	}
 	if v.WantedState != "" {
 		buf.WriteString(" WantedState=")

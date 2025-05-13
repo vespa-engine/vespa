@@ -30,7 +30,7 @@ func TestSignRequest(t *testing.T) {
 		now:           func() time.Time { return fixedTime },
 		rnd:           rnd,
 		KeyID:         "my-key",
-		PemPrivateKey: []byte(privateKey),
+		PemPrivateKey: privateKey,
 	}
 	req, err := http.NewRequest("POST", "https://example.com", strings.NewReader("body"))
 	if err != nil {

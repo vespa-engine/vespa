@@ -205,7 +205,7 @@ func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CL
 	switch format {
 	case "human":
 		desc := s.Description()
-		desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
+		desc = strings.ToUpper(string(desc[0])) + desc[1:]
 		sb.WriteString(fmt.Sprintf("%s at %s is ", desc, color.CyanString(s.BaseURL)))
 		if err == nil {
 			sb.WriteString(color.GreenString("ready"))
