@@ -233,7 +233,7 @@ func probeHandler(vArgs *visitArgs, service *vespa.Service, cli *CLI) (res Opera
 	}
 	request := &http.Request{
 		URL:    url,
-		Method: http.MethodGet,
+		Method: "GET",
 		Header: vArgs.header,
 	}
 	timeout := time.Duration(90) * time.Second
@@ -242,7 +242,7 @@ func probeHandler(vArgs *visitArgs, service *vespa.Service, cli *CLI) (res Opera
 		return Failure("Request failed: " + err.Error())
 	}
 	defer response.Body.Close()
-	if response.StatusCode == http.StatusOK {
+	if response.StatusCode == 200 {
 		handlersInfo, err := parseHandlersOutput(response.Body)
 		if err != nil || len(handlersInfo.Handlers) == 0 {
 			cli.printWarning("Could not parse JSON response from"+urlPath, err.Error())
@@ -393,7 +393,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	request := &http.Request{
 		URL:    url,
-		Method: http.MethodGet,
+		Method: "GET",
 		Header: vArgs.header,
 	}
 	timeout := time.Duration(900) * time.Second
@@ -403,7 +403,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	defer response.Body.Close()
 	vvo, err := parseVisitOutput(response.Body)
-	if response.StatusCode == http.StatusOK {
+	if response.StatusCode == 200 {
 		if err == nil {
 			totalDocCount += vvo.DocumentCount
 			if vvo.DocumentCount != len(vvo.Documents) {

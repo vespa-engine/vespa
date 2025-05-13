@@ -180,7 +180,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode == http.StatusOK {
+	if response.StatusCode == 200 {
 		output := cli.Stdout
 		if opts.profile {
 			profileFile, err := os.Create(opts.profileFile)
@@ -196,7 +196,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 		}
 	} else if response.StatusCode/100 == 4 {
 		err := fmt.Errorf("invalid query: %s\n%s", response.Status, ioutil.ReaderToJSON(response.Body))
-		if response.StatusCode == http.StatusForbidden && authMethod == "token" {
+		if response.StatusCode == 403 && authMethod == "token" {
 			return errHint(err, "Make sure the VESPA_CLI_DATA_PLANE_TOKEN environment variable is set to a valid token")
 		}
 		return err

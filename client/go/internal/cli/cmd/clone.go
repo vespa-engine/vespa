@@ -212,7 +212,7 @@ func (c *cloner) downloadZip(cachedFiles []zipFile) (string, bool, error) {
 	// the cached copy if GitHub is unavailable.
 	cacheHit := zipPath != ""
 	err := c.cli.spinner(c.cli.Stderr, color.YellowString("Downloading sample apps ..."), func() error {
-		request, err := http.NewRequest(http.MethodGet, "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
+		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			return fmt.Errorf("invalid url: %w", err)
 		}
