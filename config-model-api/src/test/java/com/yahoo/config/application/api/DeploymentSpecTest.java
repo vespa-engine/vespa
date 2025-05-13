@@ -12,6 +12,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Tags;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
 import com.yahoo.config.provision.ZoneEndpoint.AccessType;
 import com.yahoo.config.provision.ZoneEndpoint.AllowedUrn;
@@ -1183,12 +1184,8 @@ public class DeploymentSpecTest {
                                                      </deployment>
                                                      """);
         assertEquals(List.of(), spec.requireInstance("default").endpoints());
-        assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
-                                                                     defaultId(),
-                                                                     ClusterSpec.Id.from("cluster")));
-        assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
-                                                                     com.yahoo.config.provision.zone.ZoneId.from("test", "us"),
-                                                                     ClusterSpec.Id.from("cluster")));
+        assertEquals(ZoneEndpoint.defaultEndpoint, zoneEndpoint(spec, defaultId(), ClusterSpec.Id.from("cluster")));
+        assertEquals(ZoneEndpoint.defaultEndpoint, zoneEndpoint(spec, from("test", "us"), ClusterSpec.Id.from("cluster")));
     }
 
     @Test
@@ -1200,9 +1197,7 @@ public class DeploymentSpecTest {
                                              </instance>
                                           </deployment>""");
         assertEquals(List.of(), spec.requireInstance("default").endpoints());
-        assertEquals(ZoneEndpoint.defaultEndpoint, spec.zoneEndpoint(InstanceName.defaultName(),
-                                                                     defaultId(),
-                                                                     ClusterSpec.Id.from("cluster")));
+        assertEquals(ZoneEndpoint.defaultEndpoint, zoneEndpoint(spec, defaultId(), ClusterSpec.Id.from("cluster")));
     }
 
     @Test
@@ -1307,44 +1302,44 @@ public class DeploymentSpecTest {
         var devZone = from(dev, RegionName.from("us-east"));
         var perfZone = from(perf, RegionName.from("us-east"));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax")));
+                     spec.zoneEndpoint(InstanceName.from("custom"), zone, ClusterSpec.Id.from("bax"), false));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), defaultId(), ClusterSpec.Id.from("bax")));
+                     zoneEndpoint(spec, defaultId(), ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("bax")));
+                     zoneEndpoint(spec, zone, ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), testZone, ClusterSpec.Id.from("bax")));
+                     zoneEndpoint(spec, testZone, ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.privateEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), testZone, ClusterSpec.Id.from("froz")));
+                     zoneEndpoint(spec, testZone, ClusterSpec.Id.from("froz")));
 
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("nope-not-this-one")));
+                     zoneEndpoint(spec, devZone, ClusterSpec.Id.from("nope-not-this-one")));
 
         // not declared for dev
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), devZone, ClusterSpec.Id.from("froz")));
+                     zoneEndpoint(spec, devZone, ClusterSpec.Id.from("froz")));
 
         assertEquals(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "darn"))),
-                     spec.zoneEndpoint(InstanceName.from("dev"), devZone, ClusterSpec.Id.from("aye")));
+                     spec.zoneEndpoint(InstanceName.from("dev"), devZone, ClusterSpec.Id.from("aye"), false));
 
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), perfZone, ClusterSpec.Id.from("bax")));
+                     zoneEndpoint(spec, perfZone, ClusterSpec.Id.from("bax")));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("default"), perfZone, ClusterSpec.Id.from("froz")));
+                     zoneEndpoint(spec, perfZone, ClusterSpec.Id.from("froz")));
 
         assertEquals(new ZoneEndpoint(false, true, List.of(new AllowedUrn(AccessType.awsPrivateLink, "barn"),
                                                            new AllowedUrn(AccessType.gcpServiceConnect, "nine"))),
-                     spec.zoneEndpoint(InstanceName.from("default"), zone, ClusterSpec.Id.from("froz")));
+                     zoneEndpoint(spec, zone, ClusterSpec.Id.from("froz")));
 
         assertEquals(new ZoneEndpoint(true, true, List.of()),
-                     spec.zoneEndpoint(InstanceName.from("other"), devZone, ClusterSpec.Id.from("yip")));
+                     spec.zoneEndpoint(InstanceName.from("other"), devZone, ClusterSpec.Id.from("yip"), false));
         assertEquals(new ZoneEndpoint(false, false, List.of()),
-                     spec.zoneEndpoint(InstanceName.from("bother"), perfZone, ClusterSpec.Id.from("yap")));
+                     spec.zoneEndpoint(InstanceName.from("bother"), perfZone, ClusterSpec.Id.from("yap"), false));
 
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("last"), devZone, ClusterSpec.Id.from("pew")));
+                     spec.zoneEndpoint(InstanceName.from("last"), devZone, ClusterSpec.Id.from("pew"), false));
         assertEquals(ZoneEndpoint.defaultEndpoint,
-                     spec.zoneEndpoint(InstanceName.from("last"), perfZone, ClusterSpec.Id.from("pew")));
+                     spec.zoneEndpoint(InstanceName.from("last"), perfZone, ClusterSpec.Id.from("pew"), false));
     }
 
     @Test
@@ -1426,13 +1421,13 @@ public class DeploymentSpecTest {
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("nalle", spec));
         assertEquals(Set.of("us-east", "us-west"), endpointRegions("default", spec));
         assertEquals(new ZoneEndpoint(true, true, List.of()),
-                     spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-east"), ClusterSpec.Id.from("bar")));
+                     zoneEndpoint(spec, from("prod", "us-east"), ClusterSpec.Id.from("bar")));
         assertEquals(new ZoneEndpoint(true, false, List.of()),
-                     spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-west"), ClusterSpec.Id.from("bar")));
+                     zoneEndpoint(spec, from("prod", "us-west"), ClusterSpec.Id.from("bar")));
         assertEquals(new ZoneEndpoint(true, true, List.of()),
-                     spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-east"), ClusterSpec.Id.from("quux")));
+                     zoneEndpoint(spec, from("prod", "us-east"), ClusterSpec.Id.from("quux")));
         assertEquals(new ZoneEndpoint(true, true, List.of()),
-                     spec.zoneEndpoint(InstanceName.from("default"), from("prod", "us-west"), ClusterSpec.Id.from("quux")));
+                     zoneEndpoint(spec, from("prod", "us-west"), ClusterSpec.Id.from("quux")));
         assertEquals(new HashSet<>() {{ add(null); add(from("prod", "us-east")); }},
                      spec.requireInstance("default").zoneEndpoints().get(ClusterSpec.Id.from("bar")).keySet());
         assertEquals(new HashSet<>() {{ add(null); }},
@@ -1970,6 +1965,10 @@ public class DeploymentSpecTest {
         return DeploymentSpec.fromXml(xml).requireInstance("default").endpoints().stream()
                              .map(Endpoint::endpointId)
                              .toList();
+    }
+
+    private static ZoneEndpoint zoneEndpoint(DeploymentSpec spec, com.yahoo.config.provision.zone.ZoneId zoneId, ClusterSpec.Id clusterSpecId) {
+        return spec.zoneEndpoint(InstanceName.from("default"), zoneId, clusterSpecId, false);
     }
 
 }
