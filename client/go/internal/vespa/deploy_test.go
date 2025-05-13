@@ -3,6 +3,7 @@ package vespa
 
 import (
 	"archive/zip"
+	"errors"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -312,7 +313,7 @@ func parseMultiPart(t *testing.T, req *http.Request) map[string][]byte {
 	mr := multipart.NewReader(req.Body, params["boundary"])
 	for {
 		p, err := mr.NextPart()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

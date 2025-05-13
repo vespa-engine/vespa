@@ -4,6 +4,7 @@ package cmd
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -210,7 +211,7 @@ func enqueueFrom(r io.ReadCloser, dispatcher *document.Dispatcher, cli *CLI) err
 	defer r.Close()
 	for {
 		doc, err := dec.Decode()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

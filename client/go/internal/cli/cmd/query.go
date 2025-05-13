@@ -7,6 +7,7 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -171,7 +172,8 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	response, err := service.Do(hReq, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {
 		// Hint for timeout exception in cloud
-		if err, ok := err.(net.Error); ok && err.Timeout() && target.IsCloud() {
+		var netErr net.Error
+		if errors.As(err, &netErr) && netErr.Timeout() && target.IsCloud() {
 			return errHint(err, "No nodes are responsive", "Check application status in the console")
 		}
 		return fmt.Errorf("request failed: %w", err)
@@ -231,7 +233,7 @@ func printResponseBody(body io.Reader, options printOptions, output io.Writer) e
 		writingLine := false
 		for {
 			event, err := dec.Decode()
-			if err == io.EOF {
+			if errors.Is(err, io.EOF) {
 				break
 			} else if err != nil {
 				return err
