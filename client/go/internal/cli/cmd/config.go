@@ -478,6 +478,7 @@ func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (ves
 		options.PrivateKeyFile = keyFile
 	} else {
 		return vespa.TLSOptions{}, err
+
 	}
 	// CA certificate
 	_, options.TrustAll = c.environment["VESPA_CLI_DATA_PLANE_TRUST_ALL"]
