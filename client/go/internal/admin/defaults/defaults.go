@@ -156,9 +156,7 @@ func VespaConfigSourcesRpcAddrs() []string {
 	cs := VespaConfigserverRpcAddrs()
 	rv := make([]string, 0, len(cs)+1)
 	rv = append(rv, VespaConfigProxyRpcAddr())
-	for _, addr := range cs {
-		rv = append(rv, addr)
-	}
+	rv = append(rv, cs...)
 	return rv
 }
 
