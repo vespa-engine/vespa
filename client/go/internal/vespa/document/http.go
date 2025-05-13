@@ -40,7 +40,7 @@ type Client struct {
 	pending     chan *pendingDocument
 }
 
-// ClientOptions specifices the configuration options of a feed client.
+// ClientOptions specifics the configuration options of a feed client.
 type ClientOptions struct {
 	BaseURL     string
 	Header      http.Header
