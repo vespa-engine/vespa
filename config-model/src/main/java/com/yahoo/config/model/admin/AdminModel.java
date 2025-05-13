@@ -117,7 +117,7 @@ public class AdminModel extends ConfigModel {
             if ("3.0".equals(adminElement.getAttribute("version")))
                 modelContext.getDeployState().getDeployLogger()
                             .logApplicationPackage(Level.WARNING, "admin model version 3.0 is deprecated and support will removed in Vespa 9, " +
-                                    "please use version 4.0 or remove the element completely. See https://cloud.vespa.ai/en/reference/services#ignored-elements");
+                                    "please use version 4.0 or remove the element completely.");
 
             TreeConfigProducer<AnyConfigProducer> parent = modelContext.getParentProducer();
             ModelContext.Properties properties = modelContext.getDeployState().getProperties();

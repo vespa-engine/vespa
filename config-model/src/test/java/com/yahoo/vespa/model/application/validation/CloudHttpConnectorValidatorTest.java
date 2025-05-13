@@ -48,8 +48,8 @@ class CloudHttpConnectorValidatorTest {
     void fails_on_custom_ssl_for_cloud_application() {
         var exception = assertThrows(IllegalArgumentException.class, () -> runValidatorOnApp(true, "", CUSTOM_SSL_ON_8080));
         var expected = "Adding additional or modifying existing HTTPS connectors is not allowed for Vespa Cloud applications. " +
-                "Violating connectors: [default@8080]. See https://cloud.vespa.ai/en/security/whitepaper, " +
-                "https://cloud.vespa.ai/en/security/guide#data-plane.";
+                "Violating connectors: [default@8080]. See https://docs.vespa.ai/en/cloud/security/whitepaper.html, " +
+                "https://docs.vespa.ai/en/cloud/security/guide.html#data-plane.";
         assertEquals(expected, exception.getMessage());
     }
 

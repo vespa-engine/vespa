@@ -662,7 +662,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             if (isPublic) {
                 if (clientCertificates.isEmpty())
                     throw new IllegalArgumentException("Client certificate authority security/clients.pem is missing - " +
-                                                               "see: https://cloud.vespa.ai/en/security/guide#data-plane");
+                                                               "see: https://docs.vespa.ai/en/cloud/security/guide.html#data-plane");
                 builder.tlsCaCertificatesPem(X509CertificateUtils.toPem(clientCertificates))
                         .clientAuth(SslClientAuth.WANT_WITH_ENFORCER);
             } else {
