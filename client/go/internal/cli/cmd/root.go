@@ -3,6 +3,7 @@ package cmd
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -416,6 +417,10 @@ func (c *CLI) target(opts targetOptions) (vespa.Target, error) {
 	}
 	if target.IsCloud() && !c.isCloudCI() { // Vespa Cloud always runs an up-to-date version
 		if err := target.CompatibleWith(c.version); err != nil {
+			var authError vespa.AuthError
+			if errors.As(err, &authError) {
+				return nil, err
+			}
 			c.printWarning(err, "This version of CLI may not work as expected", "Try 'vespa version' to check for a new version")
 		}
 	}
