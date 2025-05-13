@@ -4,10 +4,11 @@ package slime
 
 import (
 	"errors"
-	"github.com/stretchr/testify/assert"
 	"math"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func checkJson(t *testing.T, value Value, compact bool, expect ...string) {

@@ -5,9 +5,10 @@
 package logfmt
 
 import (
+	"testing"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func assertMatch(t *testing.T, re string, flag *regexFlag, texts ...string) {

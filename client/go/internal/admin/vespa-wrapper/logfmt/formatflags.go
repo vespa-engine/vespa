@@ -9,7 +9,7 @@ import (
 type OutputFormat int
 
 const (
-	FormatVespa OutputFormat = iota //default is vespa
+	FormatVespa OutputFormat = iota // default is vespa
 	FormatRaw
 	FormatJSON
 )

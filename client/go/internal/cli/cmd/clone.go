@@ -78,7 +78,7 @@ type zipFile struct {
 }
 
 func (c *cloner) createDirectory(path string) error {
-	if err := os.Mkdir(path, 0755); err != nil {
+	if err := os.Mkdir(path, 0o755); err != nil {
 		if errors.Is(err, fs.ErrExist) {
 			entries, err := os.ReadDir(path)
 			if err != nil {
@@ -280,7 +280,7 @@ func copyFromZip(f *zip.File, destinationDir string, zipEntryPrefix string) erro
 	destinationPath := filepath.Join(destinationDir, filepath.FromSlash(strings.TrimPrefix(f.Name, zipEntryPrefix)))
 	if strings.HasSuffix(f.Name, "/") {
 		if f.Name != zipEntryPrefix { // root is already created
-			if err := os.Mkdir(destinationPath, 0755); err != nil {
+			if err := os.Mkdir(destinationPath, 0o755); err != nil {
 				return err
 			}
 		}

@@ -345,7 +345,7 @@ func assertPackageUpload(requestNumber int, url string, client *mock.HTTPClient,
 	assert.Equal(t, url, req.URL.String())
 	assert.Equal(t, "application/zip", req.Header.Get("Content-Type"))
 	assert.Equal(t, "POST", req.Method)
-	var body = req.Body
+	body := req.Body
 	assert.NotNil(t, body)
 	buf := make([]byte, 7) // Just check the first few bytes
 	body.Read(buf)

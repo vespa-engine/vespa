@@ -17,7 +17,7 @@ func setup(t *testing.T, testFileName string) {
 	trace.AdjustVerbosity(1)
 	mockBinParent = strings.TrimSuffix(testFileName, "/numactl_test.go")
 	tmpBin = t.TempDir() + "/mock.bin.numactl_test"
-	err := os.MkdirAll(tmpBin, 0755)
+	err := os.MkdirAll(tmpBin, 0o755)
 	assert.Nil(t, err)
 	t.Setenv("PATH", fmt.Sprintf("%s:%s", tmpBin, os.Getenv("PATH")))
 }
