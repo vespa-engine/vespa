@@ -63,9 +63,9 @@ type Submission struct {
 }
 
 type LogLinePrepareResponse struct {
-	Time    int64  `json:"time"`
-	Level   string `json:"level"`
-	Message string `json:"message"`
+	Time    int64
+	Level   string
+	Message string
 }
 
 type PrepareResult struct {
