@@ -104,7 +104,7 @@ func NewClient(httpClient httputil.Client, options Options) (*Client, error) {
 
 func (a *Client) getDeviceFlowConfig() (flowConfig, error) {
 	url := a.options.SystemURL + "/auth0/v1/device-flow-config"
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return flowConfig{}, err
 	}
