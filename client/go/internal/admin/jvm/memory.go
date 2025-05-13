@@ -83,7 +83,7 @@ func ParseJvmMemorySpec(spec string) (result AmountOfMemory, err error) {
 		case 'g', 'G':
 			result = GigaBytesOfMemory(int(val))
 		default:
-			err = fmt.Errorf("Unknown suffix in JVM memory spec '%s'", spec)
+			err = fmt.Errorf("unknown suffix in JVM memory spec '%s'", spec)
 		}
 	}
 	return
