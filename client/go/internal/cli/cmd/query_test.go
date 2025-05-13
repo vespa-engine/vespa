@@ -146,7 +146,7 @@ func TestQueryPostFile(t *testing.T) {
 
 	tmpFileName := filepath.Join(t.TempDir(), "tq1.json")
 	jsonQuery := []byte(`{"yql": "some yql here"}`)
-	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0o644))
+	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0644))
 
 	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "--file", tmpFileName))
 	assert.Equal(t, mockResponse+"\n", stdout.String())
@@ -165,7 +165,7 @@ func TestQueryPostFileWithArgs(t *testing.T) {
 
 	tmpFileName := filepath.Join(t.TempDir(), "tq2.json")
 	jsonQuery := []byte(`{"yql": "some yql here"}`)
-	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0o644))
+	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0644))
 
 	assert.Nil(t, cli.Run(
 		"-t", "http://foo.bar:1234/",

@@ -32,7 +32,7 @@ func TestConfigWriting(t *testing.T) {
 	creds1 := Credentials{
 		AccessToken: "some-token",
 		Scopes:      []string{"foo", "bar"},
-		ExpiresAt:   time.Date(2022, 0o3, 0o1, 15, 45, 50, 0, time.UTC),
+		ExpiresAt:   time.Date(2022, 03, 01, 15, 45, 50, 0, time.UTC),
 	}
 	require.Nil(t, client.WriteCredentials(creds1))
 	expected := `{
@@ -62,7 +62,7 @@ func TestConfigWriting(t *testing.T) {
 	creds2 := Credentials{
 		AccessToken: "another-token",
 		Scopes:      []string{"baz"},
-		ExpiresAt:   time.Date(2022, 0o3, 0o1, 15, 45, 50, 0, time.UTC),
+		ExpiresAt:   time.Date(2022, 03, 01, 15, 45, 50, 0, time.UTC),
 	}
 	require.Nil(t, client.WriteCredentials(creds2))
 	expected = `{

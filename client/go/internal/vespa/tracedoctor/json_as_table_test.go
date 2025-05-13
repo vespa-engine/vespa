@@ -5,11 +5,10 @@ package tracedoctor
 import (
 	"bufio"
 	"fmt"
+	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
 	"os"
 	"sort"
 	"testing"
-
-	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
 )
 
 // experimenting with rendering json as nested table

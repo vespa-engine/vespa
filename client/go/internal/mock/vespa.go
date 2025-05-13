@@ -14,7 +14,7 @@ func ApplicationPackageDir(t *testing.T, java, cert bool) (string, string) {
 	t.Helper()
 	rootDir := t.TempDir()
 	appDir := filepath.Join(rootDir, "src", "main", "application")
-	if err := os.MkdirAll(appDir, 0o755); err != nil {
+	if err := os.MkdirAll(appDir, 0755); err != nil {
 		t.Fatal(err)
 	}
 	servicesXML := filepath.Join(appDir, "services.xml")
@@ -28,7 +28,7 @@ func ApplicationPackageDir(t *testing.T, java, cert bool) (string, string) {
 	}
 	if cert {
 		securityDir := filepath.Join(appDir, "security")
-		if err := os.MkdirAll(securityDir, 0o755); err != nil {
+		if err := os.MkdirAll(securityDir, 0755); err != nil {
 			t.Fatal(err)
 		}
 		if _, err := os.Create(filepath.Join(securityDir, "clients.pem")); err != nil {

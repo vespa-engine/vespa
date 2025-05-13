@@ -26,14 +26,14 @@ func FindHome() string {
 		return ev
 	}
 	// some helper functions...
-	dirName := func(path string) string {
+	var dirName = func(path string) string {
 		idx := strings.LastIndex(path, "/")
 		if idx < 0 {
 			return ""
 		}
 		return path[:idx]
 	}
-	findPath := func() string {
+	var findPath = func() string {
 		myProgName := os.Args[0]
 		if strings.HasPrefix(myProgName, "/") {
 			trace.Debug("findPath", myProgName, "=>", dirName(myProgName))

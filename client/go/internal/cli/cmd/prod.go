@@ -213,7 +213,7 @@ func writeWithBackup(stdout io.Writer, pkg vespa.ApplicationPackage, filename, c
 		}
 	}
 	fmt.Fprintf(stdout, "Writing %s\n", color.GreenString(dst))
-	return os.WriteFile(dst, []byte(contents), 0o644)
+	return os.WriteFile(dst, []byte(contents), 0644)
 }
 
 func updateRegions(cli *CLI, stdin *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (xml.Deployment, error) {

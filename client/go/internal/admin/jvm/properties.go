@@ -99,7 +99,7 @@ func writeEnvAsProperties(envv []string, propsFile string) {
 		panic("missing propsFile")
 	}
 	trace.Trace("write props file:", propsFile)
-	err := os.WriteFile(propsFile, envAsProperties(envv), 0o600)
+	err := os.WriteFile(propsFile, envAsProperties(envv), 0600)
 	if err != nil {
 		osutil.ExitErr(err)
 	}

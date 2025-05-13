@@ -33,7 +33,9 @@ that is currently down can not be forced into retired state, but can be forced i
 )
 
 func NewSetNodeStateCmd() *cobra.Command {
-	var curOptions Options
+	var (
+		curOptions Options
+	)
 	cmd := &cobra.Command{
 		Use:     usageSetNodeState,
 		Short:   "vespa-set-node-state [Options] <Wanted State> [Description]",
