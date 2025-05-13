@@ -26,7 +26,7 @@ func createVespaDeployDir() (string, error) {
 		return "", err
 	}
 	vespaDeployTempDir := filepath.Join(tempDir, currentUser.Username, vespaDeployDir)
-	if err := os.MkdirAll(vespaDeployTempDir, 0700); err != nil {
+	if err := os.MkdirAll(vespaDeployTempDir, 0o700); err != nil {
 		return "", err
 	}
 	return vespaDeployTempDir, nil
@@ -46,7 +46,7 @@ func createTenantDir(tenant string) string {
 		osutil.ExitErr(err)
 	}
 	tdir := filepath.Join(vespaDeployTempDir, tenant)
-	if err := os.MkdirAll(tdir, 0700); err != nil {
+	if err := os.MkdirAll(tdir, 0o700); err != nil {
 		osutil.ExitErr(err)
 	}
 	return tdir
@@ -54,7 +54,7 @@ func createTenantDir(tenant string) string {
 
 func writeConfigsourceUrlUsed(url string) {
 	fn := configsourceUrlUsedFile()
-	os.WriteFile(fn, []byte(url), 0600)
+	os.WriteFile(fn, []byte(url), 0o600)
 }
 
 func getConfigsourceUrlUsed() string {
@@ -70,7 +70,7 @@ func writeSessionIdToFile(tenant, newSessionId string) {
 	if newSessionId != "" {
 		dir := createTenantDir(tenant)
 		fn := filepath.Join(dir, sessionIdFileName)
-		os.WriteFile(fn, []byte(newSessionId), 0600)
+		os.WriteFile(fn, []byte(newSessionId), 0o600)
 		trace.Trace("wrote", newSessionId, "to", fn)
 	}
 }

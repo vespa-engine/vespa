@@ -13,8 +13,10 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
-var tmpBin string
-var mockBinParent string
+var (
+	tmpBin        string
+	mockBinParent string
+)
 
 func useMock(prog, target string) {
 	mock := fmt.Sprintf("%s/mockbin/%s", mockBinParent, prog)
@@ -31,7 +33,7 @@ func setupValgrind(t *testing.T, testFileName string) {
 	t.Setenv("VESPA_HOME", mockBinParent+"/mock_vespahome")
 	mockBinParent = strings.TrimSuffix(testFileName, "/valgrind_test.go")
 	tmpBin = t.TempDir() + "/mock.bin.valgrind_test"
-	err := os.MkdirAll(tmpBin, 0755)
+	err := os.MkdirAll(tmpBin, 0o755)
 	assert.Nil(t, err)
 	t.Setenv("PATH", fmt.Sprintf("%s:%s", tmpBin, os.Getenv("PATH")))
 }
