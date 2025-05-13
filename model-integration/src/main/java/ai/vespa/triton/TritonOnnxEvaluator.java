@@ -2,7 +2,6 @@
 package ai.vespa.triton;
 
 import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
-import ai.vespa.llm.clients.TritonConfig;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
@@ -19,12 +18,14 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
     private final TritonOnnxClient triton;
     private final String modelName;
     private final TritonOnnxClient.ModelMetadata modelMetadata;
+    private final boolean isExplicitControlMode;
 
-    TritonOnnxEvaluator(TritonConfig config, String modelName) {
+    TritonOnnxEvaluator(TritonOnnxClient client, String modelName, boolean isExplicitControlMode) {
         this.modelName = modelName;
-        this.triton = new TritonOnnxClient(config);
+        this.triton = client;
+        this.isExplicitControlMode = isExplicitControlMode;
         try {
-            this.triton.loadModel(modelName);
+            if (isExplicitControlMode) triton.loadModel(modelName);
             this.modelMetadata = triton.getModelMetadata(modelName);
         } catch (TritonOnnxClient.TritonException e) {
             throw new RuntimeException("Failed to load model: " + modelName, e);
@@ -77,10 +78,7 @@ class TritonOnnxEvaluator implements OnnxEvaluator {
 
     @Override
     public void close() {
-        try {
-            triton.close();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to close Triton client", e);
-        }
+        // Note: This is not safe if evaluator instances shares the same underlying Triton model.
+        if (isExplicitControlMode) triton.unloadModel(modelName);
     }
 }

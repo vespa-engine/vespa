@@ -206,11 +206,12 @@ public class RankProfilesConfigImporter {
             String name = onnxModelConfig.name();
             File file = fileAcquirer.waitFor(onnxModelConfig.fileref(), 7, TimeUnit.DAYS);
 
-            OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
-            options.setExecutionMode(onnxModelConfig.stateless_execution_mode());
-            options.setInterOpThreads(onnxModelConfig.stateless_interop_threads());
-            options.setIntraOpThreads(onnxModelConfig.stateless_intraop_threads());
-            options.setGpuDevice(onnxModelConfig.gpu_device(), onnxModelConfig.gpu_device_required());
+            OnnxEvaluatorOptions options = new OnnxEvaluatorOptions.Builder()
+                    .setExecutionMode(onnxModelConfig.stateless_execution_mode())
+                    .setInterOpThreads(onnxModelConfig.stateless_interop_threads())
+                    .setIntraOpThreads(onnxModelConfig.stateless_intraop_threads())
+                    .setGpuDevice(onnxModelConfig.gpu_device(), onnxModelConfig.gpu_device_required())
+                    .build();
             var m =  new OnnxModel(name, file, options, onnx);
             for (var spec : onnxModelConfig.input()) {
                 m.addInputMapping(spec.name(), spec.source());

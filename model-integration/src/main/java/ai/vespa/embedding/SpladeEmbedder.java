@@ -69,12 +69,12 @@ public class SpladeEmbedder extends AbstractComponent implements Embedder {
             builder.setTruncation(true).setMaxLength(maxLength);
         }
         this.tokenizer = builder.build();
-        var onnxOpts = new OnnxEvaluatorOptions();
-
+        var optionsBuilder = new OnnxEvaluatorOptions.Builder()
+                .setExecutionMode(config.transformerExecutionMode().toString())
+                .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
         if (config.transformerGpuDevice() >= 0)
-            onnxOpts.setGpuDevice(config.transformerGpuDevice());
-        onnxOpts.setExecutionMode(config.transformerExecutionMode().toString());
-        onnxOpts.setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
+            optionsBuilder.setGpuDevice(config.transformerGpuDevice());
+        var onnxOpts = optionsBuilder.build();
         evaluator = onnx.evaluatorOf(config.transformerModel().toString(), onnxOpts);
         validateModel();
     }

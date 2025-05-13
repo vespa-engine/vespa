@@ -187,8 +187,9 @@ public class EmbeddedOnnxEvaluatorTest {
         logger.addHandler(logHandler);
         var runtime = new EmbeddedOnnxRuntime();
         var model = Files.readAllBytes(Paths.get("src/test/models/onnx/simple/simple.onnx"));
-        OnnxEvaluatorOptions options = new OnnxEvaluatorOptions();
-        options.setGpuDevice(0);
+        OnnxEvaluatorOptions options = new OnnxEvaluatorOptions.Builder()
+                .setGpuDevice(0)
+                .build();
         var evaluator = runtime.evaluatorOf(model,options);
         evaluator.close();
         List<LogRecord> records = logHandler.getLogRecords();
