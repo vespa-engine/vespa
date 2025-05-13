@@ -39,8 +39,8 @@ func TestFeed(t *testing.T) {
 }`)
 	jsonFile1 := filepath.Join(td, "docs1.jsonl")
 	jsonFile2 := filepath.Join(td, "docs2.jsonl")
-	require.Nil(t, os.WriteFile(jsonFile1, doc, 0644))
-	require.Nil(t, os.WriteFile(jsonFile2, doc, 0644))
+	require.Nil(t, os.WriteFile(jsonFile1, doc, 0o644))
+	require.Nil(t, os.WriteFile(jsonFile2, doc, 0o644))
 
 	httpClient.NextResponseString(200, `{"message":"OK"}`)
 	httpClient.NextResponseString(200, `{"message":"OK"}`)
@@ -118,7 +118,7 @@ func TestFeedInvalid(t *testing.T) {
   "fields": {"foo": "invalid json"
 }`)
 	jsonFile := filepath.Join(td, "docs.jsonl")
-	require.Nil(t, os.WriteFile(jsonFile, doc, 0644))
+	require.Nil(t, os.WriteFile(jsonFile, doc, 0o644))
 	httpClient.NextResponseString(200, `{"message":"OK"}`)
 	require.NotNil(t, cli.Run("feed", "-t", "http://127.0.0.1:8080", jsonFile))
 

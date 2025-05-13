@@ -4,9 +4,10 @@ package tracedoctor
 
 import (
 	"bytes"
+	"testing"
+
 	"github.com/mattn/go-runewidth"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestRenderTable(t *testing.T) {

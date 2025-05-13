@@ -44,6 +44,7 @@ func readLineFrom(filename string) (string, error) {
 func vespa_cg2get(limitname string) (output string, err error) {
 	return vespa_cg2get_impl("", limitname)
 }
+
 func vespa_cg2get_impl(rootdir, limitname string) (string, error) {
 	if _, err := os.Stat(rootdir + "/sys/fs/cgroup/cgroup.controllers"); err != nil {
 		trace.Trace("no cgroups:", err)
