@@ -452,7 +452,7 @@ func (c *Config) credentialsPEM(envVar string, credentialsFile credentialsFile) 
 		}
 		return nil, "", err
 	}
-	return pem, credentialsFile.path, nil
+	return []byte(pem), credentialsFile.path, nil
 }
 
 func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (vespa.TLSOptions, error) {
