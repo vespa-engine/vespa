@@ -43,7 +43,7 @@ func doUpload(opts *Options, args []string) (result string, err error) {
 		result, err = uploadToConfigSource(opts, src, args)
 		if err == nil {
 			writeConfigsourceUrlUsed(src)
-			return
+			break
 		}
 	}
 	return
