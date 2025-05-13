@@ -250,8 +250,8 @@ type jsonDecoder struct {
 
 func (d *jsonDecoder) next() {
 	if d.err == nil {
-		len, e := d.input.Read(d.buf)
-		if len == 1 {
+		bytesRead, e := d.input.Read(d.buf)
+		if bytesRead == 1 {
 			d.c = d.buf[0]
 		} else {
 			if e != nil {
