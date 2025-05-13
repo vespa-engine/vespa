@@ -17,14 +17,14 @@ import (
 
 // Client represents a HTTP client usable by the Vespa CLI.
 type Client interface {
-	Do(request *http.Request, timeout time.Duration) (response *http.Response, err error)
+	Do(request *http.Request, timeout time.Duration) (response *http.Response, error error)
 }
 
 type defaultClient struct {
 	client *http.Client
 }
 
-func (c *defaultClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, err error) {
+func (c *defaultClient) Do(request *http.Request, timeout time.Duration) (response *http.Response, error error) {
 	if c.client.Timeout != timeout { // Set wanted timeout
 		c.client.Timeout = timeout
 	}
