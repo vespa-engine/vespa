@@ -86,5 +86,4 @@ func TestNumaCtlDetection(t *testing.T) {
 	spec.ConfigureNumaCtl()
 	assert.Equal(t, true, spec.shouldUseNumaCtl)
 	assert.Equal(t, 0, spec.numaSocket)
-
 }
