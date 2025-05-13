@@ -84,7 +84,7 @@ func (w *Waiter) maybeWaitFor(service *vespa.Service) error {
 	}
 	// Send probe request to determine if we need to wait at all
 	if err := service.Wait(0); err == nil {
-		return err
+		return nil
 	}
 	w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for ", service.Description(), "...")
 	return service.Wait(w.Timeout)
@@ -94,7 +94,7 @@ func (w *Waiter) services(target vespa.Target) ([]*vespa.Service, error) {
 	// Send probe request to determine if we need to wait at all
 	services, err := target.ContainerServices(0)
 	if err == nil {
-		return services, err
+		return services, nil
 	}
 	if w.Timeout > 0 {
 		w.cli.printInfo("Waiting up to ", color.CyanString(w.Timeout.String()), " for cluster discovery...")
@@ -112,7 +112,7 @@ func (w *Waiter) Deployment(target vespa.Target, wantedID int64) (int64, error) 
 	// Send probe request to determine if we need to wait at all
 	id, err := target.AwaitDeployment(wantedID, 0)
 	if err == nil {
-		return id, err
+		return id, nil
 	}
 	timeout := w.Timeout
 	if timeout > 0 {
