@@ -150,8 +150,8 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         };
     }
 
-    ReferencedOrtSession acquireSession(ModelPathOrData model, OnnxEvaluatorOptions options, boolean loadCuda) throws OrtException {
-        var sessionId = new OrtSessionId(calculateModelHash(model), options, loadCuda);
+    ReferencedOrtSession acquireSession(ModelPathOrData model, OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
+        var sessionId = new OrtSessionId(calculateModelHash(model), vespaOpts, loadCuda);
         synchronized (monitor) {
             var sharedSession = sessions.get(sessionId);
             if (sharedSession != null) {
@@ -159,9 +159,9 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
             }
         }
 
-        var opts = getOptions(options, loadCuda);
+        var sessionOpts = getOptions(vespaOpts, loadCuda);
         // Note: identical models loaded simultaneously will result in duplicate session instances
-        var session = model.path().isPresent() ? factory.create(model.path().get(), opts) : factory.create(model.data().get(), opts);
+        var session = model.path().isPresent() ? factory.create(model.path().get(), sessionOpts) : factory.create(model.data().get(), sessionOpts);
         log.fine(() -> "Created new session (%s)".formatted(System.identityHashCode(session)));
 
         var sharedSession = new SharedOrtSession(sessionId, session);
@@ -190,15 +190,15 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         }
     }
 
-    private OnnxEvaluatorOptions overrideOptions(OnnxEvaluatorOptions opts) {
+    private OnnxEvaluatorOptions overrideOptions(OnnxEvaluatorOptions vespaOpts) {
         // Set GPU device required if GPU requested and GPUs are available on system
-        if (gpusAvailable > 0 && opts.requestingGpu() && !opts.gpuDeviceRequired()) {
+        if (gpusAvailable > 0 && vespaOpts.requestingGpu() && !vespaOpts.gpuDeviceRequired()) {
             // Create a new instance with updated gpuDeviceRequired value using the builder
-            return new OnnxEvaluatorOptions.Builder(opts)
-                    .setGpuDevice(opts.gpuDeviceNumber(), true)
+            return new OnnxEvaluatorOptions.Builder(vespaOpts)
+                    .setGpuDevice(vespaOpts.gpuDeviceNumber(), true)
                     .build();
         }
-        return opts;
+        return vespaOpts;
     }
 
     int sessionsCached() { synchronized(monitor) { return sessions.size(); } }
