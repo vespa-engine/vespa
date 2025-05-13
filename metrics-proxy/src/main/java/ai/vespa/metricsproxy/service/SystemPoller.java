@@ -141,7 +141,7 @@ public class SystemPoller {
         // Note 1: From man proc_pid_statm man page: rss is the same as VmRSS in /proc/pid/status
         // Note 2: From man proc_pid_status:  VmRSS  Resident set size.  Note that the value here is the sum of RssAnon, RssFile, and  RssShmem.
         // Note 3: 'shared' is RssFile+RssShmem, so subtraction below gives us the same value as RssAnon
-        size[memoryTypeResident] = Long.parseLong(statmOutputs[1]) - Long.parseLong(statmOutputs[2]) * pageSize;
+        size[memoryTypeResident] = (Long.parseLong(statmOutputs[1]) - Long.parseLong(statmOutputs[2])) * pageSize;
 
         return size;
     }
