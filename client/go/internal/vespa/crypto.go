@@ -206,14 +206,14 @@ func contentHash(r io.Reader) (string, io.Reader, error) {
 	if r == nil {
 		r = strings.NewReader("") // Request without body
 	}
-	var buf bytes.Buffer
-	teeReader := io.TeeReader(r, &buf) // Copy reader contents while we hash it
+	var copy bytes.Buffer
+	teeReader := io.TeeReader(r, &copy) // Copy reader contents while we hash it
 	hasher := sha256.New()
 	if _, err := io.Copy(hasher, teeReader); err != nil {
 		return "", nil, err
 	}
 	hashSum := hasher.Sum(nil)
-	return base64.StdEncoding.EncodeToString(hashSum), &buf, nil
+	return base64.StdEncoding.EncodeToString(hashSum), &copy, nil
 }
 
 func randomSerialNumber() (*big.Int, error) {
