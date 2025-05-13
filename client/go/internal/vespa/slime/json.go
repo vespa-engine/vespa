@@ -12,7 +12,9 @@ import (
 	"strings"
 )
 
-var hex []byte = []byte("0123456789ABCDEF")
+var (
+	hex []byte = []byte("0123456789ABCDEF")
+)
 
 func fromHexDigit(digit byte) int {
 	switch digit {

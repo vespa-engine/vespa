@@ -3,9 +3,8 @@
 package slime
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func leafTestValues() []Value {
@@ -28,13 +27,12 @@ func TestArray(t *testing.T) {
 	}
 
 	expect := []expectLeaf{
-		{mytype: EMPTY},
-		{mytype: BOOL, boolVal: true},
-		{mytype: LONG, longVal: 5, doubleVal: 5},
-		{mytype: DOUBLE, longVal: 5, doubleVal: 5.5},
-		{mytype: STRING, stringVal: "foo"},
-		{mytype: DATA, dataVal: []byte{1, 2, 3}},
-	}
+		expectLeaf{mytype: EMPTY},
+		expectLeaf{mytype: BOOL, boolVal: true},
+		expectLeaf{mytype: LONG, longVal: 5, doubleVal: 5},
+		expectLeaf{mytype: DOUBLE, longVal: 5, doubleVal: 5.5},
+		expectLeaf{mytype: STRING, stringVal: "foo"},
+		expectLeaf{mytype: DATA, dataVal: []byte{1, 2, 3}}}
 
 	var expectIndex int
 	var collect []Value

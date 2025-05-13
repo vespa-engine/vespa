@@ -244,7 +244,7 @@ func FindService(name string, authMethod string, services []*Service) (*Service,
 		if name == s.Name {
 			return s, nil
 		}
-		prettyName := color.CyanString("%s", s.Name)
+		var prettyName = color.CyanString("%s", s.Name)
 		if s.AuthMethod != "" {
 			prettyName = fmt.Sprintf("%s (%s)", prettyName, s.AuthMethod)
 		}

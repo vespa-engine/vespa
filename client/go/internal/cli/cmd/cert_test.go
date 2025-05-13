@@ -52,7 +52,7 @@ func testCert(t *testing.T, subcommand []string) {
 func TestCertCompressedPackage(t *testing.T) {
 	_, pkgDir := mock.ApplicationPackageDir(t, true, false)
 	zipFile := filepath.Join(pkgDir, "target", "application.zip")
-	err := os.MkdirAll(filepath.Dir(zipFile), 0o755)
+	err := os.MkdirAll(filepath.Dir(zipFile), 0755)
 	assert.Nil(t, err)
 	_, err = os.Create(zipFile)
 	assert.Nil(t, err)

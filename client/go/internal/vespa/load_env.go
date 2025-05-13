@@ -50,22 +50,20 @@ type loadEnvReceiver interface {
 	currentValue(varName string) string
 }
 
-type osEnvReceiver struct{}
+type osEnvReceiver struct {
+}
 
 func (p *osEnvReceiver) fallbackVar(varName, varVal string) {
 	if os.Getenv(varName) == "" {
 		os.Setenv(varName, varVal)
 	}
 }
-
 func (p *osEnvReceiver) overrideVar(varName, varVal string) {
 	os.Setenv(varName, varVal)
 }
-
 func (p *osEnvReceiver) unsetVar(varName string) {
 	os.Unsetenv(varName)
 }
-
 func (p *osEnvReceiver) currentValue(varName string) string {
 	return os.Getenv(varName)
 }
@@ -120,7 +118,7 @@ func loadDefaultEnvTo(r loadEnvReceiver) error {
 
 // borrowed some code from strings.Fields() implementation:
 func nSpacedFields(s string, n int) []string {
-	asciiSpace := [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
+	var asciiSpace = [256]uint8{'\t': 1, '\n': 1, '\v': 1, '\f': 1, '\r': 1, ' ': 1}
 	a := make([]string, n)
 	na := 0
 	i := 0
@@ -177,24 +175,20 @@ func newShellEnvExporter() *shellEnvExporter {
 		unsetVars:  make(map[string]string),
 	}
 }
-
 func (p *shellEnvExporter) fallbackVar(varName, varVal string) {
 	old := p.currentValue(varName)
 	if old == "" || old == varVal {
 		p.overrideVar(varName, varVal)
 	}
 }
-
 func (p *shellEnvExporter) overrideVar(varName, varVal string) {
 	delete(p.unsetVars, varName)
 	p.exportVars[varName] = shellQuote(varVal)
 }
-
 func (p *shellEnvExporter) unsetVar(varName string) {
 	delete(p.exportVars, varName)
 	p.unsetVars[varName] = "unset"
 }
-
 func (p *shellEnvExporter) currentValue(varName string) string {
 	if p.unsetVars[varName] != "" {
 		return ""

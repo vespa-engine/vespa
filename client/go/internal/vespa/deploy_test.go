@@ -294,10 +294,10 @@ func assertFindApplicationPackage(t *testing.T, zipOrDir string, fixture pkgFixt
 
 func writeFile(t *testing.T, name string) {
 	t.Helper()
-	err := os.MkdirAll(filepath.Dir(name), 0o755)
+	err := os.MkdirAll(filepath.Dir(name), 0755)
 	assert.Nil(t, err)
 	if !strings.HasSuffix(name, string(os.PathSeparator)) {
-		err = os.WriteFile(name, []byte{0}, 0o644)
+		err = os.WriteFile(name, []byte{0}, 0644)
 		assert.Nil(t, err)
 	}
 }

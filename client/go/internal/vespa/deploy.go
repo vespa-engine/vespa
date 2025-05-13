@@ -249,7 +249,7 @@ func fetchFilesFromConfigServer(deployment DeploymentOptions, contentURL *url.UR
 				return err
 			}
 		} else {
-			if err := os.MkdirAll(filepath.Dir(entryName), 0o755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(entryName), 0755); err != nil {
 				return err
 			}
 			f, err := os.Create(entryName)

@@ -18,12 +18,12 @@ func setup(t *testing.T, contents string) string {
 	bdir := vdir + "/bin"
 	cdir := vdir + "/conf/vespa"
 	envf := cdir + "/default-env.txt"
-	err := os.MkdirAll(cdir, 0o755)
+	err := os.MkdirAll(cdir, 0755)
 	assert.Nil(t, err)
 	t.Setenv("VESPA_HOME", vdir)
-	err = os.MkdirAll(bdir, 0o755)
+	err = os.MkdirAll(bdir, 0755)
 	assert.Nil(t, err)
-	err = os.WriteFile(envf, []byte(contents), 0o644)
+	err = os.WriteFile(envf, []byte(contents), 0644)
 	assert.Nil(t, err)
 	return tmp
 }
