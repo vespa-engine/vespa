@@ -166,8 +166,11 @@ AttributeTokensDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 }
 
 void
-AttributeTokensDFW::insertField(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state, vespalib::slime::Inserter& target) const
+AttributeTokensDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state,
+                                 const SummaryElementsSelector& elements_selector,
+                                 vespalib::slime::Inserter& target) const
 {
+    (void) elements_selector;
     auto& field_writer_state = state._fieldWriterStates[_state_index];
     if (!field_writer_state) {
         const auto attr = state.getAttribute(getIndex());

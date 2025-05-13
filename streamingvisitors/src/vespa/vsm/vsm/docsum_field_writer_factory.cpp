@@ -9,6 +9,7 @@
 #include <vespa/searchsummary/docsummary/docsum_field_writer_commands.h>
 #include <vespa/searchsummary/docsummary/empty_dfw.h>
 #include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
+#include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/vsm/config/config-vsmfields.h>
 #include <algorithm>
 
@@ -20,6 +21,7 @@ using search::docsummary::EmptyDFW;
 using search::docsummary::IDocsumEnvironment;
 using search::docsummary::IQueryTermFilterFactory;
 using search::docsummary::MatchedElementsFilterDFW;
+using search::docsummary::SummaryElementsSelector;
 using vespa::config::search::vsm::VsmfieldsConfig;
 
 namespace vsm {
@@ -68,9 +70,9 @@ DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
 std::unique_ptr<DocsumFieldWriter>
 DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
+                                                     SummaryElementsSelector& elements_selector,
                                                      const std::string& command,
-                                                     const std::string& source,
-                                                     std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+                                                     const std::string& source)
 {
     std::unique_ptr<DocsumFieldWriter> fieldWriter;
     using namespace search::docsummary;
@@ -87,8 +89,8 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
     } else if ((command == command::matched_attribute_elements_filter) ||
                (command == command::matched_elements_filter)) {
         std::string source_field = source.empty() ? field_name : source;
-        populate_fields(*matching_elems_fields, _vsm_fields_config, source_field);
-        fieldWriter = MatchedElementsFilterDFW::create(source_field, matching_elems_fields);
+        populate_fields(elements_selector.matching_elements_fields(), _vsm_fields_config, source_field);
+        fieldWriter = MatchedElementsFilterDFW::create(source_field, elements_selector);
     } else if ((command == command::tokens) ||
                (command == command::attribute_tokens)) {
         if (!source.empty()) {
@@ -97,7 +99,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
             throw_missing_source(command);
         }
     } else {
-        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source, matching_elems_fields);
+        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, elements_selector, command, source);
     }
     return fieldWriter;
 }

@@ -2,6 +2,7 @@
 
 #include <vespa/searchlib/common/matching_elements_fields.h>
 #include <vespa/searchsummary/docsummary/attributedfw.h>
+#include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/searchsummary/test/mock_attribute_manager.h>
 #include <vespa/searchsummary/test/mock_state_callback.h>
 #include <vespa/searchsummary/test/slime_value.h>
@@ -17,6 +18,7 @@ using search::attribute::CollectionType;
 using search::docsummary::AttributeDFWFactory;
 using search::docsummary::GetDocsumsState;
 using search::docsummary::DocsumFieldWriter;
+using search::docsummary::SummaryElementsSelector;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
 using search::docsummary::test::SlimeValue;
@@ -33,7 +35,7 @@ protected:
     std::unique_ptr<DocsumFieldWriter> _writer;
     MockStateCallback _callback;
     GetDocsumsState _state;
-    std::shared_ptr<search::MatchingElementsFields> _matching_elems_fields;
+    std::unique_ptr<SummaryElementsSelector> _elements_selector;
     std::string _field_name;
 
 public:
@@ -42,7 +44,7 @@ public:
           _writer(),
           _callback(),
           _state(_callback),
-          _matching_elems_fields(),
+          _elements_selector(),
           _field_name()
     {
         _attrs.build_string_attribute("array_str", { {"a", "b", "c"}, {} });
@@ -60,9 +62,11 @@ public:
 
     void setup(const std::string& field_name, bool filter_elements) {
         if (filter_elements) {
-            _matching_elems_fields = std::make_shared<MatchingElementsFields>();
+            _elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match());
+        } else {
+            _elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
         }
-        _writer = AttributeDFWFactory::create(_attrs.mgr(), field_name, filter_elements, _matching_elems_fields);
+        _writer = AttributeDFWFactory::create(_attrs.mgr(), field_name, *_elements_selector);
         _writer->setIndex(0);
         auto attr = _state._attrCtx->getAttribute(field_name);
         if (attr->hasMultiValue()) {
@@ -80,7 +84,7 @@ public:
         vespalib::Slime act;
         vespalib::slime::SlimeInserter inserter(act);
         if (!_writer->isDefaultValue(docid, _state)) {
-            _writer->insertField(docid, nullptr, _state, inserter);
+            _writer->insert_field(docid, nullptr, _state, *_elements_selector, inserter);
         }
 
         SlimeValue exp(exp_slime_as_json);
@@ -141,7 +145,7 @@ TEST_F(AttributeDFWTest, outputs_slime_for_wset_of_float)
 TEST_F(AttributeDFWTest, matched_elements_fields_is_populated)
 {
     setup("array_str", true);
-    EXPECT_TRUE(_matching_elems_fields->has_field("array_str"));
+    EXPECT_TRUE(_elements_selector->matching_elements_fields().has_field("array_str"));
 }
 
 TEST_F(AttributeDFWTest, filteres_matched_elements_in_array_attribute)

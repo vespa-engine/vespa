@@ -89,7 +89,9 @@ public:
      * @param name the name of the field to add.
      * @param docsum_field_writer field writer for writing field
      **/
-    bool addConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
+    bool addConfigEntry(const char *name,
+                        const SummaryElementsSelector& summary_elements_selector,
+                        std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
     bool addConfigEntry(const char *name);
 
     /**

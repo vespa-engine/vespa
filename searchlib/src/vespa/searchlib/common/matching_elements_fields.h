@@ -22,6 +22,8 @@ private:
 
 public:
     MatchingElementsFields();
+    MatchingElementsFields(const MatchingElementsFields& rhs);
+    MatchingElementsFields(MatchingElementsFields&& rhs) noexcept;
     ~MatchingElementsFields();
     bool empty() const { return _fields.empty(); }
     void add_field(const std::string &field_name) {
@@ -43,6 +45,7 @@ public:
         }
         return res->second;
     }
+    void merge(const MatchingElementsFields& rhs);
 };
 
 } // namespace search

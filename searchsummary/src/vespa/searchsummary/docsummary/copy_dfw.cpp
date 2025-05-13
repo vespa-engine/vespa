@@ -17,9 +17,11 @@ CopyDFW::CopyDFW(const std::string& inputField)
 CopyDFW::~CopyDFW() = default;
 
 void
-CopyDFW::insertField(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
-                     vespalib::slime::Inserter &target) const
+CopyDFW::insert_field(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
+                      const SummaryElementsSelector& elements_selector,
+                      vespalib::slime::Inserter &target) const
 {
+    (void) elements_selector;
     if (doc != nullptr) {
         doc->insert_summary_field(_input_field_name, target);
     }

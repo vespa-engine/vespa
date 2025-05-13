@@ -34,16 +34,16 @@ AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 }
 
 std::unique_ptr<DocsumFieldWriter>
-AttributeCombinerDFW::create(const std::string &fieldName, IAttributeContext &attrCtx, bool filter_elements,
-                             std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+AttributeCombinerDFW::create(const std::string &fieldName, IAttributeContext &attrCtx,
+                             SummaryElementsSelector& elements_selector)
 {
     StructFieldsResolver structFields(fieldName, attrCtx, true);
     if (structFields.has_error()) {
         return {};
     } else if (structFields.is_map_of_struct()) {
-        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(matching_elems_fields));
+        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields, elements_selector);
     }
-    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields, filter_elements, std::move(matching_elems_fields));
+    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields, elements_selector);
 }
 
 void

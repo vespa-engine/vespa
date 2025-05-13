@@ -10,8 +10,9 @@ DocumentIdDFW::DocumentIdDFW() = default;
 DocumentIdDFW::~DocumentIdDFW() = default;
 
 void
-DocumentIdDFW::insertField(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
-                           vespalib::slime::Inserter &target) const
+DocumentIdDFW::insert_field(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
+                            const SummaryElementsSelector&,
+                            vespalib::slime::Inserter &target) const
 {
     if (doc != nullptr) {
         doc->insert_document_id(target);

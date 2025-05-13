@@ -27,8 +27,7 @@ class ArrayAttributeCombinerDFW : public AttributeCombinerDFW
 public:
     ArrayAttributeCombinerDFW(const std::string &fieldName,
                               const StructFieldsResolver& fields_resolver,
-                              bool filter_elements,
-                              std::shared_ptr<MatchingElementsFields> matching_elems_fields);
+                              SummaryElementsSelector& elements_selector);
     ~ArrayAttributeCombinerDFW() override;
 };
 

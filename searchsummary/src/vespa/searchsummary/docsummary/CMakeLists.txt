@@ -38,6 +38,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     slime_filler_filter.cpp
     struct_fields_resolver.cpp
     struct_map_attribute_combiner_dfw.cpp
+    summary_elements_selector.cpp
     summaryfeaturesdfw.cpp
     tokens_converter.cpp
     tokens_dfw.cpp

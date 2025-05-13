@@ -25,8 +25,11 @@ TokensDFW::isGenerated() const
 }
 
 void
-TokensDFW::insertField(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&, vespalib::slime::Inserter& target) const
+TokensDFW::insert_field(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
+                        const SummaryElementsSelector& elements_selector,
+                        vespalib::slime::Inserter& target) const
 {
+    (void) elements_selector;
     if (doc != nullptr) {
         TokensConverter converter(_token_extractor);
         doc->insert_summary_field(_input_field_name, target, &converter);

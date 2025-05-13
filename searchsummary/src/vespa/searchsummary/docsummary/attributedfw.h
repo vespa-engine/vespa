@@ -13,6 +13,8 @@ namespace search::attribute { class IAttributeVector; }
 
 namespace search::docsummary {
 
+class SummaryElementsSelector;
+
 /**
  * Factory to create an DocsumFieldWriter to write an attribute vector to slime.
  */
@@ -20,8 +22,7 @@ class AttributeDFWFactory {
 public:
     static std::unique_ptr<DocsumFieldWriter> create(const IAttributeManager& attr_mgr,
                                                      const std::string& attr_name,
-                                                     bool filter_elements = false,
-                                                     std::shared_ptr<MatchingElementsFields> matching_elems_fields = std::shared_ptr<MatchingElementsFields>());
+                                                     SummaryElementsSelector& elements_selector);
 };
 
 class AttrDFW : public SimpleDFW

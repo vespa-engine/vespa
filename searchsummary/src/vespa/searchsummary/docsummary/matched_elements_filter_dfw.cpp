@@ -5,6 +5,7 @@
 #include "i_docsum_store_document.h"
 #include "slime_filler.h"
 #include "struct_fields_resolver.h"
+#include "summary_elements_selector.h"
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/fieldvalue/literalfieldvalue.h>
 #include <vespa/searchcommon/attribute/iattributecontext.h>
@@ -40,32 +41,34 @@ MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_fiel
 
 std::unique_ptr<DocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name,
-                                 std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+                                 SummaryElementsSelector& elements_selector)
 {
-    matching_elems_fields->add_field(input_field_name);
+    elements_selector.matching_elements_fields().add_field(input_field_name);
     return std::make_unique<MatchedElementsFilterDFW>(input_field_name);
 }
 
 std::unique_ptr<DocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name,
                                  search::attribute::IAttributeContext& attr_ctx,
-                                 std::shared_ptr<MatchingElementsFields> matching_elems_fields)
+                                 SummaryElementsSelector& elements_selector)
 {
-    matching_elems_fields->add_field(input_field_name);
+    elements_selector.matching_elements_fields().add_field(input_field_name);
     StructFieldsResolver resolver(input_field_name, attr_ctx, false);
     if (resolver.has_error()) {
         return {};
     }
-    resolver.apply_to(*matching_elems_fields);
+    resolver.apply_to(elements_selector.matching_elements_fields());
     return std::make_unique<MatchedElementsFilterDFW>(input_field_name);
 }
 
 MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;
 
 void
-MatchedElementsFilterDFW::insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                                      vespalib::slime::Inserter& target) const
+MatchedElementsFilterDFW::insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                                       const SummaryElementsSelector& elements_selector,
+                                       vespalib::slime::Inserter& target) const
 {
+    (void) elements_selector;
     auto field_value = doc->get_field_value(_input_field_name);
     if (field_value) {
         SlimeFiller::insert_summary_field_with_filter(*field_value, target, get_matching_elements(docid, state));

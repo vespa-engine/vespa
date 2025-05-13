@@ -2,6 +2,7 @@
 
 #include "resultclass.h"
 #include "docsum_field_writer.h"
+#include "summary_elements_selector.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 
@@ -30,7 +31,9 @@ ResultClass::getIndexFromName(const char* name) const
 }
 
 bool
-ResultClass::addConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter> docsum_field_writer)
+ResultClass::addConfigEntry(const char *name,
+                            const SummaryElementsSelector& elements_selector,
+                            std::unique_ptr<DocsumFieldWriter> docsum_field_writer)
 {
     if (_nameMap.find(name) != _nameMap.end()) {
         return false;
@@ -46,6 +49,7 @@ ResultClass::addConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter>
             ++_num_field_writer_states;
         }
     }
+    e.set_elements_selector(elements_selector);
     e.set_writer(std::move(docsum_field_writer));
     _entries.push_back(std::move(e));
     return true;
@@ -54,7 +58,7 @@ ResultClass::addConfigEntry(const char *name, std::unique_ptr<DocsumFieldWriter>
 bool
 ResultClass::addConfigEntry(const char *name)
 {
-    return addConfigEntry(name, {});
+    return addConfigEntry(name, SummaryElementsSelector::select_all(), {});
 }
 
 bool

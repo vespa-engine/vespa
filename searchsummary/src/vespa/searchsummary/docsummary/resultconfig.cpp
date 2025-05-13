@@ -4,6 +4,7 @@
 #include "docsum_field_writer.h"
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
+#include "summary_elements_selector.h"
 #include <vespa/config-summary.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
@@ -12,7 +13,28 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.resultconfig");
 
+using vespa::config::search::SummaryConfig;
+
 namespace search::docsummary {
+
+namespace {
+
+SummaryElementsSelector
+make_summary_elements_selector(const SummaryConfig::Classes::Fields::Elements& elements)
+{
+    using Select = SummaryConfig::Classes::Fields::Elements::Select;
+    switch (elements.select) {
+        case Select::BY_MATCH:
+            return SummaryElementsSelector::select_by_match();
+        case Select::BY_SUMMARY_FEATURE:
+            return SummaryElementsSelector::select_by_summary_feature(elements.summaryFeature);
+        case Select::ALL:
+        default:
+            return SummaryElementsSelector::select_all();
+    }
+}
+
+}
 
 void
 ResultConfig::Clean()
@@ -107,6 +129,7 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
     global_useV8geoPositions = cfg.usev8geopositions;
 
     ResultClass *unionOfAll = addResultClass("[all]", 0x12345678);
+    auto union_of_all_matching_elements_fields = unionOfAll->get_matching_elements_fields();
     for (uint32_t i = 0; rc && i < cfg.classes.size(); i++) {
         const auto& cfg_class = cfg.classes[i];
         if (cfg_class.name.empty()) {
@@ -125,20 +148,20 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             break;
         }
         resClass->set_omit_summary_features(cfg_class.omitsummaryfeatures);
-        auto matching_elems_fields = resClass->get_matching_elements_fields();
+        auto res_class_matching_elements_fields = resClass->get_matching_elements_fields();
         for (const auto & field : cfg_class.fields) {
             const char *fieldname = field.name.c_str();
             std::string command = field.command;
             std::string source_name = field.source;
             LOG(info, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), fieldname);
-            auto factory = [&]() -> std::unique_ptr<DocsumFieldWriter> {
+            auto factory = [&](SummaryElementsSelector& elements_selector) -> std::unique_ptr<DocsumFieldWriter> {
                 if (! command.empty()) {
                     try {
                         return docsum_field_writer_factory
                                 .create_docsum_field_writer(fieldname,
+                                                            elements_selector,
                                                             command,
-                                                            source_name,
-                                                            matching_elems_fields);
+                                                            source_name);
                     } catch (const vespalib::IllegalArgumentException& ex) {
                         LOG(error, "Exception during setup of summary result class '%s': field='%s', command='%s', source='%s': %s",
                             cfg_class.name.c_str(), fieldname, command.c_str(), source_name.c_str(), ex.getMessage().c_str());
@@ -147,13 +170,21 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
                 }
                 return {};
             };
-            if (! resClass->addConfigEntry(fieldname, factory())) {
-                LOG(error, "%s %s.fields: duplicate name '%s'", configId, cfg_class.name.c_str(), fieldname);
-                rc = false;
-                break;
+            {
+                auto elements_selector = make_summary_elements_selector(field.elements);
+                auto writer = factory(elements_selector);
+                elements_selector.merge_matching_elements_fields_to(*res_class_matching_elements_fields);
+                if (!resClass->addConfigEntry(fieldname, elements_selector, std::move(writer))) {
+                    LOG(error, "%s %s.fields: duplicate name '%s'", configId, cfg_class.name.c_str(), fieldname);
+                    rc = false;
+                    break;
+                }
             }
             if (unionOfAll->getIndexFromName(fieldname) < 0) {
-                unionOfAll->addConfigEntry(fieldname, factory());
+                auto elements_selector = make_summary_elements_selector(field.elements);
+                auto writer = factory(elements_selector);
+                elements_selector.merge_matching_elements_fields_to(*union_of_all_matching_elements_fields);
+                unionOfAll->addConfigEntry(fieldname, elements_selector, std::move(writer));
             }
         }
     }

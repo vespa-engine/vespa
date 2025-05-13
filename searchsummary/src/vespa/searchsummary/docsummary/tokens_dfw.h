@@ -22,7 +22,9 @@ public:
     explicit TokensDFW(const std::string& input_field_name);
     ~TokensDFW() override;
     bool isGenerated() const override;
-    void insertField(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state, vespalib::slime::Inserter& target) const override;
+    void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                      const SummaryElementsSelector& elements_selector,
+                      vespalib::slime::Inserter& target) const override;
 };
 
 }
