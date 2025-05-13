@@ -9,3 +9,6 @@ cjk bool default=false
 
 # With Chinese tokenization only: Index grams of tokens in addition to the segments themselves
 createCjkGrams bool default=true
+
+# Required confidence to guess a language, useful range 1.2 to 10.0
+detectConfidenceThreshold double default=2.0

@@ -35,7 +35,7 @@ public class OpenNlpLinguistics extends SimpleLinguistics {
         this.snowballStemmingForEnglish = config.snowballStemmingForEnglish();
         this.cjk = config.cjk();
         this.createCjkGrams = config.createCjkGrams();
-        this.detector = new OpenNlpDetector();
+        this.detector = new OpenNlpDetector(config.detectConfidenceThreshold());
     }
 
     @Override
