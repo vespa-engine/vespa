@@ -11,7 +11,7 @@ import (
 const throttlerWeight = 0.7
 
 type Throttler interface {
-	// Sent notifies the throttler that a document has been sent.
+	// Sent notifies the the throttler that a document has been sent.
 	Sent()
 	// Success notifies the throttler that document operation succeeded.
 	Success()
