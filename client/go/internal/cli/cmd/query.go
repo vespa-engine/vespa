@@ -181,7 +181,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	defer response.Body.Close()
 
 	if response.StatusCode == 200 {
-		output := cli.Stdout
+		var output io.Writer = cli.Stdout
 		if opts.profile {
 			profileFile, err := os.Create(opts.profileFile)
 			if err != nil {

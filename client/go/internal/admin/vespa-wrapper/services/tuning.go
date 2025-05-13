@@ -55,7 +55,7 @@ func drop_caches() {
 
 func increase_vm_max_map_count() {
 	const need_minimum = 262144
-	min_as_text := strconv.Itoa(need_minimum)
+	var min_as_text string = strconv.Itoa(need_minimum)
 	const name = "vm.max_map_count"
 	trace.Debug("Checking: " + VM_MAX_MAP_COUNT)
 	data, err := os.ReadFile(VM_MAX_MAP_COUNT)

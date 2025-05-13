@@ -30,5 +30,5 @@ func knownState(s string) (KnownState, error) {
 			return v, nil
 		}
 	}
-	return KnownState("unknown"), fmt.Errorf("<Wanted State> must be one of %v, was %s", alternatives, s)
+	return KnownState("unknown"), fmt.Errorf("<Wanted State> must be one of %v, was %s\n", alternatives, s)
 }
