@@ -76,7 +76,7 @@ public class SimpleDetector implements Detector {
                 block == Character.UnicodeBlock.KANBUN) {
                 // See http://www.unicode.org/charts/PDF/U31F0.pdf
                 // This is a special case because This range of character
-                // codes is classified as unasigned in
+                // codes is classified as unassigned in
                 // Character.UnicodeBlock.  But clearly it is assigned as
                 // per above.
                 return Language.JAPANESE;

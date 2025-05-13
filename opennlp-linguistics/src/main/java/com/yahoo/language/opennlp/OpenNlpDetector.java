@@ -34,17 +34,41 @@ class OpenNlpDetector implements Detector {
     private final Map<String, Language> languagesByISO3 = new HashMap<>();
     private final LanguageDetectorME detector;
     private final LanguageDetectorConfig config;
+    private final double confidenceThreshold;
 
-    OpenNlpDetector() {
+    OpenNlpDetector() { this(2.0); }
+
+    OpenNlpDetector(double threshold) {
         detector = new LanguageDetectorME(loadModel());
         config = new LanguageDetectorConfig();
+        confidenceThreshold = threshold;
         config.setMinDiff(0.02);
         config.setChunkSize(32);
         config.setMaxLength(256);
         for (Locale locale : Locale.getAvailableLocales()) {
             Language language = Language.fromLocale(locale);
-            if (language != null)
+            if (language != null) {
                 languagesByISO3.put(locale.getISO3Language(), language);
+            }
+        }
+        var toAdd = new java.util.Properties();
+        try {
+            var mapStream = OpenNlpDetector.class.getResourceAsStream("/iana/language-subtags.txt");
+            toAdd.load(mapStream);
+        } catch (java.io.IOException|NullPointerException e) {
+            throw new IllegalStateException("Could not load subtags from resource");
+        }
+        for (String subtag : toAdd.stringPropertyNames()) {
+            String tag = toAdd.getProperty(subtag);
+            if (! languagesByISO3.containsKey(subtag)) {
+                var locale = Locale.forLanguageTag(tag);
+                if (locale != null) {
+                    var lang = Language.fromLocale(locale);
+                    if (lang != null && lang != Language.UNKNOWN) {
+                        languagesByISO3.put(subtag, lang);
+                    }
+                }
+            }
         }
     }
 
@@ -85,8 +109,17 @@ class OpenNlpDetector implements Detector {
 
     private Language detectLanguage(String input) {
         var prediction = detector.probingPredictLanguages(input, config).languages()[0];
-        var result = prediction.getConfidence() > 0.02 ? languagesByISO3.get(prediction.getLang()) : null;
-        return result != null ? result : simple.guessLanguage(input.substring(0, Math.min(input.length(), 256)));
+        // getConfidence() is typically from 0.01 (very low) to 0.10 (very high).
+        // let the configured threshold have reasonable values from 1 to 10:
+        double confidence = 100.0 * prediction.getConfidence();
+        Language result = null;
+        if (confidence > confidenceThreshold) {
+            result = languagesByISO3.get(prediction.getLang());
+        }
+        if (result == null) {
+            result = simple.guessLanguage(input.substring(0, Math.min(input.length(), 256)));
+        }
+        return result;
     }
 
 }
