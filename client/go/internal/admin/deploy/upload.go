@@ -26,7 +26,7 @@ func RunUpload(opts *Options, args []string) error {
 		return err
 	}
 	if code != 200 {
-		return fmt.Errorf("request failed. HTTP status code: %d\n%s", code, result.Message)
+		return fmt.Errorf("Request failed. HTTP status code: %d\n%s", code, result.Message)
 	}
 	fmt.Println(result.Message)
 	writeSessionIdToFile(opts.Tenant, result.SessionID)
@@ -58,7 +58,7 @@ func uploadToConfigSource(opts *Options, src string, args []string) (string, err
 	} else {
 		f, err := os.Open(args[0])
 		if err != nil {
-			return "", fmt.Errorf("command failed. No such directory found: '%s'", args[0])
+			return "", fmt.Errorf("Command failed. No such directory found: '%s'", args[0])
 		}
 		defer f.Close()
 		st, err := f.Stat()
@@ -67,14 +67,14 @@ func uploadToConfigSource(opts *Options, src string, args []string) (string, err
 		}
 		if st.Mode().IsRegular() {
 			if !strings.HasSuffix(args[0], ".zip") {
-				return "", fmt.Errorf("application must be a zip file, was '%s'", args[0])
+				return "", fmt.Errorf("Application must be a zip file, was '%s'", args[0])
 			}
 			return uploadFile(opts, src, f, args[0])
 		}
 		if st.Mode().IsDir() {
 			return uploadDirectory(opts, src, args[0])
 		}
-		return "", fmt.Errorf("bad argument '%s' with FileMode %v", args[0], st.Mode())
+		return "", fmt.Errorf("Bad arg '%s' with FileMode %v", args[0], st.Mode())
 	}
 }
 
