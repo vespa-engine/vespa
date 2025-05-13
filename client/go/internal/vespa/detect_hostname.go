@@ -45,7 +45,7 @@ func HasOnlyIpV6() bool {
 // to our services, preferably the canonical DNS name.
 // If automatic detection fails, "localhost" will be returned, so
 // single-node setups still have a good chance of working.
-// Use the environment variable VESPA_HOSTNAME to override.
+// Use the enviroment variable VESPA_HOSTNAME to override.
 func FindOurHostname() (string, error) {
 	env := os.Getenv(envvars.VESPA_HOSTNAME)
 	if env != "" {
