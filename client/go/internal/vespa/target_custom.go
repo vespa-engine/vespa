@@ -81,7 +81,7 @@ func (t *customTarget) CompatibleWith(minVersion version.Version) error {
 		return err
 	}
 	versionURL := deployService.BaseURL + "/state/v1/version"
-	req, err := http.NewRequest("GET", versionURL, nil)
+	req, err := http.NewRequest(http.MethodGet, versionURL, nil)
 	if err != nil {
 		return err
 	}
@@ -187,7 +187,7 @@ func (t *customTarget) serviceStatus(wantedGeneration int64, timeout time.Durati
 		return serviceStatus{}, err
 	}
 	url := fmt.Sprintf("%s/application/v2/tenant/default/application/default/environment/prod/region/default/instance/default/serviceconverge", deployService.BaseURL)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return serviceStatus{}, err
 	}

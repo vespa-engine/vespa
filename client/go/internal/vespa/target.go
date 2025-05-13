@@ -196,7 +196,7 @@ func (s *Service) SetClient(client httputil.Client) {
 func (s *Service) Wait(timeout time.Duration) error {
 	// A path that does not need authentication, on any target
 	url := strings.TrimRight(s.BaseURL, "/") + "/status.html"
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
@@ -288,7 +288,7 @@ func deployRequest(target Target, fn responseFunc, reqFn requestFunc, timeout, r
 }
 
 func pollLogs(target Target, logsURL string, options LogOptions, retryInterval time.Duration) error {
-	req, err := http.NewRequest("GET", logsURL, nil)
+	req, err := http.NewRequest(http.MethodGet, logsURL, nil)
 	if err != nil {
 		return err
 	}
