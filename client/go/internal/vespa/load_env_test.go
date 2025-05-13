@@ -61,8 +61,8 @@ func TestLoadEnvWhiteSpace(t *testing.T) {
 	setup(t, `
 # vespa env vars file
 override VESPA_V1 v1
- override  VESPA_V2  v2
-override VESPA_V3 spaced v3 vv
+ override  VESPA_V2  v2 
+override VESPA_V3 spaced v3 v3
 override VESPA_V4 " quoted spaced "
 override VESPA_V5 v5
 `)
@@ -72,7 +72,7 @@ override VESPA_V5 v5
 	// check results
 	assert.Equal(t, os.Getenv("VESPA_V1"), "v1")
 	assert.Equal(t, os.Getenv("VESPA_V2"), "v2")
-	assert.Equal(t, os.Getenv("VESPA_V3"), "spaced v3 vv")
+	assert.Equal(t, os.Getenv("VESPA_V3"), "spaced v3 v3")
 	assert.Equal(t, os.Getenv("VESPA_V4"), " quoted spaced ")
 	assert.Equal(t, os.Getenv("VESPA_V5"), "v5")
 }
