@@ -69,12 +69,8 @@ func (p *Spec) valgrindLogOption() string {
 func (p *Spec) prependValgrind(args []string) []string {
 	result := make([]string, 0, 15+len(args))
 	result = append(result, VALGRIND_PROG)
-	for _, arg := range p.valgrindOptions() {
-		result = append(result, arg)
-	}
+	result = append(result, p.valgrindOptions()...)
 	result = append(result, p.valgrindLogOption())
-	for _, arg := range args {
-		result = append(result, arg)
-	}
+	result = append(result, args...)
 	return result
 }

@@ -11,9 +11,8 @@ import (
 func TestCg2Get(t *testing.T) {
 	trace.AdjustVerbosity(0)
 	const MM = "memory.max"
-	res, err := vespa_cg2get(MM)
 
-	res, err = vespa_cg2get_impl("mock-cg2/a", MM)
+	res, err := vespa_cg2get_impl("mock-cg2/a", MM)
 	assert.Nil(t, err)
 	assert.Equal(t, "123", res)
 

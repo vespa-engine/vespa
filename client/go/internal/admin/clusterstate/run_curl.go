@@ -56,17 +56,20 @@ func curlGet(url string, output io.Writer) error {
 
 func curlPost(url string, input []byte) (string, error) {
 	cmd, err := curlCommand(url, commonCurlArgs())
+	if err != nil {
+		return "", fmt.Errorf("failed to create curl command: %w", err)
+	}
+
 	cmd.Method = "POST"
 	cmd.Header("Content-Type", "application/json")
 	cmd.WithBodyInput(bytes.NewReader(input))
 	var out bytes.Buffer
 	trace.Debug("POST input: " + string(input))
 	trace.Trace("running curl:", cmd.String())
-	err = cmd.Run(&out, os.Stderr)
-	if err != nil {
+	if err = cmd.Run(&out, os.Stderr); err != nil {
 		var ee *exec.ExitError
 		if errors.As(err, &ee) {
-			if ee.ProcessState.ExitCode() == 7 {
+			if ee.ExitCode() == 7 {
 				return "", fmt.Errorf("HTTP request to %s failed, could not connect", url)
 			}
 		}

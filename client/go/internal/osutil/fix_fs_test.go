@@ -85,8 +85,8 @@ func TestSimpleFixes(t *testing.T) {
 
 func TestSuperUserOnly(t *testing.T) {
 	trace.AdjustVerbosity(0)
-	var userId int = -1
-	var groupId int = -1
+	userId := -1
+	groupId := -1
 	if os.Getuid() != 0 {
 		trace.Trace("skip TestSuperUserOnly, uid != 0")
 		return

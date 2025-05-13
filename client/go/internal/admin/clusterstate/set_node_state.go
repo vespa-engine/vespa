@@ -44,9 +44,9 @@ func NewSetNodeStateCmd() *cobra.Command {
 		Args: func(cmd *cobra.Command, args []string) error {
 			switch {
 			case len(args) < 1:
-				return fmt.Errorf("Missing <Wanted State>")
+				return fmt.Errorf("missing <Wanted State>")
 			case len(args) > 2:
-				return fmt.Errorf("Too many arguments, maximum is 2")
+				return fmt.Errorf("too many arguments, maximum is 2")
 			}
 			_, err := knownState(args[0])
 			return err
