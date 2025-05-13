@@ -74,7 +74,7 @@ func (t *unixTail) openTail() {
 		return
 	}
 	if sz < lastLinesSize {
-		_, err = file.Seek(0, io.SeekStart)
+		sz, err = file.Seek(0, io.SeekStart)
 		if err == nil {
 			// just read from start of file, all OK
 			t.setFile(file)
@@ -88,7 +88,7 @@ func (t *unixTail) openTail() {
 	}
 	for i := range n {
 		if t.lineBuf[i] == '\n' {
-			_, err = file.Seek(sz+int64(i+1), io.SeekStart)
+			sz, err = file.Seek(sz+int64(i+1), io.SeekStart)
 			if err == nil {
 				t.setFile(file)
 			}

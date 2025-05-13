@@ -211,7 +211,7 @@ func ParseResources(s string) (Resources, error) {
 // ParseNodeCount parses a node count range from string s.
 func ParseNodeCount(s string) (int, int, error) {
 	parseErr := fmt.Errorf("invalid node count: %q", s)
-	var minNodeCount, maxNodeCount int
+	minNodeCount, maxNodeCount := 0, 0
 	n, err := strconv.Atoi(s)
 	if err == nil {
 		minNodeCount = n
