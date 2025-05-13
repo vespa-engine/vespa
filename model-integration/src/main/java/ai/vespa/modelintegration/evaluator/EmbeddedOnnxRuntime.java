@@ -121,7 +121,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         if (!isRuntimeAvailable()) return false;
         try {
             // Expensive way of checking if runtime is available as it incurs the cost of loading the model if successful
-            defaultFactory.create(modelPath, getOptions(OnnxEvaluatorOptions.createDefault(), false));
+            defaultFactory.create(modelPath, createSessionOptions(OnnxEvaluatorOptions.createDefault(), false));
             return true;
         } catch (OrtException e) {
             return e.getCode() == OrtException.OrtErrorCode.ORT_NO_SUCHFILE;
@@ -130,7 +130,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
         }
     }
 
-    private static OrtSession.SessionOptions getOptions(OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
+    private static OrtSession.SessionOptions createSessionOptions(OnnxEvaluatorOptions vespaOpts, boolean loadCuda) throws OrtException {
         var sessionOpts = new OrtSession.SessionOptions();
         sessionOpts.setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT);
         var execMode = vespaOpts.executionMode() == OnnxEvaluatorOptions.ExecutionMode.PARALLEL ? PARALLEL : SEQUENTIAL;
@@ -159,7 +159,7 @@ public class EmbeddedOnnxRuntime extends AbstractComponent implements OnnxRuntim
             }
         }
 
-        var sessionOpts = getOptions(vespaOpts, loadCuda);
+        var sessionOpts = createSessionOptions(vespaOpts, loadCuda);
         // Note: identical models loaded simultaneously will result in duplicate session instances
         var session = model.path().isPresent() ? factory.create(model.path().get(), sessionOpts) : factory.create(model.data().get(), sessionOpts);
         log.fine(() -> "Created new session (%s)".formatted(System.identityHashCode(session)));
