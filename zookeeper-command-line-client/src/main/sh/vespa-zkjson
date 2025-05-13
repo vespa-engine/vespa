@@ -1,0 +1,457 @@
+#!/usr/libexec/platform-python
+
+"""
+A command-line utility to safely get, set, or edit JSON data stored in ZooKeeper.
+
+This script interacts with 'vespa-zkctl' to perform the following operations:
+
+- 'get /path': Retrieves JSON data from ZK, validates it, and prints it with its version.
+  Output format: {"version": 123, "data": {...}}
+
+- 'set /path': Reads JSON data from stdin (in the same format as 'get' output),
+  validates it, and sets it in ZK using the provided version for an atomic update.
+  Input format: {"version": 123, "data": {...}}
+
+- 'edit /path': Safely edits JSON data. It fetches the current JSON and version,
+  allows interactive editing in $EDITOR, validates the changes, and then sets
+  the data back using the original version for an atomic update.
+
+All operations ensure that the data being read or written is valid JSON.
+The 'set' and 'edit' operations use ZooKeeper's conditional versioning
+to prevent overwriting concurrent changes.
+"""
+
+import json
+import sys
+import subprocess
+import argparse
+import base64
+import tempfile
+import os
+
+# Global verbose flag
+VERBOSE = False
+
+# Custom Exception for version conflicts
+class VersionConflictError(RuntimeError):
+    """Custom exception raised when a ZooKeeper data version conflict occurs."""
+    pass
+
+# Verbose-print helper
+def _vprint(*args, **kwargs):
+    """Print to stderr only when global VERBOSE is True."""
+    if VERBOSE:
+        print(*args, file=sys.stderr, **kwargs)
+
+def _run_zk_command(command):
+    """Helper function to run a vespa-zkctl command and handle common operations."""
+    try:
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False  # We check returncode manually
+        )
+
+        stdout_str = result.stdout.decode('utf-8') if result.stdout else ""
+        stderr_str = result.stderr.decode('utf-8') if result.stderr else ""
+
+        _vprint("Command executed:", " ".join(command))
+        _vprint("Return Code:", result.returncode)
+        if stdout_str: # Only print if not empty
+            _vprint("STDOUT:")
+            _vprint(stdout_str)
+        if stderr_str:
+            _vprint("STDERR:")
+            _vprint(stderr_str)
+
+        if result.returncode != 0:
+            error_message = stderr_str.strip()
+            meaningful_error_lines = [
+                line for line in error_message.splitlines()
+                if not line.startswith("Connecting to") and \
+                   not line.startswith("Welcome to ZooKeeper!") and \
+                   not line.startswith("JLine support is disabled") and \
+                   not line.startswith("WATCHER::") and \
+                   "WatchedEvent state:SyncConnected" not in line
+            ]
+            if meaningful_error_lines:
+                error_message = "\n".join(meaningful_error_lines)
+
+            raise RuntimeError(f"Command '{' '.join(command)}' failed with exit code {result.returncode}: {error_message}")
+
+        return stdout_str
+    except FileNotFoundError:
+        print(f"Error: The command '{command[0]}' was not found. Make sure it's in your PATH.", file=sys.stderr)
+        raise
+
+def get_zk_data_and_version(zk_path):
+    """
+    Runs 'vespa-zkctl get -bs <zk_path>', captures output,
+    returns processed base64 data and dataVersion and dataLength.
+    Handles empty nodes where dataLength = 0.
+    """
+    command = ["vespa-zkctl", "get", "-bs", zk_path]
+    stdout_str = _run_zk_command(command)
+
+    lines = stdout_str.splitlines()
+    _vprint(f"Raw output from 'vespa-zkctl get -bs {zk_path}':\n{stdout_str}")
+
+    stat_keywords = [
+        "cZxid", "ctime", "mZxid", "mtime", "pZxid", "cversion",
+        "dataVersion", "aclVersion", "ephemeralOwner", "dataLength", "numChildren"
+    ]
+
+    potential_data_lines = []
+    stat_lines_section = []
+    found_stat_block_start = False
+
+    for line_content in lines:
+        line_stripped = line_content.strip()
+        if not line_stripped:
+            continue
+
+        if any(line_stripped.startswith(keyword + " =") for keyword in stat_keywords):
+            found_stat_block_start = True
+
+        if found_stat_block_start:
+            stat_lines_section.append(line_stripped)
+        else:
+            # Collect lines that are not part of ZK's verbose connection/session messages
+            if not line_stripped.startswith("Connecting to") and \
+               not line_stripped.startswith("Welcome to ZooKeeper!") and \
+               not line_stripped.startswith("JLine support is disabled") and \
+               not line_stripped.startswith("WATCHER::") and \
+               "WatchedEvent state:SyncConnected" not in line_stripped and \
+               line_stripped != zk_path: # Also exclude the path itself if it's printed
+                potential_data_lines.append(line_stripped)
+
+    _vprint(f"Potential data lines identified: {potential_data_lines}")
+    _vprint(f"Stat lines section identified: {stat_lines_section}")
+
+    data_version = None
+    data_length = None
+
+    if not stat_lines_section:
+        raise RuntimeError(f"Could not find stat block in 'vespa-zkctl get -bs {zk_path}' output. Output was: {stdout_str}")
+
+    for stat_line in stat_lines_section:
+        if stat_line.startswith("dataVersion ="):
+            try:
+                data_version = int(stat_line.split('=')[1].strip())
+            except ValueError:
+                raise RuntimeError(f"Could not parse dataVersion from stat line: '{stat_line}'")
+        elif stat_line.startswith("dataLength ="):
+            try:
+                data_length = int(stat_line.split('=')[1].strip())
+            except ValueError:
+                raise RuntimeError(f"Could not parse dataLength from stat line: '{stat_line}'")
+
+    if data_version is None:
+        raise RuntimeError(f"Could not find 'dataVersion' in 'vespa-zkctl get -bs {zk_path}' stat output. Stat lines: {stat_lines_section}")
+    if data_length is None:
+        raise RuntimeError(f"Could not find 'dataLength' in 'vespa-zkctl get -bs {zk_path}' stat output. Stat lines: {stat_lines_section}")
+
+    base64_data = ""
+    if data_length == 0:
+        _vprint(f"Node {zk_path} has dataLength = 0. Treating as empty data.")
+    elif potential_data_lines:
+        # Assuming the actual base64 data is the first non-stat, non-meta line.
+        # This might need adjustment if zkctl output format for data changes significantly.
+        base64_data = potential_data_lines[0]
+    elif data_length > 0 and not potential_data_lines:
+         raise RuntimeError(f"Node {zk_path} has dataLength > 0 but no potential data line was identified. Stat: {stat_lines_section}")
+
+    _vprint(f"Final determined base64_data: '{base64_data}', dataVersion: {data_version}")
+    return base64_data, data_version, data_length
+
+def get_and_decode_zk_data(zk_path):
+    """Fetches base64 data from ZK, decodes it from base64 and UTF-8. Returns decoded string and version. Validates dataLength."""
+    _vprint(f"Getting and decoding data from ZK path: {zk_path}")
+    # expected_data_length is the length of the raw (binary) data, not the base64 string
+    base64_data, version, expected_data_length = get_zk_data_and_version(zk_path)
+
+    if expected_data_length == 0:
+        if base64_data:
+            # This case should ideally not happen if parsing logic is correct and ZK is consistent
+            raise RuntimeError(
+                f"Data consistency error for '{zk_path}' (version {version}): "
+                f"ZooKeeper reports dataLength = 0, but parsed non-empty base64 data: '{base64_data[:50]}...'"
+            )
+        _vprint(f"Node '{zk_path}' (version {version}) has dataLength = 0. Returning empty string for JSON validation.")
+        return "", version # Leads to JSONDecodeError in caller for empty nodes, as intended
+
+    # If expected_data_length > 0, base64_data should have been parsed.
+    if not base64_data:
+        # This implies ZK reported data, but parsing failed to extract it (e.g. unexpected zkctl output format)
+        raise RuntimeError(
+            f"Data consistency error for '{zk_path}' (version {version}): "
+            f"ZooKeeper reports dataLength = {expected_data_length}, but no base64 data was extracted by parsing."
+        )
+
+    try:
+        decoded_bytes = base64.b64decode(base64_data)
+    except base64.binascii.Error as e:
+        print(f"Error: Data at '{zk_path}' (version {version}) is not valid Base64. Error: {e}", file=sys.stderr)
+        print(f"Problematic data (first 200 chars of base64_data): {base64_data[:200]}")
+        sys.exit(3)
+
+    actual_decoded_length = len(decoded_bytes)
+    if actual_decoded_length != expected_data_length:
+        raise RuntimeError(
+            f"Data length mismatch for '{zk_path}' (version {version}): "
+            f"ZooKeeper reported dataLength = {expected_data_length}, "
+            f"but actual decoded base64 data has length {actual_decoded_length}."
+        )
+
+    try:
+        decoded_data_str = decoded_bytes.decode('utf-8')
+        _vprint(f"Successfully decoded data from '{zk_path}' (version {version}). Decoded data (first 100): '{decoded_data_str[:100]}'...")
+        return decoded_data_str, version
+    except UnicodeDecodeError as e:
+        print(f"Error: Data at '{zk_path}' (version {version}) is not valid UTF-8 after Base64 decoding. Error: {e}", file=sys.stderr)
+        sys.exit(4)
+
+def encode_and_set_zk_data(zk_path, data_str, version):
+    """Encodes string data to UTF-8 then Base64, and sets it in ZK using the provided version."""
+    _vprint(f"Encoding and setting data (version {version}) to ZK path: {zk_path}")
+    try:
+        encoded_bytes = data_str.encode('utf-8')
+        base64_to_set = base64.b64encode(encoded_bytes).decode('utf-8')
+        _vprint(f"Base64 encoded data to set (first 100 chars): '{base64_to_set[:100]}'...")
+
+        command = ["vespa-zkctl", "set", "-b", zk_path, base64_to_set, "-v", str(version)]
+        _run_zk_command(command)
+        _vprint(f"Successfully set data for ZK path: {zk_path} at version {version}")
+
+    except RuntimeError as e:
+        if "version No is not valid" in str(e) or "does not match current version" in str(e):
+            new_error_message = (
+                f"Failed to set data for '{zk_path}' due to a version mismatch. "
+                f"Provided version was {version}, but the data on ZK has likely changed. "
+                f"Original error: {e}"
+            )
+            _vprint(f"Original error during set: {e}")
+            raise VersionConflictError(new_error_message) from e
+        raise
+
+def _get_initial_json_from_zk(zk_path):
+    """
+    Fetches data from ZK, decodes it, attempts to parse it as JSON.
+    Returns a Python object (dict/list) if ZK data is valid JSON, and its version.
+    Exits if data is not valid JSON.
+    """
+    decoded_data_str, version = get_and_decode_zk_data(zk_path)
+    try:
+        json_obj = json.loads(decoded_data_str)
+        _vprint(f"Successfully parsed JSON from '{zk_path}' (version {version}).")
+        return json_obj, version
+    except json.JSONDecodeError as e:
+        print(f"Error: Data at '{zk_path}' (version {version}) is not valid JSON. Error: {e}", file=sys.stderr)
+        print(f"Problematic data (first 200 chars): {decoded_data_str[:200]}")
+        print("This tool only works with valid JSON data for the '{command}' command.".format(command=sys.argv[1] if len(sys.argv) > 1 else 'current'))
+        sys.exit(1)
+
+def _edit_json_interactively(original_pretty_json, zk_path_for_messages, initial_version):
+    """
+    Manages interactive JSON editing. Returns (compact_modified_json, initial_version_for_set).
+    Exits on no change, editor failure, or user abort.
+    """
+    temp_file_path = None
+    safe_to_delete_temp_file = True
+    editor = os.environ.get('EDITOR', 'vi')
+
+    try:
+        while True: # Loop for retrying edits on invalid JSON
+            with tempfile.NamedTemporaryFile(mode='w+', delete=False, prefix='vespa-zkjson_edit_', suffix='.json', encoding='utf-8') as tf:
+                tf.write(original_pretty_json)
+                temp_file_path = tf.name
+            _vprint(f"Original JSON data (version {initial_version}) written to temporary file: {temp_file_path}")
+
+            print(f"Attempting to open '{temp_file_path}' with editor '{editor}' for path '{zk_path_for_messages}' (version {initial_version})...")
+            try:
+                subprocess.run([editor, temp_file_path], check=True)
+            except FileNotFoundError:
+                print(f"Error: Editor '{editor}' not found. Set the EDITOR environment variable.", file=sys.stderr)
+                sys.exit(1)
+            except subprocess.CalledProcessError as e:
+                print(f"Error: Editor '{editor}' exited with an error ({e.returncode}).", file=sys.stderr)
+                print(f"Your edits (if any) are preserved in: {temp_file_path}", file=sys.stderr)
+                safe_to_delete_temp_file = False
+                sys.exit(1)
+
+            with open(temp_file_path, 'r', encoding='utf-8') as tf:
+                edited_content = tf.read()
+
+            _vprint("Editor closed. Read modified content from temporary file.")
+
+            try:
+                edited_json_obj_candidate = json.loads(edited_content)
+                # Re-serialize to ensure consistent formatting for comparison and for compact storage
+                edited_pretty_json_for_comparison = json.dumps(edited_json_obj_candidate, indent=4, sort_keys=True)
+
+                if edited_pretty_json_for_comparison == original_pretty_json:
+                    print("No changes detected in JSON data after editing. Exiting.")
+                    sys.exit(0)
+
+                _vprint("JSON data has been modified and is valid.")
+                return json.dumps(edited_json_obj_candidate, separators=(',', ':')), initial_version
+
+            except json.JSONDecodeError as e:
+                print(f"\nError: Edited content is not valid JSON. Error: {e}", file=sys.stderr)
+                if temp_file_path:
+                    print(f"Your unsaved (invalid JSON) edits are in: {temp_file_path}", file=sys.stderr)
+
+                while True:
+                    retry_choice = input("Retry editing? (Y/n): ").lower().strip()
+                    if retry_choice in ['yes', 'y', '']:
+                        _vprint(f"Re-opening editor for {temp_file_path}. Correct JSON syntax.")
+                        # The original_pretty_json for the next edit attempt should be the user's invalid content
+                        # so they can fix it, rather than starting from scratch again.
+                        original_pretty_json = edited_content
+                        break
+                    elif retry_choice in ['no', 'n']:
+                        print("Exiting. Invalid edits preserved in temporary file (if path shown above).", file=sys.stderr)
+                        safe_to_delete_temp_file = False
+                        sys.exit(1)
+                    else:
+                        print("Invalid input. Answer 'yes' (y) or 'no' (n).", file=sys.stderr)
+                # If 'yes', continue the outer editing loop
+    finally:
+        if temp_file_path and safe_to_delete_temp_file:
+            try:
+                os.unlink(temp_file_path)
+                _vprint(f"Temporary file {temp_file_path} deleted.")
+            except OSError as e:
+                 _vprint(f"Warning: Could not delete temporary file {temp_file_path}: {e}")
+        elif temp_file_path and not safe_to_delete_temp_file:
+            _vprint(f"Temporary file {temp_file_path} intentionally not deleted.")
+
+def handle_edit_command(args):
+    """Handles the 'edit' subcommand."""
+    original_json_obj, current_version = _get_initial_json_from_zk(args.zookeeper_path)
+    _vprint(f"Initial data version for '{args.zookeeper_path}': {current_version}")
+
+    original_pretty_json = json.dumps(original_json_obj, indent=4, sort_keys=True)
+
+    compact_modified_json, version_for_set = _edit_json_interactively(original_pretty_json, args.zookeeper_path, current_version)
+
+    encode_and_set_zk_data(args.zookeeper_path, compact_modified_json, version_for_set)
+
+    print(f"Successfully retrieved (at version {version_for_set}), edited, validated, and set JSON data for ZK path: {args.zookeeper_path}")
+    if VERBOSE:
+        _vprint(f"Final (modified) compact JSON set (first 100 chars): '{compact_modified_json[:100]}'...")
+
+def handle_get_command(args):
+    """Handles the 'get' subcommand."""
+    decoded_data_str, version = get_and_decode_zk_data(args.zookeeper_path)
+    try:
+        json_data = json.loads(decoded_data_str)
+        output = {"version": version, "data": json_data}
+        print(json.dumps(output, indent=None, separators=(',', ':'))) # Compact output
+    except json.JSONDecodeError as e:
+        print(f"Error from get: Data at '{args.zookeeper_path}' (version {version}) is not valid JSON. Cannot perform 'get'. Error: {e}", file=sys.stderr)
+        print(f"Problematic data (first 200 chars): {decoded_data_str[:200]}", file=sys.stderr)
+        sys.exit(5)
+
+def handle_set_command(args):
+    """Handles the 'set' subcommand."""
+    _vprint(f"Attempting to 'set' data for ZK path: {args.zookeeper_path}")
+    _vprint("Reading JSON data from stdin...")
+    try:
+        input_str = sys.stdin.read()
+        _vprint(f"Stdin content received (first 200 chars): {input_str[:200]}")
+        input_json = json.loads(input_str)
+    except json.JSONDecodeError as e:
+        print(f"Error from set: Input from stdin is not valid JSON. Error: {e}", file=sys.stderr)
+        print(f"Problematic input (first 200 chars): {input_str[:200]}", file=sys.stderr)
+        sys.exit(6)
+    except Exception as e:
+        print(f"Error from set: Error reading from stdin: {e}", file=sys.stderr)
+        sys.exit(6)
+
+    if not isinstance(input_json, dict):
+        print(f"Error from set: Input JSON must be an object (dict), got {type(input_json).__name__}. Expected format: {{ \"version\": N, \"data\": ... }}", file=sys.stderr)
+        sys.exit(7)
+
+    if 'version' not in input_json or not isinstance(input_json['version'], int):
+        print(f"Error from set: Input JSON must contain an integer 'version' field. Found: {input_json.get('version')}", file=sys.stderr)
+        sys.exit(7)
+
+    if 'data' not in input_json:
+        print(f"Error from set: Input JSON must contain a 'data' field. Keys found: {list(input_json.keys())}", file=sys.stderr)
+        sys.exit(7)
+
+    version_from_input = input_json['version']
+    data_to_set = input_json['data'] # This is already a Python object (dict, list, str, etc.)
+
+    try:
+        # We need to re-serialize the 'data' part to a compact JSON string for ZK
+        json_string_to_set = json.dumps(data_to_set, separators=(',', ':'))
+        _vprint(f"Data to set (post-JSON dump, first 100): {json_string_to_set[:100]}..., Version from input: {version_from_input}")
+    except TypeError as e:
+        print(f"Error from set: The 'data' field in the input JSON could not be serialized. Error: {e}", file=sys.stderr)
+        sys.exit(8)
+
+    encode_and_set_zk_data(args.zookeeper_path, json_string_to_set, version_from_input)
+    print(f"Successfully set JSON data for ZK path: {args.zookeeper_path} using input version {version_from_input}")
+
+if __name__ == "__main__":
+    main_parser = argparse.ArgumentParser(
+        description=(
+            "Manage JSON data in ZooKeeper with version-safe get, edit, and set commands.\n"
+            "All commands (get, set, edit) ensure that data read from or written to ZooKeeper\n"
+            "is valid JSON.\n\n"
+            "The 'get' and 'set' commands can be combined with text or json processing tools\n"
+            "to perform safe, conditional transformations of ZK data. For example,\n"
+            "to change a boolean value for a key named 'something' from true to false:\n\n"
+            "  vespa-zkjson get /example | sed 's/\"something\":true/\"something\":false/' | vespa-zkjson set /example\n\n"
+            "This works because 'vespa-zkjson set' reads the modified JSON (including the\n"
+            "original version number) from stdin and uses it for a conditional update.\n\n"
+            "Limitations: because base64 data is passed to 'vespa-zkjson set' on the command line,\n"
+            "maximum json object size limited to about 96kb (environment dependent)."
+        ),
+        formatter_class=argparse.RawTextHelpFormatter
+    )
+    main_parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose output to stderr.")
+
+    subparsers = main_parser.add_subparsers(dest='command', title='commands') # Removed required=True
+
+    # Edit command
+    parser_edit = subparsers.add_parser('edit', help='Interactively edit JSON data in ZK.')
+    parser_edit.add_argument("zookeeper_path", help="The ZooKeeper path to get, edit, and set.")
+    parser_edit.set_defaults(func=handle_edit_command)
+
+    # Get command
+    parser_get = subparsers.add_parser('get', help='Get JSON data from ZK and print as {"version": v, "data": d}.')
+    parser_get.add_argument("zookeeper_path", help="The ZooKeeper path to get from.")
+    parser_get.set_defaults(func=handle_get_command)
+
+    # Set command
+    parser_set = subparsers.add_parser('set', help='Set JSON data to ZK from stdin. Expects {"version": v, "data": d}.')
+    parser_set.add_argument("zookeeper_path", help="The ZooKeeper path to set to.")
+    parser_set.set_defaults(func=handle_set_command)
+
+    args = main_parser.parse_args()
+    VERBOSE = args.verbose
+
+    if args.command is None:
+        main_parser.print_help(sys.stderr)
+        sys.exit(2) # Standard exit code for command line usage errors
+
+    try:
+        args.func(args) # Call the appropriate handler function
+    except VersionConflictError as e:
+        print(f"\nConflict detected: {e}", file=sys.stderr)
+        print("Please re-run the script or use 'get' to fetch the latest version and data.", file=sys.stderr)
+        sys.exit(1)
+    except (RuntimeError, FileNotFoundError) as e:
+        print(f"\nAn error occurred: {e}", file=sys.stderr) # Always print the error
+        sys.exit(1)
+    except SystemExit:
+        raise
+    except Exception as e:
+        print(f"\nAn unexpected critical error occurred: {type(e).__name__}: {e}", file=sys.stderr)
+        import traceback
+        _vprint("Traceback:\n", traceback.format_exc())
+        sys.exit(2)
