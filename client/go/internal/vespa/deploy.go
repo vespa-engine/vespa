@@ -136,7 +136,7 @@ func Fetch(deployment DeploymentOptions, path string) (string, error) {
 }
 
 func deployServiceGet(url string, deployment DeploymentOptions, w io.Writer) error {
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
@@ -280,7 +280,7 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	req, err := http.NewRequest("PUT", prepareURL.String(), nil)
+	req, err := http.NewRequest(http.MethodPut, prepareURL.String(), nil)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -317,7 +317,7 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest("PUT", u.String(), nil)
+	req, err := http.NewRequest(http.MethodPut, u.String(), nil)
 	if err != nil {
 		return err
 	}
@@ -347,7 +347,7 @@ func Deactivate(deployment DeploymentOptions) error {
 	if err != nil {
 		return err
 	}
-	req := &http.Request{URL: u, Method: "DELETE"}
+	req := &http.Request{URL: u, Method: http.MethodDelete}
 	resp, err := deployServiceDo(req, 30*time.Second, deployment)
 	if err != nil {
 		return err
@@ -438,7 +438,7 @@ func Submit(opts DeploymentOptions, submission Submission) (int64, error) {
 	}
 	request := &http.Request{
 		URL:    u,
-		Method: "POST",
+		Method: http.MethodPost,
 		Body:   io.NopCloser(&body),
 		Header: make(http.Header),
 	}
@@ -516,7 +516,7 @@ func newDeploymentRequest(url *url.URL, opts DeploymentOptions) (*http.Request, 
 	}
 	return &http.Request{
 		URL:    url,
-		Method: "POST",
+		Method: http.MethodPost,
 		Header: header,
 		Body:   io.NopCloser(body),
 	}, nil
@@ -563,11 +563,11 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 }
 
 func checkResponse(req *http.Request, response *http.Response) error {
-	if response.StatusCode == 401 || response.StatusCode == 403 {
+	if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
 		return fmt.Errorf("deployment failed: %w (status %d)\n%s", ErrUnauthorized, response.StatusCode, ioutil.ReaderToJSON(response.Body))
 	} else if response.StatusCode/100 == 4 {
 		return fmt.Errorf("invalid application package (status %d)\n%s", response.StatusCode, extractError(response.Body))
-	} else if response.StatusCode != 200 {
+	} else if response.StatusCode != http.StatusOK {
 		return fmt.Errorf("error from deploy API at %s (status %d):\n%s", req.URL.Host, response.StatusCode, ioutil.ReaderToJSON(response.Body))
 	}
 	return nil

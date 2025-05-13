@@ -56,7 +56,7 @@ func doAuthShow(cli *CLI, args []string) error {
 		return err
 	}
 	url := service.BaseURL + "/user/v1/user"
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
 	}
