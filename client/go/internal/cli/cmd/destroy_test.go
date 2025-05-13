@@ -50,7 +50,7 @@ func TestDestroy(t *testing.T) {
 
 	// Cannot remove a prod deployment
 	require.NotNil(t, cli.Run("destroy", "-z", "prod.aws-us-east-1c"))
-	assert.Equal(t, "Error: cannot remove production deployment of foo.bar.baz in prod.aws-us-east-1c\nHint: See https://cloud.vespa.ai/en/deleting-applications\n", stderr.String())
+	assert.Equal(t, "Error: cannot remove production deployment of foo.bar.baz in prod.aws-us-east-1c\nHint: See https://docs.vespa.ai/en/cloud/deleting-applications.html\n", stderr.String())
 
 	// Cannot remove a local deployment at all
 	stderr.Reset()

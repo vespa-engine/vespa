@@ -60,7 +60,7 @@ application
 Specifies the application ID to manage. It has three parts, separated by
 dots, with the third part being optional. If the third part is omitted it
 defaults to "default". This is only relevant for the "cloud" and "hosted"
-targets. See https://cloud.vespa.ai/en/tenant-apps-instances for more details.
+targets. See https://docs.vespa.ai/en/cloud/tenant-apps-instances.html for more details.
 This has no default value. Examples: tenant1.app1, tenant1.app1.instance1
 
 cluster

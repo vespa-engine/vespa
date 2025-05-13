@@ -24,7 +24,7 @@ A new release of Vespa is made from this repository's master branch every mornin
 - Home page: [https://vespa.ai](https://vespa.ai)
 - Documentation: [https://docs.vespa.ai](https://docs.vespa.ai)
 - Continuous build: [https://factory.vespa.ai](https://factory.vespa.ai)
-- Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)
+- Run applications in the cloud for free: [vespa.ai/free-trial](https://vespa.ai/free-trial/)
 
 ## Table of contents
 
@@ -48,7 +48,7 @@ hundreds of thousands of queries from Vespa per second.
 
 ## Install
 
-Deploy your Vespa applications to the cloud service: [https://cloud.vespa.ai](https://cloud.vespa.ai),
+Deploy your Vespa applications to the cloud service: [console.vespa-cloud.com](https://console.vespa-cloud.com/),
 or run your own Vespa instance: [https://docs.vespa.ai/en/getting-started.html](https://docs.vespa.ai/en/getting-started.html)
 
 ## Usage

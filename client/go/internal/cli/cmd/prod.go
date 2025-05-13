@@ -49,8 +49,8 @@ advanced configuration see the relevant Vespa Cloud documentation and make
 changes to deployment.xml and services.xml directly.
 
 Reference:
-https://cloud.vespa.ai/en/reference/services
-https://cloud.vespa.ai/en/reference/deployment`,
+https://docs.vespa.ai/en/reference/services.html
+https://docs.vespa.ai/en/reference/deployment.html`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -127,8 +127,8 @@ Nodes are allocated to the application according to resources specified in
 services.xml.
 
 For more information about production deployments in Vespa Cloud see:
-https://cloud.vespa.ai/en/production-deployment
-https://cloud.vespa.ai/en/automated-deployments
+https://docs.vespa.ai/en/cloud/production-deployment.html
+https://docs.vespa.ai/en/cloud/automated-deployments.html
 https://cloud.vespa.ai/en/reference/vespa-cloud-api#submission-properties
 `,
 		DisableAutoGenTag: true,
@@ -312,12 +312,12 @@ func promptNodes(cli *CLI, r *bufio.Reader, clusterID string, defaultValue xml.N
 
 func promptNodeCount(cli *CLI, stdin *bufio.Reader, clusterID string, nodeCount string) (string, error) {
 	fmt.Fprintln(cli.Stdout, color.CyanString("\n> Node count: "+clusterID+" cluster"))
-	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/services"))
+	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://docs.vespa.ai/en/reference/services"))
 	fmt.Fprintf(cli.Stdout, "Example: %s\nExample: %s\n\n", color.YellowString("4"), color.YellowString("[2,8]"))
 	validator := func(input string) error {
 		min, _, err := xml.ParseNodeCount(input)
 		if min < 2 {
-			return errHint(fmt.Errorf("at least 2 nodes are required for all clusters in a production environment, got %d", min), "See https://cloud.vespa.ai/en/production-deployment")
+			return errHint(fmt.Errorf("at least 2 nodes are required for all clusters in a production environment, got %d", min), "See https://docs.vespa.ai/en/cloud/production-deployment.html")
 		}
 		return err
 	}
@@ -326,7 +326,7 @@ func promptNodeCount(cli *CLI, stdin *bufio.Reader, clusterID string, nodeCount 
 
 func promptResources(cli *CLI, stdin *bufio.Reader, clusterID string, resources string) (string, error) {
 	fmt.Fprintln(cli.Stdout, color.CyanString("\n> Node resources: "+clusterID+" cluster"))
-	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://cloud.vespa.ai/en/reference/services"))
+	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://docs.vespa.ai/en/reference/services.html"))
 	fmt.Fprintf(cli.Stdout, "Example: %s\nExample: %s\n\n", color.YellowString("auto"), color.YellowString("vcpu=4,memory=8Gb,disk=100Gb"))
 	validator := func(input string) error {
 		if input == "auto" {
@@ -424,9 +424,9 @@ func verifyTest(cli *CLI, testsParent string, suite string, required bool) error
 			if errors.Is(err, os.ErrNotExist) {
 				return errHint(fmt.Errorf("no %s tests found: %w", suite, err),
 					fmt.Sprintf("No such directory: %s", testDirectory),
-					"See https://cloud.vespa.ai/en/reference/testing")
+					"See https://docs.vespa.ai/en/reference/testing.html")
 			}
-			return errHint(err, "See https://cloud.vespa.ai/en/reference/testing")
+			return errHint(err, "See https://docs.vespa.ai/en/reference/testing.html")
 		}
 		return nil
 	}

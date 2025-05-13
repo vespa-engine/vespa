@@ -58,7 +58,7 @@ Note that when overriding key pair through environment variables, that key pair
 will always be used for all applications. It's not possible to specify an
 application-specific key.
 
-See https://cloud.vespa.ai/en/security/guide for more details.`,
+See https://docs.vespa.ai/en/cloud/security/guide.html for more details.`,
 		Example: `$ vespa auth cert
 $ vespa auth cert -a my-tenant.my-app.my-instance
 $ vespa auth cert -a my-tenant.my-app.my-instance path/to/application/package`,
@@ -168,7 +168,7 @@ func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pk
 		if ignoreZip {
 			cli.printWarning("Cannot verify existence of "+color.CyanString("security/clients.pem")+" since '"+pkg.Path+"' is compressed",
 				"Deployment to Vespa Cloud requires certificate in application package",
-				"See https://cloud.vespa.ai/en/security/guide")
+				"See https://docs.vespa.ai/en/cloud/security/guide.html")
 			return nil
 		} else {
 			hint := "Try running 'mvn clean', then 'vespa auth cert add' and finally 'mvn package'"
@@ -213,7 +213,7 @@ func requireCertificate(force, ignoreZip bool, cli *CLI, target vespa.Target, pk
 		}
 	}
 	return errHint(fmt.Errorf("deployment to Vespa Cloud requires certificate in application package"),
-		"See https://cloud.vespa.ai/en/security/guide",
+		"See https://docs.vespa.ai/en/cloud/security/guide.html",
 		"Pass --add-cert to use the certificate of the current application")
 }
 

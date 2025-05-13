@@ -20,7 +20,7 @@ This part of the Vespa repository got Vespa client implementations for operation
 
 The Vespa command-line tool, see the [README](go/README.md).
 Use the Vespa CLI to deploy, feed and query a Vespa application,
-for local, self-hosted or [Vespa Cloud](https://cloud.vespa.ai/) instances.
+for local, self-hosted or [Vespa Cloud](https://vespa.ai/free-trial/) instances.
 
 ## pyvespa
 
