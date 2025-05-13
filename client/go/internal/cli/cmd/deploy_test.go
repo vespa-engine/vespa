@@ -105,10 +105,10 @@ func TestDeployCloudFastWait(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	httpClient.NextResponseString(200, `ok`)
-	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
-	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccessful"}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccessful"}`)
 	require.NotNil(t, cli.Run("deploy", pkgDir))
-	assert.Equal(t, stderr.String(), "Error: deployment failed: run 0 ended with unsuccessful status: unsuccesful\n")
+	assert.Equal(t, stderr.String(), "Error: deployment failed: run 0 ended with unsuccessful status: unsuccessful\n")
 	assert.True(t, httpClient.Consumed())
 
 	// Deployment which is running does not return error
