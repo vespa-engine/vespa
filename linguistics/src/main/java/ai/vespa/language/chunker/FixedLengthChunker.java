@@ -15,7 +15,7 @@ import java.util.List;
  */
 public class FixedLengthChunker implements Chunker {
 
-    private static final int defaultChunkLength = 500;
+    private static final int defaultChunkLength = 1000;
 
     private final CharacterClasses characters = new CharacterClasses();
 
