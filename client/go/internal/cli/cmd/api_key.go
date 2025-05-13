@@ -76,7 +76,7 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 		err := fmt.Errorf("refusing to overwrite '%s'", apiKeyFile)
 		cli.printErr(err, "Use -f to overwrite it")
 		printPublicKey(system, apiKeyFile, app.Tenant)
-		return CLIError{error: err, quiet: true}
+		return ErrCLI{error: err, quiet: true}
 	}
 	apiKey, err := vespa.CreateAPIKey()
 	if err != nil {
