@@ -5,7 +5,6 @@
 package main
 
 import (
-	"errors"
 	"fmt"
 	"os"
 
@@ -25,8 +24,7 @@ func main() {
 		fatal(1, err)
 	}
 	if err := cli.Run(); err != nil {
-		var cliErr cmd.CLIError
-		if errors.As(err, &cliErr) {
+		if cliErr, ok := err.(cmd.CLIError); ok {
 			fatal(cliErr.Status, nil)
 		} else {
 			fatal(1, nil)

@@ -261,13 +261,13 @@ func (d *jsonDecoder) next() {
 			}
 			d.c = 0
 		}
-	} else if errors.Is(d.err, io.EOF) {
+	} else if d.err == io.EOF {
 		d.err = errors.New("input underflow")
 	}
 }
 
 func (d *jsonDecoder) fail(msg string) {
-	if d.err == nil || errors.Is(d.err, io.EOF) {
+	if d.err == nil || d.err == io.EOF {
 		d.err = errors.New(msg)
 		d.c = 0
 	}
