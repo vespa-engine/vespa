@@ -173,7 +173,7 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	}
 	if s.auth != nil {
 		if err := s.auth.Authenticate(request); err != nil {
-			return nil, fmt.Errorf("%w: %s", errAuth, err)
+			return nil, fmt.Errorf("%w: %w", errAuth, err)
 		}
 	}
 	if err := s.CurlWriter.print(request, s.TLSOptions, timeout); err != nil {
@@ -181,7 +181,7 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	}
 	resp, err := s.httpClient.Do(request, timeout)
 	if isTLSAlert(err) {
-		return nil, fmt.Errorf("%w: %s", errAuth, err)
+		return nil, fmt.Errorf("%w: %w", errAuth, err)
 	}
 	return resp, err
 }
@@ -332,7 +332,7 @@ func pollLogs(target Target, logsURL string, options LogOptions, retryInterval t
 	}
 	// Ignore wait error because logFunc has no concept of completion, we just want to print log entries until timeout is reached
 	if _, err := deployRequest(target, logFunc, requestFunc, timeout, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
-		return fmt.Errorf("failed to read logs: %s", err)
+		return fmt.Errorf("failed to read logs: %w", err)
 	}
 	return nil
 }

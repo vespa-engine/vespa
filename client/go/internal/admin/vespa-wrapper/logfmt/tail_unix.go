@@ -8,6 +8,7 @@ package logfmt
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -136,7 +137,7 @@ loop:
 		}
 		bytes, err := t.reader.ReadSlice('\n')
 		t.lineBuf = append(t.lineBuf, bytes...)
-		if err == bufio.ErrBufferFull {
+		if errors.Is(err, bufio.ErrBufferFull) {
 			continue
 		}
 		if err == nil {
