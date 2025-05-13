@@ -69,26 +69,26 @@ func (t *unixTail) openTail() {
 	if err != nil {
 		return
 	}
-	sz, err := file.Seek(0, io.SeekEnd)
+	sz, err := file.Seek(0, os.SEEK_END)
 	if err != nil {
 		return
 	}
 	if sz < lastLinesSize {
-		sz, err = file.Seek(0, io.SeekStart)
+		sz, err = file.Seek(0, os.SEEK_SET)
 		if err == nil {
 			// just read from start of file, all OK
 			t.setFile(file)
 		}
 		return
 	}
-	sz, _ = file.Seek(-lastLinesSize, io.SeekEnd)
+	sz, _ = file.Seek(-lastLinesSize, os.SEEK_END)
 	n, err := file.Read(t.lineBuf)
 	if err != nil {
 		return
 	}
 	for i := range n {
 		if t.lineBuf[i] == '\n' {
-			sz, err = file.Seek(sz+int64(i+1), io.SeekStart)
+			sz, err = file.Seek(sz+int64(i+1), os.SEEK_SET)
 			if err == nil {
 				t.setFile(file)
 			}
@@ -147,16 +147,16 @@ loop:
 			continue
 		}
 		if err == io.EOF {
-			pos, _ := t.curFile.Seek(0, io.SeekCurrent)
+			pos, _ := t.curFile.Seek(0, os.SEEK_CUR)
 			for cnt := 0; cnt < 100; cnt++ {
 				time.Sleep(10 * time.Millisecond)
-				sz, _ := t.curFile.Seek(0, io.SeekEnd)
+				sz, _ := t.curFile.Seek(0, os.SEEK_END)
 				if sz != pos {
 					if sz < pos {
 						// truncation case
 						pos = 0
 					}
-					t.curFile.Seek(pos, io.SeekStart)
+					t.curFile.Seek(pos, os.SEEK_SET)
 					continue loop
 				}
 			}
