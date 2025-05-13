@@ -88,7 +88,6 @@ func runGetNodeState(opts *Options) {
 			trace.Warning("no nodes for service type: ", s.serviceType)
 			continue
 		}
-
 	}
 }
 

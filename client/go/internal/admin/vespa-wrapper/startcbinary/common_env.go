@@ -40,7 +40,6 @@ func configureCommonEnv(spec *prog.Spec) {
 		"vespa-configproxy-cmd",
 		"vespa-config-status",
 	}, " "))
-
 }
 
 func configurePath(spec *prog.Spec) {
