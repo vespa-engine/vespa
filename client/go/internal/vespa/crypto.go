@@ -200,6 +200,7 @@ func FingerprintMD5(pemPublicKey []byte) (string, error) {
 		hexDigits[i] = hex.EncodeToString([]byte{c})
 	}
 	return strings.Join(hexDigits, ":"), nil
+
 }
 
 func contentHash(r io.Reader) (string, io.Reader, error) {
