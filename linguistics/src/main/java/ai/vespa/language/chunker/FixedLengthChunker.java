@@ -8,8 +8,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A chunker which splits a text into chunks at the first non-word/letter character after a given target chunk length
- * measured in codepoints (or precisely at that length, for CJK languages).
+ * A chunker which splits a text into chunks at the first double non-letter/digit character after a given
+ * target chunk length measured in characters (or precisely at that length, for CJK languages).
+ *
+ * If there are no double non-letter/digit characters within 5% above the target length,
+ * the chunk split will be at the first single non-letter/digit character.
+ *
+ * If there are no double non-letter/digit characters within 10% above the target length,
+ * the chunk split will be at that position, so the absolute max chunk length will be 10% above the target
+ * length.
  *
  * @author bratseth
  */
