@@ -45,6 +45,8 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         return getHost() + ":" + getMappedPort(GRPC_PORT);
     }
 
+    public Path getModelRepositoryPath() { return modelRepositoryPath; }
+
     public void addModel(String modelName, Path modelFile) throws IOException {
         Path modelDir = modelRepositoryPath.resolve(modelName + "/1");
         Files.createDirectories(modelDir);
