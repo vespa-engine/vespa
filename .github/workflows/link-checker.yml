@@ -14,7 +14,9 @@ on:
 jobs:
   test:
     uses: vespa-engine/gh-actions/.github/workflows/jekyll-link-checker.yml@main
-    secrets: inherit
+    secrets:
+      github-app-id: ${{ vars.LINK_CHECKER_APP_ID }}
+      github-app-priv-key: ${{ secrets.LINK_CHECKER_PRIVATE_KEY }}      
     with:
       ignore-urls: |-
         /slack.vespa.ai/
