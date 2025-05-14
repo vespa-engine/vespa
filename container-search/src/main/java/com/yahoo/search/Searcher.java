@@ -159,15 +159,20 @@ public abstract class Searcher extends Processor {
         if (summaryClass == null)
             summaryClass = PartialSummaryHandler.resolveSummaryClass(result);
 
-        if ( ! result.isFilled(summaryClass)) {
-            fill(result, summaryClass, execution);
-        }
-        else {
+        String alsoCheck = PartialSummaryHandler.enoughFields(summaryClass, result);
+        var hasFilled = result.hits().getFilled();
+        if (hasFilled == null || hasFilled.contains(summaryClass) || hasFilled.contains(alsoCheck)) {
             int fillRejectTraceAt = 3;
             if (result.getQuery().getTrace().getLevel() >= fillRejectTraceAt)
                 result.getQuery().trace("Ignoring fill(" + summaryClass + "): " +
-                                        ( result.hits().getFilled() == null ? "Hits are unfillable" : "Hits already filled" ) +
-                                        ": result.hits().getFilled()=" + result.hits().getFilled(), fillRejectTraceAt);
+                                        ( hasFilled == null ? "Hits are unfillable" : "Hits already filled" ) +
+                                        ": result.hits().getFilled()=" + hasFilled, fillRejectTraceAt);
+        }
+        else {
+            int fillStartTraceAt = 6;
+            if (result.getQuery().getTrace().getLevel() >= fillStartTraceAt)
+                result.getQuery().trace("Hits need fill(" + summaryClass + "); hasFilled=" + hasFilled + " in " + this.getClass(), fillStartTraceAt);
+            fill(result, summaryClass, execution);
         }
     }
 
