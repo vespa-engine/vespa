@@ -48,6 +48,9 @@ public class FixedLengthChunker implements Chunker {
         final int targetLength;
         final boolean isCjk;
 
+        final int softMaxLength;
+        final int hardMaxLength;
+
         final List<Chunk> chunks = new ArrayList<>();
         int index = 0;
 
@@ -55,6 +58,9 @@ public class FixedLengthChunker implements Chunker {
             this.text = new UnicodeString(text);
             this.targetLength = chunkLength;
             this.isCjk = isCjk;
+
+            this.softMaxLength = (int)Math.round(targetLength * 1.05);
+            this.hardMaxLength = (int)Math.round(targetLength * 1.10);
         }
 
         List<Chunk> chunk() {
@@ -76,9 +82,11 @@ public class FixedLengthChunker implements Chunker {
         }
 
         private boolean endOfChunk(int currentLength) {
-             if (currentLength < targetLength) return false;
-             if (isCjk) return true;
-             return !isLetter(index) && !isLetter(nextIndex());
+            if (currentLength < targetLength) return false;
+            if (isCjk) return true;
+            if (currentLength <= softMaxLength) return !isLetter(index) && !isLetter(nextIndex());
+            if (currentLength <= hardMaxLength) return !isLetter(index);
+            return true;
         }
 
         int charAt(int index) {
