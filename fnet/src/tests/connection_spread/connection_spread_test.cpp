@@ -1,11 +1,12 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/transport_thread.h>
 #include <vespa/fnet/iserveradapter.h>
 #include <vespa/fnet/ipacketstreamer.h>
 #include <vespa/fnet/connector.h>
 #include <vespa/fnet/connection.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
@@ -31,6 +32,8 @@ struct Fixture {
     FNET_Transport server;
     Fixture() : streamer(), adapter(), client(8), server(8)
     {
+    }
+    void start() {
         ASSERT_TRUE(client.Start());
         ASSERT_TRUE(server.Start());
     }
@@ -41,8 +44,8 @@ struct Fixture {
             ok = ((client.GetNumIOComponents() == client_cnt) &&
                   (server.GetNumIOComponents() == server_cnt));
         }
-        EXPECT_EQUAL(client.GetNumIOComponents(), client_cnt);
-        EXPECT_EQUAL(server.GetNumIOComponents(), server_cnt);
+        EXPECT_EQ(client.GetNumIOComponents(), client_cnt);
+        EXPECT_EQ(server.GetNumIOComponents(), server_cnt);
     }
     ~Fixture() {
         server.ShutDown(true);
@@ -58,12 +61,14 @@ void check_threads(FNET_Transport &transport, size_t num_threads, const std::str
     for (auto thread: threads) {
         uint32_t cnt = thread->GetNumIOComponents();
         fprintf(stderr, "-- %s thread: %u io components\n", tag.c_str(), cnt);
-        EXPECT_GREATER(cnt, 1u);
+        EXPECT_GT(cnt, 1u);
     }
 }
 
-TEST_F("require that connections are spread among transport threads", Fixture)
+TEST(ConnectionSpreadTest, require_that_connections_are_spread_among_transport_threads)
 {
+    Fixture f1;
+    ASSERT_NO_FATAL_FAILURE(f1.start());
     FNET_Connector *listener = f1.server.Listen("tcp/0", &f1.streamer, &f1.adapter);
     ASSERT_TRUE(listener);
     uint32_t port = listener->GetPortNumber();
@@ -90,4 +95,4 @@ TEST_F("require that connections are spread among transport threads", Fixture)
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
