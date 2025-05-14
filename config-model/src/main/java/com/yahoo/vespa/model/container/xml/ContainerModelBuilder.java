@@ -29,11 +29,9 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DataplaneToken;
 import com.yahoo.config.provision.HostName;
-import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provision.ZoneEndpoint;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.jdisc.DataplaneProxyService;
 import com.yahoo.container.logging.AccessLog;
@@ -129,6 +127,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
+import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -1035,13 +1034,20 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private ZoneEndpoint zoneEndpoint(ConfigModelContext context, ClusterSpec.Id cluster) {
-        return context
+        var zoneEndpoint = context
                 .getApplicationPackage()
                 .getDeploymentSpec()
                 .zoneEndpoint(context.properties().applicationId().instance(),
                               context.properties().zone(),
                               cluster,
                               context.featureFlags().useNonPublicEndpointForTest());
+
+        // TODO: Temporary, remove in 8.521
+        log.log(FINE, "Zone endpoints from properties: " + context.properties().endpoints() +
+                ", zone endpoint from deployment spec: " + zoneEndpoint +
+                ", zone and cloud from properties: " + context.properties().zone() + ", " + context.properties().zone().cloud() +
+                ", zone and cloud from deploy state: " + context.getDeployState().zone() + ", " + context.getDeployState().zone().cloud());
+        return zoneEndpoint;
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {
