@@ -22,6 +22,7 @@
 #include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
 #include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
+#include <vespa/searchsummary/docsummary/struct_fields_mapper.h>
 #include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -39,8 +40,9 @@ using search::attribute::CollectionType;
 using search::attribute::Config;
 using search::attribute::IAttributeContext;
 using search::attribute::IAttributeVector;
-using search::docsummary::IDocsumStoreDocument;
 using search::docsummary::DocsumStoreDocument;
+using search::docsummary::IDocsumStoreDocument;
+using search::docsummary::StructFieldsMapper;
 using search::docsummary::test::SlimeValue;
 using vespalib::Slime;
 
@@ -204,9 +206,11 @@ StateCallback::~StateCallback() = default;
 
 class MatchedElementsFilterTest : public ::testing::Test {
 private:
-    DocsumStore _doc_store;
-    AttributeContext _attr_ctx;
-    SummaryElementsSelector _elements_selector;
+    DocsumStore                              _doc_store;
+    AttributeContext                         _attr_ctx;
+    StructFieldsMapper                       _mapper;
+    std::unique_ptr<SummaryElementsSelector> _elements_selector;
+    std::unique_ptr<MatchingElementsFields>  _matching_elements_fields;
 
     Slime run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
         auto writer = make_field_writer(input_field_name);
@@ -216,7 +220,7 @@ private:
         Slime slime;
         SlimeInserter inserter(slime);
 
-        writer->insert_field(doc_id, doc.get(), state, _elements_selector, inserter);
+        writer->insert_field(doc_id, doc.get(), state, *_elements_selector, inserter);
         return slime;
     }
 
@@ -224,19 +228,27 @@ public:
     MatchedElementsFilterTest()
         : _doc_store(),
           _attr_ctx(),
-          _elements_selector(SummaryElementsSelector::select_by_match())
+          _mapper(),
+          _elements_selector(),
+          _matching_elements_fields()
     {
+        _mapper.setup(_attr_ctx);
     }
     ~MatchedElementsFilterTest() override;
     std::unique_ptr<DocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
-        return MatchedElementsFilterDFW::create(input_field_name,_attr_ctx, _elements_selector);
+        auto elements_selector =
+            SummaryElementsSelector::select_by_match(_mapper.get_struct_fields(input_field_name));
+        _elements_selector = std::make_unique<SummaryElementsSelector>(std::move(elements_selector));
+        _matching_elements_fields = std::make_unique<MatchingElementsFields>();
+        _elements_selector->consider_apply_to(input_field_name, *_matching_elements_fields);
+        return MatchedElementsFilterDFW::create(input_field_name, _attr_ctx);
     }
     void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {
         Slime act = run_filter_field_writer(input_field_name, matching_elements);
         SlimeValue exp(exp_slime_as_json);
         EXPECT_EQ(exp.slime, act);
     }
-    const MatchingElementsFields& fields() const { return _elements_selector.matching_elements_fields(); }
+    const MatchingElementsFields& fields() const { return *_matching_elements_fields; }
     void set_empty_values() { _doc_store.set_empty_values(); }
     void set_skip_set_values() { _doc_store.set_skip_set_values(); }
  };

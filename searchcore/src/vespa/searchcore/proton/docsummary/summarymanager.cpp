@@ -12,6 +12,7 @@
 #include <vespa/searchsummary/docsummary/docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_query_term_filter.h>
 #include <vespa/searchsummary/docsummary/query_term_filter_factory.h>
+#include <vespa/searchsummary/docsummary/struct_fields_mapper.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/fastlib/text/normwordfolder.h>
 #include <vespa/config-summary.h>
@@ -36,11 +37,18 @@ using vespalib::makeLambdaTask;
 
 using search::TuneFileSummary;
 using search::common::FileHeaderContext;
+using search::docsummary::StructFieldsMapper;
 using searchcorespi::IFlushTarget;
 
 namespace proton {
 
 namespace {
+
+std::unique_ptr<StructFieldsMapper> make_struct_fields_mapper(const search::attribute::IAttributeContext& ctx) {
+    auto mapper = std::make_unique<StructFieldsMapper>();
+    mapper->setup(ctx);
+    return mapper;
+}
 
 class ShrinkSummaryLidSpaceFlushTarget : public ShrinkLidSpaceFlushTarget
 {
@@ -97,8 +105,9 @@ SummarySetup(const std::string & baseDir, const SummaryConfig & summaryCfg,
     auto resultConfig = std::make_unique<ResultConfig>();
     std::unique_ptr<IQueryTermFilterFactory> query_term_filter_factory = std::make_unique<QueryTermFilterFactory>(schema);
     auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summaryCfg.usev8geopositions, *this, *query_term_filter_factory);
+    auto struct_fields_mapper = make_struct_fields_mapper(*_attributeMgr->createContext());
     if (!resultConfig->readConfig(summaryCfg, make_string("SummaryManager(%s)", baseDir.c_str()).c_str(),
-                                  *docsum_field_writer_factory)) {
+                                  *docsum_field_writer_factory, *struct_fields_mapper)) {
         std::ostringstream oss;
         ::config::OstreamConfigWriter writer(oss);
         writer.write(summaryCfg);

@@ -112,15 +112,12 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
 
 ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const std::string &fieldName,
                                                      const StructFieldsResolver& fields_resolver,
-                                                     SummaryElementsSelector& elements_selector)
+                                                     const SummaryElementsSelector& elements_selector)
     : AttributeCombinerDFW(fieldName, elements_selector.matched_elements_only()),
       _fields(fields_resolver.get_array_fields()),
       _attributeNames(fields_resolver.get_array_attributes()),
       _is_map_of_scalar(fields_resolver.is_map_of_scalar())
 {
-    if (elements_selector.matched_elements_only()) {
-        fields_resolver.apply_to(elements_selector.matching_elements_fields());
-    }
 }
 
 ArrayAttributeCombinerDFW::~ArrayAttributeCombinerDFW() = default;

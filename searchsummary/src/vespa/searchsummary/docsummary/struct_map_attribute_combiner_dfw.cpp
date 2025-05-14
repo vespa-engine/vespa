@@ -129,15 +129,12 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 
 StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const std::string &fieldName,
                                                              const StructFieldsResolver& fields_resolver,
-                                                             SummaryElementsSelector& elements_selector)
+                                                             const SummaryElementsSelector& elements_selector)
     : AttributeCombinerDFW(fieldName, elements_selector.matched_elements_only()),
       _keyAttributeName(fields_resolver.get_map_key_attribute()),
       _valueFields(fields_resolver.get_map_value_fields()),
       _valueAttributeNames(fields_resolver.get_map_value_attributes())
 {
-    if (elements_selector.matched_elements_only()) {
-        fields_resolver.apply_to(elements_selector.matching_elements_fields());
-    }
 }
 
 StructMapAttributeCombinerDFW::~StructMapAttributeCombinerDFW() = default;

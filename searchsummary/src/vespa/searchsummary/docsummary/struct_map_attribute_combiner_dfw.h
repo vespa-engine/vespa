@@ -25,7 +25,7 @@ class StructMapAttributeCombinerDFW : public AttributeCombinerDFW
 public:
     StructMapAttributeCombinerDFW(const std::string &fieldName,
                                   const StructFieldsResolver& fields_resolver,
-                                  SummaryElementsSelector& elements_selector);
+                                  const SummaryElementsSelector& elements_selector);
     ~StructMapAttributeCombinerDFW() override;
 };
 

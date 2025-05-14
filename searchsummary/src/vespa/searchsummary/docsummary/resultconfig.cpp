@@ -4,6 +4,7 @@
 #include "docsum_field_writer.h"
 #include "docsum_field_writer_factory.h"
 #include "resultclass.h"
+#include "struct_fields_mapper.h"
 #include "summary_elements_selector.h"
 #include <vespa/config-summary.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
@@ -20,12 +21,14 @@ namespace search::docsummary {
 namespace {
 
 SummaryElementsSelector
-make_summary_elements_selector(const SummaryConfig::Classes::Fields::Elements& elements)
+make_summary_elements_selector(const SummaryConfig::Classes::Fields::Elements& elements,
+                               const std::string& source,
+                               const StructFieldsMapper& struct_fields_mapper)
 {
     using Select = SummaryConfig::Classes::Fields::Elements::Select;
     switch (elements.select) {
         case Select::BY_MATCH:
-            return SummaryElementsSelector::select_by_match();
+            return SummaryElementsSelector::select_by_match(struct_fields_mapper.get_struct_fields(source));
         case Select::BY_SUMMARY_FEATURE:
             return SummaryElementsSelector::select_by_summary_feature(elements.summaryFeature);
         case Select::ALL:
@@ -120,7 +123,8 @@ ResultConfig::set_wanted_v8_geo_positions(bool value)
 }
 
 bool
-ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory)
+ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory,
+                         const StructFieldsMapper& struct_fields_mapper)
 {
     bool rc = true;
     reset();
@@ -171,9 +175,10 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
                 return {};
             };
             {
-                auto elements_selector = make_summary_elements_selector(field.elements);
+                auto source = field.source.empty() ? field.name : field.source;
+                auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
                 auto writer = factory(elements_selector);
-                elements_selector.merge_matching_elements_fields_to(*res_class_matching_elements_fields);
+                elements_selector.consider_apply_to(source, *res_class_matching_elements_fields);
                 if (!resClass->addConfigEntry(fieldname, elements_selector, std::move(writer))) {
                     LOG(error, "%s %s.fields: duplicate name '%s'", configId, cfg_class.name.c_str(), fieldname);
                     rc = false;
@@ -181,9 +186,10 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
                 }
             }
             if (unionOfAll->getIndexFromName(fieldname) < 0) {
-                auto elements_selector = make_summary_elements_selector(field.elements);
+                auto source = field.source.empty() ? field.name : field.source;
+                auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
                 auto writer = factory(elements_selector);
-                elements_selector.merge_matching_elements_fields_to(*union_of_all_matching_elements_fields);
+                elements_selector.consider_apply_to(source, *union_of_all_matching_elements_fields);
                 unionOfAll->addConfigEntry(fieldname, elements_selector, std::move(writer));
             }
         }

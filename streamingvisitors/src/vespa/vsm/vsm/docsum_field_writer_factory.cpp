@@ -28,19 +28,6 @@ namespace vsm {
 
 namespace {
 
-void populate_fields(MatchingElementsFields& fields, VsmfieldsConfig& fields_config, const std::string& field_name)
-{
-    std::string prefix = field_name + ".";
-    for (const auto& spec : fields_config.fieldspec) {
-        if (spec.name.substr(0, prefix.size()) == prefix) {
-            fields.add_mapping(field_name, spec.name);
-        }
-        if (spec.name == field_name) {
-            fields.add_field(field_name);
-        }
-    }
-}
-
 bool is_exact_match(std::string_view arg1) {
     return ((arg1 == "exact") || (arg1 == "word"));
 }
@@ -70,7 +57,7 @@ DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
 std::unique_ptr<DocsumFieldWriter>
 DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
-                                                     SummaryElementsSelector& elements_selector,
+                                                     const SummaryElementsSelector& elements_selector,
                                                      const std::string& command,
                                                      const std::string& source)
 {
@@ -89,8 +76,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
     } else if ((command == command::matched_attribute_elements_filter) ||
                (command == command::matched_elements_filter)) {
         std::string source_field = source.empty() ? field_name : source;
-        populate_fields(elements_selector.matching_elements_fields(), _vsm_fields_config, source_field);
-        fieldWriter = MatchedElementsFilterDFW::create(source_field, elements_selector);
+        fieldWriter = MatchedElementsFilterDFW::create(source_field);
     } else if ((command == command::tokens) ||
                (command == command::attribute_tokens)) {
         if (!source.empty()) {

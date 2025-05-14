@@ -27,7 +27,7 @@ public:
     DocsumFieldWriterFactory(bool use_v8_geo_positions, const IDocsumEnvironment& env, const IQueryTermFilterFactory& query_term_filter_factory);
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string& field_name,
-                                                                  SummaryElementsSelector& elements_selector,
+                                                                  const SummaryElementsSelector& elements_selector,
                                                                   const std::string& command,
                                                                   const std::string& source) override;
 };

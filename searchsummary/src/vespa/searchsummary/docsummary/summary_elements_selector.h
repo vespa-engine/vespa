@@ -2,7 +2,10 @@
 
 #pragma once
 
-#include <vespa/searchlib/common/matching_elements_fields.h>
+#include <string>
+#include <vector>
+
+namespace search { class MatchingElementsFields; }
 
 namespace search::docsummary {
 
@@ -17,7 +20,7 @@ class SummaryElementsSelector {
     };
 
     Selector               _selector;
-    MatchingElementsFields _matching_elements_fields;
+    std::vector<std::string> _struct_fields;
     std::string            _summary_feature;
     SummaryElementsSelector();
 public:
@@ -25,15 +28,14 @@ public:
     SummaryElementsSelector(SummaryElementsSelector&& rhs) noexcept;
     ~SummaryElementsSelector();
     bool matched_elements_only() const noexcept { return _selector == Selector::BY_MATCH; }
-    MatchingElementsFields& matching_elements_fields() noexcept { return _matching_elements_fields; }
-    const MatchingElementsFields& matching_elements_fields() const noexcept { return _matching_elements_fields; }
-    void merge_matching_elements_fields_to(MatchingElementsFields& merged_matching_element_fields) const {
+    void consider_apply_to(const std::string& field_name, MatchingElementsFields& target) const {
         if (_selector == Selector::BY_MATCH) {
-            merged_matching_element_fields.merge(_matching_elements_fields);
+            apply_to(field_name, target);
         }
     }
+    void apply_to(const std::string& field_name, MatchingElementsFields& target) const;
     static SummaryElementsSelector select_all();
-    static SummaryElementsSelector select_by_match();
+    static SummaryElementsSelector select_by_match(std::vector<std::string> struct_fields);
     static SummaryElementsSelector select_by_summary_feature(const std::string& summary_feature);
 };
 

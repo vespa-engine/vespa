@@ -40,24 +40,19 @@ MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_fiel
 }
 
 std::unique_ptr<DocsumFieldWriter>
-MatchedElementsFilterDFW::create(const std::string& input_field_name,
-                                 SummaryElementsSelector& elements_selector)
+MatchedElementsFilterDFW::create(const std::string& input_field_name)
 {
-    elements_selector.matching_elements_fields().add_field(input_field_name);
     return std::make_unique<MatchedElementsFilterDFW>(input_field_name);
 }
 
 std::unique_ptr<DocsumFieldWriter>
 MatchedElementsFilterDFW::create(const std::string& input_field_name,
-                                 search::attribute::IAttributeContext& attr_ctx,
-                                 SummaryElementsSelector& elements_selector)
+                                 search::attribute::IAttributeContext& attr_ctx)
 {
-    elements_selector.matching_elements_fields().add_field(input_field_name);
     StructFieldsResolver resolver(input_field_name, attr_ctx, false);
     if (resolver.has_error()) {
         return {};
     }
-    resolver.apply_to(elements_selector.matching_elements_fields());
     return std::make_unique<MatchedElementsFilterDFW>(input_field_name);
 }
 

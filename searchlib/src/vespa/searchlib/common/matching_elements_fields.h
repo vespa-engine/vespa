@@ -45,7 +45,6 @@ public:
         }
         return res->second;
     }
-    void merge(const MatchingElementsFields& rhs);
 };
 
 } // namespace search

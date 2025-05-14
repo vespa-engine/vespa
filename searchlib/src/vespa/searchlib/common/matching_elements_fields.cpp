@@ -9,15 +9,4 @@ MatchingElementsFields::MatchingElementsFields(const MatchingElementsFields&) = 
 MatchingElementsFields::MatchingElementsFields(MatchingElementsFields&&) noexcept = default;
 MatchingElementsFields::~MatchingElementsFields() = default;
 
-void
-MatchingElementsFields::merge(const MatchingElementsFields& rhs)
-{
-    for (auto& field : rhs._fields) {
-        _fields.insert(field);
-    }
-    for (auto& kv : rhs._struct_fields) {
-        _struct_fields[kv.first] = kv.second;
-    }
-}
-
 } // namespace search

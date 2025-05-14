@@ -60,7 +60,7 @@ DocsumFieldWriterFactory::throw_missing_source(const std::string& command)
 
 std::unique_ptr<DocsumFieldWriter>
 DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
-                                                     SummaryElementsSelector& elements_selector,
+                                                     const SummaryElementsSelector& elements_selector,
                                                      const std::string& command,
                                                      const std::string& source)
 {
@@ -146,7 +146,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         const std::string& source_field = source.empty() ? field_name : source;
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
-            fieldWriter = MatchedElementsFilterDFW::create(source_field, *attr_ctx, elements_selector);
+            fieldWriter = MatchedElementsFilterDFW::create(source_field, *attr_ctx);
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::documentid) {

@@ -36,6 +36,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     simple_dfw.cpp
     slime_filler.cpp
     slime_filler_filter.cpp
+    struct_fields_mapper.cpp
     struct_fields_resolver.cpp
     struct_map_attribute_combiner_dfw.cpp
     summary_elements_selector.cpp
