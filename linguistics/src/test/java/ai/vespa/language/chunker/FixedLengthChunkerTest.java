@@ -22,24 +22,34 @@ public class FixedLengthChunkerTest {
         assertChunks("first", "first");
         assertChunks("first ", "first ");
         assertChunks("first second", "first ", "second");
-        assertChunks("first. second", "first.", " second");
-        assertChunks("first. second.", "first.", " second", ".");
+        assertChunks(7, "first. second", "first. ", "second");
+        assertChunks(6, "first. second", "first.", " secon", "d");
+        assertChunks(7, "first. second.", "first. ", "second.");
+        assertChunks(6, "first. second.", "first.", " secon", "d.");
         assertChunks("firstsecond. third....", "firstse", "cond. ", "third.", "...");
     }
 
     @Test
     public void testChunkerBoundaries() {
         // With target length = 20, soft max length is 21, and hard max length 22
+        // (extra spaces to avoid target length adjustment)
 
         // -> First chunk is 20 long
-        assertChunks(20, "first sentence, end. Next sentence.",
-                     "first sentence, end.", " Next sentence.");
+        assertChunks(20, "first sentence, end. Next sentence.    ",
+                     "first sentence, end.", " Next sentence.    ");
         // -> First chunk is 21 long as we get to a soft boundary
-        assertChunks(20, "first sentence, stop.Next sentence.",
-                     "first sentence, stop.", "Next sentence.");
+        assertChunks(20, "first sentence, stop.Next sentence.    ",
+                     "first sentence, stop.", "Next sentence.    ");
         // -> First chunk is 22 long, as there is no boundary before reaching the hard limit
-        assertChunks(20, "first sentence, endNext sentence.",
-                     "first sentence, endNex", "t sentence.");
+        assertChunks(20, "first sentence, endNext sentence.      ",
+                     "first sentence, endNex", "t sentence.      ");
+    }
+
+    @Test
+    public void testChunkerLengthAdjustment() {
+        // Target is adjusted from 34 to 21 to get close to an even split
+        assertChunks(34, "This text is slightly above 34 characters.",
+                     "This text is slightly ", "above 34 characters.");
     }
 
     @Test
@@ -47,10 +57,10 @@ public class FixedLengthChunkerTest {
         String s = "\uD800\uDC00"; // A surrogate pair representing a code point in the "letter" class
         assertChunks(s + s + s + s + s, s + s + s + s + s);
         assertChunks(s + s + s + s + s + s, s + s + s + s + s + s);
-        assertChunks(s + s + s + s + s + s + s, s + s + s + s + s + s + s);
-        assertChunks(s + s + s + s + s + s + "." + s, s + s + s + s + s + s + ".", s);
+        assertChunks(s + s + s + s + s + s + s, s + s + s + s + s + s, s);
+        assertChunks(s + s + s + s + s + s + "." + s, s + s + s + s + s + s, "." + s);
         assertChunks(s + s + s + s + s + s + ". " + s, s + s + s + s + s + s + ".", " " + s);
-        assertChunks(s + s + s + s + s + s + "a" + s, s + s + s + s + s + s + "a", s);
+        assertChunks(s + s + s + s + s + s + "a" + s, s + s + s + s + s + s, "a" + s);
     }
 
     private void assertChunks(String text, String ... expectedChunks) {

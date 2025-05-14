@@ -18,6 +18,9 @@ import java.util.List;
  * the chunk split will be at that position, so the absolute max chunk length will be 10% above the target
  * length.
  *
+ * The given target chunk length is adjusted down to prefer a more even chunk length distribution to account for the
+ * fact that the text length will typically not be an integer multiple of the target chunk length.
+ *
  * @author bratseth
  */
 public class FixedLengthChunker implements Chunker {
@@ -63,9 +66,11 @@ public class FixedLengthChunker implements Chunker {
 
         public ChunkComputer(String text, int chunkLength, boolean isCjk) {
             this.text = new UnicodeString(text);
-            this.targetLength = chunkLength;
             this.isCjk = isCjk;
 
+            double chunkCount = (double)text.length() / chunkLength; // Counting codepoints would be more precise, but too expensive
+            int targetChunkCount = (int)Math.ceil(chunkCount);
+            this.targetLength = (int)Math.ceil(chunkCount/targetChunkCount * chunkLength);
             this.softMaxLength = (int)Math.round(targetLength * 1.05);
             this.hardMaxLength = (int)Math.round(targetLength * 1.10);
         }
