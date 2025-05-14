@@ -143,13 +143,6 @@ public class Flags {
             "Takes effect at redeployment",
             INSTANCE_ID);
 
-    public static final UnboundDoubleFlag MIN_NODE_RATIO_PER_GROUP = defineDoubleFlag(
-            "min-node-ratio-per-group", 0.0,
-            List.of("vekterli"), "2021-07-16", "2025-12-01",
-            "Minimum ratio of nodes that have to be available (i.e. not Down) in any hierarchic content cluster group for the group to be Up",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
-
     public static final UnboundBooleanFlag USE_V8_GEO_POSITIONS = defineFeatureFlag(
             "use-v8-geo-positions", true,
             List.of("arnej"), "2021-11-15", "2025-12-01",
