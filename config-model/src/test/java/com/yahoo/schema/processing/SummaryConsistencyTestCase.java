@@ -4,6 +4,7 @@ package com.yahoo.schema.processing;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import org.junit.jupiter.api.Test;
 
@@ -61,6 +62,30 @@ public class SummaryConsistencyTestCase {
                 }
                 """;
         assertThrows(IllegalArgumentException.class, () -> ApplicationBuilder.createFromString(schemaString).getSchema());
+    }
+
+    @Test
+    void testMismatchedElementSelectorsMadeConsistent() throws ParseException {
+        String sd = """
+                schema foo {
+                  document foo {
+                    field foo type array<string> {
+                        indexing: summary
+                        summary: matched-elements-only
+                    }
+                  }
+                  document-summary foo_summary {
+                    summary foo {
+                        source: foo
+                    }
+                  }
+                }
+                """;
+        var builder = ApplicationBuilder.createFromString(sd);
+        var schema = builder.getSchema();
+        var summary = schema.getSummary("foo_summary");
+        var summaryField = summary.getSummaryField("foo");
+        assertEquals(SummaryElementsSelector.selectByMatch(), summaryField.getElementsSelector());
     }
 
 }
