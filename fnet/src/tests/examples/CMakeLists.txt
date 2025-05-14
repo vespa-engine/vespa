@@ -4,5 +4,6 @@ vespa_add_executable(fnet_examples_test_app TEST
     examples_test.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_examples_test_app NO_VALGRIND COMMAND fnet_examples_test_app)
