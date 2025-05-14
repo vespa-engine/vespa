@@ -1038,7 +1038,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .getApplicationPackage()
                 .getDeploymentSpec()
                 .zoneEndpoint(context.properties().applicationId().instance(),
-                              context.properties().zone(),
+                              context.getDeployState().zone(),
                               cluster,
                               context.featureFlags().useNonPublicEndpointForTest());
 
