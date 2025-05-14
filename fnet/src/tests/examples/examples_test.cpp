@@ -1,18 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/process/process.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
-#include <thread>
 #include <atomic>
 #include <csignal>
+#include <latch>
+#include <thread>
 
 // reserved in vespa/factory/doc/port-ranges.txt
 static const int PORT0 = 18570;
 
 using vespalib::Process;
 using vespalib::make_string_short::fmt;
+using vespalib::test::Nexus;
 
 int run_proc(Process &proc, std::string &output) {
     proc.close();
@@ -35,7 +39,7 @@ void consume_result(Process &proc) {
         EXPECT_TRUE(status & 0x80000000);
         status &= 0x7fffffff;
         EXPECT_TRUE(WIFSIGNALED(status));
-        EXPECT_EQUAL(WTERMSIG(status), SIGTERM);
+        EXPECT_EQ(WTERMSIG(status), SIGTERM);
     }
 }
 
@@ -57,7 +61,7 @@ bool run_with_retry(const std::string &cmd) {
     return false;
 }
 
-TEST("usage") {
+TEST(ExamplesTest, usage) {
     EXPECT_FALSE(Process::run("exec ../../examples/ping/fnet_pingserver_app"));
     EXPECT_FALSE(Process::run("exec ../../examples/ping/fnet_pingclient_app"));
     EXPECT_FALSE(Process::run("exec ../../examples/frt/rpc/fnet_rpc_client_app"));
@@ -69,119 +73,169 @@ TEST("usage") {
     EXPECT_FALSE(Process::run("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app"));
 }
 
-TEST("timeout") {
+TEST(ExamplesTest, timeout) {
     std::string out;
     EXPECT_TRUE(Process::run("exec ../../examples/timeout/fnet_timeout_app", out));
     fprintf(stderr, "%s\n", out.c_str());
 }
 
-TEST_MT_F("ping", 2, pid_t(-1)) {
-    if (thread_id == 0) {
-        Process proc(fmt("exec ../../examples/ping/fnet_pingserver_app tcp/%d",
-                         PORT0), true);
-        f1 = proc.pid();
-        TEST_BARRIER();
-        TEST_DO(consume_result(proc));
-    } else {
-        TEST_BARRIER();
-        EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
-                                       PORT0)));
-        kill(f1, SIGTERM);
-    }
+TEST(ExamplesTest, ping) {
+    constexpr size_t num_threads = 2;
+    pid_t f1(-1);
+    std::latch latch(num_threads);
+    auto task = [&f1,&latch](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            Process proc(fmt("exec ../../examples/ping/fnet_pingserver_app tcp/%d",
+                             PORT0), true);
+            f1 = proc.pid();
+            latch.arrive_and_wait();
+            consume_result(proc);
+        } else {
+            latch.arrive_and_wait();
+            EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d",
+                                           PORT0)));
+            kill(f1, SIGTERM);
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_F("ping times out", 2, pid_t(-1)) {
-    if (thread_id == 0) {
-        Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
-                         PORT0), true);
-        f1 = proc.pid();
-        TEST_BARRIER();
-        TEST_DO(consume_result(proc));
-    } else {
-        float timeout_s = 0.1;
-        TEST_BARRIER();
-        EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d %f",
-                                       PORT0, timeout_s)));
-        kill(f1, SIGTERM);
-    }
+TEST(ExamplesTest, ping_times_out) {
+    constexpr size_t num_threads = 2;
+    pid_t f1(-1);
+    std::latch latch(num_threads);
+    auto task = [&f1,&latch](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+                             PORT0), true);
+            f1 = proc.pid();
+            latch.arrive_and_wait();
+            consume_result(proc);
+        } else {
+            float timeout_s = 0.1;
+            latch.arrive_and_wait();
+            EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/ping/fnet_pingclient_app tcp/localhost:%d %f",
+                                           PORT0, timeout_s)));
+            kill(f1, SIGTERM);
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_F("rpc client server", 2, pid_t(-1)) {
-    if (thread_id == 0) {
-        Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
-                         PORT0), true);
-        f1 = proc.pid();
-        TEST_BARRIER();
-        TEST_DO(consume_result(proc));
-    } else {
-        TEST_BARRIER();
-        EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_rpc_client_app tcp/localhost:%d",
-                                       PORT0)));
-        kill(f1, SIGTERM);
-    }
+TEST(ExamplesTest, rpc_client_server) {
+    constexpr size_t num_threads = 2;
+    pid_t f1(-1);
+    std::latch latch(num_threads);
+    auto task = [&f1,&latch](Nexus &ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+                             PORT0), true);
+            f1 = proc.pid();
+            latch.arrive_and_wait();
+            consume_result(proc);
+        } else {
+            latch.arrive_and_wait();
+            EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_rpc_client_app tcp/localhost:%d",
+                                           PORT0)));
+            kill(f1, SIGTERM);
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_F("rpc echo client", 2, pid_t(-1)) {
-    if (thread_id == 0) {
-        Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
-                         PORT0), true);
-        f1 = proc.pid();
-        TEST_BARRIER();
-        TEST_DO(consume_result(proc));
-    } else {
-        TEST_BARRIER();
-        EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_echo_client_app tcp/localhost:%d",
-                                       PORT0)));
-        kill(f1, SIGTERM);
-    }
+TEST(ExamplesTest, rpc_echo_client) {
+    constexpr size_t num_threads = 2;
+    pid_t f1(-1);
+    std::latch latch(num_threads);
+    auto task = [&f1,&latch](Nexus &ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+                             PORT0), true);
+            f1 = proc.pid();
+            latch.arrive_and_wait();
+            consume_result(proc);
+        } else {
+            latch.arrive_and_wait();
+            EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_echo_client_app tcp/localhost:%d",
+                                           PORT0)));
+            kill(f1, SIGTERM);
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_F("rpc info", 2, pid_t(-1)) {
-    if (thread_id == 0) {
-        Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
-                         PORT0), true);
-        f1 = proc.pid();
-        TEST_BARRIER();
-        TEST_DO(consume_result(proc));
-    } else {
-        TEST_BARRIER();
-        EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-info tcp/localhost:%d",
-                                       PORT0)));
-        EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-info tcp/localhost:%d verbose",
-                                       PORT0)));
-        kill(f1, SIGTERM);
-    }
+TEST(ExamplesTest, rpc_info) {
+    constexpr size_t num_threads = 2;
+    pid_t f1(-1);
+    std::latch latch(num_threads);
+    auto task = [&f1,&latch](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+                             PORT0), true);
+            f1 = proc.pid();
+            latch.arrive_and_wait();
+            consume_result(proc);
+        } else {
+            latch.arrive_and_wait();
+            EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-info tcp/localhost:%d",
+                                           PORT0)));
+            EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-info tcp/localhost:%d verbose",
+                                           PORT0)));
+            kill(f1, SIGTERM);
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_F("rpc invoke", 2, pid_t(-1)) {
-    if (thread_id == 0) {
-        Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
-                         PORT0), true);
-        f1 = proc.pid();
-        TEST_BARRIER();
-        TEST_DO(consume_result(proc));
-    } else {
-        TEST_BARRIER();
-        EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-invoke-bin tcp/localhost:%d frt.rpc.echo "
+TEST(ExamplesTest, rpc_invoke) {
+    constexpr size_t num_threads = 2;
+    pid_t f1(-1);
+    std::latch latch(num_threads);
+    auto task = [&f1,&latch](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_server_app tcp/%d",
+                             PORT0), true);
+            f1 = proc.pid();
+            latch.arrive_and_wait();
+            consume_result(proc);
+        } else {
+            latch.arrive_and_wait();
+            EXPECT_TRUE(
+                    run_with_retry(fmt("exec ../../examples/frt/rpc/vespa-rpc-invoke-bin tcp/localhost:%d frt.rpc.echo "
                                        "b:1 h:2 i:4 l:8 f:0.5 d:0.25 s:foo",
                                        PORT0)));
-        kill(f1, SIGTERM);
-    }
+            kill(f1, SIGTERM);
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MT_F("rpc callback client server", 2, pid_t(-1)) {
-    if (thread_id == 0) {
-        Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_callback_server_app tcp/%d",
-                         PORT0), true);
-        f1 = proc.pid();
-        TEST_BARRIER();
-        TEST_DO(consume_result(proc));
-    } else {
-        TEST_BARRIER();
-        EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
-                                       PORT0)));
-        kill(f1, SIGTERM);
-    }
+TEST(ExamplesTest, rpc_callback_client_server) {
+    constexpr size_t num_threads = 2;
+    pid_t f1(-1);
+    std::latch latch(num_threads);
+    auto task = [&f1,&latch](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {
+            Process proc(fmt("exec ../../examples/frt/rpc/fnet_rpc_callback_server_app tcp/%d",
+                             PORT0), true);
+            f1 = proc.pid();
+            latch.arrive_and_wait();
+            consume_result(proc);
+        } else {
+            latch.arrive_and_wait();
+            EXPECT_TRUE(run_with_retry(fmt("exec ../../examples/frt/rpc/fnet_rpc_callback_client_app tcp/localhost:%d",
+                                           PORT0)));
+            kill(f1, SIGTERM);
+        }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
