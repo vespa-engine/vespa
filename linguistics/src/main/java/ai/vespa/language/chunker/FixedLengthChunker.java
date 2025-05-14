@@ -84,8 +84,8 @@ public class FixedLengthChunker implements Chunker {
         private boolean endOfChunk(int currentLength) {
             if (currentLength < targetLength) return false;
             if (isCjk) return true;
-            if (currentLength <= softMaxLength) return !isLetter(index) && !isLetter(nextIndex());
-            if (currentLength <= hardMaxLength) return !isLetter(index);
+            if (currentLength < softMaxLength) return !isLetter(index) && !isLetter(nextIndex());
+            if (currentLength < hardMaxLength) return !isLetter(index);
             return true;
         }
 
