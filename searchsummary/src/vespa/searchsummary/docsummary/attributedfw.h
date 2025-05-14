@@ -22,7 +22,7 @@ class AttributeDFWFactory {
 public:
     static std::unique_ptr<DocsumFieldWriter> create(const IAttributeManager& attr_mgr,
                                                      const std::string& attr_name,
-                                                     SummaryElementsSelector& elements_selector);
+                                                     const SummaryElementsSelector& elements_selector);
 };
 
 class AttrDFW : public SimpleDFW

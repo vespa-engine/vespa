@@ -35,7 +35,7 @@ AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 
 std::unique_ptr<DocsumFieldWriter>
 AttributeCombinerDFW::create(const std::string &fieldName, IAttributeContext &attrCtx,
-                             SummaryElementsSelector& elements_selector)
+                             const SummaryElementsSelector& elements_selector)
 {
     StructFieldsResolver structFields(fieldName, attrCtx, true);
     if (structFields.has_error()) {

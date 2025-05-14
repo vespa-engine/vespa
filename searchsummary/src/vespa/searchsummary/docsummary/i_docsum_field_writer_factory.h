@@ -21,7 +21,7 @@ public:
      * Implementations can throw vespalib::IllegalArgumentException if setup of field writer fails.
      */
     virtual std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string& field_name,
-                                                                          SummaryElementsSelector& elements_selector,
+                                                                          const SummaryElementsSelector& elements_selector,
                                                                           const std::string& command,
                                                                           const std::string& source) = 0;
 };

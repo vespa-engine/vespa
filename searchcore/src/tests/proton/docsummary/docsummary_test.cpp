@@ -30,6 +30,7 @@
 #include <vespa/searchsummary/docsummary/i_docsum_field_writer_factory.h>
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/i_juniper_converter.h>
+#include <vespa/searchsummary/docsummary/struct_fields_mapper.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/document/annotation/annotation.h>
@@ -122,7 +123,7 @@ class MockDocsumFieldWriterFactory : public search::docsummary::IDocsumFieldWrit
 {
 public:
     std::unique_ptr<DocsumFieldWriter> create_docsum_field_writer(const std::string&,
-                                                                  SummaryElementsSelector&,
+                                                                  const SummaryElementsSelector&,
                                                                   const std::string&,
                                                                   const std::string&) override {
         return {};
@@ -970,7 +971,7 @@ Fixture::Fixture()
     _summaryCfg = ConfigGetter<vespa::config::search::SummaryConfig>::getConfig(
         cfgId, ::config::FileSpec(TEST_PATH("summary.cfg")));
     auto docsum_field_writer_factory = std::make_unique<MockDocsumFieldWriterFactory>();
-    _resultCfg.readConfig(*_summaryCfg, cfgId.c_str(), *docsum_field_writer_factory);
+    _resultCfg.readConfig(*_summaryCfg, cfgId.c_str(), *docsum_field_writer_factory, StructFieldsMapper());
 }
 
 Fixture::~Fixture() = default;

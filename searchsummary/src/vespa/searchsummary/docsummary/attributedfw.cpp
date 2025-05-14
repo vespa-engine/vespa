@@ -240,14 +240,11 @@ private:
     uint32_t _state_index; // index into _fieldWriterStates in GetDocsumsState
 
 public:
-    MultiAttrDFW(const std::string& attr_name, SummaryElementsSelector& elements_selector)
+    MultiAttrDFW(const std::string& attr_name, const SummaryElementsSelector& elements_selector)
         : AttrDFW(attr_name),
           _filter_elements(elements_selector.matched_elements_only()),
           _state_index(0)
     {
-        if (elements_selector.matched_elements_only()) {
-            elements_selector.matching_elements_fields().add_field(attr_name);
-        }
     }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
     void insertField(uint32_t docid, GetDocsumsState& state, Inserter& target) const override;
@@ -313,7 +310,7 @@ MultiAttrDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib::slim
 }
 
 std::unique_ptr<DocsumFieldWriter>
-create_multi_writer(const IAttributeVector& attr, SummaryElementsSelector& elements_selector)
+create_multi_writer(const IAttributeVector& attr, const SummaryElementsSelector& elements_selector)
 {
     auto type = attr.getBasicType();
     switch (type) {
@@ -337,7 +334,7 @@ create_multi_writer(const IAttributeVector& attr, SummaryElementsSelector& eleme
 std::unique_ptr<DocsumFieldWriter>
 AttributeDFWFactory::create(const IAttributeManager& attr_mgr,
                             const std::string& attr_name,
-                            SummaryElementsSelector& elements_selector)
+                            const SummaryElementsSelector& elements_selector)
 {
     auto ctx = attr_mgr.createContext();
     const auto* attr = ctx->getAttribute(attr_name);

@@ -36,7 +36,7 @@ public:
     bool isGenerated() const override { return true; }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
     static std::unique_ptr<DocsumFieldWriter> create(const std::string &fieldName, search::attribute::IAttributeContext &attrCtx,
-                                                     SummaryElementsSelector& elements_selector);
+                                                     const SummaryElementsSelector& elements_selector);
     void insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
 };
 

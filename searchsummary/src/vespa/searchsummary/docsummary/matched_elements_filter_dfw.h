@@ -25,11 +25,9 @@ private:
 
 public:
     MatchedElementsFilterDFW(const std::string& input_field_name);
+    static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name);
     static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name,
-                                                     SummaryElementsSelector& elements_selector);
-    static std::unique_ptr<DocsumFieldWriter> create(const std::string& input_field_name,
-                                                     search::attribute::IAttributeContext& attr_ctx,
-                                                     SummaryElementsSelector& elements_selector);
+                                                     search::attribute::IAttributeContext& attr_ctx);
     ~MatchedElementsFilterDFW() override;
     bool isGenerated() const override { return false; }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,

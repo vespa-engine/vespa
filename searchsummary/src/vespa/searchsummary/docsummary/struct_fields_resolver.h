@@ -45,7 +45,6 @@ public:
     const StringVector& get_array_fields() const { return _array_fields; }
     const StringVector& get_array_attributes() const { return _array_attributes; }
     bool has_error() const { return _error; }
-    void apply_to(MatchingElementsFields& fields) const;
 };
 
 }

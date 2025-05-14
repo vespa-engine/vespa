@@ -79,22 +79,5 @@ StructFieldsResolver::StructFieldsResolver(const std::string& field_name, const 
 
 StructFieldsResolver::~StructFieldsResolver() = default;
 
-void
-StructFieldsResolver::apply_to(MatchingElementsFields& fields) const
-{
-    if (is_map_of_struct()) {
-        if (_has_map_key) {
-            fields.add_mapping(_field_name, _map_key_attribute);
-        }
-        for (const auto& sub_field : _map_value_attributes) {
-            fields.add_mapping(_field_name, sub_field);
-        }
-    } else {
-        for (const auto& sub_field : _array_attributes) {
-            fields.add_mapping(_field_name, sub_field);
-        }
-    }
-}
-
 }
 

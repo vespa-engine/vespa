@@ -11,6 +11,7 @@ namespace search::docsummary {
 
 class IDocsumFieldWriterFactory;
 class ResultClass;
+class StructFieldsMapper;
 
 /**
  * This class represents the overall result configuration. A result
@@ -161,7 +162,9 @@ public:
      * @return true(success)/false(fail)
      * @param configId reference on server
      **/
-    bool readConfig(const SummaryConfig &cfg, const char *configId, IDocsumFieldWriterFactory& docsum_field_writer_factory);
+    bool readConfig(const SummaryConfig &cfg, const char *configId,
+                    IDocsumFieldWriterFactory& docsum_field_writer_factory,
+                    const StructFieldsMapper& struct_fields_mapper);
 };
 
 }

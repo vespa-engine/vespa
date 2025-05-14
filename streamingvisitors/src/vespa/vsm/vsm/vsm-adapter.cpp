@@ -6,18 +6,32 @@
 #include "query_term_filter_factory.h"
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
+#include <vespa/searchsummary/docsummary/struct_fields_mapper.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.vsm-adapter");
 
 using search::docsummary::IQueryTermFilterFactory;
 using search::docsummary::ResConfigEntry;
+using search::docsummary::StructFieldsMapper;
 using search::MatchingElements;
 using config::ConfigSnapshot;
 using vespa::config::search::SummaryConfig;
 using vespa::config::search::summary::JuniperrcConfig;
 
 namespace vsm {
+
+namespace {
+
+std::unique_ptr<StructFieldsMapper> make_struct_fields_mapper(VsmfieldsConfig& fields_config) {
+    auto mapper = std::make_unique<StructFieldsMapper>();
+    for (const auto& spec : fields_config.fieldspec) {
+        mapper->add(spec.name);
+    }
+    return mapper;
+}
+
+}
 
 GetDocsumsStateCallback::GetDocsumsStateCallback() :
     _summaryFeatures(),
@@ -146,7 +160,8 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     auto resCfg = std::make_unique<ResultConfig>();
     std::unique_ptr<IQueryTermFilterFactory> query_term_filter_factory = std::make_unique<QueryTermFilterFactory>(*_fieldsCfg.get(), *vsmSummary);
     auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summary.get()->usev8geopositions, *docsumTools, *query_term_filter_factory, *_fieldsCfg.get());
-    if ( !resCfg->readConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory)) {
+    auto struct_fields_mapper = make_struct_fields_mapper(*_fieldsCfg.get());
+    if ( !resCfg->readConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory, *struct_fields_mapper)) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
     }
     docsum_field_writer_factory.reset();

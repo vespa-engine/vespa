@@ -20,7 +20,7 @@ public:
     ~DocsumFieldWriterFactory() override;
     std::unique_ptr<search::docsummary::DocsumFieldWriter>
     create_docsum_field_writer(const std::string& field_name,
-                               search::docsummary::SummaryElementsSelector& elements_selector,
+                               const search::docsummary::SummaryElementsSelector& elements_selector,
                                const std::string& command,
                                const std::string& source) override;
 };

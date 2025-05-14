@@ -7,6 +7,7 @@
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/docsum_field_writer_state.h>
 #include <vespa/searchsummary/docsummary/attribute_combiner_dfw.h>
+#include <vespa/searchsummary/docsummary/struct_fields_mapper.h>
 #include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/searchsummary/test/mock_attribute_manager.h>
 #include <vespa/searchsummary/test/mock_state_callback.h>
@@ -17,6 +18,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_combiner_test");
 
+using search::MatchingElementsFields;
 using search::attribute::BasicType;
 using search::attribute::getUndefined;
 using search::docsummary::AttributeCombinerDFW;
@@ -24,6 +26,7 @@ using search::docsummary::GetDocsumsState;
 using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::IDocsumEnvironment;
 using search::docsummary::DocsumFieldWriter;
+using search::docsummary::StructFieldsMapper;
 using search::docsummary::SummaryElementsSelector;
 using search::docsummary::test::MockAttributeManager;
 using search::docsummary::test::MockStateCallback;
@@ -37,17 +40,19 @@ struct AttributeCombinerTest : public ::testing::Test
     std::unique_ptr<DocsumFieldWriter>  writer;
     MockStateCallback                   callback;
     GetDocsumsState                     state;
+    StructFieldsMapper                  mapper;
     std::unique_ptr<SummaryElementsSelector> elements_selector;
+    std::unique_ptr<MatchingElementsFields>  matching_elements_fields;
 
     AttributeCombinerTest();
     ~AttributeCombinerTest() override;
     void set_field(const std::string &field_name, bool filter_elements);
     void assertWritten(const std::string &exp, uint32_t docId);
     bool has_field(const std::string& field_name) const {
-        return elements_selector->matching_elements_fields().has_field(field_name);
+        return matching_elements_fields->has_field(field_name);
     }
     const std::string& enclosing_field(const std::string& field_name) const {
-        return elements_selector->matching_elements_fields().enclosing_field(field_name);
+        return matching_elements_fields->enclosing_field(field_name);
     }
 };
 
@@ -56,7 +61,9 @@ AttributeCombinerTest::AttributeCombinerTest()
       writer(),
       callback(),
       state(callback),
-      elements_selector()
+      mapper(),
+      elements_selector(),
+      matching_elements_fields()
 {
     attrs.build_string_attribute("array.name", {{"n1.1", "n1.2"}, {"n2"}, {"n3.1", "n3.2"}, {"", "n4.2"}, {}});
     attrs.build_int_attribute("array.val", BasicType::Type::INT8, {{ 10, 11}, {20, 21 }, {30}, { getUndefined<int8_t>(), 41}, {}});
@@ -79,6 +86,7 @@ AttributeCombinerTest::AttributeCombinerTest()
     callback.add_matching_elements(4, "map", {1});
 
     state._attrCtx = attrs.mgr().createContext();
+    mapper.setup(*state._attrCtx);
 }
 
 AttributeCombinerTest::~AttributeCombinerTest() = default;
@@ -86,12 +94,13 @@ AttributeCombinerTest::~AttributeCombinerTest() = default;
 void
 AttributeCombinerTest::set_field(const std::string &field_name, bool filter_elements)
 {
-
     if (filter_elements) {
-        elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match());
+        elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match(mapper.get_struct_fields(field_name)));
     } else {
         elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
     }
+    matching_elements_fields = std::make_unique<MatchingElementsFields>();
+    elements_selector->consider_apply_to(field_name, *matching_elements_fields);
     writer = AttributeCombinerDFW::create(field_name, *state._attrCtx, *elements_selector);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._fieldWriterStates.resize(1);
