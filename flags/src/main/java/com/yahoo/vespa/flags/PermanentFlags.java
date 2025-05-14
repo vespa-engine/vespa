@@ -178,9 +178,9 @@ public class PermanentFlags {
 
     public static final UnboundJacksonFlag<CustomerRpmServiceList> CUSTOMER_RPM_SERVICES = defineJacksonFlag(
             "customer-rpm-services", CustomerRpmServiceList.empty(), CustomerRpmServiceList.class,
-            "Specifies customer rpm services to run on enclave hosts.",
+            "Specifies customer rpm services to run on enclave tenant hosts.",
             "Takes effect on next host admin tick.",
-            TENANT_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID, ARCHITECTURE);
 
     private static final String VERSION_QUALIFIER_REGEX = "[a-zA-Z0-9_-]+";
     private static final Pattern QUALIFIER_PATTERN = Pattern.compile("^" + VERSION_QUALIFIER_REGEX + "$");
