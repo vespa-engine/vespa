@@ -63,7 +63,7 @@ public class FixedLengthChunker implements Chunker {
             while (index < text.length()) {
                 int currentChar = text.codePointAt(index);
                 currentChunk.appendCodePoint(currentChar);
-                if (++currentLength >= targetLength && (isCjk || (!isLetter(index) && !isLetter(nextIndex())))) {
+                if (endOfChunk(++currentLength)) {
                     chunks.add(new Chunk(currentChunk.toString()));
                     currentChunk.setLength(0);
                     currentLength = 0;
@@ -73,6 +73,12 @@ public class FixedLengthChunker implements Chunker {
             if (currentLength > 0)
                 chunks.add(new Chunk(currentChunk.toString()));
             return chunks;
+        }
+
+        private boolean endOfChunk(int currentLength) {
+             if (currentLength < targetLength) return false;
+             if (isCjk) return true;
+             return !isLetter(index) && !isLetter(nextIndex());
         }
 
         int charAt(int index) {
