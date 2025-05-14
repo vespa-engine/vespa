@@ -157,6 +157,16 @@ public class PartialSummaryHandler {
         }
     }
 
+    public static String enoughFields(String summaryClass, Result result) {
+        var summaryFields = result.getQuery().getPresentation().getSummaryFields();
+        if (isDefaultRequest(summaryClass) && ! summaryFields.isEmpty()) {
+            // it's enough to have the string we would use as fillMarker
+            return syntheticName(summaryFields);
+        } else {
+            return summaryClass;
+        }
+    }
+
     private void computeEffectiveDocsumDef() {
         if ((docsumDefinitions != null) && docsumDefinitions.hasDocsum(askForSummary)) {
             effectiveDocsumDef = docsumDefinitions.getDocsum(askForSummary);
