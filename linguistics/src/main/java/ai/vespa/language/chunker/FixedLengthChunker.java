@@ -45,7 +45,7 @@ public class FixedLengthChunker implements Chunker {
     private class ChunkComputer {
 
         final UnicodeString text;
-        final int chunkLength;
+        final int targetLength;
         final boolean isCjk;
 
         final List<Chunk> chunks = new ArrayList<>();
@@ -53,7 +53,7 @@ public class FixedLengthChunker implements Chunker {
 
         public ChunkComputer(String text, int chunkLength, boolean isCjk) {
             this.text = new UnicodeString(text);
-            this.chunkLength = chunkLength;
+            this.targetLength = chunkLength;
             this.isCjk = isCjk;
         }
 
@@ -63,7 +63,7 @@ public class FixedLengthChunker implements Chunker {
             while (index < text.length()) {
                 int currentChar = text.codePointAt(index);
                 currentChunk.appendCodePoint(currentChar);
-                if (++currentLength >= chunkLength && (isCjk || (!isLetter(index) && !isLetter(nextIndex())))) {
+                if (++currentLength >= targetLength && (isCjk || (!isLetter(index) && !isLetter(nextIndex())))) {
                     chunks.add(new Chunk(currentChunk.toString()));
                     currentChunk.setLength(0);
                     currentLength = 0;
