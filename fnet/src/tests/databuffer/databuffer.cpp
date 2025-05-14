@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/fnet/databuffer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <chrono>
 
-TEST("test resetIfEmpty") {
+TEST(DataBufferTest, test_resetIfEmpty) {
     FNET_DataBuffer buf(64);
     EXPECT_TRUE(buf.GetData() == buf.GetDead());
     EXPECT_TRUE(buf.GetData() == buf.GetFree());
@@ -13,13 +14,13 @@ TEST("test resetIfEmpty") {
     buf.resetIfEmpty();
     EXPECT_TRUE(buf.GetData() == buf.GetDead());
     EXPECT_FALSE(buf.GetData() == buf.GetFree());
-    EXPECT_EQUAL(11111111u, buf.ReadInt32());
+    EXPECT_EQ(11111111u, buf.ReadInt32());
     buf.resetIfEmpty();
     EXPECT_TRUE(buf.GetData() == buf.GetDead());
     EXPECT_TRUE(buf.GetData() == buf.GetFree());
 }
 
-TEST("testResize") {
+TEST(DataBufferTest, testResize) {
     FNET_DataBuffer buf(64);
     uint32_t initialSize = buf.GetBufSize();
     buf.WriteInt32(11111111);
@@ -52,7 +53,7 @@ TEST("testResize") {
     EXPECT_TRUE(buf.GetDataLen() == 0);
 }
 
-TEST("testSpeed") {
+TEST(DataBufferTest, testSpeed) {
   using clock = std::chrono::steady_clock;
   using ms_double = std::chrono::duration<double, std::milli>;
 
@@ -198,4 +199,4 @@ TEST("testSpeed") {
           ms.count());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

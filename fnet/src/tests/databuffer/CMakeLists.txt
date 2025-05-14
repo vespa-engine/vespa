@@ -4,5 +4,6 @@ vespa_add_executable(fnet_databuffer_test_app TEST
     databuffer.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_databuffer_test_app COMMAND fnet_databuffer_test_app)
