@@ -21,8 +21,9 @@ public class FixedLengthChunkerTest {
         assertChunks("");
         assertChunks("first", "first");
         assertChunks("first ", "first ");
-        assertChunks("first second", "first ", "second");
-        assertChunks("first second.", "first ", "second.");
+        assertChunks("first second", "first second");
+        assertChunks("first. second", "first.", " second");
+        assertChunks("first. second.", "first.", " second.");
         assertChunks("firstsecond. third....", "firstsecond.", " third.", "...");
     }
 
@@ -32,7 +33,8 @@ public class FixedLengthChunkerTest {
         assertChunks(s + s + s + s + s, s + s + s + s + s);
         assertChunks(s + s + s + s + s + s, s + s + s + s + s + s);
         assertChunks(s + s + s + s + s + s + s, s + s + s + s + s + s + s);
-        assertChunks(s + s + s + s + s + s + "." + s, s + s + s + s + s + s + ".", s);
+        assertChunks(s + s + s + s + s + s + "." + s, s + s + s + s + s + s + "." + s);
+        assertChunks(s + s + s + s + s + s + ". " + s, s + s + s + s + s + s + ".", " " + s);
         assertChunks(s + s + s + s + s + s + "a" + s, s + s + s + s + s + s + "a" + s);
     }
 
