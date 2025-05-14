@@ -21,8 +21,12 @@ import org.w3c.dom.Element;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.logging.Level;
 
+import static java.util.logging.Level.INFO;
+import static java.util.logging.Level.SEVERE;
+import static java.util.logging.Level.WARNING;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
@@ -38,7 +42,8 @@ public abstract class ContainerModelBuilderTestBase {
 
         @Override
         public void log(Level level, String message) {
-            msgs.add(new Pair<>(level, message));
+            if (Set.of(SEVERE, WARNING, INFO).contains(level))
+                msgs.add(new Pair<>(level, message));
         }
     }
 
