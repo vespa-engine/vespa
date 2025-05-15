@@ -15,8 +15,8 @@ import java.util.Map;
  */
 class TritonOnnxEvaluator implements OnnxEvaluator {
 
-    private final TritonOnnxClient triton;
     private final String modelName;
+    private final TritonOnnxClient triton;
     private final TritonOnnxClient.ModelMetadata modelMetadata;
     private final boolean isExplicitControlMode;
 

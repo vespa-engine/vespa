@@ -8,6 +8,7 @@ import ai.vespa.modelintegration.evaluator.OnnxRuntime;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.vespa.defaults.Defaults;
+import inference.ModelConfigOuterClass;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,15 +38,10 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
     }
 
     @Override
-    public OnnxEvaluator evaluatorOf(String modelPath) {
-        var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
-        if (isExplicitControlMode) copyModelToRepository(modelPath);
-        return new TritonOnnxEvaluator(client, modelName(modelPath), isExplicitControlMode);
-    }
-
-    @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
-        return evaluatorOf(modelPath); // TODO: pass options
+        var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
+        if (isExplicitControlMode) copyModelToRepository(modelPath, options);
+        return new TritonOnnxEvaluator(client, modelName(modelPath), isExplicitControlMode);
     }
 
     @Override
@@ -53,14 +49,18 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         client.close();
     }
 
-    /** Copies the model file to the model repository */
-    private void copyModelToRepository(String externalModelPath) {
+    /** Copies the model file to the model repository and serializes the config */
+    private void copyModelToRepository(String externalModelPath, OnnxEvaluatorOptions options) {
         var modelRepository = Defaults.getDefaults().underVespaHome(config.modelRepositoryPath());
-        var repositoryModelRoot = Paths.get(modelRepository, modelName(externalModelPath), "1");
-        var repositoryModelFile = repositoryModelRoot.resolve("model.onnx");
+        var repositoryModelRoot = Paths.get(modelRepository, modelName(externalModelPath));
+        var modelVersionRoot = repositoryModelRoot.resolve("1");
+        var repositoryModelFile = modelVersionRoot.resolve("model.onnx");
+        var configFile = repositoryModelRoot.resolve("config.pbtxt");
         try {
-            Files.createDirectories(repositoryModelRoot);
+            Files.createDirectories(modelVersionRoot);
             Files.copy(Paths.get(externalModelPath), repositoryModelFile, StandardCopyOption.REPLACE_EXISTING);
+            var modelConfig = generateConfigFromEvaluatorOptions(externalModelPath, options);
+            Files.writeString(configFile, modelConfig.toString());
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }
@@ -68,8 +68,29 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     // Hackish name to deduce model name from path.
     // It should ideally include a suffix based on the model's hash/timestamp/file size to avoid conflicts
-    private static String modelName(String modelPath) {
+    static String modelName(String modelPath) {
         var name = modelPath.substring(modelPath.lastIndexOf('/') + 1);
         return name.substring(0, name.lastIndexOf('.'));
+    }
+
+    private static ModelConfigOuterClass.ModelConfig generateConfigFromEvaluatorOptions(
+            String modelPaths, OnnxEvaluatorOptions options) {
+        return ModelConfigOuterClass.ModelConfig.newBuilder()
+                .setName(modelName(modelPaths))
+                .setPlatform("onnxruntime_onnx")
+                .setMaxBatchSize(0)
+                .putParameters("enable_mem_area", ModelConfigOuterClass.ModelParameter.newBuilder()
+                        .setStringValue("0")
+                        .build())
+                .putParameters("enable_mem_pattern", ModelConfigOuterClass.ModelParameter.newBuilder()
+                        .setStringValue("0")
+                        .build())
+                .putParameters("intra_op_thread_count", ModelConfigOuterClass.ModelParameter.newBuilder()
+                        .setStringValue(Integer.toString(options.intraOpThreads()))
+                        .build())
+                .putParameters("inter_op_thread_count", ModelConfigOuterClass.ModelParameter.newBuilder()
+                        .setStringValue(Integer.toString(options.interOpThreads()))
+                        .build())
+                .build();
     }
 }

@@ -1,0 +1,26 @@
+name: "dummy_transformer"
+platform: "onnxruntime_onnx"
+parameters {
+  key: "enable_mem_area"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "enable_mem_pattern"
+  value {
+    string_value: "0"
+  }
+}
+parameters {
+  key: "inter_op_thread_count"
+  value {
+    string_value: "5"
+  }
+}
+parameters {
+  key: "intra_op_thread_count"
+  value {
+    string_value: "5"
+  }
+}

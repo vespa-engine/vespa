@@ -32,6 +32,8 @@ public interface OnnxRuntime {
         return EmbeddedOnnxRuntime.isRuntimeAvailable(modelPath);
     }
 
-    OnnxEvaluator evaluatorOf(String modelPath);
+    default OnnxEvaluator evaluatorOf(String modelPath) {
+        return evaluatorOf(modelPath, OnnxEvaluatorOptions.createDefault());
+    }
     OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options);
 }
