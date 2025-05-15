@@ -620,9 +620,10 @@ public class ScriptTestCase {
         var chunks = context.getFieldValue("myChunks");
         assertTrue(chunks instanceof Array);
         var array = (Array<?>)chunks;
-        assertEquals(2, array.size());
-        assertEquals("Hello ", array.get(0).getWrappedValue());
-        assertEquals("world!", array.get(1).getWrappedValue());
+        assertEquals(3, array.size());
+        assertEquals("Hell", array.get(0).getWrappedValue());
+        assertEquals("o wo", array.get(1).getWrappedValue());
+        assertEquals("rld!", array.get(2).getWrappedValue());
     }
 
     @Test
