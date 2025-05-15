@@ -2,3 +2,4 @@
 namespace=jdisc.http.filter.security.cors
 
 allowedUrls[] string
+accessControlHeaders{} string
