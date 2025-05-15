@@ -6,6 +6,7 @@
 #include <vespa/eval/eval/value_type_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include "vespa/eval/eval/tensor_nodes.h"
 
 using namespace vespalib::eval;
 
@@ -28,7 +29,12 @@ void print_errors(const NodeTypes &types) {
     }
 }
 
-void verify(const std::string &type_expr, const std::string &type_spec) {
+using ext_check_t = std::function<void(const Function &fun, const NodeTypes &types)>;
+struct NopExtCheck {
+    void operator()(const Function &, const NodeTypes &) noexcept {}
+};
+void verify(const std::string &type_expr, const std::string &type_spec, ext_check_t ext_check = NopExtCheck())
+{
     SCOPED_TRACE(type_expr);
     auto function = Function::parse(type_expr, TypeSpecExtractor());
     ASSERT_TRUE(!function->has_error()) << "parse error: " << function->get_error();
@@ -41,6 +47,7 @@ void verify(const std::string &type_expr, const std::string &type_spec) {
     ValueType expected_type = ValueType::from_spec(type_spec);
     ValueType actual_type = types.get_type(function->root());
     EXPECT_EQ(expected_type, actual_type);
+    ext_check(*function, types);
 }
 
 TEST(NodeTypesTest, require_that_error_nodes_have_error_type)
@@ -372,6 +379,16 @@ TEST(NodeTypesTest, require_that_tensor_cell_cast_resolves_correct_type)
     verify("cell_cast(tensor<float>(x{},y[5]),int8)", "tensor<int8>(x{},y[5])");
 }
 
+TEST(NodeTypesTest, require_that_tensor_cell_order_resolves_correct_type)
+{
+    verify("cell_order(error,max)", "error");
+    verify("cell_order(double,max)", "double");
+    verify("cell_order(tensor<int8>(x{},y[3]),max)", "tensor<float>(x{},y[3])");
+    verify("cell_order(tensor<bfloat16>(x{},y[3]),max)", "tensor<float>(x{},y[3])");
+    verify("cell_order(tensor<float>(x{},y[3]),max)", "tensor<float>(x{},y[3])");
+    verify("cell_order(tensor<double>(x{},y[3]),max)", "tensor<double>(x{},y[3])");
+}
+
 TEST(NodeTypesTest, require_that_tensor_map_subspace_resolves_correct_type)
 {
     // double input
@@ -407,6 +424,34 @@ TEST(NodeTypesTest, require_that_tensor_map_subspace_resolves_correct_type)
     verify("map_subspaces(tensor<float>(x{}), f(a)(tensor(y{}):{a:3}))", "error");
     verify("map_subspaces(tensor<float>(y[10]), f(a)(a+tensor(y[7])(y)))", "error");
     verify("map_subspaces(tensor<float>(x{},y[10]), f(y)(y*tensor<float>(x[5])(x+3)))", "error");
+}
+
+TEST(NodeTypesTest, require_that_tensor_filter_subspace_resolves_correct_type)
+{
+    struct CheckFilterType {
+        ValueType expect_type;
+        CheckFilterType(const std::string &type_spec) : expect_type(ValueType::from_spec(type_spec)) {}
+        void operator()(const Function &fun, const NodeTypes &types) const {
+            auto filter = nodes::as<nodes::TensorFilterSubspaces>(fun.root());
+            ASSERT_TRUE(filter != nullptr);
+            // with the identity filter function, the result is the same type as the input
+            // this will also test that lambda types are exported into outer function types
+            const ValueType &filter_type = types.get_type(filter->lambda().root());
+            EXPECT_FALSE(expect_type.is_error());
+            EXPECT_EQ(expect_type, filter_type);
+        }
+    };
+    verify("filter_subspaces(error, f(a)(a))", "error");
+    verify("filter_subspaces(double, f(a)(a))", "error");
+    verify("filter_subspaces(tensor<float>(y[3]), f(a)(a))", "error");
+    verify("filter_subspaces(tensor<int8>(x{}), f(a)(a))", "tensor<int8>(x{})", CheckFilterType("double"));
+    verify("filter_subspaces(tensor<bfloat16>(x{}), f(a)(a))", "tensor<bfloat16>(x{})", CheckFilterType("double"));
+    verify("filter_subspaces(tensor<float>(x{}), f(a)(a))", "tensor<float>(x{})", CheckFilterType("double"));
+    verify("filter_subspaces(tensor<double>(x{}), f(a)(a))", "tensor<double>(x{})", CheckFilterType("double"));
+    verify("filter_subspaces(tensor<int8>(x{},y[3]), f(a)(a))", "tensor<int8>(x{},y[3])", CheckFilterType("tensor<int8>(y[3])"));
+    verify("filter_subspaces(tensor<bfloat16>(x{},y[3]), f(a)(a))", "tensor<bfloat16>(x{},y[3])", CheckFilterType("tensor<bfloat16>(y[3])"));
+    verify("filter_subspaces(tensor<float>(x{},y[3]), f(a)(a))", "tensor<float>(x{},y[3])", CheckFilterType("tensor<float>(y[3])"));
+    verify("filter_subspaces(tensor<double>(x{},y[3]), f(a)(a))", "tensor<double>(x{},y[3])", CheckFilterType("tensor<double>(y[3])"));
 }
 
 TEST(NodeTypesTest, require_that_double_only_expressions_can_be_detected)

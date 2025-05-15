@@ -580,6 +580,13 @@ void parse_tensor_map_subspaces(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorMapSubspaces>(std::move(child), std::move(lambda)));
 }
 
+void parse_tensor_filter_subspaces(ParseContext &ctx) {
+    Node_UP child = get_expression(ctx);
+    ctx.eat(',');
+    auto lambda = parse_lambda(ctx, 1);
+    ctx.push_expression(std::make_unique<nodes::TensorFilterSubspaces>(std::move(child), std::move(lambda)));
+}
+
 void parse_tensor_join(ParseContext &ctx) {
     Node_UP lhs = get_expression(ctx);
     ctx.eat(',');
@@ -851,6 +858,19 @@ void parse_tensor_cell_cast(ParseContext &ctx) {
     }
 }
 
+void parse_tensor_cell_order(ParseContext &ctx) {
+    Node_UP child = get_expression(ctx);
+    ctx.eat(',');
+    auto cell_order_str = get_ident(ctx, false);
+    auto cell_order = cell_order_from_string(cell_order_str);
+    ctx.skip_spaces();
+    if (cell_order.has_value()) {
+        ctx.push_expression(std::make_unique<nodes::TensorCellOrder>(std::move(child), cell_order.value()));
+    } else {
+        ctx.fail(make_string("unknown cell order: '%s'", cell_order_str.c_str()));
+    }
+}
+
 bool maybe_parse_call(ParseContext &ctx, const std::string &name) {
     ctx.skip_spaces();
     if (ctx.get() == '(') {
@@ -865,6 +885,8 @@ bool maybe_parse_call(ParseContext &ctx, const std::string &name) {
                 parse_tensor_map(ctx);
             } else if (name == "map_subspaces") {
                 parse_tensor_map_subspaces(ctx);
+            } else if (name == "filter_subspaces") {
+                parse_tensor_filter_subspaces(ctx);
             } else if (name == "join") {
                 parse_tensor_join(ctx);
             } else if (name == "merge") {
@@ -877,6 +899,8 @@ bool maybe_parse_call(ParseContext &ctx, const std::string &name) {
                 parse_tensor_concat(ctx);
             } else if (name == "cell_cast") {
                 parse_tensor_cell_cast(ctx);
+            } else if (name == "cell_order") {
+                parse_tensor_cell_order(ctx);
             } else {
                 ctx.fail(make_string("unknown function: '%s'", name.c_str()));
                 return false;

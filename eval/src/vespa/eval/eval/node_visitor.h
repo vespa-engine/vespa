@@ -30,12 +30,14 @@ struct NodeVisitor {
     // tensor nodes
     virtual void visit(const nodes::TensorMap          &) = 0;
     virtual void visit(const nodes::TensorMapSubspaces &) = 0;
+    virtual void visit(const nodes::TensorFilterSubspaces &) = 0;
     virtual void visit(const nodes::TensorJoin         &) = 0;
     virtual void visit(const nodes::TensorMerge        &) = 0;
     virtual void visit(const nodes::TensorReduce       &) = 0;
     virtual void visit(const nodes::TensorRename       &) = 0;
     virtual void visit(const nodes::TensorConcat       &) = 0;
     virtual void visit(const nodes::TensorCellCast     &) = 0;
+    virtual void visit(const nodes::TensorCellOrder    &) = 0;
     virtual void visit(const nodes::TensorCreate       &) = 0;
     virtual void visit(const nodes::TensorLambda       &) = 0;
     virtual void visit(const nodes::TensorPeek         &) = 0;
@@ -106,12 +108,14 @@ struct EmptyNodeVisitor : NodeVisitor {
     void visit(const nodes::Error              &) override {}
     void visit(const nodes::TensorMap          &) override {}
     void visit(const nodes::TensorMapSubspaces &) override {}
+    void visit(const nodes::TensorFilterSubspaces &) override {}
     void visit(const nodes::TensorJoin         &) override {}
     void visit(const nodes::TensorMerge        &) override {}
     void visit(const nodes::TensorReduce       &) override {}
     void visit(const nodes::TensorRename       &) override {}
     void visit(const nodes::TensorConcat       &) override {}
     void visit(const nodes::TensorCellCast     &) override {}
+    void visit(const nodes::TensorCellOrder    &) override {}
     void visit(const nodes::TensorCreate       &) override {}
     void visit(const nodes::TensorLambda       &) override {}
     void visit(const nodes::TensorPeek         &) override {}

@@ -57,6 +57,12 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::map_subspaces(a, node.lambda(), types.export_types(node.lambda().root()), stash);
     }
 
+    void make_filter_subspaces(const TensorFilterSubspaces &node) {
+        assert(stack.size() >= 1);
+        const auto &a = stack.back().get();
+        stack.back() = tensor_function::filter_subspaces(a, node.lambda(), types.export_types(node.lambda().root()), stash);
+    }
+
     void make_join(const Node &, operation::op2_t function) {
         assert(stack.size() >= 2);
         const auto &b = stack.back().get();
@@ -85,6 +91,12 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         assert(stack.size() >= 1);
         const auto &a = stack.back().get();
         stack.back() = tensor_function::cell_cast(a, cell_type, stash);
+    }
+
+    void make_cell_order(const Node &, CellOrder cell_order) {
+        assert(stack.size() >= 1);
+        const auto &a = stack.back().get();
+        stack.back() = tensor_function::cell_order(a, cell_order, stash);
     }
 
     bool maybe_make_const(const Node &node) {
@@ -207,6 +219,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const TensorMapSubspaces &node) override {
         make_map_subspaces(node);
     }
+    void visit(const TensorFilterSubspaces &node) override {
+        make_filter_subspaces(node);
+    }
     void visit(const TensorJoin &node) override {
         if (auto op2 = operation::lookup_op2(node.lambda())) {
             make_join(node, op2.value());
@@ -230,6 +245,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const TensorCellCast &node) override {
         make_cell_cast(node, node.cell_type());
+    }
+    void visit(const TensorCellOrder &node) override {
+        make_cell_order(node, node.cell_order());
     }
     void visit(const TensorCreate &node) override {
         make_create(node);

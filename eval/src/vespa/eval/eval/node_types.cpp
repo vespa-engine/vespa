@@ -162,13 +162,28 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         import_types(lambda_types);
         bind(res_type, node);
     }
+    void visit(const TensorFilterSubspaces &node) override {
+        const ValueType &in_type = type(node.child());
+        if (in_type.count_mapped_dimensions() == 0) {
+            return fail(node, "input value must have mapped dimensions", false);
+        }
+        auto inner_type = in_type.strip_mapped_dimensions();
+        std::vector<ValueType> arg_type({inner_type});
+        NodeTypes lambda_types(node.lambda(), arg_type);
+        const ValueType &lambda_res = lambda_types.get_type(node.lambda().root());
+        if (lambda_res.is_error()) {
+            import_errors(lambda_types);
+            return fail(node, "lambda function has type errors", false);
+        }
+        import_types(lambda_types);
+        bind(in_type, node);
+    }
     void visit(const TensorJoin &node) override { resolve_op2(node); }
     void visit(const TensorMerge &node) override {
-        bind(ValueType::merge(type(node.get_child(0)),
-                              type(node.get_child(1))), node);
+        bind(ValueType::merge(type(node.lhs()), type(node.rhs())), node);
     }
     void visit(const TensorReduce &node) override {
-        auto my_type = type(node.get_child(0)).reduce(node.dimensions());
+        auto my_type = type(node.child()).reduce(node.dimensions());
         if (my_type.is_error()) {
             auto str = fmt("aggr: %s, dimensions: [",
                            AggrNames::name_of(node.aggr())->c_str());
@@ -197,11 +212,14 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         }
     }
     void visit(const TensorConcat &node) override {
-        bind(ValueType::concat(type(node.get_child(0)),
-                               type(node.get_child(1)), node.dimension()), node);
+        bind(ValueType::concat(type(node.lhs()), type(node.rhs()), node.dimension()), node);
     }
     void visit(const TensorCellCast &node) override {
-        bind(type(node.get_child(0)).cell_cast(node.cell_type()), node);
+        bind(type(node.child()).cell_cast(node.cell_type()), node);
+    }
+    void visit(const TensorCellOrder &node) override {
+        // use 'map' to get a decayed version of the input type
+        bind(type(node.child()).map(), node);
     }
     void visit(const TensorCreate &node) override {
         for (size_t i = 0; i < node.num_children(); ++i) {

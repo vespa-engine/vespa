@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "cell_order.h"
 #include "basic_nodes.h"
 #include "function.h"
 #include "tensor_spec.h"
@@ -42,6 +43,28 @@ private:
     std::shared_ptr<Function const> _lambda;
 public:
     TensorMapSubspaces(Node_UP child, std::shared_ptr<Function const> lambda)
+        : _child(std::move(child)), _lambda(std::move(lambda)) {}
+    const Node &child() const { return *_child; }
+    const Function &lambda() const { return *_lambda; }
+    std::string dump(DumpContext &ctx) const override;
+    void accept(NodeVisitor &visitor) const override;
+    size_t num_children() const override { return 1; }
+    const Node &get_child(size_t idx) const override {
+        (void) idx;
+        assert(idx == 0);
+        return *_child;
+    }
+    void detach_children(NodeHandler &handler) override {
+        handler.handle(std::move(_child));
+    }
+};
+
+class TensorFilterSubspaces : public Node {
+private:
+    Node_UP _child;
+    std::shared_ptr<Function const> _lambda;
+public:
+    TensorFilterSubspaces(Node_UP child, std::shared_ptr<Function const> lambda)
         : _child(std::move(child)), _lambda(std::move(lambda)) {}
     const Node &child() const { return *_child; }
     const Function &lambda() const { return *_lambda; }
@@ -186,6 +209,28 @@ public:
         : _child(std::move(child)), _cell_type(cell_type) {}
     const Node &child() const { return *_child; }
     CellType cell_type() const { return _cell_type; }
+    std::string dump(DumpContext &ctx) const override;
+    void accept(NodeVisitor &visitor) const override;
+    size_t num_children() const override { return 1; }
+    const Node &get_child(size_t idx) const override {
+        (void) idx;
+        assert(idx == 0);
+        return *_child;
+    }
+    void detach_children(NodeHandler &handler) override {
+        handler.handle(std::move(_child));
+    }
+};
+
+class TensorCellOrder : public Node {
+private:
+    Node_UP  _child;
+    CellOrder _cell_order;
+public:
+    TensorCellOrder(Node_UP child, CellOrder cell_order)
+        : _child(std::move(child)), _cell_order(cell_order) {}
+    const Node &child() const { return *_child; }
+    CellOrder cell_order() const { return _cell_order; }
     std::string dump(DumpContext &ctx) const override;
     void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 1; }
