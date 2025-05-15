@@ -5,22 +5,26 @@
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/test/nexus.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/time.h>
+#include <barrier>
+#include <cassert>
 #include <thread>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
 
 using namespace vespalib;
 using vespalib::make_string_short::fmt;
+using vespalib::test::Nexus;
 
 CryptoEngine::SP null_crypto = std::make_shared<NullCryptoEngine>();
 
 struct BasicFixture {
     FNET_Transport    transport;
-    BasicFixture() : transport(fnet::TransportConfig(4).crypto(null_crypto)) {
+    BasicFixture() : transport(fnet::TransportConfig(4).crypto(null_crypto)) { }
+    void start() {
         ASSERT_TRUE(transport.Start());
     }
     ~BasicFixture() {
@@ -33,6 +37,8 @@ struct RpcFixture : FRT_Invokable {
     std::atomic<FNET_Connection *> back_conn;
     RpcFixture(BasicFixture &basic) : orb(&basic.transport), back_conn(nullptr) {
         init_rpc();
+    }
+    void listen() {
         ASSERT_TRUE(orb.Listen(0));
     }
     ~RpcFixture() {
@@ -41,8 +47,8 @@ struct RpcFixture : FRT_Invokable {
         }
     }
     uint32_t port() const { return orb.GetListenPort(); }
-    FRT_Target *connect(uint32_t port) {
-        return orb.GetTarget(port);
+    vespalib::ref_counted<FRT_Target> connect(uint32_t port) {
+        return vespalib::ref_counted<FRT_Target>::internal_attach(orb.GetTarget(port));
     }
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
@@ -64,45 +70,43 @@ struct RpcFixture : FRT_Invokable {
         ASSERT_TRUE(back_conn.load() != nullptr);
         back_conn.load()->internal_addref();
     }
-    FRT_Target *meta_connect(uint32_t port) {
-        auto *target = orb.Get2WayTarget(fmt("tcp/localhost:%u", port).c_str());
-        auto *req = orb.AllocRPCRequest();
+    void meta_connect(uint32_t port, vespalib::ref_counted<FRT_Target>& target) {
+        target = vespalib::ref_counted<FRT_Target>::internal_attach(orb.Get2WayTarget(fmt("tcp/localhost:%u", port).c_str()));
+        auto req = vespalib::ref_counted<FRT_RPCRequest>::internal_attach(orb.AllocRPCRequest());
         req->SetMethodName("connect");
-        target->InvokeSync(req, 300.0);
+        target->InvokeSync(req.get(), 300.0);
         ASSERT_TRUE(req->CheckReturnTypes(""));
-        req->internal_subref();
-        return target;
     };
     static int check_result(FRT_RPCRequest *req, uint64_t expect) {
         int num_ok = 0;
         if (!req->CheckReturnTypes("l")) {
-            ASSERT_EQUAL(req->GetErrorCode(), FRTE_RPC_CONNECTION);
+            EXPECT_EQ(req->GetErrorCode(), FRTE_RPC_CONNECTION);
+            assert(req->GetErrorCode() == FRTE_RPC_CONNECTION);
         } else {
             uint64_t ret = req->GetReturn()->GetValue(0)._intval64;
-            ASSERT_EQUAL(ret, expect);
+            EXPECT_EQ(ret, expect);
+            assert(ret == expect);
             ++num_ok;
         }
-        req->internal_subref();
         return num_ok;
     }
     static int verify_rpc(FNET_Connection *conn) {
-        auto *req = FRT_Supervisor::AllocRPCRequest();
+        auto req = vespalib::ref_counted<FRT_RPCRequest>::internal_attach(FRT_Supervisor::AllocRPCRequest());
         req->SetMethodName("inc");
         req->GetParams()->AddInt64(7);
-        FRT_Supervisor::InvokeSync(conn->Owner()->GetScheduler(), conn, req, 300.0);
-        return check_result(req, 8);
+        FRT_Supervisor::InvokeSync(conn->Owner()->GetScheduler(), conn, req.get(), 300.0);
+        return check_result(req.get(), 8);
     }
     static int verify_rpc(FRT_Target *target) {
-        auto *req = FRT_Supervisor::AllocRPCRequest();
+        auto req = vespalib::ref_counted<FRT_RPCRequest>::internal_attach(FRT_Supervisor::AllocRPCRequest());
         req->SetMethodName("inc");
         req->GetParams()->AddInt64(4);
-        target->InvokeSync(req, 300.0);
-        return check_result(req, 5);
+        target->InvokeSync(req.get(), 300.0);
+        return check_result(req.get(), 5);
     }
     int verify_rpc(FRT_Target *target, uint32_t port) {
-        auto *my_target = connect(port);
-        int num_ok = verify_rpc(target) + verify_rpc(my_target) + verify_rpc(back_conn.load());
-        my_target->internal_subref();
+        auto my_target = connect(port);
+        int num_ok = verify_rpc(target) + verify_rpc(my_target.get()) + verify_rpc(back_conn.load());
         return num_ok;
     }
 };
@@ -121,67 +125,80 @@ struct RpcFixture : FRT_Invokable {
 // --- #5 ---
 // test cleanup
 
-TEST_MT_FFFFF("require that supervisor can be detached from transport", 4, BasicFixture(), uint32_t(), uint32_t(), uint32_t(), uint32_t()) {
-    if (thread_id == 0) {        // server 1 (talks to client 1)
-        auto self = std::make_unique<RpcFixture>(f1);
-        f2 = self->port();
-        TEST_BARRIER(); // #1
-        auto *target = self->meta_connect(f4);
-        auto *client_target = self->connect(f3);
-        TEST_BARRIER(); // #2
-        TEST_BARRIER(); // #3
-        std::this_thread::sleep_for(50ms);
-        self.reset();   // <--- detach supervisor for server 1
-        TEST_BARRIER(); // #4
-        EXPECT_EQUAL(RpcFixture::verify_rpc(target), 0); // outgoing 2way target should be closed
-        EXPECT_EQUAL(RpcFixture::verify_rpc(client_target), 1); // pure client target should not be closed
-        TEST_BARRIER(); // #5
-        target->internal_subref();
-        client_target->internal_subref();
-    } else if (thread_id == 1) { // server 2 (talks to client 2)
-        auto self = std::make_unique<RpcFixture>(f1);
-        f3 = self->port();
-        TEST_BARRIER(); // #1
-        auto *target = self->meta_connect(f5);
-        TEST_BARRIER(); // #2
-        TEST_BARRIER(); // #3
-        TEST_BARRIER(); // #4
-        TEST_BARRIER(); // #5
-        target->internal_subref();
-    } else if (thread_id == 2) { // client 1 (talks to server 1)
-        auto self = std::make_unique<RpcFixture>(f1);
-        f4 = self->port();
-        TEST_BARRIER(); // #1
-        auto *target = self->connect(f2);
-        TEST_BARRIER(); // #2
-        ASSERT_TRUE(self->back_conn.load() != nullptr);
-        EXPECT_EQUAL(self->verify_rpc(target, f2), 3);
-        TEST_BARRIER(); // #3
-        auto until = steady_clock::now() + 120s;
-        while ((self->verify_rpc(target, f2) > 0) &&
-               (steady_clock::now() < until))
-        {
-            // wait until peer is fully detached
+TEST(DetachSupervisorTest, require_that_supervisor_can_be_detached_from_transport) {
+    constexpr size_t num_threads = 4;
+    BasicFixture f1;
+    ASSERT_NO_FATAL_FAILURE(f1.start());
+    uint32_t f2(0);
+    uint32_t f3(0);
+    uint32_t f4(0);
+    uint32_t f5(0);
+    std::barrier barrier(num_threads);
+    auto task = [&f1,&f2,&f3,&f4,&f5,&barrier](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        if (thread_id == 0) {        // server 1 (talks to client 1)
+            auto self = std::make_unique<RpcFixture>(f1);
+            ASSERT_NO_FATAL_FAILURE(self->listen());
+            f2 = self->port();
+            barrier.arrive_and_wait(); // #1
+            vespalib::ref_counted<FRT_Target> target;
+            ASSERT_NO_FATAL_FAILURE(self->meta_connect(f4, target));
+            auto client_target = self->connect(f3);
+            barrier.arrive_and_wait(); // #2
+            barrier.arrive_and_wait(); // #3
+            std::this_thread::sleep_for(50ms);
+            self.reset();   // <--- detach supervisor for server 1
+            barrier.arrive_and_wait(); // #4
+            EXPECT_EQ(RpcFixture::verify_rpc(target.get()), 0); // outgoing 2way target should be closed
+            EXPECT_EQ(RpcFixture::verify_rpc(client_target.get()), 1); // pure client target should not be closed
+            barrier.arrive_and_wait(); // #5
+        } else if (thread_id == 1) { // server 2 (talks to client 2)
+            auto self = std::make_unique<RpcFixture>(f1);
+            ASSERT_NO_FATAL_FAILURE(self->listen());
+            f3 = self->port();
+            barrier.arrive_and_wait(); // #1
+            vespalib::ref_counted<FRT_Target> target;
+            ASSERT_NO_FATAL_FAILURE(self->meta_connect(f5, target));
+            barrier.arrive_and_wait(); // #2
+            barrier.arrive_and_wait(); // #3
+            barrier.arrive_and_wait(); // #4
+            barrier.arrive_and_wait(); // #5
+        } else if (thread_id == 2) { // client 1 (talks to server 1)
+            auto self = std::make_unique<RpcFixture>(f1);
+            ASSERT_NO_FATAL_FAILURE(self->listen());
+            f4 = self->port();
+            barrier.arrive_and_wait(); // #1
+            auto target = self->connect(f2);
+            barrier.arrive_and_wait(); // #2
+            ASSERT_TRUE(self->back_conn.load() != nullptr);
+            EXPECT_EQ(self->verify_rpc(target.get(), f2), 3);
+            barrier.arrive_and_wait(); // #3
+            auto until = steady_clock::now() + 120s;
+            while ((self->verify_rpc(target.get(), f2) > 0) &&
+                   (steady_clock::now() < until))
+            {
+                // wait until peer is fully detached
+            }
+            barrier.arrive_and_wait(); // #4
+            EXPECT_EQ(self->verify_rpc(target.get(), f2), 0);
+            barrier.arrive_and_wait(); // #5
+        } else {                     // client 2 (talks to server 2)
+            ASSERT_EQ(thread_id, 3u);
+            auto self = std::make_unique<RpcFixture>(f1);
+            ASSERT_NO_FATAL_FAILURE(self->listen());
+            f5 = self->port();
+            barrier.arrive_and_wait(); // #1
+            auto target = self->connect(f3);
+            barrier.arrive_and_wait(); // #2
+            ASSERT_TRUE(self->back_conn.load() != nullptr);
+            EXPECT_EQ(self->verify_rpc(target.get(), f3), 3);
+            barrier.arrive_and_wait(); // #3
+            barrier.arrive_and_wait(); // #4
+            EXPECT_EQ(self->verify_rpc(target.get(), f3), 3);
+            barrier.arrive_and_wait(); // #5
         }
-        TEST_BARRIER(); // #4
-        EXPECT_EQUAL(self->verify_rpc(target, f2), 0);
-        TEST_BARRIER(); // #5
-        target->internal_subref();
-    } else {                     // client 2 (talks to server 2)
-        ASSERT_EQUAL(thread_id, 3u);
-        auto self = std::make_unique<RpcFixture>(f1);
-        f5 = self->port();
-        TEST_BARRIER(); // #1
-        auto *target = self->connect(f3);
-        TEST_BARRIER(); // #2
-        ASSERT_TRUE(self->back_conn.load() != nullptr);
-        EXPECT_EQUAL(self->verify_rpc(target, f3), 3);
-        TEST_BARRIER(); // #3
-        TEST_BARRIER(); // #4
-        EXPECT_EQUAL(self->verify_rpc(target, f3), 3);
-        TEST_BARRIER(); // #5
-        target->internal_subref();
-    }
+    };
+    Nexus::run(num_threads, task);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
