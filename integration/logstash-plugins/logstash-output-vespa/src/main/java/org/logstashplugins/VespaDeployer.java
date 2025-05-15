@@ -114,7 +114,7 @@ public class VespaDeployer {
             logger.info("   cd {}", appDir);
             logger.info("   vespa deploy --wait 900");
             logger.info("");
-            logger.info("For more information, see: https://cloud.vespa.ai/en/getting-started");
+            logger.info("For more information, see: https://docs.vespa.ai/en/cloud/getting-started");
             logger.info("===============================================================");
         }
     }

@@ -30,7 +30,8 @@ There are two modes of operation:
 
 ### Mode 1: generating an application package
 
-If you're just getting started with Vespa, you can use the `detect_schema` option to generate an application package that works with the data you're sending. That application package can be deployed to [Vespa Cloud](https://cloud.vespa.ai) or a local Vespa instance.
+If you're just getting started with Vespa, you can use the `detect_schema` option to generate an application package that works with the data you're sending.
+That application package can be deployed to [Vespa Cloud](https://vespa.ai/free-trial/) or a local Vespa instance.
 
 To process the data, the `input` and `filter` sections are the same as when you send data to Vespa (see the [config example below](#mode-2-sending-data-to-vespa)). The output section is different. Here's an example for Vespa Cloud:
 
