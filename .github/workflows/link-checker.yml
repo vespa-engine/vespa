@@ -17,7 +17,6 @@ jobs:
     secrets:
       github-app-id: ${{ secrets.LINK_CHECKER_APP_ID }}
       github-app-priv-key: ${{ secrets.LINK_CHECKER_PRIVATE_KEY }}
-      owner: vespaai
     with:
       ignore-urls: |-
         /slack.vespa.ai/
