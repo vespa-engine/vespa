@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * @author Simon Thoresen Hult
@@ -87,7 +88,8 @@ public class ScriptManager {
             for (String content : ilscript.content()) {
                 StatementExpression statement = parse(documentType, parserContext, content);
                 allStatements.add(statement);
-                List<String> inputFieldNames = InputExpression.InputFieldNameExtractor.runOn(statement);
+                List<String> allInputFieldNames = InputExpression.InputFieldNameExtractor.runOn(statement);
+                Set<String> requiredInputFields = InputExpression.RequiredInputFieldsExtractor.runOn(statement);
                 OutputExpression.OutputFieldNameExtractor outputFieldNameExtractor = new OutputExpression.OutputFieldNameExtractor();
                 statement.select(outputFieldNameExtractor, outputFieldNameExtractor);
                 statement.select(fieldPathOptimizer, fieldPathOptimizer);
@@ -95,18 +97,20 @@ public class ScriptManager {
                     String outputFieldName = outputFieldNameExtractor.getOutputFieldNames().get(0);
                     statement.setStatementOutput(documentType, documentType.getField(outputFieldName));
                 }
-                if (inputFieldNames.size() == 1) {
-                    String fieldName = inputFieldNames.get(0);
+                if (allInputFieldNames.size() == 1 || requiredInputFields.size() == 1) {
+                    String fieldName = (allInputFieldNames.size() == 1)
+                            ? allInputFieldNames.iterator().next()
+                            : requiredInputFields.iterator().next();
                     ScriptExpression fieldScript;
                     if (fieldScripts.containsKey(fieldName)) {
                         DocumentScript existing = fieldScripts.get(fieldName);
-                        List<StatementExpression> appendedList = new ArrayList<>(((ScriptExpression)existing.getExpression()).asList());
+                        List<StatementExpression> appendedList = new ArrayList<>(existing.getExpression().asList());
                         appendedList.add(statement);
                         fieldScript = new ScriptExpression(appendedList);
                     } else {
                         fieldScript = new ScriptExpression(statement);
                     }
-                    fieldScripts.put(fieldName, new DocumentScript(documentType, inputFieldNames, fieldScript));
+                    fieldScripts.put(fieldName, new DocumentScript(documentType, List.of(fieldName), fieldScript));
                 }
             }
 
