@@ -28,7 +28,7 @@ make_summary_elements_selector(const SummaryConfig::Classes::Fields::Elements& e
     using Select = SummaryConfig::Classes::Fields::Elements::Select;
     switch (elements.select) {
         case Select::BY_MATCH:
-            return SummaryElementsSelector::select_by_match(struct_fields_mapper.get_struct_fields(source));
+            return SummaryElementsSelector::select_by_match(source, struct_fields_mapper.get_struct_fields(source));
         case Select::BY_SUMMARY_FEATURE:
             return SummaryElementsSelector::select_by_summary_feature(elements.summaryFeature);
         case Select::ALL:
@@ -178,7 +178,7 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
                 auto source = field.source.empty() ? field.name : field.source;
                 auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
                 auto writer = factory(elements_selector);
-                elements_selector.consider_apply_to(source, *res_class_matching_elements_fields);
+                elements_selector.maybe_apply_to(*res_class_matching_elements_fields);
                 if (!resClass->addConfigEntry(fieldname, elements_selector, std::move(writer))) {
                     LOG(error, "%s %s.fields: duplicate name '%s'", configId, cfg_class.name.c_str(), fieldname);
                     rc = false;
@@ -189,7 +189,7 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
                 auto source = field.source.empty() ? field.name : field.source;
                 auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
                 auto writer = factory(elements_selector);
-                elements_selector.consider_apply_to(source, *union_of_all_matching_elements_fields);
+                elements_selector.maybe_apply_to(*union_of_all_matching_elements_fields);
                 unionOfAll->addConfigEntry(fieldname, elements_selector, std::move(writer));
             }
         }

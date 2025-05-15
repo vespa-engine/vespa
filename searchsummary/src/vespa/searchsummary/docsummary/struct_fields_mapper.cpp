@@ -38,16 +38,15 @@ StructFieldsMapper::setup(const search::attribute::IAttributeContext& ctx)
 std::vector<std::string>
 StructFieldsMapper::get_struct_fields(const std::string& field) const
 {
+    std::vector<std::string> result;
     auto it = _fields.find(field);
-    if (it == _fields.end()) {
-        return {};
-    } else {
-        std::vector<std::string> result;
+    if (it != _fields.end()) {
+        result.reserve(it->second.size());
         for (const auto& sf : it->second) {
             result.emplace_back(sf);
         }
-        return result;
     }
+    return result;
 }
 
 }
