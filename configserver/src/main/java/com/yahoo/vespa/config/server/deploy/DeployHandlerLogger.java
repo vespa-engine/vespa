@@ -17,7 +17,7 @@ import java.util.logging.Logger;
 
 /**
  * A {@link DeployLogger} which stores messages in a {@link Slime} tree, and holds a tenant and application name.
- * 
+ *
  * @author Ulf Lilleengen
  */
 public class DeployHandlerLogger implements DeployLogger {
@@ -46,7 +46,9 @@ public class DeployHandlerLogger implements DeployLogger {
         log.log(Level.FINE, throwable, () -> prefix + supplier.get());
 
         if (level.intValue() <= LogLevel.DEBUG.intValue() && !verbose) return;
-        logJson(level, supplier.get());
+        synchronized(logroot) {
+            logJson(level, supplier.get());
+        }
     }
 
     @Override
@@ -55,8 +57,10 @@ public class DeployHandlerLogger implements DeployLogger {
         if (level.intValue() <= LogLevel.DEBUG.intValue() && !verbose)
             return;
 
-        Cursor entry = logJson(level, message);
-        entry.setBool("applicationPackage", true);
+        synchronized(logroot) {
+            Cursor entry = logJson(level, message);
+            entry.setBool("applicationPackage", true);
+        }
         // Also tee to a normal log, Vespa log for example, but use level fine
         log.log(Level.FINE, () -> prefix + message);
     }
