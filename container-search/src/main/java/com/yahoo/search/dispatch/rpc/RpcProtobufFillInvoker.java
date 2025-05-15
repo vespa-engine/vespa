@@ -117,7 +117,20 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     @Override
     protected void getFillResults(Result result, String summaryClass) {
-        if (partialSummaryHandler.resultAlreadyFilled()) return;
+        if (partialSummaryHandler.resultAlreadyFilled()) {
+            if (outstandingResponses == 0) {
+                for (Hit hit : (Iterable<Hit>) result.hits()::unorderedDeepIterator) {
+                    if (hit.isFillable() && hit instanceof FastHit fastHit) {
+                        partialSummaryHandler.markFilled(hit);
+                    }
+                }
+                return;
+            } else {
+                // should never happen
+                log.log(Level.SEVERE, "result was already filled, but there are "
+                        + outstandingResponses + " outstanding responses");
+            }
+        }
         try {
             processResponses(result, summaryClass);
             result.hits().setSorted(false);
