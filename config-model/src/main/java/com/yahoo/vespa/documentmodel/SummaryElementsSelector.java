@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.documentmodel;
 
+import java.util.Objects;
+
 /**
  * A class selecting which summary elements of a multi-value field to render.
  */
@@ -31,4 +33,21 @@ public final class SummaryElementsSelector {
     public static SummaryElementsSelector selectByMatch() {
         return byMatch;
     }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other instanceof SummaryElementsSelector o) {
+           return select.equals(o.select) && summaryFeature.equals(o.summaryFeature);
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(select, summaryFeature);
+    }
+
+    @Override
+    public String toString() { return "SummaryElementsSelector{" + select + ", " + summaryFeature + "}"; }
 }
