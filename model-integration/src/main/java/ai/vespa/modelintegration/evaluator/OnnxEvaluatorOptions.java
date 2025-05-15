@@ -3,6 +3,7 @@
 package ai.vespa.modelintegration.evaluator;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Session options for ONNX Runtime evaluation
@@ -15,11 +16,13 @@ public record OnnxEvaluatorOptions(
         int interOpThreads,
         int intraOpThreads,
         int gpuDeviceNumber,
-        boolean gpuDeviceRequired) {
+        boolean gpuDeviceRequired,
+        /** Optional runtime specific raw config */Optional<String> rawConfig) {
 
 
     public OnnxEvaluatorOptions {
         Objects.requireNonNull(executionMode, "executionMode cannot be null");
+        Objects.requireNonNull(rawConfig, "rawConfig cannot be null");
     }
 
     public static OnnxEvaluatorOptions createDefault() {
@@ -42,6 +45,7 @@ public record OnnxEvaluatorOptions(
         private int intraOpThreads;
         private int gpuDeviceNumber;
         private boolean gpuDeviceRequired;
+        private String rawConfig;
 
         public Builder() {
             executionMode = ExecutionMode.SEQUENTIAL;
@@ -50,6 +54,7 @@ public record OnnxEvaluatorOptions(
             intraOpThreads = quarterVcpu;
             gpuDeviceNumber = -1;
             gpuDeviceRequired = false;
+            rawConfig = null;
         }
 
         public Builder(OnnxEvaluatorOptions options) {
@@ -58,6 +63,7 @@ public record OnnxEvaluatorOptions(
             this.intraOpThreads = options.intraOpThreads();
             this.gpuDeviceNumber = options.gpuDeviceNumber();
             this.gpuDeviceRequired = options.gpuDeviceRequired();
+            this.rawConfig = options.rawConfig().orElse(null);
         }
 
         public Builder setExecutionMode(String mode) {
@@ -105,13 +111,19 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
+        public Builder setRawConfig(String config) {
+            this.rawConfig = config;
+            return this;
+        }
+
         public OnnxEvaluatorOptions build() {
             return new OnnxEvaluatorOptions(
                     executionMode,
                     interOpThreads,
                     intraOpThreads,
                     gpuDeviceNumber,
-                    gpuDeviceRequired);
+                    gpuDeviceRequired,
+                    Optional.ofNullable(rawConfig));
         }
     }
 

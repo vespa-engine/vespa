@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.component;
 
+import com.yahoo.config.FileReference;
 import com.yahoo.config.ModelReference;
 import com.yahoo.config.model.api.OnnxModelOptions;
 import com.yahoo.config.model.deploy.DeployState;
@@ -8,6 +9,7 @@ import com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import org.w3c.dom.Element;
 
+import java.util.Optional;
 import java.util.Set;
 
 import static com.yahoo.embedding.huggingface.HuggingFaceEmbedderConfig.PoolingStrategy;
@@ -27,6 +29,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     private final OnnxModelOptions onnxModelOptions;
     private final ModelReference modelRef;
     private final ModelReference vocabRef;
+    private final FileReference configRef;
     private final Integer maxTokens;
     private final String transformerInputIds;
     private final String transformerAttentionMask;
@@ -49,6 +52,10 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
                 getChildValue(xml, "onnx-gpu-device").map(Integer::parseInt).map(OnnxModelOptions.GpuDevice::new));
         modelRef = model.modelReference();
         vocabRef = Model.fromXmlOrImplicitlyFromOnnxModel(state, xml, model, "tokenizer-model", Set.of(HF_TOKENIZER)).modelReference();
+        configRef = getChildValue(xml, "internal-onnx-config-file")
+                .filter(String::isBlank)
+                .map(value -> state.getFileRegistry().addFile(value))
+                .orElse(null);
         maxTokens = getChildValue(xml, "max-tokens").map(Integer::parseInt).orElse(null);
         transformerInputIds = getChildValue(xml, "transformer-input-ids").orElse(null);
         transformerAttentionMask = getChildValue(xml, "transformer-attention-mask").orElse(null);
@@ -68,6 +75,7 @@ public class HuggingFaceEmbedder extends TypedComponent implements HuggingFaceEm
     @Override
     public void getConfig(HuggingFaceEmbedderConfig.Builder b) {
         b.transformerModel(modelRef).tokenizerPath(vocabRef);
+        if (configRef != null) b.transformerOnnxConfigPath(Optional.ofNullable(configRef));
         if (maxTokens != null) b.transformerMaxTokens(maxTokens);
         if (transformerInputIds != null) b.transformerInputIds(transformerInputIds);
         if (transformerAttentionMask != null) b.transformerAttentionMask(transformerAttentionMask);

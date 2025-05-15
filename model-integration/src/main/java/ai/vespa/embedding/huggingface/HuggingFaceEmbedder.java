@@ -73,6 +73,7 @@ public class HuggingFaceEmbedder extends AbstractComponent implements Embedder {
                 .setThreads(config.transformerInterOpThreads(), config.transformerIntraOpThreads());
         if (config.transformerGpuDevice() >= 0)
             optionsBuilder.setGpuDevice(config.transformerGpuDevice());
+
         var onnxOpts = optionsBuilder.build();
         evaluator = onnx.evaluatorOf(config.transformerModel().toString(), onnxOpts);
         tokenTypeIdsName = detectTokenTypeIds(config, evaluator);

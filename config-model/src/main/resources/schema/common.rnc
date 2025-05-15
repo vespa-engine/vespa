@@ -157,7 +157,10 @@ OnnxModelExecutionParams =
     element onnx-execution-mode { "parallel" | "sequential" }? &
     element onnx-interop-threads { xsd:integer }? &
     element onnx-intraop-threads { xsd:integer }? &
-    element onnx-gpu-device { xsd:integer }?
+    element onnx-gpu-device { xsd:integer }? &
+    # Undocumented and internal for now. Not really a model reference, but convient for now.
+    # Should probably be converted to a 'path' only element before being an official feature.
+    element internal-onnx-config-file { ModelReference }?
 
 EmbedderPoolingStrategy = element pooling-strategy { "cls" | "mean" }?
 

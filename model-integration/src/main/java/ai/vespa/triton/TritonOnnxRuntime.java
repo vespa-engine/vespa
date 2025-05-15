@@ -59,8 +59,9 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         try {
             Files.createDirectories(modelVersionRoot);
             Files.copy(Paths.get(externalModelPath), repositoryModelFile, StandardCopyOption.REPLACE_EXISTING);
-            var modelConfig = generateConfigFromEvaluatorOptions(externalModelPath, options);
-            Files.writeString(configFile, modelConfig.toString());
+            var modelConfig = options.rawConfig()
+                    .orElseGet(() -> generateConfigFromEvaluatorOptions(externalModelPath, options).toString());
+            Files.writeString(configFile, modelConfig);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }
