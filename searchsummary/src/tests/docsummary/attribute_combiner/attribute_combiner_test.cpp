@@ -95,12 +95,12 @@ void
 AttributeCombinerTest::set_field(const std::string &field_name, bool filter_elements)
 {
     if (filter_elements) {
-        elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match(mapper.get_struct_fields(field_name)));
+        elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match(field_name, mapper.get_struct_fields(field_name)));
     } else {
         elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
     }
     matching_elements_fields = std::make_unique<MatchingElementsFields>();
-    elements_selector->consider_apply_to(field_name, *matching_elements_fields);
+    elements_selector->maybe_apply_to(*matching_elements_fields);
     writer = AttributeCombinerDFW::create(field_name, *state._attrCtx, *elements_selector);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._fieldWriterStates.resize(1);

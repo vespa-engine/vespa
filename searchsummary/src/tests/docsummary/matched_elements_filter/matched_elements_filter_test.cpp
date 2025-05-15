@@ -237,10 +237,10 @@ public:
     ~MatchedElementsFilterTest() override;
     std::unique_ptr<DocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
         auto elements_selector =
-            SummaryElementsSelector::select_by_match(_mapper.get_struct_fields(input_field_name));
+            SummaryElementsSelector::select_by_match(input_field_name, _mapper.get_struct_fields(input_field_name));
         _elements_selector = std::make_unique<SummaryElementsSelector>(std::move(elements_selector));
         _matching_elements_fields = std::make_unique<MatchingElementsFields>();
-        _elements_selector->consider_apply_to(input_field_name, *_matching_elements_fields);
+        _elements_selector->maybe_apply_to(*_matching_elements_fields);
         return MatchedElementsFilterDFW::create(input_field_name, _attr_ctx);
     }
     void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {

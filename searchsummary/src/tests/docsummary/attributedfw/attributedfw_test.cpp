@@ -62,7 +62,7 @@ public:
 
     void setup(const std::string& field_name, bool filter_elements) {
         if (filter_elements) {
-            _elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match({}));
+            _elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_by_match(field_name, {}));
         } else {
             _elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
         }
@@ -146,7 +146,7 @@ TEST_F(AttributeDFWTest, matched_elements_fields_is_populated)
 {
     setup("array_str", true);
     MatchingElementsFields matching_elements_fields;
-    _elements_selector->consider_apply_to("array_str", matching_elements_fields);
+    _elements_selector->maybe_apply_to(matching_elements_fields);
     EXPECT_TRUE(matching_elements_fields.has_field("array_str"));
 }
 
