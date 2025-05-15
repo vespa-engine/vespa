@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * PartialSummaryHandler is a helper class to help handling of fill()
@@ -28,6 +30,7 @@ import java.util.Set;
  * @author arnej
  */
 public class PartialSummaryHandler {
+    private static final Logger log = Logger.getLogger(PartialSummaryHandler.class.getName());
 
     /** resolve summary class to use when none provided */
     public static String resolveSummaryClass(Result result) {
@@ -75,6 +78,11 @@ public class PartialSummaryHandler {
     // does this Hit need to be filled
     public boolean needFill(Hit hit) {
         return needsMoreFill(hit.getFilled());
+    }
+
+    // is the entire Result already filled as needed
+    public boolean resultAlreadyFilled() {
+        return ! needsMoreFill(resultHasFilled);
     }
 
     // what is the currently-effective DocsumDefinition
@@ -196,6 +204,8 @@ public class PartialSummaryHandler {
             else if (isFieldListRequest(wantClass)) {
                 var fieldSet = parseFieldList(wantClass);
                 knownSummaryClasses.put(wantClass, fieldSet);
+            } else {
+                log.log(Level.WARNING, "unknown summary class: " + wantClass);
             }
         }
         var set = knownSummaryClasses.get(wantClass);
