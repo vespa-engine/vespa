@@ -1,17 +1,16 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/util/stringfmt.h>
+
+#include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
-#include <vespa/fnet/frt/rpcrequest.h>
-class Test;
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/stringfmt.h>
+
 class SimpleHandler;
 class MediumHandler;
 class ComplexHandler;
 
 //-------------------------------------------------------------
-
-Test             *_test;
 
 std::unique_ptr<fnet::frt::StandaloneFRT> _server;
 FRT_Supervisor   *_supervisor;
@@ -65,9 +64,9 @@ public:
    * Destructor.  No cleanup needed for base class.
    */
   virtual ~ComplexA() {
-      EXPECT_EQUAL(1u, _fill1);
-      EXPECT_EQUAL(2u, _fill2);
-      EXPECT_EQUAL(3u, _fill3);
+      EXPECT_EQ(1u, _fill1);
+      EXPECT_EQ(2u, _fill2);
+      EXPECT_EQ(3u, _fill3);
   }
 
   ComplexA() : _fill1(1), _fill2(2), _fill3(3) {}
@@ -87,9 +86,9 @@ public:
    * Destructor.  No cleanup needed for base class.
    */
   virtual ~ComplexB() {
-      EXPECT_EQUAL(1u, _fill1);
-      EXPECT_EQUAL(2u, _fill2);
-      EXPECT_EQUAL(3u, _fill3);
+      EXPECT_EQ(1u, _fill1);
+      EXPECT_EQ(2u, _fill2);
+      EXPECT_EQ(3u, _fill3);
   }
 
   ComplexB() : _fill1(1), _fill2(2), _fill3(3) {}
@@ -130,7 +129,25 @@ public:
 
 //-------------------------------------------------------------
 
-void initTest() {
+class MethodPtTest : public ::testing::Test
+{
+protected:
+    MethodPtTest();
+    ~MethodPtTest() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
+};
+
+MethodPtTest::MethodPtTest()
+    : ::testing::Test()
+{
+}
+
+MethodPtTest::~MethodPtTest() = default;
+
+void
+MethodPtTest::SetUpTestSuite()
+{
     _server = std::make_unique<fnet::frt::StandaloneFRT>();
   _supervisor      = &_server->supervisor();
   _simpleHandler   = new SimpleHandler();
@@ -175,7 +192,9 @@ void initTest() {
 }
 
 
-void finiTest() {
+void
+MethodPtTest::TearDownTestSuite()
+{
   delete _complexHandler;
   delete _mediumHandler;
   delete _simpleHandler;
@@ -184,7 +203,7 @@ void finiTest() {
 }
 
 
-TEST("method pt") {
+TEST_F(MethodPtTest, method_pt) {
   FRT_RPCRequest *req = FRT_Supervisor::AllocRPCRequest();
   req->SetMethodName("simpleMethod");
   _target->InvokeSync(req, 60.0);
@@ -252,8 +271,4 @@ ComplexHandler::RPC_Method(FRT_RPCRequest *req)
 
 //-------------------------------------------------------------
 
-TEST_MAIN() {
-    initTest();
-    TEST_RUN_ALL();
-    finiTest();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
