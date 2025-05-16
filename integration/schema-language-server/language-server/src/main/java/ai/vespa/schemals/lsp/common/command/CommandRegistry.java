@@ -8,6 +8,7 @@ import org.eclipse.lsp4j.Command;
 import org.eclipse.lsp4j.ExecuteCommandParams;
 
 import ai.vespa.schemals.lsp.common.command.commandtypes.CommandList;
+import ai.vespa.schemals.lsp.common.command.commandtypes.SetComponentIds;
 import ai.vespa.schemals.lsp.common.command.commandtypes.CreateSchemaFile;
 import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentOpen;
 import ai.vespa.schemals.lsp.common.command.commandtypes.DocumentParse;
@@ -136,6 +137,10 @@ public class CommandRegistry {
              */
             public String title() { return "Get defined schemas"; }
             public SchemaCommand construct() { return new GetDefinedSchemas(); }
+        },
+        SET_COMPONENT_IDS {
+            public String title() { return "Set component ids"; }
+            public SchemaCommand construct() { return new SetComponentIds(); }
         }
     }
 

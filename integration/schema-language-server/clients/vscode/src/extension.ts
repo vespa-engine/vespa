@@ -225,8 +225,8 @@ export function activate(context: vscode.ExtensionContext) {
         if (schemaClient === null) { return false; }
         try {
             const result = await schemaClient.sendRequest("workspace/executeCommand", {
-                command: "GET_DEFINED_SCHEMAS",
-                arguments: JSON.parse(args)
+                command: "SET_COMPONENT_IDS",
+                arguments: [JSON.parse(args)]
             });
             return result;
         } catch (err) {

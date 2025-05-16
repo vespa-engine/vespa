@@ -73,7 +73,7 @@ public class VespaExtension implements IXMLExtension {
         hoverParticipant             = new HoverParticipant(serverPath);
         uriResolverExtension         = new ServicesURIResolverExtension(serverPath);
         definitionParticipant        = new DefinitionParticipant();
-        documentLifecycleParticipant = new DocumentLifecycleParticipant(registry.getCommandService(), serviceDocument);
+        documentLifecycleParticipant = new DocumentLifecycleParticipant(serviceDocument);
         diagnosticsParticipant       = new DiagnosticsParticipant(uriResolverExtension);
         codeActionParticipant        = new CodeActionParticipant();
         completionParticipant        = new CompletionParticipant();

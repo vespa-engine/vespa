@@ -17,18 +17,18 @@ public class ServiceDocument {
     private record Component(String componentId, int start, int end) {
     }
 
-    public void didChange(DOMDocument document) {
-        // printTree(document.getChildren());
-
+    public void updateComponents(DOMDocument document) {
         List<Component> components = findComponents(document);
         String componentsIds = "[";
 
         for (Component cmp : components) {
             componentsIds += "\"" + cmp.componentId() + "\",";
         }
-        componentsIds = componentsIds.substring(0, componentsIds.length() - 1) + "]";
+        if (componentsIds.length() > 1) {
+            componentsIds = componentsIds.substring(0, componentsIds.length() - 1);
+        }
+        componentsIds += "]";
         SchemaLSCommands.instance().sendComponentIds(componentsIds);
-
     }
 
     private List<Component> findComponents(DOMDocument document) {

@@ -20,6 +20,8 @@ import ai.vespa.schemals.parser.indexinglanguage.ast.ATTRIBUTE;
 import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
 import ai.vespa.schemals.parser.indexinglanguage.ast.INDEX;
 import ai.vespa.schemals.parser.indexinglanguage.ast.SUMMARY;
+import ai.vespa.schemals.parser.indexinglanguage.ast.chunkExp;
+import ai.vespa.schemals.parser.indexinglanguage.ast.embedExp;
 import ai.vespa.schemals.parser.indexinglanguage.ast.fieldName;
 import ai.vespa.schemals.parser.indexinglanguage.ast.inputExp;
 import ai.vespa.schemals.parser.indexinglanguage.ast.script;
@@ -149,6 +151,20 @@ public class IndexingLanguageResolver {
                 node.setSymbol(type, context.fileURI());
             }
             node.setSymbolStatus(SymbolStatus.UNRESOLVED);
+        }
+
+        if ((node.isASTInstance(embedExp.class) || node.isASTInstance(chunkExp.class)) && node.size() > 1) {
+            Node child = node.get(1);
+            String componentId = child.getText();
+            Optional<Boolean> result = context.schemaIndex().componentIdExists(componentId);
+            if (result.isPresent() && !result.get()) {
+                diagnostics.add(new SchemaDiagnostic.Builder()
+                    .setRange(child.getRange())
+                    .setMessage("No component found with id " + componentId)
+                    .setSeverity(DiagnosticSeverity.Error)
+                    .build()
+                );
+            }
         }
 
         for (Node child : node) {

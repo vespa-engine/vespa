@@ -55,6 +55,8 @@ public class SchemaIndex {
     private ClientLogger logger;
     private FieldIndex fieldIndex;
 
+    private Optional<Set<String>> componentIdsInServiceXML;
+
     private Map<SymbolType, List<Symbol>> symbolDefinitions;
     private Map<Symbol, List<Symbol>> symbolReferences;
     private Map<Symbol, Symbol> definitionOfReference;
@@ -87,6 +89,8 @@ public class SchemaIndex {
         }
 
         this.fieldIndex = new FieldIndex(logger, this);
+
+        this.componentIdsInServiceXML = Optional.empty();
     }
 
     public FieldIndex fieldIndex() {
@@ -564,6 +568,18 @@ public class SchemaIndex {
     public List<Symbol> getUnresolvedSymbols() {
         unresolvedSymbols.removeIf(symbol -> getSymbolDefinition(symbol).isPresent());
         return List.copyOf(unresolvedSymbols);
+    }
+
+    public void setComponentIdsInServiceXML(Set<String> componentIds) {
+        this.componentIdsInServiceXML = Optional.of(componentIds);
+    }
+
+    public Optional<Boolean> componentIdExists(String id) {
+        if (this.componentIdsInServiceXML.isEmpty()) {
+            return Optional.empty();
+        }
+
+        return Optional.of(this.componentIdsInServiceXML.get().contains(id));
     }
 
     /**
