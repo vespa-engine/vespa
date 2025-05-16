@@ -17,6 +17,7 @@ vespa_add_library(searchsummary_docsummary OBJECT
     docsumwriter.cpp
     document_id_dfw.cpp
     dynamicteaserdfw.cpp
+    element_ids.cpp
     empty_dfw.cpp
     empty_docsum_field_writer_state.cpp
     geoposdfw.cpp
