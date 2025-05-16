@@ -158,12 +158,11 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             std::string command = field.command;
             std::string source_name = field.source;
             LOG(info, "Reconfiguring class '%s' field '%s'", cfg_class.name.c_str(), fieldname);
-            auto factory = [&](SummaryElementsSelector& elements_selector) -> std::unique_ptr<DocsumFieldWriter> {
+            auto factory = [&]() -> std::unique_ptr<DocsumFieldWriter> {
                 if (! command.empty()) {
                     try {
                         return docsum_field_writer_factory
                                 .create_docsum_field_writer(fieldname,
-                                                            elements_selector,
                                                             command,
                                                             source_name);
                     } catch (const vespalib::IllegalArgumentException& ex) {
@@ -177,7 +176,7 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             {
                 auto source = field.source.empty() ? field.name : field.source;
                 auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
-                auto writer = factory(elements_selector);
+                auto writer = factory();
                 elements_selector.maybe_apply_to(*res_class_matching_elements_fields);
                 if (!resClass->addConfigEntry(fieldname, elements_selector, std::move(writer))) {
                     LOG(error, "%s %s.fields: duplicate name '%s'", configId, cfg_class.name.c_str(), fieldname);
@@ -188,7 +187,7 @@ ResultConfig::readConfig(const SummaryConfig &cfg, const char *configId, IDocsum
             if (unionOfAll->getIndexFromName(fieldname) < 0) {
                 auto source = field.source.empty() ? field.name : field.source;
                 auto elements_selector = make_summary_elements_selector(field.elements, source, struct_fields_mapper);
-                auto writer = factory(elements_selector);
+                auto writer = factory();
                 elements_selector.maybe_apply_to(*union_of_all_matching_elements_fields);
                 unionOfAll->addConfigEntry(fieldname, elements_selector, std::move(writer));
             }

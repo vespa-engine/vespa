@@ -60,7 +60,6 @@ DocsumFieldWriterFactory::throw_missing_source(const std::string& command)
 
 std::unique_ptr<DocsumFieldWriter>
 DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
-                                                     const SummaryElementsSelector& elements_selector,
                                                      const std::string& command,
                                                      const std::string& source)
 {
@@ -121,14 +120,14 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         }
     } else if (command == command::attribute) {
         if (has_attribute_manager()) {
-            fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source, elements_selector);
+            fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source);
             // Missing attribute vector is allowed, so throw_if_nullptr() is NOT used.
         }
     } else if (command == command::attribute_combiner) {
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
             const std::string& source_field = source.empty() ? field_name : source;
-            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, elements_selector);
+            fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx);
             throw_if_nullptr(fieldWriter, command);
         }
     } else if (command == command::matched_attribute_elements_filter) {
@@ -136,9 +135,9 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         if (has_attribute_manager()) {
             auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
             if (attr_ctx->getAttribute(source_field) != nullptr) {
-                fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source_field, elements_selector);
+                fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source_field);
             } else {
-                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx, elements_selector);
+                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx);
             }
             throw_if_nullptr(fieldWriter, command);
         }

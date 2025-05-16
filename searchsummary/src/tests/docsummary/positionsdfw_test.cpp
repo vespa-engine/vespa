@@ -8,6 +8,7 @@
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
 #include <vespa/searchsummary/docsummary/positionsdfw.h>
+#include <vespa/searchsummary/docsummary/summary_elements_selector.h>
 #include <vespa/searchsummary/test/slime_value.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -109,7 +110,7 @@ void checkWritePositionField(AttrType &attr,
 
     vespalib::Slime target;
     vespalib::slime::SlimeInserter inserter(target);
-    writer->insertField(doc_id, state, inserter);
+    writer->insert_field(doc_id, nullptr, state, SummaryElementsSelector::select_all(), inserter);
 
     test::SlimeValue expected(expect_json);
     EXPECT_EQ(expected.slime, target);

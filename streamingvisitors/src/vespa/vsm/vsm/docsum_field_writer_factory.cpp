@@ -57,7 +57,6 @@ DocsumFieldWriterFactory::~DocsumFieldWriterFactory() = default;
 
 std::unique_ptr<DocsumFieldWriter>
 DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_name,
-                                                     const SummaryElementsSelector& elements_selector,
                                                      const std::string& command,
                                                      const std::string& source)
 {
@@ -85,7 +84,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
             throw_missing_source(command);
         }
     } else {
-        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, elements_selector, command, source);
+        return search::docsummary::DocsumFieldWriterFactory::create_docsum_field_writer(field_name, command, source);
     }
     return fieldWriter;
 }

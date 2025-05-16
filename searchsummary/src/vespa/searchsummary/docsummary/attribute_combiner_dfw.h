@@ -2,16 +2,10 @@
 
 #pragma once
 
-#include "simple_dfw.h"
+#include "docsum_field_writer.h"
 #include <memory>
 
-namespace search {
-class MatchingElements;
-class MatchingElementsFields;
-}
 namespace search::attribute { class IAttributeContext; }
-
-namespace vespalib { class Stash; }
 
 namespace search::docsummary {
 
@@ -22,22 +16,25 @@ class DynamicDocsumWriter;
  * This class reads values from multiple struct field attributes and
  * inserts them as an array of struct or a map of struct.
  */
-class AttributeCombinerDFW : public SimpleDFW
+class AttributeCombinerDFW : public DocsumFieldWriter
 {
 protected:
     uint32_t _stateIndex;
-    const bool _filter_elements;
     std::string _fieldName;
-    AttributeCombinerDFW(const std::string &fieldName, bool filter_elements);
+    AttributeCombinerDFW(const std::string &fieldName);
 protected:
-    virtual DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext &context, vespalib::Stash& stash, const MatchingElements* matching_elements) const = 0;
+    virtual DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext& context,
+                                                          GetDocsumsState& state,
+                                                          const SummaryElementsSelector& elements_selector) const = 0;
 public:
     ~AttributeCombinerDFW() override;
     bool isGenerated() const override { return true; }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
-    static std::unique_ptr<DocsumFieldWriter> create(const std::string &fieldName, search::attribute::IAttributeContext &attrCtx,
-                                                     const SummaryElementsSelector& elements_selector);
-    void insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
+    static std::unique_ptr<DocsumFieldWriter> create(const std::string &fieldName,
+                                                     search::attribute::IAttributeContext &attrCtx);
+    void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                      const SummaryElementsSelector& elements_selector,
+                      vespalib::slime::Inserter &target) const override;
 };
 
 }
