@@ -5,10 +5,8 @@
 package main
 
 import (
-	"bufio"
 	"fmt"
 	"os"
-	"strconv"
 	"strings"
 
 	"github.com/vespa-engine/vespa/client/go/internal/admin/clusterstate"
@@ -23,8 +21,6 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/vespa"
 )
 
-const minRequiredMemoryInBytes = 4 * 1024 * 1024 * 1024
-
 func basename(s string) string {
 	parts := strings.Split(s, "/")
 	return parts[len(parts)-1]
@@ -32,8 +28,6 @@ func basename(s string) string {
 
 func main() {
 	defer handleSimplePanic()
-
-	verifyAvailableMemory()
 
 	action := basename(os.Args[0])
 	if action == "vespa-wrapper" && len(os.Args) > 1 {
@@ -45,7 +39,8 @@ func main() {
 		logfmt.RunCmdLine()
 		return
 	}
-	_ = vespa.FindAndVerifyVespaHome()
+
+	//_ = vespa.FindAndVerifyVespaHome()
 	switch action {
 	case "vespa-stop-services":
 		os.Exit(services.VespaStopServices())
@@ -94,6 +89,8 @@ func main() {
 	case "vespa-set-node-state":
 		cobra := clusterstate.NewSetNodeStateCmd()
 		cobra.Execute()
+	case "verify-container-env":
+		services.VerifyAvailableMemory()
 	default:
 		if startcbinary.IsCandidate(os.Args[0]) {
 			os.Exit(startcbinary.Run(os.Args))
@@ -102,94 +99,6 @@ func main() {
 		fmt.Fprintln(os.Stderr, "actions: export-env, ipv6-only, security-env, detect-hostname")
 		fmt.Fprintln(os.Stderr, "(also: vespa-deploy, vespa-logfmt)")
 	}
-}
-
-func verifyAvailableMemory() {
-	if !hasContainerMemoryFiles() {
-		return
-	}
-
-	if os.Getenv("VESPA_IGNORE_NOT_ENOUGH_MEMORY") != "" {
-		fmt.Fprintln(os.Stderr, "Memory check disabled via VESPA_DISABLE_MEMORY_CHECK.")
-		return
-	}
-
-	availableMemory, err := getMemoryLimitCgroupMax()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		osutil.ExitMsg("Available memory could not be obtained, " + err.Error())
-	}
-
-	if availableMemory < minRequiredMemoryInBytes {
-		osutil.ExitMsg("Running the Vespa container image requires at least 4GB available memory." +
-			" See the relevant docs (https://docs.vespa.ai/en/operations-selfhosted/docker-containers.html#memory) " +
-			" or set VESPA_IGNORE_NOT_ENOUGH_MEMORY=true")
-	}
-}
-
-func hasContainerMemoryFiles() bool {
-	paths := []string{
-		"/sys/fs/cgroup/memory.max", // cgroup v2
-		"/proc/meminfo",             // host-level memory info
-	}
-
-	for _, path := range paths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func getMemoryLimitCgroupMax() (uint64, error) {
-	data, err := os.ReadFile("/sys/fs/cgroup/memory.max")
-	if err != nil {
-		return 0, fmt.Errorf("failed to read memory.max: %w", err)
-	}
-
-	trimmed := strings.TrimSpace(string(data))
-	if trimmed == "max" {
-		// No memory limit enforced, use available system memory
-		return getAvailableSystemMemory()
-	}
-
-	limit, err := strconv.ParseUint(trimmed, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse memory limit: %w", err)
-	}
-
-	return limit, nil
-}
-
-func getAvailableSystemMemory() (uint64, error) {
-	file, err := os.Open("/proc/meminfo")
-	if err != nil {
-		return 0, fmt.Errorf("failed to open /proc/meminfo: %w", err)
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.HasPrefix(line, "MemAvailable:") {
-			fields := strings.Fields(line)
-			if len(fields) < 2 {
-				return 0, fmt.Errorf("unexpected format in MemAvailable line: %s", line)
-			}
-			// MemAvailable is in kB
-			kb, err := strconv.ParseUint(fields[1], 10, 64)
-			if err != nil {
-				return 0, fmt.Errorf("failed to parse memory value: %w", err)
-			}
-			return kb * 1024, nil // convert to bytes
-		}
-	}
-	if err := scanner.Err(); err != nil {
-		return 0, fmt.Errorf("scanner error: %w", err)
-	}
-
-	return 0, fmt.Errorf("MemAvailable not found in /proc/meminfo")
 }
 
 func handleSimplePanic() {
