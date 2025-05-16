@@ -125,11 +125,11 @@ INJECT SchemaParser:
             lastConsumedToken = nextToken(lastConsumedToken);
 
             if (lastConsumedToken.getType() == TokenType.LBRACE) {
-                braceLevel++;
+                ++braceLevel;
             }
 
             if(lastConsumedToken.getType() == TokenType.RBRACE) {
-                braceLevel--;
+                --braceLevel;
             }
         }
 
@@ -165,17 +165,36 @@ INJECT SchemaParser:
         return null;
     }
 
-    // Can be used in places where there is a ranking expression that 
-    // is not preceded by a "expression: " syntax.
-    private SubLanguageData consumeRankingExpression() {
+    // Consumes ranking expression or feature list to be parsed
+    // by the RankingExpressionParser later.
+    //
+    // Note: This implementation allows unlimited nesting of curly braces,
+    //       where the original parser only accepts a finite depth of nesting (because regex cannot count).
+    private SubLanguageData consumeRankingExpression(boolean multiline) {
         TokenSource tokS = lastConsumedToken.getTokenSource();
         String inputString = tokS.toString();
         int startSplit = lastConsumedToken.getEndOffset();
         int leadingStripped = startSplit - lastConsumedToken.getPrevious().getBeginOffset();
 
-        while (
-            nextTokenType() != TokenType.EOF && nextTokenType() != TokenType.NL
-        ) {
+        int braceLevel = (multiline ? 1 : 0); 
+
+        while (nextTokenType() != TokenType.EOF) {
+            if (!multiline && nextTokenType() == TokenType.NL) break;
+
+            if (nextTokenType() == TokenType.LBRACE) {
+                ++braceLevel;
+            }
+
+            if (nextTokenType() == TokenType.RBRACE) {
+                --braceLevel;
+            }
+            
+            if (multiline && braceLevel <= 0) {
+                // break before consuming token so that 
+                // the parser can consume it.
+                break;
+            }
+
             lastConsumedToken = nextToken(lastConsumedToken);
         }
 
@@ -212,50 +231,29 @@ INJECT indexingElm:
     }
 }
 
-/**
- * The following stores feature list string at the AST node
- * for parsing later
- */
-INJECT featureListElm:
+INJECT consumedExpressionElm:
 {
-    private String featureListString = null;
+    private SubLanguageData expressionData = null;
 
-    public boolean hasFeatureListString() { return featureListString != null; }
-    public String getFeatureListString() { return featureListString; }
+    public String getRankingExpression() {
+        return expressionData == null ? "" : expressionData.content();
+    }
 
-    public void setFeatureListString(String features) {
-        this.featureListString = features;
+    public void setRankingExpressionData(SubLanguageData data) {
+        this.expressionData = data;
     }
 }
 
-/**
- * The following stores rank expression string at the AST node
- * for parsing later
- */
-INJECT expression:
-
+INJECT consumedFeatureListElm:
 {
-    private String expressionString = null;
+    private SubLanguageData featureListData = null;
 
-    public boolean hasExpressionString() { return expressionString != null; }
-    public String getExpressionString() { return expressionString; }
-
-    public void setExpressionString(String expression) {
-        this.expressionString = expression;
-    }
-}
-
-INJECT onnxModelInput:
-
-{
-    private SubLanguageData inputSourceExpression = null;
-
-    public String getInputSourceExpression() { 
-        return inputSourceExpression == null ? "" : inputSourceExpression.content(); 
+    public String getFeatureList() {
+        return featureListData == null ? "" : featureListData.content();
     }
 
-    public void setInputSourceExpression(SubLanguageData data) {
-        this.inputSourceExpression = data;
+    public void setFeatureListData(SubLanguageData data) {
+        this.featureListData = data;
     }
 }
 
@@ -501,6 +499,15 @@ TOKEN :
 | < TENSOR_TYPE: "tensor" ("<" (~["<",">"])+ ">")? "(" (~["(",")"])* ")" >
 | < TENSOR_VALUE_SL: "value" (" ")* ":" (" ")* ("{"<BRACE_SL_LEVEL_1>) ("\n")? >
 | < TENSOR_VALUE_ML: "value" (<SEARCHLIB_SKIP>)? "{" (["\n"," "])* ("{"<BRACE_ML_LEVEL_1>) (["\n"," "])* "}" ("\n")? >
+| < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
+| < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
+| < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" >
+| < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
+| < #BRACE_SL_CONTENT: (~["{","}","\n"])+ >
+| < #BRACE_ML_CONTENT: (~["{","}"])+ >
+| < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
 | < LBRACE: "{" >
 | < RBRACE: "}" >
 | < COLON: ":" >
@@ -538,25 +545,10 @@ TOKEN :
 | < DISTANCE_METRIC: "distance-metric" >
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
-| < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* >
-| < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* >
-| < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < RANKFEATURES_SL: "rank-features" (" ")* ":" (~["}","\n"])* >
-| < RANKFEATURES_ML: "rank-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
-| < EXPRESSION_SL: "expression" (" ")* ":" (("{"<BRACE_SL_LEVEL_1>)|<BRACE_SL_CONTENT>)* >
-| < EXPRESSION_ML: "expression" (<SEARCHLIB_SKIP>)? "{" (("{"<BRACE_ML_LEVEL_1>)|<BRACE_ML_CONTENT>)* "}" >
-| < #BRACE_SL_LEVEL_1: (("{"<BRACE_SL_LEVEL_2>)|<BRACE_SL_CONTENT>)* "}" >
-| < #BRACE_SL_LEVEL_2: (("{"<BRACE_SL_LEVEL_3>)|<BRACE_SL_CONTENT>)* "}" >
-| < #BRACE_SL_LEVEL_3: <BRACE_SL_CONTENT> "}" >
-| < #BRACE_ML_LEVEL_1: (("{"<BRACE_ML_LEVEL_2>)|<BRACE_ML_CONTENT>)* "}" >
-| < #BRACE_ML_LEVEL_2: (("{"<BRACE_ML_LEVEL_3>)|<BRACE_ML_CONTENT>)* "}" >
-| < #BRACE_ML_LEVEL_3: <BRACE_ML_CONTENT> "}" >
-| < #BRACE_SL_CONTENT: (~["{","}","\n"])+ >
-| < #BRACE_ML_CONTENT: (~["{","}"])+ >
-| < #SEARCHLIB_SKIP: ([" ","\f","\n","\r","\t"])+ >
+| < MATCH_FEATURES: "match-features" >
+| < SUMMARY_FEATURES: "summary-features" >
+| < RANK_FEATURES: "rank-features" >
+| < EXPRESSION: "expression" >
 | < RANK_PROPERTIES: "rank-properties" >
 | < RERANK_COUNT: "rerank-count" >
 | < NUM_THREADS_PER_SEARCH: "num-threads-per-search" >
@@ -1978,22 +1970,21 @@ String onnxModelIOName() :
 
 // This production replaces the big regex from before:
 //   < ONNX_INPUT_SL: "input" (" ")* (<IDENTIFIER>|<DOUBLEQUOTEDSTRING>) (" ")* ":" (" ")* (~["\n"])* >
-Node onnxModelInput(OnnxModel onnxModel) :
+void onnxModelInput(OnnxModel onnxModel) :
 {
     String name = null;
     Token inputToken = null;
+    Node sourceFeatureNode;
 }
-    ( (inputToken = <INPUT>) (name = onnxModelIOName()) <COLON> ) 
+    ( (inputToken = <INPUT>) (name = onnxModelIOName()) <COLON> sourceFeatureNode = consumedFeatureListElm(false) ) 
     {
-        SubLanguageData sourceData = consumeRankingExpression();
-        String source = sourceData.content();
+        String sourceExpressionString = ((consumedFeatureListElm)sourceFeatureNode).getFeatureList();
+        sourceFeatureNode.setBeginOffset(sourceFeatureNode.getBeginOffset() - sourceExpressionString.length());
         try {
-            onnxModel.addInputNameMapping(name, source.trim());
-            thisProduction.setInputSourceExpression(sourceData);
+            onnxModel.addInputNameMapping(name, sourceExpressionString.trim());
         } catch (IllegalArgumentException ex) {
             inputToken.addIllegalArgumentException(ex);
         }
-        return thisProduction;
     }
 ;
 
@@ -2082,14 +2073,7 @@ void onnxModelItem(OnnxModel onnxModel) :
                 }
             } 
         ) 
-        | (inputNode = onnxModelInput(onnxModel)) 
-            {
-                // Make sure endOffset is correct and will propagate upwards.
-                // onnxModelInput consumes a ranking expression, but does not create a 
-                // node in the tree. Therefore we need to set endOffset manually.
-                int subContentLength = ((onnxModelInput)(inputNode)).getInputSourceExpression().length();
-                inputNode.setEndOffset(inputNode.getEndOffset() + subContentLength);
-            }
+        | onnxModelInput(onnxModel)
         | onnxModelOutput(onnxModel)
     )
 ;
@@ -2202,9 +2186,6 @@ void rankProfileItem(ParsedSchema schema, ParsedRankProfile profile) : { }
        | inputsElm(profile)
        | constantsElm(schema, profile)
        | featureListElm(profile) // Captures rank, match and summary-features
-       //| rankFeaturesElm(profile)
-       //| matchFeaturesElm(profile)
-       //| summaryFeaturesElm(profile)
        | onnxModelInProfile(profile)
        | strictElm(profile)
        | significanceElm(profile)
@@ -2280,7 +2261,7 @@ void functionElm(ParsedRankProfile profile) :
           [ parameter = identifierStr()         { func.addParameter(parameter); }
           ( <COMMA> parameter = identifierStr() { func.addParameter(parameter); } )* ]
       ")"
-      openLbrace() expression = expression() (<NL>)* <RBRACE> )
+      openLbrace() expression = expressionElm() (<NL>)* <RBRACE> )
     {
         func.setExpression(expression);
         func.setInline(inline);
@@ -2404,7 +2385,7 @@ void firstPhaseItem(ParsedRankProfile profile) :
     double dropLimit;
 }
 
-    ( expression = expression()                               { profile.setFirstPhaseRanking(expression); }
+    ( expression = expressionElm()                               { profile.setFirstPhaseRanking(expression); }
     | (<KEEP_RANK_COUNT> <COLON> keepRankCount = integerElm())     { profile.setKeepRankCount(keepRankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setRankScoreDropLimit(dropLimit); }
     )
@@ -2432,7 +2413,7 @@ void secondPhaseItem(ParsedRankProfile profile) :
     double dropLimit;
 }
 
-    ( expression = expression()                       { profile.setSecondPhaseRanking(expression); }
+    ( expression = expressionElm()                       { profile.setSecondPhaseRanking(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setRerankCount(rerankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setSecondPhaseRankScoreDropLimit(dropLimit); }
     )
@@ -2460,7 +2441,7 @@ void globalPhaseItem(ParsedRankProfile profile) :
     double dropLimit;
 }
 
-    ( expression = expression()                       { profile.setGlobalPhaseExpression(expression); }
+    ( expression = expressionElm()                       { profile.setGlobalPhaseExpression(expression); }
     | (<RERANK_COUNT> <COLON> rerankCount = integerElm()) { profile.setGlobalPhaseRerankCount(rerankCount); }
     | (<RANK_SCORE_DROP_LIMIT> <COLON> dropLimit = floatValue()) { profile.setGlobalPhaseRankScoreDropLimit(dropLimit); }
     )
@@ -2552,15 +2533,28 @@ InputType valueType(Reference reference) :
     }
 ;
 
+/*
+ * Wrapper CST node for the call to consumeRankingExpression.
+ * See details about why this is needed in consumedExpressionElm.
+ */
+Node consumedFeatureListElm(boolean multiline) :
+{
+    SubLanguageData featureList = consumeRankingExpression(multiline);
+    thisProduction.setFeatureListData(featureList);
+    return thisProduction;
+}
+;
+
+/**
+ * Consumes either a summary-features match-features or rank-features block of a rank profile.
+ *
+ * @param profile the rank profile to modify
+ */
 void featureListElm(ParsedRankProfile profile) :
 {
-    String features;
 }
 
-    ( (features = summaryFeaturesElm(profile)) | (features = matchFeaturesElm(profile)) | (features = rankFeaturesElm(profile)))
-    {
-        thisProduction.setFeatureListString(features);
-    }
+    ( summaryFeaturesElm(profile) | matchFeaturesElm(profile) | rankFeaturesElm(profile) )
 ;
 
 /**
@@ -2568,28 +2562,24 @@ void featureListElm(ParsedRankProfile profile) :
  *
  * @param profile the rank profile to modify
  */
-String summaryFeaturesElm(ParsedRankProfile profile) :
+void summaryFeaturesElm(ParsedRankProfile profile) :
 {
     String features;
     String inherited = null;
+    Node featureListNode = null;
 }
 
-    ( <SUMMARYFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } |
-      <SUMMARYFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
-                                                              lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } |
-      <SUMMARYFEATURES_ML_INHERITS> {
-          int inheritsIndex = lastConsumedToken.toString().indexOf("inherits ");
-          String rest = lastConsumedToken.toString().substring(inheritsIndex + "inherits ".length());
-          profile.setInheritedSummaryFeatures(rest.substring(0, rest.indexOf(" ")).trim());
-          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/
-      }
-    )
+    (<SUMMARY_FEATURES> (
+        (<COLON> featureListNode = consumedFeatureListElm(false) ) |
+        (openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> ) |
+        (<INHERITS> inherited = identifierWithDashStr() openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> )
+    ))
     {
-        //FeatureList featureList = getFeatureList(features);
-        //if (featureList != null) {
-        //    profile.addSummaryFeatures(featureList);
-        //}
-        return features;
+        features = ((consumedFeatureListElm)featureListNode).getFeatureList();
+        featureListNode.setBeginOffset(featureListNode.getBeginOffset() - features.length());
+        if (inherited != null) {
+            profile.setInheritedSummaryFeatures(inherited);
+        }
     }
 ;
 
@@ -2665,45 +2655,40 @@ void filterThreshold(ParsedRankProfile profile) :
  *
  * @param profile the rank profile to modify
  */
-String matchFeaturesElm(ParsedRankProfile profile) :
+void matchFeaturesElm(ParsedRankProfile profile) :
 {
     String features;
+    String inherited = null;
+    Node featureListNode;
 }
 
-    ( <MATCHFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ } |
-      <MATCHFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
-                                                                             lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } |
-      <MATCHFEATURES_ML_INHERITS> {
-          int inheritsIndex = lastConsumedToken.toString().indexOf("inherits ");
-          String rest = lastConsumedToken.toString().substring(inheritsIndex + "inherits ".length());
-          profile.setInheritedMatchFeatures(rest.substring(0, rest.indexOf(" ")).trim());
-          features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1, lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/
-      }
-    )
+    ( <MATCH_FEATURES> (
+        (<COLON> featureListNode = consumedFeatureListElm(false) ) |
+        (openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> ) |
+        (<INHERITS> inherited = identifierWithDashStr() openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> )
+    ))
     {
-        //FeatureList featureList = getFeatureList(features);
-        //if (featureList != null) {
-        //    profile.addMatchFeatures(featureList);
-        //}
-        return features;
+        features = ((consumedFeatureListElm)featureListNode).getFeatureList();
+        featureListNode.setBeginOffset(featureListNode.getBeginOffset() - features.length());
+        if (inherited != null) {
+            profile.setInheritedMatchFeatures(inherited);
+        }
     }
 ;
 
 /** Consumes a rank-features block of a rank profile */
-String rankFeaturesElm(ParsedRankProfile profile) :
+void rankFeaturesElm(ParsedRankProfile profile) :
 {
     String features;
+    Node featureListNode;
 }
-
-    ( <RANKFEATURES_SL> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1);/*.trim();*/ }
-    | <RANKFEATURES_ML> { features = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
-                                                                            lastConsumedToken.toString().lastIndexOf("}"));/*.trim();*/ } )
+    ( <RANK_FEATURES> (
+        (<COLON> featureListNode = consumedFeatureListElm(false) ) |
+        (openLbrace() featureListNode = consumedFeatureListElm(true) <RBRACE> )
+    ))
     {
-        //FeatureList featureList = getFeatureList(features);
-        //if (featureList != null) {
-        //    profile.addRankFeatures(featureList);
-        //}
-        return features;
+        features = ((consumedFeatureListElm)featureListNode).getFeatureList();
+        featureListNode.setBeginOffset(featureListNode.getBeginOffset() - features.length());
     }
 ;
 
@@ -3210,21 +3195,44 @@ void importField(ParsedSchema schema) :
 ;
 
 /**
+ * Wrapper for the call to consumeRankingExpression that essentially
+ * places an empty node in the tree which holds the ranking expression string.
+ *
+ * Using this wrapper is a trick used to manipulate the offsets of the syntax tree node.
+ * Since the call to consumeRankingExpression eats tokens without the parser knowing about it,
+ * we need to manipulate the offsets of the resulting node in order for the CST to be correct.
+ *
+ * However, when a call to a production returns, the generated parser will 'close its scope', 
+ * which means among other things setting a begin/end offset for the node. Therefore,
+ * if we had registered the offsets in the body of this production, the parser would simply overwrite them.
+ * 
+ * Returning the production node itself allows for manipulating the offsets after scope closing,
+ * allowing the manipulated offsets to propagate upwards in the tree.
+ */
+Node consumedExpressionElm(boolean multiline) :
+{
+    SubLanguageData expr = consumeRankingExpression(multiline);
+    thisProduction.setRankingExpressionData(expr);
+    return thisProduction;
+}
+;
+
+/**
  * This rule consumes an expression token and returns its image.
  *
  * @return The consumed token image.
  */
-String expression() :
+String expressionElm() :
 {
-    String exp;
+    Node expressionNode;
 }
 
-    ( <EXPRESSION_SL> { exp = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf(":") + 1); } |
-      <EXPRESSION_ML> { exp = lastConsumedToken.toString().substring(lastConsumedToken.toString().indexOf("{") + 1,
-                                                                     lastConsumedToken.toString().lastIndexOf("}")); } )
+    (<EXPRESSION> (( <COLON> expressionNode = consumedExpressionElm(false) ) |
+                  ( openLbrace() expressionNode = consumedExpressionElm(true) <RBRACE> )))
     {
-        thisProduction.setExpressionString(exp);
-        return exp;
+        String expr = ((consumedExpressionElm)expressionNode).getRankingExpression();
+        expressionNode.setBeginOffset(expressionNode.getBeginOffset() - expr.length());
+        return expr;
     }
 ;
 

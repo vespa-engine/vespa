@@ -41,8 +41,20 @@ public class ParserTokensTest {
         "SEARCHLIB_SKIP", // represents white space, handled differently in CongoCC
         "SINGLE_LINE_COMMENT", // not a regular token
         "COMMENT", // not a regular token
-        "ONNX_INPUT_SL", // implemented differently in our parser
-        "ONNX_OUTPUT_SL", // implemented differently in our parser
+        // Below are tokens that represents a big regex in the original parser,
+        // which is implemented differently in our parser 
+        "EXPRESSION_SL",
+        "EXPRESSION_ML",
+        "MATCHFEATURES_SL",
+        "MATCHFEATURES_ML",
+        "MATCHFEATURES_ML_INHERITS",
+        "ONNX_INPUT_SL", 
+        "ONNX_OUTPUT_SL", 
+        "RANKFEATURES_SL",
+        "RANKFEATURES_ML",
+        "SUMMARYFEATURES_SL",
+        "SUMMARYFEATURES_ML",
+        "SUMMARYFEATURES_ML_INHERITS",
         // Below are anonymous tokens, only there to help defining ranking expression rules. CongoCC ignores their names.
         // Schema:
         "BRACE_SL_LEVEL_1",

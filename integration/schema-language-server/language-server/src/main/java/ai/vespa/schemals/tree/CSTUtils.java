@@ -16,6 +16,7 @@ import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.TokenSource;
 import ai.vespa.schemals.parser.ast.documentElm;
 import ai.vespa.schemals.parser.ast.functionElm;
+import ai.vespa.schemals.parser.ast.consumedExpressionElm;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.lambdaFunction;
 import ai.vespa.schemals.parser.rankingexpression.ast.tensorGenerateBody;
@@ -320,8 +321,8 @@ public class CSTUtils {
 
         if (node.containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) {
             ret += " [RANK_EXPRESSION";
-            if (node.containsExpressionData()) {
-                ret += " (EXPRESSSION)";
+            if (node.isASTInstance(consumedExpressionElm.class)) {
+                ret += " (EXPRESSION)";
             } else {
                 ret += " (FEATURE LIST)";
             }

@@ -16,7 +16,7 @@ import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
 import ai.vespa.schemals.lsp.schema.hover.SchemaHover;
 import ai.vespa.schemals.parser.ast.NL;
-import ai.vespa.schemals.parser.ast.expression;
+import ai.vespa.schemals.parser.ast.expressionElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
 import ai.vespa.schemals.parser.ast.openLbrace;
 import ai.vespa.schemals.parser.rankingexpression.ast.feature;
@@ -98,7 +98,7 @@ public class RankingExpressionCompletion implements CompletionProvider {
         if (context.triggerCharacter.equals('.')) return false;
         return (clean.getLanguageType() == LanguageType.RANK_EXPRESSION || (
             clean.getParent() != null && (
-                clean.getParent().isASTInstance(expression.class) 
+                clean.getParent().isASTInstance(expressionElm.class) 
              || clean.getParent().isASTInstance(featureListElm.class)
              )
         ));

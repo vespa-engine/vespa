@@ -20,7 +20,8 @@ import ai.vespa.schemals.index.Symbol.SymbolStatus;
 import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.parser.ast.REFERENCE;
 import ai.vespa.schemals.parser.ast.dataType;
-import ai.vespa.schemals.parser.ast.featureListElm;
+import ai.vespa.schemals.parser.ast.matchFeaturesElm;
+import ai.vespa.schemals.parser.ast.summaryFeaturesElm;
 import ai.vespa.schemals.parser.ast.importField;
 import ai.vespa.schemals.parser.ast.mapDataType;
 import ai.vespa.schemals.parser.indexinglanguage.ast.DOT;
@@ -126,7 +127,7 @@ public class SymbolReferenceResolver {
 
         } else if (
             referencedType == SymbolType.RANK_PROFILE 
-         && node.getParent().getASTClass() == featureListElm.class
+         && (node.getParent().isASTInstance(summaryFeaturesElm.class) || node.getParent().isASTInstance(matchFeaturesElm.class))
          && node.getSymbol().getScope() != null 
          && node.getSymbol().getScope().getType() == SymbolType.RANK_PROFILE) {
             // This happens if you write i.e. summary-features inherits some_profile

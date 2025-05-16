@@ -34,12 +34,14 @@ import ai.vespa.schemals.parser.ast.inheritsDocument;
 import ai.vespa.schemals.parser.ast.inheritsDocumentSummary;
 import ai.vespa.schemals.parser.ast.inheritsRankProfile;
 import ai.vespa.schemals.parser.ast.inheritsStruct;
+import ai.vespa.schemals.parser.ast.matchFeaturesElm;
 import ai.vespa.schemals.parser.ast.rankTypeElm;
 import ai.vespa.schemals.parser.ast.referenceType;
 import ai.vespa.schemals.parser.ast.rootSchema;
 import ai.vespa.schemals.parser.ast.structFieldElm;
 import ai.vespa.schemals.parser.ast.summaryInDocument;
 import ai.vespa.schemals.parser.ast.summaryItem;
+import ai.vespa.schemals.parser.ast.summaryFeaturesElm;
 import ai.vespa.schemals.parser.ast.summarySourceList;
 import ai.vespa.schemals.parser.rankingexpression.ast.BaseNode;
 import ai.vespa.schemals.parser.rankingexpression.ast.LBRACE;
@@ -72,6 +74,8 @@ public class IdentifySymbolReferences extends Identifier<SchemaNode> {
     private static final HashMap<Class<?>, SymbolType> identifierWithDashTypeMap = new HashMap<Class<?>, SymbolType>() {{
         put(inheritsRankProfile.class, SymbolType.RANK_PROFILE);
         put(inheritsDocumentSummary.class, SymbolType.DOCUMENT_SUMMARY);
+        put(summaryFeaturesElm.class, SymbolType.RANK_PROFILE);
+        put(matchFeaturesElm.class, SymbolType.RANK_PROFILE);
     }};
 
     /** 
