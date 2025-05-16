@@ -20,16 +20,16 @@ import io.grpc.stub.AbstractStub;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.function.Function;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.util.concurrent.TimeUnit.*;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Experimental model inference using Nvidia Triton as ONNX backend.
@@ -324,6 +324,7 @@ public class TritonOnnxClient implements AutoCloseable {
         }
         return builder.build();
     }
+
 
     // Converts StatusRuntimeException to TritonException
     private <T> T invokeGrpc(Function<GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub, T> invocation) {

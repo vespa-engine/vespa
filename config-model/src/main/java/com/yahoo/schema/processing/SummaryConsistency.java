@@ -108,7 +108,7 @@ public class SummaryConsistency extends Processor {
             throw new IllegalArgumentException("Conflicting summary elements selectors. " + field2.toLocateString() +
                     " is already defined as " +
                     field1.toLocateString() + ". A field with the same name " +
-                    "can not have different selement selectors in different summary classes");
+                    "can not have different element selectors in different summary classes");
         }
     }
 
