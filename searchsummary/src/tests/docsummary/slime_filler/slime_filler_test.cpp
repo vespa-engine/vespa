@@ -65,6 +65,7 @@ using document::StructFieldValue;
 using document::TensorDataType;
 using document::TensorFieldValue;
 using document::WeightedSetFieldValue;
+using search::docsummary::ElementIds;
 using search::docsummary::IStringFieldConverter;
 using search::docsummary::ResultConfig;
 using search::docsummary::SlimeFiller;
@@ -296,7 +297,7 @@ SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv, con
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller filler(inserter, matching_elems);
+    SlimeFiller filler(inserter, matching_elems != nullptr ? ElementIds(*matching_elems) : ElementIds());
     fv.accept(filler);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
@@ -354,7 +355,7 @@ SlimeFillerTest::expect_insert_summary_field_with_filter(const std::string& exp,
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller::insert_summary_field_with_filter(fv, inserter, matching_elems);
+    SlimeFiller::insert_summary_field_with_filter(fv, inserter, ElementIds(matching_elems));
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }

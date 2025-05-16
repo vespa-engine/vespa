@@ -53,8 +53,8 @@ MatchedElementsFilterDFW::insert_field(uint32_t docid, const IDocsumStoreDocumen
             auto field_value = doc->get_field_value(_input_field_name);
             if (field_value) {
                 auto selected_elements = elements_selector.get_selected_elements(docid, state);
-                if (selected_elements != nullptr) {
-                    SlimeFiller::insert_summary_field_with_filter(*field_value, target, *selected_elements);
+                if (!selected_elements.all_elements()) {
+                    SlimeFiller::insert_summary_field_with_filter(*field_value, target, selected_elements);
                 } else {
                     SlimeFiller::insert_summary_field(*field_value, target);
                 }

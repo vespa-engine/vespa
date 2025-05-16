@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include <cstdint>
+#include "element_ids.h"
 #include <string>
-#include <vector>
 
 namespace search { class MatchingElementsFields; }
 
@@ -42,7 +41,7 @@ public:
     static SummaryElementsSelector select_all();
     static SummaryElementsSelector select_by_match(const std::string& field, std::vector<std::string> struct_fields);
     static SummaryElementsSelector select_by_summary_feature(const std::string& summary_feature);
-    const std::vector<uint32_t>* get_selected_elements(uint32_t docid, GetDocsumsState& state) const;
+    ElementIds get_selected_elements(uint32_t docid, GetDocsumsState& state) const;
 };
 
 }

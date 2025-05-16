@@ -59,17 +59,17 @@ SummaryElementsSelector::apply_to(MatchingElementsFields& target) const
     }
 }
 
-const std::vector<uint32_t> *
+ElementIds
 SummaryElementsSelector::get_selected_elements(uint32_t docid, GetDocsumsState &state) const
 {
     switch (_selector) {
         case Selector::ALL:
-            return nullptr;
+            return ElementIds();
         case Selector::BY_MATCH:
-            return &state.get_matching_elements().get_matching_elements(docid, _field);
+            return ElementIds(state.get_matching_elements().get_matching_elements(docid, _field));
         case Selector::BY_SUMMARY_FEATURE:
         default:
-            return &empty;
+            return ElementIds(empty);
     }
 }
 

@@ -94,15 +94,15 @@ public:
 
 SlimeFiller::SlimeFiller(Inserter& inserter)
     : _inserter(inserter),
-      _matching_elems(nullptr),
+      _selected_elements(),
       _string_converter(nullptr),
       _filter(SlimeFillerFilter::all())
 {
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, const std::vector<uint32_t>* matching_elems)
+SlimeFiller::SlimeFiller(Inserter& inserter, ElementIds selected_elements)
     : _inserter(inserter),
-      _matching_elems(matching_elems),
+      _selected_elements(selected_elements),
       _string_converter(nullptr),
       _filter(SlimeFillerFilter::all())
 {
@@ -110,7 +110,7 @@ SlimeFiller::SlimeFiller(Inserter& inserter, const std::vector<uint32_t>* matchi
 
 SlimeFiller::SlimeFiller(Inserter& inserter, IStringFieldConverter* string_converter, SlimeFillerFilter::Iterator filter)
     : _inserter(inserter),
-      _matching_elems(nullptr),
+      _selected_elements(),
       _string_converter(string_converter),
       _filter(filter)
 {
@@ -147,7 +147,7 @@ SlimeFiller::visit(const MapFieldValue& v)
     MapFieldValueInserter map_inserter(_inserter, _filter.check_field("value"));
     if (filter_matching_elements()) {
         assert(v.has_no_erased_keys());
-        for (uint32_t id_to_keep : (*_matching_elems)) {
+        for (uint32_t id_to_keep : _selected_elements) {
             auto entry = v[id_to_keep];
             map_inserter.insert_entry(*entry.first, *entry.second);
         }
@@ -168,7 +168,7 @@ SlimeFiller::visit(const ArrayFieldValue& value)
     ArrayInserter ai(a);
     SlimeFiller conv(ai, _string_converter, _filter);
     if (filter_matching_elements()) {
-        for (uint32_t id_to_keep : (*_matching_elems)) {
+        for (uint32_t id_to_keep : _selected_elements) {
             value[id_to_keep].accept(conv);
         }
     } else {
@@ -289,13 +289,8 @@ SlimeFiller::visit(const WeightedSetFieldValue& value)
     Cursor& a = _inserter.insertArray();
     Symbol isym = a.resolve("item");
     Symbol wsym = a.resolve("weight");
-    using matching_elements_iterator_type = std::vector<uint32_t>::const_iterator;
-    matching_elements_iterator_type matching_elements_itr;
-    matching_elements_iterator_type matching_elements_itr_end;
-    if (filter_matching_elements()) {
-        matching_elements_itr = _matching_elems->begin();
-        matching_elements_itr_end = _matching_elems->end();
-    }
+    auto matching_elements_itr = _selected_elements.begin();
+    auto matching_elements_itr_end = _selected_elements.end();
     uint32_t idx = 0;
     for (const auto& entry : value) {
         if (filter_matching_elements()) {
@@ -353,12 +348,12 @@ SlimeFiller::insert_summary_field(const FieldValue& value, vespalib::slime::Inse
 }
 
 void
-SlimeFiller::insert_summary_field_with_filter(const FieldValue& value, vespalib::slime::Inserter& inserter, const std::vector<uint32_t>& matching_elems)
+SlimeFiller::insert_summary_field_with_filter(const FieldValue& value, vespalib::slime::Inserter& inserter, ElementIds selected_elements)
 {
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, &matching_elems);
+        SlimeFiller visitor(inserter, selected_elements);
         value.accept(visitor);
     }
 }

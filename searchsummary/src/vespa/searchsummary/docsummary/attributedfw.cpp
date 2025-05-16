@@ -208,22 +208,22 @@ MultiAttrDFWState<MultiValueType>::insertField(uint32_t docid, Inserter& target)
         return;
     }
     auto selected_elements = _elements_selector.get_selected_elements(docid, _state);
-    if (selected_elements != nullptr) {
-        if (selected_elements->empty() || selected_elements->back() >= elements.size()) {
+    if (!selected_elements.all_elements()) {
+        if (selected_elements.empty() || selected_elements.back() >= elements.size()) {
             return;
         }
         Cursor &arr = target.insertArray(elements.size());
         if constexpr (multivalue::is_WeightedValue_v<MultiValueType>) {
             Symbol itemSymbol = arr.resolve(ITEM);
             Symbol weightSymbol = arr.resolve(WEIGHT);
-            for (uint32_t id_to_keep : *selected_elements) {
+            for (uint32_t id_to_keep : selected_elements) {
                 auto& element = elements[id_to_keep];
                 Cursor& elemC = arr.addObject();
                 set_value<ValueType>(element.value(), itemSymbol, elemC);
                 elemC.setLong(weightSymbol, element.weight());
             }
         } else {
-            for (uint32_t id_to_keep : *selected_elements) {
+            for (uint32_t id_to_keep : selected_elements) {
                 append_value<ValueType>(elements[id_to_keep], arr);
             }
         }
