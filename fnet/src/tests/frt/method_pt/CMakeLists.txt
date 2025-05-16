@@ -4,5 +4,6 @@ vespa_add_executable(fnet_method_pt_test_app TEST
     method_pt.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_method_pt_test_app COMMAND fnet_method_pt_test_app)
