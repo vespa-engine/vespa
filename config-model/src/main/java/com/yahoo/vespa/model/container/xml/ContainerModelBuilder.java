@@ -122,6 +122,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -151,6 +152,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private static final int MIN_ZOOKEEPER_NODE_COUNT = 1;
     private static final int MAX_ZOOKEEPER_NODE_COUNT = 7;
 
+    private static final Logger logger = Logger.getLogger(ContainerModelBuilder.class.getName());
+
     public enum Networking { disable, enable }
 
     private ApplicationPackage app;
@@ -158,7 +161,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private final Networking networking;
     private final boolean rpcServerEnabled;
     private final boolean httpServerEnabled;
-    protected DeployLogger log;
+    protected DeployLogger deployLogger;
 
     public static final List<ConfigModelId> configModelIds = List.of(ConfigModelId.fromName(CONTAINER_TAG));
 
@@ -181,7 +184,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     @Override
     public void doBuild(ContainerModel model, Element spec, ConfigModelContext modelContext) {
-        log = modelContext.getDeployLogger();
+        deployLogger = modelContext.getDeployLogger();
         app = modelContext.getApplicationPackage();
 
         checkVersion(spec);
@@ -454,7 +457,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.addAccessLog();
         } else {
             if (cluster.isHostedVespa()) {
-                log.logApplicationPackage(WARNING, "Applications are not allowed to override the 'accesslog' element");
+                deployLogger.logApplicationPackage(WARNING, "Applications are not allowed to override the 'accesslog' element");
             } else {
                 List<AccessLogComponent> components = new ArrayList<>();
                 for (Element accessLog : accessLogElements) {
@@ -587,7 +590,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     var tokenId = elem.getAttribute("id");
                     var token = knownTokens.get(tokenId);
                     if (token == null)
-                        log.logApplicationPackage(
+                        deployLogger.logApplicationPackage(
                                 WARNING, "Token '%s' for client '%s' does not exist".formatted(tokenId, clientId));
                     return token;
                 })
@@ -595,7 +598,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     if (token == null) return false;
                     boolean empty = token.versions().isEmpty();
                     if (empty)
-                        log.logApplicationPackage(
+                        deployLogger.logApplicationPackage(
                                 WARNING, "Token '%s' for client '%s' has no active versions"
                                         .formatted(token.tokenId(), clientId));
                     return !empty;
@@ -604,7 +607,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // Don't include 'client' that refers to token without versions
         if (referencedTokens.isEmpty()) {
-            log.log(Level.INFO, "Skipping client '%s' as it does not refer to any activate tokens".formatted(clientId));
+            deployLogger.log(Level.INFO, "Skipping client '%s' as it does not refer to any activate tokens".formatted(clientId));
             return Optional.empty();
         }
 
@@ -1043,7 +1046,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                               context.featureFlags().useNonPublicEndpointForTest());
 
         // TODO: Temporary, remove in 8.521
-        log.log(FINE, "Zone endpoints from properties: " + context.properties().endpoints() +
+        logger.log(FINE, "Zone endpoints from properties: " + context.properties().endpoints() +
                 ", zone endpoint from deployment spec: " + zoneEndpoint +
                 ", zone and cloud from properties: " + context.properties().zone() + ", " + context.properties().zone().cloud() +
                 ", zone and cloud from deploy state: " + context.getDeployState().zone() + ", " + context.getDeployState().zone().cloud());
@@ -1068,7 +1071,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         else if (nodesElement.hasAttribute("of")) {// hosted node spec referencing a content cluster
             // TODO: Remove support for combined clusters in Vespa 9
             List<ApplicationContainer> containers = createNodesFromContentServiceReference(cluster, nodesElement, context);
-            log.logApplicationPackage(WARNING, "Declaring combined cluster with <nodes of=\"...\"> is deprecated without " +
+            deployLogger.logApplicationPackage(WARNING, "Declaring combined cluster with <nodes of=\"...\"> is deprecated without " +
                                                "replacement, and the feature will be removed in Vespa 9. Use separate container and " +
                                                "content clusters instead");
             return containers;
@@ -1147,7 +1150,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                       ClusterSpec.Type.container,
                                                                                       clusterId,
                                                                                       zoneEndpoint(context, clusterId),
-                                                                                      log,
+                                                                                      deployLogger,
                                                                                       getZooKeeper(containerElement) != null,
                                                                                       context.clusterInfo().build());
             return createNodesFromHosts(hosts, cluster, context.getDeployState());
@@ -1164,8 +1167,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 .dockerImageRepository(context.getDeployState().getWantedDockerImageRepo())
                 .build();
         Map<HostResource, ClusterMembership> hosts = 
-                cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
-                                                             Capacity.fromRequiredNodeType(type), log);
+                cluster.getRoot().hostSystem().allocateHosts(clusterSpec, Capacity.fromRequiredNodeType(type), deployLogger);
         return createNodesFromHosts(hosts, cluster, context.getDeployState());
     }
     
