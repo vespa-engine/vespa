@@ -95,7 +95,11 @@ AbsDistanceDFW::findMinDistance(uint32_t docid, GetDocsumsState& state,
 }
 
 void
-AbsDistanceDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const
+AbsDistanceDFW::insert_field(uint32_t docid,
+                             const IDocsumStoreDocument*,
+                             GetDocsumsState& state,
+                             const SummaryElementsSelector&,
+                             vespalib::slime::Inserter &target) const
 {
     const auto & all_locations = getAllLocations(state);
     if (all_locations.empty()) {
@@ -220,7 +224,11 @@ void insertV8FromAttr(const attribute::IAttributeVector &attribute, uint32_t doc
 } // namespace
 
 void
-PositionsDFW::insertField(uint32_t docid, GetDocsumsState& dsState, vespalib::slime::Inserter &target) const
+PositionsDFW::insert_field(uint32_t docid,
+                           const IDocsumStoreDocument*,
+                           GetDocsumsState& dsState,
+                           const SummaryElementsSelector&,
+                           vespalib::slime::Inserter &target) const
 {
     if (_useV8geoPositions) {
         insertV8FromAttr(get_attribute(dsState), docid, target);

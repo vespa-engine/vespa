@@ -2,12 +2,11 @@
 
 #pragma once
 
-#include "simple_dfw.h"
+#include "docsum_field_writer.h"
 #include <memory>
 
 namespace search {
 class IAttributeManager;
-class MatchingElementsFields;
 }
 namespace search::attribute { class IAttributeVector; }
 
@@ -21,11 +20,10 @@ class SummaryElementsSelector;
 class AttributeDFWFactory {
 public:
     static std::unique_ptr<DocsumFieldWriter> create(const IAttributeManager& attr_mgr,
-                                                     const std::string& attr_name,
-                                                     const SummaryElementsSelector& elements_selector);
+                                                     const std::string& attr_name);
 };
 
-class AttrDFW : public SimpleDFW
+class AttrDFW : public DocsumFieldWriter
 {
 private:
     std::string _attrName;

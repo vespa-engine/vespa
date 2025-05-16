@@ -6,7 +6,6 @@
 #include "docsumstate.h"
 #include "struct_fields_resolver.h"
 #include "struct_map_attribute_combiner_dfw.h"
-#include <vespa/searchlib/common/matching_elements_fields.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -16,10 +15,9 @@ using search::attribute::IAttributeContext;
 
 namespace search::docsummary {
 
-AttributeCombinerDFW::AttributeCombinerDFW(const std::string &fieldName, bool filter_elements)
-    : SimpleDFW(),
+AttributeCombinerDFW::AttributeCombinerDFW(const std::string &fieldName)
+    : DocsumFieldWriter(),
       _stateIndex(0),
-      _filter_elements(filter_elements),
       _fieldName(fieldName)
 {
 }
@@ -34,28 +32,27 @@ AttributeCombinerDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 }
 
 std::unique_ptr<DocsumFieldWriter>
-AttributeCombinerDFW::create(const std::string &fieldName, IAttributeContext &attrCtx,
-                             const SummaryElementsSelector& elements_selector)
+AttributeCombinerDFW::create(const std::string &fieldName, IAttributeContext &attrCtx)
 {
     StructFieldsResolver structFields(fieldName, attrCtx, true);
     if (structFields.has_error()) {
         return {};
     } else if (structFields.is_map_of_struct()) {
-        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields, elements_selector);
+        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields);
     }
-    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields, elements_selector);
+    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields);
 }
 
 void
-AttributeCombinerDFW::insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const
+AttributeCombinerDFW::insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                                   const SummaryElementsSelector& elements_selector,
+                                   vespalib::slime::Inserter& target) const
 {
+    (void) doc;
+    (void) elements_selector;
     auto& fieldWriterState = state._fieldWriterStates[_stateIndex];
     if (!fieldWriterState) {
-        const MatchingElements *matching_elements = nullptr;
-        if (_filter_elements) {
-            matching_elements = &state.get_matching_elements();
-        }
-        fieldWriterState = allocFieldWriterState(*state._attrCtx, state.get_stash(), matching_elements);
+        fieldWriterState = allocFieldWriterState(*state._attrCtx, state, elements_selector);
     }
     fieldWriterState->insertField(docid, target);
 }

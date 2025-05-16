@@ -1,9 +1,17 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "summary_elements_selector.h"
+#include "docsumstate.h"
+#include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
 
 namespace search::docsummary {
+
+namespace {
+
+std::vector<uint32_t> empty;
+
+}
 
 SummaryElementsSelector::SummaryElementsSelector()
     : _selector(Selector::ALL),
@@ -48,6 +56,20 @@ SummaryElementsSelector::apply_to(MatchingElementsFields& target) const
     target.add_field(_field);
     for (auto &struct_field : _struct_fields) {
         target.add_mapping(_field, struct_field);
+    }
+}
+
+const std::vector<uint32_t> *
+SummaryElementsSelector::get_selected_elements(uint32_t docid, GetDocsumsState &state) const
+{
+    switch (_selector) {
+        case Selector::ALL:
+            return nullptr;
+        case Selector::BY_MATCH:
+            return &state.get_matching_elements().get_matching_elements(docid, _field);
+        case Selector::BY_SUMMARY_FEATURE:
+        default:
+            return &empty;
     }
 }
 

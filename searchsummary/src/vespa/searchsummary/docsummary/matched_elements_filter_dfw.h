@@ -6,10 +6,6 @@
 #include <memory>
 #include <vector>
 
-namespace search { class MatchingElementsFields; }
-
-namespace search::attribute { class IAttributeContext; }
-
 namespace search::docsummary {
 
 /**
@@ -20,8 +16,6 @@ namespace search::docsummary {
 class MatchedElementsFilterDFW : public DocsumFieldWriter {
 private:
     std::string _input_field_name;
-
-    const std::vector<uint32_t>& get_matching_elements(uint32_t docid, GetDocsumsState& state) const;
 
 public:
     MatchedElementsFilterDFW(const std::string& input_field_name);

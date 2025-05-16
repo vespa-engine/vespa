@@ -21,11 +21,12 @@ class StructMapAttributeCombinerDFW : public AttributeCombinerDFW
     std::vector<std::string> _valueFields;
     std::vector<std::string> _valueAttributeNames;
 
-    DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext &context, vespalib::Stash& stash, const MatchingElements* matching_elements) const override;
+    DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext& context,
+                                                  GetDocsumsState& state,
+                                                  const SummaryElementsSelector& elements_selector) const override;
 public:
     StructMapAttributeCombinerDFW(const std::string &fieldName,
-                                  const StructFieldsResolver& fields_resolver,
-                                  const SummaryElementsSelector& elements_selector);
+                                  const StructFieldsResolver& fields_resolver);
     ~StructMapAttributeCombinerDFW() override;
 };
 

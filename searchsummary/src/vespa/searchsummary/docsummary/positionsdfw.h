@@ -43,8 +43,9 @@ public:
     explicit AbsDistanceDFW(const std::string & attrName);
 
     bool isGenerated() const override { return true; }
-    void insertField(uint32_t docid, GetDocsumsState& state,
-                     vespalib::slime::Inserter &target) const override;
+    void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                      const SummaryElementsSelector& elements_selector,
+                      vespalib::slime::Inserter &target) const override;
 
     static std::unique_ptr<DocsumFieldWriter> create(const char *attribute_name, const IAttributeManager *index_man);
 
@@ -60,7 +61,9 @@ public:
     using UP = std::unique_ptr<PositionsDFW>;
     PositionsDFW(const std::string & attrName, bool useV8geoPositions);
     bool isGenerated() const override { return true; }
-    void insertField(uint32_t docid, GetDocsumsState& state, vespalib::slime::Inserter &target) const override;
+    void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
+                      const SummaryElementsSelector& elements_selector,
+                      vespalib::slime::Inserter &target) const override;
     static UP create(const char *attribute_name, const IAttributeManager *index_man, bool useV8geoPositions);
 };
 

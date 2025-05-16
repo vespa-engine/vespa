@@ -212,8 +212,8 @@ private:
     std::unique_ptr<SummaryElementsSelector> _elements_selector;
     std::unique_ptr<MatchingElementsFields>  _matching_elements_fields;
 
-    Slime run_filter_field_writer(const std::string& input_field_name, const ElementVector& matching_elements) {
-        auto writer = make_field_writer(input_field_name);
+    Slime run_field_writer(const std::string& input_field_name, const ElementVector& matching_elements, bool filter) {
+        auto writer = make_field_writer(input_field_name, filter);
         auto doc = _doc_store.getMappedDocsum();
         StateCallback callback(input_field_name, matching_elements);
         GetDocsumsState state(callback);
@@ -235,16 +235,22 @@ public:
         _mapper.setup(_attr_ctx);
     }
     ~MatchedElementsFilterTest() override;
-    std::unique_ptr<DocsumFieldWriter> make_field_writer(const std::string& input_field_name) {
-        auto elements_selector =
-            SummaryElementsSelector::select_by_match(input_field_name, _mapper.get_struct_fields(input_field_name));
+    std::unique_ptr<DocsumFieldWriter> make_field_writer(const std::string& input_field_name, bool filter) {
+        auto elements_selector = filter ?
+            SummaryElementsSelector::select_by_match(input_field_name, _mapper.get_struct_fields(input_field_name)) :
+            SummaryElementsSelector::select_all();
         _elements_selector = std::make_unique<SummaryElementsSelector>(std::move(elements_selector));
         _matching_elements_fields = std::make_unique<MatchingElementsFields>();
         _elements_selector->maybe_apply_to(*_matching_elements_fields);
         return MatchedElementsFilterDFW::create(input_field_name);
     }
     void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {
-        Slime act = run_filter_field_writer(input_field_name, matching_elements);
+        Slime act = run_field_writer(input_field_name, matching_elements, true);
+        SlimeValue exp(exp_slime_as_json);
+        EXPECT_EQ(exp.slime, act);
+    }
+    void expect_all(const std::string& input_field_name, const std::string& exp_slime_as_json) {
+        Slime act = run_field_writer(input_field_name, {}, false);
         SlimeValue exp(exp_slime_as_json);
         EXPECT_EQ(exp.slime, act);
     }
@@ -271,9 +277,17 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
     expect_filtered("array", {}, "null");
 }
 
+TEST_F(MatchedElementsFilterTest, all_elements_in_array_field_value)
+{
+    expect_all("array",
+               "[{'name':'a','weight':3},"
+               "{'name':'b','weight':5},"
+               "{'name':'c','weight':7}]");
+}
+
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_array_field_value)
 {
-    auto writer = make_field_writer("array");
+    auto writer = make_field_writer("array", true);
     EXPECT_TRUE(fields().has_field("array.weight"));
     EXPECT_EQ("array.name", fields().enclosing_field("array.name"));
     EXPECT_EQ("array", fields().enclosing_field("array.weight"));
@@ -295,6 +309,14 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
     expect_filtered("map", {}, "null");
 }
 
+TEST_F(MatchedElementsFilterTest, all_elements_in_map_field_value)
+{
+    expect_all("map",
+               "[{'key':'a','value':{'name':'a','weight':3}},"
+               "{'key':'b','value':{'name':'b','weight':5}},"
+               "{'key':'c','value':{'name':'c','weight':7}}]");
+}
+
 TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
 {
     expect_filtered("wset", {}, "null");
@@ -309,10 +331,15 @@ TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
     expect_filtered("wset", {}, "null");
 }
 
+TEST_F(MatchedElementsFilterTest, all_elements_in_weighed_set_field_value)
+{
+    expect_all("wset", "[{'item':'a','weight':13},{'item':'b','weight':15},{'item':'c','weight':17}]");
+}
+
 TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_field_value)
 {
     {
-        auto writer = make_field_writer("map");
+        auto writer = make_field_writer("map", true);
         EXPECT_TRUE(fields().has_field("map"));
         EXPECT_TRUE(!fields().has_field("map.key"));
         EXPECT_TRUE(fields().has_field("map.value.name"));
@@ -322,7 +349,7 @@ TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_fiel
         EXPECT_EQ("map.value.weight", fields().enclosing_field("map.value.weight"));
     }
     {
-        auto writer = make_field_writer("map2");
+        auto writer = make_field_writer("map2", true);
         EXPECT_TRUE(fields().has_field("map2"));
         EXPECT_TRUE(fields().has_field("map2.key"));
         EXPECT_EQ("map2", fields().enclosing_field("map2.key"));
@@ -333,7 +360,7 @@ TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_fiel
 
 TEST_F(MatchedElementsFilterTest, field_writer_is_not_generated_as_it_depends_on_data_from_document_store)
 {
-    auto writer = make_field_writer("array");
+    auto writer = make_field_writer("array", true);
     EXPECT_FALSE(writer->isGenerated());
 }
 

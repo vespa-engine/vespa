@@ -56,13 +56,15 @@ void fmtZcurve(int64_t zval, vespalib::slime::Inserter &target, bool useV8geoPos
 }
 
 void
-GeoPositionDFW::insertField(uint32_t docid, GetDocsumsState& dsState, vespalib::slime::Inserter &target) const
+GeoPositionDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& dsState,
+    const SummaryElementsSelector& elements_selector, vespalib::slime::Inserter &target) const
 {
     using vespalib::slime::Cursor;
     using vespalib::slime::ObjectSymbolInserter;
     using vespalib::slime::Symbol;
     using vespalib::slime::ArrayInserter;
 
+    (void) elements_selector;
     const auto& attribute = get_attribute(dsState);
     if (attribute.hasMultiValue()) {
         uint32_t entries = attribute.getValueCount(docid);

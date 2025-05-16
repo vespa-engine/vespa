@@ -101,7 +101,7 @@ AttributeCombinerTest::set_field(const std::string &field_name, bool filter_elem
     }
     matching_elements_fields = std::make_unique<MatchingElementsFields>();
     elements_selector->maybe_apply_to(*matching_elements_fields);
-    writer = AttributeCombinerDFW::create(field_name, *state._attrCtx, *elements_selector);
+    writer = AttributeCombinerDFW::create(field_name, *state._attrCtx);
     EXPECT_TRUE(writer->setFieldWriterStateIndex(0));
     state._fieldWriterStates.resize(1);
 }

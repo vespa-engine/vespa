@@ -7,7 +7,6 @@
 
 namespace search {
 namespace attribute { class IAttributeContext; }
-class MatchingElementsFields;
 }
 
 namespace search::docsummary {

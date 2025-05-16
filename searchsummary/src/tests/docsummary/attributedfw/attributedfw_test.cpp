@@ -66,7 +66,7 @@ public:
         } else {
             _elements_selector = std::make_unique<SummaryElementsSelector>(SummaryElementsSelector::select_all());
         }
-        _writer = AttributeDFWFactory::create(_attrs.mgr(), field_name, *_elements_selector);
+        _writer = AttributeDFWFactory::create(_attrs.mgr(), field_name);
         _writer->setIndex(0);
         auto attr = _state._attrCtx->getAttribute(field_name);
         if (attr->hasMultiValue()) {

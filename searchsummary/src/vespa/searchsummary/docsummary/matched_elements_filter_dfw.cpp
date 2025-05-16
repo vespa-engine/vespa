@@ -28,12 +28,6 @@ using vespalib::slime::inject;
 
 namespace search::docsummary {
 
-const std::vector<uint32_t>&
-MatchedElementsFilterDFW::get_matching_elements(uint32_t docid, GetDocsumsState& state) const
-{
-    return state.get_matching_elements().get_matching_elements(docid, _input_field_name);
-}
-
 MatchedElementsFilterDFW::MatchedElementsFilterDFW(const std::string& input_field_name)
     : _input_field_name(input_field_name)
 {
@@ -52,10 +46,20 @@ MatchedElementsFilterDFW::insert_field(uint32_t docid, const IDocsumStoreDocumen
                                        const SummaryElementsSelector& elements_selector,
                                        vespalib::slime::Inserter& target) const
 {
-    (void) elements_selector;
-    auto field_value = doc->get_field_value(_input_field_name);
-    if (field_value) {
-        SlimeFiller::insert_summary_field_with_filter(*field_value, target, get_matching_elements(docid, state));
+    if (doc != nullptr) {
+        if (elements_selector.all_elements()) {
+            doc->insert_summary_field(_input_field_name, target);
+        } else {
+            auto field_value = doc->get_field_value(_input_field_name);
+            if (field_value) {
+                auto selected_elements = elements_selector.get_selected_elements(docid, state);
+                if (selected_elements != nullptr) {
+                    SlimeFiller::insert_summary_field_with_filter(*field_value, target, *selected_elements);
+                } else {
+                    SlimeFiller::insert_summary_field(*field_value, target);
+                }
+            }
+        }
     }
 }
 
