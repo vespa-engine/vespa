@@ -1,0 +1,23 @@
+schema featuresinheritance {
+    document featuresinheritance {
+        field name type string {
+            indexing: attribute
+        }
+    }
+
+    rank-profile parent {
+        summary-features: attribute(name)
+    }
+
+    rank-profile fake-child {
+        summary-features inherits parent { 
+            # Error: Can only inherit from parent profile features
+        }
+    }
+
+    rank-profile real-child inherits parent {
+        summary-features inherits parent {
+            # OK
+        }
+    }
+}

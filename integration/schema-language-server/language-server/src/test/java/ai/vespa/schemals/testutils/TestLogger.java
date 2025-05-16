@@ -1,5 +1,10 @@
 package ai.vespa.schemals.testutils;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import org.eclipse.lsp4j.MessageType;
 
 import ai.vespa.schemals.common.ClientLogger;
@@ -10,10 +15,12 @@ import ai.vespa.schemals.SchemaMessageHandler;
  */
 public class TestLogger extends ClientLogger {
     private TestSchemaMessageHandler testMessageHandler;
+    private List<String> errors;
 
     public TestLogger(TestSchemaMessageHandler messageHandler) {
         super(messageHandler);
         testMessageHandler = messageHandler;
+        errors = new ArrayList<>();
     }
 
     public TestLogger() {
@@ -31,7 +38,7 @@ public class TestLogger extends ClientLogger {
             messageHandler.logMessage(MessageType.Error, message.toString());
         }
 
-        throw new RuntimeException("A error was logged to the client, this should never happen. Error message:" + message.toString());
+        errors.add(message.toString());
     }
 
     public void warning(Object message) {
@@ -42,5 +49,9 @@ public class TestLogger extends ClientLogger {
 
     public String getLog() {
         return testMessageHandler.getLog();
+    }
+
+    public List<String> getErrorMessages() {
+        return errors;
     }
 }

@@ -34,11 +34,7 @@ public class FetchDocumentation {
     };
 
     private final static Map<String, List<String>> REPLACE_FILENAME_MAP = new HashMap<>(){{
-        put("EXPRESSION", List.of( "EXPRESSION_SL", "EXPRESSION_ML" ));
-        put("RANK_FEATURES", List.of( "RANKFEATURES_SL", "RANKFEATURES_ML" ));
         put("FUNCTION (INLINE)? [NAME]", List.of( "FUNCTION" ));
-        put("SUMMARY_FEATURES", List.of( "SUMMARYFEATURES_SL", "SUMMARYFEATURES_ML", "SUMMARYFEATURES_ML_INHERITS" ));
-        put("MATCH_FEATURES", List.of( "MATCHFEATURES_SL", "MATCHFEATURES_ML", "MATCHFEATURES_SL_INHERITS" ));
         put("IMPORT FIELD", List.of( "IMPORT" ));
     }};
 

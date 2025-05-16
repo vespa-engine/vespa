@@ -63,7 +63,7 @@ public class SchemaParserTest {
 
         TestSchemaMessageHandler messageHandler = new TestSchemaMessageHandler();
         TestSchemaProgressHandler progressHandler = new TestSchemaProgressHandler();
-        ClientLogger logger = new TestLogger(messageHandler);
+        TestLogger logger = new TestLogger(messageHandler);
         SchemaIndex schemaIndex = new SchemaIndex(logger);
 
         List<Diagnostic> diagnostics = new ArrayList<>();
@@ -95,6 +95,13 @@ public class SchemaParserTest {
             testMessage += "\n    File: " + schemaURI + Utils.constructDiagnosticMessage(diagnostics, 2);
 
             numErrors += Utils.countErrors(diagnostics);
+        }
+
+        List<String> clientErrors = logger.getErrorMessages();
+        numErrors += clientErrors.size();
+
+        for (var s : clientErrors) {
+            testMessage += "\n    Client error: " + s;
         }
 
         assertEquals(0, numErrors, testMessage);
@@ -314,7 +321,8 @@ public class SchemaParserTest {
             new BadFileTestCase("src/test/sdfiles/single/rankprofilefuncs.sd", 2),
             new BadFileTestCase("src/test/sdfiles/single/onnxmodel.sd", 1),
             new BadFileTestCase("src/test/sdfiles/single/tensorGenerate.sd", 2),
-            new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 4)
+            new BadFileTestCase("src/test/sdfiles/single/onnxmodelinput.sd", 6),
+            new BadFileTestCase("src/test/sdfiles/single/featuresinheritance.sd", 1),
         };
 
         return Arrays.stream(tests)

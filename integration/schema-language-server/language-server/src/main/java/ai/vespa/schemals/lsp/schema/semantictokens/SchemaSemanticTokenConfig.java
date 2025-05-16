@@ -63,7 +63,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.DIVERSITY);
         add(TokenType.DOCUMENT);
         add(TokenType.DOCUMENT_SUMMARY);
-        add(TokenType.EXPRESSION_SL);
+        add(TokenType.EXPRESSION);
         add(TokenType.FIELD);
         add(TokenType.FIELDS);
         add(TokenType.FIELDSET); 
@@ -79,7 +79,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.INPUTS);
         add(TokenType.MACRO);
         add(TokenType.MATCH);
-        add(TokenType.MATCHFEATURES_SL);
+        add(TokenType.MATCH_FEATURES);
         add(TokenType.MATCH_PHASE);
         add(TokenType.MUTATE);
         add(TokenType.NORMALIZING);
@@ -89,7 +89,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.POST_FILTER_THRESHOLD);
         add(TokenType.QUERY_COMMAND);
         add(TokenType.RANK);
-        add(TokenType.RANKFEATURES_SL);
+        add(TokenType.RANK_FEATURES);
         add(TokenType.RANK_PROFILE);
         add(TokenType.RANK_PROPERTIES);
         add(TokenType.RANK_TYPE);
@@ -103,7 +103,7 @@ class SchemaSemanticTokenConfig {
         add(TokenType.STRUCT);
         add(TokenType.STRUCT_FIELD);
         add(TokenType.SUMMARY);
-        add(TokenType.SUMMARYFEATURES_SL);
+        add(TokenType.SUMMARY_FEATURES);
         add(TokenType.SUMMARY_TO);
         add(TokenType.TARGET_HITS_MAX_ADJUSTMENT_FACTOR);
         add(TokenType.TERMWISE_LIMIT);

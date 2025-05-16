@@ -20,7 +20,9 @@ import ai.vespa.schemals.parser.ast.onnxModelInput;
 import ai.vespa.schemals.tree.indexinglanguage.ILUtils;
 import ai.vespa.schemals.tree.rankingexpression.RankNode;
 import ai.vespa.schemals.tree.rankingexpression.RankingExpressionUtils;
-import ai.vespa.schemals.parser.ast.expression;
+import ai.vespa.schemals.parser.ast.expressionElm;
+import ai.vespa.schemals.parser.ast.consumedExpressionElm;
+import ai.vespa.schemals.parser.ast.consumedFeatureListElm;
 import ai.vespa.schemals.parser.ast.featureListElm;
 
 /**
@@ -178,20 +180,10 @@ public class SchemaNode extends Node {
         return (
             (language == LanguageType.INDEXING && originalSchemaNode instanceof indexingElm) ||
             (language == LanguageType.RANK_EXPRESSION && (
-                (originalSchemaNode instanceof featureListElm) ||
-                (originalSchemaNode instanceof expression) ||
-                (
-                  (originalSchemaNode instanceof onnxModelInput) 
-                  && !((onnxModelInput)originalSchemaNode).getInputSourceExpression().isEmpty()
-                )
+                (originalSchemaNode instanceof consumedExpressionElm) ||
+                (originalSchemaNode instanceof consumedFeatureListElm)
             ))
         );
-    }
-
-    public boolean containsExpressionData() {
-        if (this.language != LanguageType.SCHEMA) return false;
-
-        return (originalSchemaNode instanceof expression) || (originalSchemaNode instanceof onnxModelInput);
     }
 
     public SubLanguageData getILScript() {
@@ -203,15 +195,12 @@ public class SchemaNode extends Node {
     public String getRankExpressionString() {
         if (!containsOtherLanguageData(LanguageType.RANK_EXPRESSION)) return null;
 
-        if (originalSchemaNode instanceof featureListElm) {
-            featureListElm elmNode = (featureListElm)originalSchemaNode;
-            return elmNode.getFeatureListString();
-        } else if (originalSchemaNode instanceof expression) {
-            expression expressionNode = (expression)originalSchemaNode;
-            return expressionNode.getExpressionString();
-        } else if (originalSchemaNode instanceof onnxModelInput) {
-            onnxModelInput onnxModelInputNode = (onnxModelInput)originalSchemaNode;
-            return onnxModelInputNode.getInputSourceExpression();
+        if (originalSchemaNode instanceof consumedExpressionElm) {
+            consumedExpressionElm expressionNode = (consumedExpressionElm)originalSchemaNode;
+            return expressionNode.getRankingExpression();
+        } else if (originalSchemaNode instanceof consumedFeatureListElm) {
+            consumedFeatureListElm featureListNode = (consumedFeatureListElm)originalSchemaNode;
+            return featureListNode.getFeatureList();
         }
         return null;
     }
