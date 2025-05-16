@@ -15,31 +15,12 @@ import java.util.Objects;
  *
  * @author Tony Vaagenes
  */
-public final class FileReference {
+public record FileReference(String value) {
 
-    private final String value;
-
-    public FileReference(String value) {
+    public FileReference {
+        Objects.requireNonNull(value);
         if (Path.of(value).normalize().startsWith(".."))
             throw new IllegalArgumentException("Path may not start with '..' but got '" + value + "'");
-        this.value = Objects.requireNonNull(value);
-    }
-
-    public String value() {
-        return value;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        FileReference that = (FileReference) o;
-        return value.equals(that.value);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(value);
     }
 
     @Override
