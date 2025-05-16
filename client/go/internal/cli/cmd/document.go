@@ -70,7 +70,7 @@ func sendOperation(op document.Operation, args []string, timeoutSecs int, waiter
 		return err
 	}
 	if len(args) == 0 && data == "" {
-		return fmt.Errorf("Must provide either a file name or use the --data parameter")
+		return fmt.Errorf("must provide either a file name or use the --data parameter")
 	}
 
 	var id string

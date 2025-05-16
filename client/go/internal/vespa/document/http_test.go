@@ -58,31 +58,41 @@ func assertLeastBusy(t *testing.T, id int, client *Client) {
 }
 
 func TestClientSend(t *testing.T) {
-	var tests = []struct {
+	tests := []struct {
 		in     Document
 		method string
 		url    string
 	}{
-		{Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "123"}}`)},
+		{
+			Document{Create: true, Id: mustParseId("id:ns:type::doc1"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "123"}}`)},
 			"PUT",
-			"https://example.com:1337/document/v1/ns/type/docid/doc1?timeout=5000ms&create=true"},
-		{Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "456"}}`)},
+			"https://example.com:1337/document/v1/ns/type/docid/doc1?timeout=5000ms&create=true",
+		},
+		{
+			Document{Id: mustParseId("id:ns:type::doc2"), Operation: OperationUpdate, Body: []byte(`{"fields":{"foo": "456"}}`)},
 			"PUT",
-			"https://example.com:1337/document/v1/ns/type/docid/doc2?timeout=5000ms"},
-		{Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
+			"https://example.com:1337/document/v1/ns/type/docid/doc2?timeout=5000ms",
+		},
+		{
+			Document{Id: mustParseId("id:ns:type::doc3"), Operation: OperationRemove},
 			"DELETE",
-			"https://example.com:1337/document/v1/ns/type/docid/doc3?timeout=5000ms"},
-		{Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
+			"https://example.com:1337/document/v1/ns/type/docid/doc3?timeout=5000ms",
+		},
+		{
+			Document{Condition: "foo", Id: mustParseId("id:ns:type::doc4"), Operation: OperationUpdate, Body: []byte(`{"fields":{"baz": "789"}}`)},
 			"PUT",
-			"https://example.com:1337/document/v1/ns/type/docid/doc4?timeout=5000ms&condition=foo"},
-		{Document{Id: mustParseId("id:ns:type::doc5"), Operation: OperationPut, Body: []byte(`{"fields":{"baz": "789"}}`)},
+			"https://example.com:1337/document/v1/ns/type/docid/doc4?timeout=5000ms&condition=foo",
+		},
+		{
+			Document{Id: mustParseId("id:ns:type::doc5"), Operation: OperationPut, Body: []byte(`{"fields":{"baz": "789"}}`)},
 			"POST",
-			"https://example.com:1337/document/v1/ns/type/docid/doc5?timeout=5000ms"},
+			"https://example.com:1337/document/v1/ns/type/docid/doc5?timeout=5000ms",
+		},
 	}
 	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
-		Timeout: time.Duration(5 * time.Second),
+		Timeout: 5 * time.Second,
 	}, []httputil.Client{&httpClient})
 	clock := manualClock{t: time.Now(), tick: time.Second}
 	client.now = clock.now
@@ -163,7 +173,7 @@ func TestClientGet(t *testing.T) {
 	httpClient := mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
-		Timeout: time.Duration(5 * time.Second),
+		Timeout: 5 * time.Second,
 	}, []httputil.Client{&httpClient})
 	clock := manualClock{t: time.Now(), tick: time.Second}
 	client.now = clock.now
@@ -206,7 +216,7 @@ func TestClientSendCompressed(t *testing.T) {
 	httpClient := &mock.HTTPClient{ReadBody: true}
 	client, _ := NewClient(ClientOptions{
 		BaseURL: "https://example.com:1337",
-		Timeout: time.Duration(5 * time.Second),
+		Timeout: 5 * time.Second,
 	}, []httputil.Client{httpClient})
 
 	bigBody := fmt.Sprintf(`{"fields": {"foo": "%s"}}`, strings.Repeat("s", 512+1))
@@ -343,7 +353,7 @@ func benchmarkClientSend(b *testing.B, compression Compression, document Documen
 	client, _ := NewClient(ClientOptions{
 		Compression: compression,
 		BaseURL:     "https://example.com:1337",
-		Timeout:     time.Duration(5 * time.Second),
+		Timeout:     5 * time.Second,
 	}, []httputil.Client{&httpClient})
 	b.ResetTimer() // ignore setup
 	for n := 0; n < b.N; n++ {

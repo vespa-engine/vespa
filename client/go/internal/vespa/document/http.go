@@ -40,7 +40,7 @@ type Client struct {
 	pending     chan *pendingDocument
 }
 
-// ClientOptions specifices the configuration options of a feed client.
+// ClientOptions specifics the configuration options of a feed client.
 type ClientOptions struct {
 	BaseURL     string
 	Header      http.Header
@@ -173,16 +173,16 @@ func (c *Client) methodAndURL(d Document, buf *bytes.Buffer) (string, string) {
 
 func (c *Client) leastBusyClient() *countingHTTPClient {
 	leastBusy := c.httpClients[0]
-	min := int64(math.MaxInt64)
+	minInflight := int64(math.MaxInt64)
 	next := c.sendCount.Add(1)
 	start := int(next) % len(c.httpClients)
 	for i := range c.httpClients {
 		j := (i + start) % len(c.httpClients)
 		client := c.httpClients[j]
 		inflight := client.inflight.Load()
-		if inflight < min {
+		if inflight < minInflight {
 			leastBusy = client
-			min = inflight
+			minInflight = inflight
 		}
 	}
 	leastBusy.inflight.Add(1)
@@ -321,11 +321,11 @@ func resultWithErr(result Result, err error, elapsed time.Duration) Result {
 func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result Result, elapsed time.Duration, buf *bytes.Buffer, copyBody bool) Result {
 	result.HTTPStatus = resp.StatusCode
 	switch resp.StatusCode {
-	case 200:
+	case http.StatusOK:
 		result.Status = StatusSuccess
-	case 412:
+	case http.StatusPreconditionFailed:
 		result.Status = StatusConditionNotMet
-	case 502, 504, 507:
+	case http.StatusBadGateway, http.StatusGatewayTimeout, http.StatusInsufficientStorage:
 		result.Status = StatusVespaFailure
 	default:
 		result.Status = StatusTransportFailure
@@ -352,6 +352,6 @@ func (c *Client) resultWithResponse(resp *http.Response, sentBytes int, result R
 	}
 	result.Latency = elapsed
 	result.BytesSent = int64(sentBytes)
-	result.BytesRecv = int64(written)
+	result.BytesRecv = written
 	return result
 }

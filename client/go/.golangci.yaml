@@ -1,0 +1,44 @@
+version: "2"
+linters:
+  enable:
+    - asciicheck
+    - bidichk
+    - copyloopvar
+    - dupword
+    - errname
+    - errorlint
+    - errcheck
+    - godot
+    - misspell
+    - musttag
+    - nakedret
+    - nilerr
+    - predeclared
+    - staticcheck
+    - unconvert
+    - unused
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$

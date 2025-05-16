@@ -86,7 +86,6 @@ jobs:
           echo "Changes detected between ${previous_tag} and ${new_tag}."
           echo "has-changes=true" >> "${GITHUB_OUTPUT}"
 
-
   build-test:
     runs-on: ubuntu-latest
 
@@ -106,6 +105,12 @@ jobs:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-go@v5
+
+      - name: Lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          working-directory: client/go
+          only-new-issues: true
 
       - name: build
         run: |

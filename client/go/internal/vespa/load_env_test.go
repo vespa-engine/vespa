@@ -18,12 +18,12 @@ func setup(t *testing.T, contents string) string {
 	bdir := vdir + "/bin"
 	cdir := vdir + "/conf/vespa"
 	envf := cdir + "/default-env.txt"
-	err := os.MkdirAll(cdir, 0755)
+	err := os.MkdirAll(cdir, 0o755)
 	assert.Nil(t, err)
 	t.Setenv("VESPA_HOME", vdir)
-	err = os.MkdirAll(bdir, 0755)
+	err = os.MkdirAll(bdir, 0o755)
 	assert.Nil(t, err)
-	err = os.WriteFile(envf, []byte(contents), 0644)
+	err = os.WriteFile(envf, []byte(contents), 0o644)
 	assert.Nil(t, err)
 	return tmp
 }
@@ -61,8 +61,8 @@ func TestLoadEnvWhiteSpace(t *testing.T) {
 	setup(t, `
 # vespa env vars file
 override VESPA_V1 v1
- override  VESPA_V2  v2 
-override VESPA_V3 spaced v3 v3
+ override  VESPA_V2  v2
+override VESPA_V3 spaced v3 vv
 override VESPA_V4 " quoted spaced "
 override VESPA_V5 v5
 `)
@@ -72,7 +72,7 @@ override VESPA_V5 v5
 	// check results
 	assert.Equal(t, os.Getenv("VESPA_V1"), "v1")
 	assert.Equal(t, os.Getenv("VESPA_V2"), "v2")
-	assert.Equal(t, os.Getenv("VESPA_V3"), "spaced v3 v3")
+	assert.Equal(t, os.Getenv("VESPA_V3"), "spaced v3 vv")
 	assert.Equal(t, os.Getenv("VESPA_V4"), " quoted spaced ")
 	assert.Equal(t, os.Getenv("VESPA_V5"), "v5")
 }

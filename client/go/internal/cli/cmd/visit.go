@@ -88,9 +88,7 @@ func (v *visitArgs) dumpDocuments(documents []DocumentBlob) {
 var totalDocCount int
 
 func newVisitCmd(cli *CLI) *cobra.Command {
-	var (
-		vArgs visitArgs
-	)
+	var vArgs visitArgs
 	cmd := &cobra.Command{
 		Use:   "visit",
 		Short: "Retrieve and print all documents from Vespa",
@@ -198,9 +196,7 @@ func checkArguments(vArgs visitArgs) (res OperationResult) {
 	}
 	for _, b := range vArgs.bucketSpaces {
 		switch b {
-		case
-			"default",
-			"global":
+		case "default", "global":
 			// Do nothing
 		default:
 			return Failure("Invalid 'bucket-space' argument '" + b + "', must be 'default' or 'global'")
@@ -233,7 +229,7 @@ func probeHandler(vArgs *visitArgs, service *vespa.Service, cli *CLI) (res Opera
 	}
 	request := &http.Request{
 		URL:    url,
-		Method: "GET",
+		Method: http.MethodGet,
 		Header: vArgs.header,
 	}
 	timeout := time.Duration(90) * time.Second
@@ -242,7 +238,7 @@ func probeHandler(vArgs *visitArgs, service *vespa.Service, cli *CLI) (res Opera
 		return Failure("Request failed: " + err.Error())
 	}
 	defer response.Body.Close()
-	if response.StatusCode == 200 {
+	if response.StatusCode == http.StatusOK {
 		handlersInfo, err := parseHandlersOutput(response.Body)
 		if err != nil || len(handlersInfo.Handlers) == 0 {
 			cli.printWarning("Could not parse JSON response from"+urlPath, err.Error())
@@ -314,7 +310,7 @@ func probeVisit(vArgs *visitArgs, service *vespa.Service) []string {
 
 func runVisit(vArgs *visitArgs, service *vespa.Service) (res OperationResult) {
 	vArgs.debugPrint(fmt.Sprintf("trying to visit: '%s'", vArgs.contentCluster))
-	var totalDocuments = 0
+	totalDocuments := 0
 	var continuationToken string
 	for {
 		var vvo *VespaVisitOutput
@@ -393,7 +389,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	request := &http.Request{
 		URL:    url,
-		Method: "GET",
+		Method: http.MethodGet,
 		Header: vArgs.header,
 	}
 	timeout := time.Duration(900) * time.Second
@@ -403,7 +399,7 @@ func runOneVisit(vArgs *visitArgs, service *vespa.Service, contToken string) (*V
 	}
 	defer response.Body.Close()
 	vvo, err := parseVisitOutput(response.Body)
-	if response.StatusCode == 200 {
+	if response.StatusCode == http.StatusOK {
 		if err == nil {
 			totalDocCount += vvo.DocumentCount
 			if vvo.DocumentCount != len(vvo.Documents) {

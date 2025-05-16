@@ -12,7 +12,7 @@ type CircuitState int
 const (
 	// CircuitClosed represents a closed circuit. Documents are processed successfully
 	CircuitClosed CircuitState = iota
-	// CircuitHalfOpen represents a half-open circuit. Some errors have happend, but processing may still recover
+	// CircuitHalfOpen represents a half-open circuit. Some errors have happened, but processing may still recover
 	CircuitHalfOpen
 	// CircuitOpen represents a open circuit. Something is broken. We should no longer process documents
 	CircuitOpen

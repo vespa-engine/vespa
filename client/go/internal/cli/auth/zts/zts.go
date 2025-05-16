@@ -71,7 +71,7 @@ func (c *Client) Authenticate(request *http.Request) error {
 // AccessToken returns an access token within the domain configured in client c.
 func (c *Client) AccessToken() (Token, error) {
 	data := fmt.Sprintf("grant_type=client_credentials&scope=%s:domain", c.domain)
-	req, err := http.NewRequest("POST", c.tokenURL.String(), strings.NewReader(data))
+	req, err := http.NewRequest(http.MethodPost, c.tokenURL.String(), strings.NewReader(data))
 	if err != nil {
 		return Token{}, err
 	}

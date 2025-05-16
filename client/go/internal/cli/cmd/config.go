@@ -324,7 +324,7 @@ func (c *Config) loadLocalConfigFrom(parent string) error {
 }
 
 func (c *Config) write() error {
-	if err := os.MkdirAll(c.homeDir, 0700); err != nil {
+	if err := os.MkdirAll(c.homeDir, 0o700); err != nil {
 		return err
 	}
 	configFile := filepath.Join(c.homeDir, configFile)
@@ -452,7 +452,7 @@ func (c *Config) credentialsPEM(envVar string, credentialsFile credentialsFile) 
 		}
 		return nil, "", err
 	}
-	return []byte(pem), credentialsFile.path, nil
+	return pem, credentialsFile.path, nil
 }
 
 func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (vespa.TLSOptions, error) {
@@ -478,7 +478,6 @@ func (c *Config) readTLSOptions(app vespa.ApplicationID, targetType string) (ves
 		options.PrivateKeyFile = keyFile
 	} else {
 		return vespa.TLSOptions{}, err
-
 	}
 	// CA certificate
 	_, options.TrustAll = c.environment["VESPA_CLI_DATA_PLANE_TRUST_ALL"]
@@ -570,12 +569,12 @@ func (c *Config) writeSessionID(app vespa.ApplicationID, sessionID int64) error 
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(sessionPath, []byte(fmt.Sprintf("%d\n", sessionID)), 0600)
+	return os.WriteFile(sessionPath, []byte(fmt.Sprintf("%d\n", sessionID)), 0o600)
 }
 
 func (c *Config) applicationFilePath(app vespa.ApplicationID, name string) (string, error) {
 	appDir := filepath.Join(c.homeDir, app.String())
-	if err := os.MkdirAll(appDir, 0700); err != nil {
+	if err := os.MkdirAll(appDir, 0o700); err != nil {
 		return "", err
 	}
 	return filepath.Join(appDir, name), nil
@@ -723,7 +722,7 @@ func vespaCliHome(env map[string]string) (string, error) {
 		}
 		home = filepath.Join(userHome, ".vespa")
 	}
-	if err := os.MkdirAll(home, 0700); err != nil {
+	if err := os.MkdirAll(home, 0o700); err != nil {
 		return "", err
 	}
 	return home, nil
@@ -738,7 +737,7 @@ func vespaCliCacheDir(env map[string]string) (string, error) {
 		}
 		cacheDir = filepath.Join(userCacheDir, "vespa")
 	}
-	if err := os.MkdirAll(cacheDir, 0755); err != nil {
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
 		return "", err
 	}
 	return cacheDir, nil

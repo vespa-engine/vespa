@@ -44,7 +44,7 @@ func RunFetch(opts *Options, args []string) error {
 }
 
 func fetchDirectory(name string, input *bytes.Buffer) {
-	err := os.MkdirAll(name, 0755)
+	err := os.MkdirAll(name, 0o755)
 	if err != nil {
 		fmt.Printf("ERROR: %v\n", err)
 		return

@@ -4,6 +4,7 @@ package tracedoctor
 
 import (
 	"fmt"
+
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
 )
 

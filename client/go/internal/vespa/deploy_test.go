@@ -3,6 +3,7 @@ package vespa
 
 import (
 	"archive/zip"
+	"errors"
 	"io"
 	"mime"
 	"mime/multipart"
@@ -293,10 +294,10 @@ func assertFindApplicationPackage(t *testing.T, zipOrDir string, fixture pkgFixt
 
 func writeFile(t *testing.T, name string) {
 	t.Helper()
-	err := os.MkdirAll(filepath.Dir(name), 0755)
+	err := os.MkdirAll(filepath.Dir(name), 0o755)
 	assert.Nil(t, err)
 	if !strings.HasSuffix(name, string(os.PathSeparator)) {
-		err = os.WriteFile(name, []byte{0}, 0644)
+		err = os.WriteFile(name, []byte{0}, 0o644)
 		assert.Nil(t, err)
 	}
 }
@@ -312,7 +313,7 @@ func parseMultiPart(t *testing.T, req *http.Request) map[string][]byte {
 	mr := multipart.NewReader(req.Body, params["boundary"])
 	for {
 		p, err := mr.NextPart()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

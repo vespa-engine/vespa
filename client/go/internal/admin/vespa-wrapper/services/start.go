@@ -40,7 +40,7 @@ func checkjava() {
 		osutil.ExitErr(err)
 	}
 	if !strings.Contains(out, "64-Bit Server VM") {
-		osutil.ExitErr(fmt.Errorf("java must invoke the 64-bit Java VM, but -version says:\n%s\n", out))
+		osutil.ExitErr(fmt.Errorf("java must invoke the 64-bit Java VM, but -version says:\n%s", out))
 	}
 }
 
