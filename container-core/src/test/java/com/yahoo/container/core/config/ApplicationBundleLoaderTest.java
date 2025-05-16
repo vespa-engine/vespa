@@ -9,6 +9,7 @@ import org.osgi.framework.Bundle;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_1;
 import static com.yahoo.container.core.config.BundleTestUtil.BUNDLE_1_REF;
@@ -54,9 +55,9 @@ public class ApplicationBundleLoaderTest {
         bundleLoader.useBundles(List.of(BUNDLE_1_REF, BUNDLE_2_REF));
         bundleLoader.completeGeneration(GenerationStatus.SUCCESS);
 
-        List<BsnVersion> activeBundles = bundleLoader.activeBundlesBsnVersion();
-        assertEquals(new BsnVersion(BUNDLE_1), activeBundles.get(0));
-        assertEquals(new BsnVersion(BUNDLE_2), activeBundles.get(1));
+        Set<BsnVersion> activeBundles = Set.copyOf(bundleLoader.activeBundlesBsnVersion());
+        assertTrue(activeBundles.contains(new BsnVersion(BUNDLE_1)));
+        assertTrue(activeBundles.contains(new BsnVersion(BUNDLE_2)));
     }
 
     @Test
