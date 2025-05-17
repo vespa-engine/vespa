@@ -22,7 +22,7 @@ public interface Token {
 
     /**
      * Returns the number of components, if this token is a compound word
-     * (e.g. german "kommunikationsfehler". Otherwise, return 0
+     * (e.g. german "kommunikationsfehler". Otherwise, returns 0.
      *
      * @return number of components, or 0 if none
      */

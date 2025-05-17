@@ -69,6 +69,13 @@ public class SimpleToken implements Token {
         return components.get(i);
     }
 
+    public SimpleToken addStem(String stem) {
+        if (this.stems == null)
+            this.stems = new ArrayList<>();
+        stems.add(stem);
+        return this;
+    }
+
     public SimpleToken addComponent(Token token) {
         components.add(token);
         return this;

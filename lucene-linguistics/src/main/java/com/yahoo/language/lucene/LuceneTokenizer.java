@@ -60,14 +60,18 @@ class LuceneTokenizer implements Tokenizer {
         OffsetAttribute offsetAttribute = tokenStream.addAttribute(OffsetAttribute.class);
         try {
             tokenStream.reset();
+            SimpleToken current = null;
             while (tokenStream.incrementToken()) {
-                // TODO: what to do with cases when multiple tokens are inserted into the position?
                 String originalString = text.substring(offsetAttribute.startOffset(), offsetAttribute.endOffset());
                 String tokenString = charTermAttribute.toString();
-                tokens.add(new SimpleToken(originalString, tokenString)
-                        .setType(TokenType.ALPHABETIC)
-                        .setOffset(offsetAttribute.startOffset())
-                        .setScript(TokenScript.UNKNOWN));
+                if (isAtSamePositionAs(current, offsetAttribute)) {
+                    current.addStem(tokenString);
+                }
+                else {
+                    current = new SimpleToken(originalString, tokenString).setType(TokenType.ALPHABETIC)
+                                                                          .setOffset(offsetAttribute.startOffset());
+                    tokens.add(current);
+                }
             }
             tokenStream.end();
             tokenStream.close();
@@ -75,6 +79,11 @@ class LuceneTokenizer implements Tokenizer {
             throw new RuntimeException("Failed to analyze: " + text, e);
         }
         return tokens;
+    }
+
+    private boolean isAtSamePositionAs(Token token, OffsetAttribute offsetAttribute) {
+        if (token == null) return false;
+        return offsetAttribute.startOffset() == token.getOffset();
     }
 
 }
