@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-
 /**
  * @author Håkon Humberset
  */
@@ -154,7 +153,7 @@ public class Struct extends StructuredFieldValue {
         if (found != null) {
             Hashlet<Integer, FieldValue> copy = new Hashlet<>();
             copy.reserve(values.size() - 1);
-            for (int i=0; i < values.size(); i++) {
+            for (int i = 0; i < values.size(); i++) {
                 if (values.key(i) != field.getId()) {
                     copy.put(values.key(i), values.value(i));
                 }

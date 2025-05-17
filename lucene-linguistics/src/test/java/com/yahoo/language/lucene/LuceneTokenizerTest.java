@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.language.lucene;
 
+import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
 import com.yahoo.config.FileReference;
 import com.yahoo.language.Language;
@@ -9,9 +10,18 @@ import com.yahoo.language.process.LinguisticsParameters;
 import com.yahoo.language.process.StemList;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.LowerCaseFilter;
+import org.apache.lucene.analysis.TokenFilter;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.Tokenizer;
+import org.apache.lucene.analysis.core.WhitespaceTokenizer;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.PositionIncrementAttribute;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -49,6 +59,70 @@ public class LuceneTokenizerTest {
         List<StemList> tokens = luceneLinguistics().getStemmer().stem(text, parameters);
         assertEquals(1, tokens.size());
         assertEquals("mūš", tokens.get(0).get(0));
+    }
+
+    @Test
+    public void testStemmingMultiple() {
+        var parameters = new LinguisticsParameters(Language.ENGLISH, StemMode.ALL, false, true);
+        String languageCode = Language.ENGLISH.languageCode();
+        var analyzer = new MockAnalyzer();
+        var registry = new ComponentRegistry<Analyzer>();
+        registry.register(new ComponentId(languageCode), analyzer);
+        LuceneLinguistics linguistics = new LuceneLinguistics( new LuceneAnalysisConfig.Builder().build(), registry);
+        List<Token> tokens = iterableToList(linguistics.getTokenizer().tokenize("Dogs and cats", parameters));
+        assertEquals(3, tokens.size());
+        assertEquals("Dogs", tokens.get(0).getStem(0));
+        assertEquals("DOGS", tokens.get(0).getStem(1));
+        assertEquals("and",  tokens.get(1).getStem(0));
+        assertEquals("AND",  tokens.get(1).getStem(1));
+        assertEquals("cats", tokens.get(2).getStem(0));
+        assertEquals("CATS", tokens.get(2).getStem(1));
+    }
+
+    private static class MockAnalyzer extends Analyzer {
+
+        @Override
+        protected TokenStreamComponents createComponents(String fieldName) {
+            // Tokenizer splits text on whitespace
+            Tokenizer source = new WhitespaceTokenizer();
+            TokenStream filter = new DuplicateTokenFilter(source);
+            return new TokenStreamComponents(source, filter);
+        }
+    }
+
+    /** A token filter which emits both the lower-and upper case variant of each token, on the same position. */
+    private static class DuplicateTokenFilter extends TokenFilter {
+
+        private final CharTermAttribute term = addAttribute(CharTermAttribute.class);
+        private final PositionIncrementAttribute position = addAttribute(PositionIncrementAttribute.class);
+
+        private State savedState = null;
+        private boolean emitUppercase = false;
+
+        protected DuplicateTokenFilter(TokenStream input) {
+            super(input);
+        }
+
+        @Override
+        public boolean incrementToken() throws IOException {
+            if (emitUppercase) {
+                restoreState(savedState);
+                String value = term.toString().toUpperCase();
+                term.setEmpty();
+                term.append(value);
+                position.setPositionIncrement(0); // same position
+                emitUppercase = false;
+                return true;
+            }
+
+            if (input.incrementToken()) {
+                savedState = captureState();
+                emitUppercase = true;
+                return true;
+            }
+
+            return false;
+        }
     }
 
     private Linguistics luceneLinguistics() {
