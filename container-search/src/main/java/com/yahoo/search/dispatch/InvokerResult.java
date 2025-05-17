@@ -45,11 +45,12 @@ public class InvokerResult {
             if (hit.hasSortData()) {
                 fh.setSortData(hit.getSortData(), sorting);
             }
-            if (hit.hasMatchFeatures()) {
-                fh.setField("matchfeatures", hit.getMatchFeatures());
-            }
             fh.setQuery(query);
             fh.setFillable();
+            if (hit.hasMatchFeatures()) {
+                fh.setField("matchfeatures", hit.getMatchFeatures());
+                fh.setFilled("[f:matchfeatures]");
+            }
             fh.setCached(false);
             result.hits().add(fh);
         }

@@ -82,6 +82,10 @@ public class RpcProtobufFillInvoker extends FillInvoker {
     @Override
     protected void sendFillRequest(Result result, String summaryClass) {
         partialSummaryHandler.wantToFill(result, summaryClass);
+        if (partialSummaryHandler.resultAlreadyFilled()) {
+            result.getQuery().trace(false, 3, "Skipping fill of ", summaryClass, " as result is already filled");
+            return;
+        }
         ListMap<Integer, FastHit> hitsByNode = hitsByNode(result);
         int queueSize = Math.max(hitsByNode.size(), resourcePool.knownNodeIds().size());
         responses = new LinkedBlockingQueue<>(queueSize);
@@ -113,6 +117,20 @@ public class RpcProtobufFillInvoker extends FillInvoker {
 
     @Override
     protected void getFillResults(Result result, String summaryClass) {
+        if (partialSummaryHandler.resultAlreadyFilled()) {
+            if (outstandingResponses == 0) {
+                for (Hit hit : (Iterable<Hit>) result.hits()::unorderedDeepIterator) {
+                    if (hit.isFillable() && hit instanceof FastHit fastHit) {
+                        partialSummaryHandler.markFilled(hit);
+                    }
+                }
+                return;
+            } else {
+                // should never happen
+                log.log(Level.SEVERE, "result was already filled, but there are "
+                        + outstandingResponses + " outstanding responses");
+            }
+        }
         try {
             processResponses(result, summaryClass);
             result.hits().setSorted(false);
