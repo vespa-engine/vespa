@@ -76,4 +76,24 @@ public class ScriptManagerTestCase {
         }
         assertNull(scriptMgr.getScript(new DocumentType("unknown")));
     }
+
+    @Test
+    public void requireThatInputFieldsCanBeOptional() {
+        var typeMgr = DocumentTypeManager.fromFile("src/test/cfg/documentmanager_inherit.cfg");
+        DocumentType docType = typeMgr.getDocumentType("newsarticle");
+        assertNotNull(docType);
+        IlscriptsConfig.Builder config = new IlscriptsConfig.Builder();
+        config.ilscript(new IlscriptsConfig.Ilscript.Builder().doctype("newsarticle")
+                        .content("(input uri || \"\") | attribute city")
+                        .content("clear_state | guard { (input uri || \"\") | set_language; input weight | attribute weight; }")
+                        .content("input title | index title"));
+        ScriptManager scriptMgr = new ScriptManager(typeMgr, new IlscriptsConfig(config), null,
+                                                    Chunker.throwsOnUse.asMap(),
+                                                    Embedder.throwsOnUse.asMap(),
+                                                    FieldGenerator.throwsOnUse.asMap());
+        assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle"), "title"));
+        assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle"), "weight"));
+        assertNotNull(scriptMgr.getScript(typeMgr.getDocumentType("newsarticle"), "uri"));
+    }
+
 }

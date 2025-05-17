@@ -8,8 +8,10 @@ import com.yahoo.vespa.objects.ObjectOperation;
 import com.yahoo.vespa.objects.ObjectPredicate;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * @author Simon Thoresen Hult
@@ -118,6 +120,43 @@ public final class InputExpression extends Expression {
             InputExpression.InputFieldNameExtractor inputFieldNameExtractor = new InputExpression.InputFieldNameExtractor();
             expression.select(inputFieldNameExtractor, inputFieldNameExtractor);
             return inputFieldNameExtractor.inputFieldNames;
+        }
+
+    }
+
+
+    public static class RequiredInputFieldsExtractor implements ObjectOperation, ObjectPredicate {
+
+        private final Set<String> inputFieldNames = new HashSet<>();
+
+        @Override
+        public void execute(Object obj) {
+            if (obj instanceof InputExpression input) {
+                inputFieldNames.add(input.getFieldName());
+            }
+            if (obj instanceof ChoiceExpression choice) {
+                Set<String> required = null;
+                for (Expression child : choice.asList()) {
+                    if (required == null) {
+                        required = new HashSet<>();
+                        required.addAll(runOn(child));
+                    } else {
+                        required.retainAll(runOn(child));
+                    }
+                }
+                inputFieldNames.addAll(required);
+            }
+        }
+
+        @Override
+        public boolean check(Object obj) {
+            return (obj instanceof InputExpression) || (obj instanceof ChoiceExpression);
+        }
+
+        public static Set<String> runOn(Expression expression) {
+            var extractor = new RequiredInputFieldsExtractor();
+            expression.select(extractor, extractor);
+            return extractor.inputFieldNames;
         }
 
     }

@@ -43,7 +43,7 @@ public class DocumentScript {
         expression.resolve(documentType);
     }
 
-    public Expression getExpression() { return expression; }
+    public ScriptExpression getExpression() { return expression; }
 
     public Document execute(FieldValuesFactory fieldValuesFactory, Document document) {
         for (var i = document.iterator(); i.hasNext(); ) {
