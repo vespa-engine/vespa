@@ -1,11 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
-import com.yahoo.api.annotations.Beta;
 import com.yahoo.tensor.TensorType;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -15,7 +13,6 @@ import java.util.Objects;
  *
  * @author bratseth
  */
-@Beta
 public class RankProfile {
 
     public record InputType(TensorType tensorType, boolean declaredString) {

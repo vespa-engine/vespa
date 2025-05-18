@@ -289,6 +289,14 @@ public class Schema implements ImmutableSchema {
                 .orElse(null);
     }
 
+    /**
+     * Returns a map of the fields defined explicitly in this schema
+     * (that is, not including inherited fields).
+     */
+    public Map<String, SDField> fieldsOfThis() {
+        return Collections.unmodifiableMap(fields);
+    }
+
     @Override
     public List<ImmutableSDField> allFieldsList() {
         List<ImmutableSDField> all = new ArrayList<>(extraFieldList());
@@ -328,9 +336,9 @@ public class Schema implements ImmutableSchema {
     }
 
     /**
-     * Returns a list of all the fields of this search definition, that is all fields in all documents, in the documents
+     * Returns a list of all the fields of this schema, that is all fields in all documents, in the documents
      * they inherit, and all extra fields. The caller receives ownership to the list - subsequent changes to it will not
-     * impact this
+     * impact this.
      */
     @Override
     public List<SDField> allConcreteFields() {

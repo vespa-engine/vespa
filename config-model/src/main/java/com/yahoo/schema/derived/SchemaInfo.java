@@ -84,7 +84,6 @@ public final class SchemaInfo extends Derived {
     }
 
     public void getConfig(SchemaInfoConfig.Builder builder) {
-        // Append
         var schemaBuilder = new SchemaInfoConfig.Schema.Builder();
         schemaBuilder.name(schema.getName());
         addFieldsConfig(schemaBuilder);
@@ -124,6 +123,7 @@ public final class SchemaInfo extends Derived {
         }
         fieldBuilder.attribute(field.doesAttributing());
         fieldBuilder.index(field.doesIndexing());
+        fieldBuilder.bitPacked(field.doesBitPacking());
         schemaBuilder.field(fieldBuilder);
     }
 
@@ -136,6 +136,7 @@ public final class SchemaInfo extends Derived {
             fieldBuilder.alias(i.next());
         fieldBuilder.attribute(false);
         fieldBuilder.index(true);
+        fieldBuilder.bitPacked(false);
         schemaBuilder.field(fieldBuilder);
     }
 
@@ -148,6 +149,7 @@ public final class SchemaInfo extends Derived {
             fieldBuilder.alias(alias);
         fieldBuilder.attribute(true);
         fieldBuilder.index(false);
+        fieldBuilder.bitPacked(false);
         schemaBuilder.field(fieldBuilder);
     }
 

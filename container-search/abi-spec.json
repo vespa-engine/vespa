@@ -8593,6 +8593,7 @@
       "public com.yahoo.search.schema.Field$Builder addAlias(java.lang.String)",
       "public com.yahoo.search.schema.Field$Builder setAttribute(boolean)",
       "public com.yahoo.search.schema.Field$Builder setIndex(boolean)",
+      "public com.yahoo.search.schema.Field$Builder setBitPacked(boolean)",
       "public com.yahoo.search.schema.Field build()"
     ],
     "fields" : [ ]

@@ -27,6 +27,8 @@ public interface ImmutableSDField {
 
     boolean doesIndexing();
 
+    boolean doesBitPacking();
+
     boolean doesLowerCasing();
 
     boolean isExtraField();

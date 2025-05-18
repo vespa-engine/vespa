@@ -27,6 +27,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.AttributeExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.Expression;
 import com.yahoo.vespa.indexinglanguage.expressions.IndexExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.LowerCaseExpression;
+import com.yahoo.vespa.indexinglanguage.expressions.PackBitsExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.indexinglanguage.expressions.SummaryExpression;
 import com.yahoo.vespa.indexinglanguage.parser.IndexingInput;
@@ -213,6 +214,14 @@ public class SDField extends Field implements ImmutableSDField {
     @Override
     public boolean doesIndexing() {
         return containsExpression(IndexExpression.class);
+    }
+
+    /** Returns true if (there is strong evidence that) the value stored by this field is bit-packed. */
+    @Override
+    public boolean doesBitPacking() {
+        return getDataType() instanceof TensorDataType tensor &&
+               tensor.getTensorType().valueType() == TensorType.Value.INT8 &&
+               containsExpression(PackBitsExpression.class);
     }
 
     public boolean doesSummarying() {

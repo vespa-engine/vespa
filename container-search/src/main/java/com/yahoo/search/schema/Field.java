@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
-import com.yahoo.api.annotations.Beta;
 import com.yahoo.tensor.TensorType;
 
 import java.util.HashSet;
@@ -13,13 +12,13 @@ import java.util.Set;
  *
  * @author bratseth
  */
-@Beta
 public class Field implements FieldInfo {
 
     private final String name;
     private final Type type;
     private final boolean isAttribute;
     private final boolean isIndex;
+    private final boolean bitPacked;
     private final Set<String> aliases;
 
     public Field(Builder builder) {
@@ -27,6 +26,7 @@ public class Field implements FieldInfo {
         this.type = builder.type;
         this.isAttribute = builder.isAttribute;
         this.isIndex = builder.isIndex;
+        this.bitPacked = builder.isBitPacked;
         this.aliases = Set.copyOf(builder.aliases);
     }
 
@@ -155,6 +155,7 @@ public class Field implements FieldInfo {
         private final Set<String> aliases = new HashSet<>();
         private boolean isAttribute;
         private boolean isIndex;
+        private boolean isBitPacked;
 
         public Builder(String name, String typeString) {
             this.name = name;
@@ -173,6 +174,11 @@ public class Field implements FieldInfo {
 
         public Builder setIndex(boolean isIndex) {
             this.isIndex = isIndex;
+            return this;
+        }
+
+        public Builder setBitPacked(boolean isBitPacked) {
+            this.isBitPacked = isBitPacked;
             return this;
         }
 

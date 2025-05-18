@@ -1,8 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
-import com.yahoo.api.annotations.Beta;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -15,7 +13,6 @@ import java.util.Objects;
  *
  * @author bratseth
  */
-@Beta
 public class DocumentSummary {
 
     private final String name;
