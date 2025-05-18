@@ -154,23 +154,23 @@ public class RankProfileInputTest {
         Map<String, Embedder> embedders = Map.of(
                 "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1)
         );
-        assertEmbedQuery("embed(" + text + ")", embedding1, embedders);
-        assertEmbedQuery("embed('" + text + "')", embedding1, embedders);
-        assertEmbedQuery("embed(\"" + text + "\")", embedding1, embedders);
-        assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders);
-        assertEmbedQuery("embed(emb1, \"" + text + "\")", embedding1, embedders);
-        assertEmbedQueryFails("embed(emb2, \"" + text + "\")", embedding1, embedders,
+        assertEmbedQuery("embed(" + text + ")", "query(myTensor4)", embedding1, embedders);
+        assertEmbedQuery("embed('" + text + "')", "query(myTensor4)", embedding1, embedders);
+        assertEmbedQuery("embed(\"" + text + "\")", "query(myTensor4)", embedding1, embedders);
+        assertEmbedQuery("embed(emb1, '" + text + "')", "query(myTensor4)", embedding1, embedders);
+        assertEmbedQuery("embed(emb1, \"" + text + "\")", "query(myTensor4)", embedding1, embedders);
+        assertEmbedQueryFails("embed(emb2, \"" + text + "\")", "query(myTensor4)", embedding1, embedders,
                 "Can't find embedder 'emb2'. Available embedder ids are 'emb1'.");
 
         embedders = Map.of(
                 "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1),
                 "emb2", new MockEmbedder(text, Language.UNKNOWN, embedding2)
         );
-        assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders);
-        assertEmbedQuery("embed(emb2, '" + text + "')", embedding2, embedders);
-        assertEmbedQueryFails("embed(emb3, \"" + text + "\")", embedding1, embedders,
+        assertEmbedQuery("embed(emb1, '" + text + "')", "query(myTensor4)",embedding1, embedders);
+        assertEmbedQuery("embed(emb2, '" + text + "')", "query(myTensor4)",embedding2, embedders);
+        assertEmbedQueryFails("embed(emb3, \"" + text + "\")", "query(myTensor4)", embedding1, embedders,
                 "Can't find embedder 'emb3'. Available embedder ids are 'emb1', 'emb2'.");
-        assertEmbedQueryFails("embed(emb3, text)", embedding1, embedders,
+        assertEmbedQueryFails("embed(emb3, text)", "query(myTensor4)", embedding1, embedders,
                               "Multiple embedders are provided but the string to embed is not quoted. " +
                               "Usage: embed(embedder-id, 'text'). Available embedder ids are 'emb1', 'emb2'.");
 
@@ -178,29 +178,14 @@ public class RankProfileInputTest {
         embedders = Map.of(
                 "emb1", new MockEmbedder(text, Language.ENGLISH, embedding1)
         );
-        assertEmbedQuery("embed(" + text + ")", embedding1, embedders, Language.ENGLISH.languageCode());
+        assertEmbedQuery("embed(" + text + ")", "query(myTensor4)", embedding1, embedders, Language.ENGLISH.languageCode());
 
         embedders = Map.of(
                 "emb1", new MockEmbedder(text, Language.ENGLISH, embedding1),
                 "emb2", new MockEmbedder(text, Language.UNKNOWN, embedding2)
         );
-        assertEmbedQuery("embed(emb1, '" + text + "')", embedding1, embedders, Language.ENGLISH.languageCode());
-        assertEmbedQuery("embed(emb2, '" + text + "')", embedding2, embedders, Language.UNKNOWN.languageCode());
-    }
-
-    @Test
-    void testUnembeddedTensorRankFeatureInRequestReferencedFromAParameter() {
-        String text = "text to embed into a tensor";
-        Tensor embedding1 = Tensor.from("tensor<float>(x[5]):[3,7,4,0,0]]");
-
-        Map<String, Embedder> embedders = Map.of(
-                "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1)
-                                                );
-        assertEmbedQuery("embed(@param1)", embedding1, embedders, null, text);
-        assertEmbedQuery("embed(emb1, @param1)", embedding1, embedders, null, text);
-        assertEmbedQueryFails("embed(emb1, @noSuchParam)", embedding1, embedders,
-                              "Could not resolve query parameter reference 'noSuchParam' " +
-                              "used in an embed() argument");
+        assertEmbedQuery("embed(emb1, '" + text + "')", "query(myTensor4)", embedding1, embedders, Language.ENGLISH.languageCode());
+        assertEmbedQuery("embed(emb2, '" + text + "')", "query(myTensor4)", embedding2, embedders, Language.UNKNOWN.languageCode());
     }
 
     @Test
@@ -218,9 +203,9 @@ public class RankProfileInputTest {
         Map<String, Embedder> embedders = Map.of(
                 "emb1", new MockEmbedder(text, Language.UNKNOWN, embedding1)
                                                 );
-        assertEmbedQuery("embed(@param2)", embedding1, embedders, null, "embed into a tensor", cProfile);
-        assertEmbedQuery("embed(emb1, @param2)", embedding1, embedders, null, "embed into a tensor", cProfile);
-        assertEmbedQueryFails("embed(emb1, @noSuchParam)", embedding1, embedders,
+        assertEmbedQuery("embed(@param2)", "query(myTensor4)", embedding1, embedders, null, "embed into a tensor", cProfile);
+        assertEmbedQuery("embed(emb1, @param2)", "query(myTensor4)", embedding1, embedders, null, "embed into a tensor", cProfile);
+        assertEmbedQueryFails("embed(emb1, @noSuchParam)", "query(myTensor4)", embedding1, embedders,
                               "Could not resolve query parameter reference 'noSuchParam' " +
                               "used in an embed() argument");
     }
@@ -241,21 +226,24 @@ public class RankProfileInputTest {
         return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 
-    private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders) {
-        assertEmbedQuery(embed, expected, embedders, null, null);
+    private void assertEmbedQuery(String embed, String destination, Tensor expected, Map<String, Embedder> embedders) {
+        assertEmbedQuery(embed, destination, expected, embedders, null, null);
     }
 
-    private void assertEmbedQuery(String embed, Tensor expected, Map<String, Embedder> embedders, String language) {
-        assertEmbedQuery(embed, expected, embedders, language, null);
+    private void assertEmbedQuery(String embed, String destination, Tensor expected, Map<String, Embedder> embedders, String language) {
+        assertEmbedQuery(embed, destination, expected, embedders, language, null);
     }
     private void assertEmbedQuery(String embed,
+                                  String destination,
                                   Tensor expected,
                                   Map<String, Embedder> embedders,
                                   String language,
                                   String param1Value) {
-        assertEmbedQuery(embed, expected, embedders, language, param1Value, null);
+        assertEmbedQuery(embed, destination, expected, embedders, language, param1Value, null);
     }
+
     private void assertEmbedQuery(String embed,
+                                  String destination,
                                   Tensor expected,
                                   Map<String, Embedder> embedders,
                                   String language,
@@ -263,8 +251,6 @@ public class RankProfileInputTest {
                                   CompiledQueryProfile queryProfile) {
         String languageParam = language == null ? "" : "&language=" + language;
         String param1 = param1Value == null ? "" : "&param1=" + urlEncode(param1Value);
-
-        String destination = "query(myTensor4)";
 
         Query query = new Query.Builder().setRequest(HttpRequest.createTestRequest(
                                                  "?" + urlEncode("ranking.features." + destination) +
@@ -283,8 +269,8 @@ public class RankProfileInputTest {
         assertEquals(expected, query.getRanking().getFeatures().getTensor(destination).get());
     }
 
-    private void assertEmbedQueryFails(String embed, Tensor expected, Map<String, Embedder> embedders, String errMsg) {
-        Throwable t = assertThrows(IllegalArgumentException.class, () -> assertEmbedQuery(embed, expected, embedders));
+    private void assertEmbedQueryFails(String embed, String destination, Tensor expected, Map<String, Embedder> embedders, String errMsg) {
+        Throwable t = assertThrows(IllegalArgumentException.class, () -> assertEmbedQuery(embed, destination, expected, embedders));
         while (t != null) {
             if (t.getMessage().equals(errMsg)) return;
             t = t.getCause();
@@ -304,7 +290,8 @@ public class RankProfileInputTest {
                 .addInput("query(myTensor1)", InputType.fromSpec("tensor(a{},b{})"))
                 .addInput("query(myTensor2)", InputType.fromSpec("tensor(x[2],y[2])"))
                 .addInput("query(myTensor3)", InputType.fromSpec("tensor(x[2],y[2])"))
-                .addInput("query(myTensor4)", InputType.fromSpec("tensor<float>(x[5])"));
+                .addInput("query(myTensor4)", InputType.fromSpec("tensor<float>(x[5])"))
+                .addInput("query(myTensor5)", InputType.fromSpec("tensor<int8>(x[2])"));
         schemas.add(new Schema.Builder("a")
                             .add(common.build())
                             .add(new RankProfile.Builder("inconsistent")
