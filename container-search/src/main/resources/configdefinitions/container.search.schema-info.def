@@ -10,6 +10,7 @@ schema[].field[].type string
 schema[].field[].alias[] string
 schema[].field[].attribute bool
 schema[].field[].index bool
+schema[].field[].bitPacked bool
 
 ## Field sets
 schema[].fieldset[].name string

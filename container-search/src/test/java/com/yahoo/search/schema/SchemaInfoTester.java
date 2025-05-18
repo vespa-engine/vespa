@@ -105,10 +105,10 @@ public class SchemaInfoTester {
         schemaA.name("a");
 
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field1").type("string")
-                                                                 .index(true).attribute(false)
+                                                                 .index(true).attribute(false).bitPacked(false)
                                                                  .alias("alias1").alias("alias2"));
         schemaA.field(new SchemaInfoConfig.Schema.Field.Builder().name("field2").type("int")
-                                                                 .index(false).attribute(true));
+                                                                 .index(false).attribute(true).bitPacked(false));
 
         schemaA.rankprofile(rankProfileCommon);
         var rankProfileInconsistentA = new SchemaInfoConfig.Schema.Rankprofile.Builder();

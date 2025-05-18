@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.schema;
 
-import com.yahoo.api.annotations.Beta;
 import com.yahoo.component.annotation.Inject;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.search.Query;
@@ -35,7 +34,6 @@ import java.util.stream.Collectors;
 // NOTES:
 // This should replace IndexFacts, and probably DocumentDatabase.
 // It replicates the schema resolution mechanism in IndexFacts, but does not yet contain complete field information.
-@Beta
 public class SchemaInfo {
 
     private static final SchemaInfo empty = new SchemaInfo(List.of(), List.of());

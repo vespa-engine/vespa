@@ -25,6 +25,7 @@ class SchemaInfoConfigurer {
             Field.Builder fieldBuilder = new Field.Builder(fieldConfig.name(), fieldConfig.type());
             fieldBuilder.setAttribute(fieldConfig.attribute());
             fieldBuilder.setIndex(fieldConfig.index());
+            fieldBuilder.setBitPacked(fieldConfig.index());
             for (var alias : fieldConfig.alias())
                 fieldBuilder.addAlias(alias);
             schemaBuilder.add(fieldBuilder.build());

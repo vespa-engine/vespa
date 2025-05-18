@@ -47,6 +47,11 @@ public class ImmutableImportedSDField implements ImmutableSDField {
     }
 
     @Override
+    public boolean doesBitPacking() {
+        return importedField.targetField().doesBitPacking();
+    }
+
+    @Override
     public boolean doesLowerCasing() {
         return importedField.targetField().doesLowerCasing();
     }
