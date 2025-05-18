@@ -22,7 +22,7 @@ public:
     }
     const uint32_t& back() const noexcept { return _element_ids.back(); }
     std::span<const uint32_t>::iterator begin() const noexcept { return _element_ids.begin(); }
-    std::span<const uint32_t>::iterator end() const noexcept { return _element_ids.cend(); }
+    std::span<const uint32_t>::iterator end() const noexcept { return _element_ids.end(); }
     bool empty() const noexcept { return _element_ids.empty(); }
     bool all_elements() const noexcept { return _element_ids.data() == nullptr; }
 };
