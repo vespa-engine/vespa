@@ -15,10 +15,9 @@ using search::attribute::IAttributeContext;
 
 namespace search::docsummary {
 
-AttributeCombinerDFW::AttributeCombinerDFW(const std::string &fieldName)
+AttributeCombinerDFW::AttributeCombinerDFW()
     : DocsumFieldWriter(),
-      _stateIndex(0),
-      _fieldName(fieldName)
+      _stateIndex(0)
 {
 }
 
@@ -38,9 +37,9 @@ AttributeCombinerDFW::create(const std::string &fieldName, IAttributeContext &at
     if (structFields.has_error()) {
         return {};
     } else if (structFields.is_map_of_struct()) {
-        return std::make_unique<StructMapAttributeCombinerDFW>(fieldName, structFields);
+        return std::make_unique<StructMapAttributeCombinerDFW>(structFields);
     }
-    return std::make_unique<ArrayAttributeCombinerDFW>(fieldName, structFields);
+    return std::make_unique<ArrayAttributeCombinerDFW>(structFields);
 }
 
 void

@@ -32,7 +32,6 @@ class StructMapAttributeFieldWriterState : public DocsumFieldWriterState
     // AttributeFieldWriter instances are owned by stash passed to constructor
     std::vector<AttributeFieldWriter*> _valueWriters;
     GetDocsumsState&                   _state;
-    const std::string&                 _field_name;
     const SummaryElementsSelector&     _elements_selector;
 
 public:
@@ -41,7 +40,6 @@ public:
                                        const std::vector<std::string> &valueAttributeNames,
                                        IAttributeContext &context,
                                        GetDocsumsState& state,
-                                       const std::string &field_name,
                                        const SummaryElementsSelector& elements_selector);
     ~StructMapAttributeFieldWriterState() override;
     void insert_element(uint32_t element_index, Cursor &array);
@@ -53,13 +51,11 @@ StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const std
                                                                        const std::vector<std::string> &valueAttributeNames,
                                                                        IAttributeContext &context,
                                                                        GetDocsumsState& state,
-                                                                       const std::string& field_name,
                                                                        const SummaryElementsSelector& elements_selector)
     : DocsumFieldWriterState(),
       _keyWriter(nullptr),
       _valueWriters(),
       _state(state),
-      _field_name(field_name),
       _elements_selector(elements_selector)
 {
     auto& stash = state.get_stash();
@@ -129,9 +125,8 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
 
 }
 
-StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const std::string &fieldName,
-                                                             const StructFieldsResolver& fields_resolver)
-    : AttributeCombinerDFW(fieldName),
+StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const StructFieldsResolver& fields_resolver)
+    : AttributeCombinerDFW(),
       _keyAttributeName(fields_resolver.get_map_key_attribute()),
       _valueFields(fields_resolver.get_map_value_fields()),
       _valueAttributeNames(fields_resolver.get_map_value_attributes())
@@ -145,7 +140,7 @@ StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext& context,
                                                      const SummaryElementsSelector& elements_selector) const
 {
     auto& stash = state.get_stash();
-    return &stash.create<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context, state, _fieldName, elements_selector);
+    return &stash.create<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context, state, elements_selector);
 }
 
 }

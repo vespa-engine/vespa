@@ -20,8 +20,7 @@ class AttributeCombinerDFW : public DocsumFieldWriter
 {
 protected:
     uint32_t _stateIndex;
-    std::string _fieldName;
-    AttributeCombinerDFW(const std::string &fieldName);
+    AttributeCombinerDFW();
 protected:
     virtual DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext& context,
                                                           GetDocsumsState& state,

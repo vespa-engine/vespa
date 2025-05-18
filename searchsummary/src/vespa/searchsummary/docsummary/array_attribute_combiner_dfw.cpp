@@ -26,7 +26,6 @@ class ArrayAttributeFieldWriterState : public DocsumFieldWriterState
     // AttributeFieldWriter instances are owned by stash passed to constructor
     std::vector<AttributeFieldWriter*>                 _writers;
     GetDocsumsState&                                   _state;
-    const std::string&                                 _field_name;
     const SummaryElementsSelector&                     _elements_selector;
 
 public:
@@ -34,7 +33,6 @@ public:
                                    const std::vector<std::string> &attributeNames,
                                    IAttributeContext &context,
                                    GetDocsumsState& state,
-                                   const std::string &field_name,
                                    const SummaryElementsSelector& elements_selector,
                                    bool is_map_of_scalar);
     ~ArrayAttributeFieldWriterState() override;
@@ -46,13 +44,11 @@ ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector
                                                                const std::vector<std::string> &attributeNames,
                                                                IAttributeContext &context,
                                                                GetDocsumsState& state,
-                                                               const std::string &field_name,
                                                                const SummaryElementsSelector& elements_selector,
                                                                bool is_map_of_scalar)
     : DocsumFieldWriterState(),
       _writers(),
       _state(state),
-      _field_name(field_name),
       _elements_selector(elements_selector)
 {
     auto& stash = state.get_stash();
@@ -112,9 +108,8 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
 
 }
 
-ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const std::string &fieldName,
-                                                     const StructFieldsResolver& fields_resolver)
-    : AttributeCombinerDFW(fieldName),
+ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const StructFieldsResolver& fields_resolver)
+    : AttributeCombinerDFW(),
       _fields(fields_resolver.get_array_fields()),
       _attributeNames(fields_resolver.get_array_attributes()),
       _is_map_of_scalar(fields_resolver.is_map_of_scalar())
@@ -128,7 +123,7 @@ ArrayAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, Get
                                                  const SummaryElementsSelector& elements_selector) const
 {
     auto& stash = state.get_stash();
-    return &stash.create<ArrayAttributeFieldWriterState>(_fields, _attributeNames, context, state, _fieldName, elements_selector, _is_map_of_scalar);
+    return &stash.create<ArrayAttributeFieldWriterState>(_fields, _attributeNames, context, state, elements_selector, _is_map_of_scalar);
 }
 
 }

@@ -25,8 +25,7 @@ class StructMapAttributeCombinerDFW : public AttributeCombinerDFW
                                                   GetDocsumsState& state,
                                                   const SummaryElementsSelector& elements_selector) const override;
 public:
-    StructMapAttributeCombinerDFW(const std::string &fieldName,
-                                  const StructFieldsResolver& fields_resolver);
+    StructMapAttributeCombinerDFW(const StructFieldsResolver& fields_resolver);
     ~StructMapAttributeCombinerDFW() override;
 };
 
