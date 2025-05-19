@@ -54,7 +54,9 @@ func createTenantDir(tenant string) string {
 
 func writeConfigsourceUrlUsed(url string) {
 	fn := configsourceUrlUsedFile()
-	os.WriteFile(fn, []byte(url), 0o600)
+	if err := os.WriteFile(fn, []byte(url), 0o600); err != nil {
+		osutil.ExitErr(err)
+	}
 }
 
 func getConfigsourceUrlUsed() string {
@@ -70,7 +72,9 @@ func writeSessionIdToFile(tenant, newSessionId string) {
 	if newSessionId != "" {
 		dir := createTenantDir(tenant)
 		fn := filepath.Join(dir, sessionIdFileName)
-		os.WriteFile(fn, []byte(newSessionId), 0o600)
+		if err := os.WriteFile(fn, []byte(newSessionId), 0o600); err != nil {
+			osutil.ExitErr(err)
+		}
 		trace.Trace("wrote", newSessionId, "to", fn)
 	}
 }
