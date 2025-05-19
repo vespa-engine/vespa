@@ -78,14 +78,14 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         VisitorSession createVisitorSession(VisitorParameters params) throws ParseException;
     }
 
-    public StreamingVisitor(Query query, String searchCluster, Route route,
-                            String schema, VisitorSessionFactory visitorSessionFactory,
-                            int traceLevelOverride)
+    public StreamingVisitor(Query query, Route route,
+                            VisitorSessionFactory visitorSessionFactory,
+                            Visitor.Context context)
     {
         this.query = query;
         this.visitorSessionFactory = visitorSessionFactory;
-        this.traceLevelOverride = traceLevelOverride;
-        setVisitorParameters(searchCluster, route, schema);
+        this.traceLevelOverride = context.traceLevelOverride();
+        setVisitorParameters(route, context);
     }
 
     private int inferSessionTraceLevel(Query query) {
@@ -115,8 +115,8 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         return query.properties().getString(streamingSelection);
     }
 
-    private void setVisitorParameters(String searchCluster, Route route, String schema) {
-        params.setDocumentSelection(createSelectionString(schema, createQuerySelectionString()));
+    private void setVisitorParameters(Route route, Visitor.Context context) {
+        params.setDocumentSelection(createSelectionString(context.schema(), createQuerySelectionString()));
         params.setTimeoutMs(query.getTimeout()); // Per bucket visitor timeout
         params.setSessionTimeoutMs(query.getTimeout());
         params.setVisitorLibrary("searchvisitor");
@@ -149,16 +149,18 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         encodeQueryData(query, 0, ed);
         params.setLibraryParameter("query", ed.getEncodedData());
         params.setLibraryParameter("querystackcount", String.valueOf(ed.getReturned()));
-        params.setLibraryParameter("searchcluster", searchCluster.getBytes(StandardCharsets.UTF_8));
-        params.setLibraryParameter("schema", schema.getBytes(StandardCharsets.UTF_8));
-        if (query.getPresentation().getSummary() != null) {
-            params.setLibraryParameter("summaryclass", query.getPresentation().getSummary());
-        } else {
-            params.setLibraryParameter("summaryclass", "default");
-        }
+        params.setLibraryParameter("searchcluster", context.searchCluster().getBytes(StandardCharsets.UTF_8));
+        params.setLibraryParameter("schema", context.schema().getBytes(StandardCharsets.UTF_8));
+        String wantedSummary = query.getPresentation().getSummary();
         Set<String> summaryFields = query.getPresentation().getSummaryFields();
-        if (summaryFields != null && !summaryFields.isEmpty()) {
-            params.setLibraryParameter("summary-fields", String.join(" ", summaryFields));
+        boolean wantSomeFields = summaryFields != null && !summaryFields.isEmpty();
+        if (wantedSummary == null) {
+            params.setLibraryParameter("summaryclass", "default");
+            if (wantSomeFields) {
+                params.setLibraryParameter("summary-fields", String.join(" ", summaryFields));
+            }
+        } else {
+            params.setLibraryParameter("summaryclass", wantedSummary);
         }
         params.setLibraryParameter("summarycount", String.valueOf(query.getOffset() + query.getHits()));
         params.setLibraryParameter("rankprofile", query.getRanking().getProfile());

@@ -312,7 +312,8 @@ public class StreamingVisitorTest {
     }
 
     private void verifyVisitorOk(MockVisitorSessionFactory factory, QueryArguments qa, Route route, String searchCluster) throws Exception {
-        StreamingVisitor visitor = new StreamingVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
+        var context = new Visitor.Context(searchCluster, "mytype", 0);
+        StreamingVisitor visitor = new StreamingVisitor(buildQuery(qa), route, factory, context);
         visitor.doSearch();
         verifyVisitorParameters(factory.getParams(), qa, searchCluster, "mytype", route);
         supplyResults(visitor);
@@ -320,7 +321,8 @@ public class StreamingVisitorTest {
     }
 
     private void verifyVisitorFails(MockVisitorSessionFactory factory, QueryArguments qa, Route route, String searchCluster) throws Exception {
-        StreamingVisitor visitor = new StreamingVisitor(buildQuery(qa), searchCluster, route, "mytype", factory, 0);
+        var context = new Visitor.Context(searchCluster, "mytype", 0);
+        StreamingVisitor visitor = new StreamingVisitor(buildQuery(qa), route, factory, context);
         try {
             visitor.doSearch();
             fail("Visitor did not fail");

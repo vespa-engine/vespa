@@ -12,12 +12,15 @@ import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
 import com.yahoo.prelude.fastsearch.ClusterParams;
+import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
+import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.result.Hit;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Coverage;
@@ -85,7 +88,10 @@ public class StreamingBackend extends VespaBackend {
 
     private String getSearchClusterName() { return searchClusterName; }
 
-    @Override protected void doPartialFill(Result result, String summaryClass) { }
+    @Override protected void doPartialFill(Result result, String summaryClass) {
+        if (result.getQuery().getTrace().isTraceable(2))
+            result.getQuery().trace("Ignoring fill(" + summaryClass + "); streaming is single-pass", false, 2);
+    }
 
     private double durationInMillisFromNanoTime(long startTimeNanos) {
         return (tracingOptions.getClock().nanoTimeNow() - startTimeNanos) / (double)TimeUnit.MILLISECONDS.toNanos(1);
@@ -144,7 +150,8 @@ public class StreamingBackend extends VespaBackend {
         long timeStartedNanos = tracingOptions.getClock().nanoTimeNow();
         int effectiveTraceLevel = inferEffectiveQueryTraceLevel(query);
 
-        Visitor visitor = visitorFactory.createVisitor(query, getSearchClusterName(), route, schema, effectiveTraceLevel);
+        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel);
+        Visitor visitor = visitorFactory.createVisitor(query, route, visitorContext);
         try {
             visitor.doSearch();
         } catch (ParseException e) {
@@ -164,26 +171,28 @@ public class StreamingBackend extends VespaBackend {
         } catch (InterruptedException e) {
             return new Result(query, ErrorMessage.createBackendCommunicationError(e.getMessage()));
         }
-        return buildResultFromCompletedVisitor(query, visitor);
+        return buildResultFromCompletedVisitor(query, visitor, visitorContext);
     }
 
     private void initializeMissingQueryFields(Query query) {
         lazyTrace(query, 7, "Routing to storage cluster ", storageClusterRouteSpec);
         lazyTrace(query, 8, "Route is ", route);
 
-        lazyTrace(query, 7, "doSearch2(): query docsum class=",
-                query.getPresentation().getSummary(), ", default docsum class=",
-                getDefaultDocsumClass());
+        String requestedSummaryClass = query.getPresentation().getSummary();
+        String defaultSummaryClass = getDefaultDocsumClass();
+        lazyTrace(query, 7,
+                  "doSearch2(): query docsum class=", requestedSummaryClass,
+                  ", default docsum class=", defaultSummaryClass);
 
-        if (query.getPresentation().getSummary() == null) {
+        if (requestedSummaryClass == null) {
             lazyTrace(query, 6,
-                    "doSearch2(): No summary class specified in query, using default: ",
-                    getDefaultDocsumClass());
-            query.getPresentation().setSummary(getDefaultDocsumClass());
+                      "doSearch2(): No summary class specified in query, using default: ",
+                      defaultSummaryClass);
+            query.getPresentation().setSummary(defaultSummaryClass);
         } else {
             lazyTrace(query, 6,
-                    "doSearch2(): Summary class has been specified in query: ",
-                    query.getPresentation().getSummary());
+                      "doSearch2(): Summary class has been specified in query: ",
+                      requestedSummaryClass);
         }
 
         lazyTrace(query, 8, "doSearch2(): rank properties=", query.getRanking());
@@ -192,9 +201,10 @@ public class StreamingBackend extends VespaBackend {
                 .getSorting().fieldOrders());
     }
 
-    private Result buildResultFromCompletedVisitor(Query query, Visitor visitor) {
+    private Result buildResultFromCompletedVisitor(Query query, Visitor visitor, Visitor.Context context) {
         lazyTrace(query, 8, "offset=", query.getOffset(), ", hits=", query.getHits());
 
+        String summaryClass = query.getPresentation().getSummary();
         Result result = new Result(query);
         List<SearchResult.Hit> hits = visitor.getHits(); // Sorted on rank
         Map<String, DocumentSummary.Summary> summaryMap = visitor.getSummaryMap();
@@ -229,13 +239,12 @@ public class StreamingBackend extends VespaBackend {
                 return new Result(query, ErrorMessage.createBackendCommunicationError("Did not find summary for hit with document id " +
                                                                                       hit.getDocId()));
             }
-
             index++;
         }
-        if (result.isFilled(query.getPresentation().getSummary())) {
-            lazyTrace(query, 8, "Result is filled for summary class ", query.getPresentation().getSummary());
+        if (result.isFilled(summaryClass)) {
+            lazyTrace(query, 8, "Result is filled for summary class ", summaryClass);
         } else {
-            lazyTrace(query, 8, "Result is not filled for summary class ", query.getPresentation().getSummary());
+            lazyTrace(query, 8, "Result is not filled for summary class ", summaryClass);
         }
 
         List<Grouping> groupingList = visitor.getGroupings();
@@ -245,7 +254,7 @@ public class StreamingBackend extends VespaBackend {
             result.hits().add(groupHit);
         }
 
-        FillHitsResult fillHitsResult = fillHits(result, summaryPackets, query.getPresentation().getSummary());
+        FillHitsResult fillHitsResult = fillHits(result, summaryPackets, summaryClass);
         int skippedHits = fillHitsResult.skippedHits;
         if (fillHitsResult.error != null) {
             result.hits().addError(ErrorMessage.createTimeout(fillHitsResult.error));
@@ -368,10 +377,95 @@ public class StreamingBackend extends VespaBackend {
         }
 
         @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route, String schema, int traceLevelOverride) {
-            return new StreamingVisitor(query, searchCluster, route, schema, this, traceLevelOverride);
+        public Visitor createVisitor(Query query, Route route, Visitor.Context context) {
+            return new StreamingVisitor(query, route, this, context);
         }
 
+    }
+
+
+    static class FillHitResult {
+        final boolean ok;
+        final String error;
+        FillHitResult(boolean ok) {
+            this(ok, null);
+        }
+        FillHitResult(boolean ok, String error) {
+            this.ok = ok;
+            this.error = error;
+        }
+    }
+
+    private FillHitResult fillHit(FastHit hit, DocsumPacket packet, String summaryClass) {
+        if (packet != null) {
+            // System.err.println("fillHit from packet");
+            byte[] docsumdata = packet.getData();
+            if (docsumdata.length > 0) {
+                return new FillHitResult(true, decodeSummary(summaryClass, hit, docsumdata));
+            }
+            // System.err.println("no data");
+        } else {
+            // System.err.println("null packet");
+        }
+        return new FillHitResult(false);
+    }
+
+    static protected class FillHitsResult {
+        public final int skippedHits; // Number of hits not producing a summary.
+        public final String error; // Optional error message
+        FillHitsResult(int skippedHits, String error) {
+            this.skippedHits = skippedHits;
+            this.error = error;
+        }
+    }
+    /**
+     * Fills the hits.
+     *
+     * @return the number of hits that we did not return data for, and an optional error message.
+     *         when things are working normally we return 0.
+     */
+    protected FillHitsResult fillHits(Result result, DocsumPacket[] packets, String summaryClass) {
+        // System.err.println("fill result with packets: " + packets.length);
+        int skippedHits = 0;
+        String lastError = null;
+        int packetIndex = 0;
+        for (Hit hit : iterableHits(result)) {
+            // System.err.println("fill? hit " + hit);
+            if (hit instanceof FastHit fastHit && ! hit.isFilled(summaryClass)) {
+                // System.err.println("yes for " + summaryClass);
+
+                DocsumPacket docsum = packets[packetIndex];
+
+                packetIndex++;
+                FillHitResult fr = fillHit(fastHit, docsum, summaryClass);
+                if ( ! fr.ok ) {
+                    skippedHits++;
+                }
+                if (fr.error != null) {
+                    result.hits().addError(ErrorMessage.createTimeout(fr.error));
+                    skippedHits++;
+                    lastError = fr.error;
+                }
+            }
+        }
+        result.hits().setSorted(false);
+        return new FillHitsResult(skippedHits, lastError);
+    }
+
+    private String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata) {
+        // System.err.println("get db from q");
+        DocumentDatabase db = getDocumentDatabase(hit.getQuery());
+        hit.setField(Hit.SDDOCNAME_FIELD, db.schema().name());
+        return decodeSummary(summaryClass, hit, docsumdata, db.getDocsumDefinitionSet());
+    }
+
+    private static String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata, DocsumDefinitionSet docsumSet) {
+        String error = docsumSet.lazyDecode(summaryClass, docsumdata, hit);
+        // System.err.println("decoded, error? " + error);
+        if (error == null) {
+            hit.setFilled(summaryClass);
+        }
+        return error;
     }
 
 }

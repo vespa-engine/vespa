@@ -157,8 +157,8 @@ public class StreamingSearcherTestCase {
         public MockVisitor lastCreatedVisitor;
 
         @Override
-        public Visitor createVisitor(Query query, String searchCluster, Route route, String documentType, int traceLevelOverride) {
-            lastCreatedVisitor = new MockVisitor(query, searchCluster, route, documentType, traceLevelOverride);
+        public Visitor createVisitor(Query query, Route route, Visitor.Context context) {
+            lastCreatedVisitor = new MockVisitor(query, context.searchCluster(), route, context.schema(), context.traceLevelOverride());
             return lastCreatedVisitor;
         }
     }

@@ -11,6 +11,6 @@ import com.yahoo.search.Query;
  */
 interface VisitorFactory {
 
-    Visitor createVisitor(Query query, String searchCluster, Route route, String schema, int traceLevelOverride);
+    Visitor createVisitor(Query query, Route route, Visitor.Context context);
 
 }
