@@ -27,14 +27,12 @@ public class IndexedSearchCluster extends SearchCluster {
 
     private final List<SearchNode> searchNodes = new ArrayList<>();
     private final double dispatchWarmup;
-    private final String summaryDecodePolicy;
 
     public IndexedSearchCluster(TreeConfigProducer<AnyConfigProducer> parent, String clusterName,
                                 Redundancy.Provider redundancyProvider, ModelContext.FeatureFlags featureFlags) {
         super(parent, clusterName);
         this.redundancyProvider = redundancyProvider;
         dispatchWarmup = featureFlags.queryDispatchWarmup();
-        summaryDecodePolicy = featureFlags.summaryDecodePolicy();
     }
 
     public void addSearcher(SearchNode searcher) {
@@ -96,15 +94,6 @@ public class IndexedSearchCluster extends SearchCluster {
                 builder.maxWaitAfterCoverageFactor(searchCoverage.getMaxWaitAfterCoverageFactor());
         }
         builder.warmuptime(dispatchWarmup);
-        builder.summaryDecodePolicy(toSummaryDecoding(summaryDecodePolicy));
-    }
-
-    private DispatchConfig.SummaryDecodePolicy.Enum toSummaryDecoding(String summaryDecodeType) {
-        return switch (summaryDecodeType.toLowerCase()) {
-            case "eager" -> DispatchConfig.SummaryDecodePolicy.EAGER;
-            case "ondemand","on-demand" -> DispatchConfig.SummaryDecodePolicy.Enum.ONDEMAND;
-            default -> DispatchConfig.SummaryDecodePolicy.Enum.ONDEMAND;
-        };
     }
 
     @Override

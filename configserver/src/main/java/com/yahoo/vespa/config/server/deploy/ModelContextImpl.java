@@ -192,7 +192,6 @@ public class ModelContextImpl implements ModelContext {
         private final int rpc_num_targets;
         private final int rpc_events_before_wakeup;
         private final int heapPercentage;
-        private final String summaryDecodePolicy;
         private final boolean sortBlueprintsByCost;
         private final int contentLayerMetadataFeatureLevel;
         private final String unknownConfigDefinition;
@@ -239,7 +238,6 @@ public class ModelContextImpl implements ModelContext {
             this.rpc_events_before_wakeup = Flags.RPC_EVENTS_BEFORE_WAKEUP.bindTo(source).with(appId).with(version).value();
             this.queryDispatchWarmup = PermanentFlags.QUERY_DISPATCH_WARMUP.bindTo(source).with(appId).with(version).value();
             this.heapPercentage = PermanentFlags.HEAP_SIZE_PERCENTAGE.bindTo(source).with(appId).with(version).value();
-            this.summaryDecodePolicy = Flags.SUMMARY_DECODE_POLICY.bindTo(source).with(appId).with(version).value();
             this.contentLayerMetadataFeatureLevel = Flags.CONTENT_LAYER_METADATA_FEATURE_LEVEL.bindTo(source).with(appId).with(version).value();
             this.unknownConfigDefinition = PermanentFlags.UNKNOWN_CONFIG_DEFINITION.bindTo(source).with(appId).with(version).value();
             this.searchHandlerThreadpool = Flags.SEARCH_HANDLER_THREADPOOL.bindTo(source).with(appId).with(version).value();
@@ -263,7 +261,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useNonPublicEndpointForTest() { return useNonPublicEndpointForTest; }
         @Override public int heapSizePercentage() { return heapPercentage; }
         @Override public double queryDispatchWarmup() { return queryDispatchWarmup; }
-        @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }

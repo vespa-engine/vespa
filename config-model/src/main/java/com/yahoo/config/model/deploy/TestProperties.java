@@ -41,7 +41,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Set<ContainerEndpoint> endpoints = Set.of();
     private boolean useDedicatedNodeForLogserver = false;
     private String jvmGCOptions = null;
-    private String summaryDecodePolicy = "on-demand";
     private boolean firstTimeDeployment = false;
     private String responseSequencerType = "ADAPTIVE";
     private int responseNumThreads = 2;
@@ -124,7 +123,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int rpcNumTargets() { return rpc_num_targets; }
     @Override public int heapSizePercentage() { return heapSizePercentage; }
     @Override public int rpcEventsBeforeWakeup() { return rpc_events_before_wakeup; }
-    @Override public String summaryDecodePolicy() { return summaryDecodePolicy; }
     @Override public Optional<CloudAccount> cloudAccount() { return cloudAccount; }
     @Override public boolean allowUserFilters() { return allowUserFilters; }
     @Override public List<DataplaneToken> dataplaneTokens() { return dataplaneTokens; }
@@ -166,11 +164,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setJvmGCOptions(String gcOptions) {
         jvmGCOptions = gcOptions;
-        return this;
-    }
-
-    public TestProperties setSummaryDecodePolicy(String type) {
-        summaryDecodePolicy = type;
         return this;
     }
 
