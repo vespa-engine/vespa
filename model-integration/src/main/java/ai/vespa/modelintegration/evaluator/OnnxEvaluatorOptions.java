@@ -111,6 +111,10 @@ public record OnnxEvaluatorOptions(
             return this;
         }
 
+        /**
+         * Sets the raw config as a string. It's runtime specific - for Triton it's the content of config.pbtxt
+         * Settings this overrides other options such as {@link #setExecutionMode}, {@link #setInterOpThreads} and {@link #setIntraOpThreads}.
+         */
         public Builder setRawConfig(String config) {
             this.rawConfig = config;
             return this;
