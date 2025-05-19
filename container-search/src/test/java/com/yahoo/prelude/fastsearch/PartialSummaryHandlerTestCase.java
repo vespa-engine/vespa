@@ -25,7 +25,7 @@ public class PartialSummaryHandlerTestCase {
         var result = createResult(query, hit1, hit2);
         var toTest = new PartialSummaryHandler(set);
         toTest.wantToFill(result, null);
-        assertEquals(null, toTest.askForSummary());
+        assertEquals("default", toTest.askForSummary());
         assertNull(toTest.askForFields());
         assertFalse(toTest.resultAlreadyFilled());
         assertTrue(toTest.needFill(hit1));
@@ -36,6 +36,7 @@ public class PartialSummaryHandlerTestCase {
         assertFalse(hit1.isFilled(null));
         toTest.markFilled(hit1);
         assertTrue(hit1.isFilled(null));
+        assertTrue(hit1.isFilled("default"));
         assertEquals(1, result.hits().getFilled().size());
     }
 
@@ -58,6 +59,7 @@ public class PartialSummaryHandlerTestCase {
         assertEquals(6, docsumDef.fields().size());
         assertFalse(hit1.isFilled("default"));
         toTest.markFilled(hit1);
+        assertFalse(hit1.isFilled(null));
         assertTrue(hit1.isFilled("default"));
         assertEquals(1, result.hits().getFilled().size());
     }
@@ -202,6 +204,122 @@ public class PartialSummaryHandlerTestCase {
                 toTest.wantToFill(result, "[bad]");
             });
         assertEquals("fill([bad]) is not valid", e2.getMessage());
+    }
+
+    @Test
+    void testNullPresentation() {
+        DocsumDefinitionSet set = createDocsumDefinitionSet();
+        var query = createQuery(null);
+        var hit1 = createHit(query);
+        var hit2 = createHit(query, (String)null);
+        var result = createResult(query, hit1, hit2);
+        var toTest = new PartialSummaryHandler(set);
+        toTest.wantToFill(result, PartialSummaryHandler.PRESENTATION);
+        assertEquals("default", toTest.askForSummary());
+        assertNull(toTest.askForFields());
+        assertFalse(toTest.resultAlreadyFilled());
+        assertTrue(toTest.needFill(hit1));
+        assertFalse(toTest.needFill(hit2));
+        var docsumDef = toTest.effectiveDocsumDef();
+        assertNotNull(docsumDef);
+        assertEquals(6, docsumDef.fields().size());
+        assertFalse(hit1.isFilled(null));
+        toTest.markFilled(hit1);
+        assertTrue(hit1.isFilled(PartialSummaryHandler.PRESENTATION));
+        assertTrue(hit1.isFilled(null));
+        assertEquals(1, result.hits().getFilled().size());
+    }
+
+    @Test
+    void testClassPresentation() {
+        DocsumDefinitionSet set = createDocsumDefinitionSet();
+        var query = createQuery("middle2");
+        var hit1 = createHit(query);
+        var hit2 = createHit(query, "default");
+        var result = createResult(query, hit1, hit2);
+        var toTest = new PartialSummaryHandler(set);
+        toTest.wantToFill(result, PartialSummaryHandler.PRESENTATION);
+        assertEquals("middle2", toTest.askForSummary());
+        assertNull(toTest.askForFields());
+        assertFalse(toTest.resultAlreadyFilled());
+        assertTrue(toTest.needFill(hit1));
+        assertFalse(toTest.needFill(hit2));
+        var docsumDef = toTest.effectiveDocsumDef();
+        assertNotNull(docsumDef);
+        assertEquals(2, docsumDef.fields().size());
+        assertFalse(hit1.isFilled("middle2"));
+        toTest.markFilled(hit1);
+        assertTrue(hit1.isFilled(PartialSummaryHandler.PRESENTATION));
+        assertTrue(hit1.isFilled("middle2"));
+    }
+
+    @Test
+    void testFieldsPresentation() {
+        DocsumDefinitionSet set = createDocsumDefinitionSet();
+        var query = createQuery(null);
+        query.getPresentation().getSummaryFields().add("TOPIC");
+        query.getPresentation().getSummaryFields().add("SCORE");
+        query.getPresentation().getSummaryFields().add("CHUNK");
+        query.getPresentation().getSummaryFields().add("BYTES");
+        var hit1 = createHit(query);
+        var hit2 = createHit(query, "default");
+        var result = createResult(query, hit1, hit2);
+        var toTest = new PartialSummaryHandler(set);
+        toTest.wantToFill(result, PartialSummaryHandler.PRESENTATION);
+        assertEquals("default", toTest.askForSummary());
+        assertNotNull(toTest.askForFields());
+        assertEquals(4, toTest.askForFields().size());
+        assertFalse(toTest.resultAlreadyFilled());
+        assertTrue(toTest.needFill(hit1));
+        assertFalse(toTest.needFill(hit2));
+        var docsumDef = toTest.effectiveDocsumDef();
+        assertNotNull(docsumDef);
+        assertEquals(4, docsumDef.fields().size());
+        assertFalse(hit1.isFilled("[f:BYTES,CHUNK,SCORE,TOPIC]"));
+        toTest.markFilled(hit1);
+        assertTrue(hit1.isFilled(PartialSummaryHandler.PRESENTATION));
+        assertTrue(hit1.isFilled("[f:BYTES,CHUNK,SCORE,TOPIC]"));
+        assertFalse(hit1.isFilled(null));
+        assertFalse(hit1.isFilled("default"));
+        // no overlap
+        assertEquals(0, result.hits().getFilled().size());
+        // we will do this in dispatch code:
+        toTest.markFilled(hit2);
+        assertEquals(2, result.hits().getFilled().size());
+    }
+
+    @Test
+    void testFieldsPlusClassPresentation() {
+        DocsumDefinitionSet set = createDocsumDefinitionSet();
+        var query = createQuery("first3");
+        query.getPresentation().getSummaryFields().add("TOPIC");
+        query.getPresentation().getSummaryFields().add("SCORE");
+        var hit1 = createHit(query);
+        var hit2 = createHit(query, "default");
+        var result = createResult(query, hit1, hit2);
+        var toTest = new PartialSummaryHandler(set);
+        toTest.wantToFill(result, PartialSummaryHandler.PRESENTATION);
+        assertEquals("default", toTest.askForSummary());
+        assertNotNull(toTest.askForFields());
+        assertEquals(4, toTest.askForFields().size());
+        assertFalse(toTest.resultAlreadyFilled());
+        assertTrue(toTest.needFill(hit1));
+        assertFalse(toTest.needFill(hit2));
+        var docsumDef = toTest.effectiveDocsumDef();
+        assertNotNull(docsumDef);
+        assertEquals(4, docsumDef.fields().size());
+        assertFalse(hit1.isFilled(PartialSummaryHandler.PRESENTATION));
+        assertFalse(hit1.isFilled("[f:SCORE,TITLE,TOPIC,WORDS]"));
+        toTest.markFilled(hit1);
+        assertTrue(hit1.isFilled(PartialSummaryHandler.PRESENTATION));
+        assertTrue(hit1.isFilled("[f:SCORE,TITLE,TOPIC,WORDS]"));
+        assertFalse(hit1.isFilled(null));
+        assertFalse(hit1.isFilled("default"));
+        // no overlap
+        assertEquals(0, result.hits().getFilled().size());
+        // we will do this in dispatch code:
+        toTest.markFilled(hit2);
+        assertEquals(2, result.hits().getFilled().size());
     }
 
     static Query createQuery(String summaryClass) {

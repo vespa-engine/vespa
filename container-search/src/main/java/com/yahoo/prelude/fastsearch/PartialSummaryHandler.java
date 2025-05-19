@@ -4,12 +4,15 @@ package com.yahoo.prelude.fastsearch;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 
+import com.yahoo.search.Query;
 import com.yahoo.search.Result;
 import com.yahoo.search.result.Hit;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -31,6 +34,10 @@ import java.util.logging.Logger;
  * @author arnej
  */
 public class PartialSummaryHandler {
+    public static final String DEFAULT_CLASS = "default";
+    public static final String ALL_FIELDS_CLASS = "default"; // not really true, but best we can do for now
+    public static final String PRESENTATION = "[presentation]";
+
     private static final Logger log = Logger.getLogger(PartialSummaryHandler.class.getName());
 
     /** resolve summary class to use when none provided */
@@ -45,7 +52,7 @@ public class PartialSummaryHandler {
     private String summaryFromQuery = null;
     private String summaryRequestedInFill = null;
     private String askForSummary = null;
-    private String fillMarker = null;
+    private Set<String> fillMarkers = new HashSet<>();
     private Set<String> fieldsFromQuery = null;
     private Set<String> resultHasFilled = null;
     private Set<String> askForFields = null;
@@ -66,7 +73,20 @@ public class PartialSummaryHandler {
     public void wantToFill(Result result, String summaryClass) {
         this.summaryRequestedInFill = summaryClass;
         analyzeResult(result);
+        analyzeQuery(result.getQuery());
         // NOTE: ordering here is important, there are dependencies between these steps:
+        computeAskForFields();
+        computeAskForSum();
+        computeFillMarker();
+        computeEffectiveDocsumDef();
+    }
+
+    // for streaming
+    public void wantToFill(Query query) {
+        this.summaryRequestedInFill = PRESENTATION;
+        this.resultHasFilled = Set.of();
+        // NOTE: ordering here is important, there are dependencies between these steps:
+        analyzeQuery(query);
         computeAskForFields();
         computeAskForSum();
         computeFillMarker();
@@ -102,13 +122,17 @@ public class PartialSummaryHandler {
 
     // mark the Hit with how it actually got filled
     public void markFilled(Hit hit) {
-        hit.setFilled(fillMarker);
+        for (String marker : fillMarkers) {
+            hit.setFilled(marker);
+        }
     }
 
     private void analyzeResult(Result result) {
         this.resultHasFilled = result.hits().getFilled();
-        var presentation = result.getQuery().getPresentation();
-        // TODO: summaryFromQuery is currently not used
+    }
+
+    private void analyzeQuery(Query query) {
+        var presentation = query.getPresentation();
         this.summaryFromQuery = presentation.getSummary();
         this.fieldsFromQuery = presentation.getSummaryFields();
     }
@@ -118,13 +142,23 @@ public class PartialSummaryHandler {
     }
 
     private static boolean isDefaultRequest(String summaryClass) {
-        return summaryClass == null || summaryClass.equals("default");
+        return summaryClass == null || summaryClass.equals(DEFAULT_CLASS);
+    }
+
+    private static boolean isPresentationRequest(String summaryClass) {
+        return summaryClass != null && summaryClass.equals(PRESENTATION);
     }
 
     private void computeAskForSum() {
         this.askForSummary = summaryRequestedInFill;
+        if (askForSummary == null || askForSummary.equals(PRESENTATION)) {
+            askForSummary = summaryFromQuery;
+        }
+        if (askForSummary == null) {
+            askForSummary = DEFAULT_CLASS;
+        }
         if (askForFields != null) {
-            this.askForSummary = "default";
+            askForSummary = ALL_FIELDS_CLASS;
         }
     }
 
@@ -134,6 +168,19 @@ public class PartialSummaryHandler {
             var fieldSet = parseFieldList(summaryRequestedInFill);
             if (! fieldSet.isEmpty()) {
                 this.askForFields = fieldSet;
+            }
+        } else if (isPresentationRequest(summaryRequestedInFill)) {
+            if (! fieldsFromQuery.isEmpty()) {
+                if (summaryFromQuery == null) {
+                    askForFields = fieldsFromQuery;
+                } else {
+                    var fieldsFromClass = getFieldsForClass(summaryFromQuery);
+                    if (! fieldsFromClass.containsAll(fieldsFromQuery)) {
+                        askForFields = new HashSet<String>();
+                        askForFields.addAll(fieldsFromQuery);
+                        askForFields.addAll(fieldsFromClass);
+                    }
+                }
             }
         } else if (summaryRequestedInFill != null && summaryRequestedInFill.startsWith("[")) {
             throw new IllegalArgumentException("fill(" + summaryRequestedInFill + ") is not valid");
@@ -145,9 +192,18 @@ public class PartialSummaryHandler {
     }
 
     private void computeFillMarker() {
-        this.fillMarker = askForSummary;
-        if (askForFields != null) {
-            fillMarker = syntheticName(askForFields);
+        if (isPresentationRequest(summaryRequestedInFill)) {
+                fillMarkers.add(summaryRequestedInFill);
+                if (askForFields != null) {
+                    fillMarkers.add(syntheticName(askForFields));
+                } else {
+                    fillMarkers.add(summaryFromQuery);
+                }
+        } else if (askForFields != null) {
+            fillMarkers.add(syntheticName(askForFields));
+        } else {
+            fillMarkers.add(summaryRequestedInFill);
+            fillMarkers.add(askForSummary);
         }
     }
 
@@ -231,7 +287,9 @@ public class PartialSummaryHandler {
         // do we already have the entire thing?
         if (alreadyFilled.contains(askForSummary)) return false;
         // do we already have the entire subset?
-        if (alreadyFilled.contains(fillMarker)) return false;
+        for (var marker : fillMarkers) {
+            if (alreadyFilled.contains(marker)) return false;
+        }
 
         // no, see what we have got:
         var gotFields = new HashSet<String>();
