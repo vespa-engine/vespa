@@ -43,7 +43,6 @@ public class DocumentSourceSearcher extends Searcher {
     private final Map<Query, Result> completelyFilledResults = new HashMap<>();
     private final Map<Query, Result> unFilledResults = new HashMap<>();
     private final Map<String, Set<String>> summaryClasses = new HashMap<>();
-    private PartialSummaryHandler partialSummaryHandler = new PartialSummaryHandler(summaryClasses);
 
     private int queryCount;
 
@@ -79,7 +78,6 @@ public class DocumentSourceSearcher extends Searcher {
 
     public void addSummaryClass(String name, Set<String> fields) {
         summaryClasses.put(name, fields);
-        partialSummaryHandler = new PartialSummaryHandler(summaryClasses);
     }
 
     public void addSummaryClassByCopy(String name, Collection<String> fields) {
@@ -141,6 +139,7 @@ public class DocumentSourceSearcher extends Searcher {
             fieldsToFill = summaryClasses.get(DEFAULT_SUMMARY_CLASS);
         }
         // logic replicated from RpcProtobufFillInvoker
+        var partialSummaryHandler = new PartialSummaryHandler(summaryClasses);
         partialSummaryHandler.wantToFill(hitsToFill, summaryClass);
         var onlyFields = partialSummaryHandler.askForFields();
         if (onlyFields != null) {
