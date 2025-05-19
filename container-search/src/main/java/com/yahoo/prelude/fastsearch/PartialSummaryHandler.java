@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
  * requests which only cover some of the possible summary fields.
  *
  * Usage:
- * 1) construct from DocumentDatabase (it needs the DocsumDefinitionSet)
+ * 1) construct from DocumentDatabase or DocsumDefinitionSet
  * 2) call wantToFill to specify intent
  * 3) use askForSummary and askForFields for making the backend request
  * 4) use needFill to see if the Hit actually needs filling
@@ -50,7 +51,10 @@ public class PartialSummaryHandler {
     private Set<String> askForFields = null;
 
     public PartialSummaryHandler(DocumentDatabase docDb) {
-        this.docsumDefinitions = docDb.getDocsumDefinitionSet();
+        this(docDb.getDocsumDefinitionSet());
+    }
+    public PartialSummaryHandler(DocsumDefinitionSet docsumDefinitionSet) {
+        this.docsumDefinitions = docsumDefinitionSet;
     }
 
     // for unit testing:
@@ -63,8 +67,8 @@ public class PartialSummaryHandler {
         this.summaryRequestedInFill = summaryClass;
         analyzeResult(result);
         // NOTE: ordering here is important, there are dependencies between these steps:
-        computeAskForSum();
         computeAskForFields();
+        computeAskForSum();
         computeFillMarker();
         computeEffectiveDocsumDef();
     }
@@ -119,7 +123,7 @@ public class PartialSummaryHandler {
 
     private void computeAskForSum() {
         this.askForSummary = summaryRequestedInFill;
-        if (isFieldListRequest(summaryRequestedInFill)) {
+        if (askForFields != null) {
             this.askForSummary = "default";
         }
     }
@@ -131,6 +135,8 @@ public class PartialSummaryHandler {
             if (! fieldSet.isEmpty()) {
                 this.askForFields = fieldSet;
             }
+        } else if (summaryRequestedInFill != null && summaryRequestedInFill.startsWith("[")) {
+            throw new IllegalArgumentException("fill(" + summaryRequestedInFill + ") is not valid");
         } else if (isDefaultRequest(summaryRequestedInFill)) {
             if (! fieldsFromQuery.isEmpty()) {
                 this.askForFields = fieldsFromQuery;
@@ -146,8 +152,10 @@ public class PartialSummaryHandler {
     }
 
     private static String syntheticName(Set<String> summaryFields) {
+        // ensure deterministic ordering:
+        var sorted = new TreeSet<String>(summaryFields);
         var buf = new StringBuilder();
-        for (String field : summaryFields) {
+        for (String field : sorted) {
             buf.append(buf.length() == 0 ? "[f:" : ",");
             buf.append(field);
         }
@@ -179,7 +187,7 @@ public class PartialSummaryHandler {
         if ((docsumDefinitions != null) && docsumDefinitions.hasDocsum(askForSummary)) {
             effectiveDocsumDef = docsumDefinitions.getDocsum(askForSummary);
             if (askForFields != null) {
-                effectiveDocsumDef = new DocsumDefinition(fillMarker, effectiveDocsumDef, askForFields);
+                effectiveDocsumDef = new DocsumDefinition("<unnamed>", effectiveDocsumDef, askForFields);
             }
         }
     }
@@ -188,7 +196,7 @@ public class PartialSummaryHandler {
         if (fieldList.startsWith("[f:") && fieldList.endsWith("]")) {
             String content = fieldList.substring(3, fieldList.length() - 1);
             String[] parts = content.split(",");
-            return Set.copyOf(Arrays.asList(parts));
+            return new TreeSet<>(Arrays.asList(parts));
         }
         return Set.of();
     }
@@ -205,7 +213,7 @@ public class PartialSummaryHandler {
                 var fieldSet = parseFieldList(wantClass);
                 knownSummaryClasses.put(wantClass, fieldSet);
             } else {
-                log.log(Level.WARNING, "unknown summary class: " + wantClass);
+                throw new IllegalArgumentException("unknown summary class: " + wantClass);
             }
         }
         var set = knownSummaryClasses.get(wantClass);
