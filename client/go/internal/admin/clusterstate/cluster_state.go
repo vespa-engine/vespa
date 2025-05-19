@@ -29,7 +29,7 @@ func (s *StateAndReason) writeTo(buf *strings.Builder) {
 	}
 }
 
-// cluster state as returned by the clustercontroller REST api.
+// ClusterState represents the cluster state as returned by the clustercontroller REST API.
 type ClusterState struct {
 	State struct {
 		Generated StateAndReason `json:"generated"`
