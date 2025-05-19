@@ -28,6 +28,7 @@ func basename(s string) string {
 
 func main() {
 	defer handleSimplePanic()
+
 	action := basename(os.Args[0])
 	if action == "vespa-wrapper" && len(os.Args) > 1 {
 		action = os.Args[1]
@@ -38,6 +39,7 @@ func main() {
 		logfmt.RunCmdLine()
 		return
 	}
+
 	_ = vespa.FindAndVerifyVespaHome()
 	switch action {
 	case "vespa-stop-services":
@@ -87,6 +89,8 @@ func main() {
 	case "vespa-set-node-state":
 		cobra := clusterstate.NewSetNodeStateCmd()
 		cobra.Execute()
+	case "verify-container-env":
+		services.VerifyAvailableMemory()
 	default:
 		if startcbinary.IsCandidate(os.Args[0]) {
 			os.Exit(startcbinary.Run(os.Args))
