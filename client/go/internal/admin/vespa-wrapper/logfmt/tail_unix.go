@@ -156,7 +156,12 @@ loop:
 						// truncation case
 						pos = 0
 					}
-					t.curFile.Seek(pos, io.SeekStart)
+					_, err := t.curFile.Seek(pos, io.SeekStart)
+					if err != nil {
+						fmt.Fprintf(os.Stderr, "error seeking in '%s': %v\n", t.fn, err)
+						t.reopen(&t.curStat)
+						continue loop
+					}
 					continue loop
 				}
 			}
