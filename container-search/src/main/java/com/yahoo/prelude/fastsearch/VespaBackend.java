@@ -20,7 +20,6 @@ import com.yahoo.search.result.Hit;
 import com.yahoo.searchlib.aggregation.Grouping;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -45,9 +44,9 @@ public abstract class VespaBackend {
     /** Default docsum class. null means "unset" and is the default value */
     private final String defaultDocsumClass;
 
-    /** Returns an iterator which returns all hits below this result **/
-    private static Iterator<Hit> hitIterator(Result result) {
-        return result.hits().unorderedDeepIterator();
+    /** Iterate over all hits below this result */
+    protected static Iterable<Hit> iterableHits(Result result) {
+        return () -> result.hits().unorderedDeepIterator();
     }
 
     /** The name of this source */
@@ -181,12 +180,12 @@ public abstract class VespaBackend {
         return result;
     }
 
+    // split by query
     private static List<Result> partitionHits(Result result, String summaryClass) {
         List<Result> parts = new ArrayList<>();
         TinyIdentitySet<Query> queryMap = new TinyIdentitySet<>(4);
 
-        for (Iterator<Hit> i = hitIterator(result); i.hasNext(); ) {
-            Hit hit = i.next();
+        for (Hit hit : iterableHits(result)) {
             if (hit instanceof FastHit fastHit) {
                 if ( ! fastHit.isFilled(summaryClass)) {
                     Query q = fastHit.getQuery();
@@ -228,7 +227,14 @@ public abstract class VespaBackend {
             } else {
                 var db = getDocumentDatabase(query);
                 if (db != null && ! db.getDocsumDefinitionSet().hasDocsum(summaryClass)) {
-                    throw new IllegalInputException("invalid presentation.summary=" + summaryClass);
+                    // intentional reference compare, true when execution.fill(result) was called:
+                    if (summaryClass == query.getPresentation().getSummary()) {
+                        // problem comes from the query:
+                        throw new IllegalInputException("invalid presentation.summary=" + summaryClass);
+                    } else {
+                        // problem comes from a Searcher doing fill with explicit summaryClass:
+                        throw new IllegalArgumentException("invalid fill() with summaryClass=" + summaryClass);
+                    }
                 }
             }
         }
@@ -319,82 +325,6 @@ public abstract class VespaBackend {
         if (query.getTrace().isTraceable(level + 2) && query.getTrace().getQuery()) {
             query.trace("YQL+ representation: " + query.yqlRepresentation(), level + 2);
         }
-    }
-
-    static class FillHitResult {
-        final boolean ok;
-        final String error;
-        FillHitResult(boolean ok) {
-            this(ok, null);
-        }
-        FillHitResult(boolean ok, String error) {
-            this.ok = ok;
-            this.error = error;
-        }
-    }
-
-    private FillHitResult fillHit(FastHit hit, DocsumPacket packet, String summaryClass) {
-        if (packet != null) {
-            byte[] docsumdata = packet.getData();
-            if (docsumdata.length > 0) {
-                return new FillHitResult(true, decodeSummary(summaryClass, hit, docsumdata));
-            }
-        }
-        return new FillHitResult(false);
-    }
-
-    static protected class FillHitsResult {
-        public final int skippedHits; // Number of hits not producing a summary.
-        public final String error; // Optional error message
-        FillHitsResult(int skippedHits, String error) {
-            this.skippedHits = skippedHits;
-            this.error = error;
-        }
-    }
-    /**
-     * Fills the hits.
-     *
-     * @return the number of hits that we did not return data for, and an optional error message.
-     *         when things are working normally we return 0.
-     */
-     protected FillHitsResult fillHits(Result result, DocsumPacket[] packets, String summaryClass) {
-        int skippedHits = 0;
-        String lastError = null;
-        int packetIndex = 0;
-        for (Iterator<Hit> i = hitIterator(result); i.hasNext();) {
-            Hit hit = i.next();
-
-            if (hit instanceof FastHit fastHit && ! hit.isFilled(summaryClass)) {
-                DocsumPacket docsum = packets[packetIndex];
-
-                packetIndex++;
-                FillHitResult fr = fillHit(fastHit, docsum, summaryClass);
-                if ( ! fr.ok ) {
-                    skippedHits++;
-                }
-                if (fr.error != null) {
-                    result.hits().addError(ErrorMessage.createTimeout(fr.error));
-                    skippedHits++;
-                    lastError = fr.error;
-                }
-            }
-        }
-        result.hits().setSorted(false);
-        return new FillHitsResult(skippedHits, lastError);
-    }
-
-    private String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata) {
-        DocumentDatabase db = getDocumentDatabase(hit.getQuery());
-        hit.setField(Hit.SDDOCNAME_FIELD, db.schema().name());
-        return decodeSummary(summaryClass, hit, docsumdata, db.getDocsumDefinitionSet());
-    }
-
-    private static String decodeSummary(String summaryClass, FastHit hit, byte[] docsumdata, DocsumDefinitionSet docsumSet) {
-        String error = docsumSet.lazyDecode(summaryClass, docsumdata, hit);
-        if (error == null) {
-            hit.setFilled(summaryClass);
-        }
-        return error;
     }
 
     public void shutDown() { }
