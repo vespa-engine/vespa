@@ -10,7 +10,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
-const minRequiredMemoryInBytes = 4 * 1024 * 1024 * 1024
+const minRequiredMemoryInBytes = 3 * 1024 * 1024 * 1024
 
 func VerifyAvailableMemory() {
 	if os.Getenv("VESPA_IGNORE_NOT_ENOUGH_MEMORY") != "" {
