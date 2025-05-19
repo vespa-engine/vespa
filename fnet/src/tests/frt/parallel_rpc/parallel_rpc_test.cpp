@@ -1,17 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/test/nexus.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <latch>
 #include <thread>
 
 using namespace vespalib;
+using vespalib::test::Nexus;
 
 struct Rpc : FRT_Invokable {
     FNET_Transport    transport;
@@ -21,9 +25,9 @@ struct Rpc : FRT_Invokable {
     void start() {
         ASSERT_TRUE(transport.Start());
     }
-    uint32_t listen() {
+    void listen(uint32_t& port) {
         ASSERT_TRUE(orb.Listen(0));
-        return orb.GetListenPort();
+        port = orb.GetListenPort();
     }
     FRT_Target *connect(uint32_t port) {
         return orb.GetTarget(port);
@@ -35,11 +39,14 @@ struct Rpc : FRT_Invokable {
 
 struct Server : Rpc {
     uint32_t port;
-    Server(CryptoEngine::SP crypto, size_t num_threads, bool drop_empty = false) : Rpc(std::move(crypto), num_threads, drop_empty), port(listen()) {
-        init_rpc();
-        start();
+    Server(CryptoEngine::SP crypto, size_t num_threads, bool drop_empty = false) : Rpc(std::move(crypto), num_threads, drop_empty), port(0) {
     }
     ~Server() override;
+    void start() {
+        ASSERT_NO_FATAL_FAILURE(listen(port));
+        init_rpc();
+        ASSERT_NO_FATAL_FAILURE(Rpc::start());
+    }
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
         rb.DefineMethod("inc", "l", "l", FRT_METHOD(Server::rpc_inc), this);
@@ -59,7 +66,6 @@ Server::~Server() = default;
 struct Client : Rpc {
     uint32_t port;
     Client(CryptoEngine::SP crypto, size_t num_threads, const Server &server, bool drop_empty = false) : Rpc(std::move(crypto), num_threads, drop_empty), port(server.port) {
-        start();
     }
     ~Client() override;
     FRT_Target *connect() { return Rpc::connect(port); }
@@ -91,7 +97,7 @@ struct Result {
 bool verbose = false;
 double budget = 1.5;
 
-void perform_test(size_t thread_id, Client &client, Result &result, bool vital = false) {
+void perform_test(size_t thread_id, std::latch& latch, Client &client, Result &result, bool vital) {
     if (!vital && !verbose) {
         if (thread_id == 0) {
             fprintf(stderr, "... skipping non-vital test; run with 'verbose' to enable\n");
@@ -108,7 +114,7 @@ void perform_test(size_t thread_id, Client &client, Result &result, bool vital =
         target->InvokeSync(req, 300.0);
         ASSERT_TRUE(req->CheckReturnTypes("l"));
         uint64_t ret = req->GetReturn()->GetValue(0)._intval64;
-        EXPECT_EQUAL(ret, seq + 1);
+        EXPECT_EQ(ret, seq + 1);
         seq = ret;
     };
     size_t loop_cnt = 8;
@@ -123,14 +129,30 @@ void perform_test(size_t thread_id, Client &client, Result &result, bool vital =
     }
     double t = timer.min_time();
     BenchmarkTimer::benchmark(invoke, invoke, 0.5);
-    EXPECT_GREATER_EQUAL(seq, loop_cnt);
+    EXPECT_GE(seq, loop_cnt);
     result.req_per_sec[thread_id] = double(loop_cnt) / t;
     req->internal_subref();
     target->internal_subref();
-    TEST_BARRIER();
+    latch.arrive_and_wait();
     if (thread_id == 0) {
         result.print();
     }
+}
+
+void perform_mt_test(size_t num_threads, size_t transport_threads, std::shared_ptr<CryptoEngine> crypto,
+                     bool drop_empty_buffers, bool vital = false)
+{
+    Server server(crypto, transport_threads, drop_empty_buffers);
+    ASSERT_NO_FATAL_FAILURE(server.start());
+    Client client(crypto, transport_threads, server, drop_empty_buffers);
+    ASSERT_NO_FATAL_FAILURE(client.start());
+    Result result(num_threads);
+    std::latch latch(num_threads);
+    auto task = [&client,&result,&latch,vital](Nexus& ctx) {
+        auto thread_id = ctx.thread_id();
+        perform_test(thread_id, latch, client, result, vital);
+    };
+    Nexus::run(num_threads, task);
 }
 
 CryptoEngine::SP null_crypto = std::make_shared<NullCryptoEngine>();
@@ -141,32 +163,43 @@ namespace {
     }
 }
 
-TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads (no encryption)",
-            getNumThreads(), Server(null_crypto, 1), Client(null_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+TEST(ParallelRpcTest, parallel_rpc_with_1_1_transport_threads_and_num_cores_user_threads_no_encryption)
+{
+    perform_mt_test(getNumThreads(), 1, null_crypto, false);
+}
 
-TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads (tls encryption)",
-            getNumThreads(), Server(tls_crypto, 1), Client(tls_crypto, 1, f1), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+TEST(ParallelRpcTest, parallel_rpc_with_1_1_transport_threads_and_num_cores_user_threads_tls_encryption)
+{
+    perform_mt_test(getNumThreads(), 1, tls_crypto, false);
+}
 
-TEST_MT_FFF("parallel rpc with 1/1 transport threads and num_cores user threads (tls encryption + drop empty buffers)",
-            getNumThreads(), Server(tls_crypto, 1, true), Client(tls_crypto, 1, f1, true), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+TEST(ParallelRpcTest, parallel_rpc_with_1_1_transport_threads_and_num_cores_user_threads_tls_encryption_and_drop_empty_buffers)
+{
+    perform_mt_test(getNumThreads(), 1, tls_crypto, true);
+}
 
-TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (no encryption)",
-            getNumThreads(), Server(null_crypto, 8), Client(null_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3, true); }
+TEST(ParallelRpcTest, parallel_rpc_with_8_8_transport_threads_and_num_cores_user_threads_no_encryption)
+{
+    perform_mt_test(getNumThreads(), 8, null_crypto, false, true);
+}
 
-TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (tls encryption)",
-            getNumThreads(), Server(tls_crypto, 8), Client(tls_crypto, 8, f1), Result(num_threads)) { perform_test(thread_id, f2, f3, true); }
+TEST(ParallelRpcTest, parallel_rpc_with_8_8_transport_threads_and_num_cores_user_threads_tls_encryption)
+{
+    perform_mt_test(getNumThreads(), 8, tls_crypto, false, true);
+}
 
-TEST_MT_FFF("parallel rpc with 8/8 transport threads and num_cores user threads (tls encryption + drop empty buffers)",
-            getNumThreads(), Server(tls_crypto, 8, true), Client(tls_crypto, 8, f1, true), Result(num_threads)) { perform_test(thread_id, f2, f3); }
+TEST(ParallelRpcTest, parallel_rpc_with_8_8_transport_threads_and_num_cores_user_threads_tls_encryption_and_drop_empty_buffers)
+{
+    perform_mt_test(getNumThreads(), 8, tls_crypto, true);
+}
 
 //-----------------------------------------------------------------------------
 
 int main(int argc, char **argv) {
-    TEST_MASTER.init(__FILE__);
+    ::testing::InitGoogleTest(&argc, argv);
     if ((argc == 2) && (argv[1] == std::string("verbose"))) {
         verbose = true;
         budget = 10.0;
     }
-    TEST_RUN_ALL();
-    return (TEST_MASTER.fini() ? 0 : 1);
+    return RUN_ALL_TESTS();
 }
