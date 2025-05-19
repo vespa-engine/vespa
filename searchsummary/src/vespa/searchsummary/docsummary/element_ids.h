@@ -10,15 +10,18 @@ namespace search::docsummary {
 
 /*
  * The selected element ids for a multi-value summary field, cf. SummaryElementsSelector.
+ *
+ * If _element_ids.data() is nullptr then all elements are selected.
  */
 class ElementIds {
     const std::span<const uint32_t> _element_ids;
-    static const std::span<const uint32_t> _empty;
+    static const std::span<const uint32_t> _empty; // empty span where data() is not nullptr
 public:
-    ElementIds() noexcept : _element_ids() { }
+    ElementIds() noexcept : _element_ids() { } // default std::span constructor gives nullptr for data()
     explicit ElementIds(const std::vector<uint32_t>& element_ids) noexcept
         : _element_ids(element_ids.empty() ? _empty : element_ids)
     {
+        // _elements_ids.data() is known to not be nullptr here since _empty was used if vector was empty.
     }
     const uint32_t& back() const noexcept { return _element_ids.back(); }
     std::span<const uint32_t>::iterator begin() const noexcept { return _element_ids.begin(); }
