@@ -27,8 +27,7 @@ class ArrayAttributeCombinerDFW : public AttributeCombinerDFW
                                                   GetDocsumsState& state,
                                                   const SummaryElementsSelector& elements_selector) const override;
 public:
-    ArrayAttributeCombinerDFW(const std::string &fieldName,
-                              const StructFieldsResolver& fields_resolver);
+    ArrayAttributeCombinerDFW(const StructFieldsResolver& fields_resolver);
     ~ArrayAttributeCombinerDFW() override;
 };
 
