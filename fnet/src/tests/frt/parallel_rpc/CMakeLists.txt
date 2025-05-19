@@ -4,6 +4,7 @@ vespa_add_executable(fnet_parallel_rpc_test_app TEST
     parallel_rpc_test.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_parallel_rpc_test_app COMMAND fnet_parallel_rpc_test_app)
 vespa_add_executable(fnet_tls_rpc_bench_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(fnet_tls_rpc_bench_app TEST
     tls_rpc_bench.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_tls_rpc_bench_app COMMAND fnet_tls_rpc_bench_app BENCHMARK)

@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
@@ -28,13 +28,15 @@ struct Fixture : FRT_Invokable {
         : server(std::move(crypto)),
           orb(server.supervisor())
     {
-         ASSERT_TRUE(orb.Listen(0));
+    }
+    void start() {
+        ASSERT_TRUE(orb.Listen(0));
         init_rpc();
     }
     FRT_Target *connect() {
         return orb.GetTarget(orb.GetListenPort());
     }
-    ~Fixture();
+    ~Fixture() override;
     void init_rpc() {
         FRT_ReflectionBuilder rb(&orb);
         rb.DefineMethod("inc", "l", "l", FRT_METHOD(Fixture::rpc_inc), this);
@@ -95,7 +97,7 @@ void benchmark_rpc(Fixture &fixture, bool reconnect) {
         target->InvokeSync(req, 60.0);
         ASSERT_TRUE(req->CheckReturnTypes("l"));
         uint64_t ret = req->GetReturn()->GetValue(0)._intval64;
-        EXPECT_EQUAL(ret, seq + 1);
+        EXPECT_EQ(ret, seq + 1);
         seq = ret;
     };
     auto before = TimeTracer::now();
@@ -136,16 +138,18 @@ void benchmark_rpc(Fixture &fixture, bool reconnect) {
     }
 }
 
-TEST_F("^^^-- rpc with null encryption", Fixture(null_crypto)) {
-    fprintf(stderr, "vvv-- rpc with null encryption\n");
+TEST(TlsRpcBenchTest, rpc_with_null_encryption) {
+    Fixture f1(null_crypto);
+    ASSERT_NO_FATAL_FAILURE(f1.start());
     benchmark_rpc(f1, false);
     benchmark_rpc(f1, true);
 }
 
-TEST_F("^^^-- rpc with tls encryption", Fixture(tls_crypto)) {
-    fprintf(stderr, "vvv-- rpc with tls encryption\n");
+TEST(TlsRpcBenchTest, rpc_with_tls_encryption) {
+    Fixture f1(tls_crypto);
+    ASSERT_NO_FATAL_FAILURE(f1.start());
     benchmark_rpc(f1, false);
     benchmark_rpc(f1, true);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
