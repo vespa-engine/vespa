@@ -14,7 +14,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
-// common struct used various places in the clustercontroller REST api.
+// StateAndReason is a common struct used by the clustercontroller REST API.
 type StateAndReason struct {
 	State  string `json:"state"`
 	Reason string `json:"reason"`
