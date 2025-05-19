@@ -27,6 +27,7 @@ public class ModelIdResolver {
     public static final String BERT_VOCAB = "bert-vocabulary";
     public static final String SIGNIFICANCE_MODEL = "significance-model";
     public static final String GGUF_MODEL = "gguf-model";
+    public static final String OTHER = "other";
 
     private static Map<String, ProvidedModel> setupProvidedModels() {
         var m = new HashMap<String, ProvidedModel>();
