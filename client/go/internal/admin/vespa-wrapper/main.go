@@ -40,7 +40,7 @@ func main() {
 		return
 	}
 
-	//_ = vespa.FindAndVerifyVespaHome()
+	_ = vespa.FindAndVerifyVespaHome()
 	switch action {
 	case "vespa-stop-services":
 		os.Exit(services.VespaStopServices())
