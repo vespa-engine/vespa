@@ -64,7 +64,7 @@ SummaryElementsSelector::get_selected_elements(uint32_t docid, GetDocsumsState &
 {
     switch (_selector) {
         case Selector::ALL:
-            return ElementIds();
+            return ElementIds::select_all();
         case Selector::BY_MATCH:
             return ElementIds(state.get_matching_elements().get_matching_elements(docid, _field));
         case Selector::BY_SUMMARY_FEATURE:

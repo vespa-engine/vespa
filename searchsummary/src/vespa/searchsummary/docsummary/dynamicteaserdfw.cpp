@@ -113,13 +113,12 @@ JuniperConverter::convert(std::string_view input, vespalib::slime::Inserter& ins
 
 void
 DynamicTeaserDFW::insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                               const SummaryElementsSelector& elements_selector,
+                               ElementIds selected_elements,
                                vespalib::slime::Inserter &target) const
 {
-    (void) elements_selector;
     if (doc != nullptr) {
         JuniperConverter converter(*this, docid, state);
-        doc->insert_juniper_field(_input_field_name, target, converter);
+        doc->insert_juniper_field(_input_field_name, selected_elements, target, converter);
     }
 }
 

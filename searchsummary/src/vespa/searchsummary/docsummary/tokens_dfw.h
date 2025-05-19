@@ -23,7 +23,7 @@ public:
     ~TokensDFW() override;
     bool isGenerated() const override;
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector,
+                      ElementIds selected_elements,
                       vespalib::slime::Inserter& target) const override;
 };
 

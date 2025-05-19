@@ -25,33 +25,26 @@ class ArrayAttributeFieldWriterState : public DocsumFieldWriterState
 {
     // AttributeFieldWriter instances are owned by stash passed to constructor
     std::vector<AttributeFieldWriter*>                 _writers;
-    GetDocsumsState&                                   _state;
-    const SummaryElementsSelector&                     _elements_selector;
 
 public:
     ArrayAttributeFieldWriterState(const std::vector<std::string> &fieldNames,
                                    const std::vector<std::string> &attributeNames,
                                    IAttributeContext &context,
-                                   GetDocsumsState& state,
-                                   const SummaryElementsSelector& elements_selector,
+                                   vespalib::Stash& stash,
                                    bool is_map_of_scalar);
     ~ArrayAttributeFieldWriterState() override;
     void insert_element(uint32_t element_index, Cursor &array);
-    void insertField(uint32_t docId, vespalib::slime::Inserter &target) override;
+    void insertField(uint32_t docId, ElementIds selected_elements, vespalib::slime::Inserter &target) override;
 };
 
 ArrayAttributeFieldWriterState::ArrayAttributeFieldWriterState(const std::vector<std::string> &fieldNames,
                                                                const std::vector<std::string> &attributeNames,
                                                                IAttributeContext &context,
-                                                               GetDocsumsState& state,
-                                                               const SummaryElementsSelector& elements_selector,
+                                                               vespalib::Stash& stash,
                                                                bool is_map_of_scalar)
     : DocsumFieldWriterState(),
-      _writers(),
-      _state(state),
-      _elements_selector(elements_selector)
+      _writers()
 {
-    auto& stash = state.get_stash();
     size_t fields = fieldNames.size();
     _writers.reserve(fields);
     for (uint32_t field = 0; field < fields; ++field) {
@@ -74,7 +67,7 @@ ArrayAttributeFieldWriterState::insert_element(uint32_t element_index, Cursor &a
 }
 
 void
-ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Inserter &target)
+ArrayAttributeFieldWriterState::insertField(uint32_t docId, ElementIds selected_elements, vespalib::slime::Inserter &target)
 {
     uint32_t elems = 0;
     for (auto &writer : _writers) {
@@ -83,14 +76,13 @@ ArrayAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Ins
     if (elems == 0) {
         return;
     }
-    auto elements = _elements_selector.get_selected_elements(docId, _state);
 
-    if (!elements.all_elements()) {
-        if (elements.empty() || elements.back() >= elems) {
+    if (!selected_elements.all_elements()) {
+        if (selected_elements.empty() || selected_elements.back() >= elems) {
             return;
         }
         Cursor &arr = target.insertArray();
-        for (auto idx : elements) {
+        for (auto idx : selected_elements) {
             if (idx < elems) {
                 insert_element(idx, arr);
             }
@@ -116,11 +108,9 @@ ArrayAttributeCombinerDFW::ArrayAttributeCombinerDFW(const StructFieldsResolver&
 ArrayAttributeCombinerDFW::~ArrayAttributeCombinerDFW() = default;
 
 DocsumFieldWriterState*
-ArrayAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, GetDocsumsState& state,
-                                                 const SummaryElementsSelector& elements_selector) const
+ArrayAttributeCombinerDFW::allocFieldWriterState(IAttributeContext &context, vespalib::Stash& stash) const
 {
-    auto& stash = state.get_stash();
-    return &stash.create<ArrayAttributeFieldWriterState>(_fields, _attributeNames, context, state, elements_selector, _is_map_of_scalar);
+    return &stash.create<ArrayAttributeFieldWriterState>(_fields, _attributeNames, context, stash, _is_map_of_scalar);
 }
 
 }

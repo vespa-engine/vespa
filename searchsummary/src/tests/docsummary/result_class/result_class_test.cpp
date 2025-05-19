@@ -15,7 +15,7 @@ public:
     MockWriter(bool generated) : _generated(generated) {}
     bool isGenerated() const override { return _generated; }
     void insert_field(uint32_t, const IDocsumStoreDocument*, GetDocsumsState&,
-                      const SummaryElementsSelector&,
+                      ElementIds,
                       vespalib::slime::Inserter &) const override {}
 };
 

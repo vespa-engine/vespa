@@ -56,7 +56,7 @@ public:
         AttrDFW(attrName)
     { }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector,
+                      ElementIds selected_elements,
                       Inserter &target) const override;
     bool isDefaultValue(uint32_t docid, const GetDocsumsState& state) const override {
         return get_attribute(state).isUndefined(docid);
@@ -67,7 +67,7 @@ void
 SingleAttrDFW::insert_field(uint32_t docid,
                             const IDocsumStoreDocument*,
                             GetDocsumsState& state,
-                            const SummaryElementsSelector&,
+                            ElementIds,
                             Inserter &target) const
 {
     const auto& v = get_attribute(state);
@@ -142,24 +142,18 @@ class MultiAttrDFWState : public DocsumFieldWriterState
 {
     const std::string&                         _field_name;
     const IMultiValueReadView<MultiValueType>* _read_view;
-    GetDocsumsState&                           _state;
-    const SummaryElementsSelector&             _elements_selector;
 public:
-    MultiAttrDFWState(const std::string& field_name, const IAttributeVector& attr, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector);
+    MultiAttrDFWState(const std::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash);
     ~MultiAttrDFWState() override;
-    void insertField(uint32_t docid, Inserter& target) override;
+    void insertField(uint32_t docid, ElementIds selected_elements, Inserter& target) override;
 };
 
 
 template <typename MultiValueType>
 MultiAttrDFWState<MultiValueType>::MultiAttrDFWState(const std::string& field_name, const IAttributeVector& attr,
-                                                     GetDocsumsState& state,
-                                                     const SummaryElementsSelector& elements_selector)
+                                                     vespalib::Stash& stash)
     : _field_name(field_name),
-      _read_view(make_read_view<MultiValueType>(attr, state.get_stash())),
-      _state(state),
-      _elements_selector(elements_selector)
+      _read_view(make_read_view<MultiValueType>(attr, stash))
 {
 }
 
@@ -197,7 +191,7 @@ Memory WEIGHT("weight");
 
 template <typename MultiValueType>
 void
-MultiAttrDFWState<MultiValueType>::insertField(uint32_t docid, Inserter& target)
+MultiAttrDFWState<MultiValueType>::insertField(uint32_t docid, ElementIds selected_elements, Inserter& target)
 {
     using ValueType = multivalue::ValueType_t<MultiValueType>;
     if (!_read_view) {
@@ -207,7 +201,6 @@ MultiAttrDFWState<MultiValueType>::insertField(uint32_t docid, Inserter& target)
     if (elements.empty()) {
         return;
     }
-    auto selected_elements = _elements_selector.get_selected_elements(docid, _state);
     if (!selected_elements.all_elements()) {
         if (selected_elements.empty() || selected_elements.back() >= elements.size()) {
             return;
@@ -257,7 +250,7 @@ public:
     }
     bool setFieldWriterStateIndex(uint32_t fieldWriterStateIndex) override;
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector,
+                      ElementIds selected_elements,
                       Inserter& target) const override;
 };
 
@@ -270,57 +263,54 @@ MultiAttrDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 
 template <typename DataType>
 DocsumFieldWriterState*
-make_field_writer_state_helper(const std::string& field_name, const IAttributeVector& attr, GetDocsumsState& state,
-                               const SummaryElementsSelector& elements_selector)
+make_field_writer_state_helper(const std::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash)
 {
-    auto& stash = state.get_stash();
     bool is_weighted_set = attr.hasWeightedSetType();
     if (is_weighted_set) {
-        return &stash.create<MultiAttrDFWState<multivalue::WeightedValue<DataType>>>(field_name, attr, state, elements_selector);
+        return &stash.create<MultiAttrDFWState<multivalue::WeightedValue<DataType>>>(field_name, attr, stash);
     } else {
-        return &stash.create<MultiAttrDFWState<DataType>>(field_name, attr, state, elements_selector);
+        return &stash.create<MultiAttrDFWState<DataType>>(field_name, attr, stash);
     }
 }
 
 DocsumFieldWriterState*
-make_field_writer_state(const std::string& field_name, const IAttributeVector& attr, GetDocsumsState& state,
-                        const SummaryElementsSelector& elements_selector)
+make_field_writer_state(const std::string& field_name, const IAttributeVector& attr, vespalib::Stash& stash)
 {
     auto type = attr.getBasicType();
     switch (type) {
     case BasicType::Type::STRING:
-        return make_field_writer_state_helper<const char*>(field_name, attr, state, elements_selector);
+        return make_field_writer_state_helper<const char*>(field_name, attr, stash);
     case BasicType::Type::INT8:
-        return make_field_writer_state_helper<int8_t>(field_name, attr, state, elements_selector);
+        return make_field_writer_state_helper<int8_t>(field_name, attr, stash);
     case BasicType::Type::INT16:
-        return make_field_writer_state_helper<int16_t>(field_name, attr, state, elements_selector);
+        return make_field_writer_state_helper<int16_t>(field_name, attr, stash);
     case BasicType::Type::INT32:
-        return make_field_writer_state_helper<int32_t>(field_name, attr, state, elements_selector);
+        return make_field_writer_state_helper<int32_t>(field_name, attr, stash);
     case BasicType::Type::INT64:
-        return make_field_writer_state_helper<int64_t>(field_name, attr, state, elements_selector);
+        return make_field_writer_state_helper<int64_t>(field_name, attr, stash);
     case BasicType::Type::FLOAT:
-        return make_field_writer_state_helper<float>(field_name, attr, state, elements_selector);
+        return make_field_writer_state_helper<float>(field_name, attr, stash);
     case BasicType::Type::DOUBLE:
-        return make_field_writer_state_helper<double>(field_name, attr, state, elements_selector);
+        return make_field_writer_state_helper<double>(field_name, attr, stash);
     default:
         ;
     }
-    return &state.get_stash().create<EmptyDocsumFieldWriterState>();
+    return &stash.create<EmptyDocsumFieldWriterState>();
 }
 
 void
 MultiAttrDFW::insert_field(uint32_t docid,
                            const IDocsumStoreDocument*,
                            GetDocsumsState& state,
-                           const SummaryElementsSelector& elements_selector,
+                           ElementIds selected_elements,
                            Inserter& target) const
 {
     auto& field_writer_state = state._fieldWriterStates[_state_index];
     if (!field_writer_state) {
         const auto& attr = get_attribute(state);
-        field_writer_state = make_field_writer_state(getAttributeName(), attr, state, elements_selector);
+        field_writer_state = make_field_writer_state(getAttributeName(), attr, state.get_stash());
     }
-    field_writer_state->insertField(docid, target);
+    field_writer_state->insertField(docid, selected_elements, target);
 }
 
 std::unique_ptr<DocsumFieldWriter>

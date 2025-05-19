@@ -22,7 +22,7 @@ public:
 
     bool isGenerated() const override { return false; }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector,
+                      ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
 };
 

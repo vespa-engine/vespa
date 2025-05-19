@@ -63,7 +63,7 @@ class MultiAttributeTokensDFWState : public DocsumFieldWriterState
 public:
     MultiAttributeTokensDFWState(const IAttributeVector& attr, vespalib::Stash& stash);
     ~MultiAttributeTokensDFWState() override;
-    void insertField(uint32_t docid, Inserter& target) override;
+    void insertField(uint32_t docid, ElementIds selected_elements, Inserter& target) override;
 };
 
 MultiAttributeTokensDFWState::MultiAttributeTokensDFWState(const IAttributeVector& attr, vespalib::Stash& stash)
@@ -77,8 +77,9 @@ MultiAttributeTokensDFWState::MultiAttributeTokensDFWState(const IAttributeVecto
 MultiAttributeTokensDFWState::~MultiAttributeTokensDFWState() = default;
 
 void
-MultiAttributeTokensDFWState::insertField(uint32_t docid, Inserter& target)
+MultiAttributeTokensDFWState::insertField(uint32_t docid, ElementIds selected_elements, Inserter& target)
 {
+    (void) selected_elements;
     if (!_read_view) {
         return;
     }
@@ -101,7 +102,7 @@ class SingleAttributeTokensDFWState : public DocsumFieldWriterState
 public:
     SingleAttributeTokensDFWState(const IAttributeVector& attr);
     ~SingleAttributeTokensDFWState() override;
-    void insertField(uint32_t docid, Inserter& target) override;
+    void insertField(uint32_t docid, ElementIds selected_elements, Inserter& target) override;
 };
 
 SingleAttributeTokensDFWState::SingleAttributeTokensDFWState(const IAttributeVector& attr)
@@ -115,7 +116,7 @@ SingleAttributeTokensDFWState::SingleAttributeTokensDFWState(const IAttributeVec
 SingleAttributeTokensDFWState::~SingleAttributeTokensDFWState() = default;
 
 void
-SingleAttributeTokensDFWState::insertField(uint32_t docid, Inserter& target)
+SingleAttributeTokensDFWState::insertField(uint32_t docid, ElementIds, Inserter& target)
 {
     auto s = _attr.get_raw(docid);
     insert_value(std::string_view(s.data(), s.size()), target, _lowercase_scratch, _lowercase);
@@ -167,10 +168,9 @@ AttributeTokensDFW::setFieldWriterStateIndex(uint32_t fieldWriterStateIndex)
 
 void
 AttributeTokensDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state,
-                                 const SummaryElementsSelector& elements_selector,
+                                 ElementIds selected_elements,
                                  vespalib::slime::Inserter& target) const
 {
-    (void) elements_selector;
     auto& field_writer_state = state._fieldWriterStates[_state_index];
     if (!field_writer_state) {
         const auto attr = state.getAttribute(getIndex());
@@ -180,7 +180,7 @@ AttributeTokensDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, Ge
             field_writer_state = &state.get_stash().create<EmptyDocsumFieldWriterState>();
         }
     }
-    field_writer_state->insertField(docid, target);
+    field_writer_state->insertField(docid, selected_elements, target);
 }
 
 }

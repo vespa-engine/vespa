@@ -11,7 +11,7 @@ EmptyDocsumFieldWriterState::EmptyDocsumFieldWriterState() = default;
 EmptyDocsumFieldWriterState::~EmptyDocsumFieldWriterState() = default;
 
 void
-EmptyDocsumFieldWriterState::insertField(uint32_t, Inserter&)
+EmptyDocsumFieldWriterState::insertField(uint32_t, ElementIds, Inserter&)
 {
 }
 

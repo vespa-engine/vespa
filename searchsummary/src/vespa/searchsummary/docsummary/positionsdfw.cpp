@@ -98,7 +98,7 @@ void
 AbsDistanceDFW::insert_field(uint32_t docid,
                              const IDocsumStoreDocument*,
                              GetDocsumsState& state,
-                             const SummaryElementsSelector&,
+                             ElementIds,
                              vespalib::slime::Inserter &target) const
 {
     const auto & all_locations = getAllLocations(state);
@@ -227,7 +227,7 @@ void
 PositionsDFW::insert_field(uint32_t docid,
                            const IDocsumStoreDocument*,
                            GetDocsumsState& dsState,
-                           const SummaryElementsSelector&,
+                           ElementIds,
                            vespalib::slime::Inserter &target) const
 {
     if (_useV8geoPositions) {

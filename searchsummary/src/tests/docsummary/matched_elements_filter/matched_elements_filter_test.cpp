@@ -220,7 +220,8 @@ private:
         Slime slime;
         SlimeInserter inserter(slime);
 
-        writer->insert_field(doc_id, doc.get(), state, *_elements_selector, inserter);
+        writer->insert_field(doc_id, doc.get(), state, _elements_selector->get_selected_elements(doc_id, state),
+                             inserter);
         return slime;
     }
 

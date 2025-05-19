@@ -27,7 +27,7 @@ public:
 
     bool isGenerated() const override { return false; }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector,
+                      ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
     void insert_juniper_field(uint32_t docid, std::string_view input, GetDocsumsState& state,
                               vespalib::slime::Inserter& inserter) const;

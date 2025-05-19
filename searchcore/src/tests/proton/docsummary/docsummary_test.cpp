@@ -394,7 +394,7 @@ assertAnnotatedString(const std::string & exp, const std::string & fieldName,
     MockJuniperConverter converter;
     vespalib::Slime slime;
     vespalib::slime::SlimeInserter inserter(slime);
-    res->insert_juniper_field(fieldName, inserter, converter);
+    res->insert_juniper_field(fieldName, ElementIds::select_all(), inserter, converter);
     bool failed = false;
     EXPECT_EQ(exp, converter.get_result()) << (failed = true, "");
     return !failed;
@@ -823,13 +823,13 @@ TEST(DocSummaryTest, requireThatUrisAreUsed)
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
-        res->insert_summary_field("urisingle", inserter);
+        res->insert_summary_field("urisingle", ElementIds::select_all(), inserter);
         EXPECT_EQ("http://www.example.com:81/fluke?ab=2#4", asVstring(slime.get()));
     }
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
-        res->insert_summary_field("uriarray", inserter);
+        res->insert_summary_field("uriarray", ElementIds::select_all(), inserter);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQ("http://www.example.com:82/fluke?ab=2#8",  asVstring(slime.get()[0]));
         EXPECT_EQ("http://www.flickr.com:82/fluke?ab=2#9", asVstring(slime.get()[1]));
@@ -837,7 +837,7 @@ TEST(DocSummaryTest, requireThatUrisAreUsed)
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
-        res->insert_summary_field("uriwset", inserter);
+        res->insert_summary_field("uriwset", ElementIds::select_all(), inserter);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQ(4L, slime.get()[0]["weight"].asLong());
         EXPECT_EQ(7L, slime.get()[1]["weight"].asLong());
@@ -943,7 +943,7 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
-        res->insert_summary_field("araw", inserter);
+        res->insert_summary_field("araw", ElementIds::select_all(), inserter);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQ(vespalib::Base64::encode(raw1a0), b64encode(slime.get()[0]));
         EXPECT_EQ(vespalib::Base64::encode(raw1a1), b64encode(slime.get()[1]));
@@ -951,7 +951,7 @@ TEST(DocSummaryTest, requireThatRawFieldsWorks)
     {
         vespalib::Slime slime;
         vespalib::slime::SlimeInserter inserter(slime);
-        res->insert_summary_field("wraw", inserter);
+        res->insert_summary_field("wraw", ElementIds::select_all(), inserter);
         EXPECT_TRUE(slime.get().valid());
         EXPECT_EQ(46L, slime.get()[0]["weight"].asLong());
         EXPECT_EQ(45L, slime.get()[1]["weight"].asLong());
