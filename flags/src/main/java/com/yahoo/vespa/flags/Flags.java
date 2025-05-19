@@ -297,7 +297,7 @@ public class Flags {
             TENANT_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
-            "use-legacy-trust-store", true,
+            "use-legacy-trust-store", false,
             List.of("marlon"), "2024-12-05", "2025-06-01",
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
@@ -334,7 +334,7 @@ public class Flags {
             INSTANCE_ID);
 
     public static final UnboundBooleanFlag COPY_LEGACY_CA = defineFeatureFlag(
-            "copy-legacy-ca", true,
+            "copy-legacy-ca", false,
             List.of("olaa"), "2025-03-27", "2025-06-01",
             "Whether legacy CA should be copied from host to container",
             "Takes effect on container startup",
