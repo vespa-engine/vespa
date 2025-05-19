@@ -24,7 +24,10 @@ import com.yahoo.yolean.Exceptions;
 import org.junit.jupiter.api.Test;
 
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class StorageClusterTest {
 
@@ -336,21 +339,10 @@ public class StorageClusterTest {
         assertEquals(3.0, config.async_operation_throttler().resize_rate(), 0.0001);
     }
 
-    private void verifyMaxFeedOpBatchSize(int expected, Integer flagValue) {
-        var props = new TestProperties();
-        if (flagValue != null) {
-            props.setPersistenceThreadMaxFeedOpBatchSize(flagValue);
-        }
-        var config = filestorConfigFromProducer(simpleCluster(props));
-        assertEquals(expected, config.max_feed_op_batch_size());
-    }
-
     @Test
-    void persistence_max_feed_op_batch_size_is_controlled_by_feature_flag() {
-        // TODO update default once rolled out and tested
-        verifyMaxFeedOpBatchSize(1, null);
-        verifyMaxFeedOpBatchSize(1, 1);
-        verifyMaxFeedOpBatchSize(1234, 1234);
+    void persistence_max_feed_op_batch_size() {
+        var config = filestorConfigFromProducer(simpleCluster(new TestProperties()));
+        assertEquals(64, config.max_feed_op_batch_size());
     }
 
     private void verifyMaintenanceThrottlingConfig(boolean expectedDynamic, int expectedMaxWinSize, Integer flagValue) {
