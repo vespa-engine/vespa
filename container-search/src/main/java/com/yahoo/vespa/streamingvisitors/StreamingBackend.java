@@ -16,6 +16,7 @@ import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.FastHit;
 import com.yahoo.prelude.fastsearch.GroupingListHit;
+import com.yahoo.prelude.fastsearch.PartialSummaryHandler;
 import com.yahoo.prelude.fastsearch.TimeoutException;
 import com.yahoo.prelude.fastsearch.VespaBackend;
 import com.yahoo.processing.IllegalInputException;
@@ -150,7 +151,14 @@ public class StreamingBackend extends VespaBackend {
         long timeStartedNanos = tracingOptions.getClock().nanoTimeNow();
         int effectiveTraceLevel = inferEffectiveQueryTraceLevel(query);
 
-        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel);
+        PartialSummaryHandler partialSummaryHandler = null;
+        DocumentDatabase db = getDocumentDatabase(query);
+        // some unit tests do not setup a db:
+        if (db != null) {
+            partialSummaryHandler = new PartialSummaryHandler(db);
+            partialSummaryHandler.wantToFill(query);
+        }
+        var visitorContext = new Visitor.Context(getSearchClusterName(), schema, effectiveTraceLevel, partialSummaryHandler);
         Visitor visitor = visitorFactory.createVisitor(query, route, visitorContext);
         try {
             visitor.doSearch();
@@ -205,6 +213,10 @@ public class StreamingBackend extends VespaBackend {
         lazyTrace(query, 8, "offset=", query.getOffset(), ", hits=", query.getHits());
 
         String summaryClass = query.getPresentation().getSummary();
+        var partialSummaryHandler = context.partialSummaryHandler();
+        if (partialSummaryHandler != null) {
+            summaryClass = partialSummaryHandler.askForSummary();
+        }
         Result result = new Result(query);
         List<SearchResult.Hit> hits = visitor.getHits(); // Sorted on rank
         Map<String, DocumentSummary.Summary> summaryMap = visitor.getSummaryMap();

@@ -151,16 +151,26 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
         params.setLibraryParameter("querystackcount", String.valueOf(ed.getReturned()));
         params.setLibraryParameter("searchcluster", context.searchCluster().getBytes(StandardCharsets.UTF_8));
         params.setLibraryParameter("schema", context.schema().getBytes(StandardCharsets.UTF_8));
-        String wantedSummary = query.getPresentation().getSummary();
-        Set<String> summaryFields = query.getPresentation().getSummaryFields();
-        boolean wantSomeFields = summaryFields != null && !summaryFields.isEmpty();
-        if (wantedSummary == null) {
-            params.setLibraryParameter("summaryclass", "default");
-            if (wantSomeFields) {
+
+        var partialSummaryHandler = context.partialSummaryHandler();
+        if (partialSummaryHandler != null) {
+            params.setLibraryParameter("summaryclass", partialSummaryHandler.askForSummary());
+            var summaryFields = partialSummaryHandler.askForFields();
+            if (summaryFields != null) {
                 params.setLibraryParameter("summary-fields", String.join(" ", summaryFields));
             }
         } else {
-            params.setLibraryParameter("summaryclass", wantedSummary);
+            String wantedSummary = query.getPresentation().getSummary();
+            Set<String> summaryFields = query.getPresentation().getSummaryFields();
+            boolean wantSomeFields = summaryFields != null && !summaryFields.isEmpty();
+            if (wantedSummary == null || wantedSummary.equals("default")) {
+                params.setLibraryParameter("summaryclass", "default");
+                if (wantSomeFields) {
+                    params.setLibraryParameter("summary-fields", String.join(" ", summaryFields));
+                }
+            } else {
+                params.setLibraryParameter("summaryclass", wantedSummary);
+            }
         }
         params.setLibraryParameter("summarycount", String.valueOf(query.getOffset() + query.getHits()));
         params.setLibraryParameter("rankprofile", query.getRanking().getProfile());
