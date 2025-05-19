@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
-import com.google.common.base.Predicate;
 import com.google.inject.TypeLiteral;
 
 import java.util.List;
@@ -21,14 +20,7 @@ enum StatementOperator implements Operator {
 
     private final ArgumentsTypeChecker checker;
 
-    public static Predicate<OperatorNode<? extends Operator>> IS = new Predicate<OperatorNode<? extends Operator>>() {
-        @Override
-        public boolean apply(OperatorNode<? extends Operator> input) {
-            return input.getOperator() instanceof StatementOperator;
-        }
-    };
-
-    private StatementOperator(Object... types) {
+    StatementOperator(Object... types) {
         checker = TypeCheckers.make(this, types);
     }
 

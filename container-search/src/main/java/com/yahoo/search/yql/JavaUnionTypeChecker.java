@@ -16,11 +16,6 @@ public class JavaUnionTypeChecker extends OperatorTypeChecker {
         this.types = types;
     }
 
-    public JavaUnionTypeChecker(Operator parent, int idx, Class<?>... types) {
-        super(parent, idx);
-        this.types = ImmutableSet.copyOf(types);
-    }
-
     @Override
     public void check(Object argument) {
         Preconditions.checkNotNull(argument, "Argument %s of %s must not be null", idx, parent);
