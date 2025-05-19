@@ -227,9 +227,12 @@ public abstract class VespaBackend {
             } else {
                 var db = getDocumentDatabase(query);
                 if (db != null && ! db.getDocsumDefinitionSet().hasDocsum(summaryClass)) {
+                    // intentional reference compare, true when execution.fill(result) was called:
                     if (summaryClass == query.getPresentation().getSummary()) {
+                        // problem comes from the query:
                         throw new IllegalInputException("invalid presentation.summary=" + summaryClass);
                     } else {
+                        // problem comes from a Searcher doing fill with explicit summaryClass:
                         throw new IllegalArgumentException("invalid fill() with summaryClass=" + summaryClass);
                     }
                 }
