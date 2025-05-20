@@ -71,6 +71,12 @@ private:
 bool
 CompactionJob::scanDocuments(const LidUsageStats &stats)
 {
+    if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
+        // first operation blocked, invalidate iterator
+        _scanItr->next(stats.getLidLimit());
+        // maybe: wait for pending 0 and compact
+        return shouldRestartScanDocuments(stats);
+    }
     if (_scanItr->valid()) {
         DocumentMetaData document = getNextDocument(stats);
         if (document.valid()) {
@@ -275,8 +281,9 @@ CompactionJob::hasTooMuchLidBloat(const LidUsageStats &stats) const
 bool
 CompactionJob::shouldRestartScanDocuments(const LidUsageStats &stats) const
 {
-    return ((stats.getUsedLids() + _cfg.getAllowedLidBloat()) < stats.getHighestUsedLid()) &&
-           (stats.getLowestFreeLid() < stats.getHighestUsedLid());
+    return (stats.getLidLimit() < (stats.getHighestUsedLid() * 1.02 + 100)) &&
+            ((stats.getUsedLids() + _cfg.getAllowedLidBloat()) < stats.getHighestUsedLid()) &&
+            (stats.getLowestFreeLid() < stats.getHighestUsedLid());
 }
 
 void
