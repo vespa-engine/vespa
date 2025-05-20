@@ -1,5 +1,9 @@
 name: "dummy_transformer"
 platform: "onnxruntime_onnx"
+instance_group {
+  count: 1
+  kind: KIND_CPU
+}
 parameters {
   key: "enable_mem_area"
   value {
