@@ -11,7 +11,7 @@ using Iterator = IDocumentMetaStore::Iterator;
 
 DocumentScanIterator::DocumentScanIterator(const IDocumentMetaStore &metaStore)
     : _metaStore(metaStore),
-      _lastLid(_metaStore.getCommittedDocIdLimit()),
+      _lastLid(_metaStore.getLidUsageStats().getHighestUsedLid() + 1),
       _itrValid(true)
 {
 }
