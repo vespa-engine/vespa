@@ -148,6 +148,11 @@ public class ConnectorFactory {
 
         httpConfig.setHttpCompliance(newHttpCompliance(connectorConfig));
 
+        // Sets the maximum amount of reads that can be done by the HttpStream.
+        // if the content is not fully consumed by the application.
+        // Overriding to a higher value to avoid unnecessary connection resets on application layer back-pressure.
+        httpConfig.setMaxUnconsumedRequestContentReads(64);
+
         // TODO Vespa 9 Use default URI compliance (LEGACY == old Jetty 9.4 compliance)
         httpConfig.setUriCompliance(UriCompliance.LEGACY);
         if (isSslEffectivelyEnabled(connectorConfig)) {
