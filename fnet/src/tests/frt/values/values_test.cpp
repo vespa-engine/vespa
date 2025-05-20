@@ -124,36 +124,31 @@ void checkValues(FRT_Values &values) {
             EXPECT_EQ(double_arr[j], values[idx]._double_array._pt[j]);
         }
     }
-    EXPECT_EQ(std::string("foo"), std::string(values[idx]._string._str,
-                                                 values[idx]._string._len));
+    EXPECT_EQ(std::string("foo"), std::string(values[idx]._string._str, values[idx]._string._len));
     ++idx;
-    EXPECT_EQ(std::string("bar"), std::string(values[idx]._string._str,
-                                                 values[idx]._string._len));
+    EXPECT_EQ(std::string("bar"), std::string(values[idx]._string._str, values[idx]._string._len));
     ++idx;
-    EXPECT_EQ(std::string("baz"), std::string(values[idx]._string._str,
-                                                 values[idx]._string._len));
+    EXPECT_EQ(std::string("baz"), std::string(values[idx]._string._str, values[idx]._string._len));
     ++idx;
     ASSERT_EQ(3u, values[idx]._string_array._len);
     EXPECT_EQ(std::string("foo"), std::string(values[idx]._string_array._pt[0]._str,
-                                                 values[idx]._string_array._pt[0]._len));
+                                                values[idx]._string_array._pt[0]._len));
     EXPECT_EQ(std::string("bar"), std::string(values[idx]._string_array._pt[1]._str,
-                                                 values[idx]._string_array._pt[1]._len));
+                                                values[idx]._string_array._pt[1]._len));
     EXPECT_EQ(std::string("baz"), std::string(values[idx]._string_array._pt[2]._str,
-                                                 values[idx]._string_array._pt[2]._len));
+                                                values[idx]._string_array._pt[2]._len));
     ++idx;
-    EXPECT_EQ(std::string("foo"), std::string(values[idx]._data._buf,
-                                                 values[idx]._data._len));
+    EXPECT_EQ(std::string("foo"), std::string(values[idx]._data._buf, values[idx]._data._len));
     ++idx;
-    EXPECT_EQ(std::string("bar"), std::string(values[idx]._data._buf,
-                                                 values[idx]._data._len));
+    EXPECT_EQ(std::string("bar"), std::string(values[idx]._data._buf, values[idx]._data._len));
     ++idx;
     ASSERT_EQ(3u, values[idx]._data_array._len);
     EXPECT_EQ(std::string("foo"), std::string(values[idx]._data_array._pt[0]._buf,
-                                                 values[idx]._data_array._pt[0]._len));
+                                                values[idx]._data_array._pt[0]._len));
     EXPECT_EQ(std::string("bar"), std::string(values[idx]._data_array._pt[1]._buf,
-                                                 values[idx]._data_array._pt[1]._len));
+                                                values[idx]._data_array._pt[1]._len));
     EXPECT_EQ(std::string("baz"), std::string(values[idx]._data_array._pt[2]._buf,
-                                                 values[idx]._data_array._pt[2]._len));
+                                                values[idx]._data_array._pt[2]._len));
     ++idx;
     EXPECT_EQ(31u, idx);
 }
