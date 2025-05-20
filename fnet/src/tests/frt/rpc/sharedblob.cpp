@@ -1,9 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vector>
 
 constexpr size_t ALLOC_LIMIT=1024;
@@ -127,7 +127,7 @@ struct ServerSampler : public FRT_Invokable
     }
 };
 
-TEST("testExplicitShared") {
+TEST(SharedBlobTest, testExplicitShared) {
     fnet::frt::StandaloneFRT frt;
     FRT_Supervisor & orb = frt.supervisor();
     MyBlob         blob;
@@ -141,7 +141,7 @@ TEST("testExplicitShared") {
     req->GetParams()->AddInt32(84);
     req->GetParams()->AddSharedData(&blob);
 
-    EXPECT_EQUAL(4, blob.refcnt);
+    EXPECT_EQ(4, blob.refcnt);
     EXPECT_TRUE(strcmp(req->GetParamSpec(), "xixix") == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._len == blob.getLen());
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._buf == blob.getData());
@@ -154,7 +154,7 @@ TEST("testExplicitShared") {
 
     req->CreateRequestPacket(true)->Free(); // fake request send.
 
-    EXPECT_EQUAL(1, blob.refcnt);
+    EXPECT_EQ(1, blob.refcnt);
     EXPECT_TRUE(strcmp(req->GetParamSpec(), "xixix") == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._len == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(0)._data._buf == nullptr);
@@ -165,9 +165,9 @@ TEST("testExplicitShared") {
     EXPECT_TRUE(req->GetParams()->GetValue(4)._data._len == 0);
     EXPECT_TRUE(req->GetParams()->GetValue(4)._data._buf == nullptr);
 
-    EXPECT_EQUAL(1, blob.refcnt);
+    EXPECT_EQ(1, blob.refcnt);
     req = orb.AllocRPCRequest(req);
-    EXPECT_EQUAL(1, blob.refcnt);
+    EXPECT_EQ(1, blob.refcnt);
 
     req->GetParams()->AddSharedData(&blob);
     req->GetParams()->AddInt32(42);
@@ -175,12 +175,12 @@ TEST("testExplicitShared") {
     req->GetParams()->AddInt32(84);
     req->GetParams()->AddSharedData(&blob);
 
-    EXPECT_EQUAL(4, blob.refcnt);
+    EXPECT_EQ(4, blob.refcnt);
     req->internal_subref();
-    EXPECT_EQUAL(1, blob.refcnt);
+    EXPECT_EQ(1, blob.refcnt);
 }
 
-TEST("testImplicitShared") {
+TEST(SharedBlobTest, testImplicitShared) {
     DataSet dataSet;
     fnet::frt::StandaloneFRT frt;
     FRT_Supervisor & orb = frt.supervisor();
@@ -233,7 +233,7 @@ TEST("testImplicitShared") {
     dataSet.sample(*req->GetReturn()); // client return after drop
 
     // verify blob samples
-    EXPECT_EQUAL(dataSet.blobs.size(), 80u);
+    EXPECT_EQ(dataSet.blobs.size(), 80u);
 
     for (int i = 0; i < 80; i += 20) {
         // before discard (client params, server params, server return, client return)
@@ -268,4 +268,4 @@ TEST("testImplicitShared") {
     target->internal_subref();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
