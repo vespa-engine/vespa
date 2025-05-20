@@ -4,6 +4,7 @@
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/net/tls/maybe_tls_crypto_engine.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/testkit/test_path.h>
 
 vespalib::CryptoEngine::SP my_crypto_engine() {
     const char *env_str = getenv("CRYPTOENGINE");
@@ -27,6 +28,6 @@ vespalib::CryptoEngine::SP my_crypto_engine() {
                 vespalib::test::make_telemetry_only_capability_tls_options_for_testing());
         return std::make_shared<vespalib::MaybeTlsCryptoEngine>(std::move(tls), false);
     }
-    TEST_FATAL(("invalid crypto engine: " + engine).c_str());
+    ADD_FAILURE() << "invalid crypto engine: " <<  engine;
     abort();
 }

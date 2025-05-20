@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/vespalib/net/socket_spec.h>
 #include <vespa/vespalib/net/tls/capability_env_config.h>
 #include <vespa/vespalib/net/tls/statistics.h>
@@ -13,8 +14,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <string_view>
-#include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/testkit/test_master.hpp>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::SocketSpec;
 using vespalib::BenchmarkTimer;
@@ -27,7 +27,6 @@ constexpr double short_timeout = 0.1;
 //-------------------------------------------------------------
 
 #include "my_crypto_engine.hpp"
-vespalib::CryptoEngine::SP crypto;
 
 //-------------------------------------------------------------
 
@@ -36,27 +35,38 @@ private:
     vespalib::Latch<FRT_RPCRequest*> _latch;
 public:
     RequestLatch() : _latch() {}
-    ~RequestLatch() override { ASSERT_TRUE(!has_req()); }
+    ~RequestLatch() override;
     bool has_req() { return _latch.has_value(); }
     FRT_RPCRequest *read() { return _latch.read(); }
     void write(FRT_RPCRequest *req) { _latch.write(req); }
     void RequestDone(FRT_RPCRequest *req) override { write(req); }
 };
 
+RequestLatch::~RequestLatch()
+{
+    EXPECT_TRUE(!has_req());
+}
+
 //-------------------------------------------------------------
 
 class MyReq {
 private:
-    FRT_RPCRequest *_req;
+    vespalib::ref_counted<FRT_RPCRequest> _req;
 public:
-    explicit MyReq(FRT_RPCRequest *req) : _req(req) {}
+    explicit MyReq(FRT_RPCRequest *req)
+        : _req()
+    {
+        if (req != nullptr) {
+            _req = vespalib::ref_counted<FRT_RPCRequest>::internal_attach(req);
+        }
+    }
     explicit MyReq(const char *method_name)
-        : _req(new FRT_RPCRequest())
+        : _req(vespalib::make_ref_counted<FRT_RPCRequest>())
     {
         _req->SetMethodName(method_name);
     }
     MyReq(uint32_t value, bool async, uint32_t error, uint8_t extra)
-        : _req(new FRT_RPCRequest())
+        : _req(vespalib::make_ref_counted<FRT_RPCRequest>())
     {
         _req->SetMethodName("test");
         _req->GetParams()->AddInt32(value);
@@ -65,23 +75,21 @@ public:
         _req->GetParams()->AddInt8((async) ? 1 : 0);
     }
     ~MyReq() {
-        if (_req != nullptr) {
-            _req->internal_subref();
-        }
     }
     MyReq(const MyReq &rhs) = delete;
     MyReq &operator=(const MyReq &rhs) = delete;
     FRT_RPCRequest &get() { return *_req; }
-    FRT_RPCRequest *borrow() { return _req; }
+    FRT_RPCRequest *borrow() { return _req.get(); }
     FRT_RPCRequest *steal() {
-        auto ret = _req;
-        _req = nullptr;
-        return ret;
+        return _req.internal_detach();
     }
     uint32_t get_int_ret() {
-        ASSERT_TRUE(_req != nullptr);
-        ASSERT_TRUE(_req->CheckReturnTypes("i"));
-        return _req->GetReturn()->GetValue(0)._intval32;
+        bool failed = false;
+        EXPECT_TRUE(_req.get() != nullptr) << (failed = true, "");
+        if (!failed) {
+            EXPECT_TRUE(_req->CheckReturnTypes("i")) << (failed = true, "");
+        }
+        return failed ? 99999999 : _req->GetReturn()->GetValue(0)._intval32;
     }
 };
 
@@ -297,77 +305,112 @@ public:
 
 //-------------------------------------------------------------
 
-class Fixture
+class InvokeTest : public ::testing::Test
 {
 private:
     fnet::frt::StandaloneFRT  _client;
     fnet::frt::StandaloneFRT  _server;
     std::string   _peerSpec;
-    FRT_Target        *_target;
+    vespalib::ref_counted<FRT_Target> _target;
     TestRPC            _testRPC;
     EchoTest           _echoTest;
+protected:
+    static std::shared_ptr<vespalib::CryptoEngine> crypto;
 
 public:
     FRT_Target &target() { return *_target; }
-    FRT_Target *make_bad_target() { return _client.supervisor().GetTarget("bogus address"); }
+    vespalib::ref_counted<FRT_Target> make_bad_target() {
+        return vespalib::ref_counted<FRT_Target>::internal_attach(_client.supervisor().GetTarget("bogus address"));
+    }
     RequestLatch &detached_req() { return _testRPC.detached_req(); }
     EchoTest &echo() { return _echoTest; }
     const TestRPC& server_instance() const noexcept { return _testRPC; }
 
-    Fixture()
-        : _client(crypto),
-          _server(crypto),
-          _peerSpec(),
-          _target(nullptr),
-          _testRPC(&_server.supervisor()),
-          _echoTest(&_server.supervisor())
-    {
-        ASSERT_TRUE(_server.supervisor().Listen("tcp/0"));
-        _peerSpec = SocketSpec::from_host_port("localhost", _server.supervisor().GetListenPort()).spec();
-        _target = _client.supervisor().GetTarget(_peerSpec.c_str());
-        //---------------------------------------------------------------------
-        MyReq req("frt.rpc.ping");
-        target().InvokeSync(req.borrow(), timeout);
-        ASSERT_TRUE(!req.get().IsError());
-    }
-
-    ~Fixture() {
-        _target->internal_subref();
-    }
+    InvokeTest();
+    ~InvokeTest() override;
+    void SetUp() override;
+    void TearDown() override;
+    static void SetUpTestSuite();
+    static void TearDownTestSuite();
 };
+
+std::shared_ptr<vespalib::CryptoEngine> InvokeTest::crypto;
+
+InvokeTest::InvokeTest()
+    : ::testing::Test(),
+      _client(crypto),
+      _server(crypto),
+      _peerSpec(),
+      _target(),
+      _testRPC(&_server.supervisor()),
+      _echoTest(&_server.supervisor())
+{
+}
+
+InvokeTest::~InvokeTest() = default;
+
+void
+InvokeTest::SetUp()
+{
+    ASSERT_TRUE(_server.supervisor().Listen("tcp/0"));
+    _peerSpec = SocketSpec::from_host_port("localhost", _server.supervisor().GetListenPort()).spec();
+    _target = vespalib::ref_counted<FRT_Target>::internal_attach(_client.supervisor().GetTarget(_peerSpec.c_str()));
+    //---------------------------------------------------------------------
+    MyReq req("frt.rpc.ping");
+    target().InvokeSync(req.borrow(), timeout);
+    ASSERT_TRUE(!req.get().IsError());
+}
+
+void
+InvokeTest::TearDown()
+{
+    _target.reset();
+}
+
+void
+InvokeTest::SetUpTestSuite()
+{
+    crypto = my_crypto_engine();
+}
+
+void
+InvokeTest::TearDownTestSuite()
+{
+    crypto.reset();
+}
 
 //-------------------------------------------------------------
 
-TEST_F("require that simple invocation works", Fixture()) {
+TEST_F(InvokeTest, require_that_simple_invocation_works) {
     MyReq req("inc");
     req.get().GetParams()->AddInt32(502);
-    f1.target().InvokeSync(req.borrow(), timeout);
-    EXPECT_EQUAL(req.get_int_ret(), 503u);
+    target().InvokeSync(req.borrow(), timeout);
+    EXPECT_EQ(req.get_int_ret(), 503u);
 }
 
-TEST_F("require that void invocation works", Fixture()) {
+TEST_F(InvokeTest, require_that_void_invocation_works) {
     {
         MyReq req("setValue");
         req.get().GetParams()->AddInt32(40);
-        f1.target().InvokeSync(req.borrow(), timeout);
+        target().InvokeSync(req.borrow(), timeout);
         EXPECT_TRUE(req.get().CheckReturnTypes(""));
     }
     {
         MyReq req("incValue");
-        f1.target().InvokeVoid(req.steal());
+        target().InvokeVoid(req.steal());
     }
     {
         MyReq req("incValue");
-        f1.target().InvokeVoid(req.steal());
+        target().InvokeVoid(req.steal());
     }
     {
         MyReq req("getValue");
-        f1.target().InvokeSync(req.borrow(), timeout);
-        EXPECT_EQUAL(req.get_int_ret(), 42u);
+        target().InvokeSync(req.borrow(), timeout);
+        EXPECT_EQ(req.get_int_ret(), 42u);
     }
 }
 
-TEST_F("measure minimal invocation latency", Fixture()) {
+TEST_F(InvokeTest, measure_minimal_invocation_latency) {
     size_t cnt = 0;
     uint32_t val = 0;
     BenchmarkTimer timer(1.0);
@@ -376,159 +419,154 @@ TEST_F("measure minimal invocation latency", Fixture()) {
         {
             MyReq req("inc");
             req.get().GetParams()->AddInt32(val);
-            f1.target().InvokeSync(req.borrow(), timeout);
+            target().InvokeSync(req.borrow(), timeout);
             ASSERT_TRUE(!req.get().IsError());
             val = req.get_int_ret();
             ++cnt;
         }
         timer.after();
     }
-    EXPECT_EQUAL(cnt, val);
+    EXPECT_EQ(cnt, val);
     double t = timer.min_time();
     fprintf(stderr, "latency of invocation: %1.3f ms\n", t * 1000.0);
 }
 
-TEST_F("require that abort has no effect on a completed request", Fixture()) {
+TEST_F(InvokeTest, require_that_abort_has_no_effect_on_a_completed_request) {
     MyReq req(42, false, FRTE_NO_ERROR, 0);
-    f1.target().InvokeSync(req.borrow(), timeout);
-    EXPECT_EQUAL(req.get_int_ret(), 42u);
+    target().InvokeSync(req.borrow(), timeout);
+    EXPECT_EQ(req.get_int_ret(), 42u);
     req.get().Abort();
-    EXPECT_EQUAL(req.get_int_ret(), 42u);
+    EXPECT_EQ(req.get_int_ret(), 42u);
 }
 
-TEST_F("require that a request can be responded to at a later time", Fixture()) {
+TEST_F(InvokeTest, require_that_a_request_can_be_responded_to_at_a_later_time) {
     RequestLatch result;
     MyReq req(42, true, FRTE_NO_ERROR, 0);
-    f1.target().InvokeAsync(req.steal(), timeout, &result);
+    target().InvokeAsync(req.steal(), timeout, &result);
     EXPECT_TRUE(!result.has_req());
-    f1.detached_req().read()->Return();
+    detached_req().read()->Return();
     MyReq ret(result.read());
-    EXPECT_EQUAL(ret.get_int_ret(), 42u);
+    EXPECT_EQ(ret.get_int_ret(), 42u);
 }
 
-TEST_F("require that a bad target gives connection error", Fixture()) {
+TEST_F(InvokeTest, require_that_a_bad_target_gives_connection_error) {
     MyReq req("frt.rpc.ping");
     {
-        FRT_Target *bad_target = f1.make_bad_target();
+        auto bad_target = make_bad_target();
         bad_target->InvokeSync(req.borrow(), timeout);
-        bad_target->internal_subref();
     }
-    EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_CONNECTION);
+    EXPECT_EQ(req.get().GetErrorCode(), FRTE_RPC_CONNECTION);
 }
 
-TEST_F("require that non-existing method gives appropriate error", Fixture()) {
+TEST_F(InvokeTest, require_that_non_existing_method_gives_appropriate_error) {
     MyReq req("bogus");
-    f1.target().InvokeSync(req.borrow(), timeout);
-    EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_NO_SUCH_METHOD);    
+    target().InvokeSync(req.borrow(), timeout);
+    EXPECT_EQ(req.get().GetErrorCode(), FRTE_RPC_NO_SUCH_METHOD);
 }
 
-TEST_F("require that wrong parameter types give appropriate error", Fixture()) {
+TEST_F(InvokeTest, require_that_wrong_parameter_types_give_appropriate_error) {
     MyReq req("setValue");
     req.get().GetParams()->AddString("40");
-    f1.target().InvokeSync(req.borrow(), timeout);
-    EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_WRONG_PARAMS);
+    target().InvokeSync(req.borrow(), timeout);
+    EXPECT_EQ(req.get().GetErrorCode(), FRTE_RPC_WRONG_PARAMS);
 }
 
-TEST_F("require that wrong return value types give appropriate error", Fixture()) {
+TEST_F(InvokeTest, require_that_wrong_return_value_types_give_appropriate_error) {
     MyReq req(42, false, FRTE_NO_ERROR, 1);
-    f1.target().InvokeSync(req.borrow(), timeout);
-    EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_WRONG_RETURN);
+    target().InvokeSync(req.borrow(), timeout);
+    EXPECT_EQ(req.get().GetErrorCode(), FRTE_RPC_WRONG_RETURN);
 }
 
-TEST_F("require that the method itself can signal failure", Fixture()) {
+TEST_F(InvokeTest, require_that_the_method_itself_can_signal_failure) {
     MyReq req(42, false, 5000, 1);
-    f1.target().InvokeSync(req.borrow(), timeout);
-    EXPECT_EQUAL(req.get().GetErrorCode(), 5000u);
+    target().InvokeSync(req.borrow(), timeout);
+    EXPECT_EQ(req.get().GetErrorCode(), 5000u);
 }
 
-TEST_F("require that invocation can time out", Fixture()) {
+TEST_F(InvokeTest, require_that_invocation_can_time_out) {
     RequestLatch result;
     MyReq req(42, true, FRTE_NO_ERROR, 0);
-    f1.target().InvokeAsync(req.steal(), short_timeout, &result);
+    target().InvokeAsync(req.steal(), short_timeout, &result);
     MyReq ret(result.read());
-    f1.detached_req().read()->Return();
-    EXPECT_EQUAL(ret.get().GetErrorCode(), FRTE_RPC_TIMEOUT);
+    detached_req().read()->Return();
+    EXPECT_EQ(ret.get().GetErrorCode(), FRTE_RPC_TIMEOUT);
 }
 
-TEST_F("require that invocation can be aborted", Fixture()) {
+TEST_F(InvokeTest, require_that_invocation_can_be_aborted) {
     RequestLatch result;
     MyReq req(42, true, FRTE_NO_ERROR, 0);
     FRT_RPCRequest *will_be_mine_again_soon = req.steal();
-    f1.target().InvokeAsync(will_be_mine_again_soon, timeout, &result);
+    target().InvokeAsync(will_be_mine_again_soon, timeout, &result);
     will_be_mine_again_soon->Abort();
     MyReq ret(result.read());
-    f1.detached_req().read()->Return();
-    EXPECT_EQUAL(ret.get().GetErrorCode(), FRTE_RPC_ABORT);
+    detached_req().read()->Return();
+    EXPECT_EQ(ret.get().GetErrorCode(), FRTE_RPC_ABORT);
 }
 
-TEST_F("require that parameters can be echoed as return values", Fixture()) {
+TEST_F(InvokeTest, require_that_parameters_can_be_echoed_as_return_values) {
     MyReq req("echo");
-    ASSERT_TRUE(f1.echo().prepare_params(req.get()));
-    f1.target().InvokeSync(req.borrow(), timeout);
+    ASSERT_TRUE(echo().prepare_params(req.get()));
+    target().InvokeSync(req.borrow(), timeout);
     EXPECT_TRUE(!req.get().IsError());
     EXPECT_TRUE(req.get().GetReturn()->Equals(req.get().GetParams()));
     EXPECT_TRUE(req.get().GetParams()->Equals(req.get().GetReturn()));
 }
 
-TEST_F("request denied by access filter returns PERMISSION_DENIED and does not invoke server method", Fixture()) {
+TEST_F(InvokeTest, request_denied_by_access_filter_returns_PERMISSION_DENIED_and_does_not_invoke_server_method) {
     MyReq req("accessRestricted");
     auto key = MyAccessFilter::WRONG_KEY;
     req.get().GetParams()->AddString(key.data(), key.size());
-    f1.target().InvokeSync(req.borrow(), timeout);
-    EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_PERMISSION_DENIED);
-    EXPECT_FALSE(f1.server_instance().restricted_method_was_invoked());
+    target().InvokeSync(req.borrow(), timeout);
+    EXPECT_EQ(req.get().GetErrorCode(), FRTE_RPC_PERMISSION_DENIED);
+    EXPECT_FALSE(server_instance().restricted_method_was_invoked());
 }
 
-TEST_F("request allowed by access filter invokes server method as usual", Fixture()) {
+TEST_F(InvokeTest, request_allowed_by_access_filter_invokes_server_method_as_usual) {
     MyReq req("accessRestricted");
     auto key = MyAccessFilter::CORRECT_KEY;
     req.get().GetParams()->AddString(key.data(), key.size());
-    f1.target().InvokeSync(req.borrow(), timeout);
+    target().InvokeSync(req.borrow(), timeout);
     ASSERT_FALSE(req.get().IsError());
-    EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+    EXPECT_TRUE(server_instance().restricted_method_was_invoked());
 }
 
-TEST_F("capability checking filter is enforced under mTLS unless overridden by env var", Fixture()) {
+TEST_F(InvokeTest, capability_checking_filter_is_enforced_under_mTLS_unless_overridden_by_env_var) {
     const auto cap_stats_before = CapabilityStatistics::get().snapshot();
     MyReq req("capabilityRestricted"); // Requires content node cap set; disallowed
-    f1.target().InvokeSync(req.borrow(), timeout);
+    target().InvokeSync(req.borrow(), timeout);
     auto cap_mode = capability_enforcement_mode_from_env();
     fprintf(stderr, "capability enforcement mode: %s\n", to_string(cap_mode));
     if (crypto->use_tls_when_client() && (cap_mode == CapabilityEnforcementMode::Enforce)) {
         // Default authz rule does not give required capabilities; must fail.
-        EXPECT_EQUAL(req.get().GetErrorCode(), FRTE_RPC_PERMISSION_DENIED);
-        EXPECT_FALSE(f1.server_instance().restricted_method_was_invoked());
+        EXPECT_EQ(req.get().GetErrorCode(), FRTE_RPC_PERMISSION_DENIED);
+        EXPECT_FALSE(server_instance().restricted_method_was_invoked());
         // Permission denied should bump capability check failure statistic
         const auto cap_stats = CapabilityStatistics::get().snapshot().subtract(cap_stats_before);
-        EXPECT_EQUAL(cap_stats.rpc_capability_checks_failed, 1u);
+        EXPECT_EQ(cap_stats.rpc_capability_checks_failed, 1u);
     } else {
         // Either no mTLS configured (implicit full capability set) or capabilities not enforced.
         ASSERT_FALSE(req.get().IsError());
-        EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+        EXPECT_TRUE(server_instance().restricted_method_was_invoked());
     }
 }
 
-TEST_F("access is allowed by capability filter when peer is granted the required capability", Fixture()) {
+TEST_F(InvokeTest, access_is_allowed_by_capability_filter_when_peer_is_granted_the_required_capability) {
     const auto cap_stats_before = CapabilityStatistics::get().snapshot();
     MyReq req("capabilityAllowed"); // Requires telemetry cap set; allowed
-    f1.target().InvokeSync(req.borrow(), timeout);
+    target().InvokeSync(req.borrow(), timeout);
     // Should always be allowed, regardless of mTLS mode or capability enforcement
     ASSERT_FALSE(req.get().IsError());
-    EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+    EXPECT_TRUE(server_instance().restricted_method_was_invoked());
     // Should _not_ bump capability check failure statistic
     const auto cap_stats = CapabilityStatistics::get().snapshot().subtract(cap_stats_before);
-    EXPECT_EQUAL(cap_stats.rpc_capability_checks_failed, 0u);
+    EXPECT_EQ(cap_stats.rpc_capability_checks_failed, 0u);
 }
 
-TEST_F("access is allowed by capability filter when required capability set is empty", Fixture()) {
+TEST_F(InvokeTest, access_is_allowed_by_capability_filter_when_required_capability_set_is_empty) {
     MyReq req("emptyCapabilitySet");
-    f1.target().InvokeSync(req.borrow(), timeout);
+    target().InvokeSync(req.borrow(), timeout);
     ASSERT_FALSE(req.get().IsError());
-    EXPECT_TRUE(f1.server_instance().restricted_method_was_invoked());
+    EXPECT_TRUE(server_instance().restricted_method_was_invoked());
 }
 
-TEST_MAIN() {
-    crypto = my_crypto_engine();
-    TEST_RUN_ALL();
-    crypto.reset();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

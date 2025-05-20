@@ -1,9 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/target.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/frt/invoker.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <atomic>
 #include <thread>
@@ -42,7 +43,7 @@ struct Server : public FRT_Invokable
     }
 };
 
-TEST("detach return invoke") {
+TEST(DetachReturnInvokeTest, detach_return_invoke) {
     Receptor receptor;
     fnet::frt::StandaloneFRT frtServer;
     FRT_Supervisor & supervisor = frtServer.supervisor();
@@ -70,4 +71,4 @@ TEST("detach return invoke") {
     EXPECT_TRUE(receptor.req.load() != nullptr);
 };
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

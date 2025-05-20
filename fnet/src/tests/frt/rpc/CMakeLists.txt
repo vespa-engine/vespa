@@ -4,6 +4,7 @@ vespa_add_executable(fnet_invoke_test_app TEST
     invoke.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_invoke_test_app COMMAND fnet_invoke_test_app)
 vespa_add_test(NAME fnet_invoke_test_app_tls COMMAND fnet_invoke_test_app ENVIRONMENT "CRYPTOENGINE=tls")
@@ -20,6 +21,7 @@ vespa_add_executable(fnet_detach_return_invoke_test_app TEST
     detach_return_invoke.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_detach_return_invoke_test_app COMMAND fnet_detach_return_invoke_test_app)
 vespa_add_executable(fnet_sharedblob_test_app TEST
@@ -27,5 +29,6 @@ vespa_add_executable(fnet_sharedblob_test_app TEST
     sharedblob.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_sharedblob_test_app COMMAND fnet_sharedblob_test_app)
