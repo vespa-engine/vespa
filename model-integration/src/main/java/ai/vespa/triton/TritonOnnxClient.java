@@ -11,11 +11,15 @@ import com.yahoo.tensor.DimensionSizes;
 import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import grpc.health.v1.HealthGrpc;
+import grpc.health.v1.HealthOuterClass.HealthCheckRequest;
+import grpc.health.v1.HealthOuterClass.HealthCheckResponse;
 import inference.GRPCInferenceServiceGrpc;
 import inference.GrpcService;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
+import io.grpc.stub.AbstractBlockingStub;
 import io.grpc.stub.AbstractStub;
 
 import java.nio.ByteBuffer;
@@ -41,7 +45,8 @@ public class TritonOnnxClient implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(TritonOnnxClient.class.getName());
 
-    private final GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub grpcStub;
+    private final GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub grpcInferenceStub;
+    private final HealthGrpc.HealthBlockingV2Stub grpcHealthStub;
 
     public static class TritonException extends RuntimeException {
         public TritonException(Throwable cause) { super(cause); }
@@ -54,7 +59,8 @@ public class TritonOnnxClient implements AutoCloseable {
         var ch = ManagedChannelBuilder.forTarget(config.target())
                 .usePlaintext()
                 .build();
-        this.grpcStub = GRPCInferenceServiceGrpc.newBlockingV2Stub(ch);
+        this.grpcInferenceStub = GRPCInferenceServiceGrpc.newBlockingV2Stub(ch);
+        this.grpcHealthStub = HealthGrpc.newBlockingV2Stub(ch);
     }
 
     public record ModelMetadata(Map<String, TensorType> inputs, Map<String, TensorType> outputs) {}
@@ -62,10 +68,18 @@ public class TritonOnnxClient implements AutoCloseable {
         var request = GrpcService.ModelMetadataRequest.newBuilder()
                 .setName(modelName)
                 .build();
-        var response = invokeGrpc(s -> s.modelMetadata(request));
+        var response = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(request));
         var inputs = toTensorTypes(response.getInputsList());
         var outputs = toTensorTypes(response.getOutputsList());
         return new ModelMetadata(inputs, outputs);
+    }
+
+
+    public boolean isHealthy() {
+        var req = HealthCheckRequest.newBuilder().build();
+        var response = invokeGrpc(grpcHealthStub, s -> s.check(req));
+        log.fine(() -> "Triton health status: " + response.getStatus());
+        return response.getStatus() == HealthCheckResponse.ServingStatus.SERVING;
     }
 
     public void loadModel(String modelName) {
@@ -73,14 +87,14 @@ public class TritonOnnxClient implements AutoCloseable {
         var request = GrpcService.RepositoryModelLoadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
-        invokeGrpc(s -> s.repositoryModelLoad(request));
+        invokeGrpc(grpcInferenceStub, s -> s.repositoryModelLoad(request));
     }
 
     public void unloadModel(String modelName) {
         var request = GrpcService.RepositoryModelUnloadRequest.newBuilder()
                 .setModelName(modelName)
                 .build();
-        invokeGrpc(s -> s.repositoryModelUnload(request));
+        invokeGrpc(grpcInferenceStub, s -> s.repositoryModelUnload(request));
     }
 
     public Map<String, Tensor> evaluate(String modelName, Map<String, Tensor> inputs) {
@@ -96,7 +110,7 @@ public class TritonOnnxClient implements AutoCloseable {
                 .setModelName(modelName);
 
         // Get model metadata to convert vespa tensor types to onnx types
-        var metadata = invokeGrpc(s -> s.modelMetadata(
+        var metadata = invokeGrpc(grpcInferenceStub, s -> s.modelMetadata(
                 GrpcService.ModelMetadataRequest.newBuilder()
                         .setName(modelName)
                         .build()));
@@ -109,7 +123,7 @@ public class TritonOnnxClient implements AutoCloseable {
                         .setName(name)
                         .build()));
 
-        var response = invokeGrpc(s -> s.modelInfer(requestBuilder.build()));
+        var response = invokeGrpc(grpcInferenceStub, s -> s.modelInfer(requestBuilder.build()));
 
         Map<String, Tensor> outputs = new HashMap<>();
         for (int i = 0; i < response.getOutputsCount(); i++) {
@@ -127,7 +141,7 @@ public class TritonOnnxClient implements AutoCloseable {
 
     @Override
     public void close() {
-        var ch = (ManagedChannel) invokeGrpc(AbstractStub::getChannel);
+        var ch = (ManagedChannel) invokeGrpc(grpcInferenceStub, AbstractStub::getChannel);
         ch.shutdown();
         try {
             if (!ch.awaitTermination(5, SECONDS))
@@ -327,9 +341,9 @@ public class TritonOnnxClient implements AutoCloseable {
 
 
     // Converts StatusRuntimeException to TritonException
-    private <T> T invokeGrpc(Function<GRPCInferenceServiceGrpc.GRPCInferenceServiceBlockingV2Stub, T> invocation) {
+    private <T, S extends AbstractBlockingStub<S>> T invokeGrpc(S stub, Function<S, T> invocation) {
         try {
-            return invocation.apply(grpcStub);
+            return invocation.apply(stub);
         } catch (StatusRuntimeException e) {
             throw new TritonException(e);
         }
