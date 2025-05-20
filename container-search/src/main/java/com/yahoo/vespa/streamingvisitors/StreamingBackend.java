@@ -141,7 +141,7 @@ public class StreamingBackend extends VespaBackend {
                                                                      "streaming.groupname or streaming.selection"));
         }
         try {
-            ensureLegalSummaryClass(query, query.getPresentation().getSummary());
+            ensureLegalSummaryClass(query, PartialSummaryHandler.PRESENTATION);
         } catch (IllegalInputException e) {
             return new Result(query, ErrorMessage.createIllegalQuery(Exceptions.toMessageString(e)));
         }

@@ -349,7 +349,7 @@ public class SearchHandler extends LoggingRequestHandler {
 
         ensureQuerySet(result, query);
         // TODO: consider fill(result, "[presentation]") instead
-        execution.fill(result, result.getQuery().getPresentation().getSummary());
+        execution.fill(result);
 
         traceExecutionTimes(query, result);
         traceVespaVersion(query);

@@ -116,7 +116,7 @@ public class AsyncExecution {
     public FutureResult searchAndFill(Query query) {
         return getFutureResult(execution.context().executor(), () -> {
             Result result = execution.search(query);
-            execution.fill(result, query.getPresentation().getSummary());
+            execution.fill(result);
             return result;
         }, query);
     }
