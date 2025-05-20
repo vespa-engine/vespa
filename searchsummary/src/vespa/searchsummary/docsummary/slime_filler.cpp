@@ -84,7 +84,7 @@ public:
         key.accept(key_conv);
         if (_filter.should_render()) {
             ObjectSymbolInserter vi(c, _val_sym);
-            SlimeFiller val_conv(vi, nullptr, _filter);
+            SlimeFiller val_conv(vi, ElementIds::select_all(), nullptr, _filter);
             value.accept(val_conv);
         }
     }
@@ -94,7 +94,7 @@ public:
 
 SlimeFiller::SlimeFiller(Inserter& inserter)
     : _inserter(inserter),
-      _selected_elements(),
+      _selected_elements(ElementIds::select_all()),
       _string_converter(nullptr),
       _filter(SlimeFillerFilter::all())
 {
@@ -108,9 +108,9 @@ SlimeFiller::SlimeFiller(Inserter& inserter, ElementIds selected_elements)
 {
 }
 
-SlimeFiller::SlimeFiller(Inserter& inserter, IStringFieldConverter* string_converter, SlimeFillerFilter::Iterator filter)
+SlimeFiller::SlimeFiller(Inserter& inserter, ElementIds selected_elements, IStringFieldConverter* string_converter, SlimeFillerFilter::Iterator filter)
     : _inserter(inserter),
-      _selected_elements(),
+      _selected_elements(selected_elements),
       _string_converter(string_converter),
       _filter(filter)
 {
@@ -166,7 +166,7 @@ SlimeFiller::visit(const ArrayFieldValue& value)
     }
     Cursor& a = _inserter.insertArray();
     ArrayInserter ai(a);
-    SlimeFiller conv(ai, _string_converter, _filter);
+    SlimeFiller conv(ai, ElementIds::select_all(), _string_converter, _filter);
     if (filter_matching_elements()) {
         for (uint32_t id_to_keep : _selected_elements) {
             value[id_to_keep].accept(conv);
@@ -272,7 +272,7 @@ SlimeFiller::visit(const StructFieldValue& value)
         if (sub_filter.should_render()) {
             Memory keymem(name);
             ObjectInserter vi(c, keymem);
-            SlimeFiller conv(vi, nullptr, sub_filter);
+            SlimeFiller conv(vi, ElementIds::select_all(), nullptr, sub_filter);
             FieldValue::UP nextValue(value.getValue(itr.field()));
             (*nextValue).accept(conv);
         }
@@ -303,7 +303,7 @@ SlimeFiller::visit(const WeightedSetFieldValue& value)
         }
         if (render_as_array) {
             ArrayInserter ai(a);
-            SlimeFiller conv(ai, _string_converter, SlimeFillerFilter::all());
+            SlimeFiller conv(ai, ElementIds::select_all(), _string_converter, SlimeFillerFilter::all());
             entry.first->accept(conv);
         } else {
             Cursor& o = a.addObject();
@@ -337,45 +337,37 @@ SlimeFiller::visit(const ReferenceFieldValue& value)
 }
 
 void
-SlimeFiller::insert_summary_field(const FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter)
+SlimeFiller::insert_summary_field(const FieldValue& value, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter)
 {
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, converter, SlimeFillerFilter::all());
+        SlimeFiller visitor(inserter, selected_elements, converter, SlimeFillerFilter::all());
         value.accept(visitor);
     }
 }
 
 void
-SlimeFiller::insert_summary_field_with_filter(const FieldValue& value, vespalib::slime::Inserter& inserter, ElementIds selected_elements)
+SlimeFiller::insert_summary_field_with_field_filter(const document::FieldValue& value, ElementIds selected_elements,
+                                                    vespalib::slime::Inserter& inserter,
+                                                    IStringFieldConverter* converter, const SlimeFillerFilter* filter)
 {
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, selected_elements);
+        SlimeFiller visitor(inserter, selected_elements, converter, (filter != nullptr) ? filter->begin() : SlimeFillerFilter::all());
         value.accept(visitor);
     }
 }
 
 void
-SlimeFiller::insert_summary_field_with_field_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter, const SlimeFillerFilter* filter)
+SlimeFiller::insert_juniper_field(const document::FieldValue& value, ElementIds selected_elements,
+                                  vespalib::slime::Inserter& inserter, IStringFieldConverter& converter)
 {
     CheckUndefinedValueVisitor check_undefined;
     value.accept(check_undefined);
     if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, converter, (filter != nullptr) ? filter->begin() : SlimeFillerFilter::all());
-        value.accept(visitor);
-    }
-}
-
-void
-SlimeFiller::insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter& converter)
-{
-    CheckUndefinedValueVisitor check_undefined;
-    value.accept(check_undefined);
-    if (!check_undefined.is_undefined()) {
-        SlimeFiller visitor(inserter, &converter, SlimeFillerFilter::all());
+        SlimeFiller visitor(inserter, selected_elements, &converter, SlimeFillerFilter::all());
         value.accept(visitor);
     }
 }

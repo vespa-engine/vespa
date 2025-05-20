@@ -60,7 +60,8 @@ public:
         vespalib::Slime act;
         vespalib::slime::SlimeInserter inserter(act);
         if (!_writer->isDefaultValue(docid, _state)) {
-            _writer->insert_field(docid, nullptr, _state, _elements_selector, inserter);
+            _writer->insert_field(docid, nullptr, _state, _elements_selector.get_selected_elements(docid, _state),
+                                  inserter);
         }
 
         SlimeValue exp(exp_slime_as_json);

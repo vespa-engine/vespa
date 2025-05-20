@@ -24,8 +24,7 @@ class ArrayAttributeCombinerDFW : public AttributeCombinerDFW
     bool                     _is_map_of_scalar;
 
     DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext &context,
-                                                  GetDocsumsState& state,
-                                                  const SummaryElementsSelector& elements_selector) const override;
+                                                  vespalib::Stash& stash) const override;
 public:
     ArrayAttributeCombinerDFW(const StructFieldsResolver& fields_resolver);
     ~ArrayAttributeCombinerDFW() override;

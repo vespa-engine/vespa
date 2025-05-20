@@ -12,8 +12,6 @@ namespace search::attribute { class IAttributeVector; }
 
 namespace search::docsummary {
 
-class SummaryElementsSelector;
-
 /**
  * Factory to create an DocsumFieldWriter to write an attribute vector to slime.
  */

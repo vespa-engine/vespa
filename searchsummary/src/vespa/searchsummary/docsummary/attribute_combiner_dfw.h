@@ -7,6 +7,8 @@
 
 namespace search::attribute { class IAttributeContext; }
 
+namespace vespalib { class Stash; }
+
 namespace search::docsummary {
 
 class DocsumFieldWriterState;
@@ -23,8 +25,7 @@ protected:
     AttributeCombinerDFW();
 protected:
     virtual DocsumFieldWriterState* allocFieldWriterState(search::attribute::IAttributeContext& context,
-                                                          GetDocsumsState& state,
-                                                          const SummaryElementsSelector& elements_selector) const = 0;
+                                                          vespalib::Stash& stash) const = 0;
 public:
     ~AttributeCombinerDFW() override;
     bool isGenerated() const override { return true; }
@@ -32,7 +33,7 @@ public:
     static std::unique_ptr<DocsumFieldWriter> create(const std::string &fieldName,
                                                      search::attribute::IAttributeContext &attrCtx);
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector,
+                      ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
 };
 

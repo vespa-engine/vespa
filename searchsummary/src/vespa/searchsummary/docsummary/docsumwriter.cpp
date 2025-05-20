@@ -3,6 +3,7 @@
 #include "docsumwriter.h"
 #include "docsumstate.h"
 #include "docsum_field_writer_state.h"
+#include "summary_elements_selector.h"
 #include "i_docsum_store_document.h"
 #include <vespa/document/fieldvalue/fieldvalue.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
@@ -52,7 +53,8 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
             if (state._args.need_field(resCfg->name()) && ! writer->isDefaultValue(docid, state)) {
                 const Memory field_name(resCfg->name().data(), resCfg->name().size());
                 ObjectInserter inserter(docsum, field_name);
-                writer->insert_field(docid, nullptr, state, elements_selector, inserter);
+                writer->insert_field(docid, nullptr, state, elements_selector.get_selected_elements(docid, state),
+                                     inserter);
             }
         }
     } else {
@@ -74,11 +76,13 @@ DynamicDocsumWriter::insertDocsum(const ResolveClassInfo & rci, uint32_t docid, 
             ObjectInserter inserter(docsum, field_name);
             if (writer != nullptr) {
                 if (! writer->isDefaultValue(docid, state)) {
-                    writer->insert_field(docid, doc.get(), state, elements_selector, inserter);
+                    writer->insert_field(docid, doc.get(), state, elements_selector.get_selected_elements(docid, state),
+                                         inserter);
                 }
             } else {
                 if (doc) {
-                    doc->insert_summary_field(outCfg->name(), inserter);
+                    doc->insert_summary_field(outCfg->name(), elements_selector.get_selected_elements(docid, state),
+                                              inserter);
                 }
             }
         }

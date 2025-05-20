@@ -56,18 +56,21 @@ class SlimeFiller : public document::ConstFieldValueVisitor {
 public:
     SlimeFiller(vespalib::slime::Inserter& inserter);
     SlimeFiller(vespalib::slime::Inserter& inserter, ElementIds selected_elements);
-    SlimeFiller(vespalib::slime::Inserter& inserter, IStringFieldConverter* string_converter,
+    SlimeFiller(vespalib::slime::Inserter& inserter, ElementIds selected_elements,
+                IStringFieldConverter* string_converter,
                 SlimeFillerFilter::Iterator filter);
     ~SlimeFiller() override;
 
-    static void insert_summary_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter = nullptr);
+    static void insert_summary_field(const document::FieldValue& value, ElementIds selected_elements,
+                                     vespalib::slime::Inserter& inserter,
+                                     IStringFieldConverter* converter = nullptr);
 
-    /**
-     * Insert the given field value, but only the selected elements.
-     */
-    static void insert_summary_field_with_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, ElementIds selected_elements);
-    static void insert_summary_field_with_field_filter(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter, const SlimeFillerFilter* filter);
-    static void insert_juniper_field(const document::FieldValue& value, vespalib::slime::Inserter& inserter, IStringFieldConverter& converter);
+    static void insert_summary_field_with_field_filter(const document::FieldValue& value, ElementIds selected_elements,
+                                                       vespalib::slime::Inserter& inserter,
+                                                       IStringFieldConverter* converter,
+                                                       const SlimeFillerFilter* filter);
+    static void insert_juniper_field(const document::FieldValue& value, ElementIds selected_elements,
+                                     vespalib::slime::Inserter& inserter, IStringFieldConverter& converter);
 };
 
 }

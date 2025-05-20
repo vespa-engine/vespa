@@ -111,7 +111,7 @@ AttributeCombinerTest::assertWritten(const std::string &exp_slime_as_json, uint3
 {
     vespalib::Slime act;
     vespalib::slime::SlimeInserter inserter(act);
-    writer->insert_field(docId, nullptr, state, *elements_selector, inserter);
+    writer->insert_field(docId, nullptr, state, elements_selector->get_selected_elements(docId, state), inserter);
 
     SlimeValue exp(exp_slime_as_json);
     EXPECT_EQ(exp.slime, act);

@@ -44,7 +44,7 @@ public:
 
     bool isGenerated() const override { return true; }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector,
+                      ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
 
     static std::unique_ptr<DocsumFieldWriter> create(const char *attribute_name, const IAttributeManager *index_man);
@@ -62,7 +62,7 @@ public:
     PositionsDFW(const std::string & attrName, bool useV8geoPositions);
     bool isGenerated() const override { return true; }
     void insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                      const SummaryElementsSelector& elements_selector,
+                      ElementIds selected_elements,
                       vespalib::slime::Inserter &target) const override;
     static UP create(const char *attribute_name, const IAttributeManager *index_man, bool useV8geoPositions);
 };

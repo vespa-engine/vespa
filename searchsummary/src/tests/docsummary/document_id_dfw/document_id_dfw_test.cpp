@@ -27,12 +27,12 @@ using search::MatchingElements;
 using search::MatchingElementsFields;
 using search::docsummary::DocsumStoreDocument;
 using search::docsummary::DocumentIdDFW;
+using search::docsummary::ElementIds;
 using search::docsummary::GetDocsumsState;
 using search::docsummary::GetDocsumsStateCallback;
 using search::docsummary::IDocsumStoreDocument;
 using search::docsummary::ResultClass;
 using search::docsummary::ResultConfig;
-using search::docsummary::SummaryElementsSelector;
 using vespalib::Slime;
 using vespalib::slime::Cursor;
 using vespalib::slime::ObjectInserter;
@@ -111,7 +111,7 @@ DocumentIdDFWTest::write(const IDocsumStoreDocument* doc)
     DocumentIdDFW writer;
     MyGetDocsumsStateCallback callback;
     GetDocsumsState state(callback);
-    writer.insert_field(0, doc, state, SummaryElementsSelector::select_all(), field_inserter);
+    writer.insert_field(0, doc, state, ElementIds::select_all(), field_inserter);
     return slime;
 }
 

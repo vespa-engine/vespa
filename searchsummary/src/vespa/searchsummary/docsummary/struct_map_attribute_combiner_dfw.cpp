@@ -31,34 +31,27 @@ class StructMapAttributeFieldWriterState : public DocsumFieldWriterState
     AttributeFieldWriter*              _keyWriter;
     // AttributeFieldWriter instances are owned by stash passed to constructor
     std::vector<AttributeFieldWriter*> _valueWriters;
-    GetDocsumsState&                   _state;
-    const SummaryElementsSelector&     _elements_selector;
 
 public:
     StructMapAttributeFieldWriterState(const std::string &keyAttributeName,
                                        const std::vector<std::string> &valueFieldNames,
                                        const std::vector<std::string> &valueAttributeNames,
                                        IAttributeContext &context,
-                                       GetDocsumsState& state,
-                                       const SummaryElementsSelector& elements_selector);
+                                       vespalib::Stash& stash);
     ~StructMapAttributeFieldWriterState() override;
     void insert_element(uint32_t element_index, Cursor &array);
-    void insertField(uint32_t docId, vespalib::slime::Inserter &target) override;
+    void insertField(uint32_t docId, ElementIds selected_elements, vespalib::slime::Inserter &target) override;
 };
 
 StructMapAttributeFieldWriterState::StructMapAttributeFieldWriterState(const std::string &keyAttributeName,
                                                                        const std::vector<std::string> &valueFieldNames,
                                                                        const std::vector<std::string> &valueAttributeNames,
                                                                        IAttributeContext &context,
-                                                                       GetDocsumsState& state,
-                                                                       const SummaryElementsSelector& elements_selector)
+                                                                       vespalib::Stash& stash)
     : DocsumFieldWriterState(),
       _keyWriter(nullptr),
-      _valueWriters(),
-      _state(state),
-      _elements_selector(elements_selector)
+      _valueWriters()
 {
-    auto& stash = state.get_stash();
     const IAttributeVector *attr = context.getAttribute(keyAttributeName);
     if (attr != nullptr) {
         _keyWriter = &AttributeFieldWriter::create(keyName, *attr, stash, true);
@@ -89,7 +82,7 @@ StructMapAttributeFieldWriterState::insert_element(uint32_t element_index, Curso
 }
 
 void
-StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime::Inserter &target)
+StructMapAttributeFieldWriterState::insertField(uint32_t docId, ElementIds selected_elements, vespalib::slime::Inserter &target)
 {
     uint32_t elems = 0;
     if (_keyWriter) {
@@ -101,13 +94,12 @@ StructMapAttributeFieldWriterState::insertField(uint32_t docId, vespalib::slime:
     if (elems == 0) {
         return;
     }
-    auto elements = _elements_selector.get_selected_elements(docId, _state);
-    if (!elements.all_elements()) {
-        if (elements.empty() || elements.back() >= elems) {
+    if (!selected_elements.all_elements()) {
+        if (selected_elements.empty() || selected_elements.back() >= elems) {
             return;
         }
         Cursor &arr = target.insertArray();
-        for (auto idx : elements) {
+        for (auto idx : selected_elements) {
             if (idx < elems) {
                 insert_element(idx, arr);
             }
@@ -133,11 +125,9 @@ StructMapAttributeCombinerDFW::StructMapAttributeCombinerDFW(const StructFieldsR
 StructMapAttributeCombinerDFW::~StructMapAttributeCombinerDFW() = default;
 
 DocsumFieldWriterState*
-StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext& context, GetDocsumsState& state,
-                                                     const SummaryElementsSelector& elements_selector) const
+StructMapAttributeCombinerDFW::allocFieldWriterState(IAttributeContext& context, vespalib::Stash& stash) const
 {
-    auto& stash = state.get_stash();
-    return &stash.create<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context, state, elements_selector);
+    return &stash.create<StructMapAttributeFieldWriterState>(_keyAttributeName, _valueFields, _valueAttributeNames, context, stash);
 }
 
 }

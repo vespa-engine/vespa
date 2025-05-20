@@ -37,21 +37,21 @@ DocsumStoreDocument::get_field_value(const std::string& field_name) const
 }
 
 void
-DocsumStoreDocument::insert_summary_field(const std::string& field_name, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
+DocsumStoreDocument::insert_summary_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {
-        SlimeFiller::insert_summary_field(*field_value, inserter, converter);
+        SlimeFiller::insert_summary_field(*field_value, selected_elements, inserter, converter);
     }
 }
 
 void
-DocsumStoreDocument::insert_juniper_field(const std::string& field_name, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
+DocsumStoreDocument::insert_juniper_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IJuniperConverter& converter) const
 {
     auto field_value = get_field_value(field_name);
     if (field_value) {
         AnnotationConverter stacked_converter(converter);
-        SlimeFiller::insert_juniper_field(*field_value, inserter, stacked_converter);
+        SlimeFiller::insert_juniper_field(*field_value, selected_elements, inserter, stacked_converter);
     }
 }
 

@@ -110,7 +110,7 @@ void checkWritePositionField(AttrType &attr,
 
     vespalib::Slime target;
     vespalib::slime::SlimeInserter inserter(target);
-    writer->insert_field(doc_id, nullptr, state, SummaryElementsSelector::select_all(), inserter);
+    writer->insert_field(doc_id, nullptr, state, ElementIds::select_all(), inserter);
 
     test::SlimeValue expected(expect_json);
     EXPECT_EQ(expected.slime, target);

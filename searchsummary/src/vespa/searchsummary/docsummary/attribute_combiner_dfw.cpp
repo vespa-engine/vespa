@@ -43,17 +43,15 @@ AttributeCombinerDFW::create(const std::string &fieldName, IAttributeContext &at
 }
 
 void
-AttributeCombinerDFW::insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                                   const SummaryElementsSelector& elements_selector,
+AttributeCombinerDFW::insert_field(uint32_t docid, const IDocsumStoreDocument*, GetDocsumsState& state,
+                                   ElementIds selected_elements,
                                    vespalib::slime::Inserter& target) const
 {
-    (void) doc;
-    (void) elements_selector;
     auto& fieldWriterState = state._fieldWriterStates[_stateIndex];
     if (!fieldWriterState) {
-        fieldWriterState = allocFieldWriterState(*state._attrCtx, state, elements_selector);
+        fieldWriterState = allocFieldWriterState(*state._attrCtx, state.get_stash());
     }
-    fieldWriterState->insertField(docid, target);
+    fieldWriterState->insertField(docid, selected_elements, target);
 }
 
 }

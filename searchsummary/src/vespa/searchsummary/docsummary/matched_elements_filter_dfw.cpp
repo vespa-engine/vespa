@@ -42,24 +42,12 @@ MatchedElementsFilterDFW::create(const std::string& input_field_name)
 MatchedElementsFilterDFW::~MatchedElementsFilterDFW() = default;
 
 void
-MatchedElementsFilterDFW::insert_field(uint32_t docid, const IDocsumStoreDocument* doc, GetDocsumsState& state,
-                                       const SummaryElementsSelector& elements_selector,
+MatchedElementsFilterDFW::insert_field(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
+                                       ElementIds selected_elements,
                                        vespalib::slime::Inserter& target) const
 {
     if (doc != nullptr) {
-        if (elements_selector.all_elements()) {
-            doc->insert_summary_field(_input_field_name, target);
-        } else {
-            auto field_value = doc->get_field_value(_input_field_name);
-            if (field_value) {
-                auto selected_elements = elements_selector.get_selected_elements(docid, state);
-                if (!selected_elements.all_elements()) {
-                    SlimeFiller::insert_summary_field_with_filter(*field_value, target, selected_elements);
-                } else {
-                    SlimeFiller::insert_summary_field(*field_value, target);
-                }
-            }
-        }
+        doc->insert_summary_field(_input_field_name, selected_elements, target);
     }
 }
 

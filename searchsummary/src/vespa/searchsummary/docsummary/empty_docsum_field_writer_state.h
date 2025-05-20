@@ -15,7 +15,7 @@ class EmptyDocsumFieldWriterState : public DocsumFieldWriterState
 public:
     EmptyDocsumFieldWriterState();
     ~EmptyDocsumFieldWriterState() override;
-    void insertField(uint32_t, vespalib::slime::Inserter&) override;
+    void insertField(uint32_t, ElementIds selected_elements, vespalib::slime::Inserter&) override;
 };
 
 }

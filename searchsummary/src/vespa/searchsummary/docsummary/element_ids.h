@@ -16,8 +16,8 @@ namespace search::docsummary {
 class ElementIds {
     const std::span<const uint32_t> _element_ids;
     static const std::span<const uint32_t> _empty; // empty span where data() is not nullptr
-public:
     ElementIds() noexcept : _element_ids() { } // default std::span constructor gives nullptr for data()
+public:
     explicit ElementIds(const std::vector<uint32_t>& element_ids) noexcept
         : _element_ids(element_ids.empty() ? _empty : element_ids)
     {
@@ -28,6 +28,7 @@ public:
     std::span<const uint32_t>::iterator end() const noexcept { return _element_ids.end(); }
     bool empty() const noexcept { return _element_ids.empty(); }
     bool all_elements() const noexcept { return _element_ids.data() == nullptr; }
+    static ElementIds select_all() noexcept { return ElementIds(); }
 };
 
 }

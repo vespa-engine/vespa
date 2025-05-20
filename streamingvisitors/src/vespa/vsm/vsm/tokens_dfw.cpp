@@ -4,9 +4,9 @@
 #include <vespa/searchsummary/docsummary/i_docsum_store_document.h>
 #include "tokens_converter.h"
 
-using search::docsummary::IDocsumStoreDocument;
+using search::docsummary::ElementIds;
 using search::docsummary::GetDocsumsState;
-using search::docsummary::SummaryElementsSelector;
+using search::docsummary::IDocsumStoreDocument;
 
 namespace vsm {
 
@@ -28,13 +28,12 @@ TokensDFW::isGenerated() const
 
 void
 TokensDFW::insert_field(uint32_t, const IDocsumStoreDocument* doc, GetDocsumsState&,
-                        const SummaryElementsSelector& elements_selector,
+                        ElementIds selected_elements,
                         vespalib::slime::Inserter& target) const
 {
-    (void) elements_selector;
     if (doc != nullptr) {
         TokensConverter converter(_exact_match, _normalize_mode);
-        doc->insert_summary_field(_input_field_name, target, &converter);
+        doc->insert_summary_field(_input_field_name, selected_elements, target, &converter);
     }
 }
 

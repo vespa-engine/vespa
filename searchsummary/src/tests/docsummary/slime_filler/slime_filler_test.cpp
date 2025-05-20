@@ -297,7 +297,7 @@ SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv, con
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller filler(inserter, matching_elems != nullptr ? ElementIds(*matching_elems) : ElementIds());
+    SlimeFiller filler(inserter, matching_elems != nullptr ? ElementIds(*matching_elems) : ElementIds::select_all());
     fv.accept(filler);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
@@ -320,7 +320,7 @@ SlimeFillerTest::expect_insert(const std::string& exp, const FieldValue& fv, Sli
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller filler(inserter, nullptr, filter.begin());
+    SlimeFiller filler(inserter, ElementIds::select_all(), nullptr, filter.begin());
     fv.accept(filler);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
@@ -332,7 +332,7 @@ SlimeFillerTest::expect_insert_callback(const std::vector<std::string>& exp, con
     Slime slime;
     SlimeInserter inserter(slime);
     MockStringFieldConverter converter(false, false);
-    SlimeFiller filler(inserter, &converter, SlimeFillerFilter::all());
+    SlimeFiller filler(inserter, ElementIds::select_all(), &converter, SlimeFillerFilter::all());
     fv.accept(filler);
     auto act_null = slime_to_string(slime);
     EXPECT_EQ("null", act_null);
@@ -345,7 +345,7 @@ SlimeFillerTest::expect_insert_summary_field(const std::string& exp, const Field
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller::insert_summary_field(fv, inserter);
+    SlimeFiller::insert_summary_field(fv, ElementIds::select_all(), inserter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
@@ -355,7 +355,7 @@ SlimeFillerTest::expect_insert_summary_field_with_filter(const std::string& exp,
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller::insert_summary_field_with_filter(fv, inserter, ElementIds(matching_elems));
+    SlimeFiller::insert_summary_field(fv, ElementIds(matching_elems), inserter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
@@ -365,7 +365,7 @@ SlimeFillerTest::expect_insert_summary_field_with_field_filter(const std::string
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller::insert_summary_field_with_field_filter(fv, inserter, nullptr, filter);
+    SlimeFiller::insert_summary_field_with_field_filter(fv, ElementIds::select_all(), inserter, nullptr, filter);
     auto act = slime_to_string(slime);
     EXPECT_EQ(exp, act);
 }
@@ -376,7 +376,7 @@ SlimeFillerTest::expect_insert_juniper_field(const std::vector<std::string>& exp
     Slime slime;
     SlimeInserter inserter(slime);
     MockStringFieldConverter converter(false, false);
-    SlimeFiller::insert_juniper_field(fv, inserter, converter);
+    SlimeFiller::insert_juniper_field(fv, ElementIds::select_all(), inserter, converter);
     auto act_slime = slime_to_string(slime);
     EXPECT_EQ(exp_slime, act_slime);
     auto act = converter.get_result();
@@ -388,7 +388,7 @@ SlimeFillerTest::expect_insert_summary_field_with_converter(const std::vector<st
 {
     Slime slime;
     SlimeInserter inserter(slime);
-    SlimeFiller::insert_summary_field(fv, inserter, &converter);
+    SlimeFiller::insert_summary_field(fv, ElementIds::select_all(), inserter, &converter);
     auto act_slime = slime_to_string(slime);
     EXPECT_EQ(exp_slime, act_slime);
     auto act = converter.get_result();
