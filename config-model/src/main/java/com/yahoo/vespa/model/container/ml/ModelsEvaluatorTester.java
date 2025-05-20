@@ -5,7 +5,6 @@ import ai.vespa.models.evaluation.ModelsEvaluator;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
-import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.yahoo.config.FileReference;
@@ -49,7 +48,7 @@ import java.util.Map;
  */
 public class ModelsEvaluatorTester {
 
-    private static final List<MlModelImporter> importers = List.of(new TensorFlowImporter(),
+    private static final List<MlModelImporter> importers = List.of(
             new OnnxImporter(),
             new LightGBMImporter(),
             new XGBoostImporter(),

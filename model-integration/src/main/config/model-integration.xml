@@ -8,6 +8,5 @@
      JNI code, and so can only exist in one instance in the server. -->
 <component id="ai.vespa.rankingexpression.importer.vespa.VespaImporter" bundle="model-integration" />
 <component id="ai.vespa.rankingexpression.importer.onnx.OnnxImporter" bundle="model-integration" />
-<component id="ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter" bundle="model-integration" />
 <component id="ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter" bundle="model-integration" />
 <component id="ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter" bundle="model-integration" />

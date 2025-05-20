@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.ml;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
-import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.yahoo.config.FileReference;
@@ -46,8 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class ImportedModelTester {
 
-    private final List<MlModelImporter> importers = List.of(new TensorFlowImporter(),
-                                                            new OnnxImporter(),
+    private final List<MlModelImporter> importers = List.of(new OnnxImporter(),
                                                             new LightGBMImporter(),
                                                             new XGBoostImporter(),
                                                             new VespaImporter());
