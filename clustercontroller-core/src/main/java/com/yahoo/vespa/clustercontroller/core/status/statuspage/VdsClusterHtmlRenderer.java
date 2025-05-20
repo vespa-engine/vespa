@@ -9,12 +9,15 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.*;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Renders web page with cluster status.
@@ -80,6 +83,7 @@ public class VdsClusterHtmlRenderer {
                     storageNodeInfos, distributorNodeInfos);
 
             renderNodesOneType(storageNodeInfos,
+                    distributorNodeInfos,
                     NodeType.STORAGE,
                     timer,
                     state,
@@ -92,6 +96,7 @@ public class VdsClusterHtmlRenderer {
                     dominantVtag,
                     name);
             renderNodesOneType(distributorNodeInfos,
+                    storageNodeInfos,
                     NodeType.DISTRIBUTOR,
                     timer,
                     state,
@@ -170,6 +175,7 @@ public class VdsClusterHtmlRenderer {
 
         private void renderNodesOneType(
                 final TreeMap<Integer, NodeInfo> nodeInfos,
+                final TreeMap<Integer, NodeInfo> otherNodeInfos,
                 final NodeType nodeType,
                 final Timer timer,
                 final ClusterStateBundle stateBundle,
@@ -207,12 +213,41 @@ public class VdsClusterHtmlRenderer {
 
                 table.addRow(row);
                 if (nodeType.equals(NodeType.STORAGE)) {
-                    addFeedBlockedRowIfNodeIsBlocking(stateBundle, nodeInfo, row);
+                    var warnings = Stream.of(feedBlockWarningIfNodeIsBlocking(stateBundle, nodeInfo),
+                                             contentNodeIssueWarningIfDistributorsReportErrors(stateBundle, nodeInfo, otherNodeInfos, statsAggregator))
+                            .filter(Optional::isPresent)
+                            .map(Optional::get)
+                            .toList();
+                    addNodeMessages(warnings, row);
                 }
             }
         }
 
-        private void addFeedBlockedRowIfNodeIsBlocking(ClusterStateBundle stateBundle, NodeInfo nodeInfo, HtmlTable.Row nodeRow) {
+        private enum MessageSeverity {
+            WARNING,
+            ERROR
+        }
+
+        private record NodeMessage(MessageSeverity severity, String rawMessage) {}
+
+        private void addNodeMessages(List<NodeMessage> nodeMessages, HtmlTable.Row nodeRow) {
+            if (nodeMessages.isEmpty()) {
+                return;
+            }
+            for (var msg : nodeMessages) {
+                HtmlTable.Row feedBlockRow = new HtmlTable.Row();
+                var severityProperty = msg.severity() == MessageSeverity.ERROR ? ERROR_PROPERTY : WARNING_PROPERTY;
+                var cell = new HtmlTable.Cell(msg.rawMessage()).addProperties(severityProperty);
+                cell.addProperties(new HtmlTable.CellProperties().setColSpan(18));
+                feedBlockRow.addCell(cell);
+                table.addRow(feedBlockRow);
+            }
+            // Retroactively make the node index cell span multiple rows so it's obvious (hopefully)
+            // what node the feed block state is related to. Must also include original non-warning row.
+            nodeRow.cells.get(0).addProperties(new HtmlTable.CellProperties().setRowSpan(nodeMessages.size() + 1));
+        }
+
+        private Optional<NodeMessage> feedBlockWarningIfNodeIsBlocking(ClusterStateBundle stateBundle, NodeInfo nodeInfo) {
             // We only show a feed block row if the node is actually blocking feed in the cluster, not
             // just if limits have been exceeded (as feed block may be config disabled).
             // O(n) but n expected to be 0-(very small number) in all realistic cases.
@@ -224,18 +259,46 @@ public class VdsClusterHtmlRenderer {
                     var exhaustionsDesc = exhaustions.stream()
                             .map(NodeResourceExhaustion::toShorthandDescription)
                             .collect(Collectors.joining(", "));
-
-                    HtmlTable.Row feedBlockRow = new HtmlTable.Row();
-                    var contents = String.format("<strong>Node is blocking feed: %s</strong>", HtmlTable.escape(exhaustionsDesc));
-                    var cell = new HtmlTable.Cell(contents).addProperties(ERROR_PROPERTY);
-                    cell.addProperties(new HtmlTable.CellProperties().setColSpan(18));
-                    feedBlockRow.addCell(cell);
-                    table.addRow(feedBlockRow);
-                    // Retroactively make the node index cell span 2 rows so it's obvious (hopefully)
-                    // what node the feed block state is related to.
-                    nodeRow.cells.get(0).addProperties(new HtmlTable.CellProperties().setRowSpan(2));
+                    return Optional.of(new NodeMessage(
+                            MessageSeverity.ERROR,
+                            String.format("<strong>Node is blocking feed: %s</strong>", HtmlTable.escape(exhaustionsDesc))));
                 }
             }
+            return Optional.empty();
+        }
+
+        Optional<NodeMessage> contentNodeIssueWarningIfDistributorsReportErrors(
+                ClusterStateBundle stateBundle, NodeInfo nodeInfo,
+                TreeMap<Integer, NodeInfo> distributorNodeInfos,
+                ClusterStatsAggregator statsAggregator) {
+            var nodeStats = statsAggregator.getAggregatedStats().getErrorStats().getNodeErrorStats(nodeInfo.getNodeIndex());
+            if (nodeStats != null && !nodeStats.getStatsFromDistributors().isEmpty()) {
+                // Distributor error stats mapping should only be non-empty if at least one distributor
+                // is reporting errors towards this particular node.
+                var distributorsWithRpcErrors = nodeStats.getStatsFromDistributors().entrySet().stream()
+                        .filter(e -> e.getValue().networkErrors() > 0) // TODO decide on minimums for inclusion
+                        .sorted(Comparator.comparingInt(e -> e.getKey()))
+                        .toList();
+                if (!distributorsWithRpcErrors.isEmpty()) {
+                    var sb = new StringBuilder();
+                    sb.append(String.format("The following %d distributor(s) are reporting <strong>network-related errors</strong> towards this node:<br>\n",
+                                            distributorsWithRpcErrors.size()));
+                    for (var node : distributorsWithRpcErrors) {
+                        sb.append("<strong>%d</strong> (%.2f%% of all requests are failing)".formatted(node.getKey(), node.getValue().networkErrorRatio() * 100.0));
+                        var distrInfo = distributorNodeInfos.get(node.getKey());
+                        // If the distributor in question has not converged to the latest state version,
+                        // point an accusing finger at the content node with connectivity problems.
+                        if ((distrInfo != null) && (distrInfo.getClusterStateVersionBundleAcknowledged() != stateBundle.getVersion())) {
+                            // Emojis in the cluster controller?! Welcome to the future.
+                            sb.append(" ⚠️ <strong>This may be stalling cluster convergence!</strong>");
+                        }
+                        sb.append("<br>\n");
+                    }
+                    // TODO consider ERROR severity if e.g. > a particular ratio threshold for at least 1 node
+                    return Optional.of(new NodeMessage(MessageSeverity.WARNING, sb.toString()));
+                }
+            }
+            return Optional.empty();
         }
 
         private void addRpcAddress(NodeInfo nodeInfo, HtmlTable.Row row) {

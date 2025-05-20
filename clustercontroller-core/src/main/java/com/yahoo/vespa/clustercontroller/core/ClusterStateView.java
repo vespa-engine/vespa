@@ -85,6 +85,11 @@ public class ClusterStateView {
         }
         int currentStateVersion = clusterState.getVersion();
 
+        var errorStats = StorageNodeStatsBridge.generateErrors(node.getNodeIndex(), hostInfo.getDistributor());
+        // Error statistics are always updated, even if the node has not ACKed the latest cluster
+        // state version. Otherwise, we will never be able to observe errors that prevent convergence!
+        statsAggregator.updateErrorStatsFromDistributor(node.getNodeIndex(), errorStats);
+
         if (hostVersion != currentStateVersion) {
             // The distributor may be old (null), or the distributor may not have updated
             // to the latest state version just yet. We log here with fine, because it may
@@ -95,8 +100,8 @@ public class ClusterStateView {
             return;
         }
 
-        statsAggregator.updateForDistributor(node.getNodeIndex(),
-                StorageNodeStatsBridge.generate(hostInfo.getDistributor()));
+        var stats = StorageNodeStatsBridge.generate(hostInfo.getDistributor());
+        statsAggregator.updateForDistributor(node.getNodeIndex(), stats);
     }
 
     public ClusterStatsAggregator getStatsAggregator() {

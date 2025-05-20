@@ -44,6 +44,16 @@ public class ClusterStateViewTest {
     }
 
     @Test
+    void error_stats_are_updated_even_if_reported_state_version_mismatches() {
+        when(nodeInfo.isDistributor()).thenReturn(true);
+        when(clusterState.getVersion()).thenReturn(101);
+
+        clusterStateView.handleUpdatedHostInfo(nodeInfo, createHostInfo("22"));
+
+        verify(statsAggregator).updateErrorStatsFromDistributor(anyInt(), any());
+    }
+
+    @Test
     void testFailToGetStats() {
         when(nodeInfo.isDistributor()).thenReturn(true);
         when(clusterState.getVersion()).thenReturn(101);

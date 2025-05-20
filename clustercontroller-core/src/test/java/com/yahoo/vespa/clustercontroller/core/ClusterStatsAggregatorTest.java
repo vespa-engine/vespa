@@ -14,19 +14,33 @@ import static org.junit.jupiter.api.Assertions.*;
 public class ClusterStatsAggregatorTest {
 
     private static class Fixture {
+        private final Set<Integer> contentNodes;
         private final ClusterStatsAggregator aggregator;
 
         Fixture(Set<Integer> distributorNodes,
                 Set<Integer> contentNodes) {
-            aggregator = new ClusterStatsAggregator(distributorNodes, contentNodes);
+            this.contentNodes = contentNodes;
+            this.aggregator = new ClusterStatsAggregator(distributorNodes, contentNodes);
+        }
+
+        ContentClusterErrorStatsBuilder errorStatsBuilder() {
+            return new ContentClusterErrorStatsBuilder(contentNodes);
         }
 
         void update(int distributorIndex, ContentClusterStatsBuilder clusterStats) {
             aggregator.updateForDistributor(distributorIndex, clusterStats.build());
         }
 
+        void update(int distributorIndex, ContentClusterErrorStatsBuilder clusterErrorStats) {
+            aggregator.updateErrorStatsFromDistributor(distributorIndex, clusterErrorStats.build());
+        }
+
         public void verify(ContentClusterStatsBuilder expectedStats) {
             assertEquals(expectedStats.build(), aggregator.getAggregatedStats().getStats());
+        }
+
+        public void verify(ContentClusterErrorStatsBuilder expectedErrorStats) {
+            assertEquals(expectedErrorStats.build(), aggregator.getAggregatedStats().getErrorStats());
         }
 
         public void verify(int distributorIndex, ContentNodeStatsBuilder expectedStats) {
@@ -192,6 +206,79 @@ public class ClusterStatsAggregatorTest {
         f.update(1, new ContentClusterStatsBuilder().add(0, "default").withDocumentCountTotal(210).withBytesTotal(2900));
         assertEquals(360, f.aggregator.getAggregatedDocumentCountTotal());
         assertEquals(4920, f.aggregator.getAggregatedBytesTotal());
+    }
+
+    private static ContentNodeErrorStatsBuilder nodeErrorStats(int contentNodeIndex) {
+        return new ContentNodeErrorStatsBuilder(contentNodeIndex);
+    }
+
+    @Test
+    void error_stats_are_initially_empty_per_content_node() {
+        Fixture f = new Fixture(distributorNodes(0, 1), contentNodes(0, 1));
+        f.verify(f.errorStatsBuilder());
+    }
+
+    @Test
+    void aggregator_updates_set_of_observed_error_statistics_from_distributors() {
+        Fixture f = new Fixture(distributorNodes(0, 1, 2), contentNodes(0, 1, 2));
+        // Distributor 0 complains that node 1 responds with errors
+        f.update(0, f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(0, 100, 40)));
+        f.verify(f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(0, 100, 40)));
+        // Distributor 2 joins the chorus of laments
+        f.update(2, f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(2, 200, 100)));
+        // Distributor 1 thinks node 0 is giving off blue smoke
+        f.update(1, f.errorStatsBuilder().add(nodeErrorStats(0).addNetworkErrors(1, 300, 150)));
+        f.verify(f.errorStatsBuilder()
+                .add(nodeErrorStats(1)
+                    .addNetworkErrors(0, 100, 40)
+                    .addNetworkErrors(2, 200, 100))
+                .add(nodeErrorStats(0)
+                    .addNetworkErrors(1, 300, 150)));
+    }
+
+    @Test
+    void single_distributor_can_report_errors_for_multiple_content_nodes() {
+        Fixture f = new Fixture(distributorNodes(0, 1, 2), contentNodes(0, 1, 2));
+        f.update(2, f.errorStatsBuilder()
+                .add(nodeErrorStats(0).addNetworkErrors(2, 100, 40))
+                .add(nodeErrorStats(1).addNetworkErrors(2, 200, 60))
+                .add(nodeErrorStats(2).addNetworkErrors(2, 300, 80)));
+        f.verify(f.errorStatsBuilder()
+                .add(nodeErrorStats(0).addNetworkErrors(2, 100, 40))
+                .add(nodeErrorStats(1).addNetworkErrors(2, 200, 60))
+                .add(nodeErrorStats(2).addNetworkErrors(2, 300, 80)));
+    }
+
+    @Test
+    void error_stats_for_a_given_distributor_and_content_node_is_updated_inplace() {
+        Fixture f = new Fixture(distributorNodes(0, 1, 2), contentNodes(0, 1, 2));
+        f.update(0, f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(0, 100, 40)));
+        f.update(0, f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(0, 150, 60)));
+        f.verify(f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(0, 150, 60)));
+    }
+
+    @Test
+    void clearing_error_stats_removes_entry() {
+        Fixture f = new Fixture(distributorNodes(0, 1, 2), contentNodes(0, 1, 2));
+        f.update(1, f.errorStatsBuilder()
+                .add(nodeErrorStats(0).addNetworkErrors(1, 100, 40))
+                .add(nodeErrorStats(1).addNetworkErrors(1, 200, 80)));
+        // New observation from distributor 1 does not include node 0. Its entry should be removed.
+        f.update(1, f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(1, 200, 80)));
+        f.verify(f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(1, 200, 80)));
+    }
+
+    @Test
+    void error_stats_updates_do_not_mark_distributors_as_updated() {
+        // Updating error stats do not require a distributor to have converged to the latest
+        // cluster state. This is to avoid catch-22 situations where the reported errors are
+        // the underlying reason for why the state is not converging. This also means that we
+        // must ensure we do _not_ treat error updates as-if they imply that a state has been
+        // acked.
+        Fixture f = new Fixture(distributorNodes(0, 1), contentNodes(0, 1));
+        f.update(0, f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(0, 100, 40)));
+        f.update(1, f.errorStatsBuilder().add(nodeErrorStats(1).addNetworkErrors(1, 100, 100)));
+        assertFalse(f.hasUpdatesFromAllDistributors());
     }
 
 }

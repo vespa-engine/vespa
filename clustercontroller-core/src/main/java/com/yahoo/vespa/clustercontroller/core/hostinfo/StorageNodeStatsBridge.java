@@ -26,4 +26,18 @@ public class StorageNodeStatsBridge {
         return new ContentClusterStats(docsTotal, bytesTotal, mapToNodeStats);
     }
 
+    public static ContentClusterErrorStats generateErrors(int distributorIndex, Distributor distributor) {
+        Map<Integer, ContentNodeErrorStats> nodeErrorStats = new HashMap<>();
+        for (StorageNode storageNode : distributor.getStorageNodes()) {
+            if (storageNode.getResponseStats().hasNetworkErrors()) {
+                // These will be aggregated up across distributors later.
+                var nodeErrors = new ContentNodeErrorStats(storageNode.getIndex());
+                nodeErrors.getStatsFromDistributors().put(distributorIndex,
+                        ContentNodeErrorStats.DistributorErrorStats.fromHostInfoStats(storageNode.getResponseStats()));
+                nodeErrorStats.put(storageNode.getIndex(), nodeErrors);
+            }
+        }
+        return new ContentClusterErrorStats(nodeErrorStats);
+    }
+
 }
