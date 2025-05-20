@@ -16,7 +16,6 @@ import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
 import ai.vespa.rankingexpression.importer.configmodelview.ImportedMlModels;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
-import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 
@@ -36,8 +35,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  */
 class RankProfileSearchFixture {
 
-    private final List<MlModelImporter> importers = List.of(new TensorFlowImporter(),
-                                                            new OnnxImporter(),
+    private final List<MlModelImporter> importers = List.of(new OnnxImporter(),
                                                             new LightGBMImporter(),
                                                             new XGBoostImporter());
     private final RankProfileRegistry rankProfileRegistry = new RankProfileRegistry();

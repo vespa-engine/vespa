@@ -4,7 +4,6 @@ package com.yahoo.application;
 import ai.vespa.rankingexpression.importer.configmodelview.MlModelImporter;
 import ai.vespa.rankingexpression.importer.lightgbm.LightGBMImporter;
 import ai.vespa.rankingexpression.importer.onnx.OnnxImporter;
-import ai.vespa.rankingexpression.importer.tensorflow.TensorFlowImporter;
 import ai.vespa.rankingexpression.importer.vespa.VespaImporter;
 import ai.vespa.rankingexpression.importer.xgboost.XGBoostImporter;
 import com.yahoo.api.annotations.Beta;
@@ -141,7 +140,6 @@ public final class Application implements AutoCloseable {
     private VespaModel createVespaModel() {
         try {
             List<MlModelImporter> modelImporters = List.of(new VespaImporter(),
-                                                           new TensorFlowImporter(),
                                                            new OnnxImporter(),
                                                            new XGBoostImporter(),
                                                            new LightGBMImporter());
