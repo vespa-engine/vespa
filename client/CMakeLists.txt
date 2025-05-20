@@ -23,7 +23,6 @@ install_symlink(libexec/vespa/vespa-wrapper bin/vespa-set-node-state)
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-start-configserver)
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-start-services bin)
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-stop-services bin)
-install_symlink(libexec/vespa/vespa-wrapper bin/verify-container-env bin)
 
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-get-config)
 install_symlink(libexec/vespa/vespa-wrapper bin/vespa-verify-ranksetup)
