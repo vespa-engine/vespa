@@ -16,10 +16,10 @@
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/searchlib/common/matching_elements_fields.h>
+#include <vespa/searchsummary/docsummary/copy_dfw.h>
 #include <vespa/searchsummary/docsummary/docsum_store_document.h>
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/searchsummary/docsummary/idocsumenvironment.h>
-#include <vespa/searchsummary/docsummary/matched_elements_filter_dfw.h>
 #include <vespa/searchsummary/docsummary/resultclass.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/struct_fields_mapper.h>
@@ -29,7 +29,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
-LOG_SETUP("matched_elements_filter_test");
+LOG_SETUP("copy_dfw_test");
 
 using search::AttributeFactory;
 using search::AttributeVector;
@@ -204,7 +204,7 @@ public:
 
 StateCallback::~StateCallback() = default;
 
-class MatchedElementsFilterTest : public ::testing::Test {
+class CopyDFWTest : public ::testing::Test {
 private:
     DocsumStore                              _doc_store;
     AttributeContext                         _attr_ctx;
@@ -226,7 +226,7 @@ private:
     }
 
 public:
-    MatchedElementsFilterTest()
+    CopyDFWTest()
         : _doc_store(),
           _attr_ctx(),
           _mapper(),
@@ -235,7 +235,7 @@ public:
     {
         _mapper.setup(_attr_ctx);
     }
-    ~MatchedElementsFilterTest() override;
+    ~CopyDFWTest() override;
     std::unique_ptr<DocsumFieldWriter> make_field_writer(const std::string& input_field_name, bool filter) {
         auto elements_selector = filter ?
             SummaryElementsSelector::select_by_match(input_field_name, _mapper.get_struct_fields(input_field_name)) :
@@ -243,7 +243,7 @@ public:
         _elements_selector = std::make_unique<SummaryElementsSelector>(std::move(elements_selector));
         _matching_elements_fields = std::make_unique<MatchingElementsFields>();
         _elements_selector->maybe_apply_to(*_matching_elements_fields);
-        return MatchedElementsFilterDFW::create(input_field_name);
+        return std::make_unique<CopyDFW>(input_field_name);
     }
     void expect_filtered(const std::string& input_field_name, const ElementVector& matching_elements, const std::string& exp_slime_as_json) {
         Slime act = run_field_writer(input_field_name, matching_elements, true);
@@ -260,9 +260,9 @@ public:
     void set_skip_set_values() { _doc_store.set_skip_set_values(); }
  };
 
-MatchedElementsFilterTest::~MatchedElementsFilterTest() = default;
+CopyDFWTest::~CopyDFWTest() = default;
 
-TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
+TEST_F(CopyDFWTest, filters_elements_in_array_field_value)
 {
     expect_filtered("array", {}, "null");
     expect_filtered("array", {0}, "[{'name':'a','weight':3}]");
@@ -278,7 +278,7 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_array_field_value)
     expect_filtered("array", {}, "null");
 }
 
-TEST_F(MatchedElementsFilterTest, all_elements_in_array_field_value)
+TEST_F(CopyDFWTest, all_elements_in_array_field_value)
 {
     expect_all("array",
                "[{'name':'a','weight':3},"
@@ -286,7 +286,7 @@ TEST_F(MatchedElementsFilterTest, all_elements_in_array_field_value)
                "{'name':'c','weight':7}]");
 }
 
-TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_array_field_value)
+TEST_F(CopyDFWTest, matching_elements_fields_is_setup_for_array_field_value)
 {
     auto writer = make_field_writer("array", true);
     EXPECT_TRUE(fields().has_field("array.weight"));
@@ -294,7 +294,7 @@ TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_array_fi
     EXPECT_EQ("array", fields().enclosing_field("array.weight"));
 }
 
-TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
+TEST_F(CopyDFWTest, filters_elements_in_map_field_value)
 {
     expect_filtered("map", {}, "null");
     expect_filtered("map", {0}, "[{'key':'a','value':{'name':'a','weight':3}}]");
@@ -310,7 +310,7 @@ TEST_F(MatchedElementsFilterTest, filters_elements_in_map_field_value)
     expect_filtered("map", {}, "null");
 }
 
-TEST_F(MatchedElementsFilterTest, all_elements_in_map_field_value)
+TEST_F(CopyDFWTest, all_elements_in_map_field_value)
 {
     expect_all("map",
                "[{'key':'a','value':{'name':'a','weight':3}},"
@@ -318,7 +318,7 @@ TEST_F(MatchedElementsFilterTest, all_elements_in_map_field_value)
                "{'key':'c','value':{'name':'c','weight':7}}]");
 }
 
-TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
+TEST_F(CopyDFWTest, filter_elements_in_weighed_set_field_value)
 {
     expect_filtered("wset", {}, "null");
     expect_filtered("wset", {0}, "[{'item':'a','weight':13}]");
@@ -332,12 +332,12 @@ TEST_F(MatchedElementsFilterTest, filter_elements_in_weighed_set_field_value)
     expect_filtered("wset", {}, "null");
 }
 
-TEST_F(MatchedElementsFilterTest, all_elements_in_weighed_set_field_value)
+TEST_F(CopyDFWTest, all_elements_in_weighed_set_field_value)
 {
     expect_all("wset", "[{'item':'a','weight':13},{'item':'b','weight':15},{'item':'c','weight':17}]");
 }
 
-TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_field_value)
+TEST_F(CopyDFWTest, matching_elements_fields_is_setup_for_map_field_value)
 {
     {
         auto writer = make_field_writer("map", true);
@@ -359,7 +359,7 @@ TEST_F(MatchedElementsFilterTest, matching_elements_fields_is_setup_for_map_fiel
     }
 }
 
-TEST_F(MatchedElementsFilterTest, field_writer_is_not_generated_as_it_depends_on_data_from_document_store)
+TEST_F(CopyDFWTest, field_writer_is_not_generated_as_it_depends_on_data_from_document_store)
 {
     auto writer = make_field_writer("array", true);
     EXPECT_FALSE(writer->isGenerated());
