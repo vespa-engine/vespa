@@ -159,9 +159,13 @@ public class StateVersionTracker {
         clusterStateHistory.add(currentClusterState, currentTimeMs);
     }
 
-    void handleUpdatedHostInfo(final NodeInfo node, final HostInfo hostInfo) {
+    void handleUpdatedHostInfo(NodeInfo node, HostInfo hostInfo, boolean aggregateErrorReports) {
         // TODO the wiring here isn't unit tested. Need mockable integration points.
-        clusterStateView.handleUpdatedHostInfo(node, hostInfo);
+        clusterStateView.handleUpdatedHostInfo(node, hostInfo, aggregateErrorReports);
+    }
+
+    void handleUpdatedHostInfo(NodeInfo node, HostInfo hostInfo) {
+        handleUpdatedHostInfo(node, hostInfo, false);
     }
 
     boolean bucketSpaceMergeCompletionStateHasChanged() {

@@ -4,6 +4,9 @@ package com.yahoo.vespa.clustercontroller.core;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Builder used for testing only.
+ */
 public class ContentNodeStatsBuilder {
 
     private final int nodeIndex;

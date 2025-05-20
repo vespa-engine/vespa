@@ -62,12 +62,14 @@ public class ContentClusterStats implements Iterable<ContentNodeStats> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ContentClusterStats that = (ContentClusterStats) o;
-        return Objects.equals(mapToNodeStats, that.mapToNodeStats);
+        return documentCountTotal == that.documentCountTotal &&
+                bytesTotal == that.bytesTotal &&
+                Objects.equals(mapToNodeStats, that.mapToNodeStats);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mapToNodeStats);
+        return Objects.hash(documentCountTotal, bytesTotal, mapToNodeStats);
     }
 
     @Override

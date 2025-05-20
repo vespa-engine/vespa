@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.hostinfo;
 
+import com.yahoo.vespa.clustercontroller.core.ContentNodeErrorStats;
 import com.yahoo.vespa.clustercontroller.core.ContentNodeStats;
 import com.yahoo.vespa.clustercontroller.core.ContentClusterStats;
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author hakonhall
@@ -52,6 +55,19 @@ public class StorageNodeStatsBridgeTest {
             assertBucketSpaceStats(0, 0, stats.getBucketSpaces().get("default"));
         }
         assertFalse(itr.hasNext());
+    }
+
+    @Test
+    void error_stats_are_extracted_from_distributor_host_info() throws IOException {
+        String data = getJsonString();
+        HostInfo hostInfo = HostInfo.createHostInfo(data);
+        var clusterErrorStats = StorageNodeStatsBridge.generateErrors(1, hostInfo.getDistributor());
+        assertThat(clusterErrorStats.getAllNodeErrorStats().size(), is(1));
+        var nodeErrors = clusterErrorStats.getNodeErrorStats(1);
+        assertNotNull(nodeErrors);
+        assertThat(nodeErrors.getStatsFromDistributors().size(), is(1));
+        assertThat(nodeErrors.getStatsFromDistributors().get(1),
+                   is(new ContentNodeErrorStats.DistributorErrorStats(10000, 2500)));
     }
 
     private static void assertBucketSpaceStats(long expBucketsTotal, long expBucketsPending, ContentNodeStats.BucketSpaceStats stats) {

@@ -64,6 +64,9 @@ public class StorageNode {
     @JsonProperty("bucket-spaces")
     private List<BucketSpaceStats> bucketSpacesStats = new ArrayList<>();
 
+    @JsonProperty("response-stats")
+    private ResponseStats responseStats = ResponseStats.makeEmpty();
+
     @JsonCreator
     public StorageNode(@JsonProperty("node-index") Integer index) {
         this.index = index;
@@ -80,5 +83,9 @@ public class StorageNode {
 
     public List<BucketSpaceStats> getBucketSpacesStats() {
         return bucketSpacesStats;
+    }
+
+    public ResponseStats getResponseStats() {
+        return responseStats;
     }
 }

@@ -136,6 +136,8 @@ public class FleetControllerOptions {
 
     private final boolean includeDistributionConfigInClusterStateBundles;
 
+    private final boolean aggregateContentNodeErrorReportsFromDistributors;
+
     // TODO less impressive length...!
     private FleetControllerOptions(String clusterName,
                                    int fleetControllerIndex,
@@ -179,7 +181,8 @@ public class FleetControllerOptions {
                                    double clusterFeedBlockNoiseLevel,
                                    int maxNumberOfGroupsAllowedToBeDown,
                                    Function<FleetControllerContext, DatabaseFactory> dbFactoryFn,
-                                   boolean includeDistributionConfigInClusterStateBundles) {
+                                   boolean includeDistributionConfigInClusterStateBundles,
+                                   boolean aggregateContentNodeErrorReportsFromDistributors) {
         this.clusterName = clusterName;
         this.fleetControllerIndex = fleetControllerIndex;
         this.fleetControllerCount = fleetControllerCount;
@@ -223,6 +226,7 @@ public class FleetControllerOptions {
         this.maxNumberOfGroupsAllowedToBeDown = maxNumberOfGroupsAllowedToBeDown;
         this.dbFactoryFn = dbFactoryFn;
         this.includeDistributionConfigInClusterStateBundles = includeDistributionConfigInClusterStateBundles;
+        this.aggregateContentNodeErrorReportsFromDistributors = aggregateContentNodeErrorReportsFromDistributors;
     }
 
     public Duration getMaxDeferredTaskVersionWaitTime() {
@@ -405,6 +409,10 @@ public class FleetControllerOptions {
         return this.includeDistributionConfigInClusterStateBundles;
     }
 
+    public boolean aggregateContentNodeErrorReportsFromDistributors() {
+        return this.aggregateContentNodeErrorReportsFromDistributors;
+    }
+
     public static class Builder {
 
         private String clusterName;
@@ -450,6 +458,7 @@ public class FleetControllerOptions {
         private int maxNumberOfGroupsAllowedToBeDown = 1;
         private Function<FleetControllerContext, DatabaseFactory> dbFactoryFn = ZooKeeperDatabaseFactory::new;
         private boolean includeDistributionConfigInClusterStateBundles = false;
+        private boolean aggregateContentNodeErrorReportsFromDistributors = false;
 
         public Builder(String clusterName, Collection<ConfiguredNode> nodes) {
             this.clusterName = clusterName;
@@ -712,6 +721,11 @@ public class FleetControllerOptions {
             return this;
         }
 
+        public Builder setAggregateContentNodeErrorReportsFromDistributors(boolean shouldAggregate) {
+            this.aggregateContentNodeErrorReportsFromDistributors = shouldAggregate;
+            return this;
+        }
+
         public FleetControllerOptions build() {
             return new FleetControllerOptions(clusterName,
                                               index,
@@ -755,7 +769,8 @@ public class FleetControllerOptions {
                                               clusterFeedBlockNoiseLevel,
                                               maxNumberOfGroupsAllowedToBeDown,
                                               dbFactoryFn,
-                                              includeDistributionConfigInClusterStateBundles);
+                                              includeDistributionConfigInClusterStateBundles,
+                                              aggregateContentNodeErrorReportsFromDistributors);
         }
 
         public static Builder copy(FleetControllerOptions options) {
@@ -803,6 +818,7 @@ public class FleetControllerOptions {
             builder.maxNumberOfGroupsAllowedToBeDown = options.maxNumberOfGroupsAllowedToBeDown;
             builder.dbFactoryFn = options.dbFactoryFn;
             builder.includeDistributionConfigInClusterStateBundles = options.includeDistributionConfigInClusterStateBundles;
+            builder.aggregateContentNodeErrorReportsFromDistributors = options.aggregateContentNodeErrorReportsFromDistributors;
 
             return builder;
         }
