@@ -1279,15 +1279,13 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    void default_topKprobability_controlled_by_properties() {
+    void default_topK_probability_controlled_by_properties() {
         verifyTopKProbabilityPropertiesControl();
     }
 
-    private void verifySummaryDecodeType(String policy, DispatchConfig.SummaryDecodePolicy.Enum expected) {
+    @Test
+    public void verify_summary_decoding() {
         TestProperties properties = new TestProperties();
-        if (policy != null) {
-            properties.setSummaryDecodePolicy(policy);
-        }
         VespaModel model = createEnd2EndOneNode(properties);
 
         ContentCluster cc = model.getContentClusters().get("storage");
@@ -1295,16 +1293,7 @@ public class ContentClusterTest extends ContentBaseTest {
         cc.getSearch().getConfig(builder);
 
         DispatchConfig cfg = new DispatchConfig(builder);
-        assertEquals(expected, cfg.summaryDecodePolicy());
-    }
-
-    @Test
-    public void verify_summary_decoding_controlled_by_properties() {
-        verifySummaryDecodeType(null, DispatchConfig.SummaryDecodePolicy.ONDEMAND);
-        verifySummaryDecodeType("illegal-config", DispatchConfig.SummaryDecodePolicy.ONDEMAND);
-        verifySummaryDecodeType("eager", DispatchConfig.SummaryDecodePolicy.EAGER);
-        verifySummaryDecodeType("ondemand", DispatchConfig.SummaryDecodePolicy.ONDEMAND);
-        verifySummaryDecodeType("on-demand", DispatchConfig.SummaryDecodePolicy.ONDEMAND);
+        assertEquals(DispatchConfig.SummaryDecodePolicy.ONDEMAND, cfg.summaryDecodePolicy());
     }
 
     private long resolveMaxTLSSize(Optional<Flavor> flavor) throws Exception {
