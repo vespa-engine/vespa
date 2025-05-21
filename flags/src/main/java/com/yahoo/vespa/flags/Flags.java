@@ -55,13 +55,6 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
-    public static final UnboundStringFlag SUMMARY_DECODE_POLICY = defineStringFlag(
-            "summary-decode-policy", "on-demand",
-            List.of("hmusum"), "2023-03-30", "2025-06-01",
-            "Select summary decoding policy, valid values are eager and on-demand/ondemand.",
-            "Takes effect at redeployment (requires restart)",
-            INSTANCE_ID);
-
     public static final UnboundStringFlag SEARCH_MMAP_ADVISE = defineStringFlag(
             "search-mmap-advise", "SEQUENTIAL",
             List.of("vekterli"), "2025-02-14", "2025-06-01",
@@ -239,15 +232,6 @@ public class Flags {
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
-
-    public static final UnboundIntFlag PERSISTENCE_THREAD_MAX_FEED_OP_BATCH_SIZE = defineIntFlag(
-            "persistence-thread-max-feed-op-batch-size", 64,
-            List.of("vekterli"), "2024-04-12", "2025-12-01",
-            "Maximum number of enqueued feed operations (put/update/remove) bound "+
-            "towards the same bucket that can be async dispatched as part of the " +
-            "same write-locked batch by a persistence thread.",
-            "Takes effect at redeployment",
-            INSTANCE_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
