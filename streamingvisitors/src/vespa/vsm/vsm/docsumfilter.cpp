@@ -201,7 +201,7 @@ DocsumStoreFieldValue
 DocsumStoreVsmDocument::get_field_value(const std::string& field_name) const
 {
     if (_document != nullptr) {
-        auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
+        auto entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
             assert((uint32_t) entry_idx < _result_class.getNumEntries());
             return _docsum_filter.get_summary_field(entry_idx, _vsm_document);
@@ -225,7 +225,7 @@ void
 DocsumStoreVsmDocument::insert_summary_field(const std::string& field_name, ElementIds selected_elements, vespalib::slime::Inserter& inserter, IStringFieldConverter* converter) const
 {
     if (_document != nullptr) {
-        auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
+        auto entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
             assert((uint32_t) entry_idx < _result_class.getNumEntries());
             _docsum_filter.insert_summary_field(entry_idx, _vsm_document, selected_elements, inserter, converter);
@@ -251,7 +251,7 @@ DocsumStoreVsmDocument::insert_juniper_field(const std::string& field_name, Elem
     auto field_value = get_field_value(field_name);
     if (field_value) {
         FieldModifier* modifier = nullptr;
-        auto entry_idx = _result_class.getIndexFromName(field_name.c_str());
+        auto entry_idx = _result_class.getIndexFromName(field_name);
         if (entry_idx >= 0) {
             assert((uint32_t) entry_idx < _result_class.getNumEntries());
             if (is_struct_or_multivalue_field_type(*field_value->getDataType())) {

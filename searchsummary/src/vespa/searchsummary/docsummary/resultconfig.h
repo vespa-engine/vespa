@@ -118,7 +118,7 @@ public:
      * @param name name of result class to add.
      * @param classID id of result class to add.
      **/
-    ResultClass *addResultClass(const char *name, uint32_t classID);
+    ResultClass *addResultClass(const std::string& name, uint32_t classID);
 
     /*
      * Set default result class id.
@@ -162,7 +162,7 @@ public:
      * @return true(success)/false(fail)
      * @param configId reference on server
      **/
-    bool readConfig(const SummaryConfig &cfg, const char *configId,
+    bool readConfig(const SummaryConfig &cfg, const std::string& configId,
                     IDocsumFieldWriterFactory& docsum_field_writer_factory,
                     const StructFieldsMapper& struct_fields_mapper);
 };
