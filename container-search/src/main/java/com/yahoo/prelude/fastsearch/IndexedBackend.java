@@ -78,7 +78,7 @@ public class IndexedBackend extends VespaBackend {
                 // contain the data we need. If we fetch the default
                 // one we end up fetching docsums twice unless the
                 // user also requested the default one.
-                fill(result, query.getPresentation().getSummary()); // ARGH
+                fill(result, PartialSummaryHandler.resolveSummaryClass(result)); // ARGH
             }
             return result;
         } catch (TimeoutException e) {

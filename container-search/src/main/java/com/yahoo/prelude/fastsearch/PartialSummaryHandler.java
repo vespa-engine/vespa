@@ -3,6 +3,7 @@ package com.yahoo.prelude.fastsearch;
 
 import com.yahoo.prelude.fastsearch.DocumentDatabase;
 import com.yahoo.prelude.fastsearch.DocsumDefinitionSet;
+import com.yahoo.processing.IllegalInputException;
 
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -235,7 +236,26 @@ public class PartialSummaryHandler {
             // it's enough to have the string we would use as fillMarker
             return syntheticName(summaryFields);
         } else {
-            return summaryClass;
+            // this is always enough:
+            return ALL_FIELDS_CLASS;
+        }
+    }
+
+    public void validateSummaryClass(String summaryClass, Query query) {
+        if (isFieldListRequest(summaryClass)) {
+            var fieldSet = parseFieldList(summaryClass);
+            if (fieldSet.isEmpty()) {
+                throw new IllegalArgumentException("invalid fill() with empty fieldset=" + summaryClass);
+            }
+        } else if (isPresentationRequest(summaryClass)) {
+            String wantClass = query.getPresentation().getSummary();
+            if (! ensureKnownClass(wantClass)) {
+                throw new IllegalInputException("invalid presentation.summary=" + wantClass);
+            }
+        } else if (summaryClass != null) {
+            if (! ensureKnownClass(summaryClass)) {
+                throw new IllegalArgumentException("invalid fill() with summaryClass=" + summaryClass);
+            }
         }
     }
 
@@ -258,26 +278,30 @@ public class PartialSummaryHandler {
     }
 
     private Set<String> getFieldsForClass(String wantClass) {
-        if (! knownSummaryClasses.containsKey(wantClass)) {
-            if (docsumDefinitions != null && docsumDefinitions.hasDocsum(wantClass)) {
-                var docsumDef = docsumDefinitions.getDocsum(wantClass);
-                var fields = docsumDef.fields().keySet();
-                var fieldSet = Set.copyOf(fields);
-                knownSummaryClasses.put(wantClass, fieldSet);
-            }
-            else if (isFieldListRequest(wantClass)) {
-                var fieldSet = parseFieldList(wantClass);
-                knownSummaryClasses.put(wantClass, fieldSet);
-            } else {
-                throw new IllegalArgumentException("unknown summary class: " + wantClass);
-            }
+        if (! ensureKnownClass(wantClass)) {
+            throw new IllegalArgumentException("unknown summary class: " + wantClass);
         }
-        var set = knownSummaryClasses.get(wantClass);
-        if (set != null) {
-            return set;
-        } else {
-            return Set.of();
+        return knownSummaryClasses.get(wantClass);
+    }
+
+    private boolean ensureKnownClass(String wantClass) {
+        if (knownSummaryClasses.containsKey(wantClass))
+            return true;
+        if (isFieldListRequest(wantClass)) {
+            var fieldSet = parseFieldList(wantClass);
+            if (fieldSet.isEmpty())
+                return false;
+            knownSummaryClasses.put(wantClass, fieldSet);
+            return true;
         }
+        if (docsumDefinitions != null && docsumDefinitions.hasDocsum(wantClass)) {
+            var docsumDef = docsumDefinitions.getDocsum(wantClass);
+            var fields = docsumDef.fields().keySet();
+            var fieldSet = Set.copyOf(fields);
+            knownSummaryClasses.put(wantClass, fieldSet);
+            return true;
+        }
+        return false;
     }
 
     private boolean needsMoreFill(Set<String> alreadyFilled) {
