@@ -8,7 +8,7 @@
 
 namespace search::docsummary {
 
-ResultClass::ResultClass(const char *name)
+ResultClass::ResultClass(const std::string& name)
     : _name(name),
       _entries(),
       _nameMap(),
@@ -24,14 +24,14 @@ ResultClass::ResultClass(const char *name)
 ResultClass::~ResultClass() = default;
 
 int
-ResultClass::getIndexFromName(const char* name) const
+ResultClass::getIndexFromName(const std::string& name) const
 {
     auto found = _nameMap.find(name);
     return (found != _nameMap.end()) ? found->second : -1;
 }
 
 bool
-ResultClass::addConfigEntry(const char *name,
+ResultClass::addConfigEntry(const std::string& name,
                             const SummaryElementsSelector& elements_selector,
                             std::unique_ptr<DocsumFieldWriter> docsum_field_writer)
 {
@@ -56,7 +56,7 @@ ResultClass::addConfigEntry(const char *name,
 }
 
 bool
-ResultClass::addConfigEntry(const char *name)
+ResultClass::addConfigEntry(const std::string& name)
 {
     return addConfigEntry(name, SummaryElementsSelector::select_all(), {});
 }

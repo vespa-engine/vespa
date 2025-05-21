@@ -60,7 +60,7 @@ public:
      *
      * @param name the name of this result class.
      **/
-    explicit ResultClass(const char *name);
+    explicit ResultClass(const std::string& name);
     ResultClass(const ResultClass &) = delete;
     ResultClass& operator=(const ResultClass &) = delete;
 
@@ -89,10 +89,10 @@ public:
      * @param name the name of the field to add.
      * @param docsum_field_writer field writer for writing field
      **/
-    bool addConfigEntry(const char *name,
+    bool addConfigEntry(const std::string& name,
                         const SummaryElementsSelector& summary_elements_selector,
                         std::unique_ptr<DocsumFieldWriter> docsum_field_writer);
-    bool addConfigEntry(const char *name);
+    bool addConfigEntry(const std::string& name);
 
     /**
      * Obtain the field index from the field name. The field index may
@@ -107,7 +107,7 @@ public:
      *
      * @return field index or -1 if not found
      **/
-    int getIndexFromName(const char* name) const;
+    int getIndexFromName(const std::string& name) const;
 
     /**
      * Obtain config entry by field index.

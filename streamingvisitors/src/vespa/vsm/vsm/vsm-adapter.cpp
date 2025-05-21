@@ -159,9 +159,9 @@ VSMAdapter::configure(const VSMConfigSnapshot & snapshot)
     // init result config
     auto resCfg = std::make_unique<ResultConfig>();
     std::unique_ptr<IQueryTermFilterFactory> query_term_filter_factory = std::make_unique<QueryTermFilterFactory>(*_fieldsCfg.get(), *vsmSummary);
-    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summary.get()->usev8geopositions, *docsumTools, *query_term_filter_factory, *_fieldsCfg.get());
+    auto docsum_field_writer_factory = std::make_unique<DocsumFieldWriterFactory>(summary->usev8geopositions, *docsumTools, *query_term_filter_factory, *_fieldsCfg.get());
     auto struct_fields_mapper = make_struct_fields_mapper(*_fieldsCfg.get());
-    if ( !resCfg->readConfig(*summary.get(), _configId.c_str(), *docsum_field_writer_factory, *struct_fields_mapper)) {
+    if ( !resCfg->readConfig(*summary, _configId, *docsum_field_writer_factory, *struct_fields_mapper)) {
         throw std::runtime_error("(re-)configuration of VSM (docsum tools) failed due to bad summary config");
     }
     docsum_field_writer_factory.reset();

@@ -87,7 +87,7 @@ DocumentIdDFWTest::DocumentIdDFWTest()
       _document_type(_repo->getDocumentType(doc_type_name))
 {
     auto* cfg = _result_config->addResultClass("default", 0);
-    cfg->addConfigEntry(_field_name.c_str());
+    cfg->addConfigEntry(_field_name);
 }
 
 
