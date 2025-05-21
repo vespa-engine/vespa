@@ -29,13 +29,11 @@ public class StorageCluster extends TreeConfigProducer<StorageNode>
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilderBase<StorageCluster> {
         @Override
         protected StorageCluster doBuild(DeployState deployState, TreeConfigProducer<AnyConfigProducer> ancestor, Element producerSpec) {
-            final ModelElement clusterElem = new ModelElement(producerSpec);
-            final ContentCluster cluster = (ContentCluster)ancestor;
-
+            ModelElement clusterElem = new ModelElement(producerSpec);
             return new StorageCluster(ancestor,
                                       ContentCluster.getClusterId(clusterElem),
-                                      new FileStorProducer.Builder().build(deployState.getProperties(), cluster, clusterElem),
-                                      new StorServerProducer.Builder().build(deployState.getProperties(), clusterElem),
+                                      new FileStorProducer.Builder().build(deployState.getProperties(), clusterElem),
+                                      new StorServerProducer.Builder().build(clusterElem),
                                       new StorVisitorProducer.Builder().build(clusterElem),
                                       new PersistenceProducer.Builder().build(clusterElem));
         }
