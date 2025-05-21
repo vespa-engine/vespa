@@ -1,8 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include <vespa/fnet/frt/values.h>
 #include <vespa/fnet/databuffer.h>
 #include <vespa/fnet/info.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stash.h>
 
 using vespalib::Stash;
@@ -78,83 +79,78 @@ void fillValues(FRT_Values &values) {
 }
 
 void checkValues(FRT_Values &values) {
-    ASSERT_EQUAL(31u, values.GetNumValues());
-    ASSERT_EQUAL(std::string("bBBBhHHHiIIIlLLLfFFFdDDDsssSxxX"), values.GetTypeString());
+    ASSERT_EQ(31u, values.GetNumValues());
+    ASSERT_EQ(std::string("bBBBhHHHiIIIlLLLfFFFdDDDsssSxxX"), values.GetTypeString());
     size_t idx = 0;
-    EXPECT_EQUAL(int8_arr[0], values[idx++]._intval8);
+    EXPECT_EQ(int8_arr[0], values[idx++]._intval8);
     for (size_t i = 0; i < 3; ++i, ++idx) {
-        ASSERT_EQUAL(3u, values[idx]._int8_array._len);
+        ASSERT_EQ(3u, values[idx]._int8_array._len);
         for (size_t j = 0; j < 3; ++j) {
-            EXPECT_EQUAL(int8_arr[j], values[idx]._int8_array._pt[j]);
+            EXPECT_EQ(int8_arr[j], values[idx]._int8_array._pt[j]);
         }
     }
-    EXPECT_EQUAL(int16_arr[0], values[idx++]._intval16);
+    EXPECT_EQ(int16_arr[0], values[idx++]._intval16);
     for (size_t i = 0; i < 3; ++i, ++idx) {
-        ASSERT_EQUAL(3u, values[idx]._int16_array._len);
+        ASSERT_EQ(3u, values[idx]._int16_array._len);
         for (size_t j = 0; j < 3; ++j) {
-            EXPECT_EQUAL(int16_arr[j], values[idx]._int16_array._pt[j]);
+            EXPECT_EQ(int16_arr[j], values[idx]._int16_array._pt[j]);
         }
     }
-    EXPECT_EQUAL(int32_arr[0], values[idx++]._intval32);
+    EXPECT_EQ(int32_arr[0], values[idx++]._intval32);
     for (size_t i = 0; i < 3; ++i, ++idx) {
-        ASSERT_EQUAL(3u, values[idx]._int32_array._len);
+        ASSERT_EQ(3u, values[idx]._int32_array._len);
         for (size_t j = 0; j < 3; ++j) {
-            EXPECT_EQUAL(int32_arr[j], values[idx]._int32_array._pt[j]);
+            EXPECT_EQ(int32_arr[j], values[idx]._int32_array._pt[j]);
         }
     }
-    EXPECT_EQUAL(int64_arr[0], values[idx++]._intval64);
+    EXPECT_EQ(int64_arr[0], values[idx++]._intval64);
     for (size_t i = 0; i < 3; ++i, ++idx) {
-        ASSERT_EQUAL(3u, values[idx]._int64_array._len);
+        ASSERT_EQ(3u, values[idx]._int64_array._len);
         for (size_t j = 0; j < 3; ++j) {
-            EXPECT_EQUAL(int64_arr[j], values[idx]._int64_array._pt[j]);
+            EXPECT_EQ(int64_arr[j], values[idx]._int64_array._pt[j]);
         }
     }
-    EXPECT_EQUAL(float_arr[0], values[idx++]._float);
+    EXPECT_EQ(float_arr[0], values[idx++]._float);
     for (size_t i = 0; i < 3; ++i, ++idx) {
-        ASSERT_EQUAL(3u, values[idx]._float_array._len);
+        ASSERT_EQ(3u, values[idx]._float_array._len);
         for (size_t j = 0; j < 3; ++j) {
-            EXPECT_EQUAL(float_arr[j], values[idx]._float_array._pt[j]);
+            EXPECT_EQ(float_arr[j], values[idx]._float_array._pt[j]);
         }
     }
-    EXPECT_EQUAL(double_arr[0], values[idx++]._double);
+    EXPECT_EQ(double_arr[0], values[idx++]._double);
     for (size_t i = 0; i < 3; ++i, ++idx) {
-        ASSERT_EQUAL(3u, values[idx]._double_array._len);
+        ASSERT_EQ(3u, values[idx]._double_array._len);
         for (size_t j = 0; j < 3; ++j) {
-            EXPECT_EQUAL(double_arr[j], values[idx]._double_array._pt[j]);
+            EXPECT_EQ(double_arr[j], values[idx]._double_array._pt[j]);
         }
     }
-    EXPECT_EQUAL(std::string("foo"), std::string(values[idx]._string._str,
-                                                 values[idx]._string._len));
+    EXPECT_EQ(std::string("foo"), std::string(values[idx]._string._str, values[idx]._string._len));
     ++idx;
-    EXPECT_EQUAL(std::string("bar"), std::string(values[idx]._string._str,
-                                                 values[idx]._string._len));
+    EXPECT_EQ(std::string("bar"), std::string(values[idx]._string._str, values[idx]._string._len));
     ++idx;
-    EXPECT_EQUAL(std::string("baz"), std::string(values[idx]._string._str,
-                                                 values[idx]._string._len));
+    EXPECT_EQ(std::string("baz"), std::string(values[idx]._string._str, values[idx]._string._len));
     ++idx;
-    ASSERT_EQUAL(3u, values[idx]._string_array._len);
-    EXPECT_EQUAL(std::string("foo"), std::string(values[idx]._string_array._pt[0]._str,
-                                                 values[idx]._string_array._pt[0]._len));
-    EXPECT_EQUAL(std::string("bar"), std::string(values[idx]._string_array._pt[1]._str,
-                                                 values[idx]._string_array._pt[1]._len));
-    EXPECT_EQUAL(std::string("baz"), std::string(values[idx]._string_array._pt[2]._str,
-                                                 values[idx]._string_array._pt[2]._len));
+    ASSERT_EQ(3u, values[idx]._string_array._len);
+    EXPECT_EQ(std::string("foo"), std::string(values[idx]._string_array._pt[0]._str,
+                                              values[idx]._string_array._pt[0]._len));
+    EXPECT_EQ(std::string("bar"), std::string(values[idx]._string_array._pt[1]._str,
+                                              values[idx]._string_array._pt[1]._len));
+    EXPECT_EQ(std::string("baz"), std::string(values[idx]._string_array._pt[2]._str,
+                                              values[idx]._string_array._pt[2]._len));
     ++idx;
-    EXPECT_EQUAL(std::string("foo"), std::string(values[idx]._data._buf,
-                                                 values[idx]._data._len));
+    EXPECT_EQ(std::string("foo"), std::string(values[idx]._data._buf, values[idx]._data._len));
     ++idx;
-    EXPECT_EQUAL(std::string("bar"), std::string(values[idx]._data._buf,
-                                                 values[idx]._data._len));
+    EXPECT_EQ(std::string("bar"), std::string(values[idx]._data._buf, values[idx]._data._len));
     ++idx;
-    ASSERT_EQUAL(3u, values[idx]._data_array._len);
-    EXPECT_EQUAL(std::string("foo"), std::string(values[idx]._data_array._pt[0]._buf,
-                                                 values[idx]._data_array._pt[0]._len));
-    EXPECT_EQUAL(std::string("bar"), std::string(values[idx]._data_array._pt[1]._buf,
-                                                 values[idx]._data_array._pt[1]._len));
-    EXPECT_EQUAL(std::string("baz"), std::string(values[idx]._data_array._pt[2]._buf,
-                                                 values[idx]._data_array._pt[2]._len));
+    ASSERT_EQ(3u, values[idx]._data_array._len);
+    EXPECT_EQ(std::string("foo"), std::string(values[idx]._data_array._pt[0]._buf,
+                                              values[idx]._data_array._pt[0]._len));
+    EXPECT_EQ(std::string("bar"), std::string(values[idx]._data_array._pt[1]._buf,
+                                              values[idx]._data_array._pt[1]._len));
+    EXPECT_EQ(std::string("baz"), std::string(values[idx]._data_array._pt[2]._buf,
+                                              values[idx]._data_array._pt[2]._len));
     ++idx;
-    EXPECT_EQUAL(31u, idx);
+    EXPECT_EQ(31u, idx);
 }
 
 void checkValues(FRT_Values &v1, FRT_Values &v2) {
@@ -164,39 +160,50 @@ void checkValues(FRT_Values &v1, FRT_Values &v2) {
     EXPECT_TRUE(v2.Equals(&v1));
 }
 
-TEST_FF("set and get", Stash(), FRT_Values(f1)) {
+TEST(ValuesTest, set_and_get) {
+    Stash f1;
+    FRT_Values f2(f1);
     fillValues(f2);
     checkValues(f2);
 }
 
-TEST_FFFF("encode/decode big endian", Stash(), FRT_Values(f1),
-         FNET_DataBuffer(), FRT_Values(f1))
+TEST(ValuesTest, encode_and_decode_big_endian)
 {
+    Stash f1;
+    FRT_Values f2(f1);
+    FNET_DataBuffer f3;
+    FRT_Values f4(f1);
     fillValues(f2);
     f2.EncodeBig(&f3);
-    EXPECT_EQUAL(f2.GetLength(), f3.GetDataLen());
+    EXPECT_EQ(f2.GetLength(), f3.GetDataLen());
     EXPECT_TRUE(f4.DecodeBig(&f3, f3.GetDataLen()));
     checkValues(f2, f4);
 }
 
-TEST_FFFF("encode/decode host endian", Stash(), FRT_Values(f1),
-          FNET_DataBuffer(), FRT_Values(f1))
+TEST(ValuesTest, encode_and_decode_host_endian)
 {
+    Stash f1;
+    FRT_Values f2(f1);
+    FNET_DataBuffer f3;
+    FRT_Values f4(f1);
     fillValues(f2);
     f2.EncodeCopy(&f3);
-    EXPECT_EQUAL(f2.GetLength(), f3.GetDataLen());
+    EXPECT_EQ(f2.GetLength(), f3.GetDataLen());
     EXPECT_TRUE(f4.DecodeCopy(&f3, f3.GetDataLen()));
     checkValues(f2, f4);
 }
 
-TEST_FFFF("decode little if host is little", Stash(), FRT_Values(f1),
-          FNET_DataBuffer(), FRT_Values(f1))
+TEST(ValuesTest, decode_little_if_host_is_little)
 {
+    Stash f1;
+    FRT_Values f2(f1);
+    FNET_DataBuffer f3;
+    FRT_Values f4(f1);
     if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE) {
         fprintf(stderr, "little endian detected...\n");
         fillValues(f2);
         f2.EncodeCopy(&f3);
-        EXPECT_EQUAL(f2.GetLength(), f3.GetDataLen());
+        EXPECT_EQ(f2.GetLength(), f3.GetDataLen());
         EXPECT_TRUE(f4.DecodeLittle(&f3, f3.GetDataLen()));
         checkValues(f2, f4);
     } else {
@@ -204,9 +211,11 @@ TEST_FFFF("decode little if host is little", Stash(), FRT_Values(f1),
     }
 }
 
-TEST_FF("print values", Stash(), FRT_Values(f1)) {
+TEST(ValuesTest, print_values) {
+    Stash f1;
+    FRT_Values f2(f1);
     fillValues(f2);
     f2.Print();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
