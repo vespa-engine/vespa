@@ -11,11 +11,11 @@ import (
 const throttlerWeight = 0.7
 
 type Throttler interface {
-	// Sent notifies the the throttler that a document has been sent.
+	// Sent notifies the throttler that a document has been sent.
 	Sent()
 	// Success notifies the throttler that document operation succeeded.
 	Success()
-	// Throttled notifies the throttler that a throttling event occured while count documents were in-flight.
+	// Throttled notifies the throttler that a throttling event occurred while count documents were in-flight.
 	Throttled(count int64)
 	// TargetInflight returns the ideal number of documents to have in-flight now.
 	TargetInflight() int64

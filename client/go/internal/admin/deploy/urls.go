@@ -25,7 +25,7 @@ func makeConfigsourceUrl(opts *Options) string {
 }
 
 func makeConfigsourceUrls(opts *Options) []string {
-	var results = make([]string, 0, 3)
+	results := make([]string, 0, 3)
 	if opts.ServerHost == "" {
 		home := vespa.FindHome()
 		backticks := osutil.BackTicksForwardStderr
