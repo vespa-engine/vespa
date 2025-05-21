@@ -20,7 +20,11 @@ public class CorsResponseFilter extends AbstractResource implements SecurityResp
 
     @Inject
     public CorsResponseFilter(CorsFilterConfig config) {
-        this.cors = CorsLogic.forAllowedOrigins(config.allowedUrls());
+        if (!config.accessControlHeaders().isEmpty()) {
+            this.cors = CorsLogic.forAllowedOriginsWithHeaders(config.allowedUrls(), config.accessControlHeaders());
+        } else {
+            this.cors = CorsLogic.forAllowedOrigins(config.allowedUrls());
+        }
     }
 
     @Override
