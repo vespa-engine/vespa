@@ -16,13 +16,13 @@ import (
 func setup(t *testing.T) string {
 	tt := t.TempDir()
 	tmpDir, _ := filepath.EvalSymlinks(tt)
-	err := os.MkdirAll(tmpDir+"/a", 0o755)
+	err := os.MkdirAll(tmpDir+"/a", 0755)
 	assert.Nil(t, err)
 	err = os.MkdirAll(tmpDir+"/a/bad", 0)
 	assert.Nil(t, err)
-	err = os.WriteFile(tmpDir+"/a/f1", []byte{10}, 0o644)
+	err = os.WriteFile(tmpDir+"/a/f1", []byte{10}, 0644)
 	assert.Nil(t, err)
-	err = os.WriteFile(tmpDir+"/a/f2", []byte{10}, 0o111)
+	err = os.WriteFile(tmpDir+"/a/f2", []byte{10}, 0111)
 	assert.Nil(t, err)
 	return tmpDir
 }
@@ -51,32 +51,32 @@ func testFixSpec(t *testing.T, spec FixSpec) {
 	info, err := os.Stat(tmpDir + "/a")
 	assert.Nil(t, err)
 	assert.Equal(t, true, info.IsDir())
-	assert.Equal(t, 0o755, int(info.Mode())&0o777)
+	assert.Equal(t, 0755, int(info.Mode())&0777)
 
 	info, err = os.Stat(tmpDir + "/b")
 	assert.Nil(t, err)
 	assert.Equal(t, true, info.IsDir())
-	assert.Equal(t, 0o755, int(info.Mode())&0o777)
+	assert.Equal(t, 0755, int(info.Mode())&0777)
 
 	info, err = os.Stat(tmpDir + "/a/bad")
 	assert.Nil(t, err)
 	assert.Equal(t, true, info.IsDir())
-	assert.Equal(t, 0o755, int(info.Mode())&0o777)
+	assert.Equal(t, 0755, int(info.Mode())&0777)
 
 	info, err = os.Stat(tmpDir + "/a/bad/ok")
 	assert.Nil(t, err)
 	assert.Equal(t, true, info.IsDir())
-	assert.Equal(t, 0o755, int(info.Mode())&0o777)
+	assert.Equal(t, 0755, int(info.Mode())&0777)
 
 	info, err = os.Stat(tmpDir + "/a/f1")
 	assert.Nil(t, err)
 	assert.Equal(t, false, info.IsDir())
-	assert.Equal(t, 0o644, int(info.Mode())&0o777)
+	assert.Equal(t, 0644, int(info.Mode())&0777)
 
 	info, err = os.Stat(tmpDir + "/a/f2")
 	assert.Nil(t, err)
 	assert.Equal(t, false, info.IsDir())
-	assert.Equal(t, 0o644, int(info.Mode())&0o777)
+	assert.Equal(t, 0644, int(info.Mode())&0777)
 }
 
 func TestSimpleFixes(t *testing.T) {
@@ -85,7 +85,8 @@ func TestSimpleFixes(t *testing.T) {
 
 func TestSuperUserOnly(t *testing.T) {
 	trace.AdjustVerbosity(0)
-	groupId := -1
+	var userId int = -1
+	var groupId int = -1
 	if os.Getuid() != 0 {
 		trace.Trace("skip TestSuperUserOnly, uid != 0")
 		return
@@ -101,7 +102,6 @@ func TestSuperUserOnly(t *testing.T) {
 		trace.Trace("skip TestSuperUserOnly, user nobody was not found")
 		return
 	}
-	var userId int
 	userId, err = strconv.Atoi(u.Uid)
 	if err != nil || userId < 1 {
 		trace.Trace("skip TestSuperUserOnly, user ID of nobody was not found")

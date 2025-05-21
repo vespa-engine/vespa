@@ -38,7 +38,7 @@ const (
 )
 
 func TestQuoteFunc(t *testing.T) {
-	buf := make([]byte, 3)
+	var buf []byte = make([]byte, 3)
 	buf[0] = 'a'
 	buf[2] = 'z'
 	for i := range 256 {

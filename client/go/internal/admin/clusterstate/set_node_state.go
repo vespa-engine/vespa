@@ -33,7 +33,9 @@ that is currently down can not be forced into retired state, but can be forced i
 )
 
 func NewSetNodeStateCmd() *cobra.Command {
-	var curOptions Options
+	var (
+		curOptions Options
+	)
 	cmd := &cobra.Command{
 		Use:     usageSetNodeState,
 		Short:   "vespa-set-node-state [Options] <Wanted State> [Description]",
@@ -42,9 +44,9 @@ func NewSetNodeStateCmd() *cobra.Command {
 		Args: func(cmd *cobra.Command, args []string) error {
 			switch {
 			case len(args) < 1:
-				return fmt.Errorf("missing <Wanted State>")
+				return fmt.Errorf("Missing <Wanted State>")
 			case len(args) > 2:
-				return fmt.Errorf("too many arguments, maximum is 2")
+				return fmt.Errorf("Too many arguments, maximum is 2")
 			}
 			_, err := knownState(args[0])
 			return err

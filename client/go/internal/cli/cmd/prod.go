@@ -213,7 +213,7 @@ func writeWithBackup(stdout io.Writer, pkg vespa.ApplicationPackage, filename, c
 		}
 	}
 	fmt.Fprintf(stdout, "Writing %s\n", color.GreenString(dst))
-	return os.WriteFile(dst, []byte(contents), 0o644)
+	return os.WriteFile(dst, []byte(contents), 0644)
 }
 
 func updateRegions(cli *CLI, stdin *bufio.Reader, deploymentXML xml.Deployment, system vespa.System) (xml.Deployment, error) {
@@ -315,9 +315,9 @@ func promptNodeCount(cli *CLI, stdin *bufio.Reader, clusterID string, nodeCount 
 	fmt.Fprintf(cli.Stdout, "Documentation: %s\n", color.GreenString("https://docs.vespa.ai/en/reference/services"))
 	fmt.Fprintf(cli.Stdout, "Example: %s\nExample: %s\n\n", color.YellowString("4"), color.YellowString("[2,8]"))
 	validator := func(input string) error {
-		minNodeCount, _, err := xml.ParseNodeCount(input)
-		if minNodeCount < 2 {
-			return errHint(fmt.Errorf("at least 2 nodes are required for all clusters in a production environment, got %d", minNodeCount), "See https://cloud.vespa.ai/en/production-deployment")
+		min, _, err := xml.ParseNodeCount(input)
+		if min < 2 {
+			return errHint(fmt.Errorf("at least 2 nodes are required for all clusters in a production environment, got %d", min), "See https://docs.vespa.ai/en/cloud/production-deployment.html")
 		}
 		return err
 	}

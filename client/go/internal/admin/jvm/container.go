@@ -44,7 +44,7 @@ func (cb *containerBase) ConfigId() string {
 
 func keysOfMap(m map[string]string) []string {
 	keys := make([]string, 0, len(m))
-	for k := range m {
+	for k, _ := range m {
 		keys = append(keys, k)
 	}
 	return keys

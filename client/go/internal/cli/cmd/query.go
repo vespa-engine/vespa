@@ -7,7 +7,6 @@ package cmd
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -172,16 +171,15 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 	response, err := service.Do(hReq, deadline+time.Second) // Slightly longer than query timeout
 	if err != nil {
 		// Hint for timeout exception in cloud
-		var netErr net.Error
-		if errors.As(err, &netErr) && netErr.Timeout() && target.IsCloud() {
+		if err, ok := err.(net.Error); ok && err.Timeout() && target.IsCloud() {
 			return errHint(err, "No nodes are responsive", "Check application status in the console")
 		}
 		return fmt.Errorf("request failed: %w", err)
 	}
 	defer response.Body.Close()
 
-	if response.StatusCode == http.StatusOK {
-		output := cli.Stdout
+	if response.StatusCode == 200 {
+		var output io.Writer = cli.Stdout
 		if opts.profile {
 			profileFile, err := os.Create(opts.profileFile)
 			if err != nil {
@@ -196,7 +194,7 @@ func query(cli *CLI, arguments []string, opts *queryOptions, waiter *Waiter) err
 		}
 	} else if response.StatusCode/100 == 4 {
 		err := fmt.Errorf("invalid query: %s\n%s", response.Status, ioutil.ReaderToJSON(response.Body))
-		if response.StatusCode == http.StatusForbidden && authMethod == "token" {
+		if response.StatusCode == 403 && authMethod == "token" {
 			return errHint(err, "Make sure the VESPA_CLI_DATA_PLANE_TOKEN environment variable is set to a valid token")
 		}
 		return err
@@ -233,7 +231,7 @@ func printResponseBody(body io.Reader, options printOptions, output io.Writer) e
 		writingLine := false
 		for {
 			event, err := dec.Decode()
-			if errors.Is(err, io.EOF) {
+			if err == io.EOF {
 				break
 			} else if err != nil {
 				return err

@@ -3,11 +3,10 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"os"
-
 	"github.com/spf13/cobra"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/tracedoctor"
+	"os"
 )
 
 type inspectProfileOptions struct {

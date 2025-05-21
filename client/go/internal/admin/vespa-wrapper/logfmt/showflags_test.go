@@ -5,11 +5,10 @@
 package logfmt
 
 import (
-	"strings"
-	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"strings"
+	"testing"
 )
 
 func TestShowFlags(t *testing.T) {

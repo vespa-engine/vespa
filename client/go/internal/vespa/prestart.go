@@ -26,8 +26,8 @@ func RunPreStart() error {
 	fixSpec := osutil.FixSpec{
 		UserId:   vespaUid,
 		GroupId:  vespaGid,
-		DirMode:  0o755,
-		FileMode: 0o644,
+		DirMode:  0755,
+		FileMode: 0644,
 	}
 	fixSpec.FixDir("logs")
 	fixSpec.FixDir("logs/vespa")

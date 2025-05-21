@@ -3,10 +3,9 @@
 package tracedoctor
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/vespa-engine/vespa/client/go/internal/vespa/slime"
+	"testing"
 )
 
 func addExampleTiming(obj slime.Value) {
