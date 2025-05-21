@@ -14,6 +14,7 @@ struct IMoveOperationLimiter {
     virtual ~IMoveOperationLimiter() = default;
     virtual std::shared_ptr<vespalib::IDestructorCallback> beginOperation() = 0;
     virtual size_t numPending() const = 0;
+    virtual bool drain() noexcept = 0; // returns true if already drained, blocks job and returns false if not drained.
 };
 
 }

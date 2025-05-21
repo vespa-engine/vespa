@@ -224,10 +224,8 @@ CompactionJob::run()
     }
 
     if (_scanItr && !_scanItr->valid()) {
-        bool numPending = getLimiter().numPending();
-        if (numPending > 0) {
-            // We must wait to decide if a rescan is necessary until all operations are completed
-            return false;
+        if (!getLimiter().drain()) {
+            return true; // job blocked until all outstanding operations have completed
         }
         LidUsageStats stats = _handler->getLidStatus();
         if (shouldRestartScanDocuments(stats)) {

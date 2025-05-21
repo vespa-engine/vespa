@@ -28,6 +28,7 @@ private:
     IBlockableMaintenanceJob *_job;
     uint32_t                  _outstandingOps;
     const uint32_t            _maxOutstandingOps;
+    bool                      _draining;
 
     bool isOnLimit(const LockGuard &guard) const;
     void endOperation();
@@ -41,6 +42,7 @@ public:
     bool hasPending() const { return numPending() > 0;}
     std::shared_ptr<vespalib::IDestructorCallback> beginOperation() override;
     size_t numPending() const override;
+    bool drain() noexcept override;
 };
 
 }

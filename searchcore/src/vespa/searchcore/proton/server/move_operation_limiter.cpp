@@ -30,6 +30,12 @@ MoveOperationLimiter::endOperation()
     if (_job && considerUnblock) {
         _job->unBlock(BlockedReason::OUTSTANDING_OPS);
     }
+    if (_draining && _outstandingOps == 0) {
+        _draining = false;
+        if (_job != nullptr) {
+            _job->unBlock(BlockedReason::DRAIN_OUTSTANDING_OPS);
+        }
+    }
 }
 
 MoveOperationLimiter::MoveOperationLimiter(IBlockableMaintenanceJob *job,
@@ -37,7 +43,8 @@ MoveOperationLimiter::MoveOperationLimiter(IBlockableMaintenanceJob *job,
     : _mutex(),
       _job(job),
       _outstandingOps(0),
-      _maxOutstandingOps(maxOutstandingOps)
+      _maxOutstandingOps(maxOutstandingOps),
+      _draining(false)
 {
 }
 
@@ -55,6 +62,22 @@ MoveOperationLimiter::numPending() const
 {
     LockGuard guard(_mutex);
     return _outstandingOps;
+}
+
+bool
+MoveOperationLimiter::drain() noexcept
+{
+    LockGuard guard(_mutex);
+    if (_outstandingOps == 0) {
+        return true;
+    }
+    if (!_draining) {
+        _draining = true;
+        if (_job != nullptr) {
+            _job->setBlocked(BlockedReason::DRAIN_OUTSTANDING_OPS);
+        }
+    }
+    return false;
 }
 
 std::shared_ptr<vespalib::IDestructorCallback>
