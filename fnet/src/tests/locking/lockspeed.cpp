@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+
 #include "dummy.h"
+#include <vespa/vespalib/gtest/gtest.h>
 #include <chrono>
 #include <condition_variable>
 
@@ -17,7 +18,7 @@ public:
     void unlock() { _lock.clear(std::memory_order_release); }
 };
 
-TEST("lock speed") {
+TEST(LockSpeedTest, lock_speed) {
   using clock = std::chrono::steady_clock;
   using ms_double = std::chrono::duration<double, std::milli>;
 
@@ -231,4 +232,4 @@ TEST("lock speed") {
   //---------------------------------------------------------------------------
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
