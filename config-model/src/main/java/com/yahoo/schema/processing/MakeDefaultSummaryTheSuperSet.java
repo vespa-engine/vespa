@@ -40,7 +40,6 @@ public class MakeDefaultSummaryTheSuperSet extends Processor {
             if (defaultSummary.getSummaryField(summaryField.getName()) != null) continue;
             if (summaryField.getTransform() == SummaryTransform.ATTRIBUTE) continue;
             if (summaryField.getTransform() == SummaryTransform.ATTRIBUTECOMBINER) continue;
-            if (summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER) continue;
             if (summaryField.getTransform() == SummaryTransform.TOKENS) continue;
             if (summaryField.getTransform() == SummaryTransform.ATTRIBUTE_TOKENS) continue;
 

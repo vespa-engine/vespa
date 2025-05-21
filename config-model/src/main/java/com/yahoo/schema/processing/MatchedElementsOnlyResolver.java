@@ -10,6 +10,7 @@ import com.yahoo.schema.Schema;
 import com.yahoo.schema.document.ComplexAttributeFieldUtils;
 import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
+import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
@@ -34,7 +35,7 @@ public class MatchedElementsOnlyResolver extends Processor {
         for (var entry : schema.getSummaries().entrySet()) {
             var summary = entry.getValue();
             for (var field : summary.getSummaryFields().values()) {
-                if (field.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER) {
+                if (field.getElementsSelector().getSelect() == SummaryElementsSelector.Select.BY_MATCH) {
                     processSummaryField(summary, field, validate);
                 }
             }
@@ -45,13 +46,7 @@ public class MatchedElementsOnlyResolver extends Processor {
         var sourceField = schema.getField(field.getSingleSource());
         if (sourceField != null) {
             if (isSupportedComplexField(sourceField)) {
-                if (isComplexFieldWithOnlyStructFieldAttributes(sourceField)) {
-                    field.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
-                }
             } else if (isSupportedMultiValueField(sourceField)) {
-                if (sourceField.doesAttributing()) {
-                    field.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
-                }
             } else if (validate) {
                 fail(summary, field, "'matched-elements-only' is not supported for this field type. " +
                         "Supported field types are: array of primitive, weighted set of primitive, " +

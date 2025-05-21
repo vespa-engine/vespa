@@ -155,8 +155,6 @@ public class SummaryClass extends Derived {
                 summaryField.getTransform() == SummaryTransform.DISTANCE ||
                 summaryField.getTransform() == SummaryTransform.GEOPOS ||
                 summaryField.getTransform() == SummaryTransform.POSITIONS ||
-                summaryField.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER ||
-                summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER ||
                 summaryField.getTransform() == SummaryTransform.TOKENS ||
                 summaryField.getTransform() == SummaryTransform.ATTRIBUTE_TOKENS)
         {
@@ -184,9 +182,19 @@ public class SummaryClass extends Derived {
      * We need this because some model information is shared through configs instead of model - see usage
      */
     static boolean commandRequiringQuery(String commandName) {
-        return (commandName.equals("dynamicteaser") ||
-                commandName.equals(SummaryTransform.MATCHED_ELEMENTS_FILTER.getName()) ||
-                commandName.equals(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName()));
+        return (commandName.equals("dynamicteaser"));
+    }
+
+    /**
+     * An elements selector that needs the query to perform its computations.
+     * We need this because some model information is shared through configs instead of model - see usage
+     */
+    static boolean elementsSelectorRequiringQuery(SummaryElementsSelector elementsSelector) {
+        return switch (elementsSelector.getSelect()) {
+            case ALL -> false;
+            case BY_MATCH -> true;
+            case BY_SUMMARY_FEATURE -> true;
+        };
     }
 
 }

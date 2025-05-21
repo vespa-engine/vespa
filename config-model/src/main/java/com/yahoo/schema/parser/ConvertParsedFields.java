@@ -245,9 +245,7 @@ public class ConvertParsedFields {
         if (parsed.getMatchedElementsOnly()) {
             summary.setElementsSelector(SummaryElementsSelector.selectByMatch());
         }
-        if (parsed.getMatchedElementsOnly()) {
-            transform = SummaryTransform.MATCHED_ELEMENTS_FILTER;
-        } else if (parsed.getDynamic()) {
+        if (parsed.getDynamic()) {
             transform = SummaryTransform.DYNAMICTEASER;
         } else if (parsed.getTokens()) {
             transform = SummaryTransform.TOKENS;
