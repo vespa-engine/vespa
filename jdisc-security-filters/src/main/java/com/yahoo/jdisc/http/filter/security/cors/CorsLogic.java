@@ -81,10 +81,8 @@ class CorsLogic {
         TreeMap<String, String> headers = new TreeMap<>();
         if (originMatches(requestOriginHeader))
             headers.put(ALLOW_ORIGIN_HEADER, requestOriginHeader);
-        headers.putAll(DEFAULT_ACCESS_CONTROL_HEADERS);
-        if (accessControlHeaders != null) {
-            headers.putAll(accessControlHeaders);
-        }
+
+        headers.putAll(accessControlHeaders);
         return headers;
     }
 
