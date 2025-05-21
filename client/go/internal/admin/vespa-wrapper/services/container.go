@@ -14,7 +14,7 @@ const minRequiredMemoryInBytes = 3 * 1024 * 1024 * 1024
 
 func VerifyAvailableMemory() {
 	if os.Getenv("VESPA_IGNORE_NOT_ENOUGH_MEMORY") != "" {
-		fmt.Fprintln(os.Stderr, "Memory check disabled via VESPA_DISABLE_MEMORY_CHECK.")
+		fmt.Fprintln(os.Stderr, "Memory check disabled via VESPA_IGNORE_NOT_ENOUGH_MEMORY.")
 		return
 	}
 
