@@ -348,7 +348,6 @@ public class SearchHandler extends LoggingRequestHandler {
         Result result = execution.search(query);
 
         ensureQuerySet(result, query);
-        // TODO: consider fill(result, "[presentation]") instead
         execution.fill(result);
 
         traceExecutionTimes(query, result);
