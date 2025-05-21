@@ -10,7 +10,6 @@
 #include "geoposdfw.h"
 #include "idocsumenvironment.h"
 #include "dynamicteaserdfw.h"
-#include "matched_elements_filter_dfw.h"
 #include "positionsdfw.h"
 #include "rankfeaturesdfw.h"
 #include "summaryfeaturesdfw.h"
@@ -143,8 +142,7 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
         }
     } else if (command == command::matched_elements_filter) {
         const std::string& source_field = source.empty() ? field_name : source;
-        fieldWriter = MatchedElementsFilterDFW::create(source_field);
-        throw_if_nullptr(fieldWriter, command);
+        fieldWriter = std::make_unique<CopyDFW>(source_field);
     } else if (command == command::documentid) {
         fieldWriter = std::make_unique<DocumentIdDFW>();
     } else {
