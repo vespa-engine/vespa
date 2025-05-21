@@ -104,7 +104,7 @@ func NewClient(httpClient httputil.Client, options Options) (*Client, error) {
 
 func (a *Client) getDeviceFlowConfig() (flowConfig, error) {
 	url := a.options.SystemURL + "/auth0/v1/device-flow-config"
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return flowConfig{}, err
 	}
@@ -212,7 +212,7 @@ func (a *Client) RemoveCredentials() error {
 
 func writeConfig(provider auth0Provider, path string) error {
 	dir := filepath.Dir(path)
-	if err := os.MkdirAll(dir, 0o700); err != nil {
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
 	version := 1
@@ -227,7 +227,7 @@ func writeConfig(provider auth0Provider, path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, jsonConfig, 0o600)
+	return os.WriteFile(path, jsonConfig, 0600)
 }
 
 func readConfig(path string) (auth0Provider, error) {

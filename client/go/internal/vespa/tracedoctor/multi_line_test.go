@@ -1,9 +1,8 @@
 package tracedoctor
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func TestSplitText(t *testing.T) {

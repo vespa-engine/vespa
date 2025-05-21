@@ -6,7 +6,6 @@ package deploy
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -88,9 +87,8 @@ func runCurl(cmd *curl.Command, stdout io.Writer) error {
 	trace.Trace("running curl:", cmd.String())
 	err := cmd.Run(stdout, os.Stderr)
 	if err != nil {
-		var ee *exec.ExitError
-		if errors.As(err, &ee) {
-			if ee.ExitCode() == 7 {
+		if ee, ok := err.(*exec.ExitError); ok {
+			if ee.ProcessState.ExitCode() == 7 {
 				return fmt.Errorf("HTTP request failed. Could not connect to %s", cmd.URLPrefix())
 			}
 		}

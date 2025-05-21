@@ -13,8 +13,8 @@ func makeFixSpec() osutil.FixSpec {
 	return osutil.FixSpec{
 		UserId:   vespaUid,
 		GroupId:  vespaGid,
-		DirMode:  0o755,
-		FileMode: 0o644,
+		DirMode:  0755,
+		FileMode: 0644,
 	}
 }
 

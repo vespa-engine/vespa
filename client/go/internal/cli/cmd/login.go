@@ -70,10 +70,11 @@ This command runs a browser-based authentication flow for the Vespa Cloud contro
 				res, err = a.Authenticator.Wait(ctx, state)
 				return err
 			})
+
 			if err != nil {
 				switch err.Error() {
 				case "600":
-					return errHint(fmt.Errorf("your organization require SSO for Vespa Cloud access"),
+					return errHint(fmt.Errorf("Your organization require SSO for Vespa Cloud access"),
 						"Please login by entering your email in the email address field")
 				default:
 					return fmt.Errorf("login error: %w", err)

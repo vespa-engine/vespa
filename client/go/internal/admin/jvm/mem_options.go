@@ -11,7 +11,7 @@ import (
 )
 
 func (opts *Options) getOrSetHeapSize(prefix string, heapSize AmountOfMemory) AmountOfMemory {
-	missing := true
+	var missing bool = true
 	for _, x := range opts.jvmArgs {
 		if strings.HasPrefix(x, prefix) {
 			x = strings.TrimPrefix(x, prefix)
@@ -39,7 +39,7 @@ func (opts *Options) CurMaxHeapSize(fallback AmountOfMemory) AmountOfMemory {
 
 func (opts *Options) AddDefaultHeapSizeArgs(minHeapSize, maxHeapSize AmountOfMemory) {
 	trace.Trace("AddDefaultHeapSizeArgs", minHeapSize, "/", maxHeapSize)
-	opts.CurMinHeapSize(minHeapSize)
+	minHeapSize = opts.CurMinHeapSize(minHeapSize)
 	maxHeapSize = opts.CurMaxHeapSize(maxHeapSize)
 	opts.MaybeAddHugepages(maxHeapSize)
 }

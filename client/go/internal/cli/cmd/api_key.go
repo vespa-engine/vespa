@@ -76,13 +76,13 @@ func doApiKey(cli *CLI, overwriteKey bool, args []string) error {
 		err := fmt.Errorf("refusing to overwrite '%s'", apiKeyFile)
 		cli.printErr(err, "Use -f to overwrite it")
 		printPublicKey(system, apiKeyFile, app.Tenant)
-		return CLIError{error: err, quiet: true}
+		return ErrCLI{error: err, quiet: true}
 	}
 	apiKey, err := vespa.CreateAPIKey()
 	if err != nil {
 		return fmt.Errorf("could not create api key: %w", err)
 	}
-	if err := os.WriteFile(apiKeyFile, apiKey, 0o600); err == nil {
+	if err := os.WriteFile(apiKeyFile, apiKey, 0600); err == nil {
 		cli.printSuccess("Developer private key for tenant ", color.CyanString(app.Tenant), " written to '", apiKeyFile, "'")
 		return printPublicKey(system, apiKeyFile, app.Tenant)
 	} else {
