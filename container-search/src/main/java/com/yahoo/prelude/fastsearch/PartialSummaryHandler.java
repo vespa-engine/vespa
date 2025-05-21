@@ -43,8 +43,7 @@ public class PartialSummaryHandler {
 
     /** resolve summary class to use when none provided */
     public static String resolveSummaryClass(Result result) {
-        // TODO: consider using "[presentation]" instead
-        return result.getQuery().getPresentation().getSummary();
+        return PRESENTATION;
     }
 
     private final DocsumDefinitionSet docsumDefinitions;

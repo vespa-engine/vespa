@@ -5,6 +5,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import com.yahoo.component.chain.dependencies.After;
+import com.yahoo.prelude.fastsearch.PartialSummaryHandler;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -40,7 +41,7 @@ public class FieldFiller extends Searcher {
     public void fill(Result result, String summaryClass, Execution execution) {
         // always fill as requested first:
         execution.fill(result, summaryClass);
-        if (summaryClass == null) {
+        if (summaryClass == null || summaryClass == PartialSummaryHandler.resolveSummaryClass(result)) {
             // would fill all needed fields already
             return;
         }
@@ -57,8 +58,8 @@ public class FieldFiller extends Searcher {
             // no more was needed:
             return;
         }
-        // fetch the requested set (using the class with all fields, confusingly named "default")
-        execution.fill(result, "default");
+        // fetch the requested set (using the class with all fields)
+        execution.fill(result, PartialSummaryHandler.ALL_FIELDS_CLASS);
     }
 
     private boolean hasAll(Set<String> requested, String summaryName, Set<String> restrict) {
