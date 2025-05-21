@@ -188,6 +188,56 @@ public class PartialSummaryHandlerTestCase {
     }
 
     @Test
+    void testFillMoreAfterPresentation() {
+        DocsumDefinitionSet set = createDocsumDefinitionSet();
+        var query = createQuery("first3");
+        var hit1 = createHit(query);
+        var hit2 = createHit(query, "default");
+        var result = createResult(query, hit1, hit2);
+        {
+            var toTest = new PartialSummaryHandler(set);
+            toTest.wantToFill(result, "[presentation]");
+            assertEquals("first3", toTest.askForSummary());
+            assertNull(toTest.askForFields());
+            assertFalse(toTest.resultAlreadyFilled());
+            assertTrue(toTest.needFill(hit1));
+            assertFalse(toTest.needFill(hit2));
+            var docsumDef = toTest.effectiveDocsumDef();
+            assertNotNull(docsumDef);
+            assertEquals(3, docsumDef.fields().size());
+            assertEquals(0, hit1.getFilled().size());
+            toTest.markFilled(hit1);
+            toTest.markFilled(hit2);
+            assertTrue(hit1.isFilled("first3"));
+            assertTrue(hit1.isFilled("[presentation]"));
+        }
+        {
+            var toTest = new PartialSummaryHandler(set);
+            toTest.wantToFill(result, "last3");
+            assertEquals("last3", toTest.askForSummary());
+            assertNull(toTest.askForFields());
+            assertFalse(toTest.resultAlreadyFilled());
+            assertTrue(toTest.needFill(hit1));
+            assertFalse(toTest.needFill(hit2));
+            var docsumDef = toTest.effectiveDocsumDef();
+            assertNotNull(docsumDef);
+            assertEquals(3, docsumDef.fields().size());
+            assertEquals(2, hit1.getFilled().size());
+            assertFalse(hit1.isFilled("last3"));
+            toTest.markFilled(hit1);
+            toTest.markFilled(hit2);
+            assertEquals(3, hit1.getFilled().size());
+            assertTrue(hit1.isFilled("last3"));
+        }
+        {
+            var toTest = new PartialSummaryHandler(set);
+            toTest.wantToFill(result, "middle2");
+            assertTrue(toTest.resultAlreadyFilled());
+        }
+    }
+
+
+    @Test
     void testInvalidUsage() {
         DocsumDefinitionSet set = createDocsumDefinitionSet();
         var query = createQuery(null);

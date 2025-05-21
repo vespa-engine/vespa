@@ -41,16 +41,25 @@ public class FieldFiller extends Searcher {
     public void fill(Result result, String summaryClass, Execution execution) {
         // always fill as requested first:
         execution.fill(result, summaryClass);
-        if (summaryClass == null || summaryClass == PartialSummaryHandler.resolveSummaryClass(result)) {
-            // would fill all needed fields already
-            return;
-        }
         Set<String> summaryFields = result.getQuery().getPresentation().getSummaryFields();
         if (summaryFields.isEmpty() || result.getQuery().properties().getBoolean(FIELD_FILLER_DISABLE)) {
             // no special handling:
             return;
         }
-        if (! summaryClass.equals(result.getQuery().getPresentation().getSummary())) {
+        String fromQuery = result.getQuery().getPresentation().getSummary();
+        if (fromQuery == null) {
+            // no special handling:
+            return;
+        }
+        if (summaryClass == PartialSummaryHandler.PRESENTATION) {
+            if (hasAll(summaryFields, fromQuery, result.getQuery().getModel().getRestrict())) {
+                return;
+            }
+            // ensure we also fetch the summary class requested in query
+            execution.fill(result, fromQuery);
+            return;
+        }
+        if (! summaryClass.equals(fromQuery)) {
             // some special (programmatic) fill, top-level SearchHandler will call fill again later
             return;
         }
