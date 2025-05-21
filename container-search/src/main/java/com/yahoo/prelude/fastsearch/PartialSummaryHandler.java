@@ -189,6 +189,14 @@ public class PartialSummaryHandler {
                 this.askForFields = fieldsFromQuery;
             }
         }
+        if (askForFields != null) {
+            var available = fieldsAlreadyFilled(resultHasFilled);
+            available.addAll(getFieldsForClass(ALL_FIELDS_CLASS));
+            askForFields.retainAll(available);
+            if (askForFields.isEmpty()) {
+                askForFields = null;
+            }
+        }
     }
 
     private void computeFillMarker() {
@@ -211,8 +219,9 @@ public class PartialSummaryHandler {
         // ensure deterministic ordering:
         var sorted = new TreeSet<String>(summaryFields);
         var buf = new StringBuilder();
+        buf.append("[f:");
         for (String field : sorted) {
-            buf.append(buf.length() == 0 ? "[f:" : ",");
+            buf.append(buf.length() == 3 ? "" : ",");
             buf.append(field);
         }
         buf.append(']');
@@ -235,7 +244,7 @@ public class PartialSummaryHandler {
             // it's enough to have the string we would use as fillMarker
             return syntheticName(summaryFields);
         } else {
-            // this is always enough:
+            // this is 'always' enough:
             return ALL_FIELDS_CLASS;
         }
     }
@@ -303,6 +312,18 @@ public class PartialSummaryHandler {
         return false;
     }
 
+    private Set<String> fieldsAlreadyFilled(Set<String> alreadyFilled) {
+        var gotFields = new HashSet<String>();
+        for (var hasSummary : alreadyFilled) {
+            if (hasSummary == PRESENTATION) continue;
+            var hasSome = getFieldsForClass(hasSummary);
+            for (String field : hasSome) {
+                gotFields.add(field);
+            }
+        }
+        return gotFields;
+    }
+
     private boolean needsMoreFill(Set<String> alreadyFilled) {
         // unfillable?
         if (alreadyFilled == null) return false;
@@ -315,13 +336,7 @@ public class PartialSummaryHandler {
         }
 
         // no, see what we have got:
-        var gotFields = new HashSet<String>();
-        for (var hasSummary : alreadyFilled) {
-            var hasSome = getFieldsForClass(hasSummary);
-            for (String field : hasSome) {
-                gotFields.add(field);
-            }
-        }
+        var gotFields = fieldsAlreadyFilled(alreadyFilled);
 
         // check if got covers all that we want:
         var wantFields = (askForFields == null ? getFieldsForClass(askForSummary) : askForFields);

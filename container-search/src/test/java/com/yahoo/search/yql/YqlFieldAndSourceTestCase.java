@@ -47,7 +47,7 @@ public class YqlFieldAndSourceTestCase {
         DocumentSourceSearcher mockBackend = new DocumentSourceSearcher();
         mockBackend.addResult(query, result);
 
-        mockBackend.addSummaryClassByCopy(DEFAULT_SUMMARY_CLASS, List.of(FIELD1, FIELD2));
+        mockBackend.addSummaryClassByCopy(DEFAULT_SUMMARY_CLASS, List.of(FIELD1, FIELD2, FIELD3));
         mockBackend.addSummaryClassByCopy(SORTABLE_ATTRIBUTES_SUMMARY_CLASS, List.of(FIELD2));
         mockBackend.addSummaryClassByCopy(THIRD_OPTION, List.of(FIELD3));
 

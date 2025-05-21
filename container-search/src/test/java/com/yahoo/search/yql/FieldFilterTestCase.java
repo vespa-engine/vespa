@@ -41,6 +41,8 @@ public class FieldFilterTestCase {
         result.hits().add(createHit("hit2", .1d, true, FIELD_A, FIELD_B, FIELD_C));
 
         DocumentSourceSearcher mockBackend = new DocumentSourceSearcher();
+        mockBackend.addSummaryClass("default", Set.of("matchfeatures", "rankfeatures", "summaryfeatures",
+                                                      FIELD_A, FIELD_B, FIELD_C));
         mockBackend.addResult(query, result);
 
         searchChain = new Chain<>(new FieldFilter(), mockBackend);
