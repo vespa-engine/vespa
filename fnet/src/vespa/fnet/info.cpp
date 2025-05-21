@@ -7,6 +7,7 @@
 LOG_SETUP(".fnet");
 
 uint32_t FNET_Info::_endian = FNET_Info::ENDIAN_UNKNOWN;
+FNET_Info global_fnet_info_object; // Global object used to call FNET_Info constructor once at program startup.
 
 FNET_Info::FNET_Info()
 {
