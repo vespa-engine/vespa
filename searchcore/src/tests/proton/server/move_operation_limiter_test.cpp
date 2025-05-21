@@ -3,30 +3,63 @@
 #include <vespa/searchcore/proton/server/i_blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/move_operation_limiter.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <ostream>
 #include <queue>
 
 using namespace proton;
+
+namespace proton {
+
+void PrintTo(IBlockableMaintenanceJob::BlockedReason reason, std::ostream* os) {
+    using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
+    switch  (reason) {
+        case BlockedReason::RESOURCE_LIMITS:
+            *os << "RESOURCE_LIMITS";
+            break;
+        case BlockedReason::FROZEN_BUCKET:
+            *os << "FROZEN_BUCKET";
+            break;
+        case BlockedReason::CLUSTER_STATE:
+            *os << "CLUSTER_STATE";
+            break;
+        case BlockedReason::OUTSTANDING_OPS:
+            *os << "OUTSTANDING_OPS";
+            break;
+        case BlockedReason::DRAIN_OUTSTANDING_OPS:
+            *os << "DRAIN_OUTSTANDING_OPS";
+            break;
+        default:
+            ;
+    }
+}
+
+}
 
 namespace move_operation_limiter_test {
 
 struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
     bool blocked;
+    BlockedReason expected_blocked_reason;
     MyBlockableMaintenanceJob()
         : IBlockableMaintenanceJob("my_job", 1s, 1s),
-          blocked(false)
+          blocked(false),
+          expected_blocked_reason(BlockedReason::OUTSTANDING_OPS)
     {}
     void setBlocked(BlockedReason reason) override {
-        ASSERT_TRUE(reason == BlockedReason::OUTSTANDING_OPS);
+        ASSERT_EQ(expected_blocked_reason, reason);
         EXPECT_FALSE(blocked);
         blocked = true;
     }
     void unBlock(BlockedReason reason) override {
-        ASSERT_TRUE(reason == BlockedReason::OUTSTANDING_OPS);
+        ASSERT_EQ(expected_blocked_reason, reason);
         EXPECT_TRUE(blocked);
         blocked = false;
     }
     bool run() override { return true; }
     void onStop() override { }
+    void set_expected_blocked_reason(BlockedReason reason) noexcept {
+        expected_blocked_reason = reason;
+    }
 };
 
 struct MoveOperationLimiterTest : public ::testing::Test {
@@ -116,6 +149,17 @@ TEST_F(MoveOperationLimiterTest, require_that_destructor_callback_has_reference_
     clearLimiter();
     endOp();
     EXPECT_FALSE(job.blocked);
+}
+
+TEST_F(MoveOperationLimiterTest, require_that_drain_works)
+{
+    job.set_expected_blocked_reason(IBlockableMaintenanceJob::BlockedReason::DRAIN_OUTSTANDING_OPS);
+    beginOp();
+    ASSERT_FALSE(limiter->drain());
+    EXPECT_TRUE(job.blocked);
+    endOp();
+    EXPECT_FALSE(job.blocked);
+    ASSERT_TRUE(limiter->drain());
 }
 
 }

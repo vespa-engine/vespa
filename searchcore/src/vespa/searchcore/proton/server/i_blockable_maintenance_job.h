@@ -15,7 +15,8 @@ public:
         RESOURCE_LIMITS = 0,
         FROZEN_BUCKET = 1,
         CLUSTER_STATE = 2,
-        OUTSTANDING_OPS = 3
+        OUTSTANDING_OPS = 3,
+        DRAIN_OUTSTANDING_OPS = 4
     };
 
     IBlockableMaintenanceJob(const std::string &name,
