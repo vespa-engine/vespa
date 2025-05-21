@@ -11,6 +11,7 @@ import org.testcontainers.utility.DockerImageName;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 
 /**
@@ -51,6 +52,6 @@ public class TritonServerContainer extends GenericContainer<TritonServerContaine
         Path modelDir = modelRepositoryPath.resolve(modelName + "/1");
         Files.createDirectories(modelDir);
         Path targetModelPath = modelDir.resolve("model.onnx");
-        Files.copy(modelFile, targetModelPath);
+        Files.copy(modelFile, targetModelPath, StandardCopyOption.REPLACE_EXISTING);
     }
 }

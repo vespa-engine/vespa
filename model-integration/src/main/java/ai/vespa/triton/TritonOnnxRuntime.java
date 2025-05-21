@@ -39,6 +39,8 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
 
     @Override
     public OnnxEvaluator evaluatorOf(String modelPath, OnnxEvaluatorOptions options) {
+        if (!client.isHealthy())
+            throw new IllegalStateException("Triton server is not healthy! (target=%s)".formatted(config.target()));
         var isExplicitControlMode = config.modelControlMode() == TritonConfig.ModelControlMode.EXPLICIT;
         if (isExplicitControlMode) copyModelToRepository(modelPath, options);
         return new TritonOnnxEvaluator(client, modelName(modelPath), isExplicitControlMode);
@@ -74,10 +76,22 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         return name.substring(0, name.lastIndexOf('.'));
     }
 
+    // Generate default config based evaluator options.
+    // These are not necessarily optimal but should closely match the effective configuration for the embedded ONNX runtime.
     private static ModelConfigOuterClass.ModelConfig generateConfigFromEvaluatorOptions(
             String modelPaths, OnnxEvaluatorOptions options) {
+        // Similar to EmbeddedOnnxRuntime.overrideOptions(), relies on Triton to fall back to CPU if GPU is not available.
+        var kind = options.gpuDeviceRequired()
+                ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_GPU
+                : (options.gpuDeviceNumber() >= 0)
+                        ? ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_AUTO
+                        : ModelConfigOuterClass.ModelInstanceGroup.Kind.KIND_CPU;
         return ModelConfigOuterClass.ModelConfig.newBuilder()
                 .setName(modelName(modelPaths))
+                .addInstanceGroup(ModelConfigOuterClass.ModelInstanceGroup.newBuilder()
+                        .setCount(1)
+                        .setKind(kind)
+                        .build())
                 .setPlatform("onnxruntime_onnx")
                 .setMaxBatchSize(0)
                 .putParameters("enable_mem_area", ModelConfigOuterClass.ModelParameter.newBuilder()
