@@ -325,6 +325,9 @@ public:
         return _error;
     }
     void comment(const std::string &text) {
+        if (text.find('#') == 0) {
+            return;
+        }
         if (_enabled) {
             Cursor &f = _arr.addObject();
             f.setString("op", "c");
@@ -391,7 +394,7 @@ struct EditLineWrapper {
                 line_out.pop_back();
             }
         } while (is_hash_bang(line_out) || is_only_whitespace(line_out));
-        if (from_script) {
+        if (from_script && line_out.find("##") != 0) {
             fprintf(stdout, "%s%s\n", prompt.c_str(), line_out.c_str());
         }
         history(my_hist, &ignore, H_ENTER, line_out.c_str());
