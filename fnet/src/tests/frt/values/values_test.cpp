@@ -187,11 +187,36 @@ void checkValues(FRT_Values &v1, FRT_Values &v2) {
     EXPECT_TRUE(v2.Equals(&v1));
 }
 
+void check_empty_values(FRT_Values& values)
+{
+    ASSERT_EQ(0, values.GetNumValues());
+}
+
+void check_empty_values(FRT_Values& v1, FRT_Values &v2)
+{
+    {
+        SCOPED_TRACE("v1");
+        check_empty_values(v1);
+    }
+    {
+        SCOPED_TRACE("v2");
+        check_empty_values(v2);
+    }
+    EXPECT_TRUE(v1.Equals(&v2));
+    EXPECT_TRUE(v2.Equals(&v1));
+}
+
 TEST(ValuesTest, set_and_get) {
     Stash f1;
     FRT_Values f2(f1);
     fillValues(f2);
     checkValues(f2);
+}
+
+TEST(ValuesTest, set_and_get_empty) {
+    Stash f1;
+    FRT_Values f2(f1);
+    check_empty_values(f2);
 }
 
 TEST(ValuesTest, encode_and_decode_big_endian)
@@ -207,6 +232,18 @@ TEST(ValuesTest, encode_and_decode_big_endian)
     checkValues(f2, f4);
 }
 
+TEST(ValuesTest, encode_and_decode_big_endian_empty)
+{
+    Stash f1;
+    FRT_Values f2(f1);
+    FNET_DataBuffer f3;
+    FRT_Values f4(f1);
+    f2.EncodeBig(&f3);
+    EXPECT_EQ(f2.GetLength(), f3.GetDataLen());
+    EXPECT_TRUE(f4.DecodeBig(&f3, f3.GetDataLen()));
+    check_empty_values(f2, f4);
+}
+
 TEST(ValuesTest, encode_and_decode_host_endian)
 {
     Stash f1;
@@ -220,6 +257,18 @@ TEST(ValuesTest, encode_and_decode_host_endian)
     checkValues(f2, f4);
 }
 
+TEST(ValuesTest, encode_and_decode_host_endian_empty)
+{
+    Stash f1;
+    FRT_Values f2(f1);
+    FNET_DataBuffer f3;
+    FRT_Values f4(f1);
+    f2.EncodeCopy(&f3);
+    EXPECT_EQ(f2.GetLength(), f3.GetDataLen());
+    EXPECT_TRUE(f4.DecodeCopy(&f3, f3.GetDataLen()));
+    check_empty_values(f2, f4);
+}
+
 TEST(ValuesTest, decode_little_if_host_is_little)
 {
     Stash f1;
@@ -227,14 +276,29 @@ TEST(ValuesTest, decode_little_if_host_is_little)
     FNET_DataBuffer f3;
     FRT_Values f4(f1);
     if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE) {
-        fprintf(stderr, "little endian detected...\n");
         fillValues(f2);
         f2.EncodeCopy(&f3);
         EXPECT_EQ(f2.GetLength(), f3.GetDataLen());
         EXPECT_TRUE(f4.DecodeLittle(&f3, f3.GetDataLen()));
         checkValues(f2, f4);
     } else {
-        fprintf(stderr, "host is not little endian, coverage will suffer...\n");
+        GTEST_SKIP() << "host is not little endian, coverage will suffer...";
+    }
+}
+
+TEST(ValuesTest, decode_little_if_host_is_little_empty)
+{
+    Stash f1;
+    FRT_Values f2(f1);
+    FNET_DataBuffer f3;
+    FRT_Values f4(f1);
+    if (FNET_Info::GetEndian() == FNET_Info::ENDIAN_LITTLE) {
+        f2.EncodeCopy(&f3);
+        EXPECT_EQ(f2.GetLength(), f3.GetDataLen());
+        EXPECT_TRUE(f4.DecodeLittle(&f3, f3.GetDataLen()));
+        check_empty_values(f2, f4);
+    } else {
+        GTEST_SKIP() << "host is not little endian, coverage will suffer...";
     }
 }
 
@@ -242,6 +306,12 @@ TEST(ValuesTest, print_values) {
     Stash f1;
     FRT_Values f2(f1);
     fillValues(f2);
+    f2.Print();
+}
+
+TEST(ValuesTest, print_values_empty) {
+    Stash f1;
+    FRT_Values f2(f1);
     f2.Print();
 }
 
