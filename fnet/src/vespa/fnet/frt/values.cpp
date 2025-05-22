@@ -16,13 +16,17 @@ constexpr size_t SHARED_LIMIT = 1024;
 namespace fnet {
 
 char * copyString(char *dst, const char *src, size_t len) {
-    memcpy(dst, src, len);
+    if (len != 0) [[likely]] {
+        memcpy(dst, src, len);
+    }
     dst[len] = '\0';
     return dst;
 }
 
 char * copyData(char *dst, const void *src, size_t len) {
-    memcpy(dst, src, len);
+    if (len != 0) [[likely]] {
+        memcpy(dst, src, len);
+    }
     return dst;
 }
 
@@ -159,7 +163,9 @@ FRT_Values::AddInt8Array(const uint8_t *array, uint32_t len) {
     _values[_numValues]._int8_array._pt = pt;
     _values[_numValues]._int8_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT8_ARRAY;
-    memcpy(pt, array, len * sizeof(uint8_t));
+    if (len != 0) [[likely]] {
+        memcpy(pt, array, len * sizeof(uint8_t));
+    }
 }
 
 uint16_t *
@@ -179,7 +185,9 @@ FRT_Values::AddInt16Array(const uint16_t *array, uint32_t len) {
     _values[_numValues]._int16_array._pt = pt;
     _values[_numValues]._int16_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT16_ARRAY;
-    memcpy(pt, array, len * sizeof(uint16_t));
+    if (len != 0) [[likely]] {
+        memcpy(pt, array, len * sizeof(uint16_t));
+    }
 }
 
 uint32_t *
@@ -199,7 +207,9 @@ FRT_Values::AddInt32Array(const uint32_t *array, uint32_t len) {
     _values[_numValues]._int32_array._pt = pt;
     _values[_numValues]._int32_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT32_ARRAY;
-    memcpy(pt, array, len * sizeof(uint32_t));
+    if (len != 0) [[likely]] {
+        memcpy(pt, array, len * sizeof(uint32_t));
+    }
 }
 
 uint64_t *
@@ -219,7 +229,9 @@ FRT_Values::AddInt64Array(const uint64_t *array, uint32_t len) {
     _values[_numValues]._int64_array._pt = pt;
     _values[_numValues]._int64_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_INT64_ARRAY;
-    memcpy(pt, array, len * sizeof(uint64_t));
+    if (len != 0) [[likely]] {
+        memcpy(pt, array, len * sizeof(uint64_t));
+    }
 }
 
 float *
@@ -239,7 +251,9 @@ FRT_Values::AddFloatArray(const float *array, uint32_t len) {
     _values[_numValues]._float_array._pt = pt;
     _values[_numValues]._float_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_FLOAT_ARRAY;
-    memcpy(pt, array, len * sizeof(float));
+    if (len != 0) [[likely]] {
+        memcpy(pt, array, len * sizeof(float));
+    }
 }
 
 double *
@@ -259,7 +273,9 @@ FRT_Values::AddDoubleArray(const double *array, uint32_t len) {
     _values[_numValues]._double_array._pt = pt;
     _values[_numValues]._double_array._len = len;
     _typeString[_numValues++] = FRT_VALUE_DOUBLE_ARRAY;
-    memcpy(pt, array, len * sizeof(double));
+    if (len != 0) [[likely]] {
+        memcpy(pt, array, len * sizeof(double));
+    }
 }
 
 void
