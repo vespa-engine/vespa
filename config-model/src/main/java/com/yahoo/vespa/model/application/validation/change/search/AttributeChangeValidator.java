@@ -148,7 +148,7 @@ public class AttributeChangeValidator {
         }
     }
 
-    private static <T> void validateAttributeHnswIndexSetting(ClusterSpec.Id id,
+    private <T> void validateAttributeHnswIndexSetting(ClusterSpec.Id id,
                                                               Attribute currentAttr, Attribute nextAttr,
                                                               Function<HnswIndexParams, T> settingValueProvider,
                                                               String setting,
@@ -157,6 +157,9 @@ public class AttributeChangeValidator {
         T nextValue = settingValueProvider.apply(nextAttr.hnswIndexParams().get());
         if (!Objects.equals(currentValue, nextValue)) {
             String message = String.format("change hnsw index property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
+            deployState.validationOverrides().invalid(ValidationId.hnswSettingsChange,
+                                                      message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time",
+                                                      deployState.now());
             result.add(new VespaRestartAction(id, new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
         }
     }
