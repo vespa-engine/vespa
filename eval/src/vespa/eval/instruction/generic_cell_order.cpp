@@ -63,8 +63,7 @@ GenericCellOrder::make_instruction(const ValueType &result_type,
 {
     assert(result_type == input_type.map());
     auto &param = stash.create<ValueType>(result_type);
-    auto op = typify_invoke<1,TypifyCellMeta,SelectGenericCellOrderOp>(input_type.cell_meta().not_scalar(),
-                                                                       cell_order);
+    auto op = typify_invoke<1,TypifyCellMeta,SelectGenericCellOrderOp>(input_type.cell_meta(), cell_order);
     return {op, wrap_param<ValueType>(param)};
 }
 
