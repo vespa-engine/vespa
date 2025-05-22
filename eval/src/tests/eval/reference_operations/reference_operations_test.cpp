@@ -162,6 +162,48 @@ TEST(ReferenceCellCastTest, cell_cast_works) {
 
 //-----------------------------------------------------------------------------
 
+TEST(ReferenceCellOrderTest, plain_number) {
+    auto input = spec("5");
+    auto out_max = ReferenceOperations::cell_order(input, CellOrder::MAX);
+    auto out_min = ReferenceOperations::cell_order(input, CellOrder::MIN);
+    auto expect_min = spec("0");
+    auto expect_max = spec("0");
+    EXPECT_EQ(out_max, expect_max);
+    EXPECT_EQ(out_min, expect_min);
+}
+
+TEST(ReferenceCellOrderTest, vector_with_decay) {
+    auto input = spec("tensor<int8>(x[3]):[2,1,3]");
+    auto out_max = ReferenceOperations::cell_order(input, CellOrder::MAX);
+    auto out_min = ReferenceOperations::cell_order(input, CellOrder::MIN);
+    auto expect_max = spec("tensor<float>(x[3]):[1,2,0]");
+    auto expect_min = spec("tensor<float>(x[3]):[1,0,2]");
+    EXPECT_EQ(out_max, expect_max);
+    EXPECT_EQ(out_min, expect_min);
+}
+
+TEST(ReferenceCellOrderTest, map_with_decay) {
+    auto input = spec("tensor<int8>(x{}):{a:2,b:1,c:3}");
+    auto out_max = ReferenceOperations::cell_order(input, CellOrder::MAX);
+    auto out_min = ReferenceOperations::cell_order(input, CellOrder::MIN);
+    auto expect_max = spec("tensor<float>(x{}):{a:1,b:2,c:0}");
+    auto expect_min = spec("tensor<float>(x{}):{a:1,b:0,c:2}");
+    EXPECT_EQ(out_max, expect_max);
+    EXPECT_EQ(out_min, expect_min);
+}
+
+TEST(ReferenceCellOrderTest, mixed_with_decay) {
+    auto input = spec("tensor<int8>(x{},y[2]):{a:[2,4],b:[1,6],c:[3,5]}");
+    auto out_max = ReferenceOperations::cell_order(input, CellOrder::MAX);
+    auto out_min = ReferenceOperations::cell_order(input, CellOrder::MIN);
+    auto expect_max = spec("tensor<float>(x{},y[2]):{a:[4,2],b:[5,0],c:[3,1]}");
+    auto expect_min = spec("tensor<float>(x{},y[2]):{a:[1,3],b:[0,5],c:[2,4]}");
+    EXPECT_EQ(out_max, expect_max);
+    EXPECT_EQ(out_min, expect_min);
+}
+
+//-----------------------------------------------------------------------------
+
 TEST(ReferenceCreateTest, simple_create_works) {
     auto a = TensorSpec("double").add({}, 1.5);
     auto b = TensorSpec("tensor(z[2])").add({{"z",0}}, 2.0).add({{"z",1}}, 3.0);
@@ -291,6 +333,44 @@ TEST(ReferenceMapSubspacesTest, cast_cells_without_internal_decay) {
                };
     auto output = ReferenceOperations::map_subspaces(input, fun);
     auto expect = spec("tensor<bfloat16>(x{},y[3]):{foo:[1,2,3],bar:[4,5,6]}");
+    EXPECT_EQ(output, expect);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ReferenceFilterSubspacesTest, filter_numbers_no_decay) {
+    auto input = spec("tensor<int8>(x{}):{a:1,b:2,c:3,d:4,e:5,f:6}");
+    auto fun = [&](const TensorSpec &num) {
+        EXPECT_EQ(num.type(), "double");
+        bool keep = num.as_double() > 4.0;
+        return TensorSpec("double").add({}, keep ? 1.0 : 0.0);
+    };
+    auto output = ReferenceOperations::filter_subspaces(input, fun);
+    auto expect = spec("tensor<int8>(x{}):{e:5,f:6}");
+    EXPECT_EQ(output, expect);
+}
+
+TEST(ReferenceFilterSubspacesTest, filter_vectors_no_decay) {
+    auto input = spec("tensor<int8>(x{},y[2]):{a:[1,2],b:[3,4],c:[5,6]}");
+    auto fun = [&](const TensorSpec &vec) {
+        EXPECT_EQ(vec.type(), "tensor<int8>(y[2])");
+        bool keep = vec.as_double() < 10.0;
+        return TensorSpec("double").add({}, keep ? 1.0 : 0.0);
+    };
+    auto output = ReferenceOperations::filter_subspaces(input, fun);
+    auto expect = spec("tensor<int8>(x{},y[2]):{a:[1,2],b:[3,4]}");
+    EXPECT_EQ(output, expect);
+}
+
+TEST(ReferenceFilterSubspacesTest, identity_filter_auto_bool_conversion) {
+    auto input = spec("tensor<int8>(x{},y[2]):{a:[0,0],b:[1,0],c:[1,1]}");
+    auto fun = [&](const TensorSpec &vec) {
+        EXPECT_EQ(vec.type(), "tensor<int8>(y[2])");
+        // tensor --(sum)--> double --(!=0.0)--> bool
+        return vec;
+    };
+    auto output = ReferenceOperations::filter_subspaces(input, fun);
+    auto expect = spec("tensor<int8>(x{},y[2]):{b:[1,0],c:[1,1]}");
     EXPECT_EQ(output, expect);
 }
 

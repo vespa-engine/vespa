@@ -136,6 +136,12 @@ TEST(ReferenceEvaluationTest, map_subspaces_expression_works) {
     EXPECT_EQ(ref_eval("map_subspaces(a,f(x)(tensor(y[2])(x{y:(y)}+x{y:(y+1)})))", {a}), expect);
 }
 
+TEST(ReferenceEvaluationTest, filter_subspaces_expression_works) {
+    auto a = make_val("tensor(x{},y[2]):{foo:[3,4],bar:[6,5],baz:[7,8]}");
+    auto expect = make_val("tensor(x{},y[2]):{bar:[6,5]}");
+    EXPECT_EQ(ref_eval("filter_subspaces(a,f(x)(x{y:0}>x{y:1}))", {a}), expect);
+}
+
 TEST(ReferenceEvaluationTest, join_expression_works) {
     auto a = make_val("tensor(x[2]):[1,2]");
     auto b = make_val("tensor(y[2]):[3,4]");
@@ -161,6 +167,12 @@ TEST(ReferenceEvaluationTest, cell_cast_expression_works) {
     auto a = make_val("tensor<double>(x[4]):[1,2,3,4]");
     auto expect = make_val("tensor<float>(x[4]):[1,2,3,4]");
     EXPECT_EQ(ref_eval("cell_cast(a,float)", {a}), expect);
+}
+
+TEST(ReferenceEvaluationTest, cell_order_expression_works) {
+    auto a = make_val("tensor(x[4]):[1,2,3,4]");
+    auto expect = make_val("tensor(x[4]):[3,2,1,0]");
+    EXPECT_EQ(ref_eval("cell_order(a,max)", {a}), expect);
 }
 
 TEST(ReferenceEvaluationTest, rename_expression_works) {

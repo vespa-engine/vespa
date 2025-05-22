@@ -7,12 +7,14 @@
 #include "string_stuff.h"
 #include "value_type_spec.h"
 #include <vespa/eval/instruction/generic_cell_cast.h>
+#include <vespa/eval/instruction/generic_cell_order.h>
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_create.h>
 #include <vespa/eval/instruction/generic_join.h>
 #include <vespa/eval/instruction/generic_lambda.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_map_subspaces.h>
+#include <vespa/eval/instruction/generic_filter_subspaces.h>
 #include <vespa/eval/instruction/generic_merge.h>
 #include <vespa/eval/instruction/generic_peek.h>
 #include <vespa/eval/instruction/generic_reduce.h>
@@ -187,6 +189,20 @@ MapSubspaces::visit_self(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
+InterpretedFunction::Instruction
+FilterSubspaces::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
+{
+    return instruction::GenericFilterSubspaces::make_instruction(*this, factory, stash);
+}
+
+void
+FilterSubspaces::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Super::visit_self(visitor);
+}
+
+//-----------------------------------------------------------------------------
+
 Instruction
 Join::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
@@ -243,6 +259,21 @@ CellCast::visit_self(vespalib::ObjectVisitor &visitor) const
 {
     Super::visit_self(visitor);
     visitor.visitString("cell_type", value_type::cell_type_to_name(cell_type()));
+}
+
+//-----------------------------------------------------------------------------
+
+InterpretedFunction::Instruction
+CellOrder::compile_self(const ValueBuilderFactory &, Stash &stash) const
+{
+    return instruction::GenericCellOrder::make_instruction(result_type(), child().result_type(), cell_order(), stash);
+}
+
+void
+CellOrder::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Super::visit_self(visitor);
+    visitor.visitString("cell_order", eval::as_string(cell_order()));
 }
 
 //-----------------------------------------------------------------------------
@@ -475,6 +506,11 @@ const TensorFunction &map_subspaces(const TensorFunction &child, const Function 
     return stash.create<MapSubspaces>(result_type, child, function, std::move(node_types));
 }
 
+const TensorFunction &filter_subspaces(const TensorFunction &child, const Function &function, NodeTypes node_types, Stash &stash) {
+    auto result_type = child.result_type();
+    return stash.create<FilterSubspaces>(result_type, child, function, std::move(node_types));
+}
+
 const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash) {
     ValueType result_type = ValueType::join(lhs.result_type(), rhs.result_type());
     return stash.create<Join>(result_type, lhs, rhs, function);
@@ -501,6 +537,11 @@ const TensorFunction &lambda(const ValueType &type, const std::vector<size_t> &b
 const TensorFunction &cell_cast(const TensorFunction &child, CellType cell_type, Stash &stash) {
     ValueType result_type = child.result_type().cell_cast(cell_type);
     return stash.create<CellCast>(result_type, child, cell_type);
+}
+
+const TensorFunction &cell_order(const TensorFunction &child, eval::CellOrder cell_order, Stash &stash) {
+    ValueType result_type = child.result_type().map(); // use decayed child type for order tensor
+    return stash.create<CellOrder>(result_type, child, cell_order);
 }
 
 const TensorFunction &peek(const TensorFunction &param, const std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash) {

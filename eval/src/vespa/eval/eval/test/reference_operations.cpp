@@ -90,9 +90,44 @@ TensorSpec ReferenceOperations::cell_cast(const TensorSpec &in_a, CellType to) {
     if (res_type.is_error()) {
         return result;
     }
-    typify_invoke<1,TypifyCellType,CopyCellsWithCast>(to, a, result);
+    typify_invoke<1, TypifyCellType, CopyCellsWithCast>(to, a, result);
     return result.normalize();
 }
+
+
+TensorSpec ReferenceOperations::cell_order(const TensorSpec &in_a, CellOrder order) {
+    auto a = in_a.normalize();
+    ValueType a_type = ValueType::from_spec(a.type());
+    ValueType res_type = a_type.map();
+    TensorSpec result(res_type.to_spec());
+    if (res_type.is_error()) {
+        return result;
+    }
+    std::vector<double> values;
+    std::vector<size_t> indexes;
+    size_t idx = 0;
+    for (const auto &[addr, value]: a.cells()) {
+        values.push_back(value);
+        indexes.push_back(idx++);
+    }
+    std::vector<size_t> ranks(indexes.size());
+    std::sort(indexes.begin(), indexes.end(), [&](size_t x, size_t y) {
+        switch (order) {
+            case CellOrder::MAX: return CellOrderMAX::cmp(values[x], values[y]);
+            case CellOrder::MIN: return CellOrderMIN::cmp(values[x], values[y]);
+        }
+        abort();
+    });
+    for (size_t rank = 0; rank < indexes.size(); ++rank) {
+        ranks[indexes[rank]] = rank;
+    }
+    idx = 0;
+    for (const auto &[addr, value]: a.cells()) {
+        result.add(addr, ranks[idx++]);
+    }
+    return result.normalize();
+}
+
 
 TensorSpec ReferenceOperations::concat(const TensorSpec &in_a, const TensorSpec &in_b, const std::string &concat_dim) {
     auto a = in_a.normalize();
@@ -176,7 +211,8 @@ TensorSpec ReferenceOperations::map(const TensorSpec &in_a, map_fun_t func) {
 }
 
 
-TensorSpec ReferenceOperations::map_subspaces(const TensorSpec &a, map_subspace_fun_t fun) {
+TensorSpec ReferenceOperations::map_subspaces(const TensorSpec &in_a, subspace_fun_t fun) {
+    auto a = in_a.normalize();
     auto type = ValueType::from_spec(a.type());
     auto outer_type = type.strip_indexed_dimensions();
     auto inner_type = type.strip_mapped_dimensions();
@@ -217,6 +253,52 @@ TensorSpec ReferenceOperations::map_subspaces(const TensorSpec &a, map_subspace_
         for (const auto &[inner, value]: mapped.cells()) {
             result.add(combine(outer, inner), value);
         }        
+    }
+    return result.normalize();
+}
+
+
+TensorSpec ReferenceOperations::filter_subspaces(const TensorSpec &in_a, subspace_fun_t fun) {
+    auto a = in_a.normalize();
+    auto type = ValueType::from_spec(a.type());
+    auto inner_type = type.strip_mapped_dimensions();
+    auto inner_type_str = inner_type.to_spec();
+    auto res_type = type;
+    auto split = [](const auto &addr) {
+        TensorSpec::Address outer;
+        TensorSpec::Address inner;
+        for (const auto &[name, label]: addr) {
+            if (label.is_mapped()) {
+                outer.insert_or_assign(name, label);
+            } else {
+                inner.insert_or_assign(name, label);
+            }
+        }
+        return std::make_pair(outer, inner);
+    };
+    auto combine = [](const auto &outer, const auto &inner) {
+        TensorSpec::Address addr;
+        for (const auto &[name, label]: outer) {
+            addr.insert_or_assign(name, label);
+        }
+        for (const auto &[name, label]: inner) {
+            addr.insert_or_assign(name, label);
+        }
+        return addr;
+    };
+    std::map<TensorSpec::Address,TensorSpec> subspaces;
+    for (const auto &[addr, value]: a.cells()) {
+        auto [outer, inner] = split(addr);
+        auto &subspace = subspaces.try_emplace(outer, inner_type_str).first->second;
+        subspace.add(inner, value);
+    }
+    TensorSpec result(res_type.to_spec());
+    for (const auto &[outer, subspace]: subspaces) {
+        if (fun(subspace).as_double() != 0.0) {
+            for (const auto &[inner, value]: subspace.cells()) {
+                result.add(combine(outer, inner), value);
+            }
+        }
     }
     return result.normalize();
 }

@@ -15,6 +15,7 @@ vespa_define_module(
     src/tests/eval/addr_to_symbol
     src/tests/eval/aggr
     src/tests/eval/array_array_map
+    src/tests/eval/cell_order
     src/tests/eval/cell_type_space
     src/tests/eval/compile_cache
     src/tests/eval/compiled_function

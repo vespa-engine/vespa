@@ -1143,6 +1143,32 @@ TEST(FunctionTest, require_that_tensor_cell_cast_must_have_valid_cell_type)
 
 //-----------------------------------------------------------------------------
 
+TEST(FunctionTest, require_that_tensor_cell_order_can_be_parsed)
+{
+    EXPECT_EQ("cell_order(a,min)", Function::parse({"a"}, "cell_order(a,min)")->dump());
+    EXPECT_EQ("cell_order(a,max)", Function::parse({"a"}, " cell_order ( a , max ) ")->dump());
+}
+
+TEST(FunctionTest, require_that_tensor_cell_order_must_have_valid_order)
+{
+    verify_error("cell_order(x,avg)", "[cell_order(x,avg]...[unknown cell order: 'avg']...[)]");
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(FunctionTest, require_that_tensor_filter_subspaces_can_be_parsed)
+{
+    EXPECT_EQ("filter_subspaces(a,f(x)(x))", Function::parse({"a"}, "filter_subspaces(a,f(x)(x))")->dump());
+    EXPECT_EQ("filter_subspaces(a,f(x)(x))", Function::parse({"a"}, " filter_subspaces ( a , f ( x ) ( x ) ) ")->dump());
+}
+
+TEST(FunctionTest, require_that_tensor_filter_subspaces_lambda_is_free)
+{
+    verify_error("filter_subspaces(x,f(a)(y))", "[filter_subspaces(x,f(a)(y]...[unknown symbol: 'y']...[))]");
+}
+
+//-----------------------------------------------------------------------------
+
 struct CheckExpressions : test::EvalSpec::EvalTest {
     bool failed = false;
     size_t seen_cnt = 0;

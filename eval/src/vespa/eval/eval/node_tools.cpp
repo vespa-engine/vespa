@@ -127,12 +127,14 @@ struct CopyNode : NodeTraverser, NodeVisitor {
     // tensor nodes
     void visit(const TensorMap          &node) override { not_implemented(node); }
     void visit(const TensorMapSubspaces &node) override { not_implemented(node); }
+    void visit(const TensorFilterSubspaces &node) override { not_implemented(node); }
     void visit(const TensorJoin         &node) override { not_implemented(node); }
     void visit(const TensorMerge        &node) override { not_implemented(node); }
     void visit(const TensorReduce       &node) override { not_implemented(node); }
     void visit(const TensorRename       &node) override { not_implemented(node); }
     void visit(const TensorConcat       &node) override { not_implemented(node); }
     void visit(const TensorCellCast     &node) override { not_implemented(node); }
+    void visit(const TensorCellOrder    &node) override { not_implemented(node); }
     void visit(const TensorCreate       &node) override { not_implemented(node); }
     void visit(const TensorLambda       &node) override { not_implemented(node); }
     void visit(const TensorPeek         &node) override { not_implemented(node); }

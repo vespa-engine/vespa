@@ -468,6 +468,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const TensorMapSubspaces &node) override {
         make_error(node.num_children());
     }
+    void visit(const TensorFilterSubspaces &node) override {
+        make_error(node.num_children());
+    }
     void visit(const TensorJoin &node) override {
         make_error(node.num_children());
     }
@@ -484,6 +487,9 @@ struct FunctionBuilder : public NodeVisitor, public NodeTraverser {
         make_error(node.num_children());
     }
     void visit(const TensorCellCast &node) override {
+        make_error(node.num_children());
+    }
+    void visit(const TensorCellOrder &node) override {
         make_error(node.num_children());
     }
     void visit(const TensorCreate &node) override {

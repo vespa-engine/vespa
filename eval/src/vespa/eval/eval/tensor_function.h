@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "cell_order.h"
 #include "tensor_spec.h"
 #include "operation.h"
 #include "lazy_params.h"
@@ -272,6 +273,29 @@ public:
 
 //-----------------------------------------------------------------------------
 
+class FilterSubspaces : public Op1
+{
+    using Super = Op1;
+private:
+    ValueType _inner_type;
+    std::shared_ptr<Function const> _lambda;
+    NodeTypes _lambda_types;
+public:
+    FilterSubspaces(const ValueType &result_type_in, const TensorFunction &child_in, const Function &lambda_in, NodeTypes lambda_types_in)
+            : Super(result_type_in, child_in),
+              _inner_type(child_in.result_type().strip_mapped_dimensions()),
+              _lambda(lambda_in.shared_from_this()),
+              _lambda_types(std::move(lambda_types_in)) {}
+    const ValueType &inner_type() const { return _inner_type; }
+    const Function &lambda() const { return *_lambda; }
+    const NodeTypes &types() const { return _lambda_types; }
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const final override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
+};
+
+//-----------------------------------------------------------------------------
+
 class Join : public Op2
 {
     using Super = Op2;
@@ -338,6 +362,22 @@ public:
     CellCast(const ValueType &result_type_in, const TensorFunction &child_in, CellType cell_type)
         : Super(result_type_in, child_in), _cell_type(cell_type) {}
     CellType cell_type() const { return _cell_type; }
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+    void visit_self(vespalib::ObjectVisitor &visitor) const override;
+};
+
+//-----------------------------------------------------------------------------
+
+class CellOrder : public Op1
+{
+    using Super = Op1;
+private:
+    eval::CellOrder _cell_order;
+public:
+    CellOrder(const ValueType &result_type_in, const TensorFunction &child_in, eval::CellOrder cell_order)
+            : Super(result_type_in, child_in), _cell_order(cell_order) {}
+    eval::CellOrder cell_order() const { return _cell_order; }
     bool result_is_mutable() const override { return true; }
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     void visit_self(vespalib::ObjectVisitor &visitor) const override;
@@ -487,12 +527,14 @@ const TensorFunction &inject(const ValueType &type, size_t param_idx, Stash &sta
 const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::vector<std::string> &dimensions, Stash &stash);
 const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash);
 const TensorFunction &map_subspaces(const TensorFunction &child, const Function &function, NodeTypes node_types, Stash &stash);
+const TensorFunction &filter_subspaces(const TensorFunction &child, const Function &function, NodeTypes node_types, Stash &stash);
 const TensorFunction &join(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash);
 const TensorFunction &merge(const TensorFunction &lhs, const TensorFunction &rhs, join_fun_t function, Stash &stash);
 const TensorFunction &concat(const TensorFunction &lhs, const TensorFunction &rhs, const std::string &dimension, Stash &stash);
 const TensorFunction &create(const ValueType &type, const std::map<TensorSpec::Address, TensorFunction::CREF> &spec, Stash &stash);
 const TensorFunction &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash);
 const TensorFunction &cell_cast(const TensorFunction &child, CellType cell_type, Stash &stash);
+const TensorFunction &cell_order(const TensorFunction &child, eval::CellOrder cell_order, Stash &stash);
 const TensorFunction &peek(const TensorFunction &param, const std::map<std::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash);
 const TensorFunction &rename(const TensorFunction &child, const std::vector<std::string> &from, const std::vector<std::string> &to, Stash &stash);
 const TensorFunction &if_node(const TensorFunction &cond, const TensorFunction &true_child, const TensorFunction &false_child, Stash &stash);

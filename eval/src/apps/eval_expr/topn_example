@@ -1,0 +1,21 @@
+#!/bin/env -S vespa-eval-expr interactive
+
+## Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+# the quality of all chunks
+def t1 tensor<float>(chunk{}):{0:13,1:7,2:5,3:15,4:30,5:2}
+
+# N is dynamic
+def N 3
+
+# find ordering of cells
+def t2 cell_order(t1, max)
+
+# make a mask for the best N
+def t3 t2<N
+
+# drop all subspaces from the mask that are false
+def t4 filter_subspaces(t3, f(s)(s))
+
+# combine filtered mask with original tensor for result
+def t5 t4*t1

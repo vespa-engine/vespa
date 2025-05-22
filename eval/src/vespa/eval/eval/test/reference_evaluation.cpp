@@ -85,6 +85,10 @@ struct EvalNode : public NodeVisitor {
         result = ReferenceOperations::cell_cast(eval_node(a, params), cell_type);
     }
 
+    void eval_cell_order(const Node &a, CellOrder cell_order) {
+        result = ReferenceOperations::cell_order(eval_node(a, params), cell_order);
+    }
+
     void eval_create(const TensorCreate &node) {
         std::map<TensorSpec::Address, size_t> spec;
         std::vector<TensorSpec> children;
@@ -143,6 +147,13 @@ struct EvalNode : public NodeVisitor {
         result = ReferenceOperations::map_subspaces(eval_node(node, params), fun);
     }
 
+    void eval_filter_subspaces(const Node &node, const Node &lambda) {
+        auto fun = [&](const TensorSpec &subspace) {
+            return eval_node(lambda, {subspace});
+        };
+        result = ReferenceOperations::filter_subspaces(eval_node(node, params), fun);
+    }
+
     //-------------------------------------------------------------------------
 
     void visit(const Number &node) override {
@@ -186,6 +197,9 @@ struct EvalNode : public NodeVisitor {
     void visit(const TensorMapSubspaces &node) override {
         eval_map_subspaces(node.child(), node.lambda().root());
     }
+    void visit(const TensorFilterSubspaces &node) override {
+        eval_filter_subspaces(node.child(), node.lambda().root());
+    }
     void visit(const TensorJoin &node) override {
         auto my_op2 = [&](double a, double b) {
             return ReferenceEvaluation::eval(node.lambda(), {num(a), num(b)}).as_double();
@@ -209,6 +223,9 @@ struct EvalNode : public NodeVisitor {
     }
     void visit(const TensorCellCast &node) override {
         eval_cell_cast(node.child(), node.cell_type());
+    }
+    void visit(const TensorCellOrder &node) override {
+        eval_cell_order(node.child(), node.cell_order());
     }
     void visit(const TensorCreate &node) override {
         eval_create(node);

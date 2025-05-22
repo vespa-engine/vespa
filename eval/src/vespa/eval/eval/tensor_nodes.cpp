@@ -5,17 +5,19 @@
 
 namespace vespalib::eval::nodes {
 
-void TensorMap         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorMapSubspaces::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorJoin        ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorMerge       ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorReduce      ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorRename      ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorConcat      ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorCellCast    ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorCreate      ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorLambda      ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
-void TensorPeek        ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorMap            ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorMapSubspaces   ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorFilterSubspaces::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorJoin           ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorMerge          ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorReduce         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorRename         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorConcat         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorCellCast       ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorCellOrder      ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorCreate         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorLambda         ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
+void TensorPeek           ::accept(NodeVisitor &visitor) const { visitor.visit(*this); }
 
 std::string
 TensorMap::dump(DumpContext &ctx) const {
@@ -32,6 +34,17 @@ std::string
 TensorMapSubspaces::dump(DumpContext &ctx) const {
     std::string str;
     str += "map_subspaces(";
+    str += _child->dump(ctx);
+    str += ",";
+    str += _lambda->dump_as_lambda();
+    str += ")";
+    return str;
+}
+
+std::string
+TensorFilterSubspaces::dump(DumpContext &ctx) const {
+    std::string str;
+    str += "filter_subspaces(";
     str += _child->dump(ctx);
     str += ",";
     str += _lambda->dump_as_lambda();
@@ -129,6 +142,17 @@ TensorCellCast::dump(DumpContext &ctx) const {
     str += _child->dump(ctx);
     str += ",";
     str += value_type::cell_type_to_name(_cell_type);
+    str += ")";
+    return str;
+}
+
+std::string
+TensorCellOrder::dump(DumpContext &ctx) const {
+    std::string str;
+    str += "cell_order(";
+    str += _child->dump(ctx);
+    str += ",";
+    str += as_string(_cell_order);
     str += ")";
     return str;
 }
