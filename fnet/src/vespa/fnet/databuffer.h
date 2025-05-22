@@ -537,9 +537,11 @@ public:
      **/
     void WriteBytes(const void *src, uint32_t len)
     {
-        EnsureFree(len);
-        memcpy(_freept, src, len);
-        _freept += len;
+        if (len != 0) [[likely]] {
+            EnsureFree(len);
+            memcpy(_freept, src, len);
+            _freept += len;
+        }
     }
 
     /**
@@ -550,8 +552,10 @@ public:
      **/
     void WriteBytesFast(const void *src, uint32_t len)
     {
-        memcpy(_freept, src, len);
-        _freept += len;
+        if (len != 0) [[likely]] {
+            memcpy(_freept, src, len);
+            _freept += len;
+        }
     }
 
     /**
@@ -562,8 +566,10 @@ public:
      **/
     void ReadBytes(void *dst, uint32_t len)
     {
-        memcpy(dst, _datapt, len);
-        _datapt += len;
+        if (len != 0) [[likely]] {
+            memcpy(dst, _datapt, len);
+            _datapt += len;
+        }
     }
 
     /**
@@ -576,8 +582,10 @@ public:
      **/
     void PeekBytes(void *dst, uint32_t len, uint32_t offset)
     {
-        assert(_freept >= _datapt + offset + len);
-        memcpy(dst, _datapt + offset, len);
+        if (len != 0) [[likely]] {
+            assert(_freept >= _datapt + offset + len);
+            memcpy(dst, _datapt + offset, len);
+        }
     }
 
     /**
