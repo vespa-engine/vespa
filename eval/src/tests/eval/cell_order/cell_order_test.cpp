@@ -66,6 +66,7 @@ TEST(CellOrderTest, sort_min)
     std::sort(double_list.begin(), double_list.end(), CellOrderMIN{});
 
     for (size_t i = 0; i < float_list.size(); ++i) {
+        SCOPED_TRACE(std::to_string(i));
         if (i < int8_list.size()) {
             EXPECT_EQ(int8_list[i],     expect[i]);
             EXPECT_EQ(bfloat16_list[i], expect[i]);
