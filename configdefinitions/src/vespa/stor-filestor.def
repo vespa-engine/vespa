@@ -67,7 +67,7 @@ async_operation_throttler.resize_rate double default=3.0
 ## This prevents pipeline stalls when many write operations are in-flight to the
 ## same bucket, as each operation would otherwise have to wait for the completion
 ## of all prior writes to the bucket.
-max_feed_op_batch_size int default=1
+max_feed_op_batch_size int default=64
 
 ## Specify throttling used for async _maintenance_ operations dispatched to Proton.
 ## If enabled (i.e. set to DYNAMIC) this serves as a secondary throttling mechanism
