@@ -755,7 +755,7 @@ FRT_Values::DecodeCopy(FNET_DataBuffer *src, uint32_t len)
     }
 
     if (len != 0) goto error;
-    if (strncmp(typeString, _typeString, numValues) != 0) goto error;
+    if (numValues != 0 && strncmp(typeString, _typeString, numValues) != 0) goto error;
     return true;
 
 error:
@@ -1241,7 +1241,7 @@ FRT_Values::DecodeLittle(FNET_DataBuffer *src, uint32_t len)
     }
 
     if (len != 0) goto error;
-    if (strncmp(typeString, _typeString, numValues) != 0) goto error;
+    if (numValues != 0 && strncmp(typeString, _typeString, numValues) != 0) goto error;
     return true;
 
 error:
