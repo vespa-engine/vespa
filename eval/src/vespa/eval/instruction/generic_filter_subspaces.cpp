@@ -111,6 +111,7 @@ GenericFilterSubspaces::make_instruction(const tensor_function::FilterSubspaces 
                                          const ValueBuilderFactory &factory, Stash &stash)
 {
     InterpretedParams &params = stash.create<InterpretedParams>(filter_subspaces_in, factory);
+    assert(params.result_type.count_mapped_dimensions() > 0);
     assert(filter_subspaces_in.child().result_type().cell_type() == params.result_type.cell_type());
     auto op = typify_invoke<1,TypifyCellType,SelectGenericFilterSubspacesOp>(params.result_type.cell_type());
     return Instruction(op, wrap_param<InterpretedParams>(params));

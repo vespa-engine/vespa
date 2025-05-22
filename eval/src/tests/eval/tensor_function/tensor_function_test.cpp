@@ -5,6 +5,7 @@
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/eval/node_types.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -43,6 +44,9 @@ struct EvalCtx {
         ifun = std::make_unique<InterpretedFunction>(factory, fun);
         ictx = std::make_unique<InterpretedFunction::Context>(*ifun);
         return ifun->eval(*ictx, SimpleObjectParams(params));
+    }
+    Value::UP from_expr(const std::string &expr) {
+        return value_from_spec(TensorSpec::from_expr(expr), factory);
     }
     Value::UP make_double(double value) {
         return value_from_spec(TensorSpec("double").add({}, value), factory);
@@ -302,6 +306,56 @@ TEST(TensorFunctionTest, require_that_tensor_cell_cast_works)
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_EQ(expect->type(), fun.result_type());
     verify_equal(*expect, ctx.eval(fun));
+}
+
+TEST(TensorFunctionTest, require_that_cell_order_works) {
+    EvalCtx ctx(simple_factory);
+    size_t a_id = ctx.add_tensor(ctx.from_expr("tensor(x[3]):[5,7,3]"));
+    Value::UP expect = ctx.from_expr("tensor(x[3]):[1,0,2]");
+    const auto &a = inject(ctx.type_of(a_id), a_id, ctx.stash);
+    const auto &op = cell_order(a, eval::CellOrder::MAX, ctx.stash);
+    EXPECT_TRUE(op.result_is_mutable());
+    EXPECT_EQ(expect->type(), op.result_type());
+    verify_equal(*expect, ctx.eval(op));
+    std::vector<TensorFunction::Child::CREF> refs;
+    op.push_children(refs);
+    ASSERT_EQ(refs.size(), 1u);
+    EXPECT_EQ(&refs[0].get().get(), &a);
+    fprintf(stderr, "%s", op.as_string().c_str());
+}
+
+TEST(TensorFunctionTest, require_that_map_subspaces_works) {
+    EvalCtx ctx(simple_factory);
+    size_t a_id = ctx.add_tensor(ctx.from_expr("tensor(x{}):{a:1,b:2,c:3}"));
+    Value::UP expect = ctx.from_expr("tensor(x{}):{a:2,b:3,c:4}");
+    const auto &a = inject(ctx.type_of(a_id), a_id, ctx.stash);
+    auto inner_fun = Function::parse({"s"}, "s+1");
+    const auto &op = map_subspaces(a, *inner_fun, NodeTypes(*inner_fun, {DoubleValue::shared_type()}), ctx.stash);
+    EXPECT_TRUE(op.result_is_mutable());
+    EXPECT_EQ(expect->type(), op.result_type());
+    verify_equal(*expect, ctx.eval(op));
+    std::vector<TensorFunction::Child::CREF> refs;
+    op.push_children(refs);
+    ASSERT_EQ(refs.size(), 1u);
+    EXPECT_EQ(&refs[0].get().get(), &a);
+    fprintf(stderr, "%s", op.as_string().c_str());
+}
+
+TEST(TensorFunctionTest, require_that_filter_subspaces_works) {
+    EvalCtx ctx(simple_factory);
+    size_t a_id = ctx.add_tensor(ctx.from_expr("tensor(x{}):{a:0,b:1,c:0}"));
+    Value::UP expect = ctx.from_expr("tensor(x{}):{b:1}");
+    const auto &a = inject(ctx.type_of(a_id), a_id, ctx.stash);
+    auto inner_fun = Function::parse({"s"}, "s");
+    const auto &op = filter_subspaces(a, *inner_fun, NodeTypes(*inner_fun, {DoubleValue::shared_type()}), ctx.stash);
+    EXPECT_TRUE(op.result_is_mutable());
+    EXPECT_EQ(expect->type(), op.result_type());
+    verify_equal(*expect, ctx.eval(op));
+    std::vector<TensorFunction::Child::CREF> refs;
+    op.push_children(refs);
+    ASSERT_EQ(refs.size(), 1u);
+    EXPECT_EQ(&refs[0].get().get(), &a);
+    fprintf(stderr, "%s", op.as_string().c_str());
 }
 
 TEST(TensorFunctionTest, require_that_tensor_create_works)
