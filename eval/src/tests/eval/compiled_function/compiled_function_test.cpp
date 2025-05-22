@@ -57,13 +57,15 @@ TEST(CompiledFunctionTest, require_that_lazy_parameter_passing_works)
 std::vector<std::string> unsupported = {
     "map(",
     "map_subspaces(",
+    "filter_subspaces(",
     "join(",
     "merge(",
     "reduce(",
     "rename(",
     "tensor(",
     "concat(",
-    "cell_cast("
+    "cell_cast(",
+    "cell_order("
 };
 
 bool is_unsupported(const std::string &expression) {

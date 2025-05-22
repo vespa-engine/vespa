@@ -38,6 +38,9 @@ const Function *get_complex_lambda(const nodes::Node &node) {
     if (auto ptr = nodes::as<nodes::TensorMapSubspaces>(node)) {
         return &ptr->lambda();
     }
+    if (auto ptr = nodes::as<nodes::TensorFilterSubspaces>(node)) {
+        return &ptr->lambda();
+    }
     return nullptr;
 }
 

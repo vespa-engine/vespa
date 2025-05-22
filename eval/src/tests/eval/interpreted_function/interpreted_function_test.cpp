@@ -166,10 +166,12 @@ TEST(InterpretedFunctionTest, require_that_functions_with_non_compilable_simple_
     auto bad_join = Function::parse("join(a,b,f(x,y)(join(x,y,f(i,j)(i+j))))");
     auto bad_merge = Function::parse("merge(a,b,f(x,y)(join(x,y,f(i,j)(i+j))))");
     for (const Function *good: {good_map.get(), good_join.get(), good_merge.get()}) {
+        SCOPED_TRACE(good->dump());
         EXPECT_TRUE(!good->has_error()) << "parse error: " << good->get_error();
         EXPECT_TRUE(!InterpretedFunction::detect_issues(*good));
     }
     for (const Function *bad: {bad_map.get(), bad_join.get(), bad_merge.get()}) {
+        SCOPED_TRACE(bad->dump());
         EXPECT_TRUE(!bad->has_error()) << "parse error: " << bad->get_error();
         EXPECT_TRUE(InterpretedFunction::detect_issues(*bad));
     }
@@ -182,13 +184,17 @@ TEST(InterpretedFunctionTest, require_that_functions_with_non_interpretable_comp
 {
     auto good_tensor_lambda = Function::parse("tensor(x[5])(map(x,f(y)(y)))");
     auto good_map_subspaces = Function::parse("map_subspaces(a,f(x)(concat(x,x,y)))");
+    auto good_filter_subspaces = Function::parse("filter_subspaces(a,f(x)(concat(x,x,y)))");
     auto bad_tensor_lambda = Function::parse("tensor(x[5])(map(x,f(y)(map(y,f(i)(i+1)))))");
     auto bad_map_subspaces = Function::parse("map_subspaces(a,f(x)(map(x,f(y)(map(y,f(i)(i+1))))))");
-    for (const Function *good: {good_tensor_lambda.get(), good_map_subspaces.get()}) {
+    auto bad_filter_subspaces = Function::parse("filter_subspaces(a,f(x)(map(x,f(y)(map(y,f(i)(i+1))))))");
+    for (const Function *good: {good_tensor_lambda.get(), good_map_subspaces.get(), good_filter_subspaces.get()}) {
+        SCOPED_TRACE(good->dump());
         EXPECT_TRUE(!good->has_error()) << "parse error: " << good->get_error();
         EXPECT_TRUE(!InterpretedFunction::detect_issues(*good));
     }
-    for (const Function *bad: {bad_tensor_lambda.get(), bad_map_subspaces.get()}) {
+    for (const Function *bad: {bad_tensor_lambda.get(), bad_map_subspaces.get(), bad_filter_subspaces.get()}) {
+        SCOPED_TRACE(bad->dump());
         EXPECT_TRUE(!bad->has_error()) << "parse error: " << bad->get_error();
         EXPECT_TRUE(InterpretedFunction::detect_issues(*bad));
     }

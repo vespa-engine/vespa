@@ -218,8 +218,10 @@ EvalSpec::add_tensor_operation_cases() {
     add_expression({"a","b"}, "concat(a,b,x)");
     add_expression({"a","b"}, "concat(a,b,y)");
     add_expression({"a"}, "cell_cast(a,float)");
+    add_expression({"a"}, "cell_order(a,max)");
     add_expression({}, "tensor(x[3]):{{x:0}:0,{x:1}:1,{x:2}:2}");
     add_expression({"a"}, "a{x:3}");
+    add_expression({"a"}, "filter_subspaces(a,f(s)(s))");
 }
 
 void
