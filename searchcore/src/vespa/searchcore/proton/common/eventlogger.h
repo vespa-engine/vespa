@@ -21,6 +21,13 @@ public:
     static void populateAttributeComplete(const std::vector<string> &names, int64_t documentsVisisted);
     static void populateDocumentFieldStart(const string &fieldName);
     static void populateDocumentFieldComplete(const string &fieldName, int64_t documentsVisisted);
+    static void lidSpaceCompactionStart(const string &subDbName,
+                                        uint32_t lidBloat, uint32_t allowedLidBloat,
+                                        double lidBloatFactor, double allowedLidBloatFactor,
+                                        uint32_t lidLimit, uint32_t lowestFreeLid);
+    static void lidSpaceCompactionRestart(const string &subDbName,
+                                          uint32_t usedLids, uint32_t allowedLidBloat,
+                                          uint32_t highestUsedLid, uint32_t lowestFreeLid);
     static void lidSpaceCompactionComplete(const string &subDbName, uint32_t lidLimit);
     static void reprocessDocumentsStart(const string &subDb, double visitCost);
     static void reprocessDocumentsProgress(const string &subDb, double progress, double visitCost);
