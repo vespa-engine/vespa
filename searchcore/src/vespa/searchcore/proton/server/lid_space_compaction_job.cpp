@@ -229,6 +229,8 @@ CompactionJob::run()
         }
         LidUsageStats stats = _handler->getLidStatus();
         if (shouldRestartScanDocuments(stats)) {
+            EventLogger::lidSpaceCompactionRestart(_handler->getName(), stats.getUsedLids(), _cfg.getAllowedLidBloat(),
+                                                   stats.getHighestUsedLid(), stats.getLowestFreeLid());
             _scanItr = _handler->getIterator();
         } else {
             _scanItr.reset();
@@ -244,6 +246,9 @@ CompactionJob::run()
         compactLidSpace(stats);
     } else if (hasTooMuchLidBloat(stats)) {
         assert(!_scanItr);
+        EventLogger::lidSpaceCompactionStart(_handler->getName(), stats.getLidBloat(), _cfg.getAllowedLidBloat(),
+                                             stats.getLidBloatFactor(), _cfg.getAllowedLidBloatFactor(),
+                                             stats.getLidLimit(), stats.getLowestFreeLid());
         _scanItr = _handler->getIterator();
         return scanDocuments(stats);
     }
