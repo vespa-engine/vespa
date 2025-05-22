@@ -176,7 +176,8 @@ public final class SchemaInfo extends Derived {
                 var fieldsBuilder = new SchemaInfoConfig.Schema.Summaryclass.Fields.Builder();
                 fieldsBuilder.name(field.getName())
                              .type(field.getType().getName())
-                             .dynamic(SummaryClass.commandRequiringQuery(field.getCommand()));
+                             .dynamic(SummaryClass.commandRequiringQuery(field.getCommand()) ||
+                                      SummaryClass.elementsSelectorRequiringQuery(field.getElementsSelector()));
                 summaryBuilder.fields(fieldsBuilder);
             }
             schemaBuilder.summaryclass(summaryBuilder);

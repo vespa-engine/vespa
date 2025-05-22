@@ -20,8 +20,6 @@ public enum SummaryTransform {
     SUMMARYFEATURES("summaryfeatures"),
     GEOPOS("geopos"),
     ATTRIBUTECOMBINER("attributecombiner"),
-    MATCHED_ELEMENTS_FILTER("matchedelementsfilter"),
-    MATCHED_ATTRIBUTE_ELEMENTS_FILTER("matchedattributeelementsfilter"),
     COPY("copy"),
     DOCUMENT_ID("documentid"),
     TOKENS("tokens"),
@@ -76,7 +74,7 @@ public enum SummaryTransform {
     public boolean isInMemory() {
         return switch (this) {
             case ATTRIBUTE, DISTANCE, POSITIONS, GEOPOS, RANKFEATURES, SUMMARYFEATURES,
-                    ATTRIBUTECOMBINER, MATCHED_ATTRIBUTE_ELEMENTS_FILTER, ATTRIBUTE_TOKENS ->
+                    ATTRIBUTECOMBINER, ATTRIBUTE_TOKENS ->
                     true;
             default -> false;
         };

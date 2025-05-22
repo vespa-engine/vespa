@@ -65,8 +65,7 @@ public class SummaryDiskAccessValidator extends Processor {
     private boolean isInMemory(ImmutableSDField field, SummaryField summaryField) {
         if (field == null) return false; // For DOCUMENT_ID_FIELD, which may be implicit, but is then not in memory
         if (isComplexFieldWithOnlyStructFieldAttributes(field) &&
-                (summaryField.getTransform() == SummaryTransform.ATTRIBUTECOMBINER ||
-                        summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER)) {
+                (summaryField.getTransform() == SummaryTransform.ATTRIBUTECOMBINER)) {
             return true;
         }
         return field.doesAttributing();

@@ -13,6 +13,7 @@ import com.yahoo.schema.document.SDField;
 import com.yahoo.schema.parser.ParseException;
 import com.yahoo.schema.processing.Processing;
 import com.yahoo.vespa.config.search.SummaryConfig;
+import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 import org.junit.jupiter.api.Test;
@@ -195,27 +196,35 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
     }
 
     @Test
-    void source_field_is_passed_as_argument_in_matched_elements_filter_transforms() throws ParseException {
-        assertOverride(joinLines("field my_field type map<string, string> {",
+    void matched_elements_only_works_with_attribute_combiner() throws ParseException {
+        var schema = buildSchema(joinLines("field my_field type map<string, string> {",
                 "  indexing: summary",
                 "  summary: matched-elements-only",
                 "  struct-field key { indexing: attribute }",
-                "}"), "my_field", SummaryTransform.MATCHED_ELEMENTS_FILTER.getName());
+                "}"), "");
+        assertOverride(schema, "my_field", "", "");
+        assertElementSelect(schema, "my_field", SummaryConfig.Classes.Fields.Elements.Select.Enum.BY_MATCH, "", "default");
 
-        assertOverride(joinLines("field my_field type map<string, string> {",
+        schema = buildSchema(joinLines("field my_field type map<string, string> {",
                 "  indexing: summary",
                 "  summary: matched-elements-only",
                 "  struct-field key { indexing: attribute }",
                 "  struct-field value { indexing: attribute }",
-                "}"), "my_field", SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName());
+                "}"), "");
+        assertOverride(schema, "my_field", SummaryTransform.ATTRIBUTECOMBINER.getName(), "");
+        assertElementSelect(schema, "my_field", SummaryConfig.Classes.Fields.Elements.Select.Enum.BY_MATCH, "", "default");
     }
 
     @Test
     void commands_that_are_dynamic_and_require_the_query() {
         assertTrue(SummaryClass.commandRequiringQuery("dynamicteaser"));
-        assertTrue(SummaryClass.commandRequiringQuery(SummaryTransform.MATCHED_ELEMENTS_FILTER.getName()));
-        assertTrue(SummaryClass.commandRequiringQuery(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER.getName()));
         assertFalse(SummaryClass.commandRequiringQuery(SummaryTransform.ATTRIBUTE.getName()));
+    }
+
+    @Test
+    void elements_selectors_that_are_dynamic_and_require_the_query() {
+        assertFalse(SummaryClass.elementsSelectorRequiringQuery(SummaryElementsSelector.selectAll()));
+        assertTrue(SummaryClass.elementsSelectorRequiringQuery(SummaryElementsSelector.selectByMatch()));
     }
 
     @Test

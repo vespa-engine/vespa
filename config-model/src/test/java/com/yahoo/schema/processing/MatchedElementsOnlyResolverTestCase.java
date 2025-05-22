@@ -5,6 +5,8 @@ import com.yahoo.schema.RankProfileRegistry;
 import com.yahoo.schema.Schema;
 import com.yahoo.schema.ApplicationBuilder;
 import com.yahoo.schema.parser.ParseException;
+import com.yahoo.vespa.config.search.SummaryConfig;
+import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
 import com.yahoo.vespa.documentmodel.SummaryTransform;
 import org.junit.jupiter.api.Test;
@@ -24,21 +26,24 @@ public class MatchedElementsOnlyResolverTestCase {
                 "  summary: matched-elements-only",
                 "  struct-field key { indexing: attribute }",
                 "}"),
-                "my_field", SummaryTransform.MATCHED_ELEMENTS_FILTER);
+            "my_field", SummaryTransform.NONE,
+            SummaryElementsSelector.Select.BY_MATCH, "");
 
         assertSummaryField(joinLines("field my_field type map<string, elem> {",
                 "  indexing: summary",
                 "  summary: matched-elements-only",
                 "  struct-field key { indexing: attribute }",
                 "}"),
-                "my_field", SummaryTransform.MATCHED_ELEMENTS_FILTER);
+            "my_field", SummaryTransform.NONE,
+            SummaryElementsSelector.Select.BY_MATCH, "");
 
         assertSummaryField(joinLines("field my_field type array<elem> {",
                 "  indexing: summary",
                 "  summary: matched-elements-only",
                 "  struct-field name { indexing: attribute }",
                 "}"),
-                "my_field", SummaryTransform.MATCHED_ELEMENTS_FILTER);
+            "my_field", SummaryTransform.NONE,
+            SummaryElementsSelector.Select.BY_MATCH, "");
     }
 
     @Test
@@ -49,7 +54,8 @@ public class MatchedElementsOnlyResolverTestCase {
                 "  struct-field key { indexing: attribute }",
                 "  struct-field value { indexing: attribute }",
                 "}"),
-                "my_field", SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
+            "my_field", SummaryTransform.ATTRIBUTECOMBINER,
+            SummaryElementsSelector.Select.BY_MATCH, "");
 
         assertSummaryField(joinLines("field my_field type map<string, elem> {",
                 "  indexing: summary",
@@ -58,7 +64,8 @@ public class MatchedElementsOnlyResolverTestCase {
                 "  struct-field value.name { indexing: attribute }",
                 "  struct-field value.weight { indexing: attribute }",
                 "}"),
-                "my_field", SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
+            "my_field", SummaryTransform.ATTRIBUTECOMBINER,
+            SummaryElementsSelector.Select.BY_MATCH, "");
 
         assertSummaryField(joinLines("field my_field type array<elem> {",
                 "  indexing: summary",
@@ -66,7 +73,8 @@ public class MatchedElementsOnlyResolverTestCase {
                 "  struct-field name { indexing: attribute }",
                 "  struct-field weight { indexing: attribute }",
                 "}"),
-                "my_field", SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
+            "my_field", SummaryTransform.ATTRIBUTECOMBINER,
+            SummaryElementsSelector.Select.BY_MATCH, "");
     }
 
     @Test
@@ -84,9 +92,11 @@ public class MatchedElementsOnlyResolverTestCase {
                     "}"),
                     documentSummary);
             assertSummaryField(search.getSummaryField("my_filter_field"),
-                    SummaryTransform.MATCHED_ELEMENTS_FILTER, "my_field");
+                SummaryTransform.COPY, "my_field",
+                SummaryElementsSelector.Select.BY_MATCH, "");
             assertSummaryField(search.getSummaryField("my_field"),
-                    SummaryTransform.NONE, "my_field");
+                SummaryTransform.NONE, "my_field",
+                SummaryElementsSelector.Select.ALL, "");
         }
         {
             var search = buildSearch(joinLines("field my_field type map<string, string> {",
@@ -96,9 +106,11 @@ public class MatchedElementsOnlyResolverTestCase {
                     "}"),
                     documentSummary);
             assertSummaryField(search.getSummaryField("my_filter_field"),
-                    SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER, "my_field");
+                SummaryTransform.ATTRIBUTECOMBINER, "my_field",
+                SummaryElementsSelector.Select.BY_MATCH, "");
             assertSummaryField(search.getSummaryField("my_field"),
-                    SummaryTransform.ATTRIBUTECOMBINER, "my_field");
+                SummaryTransform.ATTRIBUTECOMBINER, "my_field",
+                SummaryElementsSelector.Select.ALL, "");
         }
     }
 
@@ -108,7 +120,8 @@ public class MatchedElementsOnlyResolverTestCase {
                 "  indexing: attribute | summary",
                 "  summary: matched-elements-only",
                 "}"),
-                "my_field", SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
+                "my_field", SummaryTransform.ATTRIBUTE,
+            SummaryElementsSelector.Select.BY_MATCH, "");
     }
 
     @Test
@@ -117,7 +130,8 @@ public class MatchedElementsOnlyResolverTestCase {
                 "  indexing: attribute | summary",
                 "  summary: matched-elements-only",
                 "}"),
-                "my_field", SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
+                "my_field", SummaryTransform.ATTRIBUTE,
+            SummaryElementsSelector.Select.BY_MATCH, "");
     }
 
     @Test
@@ -135,9 +149,11 @@ public class MatchedElementsOnlyResolverTestCase {
                 "}"),
                 documentSummary);
         assertSummaryField(search.getSummaryField("my_filter_field"),
-                SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER, "my_field");
+            SummaryTransform.ATTRIBUTE, "my_field",
+            SummaryElementsSelector.Select.BY_MATCH, "");
         assertSummaryField(search.getSummaryField("my_field"),
-                SummaryTransform.ATTRIBUTE, "my_field");
+            SummaryTransform.ATTRIBUTE, "my_field",
+            SummaryElementsSelector.Select.ALL, "");
     }
 
     @Test
@@ -155,14 +171,19 @@ public class MatchedElementsOnlyResolverTestCase {
                 "and map of primitive type to primitive type"));
     }
 
-    private void assertSummaryField(String fieldContent, String fieldName, SummaryTransform expTransform) throws ParseException {
+    private void assertSummaryField(String fieldContent, String fieldName, SummaryTransform expTransform,
+                                    SummaryElementsSelector.Select expSelect,
+                                    String expSummaryFeature) throws ParseException {
         var search = buildSearch(fieldContent);
-        assertSummaryField(search.getSummaryField(fieldName), expTransform, fieldName);
+        assertSummaryField(search.getSummaryField(fieldName), expTransform, fieldName, expSelect, expSummaryFeature);
     }
 
-    private void assertSummaryField(SummaryField field, SummaryTransform expTransform, String expSourceField) {
+    private void assertSummaryField(SummaryField field, SummaryTransform expTransform, String expSourceField,
+                                    SummaryElementsSelector.Select expSelect, String expSummaryFeature) {
         assertEquals(expTransform, field.getTransform());
         assertEquals(expSourceField, field.getSingleSource());
+        assertEquals(expSelect, field.getElementsSelector().getSelect());
+        assertEquals(expSummaryFeature, field.getElementsSelector().getSummaryFeature());
     }
 
     private Schema buildSearch(String field) throws ParseException {

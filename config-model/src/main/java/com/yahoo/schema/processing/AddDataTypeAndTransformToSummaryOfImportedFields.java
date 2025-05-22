@@ -64,12 +64,7 @@ public class AddDataTypeAndTransformToSummaryOfImportedFields extends Processor 
         if (summaryField.hasUnresolvedType()) {
             summaryField.setResolvedDataType(field.getDataType());
         }
-        if (summaryField.getTransform() == SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER) {
-            // This field already has the correct transform.
-            return;
-        } else if (summaryField.getTransform() == SummaryTransform.MATCHED_ELEMENTS_FILTER) {
-            summaryField.setTransform(SummaryTransform.MATCHED_ATTRIBUTE_ELEMENTS_FILTER);
-        } else {
+        if (summaryField.getTransform() == SummaryTransform.NONE) {
             summaryField.setTransform(SummaryTransform.ATTRIBUTECOMBINER);
         }
     }
