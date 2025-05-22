@@ -186,6 +186,7 @@ public class Nodes {
                         node = node.with(node.status().withWantToRetire(existing.get().status().wantToRetire(),
                                                                         false,
                                                                         rebuilding,
+                                                                        existing.get().status().startingRebuild(),
                                                                         existing.get().status().wantToUpgradeFlavor()));
                     }
                     nodesToRemove.add(existing.get());
@@ -209,7 +210,7 @@ public class Nodes {
         if (node.status().wantToDeprovision() || node.status().wantToRebuild())
             return park(node.hostname(), false, agent, reason);
 
-        node = node.withWantToRetire(false, false, false, false, agent, clock.instant());
+        node = node.withWantToRetire(false, false, false, false, false, agent, clock.instant());
         return db.writeTo(Node.State.ready, node, agent, Optional.of(reason));
     }
 
@@ -481,11 +482,11 @@ public class Nodes {
             Instant now = clock.instant();
             if (toState == Node.State.parked && agent == Agent.operator) {
                 if (forceDeprovision) illegal("Cannot force deprovisioning when agent is " + Agent.operator);
-                node = node.withWantToRetire(false, false, false, false, agent, now)
+                node = node.withWantToRetire(false, false, false, false, false, agent, now)
                            .withPreferToRetire(false, agent, now);
             }
             if (forceDeprovision)
-                node = node.withWantToRetire(true, true, false, false, agent, now);
+                node = node.withWantToRetire(true, true, false, false, false, agent, now);
             if (toState == Node.State.deprovisioned) {
                 node = node.with(IP.Config.EMPTY);
             }
@@ -689,13 +690,13 @@ public class Nodes {
             boolean wantToSnapshot = op.needsSnapshot(hostMutex.node(), snapshotsEnabled.value());
 
             // Update host
-            Node newHost = hostMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, wantToUpgradeFlavor, agent, instant);
+            Node newHost = hostMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, false, wantToUpgradeFlavor, agent, instant);
             write(newHost, hostMutex);
 
             // Update children
             for (var childMutex : nodeMutexes.children()) {
                 if (wantToRetire || op == HostOperation.cancel) {
-                    Node newNode = childMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, false, false, agent, instant);
+                    Node newNode = childMutex.node().withWantToRetire(wantToRetire, wantToDeprovision, false, false, false, agent, instant);
                     write(newNode, childMutex);
                 }
                 boolean contentNode = childMutex.node().allocation()

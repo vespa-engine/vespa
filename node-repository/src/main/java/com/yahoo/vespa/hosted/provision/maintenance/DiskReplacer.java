@@ -35,17 +35,32 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
 
     @Override
     protected double maintain() {
-        NodeList candidates = nodeRepository().nodes().list().rebuilding(true);
-        if (candidates.isEmpty()) {
-            return 0;
-        }
+        int attempts = 0;
         int failures = 0;
-        List<Node> rebuilding;
-        try (var locked = nodeRepository().nodes().lockAndGetAll(candidates.asList(), Optional.of(Duration.ofSeconds(10)))) {
-            rebuilding = locked.nodes().stream().map(NodeMutex::node).toList();
+        NodeList rebuildCandidates = nodeRepository().nodes().list().rebuilding(true);
+        try (var locked = nodeRepository().nodes().lockAndGetAll(rebuildCandidates.asList(), Optional.of(Duration.ofSeconds(10)))) {
+            List<Node> rebuilding = locked.nodes().stream().map(NodeMutex::node).toList();
             RebuildResult result = hostProvisioner.replaceRootDisk(rebuilding);
+            for (Node updated : result.successes()) {
+                if (!updated.status().wantToRebuild()) {
+                    nodeRepository().nodes().write(updated, () -> {});
+                }
+            }
+            for (var entry : result.failed().entrySet()) {
+                ++failures;
+                log.log(Level.WARNING, "Failed to replace root disk on " + entry.getKey() + ", will retry in " +
+                        interval() + ": " + Exceptions.toMessageString(entry.getValue()));
+            }
+            attempts += result.successes().size() + result.failed().size();
+        }
 
-            for (Node updated : result.rebuilt()) {
+        NodeList hostsStartingRebuild = nodeRepository().nodes().list().startingRebuild();
+
+        try (var locked = nodeRepository().nodes().lockAndGetAll(hostsStartingRebuild.asList(), Optional.of(Duration.ofSeconds(10)))) {
+            List<Node> starting = locked.nodes().stream().map(NodeMutex::node).toList();
+            RebuildResult startResult = hostProvisioner.startHosts(starting);
+
+            for (Node updated : startResult.successes()) {
                 if (!updated.status().wantToRebuild()) {
                     NodeList children = nodeRepository().nodes().list().childrenOf(updated);
                     restoreSnapshotsOf(children);
@@ -53,13 +68,15 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
                 }
             }
 
-            for (var entry : result.failed().entrySet()) {
+            for (var entry : startResult.failed().entrySet()) {
                 ++failures;
-                log.log(Level.WARNING, "Failed to rebuild " + entry.getKey() + ", will retry in " +
-                                       interval() + ": " + Exceptions.toMessageString(entry.getValue()));
+                log.log(Level.WARNING, "Failed to start " + entry.getKey() + ", will retry in " +
+                        interval() + ": " + Exceptions.toMessageString(entry.getValue()));
             }
+            attempts += startResult.successes().size() + startResult.failed().size();
         }
-        return asSuccessFactorDeviation(rebuilding.size(), failures);
+
+        return asSuccessFactorDeviation(attempts, failures);
     }
 
     private void restoreSnapshotsOf(NodeList children) {

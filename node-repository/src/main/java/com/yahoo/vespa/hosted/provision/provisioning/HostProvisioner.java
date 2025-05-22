@@ -80,7 +80,9 @@ public interface HostProvisioner {
      */
     default RebuildResult replaceRootDisk(Collection<Node> hosts) { return new RebuildResult(List.of(), Map.of()); }
 
-    record RebuildResult(List<Node> rebuilt, Map<Node, Exception> failed) { }
+    default RebuildResult startHosts(Collection<Node> hosts) { return new RebuildResult(List.of(), Map.of()); }
+
+    record RebuildResult(List<Node> successes, Map<Node, Exception> failed) { }
 
     /**
      * Returns the maintenance events scheduled for hosts in this zone, in given cloud accounts. Host events in the

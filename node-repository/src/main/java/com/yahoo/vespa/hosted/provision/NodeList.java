@@ -75,6 +75,13 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         });
     }
 
+    /**
+     * Returns the subset of nodes that are currently in the process of starting up during rebuild
+     */
+    public NodeList startingRebuild() {
+        return matching(node -> node.status().startingRebuild());
+    }
+
     /** Returns the subset of nodes which are removable */
     public NodeList removable() {
         return matching(node -> node.allocation().isPresent() && node.allocation().get().removable());

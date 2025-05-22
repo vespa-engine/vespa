@@ -158,7 +158,7 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(node10);
 
         Node node55 = Node.create("node55", ipConfig(55), "host55.yahoo.com", resources(2, 8, 50, 1, fast, local), NodeType.tenant)
-                          .status(Status.initial().withWantToRetire(true, true, false, false))
+                          .status(Status.initial().withWantToRetire(true, true, false, false, false))
                 .cloudAccount(defaultCloudAccount).build();
         nodes.add(node55);
 
