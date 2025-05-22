@@ -129,12 +129,14 @@ CompiledFunction::detect_issues(const nodes::Node &node)
         void close(const nodes::Node &node) override {
             if (nodes::check_type<nodes::TensorMap,
                                   nodes::TensorMapSubspaces,
+                                  nodes::TensorFilterSubspaces,
                                   nodes::TensorJoin,
                                   nodes::TensorMerge,
                                   nodes::TensorReduce,
                                   nodes::TensorRename,
                                   nodes::TensorConcat,
                                   nodes::TensorCellCast,
+                                  nodes::TensorCellOrder,
                                   nodes::TensorCreate,
                                   nodes::TensorLambda,
                                   nodes::TensorPeek>(node))

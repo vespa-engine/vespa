@@ -142,6 +142,13 @@ public:
             }
             return {};
         }
+        if (auto issues = InterpretedFunction::detect_issues(*fun)) {
+            _error = fmt("unable to interpret expression: '%s'", expr.c_str());
+            for (const auto &issue: issues.list) {
+                _error.append(fmt("\n  %s", issue.c_str()));
+            }
+            return {};
+        }
         vespalib::Stash stash;
         const TensorFunction &plain_fun = make_tensor_function(factory, fun->root(), types, stash);
         const TensorFunction &optimized = optimize_tensor_function(factory, plain_fun, stash);
