@@ -1,5 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/wrap_param.h>
 #include "generic_filter_subspaces.h"
 #include <vespa/eval/eval/value_builder_factory.h>
 
@@ -22,15 +23,19 @@ struct InterpretedParams {
     size_t num_mapped;
     size_t dense_size;
     bool direct;
-    InterpretedParams(const FilterSubspaces &filter_subspaces, const ValueBuilderFactory &factory_in)
+    InterpretedParams(const ValueType &result_type_in,
+                      const ValueType &inner_type_in,
+                      const Function &lambda, const NodeTypes &types,
+                      const ValueBuilderFactory &factory_in)
       : factory(factory_in),
-        result_type(filter_subspaces.result_type()),
-        inner_type(filter_subspaces.inner_type()),
-        fun(factory, filter_subspaces.lambda().root(), filter_subspaces.types()),
+        result_type(result_type_in),
+        inner_type(inner_type_in),
+        fun(factory, lambda.root(), types),
         num_mapped(result_type.count_mapped_dimensions()),
         dense_size(result_type.dense_subspace_size()),
         direct(result_type.cell_type() == inner_type.cell_type())
     {
+        assert(num_mapped > 0);
         assert(dense_size == inner_type.dense_subspace_size());
         assert(direct || (dense_size == 1 && inner_type.cell_type() == CellType::DOUBLE));
     }
@@ -107,13 +112,13 @@ struct SelectGenericFilterSubspacesOp {
 } // namespace <unnamed>
 
 Instruction
-GenericFilterSubspaces::make_instruction(const tensor_function::FilterSubspaces &filter_subspaces_in,
+GenericFilterSubspaces::make_instruction(const ValueType &result_type,
+                                         const ValueType &inner_type,
+                                         const Function &lambda, const NodeTypes &types,
                                          const ValueBuilderFactory &factory, Stash &stash)
 {
-    InterpretedParams &params = stash.create<InterpretedParams>(filter_subspaces_in, factory);
-    assert(params.result_type.count_mapped_dimensions() > 0);
-    assert(filter_subspaces_in.child().result_type().cell_type() == params.result_type.cell_type());
-    auto op = typify_invoke<1,TypifyCellType,SelectGenericFilterSubspacesOp>(params.result_type.cell_type());
+    InterpretedParams &params = stash.create<InterpretedParams>(result_type, inner_type, lambda, types, factory);
+    auto op = typify_invoke<1, TypifyCellType, SelectGenericFilterSubspacesOp>(params.result_type.cell_type());
     return Instruction(op, wrap_param<InterpretedParams>(params));
 }
 

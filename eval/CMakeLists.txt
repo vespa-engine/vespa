@@ -65,6 +65,7 @@ vespa_define_module(
     src/tests/instruction/generic_cell_order
     src/tests/instruction/generic_concat
     src/tests/instruction/generic_create
+    src/tests/instruction/generic_filter_subspaces
     src/tests/instruction/generic_join
     src/tests/instruction/generic_map
     src/tests/instruction/generic_merge
