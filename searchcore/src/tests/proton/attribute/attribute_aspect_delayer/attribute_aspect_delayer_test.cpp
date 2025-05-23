@@ -380,17 +380,6 @@ TEST_F(DelayerTest, require_that_removing_attribute_aspect_from_struct_field_is_
     assertSummaryConfig({make_summary_field("array")});
 }
 
-TEST_F(DelayerTest, require_that_adding_attribute_aspect_to_struct_field_is_delayed_if_field_type_is_unchanged_with_filtering_docsum)
-{
-    addFields({"array.a"});
-    setup(attrCfg({}), attrCfg({make_int32_sv_cfg("array.a")}),
-          sCfg({make_summary_field("array", command::attribute_combiner, "array"),
-                make_summary_field("array_filtered", command::matched_attribute_elements_filter, "array")}));
-    assertAttributeConfig({});
-    assertSummaryConfig({make_summary_field("array"),
-                         make_summary_field("array_filtered", command::matched_elements_filter, "array")});
-}
-
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -230,15 +230,6 @@ AttributeAspectConfigRewriter::build_summary_config(const SummaryConfig& new_sum
                 if (is_delayed_add_attribute_aspect_struct(source_field(summary_field))) {
                     remove_docsum_field_rewriter(summary_field);
                 }
-            } else if (summary_field.command == command::matched_attribute_elements_filter) {
-                if (is_delayed_add_attribute_aspect_struct(source_field(summary_field)) ||
-                    is_delayed_add_attribute_aspect(source_field(summary_field))) {
-                    summary_field.command = command::matched_elements_filter;
-                }
-            } else if (summary_field.command == command::matched_elements_filter) {
-                if (is_delayed_remove_attribute_aspect(source_field(summary_field))) {
-                    summary_field.command = command::matched_attribute_elements_filter;
-                }
             } else if (summary_field.command == "") {
                 if (is_delayed_remove_attribute_aspect(summary_field.name)) {
                     summary_field.command = command::attribute;

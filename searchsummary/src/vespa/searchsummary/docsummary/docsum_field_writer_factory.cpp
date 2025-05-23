@@ -129,20 +129,6 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
             fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx);
             throw_if_nullptr(fieldWriter, command);
         }
-    } else if (command == command::matched_attribute_elements_filter) {
-        const std::string& source_field = source.empty() ? field_name : source;
-        if (has_attribute_manager()) {
-            auto attr_ctx = getEnvironment().getAttributeManager()->createContext();
-            if (attr_ctx->getAttribute(source_field) != nullptr) {
-                fieldWriter = AttributeDFWFactory::create(*getEnvironment().getAttributeManager(), source_field);
-            } else {
-                fieldWriter = AttributeCombinerDFW::create(source_field, *attr_ctx);
-            }
-            throw_if_nullptr(fieldWriter, command);
-        }
-    } else if (command == command::matched_elements_filter) {
-        const std::string& source_field = source.empty() ? field_name : source;
-        fieldWriter = std::make_unique<CopyDFW>(source_field);
     } else if (command == command::documentid) {
         fieldWriter = std::make_unique<DocumentIdDFW>();
     } else {
