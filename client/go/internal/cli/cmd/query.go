@@ -296,6 +296,11 @@ func getJsonFrom(fn string, query url.Values) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	for i, v := range body {
+		if v == '\n' || v == '\t' {
+			body[i] = ' '
+		}
+	}
 	err = json.Unmarshal(body, &parsed)
 	if err != nil {
 		return nil, err
