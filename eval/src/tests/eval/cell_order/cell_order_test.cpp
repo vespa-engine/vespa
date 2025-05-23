@@ -2,6 +2,7 @@
 
 #include <vespa/eval/eval/cell_order.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <algorithm>
 
 using vespalib::BFloat16;
 using namespace vespalib::eval;
