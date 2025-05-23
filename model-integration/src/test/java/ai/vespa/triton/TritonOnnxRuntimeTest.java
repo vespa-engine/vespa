@@ -5,6 +5,7 @@ import ai.vespa.llm.clients.TritonConfig;
 import ai.vespa.modelintegration.evaluator.OnnxEvaluatorOptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 /**
  * @author bjorncs
  */
+@EnabledIfSystemProperty(named = "VESPA_USE_TRITON", matches = "true")
 @ExtendWith(ContainerEnvironmentAvailableCondition.class)
 class TritonOnnxRuntimeTest {
 
