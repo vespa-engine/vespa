@@ -97,5 +97,5 @@ testcase_json = df.drop(columns=["query"]).to_json(orient="records")
 # Export testcases
 TESTCASE_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 with open(TESTCASE_OUTPUT_PATH, "w") as f:
-    json.dump(testcase_json, f, indent=2)
+    f.write(testcase_json)
     print(f"Testcases saved to {TESTCASE_OUTPUT_PATH}")
