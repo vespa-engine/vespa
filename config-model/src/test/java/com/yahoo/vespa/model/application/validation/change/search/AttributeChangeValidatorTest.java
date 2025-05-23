@@ -192,12 +192,35 @@ public class AttributeChangeValidatorTest {
 
     @Test
     void changing_distance_metric_with_hnsw_index_enabled_requires_restart() {
-        new Fixture("field f1 type tensor(x[2]) { indexing: attribute | index \n index { hnsw } }",
-                "field f1 type tensor(x[2]) { indexing: attribute | index \n attribute { " +
-                        "distance-metric: geodegrees \n } }").
-                assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
-                "Field 'f1' changed: change property " +
-                        "'distance-metric' from 'EUCLIDEAN' to 'GEODEGREES'"));
+        var currentSd = """
+                        field f1 type tensor(x[2]) {
+                          indexing: attribute | index
+                          index { hnsw }
+                        }
+                        """;
+        var nextSd = """
+                        field f1 type tensor(x[2]) {
+                          indexing: attribute | index
+                          index { hnsw }
+                          attribute {
+                            distance-metric: geodegrees
+                          }
+                        }
+                        """;
+
+        // Success when validation override is set
+        String expectedOutput = "Field 'f1' changed: change property 'distance-metric' from 'EUCLIDEAN' to 'GEODEGREES'";
+        new Fixture(currentSd, nextSd, ValidationId.hnswSettingsChange)
+                .assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
+
+        // Should fail when validation override is not set
+        try {
+            new Fixture(currentSd, nextSd).assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
+            fail("Expected exception on changing hnsw settings");
+        }
+        catch (ValidationOverrides.ValidationException e) {
+            assertTrue(e.getMessage().contains(ValidationId.hnswSettingsChange.toString()));
+        }
     }
 
     @Test
@@ -263,17 +286,8 @@ public class AttributeChangeValidatorTest {
         var expectedOutput = "Field 'f1' changed: change hnsw index property 'neighbors-to-explore-at-insert' from '200' to '100'";
 
         // Success when validation override is set
-        new Fixture(currentSd, nextSd, ValidationId.hnswSettingsChange)
+        new Fixture(currentSd, nextSd)
                 .assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
-
-        // Should fail when validation override is not set
-        try {
-            new Fixture(currentSd, nextSd).assertValidation(newRestartAction(ClusterSpec.Id.from("test"), expectedOutput));
-            fail("Expected exception on changing hnsw settings");
-        }
-        catch (ValidationOverrides.ValidationException e) {
-            assertTrue(e.getMessage().contains(ValidationId.hnswSettingsChange.toString()));
-        }
     }
 
     @Test
