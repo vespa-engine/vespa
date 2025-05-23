@@ -54,19 +54,64 @@ class LightGBMParser {
         return nodes;
     }
 
+    /**
+     * As primary method, we try to determine which are categorical features from the "features_infos" structure
+     *  and then later use the "pandas_categorical" structure to determine the categoryValues.
+     *  If we can't find the categorical features in the "features_infos" structure (models exported without
+     *  "categorical_feature" parameter, or older versions of lightgbm), we fall back to traversing the
+     *  decision tree looking for categorical decisions ('==') and use that to determine which features are categorical.
+     *  Due to lack of documentation, we can't _know_ that the "feature_infos" and "pandas_categorical" will always
+     *  be of the same length and in same order, but we have tried to verify this and not managed to find a case where they are not.
+     *  And it is at least a lot better than the fallback, where we know some features can be
+     *  treated incorrectly.
+     */
     private Map<Integer, List<String>> parseCategoryValues(JsonNode root) {
         Map<Integer, List<String>> categoryValues = new HashMap<>();
 
-        // Since the JSON format does not explicitly tell which features are
-        // categorical, we traverse the decision tree looking for categorical
-        // decisions and use that to determine which categorical features.
-        Set<Integer> categoricalFeatures = new TreeSet<>();
-        nodes.forEach(node -> findCategoricalFeatures(node, categoricalFeatures));
 
+        Set<Integer> categoricalFeatures = new TreeSet<>();
+        // Get feature names and create a mapping from name to index
+        List<String> featureNamesList = new ArrayList<>();
+        if (root.has("feature_names") && root.get("feature_names").isArray()) {
+            root.get("feature_names").forEach(nameNode -> featureNamesList.add(nameNode.asText()));
+        }
+
+        Map<String, Integer> featureNameToIndex = new HashMap<>();
+        for (int i = 0; i < featureNamesList.size(); i++) {
+            featureNameToIndex.put(featureNamesList.get(i), i);
+        }
+        
+        JsonNode featureInfosNode = root.get("feature_infos");
+
+        if (featureInfosNode != null && featureInfosNode.isObject()) {
+            for (String featureName : featureNamesList) { // Iterate in the order of feature_names
+                JsonNode specificFeatureInfo = featureInfosNode.get(featureName);
+                if (specificFeatureInfo != null &&
+                        specificFeatureInfo.has("values") &&
+                        specificFeatureInfo.get("values").isArray() &&
+                        !specificFeatureInfo.get("values").isEmpty()) {
+
+                    Integer featureIndex = featureNameToIndex.get(featureName);
+                    if (featureIndex != null) {
+                        categoricalFeatures.add(featureIndex);
+                    }
+                }
+            }
+        }
+        else {
+            // We have no info in the model JSON to tell exactly which features are
+            // categorical,so we fall back to traverse the decision tree looking for categorical
+            // decisions ('==') and use that to determine which features are categorical.
+            // NB: This might give incorrect results if the model has categorical features
+            // that are not used in the decision tree. Solution is to upgrade to lightgbm>=4.0.0
+            // and make sure that the "categorical_feature" parameter is passed when training the model.
+            nodes.forEach(node -> findCategoricalFeatures(node, categoricalFeatures));
+        }
         // Again, the LightGBM JSON format does not explicitly tell which
         // categorical values map to each categorical feature. The assumption
         // here is that the order they appear in the "pandas_categorical"
-        // structure is the same order as the "feature_names".
+        // structure is the same order as the "feature_names" and the features
+        // in the "feature_infos" structure.
         var pandasFeatureIterator = root.get("pandas_categorical").iterator();
         var categoricalFeatureIterator = categoricalFeatures.iterator();
         while (pandasFeatureIterator.hasNext() && categoricalFeatureIterator.hasNext()) {
@@ -74,7 +119,6 @@ class LightGBMParser {
             pandasFeatureIterator.next().forEach(value -> values.add(value.textValue()));
             categoryValues.put(categoricalFeatureIterator.next(), values);
         }
-
         return categoryValues;
     }
 
