@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace vespalib::eval::tensor_function {
 
 template <typename T, typename IN> uint64_t wrap_param(const IN &value_in) {

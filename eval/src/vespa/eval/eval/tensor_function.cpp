@@ -192,7 +192,7 @@ MapSubspaces::visit_self(vespalib::ObjectVisitor &visitor) const
 InterpretedFunction::Instruction
 FilterSubspaces::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericFilterSubspaces::make_instruction(*this, factory, stash);
+    return instruction::GenericFilterSubspaces::make_instruction(result_type(), inner_type(), lambda(), types(), factory, stash);
 }
 
 void
