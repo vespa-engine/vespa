@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
+#include <algorithm>
 #include <cassert>
 #include <numeric>
 
