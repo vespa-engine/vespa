@@ -19,8 +19,7 @@ import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isComplexFiel
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isSupportedComplexField;
 
 /**
- * Iterates all summary fields with 'matched-elements-only' and adjusts transform (if all struct-fields are attributes)
- * and validates that the field type is supported.
+ * Iterates all summary fields with 'matched-elements-only' and validates that the field type is supported.
  *
  * @author geirst
  */
@@ -45,9 +44,7 @@ public class MatchedElementsOnlyResolver extends Processor {
     private void processSummaryField(DocumentSummary summary, SummaryField field, boolean validate) {
         var sourceField = schema.getField(field.getSingleSource());
         if (sourceField != null) {
-            if (isSupportedComplexField(sourceField)) {
-            } else if (isSupportedMultiValueField(sourceField)) {
-            } else if (validate) {
+            if (!isSupportedComplexField(sourceField) && !isSupportedMultiValueField(sourceField) && validate) {
                 fail(summary, field, "'matched-elements-only' is not supported for this field type. " +
                         "Supported field types are: array of primitive, weighted set of primitive, " +
                         "array of simple struct, map of primitive type to simple struct, " +
