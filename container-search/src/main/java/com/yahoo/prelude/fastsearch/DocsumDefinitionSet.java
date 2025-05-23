@@ -46,7 +46,7 @@ public final class DocsumDefinitionSet {
      * @throws ConfigurationException if the requested summary class is not found and there is none called "default"
      */
     public DocsumDefinition getDocsum(String summaryClass) {
-        if (summaryClass == null)
+        if (summaryClass == null || summaryClass.isEmpty())
             summaryClass = "default";
         DocsumDefinition ds = definitionsByName.get(summaryClass);
         if (ds == null)
@@ -60,7 +60,7 @@ public final class DocsumDefinitionSet {
 
     /** Do we have a summary definition with the given name */
     public boolean hasDocsum(String summaryClass) {
-        if (summaryClass == null)
+        if (summaryClass == null || summaryClass.isEmpty())
             summaryClass = "default";
         return definitionsByName.containsKey(summaryClass);
     }
