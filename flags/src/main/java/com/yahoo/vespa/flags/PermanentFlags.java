@@ -162,13 +162,13 @@ public class PermanentFlags {
             "docker-image-repo", "",
             "Override default docker image repo. Docker image version will be Vespa version.",
             "Takes effect on next deployment from controller",
-            INSTANCE_ID);
+            ZONE_ID, TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundStringFlag METRIC_SET = defineStringFlag(
             "metric-set", "Vespa9",
             "Determines which metric set we should use for the given application",
             "Takes effect on next host admin tick",
-            INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag VERBOSE_DEPLOY_PARAMETER = defineFeatureFlag(
             "verbose-deploy-parameter", false,
@@ -364,7 +364,7 @@ public class PermanentFlags {
             "The config server will refuse to serve config to nodes running a version which is incompatible with their " +
             "current wanted node version, i.e., nodes about to upgrade to a version which is incompatible with the current.",
             "Takes effect immediately",
-            INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundStringFlag ADMIN_CLUSTER_NODE_ARCHITECTURE = defineStringFlag(
             "admin-cluster-node-architecture", "x86_64",
@@ -408,7 +408,7 @@ public class PermanentFlags {
             "disabled-deployment-zones", List.of(), String.class,
             "The zones, e.g., prod.norway-71, where deployments jobs are currently disabled",
             "Takes effect immediately",
-            INSTANCE_ID
+            TENANT_ID, APPLICATION, INSTANCE_ID
     );
 
     public static final UnboundBooleanFlag ALLOW_USER_FILTERS = defineFeatureFlag(
@@ -489,18 +489,18 @@ public class PermanentFlags {
             "Drop pagecache. " +
             "This is combined with the drop-dentries-and-inodes flag for a single write to /proc/sys/vm/drop_caches.",
             "Takes effect on next tick",
-            // The application ID is the exclusive application ID associated with the host,
-            // if any, or otherwise hosted-vespa:tenant-host:default.
-            INSTANCE_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
+            // The tenant, application, and instance ID dimensions are set from the exclusive ApplicationId
+            // associated with the host, if any, or otherwise hosted-vespa:tenant-host:default.
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundIntFlag DROP_DENTRIES = defineIntFlag(
             "drop-dentries", -1,
             "Drop dentries and inodes every N minutes.  0 means every tick. -1 means disabled. " +
             "This is combined with the drop-caches flag for a single write to /proc/sys/vm/drop_caches.",
             "Takes effect on next tick",
-            // The application ID is the exclusive application ID associated with the host,
-            // if any, or otherwise hosted-vespa:tenant-host:default.
-            INSTANCE_ID, TENANT_ID, CLUSTER_ID, CLUSTER_TYPE);
+            // The tenant, application, and instance ID dimensions are set from the exclusive ApplicationId
+            // associated with the host, if any, or otherwise hosted-vespa:tenant-host:default.
+            TENANT_ID, APPLICATION, INSTANCE_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundIntFlag CERT_POOL_SIZE = defineIntFlag(
             "cert-pool-size", 0,
