@@ -13,8 +13,6 @@ const std::string documentid("documentid");
 const std::string dynamic_teaser("dynamicteaser");
 const std::string empty("empty");
 const std::string geo_position("geopos");
-const std::string matched_attribute_elements_filter("matchedattributeelementsfilter");
-const std::string matched_elements_filter("matchedelementsfilter");
 const std::string positions("positions");
 const std::string rank_features("rankfeatures");
 const std::string summary_features("summaryfeatures");

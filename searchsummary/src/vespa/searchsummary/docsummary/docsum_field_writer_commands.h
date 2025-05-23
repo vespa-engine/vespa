@@ -19,8 +19,6 @@ extern const std::string documentid;
 extern const std::string dynamic_teaser;
 extern const std::string empty;
 extern const std::string geo_position;
-extern const std::string matched_attribute_elements_filter;
-extern const std::string matched_elements_filter;
 extern const std::string positions;
 extern const std::string rank_features;
 extern const std::string summary_features;

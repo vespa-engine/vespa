@@ -70,10 +70,6 @@ DocsumFieldWriterFactory::create_docsum_field_writer(const std::string& field_na
             fieldWriter = std::make_unique<CopyDFW>(source);
         }
     } else if (command == command::geo_position) {
-    } else if ((command == command::matched_attribute_elements_filter) ||
-               (command == command::matched_elements_filter)) {
-        std::string source_field = source.empty() ? field_name : source;
-        fieldWriter = std::make_unique<CopyDFW>(source_field);
     } else if ((command == command::tokens) ||
                (command == command::attribute_tokens)) {
         if (!source.empty()) {
