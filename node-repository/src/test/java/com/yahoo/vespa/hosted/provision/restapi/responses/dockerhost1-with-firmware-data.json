@@ -60,6 +60,7 @@
   "preferToRetire": false,
   "wantToDeprovision": false,
   "wantToRebuild": false,
+  "bootingAfterRebuild": false,
   "wantToUpgradeFlavor": false,
   "down": false,
   "history": [
