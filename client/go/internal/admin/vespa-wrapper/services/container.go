@@ -32,19 +32,22 @@ func VerifyAvailableMemory() {
 }
 
 func getAvailableMemory() (uint64, error) {
+	cgroupsMemoryLimit, cgroupsErr := getMemoryLimitCgroupLimit()
+	availableSystemMemory, sysmemErr := getAvailableSystemMemory()
 
-	if availableMemory, err := getMemoryLimitCgroupMax(); err == nil {
-		return availableMemory, nil
+	switch {
+	case cgroupsErr == nil && sysmemErr == nil:
+		return min(cgroupsMemoryLimit, availableSystemMemory), nil
+	case cgroupsErr == nil:
+		return cgroupsMemoryLimit, nil
+	case sysmemErr == nil:
+		return availableSystemMemory, nil
+	default:
+		return 0, fmt.Errorf("unable to get available memory")
 	}
-
-	if availableMemory, err := getAvailableSystemMemory(); err == nil {
-		return availableMemory, nil
-	}
-
-	return 0, fmt.Errorf("unable to get available memory")
 }
 
-func getMemoryLimitCgroupMax() (uint64, error) {
+func getMemoryLimitCgroupLimit() (uint64, error) {
 	// Try cgroup v2 first
 	if data, err := os.ReadFile("/sys/fs/cgroup/memory.max"); err == nil {
 		content := strings.TrimSpace(string(data))
