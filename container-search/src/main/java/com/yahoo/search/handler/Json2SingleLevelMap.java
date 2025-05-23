@@ -45,6 +45,7 @@ class Json2SingleLevelMap {
     private static ObjectMapper createMapper() {
         return Jackson.createMapper(new JsonFactoryBuilder()
                 .streamReadConstraints(StreamReadConstraints.builder().maxStringLength(Integer.MAX_VALUE).build())
+                .configure(JsonReadFeature.ALLOW_UNESCAPED_CONTROL_CHARS, true)
                 .configure(JsonReadFeature.ALLOW_SINGLE_QUOTES, true));
     }
 
