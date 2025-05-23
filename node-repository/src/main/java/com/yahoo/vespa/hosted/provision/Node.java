@@ -294,7 +294,7 @@ public final class Node implements Nodelike {
      * If both given wantToRetire and wantToDeprovision are equal to the current values, the method is no-op.
      */
     public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, Agent agent, Instant at) {
-        return withWantToRetire(wantToRetire, wantToDeprovision, status.wantToRebuild(), status.startingRebuild(), status.wantToUpgradeFlavor(), agent, at);
+        return withWantToRetire(wantToRetire, wantToDeprovision, status.wantToRebuild(), status.bootingAfterRebuild(), status.wantToUpgradeFlavor(), agent, at);
     }
 
     /**
@@ -303,13 +303,13 @@ public final class Node implements Nodelike {
      *
      * If all given values are equal to the current ones, the method is no-op.
      */
-    public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, boolean wantToRebuild, boolean startingRebuild, boolean wantToUpgradeFlavor, Agent agent, Instant at) {
+    public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, boolean wantToRebuild, boolean bootingAfterRebuild, boolean wantToUpgradeFlavor, Agent agent, Instant at) {
         if (wantToRetire == status.wantToRetire() &&
             wantToDeprovision == status.wantToDeprovision() &&
             wantToRebuild == status.wantToRebuild() &&
-            startingRebuild == status.startingRebuild() &&
+            bootingAfterRebuild == status.bootingAfterRebuild() &&
             wantToUpgradeFlavor == status.wantToUpgradeFlavor()) return this;
-        Node node = this.with(status.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, wantToUpgradeFlavor));
+        Node node = this.with(status.withWantToRetire(wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, wantToUpgradeFlavor));
         if (wantToRetire)
             node = node.with(history.with(new History.Event(History.Event.Type.wantToRetire, agent, at)));
         return node;

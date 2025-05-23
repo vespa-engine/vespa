@@ -39,9 +39,12 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
         int failures = 0;
         NodeList rebuildCandidates = nodeRepository().nodes().list().rebuilding(true);
         try (var locked = nodeRepository().nodes().lockAndGetAll(rebuildCandidates.asList(), Optional.of(Duration.ofSeconds(10)))) {
-            List<Node> rebuilding = locked.nodes().stream().map(NodeMutex::node).toList();
+            List<Node> rebuilding = locked.nodes().stream()
+                    .map(NodeMutex::node)
+                    .filter(node -> node.status().wantToRebuild())
+                    .toList();
             RebuildResult result = hostProvisioner.replaceRootDisk(rebuilding);
-            for (Node updated : result.successes()) {
+            for (Node updated : result.completed()) {
                 if (!updated.status().wantToRebuild()) {
                     nodeRepository().nodes().write(updated, () -> {});
                 }
@@ -51,21 +54,21 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
                 log.log(Level.WARNING, "Failed to replace root disk on " + entry.getKey() + ", will retry in " +
                         interval() + ": " + Exceptions.toMessageString(entry.getValue()));
             }
-            attempts += result.successes().size() + result.failed().size();
+            attempts += result.completed().size() + result.failed().size();
         }
 
-        NodeList hostsStartingRebuild = nodeRepository().nodes().list().startingRebuild();
-
-        try (var locked = nodeRepository().nodes().lockAndGetAll(hostsStartingRebuild.asList(), Optional.of(Duration.ofSeconds(10)))) {
-            List<Node> starting = locked.nodes().stream().map(NodeMutex::node).toList();
+        NodeList hostsBootingAfterRebuild = nodeRepository().nodes().list().bootingAfterRebuild();
+        try (var locked = nodeRepository().nodes().lockAndGetAll(hostsBootingAfterRebuild.asList(), Optional.of(Duration.ofSeconds(10)))) {
+            List<Node> starting = locked.nodes().stream()
+                    .map(NodeMutex::node)
+                    .filter(node -> node.status().bootingAfterRebuild())
+                    .toList();
             RebuildResult startResult = hostProvisioner.startHosts(starting);
 
-            for (Node updated : startResult.successes()) {
-                if (!updated.status().wantToRebuild()) {
-                    NodeList children = nodeRepository().nodes().list().childrenOf(updated);
-                    restoreSnapshotsOf(children);
-                    nodeRepository().nodes().write(updated, () -> {});
-                }
+            for (Node updated : startResult.completed()) {
+                NodeList children = nodeRepository().nodes().list().childrenOf(updated);
+                restoreSnapshotsOf(children);
+                nodeRepository().nodes().write(updated, () -> {});
             }
 
             for (var entry : startResult.failed().entrySet()) {
@@ -73,7 +76,7 @@ public class DiskReplacer extends NodeRepositoryMaintainer {
                 log.log(Level.WARNING, "Failed to start " + entry.getKey() + ", will retry in " +
                         interval() + ": " + Exceptions.toMessageString(entry.getValue()));
             }
-            attempts += startResult.successes().size() + startResult.failed().size();
+            attempts += startResult.completed().size() + startResult.failed().size();
         }
 
         return asSuccessFactorDeviation(attempts, failures);

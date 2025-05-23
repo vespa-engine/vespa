@@ -83,7 +83,7 @@ public class NodeSerializer {
     private static final String wantToRetireKey = "wantToRetire";
     private static final String wantToDeprovisionKey = "wantToDeprovision";
     private static final String wantToRebuildKey = "wantToRebuild";
-    private static final String startingRebuildKey = "startingRebuild";
+    private static final String bootingAfterRebuildKey = "bootingAfterRebuild";
     private static final String preferToRetireKey = "preferToRetire";
     private static final String wantToFailKey = "wantToFailKey"; // TODO: This should be changed to 'wantToFail'
     private static final String wantToUpgradeFlavorKey = "wantToUpgradeFlavor";
@@ -175,7 +175,7 @@ public class NodeSerializer {
         object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
         object.setBool(wantToFailKey, node.status().wantToFail());
         object.setBool(wantToRebuildKey, node.status().wantToRebuild());
-        object.setBool(startingRebuildKey, node.status().startingRebuild());
+        object.setBool(bootingAfterRebuildKey, node.status().bootingAfterRebuild());
         object.setBool(wantToUpgradeFlavorKey, node.status().wantToUpgradeFlavor());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history().events(), object.setArray(historyKey));
@@ -309,7 +309,7 @@ public class NodeSerializer {
                           object.field(wantToRetireKey).asBool(),
                           object.field(wantToDeprovisionKey).asBool(),
                           object.field(wantToRebuildKey).asBool(),
-                          object.field(startingRebuildKey).asBool(),
+                          object.field(bootingAfterRebuildKey).asBool(),
                           object.field(preferToRetireKey).asBool(),
                           object.field(wantToFailKey).asBool(),
                           object.field(wantToUpgradeFlavorKey).asBool(),

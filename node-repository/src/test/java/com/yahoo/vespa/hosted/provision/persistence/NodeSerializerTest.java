@@ -335,7 +335,7 @@ public class NodeSerializerTest {
         assertFalse(node.status().wantToDeprovision());
         assertTrue(node.status().wantToRebuild());
         assertTrue(node.status().wantToUpgradeFlavor());
-        assertTrue(node.status().startingRebuild());
+        assertTrue(node.status().bootingAfterRebuild());
     }
 
     @Test

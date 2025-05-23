@@ -60,7 +60,7 @@ public class DiskReplacerTest {
         assertTrue(nodes.stream().allMatch(node -> node.status().snapshot().isPresent() &&
                                                    node.status().snapshot().get().state() == Snapshot.State.created), "Snapshot restore is not yet triggered");
         assertEquals(0, tester.nodeRepository().nodes().list().rebuilding(true).size());
-        assertEquals(1, tester.nodeRepository().nodes().list().startingRebuild().size());
+        assertEquals(1, tester.nodeRepository().nodes().list().bootingAfterRebuild().size());
 
         hostProvisioner.completeInstanceStartupOf(host0);
         diskReplacer.maintain();
@@ -69,7 +69,7 @@ public class DiskReplacerTest {
         assertTrue(nodes.stream().allMatch(node -> node.status().snapshot().isPresent() &&
                 node.status().snapshot().get().state() == Snapshot.State.restoring), "Snapshot restore is triggered for all children");
         assertEquals(0, tester.nodeRepository().nodes().list().rebuilding(true).size());
-        assertEquals(0, tester.nodeRepository().nodes().list().startingRebuild().size());
+        assertEquals(0, tester.nodeRepository().nodes().list().bootingAfterRebuild().size());
     }
 
 }

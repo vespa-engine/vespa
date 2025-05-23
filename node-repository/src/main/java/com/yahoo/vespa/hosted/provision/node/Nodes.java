@@ -186,7 +186,7 @@ public class Nodes {
                         node = node.with(node.status().withWantToRetire(existing.get().status().wantToRetire(),
                                                                         false,
                                                                         rebuilding,
-                                                                        existing.get().status().startingRebuild(),
+                                                                        existing.get().status().bootingAfterRebuild(),
                                                                         existing.get().status().wantToUpgradeFlavor()));
                     }
                     nodesToRemove.add(existing.get());

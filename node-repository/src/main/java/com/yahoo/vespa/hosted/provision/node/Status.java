@@ -23,7 +23,7 @@ public class Status {
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
     private final boolean wantToRebuild;
-    private final boolean startingRebuild;
+    private final boolean bootingAfterRebuild;
     private final boolean preferToRetire;
     private final boolean wantToFail;
     private final boolean wantToUpgradeFlavor;
@@ -38,7 +38,7 @@ public class Status {
                   boolean wantToRetire,
                   boolean wantToDeprovision,
                   boolean wantToRebuild,
-                  boolean startingRebuild,
+                  boolean bootingAfterRebuild,
                   boolean preferToRetire,
                   boolean wantToFail,
                   boolean wantToUpgradeFlavor,
@@ -63,7 +63,7 @@ public class Status {
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
         this.wantToRebuild = wantToRebuild;
-        this.startingRebuild = startingRebuild;
+        this.bootingAfterRebuild = bootingAfterRebuild;
         this.preferToRetire = preferToRetire;
         this.wantToFail = wantToFail;
         this.osVersion = Objects.requireNonNull(osVersion, "OS version must be non-null");
@@ -71,35 +71,35 @@ public class Status {
     }
 
     /** Returns a copy of this with the reboot generation changed */
-    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
+    public Status withReboot(Generation reboot) { return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
 
     /** Returns the reboot generation of this node */
     public Generation reboot() { return reboot; }
 
     /** Returns a copy of this with the vespa version changed */
-    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
+    public Status withVespaVersion(Version version) { return new Status(reboot, Optional.of(version), containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
 
     /** Returns the Vespa version installed on the node, if known */
     public Optional<Version> vespaVersion() { return vespaVersion; }
 
     /** Returns a copy of this with the container image changed */
-    public Status withContainerImage(DockerImage containerImage) { return new Status(reboot, vespaVersion, Optional.of(containerImage), failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
+    public Status withContainerImage(DockerImage containerImage) { return new Status(reboot, vespaVersion, Optional.of(containerImage), failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
 
     /** Returns the container image the node is running, if any */
     public Optional<DockerImage> containerImage() { return containerImage; }
 
-    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, containerImage, failCount + 1, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
+    public Status withIncreasedFailCount() { return new Status(reboot, vespaVersion, containerImage, failCount + 1, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
 
-    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, containerImage, failCount - 1, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
+    public Status withDecreasedFailCount() { return new Status(reboot, vespaVersion, containerImage, failCount - 1, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
 
-    public Status withFailCount(int value) { return new Status(reboot, vespaVersion, containerImage, value, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
+    public Status withFailCount(int value) { return new Status(reboot, vespaVersion, containerImage, value, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot); }
 
     /** Returns how many times this node has been moved to the failed state. */
     public int failCount() { return failCount; }
 
     /** Returns a copy of this with the want to retire/deprovision/rebuild flags changed */
-    public Status withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, boolean wantToRebuild, boolean startingRebuild, boolean wantToUpgradeFlavor) {
-        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
+    public Status withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, boolean wantToRebuild, boolean bootingAfterRebuild, boolean wantToUpgradeFlavor) {
+        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
     }
 
     /**
@@ -117,7 +117,7 @@ public class Status {
     public boolean wantToRebuild() { return wantToRebuild; }
 
     /** Returns whether this node is currently starting a rebuild. */
-    public boolean startingRebuild() { return startingRebuild; }
+    public boolean bootingAfterRebuild() { return bootingAfterRebuild; }
 
     /**
      * Returns whether this node is requested to retire. Unlike {@link Status#wantToRetire()}, this is a soft
@@ -132,7 +132,7 @@ public class Status {
 
     /** Returns a copy of this with want to fail set to the given value */
     public Status withWantToFail(boolean wantToFail) {
-        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
+        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
     }
 
     /** Returns whether this node should be failed */
@@ -140,12 +140,12 @@ public class Status {
 
     /** Returns a copy of this with prefer-to-retire set to given value */
     public Status withPreferToRetire(boolean preferToRetire) {
-        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
+        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
     }
 
     /** Returns a copy of this with the OS version set to given version */
     public Status withOsVersion(OsVersion version) {
-        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, version, firmwareVerifiedAt, snapshot);
+        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, version, firmwareVerifiedAt, snapshot);
     }
 
     /** Returns the OS version of this node */
@@ -155,7 +155,7 @@ public class Status {
 
     /** Returns a copy of this with the firmwareVerifiedAt set to the given instant. */
     public Status withFirmwareVerifiedAt(Instant instant) {
-        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, Optional.of(instant), snapshot);
+        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, Optional.of(instant), snapshot);
     }
 
     /** Returns the last time this node had firmware that was verified to be up to date. */
@@ -170,7 +170,7 @@ public class Status {
 
     /** Returns a copy of this with backup snapshot set to given value */
     public Status withSnapshot(Optional<Snapshot> snapshot) {
-        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, startingRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
+        return new Status(reboot, vespaVersion, containerImage, failCount, wantToRetire, wantToDeprovision, wantToRebuild, bootingAfterRebuild, preferToRetire, wantToFail, wantToUpgradeFlavor, osVersion, firmwareVerifiedAt, snapshot);
     }
 
     /** Returns the initial status of a newly provisioned node */
