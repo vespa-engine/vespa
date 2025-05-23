@@ -27,6 +27,7 @@ class LightGBMParser {
     private final List<LightGBMNode> nodes;
     private final List<String> featureNames;
     private final Map<Integer, List<String>> categoryValues;  // pr feature index
+    private Map<Integer, Boolean> categoricalIntegerFeatures = new HashMap<>();  // true if feature values are integers
 
     LightGBMParser(String filePath) throws IOException {
         ObjectMapper mapper = Jackson.createMapper().configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -67,6 +68,7 @@ class LightGBMParser {
      */
     private Map<Integer, List<String>> parseCategoryValues(JsonNode root) {
         Map<Integer, List<String>> categoryValues = new HashMap<>();
+        categoricalIntegerFeatures = new HashMap<>();  // Reset this map
 
 
         Set<Integer> categoricalFeatures = new TreeSet<>();
@@ -80,7 +82,7 @@ class LightGBMParser {
         for (int i = 0; i < featureNamesList.size(); i++) {
             featureNameToIndex.put(featureNamesList.get(i), i);
         }
-        
+
         JsonNode featureInfosNode = root.get("feature_infos");
 
         if (featureInfosNode != null && featureInfosNode.isObject()) {
@@ -116,8 +118,31 @@ class LightGBMParser {
         var categoricalFeatureIterator = categoricalFeatures.iterator();
         while (pandasFeatureIterator.hasNext() && categoricalFeatureIterator.hasNext()) {
             List<String> values = new ArrayList<>();
-            pandasFeatureIterator.next().forEach(value -> values.add(value.textValue()));
-            categoryValues.put(categoricalFeatureIterator.next(), values);
+            JsonNode categoryNode = pandasFeatureIterator.next();
+            int featureIndex = categoricalFeatureIterator.next();
+
+            // Check if all values are integers
+            boolean allIntegers = true;
+            for (JsonNode value : categoryNode) {
+                if (!value.isInt()) {
+                    allIntegers = false;
+                    break;
+                }
+            }
+
+            // Store feature type
+            categoricalIntegerFeatures.put(featureIndex, allIntegers);
+
+            // Process values
+            categoryNode.forEach(value -> {
+                if (value.isTextual()) {
+                    values.add(value.textValue());
+                } else {
+                    values.add(value.asText());
+                }
+            });
+
+            categoryValues.put(featureIndex, values);
         }
         return categoryValues;
     }
@@ -176,8 +201,14 @@ class LightGBMParser {
     }
 
     private String transformCategoryIndexesToValues(LightGBMNode node) {
+        int featureIndex = node.getSplit_feature();
+        boolean isIntegerFeature = categoricalIntegerFeatures.getOrDefault(featureIndex, false);
+
         return Arrays.stream(node.getThreshold().split("\\|\\|"))
-                .map(index -> "\"" + transformCategoryIndexToValue(node.getSplit_feature(), index) + "\"")
+                .map(index -> {
+                    String value = transformCategoryIndexToValue(featureIndex, index);
+                    return isIntegerFeature ? value : "\"" + value + "\"";
+                })
                 .collect(Collectors.joining(","));
     }
 
