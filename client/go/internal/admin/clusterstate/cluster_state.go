@@ -14,7 +14,7 @@ import (
 	"github.com/vespa-engine/vespa/client/go/internal/osutil"
 )
 
-// common struct used various places in the clustercontroller REST api:
+// StateAndReason is a common struct used by the clustercontroller REST API.
 type StateAndReason struct {
 	State  string `json:"state"`
 	Reason string `json:"reason"`
@@ -29,7 +29,7 @@ func (s *StateAndReason) writeTo(buf *strings.Builder) {
 	}
 }
 
-// cluster state as returned by the clustercontroller REST api:
+// ClusterState represents the cluster state as returned by the clustercontroller REST API.
 type ClusterState struct {
 	State struct {
 		Generated StateAndReason `json:"generated"`
@@ -90,7 +90,7 @@ func (cs *ClusterState) String() string {
 }
 
 func (model *VespaModelConfig) getClusterState(cluster string) (*ClusterState, *ClusterControllerSpec) {
-	errs := make([]string, 0, 0)
+	errs := make([]string, 0)
 	ccs := model.findClusterControllers()
 	if len(ccs) == 0 {
 		trace.Trace("No cluster controllers found in vespa model:", model)

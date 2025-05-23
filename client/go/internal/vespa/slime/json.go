@@ -12,9 +12,7 @@ import (
 	"strings"
 )
 
-var (
-	hex []byte = []byte("0123456789ABCDEF")
-)
+var hex []byte = []byte("0123456789ABCDEF")
 
 func fromHexDigit(digit byte) int {
 	switch digit {
@@ -250,8 +248,8 @@ type jsonDecoder struct {
 
 func (d *jsonDecoder) next() {
 	if d.err == nil {
-		len, e := d.input.Read(d.buf)
-		if len == 1 {
+		bytesRead, e := d.input.Read(d.buf)
+		if bytesRead == 1 {
 			d.c = d.buf[0]
 		} else {
 			if e != nil {
@@ -261,13 +259,13 @@ func (d *jsonDecoder) next() {
 			}
 			d.c = 0
 		}
-	} else if d.err == io.EOF {
+	} else if errors.Is(d.err, io.EOF) {
 		d.err = errors.New("input underflow")
 	}
 }
 
 func (d *jsonDecoder) fail(msg string) {
-	if d.err == nil || d.err == io.EOF {
+	if d.err == nil || errors.Is(d.err, io.EOF) {
 		d.err = errors.New(msg)
 		d.c = 0
 	}

@@ -33,7 +33,7 @@ func RunPrepare(opts *Options, args []string) (err error) {
 	} else if looksLikeNumber(args[0]) {
 		response, err = doPrepare(opts, args[0])
 	} else {
-		err = fmt.Errorf("Command failed. No directory or zip file found: '%s'", args[0])
+		err = fmt.Errorf("command failed. No directory or zip file found: '%s'", args[0])
 	}
 	if err != nil {
 		return err
@@ -47,7 +47,7 @@ func RunPrepare(opts *Options, args []string) (err error) {
 		fmt.Println(entry.Level+":", entry.Message)
 	}
 	if code != 200 {
-		return fmt.Errorf("Request failed. HTTP status code: %d\n%s", code, result.Message)
+		return fmt.Errorf("request failed. HTTP status code: %d\n%s", code, result.Message)
 	}
 	fmt.Println(result.Message)
 	return err

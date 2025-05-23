@@ -17,6 +17,7 @@ func (arr *arrayValue) Entry(index int) Value {
 	}
 	return Invalid
 }
+
 func (arr *arrayValue) EachEntry(f func(index int, value Value)) {
 	for i, x := range arr.value {
 		f(i, x)

@@ -78,7 +78,8 @@ type logMessage struct {
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
 func CloudTarget(httpClient httputil.Client, apiAuth Authenticator, deploymentAuth Authenticator,
 	apiOptions APIOptions, deploymentOptions CloudDeploymentOptions,
-	logOptions LogOptions, retryInterval time.Duration) (Target, error) {
+	logOptions LogOptions, retryInterval time.Duration,
+) (Target, error) {
 	return &cloudTarget{
 		httpClient:        httpClient,
 		apiOptions:        apiOptions,
@@ -128,8 +129,8 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 		clusterTargets = make(map[string][]clusterTarget)
 		for cluster, url := range t.deploymentOptions.ClusterURLs {
 			clusterTargets[cluster] = []clusterTarget{
-				clusterTarget{URL: url, AuthMethod: "mtls"},
-				clusterTarget{URL: url, AuthMethod: "token"},
+				{URL: url, AuthMethod: "mtls"},
+				{URL: url, AuthMethod: "token"},
 			}
 		}
 	} else {
@@ -168,7 +169,7 @@ func (t *cloudTarget) CompatibleWith(clientVersion version.Version) error {
 	if clientVersion.IsZero() { // development version is always fine
 		return nil
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf("%s/cli/v1/", t.apiOptions.System.URL), nil)
+	req, err := http.NewRequest(http.MethodGet, fmt.Sprintf("%s/cli/v1/", t.apiOptions.System.URL), nil)
 	if err != nil {
 		return err
 	}
@@ -211,7 +212,7 @@ func (t *cloudTarget) PrintLog(options LogOptions) error {
 
 func (t *cloudTarget) discoverLatestRun(timeout time.Duration) (int64, error) {
 	runsURL := t.apiOptions.System.RunsURL(t.deploymentOptions.Deployment) + "?limit=1"
-	req, err := http.NewRequest("GET", runsURL, nil)
+	req, err := http.NewRequest(http.MethodGet, runsURL, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -244,7 +245,7 @@ func (t *cloudTarget) AwaitDeployment(runID int64, timeout time.Duration) (int64
 		runID = lastRunID
 	}
 	runURL := t.apiOptions.System.RunURL(t.deploymentOptions.Deployment, runID)
-	req, err := http.NewRequest("GET", runURL, nil)
+	req, err := http.NewRequest(http.MethodGet, runURL, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -313,7 +314,7 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string][]clu
 		t.apiOptions.System.URL,
 		t.deploymentOptions.Deployment.Application.Tenant, t.deploymentOptions.Deployment.Application.Application, t.deploymentOptions.Deployment.Application.Instance,
 		t.deploymentOptions.Deployment.Zone.Environment, t.deploymentOptions.Deployment.Zone.Region)
-	req, err := http.NewRequest("GET", deploymentURL, nil)
+	req, err := http.NewRequest(http.MethodGet, deploymentURL, nil)
 	if err != nil {
 		return nil, err
 	}

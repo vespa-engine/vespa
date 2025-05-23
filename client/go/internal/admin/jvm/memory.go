@@ -21,12 +21,15 @@ type AmountOfMemory struct {
 func BytesOfMemory(v int64) AmountOfMemory {
 	return AmountOfMemory{numBytes: v}
 }
+
 func KiloBytesOfMemory(v int64) AmountOfMemory {
 	return BytesOfMemory(v * PowerOfTwo10)
 }
+
 func MegaBytesOfMemory(v int) AmountOfMemory {
 	return BytesOfMemory(int64(v) * PowerOfTwo20)
 }
+
 func GigaBytesOfMemory(v int) AmountOfMemory {
 	return BytesOfMemory(int64(v) * PowerOfTwo30)
 }
@@ -34,15 +37,19 @@ func GigaBytesOfMemory(v int) AmountOfMemory {
 func (v AmountOfMemory) ToBytes() int64 {
 	return v.numBytes
 }
+
 func (v AmountOfMemory) ToKB() int64 {
 	return v.numBytes / PowerOfTwo10
 }
+
 func (v AmountOfMemory) ToMB() int {
 	return int(v.numBytes / PowerOfTwo20)
 }
+
 func (v AmountOfMemory) ToGB() int {
 	return int(v.numBytes / PowerOfTwo30)
 }
+
 func (v AmountOfMemory) AsJvmSpec() string {
 	val := v.ToKB()
 	suffix := "k"
@@ -83,7 +90,7 @@ func ParseJvmMemorySpec(spec string) (result AmountOfMemory, err error) {
 		case 'g', 'G':
 			result = GigaBytesOfMemory(int(val))
 		default:
-			err = fmt.Errorf("Unknown suffix in JVM memory spec '%s'", spec)
+			err = fmt.Errorf("unknown suffix in JVM memory spec '%s'", spec)
 		}
 	}
 	return

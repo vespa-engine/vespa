@@ -6,6 +6,7 @@ package jvm
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -44,25 +45,25 @@ func readLineFrom(filename string) (string, error) {
 func vespa_cg2get(limitname string) (output string, err error) {
 	return vespa_cg2get_impl("", limitname)
 }
-func vespa_cg2get_impl(rootdir, limitname string) (output string, err error) {
-	_, err = os.Stat(rootdir + "/sys/fs/cgroup/cgroup.controllers")
-	if err != nil {
+
+func vespa_cg2get_impl(rootdir, limitname string) (string, error) {
+	if _, err := os.Stat(filepath.Join(rootdir, "sys", "fs", "cgroup", "cgroup.controllers")); err != nil {
 		trace.Trace("no cgroups:", err)
-		return
+		return "", err
 	}
-	cgroup_content, err := readLineFrom(rootdir + "/proc/self/cgroup")
+	cgroup_content, err := readLineFrom(filepath.Join(rootdir, "proc", "self", "cgroup"))
 	if err != nil {
 		trace.Trace("no cgroup for self:", err)
-		return
+		return "", err
 	}
 	min_value := "max"
-	path := rootdir + "/sys/fs/cgroup"
+	path := filepath.Join(rootdir, "sys", "fs", "cgroup")
 	slice := strings.TrimPrefix(cgroup_content, "0::")
 	dirNames := strings.Split(slice, "/")
 	for _, dirName := range dirNames {
-		path = path + dirName + "/"
-		value, err := readLineFrom(path + limitname)
-		trace.Debug("read from", path+limitname, "=>", value)
+		path = filepath.Join(path, dirName)
+		value, err := readLineFrom(filepath.Join(path, limitname))
+		trace.Debug("read from", filepath.Join(path, limitname), "=>", value)
 		if err == nil {
 			if value == "max" {
 				// nop
