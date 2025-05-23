@@ -85,17 +85,17 @@ class LightGBMTestBase {
     record TestCase(double expectedPrediction, Map<String, FeatureValue> features) {
 
         TestCase(Map<String, Object> raw, String targetFeature) {
-            this(toDouble(raw.get(targetFeature)), extractFeatures(raw));
+            this(toDouble(raw.get(targetFeature)), extractFeatures(raw, targetFeature));
         }
 
         private static double toDouble(Object o) {
             if (o instanceof Number n) return n.doubleValue();
-            throw new IllegalArgumentException("Test case missing or invalid model_prediction");
+            throw new IllegalArgumentException("Test case missing or invalid model prediction");
         }
 
-        private static Map<String, FeatureValue> extractFeatures(Map<String, Object> raw) {
+        private static Map<String, FeatureValue> extractFeatures(Map<String, Object> raw, String targetFeature) {
             return raw.entrySet().stream()
-                    .filter(e -> !e.getKey().equals("model_prediction"))
+                    .filter(e -> !e.getKey().equals(targetFeature))
                     .filter(e -> e.getValue() != null)
                     .collect(Collectors.toMap(Map.Entry::getKey, e -> toFeatureValue(e.getValue())));
         }
