@@ -259,7 +259,7 @@ public class NodeRepositoryTest {
 
         // Set host 2 properties and deprovision it
         try (var lock = tester.nodeRepository().nodes().lockAndGetRequired("host2")) {
-            Node host2 = lock.node().withWantToRetire(true, false, true, false, Agent.system, tester.nodeRepository().clock().instant());
+            Node host2 = lock.node().withWantToRetire(true, false, true, false, false, Agent.system, tester.nodeRepository().clock().instant());
             tester.nodeRepository().nodes().write(host2, lock);
         }
         tester.nodeRepository().nodes().removeRecursively("host2");

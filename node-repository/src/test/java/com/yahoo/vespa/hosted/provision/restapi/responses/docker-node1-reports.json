@@ -58,6 +58,7 @@
   "preferToRetire": false,
   "wantToDeprovision": true,
   "wantToRebuild": false,
+  "bootingAfterRebuild": false,
   "wantToUpgradeFlavor": false,
   "down": false,
   "history": [

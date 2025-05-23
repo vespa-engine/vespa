@@ -48,7 +48,8 @@ public class MockHostProvisioner implements HostProvisioner {
     private final List<Flavor> flavors;
     private final MockNameResolver nameResolver;
     private final int memoryTaxGb;
-    private final Set<String> rebuildsCompleted = new HashSet<>();
+    private final Set<String> rebuildsDiskReplaced = new HashSet<>();
+    private final Set<String> rebuildsStartingHost = new HashSet<>();
     private final Map<ClusterSpec.Type, Flavor> hostFlavors = new HashMap<>();
     private final Set<String> upgradableFlavors = new HashSet<>();
     private final Map<Behaviour, Integer> behaviours = new HashMap<>();
@@ -127,16 +128,29 @@ public class MockHostProvisioner implements HostProvisioner {
 
     @Override
     public RebuildResult replaceRootDisk(Collection<Node> hosts) {
-        List<Node> updated = new ArrayList<>();
+        List<Node> successes = new ArrayList<>();
         Map<Node, Exception> failed = new LinkedHashMap<>();
         for (Node host : hosts) {
             if ( ! host.type().isHost()) failed.put(host, new IllegalArgumentException(host + " is not a host"));
-            if (rebuildsCompleted.remove(host.hostname())) {
-                updated.add(host.withWantToRetire(host.status().wantToRetire(), host.status().wantToDeprovision(),
-                                                  false, false, Agent.system, Instant.ofEpochMilli(123)));
+            if (rebuildsDiskReplaced.remove(host.hostname())) {
+                successes.add(host.withWantToRetire(host.status().wantToRetire(), host.status().wantToDeprovision(),
+                                                  false, true, false, Agent.system, Instant.ofEpochMilli(123)));
             }
         }
-        return new RebuildResult(updated, failed);
+        return new RebuildResult(successes, failed);
+    }
+
+    @Override
+    public RebuildResult startHosts(Collection<Node> hosts) {
+        List<Node> successes = new ArrayList<>();
+        for (Node host : hosts) {
+            if ( ! host.type().isHost()) throw new IllegalArgumentException(host + " is not a host");
+            if (rebuildsStartingHost.remove(host.hostname())) {
+                successes.add(host.withWantToRetire(host.status().wantToRetire(), host.status().wantToDeprovision(),
+                                                  false, false, false, Agent.system, Instant.ofEpochMilli(123)));
+            }
+        }
+        return new RebuildResult(successes, new LinkedHashMap<>());
     }
 
     @Override
@@ -185,8 +199,13 @@ public class MockHostProvisioner implements HostProvisioner {
         return this;
     }
 
-    public MockHostProvisioner completeRebuildOf(String hostname) {
-        rebuildsCompleted.add(hostname);
+    public MockHostProvisioner completeDiskReplacementOf(String hostname) {
+        rebuildsDiskReplaced.add(hostname);
+        return this;
+    }
+
+    public MockHostProvisioner completeInstanceStartupOf(String hostname) {
+        rebuildsStartingHost.add(hostname);
         return this;
     }
 

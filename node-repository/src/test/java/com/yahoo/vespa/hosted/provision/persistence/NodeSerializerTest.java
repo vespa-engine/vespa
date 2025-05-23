@@ -329,12 +329,13 @@ public class NodeSerializerTest {
     public void want_to_rebuild_and_upgrade_flavor() {
         Node node = nodeSerializer.fromJson(nodeSerializer.toJson(createNode()));
         assertFalse(node.status().wantToRebuild());
-        node = node.with(node.status().withWantToRetire(true, false, true, true));
+        node = node.with(node.status().withWantToRetire(true, false, true, true, true));
         node = nodeSerializer.fromJson(nodeSerializer.toJson(node));
         assertTrue(node.status().wantToRetire());
         assertFalse(node.status().wantToDeprovision());
         assertTrue(node.status().wantToRebuild());
         assertTrue(node.status().wantToUpgradeFlavor());
+        assertTrue(node.status().bootingAfterRebuild());
     }
 
     @Test

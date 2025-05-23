@@ -63,6 +63,7 @@ public class NodePatcher {
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
     private static final String WANT_TO_REBUILD = "wantToRebuild";
+    private static final String BOOTING_AFTER_REBUILD = "bootingAfterRebuild";
     private static final String WANT_TO_UPGRADE_FLAVOR = "wantToUpgradeFlavor";
     private static final String REPORTS = "reports";
     private static final Set<String> RECURSIVE_FIELDS = Set.of(WANT_TO_RETIRE, WANT_TO_DEPROVISION);
@@ -223,6 +224,7 @@ public class NodePatcher {
             case WANT_TO_RETIRE:
             case WANT_TO_DEPROVISION:
             case WANT_TO_REBUILD:
+            case BOOTING_AFTER_REBUILD:
             case WANT_TO_UPGRADE_FLAVOR:
                 // These needs to be handled as one, because certain combinations are not allowed.
                 return node.withWantToRetire(asOptionalBoolean(root.field(WANT_TO_RETIRE))
@@ -232,6 +234,9 @@ public class NodePatcher {
                                              asOptionalBoolean(root.field(WANT_TO_REBUILD))
                                                      .filter(want -> !applyingAsChild)
                                                      .orElseGet(node.status()::wantToRebuild),
+                                            asOptionalBoolean(root.field(BOOTING_AFTER_REBUILD))
+                                                    .filter(want -> !applyingAsChild)
+                                                    .orElseGet(node.status()::bootingAfterRebuild),
                                              asOptionalBoolean(root.field(WANT_TO_UPGRADE_FLAVOR))
                                                      .filter(want -> !applyingAsChild)
                                                      .orElseGet(node.status()::wantToUpgradeFlavor),

@@ -76,11 +76,23 @@ public interface HostProvisioner {
 
     /** Replace the root (OS) disk of hosts. Implementations of this are expected to be idempotent.
      *
-     * @return the node objects for which updates were made
+     * @return the node objects for which updates were made. The hosts argument will be split to three disjoint subsets:
+     *  - nodes which were successfully updated, included in {@link RebuildResult#completed()}
+     *  - nodes which failed to be updated, included in {@link RebuildResult#failed()}
+     *  - nodes which were not updated yet, these should be retried later.
      */
     default RebuildResult replaceRootDisk(Collection<Node> hosts) { return new RebuildResult(List.of(), Map.of()); }
 
-    record RebuildResult(List<Node> rebuilt, Map<Node, Exception> failed) { }
+    /** Boots instances which had their root volumes replaced. Implementations of this are expected to be idempotent.
+     *
+     * @return the node objects for which updates were made. The hosts argument will be split to three disjoint subsets:
+     *  - nodes which were successfully updated, included in {@link RebuildResult#completed()}
+     *  - nodes which failed to be updated, included in {@link RebuildResult#failed()}
+     *  - nodes which were not updated yet, these should be retried later.
+     */
+    default RebuildResult startHosts(Collection<Node> hosts) { return new RebuildResult(List.of(), Map.of()); }
+
+    record RebuildResult(List<Node> completed, Map<Node, Exception> failed) { }
 
     /**
      * Returns the maintenance events scheduled for hosts in this zone, in given cloud accounts. Host events in the
