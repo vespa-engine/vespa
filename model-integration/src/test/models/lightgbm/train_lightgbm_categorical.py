@@ -9,14 +9,6 @@
 #     "pandas>=2.2.3",
 # ]
 # ///
-# /// script
-# requires-python = ">=3.10"
-# dependencies = [
-#     "lightgbm>=4.6.0",
-#     "numpy>=2.2.6",
-#     "pandas>=2.2.3",
-# ]
-# ///
 # If you have 'uv' installed, you can run this script with:
 # `uv run train_lightgbm_categorical.py`
 # To ensure correct python version and dependencies without installing anything globally.
