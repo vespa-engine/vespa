@@ -53,7 +53,7 @@ public class LightGBMImportEvaluationTestCase extends LightGBMTestBase {
     public void testCategoricalHandling() {
         RankingExpression expression = importModel("src/test/models/lightgbm/categorical.json");
         ArrayContext context = new ArrayContext(expression, DoubleValue.NaN);
-        String testCasePath = "src/test/testcases/lightgbm/categorical-tests.json";
+        String testCasePath = "src/test/testcases/lightgbm/categorical_tests.json";
         String targetFeature = "model_prediction";
 
         List<TestCase> testCases = loadTestCasesFromJson(testCasePath, targetFeature);
