@@ -6,6 +6,7 @@ import com.yahoo.tensor.Tensor;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledIfSystemProperty;
 import org.junit.jupiter.api.extension.ExtendWith;
 
 import java.io.IOException;
@@ -18,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * @author bjorncs
  */
+@EnabledIfSystemProperty(named = "VESPA_USE_TRITON", matches = "true")
 @ExtendWith(ContainerEnvironmentAvailableCondition.class)
 class TritonOnnxClientTest {
     private static final String MODEL_NAME = "dummy_transformer";
