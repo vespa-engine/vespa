@@ -24,7 +24,7 @@ public abstract class ContentClusterFixture {
     protected ContentCluster currentCluster;
     protected ContentCluster nextCluster;
 
-    public ContentClusterFixture(String currentSd, String nextSd) throws Exception {
+    public ContentClusterFixture(String currentSd, String nextSd) {
         currentCluster = createCluster(currentSd);
         nextCluster = createCluster(nextSd);
     }
@@ -34,16 +34,16 @@ public abstract class ContentClusterFixture {
         this.nextCluster = nextCluster;
     }
 
-    public ContentClusterFixture(String entireSd) throws Exception {
+    public ContentClusterFixture(String entireSd) {
         currentCluster = createClusterFromEntireSd(entireSd);
         nextCluster = createClusterFromEntireSd(entireSd);
     }
 
-    protected static ContentCluster createClusterFromEntireSd(String sdContent) throws Exception {
+    protected static ContentCluster createClusterFromEntireSd(String sdContent) {
         return new ContentClusterBuilder().build(ContentClusterUtils.createMockRoot(List.of(sdContent)));
     }
 
-    private static ContentCluster createCluster(String sdContent) throws Exception {
+    private static ContentCluster createCluster(String sdContent) {
         return new ContentClusterBuilder().build(
                 ContentClusterUtils.createMockRoot(
                         List.of(new SchemaBuilder().content(sdContent).build())));

@@ -136,7 +136,7 @@ public class AttributeChangeValidator {
         }
     }
 
-    private static <T> void validateAttributeProperty(ClusterSpec.Id id,
+    private <T> void validateAttributeProperty(ClusterSpec.Id id,
                                                       Attribute current, Attribute next,
                                                       Function<Attribute, T> settingValueProvider, String setting,
                                                       List<VespaConfigChangeAction> result) {
@@ -144,19 +144,29 @@ public class AttributeChangeValidator {
         T nextValue = settingValueProvider.apply(next);
         if ( ! Objects.equals(currentValue, nextValue)) {
             String message = String.format("change property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
+            if (hasHnswIndex(current) && hasHnswIndex(next))
+                deployState.validationOverrides()
+                           .invalid(ValidationId.hnswSettingsChange,
+                                    message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time",
+                                    deployState.now());
             result.add(new VespaRestartAction(id, new ChangeMessageBuilder(next.getName()).addChange(message).build()));
         }
     }
 
-    private static <T> void validateAttributeHnswIndexSetting(ClusterSpec.Id id,
-                                                              Attribute currentAttr, Attribute nextAttr,
-                                                              Function<HnswIndexParams, T> settingValueProvider,
-                                                              String setting,
-                                                              List<VespaConfigChangeAction> result) {
+    private <T> void validateAttributeHnswIndexSetting(ClusterSpec.Id id,
+                                                       Attribute currentAttr, Attribute nextAttr,
+                                                       Function<HnswIndexParams, T> settingValueProvider,
+                                                       String setting,
+                                                       List<VespaConfigChangeAction> result) {
         T currentValue = settingValueProvider.apply(currentAttr.hnswIndexParams().get());
         T nextValue = settingValueProvider.apply(nextAttr.hnswIndexParams().get());
         if (!Objects.equals(currentValue, nextValue)) {
             String message = String.format("change hnsw index property '%s' from '%s' to '%s'", setting, currentValue, nextValue);
+            if (setting.equals("max-links-per-node"))
+                deployState.validationOverrides()
+                           .invalid(ValidationId.hnswSettingsChange,
+                                    message + ". This requires the hnsw index to be rebuilt during initialization, which may take a long time",
+                                    deployState.now());
             result.add(new VespaRestartAction(id, new ChangeMessageBuilder(nextAttr.getName()).addChange(message).build()));
         }
     }
