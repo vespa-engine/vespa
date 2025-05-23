@@ -13,8 +13,11 @@ import inference.ModelConfigOuterClass;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.PosixFilePermission;
+import java.nio.file.attribute.PosixFilePermissions;
 
 /**
  * Experimental Triton ONNX runtime.
@@ -59,14 +62,29 @@ public class TritonOnnxRuntime extends AbstractComponent implements OnnxRuntime 
         var repositoryModelFile = modelVersionRoot.resolve("model.onnx");
         var configFile = repositoryModelRoot.resolve("config.pbtxt");
         try {
-            Files.createDirectories(modelVersionRoot);
+            // Create directory for model name and version with correct permissions
+            Files.createDirectories(
+                    modelVersionRoot,
+                    PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rwxrwxr-x")));
+
             Files.copy(Paths.get(externalModelPath), repositoryModelFile, StandardCopyOption.REPLACE_EXISTING);
             var modelConfig = options.rawConfig()
                     .orElseGet(() -> generateConfigFromEvaluatorOptions(externalModelPath, options).toString());
             Files.writeString(configFile, modelConfig);
+
+            // To ensure that the Triton can read the model files, explicitly grant world read
+            addReadPermissions(repositoryModelFile);
+            addReadPermissions(configFile);
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to copy model file to repository", e);
         }
+    }
+
+    private static void addReadPermissions(Path path) throws IOException {
+        var modelPerms = Files.getPosixFilePermissions(path);
+        modelPerms.add(PosixFilePermission.GROUP_READ);
+        modelPerms.add(PosixFilePermission.OTHERS_READ);
+        Files.setPosixFilePermissions(path, modelPerms);
     }
 
     // Hackish name to deduce model name from path.

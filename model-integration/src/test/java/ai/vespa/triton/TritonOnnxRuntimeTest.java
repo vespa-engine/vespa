@@ -10,6 +10,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -47,9 +48,14 @@ class TritonOnnxRuntimeTest {
                             .build()));
             assertNotNull(evaluator);
             var configFile = tritonContainer.getModelRepositoryPath().resolve("dummy_transformer/config.pbtxt");
+            var expectedFilePermissions = PosixFilePermissions.fromString("rw-r--r--");
+            assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(configFile));
             var actualConfig = Files.readString(Paths.get(configFile.toString()));
             var expectedConfig = Files.readString(Paths.get("src/test/triton/config.pbtxt"));
             assertEquals(expectedConfig, actualConfig);
+
+            var modelFile = tritonContainer.getModelRepositoryPath().resolve("dummy_transformer/1/model.onnx");
+            assertEquals(expectedFilePermissions, Files.getPosixFilePermissions(modelFile));
             evaluator.close();
         } finally {
             runtime.deconstruct();
