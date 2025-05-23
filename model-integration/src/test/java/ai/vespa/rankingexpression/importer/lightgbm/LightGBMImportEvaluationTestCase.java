@@ -66,4 +66,24 @@ public class LightGBMImportEvaluationTestCase extends LightGBMTestBase {
             );
         }
         }
+
+    @Test
+    public void testCategoricalIntegers() {
+        RankingExpression expression = importModel("src/test/models/lightgbm/cat_integers.json");
+        ArrayContext context = new ArrayContext(expression, DoubleValue.NaN);
+        String testCasePath = "src/test/testcases/lightgbm/cat_integers_tests.json";
+        String targetFeature = "model_prediction";
+
+        List<TestCase> testCases = loadTestCasesFromJson(testCasePath, targetFeature);
+
+        for (TestCase testCase : testCases) {
+            assertEvaluation(
+                    testCase.expectedPrediction(),
+                    expression,
+                    features(context, testCase.features())
+            );
+        }
+    }
+
+
 }
