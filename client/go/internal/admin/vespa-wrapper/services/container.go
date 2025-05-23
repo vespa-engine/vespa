@@ -18,14 +18,10 @@ func VerifyAvailableMemory() {
 		return
 	}
 
-	if !isMemoryInfoAvailable() {
-		osutil.ExitMsg("Unable to determine available memory: required files (/proc/meminfo, /sys/fs/cgroup/memory.max) are missing.")
-	}
-
-	availableMemory, err := getMemoryLimitCgroupMax()
+	availableMemory, err := getAvailableMemory()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		osutil.ExitMsg("Available memory could not be obtained, " + err.Error())
+		fmt.Fprintln(os.Stderr, "Warning: Unable to read memory information from /proc/meminfo or cgroup files. Memory checks will be skipped.")
+		return
 	}
 
 	if availableMemory < minRequiredMemoryInBytes {
@@ -35,39 +31,44 @@ func VerifyAvailableMemory() {
 	}
 }
 
-func isMemoryInfoAvailable() bool {
-	paths := []string{
-		"/sys/fs/cgroup/memory.max", // cgroup v2
-		"/proc/meminfo",             // host-level memory info
+func getAvailableMemory() (uint64, error) {
+
+	if availableMemory, err := getMemoryLimitCgroupMax(); err == nil {
+		return availableMemory, nil
 	}
 
-	for _, path := range paths {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			return false
-		}
+	if availableMemory, err := getAvailableSystemMemory(); err == nil {
+		return availableMemory, nil
 	}
 
-	return true
+	return 0, fmt.Errorf("unable to get available memory")
 }
 
 func getMemoryLimitCgroupMax() (uint64, error) {
-	data, err := os.ReadFile("/sys/fs/cgroup/memory.max")
-	if err != nil {
-		return 0, fmt.Errorf("failed to read memory.max: %w", err)
+	// Try cgroup v2 first
+	if data, err := os.ReadFile("/sys/fs/cgroup/memory.max"); err == nil {
+		content := strings.TrimSpace(string(data))
+		if content == "max" {
+			return 0, fmt.Errorf("no memory limit set")
+		}
+		return strconv.ParseUint(content, 10, 64)
 	}
 
-	trimmed := strings.TrimSpace(string(data))
-	if trimmed == "max" {
-		// No memory limit enforced, use available system memory
-		return getAvailableSystemMemory()
+	// Try cgroup v1
+	if data, err := os.ReadFile("/sys/fs/cgroup/memory/memory.limit_in_bytes"); err == nil {
+		content := strings.TrimSpace(string(data))
+		limit, err := strconv.ParseUint(content, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		// Check for "unlimited" (very large number in cgroup v1)
+		if limit >= (1 << 62) {
+			return 0, fmt.Errorf("no memory limit set")
+		}
+		return limit, nil
 	}
 
-	limit, err := strconv.ParseUint(trimmed, 10, 64)
-	if err != nil {
-		return 0, fmt.Errorf("failed to parse memory limit: %w", err)
-	}
-
-	return limit, nil
+	return 0, fmt.Errorf("no cgroup memory limit found")
 }
 
 func getAvailableSystemMemory() (uint64, error) {
