@@ -2,6 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
@@ -42,8 +43,9 @@ public class LiteralBoostTestCase extends AbstractExportingTestCase {
         rankProfileRegistry.add(other);
         other.addRankSetting(new RankProfile.RankSetting("a", RankProfile.RankSetting.Type.LITERALBOOST, 333));
 
-        new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
-                true, false, Set.of());
+        new Processing(new TestProperties())
+                .process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
+                         true, false, Set.of());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
 
         // Check attribute fields

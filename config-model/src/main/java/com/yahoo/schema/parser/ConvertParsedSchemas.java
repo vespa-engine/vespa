@@ -50,19 +50,6 @@ public class ConvertParsedSchemas {
     private final boolean documentsOnly;
     private final ConvertParsedTypes typeConverter;
 
-    // for unit test
-    ConvertParsedSchemas(List<ParsedSchema> orderedInput,
-                         DocumentTypeManager documentTypeManager)
-    {
-        this(orderedInput, documentTypeManager,
-             MockApplicationPackage.createEmpty(),
-             new MockFileRegistry(),
-             new BaseDeployLogger(),
-             new TestProperties(),
-             new RankProfileRegistry(),
-             true);
-    }
-
     public ConvertParsedSchemas(List<ParsedSchema> orderedInput,
                                 DocumentTypeManager documentTypeManager,
                                 ApplicationPackage applicationPackage,

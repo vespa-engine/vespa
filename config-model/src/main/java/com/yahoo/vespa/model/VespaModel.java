@@ -297,7 +297,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Mode
                 throw new RuntimeException(e);
             }
         }
-        new Processing().processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);
+        new Processing(deployState.getProperties()).processRankProfiles(deployLogger, rankProfileRegistry, queryProfiles, true, false);
     }
 
     private void addOnnxModelInfoFromSource(ImportedMlModel model, RankProfile profile) {

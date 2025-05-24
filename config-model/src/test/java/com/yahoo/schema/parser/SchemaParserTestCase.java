@@ -2,7 +2,6 @@
 package com.yahoo.schema.parser;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.io.IOUtils;
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 
@@ -19,10 +18,9 @@ public class SchemaParserTestCase {
 
     ParsedSchema parseString(String input) throws Exception {
         var deployLogger = new BaseDeployLogger();
-        var modelProperties = new TestProperties();
         var stream = new SimpleCharStream(input);
         try {
-            var parser = new SchemaParser(stream, deployLogger, modelProperties);
+            var parser = new SchemaParser(stream, deployLogger);
             return parser.schema();
         } catch (ParseException pe) {
             throw new ParseException(stream.formatException(pe.getMessage()));

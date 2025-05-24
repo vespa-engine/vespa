@@ -3,9 +3,7 @@ package com.yahoo.schema.parser;
 
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
-import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.yolean.Exceptions;
@@ -24,18 +22,15 @@ import java.util.Map;
 public class IntermediateCollection {
 
     private final DeployLogger deployLogger;
-    private final ModelContext.Properties modelProperties;
 
     private final Map<String, ParsedSchema> parsedSchemas = new LinkedHashMap<>();
 
     IntermediateCollection() {
         this.deployLogger = new BaseDeployLogger();
-        this.modelProperties = new TestProperties();
     }
 
-    public IntermediateCollection(DeployLogger logger, ModelContext.Properties properties) {
+    public IntermediateCollection(DeployLogger logger) {
         this.deployLogger = logger;
-        this.modelProperties = properties;
     }
 
     public Map<String, ParsedSchema> getParsedSchemas() { return Collections.unmodifiableMap(parsedSchemas); }
@@ -44,7 +39,7 @@ public class IntermediateCollection {
 
     public ParsedSchema addSchemaFromString(String input) throws ParseException {
         var stream = new SimpleCharStream(input);
-        var parser = new SchemaParser(stream, deployLogger, modelProperties);
+        var parser = new SchemaParser(stream, deployLogger);
         try {
             var schema = parser.schema();
             if (schema == null) {
@@ -130,7 +125,7 @@ public class IntermediateCollection {
                 throw new IllegalArgumentException("No schema named '" + schemaName + "'");
             }
             var stream = new SimpleCharStream(IOUtils.readAll(reader.getReader()));
-            var parser = new SchemaParser(stream, deployLogger, modelProperties);
+            var parser = new SchemaParser(stream, deployLogger);
             try {
                 parser.rankProfile(schema);
             } catch (ParseException | TokenMgrException e) {

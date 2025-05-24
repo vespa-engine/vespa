@@ -2,6 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.DataType;
 import com.yahoo.schema.RankProfileRegistry;
@@ -35,8 +36,9 @@ public class TypeConversionTestCase extends AbstractSchemaTestCase {
         a.parseIndexingScript(schema.getName(), "{ index }");
         document.addField(a);
 
-        new Processing().process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
-                true, false, Set.of());
+        new Processing(new TestProperties())
+                .process(schema, new BaseDeployLogger(), rankProfileRegistry, new QueryProfiles(),
+                         true, false, Set.of());
         DerivedConfiguration derived = new DerivedConfiguration(schema, rankProfileRegistry);
         IndexInfo indexInfo = derived.getIndexInfo();
         assertFalse(indexInfo.hasCommand("default", "compact-to-term"));

@@ -64,10 +64,7 @@ public class SchemaParser {
     private ModelContext.Properties properties;
 
     /** Creates a parser. */
-    public SchemaParser(SimpleCharStream stream,
-                              DeployLogger deployLogger,
-                              ModelContext.Properties properties)
-    {
+    public SchemaParser(SimpleCharStream stream, DeployLogger deployLogger) {
         this(stream);
         this.deployLogger = deployLogger;
         this.properties = properties;
