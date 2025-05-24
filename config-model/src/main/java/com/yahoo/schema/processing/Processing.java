@@ -23,8 +23,6 @@ public class Processing {
 
     private final ModelContext.Properties properties;
 
-    public Processing() { this.properties = new TestProperties(); }
-
     public Processing(ModelContext.Properties properties) { this.properties = properties; }
 
     private Collection<ProcessorFactory> processors() {

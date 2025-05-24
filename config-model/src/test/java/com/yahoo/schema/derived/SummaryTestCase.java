@@ -2,6 +2,7 @@
 package com.yahoo.schema.derived;
 
 import com.yahoo.config.model.application.provider.BaseDeployLogger;
+import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.schema.RankProfileRegistry;
@@ -174,8 +175,9 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         String fieldName = "location";
         SDField field = document.addField(fieldName, PositionDataType.INSTANCE);
         field.parseIndexingScript(schema.getName(), "{ attribute | summary }");
-        new Processing().process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
-                true, false, Set.of());
+        new Processing(new TestProperties())
+                .process(schema, new BaseDeployLogger(), new RankProfileRegistry(), new QueryProfiles(),
+                         true, false, Set.of());
 
         var summary = new SummaryClass(schema, schema.getSummary("default"), new BaseDeployLogger());
         var fields = summary.fields().values().iterator();
