@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 /**
- * A function suitable for use in MapSubspaces
+ * A function suitable for use in MapSubspaces / FilterSubspaces
  *
  * @author arnej
  */
@@ -43,9 +43,6 @@ class DenseSubspaceFunction<NAMETYPE extends Name> {
     TensorType outputType(TensorType subspaceType) {
         var context = new MyTypeContext(subspaceType);
         var result = function.type(context);
-        if (result.mappedSubtype().rank() > 0) {
-            throw new IllegalArgumentException("function used in map_subspaces type had mapped dimensions: " + result);
-        }
         return result;
     }
 

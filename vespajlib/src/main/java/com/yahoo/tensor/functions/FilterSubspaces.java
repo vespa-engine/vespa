@@ -17,20 +17,20 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * The <i>map_subspaces</i> tensor function transforms each dense subspace in a (mixed) tensor
+ * The <i>filter_subspaces</i> tensor function selects some cells or subspaces in a mapped or mixed tensor
  *
  * @author arnej
  */
-public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
+public class FilterSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
 
     private final TensorFunction<NAMETYPE> argument;
     private final DenseSubspaceFunction<NAMETYPE> function;
 
-    private MapSubspaces(TensorFunction<NAMETYPE> argument, DenseSubspaceFunction<NAMETYPE> function) {
+    private FilterSubspaces(TensorFunction<NAMETYPE> argument, DenseSubspaceFunction<NAMETYPE> function) {
         this.argument = argument;
         this.function = function;
     }
-    public MapSubspaces(TensorFunction<NAMETYPE> argument, String functionArg, TensorFunction<NAMETYPE> function) {
+    public FilterSubspaces(TensorFunction<NAMETYPE> argument, String functionArg, TensorFunction<NAMETYPE> function) {
         this(argument, new DenseSubspaceFunction<>(functionArg, function));
         Objects.requireNonNull(argument, "The argument cannot be null");
         Objects.requireNonNull(functionArg, "The functionArg cannot be null");
@@ -39,29 +39,12 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
 
     private TensorType outputType(TensorType inputType) {
         var m = inputType.mappedSubtype();
-        var d = function.outputType(inputType.indexedSubtype());
-        if (d.mappedSubtype().rank() > 0) {
-            throw new IllegalArgumentException("function used in map_subspaces type had mapped dimensions: " + d);
+        var i = inputType.indexedSubtype();
+        var d = function.outputType(i);
+        if (m.rank() != 1) {
+            throw new IllegalArgumentException("filter_subspaces needs input with 1 mapped dimension, but got: " + inputType);
         }
-
-        if (m.rank() == 0) {
-            return d;
-        }
-        if (d.rank() == 0) {
-            return TypeResolver.map(m); // decay cell type
-        }
-        TensorType.Value cellType = d.valueType();
-        Map<String, TensorType.Dimension> dims = new HashMap<>();
-        for (var dim : m.dimensions()) {
-            dims.put(dim.name(), dim);
-        }
-        for (var dim : d.dimensions()) {
-            var old = dims.put(dim.name(), dim);
-            if (old != null) {
-                throw new IllegalArgumentException("dimension name collision in map_subspaces: " + m + " vs " + d);
-            }
-        }
-        return new TensorType(cellType, dims.values());
+        return inputType;
     }
 
     public TensorFunction<NAMETYPE> argument() { return argument; }
@@ -72,13 +55,13 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
         if ( arguments.size() != 1)
-            throw new IllegalArgumentException("MapSubspaces must have 1 argument, got " + arguments.size());
-        return new MapSubspaces<NAMETYPE>(arguments.get(0), function);
+            throw new IllegalArgumentException("FilterSubspaces must have 1 argument, got " + arguments.size());
+        return new FilterSubspaces<NAMETYPE>(arguments.get(0), function);
     }
 
     @Override
     public PrimitiveTensorFunction<NAMETYPE> toPrimitive() {
-        return new MapSubspaces<>(argument.toPrimitive(), function);
+        return new FilterSubspaces<>(argument.toPrimitive(), function);
     }
 
     @Override
@@ -111,28 +94,29 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
             var idxAddr = idxAddrBuilder.build();
             builder.cell(idxAddr, cell.getValue());
         }
-        TensorType outputType = outputType(input.type());
+        TensorType outputType = input.type();
         TensorType denseOutputType = outputType.indexedSubtype();
         var denseOutputDims = denseOutputType.dimensions();
         Tensor.Builder builder = Tensor.Builder.of(outputType);
         for (var entry : builders.entrySet()) {
             TensorAddress mappedAddr = entry.getKey();
             Tensor denseInput = entry.getValue().build();
-            Tensor denseOutput = function.map(denseInput);
-            // XXX check denseOutput.type().dimensions()
-            for (Iterator<Tensor.Cell> iter = denseOutput.cellIterator(); iter.hasNext(); ) {
-                var cell = iter.next();
-                var denseAddr = cell.getKey();
-                var addrBuilder = new TensorAddress.Builder(outputType);
-                for (int i = 0; i < inputTypeMapped.dimensions().size(); i++) {
-                    var dim = inputTypeMapped.dimensions().get(i);
-                    addrBuilder.add(dim.name(), mappedAddr.objectLabel(i));
+            Tensor filterResult = function.map(denseInput).sum();
+            if (filterResult.asDouble() != 0) {
+                for (Iterator<Tensor.Cell> iter = denseInput.cellIterator(); iter.hasNext(); ) {
+                    var cell = iter.next();
+                    var denseAddr = cell.getKey();
+                    var addrBuilder = new TensorAddress.Builder(outputType);
+                    for (int i = 0; i < inputTypeMapped.dimensions().size(); i++) {
+                        var dim = inputTypeMapped.dimensions().get(i);
+                        addrBuilder.add(dim.name(), mappedAddr.objectLabel(i));
+                    }
+                    for (int i = 0; i < denseOutputDims.size(); i++) {
+                        var dim = denseOutputDims.get(i);
+                        addrBuilder.add(dim.name(), denseAddr.objectLabel(i));
+                    }
+                    builder.cell(addrBuilder.build(), cell.getValue());
                 }
-                for (int i = 0; i < denseOutputDims.size(); i++) {
-                    var dim = denseOutputDims.get(i);
-                    addrBuilder.add(dim.name(), denseAddr.objectLabel(i));
-                }
-                builder.cell(addrBuilder.build(), cell.getValue());
             }
         }
         return builder.build();
@@ -140,10 +124,10 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
 
     @Override
     public String toString(ToStringContext<NAMETYPE> context) {
-        return "map_subspaces(" + argument.toString(context) + ", " + function + ")";
+        return "filter_subspaces(" + argument.toString(context) + ", " + function + ")";
     }
 
     @Override
-    public int hashCode() { return Objects.hash("map_subspaces", argument, function); }
+    public int hashCode() { return Objects.hash("filter_subspaces", argument, function); }
 
 }
