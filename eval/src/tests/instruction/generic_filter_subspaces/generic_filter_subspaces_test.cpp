@@ -48,6 +48,8 @@ void verify(const std::string &input_str, const std::string &fun_str, const std:
         SCOPED_TRACE(fmt("cell type: %d", int(cell_type)));
         auto typed_input = ReferenceOperations::cell_cast(input, cell_type);
         auto typed_expect = ReferenceOperations::cell_cast(expect, cell_type);
+        EXPECT_EQ(ValueType::from_spec(typed_input.type()).cell_type(), cell_type);
+        EXPECT_EQ(ValueType::from_spec(typed_expect.type()).cell_type(), cell_type);
         EXPECT_EQ(ref_eval(typed_input, *fun), typed_expect);
         EXPECT_EQ(my_eval(typed_input, *fun, FastValueBuilderFactory::get()), typed_expect);
         EXPECT_EQ(my_eval(typed_input, *fun, SimpleValueBuilderFactory::get()), typed_expect);
@@ -76,6 +78,16 @@ TEST(GenericFilterSubspacesTest, filter_vectors) {
     verify("tensor(x{},y[3]):{a:[1,2,3],b:[4,5,6]}", "reduce(s,sum)<6.5", "tensor(x{},y[3]):{a:[1,2,3]}");
     verify("tensor(x{},y[3]):{a:[1,2,3],b:[4,5,6]}", "reduce(s,sum)>2.5", "tensor(x{},y[3]):{a:[1,2,3],b:[4,5,6]}");
     verify("tensor(x{},y[3]):{a:[1,2,3],b:[4,5,6]}", "reduce(s,sum)<2.5", "tensor(x{},y[3]):{}");
+}
+
+TEST(GenericFilterSubspacesTest, filter_matrices) {
+    verify("tensor(x{},y[2],z[3]):{}", "s", "tensor(x{},y[2],z[3]):{}");
+    verify("tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}", "s", "tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}");
+    verify("tensor(x{},y[2],z[3]):{a:[[0,0,0],[4,5,6]]}", "s", "tensor(x{},y[2],z[3]):{a:[[0,0,0],[4,5,6]]}");
+    verify("tensor(x{},y[2],z[3]):{a:[[1,2,3],[0,0,0]]}", "s", "tensor(x{},y[2],z[3]):{a:[[1,2,3],[0,0,0]]}");
+    verify("tensor(x{},y[2],z[3]):{a:[[0,0,0],[0,0,0]]}", "s", "tensor(x{},y[2],z[3]):{}");
+    verify("tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}", "reduce(s,sum)==21", "tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}");
+    verify("tensor(x{},y[2],z[3]):{a:[[1,2,3],[4,5,6]]}", "reduce(s,sum)!=21", "tensor(x{},y[2],z[3]):{}");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
