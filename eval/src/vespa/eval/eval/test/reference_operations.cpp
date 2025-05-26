@@ -80,6 +80,30 @@ struct CopyCellsWithCast {
     }
 };
 
+std::pair<TensorSpec::Address,TensorSpec::Address> split_addr(const TensorSpec::Address &addr) {
+    TensorSpec::Address outer;
+    TensorSpec::Address inner;
+    for (const auto &[name, label]: addr) {
+        if (label.is_mapped()) {
+            outer.insert_or_assign(name, label);
+        } else {
+            inner.insert_or_assign(name, label);
+        }
+    }
+    return std::make_pair(outer, inner);
+};
+
+TensorSpec::Address combine_addr(const TensorSpec::Address &outer, const TensorSpec::Address &inner) {
+    TensorSpec::Address addr;
+    for (const auto &[name, label]: outer) {
+        addr.insert_or_assign(name, label);
+    }
+    for (const auto &[name, label]: inner) {
+        addr.insert_or_assign(name, label);
+    }
+    return addr;
+};
+
 } // namespace <unnamed>
 
 TensorSpec ReferenceOperations::cell_cast(const TensorSpec &in_a, CellType to) {
@@ -110,7 +134,6 @@ TensorSpec ReferenceOperations::cell_order(const TensorSpec &in_a, CellOrder ord
         values.push_back(value);
         indexes.push_back(idx++);
     }
-    std::vector<size_t> ranks(indexes.size());
     std::sort(indexes.begin(), indexes.end(), [&](size_t x, size_t y) {
         switch (order) {
             case CellOrder::MAX: return CellOrderMAX::cmp(values[x], values[y]);
@@ -118,6 +141,7 @@ TensorSpec ReferenceOperations::cell_order(const TensorSpec &in_a, CellOrder ord
         }
         abort();
     });
+    std::vector<size_t> ranks(indexes.size());
     for (size_t rank = 0; rank < indexes.size(); ++rank) {
         ranks[indexes[rank]] = rank;
     }
@@ -219,31 +243,9 @@ TensorSpec ReferenceOperations::map_subspaces(const TensorSpec &in_a, subspace_f
     auto inner_type_str = inner_type.to_spec();
     auto lambda_res_type = ValueType::from_spec(fun(TensorSpec(inner_type_str).normalize()).type());
     auto res_type = outer_type.wrap(lambda_res_type);
-    auto split = [](const auto &addr) {
-                     TensorSpec::Address outer;
-                     TensorSpec::Address inner;
-                     for (const auto &[name, label]: addr) {
-                         if (label.is_mapped()) {
-                             outer.insert_or_assign(name, label);
-                         } else {
-                             inner.insert_or_assign(name, label);
-                         }
-                     }
-                     return std::make_pair(outer, inner);
-                 };
-    auto combine = [](const auto &outer, const auto &inner) {
-                       TensorSpec::Address addr;
-                       for (const auto &[name, label]: outer) {
-                           addr.insert_or_assign(name, label);
-                       }
-                       for (const auto &[name, label]: inner) {
-                           addr.insert_or_assign(name, label);
-                       }
-                       return addr;
-                   };
     std::map<TensorSpec::Address,TensorSpec> subspaces;
     for (const auto &[addr, value]: a.cells()) {
-        auto [outer, inner] = split(addr);
+        auto [outer, inner] = split_addr(addr);
         auto &subspace = subspaces.try_emplace(outer, inner_type_str).first->second;
         subspace.add(inner, value);
     }
@@ -251,7 +253,7 @@ TensorSpec ReferenceOperations::map_subspaces(const TensorSpec &in_a, subspace_f
     for (const auto &[outer, subspace]: subspaces) {
         auto mapped = fun(subspace);
         for (const auto &[inner, value]: mapped.cells()) {
-            result.add(combine(outer, inner), value);
+            result.add(combine_addr(outer, inner), value);
         }        
     }
     return result.normalize();
@@ -264,31 +266,9 @@ TensorSpec ReferenceOperations::filter_subspaces(const TensorSpec &in_a, subspac
     auto inner_type = type.strip_mapped_dimensions();
     auto inner_type_str = inner_type.to_spec();
     auto res_type = type;
-    auto split = [](const auto &addr) {
-        TensorSpec::Address outer;
-        TensorSpec::Address inner;
-        for (const auto &[name, label]: addr) {
-            if (label.is_mapped()) {
-                outer.insert_or_assign(name, label);
-            } else {
-                inner.insert_or_assign(name, label);
-            }
-        }
-        return std::make_pair(outer, inner);
-    };
-    auto combine = [](const auto &outer, const auto &inner) {
-        TensorSpec::Address addr;
-        for (const auto &[name, label]: outer) {
-            addr.insert_or_assign(name, label);
-        }
-        for (const auto &[name, label]: inner) {
-            addr.insert_or_assign(name, label);
-        }
-        return addr;
-    };
     std::map<TensorSpec::Address,TensorSpec> subspaces;
     for (const auto &[addr, value]: a.cells()) {
-        auto [outer, inner] = split(addr);
+        auto [outer, inner] = split_addr(addr);
         auto &subspace = subspaces.try_emplace(outer, inner_type_str).first->second;
         subspace.add(inner, value);
     }
@@ -296,7 +276,7 @@ TensorSpec ReferenceOperations::filter_subspaces(const TensorSpec &in_a, subspac
     for (const auto &[outer, subspace]: subspaces) {
         if (fun(subspace).as_double() != 0.0) {
             for (const auto &[inner, value]: subspace.cells()) {
-                result.add(combine(outer, inner), value);
+                result.add(combine_addr(outer, inner), value);
             }
         }
     }
