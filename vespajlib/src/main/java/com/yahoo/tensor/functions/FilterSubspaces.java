@@ -7,7 +7,6 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
-
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -28,6 +27,7 @@ public class FilterSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunct
         this.argument = argument;
         this.function = function;
     }
+
     public FilterSubspaces(TensorFunction<NAMETYPE> argument, String functionArg, TensorFunction<NAMETYPE> function) {
         this(argument, new DenseSubspaceFunction<>(functionArg, function));
         Objects.requireNonNull(argument, "The argument cannot be null");
@@ -40,19 +40,24 @@ public class FilterSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunct
         var i = inputType.indexedSubtype();
         var d = function.outputType(i);
         if (m.rank() < 1) {
-            throw new IllegalArgumentException("filter_subspaces needs input with at least 1 mapped dimension, but got: " + inputType);
+            throw new IllegalArgumentException(
+                    "filter_subspaces needs input with at least 1 mapped dimension, but got: " + inputType);
         }
         return inputType;
     }
 
-    public TensorFunction<NAMETYPE> argument() { return argument; }
+    public TensorFunction<NAMETYPE> argument() {
+        return argument;
+    }
 
     @Override
-    public List<TensorFunction<NAMETYPE>> arguments() { return List.of(argument); }
+    public List<TensorFunction<NAMETYPE>> arguments() {
+        return List.of(argument);
+    }
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
-        if ( arguments.size() != 1)
+        if (arguments.size() != 1)
             throw new IllegalArgumentException("FilterSubspaces must have 1 argument, got " + arguments.size());
         return new FilterSubspaces<NAMETYPE>(arguments.get(0), function);
     }
@@ -85,7 +90,12 @@ public class FilterSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunct
         return new SplitAddr(mapAddr, idxAddr);
     }
 
-    TensorAddress combineAddr(TensorAddress sparsePart, TensorAddress densePart, TensorType fullType, TensorType sparseType, TensorType denseType) {
+    TensorAddress combineAddr(
+            TensorAddress sparsePart,
+            TensorAddress densePart,
+            TensorType fullType,
+            TensorType sparseType,
+            TensorType denseType) {
         var addrBuilder = new TensorAddress.Builder(fullType);
         var sparseDims = sparseType.dimensions();
         for (int i = 0; i < sparseDims.size(); i++) {
@@ -136,6 +146,7 @@ public class FilterSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunct
     }
 
     @Override
-    public int hashCode() { return Objects.hash("filter_subspaces", argument, function); }
-
+    public int hashCode() {
+        return Objects.hash("filter_subspaces", argument, function);
+    }
 }

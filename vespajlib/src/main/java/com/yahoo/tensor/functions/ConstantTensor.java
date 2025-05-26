@@ -32,7 +32,7 @@ public class ConstantTensor<NAMETYPE extends Name> extends PrimitiveTensorFuncti
 
     @Override
     public TensorFunction<NAMETYPE> withArguments(List<TensorFunction<NAMETYPE>> arguments) {
-        if ( arguments.size() != 0)
+        if (arguments.size() != 0)
             throw new IllegalArgumentException("ConstantTensor must have 0 arguments, got " + arguments.size());
         return this;
     }
