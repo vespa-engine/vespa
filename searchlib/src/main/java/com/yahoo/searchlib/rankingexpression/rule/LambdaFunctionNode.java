@@ -42,7 +42,7 @@ public class LambdaFunctionNode extends CompositeNode {
 
     public String singleArgumentName() {
         if (arguments.size() != 1) {
-            throw new IllegalArgumentException("Cannot apply " + this + " in map, must have a single argument");
+            throw new IllegalArgumentException("Cannot apply " + this + " on subspaces, must have a single argument");
         }
         return arguments.get(0);
     }
@@ -54,7 +54,7 @@ public class LambdaFunctionNode extends CompositeNode {
 
     @Override
     public CompositeNode setChildren(List<ExpressionNode> children) {
-        if ( children.size() != 1)
+        if (children.size() != 1)
             throw new IllegalArgumentException("A lambda function must have a single child expression");
         return new LambdaFunctionNode(arguments, children.get(0));
     }

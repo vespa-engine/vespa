@@ -218,6 +218,32 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testFilterSubspaces() {
+        EvaluationTester tester = new EvaluationTester();
+        tester.assertEvaluates("tensor<float>(a{},x[2]):{foo:[2,3],bar:[1,0]}",
+                               "filter_subspaces(tensor0, f(t)(t))",
+                               "tensor<float>(a{},x[2]):{foo:[2,3],bar:[1,0]}");
+
+        tester.assertEvaluates("tensor<float>(a{},x[2]):{foo:[2,3]}",
+                               "filter_subspaces(tensor0, f(t)(t * 5))",
+                               "tensor<float>(a{},x[2]):{foo:[2,3],bar:[0,0]}");
+        tester.assertEvaluates("tensor<float>(a{},x[2]):{foo:[2,3]}",
+                               "filter_subspaces(tensor0, f(t)(t>1))",
+                               "tensor<float>(a{},x[2]):{foo:[2,3],bar:[1,0]}");
+    }
+
+    @Test
+    public void testCellOrder() {
+        EvaluationTester tester = new EvaluationTester();
+        tester.assertEvaluates("tensor<float>(x[5]):[2,4,0,1,3]",
+                               "cell_order(tensor0, max)",
+                               "tensor<int8>(x[5]):[7,-3,42,13,-1]");
+        tester.assertEvaluates("tensor(p{}):{a:2,b:4,c:0,d:1,e:3}",
+                               "cell_order(tensor0, max)",
+                               "tensor(p{}):{a:7,b:-3,c:12,d:11,e:-1}");
+    }
+
+    @Test
     public void testTensorEvaluation() {
         EvaluationTester tester = new EvaluationTester();
 

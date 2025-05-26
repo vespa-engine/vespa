@@ -129,6 +129,8 @@ TOKEN :
 
     <MAP: "map"> |
     <MAP_SUBSPACES: "map_subspaces"> |
+    <FILTER_SUBSPACES: "filter_subspaces"> |
+    <CELL_ORDER: "cell_order"> |
     <UNPACK_BITS: "unpack_bits"> |
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
@@ -373,6 +375,8 @@ TensorFunctionNode tensorFunction() :
     (
         tensorExpression = tensorMap() |
         tensorExpression = tensorMapSubspaces() |
+        tensorExpression = tensorFilterSubspaces() |
+        tensorExpression = tensorCellOrder() |
         tensorExpression = tensorReduce() |
         tensorExpression = tensorReduceComposites() |
         tensorExpression = tensorJoin() |
@@ -423,6 +427,41 @@ TensorFunctionNode tensorMapSubspaces() :
                       denseMapper.singleArgumentName(),
                       TensorFunctionNode.wrap(denseMapper.children().get(0))));
      }
+}
+
+TensorFunctionNode tensorFilterSubspaces() :
+{
+    ExpressionNode tensor;
+    LambdaFunctionNode denseMapper;
+}
+{
+    <FILTER_SUBSPACES> <LBRACE> tensor = expression() <COMMA> denseMapper = lambdaFunction() <RBRACE>
+    {
+        return new TensorFunctionNode(
+               new FilterSubspaces(
+                      TensorFunctionNode.wrap(tensor),
+                      denseMapper.singleArgumentName(),
+                      TensorFunctionNode.wrap(denseMapper.children().get(0))));
+     }
+}
+
+TensorFunctionNode tensorCellOrder() :
+{
+    ExpressionNode tensor;
+    CellOrder.Order orderType;
+}
+{
+    <CELL_ORDER> <LBRACE> tensor = expression() <COMMA> orderType = cellOrderType() <RBRACE>
+    { return new TensorFunctionNode(new CellOrder(TensorFunctionNode.wrap(tensor), orderType));}
+}
+
+CellOrder.Order cellOrderType() :
+{
+}
+{
+    ( <MAX> { return CellOrder.Order.MAX; }
+    | <MIN> { return CellOrder.Order.MIN; }
+    )
 }
 
 TensorFunctionNode tensorReduce() :
