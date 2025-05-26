@@ -148,14 +148,14 @@ public class Flags {
             List.of("olaa"), "2022-09-23", "2025-06-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
-            INSTANCE_ID);
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
             List.of("olaa"), "2024-01-15", "2025-06-01",
             "Determines log files handled by the OpenTelemetry collector",
             "Takes effect at next tick",
-            INSTANCE_ID, HOSTNAME
+            TENANT_ID, APPLICATION, INSTANCE_ID
     );
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
@@ -237,7 +237,8 @@ public class Flags {
             "logserver-otelcol-agent", false,
             List.of("olaa"), "2024-04-03", "2025-06-01",
             "Whether logserver container should run otel agent",
-            "Takes effect at redeployment", INSTANCE_ID);
+            "Takes effect at redeployment",
+            TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_WAND_QUERY_PARSING = defineFeatureFlag(
             "use-legacy-wand-query-parsing", true,
