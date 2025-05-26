@@ -125,7 +125,7 @@ public class ApplicationBuilder {
                                RankProfileRegistry rankProfileRegistry,
                                QueryProfileRegistry queryProfileRegistry,
                                boolean documentsOnly) {
-        this.mediator = new IntermediateCollection(deployLogger, properties);
+        this.mediator = new IntermediateCollection(deployLogger);
         this.applicationPackage = applicationPackage;
         this.rankProfileRegistry = rankProfileRegistry;
         this.queryProfileRegistry = queryProfileRegistry;
