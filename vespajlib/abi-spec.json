@@ -1712,6 +1712,45 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.functions.CellOrder$Order" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.tensor.functions.CellOrder$Order[] values()",
+      "public static com.yahoo.tensor.functions.CellOrder$Order valueOf(java.lang.String)",
+      "public java.lang.String toString()"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.tensor.functions.CellOrder$Order MAX",
+      "public static final enum com.yahoo.tensor.functions.CellOrder$Order MIN"
+    ]
+  },
+  "com.yahoo.tensor.functions.CellOrder" : {
+    "superClass" : "com.yahoo.tensor.functions.PrimitiveTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.CellOrder$Order)",
+      "public static com.yahoo.tensor.TensorType outputType(com.yahoo.tensor.TensorType)",
+      "public com.yahoo.tensor.functions.TensorFunction argument()",
+      "public com.yahoo.tensor.functions.CellOrder$Order order()",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
+      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.functions.CompositeTensorFunction" : {
     "superClass" : "com.yahoo.tensor.functions.TensorFunction",
     "interfaces" : [ ],
