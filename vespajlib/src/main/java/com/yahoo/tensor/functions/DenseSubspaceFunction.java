@@ -3,13 +3,9 @@ package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
-
-import java.util.Optional;
-import java.util.function.Function;
 
 /**
  * A function suitable for use in MapSubspaces / FilterSubspaces

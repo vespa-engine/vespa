@@ -2,7 +2,6 @@
 package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.Tensor;
-import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
@@ -10,10 +9,9 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.evaluation.VariableTensor;
 
 import java.util.List;
-import org.junit.Test;
-
 import java.util.function.Function;
 
+import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -61,7 +59,7 @@ public class FilterSubspacesTestCase {
         var constInput = new ConstantTensor<Name>(input);
         var mapper = new FilterSubspaces<Name>(constInput, "denseInput", tfun);
         Tensor mapped = mapper.evaluate();
-        System.err.println("Filter > "+threshold+" : " + mapped);
+        System.err.println("Filter > " + threshold + " : " + mapped);
 
         var primFun = tfun.toPrimitive();
         var prim = new FilterSubspaces<Name>(constInput, "denseInput", primFun);

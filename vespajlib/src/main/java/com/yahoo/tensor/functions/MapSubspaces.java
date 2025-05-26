@@ -12,7 +12,6 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,6 +29,7 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
         this.argument = argument;
         this.function = function;
     }
+
     public MapSubspaces(TensorFunction<NAMETYPE> argument, String functionArg, TensorFunction<NAMETYPE> function) {
         this(argument, new DenseSubspaceFunction<>(functionArg, function));
         Objects.requireNonNull(argument, "The argument cannot be null");

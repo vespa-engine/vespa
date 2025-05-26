@@ -4,14 +4,12 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
