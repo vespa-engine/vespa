@@ -57,7 +57,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<X509Certificate> operatorCertificates = List.of();
     private double resourceLimitDisk = 0.75;
     private double resourceLimitMemory = 0.8;
-    private double resourceLimitLowWatermarkDifference = 0.0;
+    private double resourceLimitLowWatermarkDifference = 0.01;
     private int maxUnCommittedMemory = 123456;
     private String searchMmapAdvise = "SEQUENTIAL";
     private boolean useV8GeoPositions = true;
