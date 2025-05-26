@@ -50,14 +50,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_NON_PUBLIC_ENDPOINT_FOR_TEST = defineFeatureFlag(
             "use-non-public-endpoint-for-test", false,
-            List.of("hakonhall"), "2025-03-19", "2025-06-01",
+            List.of("hakonhall"), "2025-03-19", "2025-07-01",
             "Whether to use non-public endpoint in test and staging environments (except Azure since it's not supported yet)",
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
     public static final UnboundStringFlag SEARCH_MMAP_ADVISE = defineStringFlag(
             "search-mmap-advise", "SEQUENTIAL",
-            List.of("vekterli"), "2025-02-14", "2025-06-01",
+            List.of("vekterli"), "2025-02-14", "2025-07-01",
             "Sets the MMAP advise setting used for disk based posting lists on the content node. " +
             "Valid values are [NORMAL, RANDOM, SEQUENTIAL]",
             "Takes effect at redeployment (requires restart)",
@@ -145,14 +145,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_OTELCOL = defineFeatureFlag(
             "enable-otel-collector", false,
-            List.of("olaa"), "2022-09-23", "2025-06-01",
+            List.of("olaa"), "2022-09-23", "2025-07-01",
             "Whether an OpenTelemetry collector should be enabled",
             "Takes effect at next tick",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static final UnboundListFlag<String> OTELCOL_LOGS = defineListFlag(
             "otelcol-logs", List.of(), String.class,
-            List.of("olaa"), "2024-01-15", "2025-06-01",
+            List.of("olaa"), "2024-01-15", "2025-07-01",
             "Determines log files handled by the OpenTelemetry collector",
             "Takes effect at next tick",
             TENANT_ID, APPLICATION, INSTANCE_ID
@@ -160,20 +160,20 @@ public class Flags {
 
     public static final UnboundStringFlag CORE_ENCRYPTION_PUBLIC_KEY_ID = defineStringFlag(
             "core-encryption-public-key-id", "",
-            List.of("vekterli"), "2022-11-03", "2025-06-01",
+            List.of("vekterli"), "2022-11-03", "2025-07-01",
             "Specifies which public key to use for core dump encryption.",
             "Takes effect on the next tick.",
             NODE_TYPE, HOSTNAME);
 
     public static final UnboundListFlag<String> ZONAL_WEIGHTED_ENDPOINT_RECORDS = defineListFlag(
             "zonal-weighted-endpoint-records", List.of(), String.class,
-            List.of("hmusum"), "2023-12-15", "2025-06-01",
+            List.of("hmusum"), "2023-12-15", "2025-07-01",
             "A list of weighted (application) endpoint fqdns for which we should use zonal endpoints as targets, not LBs.",
             "Takes effect at redeployment from controller");
 
     public static final UnboundListFlag<String> WEIGHTED_ENDPOINT_RECORD_TTL = defineListFlag(
             "weighted-endpoint-record-ttl", List.of(), String.class,
-            List.of("hmusum"), "2023-05-16", "2025-06-01",
+            List.of("hmusum"), "2023-05-16", "2025-07-01",
             "A list of endpoints and custom TTLs, on the form \"endpoint-fqdn:TTL-seconds\". " +
             "Where specified, CNAME records are used instead of the default ALIAS records, which have a default 60s TTL.",
             "Takes effect at redeployment from controller");
@@ -228,14 +228,14 @@ public class Flags {
 
     public static final UnboundStringFlag ENDPOINT_CONFIG = defineStringFlag(
             "endpoint-config", "legacy",
-            List.of("mpolden", "tokle"), "2023-10-06", "2025-09-01",
+            List.of("andreer", "olaa"), "2023-10-06", "2025-09-01",
             "Set the endpoint config to use for an application. Must be 'legacy', 'combined' or 'generated'. See EndpointConfig for further details",
             "Takes effect on next deployment through controller",
             TENANT_ID, APPLICATION, INSTANCE_ID);
 
     public static UnboundBooleanFlag LOGSERVER_OTELCOL_AGENT = defineFeatureFlag(
             "logserver-otelcol-agent", false,
-            List.of("olaa"), "2024-04-03", "2025-06-01",
+            List.of("olaa"), "2024-04-03", "2025-07-01",
             "Whether logserver container should run otel agent",
             "Takes effect at redeployment",
             TENANT_ID, APPLICATION, INSTANCE_ID);
@@ -249,14 +249,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag MONITORING_JWT = defineFeatureFlag(
             "monitoring-jwt", false,
-            List.of("olaa"), "2024-07-05", "2025-06-01",
+            List.of("olaa"), "2024-07-05", "2025-07-01",
             "Whether a monitoring JWT should be issued by the controller",
             "Takes effect immediately",
             TENANT_ID, CONSOLE_USER_EMAIL);
 
     public static final UnboundBooleanFlag SNAPSHOTS_ENABLED = defineFeatureFlag(
             "snapshots-enabled", false,
-            List.of("mpolden"), "2024-10-22", "2025-06-01",
+            List.of("olaa"), "2024-10-22", "2025-07-01",
             "Whether node snapshots should be created when host storage is discarded",
             "Takes effect immediately");
 
@@ -269,21 +269,21 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENFORCE_EMAIL_DOMAIN_SSO = defineFeatureFlag(
             "enforce-email-domain-sso", false,
-            List.of("eirik"), "2024-11-07", "2025-06-01",
+            List.of("eirik"), "2024-11-07", "2025-07-01",
             "Enforce SSO login for an email domain",
             "Takes effect immediately",
             CONSOLE_USER_EMAIL);
 
     public static final UnboundListFlag<String> RESTRICT_USERS_TO_DOMAIN = defineListFlag(
             "restrict-users-to-domain", List.of(), String.class,
-            List.of("eirik"), "2024-11-07", "2025-06-01",
+            List.of("eirik"), "2024-11-07", "2025-07-01",
             "Only allow adding specific email domains as user to tenant",
             "Takes effect immediately",
             TENANT_ID);
 
     public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
             "use-legacy-trust-store", false,
-            List.of("marlon"), "2024-12-05", "2025-06-01",
+            List.of("marlon"), "2024-12-05", "2025-07-01",
             "Use legacy trust store for CA, or new one",
             "Takes effect on restart of OCI containers");
 
@@ -320,14 +320,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag COPY_LEGACY_CA = defineFeatureFlag(
             "copy-legacy-ca", false,
-            List.of("olaa"), "2025-03-27", "2025-06-01",
+            List.of("olaa"), "2025-03-27", "2025-07-01",
             "Whether legacy CA should be copied from host to container",
             "Takes effect on container startup",
             TENANT_ID, INSTANCE_ID);
 
     public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
             "defer-os-upgrade", false,
-            List.of("olaa"), "2025-04-09", "2025-06-01",
+            List.of("olaa"), "2025-04-09", "2025-07-01",
             "Whether OS upgrade should be deferred",
             "Takes effect immediately",
             CLOUD_ACCOUNT
@@ -335,7 +335,7 @@ public class Flags {
     
     public static final UnboundJacksonFlag<Sidecars> SIDECARS_FOR_TEST = defineJacksonFlag(
             "sidecars-for-test", Sidecars.createDisabled(), Sidecars.class,
-            List.of("glebashnik"), "2025-04-25", "2025-06-01",
+            List.of("glebashnik"), "2025-04-25", "2025-07-01",
             "Specifies configuration for sidecars to testing provisioning",
             "Takes effect at redeployment",
             APPLICATION
@@ -343,7 +343,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag CREATE_TENANT_ROLES = defineFeatureFlag(
             "create-tenant-roles", true,
-            List.of("oyving"), "2025-04-28", "2025-06-01",
+            List.of("oyving"), "2025-04-28", "2025-07-01",
             "Whether to create tenant specific roles",
             "Takes effect immediately",
             TENANT_ID
@@ -358,7 +358,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag DELETE_TENANT_ROLES = defineFeatureFlag(
             "delete-tenant-roles", false,
-            List.of("andreer"), "2025-05-05", "2025-06-01",
+            List.of("andreer"), "2025-05-05", "2025-07-01",
             "Whether to delete tenant specific roles",
             "Role deletion happens when tenant is next processed by TenantRoleMaintainer",
             TENANT_ID
