@@ -16,7 +16,7 @@ fi
 readonly VESPA_RELEASE="$1"
 
 # shellcheck shell=bash disable=SC1083
-QUERY_VERSION_HTTP_CODE=$(curl --write-out %{http_code} --silent --location --output /dev/null "https://oss.sonatype.org/content/repositories/releases/com/yahoo/vespa/parent/${VESPA_RELEASE}/parent-${VESPA_RELEASE}.pom")
+QUERY_VERSION_HTTP_CODE=$(curl --write-out %{http_code} --silent --location --output /dev/null "https://repo.maven.apache.org/maven2/com/yahoo/vespa/parent/${VESPA_RELEASE}/parent-${VESPA_RELEASE}.pom")
 if [[ "200" == "$QUERY_VERSION_HTTP_CODE" ]]; then
   echo "Vespa version $VESPA_RELEASE is already promoted, exiting"
   exit 0
@@ -126,9 +126,9 @@ export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED"
 LOGFILE=$(mktemp)
 # shellcheck disable=2086
 $MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
-    org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:deploy-staged-repository \
+    org.sonatype.plugins:nexus-staging-maven-plugin:1.7.0:deploy-staged-repository \
     -DrepositoryDirectory="$TMP_STAGING" \
-    -DnexusUrl=https://oss.sonatype.org \
+    -DnexusUrl=https://ossrh-staging-api.central.sonatype.com \
     -DserverId=ossrh \
     -DautoReleaseAfterClose=false \
     -DstagingProgressTimeoutMinutes=10 \
@@ -137,9 +137,8 @@ $MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
 STG_REPO=$(grep 'Staging repository at http' "$LOGFILE" | head -1 | awk -F/ '{print $NF}')
 # shellcheck disable=2086
 $MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" -N \
-    org.sonatype.plugins:nexus-staging-maven-plugin:1.6.14:rc-release \
-    -DnexusUrl=https://oss.sonatype.org/ \
+    org.sonatype.plugins:nexus-staging-maven-plugin:1.7.0:rc-release \
+    -DnexusUrl=https://ossrh-staging-api.central.sonatype.com \
     -DserverId=ossrh \
     -DstagingProgressTimeoutMinutes=10 \
     -DstagingRepositoryId="$STG_REPO"
-
