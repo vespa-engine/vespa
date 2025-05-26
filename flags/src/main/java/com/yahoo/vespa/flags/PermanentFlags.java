@@ -266,7 +266,7 @@ public class PermanentFlags {
     );
 
     public static final UnboundDoubleFlag RESOURCE_LIMIT_LOW_WATERMARK_DIFFERENCE = defineDoubleFlag(
-            "resource-limit-low-watermark-difference", 0.0,
+            "resource-limit-low-watermark-difference", 0.01,
             "Number between 0.0 and 1.0 for how much lower low watermark limit should be than content node resource limits . " +
                     "This is an absolute number, so e.g. 0.01 implies that a resource limit of 0.8 effectively " +
                     "becomes 0.79 for a node that is already in feed blocked state",

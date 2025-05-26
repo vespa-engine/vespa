@@ -93,7 +93,7 @@ public class ContentSchemaClusterTest {
         assertEquals(3, limits.size());
         assertEquals(expDiskLimit, limits.get("disk"), EPSILON);
         assertEquals(expMemoryLimit, limits.get("memory"), EPSILON);
-        assertEquals(0.0, config.cluster_feed_block_noise_level(), EPSILON);
+        assertEquals(0.01, config.cluster_feed_block_noise_level(), EPSILON);
     }
 
     @Test
