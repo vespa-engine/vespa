@@ -32,6 +32,10 @@ class DenseSubspaceFunction<NAMETYPE extends Name> {
         return function.evaluate(context);
     }
 
+    DenseSubspaceFunction<NAMETYPE> toPrimitive() {
+        return new DenseSubspaceFunction<>(argName, function.toPrimitive());
+    }
+
     class MyTypeContext implements TypeContext<NAMETYPE> {
         private final TensorType subspaceType;
         MyTypeContext(TensorType subspaceType) { this.subspaceType = subspaceType; }

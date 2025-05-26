@@ -78,7 +78,7 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
 
     @Override
     public PrimitiveTensorFunction<NAMETYPE> toPrimitive() {
-        return new MapSubspaces<>(argument.toPrimitive(), function);
+        return new MapSubspaces<>(argument.toPrimitive(), function.toPrimitive());
     }
 
     @Override
