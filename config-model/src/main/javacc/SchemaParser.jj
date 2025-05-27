@@ -1217,7 +1217,7 @@ void summaryElementsBy(ParsedSummaryField field) :
             throw new IllegalArgumentException("select-elements-by: feature list must have 1 feature, got " +
                                                featureList.size() + " features: " + featureList);
         }
-        field.setSelectElementsBySummaryFeature(featureList.iterator().next().toString());
+        field.setSelectElementsBySummaryFeature(featureList.get(0).toString());
     }
 }
 

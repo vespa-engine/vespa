@@ -180,7 +180,7 @@ public class ConvertParsedFields {
                         " Remove the type specification to silence this warning.");
                 dataType = context.resolveType(otherType);
             }
-            convertSummaryField(field, summaryField, dataType);
+            convertSummaryField(schema, field, summaryField, dataType);
         }
         for (String command : parsed.getQueryCommands()) {
             field.addQueryCommand(command);
@@ -240,13 +240,19 @@ public class ConvertParsedFields {
         }
     }
 
-    static void convertSummaryFieldSettings(SummaryField summary, ParsedSummaryField parsed) {
+    static void convertSummaryFieldSettings(Schema schema, SummaryField summary, ParsedSummaryField parsed,
+                                            String documentSummaryName) {
         var transform = SummaryTransform.NONE;
         var selectElementsBySummaryFeature = parsed.getSelectElementsBySummaryFeature();
-        if (parsed.getMatchedElementsOnly()) {
-            summary.setElementsSelector(SummaryElementsSelector.selectByMatch());
-        } else if (selectElementsBySummaryFeature.isPresent()) {
+        if (selectElementsBySummaryFeature.isPresent()) {
+            if (parsed.getMatchedElementsOnly()) {
+                throw new IllegalArgumentException("For schema '" + schema.getName() + "' document-summary '" +
+                    documentSummaryName + "' summary field '" + summary.getName() + "': " +
+                    "Both matched-elements-only and select-elements-by specified, this is not supported");
+            }
             summary.setElementsSelector(SummaryElementsSelector.selectBySummaryFeature(selectElementsBySummaryFeature.get()));
+        } else if (parsed.getMatchedElementsOnly()) {
+            summary.setElementsSelector(SummaryElementsSelector.selectByMatch());
         }
         if (parsed.getDynamic()) {
             transform = SummaryTransform.DYNAMICTEASER;
@@ -266,9 +272,9 @@ public class ConvertParsedFields {
         summary.setImplicit(false);
     }
 
-    private void convertSummaryField(SDField field, ParsedSummaryField parsed, DataType type) {
+    private void convertSummaryField(Schema schema, SDField field, ParsedSummaryField parsed, DataType type) {
         var summary = new SummaryField(parsed.name(), type, field);
-        convertSummaryFieldSettings(summary, parsed);
+        convertSummaryFieldSettings(schema, summary, parsed, "default");
         summary.addDestination("default");
         if (parsed.getSources().isEmpty()) {
             summary.addSource(field.getName());
