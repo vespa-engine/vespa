@@ -7,6 +7,7 @@ import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -74,56 +75,61 @@ public class FilterSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunct
 
     record SplitAddr(TensorAddress sparsePart, TensorAddress densePart) {}
 
-    SplitAddr splitAddr(TensorAddress fullAddr, TensorType fullType, TensorType sparseType, TensorType denseType) {
-        var mapAddrBuilder = new TensorAddress.Builder(sparseType);
-        var idxAddrBuilder = new TensorAddress.Builder(denseType);
-        for (int i = 0; i < fullType.dimensions().size(); i++) {
-            var dim = fullType.dimensions().get(i);
-            if (dim.isMapped()) {
-                mapAddrBuilder.add(dim.name(), fullAddr.objectLabel(i));
-            } else {
-                idxAddrBuilder.add(dim.name(), fullAddr.objectLabel(i));
-            }
-        }
-        var mapAddr = mapAddrBuilder.build();
-        var idxAddr = idxAddrBuilder.build();
-        return new SplitAddr(mapAddr, idxAddr);
-    }
+    static class AddressSplitter {
+        final TensorType fullType;
+        final TensorType sparseType;
+        final TensorType denseType;
 
-    TensorAddress combineAddr(
-            TensorAddress sparsePart,
-            TensorAddress densePart,
-            TensorType fullType,
-            TensorType sparseType,
-            TensorType denseType) {
-        var addrBuilder = new TensorAddress.Builder(fullType);
-        var sparseDims = sparseType.dimensions();
-        for (int i = 0; i < sparseDims.size(); i++) {
-            var dim = sparseDims.get(i);
-            addrBuilder.add(dim.name(), sparsePart.objectLabel(i));
+        AddressSplitter(TensorType fullType) {
+            this.fullType = fullType;
+            this.sparseType = fullType.mappedSubtype();
+            this.denseType = fullType.indexedSubtype();
         }
-        var denseDims = denseType.dimensions();
-        for (int i = 0; i < denseDims.size(); i++) {
-            var dim = denseDims.get(i);
-            addrBuilder.add(dim.name(), densePart.objectLabel(i));
+
+        SplitAddr split(TensorAddress fullAddr) {
+            var mapAddrBuilder = new TensorAddress.Builder(sparseType);
+            var idxAddrBuilder = new TensorAddress.Builder(denseType);
+            for (int i = 0; i < fullType.dimensions().size(); i++) {
+                var dim = fullType.dimensions().get(i);
+                if (dim.isMapped()) {
+                    mapAddrBuilder.add(dim.name(), fullAddr.objectLabel(i));
+                } else {
+                    idxAddrBuilder.add(dim.name(), fullAddr.objectLabel(i));
+                }
+            }
+            var mapAddr = mapAddrBuilder.build();
+            var idxAddr = idxAddrBuilder.build();
+            return new SplitAddr(mapAddr, idxAddr);
         }
-        return addrBuilder.build();
+
+        TensorAddress combine(TensorAddress sparsePart, TensorAddress densePart) {
+            var addrBuilder = new TensorAddress.Builder(fullType);
+            var sparseDims = sparseType.dimensions();
+            for (int i = 0; i < sparseDims.size(); i++) {
+                var dim = sparseDims.get(i);
+                addrBuilder.add(dim.name(), sparsePart.objectLabel(i));
+            }
+            var denseDims = denseType.dimensions();
+            for (int i = 0; i < denseDims.size(); i++) {
+                var dim = denseDims.get(i);
+                addrBuilder.add(dim.name(), densePart.objectLabel(i));
+            }
+            return addrBuilder.build();
+        }
     }
 
     @Override
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor input = argument().evaluate(context);
-        TensorType fullType = input.type();
-        TensorType sparseType = fullType.mappedSubtype();
-        TensorType denseType = fullType.indexedSubtype();
+        var splitter = new AddressSplitter(input.type());
         Map<TensorAddress, Tensor.Builder> builders = new HashMap<>();
         for (Iterator<Tensor.Cell> iter = input.cellIterator(); iter.hasNext(); ) {
             var cell = iter.next();
-            var split = splitAddr(cell.getKey(), fullType, sparseType, denseType);
-            var builder = builders.computeIfAbsent(split.sparsePart(), k -> Tensor.Builder.of(denseType));
+            var split = splitter.split(cell.getKey());
+            var builder = builders.computeIfAbsent(split.sparsePart(), k -> Tensor.Builder.of(splitter.denseType));
             builder.cell(split.densePart(), cell.getValue());
         }
-        Tensor.Builder builder = Tensor.Builder.of(fullType);
+        Tensor.Builder builder = Tensor.Builder.of(splitter.fullType);
         for (var entry : builders.entrySet()) {
             TensorAddress mappedAddr = entry.getKey();
             Tensor denseInput = entry.getValue().build();
@@ -132,7 +138,7 @@ public class FilterSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunct
                 for (Iterator<Tensor.Cell> iter = denseInput.cellIterator(); iter.hasNext(); ) {
                     var cell = iter.next();
                     var denseAddr = cell.getKey();
-                    var fullAddr = combineAddr(mappedAddr, denseAddr, fullType, sparseType, denseType);
+                    var fullAddr = splitter.combine(mappedAddr, denseAddr);
                     builder.cell(fullAddr, cell.getValue());
                 }
             }
