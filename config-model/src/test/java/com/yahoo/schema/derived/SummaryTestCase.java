@@ -287,6 +287,21 @@ public class SummaryTestCase extends AbstractSchemaTestCase {
         assert(!schema.getSummary("default").getSummaryFields().containsKey("baz"));
     }
 
+    @Test
+    void select_elements_by_sets_selement_selector() throws ParseException {
+        var schema = buildSchema("field foo type array<string> { indexing: attribute | summary }",
+            joinLines("document-summary bar {",
+                "    summary baz {",
+                "        source: foo ",
+                "        select-elements-by: elementwise(bm25(foo),x,double)",
+                "     }",
+                "    from-disk",
+                "}"));
+        assertElementSelect(schema, "baz", SummaryConfig.Classes.Fields.Elements.Select.Enum.BY_SUMMARY_FEATURE,
+            "elementwise(bm25(foo),x,double)", "bar");
+        assert(!schema.getSummary("default").getSummaryFields().containsKey("baz"));
+    }
+
     private void assertOverride(String fieldContent, String expFieldName, String expCommand) throws ParseException {
         assertOverride(buildSchema(fieldContent, ""), expFieldName, expCommand, expFieldName);
     }

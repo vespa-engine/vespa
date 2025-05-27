@@ -52,6 +52,7 @@ public class ParserTokensTest {
         "ONNX_OUTPUT_SL", 
         "RANKFEATURES_SL",
         "RANKFEATURES_ML",
+        "SELECT_ELEMENTS_BY_SL",
         "SUMMARYFEATURES_SL",
         "SUMMARYFEATURES_ML",
         "SUMMARYFEATURES_ML_INHERITS",

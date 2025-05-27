@@ -546,6 +546,7 @@ TOKEN :
 | < NEIGHBORS_TO_EXPLORE_AT_INSERT: "neighbors-to-explore-at-insert" >
 | < MULTI_THREADED_INDEXING: "multi-threaded-indexing" >
 | < MATCH_FEATURES: "match-features" >
+| < SELECT_ELEMENTS_BY: "select-elements-by" >
 | < SUMMARY_FEATURES: "summary-features" >
 | < RANK_FEATURES: "rank-features" >
 | < EXPRESSION: "expression" >
@@ -1490,6 +1491,7 @@ void summaryInFieldLong(ParsedField field) :
 void summaryItem(ParsedSummaryField field) : { }
 
     ( summaryTransform(field)
+      | summaryElementsSelection(field)
       | summaryBolding(field)
       | summarySourceList(field)
       | summaryDestinationList(field)
@@ -1504,10 +1506,33 @@ void summaryItem(ParsedSummaryField field) : { }
 void summaryTransform(ParsedSummaryField field) : { }
 
     ( <DYNAMIC>              { field.setDynamic(); }
-     | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
      | (<FULL> | <STATIC>)   { field.setFull(); }
      | <TOKENS> { field.setTokens(); }
     )
+;
+
+void summaryElementsSelection(ParsedSummaryField field) : { }
+
+     ( <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
+       | summaryElementsBy(field)
+     )
+;
+
+void summaryElementsBy(ParsedSummaryField field) :
+{
+    Node featureListNode = null;
+}
+    ( <SELECT_ELEMENTS_BY> <COLON> { featureListNode = consumedFeatureListElm(false); } )
+    {
+        var features = ((consumedFeatureListElm)featureListNode).getFeatureList();
+        featureListNode.setBeginOffset(featureListNode.getBeginOffset() + features.length());
+        var featureList = getFeatureList(features);
+        if (featureList.size() != 1) {
+            throw new IllegalArgumentException("select-elements-by: feature list must have 1 feature, got " +
+                                               featureList.size() + " features: " + featureList);
+        }
+        field.setSelectElementsBySummaryFeature(featureList.iterator().next().toString());
+    }
 ;
 
 /**
@@ -3304,6 +3329,7 @@ String identifierWithDashStr :
     | <REMOVE_IF_ZERO>
     | <RERANK_COUNT>
     | <SECOND_PHASE>
+    | <SELECT_ELEMENTS_BY>
     | <STOPWORD_LIMIT>
     | <STRUCT_FIELD>
     | <SUMMARY_TO>

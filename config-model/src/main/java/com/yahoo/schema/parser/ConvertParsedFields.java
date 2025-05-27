@@ -242,8 +242,11 @@ public class ConvertParsedFields {
 
     static void convertSummaryFieldSettings(SummaryField summary, ParsedSummaryField parsed) {
         var transform = SummaryTransform.NONE;
+        var selectElementsBySummaryFeature = parsed.getSelectElementsBySummaryFeature();
         if (parsed.getMatchedElementsOnly()) {
             summary.setElementsSelector(SummaryElementsSelector.selectByMatch());
+        } else if (selectElementsBySummaryFeature.isPresent()) {
+            summary.setElementsSelector(SummaryElementsSelector.selectBySummaryFeature(selectElementsBySummaryFeature.get()));
         }
         if (parsed.getDynamic()) {
             transform = SummaryTransform.DYNAMICTEASER;

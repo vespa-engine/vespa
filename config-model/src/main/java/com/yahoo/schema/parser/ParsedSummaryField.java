@@ -3,6 +3,7 @@ package com.yahoo.schema.parser;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * This class holds the extracted information after parsing a summary
@@ -22,6 +23,7 @@ public class ParsedSummaryField extends ParsedBlock {
     private boolean hasExplicitType = false;
     private final List<String> sources = new ArrayList<>();
     private final List<String> destinations = new ArrayList<>();
+    private String selectElementsBySummaryFeature = null;
 
     public ParsedSummaryField(String name) {
         this(name, null);
@@ -39,6 +41,7 @@ public class ParsedSummaryField extends ParsedBlock {
     boolean getDynamic() { return isDyn; }
     boolean getFull() { return isFull; }
     boolean getMatchedElementsOnly() { return isMEO; }
+    Optional<String> getSelectElementsBySummaryFeature() { return Optional.ofNullable(selectElementsBySummaryFeature); }
     boolean getTokens() { return isTokens; }
     boolean getHasExplicitType() { return hasExplicitType; }
 
@@ -48,6 +51,9 @@ public class ParsedSummaryField extends ParsedBlock {
     public void setDynamic() { this.isDyn = true; }
     public void setFull() { this.isFull = true; }
     public void setMatchedElementsOnly() { this.isMEO = true; }
+    public void setSelectElementsBySummaryFeature(String summaryFeature) {
+        selectElementsBySummaryFeature = summaryFeature;
+    }
     public void setTokens() { this.isTokens = true; }
     public void setHasExplicitType() { this.hasExplicitType = true; }
     void setType(ParsedType value) {
