@@ -126,6 +126,7 @@ find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC 
 # shellcheck disable=2086
 $MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
     org.sonatype.central:central-publishing-maven-plugin:0.7.0:publish \
+    -f "$SOURCE_DIR/.buildkite/release-java-artifacts-dummy-pom.xml" \
     -DrepositoryDirectory="$TMP_STAGING" \
     -DpublishingServerId=central \
     -DautoPublish=true \
