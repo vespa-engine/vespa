@@ -78,7 +78,7 @@ func TestConfig(t *testing.T) {
 	yamlConfig := string(data)
 	assert.NotContains(t, yamlConfig, "zone:")
 	config := yamlConfig + "zone: \"\"\n"
-	require.Nil(t, os.WriteFile(configFile, []byte(config), 0o600))
+	require.Nil(t, os.WriteFile(configFile, []byte(config), 0600))
 	assertConfigCommand(t, configHome, "zone = <unset>\n", "config", "get", "zone")
 }
 
@@ -162,7 +162,7 @@ func TestReadAPIKey(t *testing.T) {
 	require.NotNil(t, err)
 
 	// From default path when it exists
-	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "t1.api-key.pem"), []byte("foo"), 0o600))
+	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "t1.api-key.pem"), []byte("foo"), 0600))
 	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Equal(t, []byte("foo"), key)
@@ -175,7 +175,7 @@ func TestReadAPIKey(t *testing.T) {
 
 	// From file specified in environment
 	keyFile := filepath.Join(t.TempDir(), "key")
-	require.Nil(t, os.WriteFile(keyFile, []byte("bar"), 0o600))
+	require.Nil(t, os.WriteFile(keyFile, []byte("bar"), 0600))
 	cli, _, _ = newTestCLI(t, "VESPA_CLI_API_KEY_FILE="+keyFile)
 	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
@@ -189,7 +189,7 @@ func TestReadAPIKey(t *testing.T) {
 
 	// Prefer Auth0 if we have auth config
 	cli, _, _ = newTestCLI(t)
-	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte("foo"), 0o600))
+	require.Nil(t, os.WriteFile(filepath.Join(cli.config.homeDir, "auth.json"), []byte("foo"), 0600))
 	key, err = cli.config.readAPIKey(cli, "t1")
 	require.Nil(t, err)
 	assert.Nil(t, key)
@@ -229,9 +229,9 @@ func TestConfigReadTLSOptions(t *testing.T) {
 	certFile := filepath.Join(homeDir, "cert")
 	keyFile := filepath.Join(homeDir, "key")
 	caCertFile := filepath.Join(homeDir, "cacert")
-	require.Nil(t, os.WriteFile(certFile, pemCert, 0o600))
-	require.Nil(t, os.WriteFile(keyFile, pemKey, 0o600))
-	require.Nil(t, os.WriteFile(caCertFile, []byte("cacert"), 0o600))
+	require.Nil(t, os.WriteFile(certFile, pemCert, 0600))
+	require.Nil(t, os.WriteFile(keyFile, pemKey, 0600))
+	require.Nil(t, os.WriteFile(caCertFile, []byte("cacert"), 0600))
 	assertTLSOptions(t, homeDir, app,
 		vespa.TargetLocal,
 		vespa.TLSOptions{
@@ -251,8 +251,8 @@ func TestConfigReadTLSOptions(t *testing.T) {
 	// Key pair resides in default paths
 	defaultCertFile := filepath.Join(homeDir, app.String(), "data-plane-public-cert.pem")
 	defaultKeyFile := filepath.Join(homeDir, app.String(), "data-plane-private-key.pem")
-	require.Nil(t, os.WriteFile(defaultCertFile, pemCert, 0o600))
-	require.Nil(t, os.WriteFile(defaultKeyFile, pemKey, 0o600))
+	require.Nil(t, os.WriteFile(defaultCertFile, pemCert, 0600))
+	require.Nil(t, os.WriteFile(defaultKeyFile, pemKey, 0600))
 	assertTLSOptions(t, homeDir, app,
 		vespa.TargetLocal,
 		vespa.TLSOptions{

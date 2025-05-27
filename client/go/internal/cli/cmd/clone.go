@@ -78,7 +78,7 @@ type zipFile struct {
 }
 
 func (c *cloner) createDirectory(path string) error {
-	if err := os.Mkdir(path, 0o755); err != nil {
+	if err := os.Mkdir(path, 0755); err != nil {
 		if errors.Is(err, fs.ErrExist) {
 			entries, err := os.ReadDir(path)
 			if err != nil {
@@ -212,7 +212,7 @@ func (c *cloner) downloadZip(cachedFiles []zipFile) (string, bool, error) {
 	// the cached copy if GitHub is unavailable.
 	cacheHit := zipPath != ""
 	err := c.cli.spinner(c.cli.Stderr, color.YellowString("Downloading sample apps ..."), func() error {
-		request, err := http.NewRequest(http.MethodGet, "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
+		request, err := http.NewRequest("GET", "https://github.com/vespa-engine/sample-apps/archive/refs/heads/master.zip", nil)
 		if err != nil {
 			return fmt.Errorf("invalid url: %w", err)
 		}
@@ -280,7 +280,7 @@ func copyFromZip(f *zip.File, destinationDir string, zipEntryPrefix string) erro
 	destinationPath := filepath.Join(destinationDir, filepath.FromSlash(strings.TrimPrefix(f.Name, zipEntryPrefix)))
 	if strings.HasSuffix(f.Name, "/") {
 		if f.Name != zipEntryPrefix { // root is already created
-			if err := os.Mkdir(destinationPath, 0o755); err != nil {
+			if err := os.Mkdir(destinationPath, 0755); err != nil {
 				return err
 			}
 		}

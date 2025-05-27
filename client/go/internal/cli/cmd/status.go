@@ -184,7 +184,7 @@ $ vespa status deployment -t local [session-id] --wait 600
 				if waiter.Timeout == 0 && !errors.Is(err, vespa.ErrDeployment) {
 					hints = []string{"Consider using the --wait flag to increase the wait period", "--wait 120 will make this command wait for completion up to 2 minutes"}
 				}
-				return CLIError{Status: 1, warn: true, hints: hints, error: err}
+				return ErrCLI{Status: 1, warn: true, hints: hints, error: err}
 			}
 			if t.IsCloud() {
 				log.Printf("Deployment run %s has completed", color.CyanString(strconv.FormatInt(id, 10)))
@@ -205,7 +205,7 @@ func printServiceStatus(s *vespa.Service, format string, waiter *Waiter, cli *CL
 	switch format {
 	case "human":
 		desc := s.Description()
-		desc = strings.ToUpper(string(desc[0])) + desc[1:]
+		desc = strings.ToUpper(string(desc[0])) + string(desc[1:])
 		sb.WriteString(fmt.Sprintf("%s at %s is ", desc, color.CyanString(s.BaseURL)))
 		if err == nil {
 			sb.WriteString(color.GreenString("ready"))

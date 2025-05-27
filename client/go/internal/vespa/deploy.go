@@ -63,9 +63,9 @@ type Submission struct {
 }
 
 type LogLinePrepareResponse struct {
-	Time    int64  `json:"time"`
-	Level   string `json:"level"`
-	Message string `json:"message"`
+	Time    int64
+	Level   string
+	Message string
 }
 
 type PrepareResult struct {
@@ -136,7 +136,7 @@ func Fetch(deployment DeploymentOptions, path string) (string, error) {
 }
 
 func deployServiceGet(url string, deployment DeploymentOptions, w io.Writer) error {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -204,14 +204,14 @@ func fetchFromConfigServer(deployment DeploymentOptions, path string) error {
 		return err
 	}
 	if err = renameOrCopyTmpFile(zipFile, path); err != nil {
-		return fmt.Errorf("could neither rename nor copy %s to %s: %w", zipFile, path, err)
+		return fmt.Errorf("Could neither rename nor copy %s to %s: %w", zipFile, path, err)
 	}
 	return err
 }
 
 func renameOrCopyTmpFile(srcPath, dstPath string) error {
 	if err := os.Rename(srcPath, dstPath); err == nil {
-		return nil
+		return err
 	}
 	src, err := os.Open(srcPath)
 	if err != nil {
@@ -249,7 +249,7 @@ func fetchFilesFromConfigServer(deployment DeploymentOptions, contentURL *url.UR
 				return err
 			}
 		} else {
-			if err := os.MkdirAll(filepath.Dir(entryName), 0o755); err != nil {
+			if err := os.MkdirAll(filepath.Dir(entryName), 0755); err != nil {
 				return err
 			}
 			f, err := os.Create(entryName)
@@ -280,7 +280,7 @@ func Prepare(deployment DeploymentOptions) (PrepareResult, error) {
 	if err != nil {
 		return PrepareResult{}, err
 	}
-	req, err := http.NewRequest(http.MethodPut, prepareURL.String(), nil)
+	req, err := http.NewRequest("PUT", prepareURL.String(), nil)
 	if err != nil {
 		return PrepareResult{}, err
 	}
@@ -317,7 +317,7 @@ func Activate(sessionID int64, deployment DeploymentOptions) error {
 	if err != nil {
 		return err
 	}
-	req, err := http.NewRequest(http.MethodPut, u.String(), nil)
+	req, err := http.NewRequest("PUT", u.String(), nil)
 	if err != nil {
 		return err
 	}
@@ -347,7 +347,7 @@ func Deactivate(deployment DeploymentOptions) error {
 	if err != nil {
 		return err
 	}
-	req := &http.Request{URL: u, Method: http.MethodDelete}
+	req := &http.Request{URL: u, Method: "DELETE"}
 	resp, err := deployServiceDo(req, 30*time.Second, deployment)
 	if err != nil {
 		return err
@@ -438,7 +438,7 @@ func Submit(opts DeploymentOptions, submission Submission) (int64, error) {
 	}
 	request := &http.Request{
 		URL:    u,
-		Method: http.MethodPost,
+		Method: "POST",
 		Body:   io.NopCloser(&body),
 		Header: make(http.Header),
 	}
@@ -516,7 +516,7 @@ func newDeploymentRequest(url *url.URL, opts DeploymentOptions) (*http.Request, 
 	}
 	return &http.Request{
 		URL:    url,
-		Method: http.MethodPost,
+		Method: "POST",
 		Header: header,
 		Body:   io.NopCloser(body),
 	}, nil
@@ -563,11 +563,11 @@ func uploadApplicationPackage(url *url.URL, opts DeploymentOptions) (PrepareResu
 }
 
 func checkResponse(req *http.Request, response *http.Response) error {
-	if response.StatusCode == http.StatusUnauthorized || response.StatusCode == http.StatusForbidden {
+	if response.StatusCode == 401 || response.StatusCode == 403 {
 		return fmt.Errorf("deployment failed: %w (status %d)\n%s", ErrUnauthorized, response.StatusCode, ioutil.ReaderToJSON(response.Body))
 	} else if response.StatusCode/100 == 4 {
 		return fmt.Errorf("invalid application package (status %d)\n%s", response.StatusCode, extractError(response.Body))
-	} else if response.StatusCode != http.StatusOK {
+	} else if response.StatusCode != 200 {
 		return fmt.Errorf("error from deploy API at %s (status %d):\n%s", req.URL.Host, response.StatusCode, ioutil.ReaderToJSON(response.Body))
 	}
 	return nil

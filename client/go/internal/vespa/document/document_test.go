@@ -166,7 +166,7 @@ func testDocumentDecoder(t *testing.T, jsonLike string) {
 	result := []Document{}
 	for {
 		doc, err := dec.Decode()
-		if errors.Is(err, io.EOF) {
+		if err == io.EOF {
 			break
 		}
 		if err != nil {
@@ -220,7 +220,9 @@ func TestDocumentDecoderInvalid(t *testing.T) {
 	}
 
 	dec = NewDecoder(strings.NewReader(`{}`))
-	if _, err = dec.Decode(); !errors.Is(err, ErrMissingId) {
+	_, err = dec.Decode()
+	wantErr = "invalid operation at byte offset 2: no id specified"
+	if !errors.Is(err, ErrMissingId) {
 		t.Errorf("want error %q, got %q", ErrMissingId, err.Error())
 	}
 }
@@ -258,7 +260,7 @@ func TestGenerator(t *testing.T) {
 	var docs []Document
 	for {
 		doc, err := dec.Decode()
-		if errors.Is(err, io.EOF) {
+		if err == io.EOF {
 			break
 		} else if err != nil {
 			t.Fatal(err)

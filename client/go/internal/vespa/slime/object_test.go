@@ -3,9 +3,8 @@
 package slime
 
 import (
-	"testing"
-
 	"github.com/stretchr/testify/assert"
+	"testing"
 )
 
 func dummyFieldNames(n int) []string {
@@ -26,13 +25,12 @@ func TestObject(t *testing.T) {
 	}
 
 	expect := map[string]expectLeaf{
-		"a": {mytype: EMPTY},
-		"b": {mytype: BOOL, boolVal: true},
-		"c": {mytype: LONG, longVal: 5, doubleVal: 5},
-		"d": {mytype: DOUBLE, longVal: 5, doubleVal: 5.5},
-		"e": {mytype: STRING, stringVal: "foo"},
-		"f": {mytype: DATA, dataVal: []byte{1, 2, 3}},
-	}
+		"a": expectLeaf{mytype: EMPTY},
+		"b": expectLeaf{mytype: BOOL, boolVal: true},
+		"c": expectLeaf{mytype: LONG, longVal: 5, doubleVal: 5},
+		"d": expectLeaf{mytype: DOUBLE, longVal: 5, doubleVal: 5.5},
+		"e": expectLeaf{mytype: STRING, stringVal: "foo"},
+		"f": expectLeaf{mytype: DATA, dataVal: []byte{1, 2, 3}}}
 
 	collect := make(map[string]Value)
 	obj.EachField(func(name string, val Value) {

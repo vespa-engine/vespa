@@ -56,7 +56,7 @@ $ vespa test src/test/application/tests/system-test/feed-and-query.json`,
 				for _, test := range failed {
 					fmt.Fprintln(cli.Stdout, test)
 				}
-				return CLIError{Status: 3, error: fmt.Errorf("tests failed"), quiet: true}
+				return ErrCLI{Status: 3, error: fmt.Errorf("tests failed"), quiet: true}
 			} else {
 				plural := "s"
 				if count == 1 {
@@ -226,7 +226,7 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 		if err != nil {
 			return "", "", err
 		}
-		var ok bool
+		ok := false
 		service, ok = context.clusters[cluster]
 		if !ok && waiter != nil {
 			// Cache service so we don't have to discover it for every step
@@ -330,7 +330,8 @@ func verify(step step, defaultCluster string, defaultParameters map[string]strin
 }
 
 func compare(expected interface{}, actual interface{}, path string) (string, string, string, error) {
-	var typeMatch, valueMatch bool
+	typeMatch := false
+	valueMatch := false
 	switch u := expected.(type) {
 	case nil:
 		typeMatch = actual == nil

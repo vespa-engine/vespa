@@ -5,7 +5,6 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/xml"
-	"errors"
 	"fmt"
 	"io"
 	"regexp"
@@ -211,21 +210,21 @@ func ParseResources(s string) (Resources, error) {
 // ParseNodeCount parses a node count range from string s.
 func ParseNodeCount(s string) (int, int, error) {
 	parseErr := fmt.Errorf("invalid node count: %q", s)
-	var minNodeCount, maxNodeCount int
+	min, max := 0, 0
 	n, err := strconv.Atoi(s)
 	if err == nil {
-		minNodeCount = n
-		maxNodeCount = n
+		min = n
+		max = n
 	} else if strings.HasPrefix(s, "[") && strings.HasSuffix(s, "]") {
 		parts := strings.Split(s[1:len(s)-1], ",")
 		if len(parts) != 2 {
 			return 0, 0, parseErr
 		}
-		minNodeCount, err = strconv.Atoi(strings.TrimSpace(parts[0]))
+		min, err = strconv.Atoi(strings.TrimSpace(parts[0]))
 		if err != nil {
 			return 0, 0, parseErr
 		}
-		maxNodeCount, err = strconv.Atoi(strings.TrimSpace(parts[1]))
+		max, err = strconv.Atoi(strings.TrimSpace(parts[1]))
 		if err != nil {
 			return 0, 0, parseErr
 		}
@@ -233,10 +232,10 @@ func ParseNodeCount(s string) (int, int, error) {
 		return 0, 0, parseErr
 	}
 
-	if minNodeCount <= 0 || minNodeCount > maxNodeCount {
+	if min <= 0 || min > max {
 		return 0, 0, parseErr
 	}
-	return minNodeCount, maxNodeCount, nil
+	return min, max, nil
 }
 
 // IsProdRegion returns whether string s is a valid production region.
@@ -319,7 +318,7 @@ func Replace(r io.Reader, parentName, name string, data interface{}) (string, er
 	done := false
 	for {
 		token, err := dec.Token()
-		if errors.Is(err, io.EOF) {
+		if err == io.EOF {
 			break
 		} else if err != nil {
 			return "", err

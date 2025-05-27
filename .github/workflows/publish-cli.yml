@@ -86,6 +86,7 @@ jobs:
           echo "Changes detected between ${previous_tag} and ${new_tag}."
           echo "has-changes=true" >> "${GITHUB_OUTPUT}"
 
+
   build-test:
     runs-on: ubuntu-latest
 
@@ -103,19 +104,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Fetch all history for git operations.
 
       - uses: actions/setup-go@v5
-
-      - name: Lint
-        if: github.event_name == 'pull_request' && needs.prepare.outputs.changes-detected == 'true'
-        run: |
-          # Install golangci-lint
-          curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/HEAD/install.sh | sh -s -- -b $(go env GOPATH)/bin v2.1.6
-
-          # Run the linter
-          golangci-lint run --new-from-rev=origin/${{ github.base_ref || github.ref_name }} --timeout 5m ./...
 
       - name: build
         run: |
