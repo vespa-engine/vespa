@@ -96,7 +96,7 @@ func createApplication(t *testing.T, pkgDir string, java bool, skipTests bool) {
 		appDir = filepath.Join(pkgDir, "target", "application")
 		testsDir = filepath.Join(pkgDir, "target", "application-test")
 	}
-	if err := os.MkdirAll(appDir, 0755); err != nil {
+	if err := os.MkdirAll(appDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
 	deploymentXML := `<deployment version="1.0">
@@ -104,7 +104,7 @@ func createApplication(t *testing.T, pkgDir string, java bool, skipTests bool) {
     <region>aws-us-east-1c</region>
   </prod>
 </deployment>`
-	if err := os.WriteFile(filepath.Join(appDir, "deployment.xml"), []byte(deploymentXML), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(appDir, "deployment.xml"), []byte(deploymentXML), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	servicesXML := `<services version="1.0" xmlns:deploy="vespa" xmlns:preprocess="properties">
@@ -124,16 +124,16 @@ func createApplication(t *testing.T, pkgDir string, java bool, skipTests bool) {
   </content>
 </services>`
 
-	if err := os.WriteFile(filepath.Join(appDir, "services.xml"), []byte(servicesXML), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(appDir, "services.xml"), []byte(servicesXML), 0o644); err != nil {
 		t.Fatal(err)
 	}
 	if java {
-		if err := os.WriteFile(filepath.Join(pkgDir, "pom.xml"), []byte(""), 0644); err != nil {
+		if err := os.WriteFile(filepath.Join(pkgDir, "pom.xml"), []byte(""), 0o644); err != nil {
 			t.Fatal(err)
 		}
 	}
 	if !skipTests {
-		if err := os.MkdirAll(testsDir, 0755); err != nil {
+		if err := os.MkdirAll(testsDir, 0o755); err != nil {
 			t.Fatal(err)
 		}
 		testBytes := []byte("{\"steps\":[{}]}")
@@ -144,10 +144,10 @@ func createApplication(t *testing.T, pkgDir string, java bool, skipTests bool) {
 }
 
 func writeTest(path string, content []byte, t *testing.T) {
-	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if err := os.WriteFile(path, content, 0644); err != nil {
+	if err := os.WriteFile(path, content, 0o644); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -173,8 +173,8 @@ func TestProdDeployWithoutCertificate(t *testing.T) {
 	cli.Environment["VESPA_CLI_API_KEY_FILE"] = filepath.Join(cli.config.homeDir, "t1.api-key.pem")
 
 	// We have clients.pem, but no key pair for the application
-	require.Nil(t, os.MkdirAll(filepath.Join(pkgDir, "security"), 0755))
-	require.Nil(t, os.WriteFile(filepath.Join(pkgDir, "security", "clients.pem"), []byte{}, 0644))
+	require.Nil(t, os.MkdirAll(filepath.Join(pkgDir, "security"), 0o755))
+	require.Nil(t, os.WriteFile(filepath.Join(pkgDir, "security", "clients.pem"), []byte{}, 0o644))
 	httpClient.NextResponseString(200, `{"build": 42}`)
 	assert.Nil(t, cli.Run("prod", "deploy", pkgDir))
 	assert.Contains(t, stdout.String(), "Success: Deployed '"+pkgDir+"' with build number 42")

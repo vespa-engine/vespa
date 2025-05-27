@@ -67,8 +67,6 @@ func (p *Spec) prependNumaCtl(args []string) []string {
 		result = append(result, "--interleave")
 		result = append(result, "all")
 	}
-	for _, arg := range args {
-		result = append(result, arg)
-	}
+	result = append(result, args...)
 	return result
 }

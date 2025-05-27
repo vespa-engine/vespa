@@ -51,7 +51,7 @@ func TestClone(t *testing.T) {
 
 	// Clone to current directory (dot)
 	emptyDir := filepath.Join(tempDir, "mypath1")
-	require.Nil(t, os.Mkdir(emptyDir, 0755))
+	require.Nil(t, os.Mkdir(emptyDir, 0o755))
 	require.Nil(t, os.Chdir(emptyDir))
 	httpClient.NextStatus(http.StatusNotModified)
 	require.Nil(t, cli.Run("clone", sampleAppName, "."))
@@ -62,7 +62,7 @@ func TestClone(t *testing.T) {
 	// Clone to non-empty directory
 	httpClient.NextStatus(http.StatusNotModified)
 	nonEmptyDir := filepath.Join(tempDir, "mypath2")
-	require.Nil(t, os.MkdirAll(filepath.Join(nonEmptyDir, "more"), 0755))
+	require.Nil(t, os.MkdirAll(filepath.Join(nonEmptyDir, "more"), 0o755))
 	require.NotNil(t, cli.Run("clone", sampleAppName, nonEmptyDir))
 	assert.Equal(t, "Error: could not create directory: "+nonEmptyDir+" already exists and is not empty\n", stderr.String())
 	stderr.Reset()
@@ -112,5 +112,5 @@ func assertFiles(t *testing.T, app string) {
 
 	scriptStat, err := os.Stat(filepath.Join(app, "bin", "convert-msmarco.sh"))
 	require.Nil(t, err)
-	assert.Equal(t, os.FileMode(0755), scriptStat.Mode())
+	assert.Equal(t, os.FileMode(0o755), scriptStat.Mode())
 }
