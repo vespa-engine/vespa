@@ -80,7 +80,6 @@ public class FileStorProducer implements StorFilestorConfig.Producer {
             maintenanceThrottleBuilder.max_window_size(maxContentNodeMaintenanceOpConcurrency);
             builder.maintenance_operation_throttler(maintenanceThrottleBuilder);
         }
-        builder.max_feed_op_batch_size(64); // TODO: Remove when default in config definition is 64
     }
 
 }
