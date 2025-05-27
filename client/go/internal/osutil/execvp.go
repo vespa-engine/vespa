@@ -43,5 +43,5 @@ func Execvpe(prog string, argv []string, envv []string) error {
 func Execve(prog string, argv []string, envv []string) error {
 	trace.Trace("run cmd:", strings.Join(argv, " "))
 	err := unix.Exec(prog, argv, envv)
-	return fmt.Errorf("cannot execute '%s': %w", prog, err)
+	return fmt.Errorf("cannot execute '%s': %v", prog, err)
 }

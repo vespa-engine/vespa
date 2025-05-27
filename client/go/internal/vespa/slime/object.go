@@ -18,7 +18,6 @@ func (obj *objectValue) Field(name string) Value {
 	}
 	return Invalid
 }
-
 func (obj *objectValue) EachField(f func(name string, value Value)) {
 	for n, x := range obj.value {
 		f(n, x)

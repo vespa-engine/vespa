@@ -38,7 +38,7 @@ func IsExecutable(path string) bool {
 	return !errors.Is(err, os.ErrNotExist) &&
 		info != nil &&
 		info.Mode().IsRegular() &&
-		((int(info.Mode()) & 0o111) == 0o111)
+		((int(info.Mode()) & 0111) == 0111)
 }
 
 // ReaderToString Returns the content of reader as a string. Read errors are ignored.

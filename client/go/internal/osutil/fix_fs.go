@@ -24,8 +24,8 @@ func NewFixSpec() FixSpec {
 	return FixSpec{
 		UserId:   -1,
 		GroupId:  -1,
-		DirMode:  0o755,
-		FileMode: 0o644,
+		DirMode:  0755,
+		FileMode: 0644,
 	}
 }
 

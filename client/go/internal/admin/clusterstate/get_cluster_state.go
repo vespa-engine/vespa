@@ -17,7 +17,9 @@ import (
 )
 
 func NewGetClusterStateCmd() *cobra.Command {
-	var curOptions Options
+	var (
+		curOptions Options
+	)
 	cmd := &cobra.Command{
 		Use:               "vespa-get-cluster-state [-h] [-v] [-f] [-c cluster]",
 		Short:             "Get the cluster state of a given cluster.",

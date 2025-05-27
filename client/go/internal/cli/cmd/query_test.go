@@ -146,7 +146,7 @@ func TestQueryPostFile(t *testing.T) {
 
 	tmpFileName := filepath.Join(t.TempDir(), "tq1.json")
 	jsonQuery := []byte(`{"yql": "some yql here"}`)
-	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0o644))
+	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0644))
 
 	assert.Nil(t, cli.Run("-t", "http://127.0.0.1:8080", "query", "--file", tmpFileName))
 	assert.Equal(t, mockResponse+"\n", stdout.String())
@@ -165,7 +165,7 @@ func TestQueryPostFileWithArgs(t *testing.T) {
 
 	tmpFileName := filepath.Join(t.TempDir(), "tq2.json")
 	jsonQuery := []byte(`{"yql": "some yql here"}`)
-	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0o644))
+	require.Nil(t, os.WriteFile(tmpFileName, jsonQuery, 0644))
 
 	assert.Nil(t, cli.Run(
 		"-t", "http://foo.bar:1234/",
@@ -195,6 +195,21 @@ func assertStreamingQuery(t *testing.T, expectedOutput, body string, args ...str
 	assert.Nil(t, cli.Run(append(args, "-t", "http://127.0.0.1:8080", "query", "select something")...))
 	assert.Equal(t, "", stderr.String())
 	assert.Equal(t, expectedOutput, stdout.String())
+}
+
+func assertStreamingQueryErr(t *testing.T, expectedOut, expectedErr, body string, args ...string) {
+	t.Helper()
+	client := &mock.HTTPClient{}
+	response := mock.HTTPResponse{Status: 200, Header: make(http.Header)}
+	response.Header.Set("Content-Type", "text/event-stream")
+	response.Body = []byte(body)
+	client.NextResponse(response)
+	cli, stdout, stderr := newTestCLI(t)
+	cli.httpClient = client
+
+	assert.NotNil(t, cli.Run(append(args, "-t", "http://127.0.0.1:8080", "query", "select something")...))
+	assert.Equal(t, expectedErr, stderr.String())
+	assert.Equal(t, expectedOut, stdout.String())
 }
 
 func assertQuery(t *testing.T, expectedQuery string, query ...string) {

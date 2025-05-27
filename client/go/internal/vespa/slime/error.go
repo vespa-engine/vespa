@@ -4,7 +4,9 @@ package slime
 
 import "errors"
 
-var Invalid Value = ErrorMsg("invalid value")
+var (
+	Invalid Value = ErrorMsg("invalid value")
+)
 
 type errorValue struct {
 	emptyValue

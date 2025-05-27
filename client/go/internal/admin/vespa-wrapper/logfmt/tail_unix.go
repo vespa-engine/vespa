@@ -8,7 +8,6 @@ package logfmt
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -69,26 +68,26 @@ func (t *unixTail) openTail() {
 	if err != nil {
 		return
 	}
-	sz, err := file.Seek(0, io.SeekEnd)
+	sz, err := file.Seek(0, os.SEEK_END)
 	if err != nil {
 		return
 	}
 	if sz < lastLinesSize {
-		_, err = file.Seek(0, io.SeekStart)
+		sz, err = file.Seek(0, os.SEEK_SET)
 		if err == nil {
 			// just read from start of file, all OK
 			t.setFile(file)
 		}
 		return
 	}
-	sz, _ = file.Seek(-lastLinesSize, io.SeekEnd)
+	sz, _ = file.Seek(-lastLinesSize, os.SEEK_END)
 	n, err := file.Read(t.lineBuf)
 	if err != nil {
 		return
 	}
 	for i := range n {
 		if t.lineBuf[i] == '\n' {
-			_, err = file.Seek(sz+int64(i+1), io.SeekStart)
+			sz, err = file.Seek(sz+int64(i+1), os.SEEK_SET)
 			if err == nil {
 				t.setFile(file)
 			}
@@ -137,7 +136,7 @@ loop:
 		}
 		bytes, err := t.reader.ReadSlice('\n')
 		t.lineBuf = append(t.lineBuf, bytes...)
-		if errors.Is(err, bufio.ErrBufferFull) {
+		if err == bufio.ErrBufferFull {
 			continue
 		}
 		if err == nil {
@@ -147,21 +146,16 @@ loop:
 			continue
 		}
 		if err == io.EOF {
-			pos, _ := t.curFile.Seek(0, io.SeekCurrent)
+			pos, _ := t.curFile.Seek(0, os.SEEK_CUR)
 			for cnt := 0; cnt < 100; cnt++ {
 				time.Sleep(10 * time.Millisecond)
-				sz, _ := t.curFile.Seek(0, io.SeekEnd)
+				sz, _ := t.curFile.Seek(0, os.SEEK_END)
 				if sz != pos {
 					if sz < pos {
 						// truncation case
 						pos = 0
 					}
-					_, err := t.curFile.Seek(pos, io.SeekStart)
-					if err != nil {
-						fmt.Fprintf(os.Stderr, "error seeking in '%s': %v\n", t.fn, err)
-						t.reopen(&t.curStat)
-						continue loop
-					}
+					t.curFile.Seek(pos, os.SEEK_SET)
 					continue loop
 				}
 			}

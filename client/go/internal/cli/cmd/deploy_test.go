@@ -105,10 +105,10 @@ func TestDeployCloudFastWait(t *testing.T) {
 	stdout.Reset()
 	stderr.Reset()
 	httpClient.NextResponseString(200, `ok`)
-	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccessful"}`)
-	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccessful"}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
+	httpClient.NextResponseString(200, `{"active": false, "status": "unsuccesful"}`)
 	require.NotNil(t, cli.Run("deploy", pkgDir))
-	assert.Equal(t, stderr.String(), "Error: deployment failed: run 0 ended with unsuccessful status: unsuccessful\n")
+	assert.Equal(t, stderr.String(), "Error: deployment failed: run 0 ended with unsuccessful status: unsuccesful\n")
 	assert.True(t, httpClient.Consumed())
 
 	// Deployment which is running does not return error
@@ -345,7 +345,7 @@ func assertPackageUpload(requestNumber int, url string, client *mock.HTTPClient,
 	assert.Equal(t, url, req.URL.String())
 	assert.Equal(t, "application/zip", req.Header.Get("Content-Type"))
 	assert.Equal(t, "POST", req.Method)
-	body := req.Body
+	var body = req.Body
 	assert.NotNil(t, body)
 	buf := make([]byte, 7) // Just check the first few bytes
 	body.Read(buf)

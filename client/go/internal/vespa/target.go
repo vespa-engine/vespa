@@ -173,7 +173,7 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	}
 	if s.auth != nil {
 		if err := s.auth.Authenticate(request); err != nil {
-			return nil, fmt.Errorf("%w: %w", errAuth, err)
+			return nil, fmt.Errorf("%w: %s", errAuth, err)
 		}
 	}
 	if err := s.CurlWriter.print(request, s.TLSOptions, timeout); err != nil {
@@ -181,7 +181,7 @@ func (s *Service) Do(request *http.Request, timeout time.Duration) (*http.Respon
 	}
 	resp, err := s.httpClient.Do(request, timeout)
 	if isTLSAlert(err) {
-		return nil, fmt.Errorf("%w: %w", errAuth, err)
+		return nil, fmt.Errorf("%w: %s", errAuth, err)
 	}
 	return resp, err
 }
@@ -196,7 +196,7 @@ func (s *Service) SetClient(client httputil.Client) {
 func (s *Service) Wait(timeout time.Duration) error {
 	// A path that does not need authentication, on any target
 	url := strings.TrimRight(s.BaseURL, "/") + "/status.html"
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return err
 	}
@@ -244,7 +244,7 @@ func FindService(name string, authMethod string, services []*Service) (*Service,
 		if name == s.Name {
 			return s, nil
 		}
-		prettyName := color.CyanString("%s", s.Name)
+		var prettyName = color.CyanString("%s", s.Name)
 		if s.AuthMethod != "" {
 			prettyName = fmt.Sprintf("%s (%s)", prettyName, s.AuthMethod)
 		}
@@ -288,7 +288,7 @@ func deployRequest(target Target, fn responseFunc, reqFn requestFunc, timeout, r
 }
 
 func pollLogs(target Target, logsURL string, options LogOptions, retryInterval time.Duration) error {
-	req, err := http.NewRequest(http.MethodGet, logsURL, nil)
+	req, err := http.NewRequest("GET", logsURL, nil)
 	if err != nil {
 		return err
 	}
@@ -332,7 +332,7 @@ func pollLogs(target Target, logsURL string, options LogOptions, retryInterval t
 	}
 	// Ignore wait error because logFunc has no concept of completion, we just want to print log entries until timeout is reached
 	if _, err := deployRequest(target, logFunc, requestFunc, timeout, retryInterval); err != nil && !errors.Is(err, ErrWaitTimeout) {
-		return fmt.Errorf("failed to read logs: %w", err)
+		return fmt.Errorf("failed to read logs: %s", err)
 	}
 	return nil
 }
