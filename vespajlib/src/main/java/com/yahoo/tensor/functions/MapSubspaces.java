@@ -12,7 +12,6 @@ import com.yahoo.tensor.evaluation.TypeContext;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -30,6 +29,7 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
         this.argument = argument;
         this.function = function;
     }
+
     public MapSubspaces(TensorFunction<NAMETYPE> argument, String functionArg, TensorFunction<NAMETYPE> function) {
         this(argument, new DenseSubspaceFunction<>(functionArg, function));
         Objects.requireNonNull(argument, "The argument cannot be null");
@@ -40,6 +40,10 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
     private TensorType outputType(TensorType inputType) {
         var m = inputType.mappedSubtype();
         var d = function.outputType(inputType.indexedSubtype());
+        if (d.mappedSubtype().rank() > 0) {
+            throw new IllegalArgumentException("function used in map_subspaces type had mapped dimensions: " + d);
+        }
+
         if (m.rank() == 0) {
             return d;
         }
@@ -74,7 +78,7 @@ public class MapSubspaces<NAMETYPE extends Name> extends PrimitiveTensorFunction
 
     @Override
     public PrimitiveTensorFunction<NAMETYPE> toPrimitive() {
-        return new MapSubspaces<>(argument.toPrimitive(), function);
+        return new MapSubspaces<>(argument.toPrimitive(), function.toPrimitive());
     }
 
     @Override

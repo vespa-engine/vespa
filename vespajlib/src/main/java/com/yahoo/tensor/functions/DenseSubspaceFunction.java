@@ -3,16 +3,12 @@ package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
-import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.MapEvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
-import java.util.Optional;
-import java.util.function.Function;
-
 /**
- * A function suitable for use in MapSubspaces
+ * A function suitable for use in MapSubspaces / FilterSubspaces
  *
  * @author arnej
  */
@@ -32,25 +28,37 @@ class DenseSubspaceFunction<NAMETYPE extends Name> {
         return function.evaluate(context);
     }
 
+    DenseSubspaceFunction<NAMETYPE> toPrimitive() {
+        return new DenseSubspaceFunction<>(argName, function.toPrimitive());
+    }
+
     class MyTypeContext implements TypeContext<NAMETYPE> {
         private final TensorType subspaceType;
-        MyTypeContext(TensorType subspaceType) { this.subspaceType = subspaceType; }
-        public TensorType getType(NAMETYPE name) { return getType(name.name()); }
-        public TensorType getType(String name) { return argName.equals(name) ? subspaceType : null; }
-        public String resolveBinding(String name) { return name; }
+
+        MyTypeContext(TensorType subspaceType) {
+            this.subspaceType = subspaceType;
+        }
+
+        public TensorType getType(NAMETYPE name) {
+            return getType(name.name());
+        }
+
+        public TensorType getType(String name) {
+            return argName.equals(name) ? subspaceType : null;
+        }
+
+        public String resolveBinding(String name) {
+            return name;
+        }
     }
 
     TensorType outputType(TensorType subspaceType) {
         var context = new MyTypeContext(subspaceType);
         var result = function.type(context);
-        if (result.mappedSubtype().rank() > 0) {
-            throw new IllegalArgumentException("function used in map_subspaces type had mapped dimensions: " + result);
-        }
         return result;
     }
 
     public String toString() {
         return "f(" + argName + ")(" + function + ")";
     }
-
 }
