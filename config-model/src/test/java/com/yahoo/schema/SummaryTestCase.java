@@ -427,6 +427,33 @@ public class SummaryTestCase {
         }
     }
 
+    @Test
+    void testBothMatchedElementsOnlyAndSelectElementsBy() throws ParseException {
+        String sd = """
+            schema test {
+              document test {
+                field foo type array<string> { indexing: index | summary }
+              }
+              document-summary bar {
+                summary foo {
+                  matched-elements-only
+                  select-elements-by: elementwise(bm25(foo),x,double)
+                }
+                from-disk
+              }
+            }
+            """;
+        DeployLoggerStub logger = new DeployLoggerStub();
+        try {
+            ApplicationBuilder.createFromStrings(logger, sd);
+            fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For schema 'test' document-summary 'bar' summary field 'foo': " +
+                "Both matched-elements-only and select-elements-by specified, this is not supported", e.getMessage());
+        }
+
+    }
+
     private static class TestValue {
 
         private final DocumentSummary summary;

@@ -243,7 +243,7 @@ public class ConvertParsedSchemas {
                     new SummaryField(parsedField.name(), dataType, docsum);
             // XXX does not belong here:
             summaryField.setVsmCommand(SummaryField.VsmCommand.FLATTENSPACE);
-            ConvertParsedFields.convertSummaryFieldSettings(summaryField, parsedField);
+            ConvertParsedFields.convertSummaryFieldSettings(schema, summaryField, parsedField, parsed.name());
             docsum.add(summaryField);
         }
         schema.addSummary(docsum);

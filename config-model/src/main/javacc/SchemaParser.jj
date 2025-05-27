@@ -314,6 +314,7 @@ TOKEN :
 | < MATCHFEATURES_SL: "match-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < MATCHFEATURES_ML: "match-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < MATCHFEATURES_ML_INHERITS: "match-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
+| < SELECT_ELEMENTS_BY_SL: "select-elements-by" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_SL: "summary-features" (" ")* ":" (~["}","\n"])* ("\n")? >
 | < SUMMARYFEATURES_ML: "summary-features" (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
 | < SUMMARYFEATURES_ML_INHERITS: "summary-features inherits " (<IDENTIFIER_WITH_DASH>) (<SEARCHLIB_SKIP>)? "{" (~["}"])* "}" >
@@ -1177,6 +1178,7 @@ void summaryInFieldLong(ParsedField field) :
 void summaryItem(ParsedSummaryField field) : { }
 {
     ( summaryTransform(field)
+      | summaryElementsSelection(field)
       | summaryBolding(field)
       | summarySourceList(field)
       | summaryDestinationList(field)
@@ -1191,10 +1193,32 @@ void summaryItem(ParsedSummaryField field) : { }
 void summaryTransform(ParsedSummaryField field) : { }
 {
     ( <DYNAMIC>              { field.setDynamic(); }
-     | <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
      | (<FULL> | <STATIC>)   { field.setFull(); }
      | <TOKENS> { field.setTokens(); }
     )
+}
+
+void summaryElementsSelection(ParsedSummaryField field) : { }
+{
+    ( <MATCHED_ELEMENTS_ONLY> { field.setMatchedElementsOnly(); }
+      | summaryElementsBy(field)
+    )
+}
+
+void summaryElementsBy(ParsedSummaryField field) :
+{
+    String features;
+}
+{
+    ( <SELECT_ELEMENTS_BY_SL> { features = token.image.substring(token.image.indexOf(":") + 1).trim(); } )
+    {
+        var featureList = getFeatureList(features);
+        if (featureList.size() != 1) {
+            throw new IllegalArgumentException("select-elements-by: feature list must have 1 feature, got " +
+                                               featureList.size() + " features: " + featureList);
+        }
+        field.setSelectElementsBySummaryFeature(featureList.get(0).toString());
+    }
 }
 
 /**

@@ -34,6 +34,10 @@ public final class SummaryElementsSelector {
         return byMatch;
     }
 
+    public static SummaryElementsSelector selectBySummaryFeature(String summaryFeature) {
+        return new SummaryElementsSelector(Select.BY_SUMMARY_FEATURE, summaryFeature);
+    }
+
     @Override
     public boolean equals(Object other) {
         if (other instanceof SummaryElementsSelector o) {
