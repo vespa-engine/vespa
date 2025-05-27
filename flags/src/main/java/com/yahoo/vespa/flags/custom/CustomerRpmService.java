@@ -47,17 +47,26 @@ public class CustomerRpmService {
     @JsonProperty("cpu")
     private final Double cpuLimitCores;
 
+    /**
+     * Optional disabled tag for the service unit. Defaults to false.
+     * Enables removal of service without persistent storage on the host.
+     */
+    @JsonProperty("disabled")
+    private final Boolean disabled;
+
     @JsonCreator
     public CustomerRpmService(
         @JsonProperty(value = "unit") String unit,
         @JsonProperty(value = "package") String packageName,
         @JsonProperty(value = "memory") Double memoryLimitMib,
-        @JsonProperty("cpu") Double cpuLimitCores
+        @JsonProperty("cpu") Double cpuLimitCores,
+        @JsonProperty("disabled") Boolean disabled
     ) {
         this.unit = Objects.requireNonNull(unit);
         this.packageName = packageName;
         this.memoryLimitMib = Objects.requireNonNull(memoryLimitMib);
         this.cpuLimitCores = cpuLimitCores == null || cpuLimitCores <= 0.0 ? null : cpuLimitCores;
+        this.disabled = disabled != null && disabled;
     }
 
     public String unitName() {
@@ -70,6 +79,10 @@ public class CustomerRpmService {
 
     public double memoryLimitMib() {
         return memoryLimitMib;
+    }
+
+    public boolean disabled() {
+        return disabled;
     }
 
     public Optional<Double> cpuLimitCores() {
@@ -90,14 +103,14 @@ public class CustomerRpmService {
 
     @Override
     public int hashCode() {
-        return Objects.hash(unitName(), packageName(), memoryLimitMib(), cpuLimitCores());
+        return Objects.hash(unitName(), packageName(), memoryLimitMib(), cpuLimitCores(), disabled());
     }
 
     @Override
     public String toString() {
-        return "{ unit: %s, package: %s, memory: %s MiB, cpu: %s }"
+        return "{ unit: %s, package: %s, memory: %s MiB, cpu: %s, disabled: %s }"
                 .formatted(unitName(), packageName(), memoryLimitMib(),
-                        cpuLimitCores().map(Object::toString).orElse("unlimited"));
+                        cpuLimitCores().map(Object::toString).orElse("unlimited"), disabled());
     }
 
 }

@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -32,7 +33,8 @@ public class CustomerRpmServiceTest {
                         {
                             "unit": "example3",
                             "package": "package3",
-                            "memory": 400.0
+                            "memory": 400.0,
+                            "disabled": true
                         }
                    ]
                 }
@@ -46,6 +48,7 @@ public class CustomerRpmServiceTest {
                 .findFirst();
         assertEquals("example1", service1.get().packageName());
         assertEquals(200.0, service1.get().memoryLimitMib());
+        assertFalse(service1.get().disabled());
 
         Optional<CustomerRpmService> service2 = serviceList.services().stream()
                 .filter(r -> r.unitName().equals("example2"))
@@ -53,12 +56,14 @@ public class CustomerRpmServiceTest {
         assertEquals("example2", service2.get().packageName());
         assertEquals(300.0, service2.get().memoryLimitMib());
         assertEquals(Optional.of(1.0), service2.get().cpuLimitCores());
+        assertFalse(service2.get().disabled());
 
         Optional<CustomerRpmService> service3 = serviceList.services().stream()
                 .filter(r -> r.unitName().equals("example3"))
                 .findFirst();
         assertEquals("package3", service3.get().packageName());
         assertEquals(400.0, service3.get().memoryLimitMib());
+        assertTrue(service3.get().disabled());
 
         // Empty variant
         CustomerRpmServiceList empty = Jackson.mapper().readValue("{\"services\": []}", CustomerRpmServiceList.class);
@@ -81,9 +86,9 @@ public class CustomerRpmServiceTest {
 
     @Test
     void customer_rpm_services_serialize() throws JsonProcessingException {
-        CustomerRpmService service1 = new CustomerRpmService("foo", null, 123.4, null);
-        CustomerRpmService service2 = new CustomerRpmService("bar",  null, 567.8, 1.0);
-        CustomerRpmService service3 = new CustomerRpmService("dog",  "pack", 500.0, 0.3);
+        CustomerRpmService service1 = new CustomerRpmService("foo", null, 123.4, null, false);
+        CustomerRpmService service2 = new CustomerRpmService("bar",  null, 567.8, 1.0, true);
+        CustomerRpmService service3 = new CustomerRpmService("dog",  "pack", 500.0, 0.3, false);
         CustomerRpmServiceList serviceList = new CustomerRpmServiceList(List.of(service1, service2, service3));
         var mapper = Jackson.mapper();
         String serialized = mapper.writeValueAsString(serviceList);
