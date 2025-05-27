@@ -218,6 +218,40 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testFilterSubspaces() {
+        EvaluationTester tester = new EvaluationTester();
+        // identity lambda is often used
+        tester.assertEvaluates("tensor(a{},x[2]):{foo:[2,3],bar:[1,0]}",
+                               "filter_subspaces(tensor0, f(t)(t))",
+                               "tensor(a{},x[2]):{foo:[2,3],bar:[1,0]}");
+        // check with cell type
+        tester.assertEvaluates("tensor<float>(a{},x[2]):{foo:[2,3]}",
+                               "filter_subspaces(tensor0, f(t)(t * 5))",
+                               "tensor<float>(a{},x[2]):{foo:[2,3],bar:[0,0]}");
+        // check no cell type decay
+        tester.assertEvaluates("tensor<int8>(a{},x[2]):{foo:[2,3]}",
+                               "filter_subspaces(tensor0, f(t)(t>1))",
+                               "tensor<int8>(a{},x[2]):{foo:[2,3],bar:[1,0]}");
+    }
+
+    @Test
+    public void testCellOrder() {
+        EvaluationTester tester = new EvaluationTester();
+        // simple mapped
+        tester.assertEvaluates("tensor(p{}):{a:2,b:4,c:0,d:1,e:3}",
+                               "cell_order(tensor0, max)",
+                               "tensor(p{}):{a:7,b:-3,c:12,d:11,e:-1}");
+        // with cell type decay & dense
+        tester.assertEvaluates("tensor<float>(x[5]):[2,4,0,1,3]",
+                               "cell_order(tensor0, max)",
+                               "tensor<int8>(x[5]):[7,-3,42,13,-1]");
+        // check that "min" works as well
+        tester.assertEvaluates("tensor(p{}):{a:2,b:0,c:4,d:3,e:1}",
+                               "cell_order(tensor0, min)",
+                               "tensor(p{}):{a:7,b:-3,c:12,d:11,e:-1}");
+    }
+
+    @Test
     public void testTensorEvaluation() {
         EvaluationTester tester = new EvaluationTester();
 
