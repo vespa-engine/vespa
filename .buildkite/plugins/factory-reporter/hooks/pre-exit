@@ -24,8 +24,6 @@ fi
 
 if [[ -n $BUILDKITE_COMMAND_EXIT_STATUS ]] && (( $BUILDKITE_COMMAND_EXIT_STATUS != 0 )); then
   $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE failure "Build failed"
+  START_SECONDS=$(buildkite-agent meta-data get start-seconds || echo 0)
+  $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-buildkite-job-run $START_SECONDS $PIPELINE failure
 fi
-
-
-
-
