@@ -364,6 +364,13 @@ public class Flags {
             TENANT_ID
     );
 
+    public static final UnboundBooleanFlag REQUIRE_OPERATOR_MODE = defineFeatureFlag(
+            "require-operator-mode", false,
+            List.of("eirik"), "2025-05-27", "2025-06-25",
+            "Wheter operator mode is required to access hostedOperator functionality",
+            "Takes effect immediately"
+    );
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
