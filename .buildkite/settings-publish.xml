@@ -8,6 +8,12 @@
             <username>${env.OSSRH_USER}</username>
             <password>${env.OSSRH_TOKEN}</password>
         </server>
+        <server>
+            <id>central</id>
+            <username>${env.MVN_CENTRAL_USER}</username>
+            <password>${env.MVN_CENTRAL_TOKEN}</password>
+        </server>
+
     </servers>
 
     <profiles>

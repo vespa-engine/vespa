@@ -1,7 +1,10 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-set -euo pipefail
+set -o pipefail
+set -o nounset
+set -o errexit
+set -o xtrace
 
 if [[ $# -ne 1 ]]; then
     echo "Usage: $0 <Vespa release version>"
@@ -120,25 +123,10 @@ REPO_ROOT=$(pwd)/maven-repo
 cd "$REPO_ROOT"
 find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC -I '{}' bash -c "sign_module {}"
 
-# Required for the nexus plugin to work with JDK 17
-export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED"
-
-LOGFILE=$(mktemp)
 # shellcheck disable=2086
 $MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
-    org.sonatype.plugins:nexus-staging-maven-plugin:1.7.0:deploy-staged-repository \
+    org.sonatype.central:central-publishing-maven-plugin:0.7.0:publish \
     -DrepositoryDirectory="$TMP_STAGING" \
-    -DnexusUrl=https://ossrh-staging-api.central.sonatype.com \
-    -DserverId=ossrh \
-    -DautoReleaseAfterClose=false \
-    -DstagingProgressTimeoutMinutes=10 \
-    -DstagingProfileId=407c0c3e1a197 | tee "$LOGFILE"
-
-STG_REPO=$(grep 'Staging repository at http' "$LOGFILE" | head -1 | awk -F/ '{print $NF}')
-# shellcheck disable=2086
-$MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" -N \
-    org.sonatype.plugins:nexus-staging-maven-plugin:1.7.0:rc-release \
-    -DnexusUrl=https://ossrh-staging-api.central.sonatype.com \
-    -DserverId=ossrh \
-    -DstagingProgressTimeoutMinutes=10 \
-    -DstagingRepositoryId="$STG_REPO"
+    -DpublishingServerId=central \
+    -DautoPublish=true \
+    -DwaitUntil=published
