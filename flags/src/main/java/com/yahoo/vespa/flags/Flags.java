@@ -55,14 +55,6 @@ public class Flags {
             "Takes effect on next deployment of the application",
             INSTANCE_ID, VESPA_VERSION);
 
-    public static final UnboundStringFlag SEARCH_MMAP_ADVISE = defineStringFlag(
-            "search-mmap-advise", "SEQUENTIAL",
-            List.of("vekterli"), "2025-02-14", "2025-07-01",
-            "Sets the MMAP advise setting used for disk based posting lists on the content node. " +
-            "Valid values are [NORMAL, RANDOM, SEQUENTIAL]",
-            "Takes effect at redeployment (requires restart)",
-            INSTANCE_ID);
-
     public static final UnboundStringFlag RESPONSE_SEQUENCER_TYPE = defineStringFlag(
             "response-sequencer-type", "ADAPTIVE",
             List.of("hmusum"), "2020-12-02", "2025-12-01",
@@ -105,19 +97,19 @@ public class Flags {
     public static final UnboundIntFlag MBUS_JAVA_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-java-events-before-wakeup", 1,
             List.of("hmusum"), "2022-07-05", "2025-12-01",
-            "Number write events before waking up transport thread",
+            "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag MBUS_CPP_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "mbus-cpp-events-before-wakeup", 1,
             List.of("hmusum"), "2022-07-05", "2025-12-01",
-            "Number write events before waking up transport thread",
+            "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
     public static final UnboundIntFlag RPC_EVENTS_BEFORE_WAKEUP = defineIntFlag(
             "rpc-events-before-wakeup", 1,
             List.of("hmusum"), "2022-07-05", "2025-12-01",
-            "Number write events before waking up transport thread",
+            "Number of write events before waking up transport thread",
             "Takes effect at redeployment",
             INSTANCE_ID);
 
