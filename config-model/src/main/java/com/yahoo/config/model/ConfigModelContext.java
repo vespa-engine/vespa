@@ -81,7 +81,7 @@ public final class ConfigModelContext {
             .ifPresent(builder::hostTTL);
         spec.instance(properties().applicationId().instance())
             .flatMap(instance -> instance.bcp().groups().stream()
-                                         .filter(group -> group.memberRegions().contains(properties().zone().region()))
+                                         .filter(group -> group.memberRegions().contains(deployState.zone().region()))
                                          .map(Group::deadline)
                                          .min(Comparator.naturalOrder()))
             .ifPresent(builder::bcpDeadline);
