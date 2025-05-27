@@ -27,7 +27,7 @@ public class AwsCredentials implements AutoCloseable {
     private final ZtsClient ztsClient;
     private final String externalId;
     private final boolean close;
-    private final Duration duration;
+    private final Duration expiryOrNull;
     private volatile AwsTemporaryCredentials credentials;
 
     public AwsCredentials(ZtsClient ztsClient, AthenzDomain athenzDomain, AwsRole awsRole) {
@@ -38,18 +38,18 @@ public class AwsCredentials implements AutoCloseable {
         this(ztsClient, athenzDomain, awsRole, externalId, null, false);
     }
 
-    private AwsCredentials(ZtsClient ztsClient, AthenzDomain athenzDomain, AwsRole awsRole, String externalId, Duration duration, boolean close) {
+    private AwsCredentials(ZtsClient ztsClient, AthenzDomain athenzDomain, AwsRole awsRole, String externalId, Duration expiryOrNull, boolean close) {
         this.ztsClient = ztsClient;
         this.athenzDomain = athenzDomain;
         this.awsRole = awsRole;
         this.externalId = externalId;
-        this.duration = duration;
+        this.expiryOrNull = expiryOrNull;
         this.close = close;
         this.credentials = get();
     }
 
-    public AwsCredentials(URI ztsUrl, ServiceIdentityProvider identityProvider, AthenzDomain athenzDomain, AwsRole awsRole, Duration duration) {
-        this(ztsUrl, identityProvider.getIdentitySslContext(), athenzDomain, awsRole, null, duration);
+    public AwsCredentials(URI ztsUrl, ServiceIdentityProvider identityProvider, AthenzDomain athenzDomain, AwsRole awsRole, Duration expiryOrNull) {
+        this(ztsUrl, identityProvider.getIdentitySslContext(), athenzDomain, awsRole, null, expiryOrNull);
     }
 
     public AwsCredentials(URI ztsUrl, SSLContext sslContext, AthenzDomain athenzDomain, AwsRole awsRole) {
@@ -60,8 +60,8 @@ public class AwsCredentials implements AutoCloseable {
         this(ztsUrl, sslContext, athenzDomain, awsRole, externalId, null);
     }
 
-    public AwsCredentials(URI ztsUrl, SSLContext sslContext, AthenzDomain athenzDomain, AwsRole awsRole, String externalId, Duration duration) {
-        this(new DefaultZtsClient.Builder(ztsUrl).withSslContext(sslContext).build(), athenzDomain, awsRole, externalId, duration, true);
+    public AwsCredentials(URI ztsUrl, SSLContext sslContext, AthenzDomain athenzDomain, AwsRole awsRole, String externalId, Duration expiryOrNull) {
+        this(new DefaultZtsClient.Builder(ztsUrl).withSslContext(sslContext).build(), athenzDomain, awsRole, externalId, expiryOrNull, true);
     }
 
     /**
@@ -69,7 +69,7 @@ public class AwsCredentials implements AutoCloseable {
      */
     public AwsTemporaryCredentials get() {
         if(shouldRefresh(credentials)) {
-            this.credentials = ztsClient.getAwsTemporaryCredentials(athenzDomain, awsRole, duration, externalId);
+            this.credentials = ztsClient.getAwsTemporaryCredentials(athenzDomain, awsRole, expiryOrNull, externalId);
         }
         return credentials;
     }
