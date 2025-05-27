@@ -281,12 +281,6 @@ public class Flags {
             "Takes effect immediately",
             TENANT_ID);
 
-    public static final UnboundBooleanFlag USE_LEGACY_STORE = defineFeatureFlag(
-            "use-legacy-trust-store", false,
-            List.of("marlon"), "2024-12-05", "2025-07-01",
-            "Use legacy trust store for CA, or new one",
-            "Takes effect on restart of OCI containers");
-
     public static final UnboundIntFlag DOCUMENT_V1_QUEUE_SIZE = defineIntFlag(
             "document-v1-queue-size", 0,
             List.of("bjorncs"), "2025-01-14", "2025-12-01",
@@ -317,13 +311,6 @@ public class Flags {
             "effectively unbounded behavior. Setting this value too low will have the obvious consequences.",
             "Takes effect immediately",
             INSTANCE_ID);
-
-    public static final UnboundBooleanFlag COPY_LEGACY_CA = defineFeatureFlag(
-            "copy-legacy-ca", false,
-            List.of("olaa"), "2025-03-27", "2025-07-01",
-            "Whether legacy CA should be copied from host to container",
-            "Takes effect on container startup",
-            TENANT_ID, INSTANCE_ID);
 
     public static final UnboundBooleanFlag DEFER_OS_UPGRADE = defineFeatureFlag(
             "defer-os-upgrade", false,
