@@ -9,4 +9,5 @@
   <groupId>dummy</groupId>
   <artifactId>dummy</artifactId>
   <version>1.0.0</version>
+  <packaging>pom</packaging>
 </project>
