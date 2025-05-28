@@ -6,10 +6,11 @@
 #include <vespa/config/frt/frtconnection.h>
 #include <vespa/config/frt/protocol.h>
 #include <vespa/config/frt/frtconfigrequest.h>
-#include <vespa/config/common/payload_converter.h>
-#include <vespa/config/common/configvalue.h>
-#include <vespa/config/common/configstate.h>
 #include <vespa/config/common/configresponse.h>
+#include <vespa/config/common/configstate.h>
+#include <vespa/config/common/configvalue.h>
+#include <vespa/config/common/errorcode.h>
+#include <vespa/config/common/payload_converter.h>
 #include <vespa/config/common/trace.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <cinttypes>
@@ -227,26 +228,33 @@ GetConfig::main(int argc, char **argv)
     }
     initRPC(spec);
 
-    auto vespaVersion = VespaVersion::getCurrentVersion();
+    std::vector<VespaVersion> tryVersions;
     if (vespaVersionString != nullptr) {
-        vespaVersion = VespaVersion::fromString(vespaVersionString);
+        tryVersions.push_back(VespaVersion::fromString(vespaVersionString));
     }
+    tryVersions.push_back(VespaVersion::getCurrentVersion());
+    tryVersions.push_back(VespaVersion::fromString(""));
 
-    FRTConfigRequestFactory requestFactory(traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
-    FRTConnection connection(spec, _server->supervisor(), TimingValues());
-    ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
-    ConfigState state(configXxhash64, generation, false);
-    std::unique_ptr<FRTConfigRequest> request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout);
+    for (const VespaVersion& vespaVersion : tryVersions) {
+        FRTConfigRequestFactory requestFactory(traceLevel, vespaVersion, config::protocol::readProtocolCompressionType());
+        FRTConnection connection(spec, _server->supervisor(), TimingValues());
+        ConfigKey key(configId, defName, defNamespace, defMD5, defSchema);
+        ConfigState state(configXxhash64, generation, false);
+        std::unique_ptr<FRTConfigRequest> request = requestFactory.createConfigRequest(key, &connection, state, serverTimeout);
 
-    _target->InvokeSync(request->getRequest(), vespalib::to_s(clientTimeout)); // seconds
+        _target->InvokeSync(request->getRequest(), vespalib::to_s(clientTimeout)); // seconds
 
-    std::unique_ptr<ConfigResponse> response = request->createResponse(request->getRequest());
-    response->validateResponse();
-    if (response->isError()) {
-        fprintf(stderr, "error %d: %s\n",
-                response->errorCode(), response->errorMessage().c_str());
-        retval = 1;
-    } else {
+        std::unique_ptr<ConfigResponse> response = request->createResponse(request->getRequest());
+        response->validateResponse();
+        if (response->isError()) {
+            retval = 1;
+            if (response->errorCode() == ErrorCode::UNKNOWN_VESPA_VERSION) {
+                continue;
+            }
+            fprintf(stderr, "error %d: %s\n",
+                    response->errorCode(), response->errorMessage().c_str());
+            break;
+        }
         response->fill();
         ConfigKey rKey(response->getKey());
         const ConfigState & rState = response->getConfigState();
@@ -274,6 +282,7 @@ GetConfig::main(int argc, char **argv)
             }
         }
         retval = 0;
+        break;
     }
     finiRPC();
     return retval;
