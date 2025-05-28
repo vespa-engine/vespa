@@ -388,6 +388,8 @@ public class TensorParserTestCase {
                       "tensor(x[3]):{1:[1,2,3], 2:[2,3,4], 3:[3,4,5]}");
         assertIllegal("Garbage after mapped tensor string: foo",
                       "{{x:0}:1.0} foo");
+        assertIllegal("Expected ':' after 'tensor'",
+                      "tensor(i[3])(i)");
     }
 
     private void assertIllegal(String message, String tensor) {
