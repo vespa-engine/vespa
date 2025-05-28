@@ -3021,6 +3021,22 @@
     ],
     "fields" : [ ]
   },
+  "com.yahoo.tensor.functions.Top" : {
+    "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction)",
+      "public java.util.List arguments()",
+      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
+      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
+      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)",
+      "public int hashCode()"
+    ],
+    "fields" : [ ]
+  },
   "com.yahoo.tensor.functions.XwPlusB" : {
     "superClass" : "com.yahoo.tensor.functions.CompositeTensorFunction",
     "interfaces" : [ ],
