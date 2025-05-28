@@ -75,7 +75,16 @@ FeatureSet::Value *
 FeatureSet::getFeaturesByIndex(uint32_t idx)
 {
     if (idx >= _docIds.size()) {
-        return 0;
+        return nullptr;
+    }
+    return &(_values[idx * _names.size()]);
+}
+
+const FeatureSet::Value *
+FeatureSet::getFeaturesByIndex(uint32_t idx) const
+{
+    if (idx >= _docIds.size()) {
+        return nullptr;
     }
     return &(_values[idx * _names.size()]);
 }
@@ -96,7 +105,7 @@ FeatureSet::getFeaturesByDocId(uint32_t docId) const
             return &(_values[pos * _names.size()]);
         }
     }
-    return 0;
+    return nullptr;
 }
 
 FeatureValues::FeatureValues() noexcept = default;

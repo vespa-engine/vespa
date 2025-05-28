@@ -150,6 +150,8 @@ public:
      **/
     Value *getFeaturesByIndex(uint32_t idx);
 
+    const Value *getFeaturesByIndex(uint32_t idx) const;
+
     /**
      * Obtain the feature values belonging to a document based on the
      * docid value. This method is intended for lookup when generating

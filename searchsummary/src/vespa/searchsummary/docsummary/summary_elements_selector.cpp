@@ -130,8 +130,9 @@ SummaryElementsSelector::get_summary_feature_elements(uint32_t docid, GetDocsums
         state._summary_features_elements_keys.insert(_summary_feature);
         auto name_idx = feature_set.get_name_idx(_summary_feature);
         if (name_idx.has_value()) {
-            for (auto feature_docid : feature_set.get_docids()) {
-                auto& encoded_value = feature_set.getFeaturesByDocId(feature_docid)[name_idx.value()];
+            for (uint32_t docid_idx = 0; docid_idx < feature_set.numDocs(); ++docid_idx) {
+                auto feature_docid = feature_set.get_docids()[docid_idx];
+                auto& encoded_value = feature_set.getFeaturesByIndex(docid_idx)[name_idx.value()];
                 auto elements = extract_elements_from_feature(encoded_value);
                 state._summary_features_elements->add_matching_elements(feature_docid, _summary_feature, elements);
             }
