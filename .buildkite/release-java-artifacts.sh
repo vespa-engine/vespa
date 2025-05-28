@@ -1,10 +1,6 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
-# Note about variable names for Buildkite:
-# - TL;DR: Variables with standard names (eg. enfing with _TOKEN) are redacted by default.
-# - https://buildkite.com/docs/pipelines/configure/managing-log-output#redacted-environment-variables
-#
 # Documentation for endpoints on Central API:
 # - https://central.sonatype.org/publish/publish-portal-api/
 #
@@ -19,6 +15,16 @@ if [[ $# -ne 1 ]]; then
     echo "Usage: $0 <Vespa release version>"
     exit 1
 fi
+
+# Helper functions to control debug output for sensitive operations
+disable_debug() {
+    set +x
+}
+enable_debug() {
+    set -x
+}
+export -f disable_debug
+export -f enable_debug
 
 if [[ -z $MVN_CENTRAL_USER ]] || [[ -z $MVN_CENTRAL_TOKEN ]]  || [[ -z $GPG_KEYNAME ]] || [[ -z $GPG_PASSPHRASE_TOKEN ]] || [[ -z $GPG_ENCPHRASE_TOKEN ]]; then
     echo -e "The following env variables must be set:\n MVN_CENTRAL_USER\n MVN_CENTRAL_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE_TOKEN\n GPG_ENCPHRASE_TOKEN"
@@ -52,26 +58,29 @@ NUM_PROC=10
 
 MVN=${MVN:-mvn}
 MVN_OPTS=${MVN_OPTS:-}
+disable_debug
 MAVEN_GPG_PASSPHRASE=$GPG_PASSPHRASE_TOKEN
+enable_debug
+
 export MVN
 export MVN_OPTS
 export MAVEN_GPG_PASSPHRASE
 
+disable_debug
 # Build the Base64‑encoded credentials for the Portal API
 CENTRAL_AUTH_TOKEN=$(printf "%s:%s" "$MVN_CENTRAL_USER" "$MVN_CENTRAL_TOKEN" | base64)
 export CENTRAL_AUTH_TOKEN
+enable_debug
 
 TMP_STAGING=$(mktemp -d)
 export TMP_STAGING
 mkdir -p "$TMP_STAGING"
+
 # shellcheck disable=2064
 trap "rm -rf $TMP_STAGING" EXIT
 
 sign_module() {
-
-    #Debug
-    set -x
-
+    enable_debug
     ECHO=""
 
     P=$1
@@ -140,10 +149,14 @@ wait_deployment_reaching_status() {
     #  "purls": [],
     #  "errors": {}
     # }
+        # Temporarily disable xtrace to avoid leaking auth token
+        disable_debug
         STATUS_JSON=$(curl --silent --fail \
         -H "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
         --request POST \
         "https://central.sonatype.com/api/v1/publisher/status?id=${deployment}")
+        # Re-enable xtrace
+        enable_debug
 
         STATE="$(echo "$STATUS_JSON" | jq -r '.deploymentState')"
         echo "Deployment state: $STATE"
@@ -169,9 +182,6 @@ wait_deployment_reaching_status() {
 }
 export -f wait_deployment_reaching_status
 
-#Debug
-set -x
-
 aws s3 cp "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar" .
 aws s3 cp "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar.pem" .
 aws s3 cp "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar.sig" .
@@ -190,6 +200,7 @@ ZIP_FILE=$(mktemp).zip
   zip -r "$ZIP_FILE" .
 )
 
+disable_debug
 # Upload the bundle using the Central Portal API
 echo "Uploading deployment bundle using Central Portal API"
 DEPLOYMENT_ID=$(curl --silent --show-error --fail \
@@ -198,6 +209,7 @@ DEPLOYMENT_ID=$(curl --silent --show-error --fail \
   --header "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
   --form "bundle=@$ZIP_FILE" \
   "https://central.sonatype.com/api/v1/publisher/upload?name=Vespa-${VESPA_RELEASE}-release&publishingType=AUTOMATIC")
+enable_debug
 
 if [[ -z $DEPLOYMENT_ID ]]; then
     echo "Failed to get deployment ID"
