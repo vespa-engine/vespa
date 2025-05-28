@@ -12,7 +12,7 @@ if [[ $# -ne 1 ]]; then
 fi
 
 if [[ -z $MVN_CENTRAL_USER ]] || [[ -z $MVN_CENTRAL_TOKEN ]]  || [[ -z $GPG_KEYNAME ]] || [[ -z $GPG_PASSPHRASE_TOKEN ]] || [[ -z $GPG_ENCPHRASE_TOKEN ]]; then
-    echo -e "The follwing env variables must be set:\n MVN_CENTRAL_USER\n MVN_CENTRAL_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE_TOKEN\n GPG_ENCPHRASE_TOKEN"
+    echo -e "The following env variables must be set:\n MVN_CENTRAL_USER\n MVN_CENTRAL_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE_TOKEN\n GPG_ENCPHRASE_TOKEN"
     exit 1
 fi
 
@@ -49,7 +49,7 @@ export MVN_OPTS
 export MAVEN_GPG_PASSPHRASE
 
 # Build the Base64‑encoded credentials for the Portal API
-CENTRAL_AUTH_TOKEN=$(printf "%s:%s" "$MVN_USER" "$MVN_PASSWORD" | base64)
+CENTRAL_AUTH_TOKEN=$(printf "%s:%s" "$MVN_CENTRAL_USER" "$MVN_CENTRAL_TOKEN" | base64)
 export CENTRAL_AUTH_TOKEN
 
 TMP_STAGING=$(mktemp -d)
@@ -195,7 +195,7 @@ wait_deployment_reaching_status "VALIDATED" "$STG_REPO"
 # Publish the staging repository
 echo "Publishing staging repository $STG_REPO"
 curl --silent --fail --request POST \
-  --headers "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
+  --header "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
   "https://central.sonatype.com/api/v1/publisher/deployment/${STG_REPO}"
 
 wait_deployment_reaching_status "PUBLISHED" "$STG_REPO"
