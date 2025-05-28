@@ -183,35 +183,27 @@ REPO_ROOT=$(pwd)/maven-repo
 cd "$REPO_ROOT"
 find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC -I '{}' bash -c "sign_module {}"
 
-# Required for the nexus plugin to work with JDK 17
-export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED"
-LOGFILE=$(mktemp)
+# Create a zip file of all the staged artifacts
+cd "$TMP_STAGING"
+ZIP_FILE=$(mktemp).zip
+zip -r "$ZIP_FILE" .
 
-# shellcheck disable=2086
-$MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
-    org.sonatype.plugins:nexus-staging-maven-plugin:1.7.0:deploy-staged-repository \
-    -DrepositoryDirectory="$TMP_STAGING" \
-    -DnexusUrl=https://ossrh-staging-api.central.sonatype.com \
-    -DserverId=central \
-    -DautoReleaseAfterClose=false \
-    -DstagingProgressTimeoutMinutes=10 \
-    -DstagingProfileId=407c0c3e1a197 | tee "$LOGFILE"
+# Upload the bundle using the Central Portal API
+echo "Uploading deployment bundle using Central Portal API"
+DEPLOYMENT_ID=$(curl --silent --show-error --fail \
+  --retry 3 --retry-delay 60 \
+  --request POST \
+  --header "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
+  --form "bundle=@$ZIP_FILE" \
+  "https://central.sonatype.com/api/v1/publisher/upload?name=Vespa-${VESPA_RELEASE}-release&publishingType=AUTOMATIC")
 
-STG_REPO=$(grep 'Staging repository at http' "$LOGFILE" | head -1 | awk -F/ '{print $NF}')
-
-if [[ -z $STG_REPO ]]; then
-    echo "Failed to find staging repository ID in the log"
+if [[ -z $DEPLOYMENT_ID ]]; then
+    echo "Failed to get deployment ID"
+    echo "Response: $DEPLOYMENT_ID"
     exit 1
 fi
 
-echo "Staging repository ID: $STG_REPO"
-wait_deployment_reaching_status "VALIDATED" "$STG_REPO"
+echo "Got deployment ID: $DEPLOYMENT_ID"
+wait_deployment_reaching_status "PUBLISHED" "$DEPLOYMENT_ID"
 
-# Publish the staging repository
-echo "Publishing staging repository $STG_REPO"
-curl --silent --fail --request POST \
-  --header "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
-  "https://central.sonatype.com/api/v1/publisher/deployment/${STG_REPO}"
-
-wait_deployment_reaching_status "PUBLISHED" "$STG_REPO"
-echo "Staging repository $STG_REPO published successfully"
+echo "Staging repository $DEPLOYMENT_ID published successfully"
