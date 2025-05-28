@@ -227,7 +227,7 @@ public class ConcatTestCase {
         Tensor b = Tensor.from("tensor(b{}):{}");
         Tensor c = Tensor.from("tensor(c{}):{}");
         Tensor d = Tensor.from("tensor(c{},d[3]):{}");
-        
+
         assertConcat("tensor(a[3],b{},c{},d[2])", "tensor(a[3],b{},c{},d[2]):{}",
                      a, b, "a");
         assertConcat("tensor(a[2],b{},c{},d[2],x[2])", "tensor(a[2],b{},c{},d[2],x[2]):{}",

@@ -1,7 +1,9 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.tensor.functions;
 
+import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.evaluation.Name;
+import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.evaluation.VariableTensor;
 
 import java.util.List;
@@ -20,6 +22,19 @@ public class Top<NAMETYPE extends Name> extends CompositeTensorFunction<NAMETYPE
     public Top(TensorFunction<NAMETYPE> n, TensorFunction<NAMETYPE> input) {
         this.n = n;
         this.input = input;
+    }
+
+    @Override
+    public TensorType type(TypeContext<NAMETYPE> context) {
+        var nType = n.type(context);
+        var inputType = input.type(context);
+        if (nType.rank() > 0) {
+            throw new IllegalArgumentException("the N argument to top(N,input) should be a number, but had type: " + nType);
+        }
+        if (inputType.hasIndexedDimensions() || ! inputType.hasMappedDimensions()) {
+            throw new IllegalArgumentException("the input argument to top(N,input) should be a sparse tensor, but had type: " + inputType);
+        }
+        return super.type(context);
     }
 
     @Override

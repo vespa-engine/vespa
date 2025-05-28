@@ -3029,6 +3029,7 @@
     ],
     "methods" : [
       "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.functions.TensorFunction)",
+      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
