@@ -125,10 +125,12 @@ export -f sign_module
 wait_deployment_reaching_status() {
     local expected_state=$1 ; shift
     local deployment=$1 ; shift
-
+    local START_EPOCH
+    local CURRENT_EPOCH
+    local ELAPSED_TIME
 
     # 2. Poll waiting the deployment to reach the desired state
-    local START_EPOCH=$(date +%s)
+    START_EPOCH=$(date +%s)
     while true; do
     # Example of the JSON response from the status endpoint:
     # {
@@ -154,8 +156,8 @@ wait_deployment_reaching_status() {
             exit 1
         fi
 
-        local CURRENT_EPOCH=$(date +%s)
-        local ELAPSED_TIME=$((CURRENT_EPOCH - START_EPOCH))
+        CURRENT_EPOCH=$(date +%s)
+        ELAPSED_TIME=$((CURRENT_EPOCH - START_EPOCH))
         if (( ELAPSED_TIME > 600 )); then
             echo "Deployment did not reach expected state within 10 minutes, exiting"
             exit 1
