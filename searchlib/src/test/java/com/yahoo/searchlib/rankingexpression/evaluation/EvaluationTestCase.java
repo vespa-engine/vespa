@@ -252,6 +252,24 @@ public class EvaluationTestCase {
     }
 
     @Test
+    public void testTop() {
+        EvaluationTester tester = new EvaluationTester();
+        // simple mapped
+        tester.assertEvaluates("tensor(p{}):{a:7,c:12,d:11}",
+                               "top(3, tensor0)",
+                               "tensor(p{}):{a:7,b:-3,c:12,d:11,e:-1}");
+        // with expressions
+        tester.assertEvaluates("tensor(p{}):{b:6,e:2}",
+                               "top(sum(tensor0)+1, tensor1 * -2)",
+                               "tensor(x[2]):[-1,2]",
+                               "tensor(p{}):{a:7,b:-3,c:12,d:11,e:-1}");
+        // check that "top" also works as identifier
+        tester.assertEvaluates("tensor(top[2]):[0.25,0.75]",
+                               "l1_normalize(tensor0, top)",
+                               "tensor(top[2]):[1,3]");
+    }
+
+    @Test
     public void testTensorEvaluation() {
         EvaluationTester tester = new EvaluationTester();
 

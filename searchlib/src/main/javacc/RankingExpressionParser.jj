@@ -131,6 +131,7 @@ TOKEN :
     <MAP_SUBSPACES: "map_subspaces"> |
     <FILTER_SUBSPACES: "filter_subspaces"> |
     <CELL_ORDER: "cell_order"> |
+    <TOP: "top"> |
     <UNPACK_BITS: "unpack_bits"> |
     <REDUCE: "reduce"> |
     <JOIN: "join"> |
@@ -377,6 +378,7 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorMapSubspaces() |
         tensorExpression = tensorFilterSubspaces() |
         tensorExpression = tensorCellOrder() |
+        tensorExpression = tensorTop() |
         tensorExpression = tensorReduce() |
         tensorExpression = tensorReduceComposites() |
         tensorExpression = tensorJoin() |
@@ -462,6 +464,16 @@ CellOrder.Order cellOrderType() :
     ( <MAX> { return CellOrder.Order.MAX; }
     | <MIN> { return CellOrder.Order.MIN; }
     )
+}
+
+TensorFunctionNode tensorTop() :
+{
+    ExpressionNode n;
+    ExpressionNode arg;
+}
+{
+    <TOP> <LBRACE> n = expression() <COMMA> arg = expression() <RBRACE>
+    { return new TensorFunctionNode(new Top(TensorFunctionNode.wrap(n),TensorFunctionNode.wrap(arg))); }
 }
 
 TensorFunctionNode tensorReduce() :
@@ -801,28 +813,32 @@ String tensorFunctionName() :
     Reduce.Aggregator aggregator;
 }
 {
-    ( <F>            { return token.image; } ) |
-    ( <MAP>          { return token.image; } ) |
-    ( <REDUCE>       { return token.image; } ) |
-    ( <JOIN>         { return token.image; } ) |
-    ( <MERGE>        { return token.image; } ) |
-    ( <RENAME>       { return token.image; } ) |
-    ( <CONCAT>       { return token.image; } ) |
-    ( <TENSOR>       { return token.image; } ) |
-    ( <RANGE>        { return token.image; } ) |
-    ( <DIAG>         { return token.image; } ) |
-    ( <RANDOM>       { return token.image; } ) |
-    ( <L1_NORMALIZE> { return token.image; } ) |
-    ( <L2_NORMALIZE> { return token.image; } ) |
-    ( <EUCLIDEAN_DISTANCE> { return token.image; } ) |
-    ( <COSINE_SIMILARITY> { return token.image; } ) |
-    ( <MATMUL>       { return token.image; } ) |
-    ( <SOFTMAX>      { return token.image; } ) |
-    ( <XW_PLUS_B>    { return token.image; } ) |
-    ( <ARGMAX>       { return token.image; } ) |
-    ( <ARGMIN>       { return token.image; } ) |
-    ( <CELL_CAST>    { return token.image; } ) |
-    ( <EXPAND>       { return token.image; } ) |
+    ( <F>                    { return token.image; } ) |
+    ( <MAP>                  { return token.image; } ) |
+    ( <MAP_SUBSPACES>        { return token.image; } ) |
+    ( <FILTER_SUBSPACES>     { return token.image; } ) |
+    ( <CELL_ORDER>           { return token.image; } ) |
+    ( <TOP>                  { return token.image; } ) |
+    ( <REDUCE>               { return token.image; } ) |
+    ( <JOIN>                 { return token.image; } ) |
+    ( <MERGE>                { return token.image; } ) |
+    ( <RENAME>               { return token.image; } ) |
+    ( <CONCAT>               { return token.image; } ) |
+    ( <TENSOR>               { return token.image; } ) |
+    ( <RANGE>                { return token.image; } ) |
+    ( <DIAG>                 { return token.image; } ) |
+    ( <RANDOM>               { return token.image; } ) |
+    ( <L1_NORMALIZE>         { return token.image; } ) |
+    ( <L2_NORMALIZE>         { return token.image; } ) |
+    ( <EUCLIDEAN_DISTANCE>   { return token.image; } ) |
+    ( <COSINE_SIMILARITY>    { return token.image; } ) |
+    ( <MATMUL>               { return token.image; } ) |
+    ( <SOFTMAX>              { return token.image; } ) |
+    ( <XW_PLUS_B>            { return token.image; } ) |
+    ( <ARGMAX>               { return token.image; } ) |
+    ( <ARGMIN>               { return token.image; } ) |
+    ( <CELL_CAST>            { return token.image; } ) |
+    ( <EXPAND>               { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
