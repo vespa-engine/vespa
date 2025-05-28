@@ -183,9 +183,13 @@ REPO_ROOT=$(pwd)/maven-repo
 cd "$REPO_ROOT"
 find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC -I '{}' bash -c "sign_module {}"
 
+# Required for the nexus plugin to work with JDK 17
+export MAVEN_OPTS="--add-opens=java.base/java.util=ALL-UNNAMED"
+LOGFILE=$(mktemp)
+
 # shellcheck disable=2086
 $MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
-    org.sonatype.central:central-publishing-maven-plugin:0.7.0:publish \
+    org.sonatype.plugins:nexus-staging-maven-plugin:1.7.0:deploy-staged-repository \
     -DrepositoryDirectory="$TMP_STAGING" \
     -DnexusUrl=https://ossrh-staging-api.central.sonatype.com \
     -DserverId=central \
