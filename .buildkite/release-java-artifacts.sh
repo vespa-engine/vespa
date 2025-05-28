@@ -184,10 +184,10 @@ cd "$REPO_ROOT"
 find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC -I '{}' bash -c "sign_module {}"
 
 # Create a zip file of all the staged artifacts
-(
-cd "$TMP_STAGING"
 ZIP_FILE=$(mktemp).zip
-zip -r "$ZIP_FILE" .
+(
+  cd "$TMP_STAGING"
+  zip -r "$ZIP_FILE" .
 )
 
 # Upload the bundle using the Central Portal API
