@@ -184,9 +184,11 @@ cd "$REPO_ROOT"
 find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC -I '{}' bash -c "sign_module {}"
 
 # Create a zip file of all the staged artifacts
+(
 cd "$TMP_STAGING"
 ZIP_FILE=$(mktemp).zip
 zip -r "$ZIP_FILE" .
+)
 
 # Upload the bundle using the Central Portal API
 echo "Uploading deployment bundle using Central Portal API"
@@ -206,4 +208,4 @@ fi
 echo "Got deployment ID: $DEPLOYMENT_ID"
 wait_deployment_reaching_status "PUBLISHED" "$DEPLOYMENT_ID"
 
-echo "Staging repository $DEPLOYMENT_ID published successfully"
+echo "Deployment $DEPLOYMENT_ID published successfully"
