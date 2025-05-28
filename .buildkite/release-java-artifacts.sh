@@ -11,8 +11,8 @@ if [[ $# -ne 1 ]]; then
     exit 1
 fi
 
-if [[ -z $OSSRH_USER ]] || [[ -z $OSSRH_TOKEN ]]  || [[ -z $GPG_KEYNAME ]] || [[ -z $GPG_PASSPHRASE_TOKEN ]] || [[ -z $GPG_ENCPHRASE_TOKEN ]]; then
-    echo -e "The follwing env variables must be set:\n OSSRH_USER\n OSSRH_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE_TOKEN\n GPG_ENCPHRASE_TOKEN"
+if [[ -z $MVN_CENTRAL_USER ]] || [[ -z $MVN_CENTRAL_TOKEN ]]  || [[ -z $GPG_KEYNAME ]] || [[ -z $GPG_PASSPHRASE_TOKEN ]] || [[ -z $GPG_ENCPHRASE_TOKEN ]]; then
+    echo -e "The follwing env variables must be set:\n MVN_CENTRAL_USER\n MVN_CENTRAL_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE_TOKEN\n GPG_ENCPHRASE_TOKEN"
     exit 1
 fi
 
@@ -47,6 +47,10 @@ MAVEN_GPG_PASSPHRASE=$GPG_PASSPHRASE_TOKEN
 export MVN
 export MVN_OPTS
 export MAVEN_GPG_PASSPHRASE
+
+# Build the Base64‑encoded credentials for the Portal API
+CENTRAL_AUTH_TOKEN=$(printf "%s:%s" "$MVN_USER" "$MVN_PASSWORD" | base64)
+export CENTRAL_AUTH_TOKEN
 
 TMP_STAGING=$(mktemp -d)
 export TMP_STAGING
@@ -109,6 +113,51 @@ sign_module() {
 }
 export -f sign_module
 
+wait_deployment_reaching_status() {
+    local expected_state=$1 ; shift
+    local deployment=$1 ; shift
+
+
+    # 2. Poll waiting the deployment to reach the desired state
+    local START_EPOCH=$(date +%s)
+    while true; do
+    # Example of the JSON response from the status endpoint:
+    # {
+    #  "deploymentId": "5f52bd32-9403-4e3e-8a40-7a690d985c3f",
+    #  "deploymentName": "test",
+    #  "deploymentState": "FAILED", # Can be: [ PENDING, VALIDATING, VALIDATED, PUBLISHING, PUBLISHED, FAILED ]
+    #  "purls": [],
+    #  "errors": {}
+    # }
+        STATUS_JSON=$(curl --silent --fail \
+        -H "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
+        --request POST \
+        "https://central.sonatype.com/api/v1/publisher/status?id=${deployment}")
+
+        STATE="$(echo "$STATUS_JSON" | jq -r '.deploymentState')"
+        echo "Deployment state: $STATE"
+        if [[ "$STATE" == "${expected_state}" ]]; then
+            echo "Deployment reached expected state: $STATE"
+            break
+        elif [[ "$STATE" == "FAILED" ]]; then
+            echo "Deployment FAILED:"
+            echo "$STATUS_JSON"
+            exit 1
+        fi
+
+        local CURRENT_EPOCH=$(date +%s)
+        local ELAPSED_TIME=$((CURRENT_EPOCH - START_EPOCH))
+        if (( ELAPSED_TIME > 600 )); then
+            echo "Deployment did not reach expected state within 10 minutes, exiting"
+            exit 1
+        fi
+
+        echo "Waiting for deployment to reach state: $expected_state, current state: $STATE"
+        sleep 20
+    done
+}
+export -f wait_deployment_reaching_status
+
 #Debug
 set -x
 
@@ -126,8 +175,28 @@ find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC 
 # shellcheck disable=2086
 $MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
     org.sonatype.central:central-publishing-maven-plugin:0.7.0:publish \
-    -f "$SOURCE_DIR/.buildkite/release-java-artifacts-dummy-pom.xml" \
     -DrepositoryDirectory="$TMP_STAGING" \
-    -DpublishingServerId=central \
-    -DautoPublish=true \
-    -DwaitUntil=published
+    -DnexusUrl=https://ossrh-staging-api.central.sonatype.com \
+    -DserverId=central \
+    -DautoReleaseAfterClose=false \
+    -DstagingProgressTimeoutMinutes=10 \
+    -DstagingProfileId=407c0c3e1a197 | tee "$LOGFILE"
+
+STG_REPO=$(grep 'Staging repository at http' "$LOGFILE" | head -1 | awk -F/ '{print $NF}')
+
+if [[ -z $STG_REPO ]]; then
+    echo "Failed to find staging repository ID in the log"
+    exit 1
+fi
+
+echo "Staging repository ID: $STG_REPO"
+wait_deployment_reaching_status "VALIDATED" "$STG_REPO"
+
+# Publish the staging repository
+echo "Publishing staging repository $STG_REPO"
+curl --silent --fail --request POST \
+  --headers "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
+  "https://central.sonatype.com/api/v1/publisher/deployment/${STG_REPO}"
+
+wait_deployment_reaching_status "PUBLISHED" "$STG_REPO"
+echo "Staging repository $STG_REPO published successfully"
