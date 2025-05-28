@@ -151,8 +151,18 @@ struct ResolveCurrentIndex : vespalib::ObjectOperation, vespalib::ObjectPredicat
                 docField.setCurrentIndex(setup.resolve(docField.getFieldName()));
             }
         }
+        // ignore not-multivalue ExpressionNode (see below)
     }
+
     bool check(const vespalib::Identifiable &obj) const override {
+        if (obj.inherits(ExpressionNode::classId)) {
+            const auto& expr = static_cast<const ExpressionNode &>(obj);
+            const auto * res = expr.getResult();
+            if (res && ! res->inherits(ResultNodeVector::classId)) {
+                // not multivalue, execute() will ignore it
+                return true;
+            }
+        }
         return obj.inherits(AttributeNode::classId)
                 || obj.inherits(DocumentFieldNode::classId);
     }
@@ -315,6 +325,10 @@ Grouping::configureStaticStuff(const ConfigureStaticParams & params)
         select(confDoc, confDoc);
     }
 
+    // prepare result types of expressions
+    ExpressionTree::Configure treeConf;
+    select(treeConf, treeConf);
+
     if (params._enableNestedMultivalueGrouping) {
         CurrentIndexSetup setup;
         ResolveCurrentIndex resolver(setup);
@@ -325,7 +339,7 @@ Grouping::configureStaticStuff(const ConfigureStaticParams & params)
         selectGroups(resolver, resolver, _root, 0, _lastLevel, 0);
     }
 
-    ExpressionTree::Configure treeConf;
+    // redo prepare, wiring of current-index may change result types
     select(treeConf, treeConf);
 
     AggregationResult::Configure aggrConf;
