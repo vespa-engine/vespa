@@ -1,5 +1,14 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Note about variable names for Buildkite:
+# - TL;DR: Variables with standard names (eg. enfing with _TOKEN) are redacted by default.
+# - https://buildkite.com/docs/pipelines/configure/managing-log-output#redacted-environment-variables
+#
+# Documentation for endpoints on Central API:
+# - https://central.sonatype.org/publish/publish-portal-api/
+#
+
 
 set -o pipefail
 set -o nounset
