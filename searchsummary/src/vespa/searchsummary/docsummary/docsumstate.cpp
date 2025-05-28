@@ -17,6 +17,7 @@
 
 using search::common::GeoLocationParser;
 using search::common::GeoLocationSpec;
+using vespalib::FeatureSet;
 using vespalib::Issue;
 
 namespace search::docsummary {
@@ -49,7 +50,9 @@ GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
       _summaryFeatures(nullptr),
       _omit_summary_features(false),
       _rankFeatures(nullptr),
-      _matching_elements()
+      _matching_elements(),
+      _summary_features_elements(),
+      _summary_features_elements_keys()
 {
 }
 
@@ -63,6 +66,15 @@ GetDocsumsState::get_matching_elements()
         _matching_elements = _callback.fill_matching_elements(*_matching_elements_fields);
     }
     return *_matching_elements;
+}
+
+const FeatureSet&
+GetDocsumsState::get_summary_features()
+{
+    if (!_summaryFeatures) {
+        _callback.fillSummaryFeatures(*this);
+    }
+    return *_summaryFeatures;
 }
 
 void

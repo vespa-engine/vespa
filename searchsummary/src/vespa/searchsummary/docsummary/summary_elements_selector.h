@@ -26,6 +26,7 @@ class SummaryElementsSelector {
     std::vector<std::string> _struct_fields;
     std::string              _summary_feature;
     SummaryElementsSelector();
+    const std::vector<uint32_t>& get_summary_feature_elements(uint32_t docid, GetDocsumsState& state) const;
 public:
     SummaryElementsSelector(const SummaryElementsSelector& rhs);
     SummaryElementsSelector(SummaryElementsSelector&& rhs) noexcept;

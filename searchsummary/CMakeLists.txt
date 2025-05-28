@@ -28,5 +28,6 @@ vespa_define_module(
     src/tests/docsummary/slime_filler
     src/tests/docsummary/slime_filler_filter
     src/tests/docsummary/slime_summary
+    src/tests/docsummary/summary_elements_selector
     src/tests/juniper
 )

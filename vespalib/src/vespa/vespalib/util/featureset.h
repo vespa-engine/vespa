@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/memory.h>
 #include <map>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -99,6 +100,11 @@ public:
      * @return number of features
      **/
     uint32_t numFeatures() const { return _names.size(); }
+
+
+    std::optional<uint32_t> get_name_idx(const std::string& name) const;
+
+    const std::vector<uint32_t>& get_docids() const noexcept { return _docIds; }
 
     /**
      * Obtain the number of documents this object contains information
