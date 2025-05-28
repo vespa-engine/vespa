@@ -77,6 +77,25 @@ case $COMMAND in
     }" \
     "$FACTORY_API/releases/$VERSION"
     ;;
+  update-buildkite-job-run)
+    START_SECONDS=$1
+    FACTORY_PIPELINE_ID=$2
+    STATUS=$3
+    if [[ -z $START_SECONDS ]] || [[ -z $FACTORY_PIPELINE_ID ]] || [[ -z $STATUS ]]; then
+      echo "Usage: $0 $COMMAND <start seconds> <pipeline id> <status>"
+      exit 1
+    fi
+    FACTORY_BUILD_NUMBER=$(( FACTORY_PIPELINE_ID << 32 | BUILDKITE_BUILD_NUMBER & 0xFFFFFF ))
+    $CURL -H "Authorization: Bearer $TOKEN" -d "{
+        \"startSeconds\": $START_SECONDS,
+        \"apiUrl\": \"https://api.buildkite.com/\",
+        \"pipelineId\": $FACTORY_PIPELINE_ID,
+        \"jobId\": 0,
+        \"buildId\": $FACTORY_BUILD_NUMBER,
+        \"status\": \"$STATUS\"
+    }" \
+    "$FACTORY_API/job-runs"
+    ;;
   update-github-job-run)
     # TODO: remove this when we have vespa-factory-cli in the build image (this must be implemented in the cli)
     START_SECONDS=$1
