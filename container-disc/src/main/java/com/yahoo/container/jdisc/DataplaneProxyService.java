@@ -4,9 +4,9 @@ package com.yahoo.container.jdisc;
 import ai.vespa.cloud.SystemInfo;
 import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.component.annotation.Inject;
 import com.yahoo.jdisc.http.server.jetty.DataplaneProxyCredentials;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
