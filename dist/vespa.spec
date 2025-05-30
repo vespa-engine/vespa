@@ -58,6 +58,10 @@
 
 %define go_version 1.24.2
 
+%if 0%{?el8}
+%global _use_mvn_wrapper 1
+%endif
+
 Name:           vespa
 Version:        _VESPA_VERSION_
 Release:        1%{?dist}
