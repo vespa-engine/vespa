@@ -47,7 +47,7 @@ public class GroupOperationCompletion implements CompletionProvider {
         return node.getParent().isASTInstance(operation.class);
     }
 
-    private Optional<Node> finOperationBody(Node last) {
+    private Optional<Node> findOperationBody(Node last) {
 
         if (last.isASTInstance(LBRACE.class)) {
             Node grandParent = last.getParent(2);
@@ -113,7 +113,7 @@ public class GroupOperationCompletion implements CompletionProvider {
         return ret;
     }
 
-    private Optional<Integer> getPreviosNode(Position position, List<Node> nodes) {
+    private Optional<Integer> getPreviousNode(Position position, List<Node> nodes) {
 
         for (int i = 0; i < nodes.size(); i++) {
             if (CSTUtils.positionInRange(nodes.get(i).getRange(), position)) {
@@ -131,7 +131,7 @@ public class GroupOperationCompletion implements CompletionProvider {
     public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
 
         // This is the syntax of the content of a operationBody
-        // [GROUP()] <many different functiosn>* <all() | each()>*
+        // [GROUP()] <many different functions>* <all() | each()>*
 
         List<CompletionItem> ret = new ArrayList<>();
 
@@ -149,14 +149,14 @@ public class GroupOperationCompletion implements CompletionProvider {
             return ret;
         }
 
-        Optional<Node> operationBody = finOperationBody(last);
+        Optional<Node> operationBody = findOperationBody(last);
 
         if (operationBody.isEmpty()) {
             return ret;
         }
 
         List<Node> operationNodes = getBodyElements(operationBody.get());
-        Optional<Integer> indexOfCursor = getPreviosNode(context.position, operationNodes);
+        Optional<Integer> indexOfCursor = getPreviousNode(context.position, operationNodes);
 
         // Cursor is inside a token
         if (indexOfCursor.isEmpty()) {
