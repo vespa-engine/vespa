@@ -78,7 +78,8 @@ type logMessage struct {
 // CloudTarget creates a Target for the Vespa Cloud or hosted Vespa platform.
 func CloudTarget(httpClient httputil.Client, apiAuth Authenticator, deploymentAuth Authenticator,
 	apiOptions APIOptions, deploymentOptions CloudDeploymentOptions,
-	logOptions LogOptions, retryInterval time.Duration) (Target, error) {
+	logOptions LogOptions, retryInterval time.Duration,
+) (Target, error) {
 	return &cloudTarget{
 		httpClient:        httpClient,
 		apiOptions:        apiOptions,
@@ -128,8 +129,8 @@ func (t *cloudTarget) ContainerServices(timeout time.Duration) ([]*Service, erro
 		clusterTargets = make(map[string][]clusterTarget)
 		for cluster, url := range t.deploymentOptions.ClusterURLs {
 			clusterTargets[cluster] = []clusterTarget{
-				clusterTarget{URL: url, AuthMethod: "mtls"},
-				clusterTarget{URL: url, AuthMethod: "token"},
+				{URL: url, AuthMethod: "mtls"},
+				{URL: url, AuthMethod: "token"},
 			}
 		}
 	} else {
@@ -348,4 +349,78 @@ func (t *cloudTarget) discoverEndpoints(timeout time.Duration) (map[string][]clu
 		return nil, fmt.Errorf("no endpoints found in zone %s%s", t.deploymentOptions.Deployment.Zone, waitDescription(timeout))
 	}
 	return clusterTargets, nil
+}
+
+func (t *cloudTarget) tenantUrl(tenant string) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s", t.apiOptions.System.URL, tenant)
+}
+
+func (t *cloudTarget) applicationInstanceUrl(id ApplicationID) string {
+	return fmt.Sprintf("%s/application/v4/tenant/%s/application/%s", t.apiOptions.System.URL, id.Tenant, id.Application)
+}
+
+type CloudTenantResponse struct {
+	Tenant       string
+	Applications []struct {
+		Tenant      string
+		Application string
+		Instance    string
+		Url         string
+	}
+}
+
+type CloudInstanceResponse struct {
+	Instances []struct {
+		Instance    string
+		Deployments []struct {
+			Environment      string
+			Region           string
+			AvailabilityZone string
+		}
+	}
+}
+
+func (t *cloudTarget) ListApplications(tenant string, timeout time.Duration) (*CloudTenantResponse, error) {
+	tenantUrl := t.tenantUrl(tenant)
+	req, err := http.NewRequest("GET", tenantUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	var resp CloudTenantResponse
+	resultFn := func(status int, response []byte) (bool, error) {
+		if ok, err := isOK(status); !ok {
+			return ok, err
+		}
+		if err := json.Unmarshal(response, &resp); err != nil {
+			return false, nil
+		}
+		return true, nil
+	}
+	if _, err := deployRequest(t, resultFn, func() *http.Request { return req }, timeout, t.retryInterval); err != nil {
+		return nil, fmt.Errorf("no tennat found: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (t *cloudTarget) ShowApplicationInstance(id ApplicationID, timeout time.Duration) (*CloudInstanceResponse, error) {
+	tenantUrl := t.applicationInstanceUrl(id)
+	req, err := http.NewRequest("GET", tenantUrl, nil)
+	if err != nil {
+		return nil, err
+	}
+	var resp CloudInstanceResponse
+	resultFn := func(status int, response []byte) (bool, error) {
+		if ok, err := isOK(status); !ok {
+			return ok, err
+		}
+		if err := json.Unmarshal(response, &resp); err != nil {
+			return false, nil
+		}
+		return true, nil
+	}
+	if _, err := deployRequest(t, resultFn, func() *http.Request { return req }, timeout, t.retryInterval); err != nil {
+		return nil, fmt.Errorf("no application instance found: %w", err)
+	}
+	return &resp, nil
 }

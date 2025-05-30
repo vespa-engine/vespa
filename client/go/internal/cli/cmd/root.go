@@ -290,44 +290,49 @@ func (c *CLI) configureCommands() {
 	documentCmd := newDocumentCmd(c)
 	prodCmd := newProdCmd()
 	statusCmd := newStatusCmd(c)
-	certCmd.AddCommand(newCertAddCmd(c))            // auth cert add
-	authCmd.AddCommand(certCmd)                     // auth cert
-	authCmd.AddCommand(newAPIKeyCmd(c))             // auth api-key
-	authCmd.AddCommand(newLoginCmd(c))              // auth login
-	authCmd.AddCommand(newAuthShowCmd(c))           // auth show
-	authCmd.AddCommand(newLogoutCmd(c))             // auth logout
-	rootCmd.AddCommand(authCmd)                     // auth
-	rootCmd.AddCommand(newCloneCmd(c))              // clone
-	configCmd.AddCommand(newConfigGetCmd(c))        // config get
-	configCmd.AddCommand(newConfigSetCmd(c))        // config set
-	configCmd.AddCommand(newConfigUnsetCmd(c))      // config unset
-	rootCmd.AddCommand(configCmd)                   // config
-	rootCmd.AddCommand(newCurlCmd(c))               // curl
-	rootCmd.AddCommand(newDeployCmd(c))             // deploy
-	rootCmd.AddCommand(newDestroyCmd(c))            // destroy
-	rootCmd.AddCommand(newPrepareCmd(c))            // prepare
-	rootCmd.AddCommand(newActivateCmd(c))           // activate
-	documentCmd.AddCommand(newDocumentPutCmd(c))    // document put
-	documentCmd.AddCommand(newDocumentUpdateCmd(c)) // document update
-	documentCmd.AddCommand(newDocumentRemoveCmd(c)) // document remove
-	documentCmd.AddCommand(newDocumentGetCmd(c))    // document get
-	rootCmd.AddCommand(documentCmd)                 // document
-	rootCmd.AddCommand(newLogCmd(c))                // log
-	rootCmd.AddCommand(newManCmd(c))                // man
-	rootCmd.AddCommand(newGendocCmd(c))             // gendoc
-	prodCmd.AddCommand(newProdInitCmd(c))           // prod init
-	prodCmd.AddCommand(newProdDeployCmd(c))         // prod deploy
-	rootCmd.AddCommand(prodCmd)                     // prod
-	rootCmd.AddCommand(newQueryCmd(c))              // query
-	statusCmd.AddCommand(newStatusDeployCmd(c))     // status deploy
-	statusCmd.AddCommand(newStatusDeploymentCmd(c)) // status deployment
-	rootCmd.AddCommand(statusCmd)                   // status
-	rootCmd.AddCommand(newTestCmd(c))               // test
-	rootCmd.AddCommand(newVersionCmd(c))            // version
-	rootCmd.AddCommand(newVisitCmd(c))              // visit
-	rootCmd.AddCommand(newFeedCmd(c))               // feed
-	rootCmd.AddCommand(newFetchCmd(c))              // fetch
-	rootCmd.AddCommand(newInspectCmd(c))            // inspect
+	applicationCmd := newApplicationCmd()
+
+	certCmd.AddCommand(newCertAddCmd(c))                // auth cert add
+	authCmd.AddCommand(certCmd)                         // auth cert
+	authCmd.AddCommand(newAPIKeyCmd(c))                 // auth api-key
+	authCmd.AddCommand(newLoginCmd(c))                  // auth login
+	authCmd.AddCommand(newAuthShowCmd(c))               // auth show
+	authCmd.AddCommand(newLogoutCmd(c))                 // auth logout
+	rootCmd.AddCommand(authCmd)                         // auth
+	rootCmd.AddCommand(newCloneCmd(c))                  // clone
+	configCmd.AddCommand(newConfigGetCmd(c))            // config get
+	configCmd.AddCommand(newConfigSetCmd(c))            // config set
+	configCmd.AddCommand(newConfigUnsetCmd(c))          // config unset
+	rootCmd.AddCommand(configCmd)                       // config
+	rootCmd.AddCommand(newCurlCmd(c))                   // curl
+	rootCmd.AddCommand(newDeployCmd(c))                 // deploy
+	rootCmd.AddCommand(newDestroyCmd(c))                // destroy
+	rootCmd.AddCommand(newPrepareCmd(c))                // prepare
+	rootCmd.AddCommand(newActivateCmd(c))               // activate
+	documentCmd.AddCommand(newDocumentPutCmd(c))        // document put
+	documentCmd.AddCommand(newDocumentUpdateCmd(c))     // document update
+	documentCmd.AddCommand(newDocumentRemoveCmd(c))     // document remove
+	documentCmd.AddCommand(newDocumentGetCmd(c))        // document get
+	rootCmd.AddCommand(documentCmd)                     // document
+	rootCmd.AddCommand(newLogCmd(c))                    // log
+	rootCmd.AddCommand(newManCmd(c))                    // man
+	rootCmd.AddCommand(newGendocCmd(c))                 // gendoc
+	prodCmd.AddCommand(newProdInitCmd(c))               // prod init
+	prodCmd.AddCommand(newProdDeployCmd(c))             // prod deploy
+	rootCmd.AddCommand(prodCmd)                         // prod
+	rootCmd.AddCommand(newQueryCmd(c))                  // query
+	statusCmd.AddCommand(newStatusDeployCmd(c))         // status deploy
+	statusCmd.AddCommand(newStatusDeploymentCmd(c))     // status deployment
+	rootCmd.AddCommand(statusCmd)                       // status
+	rootCmd.AddCommand(newTestCmd(c))                   // test
+	rootCmd.AddCommand(newVersionCmd(c))                // version
+	rootCmd.AddCommand(newVisitCmd(c))                  // visit
+	rootCmd.AddCommand(newFeedCmd(c))                   // feed
+	rootCmd.AddCommand(newFetchCmd(c))                  // fetch
+	rootCmd.AddCommand(newInspectCmd(c))                // inspect
+	rootCmd.AddCommand(applicationCmd)                  // application
+	applicationCmd.AddCommand(newApplicationListCmd(c)) // list
+	applicationCmd.AddCommand(newApplicationShowCmd(c)) // show
 }
 
 func (c *CLI) bindWaitFlag(cmd *cobra.Command, defaultSecs int, value *int) {
