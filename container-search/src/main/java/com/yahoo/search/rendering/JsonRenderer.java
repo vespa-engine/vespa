@@ -58,6 +58,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
+import java.util.Base64;
 import java.util.Deque;
 import java.util.Map;
 import java.util.Optional;
@@ -76,6 +77,7 @@ import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WR
 // NOTE: The JSON format is a public API. If new elements are added be sure to update the reference doc.
 public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
+    private static final CompoundName RAW_AS_BASE64 = CompoundName.from("renderer.json.rawAsBase64");
     private static final CompoundName WRAP_DEEP_MAPS = CompoundName.from("renderer.json.jsonMaps");
     private static final CompoundName WRAP_WSETS = CompoundName.from("renderer.json.jsonWsets");
     private static final CompoundName DEBUG_RENDERING_KEY = CompoundName.from("renderer.json.debug");
@@ -132,6 +134,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         volatile boolean jsonWsets = true;
         volatile boolean jsonMapsAll = true;
         volatile boolean jsonWsetsAll = false;
+        volatile boolean enableRawAsBase64 = false;
         volatile JsonFormat.EncodeOptions tensorOptions;
         boolean convertDeep() { return (jsonDeepMaps || jsonWsets); }
         void init() {
@@ -151,6 +154,8 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
             this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsets = props.getBoolean(WRAP_WSETS, true);
+            this.enableRawAsBase64 = props.getBoolean(RAW_AS_BASE64, true);
+
             // we may need more finetuning, but for now use the same query parameters here:
             this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsetsAll = props.getBoolean(WRAP_WSETS, true);
@@ -548,6 +553,25 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         this.timeSource = timeSource;
     }
 
+    private static class WithBase64 extends JsonRender.StringEncoder {
+        private final static Base64.Encoder encoder = Base64.getEncoder();
+        @Override
+        protected void encodeDATA(byte[] value) {
+            var s = encoder.encodeToString(value);
+            encodeSTRING(s);
+        }
+        WithBase64() {
+            super(new StringBuilder(), true);
+        }
+        static String toJsonString(Inspector obj, boolean enableRawAsBase64) {
+            JsonRender.StringEncoder encoder =enableRawAsBase64
+                    ? new WithBase64()
+                    : new JsonRender.StringEncoder(new StringBuilder(), true);
+            encoder.encode(obj);
+            return encoder.target().toString();
+        }
+    }
+
     /**
      * Received callbacks when fields of hits are encountered.
      * This instance is reused for all hits of a Result since we are in a single-threaded context
@@ -666,7 +690,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 if (key.type() == Type.STRING) {
                     map.put(key.asString(), value);
                 } else {
-                    map.put(JsonRender.render(key, new StringBuilder(), true).toString(), value);
+                    map.put(WithBase64.toJsonString(key, settings.enableRawAsBase64), value);
                 }
             }
             return map;
@@ -688,7 +712,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
                 if (item.type() == Type.STRING) {
                     wset.put(item.asString(), weight.asLong());
                 } else if (settings.jsonWsetsAll) {
-                    wset.put(JsonRender.render(item, new StringBuilder(), true).toString(), weight.asLong());
+                    wset.put(WithBase64.toJsonString(item, settings.enableRawAsBase64).toString(), weight.asLong());
                 } else {
                     return null;
                 }
@@ -773,7 +797,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
         }
 
         private void renderInspectorDirect(Inspector data) throws IOException {
-            generator().writeRawValue(JsonRender.render(data, new StringBuilder(), true).toString());
+            generator().writeRawValue(WithBase64.toJsonString(data, settings.enableRawAsBase64));
         }
 
         protected void renderFieldContents(Object field) throws IOException {
