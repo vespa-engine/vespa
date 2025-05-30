@@ -24,4 +24,11 @@ InitializerTask::get_transient_memory_usage() const
     return 0u;
 }
 
+void
+InitializerTask::registerInProgressReporter(IInitializationProgressReporter &reporter) {
+    for (SP &task : _dependencies) {
+        task->registerInProgressReporter(reporter);
+    }
+}
+
 }

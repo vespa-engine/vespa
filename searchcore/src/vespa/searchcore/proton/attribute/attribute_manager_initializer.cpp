@@ -47,6 +47,9 @@ public:
     size_t get_transient_memory_usage() const override {
         return _initializer->get_transient_memory_usage();
     }
+    void registerInProgressReporter(initializer::IInitializationProgressReporter &reporter) override {
+        _initializer->registerInProgressReporter(reporter);
+    }
 };
 
 class AttributeManagerInitializerTask : public vespalib::Executor::Task

@@ -47,6 +47,7 @@
 #include <vespa/searchlib/transactionlog/translogserverapp.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/data/slime/cursor.h>
+#include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/net/http/state_server.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
@@ -90,6 +91,12 @@ using vespalib::slime::Cursor;
 namespace proton {
 
 namespace {
+
+std::string timepointToString(InitializationStatus::time_point tp) {
+    time_t secs = std::chrono::duration_cast<std::chrono::seconds>(tp.time_since_epoch()).count();
+    uint32_t usecs_part = std::chrono::duration_cast<std::chrono::microseconds>(tp.time_since_epoch()).count() % 1000000;
+    return std::format("{}.{:06}", secs, usecs_part);
+}
 
 using search::fs4transport::FS4PersistentPacketStreamer;
 
@@ -296,7 +303,7 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _rpcHooks(),
       _healthAdapter(*this),
       _genericStateHandler(CUSTOM_COMPONENT_API_PATH, *this),
-      _initializationHandler(),
+      _initializationHandler(*this),
       _initializationBindToken(),
       _initializationRootToken(),
       _customComponentBindToken(),
@@ -334,6 +341,7 @@ Proton::init()
 {
     assert( ! _initStarted && ! _initComplete );
     _initStarted = true;
+    _initializationStatus.startInitialization();
     _protonConfigFetcher.start();
     auto configSnapshot = _protonConfigurer.getPendingConfigSnapshot();
     assert(configSnapshot);
@@ -1204,6 +1212,21 @@ Proton::getPersistence()
 metrics::MetricManager &
 Proton::getMetricManager() {
     return _metricsEngine->getManager();
+}
+
+void Proton::getProgress(const vespalib::slime::Inserter &inserter) const {
+    std::shared_lock<std::shared_mutex> guard(_mutex);
+
+    vespalib::slime::Cursor &cursor = inserter.insertObject();
+    cursor.setString("start_time", timepointToString(_initializationStatus.getStartTime()));
+    cursor.setString("current_time", timepointToString(std::chrono::system_clock::now()));
+
+    vespalib::slime::Cursor &dbArrayCursor = cursor.setArray("dbs");
+    vespalib::slime::ArrayInserter arrayInserter(dbArrayCursor);
+
+    for (const auto &kv : _documentDBMap) {
+        kv.second->getInitializationProgressReporter().reportProgress(arrayInserter);
+    }
 }
 
 } // namespace proton

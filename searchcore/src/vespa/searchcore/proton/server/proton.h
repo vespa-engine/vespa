@@ -9,6 +9,7 @@
 #include "i_proton_configurer_owner.h"
 #include "idocumentdbowner.h"
 #include "initialization_handler.h"
+#include "initialization_status.h"
 #include "memory_flush_config_updater.h"
 #include "proton_config_fetcher.h"
 #include "proton_configurer.h"
@@ -65,6 +66,7 @@ class Proton : public IProtonConfigurerOwner,
                public StatusProducer,
                public IPersistenceEngineOwner,
                public vespalib::ComponentConfigProducer,
+               public vespalib::InitializationProgressProducer,
                public vespalib::StateExplorer
 {
 private:
@@ -116,6 +118,7 @@ private:
     HealthAdapter                          _healthAdapter;
     vespalib::GenericStateHandler          _genericStateHandler;
     InitializationHandler                  _initializationHandler;
+    InitializationStatus                   _initializationStatus;
     vespalib::JsonHandlerRepo::Token::UP   _initializationBindToken;
     vespalib::JsonHandlerRepo::Token::UP   _initializationRootToken;
     vespalib::JsonHandlerRepo::Token::UP   _customComponentBindToken;
@@ -244,6 +247,8 @@ public:
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     std::vector<std::string> get_children_names() const override;
     std::unique_ptr<vespalib::StateExplorer> get_child(std::string_view name) const override;
+
+    void getProgress(const vespalib::slime::Inserter &inserter) const override;
 };
 
 } // namespace proton

@@ -6,6 +6,7 @@ vespa_add_library(searchcommon_searchcommon_attribute OBJECT
     collectiontype.cpp
     config.cpp
     i_search_context.cpp
+    initialization_status.cpp
     search_context_params.cpp
     status.cpp
     DEPENDS
