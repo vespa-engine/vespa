@@ -19,6 +19,9 @@ if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
   START_SECONDS=$(date +%s)
   export START_SECONDS
   buildkite-agent meta-data set start-seconds $START_SECONDS
+  echo "Build started at $START_SECONDS"
+  META_START_SECONDS=$(buildkite-agent meta-data get start-seconds || echo 0)
+  echo "Meta start seconds: $META_START_SECONDS"
 
   JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
   echo "Output from creating build : $JSON"
