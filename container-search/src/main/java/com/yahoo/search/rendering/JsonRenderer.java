@@ -154,8 +154,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
             this.debugRendering = props.getBoolean(DEBUG_RENDERING_KEY, false);
             this.jsonDeepMaps = props.getBoolean(WRAP_DEEP_MAPS, true);
             this.jsonWsets = props.getBoolean(WRAP_WSETS, true);
-            // TODO Vespa 9: flip default to "true"
-            this.enableRawAsBase64 = props.getBoolean(RAW_AS_BASE64, false);
+            this.enableRawAsBase64 = props.getBoolean(RAW_AS_BASE64, true);
 
             // we may need more finetuning, but for now use the same query parameters here:
             this.jsonMapsAll = props.getBoolean(WRAP_DEEP_MAPS, true);
