@@ -2,6 +2,7 @@ package ai.vespa.schemals.lsp.yqlplus.completion.provider;
 
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -9,8 +10,11 @@ import org.eclipse.lsp4j.CompletionItem;
 import org.eclipse.lsp4j.Position;
 
 import ai.vespa.schemals.context.EventCompletionContext;
+import ai.vespa.schemals.index.Symbol.SymbolType;
 import ai.vespa.schemals.lsp.common.completion.CompletionProvider;
 import ai.vespa.schemals.lsp.common.completion.CompletionUtils;
+import ai.vespa.schemals.parser.yqlplus.ast.FROM;
+import ai.vespa.schemals.parser.yqlplus.ast.SOURCES;
 import ai.vespa.schemals.parser.yqlplus.ast.limit_fun;
 import ai.vespa.schemals.parser.yqlplus.ast.offset_fun;
 import ai.vespa.schemals.parser.yqlplus.ast.orderby_fields;
@@ -19,6 +23,7 @@ import ai.vespa.schemals.parser.yqlplus.ast.query_statement;
 import ai.vespa.schemals.parser.yqlplus.ast.select_field_spec;
 import ai.vespa.schemals.parser.yqlplus.ast.select_source;
 import ai.vespa.schemals.parser.yqlplus.ast.select_source_from;
+import ai.vespa.schemals.parser.yqlplus.ast.select_source_sources;
 import ai.vespa.schemals.parser.yqlplus.ast.select_statement;
 import ai.vespa.schemals.parser.yqlplus.ast.timeout_fun;
 import ai.vespa.schemals.parser.yqlplus.ast.where_fun;
@@ -82,6 +87,15 @@ public class RootCompletion implements CompletionProvider {
         return List.of();
     }
 
+    private boolean isInsideSelectSources(Node node) {
+        while (node != null) {
+            if (node.isASTInstance(SOURCES.class)) return true;
+            if (node.isASTInstance(select_source_sources.class)) return true;
+            node = node.getParent();
+        }
+        return false;
+    }
+
     @Override
     public List<CompletionItem> getCompletionItems(EventCompletionContext context) {
         List<CompletionItem> ret = new ArrayList<>();
@@ -100,6 +114,25 @@ public class RootCompletion implements CompletionProvider {
         }
 
         if (last.getLanguageType() == LanguageType.GROUPING) {
+            return ret;
+        }
+
+        if (last.isASTInstance(FROM.class) || isInsideSelectSources(last)) {
+            if (last.isASTInstance(FROM.class)) {
+                ret.add(CompletionUtils.constructSnippet("sources", "sources ${1:*}"));
+            }
+
+            if (last.isASTInstance(SOURCES.class)) {
+                ret.add(CompletionUtils.constructBasic("*"));
+            }
+
+            context.schemaIndex.listSymbolsInScope(null, SymbolType.DOCUMENT)
+                .stream()
+                .forEach(symbol -> {
+                    String name = symbol.getShortIdentifier();
+                    ret.add(CompletionUtils.constructBasic(name));
+                });
+
             return ret;
         }
 

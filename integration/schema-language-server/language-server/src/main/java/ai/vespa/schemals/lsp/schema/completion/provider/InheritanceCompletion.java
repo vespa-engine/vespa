@@ -76,7 +76,9 @@ public class InheritanceCompletion implements CompletionProvider {
                       ? null : identifierSymbol.getScope();
 
         for (var symbol : context.schemaIndex.listSymbolsInScope(scope, identifierSymbol.getType())) {
-            if (symbol.getShortIdentifier().equals(identifierSymbol.getShortIdentifier()))continue; // identifier-based, since symbols may be inaccurate in this context
+            // identifier-based comparison, since using symbol equality may be inaccurate in this context
+            if (symbol.getShortIdentifier().equals(identifierSymbol.getShortIdentifier()))continue; 
+
             ret.add(CompletionUtils.constructBasic(symbol.getShortIdentifier(), symbol.getLongIdentifier()));
             if (symbol.getShortIdentifier().equals("default"))defaultSeen = true;
         }

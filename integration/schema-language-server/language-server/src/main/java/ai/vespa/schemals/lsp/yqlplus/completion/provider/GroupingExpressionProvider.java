@@ -129,7 +129,7 @@ public class GroupingExpressionProvider implements CompletionProvider {
                 return mathFunctions.stream()
                     .map(func -> CompletionUtils.constructSnippet(func, func + "($0)"))
                     .toList();
-            } else if (sibling.getPreviousSibling().isASTInstance(TIME.class)) {
+            } else if (sibling.isASTInstance(TIME.class)) {
                 return timeFunctions.stream()
                     .map(func -> CompletionUtils.constructSnippet(func, func + "($0)"))
                     .toList();
