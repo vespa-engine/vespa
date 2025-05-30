@@ -26,7 +26,7 @@ vim.filetype.add {
 Create a config for schema language server (in `init.lua`):
 ```lua
 vim.lsp.config('vespa_ls', {
-    cmd = { 'java', '-jar', '/path/to/schema-language-server-jar-with-dependencies.jar' },
+    cmd = { 'java', '-jar', '/path/to/vespa-language-server_X.X.X.jar' },
     -- on_attach = ...
 })
 
