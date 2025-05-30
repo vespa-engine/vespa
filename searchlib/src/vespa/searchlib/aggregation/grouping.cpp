@@ -2,17 +2,18 @@
 
 #include "grouping.h"
 #include "hitsaggregationresult.h"
-#include <vespa/searchlib/expression/stringresultnode.h>
-#include <vespa/searchlib/expression/enumresultnode.h>
-#include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchlib/attribute/stringbase.h>
+#include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/expression/attributenode.h>
-#include <vespa/searchlib/expression/documentfieldnode.h>
 #include <vespa/searchlib/expression/current_index_setup.h>
 #include <vespa/searchlib/expression/documentaccessornode.h>
-#include <vespa/searchlib/attribute/stringbase.h>
-#include <vespa/vespalib/objects/serializer.hpp>
+#include <vespa/searchlib/expression/documentfieldnode.h>
+#include <vespa/searchlib/expression/enumresultnode.h>
+#include <vespa/searchlib/expression/numelemfunctionnode.h>
+#include <vespa/searchlib/expression/resultvector.h>
+#include <vespa/searchlib/expression/stringresultnode.h>
 #include <vespa/vespalib/objects/deserializer.hpp>
-#include <vespa/searchlib/common/idocumentmetastore.h>
+#include <vespa/vespalib/objects/serializer.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.aggregation.grouping");
@@ -151,8 +152,14 @@ struct ResolveCurrentIndex : vespalib::ObjectOperation, vespalib::ObjectPredicat
                 docField.setCurrentIndex(setup.resolve(docField.getFieldName()));
             }
         }
+        // ignore nodes that are explicitly not-multivalue
     }
+
     bool check(const vespalib::Identifiable &obj) const override {
+        if (obj.inherits(NumElemFunctionNode::classId)) {
+            // not multivalue, execute() will ignore it
+            return true;
+        }
         return obj.inherits(AttributeNode::classId)
                 || obj.inherits(DocumentFieldNode::classId);
     }
