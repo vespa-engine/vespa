@@ -40,6 +40,7 @@ public class ParserTokensTest {
         "DEFAULT", // Lexical State in JavaCC parser
         "SEARCHLIB_SKIP", // represents white space, handled differently in CongoCC
         "SINGLE_LINE_COMMENT", // not a regular token
+        "MULTI_LINE_COMMENT", // not a regular token
         "COMMENT", // not a regular token
         // Below are tokens that represents a big regex in the original parser,
         // which is implemented differently in our parser 
@@ -143,7 +144,7 @@ public class ParserTokensTest {
         }
 
         List<String> missing = findMissingTokens(javaCCFields, congoCCTokenStrings);
-        assertEquals(0, missing.size(), "Missing ranking expression tokens in CongoCC: " + String.join(", ", missing));
+        assertEquals(0, missing.size(), "Missing grouping tokens in CongoCC: " + String.join(", ", missing));
     }
 
     @Test
