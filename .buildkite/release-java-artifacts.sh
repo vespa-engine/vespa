@@ -134,6 +134,7 @@ export -f sign_module
 wait_deployment_reaching_status() {
     local expected_state=$1 ; shift
     local deployment=$1 ; shift
+    local max_wait_minutes=$1 ; shift
     local START_EPOCH
     local CURRENT_EPOCH
     local ELAPSED_TIME
@@ -171,8 +172,8 @@ wait_deployment_reaching_status() {
 
         CURRENT_EPOCH=$(date +%s)
         ELAPSED_TIME=$((CURRENT_EPOCH - START_EPOCH))
-        if (( ELAPSED_TIME > 600 )); then
-            echo "Deployment did not reach expected state within 10 minutes, exiting"
+        if (( ELAPSED_TIME > (max_wait_minutes * 60) )); then
+            echo "Deployment did not reach expected state within $max_wait_minutes minutes, exiting"
             exit 1
         fi
 
@@ -218,6 +219,6 @@ if [[ -z $DEPLOYMENT_ID ]]; then
 fi
 
 echo "Got deployment ID: $DEPLOYMENT_ID"
-wait_deployment_reaching_status "PUBLISHED" "$DEPLOYMENT_ID"
+wait_deployment_reaching_status "PUBLISHED" "$DEPLOYMENT_ID" 30
 
 echo "Deployment $DEPLOYMENT_ID published successfully"
