@@ -4,7 +4,20 @@
 #include <memory>
 #include <vector>
 
+namespace vespalib::slime {
+    struct Inserter;
+}
+
 namespace proton::initializer {
+
+class IInitializationProgressReporter {
+public:
+    using SP = std::shared_ptr<IInitializationProgressReporter>;
+    virtual ~IInitializationProgressReporter() = default;
+
+    virtual void reportProgress(const vespalib::slime::Inserter &) const = 0;
+    virtual void registerSubReporter(const SP &) {};
+};
 
 /*
  * Class representign an initializer task, used to load a data
@@ -32,6 +45,7 @@ public:
     void addDependency(SP dependency);
     virtual void run() = 0;
     virtual size_t get_transient_memory_usage() const;
+    virtual void registerInProgressReporter(IInitializationProgressReporter &reporter);
 };
 
 }

@@ -4,8 +4,11 @@
 
 #include <vespa/vespalib/net/tls/capability.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+#include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/data/simple_buffer.h>
 #include <functional>
 
+using vespalib::InitializationProgressProducer;
 using vespalib::JsonGetHandler;
 using vespalib::net::tls::Capability;
 using vespalib::net::tls::CapabilitySet;
@@ -24,20 +27,20 @@ JsonGetHandler::Response cap_checked(const vespalib::net::ConnectionAuthContext 
     return JsonGetHandler::Response::make_ok_with_json(fn());
 }
 
-std::string respond_initialization() {
-    vespalib::JSONStringer json;
-    json.beginObject();
+std::string respond_initialization(const InitializationProgressProducer &initializationProgressProducer) {
+    vespalib::Slime slime;
+    vespalib::slime::SlimeInserter inserter(slime);
+    initializationProgressProducer.getProgress(inserter);
 
-    json.appendKey("Hello");
-    json.appendString("World");
-
-    json.endObject();
-    return json.str();
+    vespalib::SimpleBuffer buf;
+    vespalib::slime::JsonFormat::encode(slime, buf, false);
+    return buf.get().make_string();
 }
 
 } // namespace proton::unnamed
 
-InitializationHandler::InitializationHandler()
+InitializationHandler::InitializationHandler(InitializationProgressProducer &initializationProgressProducer)
+    : _initializationProgressProducer(initializationProgressProducer)
 {
 }
 
@@ -49,7 +52,7 @@ InitializationHandler::get(const std::string &/*host*/,
 {
     if (path == "/state/v1/initialization") {
         return cap_checked(auth_ctx, CapabilitySet::make_empty(), [&] {
-            return respond_initialization();
+            return respond_initialization(_initializationProgressProducer);
         });
     } else {
         // TODO Return different error (?)

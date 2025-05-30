@@ -7,6 +7,8 @@
 #include "ddbstate.h"
 #include "resource_usage_forwarder.h"
 #include "document_db_config_owner.h"
+#include "document_db_initialization_status.h"
+#include "document_db_initialization_progress_reporter.h"
 #include "documentdb_metrics_updater.h"
 #include "documentsubdbcollection.h"
 #include "executorthreadingservice.h"
@@ -144,6 +146,8 @@ private:
     DocumentDBJobTrackers                            _jobTrackers;
     std::shared_ptr<IBucketStateCalculator>          _calc;
     DocumentDBMetricsUpdater                         _metricsUpdater;
+    DocumentDBInitializationStatus                   _initializationStatus;
+    DocumentDBInitializationProgressReporter         _initializationProgressReporter;
 
     void registerReference();
     void setActiveConfig(DocumentDBConfigSP config);
@@ -427,6 +431,10 @@ public:
 
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);
     const DDBState& get_state() const noexcept { return _state; }
+
+    const DocumentDBInitializationStatus& getInitializationStatus() const { return _initializationStatus; }
+    const DocumentDBInitializationProgressReporter& getInitializationProgressReporter() const { return _initializationProgressReporter; }
+    DocumentDBInitializationProgressReporter& getInitializationProgressReporter() { return _initializationProgressReporter; }
 };
 
 } // namespace proton

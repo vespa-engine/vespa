@@ -8,6 +8,7 @@
 #include "basename.h"
 #include <vespa/searchcommon/attribute/i_search_context.h>
 #include <vespa/searchcommon/attribute/iattributevector.h>
+#include <vespa/searchcommon/attribute/initialization_status.h>
 #include <vespa/searchcommon/attribute/search_context_params.h>
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/searchcommon/common/range.h>
@@ -75,6 +76,7 @@ namespace search {
 
 namespace search {
 
+using search::attribute::InitializationStatus;
 using search::attribute::WeightedType;
 using search::attribute::Status;
 using document::ArithmeticValueUpdate;
@@ -114,6 +116,7 @@ public:
     using generation_t = GenerationHandler::generation_t;
 
     ~AttributeVector() override;
+
 protected:
     /**
      * Will update statistics by calling onUpdateStat if necessary.
@@ -309,6 +312,9 @@ public:
     const Status & getStatus() const { return _status; }
     Status & getStatus() { return _status; }
 
+    const InitializationStatus& getInitializationStatus() const { return _initializationStatus; }
+    InitializationStatus& getInitializationStatus() { return _initializationStatus; }
+
     AddressSpaceUsage getAddressSpaceUsage() const;
 
     BasicType::Type getBasicType() const override final;
@@ -418,6 +424,7 @@ private:
     mutable std::shared_mutex             _enumLock;
     GenerationHandler                     _genHandler;
     GenerationHolder                      _genHolder;
+    InitializationStatus                  _initializationStatus;
     Status                                _status;
     std::atomic<int>                      _highestValueCount;
     uint32_t                              _enumMax;

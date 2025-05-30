@@ -4,6 +4,7 @@
 
 #include "attribute_spec.h"
 #include "attribute_initializer_result.h"
+#include "attribute_initialization_progress_reporter.h"
 #include <vespa/searchlib/common/serialnum.h>
 #include <optional>
 #include <string>
@@ -34,6 +35,7 @@ private:
     vespalib::Executor             &_shared_executor;
     std::unique_ptr<const search::attribute::AttributeHeader> _header;
     bool                            _header_ok;
+    AttributeInitializationProgressReporter::SP _progressReporter;
 
     void readHeader();
 
@@ -55,6 +57,7 @@ public:
     AttributeInitializerResult init() const;
     const std::optional<uint64_t>& getCurrentSerialNum() const noexcept { return _currentSerialNum; }
     size_t get_transient_memory_usage() const;
+    void registerInProgressReporter(initializer::IInitializationProgressReporter &reporter);
 };
 
 } // namespace proton
