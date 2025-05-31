@@ -335,10 +335,10 @@ public class Model implements Cloneable {
      */
     public void setType(String typeString) { this.type = Query.Type.getType(typeString); }
 
+    @Override
     public boolean equals(Object o) {
-        if ( ! (o instanceof Model)) return false;
+        if ( ! (o instanceof Model other)) return false;
 
-        Model other = (Model) o;
         if ( ! (
                 QueryHelper.equals(other.encoding, this.encoding) &&
                 QueryHelper.equals(other.language, this.language) &&
@@ -528,7 +528,7 @@ public class Model implements Cloneable {
         for (Item  candidate : candidates) {
             TaggableItem t = (TaggableItem) candidate;
             var documentFrequency = t.getDocumentFrequency();
-            if ( ! documentFrequency.isPresent()) continue;
+            if (documentFrequency.isEmpty()) continue;
             String name = "vespa.term." + t.getUniqueID() + ".docfreq";
             ranking.getProperties().put(name, String.valueOf(documentFrequency.get().frequency()));
             ranking.getProperties().put(name, String.valueOf(documentFrequency.get().count()));
@@ -542,8 +542,7 @@ public class Model implements Cloneable {
             // This is tested before descending, as phrases are viewed
             // as leaf nodes in the ranking code in the backend
             terms.add(root);
-        } else if (root instanceof CompositeItem) {
-            CompositeItem c = (CompositeItem) root;
+        } else if (root instanceof CompositeItem c) {
             for (Iterator<Item> i = c.getItemIterator(); i.hasNext();) {
                 collectTaggableItems(i.next(), terms);
             }
