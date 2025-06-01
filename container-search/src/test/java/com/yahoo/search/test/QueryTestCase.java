@@ -1272,6 +1272,10 @@ public class QueryTestCase {
         assertParsed("AND a b c",              "a b -c", type("tokenize").setCompositeType(QueryType.CompositeType.and));
         assertParsed("+(AND a b) -c",          "a b -c", type("web"));
         assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("web").setCompositeType(QueryType.CompositeType.weakAnd));
+        assertParsed("WEAKAND(100) a b c",     "a b -c", type("linguistics"));
+        assertParsed("OR a b c",               "a b -c", type("linguistics").setCompositeType(QueryType.CompositeType.or));
+        assertFails("Failed parsing query: query type linguistics [compositeType: weakAnd, toenization: linguistics, syntax: web] is invalid: Linguistics tokenization can only be combined with syntax none",
+                    type("linguistics").setSyntax(QueryType.Syntax.web));
     }
 
     private QueryType type(String type) {
@@ -1283,6 +1287,17 @@ public class QueryTestCase {
         q.getModel().setQueryString(query);
         q.getModel().setType(type);
         assertEquals(expected, q.getModel().getQueryTree().toString());
+    }
+
+    private void assertFails(String message, QueryType type) {
+        try {
+            assertParsed("ignored", "ignored", type);
+            fail("Expected exception");
+        }
+        catch (Exception e) {
+            assertEquals(message, Exceptions.toMessageString(e));
+        }
+
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {

@@ -32,6 +32,7 @@ public final class ParserFactory {
      */
     @SuppressWarnings("deprecation")
     public static Parser newInstance(QueryType type, ParserEnvironment environment) {
+        type.validate();
         environment.setType(type);
         return switch (type.getType()) {
             case ALL -> new AllParser(environment);

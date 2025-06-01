@@ -74,6 +74,14 @@ public class QueryType {
         return this;
     }
 
+    /**
+     * Throws IllegalArgumentException if the combination of options set in this are ot supported.
+     */
+    public void validate() {
+        if (tokenization == Tokenization.linguistics && syntax != Syntax.none)
+            throw new IllegalArgumentException(this + " is invalid: Linguistics tokenization can only be combined with syntax none");
+    }
+
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof QueryType other)) return false;
@@ -106,7 +114,7 @@ public class QueryType {
             case ADVANCED -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.advanced);
             case ALL -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.simple);
             case ANY -> new QueryType(type, CompositeType.or, Tokenization.internal, Syntax.simple);
-            case LINGUISTICS -> new QueryType(type, CompositeType.weakAnd, Tokenization.linguistics, Syntax.simple);
+            case LINGUISTICS -> new QueryType(type, CompositeType.weakAnd, Tokenization.linguistics, Syntax.none);
             case PHRASE -> new QueryType(type, CompositeType.phrase, Tokenization.internal, Syntax.simple);
             case PROGRAMMATIC -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.yql);
             case SELECT -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.simple);
