@@ -3,6 +3,7 @@ package com.yahoo.search.query.parser;
 
 import com.yahoo.prelude.query.parser.*;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.yql.YqlParser;
 
@@ -17,6 +18,10 @@ public final class ParserFactory {
         // hide
     }
 
+    public static Parser newInstance(Query.Type type, ParserEnvironment environment) {
+        return newInstance(QueryType.from(type), environment);
+    }
+
     /**
      * Creates a {@link Parser} appropriate for the given <code>Query.Type</code>, providing the Parser with access to
      * the {@link ParserEnvironment} given.
@@ -26,9 +31,10 @@ public final class ParserFactory {
      * @return the created Parser
      */
     @SuppressWarnings("deprecation")
-    public static Parser newInstance(Query.Type type, ParserEnvironment environment) {
-        return switch (type) {
-            case ALL -> new AllParser(environment, false);
+    public static Parser newInstance(QueryType type, ParserEnvironment environment) {
+        environment.setType(type);
+        return switch (type.getType()) {
+            case ALL -> new AllParser(environment);
             case ANY -> new AnyParser(environment);
             case PHRASE -> new PhraseParser(environment);
             case ADVANCED -> new AdvancedParser(environment);
@@ -36,7 +42,7 @@ public final class ParserFactory {
             case PROGRAMMATIC -> new ProgrammaticParser();
             case YQL -> new YqlParser(environment);
             case SELECT -> new SelectParser(environment);
-            case WEAKAND -> new AllParser(environment, true);
+            case WEAKAND -> new AllParser(environment);
             case TOKENIZE -> new TokenizeParser(environment);
             case LINGUISTICS -> new LinguisticsParser(environment);
         };

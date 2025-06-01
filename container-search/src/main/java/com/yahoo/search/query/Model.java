@@ -87,7 +87,7 @@ public class Model implements Cloneable {
     private Locale locale = null;
     private QueryTree queryTree = null; // The query tree to execute. This is lazily created from the program
     private String defaultIndex = null;
-    private Query.Type type = Query.Type.WEAKAND;
+    private QueryType type = QueryType.from(Query.Type.WEAKAND);
     private Query parent;
     private Set<String> sources = new LinkedHashSet<>();
     private Set<String> restrict = new LinkedHashSet<>();
@@ -316,24 +316,38 @@ public class Model implements Cloneable {
     public void setDefaultIndex(String defaultIndex) { this.defaultIndex = defaultIndex; }
 
     /**
-     * Sets the query type of for this query.
+     * Returns the query type of for this query.
      * The type is taken into account at the time the query tree is parsed.
      */
-    public Query.Type getType() { return type; }
+    public Query.Type getType() { return type.getType(); }
 
     /**
-     * Sets the query type of for this query.
+     * Returns the detailed query type of for this query.
+     * The type is taken into account at the time the query tree is parsed.
+     */
+    public QueryType getQueryType() { return type; }
+
+    /**
+     * Sets the query type of this query to the QueryType of the given type
+     * (such that any QueryType settings are deplaced by this).
      * The type is taken into account at the time the query tree is parsed.
      * Setting this does <i>not</i> cause the query to be reparsed.
      */
-    public void setType(Query.Type type) { this.type = type; }
+    public void setType(Query.Type type) { this.type = QueryType.from(type); }
 
     /**
-     * Sets the query type of for this query.
+     * Sets the query type of this query.
      * The type is taken into account at the time the query tree is parsed.
      * Setting this does <i>not</i> cause the query to be reparsed.
      */
-    public void setType(String typeString) { this.type = Query.Type.getType(typeString); }
+    public void setType(QueryType type) { this.type = type; }
+
+    /**
+     * Sets the query type of this query.
+     * The type is taken into account at the time the query tree is parsed.
+     * Setting this does <i>not</i> cause the query to be reparsed.
+     */
+    public void setType(String typeString) { this.type = QueryType.from(Query.Type.getType(typeString)); }
 
     @Override
     public boolean equals(Object o) {

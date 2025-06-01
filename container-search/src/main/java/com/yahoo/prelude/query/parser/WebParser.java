@@ -25,7 +25,7 @@ import com.yahoo.search.query.parser.ParserEnvironment;
 public class WebParser extends AllParser {
 
     public WebParser(ParserEnvironment environment) {
-        super(environment, false);
+        super(environment);
     }
 
     @Override

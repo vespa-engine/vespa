@@ -35,6 +35,7 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.grouping.GroupingQueryParser;
 import com.yahoo.search.query.QueryTree;
+import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.SessionId;
 import com.yahoo.search.query.parser.ParserEnvironment.ParserSettings;
 import com.yahoo.search.query.profile.DimensionValues;
@@ -138,19 +139,9 @@ public class QueryTestCase {
         assertNotSame(q.getModel().getQueryTree(), p.getModel().getQueryTree());
     }
 
-    private boolean isA(String s) {
-        return (s.equals("a"));
-    }
-
-    private void printIt(List<String> l) {
-        System.out.println(l);
-    }
-
     @Test
     void testCloneWithConnectivity() {
         List<String> l = List.of("a", "b", "c", "a");
-        printIt(l.stream().filter(this::isA).toList());
-        printIt(l.stream().filter(i -> !isA(i)).toList());
 
         Query q = new Query();
         WordItem a = new WordItem("a");
@@ -1270,6 +1261,28 @@ public class QueryTestCase {
                                                                                                                             .snowballStemmingForEnglish(true).build())));
         query.getModel().setExecution(execution);
         assertEquals("WEAKAND(100) 中村靖 日驟 逝", query.getModel().getQueryTree().toString());
+    }
+
+    @Test
+    void testQueryTypes() {
+        assertParsed("+(AND a b) -c",          "a b -c", type("all"));
+        assertParsed("+(OR a b) -c",           "a b -c", type("any"));
+        assertParsed("\"a b c\"",              "a b -c", type("phrase"));
+        assertParsed("WEAKAND(100) a b c",     "a b -c", type("tokenize"));
+        assertParsed("AND a b c",              "a b -c", type("tokenize").setCompositeType(QueryType.CompositeType.and));
+        assertParsed("+(AND a b) -c",          "a b -c", type("web"));
+        assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("web").setCompositeType(QueryType.CompositeType.weakAnd));
+    }
+
+    private QueryType type(String type) {
+        return QueryType.from(type);
+    }
+
+    private void assertParsed(String expected, String query, QueryType type) {
+        Query q = new Query();
+        q.getModel().setQueryString(query);
+        q.getModel().setType(type);
+        assertEquals(expected, q.getModel().getQueryTree().toString());
     }
 
     private void assertDetectionText(String expectedDetectionText, String queryString, String ... indexSpecs) {
