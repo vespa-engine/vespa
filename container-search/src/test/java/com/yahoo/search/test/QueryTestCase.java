@@ -1269,24 +1269,24 @@ public class QueryTestCase {
         assertParsed("+(OR a b) -c",           "a b -c", type("any"));
         assertParsed("\"a b c\"",              "a b -c", type("phrase"));
         assertParsed("WEAKAND(100) a b c",     "a b -c", type("tokenize"));
-        assertParsed("AND a b c",              "a b -c", type("tokenize").setCompositeType(QueryType.CompositeType.and));
+        assertParsed("AND a b c",              "a b -c", type("tokenize").setComposite(QueryType.Composite.and));
         assertParsed("+(AND a b) -c",          "a b -c", type("web"));
-        assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("web").setCompositeType(QueryType.CompositeType.weakAnd));
+        assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("web").setComposite(QueryType.Composite.weakAnd));
         assertParsed("WEAKAND(100) a b c",     "a b -c", type("linguistics"));
-        assertParsed("OR a b c",               "a b -c", type("linguistics").setCompositeType(QueryType.CompositeType.or));
-        assertParsed("OR a b c",               "a b -c", type("weakAnd").setCompositeType(QueryType.CompositeType.or).setTokenization(QueryType.Tokenization.linguistics).setSyntax(QueryType.Syntax.none));
+        assertParsed("OR a b c",               "a b -c", type("linguistics").setComposite(QueryType.Composite.or));
+        assertParsed("OR a b c",               "a b -c", type("weakAnd").setComposite(QueryType.Composite.or).setTokenization(QueryType.Tokenization.linguistics).setSyntax(QueryType.Syntax.none));
         assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("tokenize").setSyntax(QueryType.Syntax.web));
         assertParsed("AND a b c",              "a b -c", type("web").setSyntax(QueryType.Syntax.none));
 
         assertFails("Failed parsing query: query type linguistics " +
-                    "[compositeType: weakAnd, tokenization: linguistics, syntax: web] is invalid: " +
+                    "[composite: weakAnd, tokenization: linguistics, syntax: web] is invalid: " +
                     "Linguistics tokenization can only be combined with syntax none",
                     type("linguistics").setSyntax(QueryType.Syntax.web));
 
         assertEquals("WEAKAND(100) a b c",
                      new Query(httpEncode("?query=a b -c&model.type=linguistics")).getModel().getQueryTree().toString());
         assertEquals("OR a b c",
-                     new Query(httpEncode("?query=a b -c&model.type.compositeType=or&model.type.tokenization=linguistics&model.type.syntax=none")).getModel().getQueryTree().toString());
+                     new Query(httpEncode("?query=a b -c&model.type.composite=or&model.type.tokenization=linguistics&model.type.syntax=none")).getModel().getQueryTree().toString());
         assertEquals(QueryType.from(Query.Type.ALL), new Query(httpEncode("?query=a b -c&model.type=all")).getModel().getQueryType());
         assertEquals(QueryType.from(Query.Type.ALL).getType(), new Query(httpEncode("?query=a b -c&model.type=all")).properties().get("model.type"));
         assertEquals(QueryType.from(Query.Type.ALL).getType(), new Query(httpEncode("?query=a b -c&type=all")).properties().get("model.type"));

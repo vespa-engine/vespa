@@ -71,7 +71,7 @@ public class QueryProperties extends Properties {
         Map<CompoundName, GetterSetter> map = new HashMap<>();
         map.put(CompoundName.fromComponents(Model.MODEL, Model.QUERY_STRING), GetterSetter.of(query -> query.getModel().getQueryString(), (query, value) -> query.getModel().setQueryString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE), GetterSetter.of(query -> query.getModel().getType(), (query, value) -> query.getModel().setType(asString(value, "ANY"))));
-        map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.COMPOSITETYPE), GetterSetter.of(query -> query.getModel().getQueryType().getCompositeType(), (query, value) -> query.getModel().getQueryType().setCompositeType(asString(value, null))));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.COMPOSITE), GetterSetter.of(query -> query.getModel().getQueryType().getComposite(), (query, value) -> query.getModel().getQueryType().setComposite(asString(value, null))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.TOKENIZATION), GetterSetter.of(query -> query.getModel().getQueryType().getTokenization(), (query, value) -> query.getModel().getQueryType().setTokenization(asString(value, null))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.SYNTAX), GetterSetter.of(query -> query.getModel().getQueryType().getSyntax(), (query, value) -> query.getModel().getQueryType().setSyntax(asString(value, null))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.FILTER), GetterSetter.of(query -> query.getModel().getFilter(), (query, value) -> query.getModel().setFilter(asString(value, ""))));

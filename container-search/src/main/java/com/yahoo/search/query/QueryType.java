@@ -1,9 +1,7 @@
 package com.yahoo.search.query;
 
-import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.types.FieldDescription;
-import com.yahoo.search.query.profile.types.QueryProfileFieldType;
 import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.Objects;
@@ -20,13 +18,11 @@ public class QueryType {
 
     private final Query.Type type;
 
-    private CompositeType compositeType;
+    private Composite composite;
     private Tokenization tokenization;
     private Syntax syntax;
 
-    //         argumentType.addField(new FieldDescription(TYPE, "string", "type"));
-
-    public static final String COMPOSITETYPE = "compositeType";
+    public static final String COMPOSITE = "composite";
     public static final String TOKENIZATION = "tokenization";
     public static final String SYNTAX = "syntax";
 
@@ -35,7 +31,7 @@ public class QueryType {
         argumentType.setStrict(true);
         argumentType.setBuiltin(true);
         argumentType.addField(new FieldDescription("", "string")); // The Query.Type
-        argumentType.addField(new FieldDescription(COMPOSITETYPE, "string"));
+        argumentType.addField(new FieldDescription(COMPOSITE, "string"));
         argumentType.addField(new FieldDescription(TOKENIZATION, "string"));
         argumentType.addField(new FieldDescription(SYNTAX, "string"));
         argumentType.freeze();
@@ -43,33 +39,33 @@ public class QueryType {
 
     public static QueryProfileType getArgumentType() { return argumentType; }
 
-    public QueryType(Query.Type type, CompositeType compositeType, Tokenization tokenization, Syntax syntax) {
+    public QueryType(Query.Type type, Composite composite, Tokenization tokenization, Syntax syntax) {
         this.type = type;
-        this.compositeType = compositeType;
+        this.composite = composite;
         this.tokenization = tokenization;
         this.syntax = syntax;
     }
 
     /** Returns the overall type of this. */
-    public Query.Type getType() {return type;}
+    public Query.Type getType() { return type; }
 
     /** Returns the composite type terms should be collected as by default. */
-    public CompositeType getCompositeType() {return compositeType;}
+    public Composite getComposite() { return composite; }
 
     /**
      * Sets the composite type terms should be collected as by default.
      *
      * @return this for chaining
      */
-    public QueryType setCompositeType(CompositeType compositeType) {
-        this.compositeType = compositeType;
+    public QueryType setComposite(Composite composite) {
+        this.composite = composite;
         return this;
     }
 
     /** Sets the composite value from a string enum value. If the argument is null this does nothing. */
-    public QueryType setCompositeType(String composite) {
+    public QueryType setComposite(String composite) {
         if (composite == null) return this;
-        this.compositeType = CompositeType.valueOf(composite);
+        this.composite = Composite.valueOf(composite);
         return this;
     }
 
@@ -125,7 +121,7 @@ public class QueryType {
     public boolean equals(Object o) {
         if (!(o instanceof QueryType other)) return false;
         if (other.type != this.type) return false;
-        if (other.compositeType != this.compositeType) return false;
+        if (other.composite != this.composite) return false;
         if (other.tokenization != this.tokenization) return false;
         if (other.syntax != this.syntax) return false;
         return true;
@@ -133,16 +129,16 @@ public class QueryType {
 
     @Override
     public int hashCode() {
-        return Objects.hash(type, compositeType, tokenization, syntax);
+        return Objects.hash(type, composite, tokenization, syntax);
     }
 
     @Override
     public String toString() {
         return "query type " + type +
-               " [compositeType: " + compositeType + ", tokenization: " + tokenization + ", syntax: " + syntax + "]";
+               " [composite: " + composite + ", tokenization: " + tokenization + ", syntax: " + syntax + "]";
     }
 
-    public enum CompositeType { and, or, phrase, weakAnd }
+    public enum Composite { and, or, phrase, weakAnd }
 
     public enum Tokenization { internal, linguistics }
 
@@ -150,17 +146,17 @@ public class QueryType {
 
     public static QueryType from(Query.Type type) {
         return switch (type) {
-            case ADVANCED ->     new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.advanced);
-            case ALL ->          new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.simple);
-            case ANY ->          new QueryType(type, CompositeType.or,      Tokenization.internal,    Syntax.simple);
-            case LINGUISTICS ->  new QueryType(type, CompositeType.weakAnd, Tokenization.linguistics, Syntax.none);
-            case PHRASE ->       new QueryType(type, CompositeType.phrase,  Tokenization.internal,    Syntax.simple);
-            case PROGRAMMATIC -> new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.programmatic);
-            case SELECT ->       new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.json);
-            case TOKENIZE ->     new QueryType(type, CompositeType.weakAnd, Tokenization.internal,    Syntax.none);
-            case WEAKAND ->      new QueryType(type, CompositeType.weakAnd, Tokenization.internal,    Syntax.simple);
-            case WEB ->          new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.web);
-            case YQL ->          new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.yql);
+            case ADVANCED ->     new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.advanced);
+            case ALL ->          new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.simple);
+            case ANY ->          new QueryType(type, Composite.or,      Tokenization.internal,    Syntax.simple);
+            case LINGUISTICS ->  new QueryType(type, Composite.weakAnd, Tokenization.linguistics, Syntax.none);
+            case PHRASE ->       new QueryType(type, Composite.phrase,  Tokenization.internal,    Syntax.simple);
+            case PROGRAMMATIC -> new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.programmatic);
+            case SELECT ->       new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.json);
+            case TOKENIZE ->     new QueryType(type, Composite.weakAnd, Tokenization.internal,    Syntax.none);
+            case WEAKAND ->      new QueryType(type, Composite.weakAnd, Tokenization.internal,    Syntax.simple);
+            case WEB ->          new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.web);
+            case YQL ->          new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.yql);
         };
     }
 

@@ -407,7 +407,7 @@ public abstract class AbstractParser implements CustomParser {
 
     /** Creates a new composite of the type specified in environment.getType().getComposite(). */
     protected CompositeItem newComposite() {
-        return switch (environment.getType().getCompositeType()) {
+        return switch (environment.getType().getComposite()) {
             case and     -> new AndItem();
             case or      -> new OrItem();
             case phrase  -> new PhraseItem();

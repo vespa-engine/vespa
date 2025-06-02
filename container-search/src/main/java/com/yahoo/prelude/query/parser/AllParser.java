@@ -114,7 +114,7 @@ public class AllParser extends SimpleParser {
     }
 
     private boolean weakAnd() {
-        return environment.getType().getCompositeType() == QueryType.CompositeType.weakAnd;
+        return environment.getType().getComposite() == QueryType.Composite.weakAnd;
     }
 
     protected CompositeItem addAnd(Item item, CompositeItem parent) {

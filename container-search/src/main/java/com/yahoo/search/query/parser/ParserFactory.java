@@ -54,9 +54,9 @@ public final class ParserFactory {
                 return new TokenizeParser(environment);
         }
         else if (type.getSyntax() == QueryType.Syntax.simple) {
-            if (type.getCompositeType() == QueryType.CompositeType.or)
+            if (type.getComposite() == QueryType.Composite.or)
                 return new AnyParser(environment);
-            if (type.getCompositeType() == QueryType.CompositeType.phrase)
+            if (type.getComposite() == QueryType.Composite.phrase)
                 return new PhraseParser(environment);
             else
                 return new AllParser(environment); // Covers both 'weakAnd' and 'and'
