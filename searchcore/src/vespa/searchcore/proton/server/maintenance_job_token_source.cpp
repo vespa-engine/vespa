@@ -58,6 +58,7 @@ MaintenanceJobTokenSource::get_token(std::shared_ptr<IBlockableMaintenanceJob> j
     std::unique_lock guard(_mutex);
     auto existing_token = _token.lock();
     if (existing_token) {
+        // Existing token is kept alive until return, thus it is not destroyed before this job is blocked.
         _jobs.emplace_back(job);
         guard.unlock();
         job->setBlocked(IBlockableMaintenanceJob::BlockedReason::JOB_TOKEN);
