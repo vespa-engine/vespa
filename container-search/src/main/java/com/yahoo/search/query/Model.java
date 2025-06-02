@@ -282,8 +282,8 @@ public class Model implements Cloneable {
     }
 
     /**
-     * Clears the parsed query such that it will be created anew from the textual representation (a query string or
-     * select.where expression) on the next access.
+     * Clears the parsed query such that it will be created anew from the textual representation
+     * (a query string or 'select where' expression) on the next access.
      */
     public void clearQueryTree() {
         queryTree = null;

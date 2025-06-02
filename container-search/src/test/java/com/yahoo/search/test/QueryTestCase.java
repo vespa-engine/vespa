@@ -1274,6 +1274,9 @@ public class QueryTestCase {
         assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("web").setCompositeType(QueryType.CompositeType.weakAnd));
         assertParsed("WEAKAND(100) a b c",     "a b -c", type("linguistics"));
         assertParsed("OR a b c",               "a b -c", type("linguistics").setCompositeType(QueryType.CompositeType.or));
+        assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("tokenize").setSyntax(QueryType.Syntax.web));
+        assertParsed("AND a b c",              "a b -c", type("web").setSyntax(QueryType.Syntax.none));
+
         assertFails("Failed parsing query: query type linguistics [compositeType: weakAnd, toenization: linguistics, syntax: web] is invalid: Linguistics tokenization can only be combined with syntax none",
                     type("linguistics").setSyntax(QueryType.Syntax.web));
     }

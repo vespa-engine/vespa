@@ -103,25 +103,25 @@ public class QueryType {
                " [compositeType: " + compositeType + ", toenization: " + tokenization + ", syntax: " + syntax + "]";
     }
 
-    public enum CompositeType {and, or, weakAnd, phrase}
+    public enum CompositeType { and, or, phrase, weakAnd }
 
-    public enum Tokenization {internal, linguistics}
+    public enum Tokenization { internal, linguistics }
 
-    public enum Syntax {simple, web, advanced, yql, none}
+    public enum Syntax { advanced, json, none, programmatic, simple, web, yql }
 
     public static QueryType from(Query.Type type) {
         return switch (type) {
-            case ADVANCED -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.advanced);
-            case ALL -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.simple);
-            case ANY -> new QueryType(type, CompositeType.or, Tokenization.internal, Syntax.simple);
-            case LINGUISTICS -> new QueryType(type, CompositeType.weakAnd, Tokenization.linguistics, Syntax.none);
-            case PHRASE -> new QueryType(type, CompositeType.phrase, Tokenization.internal, Syntax.simple);
-            case PROGRAMMATIC -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.yql);
-            case SELECT -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.simple);
-            case TOKENIZE -> new QueryType(type, CompositeType.weakAnd, Tokenization.internal, Syntax.none);
-            case WEAKAND -> new QueryType(type, CompositeType.weakAnd, Tokenization.internal, Syntax.simple);
-            case WEB -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.web);
-            case YQL -> new QueryType(type, CompositeType.and, Tokenization.internal, Syntax.yql);
+            case ADVANCED ->     new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.advanced);
+            case ALL ->          new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.simple);
+            case ANY ->          new QueryType(type, CompositeType.or,      Tokenization.internal,    Syntax.simple);
+            case LINGUISTICS ->  new QueryType(type, CompositeType.weakAnd, Tokenization.linguistics, Syntax.none);
+            case PHRASE ->       new QueryType(type, CompositeType.phrase,  Tokenization.internal,    Syntax.simple);
+            case PROGRAMMATIC -> new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.programmatic);
+            case SELECT ->       new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.json);
+            case TOKENIZE ->     new QueryType(type, CompositeType.weakAnd, Tokenization.internal,    Syntax.none);
+            case WEAKAND ->      new QueryType(type, CompositeType.weakAnd, Tokenization.internal,    Syntax.simple);
+            case WEB ->          new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.web);
+            case YQL ->          new QueryType(type, CompositeType.and,     Tokenization.internal,    Syntax.yql);
         };
     }
 

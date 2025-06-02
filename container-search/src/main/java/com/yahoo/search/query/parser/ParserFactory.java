@@ -32,21 +32,36 @@ public final class ParserFactory {
      */
     @SuppressWarnings("deprecation")
     public static Parser newInstance(QueryType type, ParserEnvironment environment) {
+        // This isn't a clean switch from type.getSyntax for legacy reasons.
+        // With some more effort the various parsers for the same syntax could be merged into one
+        // since the variance is covered in environment.getType which is accessible to the parsers.
         type.validate();
         environment.setType(type);
-        return switch (type.getType()) {
-            case ALL -> new AllParser(environment);
-            case ANY -> new AnyParser(environment);
-            case PHRASE -> new PhraseParser(environment);
-            case ADVANCED -> new AdvancedParser(environment);
-            case WEB -> new WebParser(environment);
-            case PROGRAMMATIC -> new ProgrammaticParser();
-            case YQL -> new YqlParser(environment);
-            case SELECT -> new SelectParser(environment);
-            case WEAKAND -> new AllParser(environment);
-            case TOKENIZE -> new TokenizeParser(environment);
-            case LINGUISTICS -> new LinguisticsParser(environment);
-        };
+        if (type.getSyntax() == QueryType.Syntax.advanced)
+            return new AdvancedParser(environment);
+        if (type.getSyntax() == QueryType.Syntax.json)
+            return new SelectParser(environment);
+        if (type.getSyntax() == QueryType.Syntax.programmatic)
+            return new ProgrammaticParser();
+        if (type.getSyntax() == QueryType.Syntax.web)
+            return new WebParser(environment);
+        if (type.getSyntax() == QueryType.Syntax.yql)
+            return new YqlParser(environment);
+        if (type.getSyntax() == QueryType.Syntax.none) {
+            if (type.getTokenization() == QueryType.Tokenization.linguistics)
+                return new LinguisticsParser(environment);
+            else
+                return new TokenizeParser(environment);
+        }
+        else if (type.getSyntax() == QueryType.Syntax.simple) {
+            if (type.getCompositeType() == QueryType.CompositeType.or)
+                return new AnyParser(environment);
+            if (type.getCompositeType() == QueryType.CompositeType.phrase)
+                return new PhraseParser(environment);
+            else
+                return new AllParser(environment); // Covers both 'weakAnd' and 'and'
+        }
+        throw new IllegalStateException("Unsupported query syntax '" + type.getSyntax() + "'");
     }
 
 }
