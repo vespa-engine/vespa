@@ -92,6 +92,28 @@ public class UserInputTestCase {
     }
 
     @Test
+    void testGrammarDetails() {
+        URIBuilder builder = searchUri();
+        builder.setParameter("yql",
+                             "select * from sources * where " +
+                             "{grammar.composite:'or', grammar.tokenization:'linguistics', grammar.syntax:'none'}userInput('a b -c')"
+                            );
+        Query query1 = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where (default contains ({stem: false, accentDrop: false, implicitTransforms: false}\"a\") OR " +
+                                                             "default contains ({stem: false, accentDrop: false, implicitTransforms: false}\"b\") OR " +
+                                                             "default contains ({stem: false, accentDrop: false, implicitTransforms: false}\"c\"))",
+                     query1.yqlRepresentation());
+
+        builder.setParameter("yql",
+                             "select * from sources * where " +
+                             "{grammar.composite:'weakAnd', grammar.tokenization:'internal', grammar.syntax:'web'}userInput('a b -c')"
+                            );
+        Query query2 = searchAndAssertNoErrors(builder);
+        assertEquals("select * from sources * where (weakAnd(default contains \"a\", default contains \"b\")) AND !(default contains \"c\")",
+                     query2.yqlRepresentation());
+    }
+
+    @Test
     void testSegmentedUserInput() {
         URIBuilder builder = searchUri();
         builder.setParameter("yql",

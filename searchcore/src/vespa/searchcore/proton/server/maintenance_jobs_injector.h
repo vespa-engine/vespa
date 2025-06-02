@@ -17,6 +17,7 @@ class IBucketStateChangedNotifier;
 class IClusterStateChangedNotifier;
 class IDiskMemUsageNotifier;
 class IPruneRemovedDocumentsHandler;
+class MaintenanceJobTokenSource;
 struct IAttributeManager;
 struct IBucketStateCalculator;
 struct IDocumentMoveHandler;
@@ -46,7 +47,8 @@ struct MaintenanceJobsInjector
                            DocumentDBJobTrackers &jobTrackers,
                            IAttributeManagerSP readyAttributeManager,
                            IAttributeManagerSP notReadyAttributeManager,
-                           AttributeUsageFilter &attributeUsageFilter);
+                           AttributeUsageFilter &attributeUsageFilter,
+                           std::shared_ptr<MaintenanceJobTokenSource> lid_space_compaction_job_token_source);
 };
 
 } // namespace proton

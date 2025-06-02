@@ -131,7 +131,8 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                              const BlockableMaintenanceJobConfig &blockableConfig,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              bool node_retired_or_maintenance,
-                             document::BucketSpace bucketSpace)
+                             document::BucketSpace bucketSpace,
+                             std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source)
     : BlockableMaintenanceJob("lid_space_compaction." + handler->getName(),
                               config.getDelay(), config.getInterval(), blockableConfig),
       IDiskMemUsageListener(),
@@ -152,6 +153,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
       _dbRetainer(std::move(dbRetainer)),
       _bucketSpace(bucketSpace)
 {
+    _token_source = std::move(maintenance_job_token_source);
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
     if (node_retired_or_maintenance) {
@@ -176,11 +178,13 @@ CompactionJob::create(const DocumentDBLidSpaceCompactionConfig &config,
                       const BlockableMaintenanceJobConfig &blockableConfig,
                       IClusterStateChangedNotifier &clusterStateChangedNotifier,
                       bool node_retired_or_maintenance,
-                      document::BucketSpace bucketSpace)
+                      document::BucketSpace bucketSpace,
+                      std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source)
 {
     return std::shared_ptr<CompactionJob>(
             new CompactionJob(config, std::move(dbRetainer), std::move(handler), opStorer, master, bucketExecutor,
-                              diskMemUsageNotifier, blockableConfig, clusterStateChangedNotifier, node_retired_or_maintenance, bucketSpace),
+                              diskMemUsageNotifier, blockableConfig, clusterStateChangedNotifier,
+                              node_retired_or_maintenance, bucketSpace, maintenance_job_token_source),
             [&master](auto job) {
                 auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
                 assert(!failed);

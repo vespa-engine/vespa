@@ -167,6 +167,14 @@ public class RankingExpressionTestCase {
     }
 
     @Test
+    public void testTensorLabelReordering() throws ParseException {
+        assertEquals(
+                new RankingExpression("tensor(a[2],b[3]):[[1,2,3],[4,5,6]]").toString(),
+                new RankingExpression("tensor(b[3],a[2]):[[1,4],[2,5],[3,6]]").toString());
+
+    }
+
+    @Test
     public void testFunctionInTensorSerialization() throws ParseException {
         List<ExpressionFunction> functions = new ArrayList<>();
         functions.add(new ExpressionFunction("scalarFunction", List.of(), new RankingExpression("5")));

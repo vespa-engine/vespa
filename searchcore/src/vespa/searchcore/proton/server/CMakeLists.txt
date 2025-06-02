@@ -66,6 +66,8 @@ vespa_add_library(searchcore_server STATIC
     lid_space_compaction_handler.cpp
     lid_space_compaction_job.cpp
     maintenance_controller_explorer.cpp
+    maintenance_job_token.cpp
+    maintenance_job_token_source.cpp
     maintenance_jobs_injector.cpp
     maintenancecontroller.cpp
     maintenancedocumentsubdb.cpp

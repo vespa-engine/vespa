@@ -874,16 +874,11 @@ final class ProgramParser {
                     return convertExpr(parseTree.getChild(1), scope);
                 } else {
                     List<Literal_elementContext> elements = ((Literal_listContext) parseTree).literal_element();
-                    ParseTree firldElement = elements.get(0).getChild(0);
-                    if (elements.size() == 1 && scope.getParser().isArrayParameter(firldElement)) {
-                        return convertExpr(firldElement, scope);
-                    } else {
-                        List<OperatorNode<ExpressionOperator>> values = new ArrayList<>(elements.size());
-                        for (Literal_elementContext child : elements) {
-                            values.add(convertExpr(child.getChild(0), scope));
-                        }
-                        return OperatorNode.create(toLocation(scope, elements.get(0)),ExpressionOperator.ARRAY, values);
+                    List<OperatorNode<ExpressionOperator>> values = new ArrayList<>(elements.size());
+                    for (Literal_elementContext child : elements) {
+                        values.add(convertExpr(child.getChild(0), scope));
                     }
+                    return OperatorNode.create(toLocation(scope, elements.get(0)),ExpressionOperator.ARRAY, values);
                 }
         }
         throw new ProgramCompileException(toLocation(scope, parseTree),

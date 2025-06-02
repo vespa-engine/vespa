@@ -965,7 +965,8 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config)
             _jobTrackers,
             _subDBs.getReadySubDB()->getAttributeManager(),
             _subDBs.getNotReadySubDB()->getAttributeManager(),
-            _writeFilter);
+            _writeFilter,
+            _owner.get_lid_space_compaction_job_token_source());
 }
 
 void

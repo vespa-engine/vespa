@@ -7,6 +7,8 @@
 
 namespace proton {
 
+class MaintenanceJobTokenSource;
+
 namespace matching { class SessionManager; }
 
 /**

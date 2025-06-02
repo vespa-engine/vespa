@@ -17,6 +17,7 @@ struct JobTestBase : public ::testing::Test {
     std::unique_ptr<searchcorespi::index::ISyncableThreadService> _master;
     std::shared_ptr<MyHandler> _handler;
     MyStorer _storer;
+    std::shared_ptr<MaintenanceJobTokenSource> _maintenance_job_token_source;
     std::shared_ptr<BlockableMaintenanceJob> _job;
     JobTestBase();
     ~JobTestBase() override;

@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/util/featureset.h>
 #include <vespa/vespalib/util/stash.h>
+#include <set>
 
 namespace juniper {
     class Config;
@@ -86,8 +87,11 @@ public:
     // used by RankFeaturesDFW
     std::shared_ptr<FeatureSet> _rankFeatures;
 
-    // Used by AttributeCombinerDFW and MultiAttrDFW when filtering is enabled
+    // Used by SummaryElementsSelector when matched-elements-only is specified
     std::unique_ptr<search::MatchingElements> _matching_elements;
+    // Used by SummaryElementsSelector when select-elements-by is specified
+    std::unique_ptr<search::MatchingElements> _summary_features_elements;
+    std::set<std::string>                     _summary_features_elements_keys;
 
     GetDocsumsState(const GetDocsumsState &) = delete;
     GetDocsumsState& operator=(const GetDocsumsState &) = delete;
@@ -95,6 +99,7 @@ public:
     ~GetDocsumsState();
 
     const MatchingElements &get_matching_elements();
+    const FeatureSet& get_summary_features();
     vespalib::Stash& get_stash() noexcept { return _stash; }
     const QueryNormalization * query_normalization() const { return _normalization; }
     void query_normalization(const QueryNormalization * normalization) { _normalization = normalization; }

@@ -44,6 +44,7 @@ struct MyMaintenanceJob : public IBlockableMaintenanceJob
     void setBlocked(BlockedReason) override { _blocked = true; }
     void unBlock(BlockedReason) override { _blocked = false; }
     bool isBlocked() const override { return _blocked; }
+    void got_token(std::shared_ptr<MaintenanceJobToken>, bool) override { }
     bool run() override {
         _runGates[_runIdx++]->await(5s);
         return _runIdx == _runGates.size();

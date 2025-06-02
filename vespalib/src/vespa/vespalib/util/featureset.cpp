@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "featureset.h"
+#include <algorithm>
 
 namespace vespalib {
 
@@ -11,7 +12,7 @@ FeatureSet::FeatureSet()
 {
 }
 
-FeatureSet::~FeatureSet() {}
+FeatureSet::~FeatureSet() = default;
 
 FeatureSet::FeatureSet(const StringVector &names, uint32_t expectDocs)
     : _names(names),
@@ -28,6 +29,17 @@ FeatureSet::equals(const FeatureSet &rhs) const
     return ((_docIds == rhs._docIds) &&
             (_values == rhs._values) &&
             (_names == rhs._names)); // do names last, as they are most likely to match
+}
+
+std::optional<uint32_t>
+FeatureSet::get_name_idx(const std::string& name) const
+{
+    auto itr = std::find(_names.begin(), _names.end(), name);
+    if (itr != _names.end()) {
+        return itr - _names.begin();
+    } else {
+        return std::nullopt;
+    }
 }
 
 uint32_t
@@ -63,7 +75,16 @@ FeatureSet::Value *
 FeatureSet::getFeaturesByIndex(uint32_t idx)
 {
     if (idx >= _docIds.size()) {
-        return 0;
+        return nullptr;
+    }
+    return &(_values[idx * _names.size()]);
+}
+
+const FeatureSet::Value *
+FeatureSet::getFeaturesByIndex(uint32_t idx) const
+{
+    if (idx >= _docIds.size()) {
+        return nullptr;
     }
     return &(_values[idx * _names.size()]);
 }
@@ -84,7 +105,7 @@ FeatureSet::getFeaturesByDocId(uint32_t docId) const
             return &(_values[pos * _names.size()]);
         }
     }
-    return 0;
+    return nullptr;
 }
 
 FeatureValues::FeatureValues() noexcept = default;

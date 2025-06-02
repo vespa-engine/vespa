@@ -45,6 +45,8 @@ class TensorParser {
         tensorString = tensorString.trim();
         if (tensorString.startsWith("tensor")) {
             int colonIndex = tensorString.indexOf(':');
+            if( colonIndex < 0 )
+                throw new IllegalArgumentException("Expected ':' after 'tensor'");
             String typeString = tensorString.substring(0, colonIndex);
             dimensionOrder = new ArrayList<>();
             TensorType typeFromString = TensorTypeParser.fromSpec(typeString, dimensionOrder);

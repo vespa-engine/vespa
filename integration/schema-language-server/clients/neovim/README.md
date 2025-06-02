@@ -9,38 +9,28 @@ Optional: [lspconfig](https://github.com/neovim/nvim-lspconfig) plugin for nvim.
 Download `schema-language-server-jar-with-dependencies.jar`.
 
 ### Using lspconfig
-Register `.sd` and `.profile` as filetypes (in `init.lua`):
+The language server is registered at `lspconfig` as `vespa_ls`. If you have `lspconfig` installed, all that needs to 
+be done is to enable the language server.
+
+Register `.sd`, `.profile` and `.yql` as filetypes (in `init.lua`):
 ```lua
 vim.filetype.add {
   extension = {
     profile = 'sd',
-    sd = 'sd'
+    sd = 'sd',
+    yql = 'yql'
   }
 }
 ```
 
 Create a config for schema language server (in `init.lua`):
 ```lua
-local lspconfig = require "lspconfig"
-local configs = require "lspconfig.configs"
+vim.lsp.config('vespa_ls', {
+    cmd = { 'java', '-jar', '/path/to/vespa-language-server_X.X.X.jar' },
+    -- on_attach = ...
+})
 
-if not configs.schemals then
-    configs.schemals = {
-        default_config = {
-            filetypes = { 'sd' },
-            cmd = { 'java', '-jar', '/path/to/schema-language-server-jar-with-dependencies.jar' },
-            root_dir = lspconfig.util.root_pattern('.')
-        },
-    }
-end
-
-lspconfig.schemals.setup{
-    -- optional on_attach function for setting keybindings etc.
-    on_attach = function(client, bufnr)
-       	-- local opts = {buffer = bufnr, remap = false}
-	    -- vim.keymap.set("n", "gd", function() vim.lsp.buf.definition() end, opts)
-    end
-}
+vim.lsp.enable('vespa_ls')
 ```
 
 ### Manual Installation

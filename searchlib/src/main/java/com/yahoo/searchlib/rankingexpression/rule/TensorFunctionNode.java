@@ -150,9 +150,14 @@ public class TensorFunctionNode extends CompositeNode {
             throw new IllegalArgumentException("Need " + indexes.size() + " values to fill " + type + " but got " + nodes.size());
 
         List<ScalarFunction<Reference>> wrapped = new ArrayList<>(nodes.size());
+        for (int i = 0; i < nodes.size(); i++) {
+            wrapped.add(null);
+        }
+        int i = 0;
         while (indexes.hasNext()) {
             indexes.next();
-            wrapped.add(wrapScalar(nodes.get((int)indexes.toSourceValueIndex())));
+            int idx = (int)indexes.toSourceValueIndex();
+            wrapped.set(idx, wrapScalar(nodes.get(i++)));
         }
         return wrapped;
     }

@@ -78,6 +78,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
 import com.yahoo.search.grouping.request.GroupingOperation;
 import com.yahoo.search.query.QueryTree;
+import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.Sorting;
 import com.yahoo.search.query.Sorting.AttributeSorter;
 import com.yahoo.search.query.Sorting.FieldOrder;
@@ -132,6 +133,9 @@ public class YqlParser implements Parser {
     private static final String USER_INPUT_ALLOW_EMPTY = "allowEmpty";
     private static final String USER_INPUT_DEFAULT_INDEX = "defaultIndex";
     private static final String USER_INPUT_GRAMMAR = "grammar";
+    private static final String USER_INPUT_GRAMMAR_COMPOSITE = "grammar." + QueryType.COMPOSITE;
+    private static final String USER_INPUT_GRAMMAR_TOKENIZATION = "grammar." + QueryType.TOKENIZATION;
+    private static final String USER_INPUT_GRAMMAR_SYNTAX = "grammar." + QueryType.SYNTAX;
     public static final String USER_INPUT_LANGUAGE = "language";
     private static final String USER_INPUT_GRAMMAR_RAW = "raw";
     private static final String USER_INPUT_GRAMMAR_SEGMENT = "segment";
@@ -803,29 +807,46 @@ public class YqlParser implements Parser {
                                            Boolean.FALSE, "flag for allowing NullItem to be returned");
         if (allowEmpty && (wordData == null || wordData.isEmpty())) return new NullItem();
 
-        String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
-                                       Query.Type.WEAKAND.toString(), "grammar for handling user input");
         String defaultIndex = getAnnotation(ast, USER_INPUT_DEFAULT_INDEX,
                                             String.class, "default", "default index for user input terms");
         Language language = decideParsingLanguage(ast, wordData);
         Item item;
+        String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
+                                       Query.Type.WEAKAND.toString(), "The overall query type of the user input");
         if (USER_INPUT_GRAMMAR_RAW.equals(grammar)) {
             item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.NEVER, true, language);
         } else if (USER_INPUT_GRAMMAR_SEGMENT.equals(grammar)) {
             item = instantiateWordItem(defaultIndex, wordData, ast, null, SegmentWhen.ALWAYS, false, language);
         } else {
-            item = parseUserInput(grammar, defaultIndex, wordData, language, allowEmpty);
+            QueryType queryType = buildQueryType(ast);
+            item = parseUserInput(queryType, defaultIndex, wordData, language, allowEmpty);
             propagateUserInputAnnotationsRecursively(ast, item);
-        }
 
-        // Set grammar-specific annotations
-        if (WEAKAND_GRAMMARS.contains(grammar) && item instanceof WeakAndItem weakAndItem) {
-            Integer targetNumHits = getAnnotation(ast, TARGET_HITS, Integer.class, null, "'targetHits' (N) for weak and");
-            if (targetNumHits != null) {
-                weakAndItem.setN(targetNumHits);
+            // Set grammar-specific annotations
+            if (queryType.getComposite() == QueryType.Composite.weakAnd && item instanceof WeakAndItem weakAndItem) {
+                Integer targetNumHits = getAnnotation(ast, TARGET_HITS, Integer.class, null, "'targetHits' (N) for weak and");
+                if (targetNumHits != null) {
+                    weakAndItem.setN(targetNumHits);
+                }
             }
         }
+
         return item;
+    }
+
+    private QueryType buildQueryType(OperatorNode<ExpressionOperator> ast) {
+        String grammar = getAnnotation(ast, USER_INPUT_GRAMMAR, String.class,
+                                       Query.Type.WEAKAND.toString(), "The overall query type of the user input");
+        String composite = getAnnotation(ast, USER_INPUT_GRAMMAR_COMPOSITE, String.class,
+                                         null, "The composite type terms should be collected under");
+        String tokenization = getAnnotation(ast, USER_INPUT_GRAMMAR_TOKENIZATION, String.class,
+                                            null, "The tokenization type to apply to the user input string");
+        String syntax = getAnnotation(ast, USER_INPUT_GRAMMAR_SYNTAX, String.class,
+                                      null, "The syntax type of the user input");
+
+        return QueryType.from(grammar).setComposite(composite)
+                                      .setTokenization(tokenization)
+                                      .setSyntax(syntax);
     }
 
     private Language decideParsingLanguage(OperatorNode<ExpressionOperator> ast, String wordData) {
@@ -860,10 +881,9 @@ public class YqlParser implements Parser {
         ToolBox.visit(new AnnotationPropagator(ast), item);
     }
 
-    private Item parseUserInput(String grammar, String defaultIndex, String wordData,
+    private Item parseUserInput(QueryType queryType, String defaultIndex, String wordData,
                                 Language language, boolean allowNullItem) {
-        Query.Type parseAs = Query.Type.getType(grammar);
-        Parser parser = ParserFactory.newInstance(parseAs, environment);
+        Parser parser = ParserFactory.newInstance(queryType, environment);
         // perhaps not use already resolved doctypes, but respect source and restrict
         Item item = parser.parse(new Parsable().setQuery(wordData)
                                                .addSources(docTypes)

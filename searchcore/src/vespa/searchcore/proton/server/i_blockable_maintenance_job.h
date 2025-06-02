@@ -5,6 +5,8 @@
 
 namespace proton {
 
+class MaintenanceJobToken;
+
 /**
  * Interface for a maintenance job that can be blocked and unblocked due to various external reasons.
  * A blocked job is not executed. When unblocked, the job should be scheduled for execution again.
@@ -16,7 +18,8 @@ public:
         FROZEN_BUCKET = 1,
         CLUSTER_STATE = 2,
         OUTSTANDING_OPS = 3,
-        DRAIN_OUTSTANDING_OPS = 4
+        DRAIN_OUTSTANDING_OPS = 4,
+        JOB_TOKEN = 5
     };
 
     IBlockableMaintenanceJob(const std::string &name,
@@ -36,6 +39,8 @@ public:
      * Can be called from any thread.
      */
     virtual void unBlock(BlockedReason reason) = 0;
+
+    virtual void got_token(std::shared_ptr<MaintenanceJobToken> token, bool sync) = 0;
 
     IBlockableMaintenanceJob *asBlockable() override { return this; }
 };

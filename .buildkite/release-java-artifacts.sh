@@ -1,5 +1,10 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#
+# Documentation for endpoints on Central API:
+# - https://central.sonatype.org/publish/publish-portal-api/
+#
+
 
 set -o pipefail
 set -o nounset
@@ -11,8 +16,18 @@ if [[ $# -ne 1 ]]; then
     exit 1
 fi
 
-if [[ -z $OSSRH_USER ]] || [[ -z $OSSRH_TOKEN ]]  || [[ -z $GPG_KEYNAME ]] || [[ -z $GPG_PASSPHRASE_TOKEN ]] || [[ -z $GPG_ENCPHRASE_TOKEN ]]; then
-    echo -e "The follwing env variables must be set:\n OSSRH_USER\n OSSRH_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE_TOKEN\n GPG_ENCPHRASE_TOKEN"
+# Helper functions to control debug output for sensitive operations
+disable_debug() {
+    set +x
+}
+enable_debug() {
+    set -x
+}
+export -f disable_debug
+export -f enable_debug
+
+if [[ -z $MVN_CENTRAL_USER ]] || [[ -z $MVN_CENTRAL_TOKEN ]]  || [[ -z $GPG_KEYNAME ]] || [[ -z $GPG_PASSPHRASE_TOKEN ]] || [[ -z $GPG_ENCPHRASE_TOKEN ]]; then
+    echo -e "The following env variables must be set:\n MVN_CENTRAL_USER\n MVN_CENTRAL_TOKEN\n GPG_KEYNAME\n GPG_PASSPHRASE_TOKEN\n GPG_ENCPHRASE_TOKEN"
     exit 1
 fi
 
@@ -43,22 +58,29 @@ NUM_PROC=10
 
 MVN=${MVN:-mvn}
 MVN_OPTS=${MVN_OPTS:-}
+disable_debug
 MAVEN_GPG_PASSPHRASE=$GPG_PASSPHRASE_TOKEN
+enable_debug
+
 export MVN
 export MVN_OPTS
 export MAVEN_GPG_PASSPHRASE
 
+disable_debug
+# Build the Base64‑encoded credentials for the Portal API
+CENTRAL_AUTH_TOKEN=$(printf "%s:%s" "$MVN_CENTRAL_USER" "$MVN_CENTRAL_TOKEN" | base64)
+export CENTRAL_AUTH_TOKEN
+enable_debug
+
 TMP_STAGING=$(mktemp -d)
 export TMP_STAGING
 mkdir -p "$TMP_STAGING"
+
 # shellcheck disable=2064
 trap "rm -rf $TMP_STAGING" EXIT
 
 sign_module() {
-
-    #Debug
-    set -x
-
+    enable_debug
     ECHO=""
 
     P=$1
@@ -109,8 +131,57 @@ sign_module() {
 }
 export -f sign_module
 
-#Debug
-set -x
+wait_deployment_reaching_status() {
+    local expected_state=$1 ; shift
+    local deployment=$1 ; shift
+    local max_wait_minutes=$1 ; shift
+    local START_EPOCH
+    local CURRENT_EPOCH
+    local ELAPSED_TIME
+
+    # 2. Poll waiting the deployment to reach the desired state
+    START_EPOCH=$(date +%s)
+    while true; do
+    # Example of the JSON response from the status endpoint:
+    # {
+    #  "deploymentId": "5f52bd32-9403-4e3e-8a40-7a690d985c3f",
+    #  "deploymentName": "test",
+    #  "deploymentState": "FAILED", # Can be: [ PENDING, VALIDATING, VALIDATED, PUBLISHING, PUBLISHED, FAILED ]
+    #  "purls": [],
+    #  "errors": {}
+    # }
+        # Temporarily disable xtrace to avoid leaking auth token
+        disable_debug
+        STATUS_JSON=$(curl --silent --fail \
+        -H "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
+        --request POST \
+        "https://central.sonatype.com/api/v1/publisher/status?id=${deployment}")
+        # Re-enable xtrace
+        enable_debug
+
+        STATE="$(echo "$STATUS_JSON" | jq -r '.deploymentState')"
+        echo "Deployment state: $STATE"
+        if [[ "$STATE" == "${expected_state}" ]]; then
+            echo "Deployment reached expected state: $STATE"
+            break
+        elif [[ "$STATE" == "FAILED" ]]; then
+            echo "Deployment FAILED:"
+            echo "$STATUS_JSON"
+            exit 1
+        fi
+
+        CURRENT_EPOCH=$(date +%s)
+        ELAPSED_TIME=$((CURRENT_EPOCH - START_EPOCH))
+        if (( ELAPSED_TIME > (max_wait_minutes * 60) )); then
+            echo "Deployment did not reach expected state within $max_wait_minutes minutes, exiting"
+            exit 1
+        fi
+
+        echo "Waiting for deployment to reach state: $expected_state, current state: $STATE"
+        sleep 20
+    done
+}
+export -f wait_deployment_reaching_status
 
 aws s3 cp "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar" .
 aws s3 cp "s3://381492154096-build-artifacts/vespa-engine--vespa/$VESPA_RELEASE/artifacts/amd64/maven-repo.tar.pem" .
@@ -123,11 +194,31 @@ REPO_ROOT=$(pwd)/maven-repo
 cd "$REPO_ROOT"
 find . -name "$VESPA_RELEASE" -type d | sed 's,^./,,' | xargs -n 1 -P $NUM_PROC -I '{}' bash -c "sign_module {}"
 
-# shellcheck disable=2086
-$MVN $MVN_OPTS --settings="$SOURCE_DIR/.buildkite/settings-publish.xml" \
-    org.sonatype.central:central-publishing-maven-plugin:0.7.0:publish \
-    -f "$SOURCE_DIR/.buildkite/release-java-artifacts-dummy-pom.xml" \
-    -DrepositoryDirectory="$TMP_STAGING" \
-    -DpublishingServerId=central \
-    -DautoPublish=true \
-    -DwaitUntil=published
+# Create a zip file of all the staged artifacts
+ZIP_FILE=$(mktemp).zip
+(
+  cd "$TMP_STAGING"
+  zip -r "$ZIP_FILE" .
+)
+
+disable_debug
+# Upload the bundle using the Central Portal API
+echo "Uploading deployment bundle using Central Portal API"
+DEPLOYMENT_ID=$(curl --silent --show-error --fail \
+  --retry 3 --retry-delay 60 \
+  --request POST \
+  --header "Authorization: Bearer $CENTRAL_AUTH_TOKEN" \
+  --form "bundle=@$ZIP_FILE" \
+  "https://central.sonatype.com/api/v1/publisher/upload?name=Vespa-${VESPA_RELEASE}-release&publishingType=AUTOMATIC")
+enable_debug
+
+if [[ -z $DEPLOYMENT_ID ]]; then
+    echo "Failed to get deployment ID"
+    echo "Response: $DEPLOYMENT_ID"
+    exit 1
+fi
+
+echo "Got deployment ID: $DEPLOYMENT_ID"
+wait_deployment_reaching_status "PUBLISHED" "$DEPLOYMENT_ID" 30
+
+echo "Deployment $DEPLOYMENT_ID published successfully"

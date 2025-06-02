@@ -16,8 +16,16 @@ if [[ -z $PIPELINE ]]; then
 fi
 
 if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
-  JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
+  START_SECONDS=$(date +%s)
+  export START_SECONDS
+  if ! buildkite-agent meta-data exists start-seconds; then
+    buildkite-agent meta-data set start-seconds $START_SECONDS
+    echo "Build started at $START_SECONDS"
+  else
+    echo "start-seconds already set, skipping"
+  fi
 
+  JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
   echo "Output from creating build : $JSON"
 
   VESPA_FACTORY_BUILD_ID=$(jq -re '.buildId' <<< "$JSON")
@@ -33,8 +41,11 @@ if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
   echo "Created factory build $VESPA_FACTORY_BUILD_ID for pipeline $PIPELINE"
 
   $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE running "Building"
-
   echo "Set factory build $VESPA_FACTORY_BUILD_ID status to running"
+
+  JOB_JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-buildkite-job-run $START_SECONDS $PIPELINE "running")
+  echo "Output from updating job run : $JOB_JSON"
+
 else
   VESPA_VERSION="$(curl -sSLf 'https://api.factory.vespa.ai/factory/v1/latest-successful-build?platform=opensource_centos7&vespaMajor=8' | jq -re .version)"
   export VESPA_VERSION

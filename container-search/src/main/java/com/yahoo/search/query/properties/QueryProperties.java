@@ -9,6 +9,7 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.Model;
 import com.yahoo.search.query.Presentation;
 import com.yahoo.search.query.Properties;
+import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.Ranking;
 import com.yahoo.search.query.Select;
 import com.yahoo.search.query.Trace;
@@ -70,6 +71,9 @@ public class QueryProperties extends Properties {
         Map<CompoundName, GetterSetter> map = new HashMap<>();
         map.put(CompoundName.fromComponents(Model.MODEL, Model.QUERY_STRING), GetterSetter.of(query -> query.getModel().getQueryString(), (query, value) -> query.getModel().setQueryString(asString(value, ""))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE), GetterSetter.of(query -> query.getModel().getType(), (query, value) -> query.getModel().setType(asString(value, "ANY"))));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.COMPOSITE), GetterSetter.of(query -> query.getModel().getQueryType().getComposite(), (query, value) -> query.getModel().getQueryType().setComposite(asString(value, null))));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.TOKENIZATION), GetterSetter.of(query -> query.getModel().getQueryType().getTokenization(), (query, value) -> query.getModel().getQueryType().setTokenization(asString(value, null))));
+        map.put(CompoundName.fromComponents(Model.MODEL, Model.TYPE, QueryType.SYNTAX), GetterSetter.of(query -> query.getModel().getQueryType().getSyntax(), (query, value) -> query.getModel().getQueryType().setSyntax(asString(value, null))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.FILTER), GetterSetter.of(query -> query.getModel().getFilter(), (query, value) -> query.getModel().setFilter(asString(value, ""))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.DEFAULT_INDEX), GetterSetter.of(query -> query.getModel().getDefaultIndex(), (query, value) -> query.getModel().setDefaultIndex(asString(value, ""))));
         map.put(CompoundName.fromComponents(Model.MODEL, Model.LANGUAGE), GetterSetter.of(query -> query.getModel().getLanguage(), (query, value) -> query.getModel().setLanguage(asString(value, ""))));
