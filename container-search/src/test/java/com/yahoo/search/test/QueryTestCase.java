@@ -1287,6 +1287,10 @@ public class QueryTestCase {
                      new Query(httpEncode("?query=a b -c&model.type=linguistics")).getModel().getQueryTree().toString());
         assertEquals("OR a b c",
                      new Query(httpEncode("?query=a b -c&model.type.compositeType=or&model.type.tokenization=linguistics&model.type.syntax=none")).getModel().getQueryTree().toString());
+        assertEquals(QueryType.from(Query.Type.ALL), new Query(httpEncode("?query=a b -c&model.type=all")).getModel().getQueryType());
+        assertEquals(QueryType.from(Query.Type.ALL).getType(), new Query(httpEncode("?query=a b -c&model.type=all")).properties().get("model.type"));
+        assertEquals(QueryType.from(Query.Type.ALL).getType(), new Query(httpEncode("?query=a b -c&type=all")).properties().get("model.type"));
+        assertEquals(QueryType.Syntax.none, new Query(httpEncode("?query=a b -c&model.type.syntax=none")).properties().get("model.type.syntax"));
     }
 
     private QueryType type(String type) {
