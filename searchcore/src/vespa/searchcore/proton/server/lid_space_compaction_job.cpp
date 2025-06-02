@@ -6,6 +6,7 @@
 #include "i_operation_storer.h"
 #include "i_disk_mem_usage_notifier.h"
 #include "iclusterstatechangednotifier.h"
+#include "maintenance_job_token_source.h"
 #include "remove_operations_rate_tracker.h"
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
@@ -203,6 +204,9 @@ CompactionJob::run()
     if (isBlocked()) {
         return true; // indicate work is done since no work can be done
     }
+    if (_token_source && !_token && !_token_source->get_token(shared_from_this())) {
+        return true; // Blocked on job token
+    }
     if (remove_batch_is_ongoing()) {
         // Note that we don't set the job as blocked as the decision to un-block it is not driven externally.
         if (!_is_disabled) {
@@ -256,6 +260,7 @@ CompactionJob::run()
         _scanItr = _handler->getIterator();
         return scanDocuments(stats);
     }
+    _token.reset();
     return true;
 }
 
