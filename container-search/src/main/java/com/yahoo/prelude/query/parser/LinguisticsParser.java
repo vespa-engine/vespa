@@ -21,7 +21,7 @@ import static com.yahoo.prelude.query.parser.Token.Kind.WORD;
  * A parser which delegates all tokenization and processing to the linguistics component.
  * The full string is given as-is to the linguistics component for tokenization, and
  * what comes back is assumes fully processed including stemming (if applicable).
- * The returned tokens are collected into a WeakAnd item.
+ * The returned tokens are collected into a single parent item.
  *
  * @author bratseth
  */
@@ -38,12 +38,12 @@ public final class LinguisticsParser extends AbstractParser {
                                                    StemMode.BEST,
                                                    true,
                                                    true);
-        var weakAnd = new WeakAndItem();
+        var parent = newComposite();
         for (com.yahoo.language.process.Token token : environment.getLinguistics().getTokenizer().tokenize(queryToParse, parameters)) {
             if ( ! token.getType().isIndexable()) continue;
-            weakAnd.addItem(toItem(token, defaultIndex));
+            parent.addItem(toItem(token, defaultIndex));
         }
-        return weakAnd;
+        return parent;
     }
 
     @Override

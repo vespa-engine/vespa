@@ -15,15 +15,13 @@ import java.util.Set;
 
 final class TypeCheckers {
 
-    public static final TypeLiteral<List<String>> LIST_OF_STRING = new TypeLiteral<List<String>>() {
+    public static final TypeLiteral<List<String>> LIST_OF_STRING = new TypeLiteral<>() {
     };
-    public static final TypeLiteral<List<List<String>>> LIST_OF_LIST_OF_STRING = new TypeLiteral<List<List<String>>>() {
+    public static final TypeLiteral<List<List<String>>> LIST_OF_LIST_OF_STRING = new TypeLiteral<>() {
     };
-    public static final TypeLiteral<List<OperatorNode<SequenceOperator>>> SEQUENCES = new TypeLiteral<List<OperatorNode<SequenceOperator>>>() {
+    public static final TypeLiteral<List<OperatorNode<SequenceOperator>>> SEQUENCES = new TypeLiteral<>() {
     };
-    public static final TypeLiteral<List<OperatorNode<ExpressionOperator>>> EXPRS = new TypeLiteral<List<OperatorNode<ExpressionOperator>>>() {
-    };
-    public static final TypeLiteral<List<List<OperatorNode<ExpressionOperator>>>> LIST_OF_EXPRS = new TypeLiteral<List<List<OperatorNode<ExpressionOperator>>>>() {
+    public static final TypeLiteral<List<OperatorNode<ExpressionOperator>>> EXPRS = new TypeLiteral<>() {
     };
     public static final ImmutableSet<Class<?>> LITERAL_TYPES = ImmutableSet.<Class<?>>builder()
             .add(String.class)

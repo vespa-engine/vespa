@@ -62,22 +62,13 @@ enum ExpressionOperator implements Operator {
 
     private final ArgumentsTypeChecker checker;
 
-
     ExpressionOperator(Object... types) {
         checker = TypeCheckers.make(this, types);
     }
-
 
     @Override
     public void checkArguments(Object... args) {
         checker.check(args);
     }
-
-    public static Predicate<OperatorNode<? extends Operator>> IS = new Predicate<OperatorNode<? extends Operator>>() {
-        @Override
-        public boolean apply(OperatorNode<? extends Operator> input) {
-            return input.getOperator() instanceof ExpressionOperator;
-        }
-    };
 
 }
