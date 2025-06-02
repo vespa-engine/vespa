@@ -293,32 +293,41 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
 
         generator.writeArrayFieldStart(ERRORS);
         for (ErrorMessage e : errors) {
-            String summary = e.getMessage();
-            String source = e.getSource();
-            Throwable cause = e.getCause();
-            String message = e.getDetailedMessage();
-            generator.writeStartObject();
-            generator.writeNumberField(ERROR_CODE, e.getCode());
-            generator.writeStringField(ERROR_SUMMARY, summary);
-            if (source != null) {
-                generator.writeStringField(ERROR_SOURCE, source);
-            }
-            if (message != null) {
-                generator.writeStringField(ERROR_MESSAGE, message);
-            }
-            if (cause != null && shouldRenderStacktraceOf(cause) && cause.getStackTrace().length > 0) {
-                StringWriter s = new StringWriter();
-                PrintWriter p = new PrintWriter(s);
-                cause.printStackTrace(p);
-                p.close();
-                generator.writeStringField(ERROR_STACK_TRACE, s.toString());
-            }
-            generator.writeEndObject();
+            renderError(generator, e);
         }
         generator.writeEndArray();
     }
 
-    protected boolean shouldRenderStacktraceOf(Throwable cause) {
+    static void renderError(JsonGenerator generator, ErrorMessage error) throws IOException {
+        var summary = error.getMessage();
+        var source = error.getSource();
+        var cause = error.getCause();
+        var message = error.getDetailedMessage();
+
+        generator.writeStartObject();
+        generator.writeNumberField(ERROR_CODE, error.getCode());
+        generator.writeStringField(ERROR_SUMMARY, summary);
+
+        if (source != null) {
+            generator.writeStringField(ERROR_SOURCE, source);
+        }
+
+        if (message != null) {
+            generator.writeStringField(ERROR_MESSAGE, message);
+        }
+
+        if (cause != null && shouldRenderStacktraceOf(cause) && cause.getStackTrace().length > 0) {
+            var stringWriter = new StringWriter();
+            var printWriter = new PrintWriter(stringWriter);
+            cause.printStackTrace(printWriter);
+            printWriter.close();
+            generator.writeStringField(ERROR_STACK_TRACE, stringWriter.toString());
+        }
+
+        generator.writeEndObject();
+    }
+
+    static boolean shouldRenderStacktraceOf(Throwable cause) {
         return  ! (cause instanceof IllegalArgumentException);
     }
 
