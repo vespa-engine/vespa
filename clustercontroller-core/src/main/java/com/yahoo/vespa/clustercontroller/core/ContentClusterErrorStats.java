@@ -16,19 +16,18 @@ import java.util.Set;
  *
  * @author vekterli
  */
-public class ContentClusterErrorStats {
+public record ContentClusterErrorStats(Map<Integer, ContentNodeErrorStats> contentNodeErrorStats) {
 
-    private final Map<Integer, ContentNodeErrorStats> contentNodeErrorStats;
-
-    public ContentClusterErrorStats(Set<Integer> storageNodes) {
-        contentNodeErrorStats = new HashMap<>(storageNodes.size());
+    private static Map<Integer, ContentNodeErrorStats> toEmptyErrorStats(Set<Integer> storageNodes) {
+        Map<Integer, ContentNodeErrorStats> contentNodeErrorStats = new HashMap<>(storageNodes.size());
         for (Integer index : storageNodes) {
             contentNodeErrorStats.put(index, new ContentNodeErrorStats(index));
         }
+        return contentNodeErrorStats;
     }
 
-    public ContentClusterErrorStats(Map<Integer, ContentNodeErrorStats> contentNodeErrorStats) {
-        this.contentNodeErrorStats = contentNodeErrorStats;
+    public ContentClusterErrorStats(Set<Integer> storageNodes) {
+        this(toEmptyErrorStats(storageNodes));
     }
 
     public ContentNodeErrorStats getNodeErrorStats(Integer index) {
@@ -41,23 +40,6 @@ public class ContentClusterErrorStats {
 
     public void clearAllStats() {
         contentNodeErrorStats.clear();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        ContentClusterErrorStats that = (ContentClusterErrorStats) o;
-        return Objects.equals(contentNodeErrorStats, that.contentNodeErrorStats);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hashCode(contentNodeErrorStats);
-    }
-
-    @Override
-    public String toString() {
-        return String.format("{contentNodeErrorStats=[%s]}", Arrays.toString(contentNodeErrorStats.entrySet().toArray()));
     }
 
 }
