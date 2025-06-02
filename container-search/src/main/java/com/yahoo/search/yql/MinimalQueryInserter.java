@@ -138,6 +138,12 @@ public class MinimalQueryInserter extends Searcher {
             query.getRanking().setSorting(parser.getSorting());
         }
         query.trace("YQL query parsed", true, 2);
+
+        if (query.getModel().getFilter() != null && query.getModel().getQueryString() == null) {
+            return new Result(
+                    query,
+                    ErrorMessage.createInvalidQueryParameter("Filter can only be combined with query string"));
+        }
         return null;
     }
 
