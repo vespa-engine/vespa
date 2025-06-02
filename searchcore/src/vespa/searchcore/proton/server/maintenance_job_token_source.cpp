@@ -38,6 +38,10 @@ MaintenanceJobTokenSource::token_destroyed()
 {
     std::unique_lock guard(_mutex);
     remove_deleted_or_stopped_jobs();
+    auto existing_token = _token.lock();
+    if (existing_token) {
+        return; // get_token() was called after all references to old token were removed but before token_destroyed() was called.
+    }
     while (!_jobs.empty()) {
         auto job = _jobs.front().lock();
         if (job && !job->stopped()) {
