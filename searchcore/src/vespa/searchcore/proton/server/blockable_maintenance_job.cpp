@@ -4,6 +4,7 @@
 #include "disk_mem_usage_state.h"
 #include "imaintenancejobrunner.h"
 #include "document_db_maintenance_config.h"
+#include "maintenance_job_token_source.h"
 #include "move_operation_limiter.h"
 
 namespace proton {
@@ -44,7 +45,9 @@ BlockableMaintenanceJob::BlockableMaintenanceJob(const std::string &name,
       _blocked(false),
       _runner(nullptr),
       _resourceLimitFactor(config.getResourceLimitFactor()),
-      _moveOpsLimiter(std::make_shared<MoveOperationLimiter>(this, config.getMaxOutstandingMoveOps()))
+      _moveOpsLimiter(std::make_shared<MoveOperationLimiter>(this, config.getMaxOutstandingMoveOps())),
+      _token(),
+      _token_source()
 {
 }
 
@@ -58,6 +61,18 @@ BlockableMaintenanceJob::isBlocked(BlockedReason reason)
 {
     LockGuard guard(_mutex);
     return (_blockReasons.find(reason) != _blockReasons.end());
+}
+
+void
+BlockableMaintenanceJob::got_token(std::shared_ptr<MaintenanceJobToken> token, bool sync)
+{
+    {
+        LockGuard guard(_mutex);
+        _token = std::move(token);
+    }
+    if (!sync) {
+        unBlock(BlockedReason::JOB_TOKEN);
+    }
 }
 
 void

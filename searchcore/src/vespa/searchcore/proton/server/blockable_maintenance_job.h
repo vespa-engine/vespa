@@ -12,6 +12,7 @@ class BlockableMaintenanceJobConfig;
 class DiskMemUsageState;
 class IMaintenanceJobRunner;
 struct IMoveOperationLimiter;
+class MaintenanceJobTokenSource;
 
 /**
  * Implementation of a maintenance job that can be blocked and unblocked due to various external reasons.
@@ -29,7 +30,11 @@ private:
     IMaintenanceJobRunner *_runner;
     double                 _resourceLimitFactor;
     std::shared_ptr<IMoveOperationLimiter> _moveOpsLimiter;
+protected:
+    std::shared_ptr<MaintenanceJobToken>       _token;
+    std::shared_ptr<MaintenanceJobTokenSource> _token_source;
 
+private:
     void updateBlocked(const LockGuard &guard);
 protected:
     void internalNotifyDiskMemUsage(const DiskMemUsageState &state);
@@ -53,6 +58,7 @@ public:
     void setBlocked(BlockedReason reason) override;
     void unBlock(BlockedReason reason) override;
     bool isBlocked() const override;
+    void got_token(std::shared_ptr<MaintenanceJobToken> token, bool sync) override;
     void registerRunner(IMaintenanceJobRunner *runner) override { _runner = runner; }
     IMoveOperationLimiter & getLimiter() { return *_moveOpsLimiter; }
     const IMoveOperationLimiter & getLimiter() const { return *_moveOpsLimiter; }
