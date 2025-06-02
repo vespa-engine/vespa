@@ -128,7 +128,7 @@ public class ClusterStatsAggregator {
         // It also does not implicitly put an entry into the `distributorToStats` mapping; error
         // stats are kept entirely separate.
         ContentClusterErrorStats prevErrorStats = distributorToErrorStats.put(distributorIndex, updatedErrorStats);
-        for (var contentNodeEntry : aggregatedErrorStats.getAllNodeErrorStats().entrySet()) {
+        for (var contentNodeEntry : aggregatedErrorStats.contentNodeErrorStats().entrySet()) {
             var nodeIndex   = contentNodeEntry.getKey();
             var contentNode = contentNodeEntry.getValue();
             ContentNodeErrorStats statsToAdd = updatedErrorStats.getNodeErrorStats(nodeIndex);

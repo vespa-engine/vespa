@@ -34,10 +34,6 @@ public record ContentClusterErrorStats(Map<Integer, ContentNodeErrorStats> conte
         return contentNodeErrorStats.get(index);
     }
 
-    public Map<Integer, ContentNodeErrorStats> getAllNodeErrorStats() {
-        return contentNodeErrorStats;
-    }
-
     public void clearAllStats() {
         contentNodeErrorStats.clear();
     }

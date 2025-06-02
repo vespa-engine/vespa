@@ -62,7 +62,7 @@ public class StorageNodeStatsBridgeTest {
         String data = getJsonString();
         HostInfo hostInfo = HostInfo.createHostInfo(data);
         var clusterErrorStats = StorageNodeStatsBridge.generateErrors(1, hostInfo.getDistributor());
-        assertThat(clusterErrorStats.getAllNodeErrorStats().size(), is(1));
+        assertThat(clusterErrorStats.contentNodeErrorStats().size(), is(1));
         var nodeErrors = clusterErrorStats.getNodeErrorStats(1);
         assertNotNull(nodeErrors);
         assertThat(nodeErrors.getStatsFromDistributors().size(), is(1));
