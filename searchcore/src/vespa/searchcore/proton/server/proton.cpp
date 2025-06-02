@@ -8,6 +8,7 @@
 #include "flushhandlerproxy.h"
 #include "hw_info_explorer.h"
 #include "initialize_threads_calculator.h"
+#include "maintenance_job_token_source.h"
 #include "malloc_info_explorer.h"
 #include "memoryflush.h"
 #include "persistencehandlerproxy.h"
@@ -296,7 +297,8 @@ Proton::Proton(FNET_Transport & transport, const config::ConfigUri & configUri,
       _documentDBReferenceRegistry(std::make_shared<DocumentDBReferenceRegistry>()),
       _nodeUpLock(),
       _nodeUp(),
-      _posting_list_cache()
+      _posting_list_cache(),
+      _lid_space_compaction_job_token_source(std::make_shared<MaintenanceJobTokenSource>())
 { }
 
 BootstrapConfig::SP
@@ -1104,6 +1106,12 @@ Proton::getDocumentDBReferenceRegistry() const
 matching::SessionManager &
 Proton::session_manager() {
     return *_sessionManager;
+}
+
+std::shared_ptr<MaintenanceJobTokenSource>
+Proton::get_lid_space_compaction_job_token_source()
+{
+    return _lid_space_compaction_job_token_source;
 }
 
 storage::spi::PersistenceProvider &

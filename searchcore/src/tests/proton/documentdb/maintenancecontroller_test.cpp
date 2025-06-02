@@ -25,6 +25,7 @@
 #include <vespa/searchcore/proton/server/iheartbeathandler.h>
 #include <vespa/searchcore/proton/server/ipruneremoveddocumentshandler.h>
 #include <vespa/searchcore/proton/server/maintenance_controller_explorer.h>
+#include <vespa/searchcore/proton/server/maintenance_job_token_source.h>
 #include <vespa/searchcore/proton/server/maintenance_jobs_injector.h>
 #include <vespa/searchcore/proton/server/maintenancecontroller.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
@@ -547,6 +548,7 @@ public:
     DocumentDBMaintenanceConfig::SP    _mcCfg;
     bool                               _injectDefaultJobs;
     DocumentDBJobTrackers              _jobTrackers;
+    std::shared_ptr<MaintenanceJobTokenSource> _lid_space_compaction_job_token_source;
     std::shared_ptr<proton::IAttributeManager> _readyAttributeManager;
     std::shared_ptr<proton::IAttributeManager> _notReadyAttributeManager;
     AttributeUsageFilter               _attributeUsageFilter;
@@ -655,6 +657,7 @@ MaintenanceControllerTest::MaintenanceControllerTest()
       _mcCfg(new DocumentDBMaintenanceConfig),
       _injectDefaultJobs(true),
       _jobTrackers(),
+      _lid_space_compaction_job_token_source(std::make_shared<MaintenanceJobTokenSource>()),
       _readyAttributeManager(std::make_shared<MyAttributeManager>()),
       _notReadyAttributeManager(std::make_shared<MyAttributeManager>()),
       _attributeUsageFilter(),
@@ -717,7 +720,7 @@ MaintenanceControllerTest::injectMaintenanceJobs()
                                             _bucketCreateNotifier, makeBucketSpace(), _fh, _fh,
                                             _bmc, _clusterStateHandler, _bucketHandler, _calc, _diskMemUsageNotifier,
                                             _jobTrackers, _readyAttributeManager, _notReadyAttributeManager,
-                                            _attributeUsageFilter);
+                                            _attributeUsageFilter, _lid_space_compaction_job_token_source);
     }
 }
 
