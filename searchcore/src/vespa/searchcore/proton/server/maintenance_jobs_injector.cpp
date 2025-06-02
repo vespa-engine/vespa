@@ -32,13 +32,15 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              IDiskMemUsageNotifier &diskMemUsageNotifier,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
                              const std::shared_ptr<IBucketStateCalculator> &calc,
-                             document::BucketSpace bucketSpace)
+                             document::BucketSpace bucketSpace,
+                             std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source)
 {
     for (auto &lidHandler : lscHandlers) {
         auto job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), controller.retainDB(),
                                                    std::move(lidHandler), opStorer, controller.masterThread(),
                                                    bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
-                                                   clusterStateChangedNotifier, calc && calc->node_retired_or_maintenance(), bucketSpace);
+                                                   clusterStateChangedNotifier, calc && calc->node_retired_or_maintenance(), bucketSpace,
+                                                   maintenance_job_token_source);
         controller.registerJob(trackJob(tracker, std::move(job)));
     }
 }
@@ -85,7 +87,8 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     DocumentDBJobTrackers &jobTrackers,
                                     IAttributeManagerSP readyAttributeManager,
                                     IAttributeManagerSP notReadyAttributeManager,
-                                    AttributeUsageFilter &attributeUsageFilter)
+                                    AttributeUsageFilter &attributeUsageFilter,
+                                    std::shared_ptr<MaintenanceJobTokenSource> lid_space_compaction_job_token_source)
 {
     controller.registerJob(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
     auto visibility_delay = config.getVisibilityDelay();
@@ -114,7 +117,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
         lidSpaceCompactionHandlers.push_back(std::make_shared<LidSpaceCompactionHandler>(controller.getNotReadySubDB(), docTypeName));
         injectLidSpaceCompactionJobs(controller, config, bucketExecutor, std::move(lidSpaceCompactionHandlers),
                                      opStorer, jobTrackers.getLidSpaceCompact(), diskMemUsageNotifier,
-                                     clusterStateChangedNotifier, calc, bucketSpace);
+                                     clusterStateChangedNotifier, calc, bucketSpace, std::move(lid_space_compaction_job_token_source));
     }
 
     injectBucketMoveJob(controller, config, bucketExecutor, bucketCreateNotifier, docTypeName, bucketSpace,

@@ -3,6 +3,7 @@
 #include "lid_space_jobtest.h"
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
+#include <vespa/searchcore/proton/server/maintenance_job_token_source.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
@@ -34,6 +35,7 @@ JobTestBase::JobTestBase()
       _diskMemUsageNotifier(),
       _handler(),
       _storer(),
+      _maintenance_job_token_source(std::make_shared<MaintenanceJobTokenSource>()),
       _job()
 {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, JOB_DELAY, false, MAX_OUTSTANDING_MOVE_OPS);
@@ -58,7 +60,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
     _bucketExecutor = std::make_unique<storage::spi::dummy::DummyBucketExecutor>(4);
     _job = lidspace::CompactionJob::create(compactCfg, RetainGuard(_refCount), _handler, _storer, *_master, *_bucketExecutor,
                                            _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, node_retired_or_maintenance,
-                                           document::BucketSpace::placeHolder());
+                                           document::BucketSpace::placeHolder(), _maintenance_job_token_source);
 }
 
 void

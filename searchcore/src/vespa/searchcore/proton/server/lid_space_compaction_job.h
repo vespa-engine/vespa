@@ -77,7 +77,8 @@ private:
                   const BlockableMaintenanceJobConfig &blockableConfig,
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   bool nodeRetired,
-                  document::BucketSpace bucketSpace);
+                  document::BucketSpace bucketSpace,
+                  std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source);
 public:
     static std::shared_ptr<CompactionJob>
     create(const DocumentDBLidSpaceCompactionConfig &config,
@@ -90,7 +91,8 @@ public:
            const BlockableMaintenanceJobConfig &blockableConfig,
            IClusterStateChangedNotifier &clusterStateChangedNotifier,
            bool nodeRetired,
-           document::BucketSpace bucketSpace);
+           document::BucketSpace bucketSpace,
+           std::shared_ptr<MaintenanceJobTokenSource> maintenance_job_token_source);
     ~CompactionJob() override;
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
