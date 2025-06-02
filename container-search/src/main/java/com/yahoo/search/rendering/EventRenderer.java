@@ -64,16 +64,12 @@ public class EventRenderer extends AsynchronousSectionedRenderer<Result> {
 
     @Override
     public void data(Data data) throws IOException {
-        if (data instanceof EventStream.ErrorEvent error) {
-            generator.writeRaw("event: error\n");
-            generator.writeRaw("data: ");
-            generator.writeStartObject();
-            generator.writeStringField("source", error.source());
-            generator.writeNumberField("error", error.code());
-            generator.writeStringField("message", error.message());
-            generator.writeEndObject();
-            generator.writeRaw("\n\n");
-            generator.flush();
+        if (data instanceof EventStream.ErrorEvent errorEvent) {
+            renderError(errorEvent.asError());
+        } else if (data instanceof ErrorHit errorHit) {
+            for (var error: errorHit.errors()) {
+                renderError(error);
+            }
         } else if (data instanceof EventStream.Event event) {
             if (RENDER_EVENT_HEADER) {
                 generator.writeRaw("event: " + event.type() + "\n");
@@ -89,6 +85,14 @@ public class EventRenderer extends AsynchronousSectionedRenderer<Result> {
             generator.writeRaw("\n\n");
             generator.flush();
         }
+    }
+    
+    private void renderError(ErrorMessage error) throws IOException {
+        generator.writeRaw("event: error\n");
+        generator.writeRaw("data: ");
+        JsonRenderer.renderError(generator, error);
+        generator.writeRaw("\n\n");
+        generator.flush();
     }
 
     @Override

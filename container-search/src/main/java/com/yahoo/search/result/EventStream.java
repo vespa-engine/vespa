@@ -147,8 +147,12 @@ public class EventStream extends Hit implements DataList<Data> {
             hit.setField("code", message.getCode());
             return hit;
         }
-
-
+        
+        public ErrorMessage asError() {
+            var errorMessage = message.clone();
+            errorMessage.setSource(source);
+            return errorMessage;
+        }
     }
 
 }

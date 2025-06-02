@@ -7807,7 +7807,6 @@
       "protected void moreChildren()",
       "protected void renderHitGroupHead(com.yahoo.search.result.HitGroup)",
       "protected void renderErrors(java.util.Set)",
-      "protected boolean shouldRenderStacktraceOf(java.lang.Throwable)",
       "protected void renderCoverage()",
       "protected void renderHit(com.yahoo.search.result.Hit)",
       "protected boolean shouldRender(com.yahoo.search.result.Hit)",
@@ -8146,7 +8145,8 @@
       "public java.lang.String source()",
       "public int code()",
       "public java.lang.String message()",
-      "public com.yahoo.search.result.Hit asHit()"
+      "public com.yahoo.search.result.Hit asHit()",
+      "public com.yahoo.search.result.ErrorMessage asError()"
     ],
     "fields" : [ ]
   },
