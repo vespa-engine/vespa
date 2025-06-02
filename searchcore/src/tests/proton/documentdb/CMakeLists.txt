@@ -26,6 +26,7 @@ vespa_add_test(NAME searchcore_documentdb_test_app COMMAND searchcore_documentdb
 vespa_add_executable(searchcore_proton_documentdb_gtest_test_app TEST
     SOURCES
     gtest_runner.cpp
+    blockable_maintenance_job_test.cpp
     buckethandler_test.cpp
     bucketmover_common.cpp
     clusterstatehandler_test.cpp

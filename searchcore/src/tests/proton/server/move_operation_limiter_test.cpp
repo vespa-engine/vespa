@@ -55,6 +55,7 @@ struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
         EXPECT_TRUE(blocked);
         blocked = false;
     }
+    void got_token(std::shared_ptr<MaintenanceJobToken>, bool) override { }
     bool run() override { return true; }
     void onStop() override { }
     void set_expected_blocked_reason(BlockedReason reason) noexcept {
