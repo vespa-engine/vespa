@@ -11,6 +11,8 @@ import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
+import com.yahoo.search.query.ranking.GlobalPhase;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
@@ -62,7 +64,6 @@ public class Model implements Cloneable {
         argumentType.setBuiltin(true);
         //argumentType.addField(new FieldDescription(PROGRAM, "string", "yql")); // TODO: Custom type
         argumentType.addField(new FieldDescription(QUERY_STRING, "string", "query"));
-        argumentType.addField(new FieldDescription(TYPE, "string", "type"));
         argumentType.addField(new FieldDescription(FILTER, "string","filter"));
         argumentType.addField(new FieldDescription(DEFAULT_INDEX, "string", "default-index"));
         argumentType.addField(new FieldDescription(LANGUAGE, "string", "language lang"));
@@ -71,6 +72,7 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(SOURCES, "string", "sources search"));
         argumentType.addField(new FieldDescription(SEARCH_PATH, "string", "searchpath"));
         argumentType.addField(new FieldDescription(RESTRICT, "string", "restrict"));
+        argumentType.addField(new FieldDescription(TYPE, new QueryProfileFieldType(QueryType.getArgumentType()), "type"));
         argumentType.freeze();
         argumentTypeName = CompoundName.from(argumentType.getId().getName());
     }

@@ -1211,7 +1211,7 @@ public class QueryTestCase {
 
     /**
      * Tests that the value presentation.format.tensors can be set in a query profile.
-     * This is special because presentation.format is a native query profile.
+     * This is special because 'presentation.format' is a native query profile.
      */
     @Test
     void testSettingNativeQueryProfileValueInQueryProfile() {
@@ -1274,11 +1274,19 @@ public class QueryTestCase {
         assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("web").setCompositeType(QueryType.CompositeType.weakAnd));
         assertParsed("WEAKAND(100) a b c",     "a b -c", type("linguistics"));
         assertParsed("OR a b c",               "a b -c", type("linguistics").setCompositeType(QueryType.CompositeType.or));
+        assertParsed("OR a b c",               "a b -c", type("weakAnd").setCompositeType(QueryType.CompositeType.or).setTokenization(QueryType.Tokenization.linguistics).setSyntax(QueryType.Syntax.none));
         assertParsed("+(WEAKAND(100) a b) -c", "a b -c", type("tokenize").setSyntax(QueryType.Syntax.web));
         assertParsed("AND a b c",              "a b -c", type("web").setSyntax(QueryType.Syntax.none));
 
-        assertFails("Failed parsing query: query type linguistics [compositeType: weakAnd, toenization: linguistics, syntax: web] is invalid: Linguistics tokenization can only be combined with syntax none",
+        assertFails("Failed parsing query: query type linguistics " +
+                    "[compositeType: weakAnd, tokenization: linguistics, syntax: web] is invalid: " +
+                    "Linguistics tokenization can only be combined with syntax none",
                     type("linguistics").setSyntax(QueryType.Syntax.web));
+
+        assertEquals("WEAKAND(100) a b c",
+                     new Query(httpEncode("?query=a b -c&model.type=linguistics")).getModel().getQueryTree().toString());
+        assertEquals("OR a b c",
+                     new Query(httpEncode("?query=a b -c&model.type.compositeType=or&model.type.tokenization=linguistics&model.type.syntax=none")).getModel().getQueryTree().toString());
     }
 
     private QueryType type(String type) {

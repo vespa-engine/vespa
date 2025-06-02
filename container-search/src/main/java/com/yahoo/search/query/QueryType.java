@@ -1,6 +1,10 @@
 package com.yahoo.search.query;
 
+import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
+import com.yahoo.search.query.profile.types.FieldDescription;
+import com.yahoo.search.query.profile.types.QueryProfileFieldType;
+import com.yahoo.search.query.profile.types.QueryProfileType;
 
 import java.util.Objects;
 
@@ -11,11 +15,33 @@ import java.util.Objects;
  */
 public class QueryType {
 
-    private Query.Type type;
+    /** The type representing the property arguments consumed by this */
+    private static final QueryProfileType argumentType;
+
+    private final Query.Type type;
 
     private CompositeType compositeType;
     private Tokenization tokenization;
     private Syntax syntax;
+
+    //         argumentType.addField(new FieldDescription(TYPE, "string", "type"));
+
+    public static final String COMPOSITETYPE = "compositeType";
+    public static final String TOKENIZATION = "tokenization";
+    public static final String SYNTAX = "syntax";
+
+    static {
+        argumentType = new QueryProfileType(Model.TYPE);
+        argumentType.setStrict(true);
+        argumentType.setBuiltin(true);
+        argumentType.addField(new FieldDescription("", "string")); // The Query.Type
+        argumentType.addField(new FieldDescription(COMPOSITETYPE, "string"));
+        argumentType.addField(new FieldDescription(TOKENIZATION, "string"));
+        argumentType.addField(new FieldDescription(SYNTAX, "string"));
+        argumentType.freeze();
+    }
+
+    public static QueryProfileType getArgumentType() { return argumentType; }
 
     public QueryType(Query.Type type, CompositeType compositeType, Tokenization tokenization, Syntax syntax) {
         this.type = type;
@@ -24,14 +50,10 @@ public class QueryType {
         this.syntax = syntax;
     }
 
-    /**
-     * Returns the overall type of this.
-     */
+    /** Returns the overall type of this. */
     public Query.Type getType() {return type;}
 
-    /**
-     * Returns the composite type terms should be collected as by default.
-     */
+    /** Returns the composite type terms should be collected as by default. */
     public CompositeType getCompositeType() {return compositeType;}
 
     /**
@@ -41,6 +63,13 @@ public class QueryType {
      */
     public QueryType setCompositeType(CompositeType compositeType) {
         this.compositeType = compositeType;
+        return this;
+    }
+
+    /** Sets the composite value from a string enum value. If the argument is null this does nothing. */
+    public QueryType setCompositeType(String composite) {
+        if (composite == null) return this;
+        this.compositeType = CompositeType.valueOf(composite);
         return this;
     }
 
@@ -59,9 +88,14 @@ public class QueryType {
         return this;
     }
 
-    /**
-     * Returns the query syntax used in this query.
-     */
+    /** Sets tokenization from a string enum value. If the argument is null this does nothing. */
+    public QueryType setTokenization(String tokenization) {
+        if (tokenization == null) return this;
+        this.tokenization = Tokenization.valueOf(tokenization);
+        return this;
+    }
+
+    /** Returns the query syntax used in this query. */
     public Syntax getSyntax() {return syntax;}
 
     /**
@@ -74,9 +108,14 @@ public class QueryType {
         return this;
     }
 
-    /**
-     * Throws IllegalArgumentException if the combination of options set in this are ot supported.
-     */
+    /** Sets the syntax from a string enum value. If the argument is null this does nothing. */
+    public QueryType setSyntax(String syntax) {
+        if (syntax == null) return this;
+        this.syntax = Syntax.valueOf(syntax);
+        return this;
+    }
+
+    /** Throws IllegalArgumentException if the combination of options set in this are ot supported. */
     public void validate() {
         if (tokenization == Tokenization.linguistics && syntax != Syntax.none)
             throw new IllegalArgumentException(this + " is invalid: Linguistics tokenization can only be combined with syntax none");
@@ -100,7 +139,7 @@ public class QueryType {
     @Override
     public String toString() {
         return "query type " + type +
-               " [compositeType: " + compositeType + ", toenization: " + tokenization + ", syntax: " + syntax + "]";
+               " [compositeType: " + compositeType + ", tokenization: " + tokenization + ", syntax: " + syntax + "]";
     }
 
     public enum CompositeType { and, or, phrase, weakAnd }
