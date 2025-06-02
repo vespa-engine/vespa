@@ -38,7 +38,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
 
     private boolean builtin = false;
 
-    /** Aliases *from* any strings *to* field names. Aliases are case-insensitive */
+    /** Aliases *from* any strings *to* field names. Aliases are case insensitive */
     private Map<String, String> aliases = null;
 
     public QueryProfileType(String idString) {
@@ -202,7 +202,7 @@ public class QueryProfileType extends FreezableSimpleComponent {
      * Returns the permissible class for the value of the given name in this type
      *
      * @return the permissible class for a value, <code>Object</code> if all types are legal,
-     *         null if no types are legal (i.e. if the name is not legal)
+     *         null if no types are legal (i.e if the name is not legal)
      */
     public Class<?> getValueClass(String name) {
         FieldDescription fieldDescription = getField(name);

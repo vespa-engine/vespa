@@ -25,7 +25,7 @@ public class TextSerialize {
 
             if (!(result instanceof Item)) {
                 throw new RuntimeException("The serialized query '" + serializedQuery + "' did not evaluate to an Item" +
-                                           "(type = " + result.getClass() + ")");
+                        "(type = " + result.getClass() + ")");
             }
             return (Item) result;
         } catch (ParseException | TokenMgrException e) {

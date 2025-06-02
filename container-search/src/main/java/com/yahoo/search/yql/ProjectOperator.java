@@ -1,6 +1,8 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.search.yql;
 
+import com.google.common.base.Predicate;
+
 /**
  * Represents a projection command which affects the output record.
  */
@@ -12,7 +14,14 @@ enum ProjectOperator implements Operator {
 
     private final ArgumentsTypeChecker checker;
 
-    ProjectOperator(Object... types) {
+    public static Predicate<OperatorNode<? extends Operator>> IS = new Predicate<OperatorNode<? extends Operator>>() {
+        @Override
+        public boolean apply(OperatorNode<? extends Operator> input) {
+            return input.getOperator() instanceof ProjectOperator;
+        }
+    };
+
+    private ProjectOperator(Object... types) {
         checker = TypeCheckers.make(this, types);
     }
 

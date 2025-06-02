@@ -11,8 +11,6 @@ import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
-import com.yahoo.search.query.profile.types.QueryProfileFieldType;
-import com.yahoo.search.query.ranking.GlobalPhase;
 import com.yahoo.search.schema.SchemaInfo;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.Parser;
@@ -64,6 +62,7 @@ public class Model implements Cloneable {
         argumentType.setBuiltin(true);
         //argumentType.addField(new FieldDescription(PROGRAM, "string", "yql")); // TODO: Custom type
         argumentType.addField(new FieldDescription(QUERY_STRING, "string", "query"));
+        argumentType.addField(new FieldDescription(TYPE, "string", "type"));
         argumentType.addField(new FieldDescription(FILTER, "string","filter"));
         argumentType.addField(new FieldDescription(DEFAULT_INDEX, "string", "default-index"));
         argumentType.addField(new FieldDescription(LANGUAGE, "string", "language lang"));
@@ -72,7 +71,6 @@ public class Model implements Cloneable {
         argumentType.addField(new FieldDescription(SOURCES, "string", "sources search"));
         argumentType.addField(new FieldDescription(SEARCH_PATH, "string", "searchpath"));
         argumentType.addField(new FieldDescription(RESTRICT, "string", "restrict"));
-        argumentType.addField(new FieldDescription(TYPE, new QueryProfileFieldType(QueryType.getArgumentType()), "type"));
         argumentType.freeze();
         argumentTypeName = CompoundName.from(argumentType.getId().getName());
     }
@@ -89,7 +87,7 @@ public class Model implements Cloneable {
     private Locale locale = null;
     private QueryTree queryTree = null; // The query tree to execute. This is lazily created from the program
     private String defaultIndex = null;
-    private QueryType type = QueryType.from(Query.Type.WEAKAND);
+    private Query.Type type = Query.Type.WEAKAND;
     private Query parent;
     private Set<String> sources = new LinkedHashSet<>();
     private Set<String> restrict = new LinkedHashSet<>();
@@ -284,8 +282,8 @@ public class Model implements Cloneable {
     }
 
     /**
-     * Clears the parsed query such that it will be created anew from the textual representation
-     * (a query string or 'select where' expression) on the next access.
+     * Clears the parsed query such that it will be created anew from the textual representation (a query string or
+     * select.where expression) on the next access.
      */
     public void clearQueryTree() {
         queryTree = null;
@@ -318,43 +316,29 @@ public class Model implements Cloneable {
     public void setDefaultIndex(String defaultIndex) { this.defaultIndex = defaultIndex; }
 
     /**
-     * Returns the query type of for this query.
+     * Sets the query type of for this query.
      * The type is taken into account at the time the query tree is parsed.
      */
-    public Query.Type getType() { return type.getType(); }
+    public Query.Type getType() { return type; }
 
     /**
-     * Returns the detailed query type of for this query.
-     * The type is taken into account at the time the query tree is parsed.
-     */
-    public QueryType getQueryType() { return type; }
-
-    /**
-     * Sets the query type of this query to the QueryType of the given type
-     * (such that any QueryType settings are deplaced by this).
+     * Sets the query type of for this query.
      * The type is taken into account at the time the query tree is parsed.
      * Setting this does <i>not</i> cause the query to be reparsed.
      */
-    public void setType(Query.Type type) { this.type = QueryType.from(type); }
+    public void setType(Query.Type type) { this.type = type; }
 
     /**
-     * Sets the query type of this query.
+     * Sets the query type of for this query.
      * The type is taken into account at the time the query tree is parsed.
      * Setting this does <i>not</i> cause the query to be reparsed.
      */
-    public void setType(QueryType type) { this.type = type; }
+    public void setType(String typeString) { this.type = Query.Type.getType(typeString); }
 
-    /**
-     * Sets the query type of this query.
-     * The type is taken into account at the time the query tree is parsed.
-     * Setting this does <i>not</i> cause the query to be reparsed.
-     */
-    public void setType(String typeString) { this.type = QueryType.from(Query.Type.getType(typeString)); }
-
-    @Override
     public boolean equals(Object o) {
-        if ( ! (o instanceof Model other)) return false;
+        if ( ! (o instanceof Model)) return false;
 
+        Model other = (Model) o;
         if ( ! (
                 QueryHelper.equals(other.encoding, this.encoding) &&
                 QueryHelper.equals(other.language, this.language) &&
@@ -544,7 +528,7 @@ public class Model implements Cloneable {
         for (Item  candidate : candidates) {
             TaggableItem t = (TaggableItem) candidate;
             var documentFrequency = t.getDocumentFrequency();
-            if (documentFrequency.isEmpty()) continue;
+            if ( ! documentFrequency.isPresent()) continue;
             String name = "vespa.term." + t.getUniqueID() + ".docfreq";
             ranking.getProperties().put(name, String.valueOf(documentFrequency.get().frequency()));
             ranking.getProperties().put(name, String.valueOf(documentFrequency.get().count()));
@@ -558,7 +542,8 @@ public class Model implements Cloneable {
             // This is tested before descending, as phrases are viewed
             // as leaf nodes in the ranking code in the backend
             terms.add(root);
-        } else if (root instanceof CompositeItem c) {
+        } else if (root instanceof CompositeItem) {
+            CompositeItem c = (CompositeItem) root;
             for (Iterator<Item> i = c.getItemIterator(); i.hasNext();) {
                 collectTaggableItems(i.next(), terms);
             }

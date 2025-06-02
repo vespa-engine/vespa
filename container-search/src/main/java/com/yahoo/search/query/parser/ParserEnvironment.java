@@ -5,9 +5,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.language.process.SpecialTokens;
-import com.yahoo.search.Query;
 import com.yahoo.search.Searcher;
-import com.yahoo.search.query.QueryType;
 import com.yahoo.search.searchchain.Execution;
 
 /**
@@ -18,7 +16,7 @@ import com.yahoo.search.searchchain.Execution;
  */
 public final class ParserEnvironment {
 
-    /** Flags to set various sub-modes in query parsing */
+    /** flags to enable backwards-compatibility modes in query parsing */
     public record ParserSettings(boolean keepImplicitAnds,
                                  boolean markSegmentAnds,
                                  boolean keepSegmentAnds,
@@ -36,7 +34,6 @@ public final class ParserEnvironment {
     private Linguistics linguistics = new SimpleLinguistics();
     private SpecialTokens specialTokens = SpecialTokens.empty();
     private ParserSettings parserSettings = new ParserSettings();
-    private QueryType type = QueryType.from(Query.Type.WEAKAND);
 
     public ParserSettings getParserSettings() {
         return parserSettings;
@@ -74,15 +71,6 @@ public final class ParserEnvironment {
         return this;
     }
 
-    public QueryType getType() {
-        return type;
-    }
-
-    public ParserEnvironment setType(QueryType type) {
-        this.type = type;
-        return this;
-    }
-
     public static ParserEnvironment fromExecutionContext(Execution.Context context) {
         ParserEnvironment env = new ParserEnvironment();
         if (context == null) return env;
@@ -106,8 +94,6 @@ public final class ParserEnvironment {
                 .setIndexFacts(environment.indexFacts)
                 .setParserSettings(environment.parserSettings)
                 .setLinguistics(environment.linguistics)
-                .setSpecialTokens(environment.specialTokens)
-                .setType(environment.type);
+                .setSpecialTokens(environment.specialTokens);
     }
-
 }

@@ -48,7 +48,9 @@ public class ParseTestCase {
 
     @Test
     void testTermWithIndexPrefix() {
-        tester.assertParsed("url:foobar", "url:foobar", Query.Type.ANY);
+        tester.assertParsed("url:foobar",
+                "url:foobar",
+                Query.Type.ANY);
     }
 
     @Test

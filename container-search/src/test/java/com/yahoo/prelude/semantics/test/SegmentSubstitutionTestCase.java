@@ -6,7 +6,6 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.parser.AllParser;
 import com.yahoo.prelude.query.parser.TestLinguistics;
 import com.yahoo.search.Query;
-import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import org.junit.jupiter.api.Test;
@@ -54,10 +53,7 @@ public class SegmentSubstitutionTestCase extends RuleBaseAbstractTestCase {
     }
 
     private static Item parseQuery(String query) {
-        var environment = new ParserEnvironment();
-        environment.setLinguistics(TestLinguistics.INSTANCE);
-        environment.getType().setComposite(QueryType.Composite.and);
-        AllParser parser = new AllParser(environment);
+        AllParser parser = new AllParser(new ParserEnvironment().setLinguistics(TestLinguistics.INSTANCE), false);
         return parser.parse(new Parsable().setQuery(query).setLanguage(Language.CHINESE_SIMPLIFIED)).getRoot();
     }
 

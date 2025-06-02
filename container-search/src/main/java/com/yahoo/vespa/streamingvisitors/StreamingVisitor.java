@@ -64,7 +64,7 @@ class StreamingVisitor extends VisitorDataHandler implements Visitor {
     private static final Logger log = Logger.getLogger(StreamingVisitor.class.getName());
     private final VisitorParameters params = new VisitorParameters("");
     private List<SearchResult.Hit> hits = new ArrayList<>();
-    private final Set<String> errors = new TreeSet<>();
+    private Set<String> errors = new TreeSet<>();
     private int totalHitCount = 0;
 
     private final Map<String, DocumentSummary.Summary> summaryMap = new HashMap<>();

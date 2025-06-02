@@ -3,7 +3,6 @@ package com.yahoo.search.query.parser;
 
 import com.yahoo.prelude.query.parser.*;
 import com.yahoo.search.Query;
-import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.SelectParser;
 import com.yahoo.search.yql.YqlParser;
 
@@ -18,10 +17,6 @@ public final class ParserFactory {
         // hide
     }
 
-    public static Parser newInstance(Query.Type type, ParserEnvironment environment) {
-        return newInstance(QueryType.from(type), environment);
-    }
-
     /**
      * Creates a {@link Parser} appropriate for the given <code>Query.Type</code>, providing the Parser with access to
      * the {@link ParserEnvironment} given.
@@ -31,37 +26,20 @@ public final class ParserFactory {
      * @return the created Parser
      */
     @SuppressWarnings("deprecation")
-    public static Parser newInstance(QueryType type, ParserEnvironment environment) {
-        // This isn't a clean switch from type.getSyntax for legacy reasons.
-        // With some more effort the various parsers for the same syntax could be merged into one
-        // since the variance is covered in environment.getType which is accessible to the parsers.
-        type.validate();
-        environment.setType(type);
-        if (type.getSyntax() == QueryType.Syntax.advanced)
-            return new AdvancedParser(environment);
-        if (type.getSyntax() == QueryType.Syntax.json)
-            return new SelectParser(environment);
-        if (type.getSyntax() == QueryType.Syntax.programmatic)
-            return new ProgrammaticParser();
-        if (type.getSyntax() == QueryType.Syntax.web)
-            return new WebParser(environment);
-        if (type.getSyntax() == QueryType.Syntax.yql)
-            return new YqlParser(environment);
-        if (type.getSyntax() == QueryType.Syntax.none) {
-            if (type.getTokenization() == QueryType.Tokenization.linguistics)
-                return new LinguisticsParser(environment);
-            else
-                return new TokenizeParser(environment);
-        }
-        else if (type.getSyntax() == QueryType.Syntax.simple) {
-            if (type.getComposite() == QueryType.Composite.or)
-                return new AnyParser(environment);
-            if (type.getComposite() == QueryType.Composite.phrase)
-                return new PhraseParser(environment);
-            else
-                return new AllParser(environment); // Covers both 'weakAnd' and 'and'
-        }
-        throw new IllegalStateException("Unsupported query syntax '" + type.getSyntax() + "'");
+    public static Parser newInstance(Query.Type type, ParserEnvironment environment) {
+        return switch (type) {
+            case ALL -> new AllParser(environment, false);
+            case ANY -> new AnyParser(environment);
+            case PHRASE -> new PhraseParser(environment);
+            case ADVANCED -> new AdvancedParser(environment);
+            case WEB -> new WebParser(environment);
+            case PROGRAMMATIC -> new ProgrammaticParser();
+            case YQL -> new YqlParser(environment);
+            case SELECT -> new SelectParser(environment);
+            case WEAKAND -> new AllParser(environment, true);
+            case TOKENIZE -> new TokenizeParser(environment);
+            case LINGUISTICS -> new LinguisticsParser(environment);
+        };
     }
 
 }
