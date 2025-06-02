@@ -17,7 +17,7 @@ final class ArgumentsTypeChecker {
 
     public void check(Object... args) {
         if (args == null) {
-            Preconditions.checkArgument(checkers.isEmpty(), "Operator %s argument count mismatch: expected %s got 0", target, checkers.size());
+            Preconditions.checkArgument(checkers.size() == 0, "Operator %s argument count mismatch: expected %s got 0", target, checkers.size());
             return;
         } else {
             Preconditions.checkArgument(args.length == checkers.size(), "Operator %s argument count mismatch: expected: %s got %s", target, checkers.size(), args.length);

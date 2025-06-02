@@ -5,19 +5,15 @@ import com.yahoo.language.Language;
 import com.yahoo.language.process.Segmenter;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.AndSegmentItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IndexedItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.NullItem;
-import com.yahoo.prelude.query.OrItem;
 import com.yahoo.prelude.query.PhraseItem;
 import com.yahoo.prelude.query.PhraseSegmentItem;
-import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.prelude.query.WordItem;
 import com.yahoo.search.query.QueryTree;
-import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.parser.Parsable;
 import com.yahoo.search.query.parser.ParserEnvironment;
 
@@ -32,6 +28,7 @@ import java.util.ListIterator;
  * @author Steinar Knutsen
  */
 public abstract class AbstractParser implements CustomParser {
+
 
     /** The current submodes of this parser */
     protected Submodes submodes = new Submodes();
@@ -374,7 +371,7 @@ public abstract class AbstractParser implements CustomParser {
 
         Segmenter segmenter = environment.getLinguistics().getSegmenter();
         List<String> segments = segmenter.segment(normalizedToken, language);
-        if (segments.isEmpty()) {
+        if (segments.size() == 0) {
             return null;
         }
 
@@ -403,16 +400,6 @@ public abstract class AbstractParser implements CustomParser {
         }
         composite.lock();
         return composite;
-    }
-
-    /** Creates a new composite of the type specified in environment.getType().getComposite(). */
-    protected CompositeItem newComposite() {
-        return switch (environment.getType().getComposite()) {
-            case and     -> new AndItem();
-            case or      -> new OrItem();
-            case phrase  -> new PhraseItem();
-            case weakAnd -> new WeakAndItem();
-        };
     }
 
 }

@@ -15,7 +15,6 @@ import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.TrueItem;
 import com.yahoo.prelude.query.WeakAndItem;
 import com.yahoo.search.query.QueryTree;
-import com.yahoo.search.query.QueryType;
 import com.yahoo.search.query.parser.ParserEnvironment;
 import com.yahoo.search.query.parser.ParserEnvironment.ParserSettings;
 
@@ -32,11 +31,17 @@ import static com.yahoo.prelude.query.parser.Token.Kind.SPACE;
  */
 public class AllParser extends SimpleParser {
 
+    private final boolean weakAnd;
     private final ParserSettings parserSettings;
 
-    /** Creates an all/weakAnd parser. */
-    public AllParser(ParserEnvironment environment) {
+    /**
+     * Creates an all/weakAnd parser
+     *
+     * @param weakAnd false to parse into AndItem (by default), true to parse to WeakAndItem
+     */
+    public AllParser(ParserEnvironment environment, boolean weakAnd) {
         super(environment);
+        this.weakAnd = weakAnd;
         this.parserSettings = environment.getParserSettings();
     }
 
@@ -101,11 +106,11 @@ public class AllParser extends SimpleParser {
         if (other instanceof AndItem) {
             return ! parserSettings.keepImplicitAnds();
         }
-        if ( weakAnd() && other instanceof AndSegmentItem sand) {
+        if (weakAnd && other instanceof AndSegmentItem sand) {
             if (parserSettings.keepSegmentAnds()) {
                 return false;
             } else if (parserSettings.markSegmentAnds()) {
-                sand.shouldFoldIntoWand(weakAnd());
+                sand.shouldFoldIntoWand(weakAnd);
                 return false;
             }
             return true;
@@ -113,21 +118,21 @@ public class AllParser extends SimpleParser {
         return false;
     }
 
-    private boolean weakAnd() {
-        return environment.getType().getComposite() == QueryType.Composite.weakAnd;
-    }
-
-    protected CompositeItem addAnd(Item item, CompositeItem parent) {
-        if (parent == null)
-            parent = newComposite();
+    protected CompositeItem addAnd(Item item, CompositeItem and) {
+        if (and == null)
+            and = createAnd();
         if (item instanceof CompositeItem composite && foldIntoAnd(composite)) {
             for (var subItem : composite.items()) {
-                addAnd(subItem, parent);
+                addAnd(subItem, and);
             }
         } else {
-            parent.addItem(item);
+            and.addItem(item);
         }
-        return parent;
+        return and;
+    }
+
+    private CompositeItem createAnd() {
+        return weakAnd ? new WeakAndItem() : new AndItem();
     }
 
     protected OrItem addOr(Item item, OrItem or) {
@@ -160,8 +165,8 @@ public class AllParser extends SimpleParser {
 
                 if (item != null) {
                     isComposited = true;
-                    if (item instanceof OrItem) { // Turn into the default composite
-                        CompositeItem and = newComposite();
+                    if (item instanceof OrItem) { // Turn into And
+                        CompositeItem and = createAnd();
 
                         for (Iterator<Item> i = ((OrItem) item).getItemIterator(); i.hasNext();) {
                             and.addItem(i.next());

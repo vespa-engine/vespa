@@ -513,7 +513,6 @@ public class YqlParserTestCase {
             assertTrue(child instanceof WordItem);
             WordItem childWord = (WordItem)child;
             assertFalse(childWord.isStemmed());
-            assertTrue(childWord.isNormalizable());
         }
 
         root = parse("select foo from bar where {grammar:\"linguistics\"}userInput(\"yoni jo dima\")").getRoot();

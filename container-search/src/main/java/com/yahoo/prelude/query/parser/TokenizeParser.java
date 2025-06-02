@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.IntItem;
 import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.WeakAndItem;
@@ -24,14 +23,14 @@ public final class TokenizeParser extends AbstractParser {
 
     @Override
     protected Item parseItems() {
-        CompositeItem parent = newComposite();
+        WeakAndItem weakAnd = new WeakAndItem();
         Token token;
         while (null != (token = tokens.next())) {
             Item termItem = toTerm(token);
             if (termItem != null)
-                parent.addItem(termItem);
+                weakAnd.addItem(termItem);
         }
-        return parent;
+        return weakAnd;
     }
 
     /** Returns the item representing this token if it is searchable, and null otherwise */
