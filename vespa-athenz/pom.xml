@@ -8,6 +8,7 @@
     <artifactId>vespa-athenz</artifactId>
     <packaging>container-plugin</packaging>
     <version>8-SNAPSHOT</version>
+    <name>${project.artifactId}</name>
 
     <parent>
         <groupId>com.yahoo.vespa</groupId>

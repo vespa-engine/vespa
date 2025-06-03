@@ -11,6 +11,7 @@
   <artifactId>vespa-feed-client-api</artifactId>
   <packaging>jar</packaging>
   <version>8-SNAPSHOT</version>
+  <name>${project.artifactId}</name>
 
   <dependencies>
     <!-- compile scope -->

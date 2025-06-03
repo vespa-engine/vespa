@@ -15,6 +15,7 @@
   <artifactId>client</artifactId>
   <packaging>jar</packaging>
   <version>8-SNAPSHOT</version>
+  <name>${project.artifactId}</name>
 
   <dependencies>
     <dependency>

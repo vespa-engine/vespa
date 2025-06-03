@@ -8,6 +8,7 @@
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>socket_test</artifactId>
     <version>8-SNAPSHOT</version>
+  <name>${project.artifactId}</name>
     <parent>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>parent</artifactId>

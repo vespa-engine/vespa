@@ -11,6 +11,7 @@
   <artifactId>zookeeper-server-3.9.3</artifactId>
   <packaging>container-plugin</packaging>
   <version>8-SNAPSHOT</version>
+  <name>${project.artifactId}</name>
   <properties>
     <zookeeper.version>3.9.3</zookeeper.version>
   </properties>

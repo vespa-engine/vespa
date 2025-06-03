@@ -11,6 +11,7 @@
   <artifactId>zookeeper-server-parent</artifactId>
   <packaging>pom</packaging>
   <version>8-SNAPSHOT</version>
+  <name>${project.artifactId}</name>
   <modules>
     <module>zookeeper-server-common</module>
     <module>zookeeper-server</module>

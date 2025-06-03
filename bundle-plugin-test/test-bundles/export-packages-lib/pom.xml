@@ -14,6 +14,7 @@
   <artifactId>export-packages-lib</artifactId>
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
+  <name>${project.artifactId}</name>
 
   <build>
     <plugins>

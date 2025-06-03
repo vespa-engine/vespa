@@ -14,6 +14,7 @@
     <artifactId>node-repository</artifactId>
     <version>8-SNAPSHOT</version>
     <packaging>container-plugin</packaging>
+    <name>${project.artifactId}</name>
     <description>Keeps track of node assignment in a multi-application setup.</description>
 
     <dependencies>
