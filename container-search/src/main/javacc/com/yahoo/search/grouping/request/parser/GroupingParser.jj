@@ -184,7 +184,7 @@ TOKEN :
 // Declare a special skip token for comments.
 SPECIAL_TOKEN :
 {
-  <SINGLE_LINE_COMMENT: "//" (~["\n","\r"])* > |
+  <SINGLE_LINE_COMMENT: ("//"|"#") (~["\n","\r"])* > |
   <MULTI_LINE_COMMENT: "/*" (~["*"])* "*" (~["*", "/"] (~["*"])* "*" | "*")* "/" >
 }
 

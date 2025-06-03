@@ -1296,6 +1296,7 @@ public class YqlParserTestCase {
     @Test
     public void testParseYqlComment() {
         assertParse("select foo from bar where // false \n true", "TRUE");
+        assertParse("select foo from bar where # false \n true", "TRUE");
     }
 
     @Test
@@ -1306,6 +1307,20 @@ public class YqlParserTestCase {
                 " )",
                 "TRUE");
         assertEquals("[[]all(group(a) each(output(count())))]",
+                toString(parser.getGroupingSteps()));
+
+        assertParse(
+                """
+                select foo from bar where true | all(
+                    # get count of each 'a':
+                    group(a) each( output(
+                        count() as(num) # call it 'num'
+                                         )
+                                 )
+                    )
+                """,
+                "TRUE");
+        assertEquals("[[]all(group(a) each(output(count() as(num))))]",
                 toString(parser.getGroupingSteps()));
     }
 
