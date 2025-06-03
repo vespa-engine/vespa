@@ -99,6 +99,7 @@ public class ClusterControllerClusterConfigurer extends AbstractComponent {
         builder.setClusterFeedBlockNoiseLevel(config.cluster_feed_block_noise_level());
         builder.setMaxNumberOfGroupsAllowedToBeDown(config.max_number_of_groups_allowed_to_be_down());
         builder.setIncludeDistributionConfigInClusterStateBundles(config.include_distribution_config_in_cluster_state_bundle());
+        builder.setAggregateContentNodeErrorReportsFromDistributors(config.aggregate_content_node_error_reports_from_distributors());
     }
 
     private static void configure(FleetControllerOptions.Builder builder, SlobroksConfig config) {

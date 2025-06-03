@@ -102,6 +102,11 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
             }
 
             @Override
+            public ContentClusterErrorStats getErrorStats() {
+                return null;
+            }
+
+            @Override
             public ContentNodeStats getGlobalStats() {
                 return globalClusterStats;
             }

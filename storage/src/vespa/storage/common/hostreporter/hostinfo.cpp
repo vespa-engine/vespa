@@ -18,7 +18,13 @@ void HostInfo::printReport(vespalib::JsonStream& report) {
 }
 
 void HostInfo::registerReporter(HostReporter *reporter) {
-    customReporters.push_back(reporter);
+    customReporters.emplace_back(reporter);
+}
+
+void HostInfo::invoke_periodic_callbacks(std::chrono::steady_clock::time_point now_steady) {
+    for (HostReporter* reporter : customReporters) {
+        reporter->on_periodic_callback(now_steady);
+    }
 }
 
 }

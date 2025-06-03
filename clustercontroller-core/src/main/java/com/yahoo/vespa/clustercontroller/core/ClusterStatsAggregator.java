@@ -33,11 +33,18 @@ public class ClusterStatsAggregator {
     // Maps the distributor node index to a map of content node index to the
     // content node's stats.
     private final Map<Integer, ContentClusterStats> distributorToStats = new HashMap<>();
+    private final Map<Integer, ContentClusterErrorStats> distributorToErrorStats = new HashMap<>();
 
     // This is only needed as an optimization. Is just the sum of distributorToStats' ContentClusterStats.
     // Maps the content node index to the content node stats for that node.
     // This MUST be kept up-to-date with distributorToStats;
     private final ContentClusterStats aggregatedStats;
+    // Aggregate of all error reports received from all distributors for all content nodes.
+    // Makes it cheap to determine which distributors, if any, have observed errors towards
+    // any given content node in the current cluster state. This conceptually mirrors
+    // `aggregatedStats`, but with an extra internal indirection that is expected to be
+    // very sparse in a healthy system.
+    private final ContentClusterErrorStats aggregatedErrorStats;
     // This is the aggregate of aggregates across content nodes, allowing a reader to
     // get a O(1) view of all merges pending in the cluster.
     private final ContentNodeStats globallyAggregatedNodeStats = new ContentNodeStats(-1);
@@ -49,6 +56,7 @@ public class ClusterStatsAggregator {
         this.distributors = distributors;
         nonUpdatedDistributors = new HashSet<>(distributors);
         aggregatedStats = new ContentClusterStats(storageNodes);
+        aggregatedErrorStats = new ContentClusterErrorStats(storageNodes);
     }
 
     public AggregatedClusterStats getAggregatedStats() {
@@ -62,6 +70,11 @@ public class ClusterStatsAggregator {
             @Override
             public ContentClusterStats getStats() {
                 return aggregatedStats;
+            }
+
+            @Override
+            public ContentClusterErrorStats getErrorStats() {
+                return aggregatedErrorStats;
             }
 
             @Override
@@ -103,6 +116,37 @@ public class ClusterStatsAggregator {
         }
         nonUpdatedDistributors.remove(distributorIndex);
         addStatsFromDistributor(distributorIndex, clusterStats);
+    }
+
+    void updateErrorStatsFromDistributor(int distributorIndex, ContentClusterErrorStats updatedErrorStats) {
+        if (!distributors.contains(distributorIndex)) {
+            return;
+        }
+        // This does _not_ remove the distributor from `nonUpdatedDistributors` since this
+        // method will be called even if the distributor has not yet converged to the newest
+        // cluster state.
+        // It also does not implicitly put an entry into the `distributorToStats` mapping; error
+        // stats are kept entirely separate.
+        ContentClusterErrorStats prevErrorStats = distributorToErrorStats.put(distributorIndex, updatedErrorStats);
+        for (var contentNodeEntry : aggregatedErrorStats.contentNodeErrorStats().entrySet()) {
+            var nodeIndex   = contentNodeEntry.getKey();
+            var contentNode = contentNodeEntry.getValue();
+            ContentNodeErrorStats statsToAdd = updatedErrorStats.getNodeErrorStats(nodeIndex);
+            if (statsToAdd != null) {
+                contentNode.addErrorStatsFrom(distributorIndex, statsToAdd);
+            }
+            if (prevErrorStats != null) {
+                ContentNodeErrorStats statsToSubtract = prevErrorStats.getNodeErrorStats(nodeIndex);
+                if (statsToSubtract != null) {
+                    contentNode.subtractErrorStatsFrom(distributorIndex, statsToSubtract);
+                }
+            }
+        }
+    }
+
+    void clearAllErrorStatsFromDistributors() {
+        distributorToErrorStats.clear();
+        aggregatedErrorStats.clearAllStats();
     }
 
     private void addStatsFromDistributor(int distributorIndex, ContentClusterStats clusterStats) {

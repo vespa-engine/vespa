@@ -212,3 +212,10 @@ max_number_of_groups_allowed_to_be_down int default=-1
 ## a given versioned state corresponds directly to a particular bucket ownership
 ## and replica placement mapping for the ideal state algorithm.
 include_distribution_config_in_cluster_state_bundle bool default=true
+
+## Iff true, the cluster controller will aggregate error reports for content nodes
+## reported by the distributors in the cluster. Setting this to false will clear
+## any existing error aggregates on the cluster controller. It does not affect whether
+## the distributors actually report back error information, only the controller-side
+## aggregation of this information.
+aggregate_content_node_error_reports_from_distributors bool default=false

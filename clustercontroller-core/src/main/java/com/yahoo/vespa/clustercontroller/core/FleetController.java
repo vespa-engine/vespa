@@ -303,7 +303,8 @@ public class FleetController implements NodeListener, SlobrokListener, SystemSta
     public void handleUpdatedHostInfo(NodeInfo nodeInfo, HostInfo newHostInfo) {
         verifyInControllerThread();
         triggerBundleRecomputationIfResourceExhaustionStateChanged(nodeInfo, newHostInfo);
-        stateVersionTracker.handleUpdatedHostInfo(nodeInfo, newHostInfo);
+        boolean aggregateErrors = options.aggregateContentNodeErrorReportsFromDistributors();
+        stateVersionTracker.handleUpdatedHostInfo(nodeInfo, newHostInfo, aggregateErrors);
     }
 
     private void triggerBundleRecomputationIfResourceExhaustionStateChanged(NodeInfo nodeInfo, HostInfo newHostInfo) {

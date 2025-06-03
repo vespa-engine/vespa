@@ -585,12 +585,14 @@ StateManager::warn_on_missing_health_ping()
 
 void
 StateManager::tick() {
-    bool almost_immediate_replies = _requested_almost_immediate_node_state_replies.load(std::memory_order_relaxed);
+    const auto now_steady = _component.getClock().getMonotonicTime();
+    _hostInfo->invoke_periodic_callbacks(now_steady);
+    const bool almost_immediate_replies = _requested_almost_immediate_node_state_replies.load(std::memory_order_relaxed);
     if (almost_immediate_replies) {
         _requested_almost_immediate_node_state_replies.store(false, std::memory_order_relaxed);
         sendGetNodeStateReplies();
     } else {
-        sendGetNodeStateReplies(_component.getClock().getMonotonicTime());
+        sendGetNodeStateReplies(now_steady);
     }
     warn_on_missing_health_ping();
 }

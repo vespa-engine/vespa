@@ -22,6 +22,7 @@
 #include <vespa/storage/distributor/distributor_stripe_thread.h>
 #include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/metrics/updatehook.h>
 #include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -148,6 +149,10 @@ struct TopLevelDistributorTest : Test, TopLevelDistributorTestUtil {
     uint32_t get_bucket_last_gc_time(const BucketId& bucket_id) const {
         auto db_entry = get_bucket(bucket_id);
         return db_entry->getLastGarbageCollectionTime();
+    }
+
+    ContentNodeMessageStatsTracker::NodeStats content_node_message_stats() const {
+        return _distributor->content_node_stats();
     }
 
 };
@@ -328,6 +333,36 @@ TEST_F(TopLevelDistributorTest, metric_update_hook_updates_pending_maintenance_m
         EXPECT_EQ(0, metrics.operations[MO::JOIN_BUCKET]->pending.getLast());
         EXPECT_EQ(0, metrics.operations[MO::GARBAGE_COLLECTION]->pending.getLast());
     }
+}
+
+// Messages sent as part of cluster state changes are sent by the _top level_ distributor
+// component and _not_ by the individual stripes. It is therefore not sufficient to just
+// keep track of sent messages by the stripes themselves to deduce that state convergence
+// is having issues due to messaging failures. I.e. we must track top-level messages sent
+// from (and received by) the top level bucket DB updater.
+TEST_F(TopLevelDistributorTest, top_level_bucket_db_updater_are_tracked_by_statistics) {
+    setup_distributor(Redundancy(2), NodeCount(2), "version:1 storage:2 .0.s:d distributor:1");
+    auto stats_before = content_node_message_stats();
+
+    receive_set_system_state_command("version:2 storage:2 distributor:1"); // node 0 came back up; must send bucket requests
+    tick_top_level_distributor_n_times(1); // Process enqueued message
+
+    auto stats_delta = content_node_message_stats().sparse_subtracted(stats_before);
+    ASSERT_TRUE(stats_delta.per_node.contains(0));
+    const size_t n_expected_msgs = bucket_spaces().size(); // 1 message per bucket space
+    EXPECT_EQ(stats_delta.per_node[0].sent, n_expected_msgs);
+    EXPECT_EQ(stats_delta.per_node[0].sum_received(), 0);
+    EXPECT_EQ(stats_delta.per_node[0].sum_errors(), 0);
+
+    reply_to_1_node_bucket_info_fetch_with_n_buckets(10);
+    tick_top_level_distributor_n_times(1); // Process enqueued message
+
+    stats_delta = content_node_message_stats().sparse_subtracted(stats_before);
+    ASSERT_TRUE(stats_delta.per_node.contains(0));
+    EXPECT_EQ(stats_delta.per_node[0].sent, n_expected_msgs);
+    EXPECT_EQ(stats_delta.per_node[0].recv_ok, n_expected_msgs);
+    EXPECT_EQ(stats_delta.per_node[0].sum_received(), n_expected_msgs);
+    EXPECT_EQ(stats_delta.per_node[0].sum_errors(), 0);
 }
 
 TEST_F(TopLevelDistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_time_intervals) {

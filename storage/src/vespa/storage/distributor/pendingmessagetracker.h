@@ -1,11 +1,13 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "content_node_message_stats_tracker.h"
 #include "nodeinfo.h"
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageframework/generic/component/component.h>
 #include <vespa/storageframework/generic/component/componentregister.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <boost/multi_index/composite_key.hpp>
 #include <boost/multi_index/identity.hpp>
@@ -108,6 +110,8 @@ public:
     const NodeInfo& getNodeInfo() const noexcept { return _nodeInfo; }
     NodeInfo& getNodeInfo() noexcept { return _nodeInfo; }
 
+    [[nodiscard]] ContentNodeMessageStatsTracker::NodeStats content_node_stats() const;
+
     /**
      * Clears all pending messages for the given node, and returns
      * the messages erased.
@@ -192,16 +196,16 @@ private:
             document::Bucket::hash
         >;
 
-    Messages                   _messages;
-    framework::Component       _component;
-    NodeInfo                   _nodeInfo;
-    vespalib::duration         _nodeBusyDuration;
-    DeferredBucketTaskMap      _deferred_read_tasks;
-    mutable std::atomic<bool>  _trackTime;
+    Messages                       _messages;
+    framework::Component           _component;
+    NodeInfo                       _nodeInfo;
+    vespalib::duration             _nodeBusyDuration;
+    DeferredBucketTaskMap          _deferred_read_tasks;
+    ContentNodeMessageStatsTracker _node_message_stats_tracker;
+    mutable std::atomic<bool>      _trackTime;
 
-    // Since distributor is currently single-threaded, this will only
-    // contend when status page is being accessed. It is, however, required
-    // to be present for that exact purpose.
+    // Protects sampling of content node statistics and status page rendering, as this can happen
+    // from arbitrary other threads than the owning stripe's worker thread.
     mutable std::mutex _lock;
 
     void getStatusStartPage(std::ostream& out) const;

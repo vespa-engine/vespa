@@ -10,6 +10,7 @@ vespa_add_executable(storage_distributor_gtest_runner_app TEST
     bucketgctimecalculatortest.cpp
     bucketstateoperationtest.cpp
     check_condition_test.cpp
+    content_node_message_stats_test.cpp
     distributor_bucket_space_repo_test.cpp
     distributor_bucket_space_test.cpp
     distributor_host_info_reporter_test.cpp
