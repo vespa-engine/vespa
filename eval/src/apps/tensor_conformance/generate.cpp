@@ -258,6 +258,21 @@ void generate_map_subspaces(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
+void generate_filter_subspaces(TestBuilder &dst) {
+    auto my_seq = Seq({1, 2, 3, 4, 5, 6, 7, 8});
+    auto sparse = GenSpec().from_desc("x8_1").seq(my_seq);
+    auto mixed = GenSpec().from_desc("x4_1y2").seq(my_seq);
+    auto complex = GenSpec().from_desc("x2_1y2_1z2").seq(my_seq);
+    std::string single("filter_subspaces(a,f(x)(x>3.5))");
+    std::string with_y("filter_subspaces(a,f(x)(x{y:0}>3.5))");
+    std::string with_z("filter_subspaces(a,f(x)(x{z:1}>3.5))");
+    generate(single, sparse, dst);
+    generate(with_y, mixed, dst);
+    generate(with_z, complex, dst);
+}
+
+//-----------------------------------------------------------------------------
+
 void generate_join_expr(const std::string &expr, const Sequence &seq, TestBuilder &dst) {
     for (const auto &layouts: join_layouts) {
         GenSpec a = GenSpec::from_desc(layouts.first).seq(seq);
@@ -425,6 +440,26 @@ void generate_cell_cast(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
+void generate_cell_order(TestBuilder &dst) {
+    auto my_seq = Seq({37, -82, 114, -11, 5, -103});
+    auto scalar = GenSpec(37.0);
+    auto sparse = GenSpec().from_desc("x3_1y2_1").seq(my_seq);
+    auto mixed = GenSpec().from_desc("x3_1y2").seq(my_seq);
+    auto dense = GenSpec().from_desc("x3y2").seq(my_seq);
+    std::string order_max("cell_order(a,max)");
+    std::string order_min("cell_order(a,min)");
+    generate(order_max, scalar, dst);
+    generate(order_max, sparse, dst);
+    generate(order_max, mixed, dst);
+    generate(order_max, dense, dst);
+    generate(order_min, scalar, dst);
+    generate(order_min, sparse, dst);
+    generate(order_min, mixed, dst);
+    generate(order_min, dense, dst);
+}
+
+//-----------------------------------------------------------------------------
+
 void generate_peek(TestBuilder &dst) {
     GenSpec num(2);
     GenSpec dense  = GenSpec::from_desc("x3y5z7").seq(N());
@@ -583,12 +618,14 @@ Generator::generate(TestBuilder &dst)
     generate_reduce(dst);
     generate_map(dst);
     generate_map_subspaces(dst);
+    generate_filter_subspaces(dst);
     generate_join(dst);
     generate_merge(dst);
     generate_concat(dst);
     generate_create(dst);
     generate_lambda(dst);
     generate_cell_cast(dst);
+    generate_cell_order(dst);
     generate_peek(dst);
     generate_rename(dst);
     generate_if(dst);
