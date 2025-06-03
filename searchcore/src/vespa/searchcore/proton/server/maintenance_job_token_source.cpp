@@ -40,6 +40,7 @@ MaintenanceJobTokenSource::token_destroyed()
     remove_deleted_or_stopped_jobs();
     auto existing_token = _token.lock();
     if (existing_token) {
+        guard.unlock(); // Drop lock to handle recursed call to token_destroyed() if existing_token holds last reference
         return; // get_token() was called after all references to old token were removed but before token_destroyed() was called.
     }
     while (!_jobs.empty()) {
