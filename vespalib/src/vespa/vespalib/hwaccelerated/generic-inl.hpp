@@ -1,6 +1,15 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "generic.h"
+// There is _no_ #pragma once here. This is intentional! This is a header intended to be
+// included by multiple distinct translation units with different compilation options.
+
+#ifndef VESPA_HWACCEL_TARGET_TYPE
+#error "VESPA_HWACCEL_TARGET_TYPE not set"
+#endif
+#ifndef VESPA_HWACCEL_INCLUDE_DEFINITIONS
+#error "VESPA_HWACCEL_INCLUDE_DEFINITIONS not set"
+#endif
+
 #include "private_helpers.hpp"
 #include <cblas.h>
 
@@ -87,59 +96,59 @@ bitOperation(Operation operation, void * aOrg, const void * bOrg, size_t bytes) 
 }
 
 float
-GenericAccelerator::dotProduct(const float * a, const float * b, size_t sz) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const float * a, const float * b, size_t sz) const noexcept
 {
     return cblas_sdot(sz, a, 1, b, 1);
 }
 
 double
-GenericAccelerator::dotProduct(const double * a, const double * b, size_t sz) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const double * a, const double * b, size_t sz) const noexcept
 {
     return cblas_ddot(sz, a, 1, b, 1);
 }
 
 int64_t
-GenericAccelerator::dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept
 {
     return helper::multiplyAdd(a, b, sz);
 }
 
 int64_t
-GenericAccelerator::dotProduct(const int16_t * a, const int16_t * b, size_t sz) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int16_t * a, const int16_t * b, size_t sz) const noexcept
 {
     return multiplyAdd<int64_t, int16_t, 8>(a, b, sz);
 }
 int64_t
-GenericAccelerator::dotProduct(const int32_t * a, const int32_t * b, size_t sz) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int32_t * a, const int32_t * b, size_t sz) const noexcept
 {
     return multiplyAdd<int64_t, int32_t, 8>(a, b, sz);
 }
 
 long long
-GenericAccelerator::dotProduct(const int64_t * a, const int64_t * b, size_t sz) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::dotProduct(const int64_t * a, const int64_t * b, size_t sz) const noexcept
 {
     return multiplyAdd<long long, int64_t, 8>(a, b, sz);
 }
 
 void
-GenericAccelerator::orBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::orBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
 {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a | b; }, aOrg, bOrg, bytes);
 }
 
 void
-GenericAccelerator::andBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::andBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
 {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a & b; }, aOrg, bOrg, bytes);
 }
 void
-GenericAccelerator::andNotBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::andNotBit(void * aOrg, const void * bOrg, size_t bytes) const noexcept
 {
     bitOperation<8>([](uint64_t a, uint64_t b) { return a & ~b; }, aOrg, bOrg, bytes);
 }
 
 void
-GenericAccelerator::notBit(void * aOrg, size_t bytes) const noexcept
+VESPA_HWACCEL_TARGET_TYPE::notBit(void * aOrg, size_t bytes) const noexcept
 {
     auto a(static_cast<uint64_t *>(aOrg));
     const size_t sz(bytes/sizeof(uint64_t));
@@ -153,38 +162,38 @@ GenericAccelerator::notBit(void * aOrg, size_t bytes) const noexcept
 }
 
 void
-GenericAccelerator::convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept {
+VESPA_HWACCEL_TARGET_TYPE::convert_bfloat16_to_float(const uint16_t * src, float * dest, size_t sz) const noexcept {
     helper::convert_bfloat16_to_float(src, dest, sz);
 }
 
 size_t
-GenericAccelerator::populationCount(const uint64_t *a, size_t sz) const noexcept {
+VESPA_HWACCEL_TARGET_TYPE::populationCount(const uint64_t *a, size_t sz) const noexcept {
     return helper::populationCount(a, sz);
 }
 
 double
-GenericAccelerator::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept {
+VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const int8_t * a, const int8_t * b, size_t sz) const noexcept {
     return helper::squaredEuclideanDistance(a, b, sz);
 }
 
 double
-GenericAccelerator::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
+VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const float * a, const float * b, size_t sz) const noexcept {
     return squaredEuclideanDistanceT<float, 16>(a, b, sz);
 }
 
 double
-GenericAccelerator::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
+VESPA_HWACCEL_TARGET_TYPE::squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept {
     return squaredEuclideanDistanceT<double, 16>(a, b, sz);
 }
 
 void
-GenericAccelerator::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+VESPA_HWACCEL_TARGET_TYPE::and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
     helper::andChunks<16, 8>(offset, src, dest);
 }
 
 void
-GenericAccelerator::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
+VESPA_HWACCEL_TARGET_TYPE::or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept {
     helper::orChunks<16, 8>(offset, src, dest);
 }
 
-}
+} // vespalib::hwaccelerated
