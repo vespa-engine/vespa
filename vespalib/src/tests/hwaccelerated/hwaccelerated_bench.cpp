@@ -1,7 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/hwaccelerated/iaccelerated.h>
-#include <vespa/vespalib/hwaccelerated/generic.h>
 #include <vespa/vespalib/util/time.h>
 #include <cinttypes>
 
@@ -52,9 +51,9 @@ int main(int argc, char *argv[]) {
         count = atol(argv[2]);
     }
     printf("%s %d %d\n", argv[0], length, count);
-    printf("Squared Euclidian Distance - Generic\n");
-    benchMarkEuclidianDistance(hwaccelerated::GenericAccelerator(), length, count);
-    printf("Squared Euclidian Distance - Optimized for this cpu\n");
+    printf("Squared Euclidian Distance - Platform baseline\n");
+    benchMarkEuclidianDistance(*hwaccelerated::IAccelerated::create_platform_baseline_accelerator(), length, count);
+    printf("Squared Euclidian Distance - Optimized for this CPU\n");
     benchMarkEuclidianDistance(hwaccelerated::IAccelerated::getAccelerator(), length, count);
     return 0;
 }

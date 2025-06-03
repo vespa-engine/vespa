@@ -1,15 +1,20 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#pragma once
+// There is _no_ #pragma once here. This is intentional! This is a header intended to be
+// included by multiple distinct translation units with different compilation options.
+
+#ifndef VESPA_HWACCEL_TARGET_TYPE
+#error "VESPA_HWACCEL_TARGET_TYPE not set"
+#endif
 
 #include "iaccelerated.h"
 
 namespace vespalib::hwaccelerated {
 
 /**
- * Generic cpu agnostic implementation.
+ * Generic CPU agnostic implementation.
  */
-class GenericAccelerator : public IAccelerated
+class VESPA_HWACCEL_TARGET_TYPE : public IAccelerated
 {
 public:
     float dotProduct(const float * a, const float * b, size_t sz) const noexcept override;
@@ -29,6 +34,14 @@ public:
     double squaredEuclideanDistance(const double * a, const double * b, size_t sz) const noexcept override;
     void and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept override;
     void or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept override;
+#ifdef VESPA_HWACCEL_TARGET_NAME
+    const char* target_name() const noexcept override { return VESPA_HWACCEL_TARGET_NAME; }
+#endif
 };
 
-}
+} // vespalib::hwaccelerated
+
+// .cpp files should set this additional macro to also generate the target class _definitions_
+#ifdef VESPA_HWACCEL_INCLUDE_DEFINITIONS
+#include "generic-inl.hpp"
+#endif
