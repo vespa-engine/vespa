@@ -18,6 +18,7 @@
              impossible with the maven-versions-plugin, and cumbersome with factorylib. -->
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
+  <name>${project.artifactId}</name>
   <dependencies>
   </dependencies>
   <build>

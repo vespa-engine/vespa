@@ -8,6 +8,7 @@
     <groupId>com.yahoo.vespa</groupId>
     <artifactId>tenant-cd-commons</artifactId>
     <packaging>jar</packaging>
+    <name>${project.artifactId}</name>
 
     <parent>
         <groupId>com.yahoo.vespa</groupId>

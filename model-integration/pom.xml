@@ -14,6 +14,7 @@
   <artifactId>model-integration</artifactId>
   <version>8-SNAPSHOT</version>
   <packaging>container-plugin</packaging>
+  <name>${project.artifactId}</name>
 
   <dependencyManagement>
     <dependencies>
@@ -242,7 +243,7 @@
     </exclusions>
     </dependency>
 
-     <!-- include com.fasterxml.jackson.databind -->
+    <!-- include com.fasterxml.jackson.databind -->
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-databind</artifactId>

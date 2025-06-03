@@ -15,6 +15,7 @@
     <artifactId>cloud-tenant-base-dependencies-enforcer</artifactId>
     <version>8-SNAPSHOT</version>
     <packaging>pom</packaging>
+    <name>${project.artifactId}</name>
 
     <build>
         <plugins>

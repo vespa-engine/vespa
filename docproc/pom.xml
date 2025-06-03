@@ -14,6 +14,7 @@
   <artifactId>docproc</artifactId>
   <packaging>jar</packaging>
   <version>8-SNAPSHOT</version>
+  <name>${project.artifactId}</name>
   <dependencies>
     <!-- PROVIDED scope -->
     <dependency>
