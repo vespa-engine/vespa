@@ -760,6 +760,8 @@ public class VespaSerializer {
                 Item current = item.getItem(i);
                 if (current instanceof WordItem) {
                     new WordSerializer().serialize(destination, (WordItem)current);
+                } else if (current instanceof RangeItem) {
+                    new RangeSerializer().serialize(destination, (RangeItem)current);
                 } else if (current instanceof IntItem) {
                     new NumberSerializer().serialize(destination, (IntItem)current);
                 } else if (current instanceof FuzzyItem) {
