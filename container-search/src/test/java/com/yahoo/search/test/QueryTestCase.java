@@ -1291,6 +1291,13 @@ public class QueryTestCase {
         assertEquals(QueryType.from(Query.Type.ALL).getType(), new Query(httpEncode("?query=a b -c&model.type=all")).properties().get("model.type"));
         assertEquals(QueryType.from(Query.Type.ALL).getType(), new Query(httpEncode("?query=a b -c&type=all")).properties().get("model.type"));
         assertEquals(QueryType.Syntax.none, new Query(httpEncode("?query=a b -c&model.type.syntax=none")).properties().get("model.type.syntax"));
+
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfile profile = new QueryProfile("default");
+        profile.set("query.type", "all", registry);
+        registry.register(profile);
+        CompiledQueryProfileRegistry cRegistry = registry.compile();
+        Query q = new Query(httpEncode("?query=a b -c&model.type=linguistics"), cRegistry.findQueryProfile("default"));
     }
 
     private QueryType type(String type) {
