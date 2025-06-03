@@ -5,6 +5,8 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
+import com.yahoo.prelude.query.IntItem;
+import com.yahoo.prelude.query.RangeItem;
 import com.yahoo.prelude.query.SameElementItem;
 import com.yahoo.search.Query;
 import com.yahoo.search.grouping.Continuation;
@@ -258,6 +260,15 @@ public class VespaSerializerTestCase {
         phraseSegment.lock();
         String q = VespaSerializer.serialize(phraseSegment);
         assertEquals("someIndexName contains ({origin: {original: \"abc\", offset: 0, length: 3}, label: \"labeled\"}phrase(\"a\", \"b\"))", q);
+    }
+
+    @Test
+    void testSameElementWithRange() {
+        SameElementItem sameElement = new SameElementItem("myMap");
+        sameElement.addItem(new IntItem(209, "key"));
+        sameElement.addItem(new RangeItem(10, 20, "value"));
+        assertEquals("myMap contains sameElement(key = 209, range(value, 10, 20))",
+                     VespaSerializer.serialize(sameElement));
     }
 
     @Test
