@@ -6891,11 +6891,10 @@
       "public java.lang.String toString()",
       "public java.lang.String toInstanceDescription()",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
-      "public com.yahoo.search.query.profile.QueryProfile convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
+      "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
-      "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
-      "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)"
+      "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)"
     ],
     "fields" : [ ]
   },
