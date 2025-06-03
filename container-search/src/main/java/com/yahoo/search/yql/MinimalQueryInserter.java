@@ -140,9 +140,9 @@ public class MinimalQueryInserter extends Searcher {
         query.trace("YQL query parsed", true, 2);
 
         if (query.getModel().getFilter() != null && query.getModel().getQueryString() == null) {
-            return new Result(
-                    query,
-                    ErrorMessage.createInvalidQueryParameter("Filter can only be combined with query string"));
+            query.errors().add(ErrorMessage.createInvalidQueryParameter(
+                    "Filter can only be combined with query string. " +
+                            "See https://docs.vespa.ai/en/reference/query-api-reference.html#model.filter"));
         }
         return null;
     }
