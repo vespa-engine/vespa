@@ -236,6 +236,7 @@ public enum SearchNodeMetrics implements VespaMetrics {
     CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_DEAD_BYTES("content.proton.documentdb.index.memory_usage.dead_bytes", Unit.BYTE, "The number of dead bytes (<= used_bytes) for the memory index for this document type"),
     CONTENT_PROTON_DOCUMENTDB_INDEX_MEMORY_USAGE_ONHOLD_BYTES("content.proton.documentdb.index.memory_usage.onhold_bytes", Unit.BYTE, "The number of bytes on hold for the memory index for this document type"),
     CONTENT_PROTON_DOCUMENTDB_INDEX_DISK_USAGE("content.proton.documentdb.index.disk_usage", Unit.BYTE, "Disk space usage (in bytes) of all disk indexes for this document type"),
+    CONTENT_PROTON_DOCUMENTDB_INDEX_INDEXES("content.proton.documentdb.index.indexes", Unit.ITEM, "Number of disk or memory indexes"),
     CONTENT_PROTON_DOCUMENTDB_INDEX_IO_SEARCH_READ_BYTES("content.proton.documentdb.index.io.search.read_bytes", Unit.BYTE, "Bytes read from disk index posting list and bitvector files as part of search for this document type"),
     CONTENT_PROTON_DOCUMENTDB_INDEX_IO_SEARCH_CACHED_READ_BYTES("content.proton.documentdb.index.io.search.cached_read_bytes", Unit.BYTE, "Bytes read from cached disk index posting list and bitvector files as part of search for this document type"),
     CONTENT_PROTON_DOCUMENTDB_READY_INDEX_MEMORY_USAGE_ALLOCATED_BYTES("content.proton.documentdb.ready.index.memory_usage.allocated_bytes", Unit.BYTE, "The number of allocated bytes for this index field in the memory index for this document type"),
