@@ -181,6 +181,13 @@ TOKEN :
     <IDENTIFIER: ["A"-"Z","a"-"z"](["A"-"Z","a"-"z","0"-"9","_","@"])*>
 }
 
+// Declare a special skip token for comments.
+SPECIAL_TOKEN :
+{
+  <SINGLE_LINE_COMMENT: ("//"|"#") (~["\n","\r"])* > |
+  <MULTI_LINE_COMMENT: "/*" (~["*"])* "*" (~["*", "/"] (~["*"])* "*" | "*")* "/" >
+}
+
 // --------------------------------------------------------------------------------
 //
 // Production rules.
