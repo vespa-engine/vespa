@@ -19,3 +19,9 @@ configuration:
   required:
     - pipeline-id
     - first-step
+
+hooks:
+  pre-command:
+    command: "hooks/pre-command"
+  pre-exit:
+    command: "hooks/pre-exit"
