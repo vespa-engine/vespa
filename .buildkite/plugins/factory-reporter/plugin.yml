@@ -11,6 +11,9 @@ configuration:
     first-step:
       type: boolean
       description: "Is this the first step? Yes: Create a build, No: Update the build"
+    job-type:
+        type: string
+        description: "The type of job being reported (e.g., 'build', 'release'). Defaults to 'build'."
   additionalProperties: false
   required:
     - pipeline-id
