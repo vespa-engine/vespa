@@ -280,6 +280,7 @@ DiskIndex::get_stats(bool clear_disk_io_stats) const
         ++field_id;
     }
     stats.sizeOnDisk(size_on_disk);
+    stats.disk_indexes(1);
     return stats;
 }
 

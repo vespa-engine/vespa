@@ -218,6 +218,7 @@ MemoryIndex::get_stats() const
 {
     auto stats = _fieldIndexes->get_stats(_schema);
     stats.docsInMemory(getNumDocs());
+    stats.memory_indexes(1);
     return stats;
 }
 

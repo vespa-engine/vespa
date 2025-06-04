@@ -78,6 +78,7 @@ updateIndexMetrics(DocumentDBTaggedMetrics &metrics, const search::IndexStats &s
     updateDiskUsageMetric(indexMetrics.diskUsage, stats.sizeOnDisk(), totalStats);
     updateMemoryUsageMetrics(indexMetrics.memoryUsage, stats.memoryUsage(), totalStats);
     indexMetrics.docsInMemory.set(stats.docsInMemory());
+    indexMetrics.indexes.set(stats.disk_indexes() + stats.memory_indexes());
     auto& field_metrics = metrics.ready.index;
     search::FieldIndexIoStats disk_io;
     for (auto& field : stats.get_field_stats()) {

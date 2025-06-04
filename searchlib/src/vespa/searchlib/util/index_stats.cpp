@@ -10,6 +10,8 @@ IndexStats::IndexStats()
       _docsInMemory(0),
       _sizeOnDisk(0),
       _fusion_size_on_disk(0),
+      _disk_indexes(0),
+      _memory_indexes(0),
       _field_stats()
 {
 }
@@ -22,6 +24,8 @@ IndexStats::merge(const IndexStats &rhs) {
     _docsInMemory += rhs._docsInMemory;
     _sizeOnDisk += rhs._sizeOnDisk;
     _fusion_size_on_disk += rhs._fusion_size_on_disk;
+    _disk_indexes += rhs._disk_indexes;
+    _memory_indexes += rhs._memory_indexes;
     for (auto& rhs_field : rhs._field_stats) {
         _field_stats[rhs_field.first].merge(rhs_field.second);
     }
@@ -35,6 +39,8 @@ IndexStats::operator==(const IndexStats& rhs) const noexcept
     _docsInMemory == rhs._docsInMemory &&
     _sizeOnDisk == rhs._sizeOnDisk &&
     _fusion_size_on_disk == rhs._fusion_size_on_disk &&
+    _disk_indexes == rhs._disk_indexes &&
+    _memory_indexes == rhs._memory_indexes &&
     _field_stats == rhs._field_stats;
 }
 
@@ -47,7 +53,8 @@ IndexStats::add_field_stats(const std::string& name, const FieldIndexStats& stat
 
 std::ostream& operator<<(std::ostream& os, const IndexStats& stats) {
     os << "{memory: " << stats.memoryUsage() << ", docsInMemory: " << stats.docsInMemory() <<
-       ", disk: " << stats.sizeOnDisk() << ", fusion_size_on_disk: " << stats.fusion_size_on_disk() << ", ";
+       ", disk: " << stats.sizeOnDisk() << ", fusion_size_on_disk: " << stats.fusion_size_on_disk() << ", " <<
+       ", disk_indexes: " << stats.disk_indexes() << ", memory_indexes: " << stats.memory_indexes() << ", ";
     os << "fields: {";
     bool first = true;
     for (auto& field : stats.get_field_stats()) {
