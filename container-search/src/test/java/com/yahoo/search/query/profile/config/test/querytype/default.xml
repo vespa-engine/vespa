@@ -1,0 +1,4 @@
+<query-profile id="default" type="root">
+    <field name="model.type">all</field>
+    <field name="model.type.syntax">web</field>
+</query-profile>

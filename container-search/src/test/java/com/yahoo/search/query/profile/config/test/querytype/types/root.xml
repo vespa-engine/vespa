@@ -1,0 +1,3 @@
+<query-profile-type id="root" inherits="native">
+    <field name="query(foo)" type="tensor(x[19])"/>
+</query-profile-type>

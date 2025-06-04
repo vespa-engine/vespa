@@ -5402,7 +5402,9 @@
       "public java.lang.String getDefaultIndex()",
       "public void setDefaultIndex(java.lang.String)",
       "public com.yahoo.search.Query$Type getType()",
+      "public com.yahoo.search.query.QueryType getQueryType()",
       "public void setType(com.yahoo.search.Query$Type)",
+      "public void setType(com.yahoo.search.query.QueryType)",
       "public void setType(java.lang.String)",
       "public boolean equals(java.lang.Object)",
       "public int hashCode()",
@@ -5549,6 +5551,96 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields" : [ ]
+  },
+  "com.yahoo.search.query.QueryType$Composite" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.search.query.QueryType$Composite[] values()",
+      "public static com.yahoo.search.query.QueryType$Composite valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.search.query.QueryType$Composite and",
+      "public static final enum com.yahoo.search.query.QueryType$Composite or",
+      "public static final enum com.yahoo.search.query.QueryType$Composite phrase",
+      "public static final enum com.yahoo.search.query.QueryType$Composite weakAnd"
+    ]
+  },
+  "com.yahoo.search.query.QueryType$Syntax" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.search.query.QueryType$Syntax[] values()",
+      "public static com.yahoo.search.query.QueryType$Syntax valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.search.query.QueryType$Syntax advanced",
+      "public static final enum com.yahoo.search.query.QueryType$Syntax json",
+      "public static final enum com.yahoo.search.query.QueryType$Syntax none",
+      "public static final enum com.yahoo.search.query.QueryType$Syntax programmatic",
+      "public static final enum com.yahoo.search.query.QueryType$Syntax simple",
+      "public static final enum com.yahoo.search.query.QueryType$Syntax web",
+      "public static final enum com.yahoo.search.query.QueryType$Syntax yql"
+    ]
+  },
+  "com.yahoo.search.query.QueryType$Tokenization" : {
+    "superClass" : "java.lang.Enum",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods" : [
+      "public static com.yahoo.search.query.QueryType$Tokenization[] values()",
+      "public static com.yahoo.search.query.QueryType$Tokenization valueOf(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final enum com.yahoo.search.query.QueryType$Tokenization internal",
+      "public static final enum com.yahoo.search.query.QueryType$Tokenization linguistics"
+    ]
+  },
+  "com.yahoo.search.query.QueryType" : {
+    "superClass" : "java.lang.Object",
+    "interfaces" : [ ],
+    "attributes" : [
+      "public"
+    ],
+    "methods" : [
+      "public static com.yahoo.search.query.profile.types.QueryProfileType getArgumentType()",
+      "public void <init>(com.yahoo.search.Query$Type, com.yahoo.search.query.QueryType$Composite, com.yahoo.search.query.QueryType$Tokenization, com.yahoo.search.query.QueryType$Syntax)",
+      "public com.yahoo.search.Query$Type getType()",
+      "public com.yahoo.search.query.QueryType$Composite getComposite()",
+      "public com.yahoo.search.query.QueryType setComposite(com.yahoo.search.query.QueryType$Composite)",
+      "public com.yahoo.search.query.QueryType setComposite(java.lang.String)",
+      "public com.yahoo.search.query.QueryType$Tokenization getTokenization()",
+      "public com.yahoo.search.query.QueryType setTokenization(com.yahoo.search.query.QueryType$Tokenization)",
+      "public com.yahoo.search.query.QueryType setTokenization(java.lang.String)",
+      "public com.yahoo.search.query.QueryType$Syntax getSyntax()",
+      "public com.yahoo.search.query.QueryType setSyntax(com.yahoo.search.query.QueryType$Syntax)",
+      "public com.yahoo.search.query.QueryType setSyntax(java.lang.String)",
+      "public void validate()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public static com.yahoo.search.query.QueryType from(com.yahoo.search.Query$Type)",
+      "public static com.yahoo.search.query.QueryType from(java.lang.String)"
+    ],
+    "fields" : [
+      "public static final java.lang.String COMPOSITE",
+      "public static final java.lang.String TOKENIZATION",
+      "public static final java.lang.String SYNTAX"
+    ]
   },
   "com.yahoo.search.query.Ranking" : {
     "superClass" : "java.lang.Object",
@@ -6019,6 +6111,8 @@
       "public com.yahoo.search.query.parser.ParserEnvironment setLinguistics(com.yahoo.language.Linguistics)",
       "public com.yahoo.language.process.SpecialTokens getSpecialTokens()",
       "public com.yahoo.search.query.parser.ParserEnvironment setSpecialTokens(com.yahoo.language.process.SpecialTokens)",
+      "public com.yahoo.search.query.QueryType getType()",
+      "public com.yahoo.search.query.parser.ParserEnvironment setType(com.yahoo.search.query.QueryType)",
       "public static com.yahoo.search.query.parser.ParserEnvironment fromExecutionContext(com.yahoo.search.searchchain.Execution$Context)",
       "public static com.yahoo.search.query.parser.ParserEnvironment fromParserEnvironment(com.yahoo.search.query.parser.ParserEnvironment)"
     ],
@@ -6032,7 +6126,8 @@
       "final"
     ],
     "methods" : [
-      "public static com.yahoo.search.query.parser.Parser newInstance(com.yahoo.search.Query$Type, com.yahoo.search.query.parser.ParserEnvironment)"
+      "public static com.yahoo.search.query.parser.Parser newInstance(com.yahoo.search.Query$Type, com.yahoo.search.query.parser.ParserEnvironment)",
+      "public static com.yahoo.search.query.parser.Parser newInstance(com.yahoo.search.query.QueryType, com.yahoo.search.query.parser.ParserEnvironment)"
     ],
     "fields" : [ ]
   },
@@ -6796,11 +6891,10 @@
       "public java.lang.String toString()",
       "public java.lang.String toInstanceDescription()",
       "public com.yahoo.search.query.profile.compiled.CompiledQueryProfile convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
-      "public com.yahoo.search.query.profile.QueryProfile convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
+      "public java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)",
       "public int hashCode()",
       "public boolean equals(java.lang.Object)",
-      "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)",
-      "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.QueryProfileRegistry)"
+      "public bridge synthetic java.lang.Object convertFrom(java.lang.Object, com.yahoo.search.query.profile.types.ConversionContext)"
     ],
     "fields" : [ ]
   },

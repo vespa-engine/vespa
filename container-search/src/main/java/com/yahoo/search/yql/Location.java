@@ -16,7 +16,6 @@ final class Location {
         this.characterOffset = characterOffset;
     }
 
-
     public int getLineNumber() {
         return lineNumber;
     }

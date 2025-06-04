@@ -5,6 +5,7 @@ import com.yahoo.jdisc.http.HttpRequest.Method;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.language.process.Embedder;
 import com.yahoo.processing.request.CompoundName;
+import com.yahoo.search.query.QueryType;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.yolean.Exceptions;
@@ -144,6 +145,18 @@ public class XmlReadingTestCase {
         assertEquals("test", q.properties().get("QueRY"));
         assertEquals("test", q.properties().get("model.queryString"));
         assertEquals("test", q.getModel().getQueryString());
+    }
+
+    /** Test reading a (built-in) query profile that has a value at a non-root: query.type */
+    @Test
+    void testQueryType() {
+        QueryProfileRegistry registry =
+                new QueryProfileXMLReader().read("src/test/java/com/yahoo/search/query/profile/config/test/querytype");
+        var cRegistry = registry.compile();
+        var query = new Query("?test", cRegistry.findQueryProfile("default"));
+        QueryType queryType = query.getModel().getQueryType();
+        assertEquals(Query.Type.ALL, queryType.getType());
+        assertEquals(QueryType.Syntax.web, queryType.getSyntax());
     }
 
     /** Tests a subset of the configuration in the system test of this */

@@ -16,14 +16,14 @@ public class QueryProfileFieldType extends FieldType {
     private final QueryProfileType type;
 
     public static QueryProfileFieldType fromString(String queryProfileName, QueryProfileTypeRegistry registry) {
-        if (queryProfileName==null || queryProfileName.equals(""))
+        if (queryProfileName == null || queryProfileName.isEmpty())
             return new QueryProfileFieldType(null);
 
-        if (registry==null)
+        if (registry == null)
             throw new IllegalArgumentException("Can not resolve query profile type '" + queryProfileName +
                                                "' because no registry is provided");
         QueryProfileType queryProfileType=registry.getComponent(queryProfileName);
-        if (queryProfileType==null)
+        if (queryProfileType == null)
             throw new IllegalArgumentException("Could not resolve query profile type '" + queryProfileName + "'");
         return new QueryProfileFieldType(registry.getComponent(queryProfileName));
     }
@@ -42,7 +42,7 @@ public class QueryProfileFieldType extends FieldType {
 
     @Override
     public String stringValue() {
-        return "query-profile" + (type!=null ? ":" + type.getId().getName() : "");
+        return "query-profile" + (type != null ? ":" + type.getId().getName() : "");
     }
 
     @Override
@@ -52,7 +52,7 @@ public class QueryProfileFieldType extends FieldType {
 
     @Override
     public String toInstanceDescription() {
-        return "reference to a query profile" + (type!=null ? " of type '" + type.getId().getName() + "'" : "");
+        return "reference to a query profile" + (type != null ? " of type '" + type.getId().getName() + "'" : "");
     }
 
     @Override
@@ -67,17 +67,24 @@ public class QueryProfileFieldType extends FieldType {
     }
 
     @Override
-    public QueryProfile convertFrom(Object object, QueryProfileRegistry registry) {
+    public Object convertFrom(Object object, QueryProfileRegistry registry) {
         QueryProfile profile;
-        if (object instanceof String)
-            profile = registry.getComponent((String)object);
-        else if (object instanceof QueryProfile)
-            profile = (QueryProfile)object;
-        else
+        if (object instanceof String) {
+            // A query profile type which itself can contain a value
+            if (type != null && type.fields().containsKey("") && type.fields().get("").getType() == FieldType.stringType)
+                return object;
+
+            profile = registry.getComponent((String) object);
+        }
+        else if (object instanceof QueryProfile) {
+            profile = (QueryProfile) object;
+        }
+        else {
             return null;
+        }
 
         // Verify its type as well
-        if (type!=null && type!=profile.getType()) return null;
+        if (type != null && type != profile.getType()) return null;
         return profile;
     }
 
@@ -90,8 +97,7 @@ public class QueryProfileFieldType extends FieldType {
     @Override
     public boolean equals(Object o) {
         if (o == this) return true;
-        if ( ! (o instanceof QueryProfileFieldType)) return false;
-        QueryProfileFieldType other = (QueryProfileFieldType)o;
+        if ( ! (o instanceof QueryProfileFieldType other)) return false;
         return equals(this.type.getId(), other.type.getId());
     }
 

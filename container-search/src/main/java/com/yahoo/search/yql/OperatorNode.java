@@ -10,6 +10,7 @@ import com.google.common.collect.Maps;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Represents a use of an operator against concrete arguments. The types of arguments depend on the operator.
@@ -116,51 +117,6 @@ final class OperatorNode<T extends Operator> {
         return ImmutableMap.copyOf(annotations);
     }
 
-    public OperatorNode<T> transform(Function<Object, Object> argumentTransform) {
-        if (args.length == 0) {
-            // nothing to transform, so no change is possible
-            return this;
-        }
-        Object[] newArgs = new Object[args.length];
-        boolean changed = false;
-        for (int i = 0; i < args.length; ++i) {
-            Object target = args[i];
-            if (target instanceof List) {
-                List<Object> newList = Lists.newArrayListWithExpectedSize(((List) target).size());
-                for (Object val : (List) target) {
-                    newList.add(argumentTransform.apply(val));
-                }
-                newArgs[i] = newList;
-                // this will always 'change' the tree, maybe fix later
-            } else {
-                newArgs[i] = argumentTransform.apply(args[i]);
-            }
-            changed = changed || newArgs[i] != args[i];
-        }
-        if (changed) {
-            return new OperatorNode<>(location, annotations, operator, newArgs);
-        }
-        return this;
-    }
-
-    public void visit(OperatorVisitor visitor) {
-        if (visitor.enter(this)) {
-            for (Object target : args) {
-                if (target instanceof List) {
-                    for (Object val : (List) target) {
-                        if (val instanceof OperatorNode) {
-                            ((OperatorNode) val).visit(visitor);
-                        }
-                    }
-                } else if (target instanceof OperatorNode) {
-                    ((OperatorNode) target).visit(visitor);
-
-                }
-            }
-        }
-        visitor.exit(this);
-    }
-
     // we are aware only of types used in our logical operator trees -- OperatorNode, List, and constant values
     private static final Function<Object, Object> COPY = new Function<>() {
         @Override
@@ -214,7 +170,7 @@ final class OperatorNode<T extends Operator> {
             first = false;
             output.append(" ");
             if(arg instanceof OperatorNode) {
-                ((OperatorNode) arg).toString(output);
+                ((OperatorNode<?>) arg).toString(output);
             } else if(arg instanceof Iterable) {
                 output.append("[");
                 Joiner.on(", ").appendTo(output, (Iterable)arg);
@@ -226,6 +182,7 @@ final class OperatorNode<T extends Operator> {
         output.append(")");
     }
 
+    @Override
     public String toString() {
         StringBuilder output = new StringBuilder();
         toString(output);
@@ -249,9 +206,7 @@ final class OperatorNode<T extends Operator> {
 
     @Override
     public int hashCode() {
-        int result = operator.hashCode();
-        result = 31 * result + annotations.hashCode();
-        result = 31 * result + Arrays.hashCode(args);
-        return result;
+        return Objects.hash(operator, annotations, Arrays.hashCode(args));
     }
+
 }

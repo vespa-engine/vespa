@@ -26,4 +26,5 @@ public class VespaGroupingStep {
     public List<Continuation> continuations() {
         return continuations;
     }
+
 }
