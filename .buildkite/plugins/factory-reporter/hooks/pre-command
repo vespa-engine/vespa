@@ -4,6 +4,7 @@
 set -eo pipefail
 
 PIPELINE="$BUILDKITE_PLUGIN_FACTORY_REPORTER_PIPELINE_ID"
+JOB_TYPE="$BUILDKITE_PLUGIN_FACTORY_REPORTER_JOB_TYPE"
 FIRST_STEP="$BUILDKITE_PLUGIN_FACTORY_REPORTER_FIRST_STEP"
 
 if [[ $SKIP_BUILDKITE_PLUGINS == "true" ]]; then
@@ -25,6 +26,15 @@ if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
     echo "start-seconds already set, skipping"
   fi
 
+  JOB_JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-buildkite-job-run $START_SECONDS $PIPELINE "running")
+  echo "Output from updating job run : $JOB_JSON"
+
+  # Only create a build if the job type is 'build'
+  if [[ $JOB_TYPE != "build" ]]; then
+    echo "Job type is not 'build', skipping build creation"
+    exit 0
+  fi
+
   JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh create-build $PIPELINE)
   echo "Output from creating build : $JSON"
 
@@ -42,9 +52,6 @@ if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
 
   $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE running "Building"
   echo "Set factory build $VESPA_FACTORY_BUILD_ID status to running"
-
-  JOB_JSON=$($BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-buildkite-job-run $START_SECONDS $PIPELINE "running")
-  echo "Output from updating job run : $JOB_JSON"
 
 else
   VESPA_VERSION="$(curl -sSLf 'https://api.factory.vespa.ai/factory/v1/latest-successful-build?platform=opensource_centos7&vespaMajor=8' | jq -re .version)"
