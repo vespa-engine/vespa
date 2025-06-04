@@ -94,6 +94,7 @@ DocumentDBTaggedMetrics::IndexMetrics::IndexMetrics(MetricSet *parent)
       diskUsage("disk_usage", {}, "Disk space usage in bytes", this),
       memoryUsage(this),
       docsInMemory("docs_in_memory", {}, "Number of documents in memory index", this),
+      indexes("indexes", {}, "Number of disk or memory indexes", this),
       disk_io(this)
 {
 }

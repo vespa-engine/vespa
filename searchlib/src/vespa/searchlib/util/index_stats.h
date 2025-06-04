@@ -18,6 +18,8 @@ private:
     size_t _docsInMemory;
     size_t _sizeOnDisk; // in bytes
     size_t _fusion_size_on_disk; // in bytes
+    uint32_t _disk_indexes;
+    uint32_t _memory_indexes;
     std::map<std::string, FieldIndexStats> _field_stats;
 
 public:
@@ -43,6 +45,17 @@ public:
         return *this;
     }
     size_t fusion_size_on_disk() const { return _fusion_size_on_disk; }
+    IndexStats& disk_indexes(uint32_t value) noexcept
+    {
+        _disk_indexes = value;
+        return *this;
+    }
+    uint32_t disk_indexes() const noexcept { return _disk_indexes; }
+    IndexStats& memory_indexes(uint32_t value) noexcept {
+        _memory_indexes = value;
+        return *this;
+    }
+    uint32_t memory_indexes() const noexcept { return _memory_indexes; }
 
     IndexStats& merge(const IndexStats& rhs);
     bool operator==(const IndexStats& rhs) const noexcept;

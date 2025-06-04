@@ -11,28 +11,33 @@ TEST(IndexStatsTest, stats_can_be_merged)
     EXPECT_EQ(0u, stats.docsInMemory());
     EXPECT_EQ(0u, stats.sizeOnDisk());
     EXPECT_EQ(0u, stats.fusion_size_on_disk());
+    EXPECT_EQ(0, stats.disk_indexes());
+    EXPECT_EQ(0, stats.memory_indexes());
     {
         IndexStats rhs;
         EXPECT_EQ(&rhs.memoryUsage(vespalib::MemoryUsage(100,0,0,0)), &rhs);
         EXPECT_EQ(&rhs.docsInMemory(10), &rhs);
         EXPECT_EQ(&rhs.sizeOnDisk(1000), &rhs);
         EXPECT_EQ(&rhs.fusion_size_on_disk(500), &rhs);
+        EXPECT_EQ(&rhs.memory_indexes(1), &rhs);
         EXPECT_EQ(&stats.merge(rhs), &stats);
     }
     EXPECT_EQ(100u, stats.memoryUsage().allocatedBytes());
     EXPECT_EQ(10u, stats.docsInMemory());
     EXPECT_EQ(1000u, stats.sizeOnDisk());
     EXPECT_EQ(500u, stats.fusion_size_on_disk());
+    EXPECT_EQ(1, stats.memory_indexes());
 
     stats.merge(IndexStats()
                         .memoryUsage(vespalib::MemoryUsage(150,0,0,0))
                         .docsInMemory(15)
                         .sizeOnDisk(1500)
-                        .fusion_size_on_disk(800));
+                        .fusion_size_on_disk(800).disk_indexes(2));
     EXPECT_EQ(250u, stats.memoryUsage().allocatedBytes());
     EXPECT_EQ(25u, stats.docsInMemory());
     EXPECT_EQ(2500u, stats.sizeOnDisk());
     EXPECT_EQ(1300u, stats.fusion_size_on_disk());
+    EXPECT_EQ(2, stats.disk_indexes());
 }
 
 TEST(IndexStatsTest, field_stats_can_be_merged)
