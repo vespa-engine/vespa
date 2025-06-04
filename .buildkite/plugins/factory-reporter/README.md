@@ -26,4 +26,6 @@ The id of the pipeline
 
 Set to true if this is the first step in the pipeline
 
+### `job-type` (Optional, string)
 
+The type of job. Defaults to `build`.
