@@ -34,7 +34,7 @@ public class YQLUtils {
 
     public static void printTree(ClientLogger logger, Node node, Integer indent) {
         Range range = getNodeRange(node);
-        logger.info(new String(new char[indent]).replace("\0", "\t") + node.getClass().getName()
+        logger.info(new String(new char[indent]).replace("\0", "\t") + node.getClass().getSimpleName()
             + ": (" + range.getStart().getLine() + ", " + range.getStart().getCharacter() + ") - (" + range.getEnd().getLine() + ", " + range.getEnd().getCharacter() + ")"
         );
 
