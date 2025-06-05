@@ -37,11 +37,13 @@
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>okhttp</artifactId>
+        <version>${okhttp.vespa.version}</version>
         <scope>compile</scope>
       </dependency>
       <dependency>
         <groupId>com.squareup.okhttp3</groupId>
         <artifactId>logging-interceptor</artifactId>
+        <version>${okhttp.vespa.version}</version>
         <scope>compile</scope>
       </dependency>
       <!-- END: Transitive dependencies for openai-java -->
@@ -71,6 +73,7 @@
       <dependency>
         <groupId>io.perfmark</groupId>
         <artifactId>perfmark-api</artifactId>
+        <version>${io-perfmark.vespa.version}</version>
         <scope>compile</scope>
       </dependency>
       <dependency>
