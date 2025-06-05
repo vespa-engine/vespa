@@ -21,8 +21,10 @@ public class EmbedExpressionValidator implements Validator {
 
     @Override
     public void validate(Validation.Context context) {
+        record SchemaAndField(String schemaName, String fieldName) {}
+
         // Collect all embedder ids from EmbedExpression instances in all schemas
-        var fieldToEmbedderId = new HashMap<String, String>();
+        var fieldToEmbedderId = new HashMap<SchemaAndField, String>();
         context.model().getContentClusters().forEach((__, contentCluster) -> {
             if (!contentCluster.getSearch().hasSearchCluster()) return;
 
@@ -37,8 +39,9 @@ public class EmbedExpressionValidator implements Validator {
                                     if (e instanceof EmbedExpression ee) {
                                         ee.requestedEmbedderId().ifPresent(id -> {
                                             var fieldName = field.getName();
-                                            log.log(Level.FINE, () -> "Found embedder '%s' for field '%s'".formatted(id, fieldName));
-                                            fieldToEmbedderId.put(fieldName, id);
+                                            var schemaName = schema.fullSchema().getName();
+                                            log.log(Level.FINE, () -> "Found embedder '%s' for field '%s' in schema '%s'".formatted(id, fieldName, schemaName));
+                                            fieldToEmbedderId.put(new SchemaAndField(schemaName, fieldName), id);
                                         });
                                     }
                                 }
@@ -59,11 +62,12 @@ public class EmbedExpressionValidator implements Validator {
                         }));
 
         // Validate that all embedder ids are present as components
-        fieldToEmbedderId.forEach((fieldName, requestedEmbedderId) -> {
+        fieldToEmbedderId.forEach((field, requestedEmbedderId) -> {
             if (!allComponentIds.contains(requestedEmbedderId)) {
                 context.illegal(
-                        ("The 'embed' expression for field '%s' refers to an embedder with id '%s'. " +
-                                "No component with that id is configured.").formatted(fieldName, requestedEmbedderId));
+                        ("The 'embed' expression for field '%s' in schema '%s' refers to an embedder with id '%s'. " +
+                                "No component with that id is configured.").formatted(
+                                        field.fieldName(), field.schemaName(), requestedEmbedderId));
             }
         });
     }

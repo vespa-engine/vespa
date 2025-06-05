@@ -59,6 +59,7 @@ class EmbedExpressionValidatorTest {
                 new EmbedExpressionValidator(),
                 new VespaModel(deployState),
                 deployState,
-                "The 'embed' expression for field 'embedding' refers to an embedder with id 'non_existing_embedder'. No component with that id is configured.");
+                "The 'embed' expression for field 'embedding' in schema 'test' refers to an embedder " +
+                        "with id 'non_existing_embedder'. No component with that id is configured.");
     }
 }
