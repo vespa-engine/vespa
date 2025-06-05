@@ -97,18 +97,23 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitDisk() { return 0.75; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitMemory() { return 0.8; }
         @ModelFeatureFlag(owners = {"hmusum"}) default double resourceLimitLowWatermarkDifference() { return 0.01; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.516") default double minNodeRatioPerGroup() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean forwardIssuesAsErrors() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useV8GeoPositions() { return false; }
         @ModelFeatureFlag(owners = {"arnej", "andreer"}) default List<String> ignoredHttpUserAgents() { return List.of(); }
+        @ModelFeatureFlag(owners = {"arnej"}, removeAfter = "8.511") default String logFileCompressionAlgorithm(String defVal) { return defVal; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "8.524") default String summaryDecodePolicy() { return "on-demand"; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int contentLayerMetadataFeatureLevel() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String unknownConfigDefinition() { return "warn"; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int searchHandlerThreadpool() { return 10; }
         @ModelFeatureFlag(owners = {"havardpe"}) default boolean sortBlueprintsByCost() { return false; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.524") default int persistenceThreadMaxFeedOpBatchSize() { return 64; }
         @ModelFeatureFlag(owners = {"olaa"}) default boolean logserverOtelCol() { return false; }
         @ModelFeatureFlag(owners = {"bratseth"}) default SharedHosts sharedHosts() { return SharedHosts.empty(); }
         @ModelFeatureFlag(owners = {"bratseth"}) default Architecture adminClusterArchitecture() { return Architecture.x86_64; }
         @ModelFeatureFlag(owners = {"arnej"}) default double logserverNodeMemory() { return 0.0; }
         @ModelFeatureFlag(owners = {"arnej"}) default double clusterControllerNodeMemory() { return 0.0; }
+        @ModelFeatureFlag(owners = {"vekterli"}, removeAfter = "8.517") default boolean symmetricPutAndActivateReplicaSelection() { return true; }
         @ModelFeatureFlag(owners = {"arnej"}) default boolean useLegacyWandQueryParsing() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default boolean forwardAllLogLevels() { return true; }
         @ModelFeatureFlag(owners = {"hmusum"}) default long zookeeperPreAllocSize() { return 65536L; }
