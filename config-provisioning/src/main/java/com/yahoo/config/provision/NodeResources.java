@@ -5,16 +5,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.logging.Logger;
 
-import static java.util.logging.Level.INFO;
-
 /**
  * The node resources required by an application cluster
  *
  * @author bratseth
  */
 public class NodeResources {
-
-    private static final Logger log = Logger.getLogger(NodeResources.class.getName());
 
     // Standard unit cost in dollars per hour
     private static final double cpuUnitCost =    0.11;
@@ -535,32 +531,6 @@ public class NodeResources {
 
     private static boolean equal(double a, double b) {
         return Math.abs(a - b) < 0.00000001;
-    }
-
-    /**
-     * Create this from serial form.
-     *
-     * @throws IllegalArgumentException if the given string cannot be parsed as a serial form of this
-     */
-    // TODO: Remove this when oldest config model in use is 8.518
-    public static NodeResources fromLegacyName(String name) {
-        if ( ! name.startsWith("d-"))
-            throw new IllegalArgumentException("A node specification string must start by 'd-' but was '" + name + "'");
-        String[] parts = name.split("-");
-        if (parts.length != 4)
-            throw new IllegalArgumentException("A node specification string must contain three numbers separated by '-' but was '" + name + "'");
-
-        // TODO: Use warning when we are sure this will not cause a lot of noise
-        // No info about application or cluster known here
-        log.log(INFO, "Legacy node flavor '%s' is used, change to using <nodes ... <resources> instead".formatted(name));
-
-        double cpu = Integer.parseInt(parts[1]);
-        double mem = Integer.parseInt(parts[2]);
-        double dsk = Integer.parseInt(parts[3]);
-        if (cpu == 0) cpu = 0.5;
-        if (cpu == 2 && mem == 8 ) cpu = 1.5;
-        if (cpu == 2 && mem == 12 ) cpu = 2.3;
-        return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.getDefault(), StorageType.getDefault(), Architecture.any);
     }
 
     private static double validate(double value, String valueName) {
