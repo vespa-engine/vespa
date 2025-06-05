@@ -1,4 +1,3 @@
-- Added support for formatting Schema files and selections.
-- Added progress indication when indexing large workspaces.
-- Added basic support for completion in YQL files.
+- Improved completion in YQL files.
+- Added support for chunk in indexing expressions
 - Minor bug fixes.
