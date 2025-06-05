@@ -10,6 +10,7 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
+  <name>${project.artifactId}</name>
   <artifactId>vespa-maven-plugin</artifactId>
   <description>Maven Plugin for deploying a Vespa application package</description>
   <packaging>maven-plugin</packaging>

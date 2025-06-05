@@ -8,6 +8,7 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
+  <name>${project.artifactId}</name>
   <artifactId>zookeeper-common</artifactId>
   <packaging>jar</packaging>
   <version>8-SNAPSHOT</version>

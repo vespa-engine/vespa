@@ -11,6 +11,7 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
+  <name>${project.artifactId}</name>
   <groupId>com.yahoo.vespa.bundle-plugin</groupId>
   <artifactId>bundle-plugin-test</artifactId>
   <version>8-SNAPSHOT</version>

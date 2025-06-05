@@ -17,6 +17,7 @@
         <version>8-SNAPSHOT</version>
         <relativePath>../parent</relativePath>
     </parent>
+  <name>${project.artifactId}</name>
 
     <properties>
 

@@ -8,6 +8,7 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
+  <name>${project.artifactId}</name>
   <artifactId>zookeeper-command-line-client</artifactId>
   <version>8-SNAPSHOT</version>
   <dependencies>

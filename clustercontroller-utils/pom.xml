@@ -9,6 +9,7 @@
         <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
+  <name>${project.artifactId}</name>
     <artifactId>clustercontroller-utils</artifactId>
     <version>8-SNAPSHOT</version>
     <packaging>container-plugin</packaging>

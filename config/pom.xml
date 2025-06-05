@@ -9,6 +9,7 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
+  <name>${project.artifactId}</name>
   <artifactId>config</artifactId>
   <packaging>container-plugin</packaging>
   <version>8-SNAPSHOT</version>

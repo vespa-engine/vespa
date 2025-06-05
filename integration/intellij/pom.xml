@@ -8,6 +8,7 @@
         <version>8-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
+  <name>${project.artifactId}</name>
     <artifactId>vespa-intellij</artifactId> <!-- Not used - plugin is build by gradle -->
     <version>1.6.1</version> <!-- See copy-zip below, which depends on this being the same as the v. in build.gradle.kts -->
     <description>
