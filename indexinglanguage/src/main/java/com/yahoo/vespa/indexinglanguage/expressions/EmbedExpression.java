@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 
 /**
@@ -29,15 +30,20 @@ public class EmbedExpression extends Expression  {
 
     private final Linguistics linguistics;
     private final SelectedComponent<Embedder> embedder;
+    private final String requestedEmbedderId;
 
     /** The destination the embedding will be written to on the form [schema name].[field name] */
     private String destination;
 
     public EmbedExpression(Linguistics linguistics, Map<String, Embedder> embedders, String embedderId, List<String> embedderArguments) {
         this.linguistics = linguistics;
+        this.requestedEmbedderId = embedderId;
         embedder = new SelectedComponent<>("embedder", embedders, embedderId, true, embedderArguments,
                                            Embedder.FailingEmbedder::new);
     }
+
+    /** @return the requested embedder id. This will diverge from the selected embedder's id when executed in config-model */
+    public Optional<String> requestedEmbedderId() { return Optional.of(requestedEmbedderId).filter(s -> !s.isEmpty()); }
 
     @Override
     public DataType setInputType(DataType inputType, TypeContext context) {

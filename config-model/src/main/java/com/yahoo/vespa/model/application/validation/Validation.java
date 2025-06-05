@@ -111,6 +111,7 @@ public class Validation {
         new PagedAttributesRemoteStorageValidator().validate(execution);
         new TenantSecretValidator().validate(execution);
         new HnswValidator().validate(execution);
+        new EmbedExpressionValidator().validate(execution);
     }
 
     private static void validateFirstTimeDeployment(Execution execution) {
