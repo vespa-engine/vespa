@@ -12,20 +12,18 @@ import com.yahoo.schema.document.ImmutableSDField;
 import com.yahoo.vespa.documentmodel.DocumentSummary;
 import com.yahoo.vespa.documentmodel.SummaryElementsSelector;
 import com.yahoo.vespa.documentmodel.SummaryField;
-import com.yahoo.vespa.documentmodel.SummaryTransform;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
-import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isComplexFieldWithOnlyStructFieldAttributes;
 import static com.yahoo.schema.document.ComplexAttributeFieldUtils.isSupportedComplexField;
 
 /**
- * Iterates all summary fields with 'matched-elements-only' and validates that the field type is supported.
+ * Iterates all summary fields with 'matched-elements-only' or 'select-elements-by' and validates that the field type is supported.
  *
  * @author geirst
  */
-public class MatchedElementsOnlyResolver extends Processor {
+public class SummaryElementsSelectorValidator extends Processor {
 
-    public MatchedElementsOnlyResolver(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
+    public SummaryElementsSelectorValidator(Schema schema, DeployLogger deployLogger, RankProfileRegistry rankProfileRegistry, QueryProfiles queryProfiles) {
         super(schema, deployLogger, rankProfileRegistry, queryProfiles);
     }
 
@@ -34,7 +32,8 @@ public class MatchedElementsOnlyResolver extends Processor {
         for (var entry : schema.getSummaries().entrySet()) {
             var summary = entry.getValue();
             for (var field : summary.getSummaryFields().values()) {
-                if (field.getElementsSelector().getSelect() == SummaryElementsSelector.Select.BY_MATCH) {
+                if (field.getElementsSelector().getSelect() == SummaryElementsSelector.Select.BY_MATCH ||
+                    field.getElementsSelector().getSelect() == SummaryElementsSelector.Select.BY_SUMMARY_FEATURE) {
                     processSummaryField(summary, field, validate);
                 }
             }
@@ -45,7 +44,11 @@ public class MatchedElementsOnlyResolver extends Processor {
         var sourceField = schema.getField(field.getSingleSource());
         if (sourceField != null) {
             if (!isSupportedComplexField(sourceField) && !isSupportedMultiValueField(sourceField) && validate) {
-                fail(summary, field, "'matched-elements-only' is not supported for this field type. " +
+                String selectMsg = "matched-elements-only";
+                if (field.getElementsSelector().getSelect() == SummaryElementsSelector.Select.BY_SUMMARY_FEATURE) {
+                    selectMsg = "select-elements-by";
+                }
+                fail(summary, field, "'" + selectMsg + "' is not supported for this field type. " +
                         "Supported field types are: array of primitive, weighted set of primitive, " +
                         "array of simple struct, map of primitive type to simple struct, " +
                         "and map of primitive type to primitive type");
