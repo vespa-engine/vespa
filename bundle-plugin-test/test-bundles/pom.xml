@@ -11,6 +11,7 @@
         <version>8-SNAPSHOT</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
+  <name>${project.artifactId}</name>
     <artifactId>test-bundles</artifactId>
     <version>8-SNAPSHOT</version>
     <packaging>pom</packaging>

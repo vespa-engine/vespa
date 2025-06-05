@@ -9,6 +9,7 @@
     <version>8-SNAPSHOT</version>
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
+  <name>${project.artifactId}</name>
   <artifactId>documentapi-dependencies</artifactId>
   <packaging>pom</packaging>
   <version>8-SNAPSHOT</version>
