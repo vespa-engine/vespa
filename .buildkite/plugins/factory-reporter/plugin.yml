@@ -13,7 +13,7 @@ configuration:
       description: "Is this the first step? Yes: Create a build, No: Update the build"
     job-type:
         type: string
-        description: "The type of job being reported (e.g., 'build', 'release'). Defaults to 'build'."
+        description: "The type of job being reported (e.g., 'build', 'release', 'test'). Defaults to 'build'."
         default: 'build'
   additionalProperties: false
   required:
@@ -23,5 +23,7 @@ configuration:
 hooks:
   pre-command:
     command: "hooks/pre-command"
+  post-command:
+    command: "hooks/post-command"
   pre-exit:
     command: "hooks/pre-exit"
