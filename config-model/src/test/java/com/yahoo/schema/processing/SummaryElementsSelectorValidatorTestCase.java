@@ -17,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 /**
  * @author geirst
  */
-public class MatchedElementsOnlyResolverTestCase {
+public class SummaryElementsSelectorValidatorTestCase {
 
     @Test
     void complex_field_with_some_struct_field_attributes_gets_default_transform() throws ParseException {
@@ -157,7 +157,7 @@ public class MatchedElementsOnlyResolverTestCase {
     }
 
     @Test
-    void unsupported_field_type_throws() throws ParseException {
+    void unsupported_matched_elements_only_field_type_throws() throws ParseException {
         Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
             buildSearch(joinLines("field my_field type string {",
                     "  indexing: summary",
@@ -169,6 +169,27 @@ public class MatchedElementsOnlyResolverTestCase {
                 "Supported field types are: array of primitive, weighted set of primitive, " +
                 "array of simple struct, map of primitive type to simple struct, " +
                 "and map of primitive type to primitive type"));
+    }
+
+    @Test
+    void unsupported_select_elements_by_field_type_throws() throws ParseException {
+        Throwable exception = assertThrows(IllegalArgumentException.class, () -> {
+            buildSearch(joinLines("field my_field type string {",
+                    "  indexing: summary",
+                    "}"),
+                """
+                    document-summary default {
+                       summary my_field {
+                          select-elements-by: elementwise(bm25(my_field),x,double)
+                       }
+                    }
+                    """);
+        });
+        assertTrue(exception.getMessage().contains("For schema 'test', document-summary 'default', summary field 'my_field': " +
+            "'select-elements-by' is not supported for this field type. " +
+            "Supported field types are: array of primitive, weighted set of primitive, " +
+            "array of simple struct, map of primitive type to simple struct, " +
+            "and map of primitive type to primitive type"));
     }
 
     private void assertSummaryField(String fieldContent, String fieldName, SummaryTransform expTransform,
