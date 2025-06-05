@@ -108,6 +108,7 @@
         <hdrhistogram.vespa.version>2.2.2</hdrhistogram.vespa.version>
         <huggingface.vespa.version>0.32.0</huggingface.vespa.version>
         <icu4j.vespa.version>75.1</icu4j.vespa.version>
+        <io-perfmark.vespa.version>0.27.0</io-perfmark.vespa.version>
         <java-jjwt.vespa.version>0.11.5</java-jjwt.vespa.version>
         <java-jwt.vespa.version>4.4.0</java-jwt.vespa.version>
         <javax.annotation.vespa.version>1.2</javax.annotation.vespa.version>
@@ -133,6 +134,7 @@
         <mojo-executor.vespa.version>2.4.0</mojo-executor.vespa.version>
         <netty.vespa.version>4.1.118.Final</netty.vespa.version>
         <netty-tcnative.vespa.version>2.0.65.Final</netty-tcnative.vespa.version>
+        <okhttp.vespa.version>4.12.0</okhttp.vespa.version>
         <onnxruntime.vespa.version>1.20.0</onnxruntime.vespa.version>
         <openai-java.vespa.version>0.34.0</openai-java.vespa.version>
         <opennlp.vespa.version>2.4.0</opennlp.vespa.version>
