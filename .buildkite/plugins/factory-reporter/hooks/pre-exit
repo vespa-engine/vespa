@@ -24,11 +24,10 @@ fi
 
 if [[ -n $BUILDKITE_COMMAND_EXIT_STATUS ]] && (( $BUILDKITE_COMMAND_EXIT_STATUS != 0 )); then
   START_SECONDS=$(buildkite-agent meta-data get start-seconds || echo 0)
-  FACTORY_COMMAND=$(buildkite-agent meta-data get factory-command)
-  $FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE failure
+  $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-buildkite-job-run $START_SECONDS $PIPELINE failure
 
   # Only update build status if the job type is 'build'
   if [[ $JOB_TYPE == "build" ]]; then
-    $FACTORY_COMMAND update-build-status $PIPELINE failure "Build failed"
+    $BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh update-build-status $PIPELINE failure "Build failed"
   fi
 fi
