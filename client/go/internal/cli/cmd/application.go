@@ -90,6 +90,7 @@ func activeApplication(id vespa.ApplicationID, target vespa.Target) bool {
 
 func newApplicationShowCmd(cli *CLI) *cobra.Command {
 	var format string
+	var listAllInstances bool
 	cmd := &cobra.Command{
 		Use:               "show",
 		Short:             "Show information about a given application",
@@ -122,9 +123,11 @@ $ vespa application show -a <tenant>.<application> --format plain`,
 				}
 			} else {
 				for _, instance := range application.Instances {
-					fmt.Printf("%s.%s.%s:\n", appId.Tenant, appId.Application, instance.Instance)
-					for _, deployment := range instance.Deployments {
-						fmt.Printf("  %s.%s\n", deployment.Environment, deployment.Region)
+					if listAllInstances || len(instance.Deployments) > 0 {
+						fmt.Printf("%s.%s.%s:\n", appId.Tenant, appId.Application, instance.Instance)
+						for _, deployment := range instance.Deployments {
+							fmt.Printf("  %s.%s\n", deployment.Environment, deployment.Region)
+						}
 					}
 				}
 			}
@@ -132,5 +135,6 @@ $ vespa application show -a <tenant>.<application> --format plain`,
 		},
 	}
 	cmd.PersistentFlags().StringVarP(&format, "format", "", "human", "Output format. Must be 'human' (human-readable) or 'plain'")
+	cmd.PersistentFlags().BoolVarP(&listAllInstances, "list-all-instances", "A", false, "List all instances, not just the active ones")
 	return cmd
 }
