@@ -4,6 +4,7 @@
 # This script is run after the command has completed, and updates the job run status in factory.
 #
 set -eo pipefail
+set -x
 
 PIPELINE="$BUILDKITE_PLUGIN_FACTORY_REPORTER_PIPELINE_ID"
 
@@ -17,7 +18,21 @@ if [[ -z $PIPELINE ]]; then
 fi
 
 if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
+
+  START_SECONDS=$(buildkite-agent meta-data get start-seconds)
+  if [[ -z $START_SECONDS ]]; then
+    echo "Error: start-seconds not set as meta-data" >&2
+    exit 1
+  fi
+
   FACTORY_COMMAND=$(buildkite-agent meta-data get factory-command)
+  if [[ -z $FACTORY_COMMAND ]]; then
+    echo "Error: factory-command not set as meta-data" >&2
+    exit 1
+  fi
+  echo "Using factory command: $FACTORY_COMMAND"
+
+
   JOB_JSON=$($FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE "success")
   echo "Output from updating job run : $JOB_JSON"
 fi
