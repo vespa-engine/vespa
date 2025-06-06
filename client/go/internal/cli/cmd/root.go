@@ -449,7 +449,9 @@ func (c *CLI) targetType(targetTypeRestriction int) (targetType, error) {
 	unsupported := (targetTypeRestriction == cloudTargetOnly && tt.name != vespa.TargetCloud && tt.name != vespa.TargetHosted) ||
 		(targetTypeRestriction == localTargetOnly && tt.name != vespa.TargetLocal && tt.name != vespa.TargetCustom)
 	if unsupported {
-		return targetType{}, fmt.Errorf("command does not support %s target", tt.name)
+		return targetType{}, errHint(fmt.Errorf("command does not support %s target", tt.name),
+			"to switch target run the following:",
+			"$ vespa config set target cloud")
 	}
 	return tt, nil
 }
