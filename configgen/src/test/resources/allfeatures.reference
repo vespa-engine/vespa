@@ -998,6 +998,13 @@ public final class AllfeaturesConfig extends ConfigInstance {
   }
 
   /**
+   * @return allfeatures.modelVal ModelReference
+   */
+  public ModelReference modelValReference() {
+    return modelVal.getModelReference();
+  }
+
+  /**
    * @return allfeatures.boolarr[]
    */
   public List<Boolean> boolarr() {
