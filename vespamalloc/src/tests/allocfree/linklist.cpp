@@ -113,13 +113,13 @@ private:
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() {
+int main(int argc, char **argv) {
     int duration = 10;
     if (argc > 1) {
         duration = atoi(argv[1]);
     }
 
-    ASSERT_EQUAL(1024ul, sizeof(List));
+    static_assert(1024ul == sizeof(List));
 
     vespalib::ThreadPool   pool;
     List::AtomicHeadPtr    sharedList(List::HeadPtr(nullptr, 1));
@@ -132,10 +132,16 @@ TEST_MAIN() {
     fprintf(stderr, "Start verifying result 1.\n");
     for (size_t i=0; i < NumBlocks; i++) {
         List *l =  List::linkOut(sharedList);
-        ASSERT_TRUE((l >= &globalList[0]) && (l < &globalList[NumBlocks]));
+        if (!((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) {
+            fprintf(stderr, "not true: (l >= &globalList[0]) && (l < &globalList[NumBlocks])\n");
+            return false;
+        }
     }
     List *n =  List::linkOut(sharedList);
-    ASSERT_TRUE(n == nullptr);
+    if (!(n == nullptr)) {
+        fprintf(stderr, "not true: n == nullptr\n");
+        return false;
+    }
 
     List::HeadPtr tmp(sharedList.load());
     tmp._tag = 1;
@@ -178,8 +184,15 @@ TEST_MAIN() {
     fprintf(stderr, "Start verifying result 2.\n");
     for (size_t i=0; i < NumBlocks; i++) {
         List *l =  List::linkOut(sharedList);
-        ASSERT_TRUE((l >= &globalList[0]) && (l < &globalList[NumBlocks]));
+        if (!((l >= &globalList[0]) && (l < &globalList[NumBlocks]))) {
+            fprintf(stderr, "not true: (l >= &globalList[0]) && (l < &globalList[NumBlocks])\n");
+            return false;
+        }
     }
     n =  List::linkOut(sharedList);
-    ASSERT_TRUE(n == nullptr);
+    if (!(n == nullptr)) {
+        fprintf(stderr, "not true: n == nullptr\n");
+        return false;
+    }
+    return 0;
 }

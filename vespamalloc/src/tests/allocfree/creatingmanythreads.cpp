@@ -11,7 +11,7 @@ void * thread_alloc(void * arg)
     return NULL;
 }
 
-TEST_MAIN() {
+int main(int argc, char **argv) {
     int numThreads(10000);
     int allocSize(256);
     if (argc > 1) {
@@ -25,9 +25,16 @@ TEST_MAIN() {
     for (int i(0); i < numThreads; ) {
         for (int j(0); (i < numThreads) && j < 10000; i++, j++) {
             pthread_t thread;
-            ASSERT_EQUAL(0, pthread_create(&thread, NULL, thread_alloc, &allocSize));
-            ASSERT_EQUAL(0, pthread_join(thread, NULL));
+            if (pthread_create(&thread, NULL, thread_alloc, &allocSize) != 0) {
+                LOG(error, "Failed to create thread");
+                return 1;
+            }
+            if (pthread_join(thread, NULL) != 0) {
+                LOG(error, "Failed to join thread");
+                return 1;
+            }
         }
         LOG(info, "Completed %d tests", i);
     }
+    return 0;
 }

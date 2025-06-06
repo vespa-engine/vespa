@@ -1,7 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
-
-using namespace vespalib;
+#include <vespa/vespalib/gtest/gtest.h>
 
 void check_ptr_real(void *ptr)
 {
@@ -34,9 +32,9 @@ void (*delete_vec)(char *ptr) = delete_vec_real;
 void testFillValue(char *a)
 {
     // Verify fillvalue
-    EXPECT_EQUAL((int)a[0], 0x66);
-    EXPECT_EQUAL((int)a[1], 0x66);
-    EXPECT_EQUAL((int)a[255], 0x66);
+    EXPECT_EQ((int)a[0], 0x66);
+    EXPECT_EQ((int)a[1], 0x66);
+    EXPECT_EQ((int)a[255], 0x66);
 
     // Make sure that enough blocks of memory is allocated and freed.
     for (size_t i(0); i < 100; i++) {
@@ -44,9 +42,9 @@ void testFillValue(char *a)
         memset(d, 0x77, 256);
         check_ptr(d);
         delete_vec(d);
-        EXPECT_EQUAL((int)d[0], 0x66);
-        EXPECT_EQUAL((int)d[1], 0x66);
-        EXPECT_EQUAL((int)d[255], 0x66);
+        EXPECT_EQ((int)d[0], 0x66);
+        EXPECT_EQ((int)d[1], 0x66);
+        EXPECT_EQ((int)d[255], 0x66);
     }
 
     // Make sure we trigger vespamallocd detection of memory written after delete.
@@ -59,9 +57,9 @@ void testFillValue(char *a)
     for (size_t i(0); i < sizeof(aa)/sizeof(aa[0]); i++) {
         check_ptr(aa[i]);
         delete_vec(aa[i]);
-        EXPECT_EQUAL((int)a[0], 0x66);
-        EXPECT_EQUAL((int)a[1], 0x66);
-        EXPECT_EQUAL((int)a[255], 0x66);
+        EXPECT_EQ((int)a[0], 0x66);
+        EXPECT_EQ((int)a[1], 0x66);
+        EXPECT_EQ((int)a[255], 0x66);
     }
 }
 
@@ -106,33 +104,43 @@ void verifyWriteAfterFreeDetection()
     }
 }
 
-TEST_MAIN() {
+int my_argc = 0;
+char **my_argv = nullptr;
+
+TEST(OverwriteTest, main) {
     char * a = new_vec(256);
     memset(a, 0x77, 256);
     a[0] = 0;
-    EXPECT_EQUAL((int)a[0], 0);
-    EXPECT_EQUAL((int)a[1], 0x77);
-    EXPECT_EQUAL((int)a[255], 0x77);
+    EXPECT_EQ((int)a[0], 0);
+    EXPECT_EQ((int)a[1], 0x77);
+    EXPECT_EQ((int)a[255], 0x77);
     char * b = a;
-    EXPECT_EQUAL(a, b);
+    EXPECT_EQ(a, b);
     check_ptr(a);
     delete_vec(a);
-    EXPECT_EQUAL(a, b);
+    EXPECT_EQ(a, b);
 
-    if (argc > 1) {
+    if (my_argc > 1) {
         testFillValue(a);
-        if (strcmp(argv[1], "prewrite") == 0) {
+        if (strcmp(my_argv[1], "prewrite") == 0) {
             verifyPreWriteDetection();
-        } else if (strcmp(argv[1], "postwrite") == 0) {
+        } else if (strcmp(my_argv[1], "postwrite") == 0) {
             verifyPostWriteDetection();
-        } else if (strcmp(argv[1], "writeafterfree") == 0) {
+        } else if (strcmp(my_argv[1], "writeafterfree") == 0) {
             verifyWriteAfterFreeDetection();
         }
 
     } else {
         // Verify that nothing is done when not expected too.
-        EXPECT_EQUAL((int)a[0], 0);
-        EXPECT_EQUAL((int)a[1], 0x77);
-        EXPECT_EQUAL((int)a[255], 0x77);
+        EXPECT_EQ((int)a[0], 0);
+        EXPECT_EQ((int)a[1], 0x77);
+        EXPECT_EQ((int)a[255], 0x77);
     }
+}
+
+int main(int argc, char** argv) {
+    ::testing::InitGoogleTest(&argc, argv);
+    my_argc = argc;
+    my_argv = argv;
+    return RUN_ALL_TESTS();
 }
