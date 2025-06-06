@@ -214,6 +214,14 @@ func (t *customTarget) serviceStatus(wantedGeneration int64, timeout time.Durati
 	return status, nil
 }
 
+func (t *customTarget) ListApplications(_ string, _ time.Duration) (*CloudTenantResponse, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
+func (t *customTarget) ShowApplicationInstance(_ ApplicationID, _ time.Duration) (*CloudInstanceResponse, error) {
+	return nil, fmt.Errorf("not implemented")
+}
+
 func generationDescription(generation int64) string {
 	switch generation {
 	case AnyDeployment:
