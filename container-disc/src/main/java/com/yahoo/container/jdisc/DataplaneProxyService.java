@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.container.jdisc;
 
+import ai.vespa.cloud.Environment;
 import ai.vespa.cloud.SystemInfo;
 import com.yahoo.cloud.config.DataplaneProxyConfig;
 import com.yahoo.component.AbstractComponent;
@@ -40,6 +41,7 @@ public final class DataplaneProxyService extends AbstractComponent {
     private final ProxyCommands proxyCommands;
     private final ScheduledThreadPoolExecutor executorService;
     private final Path root;
+    private final boolean isDevEnvironment;
 
     enum NginxState {INITIALIZING, RUNNING, RELOAD_REQUIRED, STOPPED};
     private volatile NginxState state;
@@ -51,21 +53,22 @@ public final class DataplaneProxyService extends AbstractComponent {
 
     @Inject
     public DataplaneProxyService(SystemInfo systemInfo) {
-        this(Paths.get(PREFIX), new NginxProxyCommands(), 1, CLOUD_AZURE.equalsIgnoreCase(systemInfo.cloud().name()));
+        this(Paths.get(PREFIX), new NginxProxyCommands(), 1, CLOUD_AZURE.equalsIgnoreCase(systemInfo.cloud().name()), systemInfo.zone().environment().equals(Environment.dev));
     }
 
     public DataplaneProxyService() {
-        this(Paths.get(PREFIX), new NginxProxyCommands(), 1, false);
+        this(Paths.get(PREFIX), new NginxProxyCommands(), 1, false, false);
     }
     
     DataplaneProxyService(Path root, ProxyCommands proxyCommands, int reloadPeriodMinutes) {
-        this(root, proxyCommands, reloadPeriodMinutes, false);
+        this(root, proxyCommands, reloadPeriodMinutes, false, false);
     }
 
-    private DataplaneProxyService(Path root, ProxyCommands proxyCommands, int reloadPeriodMinutes, boolean useAzureProxy) {
+    private DataplaneProxyService(Path root, ProxyCommands proxyCommands, int reloadPeriodMinutes, boolean useAzureProxy, boolean isDevEnvironment) {
         this.root = root;
         this.proxyCommands = proxyCommands;
         this.useAzureProxy = useAzureProxy;
+        this.isDevEnvironment = isDevEnvironment;
         changeState(NginxState.INITIALIZING);
         wantedState = NginxState.RUNNING;
         configTemplate = root.resolve("conf/nginx/nginx.conf.template");
@@ -121,7 +124,8 @@ public final class DataplaneProxyService extends AbstractComponent {
                                                    config.tokenPort(),
                                                    config.tokenEndpoints(),
                                                    root,
-                                                   useAzureProxy));
+                                                   useAzureProxy,
+                                                   isDevEnvironment));
                 if (configChanged) {
                     logger.log(Level.INFO, "Configuring data plane proxy service. Token endpoints: [%s]"
                             .formatted(String.join(", ", config.tokenEndpoints())));
@@ -215,7 +219,8 @@ public final class DataplaneProxyService extends AbstractComponent {
             int vespaTokenPort,
             List<String> tokenEndpoints,
             Path root,
-            boolean useAzureProxy) {
+            boolean useAzureProxy,
+            boolean isDevEnvironment) {
 
         try {
             String nginxTemplate = Files.readString(configTemplate);
@@ -234,6 +239,30 @@ public final class DataplaneProxyService extends AbstractComponent {
                     .map("        %s vespatoken;"::formatted)
                     .collect(Collectors.joining("\n"));
             nginxTemplate = replace(nginxTemplate, "vespa_token_endpoints", tokenmapping);
+
+            String corsMap = isDevEnvironment ? """
+                    map $http_origin $allow_origin {
+                            ~^https://.*\\.vespa-cloud.com$ $http_origin;
+                            ~^https?://localhost(:\\d+)?$ $http_origin;
+                            default "";
+                        }
+                    """ : "";
+
+            String corsHandler = isDevEnvironment ? """
+                    if ($request_method = OPTIONS) {
+                                  add_header Access-Control-Allow-Origin $allow_origin;
+                                  add_header Vary Origin;
+                                  add_header Access-Control-Allow-Headers "Authorization";
+                                  add_header Content-Length 0;
+                                  add_header Content-Type text/plain;
+                                  return 200 "";
+                                }
+                                add_header Access-Control-Allow-Origin $allow_origin;
+                                add_header Vary Origin;
+                    """ : "";
+
+            nginxTemplate = replace(nginxTemplate, "cors_map", corsMap);
+            nginxTemplate = replace(nginxTemplate, "cors_handler", corsHandler);
 
             // TODO: verify that all template vars have been expanded
             return nginxTemplate;
