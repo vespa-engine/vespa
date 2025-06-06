@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/signalhandler.h>
 #include <vespa/eval/gp/gp.h>
 #include <limits.h>
@@ -42,7 +42,7 @@ struct Dist {
             result *= 2; // y
             if (num_outputs > 2) {
                 result *= 2; // x
-                ASSERT_EQUAL(num_outputs, 3u);
+                EXPECT_EQ(num_outputs, 3u);
             }
         }
         return result;
@@ -50,41 +50,41 @@ struct Dist {
     Dist(size_t num_outputs) : slots(need_slots(num_outputs), 0) {}
     void sample(int z) {
         int post_z = (size_t(z) % 6);
-        ASSERT_GREATER_EQUAL(post_z, 0);
-        ASSERT_LESS(post_z, 6);
+        EXPECT_GE(post_z, 0);
+        EXPECT_LT(post_z, 6);
         int slot = post_z;
-        ASSERT_LESS(size_t(slot), slots.size());
+        EXPECT_LT(size_t(slot), slots.size());
         ++slots[slot];
     }
     void sample(int z, int y) {
         int post_y = (y & 1);
         int post_z = (size_t(z) % 6);
-        ASSERT_GREATER_EQUAL(post_y, 0);
-        ASSERT_GREATER_EQUAL(post_z, 0);
-        ASSERT_LESS(post_y, 2);
-        ASSERT_LESS(post_z, 6);
+        EXPECT_GE(post_y, 0);
+        EXPECT_GE(post_z, 0);
+        EXPECT_LT(post_y, 2);
+        EXPECT_LT(post_z, 6);
         int slot = (post_z<<1) | (post_y);
-        ASSERT_LESS(size_t(slot), slots.size());
+        EXPECT_LT(size_t(slot), slots.size());
         ++slots[slot];
     }
     void sample(int z, int y, int x) {
         int post_x = (x & 1);
         int post_y = (y & 1);
         int post_z = (size_t(z) % 6);
-        ASSERT_GREATER_EQUAL(post_x, 0);
-        ASSERT_GREATER_EQUAL(post_y, 0);
-        ASSERT_GREATER_EQUAL(post_z, 0);
-        ASSERT_LESS(post_x, 2);
-        ASSERT_LESS(post_y, 2);
-        ASSERT_LESS(post_z, 6);
+        EXPECT_GE(post_x, 0);
+        EXPECT_GE(post_y, 0);
+        EXPECT_GE(post_z, 0);
+        EXPECT_LT(post_x, 2);
+        EXPECT_LT(post_y, 2);
+        EXPECT_LT(post_z, 6);
         int slot = (post_z<<2) | (post_y<<1) | (post_x);
-        ASSERT_LESS(size_t(slot), slots.size());
+        EXPECT_LT(size_t(slot), slots.size());
         ++slots[slot];
     }
     size_t error() const {
         size_t err = 0;
         int expect = (216 / slots.size());
-        ASSERT_EQUAL(216 % slots.size(), 0u);
+        EXPECT_EQ(216 % slots.size(), 0u);
         for (int cnt: slots) {
             err += (std::max(cnt, expect) - std::min(cnt, expect));
         }
@@ -107,7 +107,7 @@ Feedback find_weakness(const MultiFunction &fun) {
                     input.push_back(70677);
                 }
                 Result result = fun.execute(input);
-                ASSERT_EQUAL(result.size(), state.size());
+                EXPECT_EQ(result.size(), state.size());
                 for (size_t i = 0; i < result.size(); ++i) {
                     const Output &output = result[i];
                     switch(output.size()) {
@@ -118,7 +118,7 @@ Feedback find_weakness(const MultiFunction &fun) {
                         state[i].sample(output[0], output[1]); // z,y
                         break;
                     default:
-                        ASSERT_EQUAL(output.size(), 3u);
+                        EXPECT_EQ(output.size(), 3u);
                         state[i].sample(output[0], output[1], output[2]); // z,y,x
                     }
                 }
@@ -161,7 +161,7 @@ const size_t pow_id = 6;
 using Ref = Program::Ref;
 using Op = Program::Op;
 
-TEST("evaluating hand-crafted solution") {
+TEST(Ponder2017, evaluating_hand_crafted_solution) {
     // constants are modeled as inputs
     Program prog(my_repo(), 6, 3, 2, 0);
     auto a = Ref::in(0);                   // a
@@ -190,28 +190,28 @@ TEST("evaluating hand-crafted solution") {
     auto x = prog.add_op(div_id, k2, d);   // x = 1502/d
     // '%2' (for x and y) and '%6+1' (for z) done outside program
     //--- verify sub-expressions
-    EXPECT_EQUAL(prog.as_string(a), "i0");
-    EXPECT_EQUAL(prog.as_string(k2), "i4");
-    EXPECT_EQUAL(prog.as_string(d), "pow(i3,div(mul(sub(i2,i0),add(i2,i0)),i3))");
-    EXPECT_EQUAL(prog.as_string(x), "div(i4,pow(i3,div(mul(sub(i2,i0),add(i2,i0)),i3)))");
-    EXPECT_EQUAL(prog.as_string(y), "div(i5,pow(i3,div(mul(sub(i2,i0),add(i2,i0)),i3)))");
-    EXPECT_EQUAL(prog.as_string(z), "add(add(i0,i1),i2)");
+    EXPECT_EQ(prog.as_string(a), "i0");
+    EXPECT_EQ(prog.as_string(k2), "i4");
+    EXPECT_EQ(prog.as_string(d), "pow(i3,div(mul(sub(i2,i0),add(i2,i0)),i3))");
+    EXPECT_EQ(prog.as_string(x), "div(i4,pow(i3,div(mul(sub(i2,i0),add(i2,i0)),i3)))");
+    EXPECT_EQ(prog.as_string(y), "div(i5,pow(i3,div(mul(sub(i2,i0),add(i2,i0)),i3)))");
+    EXPECT_EQ(prog.as_string(z), "add(add(i0,i1),i2)");
     //--- verify (expression) sizes
-    EXPECT_EQUAL(prog.size_of(a), 1u);
-    EXPECT_EQUAL(prog.size_of(k2), 1u);
-    EXPECT_EQUAL(prog.size_of(d), 11u);
-    EXPECT_EQUAL(prog.size_of(x), 13u);
-    EXPECT_EQUAL(prog.size_of(y), 13u);
-    EXPECT_EQUAL(prog.size_of(z), 5u);
+    EXPECT_EQ(prog.size_of(a), 1u);
+    EXPECT_EQ(prog.size_of(k2), 1u);
+    EXPECT_EQ(prog.size_of(d), 11u);
+    EXPECT_EQ(prog.size_of(x), 13u);
+    EXPECT_EQ(prog.size_of(y), 13u);
+    EXPECT_EQ(prog.size_of(z), 5u);
     //--- verify costs
-    EXPECT_EQUAL(prog.get_cost(0), 3u);
-    EXPECT_EQUAL(prog.get_cost(1), 9u);
+    EXPECT_EQ(prog.get_cost(0), 3u);
+    EXPECT_EQ(prog.get_cost(1), 9u);
     //--- evaluate
     Random dummy;
     prog.handle_feedback(dummy, find_weakness(prog));
-    EXPECT_EQUAL(prog.stats().weakness, 0.0);
-    EXPECT_EQUAL(prog.stats().cost, 9u);
-    EXPECT_EQUAL(prog.stats().alt, 1u);
+    EXPECT_EQ(prog.stats().weakness, 0.0);
+    EXPECT_EQ(prog.stats().cost, 9u);
+    EXPECT_EQ(prog.stats().alt, 1u);
 }
 
 void maybe_newline(bool &partial_line) {
@@ -266,7 +266,7 @@ Program try_evolve(const Params &params, size_t max_idle, const Program *program
 // y(size=13): sub(mod(mul(i1,add(i1,add(i2,i0))),add(i2,i0)),i2)
 // z(size=5): add(i1,add(i2,i0))
 
-TEST("trying to evolve a solution automatically") {
+TEST(Ponder2017, trying_to_evolve_a_solution_automatically) {
     fprintf(stderr, "training f(a,b,c) -> (z)...\n");
     Program best_z = try_evolve(Params(3, 1, 8, 8, 8), 10 * 1000);
     fprintf(stderr, "training f(a,b,c) -> (z,y)...\n");
@@ -279,7 +279,8 @@ TEST("trying to evolve a solution automatically") {
     fprintf(stderr, "z(size=%zu): %s\n", best.size_of(refs[0]), best.as_string(refs[0]).c_str());
 }
 
-TEST_MAIN() {
+int main(int argc, char* argv[]) {
     SignalHandler::INT.hook();
-    TEST_RUN_ALL();
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

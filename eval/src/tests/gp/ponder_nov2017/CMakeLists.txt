@@ -4,4 +4,5 @@ vespa_add_executable(eval_gp_ponder_nov2017_app
     ponder_nov2017.cpp
     DEPENDS
     vespaeval
+    GTest::gtest
 )
