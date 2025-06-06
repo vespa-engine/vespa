@@ -139,6 +139,9 @@ type Target interface {
 
 	// CompatibleWith returns nil if target is compatible with the given version.
 	CompatibleWith(version version.Version) error
+
+	ListApplications(tenant string, timeout time.Duration) (*CloudTenantResponse, error)
+	ShowApplicationInstance(id ApplicationID, timeout time.Duration) (*CloudInstanceResponse, error)
 }
 
 // TLSOptions holds the client certificate to use for cloud API or service requests.
@@ -244,7 +247,7 @@ func FindService(name string, authMethod string, services []*Service) (*Service,
 		if name == s.Name {
 			return s, nil
 		}
-		var prettyName = color.CyanString("%s", s.Name)
+		prettyName := color.CyanString("%s", s.Name)
 		if s.AuthMethod != "" {
 			prettyName = fmt.Sprintf("%s (%s)", prettyName, s.AuthMethod)
 		}
