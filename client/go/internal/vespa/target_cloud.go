@@ -397,7 +397,7 @@ func (t *cloudTarget) ListApplications(tenant string, timeout time.Duration) (*C
 		return true, nil
 	}
 	if _, err := deployRequest(t, resultFn, func() *http.Request { return req }, timeout, t.retryInterval); err != nil {
-		return nil, fmt.Errorf("no tennat found: %w", err)
+		return nil, fmt.Errorf("no tenant found: %w", err)
 	}
 
 	return &resp, nil

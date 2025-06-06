@@ -10,7 +10,7 @@ import (
 )
 
 func newApplicationCmd() *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Hidden: true,
 		Use:    "application",
 		Short:  "",
@@ -24,13 +24,15 @@ $ vespa application show -a <tenant>.<application>`,
 			return fmt.Errorf("invalid command: %s", args[0])
 		},
 	}
+	return cmd
 }
 
 func newApplicationListCmd(cli *CLI) *cobra.Command {
+	var listAllApplications bool
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List all application for a given tenant",
-		Long: `The tenant is provided by specifying -a <tenant>.IGNORED.
+		Long: `The tenant is provided by specifying -a <tenant>.ignored
 The applications are listed without any extra information. In the format <tenant>.<application>.`,
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
@@ -39,34 +41,51 @@ The applications are listed without any extra information. In the format <tenant
 			if err != nil {
 				return err
 			}
-			if target.Type() != vespa.TargetCloud && target.Type() != vespa.TargetHosted {
-				return fmt.Errorf("application list does not support %s target", target.Type())
-			}
 
 			appId, err := cli.config.application()
 			if err != nil {
 				return err
 			}
-			tenant, err := target.ListApplications(appId.Tenant, 30*time.Second)
+			applicationList, err := target.ListApplications(appId.Tenant, 30*time.Second)
 			if err != nil {
 				return err
 			}
 
 			seen := map[string]bool{}
-			for _, app := range tenant.Applications {
-				app := fmt.Sprintf("%s.%s", app.Tenant, app.Application)
+			for _, app := range applicationList.Applications {
+				appId := fmt.Sprintf("%s.%s", app.Tenant, app.Application)
 				// skip application with multiple instances
-				if seen[app] {
+				if seen[appId] {
 					continue
 				}
-				fmt.Printf("%s\n", app)
-				seen[app] = true
+				if listAllApplications || activeApplication(vespa.ApplicationID{
+					Tenant:      app.Tenant,
+					Application: app.Application,
+					Instance:    "",
+				}, target) {
+					fmt.Printf("%s\n", appId)
+					seen[appId] = true
+				}
 			}
 
 			return nil
 		},
 	}
+	cmd.PersistentFlags().BoolVarP(&listAllApplications, "list-all-applications", "A", false, "List all applications, not just the active ones")
 	return cmd
+}
+
+func activeApplication(id vespa.ApplicationID, target vespa.Target) bool {
+	app, err := target.ShowApplicationInstance(id, 10*time.Second)
+	if err != nil {
+		return true // assume true
+	} else {
+		deployments := 0
+		for _, instance := range app.Instances {
+			deployments += len(instance.Deployments)
+		}
+		return deployments > 0
+	}
 }
 
 func newApplicationShowCmd(cli *CLI) *cobra.Command {
@@ -78,7 +97,7 @@ func newApplicationShowCmd(cli *CLI) *cobra.Command {
 		DisableAutoGenTag: true,
 		SilenceUsage:      true,
 		Example: `$ vespa application show -a <tenant>.<application>
-$ vespa application show -a <tenant.application> --format plain`,
+$ vespa application show -a <tenant>.<application> --format plain`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			target, err := cli.target(targetOptions{noCertificate: true, supportedType: cloudTargetOnly})
 			if err != nil {
