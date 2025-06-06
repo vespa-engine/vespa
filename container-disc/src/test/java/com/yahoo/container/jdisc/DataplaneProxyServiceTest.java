@@ -184,7 +184,7 @@ public class DataplaneProxyServiceTest {
         Files.createFile(serverCert);
         Files.createFile(serverKey);
 
-        String out = DataplaneProxyService.nginxConfig(templatePath, clientCert, clientKey, serverCert, serverKey, 1111, 2222, List.of("one", "two"), fs.getPath("/opt/vespa"), true);
+        String out = DataplaneProxyService.nginxConfig(templatePath, clientCert, clientKey, serverCert, serverKey, 1111, 2222, List.of("one", "two"), fs.getPath("/opt/vespa"), true, false);
 
         assertTrue(out.contains("proxy_suffix:"), "Suffix must be empty on Azure");
         assertTrue(out.contains("one vespatoken;"), "Should map first endpoint");
@@ -205,7 +205,7 @@ public class DataplaneProxyServiceTest {
         Path dummy = fs.getPath("/dummy.pem");
         Files.createFile(dummy);
 
-        String out = DataplaneProxyService.nginxConfig(templatePath, dummy, dummy, dummy, dummy, 1, 2, List.of("e"), fs.getPath("/pfx"), false);
+        String out = DataplaneProxyService.nginxConfig(templatePath, dummy, dummy, dummy, dummy, 1, 2, List.of("e"), fs.getPath("/pfx"), false, false);
 
         assertTrue(out.contains("proxy_suffix:proxy_protocol"), "Should add 'proxy_protocol' suffix when not on Azure");
     }
