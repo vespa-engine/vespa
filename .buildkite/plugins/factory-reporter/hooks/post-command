@@ -1,7 +1,10 @@
 #!/bin/bash
 # Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-
+#
+# This script is run after the command has completed, and updates the job run status in factory.
+#
 set -eo pipefail
+set -x
 
 PIPELINE="$BUILDKITE_PLUGIN_FACTORY_REPORTER_PIPELINE_ID"
 
@@ -9,20 +12,12 @@ if [[ $SKIP_BUILDKITE_PLUGINS == "true" ]]; then
     echo "SKIP_BUILDKITE_PLUGINS is set. Skipping factory reporter"
     exit 0
 fi
-if [[ $BUILDKITE_PULL_REQUEST != "false" ]]; then
-    echo "This is a pull request, skipping factory reporter"
-    exit 0
-fi
 if [[ -z $PIPELINE ]]; then
     echo "No pipeline ID found, skipping factory reporter"
     exit 0
 fi
-if [[ -z $BUILDKITE_BUILD_NUMBER ]]; then
-    echo "No BUILDKITE_BUILD_NUMBER environment found, skipping factory reporter"
-    exit 0
-fi
 
-if [[ -n $BUILDKITE_COMMAND_EXIT_STATUS ]] && (( $BUILDKITE_COMMAND_EXIT_STATUS != 0 )); then
+if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
 
   START_SECONDS=$(buildkite-agent meta-data get start-seconds)
   if [[ -z $START_SECONDS ]]; then
@@ -37,10 +32,7 @@ if [[ -n $BUILDKITE_COMMAND_EXIT_STATUS ]] && (( $BUILDKITE_COMMAND_EXIT_STATUS 
   fi
   echo "Using factory command: $FACTORY_COMMAND"
 
-  $FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE failure
 
-  # Only update build status if the job type is 'build'
-  if [[ $JOB_TYPE == "build" ]]; then
-    $FACTORY_COMMAND update-build-status $PIPELINE failure "Build failed"
-  fi
+  JOB_JSON=$($FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE "success")
+  echo "Output from updating job run : $JOB_JSON"
 fi
