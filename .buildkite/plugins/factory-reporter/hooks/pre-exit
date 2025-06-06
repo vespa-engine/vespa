@@ -23,8 +23,20 @@ if [[ -z $BUILDKITE_BUILD_NUMBER ]]; then
 fi
 
 if [[ -n $BUILDKITE_COMMAND_EXIT_STATUS ]] && (( $BUILDKITE_COMMAND_EXIT_STATUS != 0 )); then
-  START_SECONDS=$(buildkite-agent meta-data get start-seconds || echo 0)
+
+  START_SECONDS=$(buildkite-agent meta-data get start-seconds)
+  if [[ -z $START_SECONDS ]]; then
+    echo "Error: start-seconds not set as meta-data" >&2
+    exit 1
+  fi
+
   FACTORY_COMMAND=$(buildkite-agent meta-data get factory-command)
+  if [[ -z $FACTORY_COMMAND ]]; then
+    echo "Error: factory-command not set as meta-data" >&2
+    exit 1
+  fi
+  echo "Using factory command: $FACTORY_COMMAND"
+
   $FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE failure
 
   # Only update build status if the job type is 'build'
