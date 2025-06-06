@@ -26,10 +26,13 @@ if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
     echo "start-seconds already set, skipping"
   fi
 
-  if command -v factory-command &> /dev/null; then
+  if [[ -x "$BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh" ]]; then
+    FACTORY_COMMAND="$BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh"
+  elif command -v factory-command &> /dev/null; then
     FACTORY_COMMAND="factory-command"
   else
-    FACTORY_COMMAND="$BUILDKITE_BUILD_CHECKOUT_PATH/.buildkite/factory-command.sh"
+    echo "Error: No factory-command found." >&2
+    exit 1
   fi
   buildkite-agent meta-data set factory-command "$FACTORY_COMMAND"
 
