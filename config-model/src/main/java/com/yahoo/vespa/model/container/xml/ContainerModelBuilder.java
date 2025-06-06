@@ -464,6 +464,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     AccessLogBuilder.buildIfNotDisabled(deployState, cluster, accessLog).ifPresent(accessLogComponent -> {
                         components.add(accessLogComponent);
                         cluster.addComponent(accessLogComponent);
+                        // The request content logging configuration is not really tied to the access log, but instead to each connector,
+                        // as each connector must know whether to log the request content or not at the start of processing a request.
+                        // If multiple access logs are configured with different request content logging configuration,
+                        // the effective configuration for both will be the union set.
+                        Optional.ofNullable(cluster.getHttp())
+                                .flatMap(Http::getHttpServer)
+                                .ifPresent(ht -> ht.getConnectorFactories()
+                                        .forEach(c -> c.addRequestContentLogging(accessLogComponent.getRequestContent())));
                     });
                 }
                 if ( ! components.isEmpty()) {
