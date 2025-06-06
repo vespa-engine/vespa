@@ -2,10 +2,10 @@
 package com.yahoo.vespa.streamingvisitors;
 
 import com.yahoo.vespa.streamingvisitors.tracing.LoggingTraceExporter;
-import com.yahoo.vespa.streamingvisitors.tracing.MaxSamplesPerPeriod;
-import com.yahoo.vespa.streamingvisitors.tracing.MonotonicNanoClock;
-import com.yahoo.vespa.streamingvisitors.tracing.ProbabilisticSampleRate;
-import com.yahoo.vespa.streamingvisitors.tracing.SamplingStrategy;
+import ai.vespa.sampling.MaxSamplesPerPeriod;
+import ai.vespa.sampling.MonotonicNanoClock;
+import ai.vespa.sampling.ProbabilisticSampleRate;
+import ai.vespa.sampling.SamplingStrategy;
 import com.yahoo.vespa.streamingvisitors.tracing.SamplingTraceExporter;
 import com.yahoo.vespa.streamingvisitors.tracing.TraceExporter;
 

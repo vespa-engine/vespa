@@ -19,9 +19,8 @@ import com.yahoo.searchlib.aggregation.Grouping;
 import com.yahoo.vdslib.DocumentSummary;
 import com.yahoo.vdslib.SearchResult;
 import com.yahoo.vdslib.VisitorStatistics;
-import com.yahoo.vespa.streamingvisitors.tracing.MockUtils;
-import com.yahoo.vespa.streamingvisitors.tracing.MonotonicNanoClock;
-import com.yahoo.vespa.streamingvisitors.tracing.SamplingStrategy;
+import ai.vespa.sampling.MonotonicNanoClock;
+import ai.vespa.sampling.SamplingStrategy;
 import com.yahoo.vespa.streamingvisitors.tracing.TraceExporter;
 import org.junit.jupiter.api.Test;
 
@@ -311,7 +310,8 @@ public class StreamingSearcherTestCase {
         StreamingBackend searcher;
 
         private TraceFixture(Long firstTimestamp, Long... additionalTimestamps) {
-            clock = MockUtils.mockedClockReturning(firstTimestamp, additionalTimestamps);
+            clock = mock(MonotonicNanoClock.class);
+            when(clock.nanoTimeNow()).thenReturn(firstTimestamp, additionalTimestamps);
             options = new TracingOptions(sampler, exporter, clock, 8, 2.0);
             factory = new MockVisitorFactory();
             searcher = new StreamingBackend(CLUSTER_PARAMS, "search-cluster-A", factory, "content-cluster-A", options);
