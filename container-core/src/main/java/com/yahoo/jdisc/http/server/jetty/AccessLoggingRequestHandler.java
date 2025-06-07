@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import ai.vespa.sampling.ProbabilisticSampleRate;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
@@ -18,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
@@ -52,9 +52,8 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
     private final RequestHandler delegateRequestHandler;
     private final AccessLogEntry accessLogEntry;
     private final List<String> pathPrefixes;
-    private final List<Double> samplingRate;
+    private final List<ProbabilisticSampleRate> samplingRate;
     private final List<Long> maxSize;
-    private final Random rng = new Random();
 
     public AccessLoggingRequestHandler(
             org.eclipse.jetty.server.Request jettyRequest,
@@ -65,7 +64,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         this.accessLogEntry = accessLogEntry;
         var cfg = getConnector(jettyRequest).connectorConfig().accessLog().content();
         this.pathPrefixes = cfg.stream().map(e -> e.pathPrefix()).toList();
-        this.samplingRate = cfg.stream().map(e -> e.sampleRate()).toList();
+        this.samplingRate = cfg.stream().map(e -> ProbabilisticSampleRate.withSystemDefaults(e.sampleRate())).toList();
         this.maxSize = cfg.stream().map(e -> e.maxSize()).toList();
     }
 
@@ -79,7 +78,7 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler implemen
         if (methodsWithEntity.contains(httpRequest.getMethod())) {
             for (int i = 0; i < pathPrefixes.size(); i++) {
                 if (uriPath.startsWith(pathPrefixes.get(i))) {
-                    if (samplingRate.get(i) > rng.nextDouble()) {
+                    if (samplingRate.get(i).shouldSample()) {
                         return new ContentLoggingContentChannel(originalContentChannel, maxSize.get(i));
                     }
                 }

@@ -16,8 +16,11 @@ import com.yahoo.container.logging.ConnectionLogConfig;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
+import com.yahoo.vespa.model.container.component.AccessLogComponent;
+import com.yahoo.vespa.model.container.component.AccessLogComponent.RequestContentItem;
 import com.yahoo.vespa.model.container.component.Component;
 import org.junit.jupiter.api.Test;
 import org.w3c.dom.Element;
@@ -26,7 +29,12 @@ import java.util.logging.Level;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.text.StringUtilities.quote;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * @author gjoranv
@@ -184,4 +192,62 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         return cluster.getComponentsMap().get(ComponentId.fromString((AccessLog.class.getName())));
     }
 
+    @Test
+    void request_content_elements_are_included_in_access_log_config() {
+        var clusterElem = DomBuilderTest.parse(
+                "<container id='default' version='1.0'>",
+                "  <http>",
+                "    <server id='default' port='8080' />",
+                "  </http>",
+                "  <accesslog type='json' ",
+                "             fileNamePattern='pattern' rotationInterval='interval'>",
+                "    <request-content>",
+                "      <samples-per-second>0.2</samples-per-second>",
+                "      <path-prefix>/search</path-prefix>",
+                "      <max-bytes>65536</max-bytes>",
+                "    </request-content>",
+                "    <request-content>",
+                "      <samples-per-second>0.5</samples-per-second>",
+                "      <path-prefix>/document</path-prefix>",
+                "      <max-bytes>32768</max-bytes>",
+                "    </request-content>",
+                "  </accesslog>",
+                nodesXml,
+                "</container>");
+
+        createModel(root, clusterElem);
+
+        // Get the AccessLogComponent instance
+        var jsonAccessLog = getComponent("default", JSONAccessLog.class.getName());
+        assertNotNull(jsonAccessLog);
+        assertInstanceOf(AccessLogComponent.class, jsonAccessLog);
+        var accessLogComponent = (AccessLogComponent) jsonAccessLog;
+
+        // Check that the getter returns the correct entries
+        var requestContent = accessLogComponent.getRequestContent();
+        assertEquals(2, requestContent.size());
+
+        // Check that the set contains the expected RequestContentItem objects
+        assertTrue(requestContent.contains(
+                new RequestContentItem(0.2, "/search", 65536)));
+        assertTrue(requestContent.contains(
+                new RequestContentItem(0.5, "/document", 32768)));
+
+        // Verify that the connector config includes the request content items
+        var accessLogConfig = root.getConfig(ConnectorConfig.class, "default/http/jdisc-jetty/default").accessLog();
+
+        // Check that the access log config has the correct number of content items
+        assertEquals(2, accessLogConfig.content().size());
+
+        // Check that the content items have the correct values
+        var contentItems = accessLogConfig.content();
+        assertTrue(contentItems.stream().anyMatch(item -> 
+                item.pathPrefix().equals("/search") && 
+                item.maxSize() == 65536 && 
+                item.sampleRate() == 0.2));
+        assertTrue(contentItems.stream().anyMatch(item -> 
+                item.pathPrefix().equals("/document") && 
+                item.maxSize() == 32768 && 
+                item.sampleRate() == 0.5));
+    }
 }

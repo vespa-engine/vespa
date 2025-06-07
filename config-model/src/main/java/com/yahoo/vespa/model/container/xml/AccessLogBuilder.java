@@ -8,8 +8,13 @@ import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType;
+import com.yahoo.vespa.model.container.component.AccessLogComponent.RequestContentItem;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
+
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.collections.CollectionUtil.firstMatching;
 import static com.yahoo.config.model.builder.xml.XmlHelper.getOptionalAttribute;
@@ -61,7 +66,29 @@ public class AccessLogBuilder {
                     isHostedVespa,
                     symlinkName(spec),
                     queueSize(spec),
-                    bufferSize(spec));
+                    bufferSize(spec),
+                    parseRequestContent(spec));
+        }
+
+        private Set<RequestContentItem> parseRequestContent(Element spec) {
+            var requestContent = new HashSet<RequestContentItem>();
+            var requestContentElements = spec.getElementsByTagName("request-content");
+            for (int i = 0; i < requestContentElements.getLength(); i++) {
+                var requestContentElement = (Element) requestContentElements.item(i);
+
+                // All sub-elements are now mandatory, so we can directly get their values
+                var samplesPerSecondElement = (Element) requestContentElement.getElementsByTagName("samples-per-second").item(0);
+                double samplesPerSecond = Double.parseDouble(samplesPerSecondElement.getTextContent());
+
+                var pathPrefixElement = (Element) requestContentElement.getElementsByTagName("path-prefix").item(0);
+                String pathPrefix = pathPrefixElement.getTextContent();
+
+                var maxBytesElement = (Element) requestContentElement.getElementsByTagName("max-bytes").item(0);
+                int maxBytes = Integer.parseInt(maxBytesElement.getTextContent());
+
+                requestContent.add(new RequestContentItem(samplesPerSecond, pathPrefix, maxBytes));
+            }
+            return requestContent;
         }
 
         private String symlinkName(Element spec) {

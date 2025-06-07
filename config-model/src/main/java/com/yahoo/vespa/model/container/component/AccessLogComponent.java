@@ -10,6 +10,7 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import static com.yahoo.container.core.AccessLogConfig.FileHandler.CompressionFormat.Enum.GZIP;
 import static com.yahoo.container.core.AccessLogConfig.FileHandler.CompressionFormat.Enum.ZSTD;
@@ -24,6 +25,8 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     public enum AccessLogType { queryAccessLog, jsonAccessLog }
     public enum CompressionType { GZIP, ZSTD }
 
+    public record RequestContentItem(double samplesPerSecond, String pathPrefix, int maxBytes) {}
+
     private final String fileNamePattern;
     private final String rotationInterval;
     private final Boolean compression;
@@ -32,6 +35,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     private final CompressionType compressionType;
     private final int queueSize;
     private final Integer bufferSize;
+    private final Set<RequestContentItem> requestContent;
 
     public AccessLogComponent(ContainerCluster<?> cluster,
                               AccessLogType logType,
@@ -49,7 +53,8 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                 isHostedVespa,
                 capitalize(logTypeAndClusterName(logType, clusterName)),
                 -1,
-                ((cluster instanceof ApplicationContainerCluster) ? 4 << 20 : null));
+                ((cluster instanceof ApplicationContainerCluster) ? 4 << 20 : null),
+                Set.of());
     }
 
     public AccessLogComponent(AccessLogType logType,
@@ -61,6 +66,19 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
                               String symlinkName,
                               Integer queueSize,
                               Integer bufferSize) {
+        this(logType, compressionType, fileNamePattern, rotationInterval, compressOnRotation, isHostedVespa, symlinkName, queueSize, bufferSize, Set.of());
+    }
+
+    public AccessLogComponent(AccessLogType logType,
+                              String compressionType,
+                              String fileNamePattern,
+                              String rotationInterval,
+                              Boolean compressOnRotation,
+                              boolean isHostedVespa,
+                              String symlinkName,
+                              Integer queueSize,
+                              Integer bufferSize,
+                              Set<RequestContentItem> requestContent) {
         super(new ComponentModel(accessLogClass(logType), null, null, null));
         this.fileNamePattern = Objects.requireNonNull(fileNamePattern, "File name pattern required when configuring access log");
         this.rotationInterval = rotationInterval;
@@ -70,6 +88,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.compressionType = "zstd".equals(compressionType) ? CompressionType.ZSTD :CompressionType.GZIP;
         this.queueSize = (queueSize == null) ? 256 : queueSize;
         this.bufferSize = bufferSize;
+        this.requestContent = requestContent;
     }
 
     private static String capitalize(String name) {
@@ -118,5 +137,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     }
 
     public String getFileNamePattern() { return fileNamePattern; }
+
+    public Set<RequestContentItem> getRequestContent() { return Set.copyOf(requestContent); }
 
 }

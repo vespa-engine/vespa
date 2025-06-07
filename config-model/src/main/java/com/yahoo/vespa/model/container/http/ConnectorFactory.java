@@ -4,12 +4,15 @@ package com.yahoo.vespa.model.container.http;
 import com.yahoo.component.ComponentId;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 import com.yahoo.vespa.model.container.http.ssl.DefaultSslProvider;
 import com.yahoo.vespa.model.container.http.ssl.SslProvider;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * @author Einar M R Rosenvinge
@@ -23,6 +26,7 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private final SslProvider sslProviderComponent;
     private volatile ComponentId defaultRequestFilterChain;
     private volatile ComponentId defaultResponseFilterChain;
+    private final Set<AccessLogComponent.RequestContentItem> requestContentLogging = new HashSet<>();
 
     protected ConnectorFactory(Builder builder) {
         super(new ComponentModel(builder.name,
@@ -41,9 +45,16 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     public void getConfig(ConnectorConfig.Builder connectorBuilder) {
         connectorBuilder.listenPort(listenPort);
         connectorBuilder.name(name);
-        connectorBuilder.accessLog(new ConnectorConfig.AccessLog.Builder()
-                                           .remoteAddressHeaders(List.of("x-forwarded-for"))
-                                           .remotePortHeaders(List.of("X-Forwarded-Port")));
+        connectorBuilder
+                .accessLog(new ConnectorConfig.AccessLog.Builder()
+                .remoteAddressHeaders(List.of("x-forwarded-for"))
+                .remotePortHeaders(List.of("X-Forwarded-Port"))
+                .content(requestContentLogging.stream()
+                        .map(item -> new ConnectorConfig.AccessLog.Content.Builder()
+                                .sampleRate(item.samplesPerSecond())
+                                .pathPrefix(item.pathPrefix())
+                                .maxSize(item.maxBytes()))
+                        .toList()));
         sslProviderComponent.amendConnectorConfig(connectorBuilder);
     }
 
@@ -62,6 +73,10 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     public void setDefaultRequestFilterChain(ComponentId filterChain) { this.defaultRequestFilterChain = filterChain; }
 
     public void setDefaultResponseFilterChain(ComponentId filterChain) { this.defaultResponseFilterChain = filterChain; }
+
+    public void addRequestContentLogging(Set<AccessLogComponent.RequestContentItem> requestContent) {
+        requestContentLogging.addAll(requestContent);
+    }
 
     public SslProvider sslProvider() { return sslProviderComponent; }
 

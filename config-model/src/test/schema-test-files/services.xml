@@ -120,7 +120,19 @@
     </http>
 
     <accesslog type='json'
-           fileNamePattern='logs/vespa/access/access-json.%Y%m%d%H%M%S' compressOnRotation='true'  compressionType='zstd' queueSize='13' bufferSize='65536'/>
+           fileNamePattern='logs/vespa/access/access-json.%Y%m%d%H%M%S' compressOnRotation='true'  compressionType='zstd' queueSize='13' bufferSize='65536'>
+      <request-content>
+        <samples-per-second>0.2</samples-per-second>
+        <path-prefix>/search</path-prefix>
+        <max-bytes>65536</max-bytes>
+      </request-content>
+      <request-content>
+        <samples-per-second>0.5</samples-per-second>
+        <path-prefix>/document</path-prefix>
+        <max-bytes>32768</max-bytes>
+      </request-content>
+    </accesslog>
+
     <accesslog type='vespa'
            fileNamePattern='logs/vespa/access/access-vespa.%Y%m%d%H%M%S' />
 

@@ -75,7 +75,12 @@ AccessLog = element accesslog {
     attribute compressionType { string "gzip" | string "zstd" }? &
     attribute queueSize { xsd:nonNegativeInteger }? &
     attribute bufferSize { xsd:nonNegativeInteger }? &
-    attribute rotationInterval { string }?
+    attribute rotationInterval { string }? &
+    element request-content {
+        element samples-per-second { xsd:double { minInclusive = "0.0" maxInclusive = "100000" } } &
+        element path-prefix { string } &
+        element max-bytes { xsd:nonNegativeInteger }
+    }*
 }
 
 SecretStore = element secret-store {
