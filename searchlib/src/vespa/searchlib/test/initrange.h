@@ -7,12 +7,6 @@
 
 namespace search::test {
 
-#ifdef ENABLE_GTEST_MIGRATION
-#define InitRangeVerifier InitRangeVerifierForGTest
-#else
-#define InitRangeVerifier InitRangeVerifierForVespaTest
-#endif
-
 class InitRangeVerifier {
 public:
     using SearchIterator = queryeval::SearchIterator;

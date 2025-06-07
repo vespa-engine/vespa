@@ -13,7 +13,6 @@
 #include <vespa/searchlib/features/termeditdistancefeature.h>
 #include <vespa/searchlib/features/utils.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/rand48.h>
