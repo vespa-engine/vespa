@@ -3,7 +3,6 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchlib/memoryindex/field_index.h>
 #include <vespa/searchlib/test/memoryindex/wrap_inserter.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/vespalib/gtest/gtest.h>

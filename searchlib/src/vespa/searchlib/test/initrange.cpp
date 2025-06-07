@@ -1,12 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "initrange.h"
-#ifdef ENABLE_GTEST_MIGRATION
 #include <vespa/vespalib/gtest/gtest.h>
-#define ASSERT_EQUAL ASSERT_EQ
-#define EXPECT_EQUAL EXPECT_EQ
-#else
-#include <vespa/vespalib/testkit/test_kit.h>
-#endif
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/truesearch.h>
 #include <algorithm>
@@ -147,9 +141,9 @@ void
 InitRangeVerifier::verify(SearchIterator & iterator, const Ranges & ranges, bool strict) const
 {
     DocIds result = search(iterator, ranges, strict);
-    ASSERT_EQUAL(_docIds.size(), result.size());
+    ASSERT_EQ(_docIds.size(), result.size());
     for (size_t i(0); i < _docIds.size(); i++) {
-        EXPECT_EQUAL(_docIds[i], result[i]);
+        EXPECT_EQ(_docIds[i], result[i]);
     }
 }
 

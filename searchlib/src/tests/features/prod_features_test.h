@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/features/distancetopathfeature.h>
 #include <vespa/searchlib/features/termdistancefeature.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 
 class Test : public FtTestAppBase

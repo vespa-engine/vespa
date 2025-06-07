@@ -10,7 +10,6 @@
 #include <vespa/searchlib/fef/functiontablefactory.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/stringfmt.h>

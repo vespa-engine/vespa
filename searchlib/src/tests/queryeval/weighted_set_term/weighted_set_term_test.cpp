@@ -10,7 +10,6 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/fake_requestcontext.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

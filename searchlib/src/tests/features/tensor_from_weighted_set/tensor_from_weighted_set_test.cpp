@@ -14,7 +14,6 @@
 #include <vespa/searchlib/features/tensor_from_weighted_set_feature.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

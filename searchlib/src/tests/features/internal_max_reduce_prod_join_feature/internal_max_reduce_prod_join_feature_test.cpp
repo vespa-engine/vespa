@@ -4,7 +4,6 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/features/internal_max_reduce_prod_join_feature.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

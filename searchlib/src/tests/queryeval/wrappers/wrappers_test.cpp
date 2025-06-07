@@ -5,7 +5,6 @@
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 
 using namespace search::fef;

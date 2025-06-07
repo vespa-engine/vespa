@@ -6,7 +6,6 @@
 #include <vespa/searchlib/queryeval/test/eagerchild.h>
 #include <vespa/searchlib/queryeval/test/leafspec.h>
 #include <vespa/searchlib/queryeval/test/wandspec.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

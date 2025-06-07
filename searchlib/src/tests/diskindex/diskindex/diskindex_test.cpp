@@ -3,7 +3,6 @@
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/diskindex/disktermblueprint.h>
 #include <vespa/searchlib/test/diskindex/testdiskindex.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/diskindex/zcposocciterators.h>

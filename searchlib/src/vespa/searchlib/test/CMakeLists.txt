@@ -18,20 +18,9 @@ vespa_add_library(searchlib_test
     weightedchildrenverifiers.cpp
     $<TARGET_OBJECTS:searchlib_test_fakedata>
     $<TARGET_OBJECTS:searchlib_searchlib_test_diskindex>
-    $<TARGET_OBJECTS:searchlib_test_gtest_migration>
     DEPENDS
     vespa_searchlib
     searchlib_searchlib_test_features
     searchlib_searchlib_test_memoryindex
     GTest::gtest
 )
-
-vespa_add_library(searchlib_test_gtest_migration OBJECT
-    SOURCES
-    ft_test_app_base.cpp
-    initrange.cpp
-    searchiteratorverifier.cpp
-    weightedchildrenverifiers.cpp
-)
-
-target_compile_definitions(searchlib_test_gtest_migration PRIVATE ENABLE_GTEST_MIGRATION)

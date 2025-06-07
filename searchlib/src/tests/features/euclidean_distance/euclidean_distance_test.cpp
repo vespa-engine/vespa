@@ -9,7 +9,6 @@
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/features/euclidean_distance_feature.h>
 #include <vespa/searchlib/fef/fef.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

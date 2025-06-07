@@ -8,10 +8,6 @@
 #include <vespa/log/log.h>
 LOG_SETUP(".ft_test_app_base");
 
-#ifdef ENABLE_GTEST_MIGRATION
-#define EXPECT_EQUAL EXPECT_EQ
-#endif
-
 namespace fieldmatch = search::features::fieldmatch;
 using search::fef::test::DummyDependencyHandler;
 using search::fef::FieldInfo;
@@ -100,10 +96,10 @@ FtTestAppBase::FT_EQUAL(const std::vector<string> &expected, const std::vector<s
 {
     FT_LOG(prefix + " expected", expected);
     FT_LOG(prefix + " actual  ", actual);
-    EXPECT_EQUAL(expected.size(), actual.size());
+    EXPECT_EQ(expected.size(), actual.size());
     ASSERT_TRUE(expected.size() == actual.size());
     for (uint32_t i = 0; i < expected.size(); ++i) {
-        EXPECT_EQUAL(expected[i], actual[i]);
+        EXPECT_EQ(expected[i], actual[i]);
         ASSERT_TRUE(expected[i] == actual[i]);
     }
 }
