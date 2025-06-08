@@ -25,7 +25,7 @@ public class MessageBusParams {
      */
     public MessageBusParams() {
         retryPolicy = new RetryTransientErrorsPolicy();
-        maxPendingCount = 4096;
+        maxPendingCount = 1024;
         config = null;
     }
 
