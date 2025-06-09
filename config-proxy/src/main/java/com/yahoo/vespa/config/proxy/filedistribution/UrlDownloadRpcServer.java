@@ -8,9 +8,9 @@ import com.yahoo.jrt.StringValue;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.security.tls.Capability;
 import com.yahoo.text.Utf8;
+import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.yolean.Exceptions;
-import net.jpountz.xxhash.XXHashFactory;
 
 import java.io.File;
 import java.net.MalformedURLException;
@@ -34,7 +34,7 @@ import static java.util.logging.Level.WARNING;
 /**
  * An RPC server that handles URL download requests.
  *
- * @author lesters
+ * @author Lester Solbakken
  */
 class UrlDownloadRpcServer {
 
@@ -116,7 +116,7 @@ class UrlDownloadRpcServer {
     }
 
     private static String urlToDirName(String uri) {
-        return String.valueOf(XXHashFactory.fastestJavaInstance().hash64().hash(ByteBuffer.wrap(Utf8.toBytes(uri)), 0));
+        return ConfigUtils.getXxhash64(ByteBuffer.wrap(Utf8.toBytes(uri)));
     }
 
 }
