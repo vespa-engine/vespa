@@ -223,7 +223,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addClients(deployState, spec, cluster);
         addHttp(deployState, spec, cluster, context);
 
-        addAccessLogs(deployState, cluster, spec);
         addNodes(cluster, spec, context);
 
         addModelEvaluationRuntime(deployState, cluster);
@@ -234,6 +233,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (!standaloneBuilder) cluster.addAllPlatformBundles();
 
         // Must be added after nodes:
+        addAccessLogs(deployState, cluster, spec);
         addDeploymentSpecConfig(cluster, context, deployState.getDeployLogger());
         addZooKeeper(cluster, spec);
         addAthenzServiceIdentityProvider(cluster, context);
@@ -466,8 +466,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         // the effective configuration for both will be the union set.
                         Optional.ofNullable(cluster.getHttp())
                                 .flatMap(Http::getHttpServer)
-                                .ifPresent(ht -> ht.getConnectorFactories()
-                                        .forEach(c -> c.addRequestContentLogging(accessLogComponent.getRequestContent())));
+                                .ifPresent(jhs -> addRequestContentLogging(jhs, accessLogComponent.getRequestContent()));
+                        for (var c : cluster.getContainers()) {
+                            addRequestContentLogging(c.getDefaultHttpServer(), accessLogComponent.getRequestContent());
+                        }
                     });
                 }
                 if ( ! components.isEmpty()) {
@@ -480,6 +482,12 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent))
             cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "access"));
+    }
+
+    private static void addRequestContentLogging(
+            JettyHttpServer httpServer, Set<AccessLogComponent.RequestContentItem> requestContent) {
+                httpServer.getConnectorFactories()
+                        .forEach(c -> c.addRequestContentLogging(requestContent));
     }
 
     private List<Element> getAccessLogElements(Element spec) {
