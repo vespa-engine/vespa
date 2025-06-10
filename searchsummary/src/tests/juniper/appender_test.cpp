@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #define _NEED_SUMMARY_CONFIG_IMPL
 #include <string>
@@ -22,7 +22,7 @@ struct FixtureBase {
     void assertString(const std::string& input, const std::string& output) {
         std::vector<char> buf;
         _appender.append(buf, input.c_str(), input.size());
-        EXPECT_EQUAL(output, std::string(&buf[0], buf.size()));
+        EXPECT_EQ(output, std::string(&buf[0], buf.size()));
     }
 };
 
@@ -34,14 +34,14 @@ struct PreserveFixture : public FixtureBase {
     PreserveFixture() : FixtureBase(ConfigFlag::CF_ON) {}
 };
 
-TEST_F("requireThatMultipleWhiteSpacesAreEliminated", DefaultFixture) {
+TEST(AppenderTest, requireThatMultipleWhiteSpacesAreEliminated) {
+    DefaultFixture f;
     f.assertString("text  with\nwhite \nspace like   this", "text with white space like this");
 }
 
-TEST_F("requireThatMultipleWhiteSpacesArePreserved", PreserveFixture) {
+TEST(AppenderTest, requireThatMultipleWhiteSpacesArePreserved) {
+    PreserveFixture f;
     f.assertString("text  with\nwhite \nspace like   this", "text  with\nwhite \nspace like   this");
 }
 
-TEST_MAIN() {
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()

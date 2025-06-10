@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <memory>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <string>
 #include <vespa/juniper/query_item.h>
@@ -43,22 +43,22 @@ struct Fixture {
         visitor(query, &handle) {}
 };
 
-TEST_F("require that terms are picked up by the query visitor", Fixture("my_term")) {
+TEST(QueryVisitorTest, require_that_terms_are_picked_up_by_the_query_visitor) {
+    Fixture f("my_term");
     auto query = std::unique_ptr<QueryExpr>(f.visitor.GetQuery());
     ASSERT_TRUE(query != nullptr);
     QueryNode* node = query->AsNode();
     ASSERT_TRUE(node != nullptr);
-    EXPECT_EQUAL(1, node->_arity);
+    EXPECT_EQ(1, node->_arity);
     QueryTerm* term = node->_children[0]->AsTerm();
     ASSERT_TRUE(term != nullptr);
-    EXPECT_EQUAL("my_term", std::string(term->term()));
+    EXPECT_EQ("my_term", std::string(term->term()));
 }
 
-TEST_F("require that empty terms are ignored by the query visitor", Fixture("")) {
+TEST(QueryVisitorTest, require_that_empty_terms_are_ignored_by_the_query_visitor) {
+    Fixture f("");
     QueryExpr* query = f.visitor.GetQuery();
     ASSERT_TRUE(query == nullptr);
 }
 
-TEST_MAIN() {
-    TEST_RUN_ALL();
-}
+GTEST_MAIN_RUN_ALL_TESTS()
