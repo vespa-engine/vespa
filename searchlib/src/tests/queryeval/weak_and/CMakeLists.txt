@@ -20,6 +20,7 @@ vespa_add_executable(searchlib_weak_and_bench_app
     weak_and_bench.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_weak_and_bench_app COMMAND searchlib_weak_and_bench_app BENCHMARK)
 vespa_add_executable(searchlib_parallel_weak_and_bench_app
@@ -27,5 +28,6 @@ vespa_add_executable(searchlib_parallel_weak_and_bench_app
     parallel_weak_and_bench.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_parallel_weak_and_bench_app COMMAND searchlib_parallel_weak_and_bench_app BENCHMARK)

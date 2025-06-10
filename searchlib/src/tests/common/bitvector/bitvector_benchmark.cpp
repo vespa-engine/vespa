@@ -1,7 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/log/log.h>
 LOG_SETUP("bitvector_benchmark");
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchlib/common/bitvector.h>
 
 using namespace search;
@@ -22,15 +22,15 @@ size_t scan(BitVector & bv)
 }
 
 // This test is 10% faster with table lookup than with runtime shifting.
-TEST("speed of getNextTrueBit")
+TEST(BitvectorBenchmarkTest, speed_of_getNextTrueBit)
 {
     BitVector::UP bv(BitVector::create(100000000));
-    bv->setInterval(0, bv->size() - 1);
+    bv->setInterval(0, bv->size());
 
     for (size_t i(0); i < 10; i++) {
-        EXPECT_EQUAL(bv->size(), scan(*bv));
+        EXPECT_EQ(bv->size(), scan(*bv));
     }
-    EXPECT_EQUAL(bv->size(), bv->countTrueBits());
+    EXPECT_EQ(bv->size(), bv->countTrueBits());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

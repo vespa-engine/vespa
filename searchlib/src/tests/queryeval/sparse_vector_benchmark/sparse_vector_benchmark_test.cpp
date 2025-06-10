@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include "../weak_and/rise_wand.h"
 #include "../weak_and/rise_wand.hpp"
@@ -373,7 +373,7 @@ Result run_single_benchmark(FilterStrategy &filterStrategy, SparseVectorFactory 
 //-----------------------------------------------------------------------------
 
 // one setup is used to produce all graphs in a single plot
-class Setup
+class MySetup
 {
 private:
     FilterStrategy &_filterStrategy;
@@ -386,7 +386,7 @@ private:
     }
 
 public:
-    Setup(FilterStrategy &fs, ChildFactory &cf, uint32_t lim) : _filterStrategy(fs), _childFactory(cf), _limit(lim) {
+    MySetup(FilterStrategy &fs, ChildFactory &cf, uint32_t lim) : _filterStrategy(fs), _childFactory(cf), _limit(lim) {
         _plot = Plot::createPlot(make_title());
         fprintf(stderr, "benchmark setup: %s\n", make_title().c_str());
     }
@@ -407,7 +407,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-void benchmark_all_operators(Setup &setup, const std::vector<uint32_t> &child_counts) {
+void benchmark_all_operators(MySetup &setup, const std::vector<uint32_t> &child_counts) {
     VespaWandFactory       vespaWand256(256);
     RiseWandFactory        riseWand256(256);
     WeightedSetFactory     weightedSet(false, false);
@@ -444,20 +444,32 @@ Box<uint32_t> make_full_child_counts() {
 
 } // namespace <unnamed>
 
-TEST_FFF("benchmark", NoFilterStrategy(), ModSearchFactory(), Setup(f1, f2, 5000000)) {
+TEST(SparseVectorBenchmarkTest, benchmark1) {
+    NoFilterStrategy f1;
+    ModSearchFactory f2;
+    MySetup f3(f1, f2, 5000000);
     benchmark_all_operators(f3, make_full_child_counts());
 }
 
-TEST_FFF("benchmark", NoFilterStrategy(), ModSearchFactory(8), Setup(f1, f2, 5000000)) {
+TEST(SparseVectorBenchmarkTest, benchmark2) {
+    NoFilterStrategy f1;
+    ModSearchFactory f2(8);
+    MySetup f3(f1, f2, 5000000);
     benchmark_all_operators(f3, make_full_child_counts());
 }
 
-TEST_FFF("benchmark", PositiveFilterBeforeStrategy(), ModSearchFactory(), Setup(f1, f2, 5000000)) {
+TEST(SparseVectorBenchmarkTest, benchmark3) {
+    PositiveFilterBeforeStrategy f1;
+    ModSearchFactory f2;
+    MySetup f3(f1, f2, 5000000);
     benchmark_all_operators(f3, make_full_child_counts());
 }
 
-TEST_FFF("benchmark", NegativeFilterAfterStrategy(), ModSearchFactory(), Setup(f1, f2, 5000000)) {
+TEST(SparseVectorBenchmarkTest, benchmark4) {
+    NegativeFilterAfterStrategy f1;
+    ModSearchFactory f2;
+    MySetup f3(f1, f2, 5000000);
     benchmark_all_operators(f3, make_full_child_counts());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

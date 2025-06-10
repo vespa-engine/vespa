@@ -12,6 +12,7 @@ vespa_add_executable(searchlib_bitvector_benchmark_app
     bitvector_benchmark.cpp
     DEPENDS
     vespa_searchlib
+    GTest::gtest
 )
 vespa_add_test(NAME searchlib_bitvector_benchmark_app COMMAND searchlib_bitvector_benchmark_app BENCHMARK)
 vespa_add_executable(searchlib_condensedbitvector_test_app TEST
