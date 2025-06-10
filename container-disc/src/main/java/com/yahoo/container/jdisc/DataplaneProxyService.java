@@ -254,6 +254,7 @@ public final class DataplaneProxyService extends AbstractComponent {
                                   add_header Vary Origin;
                                   add_header Access-Control-Allow-Headers "Origin,Content-Type,Accept,Authorization";
                                   add_header Access-Control-Allow-Methods "OPTIONS,GET,PUT,DELETE,POST,PATCH";
+                                  add_header Access-Control-Max-Age "600";
                                   return 204;
                                 }
                                 add_header Access-Control-Allow-Origin $allow_origin;
