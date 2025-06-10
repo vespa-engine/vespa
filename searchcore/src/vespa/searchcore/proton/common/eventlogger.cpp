@@ -206,17 +206,22 @@ EventLogger::lidSpaceCompactionStart(const string &subDbName,
                                      double lidBloatFactor, double allowedLidBloatFactor,
                                      uint32_t lidLimit, uint32_t lowestFreeLid)
 {
-    JSONStringer jstr;
-    jstr.beginObject();
-    jstr.appendKey("documentsubdb").appendString(subDbName)
-        .appendKey("lidbloat").appendInt64(lidBloat)
-        .appendKey("allowedlidbloat").appendInt64(allowedLidBloat)
-        .appendKey("lidbloatfactor").appendDouble(lidBloatFactor)
-        .appendKey("allowedlidbloatfactor").appendDouble(allowedLidBloatFactor)
-        .appendKey("lidlimit").appendInt64(lidLimit)
-        .appendKey("lowestfreelid").appendInt64(lowestFreeLid);
-    jstr.endObject();
-    EV_STATE("lidspace.compaction.start", jstr.str().c_str());
+    // lidspace compaction throttling might cause a lot of stop-and-go for compaction,
+    // causing an excessive amount of (re-)start edge events. For now, only log if debug
+    // level has been enabled on this component.
+    if (LOG_WOULD_LOG(debug)) {
+        JSONStringer jstr;
+        jstr.beginObject();
+        jstr.appendKey("documentsubdb").appendString(subDbName)
+            .appendKey("lidbloat").appendInt64(lidBloat)
+            .appendKey("allowedlidbloat").appendInt64(allowedLidBloat)
+            .appendKey("lidbloatfactor").appendDouble(lidBloatFactor)
+            .appendKey("allowedlidbloatfactor").appendDouble(allowedLidBloatFactor)
+            .appendKey("lidlimit").appendInt64(lidLimit)
+            .appendKey("lowestfreelid").appendInt64(lowestFreeLid);
+        jstr.endObject();
+        EV_STATE("lidspace.compaction.start", jstr.str().c_str());
+    }
 }
 
 void
@@ -224,15 +229,20 @@ EventLogger::lidSpaceCompactionRestart(const string &subDbName,
                                        uint32_t usedLids, uint32_t allowedLidBloat,
                                        uint32_t highestUsedLid, uint32_t lowestFreeLid)
 {
-    JSONStringer jstr;
-    jstr.beginObject();
-    jstr.appendKey("documentsubdb").appendString(subDbName)
-        .appendKey("usedlids").appendInt64(usedLids)
-        .appendKey("allowedlidbloat").appendInt64(allowedLidBloat)
-        .appendKey("highestusedlid").appendInt64(highestUsedLid)
-        .appendKey("lowestfreelid").appendInt64(lowestFreeLid);
-    jstr.endObject();
-    EV_STATE("lidspace.compaction.restart", jstr.str().c_str());
+    // lidspace compaction throttling might cause a lot of stop-and-go for compaction,
+    // causing an excessive amount of (re-)start edge events. For now, only log if debug
+    // level has been enabled on this component.
+    if (LOG_WOULD_LOG(debug)) {
+        JSONStringer jstr;
+        jstr.beginObject();
+        jstr.appendKey("documentsubdb").appendString(subDbName)
+            .appendKey("usedlids").appendInt64(usedLids)
+            .appendKey("allowedlidbloat").appendInt64(allowedLidBloat)
+            .appendKey("highestusedlid").appendInt64(highestUsedLid)
+            .appendKey("lowestfreelid").appendInt64(lowestFreeLid);
+        jstr.endObject();
+        EV_STATE("lidspace.compaction.restart", jstr.str().c_str());
+    }
 }
 
 void
