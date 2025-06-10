@@ -122,13 +122,11 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.yahoo.vespa.model.container.ContainerCluster.VIP_HANDLER_BINDING;
-import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
 
 /**
@@ -151,8 +149,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     // The node count to enforce in a cluster running ZooKeeper
     private static final int MIN_ZOOKEEPER_NODE_COUNT = 1;
     private static final int MAX_ZOOKEEPER_NODE_COUNT = 7;
-
-    private static final Logger logger = Logger.getLogger(ContainerModelBuilder.class.getName());
 
     public enum Networking { disable, enable }
 
@@ -1037,20 +1033,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private ZoneEndpoint zoneEndpoint(ConfigModelContext context, ClusterSpec.Id cluster) {
-        var zoneEndpoint = context
+        return context
                 .getApplicationPackage()
                 .getDeploymentSpec()
                 .zoneEndpoint(context.properties().applicationId().instance(),
                               context.getDeployState().zone(),
                               cluster,
                               context.featureFlags().useNonPublicEndpointForTest());
-
-        // TODO: Temporary, remove in 8.521
-        logger.log(FINE, "Zone endpoints from properties: " + context.properties().endpoints() +
-                ", zone endpoint from deployment spec: " + zoneEndpoint +
-                ", zone and cloud from properties: " + context.properties().zone() + ", " + context.properties().zone().cloud() +
-                ", zone and cloud from deploy state: " + context.getDeployState().zone() + ", " + context.getDeployState().zone().cloud());
-        return zoneEndpoint;
     }
 
     private static Map<String, String> getEnvironmentVariables(Element environmentVariables) {

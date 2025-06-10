@@ -55,7 +55,8 @@ MallocFreeWorker::~MallocFreeWorker() = default;
 
 //-----------------------------------------------------------------------------
 
-TEST_MAIN() {
+int main(int argc, char **argv) {
+    bool failed = false;
     int duration = 10;
     int numCrossThreadAlloc(2);
     int numSameThreadAlloc(2);
@@ -110,10 +111,14 @@ TEST_MAIN() {
     for(std::map<int, std::shared_ptr<MallocFreeWorker> >::iterator it(mallocFreeWorkers.begin()), mt(mallocFreeWorkers.end()); it != mt; it++) {
         numSameThreadMallocFreeOperations += it->second->operationsConsumed();
     }
-    EXPECT_EQUAL(numFreeOperations, numMallocOperations);
+    if (numFreeOperations != numMallocOperations) {
+        failed = true;
+        fprintf(stderr, "error: numFreeOperations(%zu) != numMallocOperations(%zu)", numFreeOperations, numMallocOperations);
+    }
     const size_t numCrossThreadMallocFreeOperations(numMallocOperations);
 
     fprintf(stderr, "Did %lu Cross thread malloc/free operations\n", numCrossThreadMallocFreeOperations);
     fprintf(stderr, "Did %lu Same thread malloc/free operations\n", numSameThreadMallocFreeOperations);
     fprintf(stderr, "Did %lu Total operations\n", numCrossThreadMallocFreeOperations + numSameThreadMallocFreeOperations);
+    return failed ? 1 : 0;
 }
