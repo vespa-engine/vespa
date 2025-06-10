@@ -157,7 +157,9 @@ accessLog.remotePortHeaders[]         string
 
 # Path prefixes for which content should be logged
 accessLog.content[].pathPrefix  string
+# Maximum size of content to log, in bytes
 accessLog.content[].maxSize     long
+# Probabilistic sample rate, per second
 accessLog.content[].sampleRate  double
 
 compliance.httpViolations[] string
