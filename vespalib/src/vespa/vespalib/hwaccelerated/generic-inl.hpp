@@ -1,8 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-// There is _no_ #pragma once here. This is intentional! This is a header intended to be
-// included by multiple distinct translation units with different compilation options.
-
 #ifndef VESPA_HWACCEL_TARGET_TYPE
 #error "VESPA_HWACCEL_TARGET_TYPE not set"
 #endif

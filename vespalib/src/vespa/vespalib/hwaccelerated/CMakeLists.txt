@@ -5,7 +5,7 @@ if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
 elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
   set(ACCEL_FILES "neon.cpp" "neon_fp16_dotprod.cpp")
 else()
-  message(FATAL_ERROR "Unsupported architecture for vectorization: ${CMAKE_SYSTEM_PROCESSOR}")
+  message(FATAL_ERROR "Unsupported architecture: ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
 vespa_add_library(vespa_hwaccelerated

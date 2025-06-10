@@ -1,8 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-// There is _no_ #pragma once here. This is intentional! This is a header intended to be
-// included by multiple distinct translation units with different compilation options.
-
 #ifndef VESPA_HWACCEL_TARGET_TYPE
 #error "VESPA_HWACCEL_TARGET_TYPE not set"
 #endif
@@ -12,7 +9,9 @@
 namespace vespalib::hwaccelerated {
 
 /**
- * Generic CPU agnostic implementation.
+ * A generic implementation of IAccelerated (in the sense that it has no CPU-specific
+ * tweaks or tricks up its sleeves) that can be compiled for distinct architecture targets
+ * to get a baseline auto-vectorized set of kernels for those targets.
  */
 class VESPA_HWACCEL_TARGET_TYPE : public IAccelerated
 {
