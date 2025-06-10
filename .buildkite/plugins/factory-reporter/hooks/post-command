@@ -42,4 +42,6 @@ if [[ -z "$BUILDKITE_COMMAND_EXIT_STATUS" ]]; then
 elif (( $BUILDKITE_COMMAND_EXIT_STATUS == 0 )); then
   JOB_JSON=$($FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE "success")
   echo "Used factory-command to set job run success: $JOB_JSON"
+else
+  echo "BUILDKITE_COMMAND_EXIT_STATUS is non-zero. Pre-exit hook is expected to handle this case." >&2
 fi
