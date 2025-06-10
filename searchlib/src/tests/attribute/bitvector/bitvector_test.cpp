@@ -8,7 +8,6 @@
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/queryeval/docid_with_weight_search_iterator.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/searchlib/util/randomgenerator.h>
 #include <vespa/vespalib/gtest/gtest.h>

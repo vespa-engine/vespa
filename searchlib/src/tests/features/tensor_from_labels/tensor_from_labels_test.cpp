@@ -8,7 +8,6 @@
 #include <vespa/searchlib/features/tensor_from_labels_feature.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/eval/eval/function.h>

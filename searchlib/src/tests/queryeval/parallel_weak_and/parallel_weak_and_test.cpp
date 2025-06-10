@@ -10,7 +10,6 @@
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_blueprint.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
 #include <vespa/searchlib/test/document_weight_attribute_helper.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/weightedchildrenverifiers.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

@@ -4,7 +4,6 @@
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
 #include <vespa/searchlib/fef/test/queryenvironment.h>
 #include <vespa/searchlib/features/element_similarity_feature.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <initializer_list>
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>

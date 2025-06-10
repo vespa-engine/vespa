@@ -7,7 +7,6 @@
 #include <vespa/searchlib/fef/test/dummy_dependency_handler.h>
 #include <vespa/searchlib/fef/test/indexenvironment.h>
 #include <vespa/searchlib/fef/test/indexenvironmentbuilder.h>
-#define ENABLE_GTEST_MIGRATION
 #include <vespa/searchlib/test/ft_test_app_base.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/eval/eval/tensor_spec.h>
