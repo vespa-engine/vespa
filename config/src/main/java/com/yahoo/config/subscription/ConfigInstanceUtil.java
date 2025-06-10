@@ -44,16 +44,8 @@ public class ConfigInstanceUtil {
             ConfigInstance.Builder instanceBuilder = transformer.toConfigBuilder(payload);
             Constructor<T> constructor = type.getConstructor(instanceBuilder.getClass());
             instance = constructor.newInstance(instanceBuilder);
-
-            // Workaround for JDK7, where compilation fails due to fields being
-            // private and not accessible from T. Reference it as a
-            // ConfigInstance to work around it. See
-            // http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=7022052 for
-            // more information.
-            ConfigInstance i = instance;
-            i.postInitialize(configId);
-            setConfigId(i, configId);
-
+            instance.postInitialize(configId);
+            setConfigId(instance, configId);
         } catch (InstantiationException | InvocationTargetException | NoSuchMethodException |
                  NoSuchFieldException | IllegalAccessException e) {
             throw new IllegalArgumentException("Failed creating new instance of '" + type.getCanonicalName() +
