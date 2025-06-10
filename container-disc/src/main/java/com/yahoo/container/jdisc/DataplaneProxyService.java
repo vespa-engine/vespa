@@ -252,10 +252,9 @@ public final class DataplaneProxyService extends AbstractComponent {
                     if ($request_method = OPTIONS) {
                                   add_header Access-Control-Allow-Origin $allow_origin;
                                   add_header Vary Origin;
-                                  add_header Access-Control-Allow-Headers "Authorization";
-                                  add_header Content-Length 0;
-                                  add_header Content-Type text/plain;
-                                  return 200 "";
+                                  add_header Access-Control-Allow-Headers "Origin,Content-Type,Accept,Authorization";
+                                  add_header Access-Control-Allow-Methods "OPTIONS,GET,PUT,DELETE,POST,PATCH";
+                                  return 204;
                                 }
                                 add_header Access-Control-Allow-Origin $allow_origin;
                                 add_header Vary Origin;
