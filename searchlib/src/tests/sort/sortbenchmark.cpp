@@ -1,5 +1,4 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/common/sort.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
@@ -76,7 +75,7 @@ Test::cat() const
     return c;
 }
 
-TEST_MAIN() {
+int main(int argc, char **argv) {
     size_t numVectors(11);
     size_t values(10000000);
     std::string type("radix");
@@ -84,7 +83,7 @@ TEST_MAIN() {
         values = strtol(argv[1], nullptr, 0);
         if (argc > 2) {
             numVectors = strtol(argv[2], nullptr, 0);
-            if (argc > 2) {
+            if (argc > 3) {
                 type = argv[3];
             }
         }
@@ -106,4 +105,5 @@ TEST_MAIN() {
         S(&v[0], v.size());
         printf("sorted %ld value with radix::sort\n", v.size());
     }
+    return 0;
 }

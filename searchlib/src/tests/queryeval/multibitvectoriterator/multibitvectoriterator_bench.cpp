@@ -1,6 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/queryeval/multibitvectoriterator.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
@@ -118,7 +117,7 @@ Fixture::testSearch(bool strict)
     LOG(info, "Found %ld hits", h.size());
 }
 
-TEST_MAIN() {
+int main(int argc, char **argv) {
     if (argc < 6) {
         LOG(info, "%s <'and/or'> <'strict/no-strict'> <'optimize/no-optimize> <numsearch> <numdocs> <fill 1> [<fill N>]", argv[0]);
         exit(1);
@@ -129,4 +128,5 @@ TEST_MAIN() {
     LOG(info, "Start benchmark");
     fixture.benchmark();
     LOG(info, "Done benchmark");
+    return 0;
 }
