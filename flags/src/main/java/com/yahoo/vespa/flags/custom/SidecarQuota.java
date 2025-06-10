@@ -8,32 +8,33 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
+import java.util.Optional;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(value = JsonInclude.Include.NON_NULL)
 public class SidecarQuota {
-    private final Double cpus;
-    private final String memory;
+    private final Double cpu;
+    private final Double memoryGiB;
     private final String gpu;
 
     @JsonCreator
     public SidecarQuota(
-            @JsonProperty("cpus") Double cpus, 
-            @JsonProperty("memory") String memory, 
+            @JsonProperty("cpu") Double cpu,
+            @JsonProperty("memory") Double memoryGiB,
             @JsonProperty("gpu") String gpu) {
-        this.cpus = cpus;
-        this.memory = memory;
+        this.cpu = cpu;
+        this.memoryGiB = memoryGiB;
         this.gpu = gpu;
     }
-    
-    @JsonGetter("cpus")
-    public Double getCpus() {
-        return cpus;
+
+    @JsonGetter("cpu")
+    public Double getCpu() {
+        return cpu;
     }
 
-    @JsonGetter("memory")
-    public String getMemory() {
-        return memory;
+    @JsonGetter("memoryGiB")
+    public Double getMemoryGiB() {
+        return memoryGiB;
     }
 
     @JsonGetter("gpu")
@@ -43,11 +44,11 @@ public class SidecarQuota {
 
     @Override
     public String toString() {
-        return "SidecarQuota{" +
-                "cpus=" + cpus +
-                ", memory='" + memory + '\'' +
-                ", gpu='" + gpu + '\'' +
-                '}';
+        return "SidecarQuota{cpus=%s, memoryGiB=%s, gpu='%s'}"
+                .formatted(
+                        Optional.ofNullable(cpu).map(Object::toString).orElse("null"),
+                        Optional.ofNullable(memoryGiB).map(Object::toString).orElse("null"),
+                        String.valueOf(gpu));
     }
 
     @Override
@@ -55,15 +56,13 @@ public class SidecarQuota {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         var that = (SidecarQuota) o;
-        return Objects.equals(cpus, that.cpus) &&
-                Objects.equals(memory, that.memory) &&
-                Objects.equals(gpu, that.gpu);
+        return Objects.equals(cpu, that.cpu)
+                && Objects.equals(memoryGiB, that.memoryGiB)
+                && Objects.equals(gpu, that.gpu);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(cpus, memory, gpu);
+        return Objects.hash(cpu, memoryGiB, gpu);
     }
-    
-    
 }
