@@ -12,27 +12,34 @@ if [[ $SKIP_BUILDKITE_PLUGINS == "true" ]]; then
     echo "SKIP_BUILDKITE_PLUGINS is set. Skipping factory reporter"
     exit 0
 fi
+if [[ $BUILDKITE_PULL_REQUEST != "false" ]]; then
+    exit 0
+fi
 if [[ -z $PIPELINE ]]; then
     echo "No pipeline ID found, skipping factory reporter"
     exit 0
 fi
 
-if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
+START_SECONDS=$(buildkite-agent meta-data get start-seconds)
+if [[ -z $START_SECONDS ]]; then
+  echo "Error: start-seconds not set as meta-data" >&2
+  exit 1
+fi
 
-  START_SECONDS=$(buildkite-agent meta-data get start-seconds)
-  if [[ -z $START_SECONDS ]]; then
-    echo "Error: start-seconds not set as meta-data" >&2
-    exit 1
-  fi
+FACTORY_COMMAND=$(buildkite-agent meta-data get factory-command)
+if [[ -z $FACTORY_COMMAND ]]; then
+  echo "Error: factory-command not set as meta-data" >&2
+  exit 1
+fi
+echo "Using factory command: $FACTORY_COMMAND"
 
-  FACTORY_COMMAND=$(buildkite-agent meta-data get factory-command)
-  if [[ -z $FACTORY_COMMAND ]]; then
-    echo "Error: factory-command not set as meta-data" >&2
-    exit 1
-  fi
-  echo "Using factory command: $FACTORY_COMMAND"
-
-
+# Update the job run status in factory
+# The case where BUILDKITE_COMMAND_EXIT_STATUS is non-zero is handled in the pre-exit hook.
+if [[ -z $BUILDKITE_COMMAND_EXIT_STATUS ]]; then
+  echo "BUILDKITE_COMMAND_EXIT_STATUS is not set, assuming failure"
+  JOB_JSON=$($FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE "failure")
+  echo "Used factory-command to set job run failure: $JOB_JSON"
+elif (( $BUILDKITE_COMMAND_EXIT_STATUS == 0 )); then
   JOB_JSON=$($FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE "success")
-  echo "Output from updating job run : $JOB_JSON"
+  echo "Used factory-command to set job run success: $JOB_JSON"
 fi
