@@ -35,7 +35,7 @@ echo "Using factory command: $FACTORY_COMMAND"
 
 # Update the job run status in factory
 # The case where BUILDKITE_COMMAND_EXIT_STATUS is non-zero is handled in the pre-exit hook.
-if [[ -z $BUILDKITE_COMMAND_EXIT_STATUS ]]; then
+if [[ -z "$BUILDKITE_COMMAND_EXIT_STATUS" ]]; then
   echo "BUILDKITE_COMMAND_EXIT_STATUS is not set, assuming failure"
   JOB_JSON=$($FACTORY_COMMAND update-buildkite-job-run $START_SECONDS $PIPELINE "failure")
   echo "Used factory-command to set job run failure: $JOB_JSON"
