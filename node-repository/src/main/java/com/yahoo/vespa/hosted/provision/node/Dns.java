@@ -27,10 +27,25 @@ public class Dns {
 
     /** Returns the set of DNS record types for a host and its children and the given version (ipv6), host type, etc. */
     public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave) {
-        return recordTypesFor(ipVersion, hostType, cloudName, enclave, false);
+        return recordTypesFor(ipVersion, hostType, cloudName, enclave, false, false);
     }
 
-    public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave, boolean allowReverse) {
+    // TODO: Remove azureIpv6Enabled once AZURE_IPV6 flag is no longer used
+    public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave,  boolean azureIpv6Enabled) {
+        return recordTypesFor(ipVersion, hostType, cloudName, enclave, false, azureIpv6Enabled);
+    }
+
+    public static Set<RecordType> recordTypesFor(IP.Version ipVersion, NodeType hostType, CloudName cloudName, boolean enclave, boolean allowReverse, boolean azureIpv6Enabled) {
+
+        if (cloudName == CloudName.AZURE && !azureIpv6Enabled) {
+            return ipVersion.is6() ? EnumSet.noneOf(RecordType.class) :
+                    // Each Azure enclave and cfg host and child gets one private 10.* address and one public address.
+                    // The private DNS zone resolves to the private, while the public DNS zone resolves to the public,
+                    // which is why we return FORWARD and PUBLIC_FORWARD here.  The node repo only contains the private addresses.
+                    enclave || hostType == confighost ? EnumSet.of(RecordType.FORWARD, RecordType.PUBLIC_FORWARD) :
+                            EnumSet.of(RecordType.FORWARD);
+        }
+
         if (cloudName == CloudName.AWS || cloudName == CloudName.GCP || cloudName == CloudName.AZURE) {
             if (enclave) {
                 return ipVersion.is6() ?
