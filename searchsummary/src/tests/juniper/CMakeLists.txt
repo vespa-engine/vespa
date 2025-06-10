@@ -44,6 +44,7 @@ vespa_add_executable(juniper_appender_test_app TEST
     appender_test.cpp
     DEPENDS
     vespa_searchsummary
+    GTest::gtest
 )
 vespa_add_test(NAME juniper_appender_test_app COMMAND juniper_appender_test_app)
 vespa_add_executable(juniper_queryvisitor_test_app TEST
@@ -52,6 +53,7 @@ vespa_add_executable(juniper_queryvisitor_test_app TEST
     queryvisitor_test.cpp
     DEPENDS
     vespa_searchsummary
+    GTest::gtest
 )
 vespa_add_test(NAME juniper_queryvisitor_test_app COMMAND juniper_queryvisitor_test_app)
 vespa_add_executable(juniper_auxTest_app TEST
