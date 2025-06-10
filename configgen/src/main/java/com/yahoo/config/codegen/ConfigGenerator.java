@@ -220,6 +220,8 @@ public class ConfigGenerator {
             return accessorsForArray(node);
         } else if (node.isMap) {
             return accessorsForMap(node);
+        } else if (node instanceof ModelLeaf) {
+            return accessorForModel(node);
         } else {
             return accessorForStructOrScalar(node);
         }
@@ -294,6 +296,17 @@ public class ConfigGenerator {
                 " */\n" +//
                 "public " + userDataType(node) + " " + node.getName() + "() {\n" +//
                 "  return " + node.getName() + valueAccessor(node) + ";\n" +//
+                "}";
+    }
+
+    private static String accessorForModel(CNode node) {
+        String scalarAccessor = accessorForStructOrScalar(node);
+        return scalarAccessor + "\n\n" +
+                "/**\n" +//
+                " * @return " + node.getFullName() + " ModelReference\n" +//
+                " */\n" +//
+                "public ModelReference " + node.getName() + "Reference() {\n" +//
+                "  return " + node.getName() + ".getModelReference();\n" +//
                 "}";
     }
 
