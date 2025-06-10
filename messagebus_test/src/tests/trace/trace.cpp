@@ -1,6 +1,7 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/messagebus/emptyreply.h>
@@ -35,7 +36,7 @@ waitSlobrok(RPCMessageBus &mbus, const std::string &pattern)
     return false;
 }
 
-TEST("trace_test") {
+TEST(TraceTest, trace_test) {
     Slobrok slobrok;
     const std::string routing_template = TEST_PATH("routing-template.cfg");
     const std::string ctl_script = TEST_PATH("ctl.sh");
@@ -107,8 +108,8 @@ TEST("trace_test") {
     }
 
     EXPECT_TRUE(!reply->hasErrors());
-    EXPECT_EQUAL(reply->getTrace().encode(), expect.encode());
+    EXPECT_EQ(reply->getTrace().encode(), expect.encode());
     EXPECT_TRUE(system((ctl_script + " stop all").c_str()) == 0);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

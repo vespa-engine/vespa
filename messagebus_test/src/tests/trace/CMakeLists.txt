@@ -4,6 +4,7 @@ vespa_add_executable(messagebus_test_trace_test_app TEST
     trace.cpp
     DEPENDS
     vespa_messagebus-test
+    GTest::gtest
 )
 vespa_add_executable(messagebus_test_cpp-server-trace_app
     SOURCES

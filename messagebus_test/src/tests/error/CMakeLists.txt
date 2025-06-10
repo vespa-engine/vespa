@@ -4,6 +4,7 @@ vespa_add_executable(messagebus_test_error_test_app TEST
     error.cpp
     DEPENDS
     vespa_messagebus-test
+    GTest::gtest
 )
 vespa_add_executable(messagebus_test_cpp-server-error_app
     SOURCES

@@ -4,6 +4,7 @@ vespa_add_executable(messagebus_test_speed_test_app
     speed.cpp
     DEPENDS
     vespa_messagebus-test
+    GTest::gtest
 )
 vespa_add_executable(messagebus_test_cpp-server-speed_app
     SOURCES
