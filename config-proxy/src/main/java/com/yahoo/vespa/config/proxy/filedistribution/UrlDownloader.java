@@ -24,15 +24,21 @@ class UrlDownloader {
     private static final String USER_AGENT_MODEL_DOWNLOADER = "Vespa/8.x (model download - https://github.com/vespa-engine/vespa)";
 
     private final URL url;
+    private final DownloadOptions downloadOptions;
 
-    public UrlDownloader(URL url) {
+    public UrlDownloader(URL url, DownloadOptions downloadOptions) {
         this.url = url;
+        this.downloadOptions = downloadOptions;
     }
 
     public Optional<File> download(File downloadDir) throws IOException {
         long start = System.currentTimeMillis();
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setRequestProperty("User-Agent", USER_AGENT_MODEL_DOWNLOADER);
+
+        downloadOptions.getAuthToken()
+                .ifPresent(token -> connection.setRequestProperty("Authorization", "Bearer " + token));
+
         if (connection.getResponseCode() != 200)
             throw new RuntimeException("Download of URL '" + this.url + "' failed, got response code " + connection.getResponseCode());
 
@@ -66,5 +72,4 @@ class UrlDownloader {
         File contents = new File(downloadDir,fileName());
         return contents.exists() && contents.length() > 0;
     }
-
 }

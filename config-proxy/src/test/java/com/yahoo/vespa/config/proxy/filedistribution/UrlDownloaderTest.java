@@ -19,7 +19,7 @@ public class UrlDownloaderTest {
     @Test
     public void testFileDownload() throws IOException {
         URL url = new URL("https://docs.vespa.ai/foo");
-        var downloader = new UrlDownloader(url);
+        var downloader = new UrlDownloader(url, new DownloadOptions(null));
 
         assertFalse(downloader.alreadyDownloaded(temporaryFolder));
 
