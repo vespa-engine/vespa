@@ -138,6 +138,7 @@ public class DomConfigPayloadBuilder {
             // special syntax for "model" fields
             var model = ModelReference.unresolved(modelElement("model-id", element),
                                                   modelElement("url", element).map(UrlReference::new),
+                                                  modelElement("secret-name", element),
                                                   modelElement("path", element).map(FileReference::new));
             payloadBuilder.setField(name, model.toString());
         }
