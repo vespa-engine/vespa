@@ -47,10 +47,11 @@ class UrlDownloadRpcServer {
 
     UrlDownloadRpcServer(Supervisor supervisor) {
         this.rootDownloadDir = defaultDownloadDirectory;
-        supervisor.addMethod(new Method("url.waitFor", "s", "s", this::download)
+        supervisor.addMethod(new Method("url.waitFor", "s*", "s", this::download)
                                     .requireCapabilities(Capability.CONFIGPROXY__FILEDISTRIBUTION_API)
                                     .methodDesc("get path to url download")
                                     .paramDesc(0, "url", "url")
+                                    .paramDesc(1, "auth_token", "auth token (optional)") // TODO: Return back to give a proper name
                                     .returnDesc(0, "path", "path to file"));
     }
 
@@ -71,10 +72,12 @@ class UrlDownloadRpcServer {
 
     private void downloadFile(Request req) {
         String url = req.parameters().get(0).asString();
+        String authHeader = req.parameters().size() > 1 ? req.parameters().get(1).asString() : null;
+
         File downloadDir = new File(rootDownloadDir, urlToDirName(url));
         UrlDownloader downloader;
         try {
-            downloader = downloader(url);
+            downloader = downloader(url, new DownloadOptions(authHeader));
         } catch (MalformedURLException e) {
             throw new RuntimeException(e);
         }
@@ -100,11 +103,11 @@ class UrlDownloadRpcServer {
         req.returnRequest();
     }
 
-    private static UrlDownloader downloader(String urlString) throws MalformedURLException {
+    private static UrlDownloader downloader(String urlString, DownloadOptions options) throws MalformedURLException {
         Objects.requireNonNull(urlString, "url cannot be null");
         URL url = new URL(urlString);
         return switch (url.getProtocol()) {
-            case "http", "https" -> new UrlDownloader(url);
+            case "http", "https" -> new UrlDownloader(url, options);
             default -> throw new IllegalArgumentException("Unsupported scheme '" + url.getProtocol() + "'");
         };
     }
