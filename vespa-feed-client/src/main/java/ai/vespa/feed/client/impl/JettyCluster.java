@@ -15,6 +15,7 @@ import org.eclipse.jetty.client.Origin;
 import org.eclipse.jetty.client.Request;
 import org.eclipse.jetty.client.Response;
 import org.eclipse.jetty.client.Result;
+import org.eclipse.jetty.client.RetryableRequestException;
 import org.eclipse.jetty.client.WWWAuthenticationProtocolHandler;
 import org.eclipse.jetty.client.transport.HttpClientConnectionFactory;
 import org.eclipse.jetty.client.transport.HttpClientTransportDynamic;
@@ -29,7 +30,6 @@ import org.eclipse.jetty.io.ClientConnectionFactory;
 import org.eclipse.jetty.io.ClientConnector;
 import org.eclipse.jetty.util.ConcurrentPool;
 import org.eclipse.jetty.util.Jetty;
-import org.eclipse.jetty.util.Pool;
 import org.eclipse.jetty.util.Promise;
 import org.eclipse.jetty.util.SocketAddressResolver;
 import org.eclipse.jetty.util.component.AbstractLifeCycle;
@@ -124,7 +124,14 @@ class JettyCluster implements Cluster {
                                         result.isFailed()
                                                 ? result.getFailure().toString() : result.getResponse().getStatus()));
                         endpoint.inflight.decrementAndGet();
-                        if (result.isFailed()) vessel.completeExceptionally(result.getFailure());
+                        if (result.isFailed()) {
+                            if (result.getFailure() instanceof RetryableRequestException)
+                                // Request can be safely retried as it was cancelled locally
+                                // https://github.com/jetty/jetty.project/issues/13131
+                                vessel.completeExceptionally(new RetryableException(result.getFailure()));
+                            else
+                                vessel.completeExceptionally(result.getFailure());
+                        }
                         else vessel.complete(new JettyResponse(result.getResponse(), getContent()));
                     }
                 });
