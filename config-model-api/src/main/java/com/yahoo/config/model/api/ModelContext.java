@@ -131,8 +131,7 @@ public interface ModelContext {
         AthenzDomain tenantSecretDomain();
         String athenzDnsSuffix();
         boolean hostedVespa();
-        // TODO: Remove this when oldest model in use is 8.533
-        default Zone zone() { throw new UnsupportedOperationException("Zone is not set in this context, use zone() in DeployState instead"); }
+        Zone zone();
         Set<ContainerEndpoint> endpoints();
         boolean isBootstrap();
         boolean isFirstTimeDeployment();
