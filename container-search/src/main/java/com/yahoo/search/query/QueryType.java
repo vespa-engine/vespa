@@ -150,7 +150,7 @@ public class QueryType {
             case ALL ->          new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.simple);
             case ANY ->          new QueryType(type, Composite.or,      Tokenization.internal,    Syntax.simple);
             case LINGUISTICS ->  new QueryType(type, Composite.weakAnd, Tokenization.linguistics, Syntax.none);
-            case PHRASE ->       new QueryType(type, Composite.phrase,  Tokenization.internal,    Syntax.simple);
+            case PHRASE ->       new QueryType(type, Composite.phrase,  Tokenization.internal,    Syntax.none);
             case PROGRAMMATIC -> new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.programmatic);
             case SELECT ->       new QueryType(type, Composite.and,     Tokenization.internal,    Syntax.json);
             case TOKENIZE ->     new QueryType(type, Composite.weakAnd, Tokenization.internal,    Syntax.none);
