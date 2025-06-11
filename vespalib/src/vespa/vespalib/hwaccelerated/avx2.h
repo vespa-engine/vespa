@@ -2,14 +2,14 @@
 
 #pragma once
 
-#include "generic.h"
+#include "x64_generic.h"
 
 namespace vespalib::hwaccelerated {
 
 /**
  * Avx-512 implementation.
  */
-class Avx2Accelerator : public GenericAccelerator
+class Avx2Accelerator : public X64GenericAccelerator
 {
 public:
     size_t populationCount(const uint64_t *a, size_t sz) const noexcept override;
@@ -20,6 +20,7 @@ public:
     int64_t dotProduct(const int8_t * a, const int8_t * b, size_t sz) const noexcept override;
     void and128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept override;
     void or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept override;
+    const char* target_name() const noexcept override { return "AVX2"; }
 };
 
 }
