@@ -350,13 +350,6 @@ public class Flags {
             "Takes effect immediately"
     );
 
-    public static final UnboundBooleanFlag AZURE_IPV6 = defineFeatureFlag(
-            "azure-ipv6", false,
-            List.of("olaa"), "2025-06-10", "2025-08-10",
-            "Whether Azure hosts should be provsioned with IPv6 addresses",
-            "Takes effect immediately"
-    );
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
