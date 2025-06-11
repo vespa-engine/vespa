@@ -12,7 +12,7 @@
   <packaging>container-plugin</packaging>
   <version>8-SNAPSHOT</version>
   <name>vdslib</name>
-  <description> </description>
+  <description>Development libraries related to VDS</description>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
