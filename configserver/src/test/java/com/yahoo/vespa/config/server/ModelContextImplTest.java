@@ -28,7 +28,6 @@ import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -90,7 +89,6 @@ public class ModelContextImplTest {
         assertEquals(ApplicationId.defaultId(), context.properties().applicationId());
         assertTrue(context.properties().configServerSpecs().isEmpty());
         assertTrue(context.properties().multitenant());
-        assertNotNull(context.properties().zone());
         assertFalse(context.properties().hostedVespa());
         assertEquals(endpoints, context.properties().endpoints());
         assertFalse(context.properties().isFirstTimeDeployment());
