@@ -19,13 +19,16 @@ import com.yahoo.config.provision.zone.ZoneId;
 import java.io.Reader;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringJoiner;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.joining;
@@ -178,6 +181,14 @@ public final class DeploymentSpec {
 
     /** Returns the deployment steps of this in the order they will be performed */
     public List<Step> steps() { return steps; }
+
+    /** Returns the set of unique environments concerned by this deployment spec */
+    public Set<Environment> concernedEnvironments() {
+        return steps.stream().map(Step::zones)
+                .flatMap(Collection::stream)
+                .map(DeclaredZone::environment)
+                .collect(Collectors.toSet());
+    }
 
     /** Returns the Athenz domain set on the root tag, if any */
     public Optional<AthenzDomain> athenzDomain() { return athenzDomain; }
