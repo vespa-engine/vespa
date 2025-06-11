@@ -23,13 +23,13 @@ class ModelIdResolverTest {
         var state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(true)).build();
         var e = assertThrows(IllegalArgumentException.class, () ->
                 ModelIdResolver.resolveToModelReference(
-                        "param", Optional.of("minilm-l6-v2"), Optional.empty(), Optional.empty(), Set.of(HF_TOKENIZER), state));
+                        "param", Optional.of("minilm-l6-v2"), Optional.empty(), Optional.empty(), Optional.empty(), Set.of(HF_TOKENIZER), state));
         var expectedMsg = "Model 'minilm-l6-v2' on 'param' has tags [onnx-model] but are missing required tags [huggingface-tokenizer]";
         assertEquals(expectedMsg, e.getMessage());
 
         assertDoesNotThrow(
                 () -> ModelIdResolver.resolveToModelReference(
-                        "param", Optional.of("minilm-l6-v2"), Optional.empty(), Optional.empty(), Set.of(ONNX_MODEL), state));
+                        "param", Optional.of("minilm-l6-v2"), Optional.empty(), Optional.empty(), Optional.empty(), Set.of(ONNX_MODEL), state));
     }
 
 }
