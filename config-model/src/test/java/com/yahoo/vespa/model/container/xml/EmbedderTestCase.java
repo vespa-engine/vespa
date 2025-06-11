@@ -192,8 +192,8 @@ public class EmbedderTestCase {
 
         Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
         ConfigPayloadBuilder config = testComponent.getUserConfigs().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
-        assertEquals("minilm-l6-v2 application-url \"\"", config.getObject("model").getValue());
-        assertEquals("\"\" \"\" files/vocab.txt", config.getObject("vocab").getValue());
+        assertEquals("minilm-l6-v2 application-url \"\" \"\"", config.getObject("model").getValue());
+        assertEquals("\"\" \"\" \"\" files/vocab.txt", config.getObject("vocab").getValue());
     }
 
     @Test
@@ -204,9 +204,9 @@ public class EmbedderTestCase {
 
         Component<?, ?> testComponent = containerCluster.getComponentsMap().get(new ComponentId("transformer"));
         ConfigPayloadBuilder config = testComponent.getUserConfigs().get(new ConfigDefinitionKey("sentence-embedder", "ai.vespa.example.paragraph"));
-        assertEquals("minilm-l6-v2 https://data.vespa-cloud.com/onnx_models/sentence_all_MiniLM_L6_v2.onnx \"\"",
+        assertEquals("minilm-l6-v2 https://data.vespa-cloud.com/onnx_models/sentence_all_MiniLM_L6_v2.onnx \"\" \"\"",
                      config.getObject("model").getValue());
-        assertEquals("\"\" \"\" files/vocab.txt", config.getObject("vocab").getValue());
+        assertEquals("\"\" \"\" \"\" files/vocab.txt", config.getObject("vocab").getValue());
     }
 
     @Test

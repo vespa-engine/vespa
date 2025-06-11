@@ -130,7 +130,7 @@ public class ModelIdResolver {
 
     private static ModelReference createModelReference(Optional<String> id, Optional<String> url, Optional<String> path, DeployState state) {
         var fileRef = path.map(p -> state.getFileRegistry().addFile(p));
-        return ModelReference.unresolved(id, url.map(UrlReference::valueOf), fileRef);
+        return ModelReference.unresolved(id, url.map(UrlReference::valueOf), Optional.empty(), fileRef);
     }
 
     private static IllegalArgumentException onlyModelIdInHostedException(String paramName) {
