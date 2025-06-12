@@ -1,13 +1,21 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.proxy.filedistribution;
 
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.ClassicHttpResponse;
+import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.util.Timeout;
+
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
+import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -23,47 +31,51 @@ class UrlDownloader {
     private static final String CONTENTS_FILE_NAME = "contents";
     private static final String USER_AGENT_MODEL_DOWNLOADER = "Vespa/8.x (model download - https://github.com/vespa-engine/vespa)";
 
-    private final URL url;
+    private final URI uri;
     private final DownloadOptions downloadOptions;
+    private final HttpClient httpClient = createClient();
 
-    public UrlDownloader(URL url, DownloadOptions downloadOptions) {
-        this.url = url;
+    public UrlDownloader(URI uri, DownloadOptions downloadOptions) {
+        this.uri = uri;
         this.downloadOptions = downloadOptions;
     }
 
     public Optional<File> download(File downloadDir) throws IOException {
         long start = System.currentTimeMillis();
-        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setRequestProperty("User-Agent", USER_AGENT_MODEL_DOWNLOADER);
-
-        downloadOptions.getAuthToken()
-                .ifPresent(token -> connection.setRequestProperty("Authorization", "Bearer " + token));
-
-        if (connection.getResponseCode() != 200)
-            throw new RuntimeException("Download of URL '" + this.url + "' failed, got response code " + connection.getResponseCode());
-
-        log.log(Level.INFO, "Downloading URL '" + this.url + "'");
+        log.log(Level.INFO, "Downloading URL '" + uri + "'");
         File contentsPath = new File(downloadDir, fileName());
-        try (ReadableByteChannel rbc = Channels.newChannel(connection.getInputStream())) {
-            try (FileOutputStream fos = new FileOutputStream((contentsPath.getAbsolutePath()))) {
-                fos.getChannel().transferFrom(rbc, 0, Long.MAX_VALUE);
+        HttpGet get = new HttpGet(uri);
+        downloadOptions.getAuthToken()
+                       .ifPresent(token -> get.setHeader(new BasicHeader("Authorization", "Bearer " + token)));
+        return httpClient.execute(get, resp -> {
+            var code = resp.getCode();
+            if (code != 200)
+                throw new RuntimeException("Download of URL '" + uri + "' failed, got response code " + code);
+            return writeContent(downloadDir, resp, contentsPath, start);
+        });
+    }
 
-                if (contentsPath.exists() && contentsPath.length() > 0) {
-                    new RequestTracker().trackRequest(downloadDir);
-                    log.log(Level.FINE, () -> "URL '" + this.url + "' available at " + contentsPath);
-                    log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
-                                                      this.url, (System.currentTimeMillis() - start) / 1000.0));
-                    return Optional.of(contentsPath);
-                } else {
-                    log.log(Level.SEVERE, "Downloaded URL '" + this.url + "' not found, returning error");
-                    return Optional.empty();
-                }
+    private Optional<File> writeContent(File downloadDir, ClassicHttpResponse resp, File contentsPath, long start) throws IOException {
+        InputStream content = resp.getEntity().getContent();
+        if (content == null) return Optional.empty();
+
+        try (var in = content) {
+            Files.copy(in, contentsPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
+            if (contentsPath.exists() && contentsPath.length() > 0) {
+                new RequestTracker().trackRequest(downloadDir);
+                log.log(Level.FINE, () -> "URL '" + uri + "' available at " + contentsPath);
+                log.log(Level.INFO, String.format("Download of URL '%s' done in %.3f seconds",
+                                                  uri, (System.currentTimeMillis() - start) / 1000.0));
+                return Optional.of(contentsPath);
+            } else {
+                log.log(Level.SEVERE, "Downloaded URL '" + uri + "' not found, returning error");
+                return Optional.empty();
             }
         }
     }
 
     public String fileName() {
-        String path = url.getPath();
+        String path = uri.getPath();
         var fileName = path.substring(path.lastIndexOf('/') + 1);
         return fileName.isEmpty() ? CONTENTS_FILE_NAME : fileName;
     }
@@ -72,4 +84,17 @@ class UrlDownloader {
         File contents = new File(downloadDir,fileName());
         return contents.exists() && contents.length() > 0;
     }
+
+    private static HttpClient createClient() {
+        return HttpClientBuilder.create()
+                                .setRetryStrategy(new DefaultHttpRequestRetryStrategy())
+                                .setUserAgent(USER_AGENT_MODEL_DOWNLOADER)
+                                .setDefaultRequestConfig(
+                                        RequestConfig.custom()
+                                                     .setConnectionRequestTimeout(Timeout.ofSeconds(30))
+                                                     .setResponseTimeout(Timeout.ofSeconds(30))
+                                                     .build())
+                                .build();
+    }
+
 }

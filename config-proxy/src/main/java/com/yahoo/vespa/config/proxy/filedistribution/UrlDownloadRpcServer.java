@@ -14,7 +14,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URL;
+import java.net.URI;
 import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.Objects;
@@ -105,10 +105,11 @@ class UrlDownloadRpcServer {
 
     private static UrlDownloader downloader(String urlString, DownloadOptions options) throws MalformedURLException {
         Objects.requireNonNull(urlString, "url cannot be null");
-        URL url = new URL(urlString);
-        return switch (url.getProtocol()) {
-            case "http", "https" -> new UrlDownloader(url, options);
-            default -> throw new IllegalArgumentException("Unsupported scheme '" + url.getProtocol() + "'");
+        URI uri = URI.create(urlString);
+        String scheme = uri.getScheme();
+        return switch (scheme) {
+            case "http", "https" -> new UrlDownloader(uri, options);
+            default -> throw new IllegalArgumentException("Unsupported scheme '" + scheme + "'");
         };
     }
 
