@@ -514,6 +514,7 @@
       "public boolean isEmpty()",
       "public java.util.Optional majorVersion()",
       "public java.util.List steps()",
+      "public java.util.Set concernedEnvironments()",
       "public java.util.Optional athenzDomain()",
       "public java.util.Optional athenzService()",
       "public java.util.Optional athenzService(com.yahoo.config.provision.InstanceName, com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",

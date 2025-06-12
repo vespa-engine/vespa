@@ -4,5 +4,6 @@ vespa_add_executable(slobrok_registerapi_test_app TEST
     registerapi.cpp
     DEPENDS
     vespa_slobrok_slobrokserver
+    GTest::gtest
 )
 vespa_add_test(NAME slobrok_registerapi_test_app COMMAND slobrok_registerapi_test_app)

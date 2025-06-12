@@ -21,6 +21,8 @@ GOTOOLCHAIN := $(shell go env GOTOOLCHAIN)
 
 all: test checkfmt install
 
+all: GO_FLAGS = -ldflags "-linkmode=external -X github.com/vespa-engine/vespa/client/go/internal/build.Version=$(VERSION)"
+
 #
 # Dist targets
 #

@@ -73,10 +73,15 @@ class LuceneTokenizer implements Tokenizer {
                     tokens.add(current);
                 }
             }
-            tokenStream.end();
-            tokenStream.close();
         } catch (IOException e) {
             throw new RuntimeException("Failed to analyze: " + text, e);
+        } finally {
+            try {
+                tokenStream.end();
+                tokenStream.close();
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to close stream: " + e);
+            }
         }
         return tokens;
     }

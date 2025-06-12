@@ -11,26 +11,19 @@ import ai.vespa.feed.client.OperationStats;
 import ai.vespa.feed.client.impl.HttpFeedClient.ClusterFactory;
 
 import java.io.IOException;
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -163,6 +156,7 @@ class HttpRequestStrategy implements RequestStrategy {
         if (   (thrown instanceof IOException)               // General IO problems.
             //  Thrown by HTTP2Session.StreamsState.reserveSlot, likely on GOAWAY from server
             || (thrown instanceof IllegalStateException && "session closed".equals(thrown.getMessage()))
+            || thrown instanceof RetryableException
         ) {
             log.log(FINER, thrown, () -> "Failed attempt " + attempt + " at " + request);
             return retry(request, attempt);

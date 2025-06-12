@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/config-slobroks.h>
 #include <algorithm>
@@ -117,7 +117,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
 }
 
 
-TEST("mirrorapi_test") {
+TEST(MirrorAPITest, mirrorapi_test) {
 
     SlobrokServer mock(18501);
     std::this_thread::sleep_for(300ms);
@@ -149,13 +149,11 @@ TEST("mirrorapi_test") {
     EXPECT_TRUE(compare(mirror, "**", SpecList().add("A/x/w", "tcp/localhost:18502")));
     EXPECT_TRUE(mirror.ready());
 
-    TEST_FLUSH();
     b.reg();
     EXPECT_TRUE(compare(mirror, "B/x", SpecList().add("B/x", "tcp/localhost:18503")));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList().add("B/x", "tcp/localhost:18503")));
     EXPECT_TRUE(compare(mirror, "*/*/*", SpecList().add("A/x/w", "tcp/localhost:18502")));
 
-    TEST_FLUSH();
     c.reg();
     EXPECT_TRUE(compare(mirror, "C/x/z", SpecList().add("C/x/z", "tcp/localhost:18504")));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList().add("B/x", "tcp/localhost:18503")));
@@ -163,7 +161,6 @@ TEST("mirrorapi_test") {
                        .add("A/x/w", "tcp/localhost:18502")
                        .add("C/x/z", "tcp/localhost:18504")));
 
-    TEST_FLUSH();
     d.reg();
     EXPECT_TRUE(compare(mirror, "D/y/z", SpecList().add("D/y/z", "tcp/localhost:18505")));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList().add("B/x", "tcp/localhost:18503")));
@@ -172,7 +169,6 @@ TEST("mirrorapi_test") {
                        .add("C/x/z", "tcp/localhost:18504")
                        .add("D/y/z", "tcp/localhost:18505")));
 
-    TEST_FLUSH();
     e.reg();
     EXPECT_TRUE(compare(mirror, "E/y", SpecList().add("E/y", "tcp/localhost:18506")));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList()
@@ -183,7 +179,6 @@ TEST("mirrorapi_test") {
                        .add("C/x/z", "tcp/localhost:18504")
                        .add("D/y/z", "tcp/localhost:18505")));
 
-    TEST_FLUSH();
     f.reg();
     EXPECT_TRUE(compare(mirror, "F/y/w", SpecList().add("F/y/w", "tcp/localhost:18507")));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList()
@@ -221,4 +216,4 @@ TEST("mirrorapi_test") {
     transport.ShutDown(true);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

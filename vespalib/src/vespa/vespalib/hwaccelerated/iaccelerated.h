@@ -37,6 +37,11 @@ public:
     // OR 128 bytes from multiple, optionally inverted sources
     virtual void or128(size_t offset, const std::vector<std::pair<const void *, bool>> &src, void *dest) const noexcept = 0;
 
+    // Returns a static string representing the name of the underlying accelerator implementation
+    [[nodiscard]] virtual const char* target_name() const noexcept { return "Unknown"; }
+
+    static IAccelerated::UP create_platform_baseline_accelerator();
+
     static const IAccelerated & getAccelerator() __attribute__((noinline));
 };
 

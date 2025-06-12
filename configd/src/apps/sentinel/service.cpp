@@ -321,7 +321,7 @@ Service::youExited(int status)
         if (diff < MAX_RESTART_PENALTY) {
             incrementRestartPenalty();
         }
-        if (diff > 10 * MAX_RESTART_PENALTY) {
+        if (diff > 5 * MAX_RESTART_PENALTY) {
             resetRestartPenalty();
         }
         if (diff < _restartPenalty) {

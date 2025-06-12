@@ -326,16 +326,19 @@ export JAVA_HOME=/usr/lib/jvm/java-%{_vespa_java_version}-openjdk
 export PATH="$JAVA_HOME/bin:$PATH"
 export FACTORY_VESPA_VERSION=%{version}
 
+export PATH="%{_prefix}-deps/bin:$PATH"
+
 %if 0%{?_use_mvn_wrapper}
 mvn -B wrapper:wrapper -Dmaven=3.8.8 -N
 %endif
 %{?_use_mvn_wrapper:env VESPA_MAVEN_COMMAND=$(pwd)/mvnw }sh bootstrap.sh java
 %{?_use_mvn_wrapper:./mvnw}%{!?_use_mvn_wrapper:mvn} --batch-mode -nsu -T 1C install -DskipTests -Dmaven.javadoc.skip=true
+
 %{_command_cmake} -DCMAKE_INSTALL_PREFIX=%{_prefix} \
        -DJAVA_HOME=$JAVA_HOME \
        -DVESPA_USER=%{_vespa_user} \
        -DVESPA_UNPRIVILEGED=no \
-       %{_cmake_extra_opts} \
+       %{?_cmake_extra_opts} \
        .
 
 make %{_smp_mflags}

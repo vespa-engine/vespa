@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/slobrok/sbmirror.h>
 
 class MatchTester : public slobrok::api::IMirrorAPI
@@ -14,9 +14,9 @@ class MatchTester : public slobrok::api::IMirrorAPI
 
     void testMatch(const char *n, const char *p, bool expected)
     {
-        TEST_STATE(n);
-        TEST_STATE(p);
-        EXPECT_EQUAL(expected, match(n, p));
+        SCOPED_TRACE(n);
+        SCOPED_TRACE(p);
+        EXPECT_EQ(expected, match(n, p));
     }
 
 public:
@@ -31,35 +31,35 @@ public:
 };
 
 
-TEST("require that pattern matches same string") {
+TEST(MatchTest, require_that_pattern_matches_same_string) {
     std::string pattern = "foo/bar*zot/qux?foo**bar*/*nop*";
     MatchTester name(pattern);
     name.mustMatch(pattern);
 }
 
-TEST("require that star is prefix match") {
+TEST(MatchTest, require_that_star_is_prefix_match) {
     MatchTester name("foo/bar.foo/qux.bar/bar123/nop000");
     name.mustMatch("foo/bar.*/qux.*/bar*/nop*");
 }
 
-TEST("require that star matches empty string") {
+TEST(MatchTest, require_that_star_matches_empty_string) {
     MatchTester name("foo/bar./qux./bar/nop");
     name.mustMatch("foo/bar.*/qux.*/bar*/nop*");
 }
 
-TEST("require that extra char before slash does not match") {
+TEST(MatchTest, require_that_extra_char_before_slash_does_not_match) {
     MatchTester name("foo1/bar");
     name.mustNotMatch("foo/*");
 }
 
-TEST("require that star does not match multiple levels") {
+TEST(MatchTest, require_that_star_does_not_match_multiple_levels) {
     MatchTester name1("foo/bar/qux");
     MatchTester name2("foo/bar/bar/qux");
     name1.mustMatch("foo/*/qux");
     name2.mustNotMatch("foo/*/qux");
 }
 
-TEST("require that double star matches multiple levels") {
+TEST(MatchTest, require_that_double_star_matches_multiple_levels) {
     MatchTester name("foo/bar.foo/qux.bar/bar123/nop000");
     name.mustMatch("**");
     name.mustMatch("f**");
@@ -68,14 +68,14 @@ TEST("require that double star matches multiple levels") {
     name.mustMatch("foo*/**");
 }
 
-TEST("require that double star matches nothing") {
+TEST(MatchTest, require_that_double_star_matches_nothing) {
     MatchTester name("A");
     name.mustMatch("A**");
 }
 
-TEST("require that double star eats rest of name") {
+TEST(MatchTest, require_that_double_star_eats_rest_of_name) {
     MatchTester name("foo/bar/baz/suffix");
     name.mustNotMatch("foo/**/suffix");
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

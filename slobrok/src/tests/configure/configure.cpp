@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/slobrok/sbregister.h>
 #include <vespa/slobrok/server/slobrokserver.h>
@@ -90,7 +90,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
     return false;
 }
 
-TEST("configure_test") {
+TEST(ConfigureTest, configure_test) {
 
     fnet::frt::StandaloneFRT orb1;
     fnet::frt::StandaloneFRT orb2;
@@ -157,7 +157,6 @@ TEST("configure_test") {
                        .add("A", myspec1.c_str())
                        .add("B", myspec2.c_str())));
 
-    TEST_FLUSH();
 
     reg1.unregisterName("A");
     reg2.unregisterName("B");
@@ -194,7 +193,6 @@ TEST("configure_test") {
                        .add("A", myspec4.c_str())
                        .add("B", myspec2.c_str())));
 
-    TEST_FLUSH();
 
     // test mirror API reconfiguration
     cli3Builder.slobrok.resize(1);
@@ -214,4 +212,4 @@ TEST("configure_test") {
     orb1.supervisor().GetTransport()->ShutDown(true);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

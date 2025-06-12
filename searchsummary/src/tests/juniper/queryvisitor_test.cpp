@@ -41,7 +41,9 @@ struct Fixture {
       : query(term),
         handle(query, ""),
         visitor(query, &handle) {}
+    ~Fixture();
 };
+Fixture::~Fixture() = default;
 
 TEST(QueryVisitorTest, require_that_terms_are_picked_up_by_the_query_visitor) {
     Fixture f("my_term");
