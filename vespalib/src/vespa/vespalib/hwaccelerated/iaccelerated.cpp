@@ -159,7 +159,7 @@ constexpr static uint32_t DEFAULT_LEVEL = NEON_FP16_DOTPROD;
         return NEON;
     }
 #endif
-    LOG(warning, "Unknown vectorization target level for " VESPA_HWACCEL_ARCH_NAME ": '%s'. Using %s.",
+    LOG(info, "Unknown vectorization target level for " VESPA_HWACCEL_ARCH_NAME ": '%s'. Using %s.",
         str.c_str(), level_u32_to_str(DEFAULT_LEVEL));
     return DEFAULT_LEVEL;
 }
