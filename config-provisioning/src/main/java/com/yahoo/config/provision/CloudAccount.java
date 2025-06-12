@@ -33,10 +33,12 @@ public class CloudAccount implements Comparable<CloudAccount> {
         this.cloudName = cloudName;
     }
 
-    public String account() { return account; }
     public CloudName cloudName() { return cloudName; }
 
-    /** Returns the serialized value of this account that can be deserialized with {@link CloudAccount#from} */
+    /** Returns the cloud-specific account identifier: The account ID in AWS, the subscription ID in Azure, the project ID in GCP. */
+    public String account() { return account; }
+
+    /** Returns the serialized value of this account that can be deserialized with {@link #from(String)} */
     public final String value() {
         if (isUnspecified()) return account;
         return cloudName.value() + ':' + account;
@@ -82,7 +84,11 @@ public class CloudAccount implements Comparable<CloudAccount> {
         return this.value().compareTo(o.value());
     }
 
+    public static CloudAccount from(CloudName cloudName, String account) {
+        return from(cloudName.value(), account);
+    }
 
+    /** Returns a CloudAccount from its serialized value (inverse of {@link #value()}). */
     public static CloudAccount from(String cloudAccount) {
         int index = cloudAccount.indexOf(':');
         if (index < 0) {
@@ -96,14 +102,16 @@ public class CloudAccount implements Comparable<CloudAccount> {
             throw illegal(cloudAccount, "Must be on format '<cloud-name>:<account>' or 'default'");
         }
 
-        String cloud = cloudAccount.substring(0, index);
-        String account = cloudAccount.substring(index + 1);
+        return from(cloudAccount.substring(0, index), cloudAccount.substring(index + 1));
+    }
+
+    private static CloudAccount from(String cloud, String account) {
         CloudMeta cloudMeta = META_BY_CLOUD.get(cloud);
         if (cloudMeta == null)
-            throw illegal(cloudAccount, "Cloud name must be one of: " + META_BY_CLOUD.keySet().stream().sorted().collect(Collectors.joining(", ")));
+            throw illegal(cloud + ':' + account, "Cloud name must be one of: " + META_BY_CLOUD.keySet().stream().sorted().collect(Collectors.joining(", ")));
 
         if (!cloudMeta.matches(account))
-            throw illegal(cloudAccount, cloudMeta.accountType + " must match '" + cloudMeta.pattern.pattern() + "'");
+            throw illegal(cloud + ':' + account, cloudMeta.accountType + " must match '" + cloudMeta.pattern.pattern() + "'");
         return new CloudAccount(account, CloudName.from(cloud));
     }
 
