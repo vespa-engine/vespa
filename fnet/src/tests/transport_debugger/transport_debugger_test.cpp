@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/testkit/time_bomb.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fnet/transport_thread.h>
@@ -22,7 +22,9 @@ struct Service : FRT_Invokable {
       : frt(fnet::TransportConfig(4).crypto(tls_crypto).time_tools(time_tools))
     {
         init_rpc();
-        ASSERT_TRUE(frt.supervisor().Listen(0));
+        bool ok = frt.supervisor().Listen(0);
+        EXPECT_TRUE(ok);
+        assert(ok);
     }
     FNET_Transport &transport() { return *frt.supervisor().GetTransport(); }
     int listen_port() const {
@@ -77,7 +79,10 @@ struct MyWait : FRT_IRequestWait {
     void RequestDone(FRT_RPCRequest *r) override { req = r; }
 };
 
-TEST_FF("transport layers can be run with transport debugger", Fixture(), vespalib::TimeBomb(60)) {
+TEST(TransportDebuggerTest, transport_layers_can_be_run_with_transport_debugger) {
+    Fixture f1;
+    vespalib::TimeBomb f2(60);
+
     MyWait w4; // short timeout, should fail
     MyWait w6; // long timeout, should be ok
 
@@ -109,14 +114,14 @@ TEST_FF("transport layers can be run with transport debugger", Fixture(), vespal
             fprintf(stderr, "request with 6s timeout completed after %zu steps (~%zu ms)\n", steps, steps * 5);
         }
     }
-    ASSERT_EQUAL(req4, w4.req);
-    ASSERT_EQUAL(req6, w6.req);
-    EXPECT_EQUAL(req4->GetErrorCode(), FRTE_RPC_TIMEOUT);
+    ASSERT_EQ(req4, w4.req);
+    ASSERT_EQ(req6, w6.req);
+    EXPECT_EQ(req4->GetErrorCode(), FRTE_RPC_TIMEOUT);
     ASSERT_TRUE(req6->CheckReturnTypes("l"));
-    EXPECT_EQUAL(req6->GetReturn()->GetValue(0)._intval64, 8u);
+    EXPECT_EQ(req6->GetReturn()->GetValue(0)._intval64, 8u);
     target->internal_subref();
     req4->internal_subref();
     req6->internal_subref();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

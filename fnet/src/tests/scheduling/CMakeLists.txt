@@ -4,6 +4,7 @@ vespa_add_executable(fnet_schedule_test_app TEST
     schedule.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_schedule_test_app COMMAND fnet_schedule_test_app)
 vespa_add_executable(fnet_sloweventloop_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(fnet_sloweventloop_test_app TEST
     sloweventloop.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_sloweventloop_test_app COMMAND fnet_sloweventloop_test_app)

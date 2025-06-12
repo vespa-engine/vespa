@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/packetqueue.h>
 #include <vespa/fnet/info.h>
@@ -10,7 +10,7 @@ void printError(uint32_t ecode) {
             ecode, FRT_GetErrorCodeName(ecode), FRT_GetDefaultErrorMessage(ecode));
 }
 
-TEST("frt error code names and default messages") {
+TEST(PrintStuffTest, frt_error_code_names_and_default_messages) {
     printError(0);
     printError(99);
     for (uint32_t i = 100; i < 112; ++i) {
@@ -22,7 +22,7 @@ TEST("frt error code names and default messages") {
     printError(70000);
 }
 
-TEST("rpc packets in a queue") {
+TEST(PrintStuffTest, rpc_packets_in_a_queue) {
     FRT_RPCRequest *req = new FRT_RPCRequest();
     {
         req->SetMethodName("foo");
@@ -40,9 +40,9 @@ TEST("rpc packets in a queue") {
     req->internal_subref();
 }
 
-TEST("info") {
+TEST(PrintStuffTest, info) {
     FNET_Info::PrintInfo();
     FNET_Info::LogInfo();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

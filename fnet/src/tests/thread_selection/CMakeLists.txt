@@ -4,5 +4,6 @@ vespa_add_executable(fnet_thread_selection_test_app TEST
     thread_selection_test.cpp
     DEPENDS
     vespa_fnet
+    GTest::gtest
 )
 vespa_add_test(NAME fnet_thread_selection_test_app COMMAND fnet_thread_selection_test_app)

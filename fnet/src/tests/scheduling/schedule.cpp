@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
 #include <cassert>
@@ -80,7 +80,7 @@ public:
 };
 
 
-TEST("schedule") {
+TEST(ScheduleTest, schedule) {
   _time = steady_time(vespalib::duration::zero());
   _scheduler = new FNET_Scheduler(&_time);
 
@@ -162,4 +162,4 @@ TEST("schedule") {
   }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
