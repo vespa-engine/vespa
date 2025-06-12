@@ -20,12 +20,22 @@ struct DynamicThrottleFixture {
         SharedOperationThrottler::DynamicThrottleParams params;
         params.window_size_increment = 1;
         params.min_window_size = 1;
+        // By default, tests will not set a resource limit, which means they operate
+        // as-if the resource limit does not exist.
         _throttler = SharedOperationThrottler::make_dynamic_throttler(params);
     }
 };
 
 struct SharedOperationHandlerTest : Test {
     DynamicThrottleFixture f;
+
+    static SharedOperationThrottler::DynamicThrottleParams params_with_resource_limit(uint64_t limit) {
+        SharedOperationThrottler::DynamicThrottleParams params;
+        params.window_size_increment = 1;
+        params.min_window_size = 10; // Enough that tests aren't throttled by the throttle policy itself.
+        params.resource_usage_soft_limit = limit;
+        return params;
+    }
 };
 
 TEST_F(SharedOperationHandlerTest, unlimited_throttler_does_not_throttle) {
@@ -125,6 +135,64 @@ TEST_F(SharedOperationHandlerTest, token_can_be_moved_and_reset) {
     token3.reset();
     token1 = f._throttler->try_acquire_one();
     EXPECT_TRUE(token1.valid());
+}
+
+TEST_F(SharedOperationHandlerTest, resource_soft_limit_takes_precedence_over_window_size) {
+    f._throttler = SharedOperationThrottler::make_dynamic_throttler(params_with_resource_limit(3000));
+    ASSERT_EQ(f._throttler->current_window_size(), 10);
+    auto token1 = f._throttler->try_acquire_one(2000);
+    ASSERT_TRUE(token1.valid());
+    EXPECT_EQ(f._throttler->current_resource_usage(), 2000);
+    auto token2 = f._throttler->try_acquire_one(1001); // Would go past limit, even though window has room
+    ASSERT_FALSE(token2.valid());
+    EXPECT_EQ(f._throttler->current_resource_usage(), 2000);
+    auto token3 = f._throttler->try_acquire_one(1000); // Goldilocks fit, just right
+    EXPECT_TRUE(token3.valid());
+    EXPECT_EQ(f._throttler->current_resource_usage(), 3000);
+}
+
+TEST_F(SharedOperationHandlerTest, resource_soft_limit_allows_single_op_even_if_it_exceeds_limit) {
+    f._throttler = SharedOperationThrottler::make_dynamic_throttler(params_with_resource_limit(3000));
+    // Should be allowed even if it exceeds the limit since we always need to allow at
+    // least one operation to ensure liveness.
+    auto token1 = f._throttler->try_acquire_one(5000);
+    ASSERT_TRUE(token1.valid());
+    EXPECT_EQ(f._throttler->current_resource_usage(), 5000);
+    auto token2 = f._throttler->try_acquire_one(1);
+    ASSERT_FALSE(token2.valid());
+    EXPECT_EQ(f._throttler->current_resource_usage(), 5000);
+}
+
+TEST_F(SharedOperationHandlerTest, token_destruction_frees_up_resource_usage_of_token) {
+    f._throttler = SharedOperationThrottler::make_dynamic_throttler(params_with_resource_limit(10000));
+    auto token1 = f._throttler->try_acquire_one(5000);
+    ASSERT_TRUE(token1.valid());
+    auto token2 = f._throttler->try_acquire_one(3000);
+    ASSERT_TRUE(token2.valid());
+    EXPECT_EQ(f._throttler->current_resource_usage(), 8000);
+    token1.reset();
+    EXPECT_EQ(f._throttler->current_resource_usage(), 3000);
+    auto token2_moved = std::move(token2); // Must be tracked across moves
+    token2_moved.reset();
+    EXPECT_EQ(f._throttler->current_resource_usage(), 0);
+}
+
+TEST_F(SharedOperationHandlerTest, resource_usage_overflow_fails_token_acquisition) {
+    f._throttler = SharedOperationThrottler::make_dynamic_throttler(params_with_resource_limit(3000));
+    auto token1 = f._throttler->try_acquire_one(1000);
+    ASSERT_TRUE(token1.valid());
+    auto token2 = f._throttler->try_acquire_one(UINT64_MAX - 999);
+    EXPECT_FALSE(token2.valid());
+}
+
+TEST_F(SharedOperationHandlerTest, unlimited_resource_usage_does_not_block_token_acquisition) {
+    f._throttler = SharedOperationThrottler::make_dynamic_throttler(params_with_resource_limit(0)); // 0 == inf
+    auto token1 = f._throttler->try_acquire_one(10'000);
+    EXPECT_TRUE(token1.valid());
+    auto token2 = f._throttler->try_acquire_one(20'000);
+    EXPECT_TRUE(token2.valid());
+    // We still track the resource usage
+    EXPECT_EQ(f._throttler->current_resource_usage(), 30'000);
 }
 
 // Note on test semantics: these tests are adapted from a subset of the MessageBus
