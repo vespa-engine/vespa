@@ -199,7 +199,7 @@ cluster_feed_block_limit{} double
 # node must reach a lower resource usage than the limit for feed to be unblocked.
 # This is in absolute numbers, so 0.01 implies that a block limit of 0.8 effectively
 # becomes 0.79 for an already blocked node.
-cluster_feed_block_noise_level double default=0.0
+cluster_feed_block_noise_level double default=0.01
 
 # For apps that have several groups this controls how many groups are allowed to
 # be down simultaneously in this cluster. The default value of -1 means that
