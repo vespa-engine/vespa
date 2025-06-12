@@ -5,6 +5,8 @@
 #include <memory>
 #include <cstdint>
 
+namespace vespalib { class SharedOperationThrottler; }
+
 namespace proton {
 
 class IDocumentDBReferenceRegistry;
@@ -23,6 +25,7 @@ public:
     virtual uint32_t getNumThreadsPerSearch() const = 0;
     virtual SessionManager & session_manager() = 0;
     virtual std::shared_ptr<MaintenanceJobTokenSource> get_lid_space_compaction_job_token_source() = 0;
+    virtual std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler() const = 0;
     virtual std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const = 0;
 };
 

@@ -135,6 +135,7 @@ private:
     std::set<BucketSpace>           _nodeUp;   // bucketspaces where node is up
     std::shared_ptr<search::diskindex::IPostingListCache> _posting_list_cache;
     std::shared_ptr<MaintenanceJobTokenSource> _lid_space_compaction_job_token_source;
+    std::shared_ptr<vespalib::SharedOperationThrottler> _shared_replay_throttler;
 
     std::shared_ptr<DocumentDBConfigOwner>
     addDocumentDB(const DocTypeName & docTypeName, BucketSpace bucketSpace, const std::string & configid,
@@ -153,6 +154,7 @@ private:
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
     SessionManager & session_manager() override;
     std::shared_ptr<MaintenanceJobTokenSource> get_lid_space_compaction_job_token_source() override;
+    std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler() const override;
     // Returns true if the node is up in _any_ bucket space
     bool updateNodeUp(BucketSpace bucketSpace, bool nodeUpInBucketSpace);
     void closeDocumentDBs(vespalib::ThreadStackExecutorBase & executor);

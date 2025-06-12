@@ -77,18 +77,6 @@ makeIndexConfig(const ProtonConfig::Index & cfg) {
     return {WarmupConfig(vespalib::from_s(cfg.warmup.time), cfg.warmup.unpack), size_t(cfg.maxflushed)};
 }
 
-ReplayThrottlingPolicy
-make_replay_throttling_policy(const ProtonConfig::ReplayThrottlingPolicy& cfg) {
-    if (cfg.type == ProtonConfig::ReplayThrottlingPolicy::Type::UNLIMITED) {
-        return ReplayThrottlingPolicy({});
-    }
-    vespalib::SharedOperationThrottler::DynamicThrottleParams params;
-    params.min_window_size = cfg.minWindowSize;
-    params.max_window_size = cfg.maxWindowSize;
-    params.window_size_increment = cfg.windowSizeIncrement;
-    return ReplayThrottlingPolicy(params);
-}
-
 class MetricsUpdateHook : public metrics::UpdateHook {
     DocumentDB &_db;
 public:
@@ -205,7 +193,6 @@ DocumentDB::DocumentDB(const std::string &baseDir,
       _clusterStateHandler(_writeService.master()),
       _bucketHandler(_writeService.master()),
       _indexCfg(makeIndexConfig(protonCfg.index)),
-      _replay_throttling_policy(std::make_unique<ReplayThrottlingPolicy>(make_replay_throttling_policy(protonCfg.replayThrottlingPolicy))),
       _config_store(std::move(config_store)),
       _metricsWireService(metricsWireService),
       _metrics(_docTypeName.getName(), owner.getNumThreadsPerSearch()),
@@ -742,7 +729,7 @@ DocumentDB::startTransactionLogReplay()
                                       oldestFlushedSerial,
                                       newestFlushedSerial,
                                       *_config_store,
-                                      *_replay_throttling_policy);
+                                      _owner.shared_replay_throttler());
     _initGate.countDown();
 
     LOG(debug, "DocumentDB(%s): Database started.", _docTypeName.toString().c_str());

@@ -17,6 +17,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/util/shared_operation_throttler.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::BucketId;
@@ -95,7 +96,7 @@ protected:
     MemoryConfigStore config_store;
     bucketdb::BucketDBOwner _bucketDB;
     bucketdb::BucketDBHandler _bucketDBHandler;
-    ReplayThrottlingPolicy _replay_throttling_policy;
+    std::shared_ptr<vespalib::SharedOperationThrottler> _replay_throttler;
     MyIncSerialNum _inc_serial_num;
     ReplayTransactionLogState state;
 
@@ -112,9 +113,9 @@ FeedStatesTest::FeedStatesTest()
       config_store(),
       _bucketDB(),
       _bucketDBHandler(_bucketDB),
-      _replay_throttling_policy({}),
+      _replay_throttler(vespalib::SharedOperationThrottler::make_unlimited_throttler()),
       _inc_serial_num(9u),
-      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store, _replay_throttling_policy, _inc_serial_num)
+      state("doctypename", feed_view_ptr, _bucketDBHandler, replay_config, config_store, _replay_throttler, _inc_serial_num)
 {
 }
 

@@ -11,6 +11,7 @@ struct DummyDBOwner : IDocumentDBOwner {
     std::shared_ptr<IDocumentDBReferenceRegistry> _registry;
     std::unique_ptr<SessionManager> _sessionManager;
     std::shared_ptr<MaintenanceJobTokenSource> _lid_space_compaction_job_token_source;
+    std::shared_ptr<vespalib::SharedOperationThrottler> _shared_replay_throttler;
 
     DummyDBOwner();
     ~DummyDBOwner() override;
@@ -22,6 +23,7 @@ struct DummyDBOwner : IDocumentDBOwner {
     std::shared_ptr<IDocumentDBReferenceRegistry> getDocumentDBReferenceRegistry() const override;
     SessionManager & session_manager() override;
     std::shared_ptr<MaintenanceJobTokenSource> get_lid_space_compaction_job_token_source() override;
+    std::shared_ptr<vespalib::SharedOperationThrottler> shared_replay_throttler() const override;
 };
 
 } // namespace proton

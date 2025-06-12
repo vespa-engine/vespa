@@ -56,23 +56,15 @@ class TransactionLogReplayPacketHandler : public IReplayPacketHandler {
     FeedConfigStore &_config_store;
     IIncSerialNum   &_inc_serial_num;
     CommitTimeTracker _commitTimeTracker;
-    std::unique_ptr<SharedOperationThrottler> _throttler;
+    std::shared_ptr<SharedOperationThrottler> _throttler;
     std::unique_ptr<feedtoken::ReplayFeedTokenFactory> _replay_feed_token_factory;
-
-    static std::unique_ptr<SharedOperationThrottler> make_throttler(const ReplayThrottlingPolicy& replay_throttling_policy) {
-        auto& params = replay_throttling_policy.get_params();
-        if (!params.has_value()) {
-            return SharedOperationThrottler::make_unlimited_throttler();
-        }
-        return SharedOperationThrottler::make_dynamic_throttler(params.value());
-    }
 
 public:
     TransactionLogReplayPacketHandler(IFeedView *& feed_view_ptr,
                                       IBucketDBHandler &bucketDBHandler,
                                       IReplayConfig &replay_config,
                                       FeedConfigStore &config_store,
-                                      const ReplayThrottlingPolicy& replay_throttling_policy,
+                                      std::shared_ptr<vespalib::SharedOperationThrottler> shared_operation_throttler,
                                       IIncSerialNum &inc_serial_num)
         : _feed_view_ptr(feed_view_ptr),
           _bucketDBHandler(bucketDBHandler),
@@ -80,14 +72,18 @@ public:
           _config_store(config_store),
           _inc_serial_num(inc_serial_num),
           _commitTimeTracker(5ms),
-        _throttler(make_throttler(replay_throttling_policy)),
-        _replay_feed_token_factory(std::make_unique<feedtoken::ReplayFeedTokenFactory>(true))
+          _throttler(std::move(shared_operation_throttler)),
+          _replay_feed_token_factory(std::make_unique<feedtoken::ReplayFeedTokenFactory>(true))
     { }
 
     ~TransactionLogReplayPacketHandler() override = default;
 
     FeedToken make_replay_feed_token(const FeedOperation& op) {
-        SharedOperationThrottler::Token throttler_token = _throttler->blocking_acquire_one();
+        uint64_t estimated_memory_footprint = 0;
+        if (const auto* doc_op = dynamic_cast<const DocumentOperation*>(&op)) {
+            estimated_memory_footprint = doc_op->getSerializedDocSize(); // Cached and "free" to read
+        }
+        SharedOperationThrottler::Token throttler_token = _throttler->blocking_acquire_one(estimated_memory_footprint);
         return _replay_feed_token_factory->make_replay_feed_token(std::move(throttler_token), op);
     }
 
@@ -195,11 +191,13 @@ ReplayTransactionLogState::ReplayTransactionLogState(
         IBucketDBHandler &bucketDBHandler,
         IReplayConfig &replay_config,
         FeedConfigStore &config_store,
-        const ReplayThrottlingPolicy &replay_throttling_policy,
+        std::shared_ptr<vespalib::SharedOperationThrottler> shared_operation_throttler,
         IIncSerialNum& inc_serial_num)
     : FeedState(REPLAY_TRANSACTION_LOG),
       _doc_type_name(name),
-      _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(feed_view_ptr, bucketDBHandler, replay_config, config_store, replay_throttling_policy, inc_serial_num))
+      _packet_handler(std::make_unique<TransactionLogReplayPacketHandler>(
+            feed_view_ptr, bucketDBHandler, replay_config, config_store,
+            std::move(shared_operation_throttler), inc_serial_num))
 { }
 
 ReplayTransactionLogState::~ReplayTransactionLogState() = default;

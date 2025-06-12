@@ -19,6 +19,7 @@
 
 namespace searchcorespi::index { struct IThreadingService; }
 namespace document { class DocumentTypeRepo; }
+namespace vespalib { class SharedOperationThrottler; }
 
 namespace proton {
 struct ConfigStore;
@@ -189,7 +190,7 @@ public:
                          SerialNum oldestFlushedSerial,
                          SerialNum newestFlushedSerial,
                          ConfigStore &config_store,
-                         const ReplayThrottlingPolicy& replay_throttling_policy);
+                         std::shared_ptr<vespalib::SharedOperationThrottler> shared_operation_throttler);
 
     /**
      * Called when a flush is done and allows pruning of the transaction log.
