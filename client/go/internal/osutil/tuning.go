@@ -40,7 +40,7 @@ func setTimerHZ(description, timerHZ string) {
 
 func TuneResourceLimits() {
 	var numfiles uint64 = 262144
-	var numprocs uint64 = 409600
+	var numprocs uint64 = 102400
 	if env := os.Getenv(envvars.FILE_DESCRIPTOR_LIMIT); env != "" {
 		n, err := strconv.Atoi(env)
 		if err != nil {
