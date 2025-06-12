@@ -5,5 +5,6 @@ vespa_add_executable(vbench_qps_analyzer_test_app TEST
     DEPENDS
     vbench_test
     vespa_vbench
+    GTest::gtest
 )
 vespa_add_test(NAME vbench_qps_analyzer_test_app COMMAND vbench_qps_analyzer_test_app)

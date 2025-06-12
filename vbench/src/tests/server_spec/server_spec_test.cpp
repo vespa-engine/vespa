@@ -1,22 +1,22 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vbench/test/all.h>
 
 using namespace vbench;
 
-TEST("empty") {
+TEST(ServerSpecTest, empty) {
     ServerSpec spec;
-    EXPECT_EQUAL("", spec.host);
-    EXPECT_EQUAL(0, spec.port);
+    EXPECT_EQ("", spec.host);
+    EXPECT_EQ(0, spec.port);
 }
 
-TEST("standard") {
+TEST(ServerSpecTest, standard) {
     ServerSpec spec("foo", 3);
-    EXPECT_EQUAL("foo", spec.host);
-    EXPECT_EQUAL(3, spec.port);
+    EXPECT_EQ("foo", spec.host);
+    EXPECT_EQ(3, spec.port);
 }
 
-TEST("compare") {
+TEST(ServerSpecTest, compare) {
     ServerSpec spec0("foo", 3);
     ServerSpec spec1("foo", 3);
     ServerSpec spec2("bar", 3);
@@ -35,4 +35,4 @@ TEST("compare") {
     EXPECT_FALSE(spec4 < spec0);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

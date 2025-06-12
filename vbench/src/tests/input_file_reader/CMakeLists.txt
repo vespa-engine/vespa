@@ -5,5 +5,6 @@ vespa_add_executable(vbench_input_file_reader_test_app TEST
     DEPENDS
     vbench_test
     vespa_vbench
+    GTest::gtest
 )
 vespa_add_test(NAME vbench_input_file_reader_test_app COMMAND vbench_input_file_reader_test_app)

@@ -5,5 +5,6 @@ vespa_add_executable(vbench_request_generator_test_app TEST
     DEPENDS
     vbench_test
     vespa_vbench
+    GTest::gtest
 )
 vespa_add_test(NAME vbench_request_generator_test_app COMMAND vbench_request_generator_test_app)

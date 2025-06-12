@@ -1,43 +1,43 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vbench/test/all.h>
 
 using namespace vbench;
 
-TEST("untainted") {
+TEST(TaintTest, untainted) {
     Taint t;
     bool fail = t;
     EXPECT_FALSE(fail);
     EXPECT_FALSE(t.taint());
-    EXPECT_EQUAL("", t.reason());
+    EXPECT_EQ("", t.reason());
 }
 
-TEST("Taintable::nil") {
+TEST(TaintTest, test_Taintable__nil) {
     const Taint &t = Taintable::nil().tainted();
     bool fail = t;
     EXPECT_FALSE(fail);
     EXPECT_FALSE(t.taint());
-    EXPECT_EQUAL("", t.reason());
+    EXPECT_EQ("", t.reason());
 }
 
-TEST("tainted") {
+TEST(TaintTest, tainted) {
     Taint t("argh");
     bool fail = t;
     EXPECT_TRUE(fail);
     EXPECT_TRUE(t.taint());
-    EXPECT_EQUAL("argh", t.reason());
+    EXPECT_EQ("argh", t.reason());
 }
 
-TEST("reset taint") {
+TEST(TaintTest, reset_taint) {
     Taint t;
     EXPECT_FALSE(t.taint());
-    EXPECT_EQUAL("", t.reason());
+    EXPECT_EQ("", t.reason());
     t.reset("argh");
     EXPECT_TRUE(t.taint());
-    EXPECT_EQUAL("argh", t.reason());
+    EXPECT_EQ("argh", t.reason());
     t.reset();
     EXPECT_FALSE(t.taint());
-    EXPECT_EQUAL("", t.reason());
+    EXPECT_EQ("", t.reason());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
