@@ -1,4 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+#include "overflow.h"
 #include "shared_operation_throttler.h"
 #include <atomic>
 #include <condition_variable>
@@ -14,39 +15,47 @@ class NoLimitsOperationThrottler final : public SharedOperationThrottler {
 public:
     NoLimitsOperationThrottler()
         : SharedOperationThrottler(),
-          _refs(0u)
+          _refs(0u),
+          _current_resource_usage(0)
     {
     }
     ~NoLimitsOperationThrottler() override {
         assert(_refs.load() == 0u);
+        assert(_current_resource_usage.load() == 0);
     }
-    Token blocking_acquire_one() noexcept override {
-        internal_ref_count_increase();
-        return Token(this, TokenCtorTag{});
+    Token blocking_acquire_one(uint64_t operation_resource_usage) noexcept override {
+        internal_ref_count_and_resource_usage_increase(operation_resource_usage);
+        return Token(this, operation_resource_usage, TokenCtorTag{});
     }
-    Token blocking_acquire_one(vespalib::steady_time) noexcept override {
-        internal_ref_count_increase();
-        return Token(this, TokenCtorTag{});
+    Token blocking_acquire_one(vespalib::steady_time, uint64_t operation_resource_usage) noexcept override {
+        internal_ref_count_and_resource_usage_increase(operation_resource_usage);
+        return Token(this, operation_resource_usage, TokenCtorTag{});
     }
-    Token try_acquire_one() noexcept override {
-        internal_ref_count_increase();
-        return Token(this, TokenCtorTag{});
+    Token try_acquire_one(uint64_t operation_resource_usage) noexcept override {
+        internal_ref_count_and_resource_usage_increase(operation_resource_usage);
+        return Token(this, operation_resource_usage, TokenCtorTag{});
     }
     uint32_t current_window_size() const noexcept override { return 0; }
     uint32_t current_active_token_count() const noexcept override {
         return _refs.load(std::memory_order_relaxed);
     }
     uint32_t waiting_threads() const noexcept override { return 0; }
+    uint64_t current_resource_usage() const noexcept override {
+        return _current_resource_usage.load(std::memory_order_relaxed);
+    }
     void reconfigure_dynamic_throttling(const DynamicThrottleParams&) noexcept override { /* no-op */ }
 private:
-    void internal_ref_count_increase() noexcept {
+    void internal_ref_count_and_resource_usage_increase(uint64_t operation_resource_usage) noexcept {
         // Relaxed semantics suffice, as there are no transitive memory visibility/ordering requirements.
+        _current_resource_usage.fetch_add(operation_resource_usage, std::memory_order_relaxed);
         _refs.fetch_add(1u, std::memory_order_relaxed);
     }
-    void release_one() noexcept override {
+    void release_one(uint64_t operation_resource_usage) noexcept override {
+        _current_resource_usage.fetch_sub(operation_resource_usage, std::memory_order_relaxed);
         _refs.fetch_sub(1u, std::memory_order_relaxed);
     }
     std::atomic<uint32_t> _refs;
+    std::atomic<uint64_t> _current_resource_usage;
 };
 
 /**
@@ -151,7 +160,8 @@ DynamicThrottlePolicy::set_resize_rate(double resize_rate) noexcept
 void
 DynamicThrottlePolicy::set_max_window_size(double max_size) noexcept
 {
-    _max_window_size = max_size;
+    // Note: max window size is always set _after_ min window size has already been set.
+    _max_window_size = std::max(_min_window_size, max_size);
 }
 
 void
@@ -264,25 +274,30 @@ class DynamicOperationThrottler final : public SharedOperationThrottler {
     DynamicThrottlePolicy   _throttle_policy;
     uint32_t                _pending_ops;
     uint32_t                _waiting_threads;
+    uint64_t                _current_resource_usage;
+    uint64_t                _resource_usage_soft_limit;
 public:
     DynamicOperationThrottler(const DynamicThrottleParams& params,
                               std::function<steady_time()> time_provider);
     ~DynamicOperationThrottler() override;
 
-    Token blocking_acquire_one() noexcept override;
-    Token blocking_acquire_one(vespalib::steady_time deadline) noexcept override;
-    Token try_acquire_one() noexcept override;
+    Token blocking_acquire_one(uint64_t operation_resource_usage) noexcept override;
+    Token blocking_acquire_one(vespalib::steady_time deadline, uint64_t operation_resource_usage) noexcept override;
+    Token try_acquire_one(uint64_t operation_resource_usage) noexcept override;
     uint32_t current_window_size() const noexcept override;
     uint32_t current_active_token_count() const noexcept override;
     uint32_t waiting_threads() const noexcept override;
+    uint64_t current_resource_usage() const noexcept override;
     void reconfigure_dynamic_throttling(const DynamicThrottleParams& params) noexcept override;
 private:
-    void release_one() noexcept override;
+    void release_one(uint64_t operation_resource_usage) noexcept override;
     // Non-const since actually checking the send window of a dynamic throttler might change
     // it if enough time has passed.
-    [[nodiscard]] bool has_spare_capacity_in_active_window() noexcept;
+    [[nodiscard]] bool has_spare_capacity_in_active_window(uint64_t operation_resource_usage) noexcept;
     void add_one_to_active_window_size() noexcept;
+    void add_to_current_resource_usage(uint64_t operation_resource_usage) noexcept;
     void subtract_one_from_active_window_size() noexcept;
+    void subtract_from_current_resource_usage(uint64_t operation_resource_usage) noexcept;
 };
 
 DynamicOperationThrottler::DynamicOperationThrottler(const DynamicThrottleParams& params,
@@ -291,7 +306,9 @@ DynamicOperationThrottler::DynamicOperationThrottler(const DynamicThrottleParams
       _cond(),
       _throttle_policy(params, std::move(time_provider)),
       _pending_ops(0),
-      _waiting_threads(0)
+      _waiting_threads(0),
+      _current_resource_usage(0),
+      _resource_usage_soft_limit(params.resource_usage_soft_limit)
 {
 }
 
@@ -301,9 +318,17 @@ DynamicOperationThrottler::~DynamicOperationThrottler()
 }
 
 bool
-DynamicOperationThrottler::has_spare_capacity_in_active_window() noexcept
+DynamicOperationThrottler::has_spare_capacity_in_active_window(uint64_t operation_resource_usage) noexcept
 {
-    return _throttle_policy.has_spare_capacity(_pending_ops);
+    // If overflow would happen, we refuse the operation regardless of configured limits.
+    // This can by definition never happen for the first operation.
+    if (add_would_overflow<uint64_t>(_current_resource_usage, operation_resource_usage)) {
+        return false;
+    }
+    const bool within_resource_limits = ((_resource_usage_soft_limit == 0) || // 0 means unlimited
+                                         (_pending_ops == 0) ||               // First operation is always allowed
+                                         (_current_resource_usage + operation_resource_usage <= _resource_usage_soft_limit));
+    return within_resource_limits && _throttle_policy.has_spare_capacity(_pending_ops);
 }
 
 void
@@ -314,6 +339,13 @@ DynamicOperationThrottler::add_one_to_active_window_size() noexcept
 }
 
 void
+DynamicOperationThrottler::add_to_current_resource_usage(uint64_t operation_resource_usage) noexcept
+{
+    assert(!add_would_overflow<uint64_t>(_current_resource_usage, operation_resource_usage));
+    _current_resource_usage += operation_resource_usage;
+}
+
+void
 DynamicOperationThrottler::subtract_one_from_active_window_size() noexcept
 {
     _throttle_policy.process_response(true); // TODO support failure push-back
@@ -321,29 +353,37 @@ DynamicOperationThrottler::subtract_one_from_active_window_size() noexcept
     --_pending_ops;
 }
 
+void
+DynamicOperationThrottler::subtract_from_current_resource_usage(uint64_t operation_resource_usage) noexcept
+{
+    assert(_current_resource_usage >= operation_resource_usage);
+    _current_resource_usage -= operation_resource_usage;
+}
+
 DynamicOperationThrottler::Token
-DynamicOperationThrottler::blocking_acquire_one() noexcept
+DynamicOperationThrottler::blocking_acquire_one(uint64_t operation_resource_usage) noexcept
 {
     std::unique_lock lock(_mutex);
-    if (!has_spare_capacity_in_active_window()) {
+    if (!has_spare_capacity_in_active_window(operation_resource_usage)) {
         ++_waiting_threads;
         _cond.wait(lock, [&] {
-            return has_spare_capacity_in_active_window();
+            return has_spare_capacity_in_active_window(operation_resource_usage);
         });
         --_waiting_threads;
     }
     add_one_to_active_window_size();
-    return Token(this, TokenCtorTag{});
+    add_to_current_resource_usage(operation_resource_usage);
+    return Token(this, operation_resource_usage, TokenCtorTag{});
 }
 
 DynamicOperationThrottler::Token
-DynamicOperationThrottler::blocking_acquire_one(vespalib::steady_time deadline) noexcept
+DynamicOperationThrottler::blocking_acquire_one(vespalib::steady_time deadline, uint64_t operation_resource_usage) noexcept
 {
     std::unique_lock lock(_mutex);
-    if (!has_spare_capacity_in_active_window()) {
+    if (!has_spare_capacity_in_active_window(operation_resource_usage)) {
         ++_waiting_threads;
         const bool accepted = _cond.wait_until(lock, deadline, [&] {
-            return has_spare_capacity_in_active_window();
+            return has_spare_capacity_in_active_window(operation_resource_usage);
         });
         --_waiting_threads;
         if (!accepted) {
@@ -351,27 +391,30 @@ DynamicOperationThrottler::blocking_acquire_one(vespalib::steady_time deadline) 
         }
     }
     add_one_to_active_window_size();
-    return Token(this, TokenCtorTag{});
+    add_to_current_resource_usage(operation_resource_usage);
+    return Token(this, operation_resource_usage, TokenCtorTag{});
 }
 
 DynamicOperationThrottler::Token
-DynamicOperationThrottler::try_acquire_one() noexcept
+DynamicOperationThrottler::try_acquire_one(uint64_t operation_resource_usage) noexcept
 {
     std::unique_lock lock(_mutex);
-    if (!has_spare_capacity_in_active_window()) {
+    if (!has_spare_capacity_in_active_window(operation_resource_usage)) {
         return Token();
     }
     add_one_to_active_window_size();
-    return Token(this, TokenCtorTag{});
+    add_to_current_resource_usage(operation_resource_usage);
+    return Token(this, operation_resource_usage, TokenCtorTag{});
 }
 
 void
-DynamicOperationThrottler::release_one() noexcept
+DynamicOperationThrottler::release_one(uint64_t operation_resource_usage) noexcept
 {
     std::unique_lock lock(_mutex);
     subtract_one_from_active_window_size();
+    subtract_from_current_resource_usage(operation_resource_usage);
     // Only wake up a waiting thread if doing so would possibly result in success.
-    if ((_waiting_threads > 0) && has_spare_capacity_in_active_window()) {
+    if ((_waiting_threads > 0) && has_spare_capacity_in_active_window(0)) {
         lock.unlock();
         _cond.notify_one();
     }
@@ -380,29 +423,37 @@ DynamicOperationThrottler::release_one() noexcept
 uint32_t
 DynamicOperationThrottler::current_window_size() const noexcept
 {
-    std::unique_lock lock(_mutex);
+    std::lock_guard lock(_mutex);
     return _throttle_policy.current_window_size();
 }
 
 uint32_t
 DynamicOperationThrottler::current_active_token_count() const noexcept
 {
-    std::unique_lock lock(_mutex);
+    std::lock_guard lock(_mutex);
     return _pending_ops;
 }
 
 uint32_t
 DynamicOperationThrottler::waiting_threads() const noexcept
 {
-    std::unique_lock lock(_mutex);
+    std::lock_guard lock(_mutex);
     return _waiting_threads;
+}
+
+uint64_t
+DynamicOperationThrottler::current_resource_usage() const noexcept
+{
+    std::lock_guard lock(_mutex);
+    return _current_resource_usage;
 }
 
 void
 DynamicOperationThrottler::reconfigure_dynamic_throttling(const DynamicThrottleParams& params) noexcept
 {
-    std::unique_lock lock(_mutex);
+    std::lock_guard lock(_mutex);
     _throttle_policy.configure(params);
+    _resource_usage_soft_limit = params.resource_usage_soft_limit;
 }
 
 } // anonymous namespace
@@ -429,7 +480,7 @@ SharedOperationThrottler::make_dynamic_throttler(const DynamicThrottleParams& pa
 DynamicOperationThrottler::Token::~Token()
 {
     if (_throttler) {
-        _throttler->release_one();
+        _throttler->release_one(_operation_resource_usage);
     }
 }
 
@@ -437,7 +488,7 @@ void
 DynamicOperationThrottler::Token::reset() noexcept
 {
     if (_throttler) {
-        _throttler->release_one();
+        _throttler->release_one(_operation_resource_usage);
         _throttler = nullptr;
     }
 }
@@ -447,7 +498,9 @@ DynamicOperationThrottler::Token::operator=(Token&& rhs) noexcept
 {
     reset();
     _throttler = rhs._throttler;
+    _operation_resource_usage = rhs._operation_resource_usage;
     rhs._throttler = nullptr;
+    rhs._operation_resource_usage = 0;
     return *this;
 }
 
