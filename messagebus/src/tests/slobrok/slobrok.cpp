@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/messagebus/network/rpcnetwork.h>
@@ -56,7 +56,7 @@ compare(const IMirrorAPI &api, const string &pattern, SpecList expect)
     return false;
 }
 
-TEST("slobrok_test") {
+TEST(SlobrokTest, slobrok_test) {
     Slobrok slobrok;
     RPCNetwork net1(RPCNetworkParams(slobrok.config())
                     .setIdentity(Identity("net/a")));
@@ -125,4 +125,4 @@ TEST("slobrok_test") {
     net1.shutdown();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

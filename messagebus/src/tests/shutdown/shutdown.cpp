@@ -7,14 +7,14 @@
 #include <vespa/messagebus/testlib/simpleprotocol.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 using namespace mbus;
 
 static const duration TIMEOUT = 120s;
 
-TEST("requireThatListenFailedIsExceptionSafe")
+TEST(ShutdownTest, requireThatListenFailedIsExceptionSafe)
 {
     fnet::frt::StandaloneFRT orb;
     ASSERT_TRUE(orb.supervisor().Listen(0));
@@ -26,11 +26,11 @@ TEST("requireThatListenFailedIsExceptionSafe")
                        .setListenPort(orb.supervisor().GetListenPort()));
         EXPECT_TRUE(false);
     } catch (vespalib::Exception &e) {
-        EXPECT_EQUAL("Failed to start network.", e.getMessage());
+        EXPECT_EQ("Failed to start network.", e.getMessage());
     }
 }
 
-TEST("requireThatShutdownOnSourceWithPendingIsSafe")
+TEST(ShutdownTest, requireThatShutdownOnSourceWithPendingIsSafe)
 {
     Slobrok slobrok;
     TestServer dstServer(MessageBusParams()
@@ -65,7 +65,7 @@ TEST("requireThatShutdownOnSourceWithPendingIsSafe")
     }
 }
 
-TEST("requireThatShutdownOnIntermediateWithPendingIsSafe")
+TEST(ShutdownTest, requireThatShutdownOnIntermediateWithPendingIsSafe)
 {
     Slobrok slobrok;
     TestServer dstServer(MessageBusParams()
@@ -119,4 +119,4 @@ TEST("requireThatShutdownOnIntermediateWithPendingIsSafe")
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

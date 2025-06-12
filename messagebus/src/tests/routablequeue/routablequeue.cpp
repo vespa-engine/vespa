@@ -3,7 +3,7 @@
 #include <vespa/messagebus/routablequeue.h>
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/simplereply.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
@@ -31,7 +31,7 @@ public:
 };
 uint32_t TestReply::_cnt = 0;
 
-TEST("routablequeue_test") {
+TEST(RoutableQueueTest, routablequeue_test) {
     {
         RoutableQueue rq;
         EXPECT_TRUE(rq.size() == 0);
@@ -100,4 +100,4 @@ TEST("routablequeue_test") {
     EXPECT_TRUE(TestReply::getCnt() == 0);
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

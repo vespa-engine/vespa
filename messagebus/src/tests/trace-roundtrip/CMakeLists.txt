@@ -5,5 +5,6 @@ vespa_add_executable(messagebus_trace-roundtrip_test_app TEST
     DEPENDS
     vespa_messagebus-test
     vespa_messagebus
+    GTest::gtest
 )
 vespa_add_test(NAME messagebus_trace-roundtrip_test_app COMMAND messagebus_trace-roundtrip_test_app)

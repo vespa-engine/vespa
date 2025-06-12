@@ -11,7 +11,7 @@
 #include <vespa/messagebus/testlib/simplemessage.h>
 #include <vespa/messagebus/testlib/slobrok.h>
 #include <vespa/messagebus/testlib/testserver.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
@@ -23,7 +23,7 @@ RoutingSpec getRouting() {
                   .addRoute(RouteSpec("test").addHop("pxy").addHop("dst")));
 }
 
-TEST("error_test") {
+TEST(ErrorTest, error_test) {
 
     Slobrok     slobrok;
     TestServer  srcNet(Identity("test/src"), getRouting(), slobrok);
@@ -57,17 +57,17 @@ TEST("error_test") {
 
         reply = pxy.getReply();
         ASSERT_TRUE(reply);
-        ASSERT_EQUAL(reply->getNumErrors(), 1u);
-        EXPECT_EQUAL(reply->getError(0).getService(), "test/dst/session");
+        ASSERT_EQ(reply->getNumErrors(), 1u);
+        EXPECT_EQ(reply->getError(0).getService(), "test/dst/session");
         reply->addError(Error(ErrorCode::APP_FATAL_ERROR, "fatality"));
         is->forward(std::move(reply));
 
         reply = src.getReply();
         ASSERT_TRUE(reply);
-        ASSERT_EQUAL(reply->getNumErrors(), 2u);
-        EXPECT_EQUAL(reply->getError(0).getService(), "test/dst/session");
-        EXPECT_EQUAL(reply->getError(1).getService(), "test/pxy/session");
+        ASSERT_EQ(reply->getNumErrors(), 2u);
+        EXPECT_EQ(reply->getError(0).getService(), "test/dst/session");
+        EXPECT_EQ(reply->getError(1).getService(), "test/pxy/session");
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

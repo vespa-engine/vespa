@@ -5,5 +5,6 @@ vespa_add_executable(messagebus_protocolrepository_test_app TEST
     DEPENDS
     vespa_messagebus-test
     vespa_messagebus
+    GTest::gtest
 )
 vespa_add_test(NAME messagebus_protocolrepository_test_app NO_VALGRIND COMMAND messagebus_protocolrepository_test_app)

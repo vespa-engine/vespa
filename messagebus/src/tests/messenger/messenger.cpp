@@ -2,7 +2,7 @@
 
 #include <vespa/messagebus/messenger.h>
 #include <vespa/vespalib/util/barrier.h>
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 using namespace mbus;
 
@@ -37,7 +37,7 @@ public:
     }
 };
 
-TEST("messenger_test") {
+TEST(MessengerTest, messenger_test) {
 
     Messenger msn;
     msn.start();
@@ -50,4 +50,4 @@ TEST("messenger_test") {
     ASSERT_TRUE(msn.isEmpty());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
