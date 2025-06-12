@@ -4,5 +4,6 @@ vespa_add_executable(slobrok_standalone_test_app TEST
     standalone.cpp
     DEPENDS
     vespa_slobrok_slobrokserver
+    GTest::gtest
 )
 vespa_add_test(NAME slobrok_standalone_test_app COMMAND slobrok_standalone_test_app)

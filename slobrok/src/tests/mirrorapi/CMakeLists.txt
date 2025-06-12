@@ -4,6 +4,7 @@ vespa_add_executable(slobrok_mirrorapi_test_app TEST
     mirrorapi.cpp
     DEPENDS
     vespa_slobrok_slobrokserver
+    GTest::gtest
 )
 vespa_add_test(NAME slobrok_mirrorapi_test_app COMMAND slobrok_mirrorapi_test_app)
 vespa_add_executable(slobrok_mirror_match_test_app TEST
@@ -11,5 +12,6 @@ vespa_add_executable(slobrok_mirror_match_test_app TEST
     match_test.cpp
     DEPENDS
     vespa_slobrok
+    GTest::gtest
 )
 vespa_add_test(NAME slobrok_mirror_match_test_app COMMAND slobrok_mirror_match_test_app)

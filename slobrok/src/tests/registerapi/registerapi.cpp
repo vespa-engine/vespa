@@ -1,6 +1,6 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/slobrok/sbmirror.h>
 #include <vespa/slobrok/sbregister.h>
@@ -68,7 +68,7 @@ compare(MirrorAPI &api, const char *pattern, SpecList expect)
     return false;
 }
 
-TEST("registerapi_test") {
+TEST(RegisterAPITest, registerapi_test) {
 
     SlobrokServer mock(18548);
     std::this_thread::sleep_for(300ms);
@@ -97,13 +97,11 @@ TEST("registerapi_test") {
     }
     EXPECT_TRUE(!reg.busy());
 
-    TEST_FLUSH();
     reg.registerName("B/x");
     EXPECT_TRUE(compare(mirror, "B/x", SpecList().add("B/x", myspec.c_str())));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList().add("B/x", myspec.c_str())));
     EXPECT_TRUE(compare(mirror, "*/*/*", SpecList().add("A/x/w", myspec.c_str())));
 
-    TEST_FLUSH();
     reg.registerName("C/x/z");
     EXPECT_TRUE(compare(mirror, "C/x/z", SpecList().add("C/x/z", myspec.c_str())));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList().add("B/x", myspec.c_str())));
@@ -111,7 +109,6 @@ TEST("registerapi_test") {
                        .add("A/x/w", myspec.c_str())
                        .add("C/x/z", myspec.c_str())));
 
-    TEST_FLUSH();
     reg.registerName("D/y/z");
     EXPECT_TRUE(compare(mirror, "D/y/z", SpecList().add("D/y/z", myspec.c_str())));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList().add("B/x", myspec.c_str())));
@@ -120,7 +117,6 @@ TEST("registerapi_test") {
                        .add("C/x/z", myspec.c_str())
                        .add("D/y/z", myspec.c_str())));
 
-    TEST_FLUSH();
     reg.registerName("E/y");
     EXPECT_TRUE(compare(mirror, "E/y", SpecList().add("E/y", myspec.c_str())));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList()
@@ -131,7 +127,6 @@ TEST("registerapi_test") {
                        .add("C/x/z", myspec.c_str())
                        .add("D/y/z", myspec.c_str())));
 
-    TEST_FLUSH();
     reg.registerName("F/y/w");
     EXPECT_TRUE(compare(mirror, "F/y/w", SpecList().add("F/y/w", myspec.c_str())));
     EXPECT_TRUE(compare(mirror, "*/*", SpecList()
@@ -165,7 +160,6 @@ TEST("registerapi_test") {
     EXPECT_TRUE(compare(mirror, "A/*/w", SpecList()
                        .add("A/x/w", myspec.c_str())));
 
-    TEST_FLUSH();
     reg.unregisterName("E/y");
     reg.unregisterName("C/x/z");
     reg.unregisterName("F/y/w");
@@ -175,7 +169,6 @@ TEST("registerapi_test") {
                        .add("A/x/w", myspec.c_str())
                        .add("D/y/z", myspec.c_str())));
 
-    TEST_FLUSH();
     reg.registerName("E/y");
     reg.registerName("C/x/z");
     reg.registerName("F/y/w");
@@ -188,7 +181,6 @@ TEST("registerapi_test") {
                        .add("D/y/z", myspec.c_str())
                        .add("F/y/w", myspec.c_str())));
 
-    TEST_FLUSH();
     reg.unregisterName("E/y");
     reg.unregisterName("C/x/z");
     reg.unregisterName("F/y/w");
@@ -198,7 +190,6 @@ TEST("registerapi_test") {
                        .add("A/x/w", myspec.c_str())
                        .add("D/y/z", myspec.c_str())));
 
-    TEST_FLUSH();
     reg.registerName("E/y");
     reg.registerName("C/x/z");
     reg.registerName("F/y/w");
@@ -215,4 +206,4 @@ TEST("registerapi_test") {
     server.shutdown();
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
