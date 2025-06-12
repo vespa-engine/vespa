@@ -39,10 +39,10 @@ public:
     bool operator!=(const DiskMemUsageState &rhs) const {
         return ! ((*this) == rhs);
     }
-    const ResourceUsageState &diskState() const { return _diskState; }
-    const ResourceUsageState &memoryState() const { return _memoryState; }
-    double transient_disk_usage() const { return _transient_disk_usage; }
-    double transient_memory_usage() const { return _transient_memory_usage; }
+    const ResourceUsageState &diskState() const noexcept { return _diskState; }
+    const ResourceUsageState &memoryState() const noexcept { return _memoryState; }
+    double transient_disk_usage() const noexcept { return _transient_disk_usage; }
+    double transient_memory_usage() const noexcept { return _transient_memory_usage; }
     double non_transient_disk_usage() const { return std::max(0.0, _diskState.usage() - _transient_disk_usage); }
     double non_transient_memory_usage() const { return std::max(0.0, _memoryState.usage() - _transient_memory_usage); }
     bool aboveDiskLimit(double resourceLimitFactor) const { return diskState().aboveLimit(resourceLimitFactor); }

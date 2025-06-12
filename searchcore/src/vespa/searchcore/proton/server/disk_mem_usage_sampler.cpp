@@ -13,6 +13,7 @@ namespace proton {
 
 DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const vespalib::HwInfo &hwInfo)
     : _filter(hwInfo),
+      _notifier(_filter),
       _path(path_in),
       _sampleInterval(60s),
       _lastSampleTime(),
@@ -37,7 +38,7 @@ DiskMemUsageSampler::timeToSampleAgain() const noexcept {
 void
 DiskMemUsageSampler::setConfig(const Config &config, IScheduledExecutor & executor)
 {
-    bool wasChanged = _filter.setConfig(config.filterConfig);
+    bool wasChanged = _notifier.setConfig(config.filterConfig);
     if (_periodicHandle && (_sampleInterval == config.sampleInterval) && !wasChanged) {
         return;
     }
@@ -64,7 +65,7 @@ DiskMemUsageSampler::sampleAndReportUsage()
      */
     vespalib::ProcessMemoryStats memoryStats = sampleMemoryUsage();
     uint64_t diskUsage = sampleDiskUsage();
-    _filter.set_resource_usage(transientUsage, memoryStats, diskUsage);
+    _notifier.set_resource_usage(transientUsage, memoryStats, diskUsage);
     _lastSampleTime = vespalib::steady_clock::now();
 }
 
@@ -130,7 +131,7 @@ sampleDiskUsageInDirectory(const fs::path &path)
 uint64_t
 DiskMemUsageSampler::sampleDiskUsage()
 {
-    const auto &disk = _filter.getHwInfo().disk();
+    const auto &disk = _notifier.getHwInfo().disk();
     return disk.shared()
         ? sampleDiskUsageInDirectory(_path)
         : sampleDiskUsageOnFileSystem(_path, disk);
