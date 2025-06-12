@@ -5,5 +5,6 @@ vespa_add_executable(vbench_line_reader_test_app TEST
     DEPENDS
     vbench_test
     vespa_vbench
+    GTest::gtest
 )
 vespa_add_test(NAME vbench_line_reader_test_app COMMAND vbench_line_reader_test_app)

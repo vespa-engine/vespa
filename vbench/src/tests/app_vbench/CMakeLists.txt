@@ -5,6 +5,7 @@ vespa_add_executable(vbench_app_vbench_test_app TEST
     DEPENDS
     vbench_test
     vespa_vbench
+    GTest::gtest
 )
 vespa_add_test(NAME vbench_app_vbench_test_app NO_VALGRIND COMMAND vbench_app_vbench_test_app)
 configure_file(vbench.cfg.template.template vbench.cfg.template @ONLY)

@@ -1,10 +1,11 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/testkit/test_path.h>
 #include <vbench/test/all.h>
 
 using namespace vbench;
 
-TEST("input file reader") {
+TEST(InputFileReaderTest, input_file_reader) {
     {
         InputFileReader reader("not_found.txt");
         EXPECT_TRUE(reader.tainted());
@@ -14,29 +15,27 @@ TEST("input file reader") {
         EXPECT_TRUE(!reader.tainted());
         string line;
         EXPECT_TRUE(reader.readLine(line));
-        EXPECT_EQUAL("foo", line);
+        EXPECT_EQ("foo", line);
         EXPECT_TRUE(reader.readLine(line));
-        EXPECT_EQUAL("bar", line);
+        EXPECT_EQ("bar", line);
         EXPECT_TRUE(reader.readLine(line));
-        EXPECT_EQUAL("baz", line);
+        EXPECT_EQ("baz", line);
         EXPECT_TRUE(!reader.readLine(line));
-        TEST_FLUSH();
     }
     {
         InputFileReader reader(TEST_PATH("hard_test_input.txt"));
         EXPECT_TRUE(!reader.tainted());
         string line;
         EXPECT_TRUE(reader.readLine(line));
-        EXPECT_EQUAL("foo", line);
+        EXPECT_EQ("foo", line);
         EXPECT_TRUE(reader.readLine(line));
-        EXPECT_EQUAL("bar", line);
+        EXPECT_EQ("bar", line);
         EXPECT_TRUE(reader.readLine(line));
-        EXPECT_EQUAL("baz", line);
+        EXPECT_EQ("baz", line);
         EXPECT_TRUE(reader.readLine(line));
-        EXPECT_EQUAL("\r", line);
+        EXPECT_EQ("\r", line);
         EXPECT_TRUE(!reader.readLine(line));
-        TEST_FLUSH();
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

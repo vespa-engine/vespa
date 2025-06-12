@@ -5,5 +5,6 @@ vespa_add_executable(vbench_latency_analyzer_test_app TEST
     DEPENDS
     vbench_test
     vespa_vbench
+    GTest::gtest
 )
 vespa_add_test(NAME vbench_latency_analyzer_test_app COMMAND vbench_latency_analyzer_test_app)

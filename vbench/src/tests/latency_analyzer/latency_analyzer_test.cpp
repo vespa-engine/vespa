@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vbench/test/all.h>
 
 using namespace vbench;
@@ -12,25 +12,29 @@ void post(double latency, Handler<Request> &handler,
     handler.handle(std::move(req));
 }
 
-TEST_FF("require that only OK requests are counted", RequestSink(), LatencyAnalyzer(f1)) {
+TEST(LatencyAnalyzerTest, require_that_only_OK_requests_are_counted) {
+    RequestSink f1;
+    LatencyAnalyzer f2(f1);
     post(1.0, f2);
     post(2.0, f2, 3.0);
     post(10.0, f2, 0.0, Request::STATUS_DROPPED);
     post(20.0, f2, 0.0, Request::STATUS_FAILED);
-    EXPECT_APPROX(1.0, f2.getStats().min, 10e-6);
-    EXPECT_APPROX(1.5, f2.getStats().avg, 10e-6);
-    EXPECT_APPROX(2.0, f2.getStats().max, 10e-6);
+    EXPECT_NEAR(1.0, f2.getStats().min, 10e-6);
+    EXPECT_NEAR(1.5, f2.getStats().avg, 10e-6);
+    EXPECT_NEAR(2.0, f2.getStats().max, 10e-6);
 }
 
-TEST_FF("verify percentiles", RequestSink(), LatencyAnalyzer(f1)) {
+TEST(LatencyAnalyzerTest, verify_percentiles) {
+    RequestSink f1;
+    LatencyAnalyzer f2(f1);
     for (size_t i = 0; i <= 10000; ++i) {
         post(0.001 * i, f2);
     }
     LatencyAnalyzer::Stats stats = f2.getStats();
-    EXPECT_APPROX(5.0, stats.per50, 10e-6);
-    EXPECT_APPROX(9.5, stats.per95, 10e-6);
-    EXPECT_APPROX(9.9, stats.per99, 10e-6);
+    EXPECT_NEAR(5.0, stats.per50, 10e-6);
+    EXPECT_NEAR(9.5, stats.per95, 10e-6);
+    EXPECT_NEAR(9.9, stats.per99, 10e-6);
     fprintf(stderr, "%s", stats.toString().c_str());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

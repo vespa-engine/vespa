@@ -5,5 +5,6 @@ vespa_add_executable(vbench_time_queue_test_app TEST
     DEPENDS
     vbench_test
     vespa_vbench
+    GTest::gtest
 )
 vespa_add_test(NAME vbench_time_queue_test_app COMMAND vbench_time_queue_test_app)

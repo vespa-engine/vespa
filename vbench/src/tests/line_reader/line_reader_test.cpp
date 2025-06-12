@@ -1,5 +1,5 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vbench/test/all.h>
 
 using namespace vbench;
@@ -7,7 +7,7 @@ using namespace vbench;
 using OutputWriter = vespalib::OutputWriter;
 using SimpleBuffer = vespalib::SimpleBuffer;
 
-TEST("line reader") {
+TEST(LineReaderTest, line_reader) {
     SimpleBuffer buffer;
     {
         OutputWriter dst(buffer, 64);
@@ -22,20 +22,20 @@ TEST("line reader") {
         LineReader src(buffer);
         string str;
         EXPECT_TRUE(src.readLine(str));
-        EXPECT_EQUAL("foo", str);
+        EXPECT_EQ("foo", str);
         EXPECT_TRUE(src.readLine(str));
-        EXPECT_EQUAL("bar", str);
+        EXPECT_EQ("bar", str);
         EXPECT_TRUE(src.readLine(str));
-        EXPECT_EQUAL("", str);
+        EXPECT_EQ("", str);
         EXPECT_TRUE(src.readLine(str));
-        EXPECT_EQUAL("\rbaz", str);
+        EXPECT_EQ("\rbaz", str);
         EXPECT_TRUE(src.readLine(str));
-        EXPECT_EQUAL("", str);
+        EXPECT_EQ("", str);
         EXPECT_TRUE(src.readLine(str));
-        EXPECT_EQUAL("zzz", str);
+        EXPECT_EQ("zzz", str);
         EXPECT_TRUE(!src.readLine(str));
-        EXPECT_EQUAL("", str);
+        EXPECT_EQ("", str);
     }
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()

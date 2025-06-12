@@ -1,10 +1,10 @@
 // Copyright Vespa.ai. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/gtest/gtest.h>
 #include <vbench/test/all.h>
 
 using namespace vbench;
 
-TEST("require that benchmark headers can be set") {
+TEST(BenchmarkHeadersTest, require_that_benchmark_headers_can_be_set) {
     vbench::BenchmarkHeaders headers;
     EXPECT_FALSE(headers.num_hits.is_set);
     EXPECT_FALSE(headers.num_fasthits.is_set);
@@ -51,23 +51,23 @@ TEST("require that benchmark headers can be set") {
     EXPECT_TRUE(headers.nodes_searched.is_set);
     EXPECT_TRUE(headers.full_coverage.is_set);
 
-    EXPECT_EQUAL(headers.num_hits.value, 1.0);
-    EXPECT_EQUAL(headers.num_fasthits.value, 2.0);
-    EXPECT_EQUAL(headers.num_grouphits.value, 3.0);
-    EXPECT_EQUAL(headers.num_errors.value, 4.0);
-    EXPECT_EQUAL(headers.total_hit_count.value, 5.0);
-    EXPECT_EQUAL(headers.num_docsums.value, 6.0);
-    EXPECT_EQUAL(headers.query_hits.value, 7.0);
-    EXPECT_EQUAL(headers.query_offset.value, 8.0);
-    EXPECT_EQUAL(headers.search_time.value, 9.0);
-    EXPECT_EQUAL(headers.attr_time.value, 10.0);
-    EXPECT_EQUAL(headers.fill_time.value, 11.0);
-    EXPECT_EQUAL(headers.docs_searched.value, 12.0);
-    EXPECT_EQUAL(headers.nodes_searched.value, 13.0);
-    EXPECT_EQUAL(headers.full_coverage.value, 14.0);
+    EXPECT_EQ(headers.num_hits.value, 1.0);
+    EXPECT_EQ(headers.num_fasthits.value, 2.0);
+    EXPECT_EQ(headers.num_grouphits.value, 3.0);
+    EXPECT_EQ(headers.num_errors.value, 4.0);
+    EXPECT_EQ(headers.total_hit_count.value, 5.0);
+    EXPECT_EQ(headers.num_docsums.value, 6.0);
+    EXPECT_EQ(headers.query_hits.value, 7.0);
+    EXPECT_EQ(headers.query_offset.value, 8.0);
+    EXPECT_EQ(headers.search_time.value, 9.0);
+    EXPECT_EQ(headers.attr_time.value, 10.0);
+    EXPECT_EQ(headers.fill_time.value, 11.0);
+    EXPECT_EQ(headers.docs_searched.value, 12.0);
+    EXPECT_EQ(headers.nodes_searched.value, 13.0);
+    EXPECT_EQ(headers.full_coverage.value, 14.0);
 }
 
-TEST("require that benchmark headers can be converted to string") {
+TEST(BenchmarkHeadersTest, require_that_benchmark_headers_can_be_converted_to_string) {
     vbench::BenchmarkHeaders headers;
     headers.handleHeader("X-Yahoo-Vespa-NumErrors", "4");
     headers.handleHeader("X-Yahoo-Vespa-TotalHitCount", "5");
@@ -76,4 +76,4 @@ TEST("require that benchmark headers can be converted to string") {
     fprintf(stderr, "%s", result.c_str());
 }
 
-TEST_MAIN() { TEST_RUN_ALL(); }
+GTEST_MAIN_RUN_ALL_TESTS()
