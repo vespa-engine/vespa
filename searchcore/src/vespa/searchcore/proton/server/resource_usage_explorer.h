@@ -6,7 +6,7 @@
 
 namespace proton {
 
-class DiskMemUsageFilter;
+class DiskMemUsageNotifier;
 class ResourceUsageTracker;
 
 /**
@@ -15,11 +15,11 @@ class ResourceUsageTracker;
 class ResourceUsageExplorer : public vespalib::StateExplorer
 {
 private:
-    const DiskMemUsageFilter& _usage_filter;
+    const DiskMemUsageNotifier& _usage_notifier;
     const ResourceUsageTracker& _usage_tracker;
 
 public:
-    ResourceUsageExplorer(const DiskMemUsageFilter& usage_filter,
+    ResourceUsageExplorer(const DiskMemUsageNotifier& usage_notifier,
                           const ResourceUsageTracker& usage_tracker);
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;

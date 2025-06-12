@@ -834,8 +834,9 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
             metrics.transactionLog.update(tls->getDomainStats());
         }
 
-        const DiskMemUsageFilter &usageFilter = _diskMemUsageSampler->writeFilter();
-        auto dm_metrics = usageFilter.get_metrics();
+        const auto &usage_filter = _diskMemUsageSampler->writeFilter();
+        const auto &usage_notifier = _diskMemUsageSampler->real_notifier();
+        auto dm_metrics = usage_notifier.get_metrics();
         metrics.resourceUsage.disk.set(dm_metrics.non_transient_disk_usage());
         metrics.resourceUsage.disk_usage.total.set(dm_metrics.total_disk_usage());
         metrics.resourceUsage.disk_usage.total_util.set(dm_metrics.total_disk_utilization());
@@ -847,7 +848,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.memory_usage.transient.set(dm_metrics.transient_memory_usage());
 
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
-        metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));
+        metrics.resourceUsage.feedingBlocked.set((usage_filter.acceptWriteOperation() ? 0.0 : 1.0));
 #ifdef __linux__
 #if __GLIBC_PREREQ(2, 33)
         struct mallinfo2 mallocInfo = mallinfo2();
@@ -1074,7 +1075,7 @@ Proton::get_child(std::string_view name) const
     } else if (name == TLS_NAME && _tls) {
         return std::make_unique<search::transactionlog::TransLogServerExplorer>(_tls->getTransLogServer());
     } else if (name == RESOURCE_USAGE && _diskMemUsageSampler && _persistenceEngine) {
-        return std::make_unique<ResourceUsageExplorer>(_diskMemUsageSampler->writeFilter(),
+        return std::make_unique<ResourceUsageExplorer>(_diskMemUsageSampler->real_notifier(),
                                                        _persistenceEngine->get_resource_usage_tracker());
     } else if (name == THREAD_POOLS) {
         return std::make_unique<ProtonThreadPoolsExplorer>((_shared_service) ? &_shared_service->shared() : nullptr,

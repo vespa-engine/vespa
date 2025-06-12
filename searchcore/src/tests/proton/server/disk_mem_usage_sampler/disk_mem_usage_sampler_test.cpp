@@ -54,6 +54,7 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
     }
     ~DiskMemUsageSamplerTest();
     const DiskMemUsageFilter& filter() const { return sampler->writeFilter(); }
+    const DiskMemUsageNotifier& notifier() const { return sampler->real_notifier(); }
 };
 
 DiskMemUsageSamplerTest::~DiskMemUsageSamplerTest() {
@@ -65,7 +66,7 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
     // Poll for up to 20 seconds to get a sample.
     size_t i = 0;
     for (; i < static_cast<size_t>(20s / 50ms); ++i) {
-        if (filter().get_transient_resource_usage().memory() > 0) {
+        if (notifier().get_transient_resource_usage().memory() > 0) {
             break;
         }
         std::this_thread::sleep_for(50ms);
@@ -73,16 +74,16 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
     LOG(info, "Polled %zu times (%zu ms) to get a sample", i, i * 50);
 #ifdef __linux__
     // Anonymous resident memory used by current process is sampled.
-    EXPECT_GT(filter().getMemoryStats().getAnonymousRss(), 0);
+    EXPECT_GT(notifier().getMemoryStats().getAnonymousRss(), 0);
 #else
     // Anonymous resident memory used by current process is not sampled.
     EXPECT_EQ(filter().getMemoryStats().getAnonymousRss(), 0);
 #endif
-    EXPECT_GT(filter().getDiskUsedSize(), 0);
-    EXPECT_EQ(150, filter().get_transient_resource_usage().memory());
-    EXPECT_EQ(150.0 / memory_size_bytes, filter().usageState().transient_memory_usage());
-    EXPECT_EQ(350, filter().get_transient_resource_usage().disk());
-    EXPECT_EQ(350.0 / disk_size_bytes, filter().usageState().transient_disk_usage());
+    EXPECT_GT(notifier().getDiskUsedSize(), 0);
+    EXPECT_EQ(150, notifier().get_transient_resource_usage().memory());
+    EXPECT_EQ(150.0 / memory_size_bytes, notifier().usageState().transient_memory_usage());
+    EXPECT_EQ(350, notifier().get_transient_resource_usage().disk());
+    EXPECT_EQ(350.0 / disk_size_bytes, notifier().usageState().transient_disk_usage());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

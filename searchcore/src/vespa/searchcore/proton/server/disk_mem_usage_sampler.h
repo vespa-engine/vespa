@@ -3,6 +3,7 @@
 #pragma once
 
 #include "disk_mem_usage_filter.h"
+#include "disk_mem_usage_notifier.h"
 #include <vespa/searchcore/proton/common/i_scheduled_executor.h>
 
 namespace vespalib { class IDestructorCallback; }
@@ -16,6 +17,7 @@ class ITransientResourceUsageProvider;
  */
 class DiskMemUsageSampler {
     DiskMemUsageFilter     _filter;
+    DiskMemUsageNotifier   _notifier;
     std::filesystem::path  _path;
     vespalib::duration     _sampleInterval;
     vespalib::steady_time  _lastSampleTime;
@@ -30,7 +32,7 @@ class DiskMemUsageSampler {
     [[nodiscard]] bool timeToSampleAgain() const noexcept;
 public:
     struct Config {
-        DiskMemUsageFilter::Config filterConfig;
+        DiskMemUsageNotifier::Config filterConfig;
         vespalib::duration sampleInterval;
         vespalib::HwInfo hwInfo;
 
@@ -56,8 +58,9 @@ public:
 
     void setConfig(const Config &config, IScheduledExecutor & executor);
 
-    const DiskMemUsageFilter &writeFilter() const { return _filter; }
-    IDiskMemUsageNotifier &notifier() { return _filter; }
+    const DiskMemUsageFilter& writeFilter() const noexcept { return _filter; }
+    IDiskMemUsageNotifier& notifier() noexcept { return _notifier; }
+    const DiskMemUsageNotifier& real_notifier() noexcept { return _notifier; }
     void add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
     void remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider);
 };
