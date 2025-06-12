@@ -20,6 +20,7 @@ vespa_add_executable(vespalib_util_gtest_runner_test_app TEST
     mmap_file_allocator_factory_test.cpp
     mmap_file_allocator_test.cpp
     nexus_test.cpp
+    overflow_test.cpp
     printabletest.cpp
     ptrholder.cpp
     random_test.cpp
