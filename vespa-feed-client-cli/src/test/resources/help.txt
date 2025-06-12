@@ -23,6 +23,9 @@ Vespa feed client
     --header <arg>                        HTTP header on the form 'Name:
                                           value'
     --help
+    --initial-inflight-factor <arg>       Multiplier for minInflight to
+                                          determine the initial
+                                          targetInflight
     --log-config <arg>                    Specify a path to a Java Util
                                           Logging properties file.
                                           Overrides the default

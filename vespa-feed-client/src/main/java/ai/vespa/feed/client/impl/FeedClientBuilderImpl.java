@@ -59,6 +59,7 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
     URI proxy;
     Duration connectionTtl = Duration.ZERO;
     LongSupplier nanoClock = System::nanoTime;
+    int initialInflightFactor = 1;
 
     public FeedClientBuilderImpl() { }
 
@@ -254,6 +255,13 @@ public class FeedClientBuilderImpl implements FeedClientBuilder {
 
     FeedClientBuilderImpl setNanoClock(LongSupplier nanoClock) {
         this.nanoClock = requireNonNull(nanoClock);
+        return this;
+    }
+
+    @Override
+    public FeedClientBuilderImpl setInitialInflightFactor(int factor) {
+        if (factor < 1) throw new IllegalArgumentException("Initial inflight factor must be at least 1, but was " + factor);
+        this.initialInflightFactor = factor;
         return this;
     }
 
