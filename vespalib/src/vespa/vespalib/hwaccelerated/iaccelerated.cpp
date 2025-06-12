@@ -206,7 +206,7 @@ EnabledTargetLevel EnabledTargetLevel::create_from_env_var() {
             : target::DEFAULT_LEVEL;
     const uint32_t supported_level = target::max_supported_level();
     if (wanted_level > supported_level && (maybe_var != nullptr)) {
-        LOG(warning, "Requested vectorization target level is %s, but platform only supports %s.",
+        LOG(info, "Requested vectorization target level is %s, but platform only supports %s.",
             target::level_u32_to_str(wanted_level), target::level_u32_to_str(supported_level));
     }
     const uint32_t enabled_level = std::min(wanted_level, supported_level);
