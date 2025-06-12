@@ -3,13 +3,16 @@ package com.yahoo.vespa.config.proxy.filedistribution;
 
 import org.apache.hc.client5.http.classic.HttpClient;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.DefaultHttpRequestRetryStrategy;
 import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.message.BasicHeader;
+import org.apache.hc.core5.util.Timeout;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
@@ -53,7 +56,10 @@ class UrlDownloader {
     }
 
     private Optional<File> writeContent(File downloadDir, ClassicHttpResponse resp, File contentsPath, long start) throws IOException {
-        try (var in = resp.getEntity().getContent()) {
+        InputStream content = resp.getEntity().getContent();
+        if (content == null) return Optional.empty();
+
+        try (var in = content) {
             Files.copy(in, contentsPath.toPath(), StandardCopyOption.REPLACE_EXISTING);
             if (contentsPath.exists() && contentsPath.length() > 0) {
                 new RequestTracker().trackRequest(downloadDir);
@@ -83,6 +89,11 @@ class UrlDownloader {
         return HttpClientBuilder.create()
                                 .setRetryStrategy(new DefaultHttpRequestRetryStrategy())
                                 .setUserAgent(USER_AGENT_MODEL_DOWNLOADER)
+                                .setDefaultRequestConfig(
+                                        RequestConfig.custom()
+                                                     .setConnectionRequestTimeout(Timeout.ofSeconds(30))
+                                                     .setResponseTimeout(Timeout.ofSeconds(30))
+                                                     .build())
                                 .build();
     }
 
